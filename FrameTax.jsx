@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createRoot } from "react-dom/client";
 
 var GOLD   = "#C9A84C";
 var CREAM  = "#F0EAD6";
@@ -48,6 +49,17 @@ var CHAT_SUGGESTIONS = [
   "Currency hedging strategies I should consider?",
   "Which destination has the most flexible cultural test?"
 ];
+
+var FX_CURRENCIES = ["GBP","EUR","CAD","AUD","NZD","MXN","CZK","HUF","ZAR","KRW","JPY","AED","GEL","RSD","PLN","MAD","ILS","THB","SGD","NOK","SEK","DKK"];
+
+async function fetchFXRates() {
+  try {
+    var res = await fetch("https://open.er-api.com/v6/latest/USD");
+    if (!res.ok) return null;
+    var data = await res.json();
+    return (data && data.rates) ? data.rates : null;
+  } catch(e) { return null; }
+}
 
 async function callClaude(messages, useSearch, maxTok) {
   if (!maxTok) maxTok = 4000;
@@ -273,7 +285,7 @@ function DrivePicker(props) {
           {err && (
             <div style={{ fontFamily:"'DM Mono',monospace", fontSize:".78rem", color:"#E07070", background:"rgba(224,112,112,.06)", border:"1px solid rgba(224,112,112,.2)", padding:"1rem", lineHeight:1.6 }}>
               {err}
-              <div style={{ marginTop:".5rem", color:"#8A8070", fontSize:".7rem" }}>Make sure your Google Drive is connected in Claude settings (Settings > Connectors).</div>
+              <div style={{ marginTop:".5rem", color:"#8A8070", fontSize:".7rem" }}>Make sure your Google Drive is connected in Claude settings (Settings {'>'} Connectors).</div>
             </div>
           )}
           {!loading && !err && files.length === 0 && (
@@ -350,6 +362,16 @@ function HomeBaseCard(props) {
           {hb.noIncentiveReason && !hasIncentive && (
             <div style={{ background:"rgba(224,112,112,.06)", border:"1px solid rgba(224,112,112,.2)", padding:".75rem 1rem", fontFamily:"'DM Mono',monospace", fontSize:".78rem", color:"#E07070" }}>
               {hb.noIncentiveReason}
+            </div>
+          )}
+          {(hb.sourceLabel || hb.sourceUrl) && (
+            <div style={{ display:"flex", flexWrap:"wrap", alignItems:"baseline", gap:".4rem", fontFamily:"'DM Mono',monospace", fontSize:".68rem", marginTop:".75rem", color:"#8A8070" }}>
+              <span style={{ color: hb.confidenceTier === "verified" ? "#5A9A5A" : hb.confidenceTier === "stale" ? "#E07070" : "#C9801C", border:"1px solid " + (hb.confidenceTier === "verified" ? "#5A9A5A40" : hb.confidenceTier === "stale" ? "#E0707040" : "#C9801C40"), background: hb.confidenceTier === "verified" ? "#5A9A5A12" : hb.confidenceTier === "stale" ? "#E0707012" : "#C9801C12", padding:".1rem .4rem" }}>
+                {hb.confidenceTier === "verified" ? "VERIFIED" : hb.confidenceTier === "stale" ? "STALE DATA" : "RECENT"}
+              </span>
+              {hb.sourceLabel && <span>{hb.sourceLabel}</span>}
+              {hb.lastVerified && <span>{"as of " + hb.lastVerified}</span>}
+              {hb.sourceUrl && <span style={{ color:"#C9A84C", wordBreak:"break-all" }}>{hb.sourceUrl}</span>}
             </div>
           )}
         </div>
@@ -785,9 +807,20 @@ function DestCard(props) {
           )}
 
           {dest.exchangeRate && (
-            <p style={{ fontFamily:"'DM Mono',monospace", fontSize:".74rem", color:"#8A8070", marginBottom:".75rem" }}>
+            <p style={{ fontFamily:"'DM Mono',monospace", fontSize:".74rem", color:"#8A8070", marginBottom:".5rem" }}>
               {dest.exchangeRate + " - Currency risk: " + dest.currencyRisk}
             </p>
+          )}
+
+          {(dest.sourceLabel || dest.sourceUrl) && (
+            <div style={{ display:"flex", flexWrap:"wrap", alignItems:"baseline", gap:".4rem", fontFamily:"'DM Mono',monospace", fontSize:".68rem", marginBottom:".75rem", color:"#8A8070" }}>
+              <span style={{ color: dest.confidenceTier === "verified" ? "#5A9A5A" : dest.confidenceTier === "stale" ? "#E07070" : "#C9801C", border:"1px solid " + (dest.confidenceTier === "verified" ? "#5A9A5A40" : dest.confidenceTier === "stale" ? "#E0707040" : "#C9801C40"), background: dest.confidenceTier === "verified" ? "#5A9A5A12" : dest.confidenceTier === "stale" ? "#E0707012" : "#C9801C12", padding:".1rem .4rem" }}>
+                {dest.confidenceTier === "verified" ? "VERIFIED" : dest.confidenceTier === "stale" ? "STALE DATA" : "RECENT"}
+              </span>
+              {dest.sourceLabel && <span>{dest.sourceLabel}</span>}
+              {dest.lastVerified && <span>{"as of " + dest.lastVerified}</span>}
+              {dest.sourceUrl && <span style={{ color:"#C9A84C", wordBreak:"break-all" }}>{dest.sourceUrl}</span>}
+            </div>
           )}
 
           {dest.qualifications && dest.qualifications.length > 0 && (
@@ -953,15 +986,11 @@ export default function FrameTax() {
       totalBudget: parsed && parsed.totalBudget,
       answers: answers,
       pref: pref,
-      results: results ? {
-        overallRecommendation: results.overallRecommendation,
-        budgetOrigin: results.budgetOrigin,
-        destinations: (results.destinations || []).map(function(d) {
-          return { rank:d.rank, country:d.country, flag:d.flag, creditRate:d.creditRate, trueNetCost:d.trueNetCost, vsSavings:d.vsSavings };
-        })
-      } : null
+      results: results || null,
+      parsed: parsed || null,
+      intel: intel || null
     };
-    var updated = [entry].concat(library.slice(0, 19)); // keep max 20
+    var updated = [entry].concat(library.slice(0, 19));
     setLibrary(updated);
     try {
       await window.storage.set("frametax-library", JSON.stringify(updated));
@@ -980,10 +1009,16 @@ export default function FrameTax() {
     setBudget(entry.budgetText || "");
     setAnswers(entry.answers || {});
     setPref(entry.pref || []);
+    if (entry.parsed) setParsed(entry.parsed);
+    if (entry.intel) setIntel(entry.intel);
     if (entry.results) {
-      // show a summary - user can re-run full analysis
+      setResults(entry.results);
+      setOverrideResults({});
+      var openInit = {};
+      if (entry.results.destinations && entry.results.destinations[0]) openInit[0] = true;
+      setOpenCards(openInit);
       setShowLib(false);
-      setPage("upload");
+      setPage("results");
     } else {
       setShowLib(false);
       setPage("upload");
@@ -1106,6 +1141,19 @@ export default function FrameTax() {
     } catch(e) { imd = null; }
     setLStep(2);
 
+    var fxRates = null;
+    try { fxRates = await fetchFXRates(); } catch(e) {}
+    var fxNote = "";
+    if (fxRates) {
+      var fxLines = FX_CURRENCIES
+        .filter(function(c) { return fxRates[c]; })
+        .map(function(c) { return "USD/" + c + ": " + fxRates[c]; })
+        .join(", ");
+      fxNote = "\nLIVE FX RATES (fetched " + new Date().toISOString().slice(0,10) + ", source: open.er-api.com): " + fxLines + "\n";
+    } else {
+      fxNote = "\nFX RATES: Live fetch unavailable - use best available estimate from training data.\n";
+    }
+
     var ci = intel || {};
     var dirName = (imd && imd.directorName) || ci.director || "Unknown";
     var dirNat  = (imd && imd.directorNationality) || ci.directorNationality || (answers && answers.dirNat) || "Unknown";
@@ -1145,6 +1193,7 @@ export default function FrameTax() {
       var insNote = ci.hasInsurance ? "IN budget " + fmt(ci.insuranceAmt) : "NOT in budget";
 
       var prompt = "World-leading film production finance expert.\n\n"
+        + fxNote
         + "INTEL: Film=\"" + filmTitle + "\" | Total=" + fmt(total)
         + " | Origin=" + origin + " | RateBase=" + rateBase + "\n"
         + "FixedATL=" + fmt(fATL) + " (do NOT adjust) | VariableBTL=" + fmt(vBTL) + " (MUST rebase to local rates)\n"
@@ -1152,18 +1201,24 @@ export default function FrameTax() {
         + "Director=" + dirName + " (" + dirNat + ") | Writer nat.=" + wNat + " | Cast=" + cast + "\n\n"
         + "Q&A:\n" + qaText + prefNote + sNote + "\n\n"
         + "TASK 1: Analyze the HOME BASE (where the budget is priced - " + origin + "). What incentives exist in the home country/state? What is the true net cost if filming at home?\n"
-        + "TASK 2: Analyze top 5 international filming destinations. Rebase BTL, apply live FX, calculate credits, add travel.\n"
+        + "TASK 2: Analyze top 5 international filming destinations. Rebase BTL, USE THE LIVE FX RATES PROVIDED ABOVE (do not estimate), calculate credits, add travel.\n"
         + "Output ONLY valid JSON - no markdown, no backticks. Start with { end with }.\n"
         + "Top-level: homeCurrency,budgetOrigin,budgetRateBase,variableBTLBase,fixedATLBase,"
         + "directorIntel{name,nationality,imdbFound},writerIntel{nationality},"
         + "financeFlagged,insuranceFlagged,overallRecommendation,travelNote,currencyNote,"
-        + "homeBase{country,flag,incentiveProgram,creditRate,estimatedCredit,trueNetCost,notes,noIncentiveReason},"
+        + "homeBase{country,flag,incentiveProgram,creditRate,estimatedCredit,trueNetCost,notes,noIncentiveReason,"
+        + "sourceUrl,sourceLabel,lastVerified,confidenceTier},"
         + "destinations[].\n"
         + "Per dest: rank,country,flag,incentiveProgram,creditRate,estimatedCredit,baseRateMultiplier,"
         + "localCostUSD,travelCost,trueNetCost,vsSavings,vsPercent,exchangeRate,currencyRisk,"
         + "rateAdjustmentNote,qualifications[]{test,status,detail},atLStatus,insuranceStatus,"
         + "financeStatus,financeEligibleAmount,insuranceEligibleAmount,coproOpportunity,"
-        + "qualGap,structuringTip,locationFit,highlights[].\n"
+        + "qualGap,structuringTip,locationFit,highlights[],"
+        + "sourceUrl,sourceLabel,lastVerified,confidenceTier.\n"
+        + "sourceUrl: official film commission or government tax authority URL.\n"
+        + "sourceLabel: e.g. British Film Commission, Creative Europe, Screen Australia.\n"
+        + "lastVerified: ISO date the model believes this data is current to (e.g. 2025-01-01).\n"
+        + "confidenceTier: verified (directly from official source) | recent (< 12 months old) | stale (> 12 months or uncertain).\n"
         + "Max 4 quals and 3 highlights per dest. Strings under 120 chars.";
 
       setLStep(4);
@@ -1694,7 +1749,6 @@ export default function FrameTax() {
                 Browse Google Drive for Script
               </button>
             </div>
-            </div>
             {script && <GhostBtn onClick={function() { setScript(""); setSName(""); setLocReqs(null); }}>Remove script</GhostBtn>}
           </div>
 
@@ -2037,3 +2091,6 @@ export default function FrameTax() {
     </div>
   );
 }
+
+var _root = document.getElementById("root");
+if (_root) { createRoot(_root).render(React.createElement(FrameTax)); }
