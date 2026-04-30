@@ -1,0 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=DM+Mono:wght@400;500&family=Jost:wght@300;400;500;600&display=swap');
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+.fta{font-family:'Jost',sans-serif;min-height:100vh;background:#080808;color:#F0EAD6;overflow-x:hidden}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fu{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+.fu{animation:fu .35s ease}
+.ring{width:80px;height:80px;border-radius:50%;border:2px solid #2A2520;border-top-color:#C9A84C;animation:spin 1s linear infinite}
+.ld{min-height:80vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2rem;text-align:center;padding:2rem}
+.sc{max-width:900px;margin:0 auto;padding:3rem 2rem}
+.sc960{max-width:960px;margin:0 auto;padding:3rem 2rem}
+.sc680{max-width:680px;margin:0 auto;padding:3rem 2rem}
