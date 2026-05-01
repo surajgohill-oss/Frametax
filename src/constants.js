@@ -50,3 +50,5 @@ export var CHAT_SUGGESTIONS = [
   "Currency hedging strategies I should consider?",
   "Which destination has the most flexible cultural test?"
 ];
+
+export var FX_CURRENCIES = ["GBP","EUR","CAD","AUD","NZD","MXN","CZK","HUF","ZAR","KRW","JPY","AED","GEL","RSD","PLN","MAD","ILS","THB","SGD","NOK","SEK","DKK"];

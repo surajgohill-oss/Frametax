@@ -71,6 +71,15 @@ export function autoCloseJSON(s) {
   return trimmed + stack.reverse().join("");
 }
 
+export async function fetchFXRates() {
+  try {
+    var res = await fetch("https://open.er-api.com/v6/latest/USD");
+    if (!res.ok) return null;
+    var data = await res.json();
+    return (data && data.rates) ? data.rates : null;
+  } catch(e) { return null; }
+}
+
 export function fmt(n) {
   if (!n && n !== 0) return "-";
   var v = parseFloat(String(n).replace(/[^0-9.-]/g,""));
