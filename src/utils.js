@@ -1,4 +1,4 @@
-export async function callClaude(messages, useSearch, maxTok) {
+export async function callClaude(messages, useSearch, maxTok, apiKey) {
   if (!maxTok) maxTok = 4000;
   var body = {
     model: "claude-sonnet-4-20250514",
@@ -8,9 +8,11 @@ export async function callClaude(messages, useSearch, maxTok) {
   if (useSearch) {
     body.tools = [{ type: "web_search_20250305", name: "web_search" }];
   }
+  var headers = { "Content-Type": "application/json", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" };
+  if (apiKey) headers["x-api-key"] = apiKey;
   var res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: headers,
     body: JSON.stringify(body)
   });
   if (!res.ok) throw new Error("API error " + res.status);

@@ -17,6 +17,8 @@ export default function FrameTax() {
   var scriptRef = useRef(null);
   var chatEnd   = useRef(null);
 
+  var [apiKey,         setApiKey]         = useState(function() { return localStorage.getItem("ft-api-key") || ""; });
+  var [apiKeyInput,    setApiKeyInput]    = useState("");
   var [page,           setPage]           = useState("hero");
   var [budget,         setBudget]         = useState("");
   var [script,         setScript]         = useState("");
@@ -170,7 +172,7 @@ export default function FrameTax() {
         + "isFixed=true for ATL talent/rights. isFixed=false for BTL crew/equipment/locations.\n"
         + "BUDGET:\n" + budget;
 
-      var raw = await callClaude([{ role:"user", content:prompt }], false, 4000);
+      var raw = await callClaude([{ role:"user", content:prompt }], false, 4000, apiKey);
       var d = parseJSON(raw);
       setIntel({
         director: d.director || null,
@@ -204,7 +206,7 @@ export default function FrameTax() {
           + "Schema: {\"writerName\":null,\"writerNationality\":null,\"environments\":[],\"climateNeeds\":[],"
           + "\"specificLocations\":[],\"wouldNotWorkIn\":[]}\n"
           + "SCRIPT:\n" + script.slice(0, 15000);
-        var r2 = await callClaude([{ role:"user", content:p2 }], false, 4000);
+        var r2 = await callClaude([{ role:"user", content:p2 }], false, 4000, apiKey);
         lr = parseJSON(r2); setLocReqs(lr);
       } catch(e) { lr = null; }
     }
@@ -217,7 +219,7 @@ export default function FrameTax() {
       var p3 = "Search IMDb for attachments to the film \"" + title + "\"" + dirPart + ".\n"
         + "Output ONLY valid JSON - no markdown, no backticks. Start with { end with }.\n"
         + "Schema: {\"found\":false,\"directorName\":null,\"directorNationality\":null,\"castAttachments\":[]}";
-      var r3 = await callClaude([{ role:"user", content:p3 }], true, 4000);
+      var r3 = await callClaude([{ role:"user", content:p3 }], true, 4000, apiKey);
       imd = parseJSON(r3);
     } catch(e) { imd = null; }
     setLStep(2);
@@ -303,7 +305,7 @@ export default function FrameTax() {
         + "Max 4 quals and 3 highlights per dest. Strings under 120 chars.";
 
       setLStep(4);
-      var raw = await callClaude([{ role:"user", content:prompt }], true, 8000);
+      var raw = await callClaude([{ role:"user", content:prompt }], true, 8000, apiKey);
       var data = parseJSON(raw);
 
       var treatyData = null;
@@ -346,7 +348,7 @@ export default function FrameTax() {
           + "\"quickWins\":[{\"action\":\"Register Scottish subsidiary\",\"timeframe\":\"3 months\",\"value\":\"Up to $280K additional\"}],"
           + "\"warnings\":[\"Do not stack X with Y - treaty prevents this\"]}";
 
-        var tRaw = await callClaude([{ role:"user", content:tPrompt }], true, 6000);
+        var tRaw = await callClaude([{ role:"user", content:tPrompt }], true, 6000, apiKey);
         treatyData = parseJSON(tRaw);
       } catch(e) {
         treatyData = {
@@ -511,7 +513,7 @@ export default function FrameTax() {
         + "\"assumedQualifications\":[{\"test\":\"string\",\"howToPass\":\"string\",\"difficulty\":\"low|medium|high\"}],"
         + "\"caveats\":[\"string\"],\"executiveSummary\":\"string\"}";
 
-      var raw = await callClaude([{ role:"user", content:prompt }], true, 5000);
+      var raw = await callClaude([{ role:"user", content:prompt }], true, 5000, apiKey);
       var data = parseJSON(raw);
       setOverrideResults(function(prev) {
         var n = Object.assign({}, prev); n[key] = data; return n;
@@ -548,7 +550,7 @@ export default function FrameTax() {
         { role:"user", content:ctx },
         { role:"assistant", content:"Full context loaded. Ready for questions." }
       ].concat(hist).concat([{ role:"user", content:msg }]);
-      var reply = await callClaude(allMsgs, true, 1000);
+      var reply = await callClaude(allMsgs, true, 1000, apiKey);
       setMsgs(function(p) { return p.concat([{ role:"assistant", text:reply }]); });
     } catch(e) {
       setMsgs(function(p) { return p.concat([{ role:"assistant", text:"Sorry, could not process that." }]); });
@@ -556,6 +558,13 @@ export default function FrameTax() {
       setChatLd(false);
       setTimeout(function() { if (chatEnd.current) chatEnd.current.scrollIntoView({ behavior:"smooth" }); }, 100);
     }
+  }
+
+  function saveApiKey(key) {
+    var k = key.trim();
+    localStorage.setItem("ft-api-key", k);
+    setApiKey(k);
+    setApiKeyInput("");
   }
 
   function reset() {
@@ -576,6 +585,37 @@ export default function FrameTax() {
       }, 0) : 0;
 
   var navSteps = ["upload", "review", "qa", "results"];
+
+  if (!apiKey) {
+    return (
+      <div className="fta" style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", padding:"2rem" }}>
+        <div style={{ width:"min(480px,100%)", border:"1px solid #2A2520", padding:"2.5rem", background:"#0C0C0C" }}>
+          <div style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"1.3rem", letterSpacing:".08em", marginBottom:"1.75rem" }}>
+            FRAME<span style={{ color:"#C9A84C" }}>TAX</span>
+          </div>
+          <div style={{ fontFamily:"'DM Mono',monospace", fontSize:".7rem", letterSpacing:".2em", color:"#C9A84C", textTransform:"uppercase", marginBottom:".6rem" }}>Anthropic API Key Required</div>
+          <p style={{ fontSize:".85rem", color:"#8A8070", lineHeight:1.7, marginBottom:"1.5rem" }}>
+            Get a free key at <span style={{ color:"#C9A84C" }}>console.anthropic.com</span> then paste it below. It is stored only in your browser and never sent anywhere except Anthropic.
+          </p>
+          <input
+            type="password"
+            value={apiKeyInput}
+            onChange={function(e) { setApiKeyInput(e.target.value); }}
+            onKeyDown={function(e) { if (e.key === "Enter" && apiKeyInput.trim().startsWith("sk-")) saveApiKey(apiKeyInput); }}
+            placeholder="sk-ant-..."
+            style={{ width:"100%", background:"#080808", border:"1px solid #2A2520", color:"#F0EAD6", fontFamily:"'DM Mono',monospace", fontSize:".9rem", padding:".85rem 1rem", outline:"none", marginBottom:"1rem" }}
+          />
+          <button
+            onClick={function() { if (apiKeyInput.trim().startsWith("sk-")) saveApiKey(apiKeyInput); }}
+            disabled={!apiKeyInput.trim().startsWith("sk-")}
+            style={{ width:"100%", background: apiKeyInput.trim().startsWith("sk-") ? "#C9A84C" : "#3A3010", color: apiKeyInput.trim().startsWith("sk-") ? "#080808" : "#5A5040", border:"none", fontFamily:"'Jost',sans-serif", fontSize:".85rem", fontWeight:700, letterSpacing:".1em", textTransform:"uppercase", padding:".9rem", cursor: apiKeyInput.trim().startsWith("sk-") ? "pointer" : "not-allowed" }}>
+            Save Key and Continue
+          </button>
+          <p style={{ fontFamily:"'DM Mono',monospace", fontSize:".7rem", color:"#5A5040", marginTop:"1rem", textAlign:"center" }}>Key is saved in localStorage. Clear browser data to remove it.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fta">
@@ -599,6 +639,7 @@ export default function FrameTax() {
               {"Library" + (library.length > 0 ? " (" + library.length + ")" : "")}
             </button>
             <GhostBtn onClick={reset}>Start over</GhostBtn>
+            <GhostBtn onClick={function() { localStorage.removeItem("ft-api-key"); setApiKey(""); }}>API Key</GhostBtn>
           </div>
         </nav>
       )}
