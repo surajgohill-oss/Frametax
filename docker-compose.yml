@@ -1,0 +1,84 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: concert
+      POSTGRES_PASSWORD: concert
+      POSTGRES_DB: concert_tracker
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U concert"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    environment:
+      DATABASE_URL: postgresql+asyncpg://concert:concert@db:5432/concert_tracker
+      REDIS_URL: redis://redis:6379/0
+      APP_ENV: production
+      CORS_ORIGINS: '["http://localhost:3000","http://frontend:3000"]'
+      SCREENSHOTS_DIR: /app/debug_screenshots
+      HTML_SNAPSHOTS_DIR: /app/debug_html
+    volumes:
+      - ./shared:/shared:ro
+      - browser_sessions:/app/browser_sessions
+      - debug_screenshots:/app/debug_screenshots
+      - debug_html:/app/debug_html
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  seed:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    command: python /app/scripts/seed_db_docker.py
+    environment:
+      DATABASE_URL: postgresql+asyncpg://concert:concert@db:5432/concert_tracker
+    volumes:
+      - ./shared:/shared:ro
+      - ./scripts:/app/scripts:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  browser_sessions:
+  debug_screenshots:
+  debug_html:

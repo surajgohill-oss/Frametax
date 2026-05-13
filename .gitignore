@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.venv/
+venv/
+env/
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+frontend/.next/
+frontend/node_modules/
+
+# Database
+*.sqlite
+*.db
+
+# Debug artifacts
+debug_screenshots/
+debug_html/
+
+# Browser sessions (contain cookies — never commit)
+backend/browser_sessions/
+browser_sessions/
+
+# Alembic generated
+backend/migrations/versions/*.pyc
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
