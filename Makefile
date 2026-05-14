@@ -1,4 +1,4 @@
-.PHONY: up down reset logs status build
+.PHONY: up down reset logs status build verify
 
 up:
 	docker compose up --build -d
@@ -10,8 +10,10 @@ down:
 
 reset:
 	docker compose down -v --remove-orphans
+	rm -rf frontend/.next
 	docker compose up --build -d
 	@$(MAKE) --no-print-directory _wait
+	@$(MAKE) --no-print-directory verify
 	@$(MAKE) --no-print-directory status
 
 logs:
@@ -20,8 +22,17 @@ logs:
 logs-%:
 	docker compose logs -f --tail=100 $*
 
-status:
+verify:
+	@echo "── Dependency check ──────────────────────"
+	@docker compose exec -T frontend node -e \
+		"try{require('tailwindcss');console.log('  tailwindcss  ✓')}catch(e){console.error('  tailwindcss  ✗ MISSING — run: make reset');process.exit(1)}"
+	@docker compose exec -T frontend node -e \
+		"try{require('./postcss.config.js');console.log('  postcss cfg  ✓')}catch(e){console.error('  postcss cfg  ✗',e.message);process.exit(1)}"
+	@docker compose exec -T frontend sh -c \
+		"ls tailwind.config.js >/dev/null 2>&1 && echo '  tailwind cfg ✓' || (echo '  tailwind cfg ✗ tailwind.config.js missing'; exit 1)"
 	@echo ""
+
+status:
 	@echo "── Services ──────────────────────────────"
 	@docker compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null || docker compose ps
 	@echo ""
