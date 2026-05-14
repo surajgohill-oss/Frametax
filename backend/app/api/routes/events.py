@@ -18,20 +18,17 @@ def _canonical_id(title: str, venue_slug: str, event_date: datetime) -> str:
     return hashlib.sha256(raw.encode()).hexdigest()[:16]
 
 
-async def _get_event(db: AsyncSession, event_id: int) -> Event | None:
+async def _get_event(db, event_id: int):
     result = await db.execute(
-        select(Event)
-        .options(
+        select(Event).options(
             selectinload(Event.venue),
             selectinload(Event.tracked_events).selectinload(TrackedEvent.marketplace),
-        )
-        .where(Event.id == event_id)
+        ).where(Event.id == event_id)
     )
     return result.scalar_one_or_none()
 
 
-async def _enrich_event(db: AsyncSession, event: Event) -> dict:
-    """Add lowest_ask per marketplace from active listings."""
+async def _enrich_event(db, event: Event) -> dict:
     mp_asks: dict[str, float] = {}
     result = await db.execute(
         select(TrackedEvent, Marketplace)
@@ -41,31 +38,21 @@ async def _enrich_event(db: AsyncSession, event: Event) -> dict:
     for te, mp in result.all():
         ask_result = await db.execute(
             select(func.min(Listing.price)).where(
-                Listing.event_id == event.id,
-                Listing.marketplace_id == mp.id,
-                Listing.is_active == True,
+                Listing.event_id == event.id, Listing.marketplace_id == mp.id, Listing.is_active == True,
             )
         )
         ask = ask_result.scalar_one_or_none()
         if ask is not None:
             mp_asks[mp.slug] = float(ask)
 
-    tracked = event.tracked_events if event.tracked_events else []
+    tracked = event.tracked_events or []
     stubhub_te = next((te for te in tracked if te.marketplace.slug == "stubhub"), None)
     seatgeek_te = next((te for te in tracked if te.marketplace.slug == "seatgeek"), None)
-
-    next_poll_at = None
-    if tracked:
-        times = [te.next_poll_at for te in tracked if te.next_poll_at and te.is_active]
-        if times:
-            next_poll_at = min(times).isoformat()
+    times = [te.next_poll_at for te in tracked if te.next_poll_at and te.is_active]
 
     return {
-        "id": event.id,
-        "canonical_id": event.canonical_id,
-        "title": event.title,
-        "artist": event.artist,
-        "venue_id": event.venue_id,
+        "id": event.id, "canonical_id": event.canonical_id, "title": event.title,
+        "artist": event.artist, "venue_id": event.venue_id,
         "venue_name": event.venue.name if event.venue else None,
         "venue_slug": event.venue.slug if event.venue else None,
         "event_date": event.event_date.isoformat(),
@@ -74,20 +61,16 @@ async def _enrich_event(db: AsyncSession, event: Event) -> dict:
         "seatgeek_url": seatgeek_te.external_url if seatgeek_te else None,
         "lowest_ask_stubhub": mp_asks.get("stubhub"),
         "lowest_ask_seatgeek": mp_asks.get("seatgeek"),
-        "next_poll_at": next_poll_at,
+        "next_poll_at": min(times).isoformat() if times else None,
         "created_at": event.created_at.isoformat() if event.created_at else None,
         "tracked_events": [
             {
-                "id": te.id,
-                "marketplace_slug": te.marketplace.slug,
-                "external_event_id": te.external_event_id,
-                "external_url": te.external_url,
-                "is_active": te.is_active,
-                "poll_interval_minutes": te.poll_interval_minutes,
+                "id": te.id, "marketplace_slug": te.marketplace.slug,
+                "external_event_id": te.external_event_id, "external_url": te.external_url,
+                "is_active": te.is_active, "poll_interval_minutes": te.poll_interval_minutes,
                 "last_polled_at": te.last_polled_at.isoformat() if te.last_polled_at else None,
                 "next_poll_at": te.next_poll_at.isoformat() if te.next_poll_at else None,
-            }
-            for te in tracked
+            } for te in tracked
         ],
     }
 
@@ -95,15 +78,12 @@ async def _enrich_event(db: AsyncSession, event: Event) -> dict:
 @router.get("/")
 async def list_events(db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(Event)
-        .options(
+        select(Event).options(
             selectinload(Event.venue),
             selectinload(Event.tracked_events).selectinload(TrackedEvent.marketplace),
-        )
-        .order_by(Event.event_date)
+        ).order_by(Event.event_date)
     )
-    events = result.scalars().all()
-    return [await _enrich_event(db, e) for e in events]
+    return [await _enrich_event(db, e) for e in result.scalars().all()]
 
 
 @router.post("/", status_code=201)
@@ -123,39 +103,20 @@ async def create_event(data: dict, db: AsyncSession = Depends(get_db)):
     existing = await db.execute(select(Event).where(Event.canonical_id == canonical_id))
     event = existing.scalar_one_or_none()
     if not event:
-        event = Event(
-            canonical_id=canonical_id,
-            title=data["title"],
-            artist=data.get("artist"),
-            venue_id=venue.id,
-            event_date=event_date,
-        )
+        event = Event(canonical_id=canonical_id, title=data["title"], artist=data.get("artist"), venue_id=venue.id, event_date=event_date)
         db.add(event)
         await db.flush()
 
     poll_interval = int(data.get("poll_interval_minutes", 60))
-
     for mp_slug, url_key in [("stubhub", "stubhub_url"), ("seatgeek", "seatgeek_url")]:
         url = data.get(url_key, "").strip()
-        if not url:
-            continue
+        if not url: continue
         mp_result = await db.execute(select(Marketplace).where(Marketplace.slug == mp_slug))
         mp = mp_result.scalar_one_or_none()
-        if not mp:
-            continue
-        existing_te = await db.execute(
-            select(TrackedEvent).where(
-                TrackedEvent.event_id == event.id,
-                TrackedEvent.marketplace_id == mp.id,
-            )
-        )
+        if not mp: continue
+        existing_te = await db.execute(select(TrackedEvent).where(TrackedEvent.event_id == event.id, TrackedEvent.marketplace_id == mp.id))
         if not existing_te.scalar_one_or_none():
-            db.add(TrackedEvent(
-                event_id=event.id,
-                marketplace_id=mp.id,
-                external_url=url,
-                poll_interval_minutes=poll_interval,
-            ))
+            db.add(TrackedEvent(event_id=event.id, marketplace_id=mp.id, external_url=url, poll_interval_minutes=poll_interval))
 
     await db.commit()
     event = await _get_event(db, event.id)
@@ -165,15 +126,13 @@ async def create_event(data: dict, db: AsyncSession = Depends(get_db)):
 @router.get("/{event_id}")
 async def get_event(event_id: int, db: AsyncSession = Depends(get_db)):
     event = await _get_event(db, event_id)
-    if not event:
-        raise HTTPException(404, "Event not found")
+    if not event: raise HTTPException(404, "Event not found")
     return await _enrich_event(db, event)
 
 
 @router.delete("/{event_id}", status_code=204)
 async def delete_event(event_id: int, db: AsyncSession = Depends(get_db)):
     event = await _get_event(db, event_id)
-    if not event:
-        raise HTTPException(404, "Event not found")
+    if not event: raise HTTPException(404, "Event not found")
     await db.delete(event)
     await db.commit()

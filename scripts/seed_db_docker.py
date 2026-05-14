@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""Docker-internal version of seed_db.py."""
 import asyncio, json, sys
 from pathlib import Path
 
@@ -22,8 +21,7 @@ async def seed(db):
         {"slug": "gametime", "name": "Gametime", "base_url": "https://gametime.co", "is_active": False},
     ]:
         ex = await db.execute(select(Marketplace).where(Marketplace.slug == mp["slug"]))
-        if not ex.scalar_one_or_none():
-            db.add(Marketplace(**mp))
+        if not ex.scalar_one_or_none(): db.add(Marketplace(**mp))
     await db.flush()
     for map_file in sorted(VENUE_MAP_DIR.glob("*.json")):
         data = json.loads(map_file.read_text())
@@ -36,8 +34,15 @@ async def seed(db):
         for sec in data["sections"]:
             ex2 = await db.execute(select(VenueSection).where(VenueSection.venue_id == venue.id, VenueSection.section_id == sec["section_id"]))
             if not ex2.scalar_one_or_none():
-                db.add(VenueSection(venue_id=venue.id, section_id=sec["section_id"], display_name=sec["display_name"], tier=sec["tier"], quality_score=sec["quality_score"], x=sec["x"], y=sec["y"], width=sec.get("width", 40), height=sec.get("height", 30), shape=sec.get("shape", "rect"), shape_data=sec.get("shape_data"), stubhub_aliases=sec.get("stubhub_aliases"), seatgeek_aliases=sec.get("seatgeek_aliases")))
+                db.add(VenueSection(
+                    venue_id=venue.id, section_id=sec["section_id"], display_name=sec["display_name"],
+                    tier=sec["tier"], quality_score=sec["quality_score"], x=sec["x"], y=sec["y"],
+                    width=sec.get("width", 40), height=sec.get("height", 30), shape=sec.get("shape", "rect"),
+                    shape_data=sec.get("shape_data"), stubhub_aliases=sec.get("stubhub_aliases"),
+                    seatgeek_aliases=sec.get("seatgeek_aliases"),
+                ))
     await db.commit()
+    print("Seed complete.")
 
 
 async def main():
