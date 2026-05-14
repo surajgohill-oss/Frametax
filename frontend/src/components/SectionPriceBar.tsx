@@ -1,1 +1,1 @@
-export { SectionPriceBar as default } from '@/components/charts/SectionPriceBar';
+export { default } from '@/components/charts/SectionPriceBar';

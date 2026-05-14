@@ -1,1 +1,1 @@
-export { InventoryChart as default } from '@/components/charts/InventoryChart';
+export { default } from '@/components/charts/InventoryChart';

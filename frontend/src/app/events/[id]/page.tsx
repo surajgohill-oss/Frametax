@@ -5,10 +5,10 @@ import { api } from '@/lib/api';
 import { fmt$, fmtDate, fmtDateTime, fmtRelative } from '@/lib/utils';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import VenueHeatmap from '@/components/VenueHeatmap';
-import PriceHistoryChart from '@/components/PriceHistoryChart';
-import SectionPriceBar from '@/components/SectionPriceBar';
-import InventoryChart from '@/components/InventoryChart';
+import VenueHeatmap from '@/components/venue/VenueHeatmap';
+import PriceHistoryChart from '@/components/charts/PriceHistoryChart';
+import SectionPriceBar from '@/components/charts/SectionPriceBar';
+import InventoryChart from '@/components/charts/InventoryChart';
 
 type Tab = 'overview' | 'heatmap' | 'history';
 
@@ -170,7 +170,7 @@ export default function EventDetailPage() {
               </button>
             ))}
           </div>
-          <SectionPriceBar sections={listings} />
+          <SectionPriceBar sections={listings.map((l: any) => ({ display_name: l.section_name, lowest_ask: l.price_each }))} />
           <div className="bg-gray-800 rounded-xl overflow-hidden">
             <table className="w-full text-sm">
               <thead>

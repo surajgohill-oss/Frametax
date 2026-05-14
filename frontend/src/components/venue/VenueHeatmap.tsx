@@ -29,7 +29,7 @@ function inventoryColor(count: number, max: number): string {
   return `rgb(${Math.round(20 + t * 30)},${Math.round(80 + t * 140)},${Math.round(200 + t * 55)})`;
 }
 
-export function VenueHeatmap({ sections: sectionsProp, prices: pricesProp, mapWidth = 800, mapHeight = 600, colorMode, onSectionClick, selectedSection, venueSlug, listings, mode }: Props) {
+export default function VenueHeatmap({ sections: sectionsProp, prices: pricesProp, mapWidth = 800, mapHeight = 600, colorMode, onSectionClick, selectedSection, venueSlug, listings, mode }: Props) {
   const [hovered, setHovered] = useState<string | null>(null);
   const [tooltip, setTooltip] = useState<{ x: number; y: number; label: string } | null>(null);
   const [fetchedSections, setFetchedSections] = useState<Section[]>([]);

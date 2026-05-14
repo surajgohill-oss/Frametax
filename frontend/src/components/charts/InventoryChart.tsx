@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 
 const COLORS: Record<string, string> = { stubhub: "#3b82f6", seatgeek: "#10b981" };
 
-export function InventoryChart({ eventId, data: dataProp, height = 220 }: { eventId?: number; data?: any[]; height?: number }) {
+export default function InventoryChart({ eventId, data: dataProp, height = 220 }: { eventId?: number; data?: any[]; height?: number }) {
   const [data, setData] = useState<any[]>(dataProp ?? []);
   useEffect(() => {
     if (eventId != null) api.analytics.priceHistory(eventId).then(setData).catch(() => {});

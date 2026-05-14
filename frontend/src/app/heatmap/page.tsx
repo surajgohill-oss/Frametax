@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
-import VenueHeatmap from '@/components/VenueHeatmap';
+import VenueHeatmap from '@/components/venue/VenueHeatmap';
 
 export default function HeatmapPage() {
   const [events, setEvents] = useState<any[]>([]);

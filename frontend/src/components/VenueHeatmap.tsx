@@ -1,1 +1,1 @@
-export { VenueHeatmap as default } from '@/components/venue/VenueHeatmap';
+export { default } from '@/components/venue/VenueHeatmap';

@@ -2,7 +2,7 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { fmt$ } from "@/lib/utils";
 
-export function SectionPriceBar({ sections, height = 280 }: { sections: any[]; height?: number }) {
+export default function SectionPriceBar({ sections, height = 280 }: { sections: any[]; height?: number }) {
   const sorted = [...sections].sort((a, b) => (a.lowest_ask ?? 0) - (b.lowest_ask ?? 0));
   const min = Math.min(...sorted.map((s) => s.lowest_ask ?? 0));
   const max = Math.max(...sorted.map((s) => s.lowest_ask ?? 0));
