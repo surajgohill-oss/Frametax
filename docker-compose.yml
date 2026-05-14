@@ -2,7 +2,8 @@ version: "3.9"
 
 services:
   db:
-    image: postgres:15-alpine
+    image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_USER: concert
       POSTGRES_PASSWORD: concert
@@ -12,36 +13,46 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U concert"]
+      test: ["CMD-SHELL", "pg_isready -U concert -d concert_tracker"]
       interval: 5s
       timeout: 5s
       retries: 10
 
   redis:
     image: redis:7-alpine
+    restart: unless-stopped
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
-      timeout: 5s
+      timeout: 3s
       retries: 5
 
   backend:
     build:
-      context: .
-      dockerfile: docker/Dockerfile.backend
+      context: ./backend
+      dockerfile: ../docker/Dockerfile.backend
+    restart: unless-stopped
     environment:
       DATABASE_URL: postgresql+asyncpg://concert:concert@db:5432/concert_tracker
+      DATABASE_SYNC_URL: postgresql://concert:concert@db:5432/concert_tracker
       REDIS_URL: redis://redis:6379/0
-      CORS_ORIGINS: '["http://localhost:3000","http://frontend:3000"]'
-      SCREENSHOTS_DIR: /app/debug_screenshots
-      HTML_SNAPSHOTS_DIR: /app/debug_html
+      DEBUG: "false"
+      APP_NAME: LA Concert Watchlist Tracker
+      MAX_TRACKED_EVENTS: "30"
+      DEFAULT_POLL_INTERVAL_MINUTES: "60"
+      BROWSER_DATA_DIR: /app/browser_sessions
+      CORS_ORIGINS: '["http://localhost:3000"]'
+      SEATGEEK_CLIENT_ID: ""
+      SEATGEEK_CLIENT_SECRET: ""
     volumes:
-      - ./shared:/shared:ro
+      - ./backend:/app
       - browser_sessions:/app/browser_sessions
-      - debug_screenshots:/app/debug_screenshots
-      - debug_html:/app/debug_html
+      - ./shared:/shared:ro
+      - ./scripts:/shared_scripts:ro
     ports:
       - "8000:8000"
     depends_on:
@@ -49,35 +60,31 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-
-  seed:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.backend
-    command: python /app/scripts/seed_db_docker.py
-    environment:
-      DATABASE_URL: postgresql+asyncpg://concert:concert@db:5432/concert_tracker
-    volumes:
-      - ./shared:/shared:ro
-      - ./scripts:/app/scripts:ro
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: "no"
+    command: >
+      sh -c "
+        alembic upgrade head &&
+        python /shared_scripts/seed_db_docker.py &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
 
   frontend:
     build:
-      context: .
-      dockerfile: docker/Dockerfile.frontend
+      context: ./frontend
+      dockerfile: ../docker/Dockerfile.frontend
+    restart: unless-stopped
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
     ports:
       - "3000:3000"
     depends_on:
       - backend
+    command: npm run dev
 
 volumes:
   postgres_data:
+  redis_data:
   browser_sessions:
-  debug_screenshots:
-  debug_html:
