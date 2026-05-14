@@ -34,9 +34,6 @@ debug_html/
 backend/browser_sessions/
 browser_sessions/
 
-# Alembic generated
-backend/migrations/versions/*.pyc
-
 # OS
 .DS_Store
 Thumbs.db
