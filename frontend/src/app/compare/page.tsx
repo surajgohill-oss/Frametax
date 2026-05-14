@@ -1,168 +1,170 @@
-"use client";
-import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
-import { Card } from "@/components/ui/Card";
-import { fmt$ } from "@/lib/utils";
-import { TrendingDown, TrendingUp, Minus } from "lucide-react";
+'use client';
+import { useState, useEffect } from 'react';
+import { api, TrackedEvent } from '@/lib/api';
+import { formatCurrency, formatRelativeTime } from '@/lib/utils';
+import { Card } from '@/components/ui/Card';
+
+interface CompareRow {
+  event: TrackedEvent;
+  stubhubLow: number | null;
+  seatgeekLow: number | null;
+  diff: number | null;
+  cheaperOn: 'stubhub' | 'seatgeek' | 'equal' | null;
+}
 
 export default function ComparePage() {
-  const [events, setEvents] = useState<any[]>([]);
-  const [eventId, setEventId] = useState<number | null>(null);
-  const [comparison, setComparison] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [rows, setRows] = useState<CompareRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState<'diff' | 'stubhub' | 'seatgeek'>('diff');
 
-  useEffect(() => {
-    api.events.list().then((evts) => {
-      setEvents(evts.filter((e: any) => e.is_active));
-      if (evts.length > 0) setEventId(evts[0].id);
-    });
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
-  useEffect(() => {
-    if (!eventId) { setComparison([]); return; }
-    setLoading(true);
-    api.analytics.compare(eventId)
-      .then(setComparison)
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [eventId]);
-
-  const selectedEvent = events.find((e) => e.id === eventId);
-  const stubhub = comparison.filter((r) => r.marketplace === "stubhub");
-  const seatgeek = comparison.filter((r) => r.marketplace === "seatgeek");
-
-  const allSectionIds = Array.from(
-    new Set([...stubhub, ...seatgeek].map((r) => r.section_id))
-  );
-
-  const stubhubMap = Object.fromEntries(stubhub.map((r) => [r.section_id, r]));
-  const seatgeekMap = Object.fromEntries(seatgeek.map((r) => [r.section_id, r]));
-
-  function priceDiff(sh?: number, sg?: number) {
-    if (sh == null || sg == null) return null;
-    return ((sh - sg) / sg) * 100;
+  async function loadData() {
+    try {
+      const events = await api.getEvents();
+      const results = await Promise.all(
+        events.map(async (event) => {
+          const listings = await api.getListings(event.id);
+          const stubhub = listings.filter(l => l.marketplace_slug === 'stubhub');
+          const seatgeek = listings.filter(l => l.marketplace_slug === 'seatgeek');
+          const stubhubLow = stubhub.length > 0 ? Math.min(...stubhub.map(l => l.price_each)) : null;
+          const seatgeekLow = seatgeek.length > 0 ? Math.min(...seatgeek.map(l => l.price_each)) : null;
+          let diff: number | null = null;
+          let cheaperOn: CompareRow['cheaperOn'] = null;
+          if (stubhubLow != null && seatgeekLow != null) {
+            diff = Math.abs(stubhubLow - seatgeekLow);
+            if (stubhubLow < seatgeekLow) cheaperOn = 'stubhub';
+            else if (seatgeekLow < stubhubLow) cheaperOn = 'seatgeek';
+            else cheaperOn = 'equal';
+          }
+          return { event, stubhubLow, seatgeekLow, diff, cheaperOn };
+        })
+      );
+      setRows(results);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
   }
 
+  const sorted = [...rows].sort((a, b) => {
+    if (sortBy === 'diff') return (b.diff ?? -1) - (a.diff ?? -1);
+    if (sortBy === 'stubhub') return (a.stubhubLow ?? Infinity) - (b.stubhubLow ?? Infinity);
+    return (a.seatgeekLow ?? Infinity) - (b.seatgeekLow ?? Infinity);
+  });
+
+  const savingsTotal = rows.reduce((acc, r) => {
+    if (r.diff != null) acc += r.diff;
+    return acc;
+  }, 0);
+
+  const stubhubWins = rows.filter(r => r.cheaperOn === 'stubhub').length;
+  const seatgeekWins = rows.filter(r => r.cheaperOn === 'seatgeek').length;
+
   return (
-    <div className="space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Marketplace Compare</h1>
-        <p className="text-slate-400 text-sm mt-1">StubHub vs SeatGeek section-by-section pricing</p>
+        <h1 className="text-2xl font-bold text-white">Marketplace Comparison</h1>
+        <p className="text-gray-400 mt-1">StubHub vs SeatGeek lowest ask across your watchlist</p>
       </div>
 
-      <Card className="p-4">
-        <div>
-          <label className="block text-xs text-slate-400 mb-1">Event</label>
-          <select
-            value={eventId ?? ""}
-            onChange={(e) => setEventId(Number(e.target.value))}
-            className="px-3 py-1.5 bg-[#0d1117] border border-[#2a3145] rounded-lg text-white text-sm focus:outline-none focus:border-blue-500"
-          >
-            {events.map((e) => (
-              <option key={e.id} value={e.id}>{e.title}</option>
-            ))}
-          </select>
-        </div>
-      </Card>
+      <div className="grid grid-cols-3 gap-4">
+        <Card>
+          <p className="text-xs text-gray-400 mb-1">Avg Price Difference</p>
+          <p className="text-xl font-bold text-yellow-400">
+            {rows.length > 0 ? formatCurrency(savingsTotal / rows.filter(r => r.diff != null).length || 0) : '—'}
+          </p>
+        </Card>
+        <Card>
+          <p className="text-xs text-gray-400 mb-1">StubHub Cheaper</p>
+          <p className="text-xl font-bold text-indigo-400">{stubhubWins} events</p>
+        </Card>
+        <Card>
+          <p className="text-xs text-gray-400 mb-1">SeatGeek Cheaper</p>
+          <p className="text-xl font-bold text-blue-400">{seatgeekWins} events</p>
+        </Card>
+      </div>
 
-      {selectedEvent && (
-        <div className="grid grid-cols-3 gap-4">
-          <Card className="p-4 text-center">
-            <div className="text-xs text-slate-400 mb-1">StubHub Lowest</div>
-            <div className="text-2xl font-bold font-mono text-white">
-              {selectedEvent.lowest_ask_stubhub != null ? fmt$(selectedEvent.lowest_ask_stubhub) : "—"}
-            </div>
-          </Card>
-          <Card className="p-4 text-center">
-            <div className="text-xs text-slate-400 mb-1">SeatGeek Lowest</div>
-            <div className="text-2xl font-bold font-mono text-white">
-              {selectedEvent.lowest_ask_seatgeek != null ? fmt$(selectedEvent.lowest_ask_seatgeek) : "—"}
-            </div>
-          </Card>
-          <Card className="p-4 text-center">
-            <div className="text-xs text-slate-400 mb-1">Price Difference</div>
-            <div className="text-2xl font-bold font-mono text-white">
-              {selectedEvent.lowest_ask_stubhub != null && selectedEvent.lowest_ask_seatgeek != null ? (
-                <span className={
-                  selectedEvent.lowest_ask_stubhub > selectedEvent.lowest_ask_seatgeek
-                    ? "text-red-400" : "text-green-400"
-                }>
-                  {priceDiff(selectedEvent.lowest_ask_stubhub, selectedEvent.lowest_ask_seatgeek)?.toFixed(1)}%
-                </span>
-              ) : "—"}
-            </div>
-          </Card>
+      <div className="flex gap-2 items-center">
+        <span className="text-sm text-gray-400">Sort by:</span>
+        {(['diff', 'stubhub', 'seatgeek'] as const).map(s => (
+          <button
+            key={s}
+            onClick={() => setSortBy(s)}
+            className={`px-3 py-1 rounded-full text-xs font-medium ${
+              sortBy === s ? 'bg-indigo-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            }`}
+          >
+            {s === 'diff' ? 'Price Diff' : s === 'stubhub' ? 'StubHub Low' : 'SeatGeek Low'}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-16">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500" />
+        </div>
+      ) : (
+        <div className="bg-gray-800 rounded-xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-700">
+                <th className="px-4 py-3 text-left text-gray-400 font-medium">Event</th>
+                <th className="px-4 py-3 text-right text-gray-400 font-medium">StubHub</th>
+                <th className="px-4 py-3 text-right text-gray-400 font-medium">SeatGeek</th>
+                <th className="px-4 py-3 text-right text-gray-400 font-medium">Difference</th>
+                <th className="px-4 py-3 text-left text-gray-400 font-medium">Cheaper On</th>
+                <th className="px-4 py-3 text-left text-gray-400 font-medium">Last Polled</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-700">
+              {sorted.map(({ event, stubhubLow, seatgeekLow, diff, cheaperOn }) => (
+                <tr key={event.id} className="hover:bg-gray-750 transition-colors">
+                  <td className="px-4 py-3">
+                    <a href={`/events/${event.id}`} className="text-white hover:text-indigo-300">
+                      {event.event?.title || `Event #${event.id}`}
+                    </a>
+                    <p className="text-xs text-gray-500">{event.event?.venue_name}</p>
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono">
+                    <span className={cheaperOn === 'stubhub' ? 'text-green-400 font-bold' : 'text-gray-300'}>
+                      {stubhubLow != null ? formatCurrency(stubhubLow) : '—'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono">
+                    <span className={cheaperOn === 'seatgeek' ? 'text-green-400 font-bold' : 'text-gray-300'}>
+                      {seatgeekLow != null ? formatCurrency(seatgeekLow) : '—'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono">
+                    {diff != null ? (
+                      <span className="text-yellow-400">{formatCurrency(diff)}</span>
+                    ) : '—'}
+                  </td>
+                  <td className="px-4 py-3">
+                    {cheaperOn ? (
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                        cheaperOn === 'stubhub' ? 'bg-indigo-900 text-indigo-300' :
+                        cheaperOn === 'seatgeek' ? 'bg-blue-900 text-blue-300' :
+                        'bg-gray-700 text-gray-300'
+                      }`}>
+                        {cheaperOn}
+                      </span>
+                    ) : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-gray-400 text-xs">
+                    {event.last_polled_at ? formatRelativeTime(event.last_polled_at) : 'Never'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {sorted.length === 0 && (
+            <p className="text-center py-8 text-gray-400">No events in watchlist. Add some events first.</p>
+          )}
         </div>
       )}
-
-      <Card>
-        <div className="p-4 border-b border-[#2a3145]">
-          <h2 className="font-semibold text-white">Section-by-Section Comparison</h2>
-        </div>
-        {loading ? (
-          <div className="p-8 text-center text-slate-500">Loading…</div>
-        ) : allSectionIds.length === 0 ? (
-          <div className="p-8 text-center text-slate-500">
-            No comparison data available. Poll this event first.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[#2a3145]">
-                  <th className="text-left px-4 py-3 text-slate-400 font-medium">Section</th>
-                  <th className="text-right px-4 py-3 text-slate-400 font-medium">StubHub</th>
-                  <th className="text-right px-4 py-3 text-slate-400 font-medium">SeatGeek</th>
-                  <th className="text-right px-4 py-3 text-slate-400 font-medium">Diff</th>
-                  <th className="text-right px-4 py-3 text-slate-400 font-medium">Better</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#2a3145]">
-                {allSectionIds.map((sid) => {
-                  const sh = stubhubMap[sid];
-                  const sg = seatgeekMap[sid];
-                  const diff = priceDiff(sh?.lowest_ask, sg?.lowest_ask);
-                  const shCheaper = diff != null && diff < 0;
-                  const sgCheaper = diff != null && diff > 0;
-                  return (
-                    <tr key={sid} className="hover:bg-[#1e2535] transition-colors">
-                      <td className="px-4 py-2.5 text-white">
-                        {sh?.display_name ?? sg?.display_name ?? sid}
-                      </td>
-                      <td className={`px-4 py-2.5 text-right font-mono ${shCheaper ? "text-green-400" : "text-white"}`}>
-                        {sh?.lowest_ask != null ? fmt$(sh.lowest_ask) : <span className="text-slate-600">—</span>}
-                      </td>
-                      <td className={`px-4 py-2.5 text-right font-mono ${sgCheaper ? "text-green-400" : "text-white"}`}>
-                        {sg?.lowest_ask != null ? fmt$(sg.lowest_ask) : <span className="text-slate-600">—</span>}
-                      </td>
-                      <td className={`px-4 py-2.5 text-right font-mono text-xs ${
-                        diff == null ? "text-slate-600" : diff < 0 ? "text-green-400" : diff > 0 ? "text-red-400" : "text-slate-400"
-                      }`}>
-                        {diff == null ? "—" : `${diff > 0 ? "+" : ""}${diff.toFixed(1)}%`}
-                      </td>
-                      <td className="px-4 py-2.5 text-right">
-                        {diff == null ? (
-                          <span className="text-slate-600 text-xs">—</span>
-                        ) : Math.abs(diff) < 0.5 ? (
-                          <span className="text-slate-400 text-xs flex justify-end"><Minus className="w-3 h-3" /></span>
-                        ) : shCheaper ? (
-                          <span className="text-xs text-green-400 flex items-center justify-end gap-1">
-                            <TrendingDown className="w-3 h-3" /> SH
-                          </span>
-                        ) : (
-                          <span className="text-xs text-green-400 flex items-center justify-end gap-1">
-                            <TrendingDown className="w-3 h-3" /> SG
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
     </div>
   );
 }

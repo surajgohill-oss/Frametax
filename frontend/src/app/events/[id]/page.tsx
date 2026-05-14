@@ -1,232 +1,238 @@
-"use client";
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { api } from "@/lib/api";
-import { Card } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
-import { VenueHeatmap } from "@/components/venue/VenueHeatmap";
-import { PriceHistoryChart } from "@/components/charts/PriceHistoryChart";
-import { SectionPriceBar } from "@/components/charts/SectionPriceBar";
-import { fmtDate, fmt$, fmtRelative } from "@/lib/utils";
-import { RefreshCw, ExternalLink, ArrowLeft } from "lucide-react";
+'use client';
+import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { api, TrackedEvent, Listing } from '@/lib/api';
+import { formatCurrency, formatDateTime, formatRelativeTime } from '@/lib/utils';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import VenueHeatmap from '@/components/VenueHeatmap';
+import PriceHistoryChart from '@/components/PriceHistoryChart';
+import SectionPriceBar from '@/components/SectionPriceBar';
+import InventoryChart from '@/components/InventoryChart';
 
-type Tab = "overview" | "sections" | "history";
+type Tab = 'overview' | 'heatmap' | 'history';
 
 export default function EventDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams();
   const router = useRouter();
-  const [event, setEvent] = useState<any>(null);
-  const [listings, setListings] = useState<any[]>([]);
-  const [history, setHistory] = useState<any[]>([]);
-  const [sections, setSections] = useState<any[]>([]);
-  const [tab, setTab] = useState<Tab>("overview");
-  const [marketplace, setMarketplace] = useState<"stubhub" | "seatgeek" | "all">("all");
-  const [colorMode, setColorMode] = useState<"price" | "inventory">("price");
-  const [polling, setPolling] = useState(false);
+  const eventId = Number(params.id);
+
+  const [event, setEvent] = useState<TrackedEvent | null>(null);
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [loading, setLoading] = useState(true);
+  const [pollLoading, setPollLoading] = useState(false);
+  const [marketplace, setMarketplace] = useState<string>('all');
 
   useEffect(() => {
-    if (!id) return;
-    Promise.all([
-      api.events.get(Number(id)),
-      api.listings.byEvent(Number(id)),
-      api.analytics.priceHistory(Number(id)),
-    ])
-      .then(([ev, lst, hist]) => {
-        setEvent(ev);
-        setListings(lst);
-        setHistory(hist);
-        return api.venues.sections(ev.venue_slug);
-      })
-      .then(setSections)
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [id]);
+    loadEvent();
+  }, [eventId]);
 
-  async function handlePoll() {
-    setPolling(true);
+  useEffect(() => {
+    if (event) loadListings();
+  }, [event, marketplace]);
+
+  async function loadEvent() {
     try {
-      await api.poll.trigger(Number(id));
-      setTimeout(() => {
-        Promise.all([
-          api.events.get(Number(id)),
-          api.listings.byEvent(Number(id)),
-        ]).then(([ev, lst]) => { setEvent(ev); setListings(lst); });
-        setPolling(false);
-      }, 4000);
-    } catch {
-      setPolling(false);
+      const data = await api.getEvent(eventId);
+      setEvent(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
     }
   }
 
-  const filteredListings = listings.filter(
-    (l) => marketplace === "all" || l.marketplace === marketplace
-  );
+  async function loadListings() {
+    try {
+      const mp = marketplace === 'all' ? undefined : marketplace;
+      const data = await api.getListings(eventId, mp);
+      setListings(data);
+    } catch (e) {
+      console.error(e);
+    }
+  }
 
-  const sectionPrices = sections.map((sec: any) => {
-    const matched = filteredListings.filter((l) => l.section_id === sec.section_id);
-    const asks = matched.map((l) => l.price ?? l.lowest_ask).filter((v) => v != null);
-    return {
-      section_id: sec.section_id,
-      display_name: sec.display_name,
-      lowest_ask: asks.length ? Math.min(...asks) : undefined,
-      listing_count: matched.length || undefined,
-    };
-  });
+  async function triggerPoll() {
+    if (!event) return;
+    setPollLoading(true);
+    try {
+      await api.triggerPoll(event.id);
+      await new Promise(r => setTimeout(r, 3000));
+      await loadEvent();
+      await loadListings();
+    } finally {
+      setPollLoading(false);
+    }
+  }
 
-  if (loading) return <div className="flex items-center justify-center h-64 text-slate-500">Loading…</div>;
-  if (!event) return <div className="text-slate-500 p-8">Event not found.</div>;
+  async function toggleActive() {
+    if (!event) return;
+    await api.updateEvent(event.id, { is_active: !event.is_active });
+    await loadEvent();
+  }
 
-  const tabs: { id: Tab; label: string }[] = [
-    { id: "overview", label: "Overview" },
-    { id: "sections", label: "Section Heatmap" },
-    { id: "history", label: "Price History" },
-  ];
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500" />
+      </div>
+    );
+  }
+
+  if (!event) {
+    return (
+      <div className="text-center py-16">
+        <p className="text-gray-400 mb-4">Event not found</p>
+        <button onClick={() => router.back()} className="text-indigo-400 hover:text-indigo-300">Go back</button>
+      </div>
+    );
+  }
+
+  const stubhubListings = listings.filter(l => l.marketplace_slug === 'stubhub');
+  const seatgeekListings = listings.filter(l => l.marketplace_slug === 'seatgeek');
+  const lowestStubhub = stubhubListings.length > 0 ? Math.min(...stubhubListings.map(l => l.price_each)) : null;
+  const lowestSeatgeek = seatgeekListings.length > 0 ? Math.min(...seatgeekListings.map(l => l.price_each)) : null;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start gap-4">
-        <button onClick={() => router.back()} className="mt-1 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#1e2535] transition-colors">
-          <ArrowLeft className="w-4 h-4" />
-        </button>
-        <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-bold text-white truncate">{event.title}</h1>
-          <div className="text-slate-400 text-sm mt-1">
-            {event.venue_slug?.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())} · {fmtDate(event.event_date)}
-          </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={handlePoll}
-            disabled={polling}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1e2535] border border-[#2a3145] text-slate-300 text-sm rounded-lg hover:bg-[#2a3145] transition-colors disabled:opacity-50"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${polling ? "animate-spin" : ""}`} />
-            {polling ? "Polling…" : "Poll Now"}
+    <div className="max-w-6xl mx-auto space-y-6">
+      <div className="flex items-start justify-between">
+        <div>
+          <button onClick={() => router.back()} className="text-sm text-gray-400 hover:text-white mb-2 flex items-center gap-1">
+            ← Back to events
           </button>
-          {event.stubhub_url && (
-            <a href={event.stubhub_url} target="_blank" rel="noreferrer"
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1e2535] border border-[#2a3145] text-slate-300 text-sm rounded-lg hover:bg-[#2a3145] transition-colors">
-              <ExternalLink className="w-3.5 h-3.5" /> StubHub
-            </a>
-          )}
-          {event.seatgeek_url && (
-            <a href={event.seatgeek_url} target="_blank" rel="noreferrer"
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1e2535] border border-[#2a3145] text-slate-300 text-sm rounded-lg hover:bg-[#2a3145] transition-colors">
-              <ExternalLink className="w-3.5 h-3.5" /> SeatGeek
-            </a>
-          )}
+          <h1 className="text-2xl font-bold text-white">{event.event?.title || 'Unnamed Event'}</h1>
+          <p className="text-gray-400 mt-1">
+            {event.event?.venue_name} &bull; {event.event?.event_date ? formatDateTime(event.event.event_date) : 'Date TBD'}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={triggerPoll}
+            disabled={pollLoading}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg text-sm font-medium transition-colors"
+          >
+            {pollLoading ? 'Polling...' : 'Poll Now'}
+          </button>
+          <button
+            onClick={toggleActive}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              event.is_active
+                ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                : 'bg-green-700 hover:bg-green-600 text-white'
+            }`}
+          >
+            {event.is_active ? 'Pause' : 'Resume'}
+          </button>
         </div>
       </div>
 
-      {/* Price Summary Badges */}
-      <div className="flex gap-4">
-        {event.lowest_ask_stubhub != null && (
-          <Card className="px-4 py-3 flex items-center gap-3">
-            <div className="text-xs text-slate-400">StubHub Lowest Ask</div>
-            <div className="text-xl font-bold text-white font-mono">{fmt$(event.lowest_ask_stubhub)}</div>
-          </Card>
-        )}
-        {event.lowest_ask_seatgeek != null && (
-          <Card className="px-4 py-3 flex items-center gap-3">
-            <div className="text-xs text-slate-400">SeatGeek Lowest Ask</div>
-            <div className="text-xl font-bold text-white font-mono">{fmt$(event.lowest_ask_seatgeek)}</div>
-          </Card>
-        )}
-        {event.next_poll_at && (
-          <Card className="px-4 py-3 flex items-center gap-3">
-            <div className="text-xs text-slate-400">Next Poll</div>
-            <div className="text-sm text-slate-300">{fmtRelative(event.next_poll_at)}</div>
-          </Card>
-        )}
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-1 border-b border-[#2a3145]">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`px-4 py-2 text-sm rounded-t-lg transition-colors ${
-              tab === t.id
-                ? "text-white bg-[#1e2535] border-b-2 border-blue-500"
-                : "text-slate-400 hover:text-white"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Marketplace filter */}
-      <div className="flex gap-2">
-        {(["all", "stubhub", "seatgeek"] as const).map((mp) => (
-          <button
-            key={mp}
-            onClick={() => setMarketplace(mp)}
-            className={`px-3 py-1 text-xs rounded-full border transition-colors ${
-              marketplace === mp
-                ? "bg-blue-600 border-blue-500 text-white"
-                : "border-[#2a3145] text-slate-400 hover:text-white"
-            }`}
-          >
-            {mp === "all" ? "All" : mp === "stubhub" ? "StubHub" : "SeatGeek"}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab Content */}
-      {tab === "overview" && (
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
-          <div className="p-4 border-b border-[#2a3145] flex items-center justify-between">
-            <h2 className="font-semibold text-white">Section Prices</h2>
-          </div>
-          <div className="p-4">
-            <SectionPriceBar sections={sectionPrices.filter((s) => s.lowest_ask != null)} />
-          </div>
+          <p className="text-xs text-gray-400 mb-1">StubHub Low</p>
+          <p className="text-xl font-bold text-green-400">
+            {lowestStubhub != null ? formatCurrency(lowestStubhub) : '—'}
+          </p>
         </Card>
+        <Card>
+          <p className="text-xs text-gray-400 mb-1">SeatGeek Low</p>
+          <p className="text-xl font-bold text-blue-400">
+            {lowestSeatgeek != null ? formatCurrency(lowestSeatgeek) : '—'}
+          </p>
+        </Card>
+        <Card>
+          <p className="text-xs text-gray-400 mb-1">Total Listings</p>
+          <p className="text-xl font-bold text-white">{listings.length}</p>
+        </Card>
+        <Card>
+          <p className="text-xs text-gray-400 mb-1">Last Polled</p>
+          <p className="text-xl font-bold text-white">
+            {event.last_polled_at ? formatRelativeTime(event.last_polled_at) : 'Never'}
+          </p>
+        </Card>
+      </div>
+
+      <div className="border-b border-gray-700">
+        <nav className="flex gap-6">
+          {(['overview', 'heatmap', 'history'] as Tab[]).map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`py-3 text-sm font-medium border-b-2 -mb-px capitalize transition-colors ${
+                activeTab === tab
+                  ? 'border-indigo-500 text-white'
+                  : 'border-transparent text-gray-400 hover:text-white'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      {activeTab === 'overview' && (
+        <div className="space-y-4">
+          <div className="flex gap-2 mb-4">
+            {['all', 'stubhub', 'seatgeek'].map(mp => (
+              <button
+                key={mp}
+                onClick={() => setMarketplace(mp)}
+                className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${
+                  marketplace === mp
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                {mp}
+              </button>
+            ))}
+          </div>
+          <SectionPriceBar listings={listings} />
+          <div className="bg-gray-800 rounded-xl overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-700">
+                  <th className="px-4 py-3 text-left text-gray-400 font-medium">Section</th>
+                  <th className="px-4 py-3 text-left text-gray-400 font-medium">Row</th>
+                  <th className="px-4 py-3 text-right text-gray-400 font-medium">Price</th>
+                  <th className="px-4 py-3 text-right text-gray-400 font-medium">Qty</th>
+                  <th className="px-4 py-3 text-left text-gray-400 font-medium">Source</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-700">
+                {listings.slice(0, 50).map(listing => (
+                  <tr key={listing.id} className="hover:bg-gray-750 transition-colors">
+                    <td className="px-4 py-2.5 text-white">{listing.section_name || '—'}</td>
+                    <td className="px-4 py-2.5 text-gray-300">{listing.row || '—'}</td>
+                    <td className="px-4 py-2.5 text-right font-mono text-green-400">
+                      {formatCurrency(listing.price_each)}
+                    </td>
+                    <td className="px-4 py-2.5 text-right text-gray-300">{listing.quantity}</td>
+                    <td className="px-4 py-2.5">
+                      <Badge variant={listing.marketplace_slug === 'stubhub' ? 'indigo' : 'blue'}>
+                        {listing.marketplace_slug}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {listings.length === 0 && (
+              <p className="text-center py-8 text-gray-400">No listings found. Try polling.</p>
+            )}
+          </div>
+        </div>
       )}
 
-      {tab === "sections" && (
-        <Card>
-          <div className="p-4 border-b border-[#2a3145] flex items-center justify-between">
-            <h2 className="font-semibold text-white">Venue Heatmap</h2>
-            <div className="flex gap-2">
-              {(["price", "inventory"] as const).map((mode) => (
-                <button
-                  key={mode}
-                  onClick={() => setColorMode(mode)}
-                  className={`px-3 py-1 text-xs rounded-full border transition-colors ${
-                    colorMode === mode
-                      ? "bg-blue-600 border-blue-500 text-white"
-                      : "border-[#2a3145] text-slate-400 hover:text-white"
-                  }`}
-                >
-                  {mode === "price" ? "Price" : "Inventory"}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="p-4">
-            <VenueHeatmap
-              sections={sections}
-              prices={sectionPrices}
-              colorMode={colorMode}
-            />
-          </div>
-        </Card>
+      {activeTab === 'heatmap' && event.event?.venue_slug && (
+        <VenueHeatmap venueSlug={event.event.venue_slug} listings={listings} mode="price" />
       )}
 
-      {tab === "history" && (
-        <Card>
-          <div className="p-4 border-b border-[#2a3145]">
-            <h2 className="font-semibold text-white">Price History</h2>
-          </div>
-          <div className="p-4">
-            <PriceHistoryChart data={history} />
-          </div>
-        </Card>
+      {activeTab === 'history' && (
+        <div className="space-y-4">
+          <PriceHistoryChart eventId={eventId} />
+          <InventoryChart eventId={eventId} />
+        </div>
       )}
     </div>
   );
