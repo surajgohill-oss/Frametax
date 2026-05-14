@@ -1,13 +1,3 @@
-"""
-BaseCollector — abstract contract every marketplace collector must implement.
-
-To add TickPick or Gametime:
-  1. Create collectors/tickpick.py
-  2. class TickPickCollector(DebugMixin, BaseCollector)
-  3. Implement: _fetch_listings, normalize_section
-  4. Register in COLLECTOR_REGISTRY
-"""
-
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -51,42 +41,27 @@ class BaseCollector(DebugMixin, ABC):
         self.debug_mode = debug_mode
         self.slow_mo_ms = slow_mo_ms
         self.logger = logging.getLogger(f"collector.{self.marketplace_slug}")
-        self._db_session_factory = None  # Set by scheduler before each run
+        self._db_session_factory = None
 
     async def collect(self, tracked_event) -> CollectorResult:
-        if self.debug_mode:
-            self._debug_log(
-                f"Starting collection",
-                event_id=tracked_event.event_id,
-                url=tracked_event.external_url,
-            )
         try:
             listings = await self._fetch_listings(tracked_event)
             return CollectorResult(
-                marketplace_slug=self.marketplace_slug,
-                event_id=tracked_event.event_id,
-                listings=listings,
-                fetched_at=datetime.utcnow(),
-                raw_count=len(listings),
+                marketplace_slug=self.marketplace_slug, event_id=tracked_event.event_id,
+                listings=listings, fetched_at=datetime.utcnow(), raw_count=len(listings),
             )
         except Exception as exc:
             self.logger.exception("Collection failed: %s", exc)
             return CollectorResult(
-                marketplace_slug=self.marketplace_slug,
-                event_id=tracked_event.event_id,
-                listings=[],
-                fetched_at=datetime.utcnow(),
-                raw_count=0,
-                error=str(exc),
+                marketplace_slug=self.marketplace_slug, event_id=tracked_event.event_id,
+                listings=[], fetched_at=datetime.utcnow(), raw_count=0, error=str(exc),
             )
 
     @abstractmethod
-    async def _fetch_listings(self, tracked_event) -> list[RawListing]:
-        ...
+    async def _fetch_listings(self, tracked_event) -> list[RawListing]: ...
 
     @abstractmethod
-    def normalize_section(self, raw_section: str) -> str:
-        ...
+    def normalize_section(self, raw_section: str) -> str: ...
 
     async def close(self):
         pass

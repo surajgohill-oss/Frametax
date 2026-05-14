@@ -109,7 +109,6 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
         seen_ids: set[str] = set()
         new_count = 0
         snapshots: list[ListingSnapshot] = []
-
         collector = get_collector(result.marketplace_slug, settings)
 
         for raw in result.listings:
@@ -129,35 +128,21 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
                 l.last_seen_at = result.fetched_at
             else:
                 l = Listing(
-                    event_id=result.event_id,
-                    marketplace_id=marketplace.id,
-                    external_listing_id=raw.external_listing_id,
-                    section=raw.section,
-                    section_id=norm_section,
-                    row=raw.row,
-                    quantity=raw.quantity,
-                    price=raw.price,
-                    fees=raw.fees,
-                    all_in_price=raw.all_in_price,
-                    listing_url=raw.listing_url,
-                    first_seen_at=result.fetched_at,
-                    last_seen_at=result.fetched_at,
-                    extra=raw.extra,
+                    event_id=result.event_id, marketplace_id=marketplace.id,
+                    external_listing_id=raw.external_listing_id, section=raw.section,
+                    section_id=norm_section, row=raw.row, quantity=raw.quantity,
+                    price=raw.price, fees=raw.fees, all_in_price=raw.all_in_price,
+                    listing_url=raw.listing_url, first_seen_at=result.fetched_at,
+                    last_seen_at=result.fetched_at, extra=raw.extra,
                 )
                 db.add(l)
                 await db.flush()
                 new_count += 1
 
             snapshots.append(ListingSnapshot(
-                listing_id=l.id,
-                event_id=result.event_id,
-                marketplace_id=marketplace.id,
-                section_id=norm_section,
-                quantity=raw.quantity,
-                price=raw.price,
-                fees=raw.fees,
-                all_in_price=raw.all_in_price,
-                snapshot_at=result.fetched_at,
+                listing_id=l.id, event_id=result.event_id, marketplace_id=marketplace.id,
+                section_id=norm_section, quantity=raw.quantity, price=raw.price,
+                fees=raw.fees, all_in_price=raw.all_in_price, snapshot_at=result.fetched_at,
             ))
 
         disappeared = 0
@@ -179,7 +164,4 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
             poll_run.error_message = result.error
 
         await db.commit()
-        logger.info(
-            "Poll done: %d listings, %d new, %d gone",
-            len(result.listings), new_count, disappeared,
-        )
+        logger.info("Poll done: %d listings, %d new, %d gone", len(result.listings), new_count, disappeared)

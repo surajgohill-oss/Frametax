@@ -15,8 +15,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.create_table(
-        "marketplaces",
+    op.create_table("marketplaces",
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column("slug", sa.String(50), nullable=False, unique=True),
         sa.Column("name", sa.String(100), nullable=False),
@@ -24,9 +23,7 @@ def upgrade() -> None:
         sa.Column("is_active", sa.Boolean(), default=True),
         sa.Column("created_at", sa.DateTime(), server_default=sa.func.now()),
     )
-
-    op.create_table(
-        "venues",
+    op.create_table("venues",
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column("slug", sa.String(100), nullable=False, unique=True),
         sa.Column("name", sa.String(200), nullable=False),
@@ -37,9 +34,7 @@ def upgrade() -> None:
         sa.Column("map_height", sa.Integer(), default=600),
         sa.Column("created_at", sa.DateTime(), server_default=sa.func.now()),
     )
-
-    op.create_table(
-        "venue_sections",
+    op.create_table("venue_sections",
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column("venue_id", sa.Integer(), sa.ForeignKey("venues.id", ondelete="CASCADE"), nullable=False),
         sa.Column("section_id", sa.String(50), nullable=False),
@@ -52,13 +47,11 @@ def upgrade() -> None:
         sa.Column("height", sa.Float(), default=30),
         sa.Column("shape", sa.String(20), default="rect"),
         sa.Column("shape_data", postgresql.JSONB()),
-        sa.Column("stubhub_aliases", postgresql.ARRAY(sa.String())),
-        sa.Column("seatgeek_aliases", postgresql.ARRAY(sa.String())),
+        sa.Column("stubhub_aliases", postgresql.JSONB()),
+        sa.Column("seatgeek_aliases", postgresql.JSONB()),
         sa.UniqueConstraint("venue_id", "section_id"),
     )
-
-    op.create_table(
-        "events",
+    op.create_table("events",
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column("canonical_id", sa.String(32), nullable=False, unique=True),
         sa.Column("title", sa.String(300), nullable=False),
@@ -66,11 +59,8 @@ def upgrade() -> None:
         sa.Column("venue_id", sa.Integer(), sa.ForeignKey("venues.id"), nullable=False),
         sa.Column("event_date", sa.DateTime(), nullable=False),
         sa.Column("created_at", sa.DateTime(), server_default=sa.func.now()),
-        sa.Column("updated_at", sa.DateTime(), server_default=sa.func.now(), onupdate=sa.func.now()),
     )
-
-    op.create_table(
-        "tracked_events",
+    op.create_table("tracked_events",
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column("event_id", sa.Integer(), sa.ForeignKey("events.id", ondelete="CASCADE"), nullable=False),
         sa.Column("marketplace_id", sa.Integer(), sa.ForeignKey("marketplaces.id"), nullable=False),
@@ -82,9 +72,7 @@ def upgrade() -> None:
         sa.Column("next_poll_at", sa.DateTime()),
         sa.Column("created_at", sa.DateTime(), server_default=sa.func.now()),
     )
-
-    op.create_table(
-        "listings",
+    op.create_table("listings",
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column("event_id", sa.Integer(), sa.ForeignKey("events.id", ondelete="CASCADE"), nullable=False),
         sa.Column("marketplace_id", sa.Integer(), sa.ForeignKey("marketplaces.id"), nullable=False),
@@ -102,33 +90,28 @@ def upgrade() -> None:
         sa.Column("last_seen_at", sa.DateTime(), server_default=sa.func.now()),
         sa.UniqueConstraint("event_id", "marketplace_id", "external_listing_id"),
     )
-
-    op.create_table(
-        "listing_snapshots",
+    op.create_table("listing_snapshots",
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column("event_id", sa.Integer(), sa.ForeignKey("events.id", ondelete="CASCADE"), nullable=False),
         sa.Column("marketplace_id", sa.Integer(), sa.ForeignKey("marketplaces.id"), nullable=False),
+        sa.Column("listing_id", sa.Integer(), sa.ForeignKey("listings.id"), nullable=False),
         sa.Column("section_id", sa.String(50)),
         sa.Column("price", sa.Numeric(10, 2), nullable=False),
         sa.Column("quantity", sa.Integer(), default=1),
         sa.Column("snapshot_at", sa.DateTime(), server_default=sa.func.now()),
     )
-
-    op.create_table(
-        "poll_runs",
+    op.create_table("poll_runs",
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column("tracked_event_id", sa.Integer(), sa.ForeignKey("tracked_events.id", ondelete="CASCADE"), nullable=False),
         sa.Column("started_at", sa.DateTime(), server_default=sa.func.now()),
-        sa.Column("finished_at", sa.DateTime()),
+        sa.Column("completed_at", sa.DateTime()),
         sa.Column("status", sa.String(20), default="running"),
         sa.Column("listings_found", sa.Integer(), default=0),
-        sa.Column("listings_new", sa.Integer(), default=0),
-        sa.Column("listings_updated", sa.Integer(), default=0),
+        sa.Column("new_listings", sa.Integer(), default=0),
+        sa.Column("disappeared_listings", sa.Integer(), default=0),
         sa.Column("error_message", sa.Text()),
     )
-
-    op.create_table(
-        "scraper_error_logs",
+    op.create_table("scraper_error_logs",
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column("marketplace", sa.String(50), nullable=False),
         sa.Column("event_id", sa.String(100)),
@@ -142,9 +125,7 @@ def upgrade() -> None:
         sa.Column("extra", postgresql.JSONB()),
         sa.Column("timestamp", sa.DateTime(), server_default=sa.func.now()),
     )
-
-    op.create_table(
-        "failure_memory",
+    op.create_table("failure_memory",
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column("marketplace", sa.String(50), nullable=False),
         sa.Column("error_type", sa.String(50), nullable=False),
@@ -160,23 +141,7 @@ def upgrade() -> None:
         sa.UniqueConstraint("marketplace", "error_type", "failed_pattern"),
     )
 
-    # Indexes
-    op.create_index("ix_listings_event_mp", "listings", ["event_id", "marketplace_id"])
-    op.create_index("ix_listings_section", "listings", ["section_id"])
-    op.create_index("ix_snapshots_event_time", "listing_snapshots", ["event_id", "snapshot_at"])
-    op.create_index("ix_errors_marketplace", "scraper_error_logs", ["marketplace"])
-    op.create_index("ix_errors_timestamp", "scraper_error_logs", ["timestamp"])
-    op.create_index("ix_failure_memory_mp_type", "failure_memory", ["marketplace", "error_type"])
-
 
 def downgrade() -> None:
-    op.drop_table("failure_memory")
-    op.drop_table("scraper_error_logs")
-    op.drop_table("poll_runs")
-    op.drop_table("listing_snapshots")
-    op.drop_table("listings")
-    op.drop_table("tracked_events")
-    op.drop_table("events")
-    op.drop_table("venue_sections")
-    op.drop_table("venues")
-    op.drop_table("marketplaces")
+    for t in ["failure_memory","scraper_error_logs","poll_runs","listing_snapshots","listings","tracked_events","events","venue_sections","venues","marketplaces"]:
+        op.drop_table(t)

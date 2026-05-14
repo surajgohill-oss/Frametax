@@ -35,8 +35,6 @@ class Listing(Base):
 
 
 class ListingSnapshot(Base):
-    """Immutable append-only historical record."""
-
     __tablename__ = "listing_snapshots"
     __table_args__ = (
         Index("ix_snapshots_event_ts", "event_id", "snapshot_at"),
