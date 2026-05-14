@@ -21,24 +21,45 @@ async def seed(db):
         {"slug": "gametime", "name": "Gametime", "base_url": "https://gametime.co", "is_active": False},
     ]:
         ex = await db.execute(select(Marketplace).where(Marketplace.slug == mp["slug"]))
-        if not ex.scalar_one_or_none(): db.add(Marketplace(**mp))
+        if not ex.scalar_one_or_none():
+            db.add(Marketplace(**mp))
     await db.flush()
-    for map_file in sorted(VENUE_MAP_DIR.glob("*.json")):
+
+    for i, map_file in enumerate(sorted(VENUE_MAP_DIR.glob("*.json"))):
         data = json.loads(map_file.read_text())
         ex = await db.execute(select(Venue).where(Venue.slug == data["slug"]))
         venue = ex.scalar_one_or_none()
         if not venue:
-            venue = Venue(slug=data["slug"], name=data["name"], map_width=data["map_width"], map_height=data["map_height"])
+            venue = Venue(
+                slug=data["slug"],
+                name=data["name"],
+                map_width=data.get("map_width", 700),
+                map_height=data.get("map_height", 500),
+            )
             db.add(venue)
             await db.flush()
-        for sec in data["sections"]:
-            ex2 = await db.execute(select(VenueSection).where(VenueSection.venue_id == venue.id, VenueSection.section_id == sec["section_id"]))
+        for j, sec in enumerate(data.get("sections", [])):
+            sid = sec.get("section_id") or sec.get("slug") or f"sec-{i}-{j}"
+            ex2 = await db.execute(
+                select(VenueSection).where(
+                    VenueSection.venue_id == venue.id,
+                    VenueSection.section_id == sid,
+                )
+            )
             if not ex2.scalar_one_or_none():
                 db.add(VenueSection(
-                    venue_id=venue.id, section_id=sec["section_id"], display_name=sec["display_name"],
-                    tier=sec["tier"], quality_score=sec["quality_score"], x=sec["x"], y=sec["y"],
-                    width=sec.get("width", 40), height=sec.get("height", 30), shape=sec.get("shape", "rect"),
-                    shape_data=sec.get("shape_data"), stubhub_aliases=sec.get("stubhub_aliases"),
+                    venue_id=venue.id,
+                    section_id=sid,
+                    display_name=sec.get("display_name") or sec.get("name") or sid,
+                    tier=sec.get("tier") or sec.get("section_type") or "general",
+                    quality_score=sec.get("quality_score", 50),
+                    x=float(sec.get("x", 0)),
+                    y=float(sec.get("y", 0)),
+                    width=float(sec.get("width", 40)),
+                    height=float(sec.get("height", 30)),
+                    shape=sec.get("shape", "rect"),
+                    shape_data=sec.get("shape_data"),
+                    stubhub_aliases=sec.get("stubhub_aliases"),
                     seatgeek_aliases=sec.get("seatgeek_aliases"),
                 ))
     await db.commit()
