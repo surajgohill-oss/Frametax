@@ -1,11 +1,11 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { api, TrackedEvent } from '@/lib/api';
-import { formatCurrency, formatRelativeTime } from '@/lib/utils';
+import { api } from '@/lib/api';
+import { fmt$, fmtRelative } from '@/lib/utils';
 import { Card } from '@/components/ui/Card';
 
 interface CompareRow {
-  event: TrackedEvent;
+  event: any;
   stubhubLow: number | null;
   seatgeekLow: number | null;
   diff: number | null;
@@ -21,21 +21,19 @@ export default function ComparePage() {
 
   async function loadData() {
     try {
-      const events = await api.getEvents();
+      const events = await api.events.list();
       const results = await Promise.all(
-        events.map(async (event) => {
-          const listings = await api.getListings(event.id);
-          const stubhub = listings.filter(l => l.marketplace_slug === 'stubhub');
-          const seatgeek = listings.filter(l => l.marketplace_slug === 'seatgeek');
-          const stubhubLow = stubhub.length > 0 ? Math.min(...stubhub.map(l => l.price_each)) : null;
-          const seatgeekLow = seatgeek.length > 0 ? Math.min(...seatgeek.map(l => l.price_each)) : null;
+        events.map(async (event: any) => {
+          const listings = await api.listings.byEvent(event.id);
+          const stubhub = listings.filter((l: any) => l.marketplace_slug === 'stubhub');
+          const seatgeek = listings.filter((l: any) => l.marketplace_slug === 'seatgeek');
+          const stubhubLow = stubhub.length > 0 ? Math.min(...stubhub.map((l: any) => l.price_each)) : null;
+          const seatgeekLow = seatgeek.length > 0 ? Math.min(...seatgeek.map((l: any) => l.price_each)) : null;
           let diff: number | null = null;
           let cheaperOn: CompareRow['cheaperOn'] = null;
           if (stubhubLow != null && seatgeekLow != null) {
             diff = Math.abs(stubhubLow - seatgeekLow);
-            if (stubhubLow < seatgeekLow) cheaperOn = 'stubhub';
-            else if (seatgeekLow < stubhubLow) cheaperOn = 'seatgeek';
-            else cheaperOn = 'equal';
+            cheaperOn = stubhubLow < seatgeekLow ? 'stubhub' : seatgeekLow < stubhubLow ? 'seatgeek' : 'equal';
           }
           return { event, stubhubLow, seatgeekLow, diff, cheaperOn };
         })
@@ -54,11 +52,8 @@ export default function ComparePage() {
     return (a.seatgeekLow ?? Infinity) - (b.seatgeekLow ?? Infinity);
   });
 
-  const savingsTotal = rows.reduce((acc, r) => {
-    if (r.diff != null) acc += r.diff;
-    return acc;
-  }, 0);
-
+  const compared = rows.filter(r => r.diff != null);
+  const avgDiff = compared.length > 0 ? compared.reduce((s, r) => s + r.diff!, 0) / compared.length : 0;
   const stubhubWins = rows.filter(r => r.cheaperOn === 'stubhub').length;
   const seatgeekWins = rows.filter(r => r.cheaperOn === 'seatgeek').length;
 
@@ -72,9 +67,7 @@ export default function ComparePage() {
       <div className="grid grid-cols-3 gap-4">
         <Card>
           <p className="text-xs text-gray-400 mb-1">Avg Price Difference</p>
-          <p className="text-xl font-bold text-yellow-400">
-            {rows.length > 0 ? formatCurrency(savingsTotal / rows.filter(r => r.diff != null).length || 0) : '—'}
-          </p>
+          <p className="text-xl font-bold text-yellow-400">{fmt$(avgDiff || null)}</p>
         </Card>
         <Card>
           <p className="text-xs text-gray-400 mb-1">StubHub Cheaper</p>
@@ -120,27 +113,25 @@ export default function ComparePage() {
             </thead>
             <tbody className="divide-y divide-gray-700">
               {sorted.map(({ event, stubhubLow, seatgeekLow, diff, cheaperOn }) => (
-                <tr key={event.id} className="hover:bg-gray-750 transition-colors">
+                <tr key={event.id} className="hover:bg-gray-750">
                   <td className="px-4 py-3">
                     <a href={`/events/${event.id}`} className="text-white hover:text-indigo-300">
-                      {event.event?.title || `Event #${event.id}`}
+                      {event.title || `Event #${event.id}`}
                     </a>
-                    <p className="text-xs text-gray-500">{event.event?.venue_name}</p>
+                    <p className="text-xs text-gray-500">{event.venue_slug}</p>
                   </td>
                   <td className="px-4 py-3 text-right font-mono">
                     <span className={cheaperOn === 'stubhub' ? 'text-green-400 font-bold' : 'text-gray-300'}>
-                      {stubhubLow != null ? formatCurrency(stubhubLow) : '—'}
+                      {fmt$(stubhubLow)}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right font-mono">
                     <span className={cheaperOn === 'seatgeek' ? 'text-green-400 font-bold' : 'text-gray-300'}>
-                      {seatgeekLow != null ? formatCurrency(seatgeekLow) : '—'}
+                      {fmt$(seatgeekLow)}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right font-mono">
-                    {diff != null ? (
-                      <span className="text-yellow-400">{formatCurrency(diff)}</span>
-                    ) : '—'}
+                    {diff != null ? <span className="text-yellow-400">{fmt$(diff)}</span> : '—'}
                   </td>
                   <td className="px-4 py-3">
                     {cheaperOn ? (
@@ -148,20 +139,18 @@ export default function ComparePage() {
                         cheaperOn === 'stubhub' ? 'bg-indigo-900 text-indigo-300' :
                         cheaperOn === 'seatgeek' ? 'bg-blue-900 text-blue-300' :
                         'bg-gray-700 text-gray-300'
-                      }`}>
-                        {cheaperOn}
-                      </span>
+                      }`}>{cheaperOn}</span>
                     ) : '—'}
                   </td>
                   <td className="px-4 py-3 text-gray-400 text-xs">
-                    {event.last_polled_at ? formatRelativeTime(event.last_polled_at) : 'Never'}
+                    {event.last_polled_at ? fmtRelative(event.last_polled_at) : 'Never'}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
           {sorted.length === 0 && (
-            <p className="text-center py-8 text-gray-400">No events in watchlist. Add some events first.</p>
+            <p className="text-center py-8 text-gray-400">No events in watchlist yet.</p>
           )}
         </div>
       )}

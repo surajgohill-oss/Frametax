@@ -1,17 +1,17 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { api, TrackedEvent, Listing } from '@/lib/api';
+import { api } from '@/lib/api';
 import VenueHeatmap from '@/components/VenueHeatmap';
 
 export default function HeatmapPage() {
-  const [events, setEvents] = useState<TrackedEvent[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
-  const [listings, setListings] = useState<Listing[]>([]);
+  const [listings, setListings] = useState<any[]>([]);
   const [mode, setMode] = useState<'price' | 'inventory'>('price');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.getEvents().then(data => {
+    api.events.list().then(data => {
       setEvents(data);
       if (data.length > 0) setSelectedEventId(data[0].id);
     }).finally(() => setLoading(false));
@@ -19,11 +19,11 @@ export default function HeatmapPage() {
 
   useEffect(() => {
     if (selectedEventId) {
-      api.getListings(selectedEventId).then(setListings);
+      api.listings.byEvent(selectedEventId).then(setListings);
     }
   }, [selectedEventId]);
 
-  const selectedEvent = events.find(e => e.id === selectedEventId);
+  const selectedEvent = events.find((e: any) => e.id === selectedEventId);
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -40,9 +40,9 @@ export default function HeatmapPage() {
             onChange={e => setSelectedEventId(Number(e.target.value))}
             className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm min-w-[280px]"
           >
-            {events.map(event => (
+            {events.map((event: any) => (
               <option key={event.id} value={event.id}>
-                {event.event?.title || `Event #${event.id}`}
+                {event.title || `Event #${event.id}`}
               </option>
             ))}
           </select>
@@ -69,12 +69,8 @@ export default function HeatmapPage() {
         <div className="flex justify-center py-16">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500" />
         </div>
-      ) : selectedEvent?.event?.venue_slug ? (
-        <VenueHeatmap
-          venueSlug={selectedEvent.event.venue_slug}
-          listings={listings}
-          mode={mode}
-        />
+      ) : selectedEvent?.venue_slug ? (
+        <VenueHeatmap venueSlug={selectedEvent.venue_slug} listings={listings} mode={mode} />
       ) : (
         <div className="text-center py-16 text-gray-400">
           {events.length === 0 ? 'Add events to your watchlist first.' : 'Select an event to view its heatmap.'}

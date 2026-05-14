@@ -1,38 +1,15 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
-import { formatDateTime, formatRelativeTime } from '@/lib/utils';
+import { fmtRelative } from '@/lib/utils';
 import { Badge } from '@/components/ui/Badge';
-
-interface ErrorLog {
-  id: number;
-  marketplace: string;
-  event_id: number | null;
-  error_type: string;
-  error_message: string;
-  selector_used: string | null;
-  url: string | null;
-  screenshot_path: string | null;
-  html_path: string | null;
-  created_at: string;
-}
-
-interface MemoryEntry {
-  id: number;
-  marketplace: string;
-  selector_pattern: string;
-  failure_count: number;
-  last_failure_at: string;
-  last_success_at: string | null;
-  is_active: boolean;
-}
 
 type View = 'errors' | 'memory';
 
 export default function DebugPage() {
   const [view, setView] = useState<View>('errors');
-  const [errors, setErrors] = useState<ErrorLog[]>([]);
-  const [memory, setMemory] = useState<MemoryEntry[]>([]);
+  const [errors, setErrors] = useState<any[]>([]);
+  const [memory, setMemory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [testUrl, setTestUrl] = useState('');
   const [testMarketplace, setTestMarketplace] = useState('stubhub');
@@ -45,11 +22,9 @@ export default function DebugPage() {
     setLoading(true);
     try {
       if (view === 'errors') {
-        const data = await api.getDebugErrors();
-        setErrors(data);
+        setErrors(await api.debug.errors());
       } else {
-        const data = await api.getFailureMemory();
-        setMemory(data);
+        setMemory(await api.debug.memory());
       }
     } catch (e) {
       console.error(e);
@@ -60,7 +35,7 @@ export default function DebugPage() {
 
   async function clearMemory() {
     if (!confirm('Clear all failure memory entries?')) return;
-    await api.clearFailureMemory();
+    await api.debug.clearMemory();
     await loadData();
   }
 
@@ -69,7 +44,7 @@ export default function DebugPage() {
     setTestLoading(true);
     setTestResult(null);
     try {
-      const result = await api.testCollect(testMarketplace, testUrl);
+      const result = await api.debug.testCollect(testMarketplace, testUrl);
       setTestResult(JSON.stringify(result, null, 2));
     } catch (e: unknown) {
       setTestResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
@@ -77,13 +52,6 @@ export default function DebugPage() {
       setTestLoading(false);
     }
   }
-
-  const errorTypeColor = (type: string) => {
-    if (type.includes('timeout')) return 'yellow';
-    if (type.includes('blocked') || type.includes('captcha')) return 'red';
-    if (type.includes('parse')) return 'orange';
-    return 'gray';
-  };
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -162,21 +130,15 @@ export default function DebugPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-700">
-              {errors.map(err => (
-                <tr key={err.id} className="hover:bg-gray-750">
-                  <td className="px-4 py-2.5 text-gray-400 whitespace-nowrap">
-                    {formatRelativeTime(err.created_at)}
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <Badge variant="indigo">{err.marketplace}</Badge>
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <Badge variant={errorTypeColor(err.error_type) as 'gray'}>{err.error_type}</Badge>
-                  </td>
+              {errors.map((err: any) => (
+                <tr key={err.id}>
+                  <td className="px-4 py-2.5 text-gray-400 whitespace-nowrap">{fmtRelative(err.created_at)}</td>
+                  <td className="px-4 py-2.5"><Badge variant="indigo">{err.marketplace}</Badge></td>
+                  <td className="px-4 py-2.5"><Badge variant="secondary">{err.error_type}</Badge></td>
                   <td className="px-4 py-2.5 text-gray-300 max-w-xs truncate">{err.error_message}</td>
                   <td className="px-4 py-2.5 flex gap-2">
-                    {err.screenshot_path && <span className="text-blue-400" title={err.screenshot_path}>📷</span>}
-                    {err.html_path && <span className="text-green-400" title={err.html_path}>📄</span>}
+                    {err.screenshot_path && <span title={err.screenshot_path}>📷</span>}
+                    {err.html_path && <span title={err.html_path}>📄</span>}
                   </td>
                 </tr>
               ))}
@@ -200,25 +162,21 @@ export default function DebugPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-700">
-              {memory.map(entry => (
-                <tr key={entry.id} className="hover:bg-gray-750">
-                  <td className="px-4 py-2.5">
-                    <Badge variant="indigo">{entry.marketplace}</Badge>
-                  </td>
+              {memory.map((entry: any) => (
+                <tr key={entry.id}>
+                  <td className="px-4 py-2.5"><Badge variant="indigo">{entry.marketplace}</Badge></td>
                   <td className="px-4 py-2.5 font-mono text-gray-300">{entry.selector_pattern}</td>
                   <td className="px-4 py-2.5 text-right">
                     <span className={entry.failure_count >= 3 ? 'text-red-400 font-bold' : 'text-yellow-400'}>
                       {entry.failure_count}
                     </span>
                   </td>
+                  <td className="px-4 py-2.5 text-gray-400">{fmtRelative(entry.last_failure_at)}</td>
                   <td className="px-4 py-2.5 text-gray-400">
-                    {formatRelativeTime(entry.last_failure_at)}
-                  </td>
-                  <td className="px-4 py-2.5 text-gray-400">
-                    {entry.last_success_at ? formatRelativeTime(entry.last_success_at) : '—'}
+                    {entry.last_success_at ? fmtRelative(entry.last_success_at) : '—'}
                   </td>
                   <td className="px-4 py-2.5">
-                    <Badge variant={entry.is_active ? 'red' : 'green'}>
+                    <Badge variant={entry.is_active ? 'secondary' : 'success'}>
                       {entry.is_active ? 'skipping' : 'active'}
                     </Badge>
                   </td>
