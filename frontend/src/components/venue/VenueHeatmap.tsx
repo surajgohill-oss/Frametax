@@ -1,9 +1,21 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { api } from "@/lib/api";
 
 interface Section { section_id: string; display_name: string; x: number; y: number; width: number; height: number; shape?: string; shape_data?: any; }
 interface SectionPrice { section_id: string; display_name: string; lowest_ask?: number; listing_count?: number; }
-interface Props { sections: Section[]; prices: SectionPrice[]; mapWidth?: number; mapHeight?: number; colorMode?: "price" | "inventory"; onSectionClick?: (sectionId: string, displayName: string) => void; selectedSection?: string | null; }
+interface Props {
+  sections?: Section[];
+  prices?: SectionPrice[];
+  mapWidth?: number;
+  mapHeight?: number;
+  colorMode?: "price" | "inventory";
+  onSectionClick?: (sectionId: string, displayName: string) => void;
+  selectedSection?: string | null;
+  venueSlug?: string;
+  listings?: any[];
+  mode?: "price" | "inventory";
+}
 
 function priceColor(value: number, min: number, max: number): string {
   if (max === min) return "rgb(100,140,220)";
@@ -17,9 +29,31 @@ function inventoryColor(count: number, max: number): string {
   return `rgb(${Math.round(20 + t * 30)},${Math.round(80 + t * 140)},${Math.round(200 + t * 55)})`;
 }
 
-export function VenueHeatmap({ sections, prices, mapWidth = 800, mapHeight = 600, colorMode = "price", onSectionClick, selectedSection }: Props) {
+export function VenueHeatmap({ sections: sectionsProp, prices: pricesProp, mapWidth = 800, mapHeight = 600, colorMode, onSectionClick, selectedSection, venueSlug, listings, mode }: Props) {
   const [hovered, setHovered] = useState<string | null>(null);
   const [tooltip, setTooltip] = useState<{ x: number; y: number; label: string } | null>(null);
+  const [fetchedSections, setFetchedSections] = useState<Section[]>([]);
+
+  useEffect(() => {
+    if (venueSlug) api.venues.sections(venueSlug).then(setFetchedSections).catch(() => {});
+  }, [venueSlug]);
+
+  const sections: Section[] = sectionsProp ?? fetchedSections;
+  const effectiveColorMode = colorMode ?? mode ?? "price";
+
+  const prices: SectionPrice[] = pricesProp ?? (() => {
+    if (!listings) return [];
+    const map = new Map<string, { lowest_ask: number; count: number; display_name: string }>();
+    for (const l of listings) {
+      const sid = l.section_id ?? l.section ?? "";
+      if (!sid) continue;
+      const prev = map.get(sid);
+      const ask = Number(l.price ?? l.lowest_ask ?? 0);
+      if (!prev || ask < prev.lowest_ask) map.set(sid, { lowest_ask: ask, count: (prev?.count ?? 0) + 1, display_name: l.section ?? sid });
+      else prev.count += 1;
+    }
+    return Array.from(map.entries()).map(([sid, v]) => ({ section_id: sid, display_name: v.display_name, lowest_ask: v.lowest_ask, listing_count: v.count }));
+  })();
 
   const priceMap = useMemo(() => { const m = new Map<string, SectionPrice>(); for (const p of prices) m.set(p.section_id, p); return m; }, [prices]);
   const { minPrice, maxPrice, maxInventory } = useMemo(() => {
@@ -31,7 +65,7 @@ export function VenueHeatmap({ sections, prices, mapWidth = 800, mapHeight = 600
   function getFill(sec: Section): string {
     const p = priceMap.get(sec.section_id);
     if (!p) return "#1e2535";
-    if (colorMode === "inventory" && p.listing_count != null) return inventoryColor(p.listing_count, maxInventory);
+    if (effectiveColorMode === "inventory" && p.listing_count != null) return inventoryColor(p.listing_count, maxInventory);
     if (p.lowest_ask != null) return priceColor(p.lowest_ask, minPrice, maxPrice);
     return "#1e2535";
   }
@@ -77,7 +111,7 @@ export function VenueHeatmap({ sections, prices, mapWidth = 800, mapHeight = 600
         )}
       </svg>
       <div className="mt-2 flex items-center gap-3 text-xs text-slate-400">
-        {colorMode === "price" && prices.some((p) => p.lowest_ask != null) ? (<><span>${minPrice.toFixed(0)}</span><div className="flex-1 h-2 rounded" style={{ background: "linear-gradient(to right, rgb(0,180,60), rgb(220,0,60))" }} /><span>${maxPrice.toFixed(0)}</span></>) : colorMode === "inventory" && prices.some((p) => p.listing_count != null) ? (<><span>0</span><div className="flex-1 h-2 rounded" style={{ background: "linear-gradient(to right, rgb(20,80,200), rgb(50,220,255))" }} /><span>{maxInventory}</span></>) : (<span className="text-slate-600">No pricing data available</span>)}
+        {effectiveColorMode === "price" && prices.some((p) => p.lowest_ask != null) ? (<><span>${minPrice.toFixed(0)}</span><div className="flex-1 h-2 rounded" style={{ background: "linear-gradient(to right, rgb(0,180,60), rgb(220,0,60))" }} /><span>${maxPrice.toFixed(0)}</span></>) : effectiveColorMode === "inventory" && prices.some((p) => p.listing_count != null) ? (<><span>0</span><div className="flex-1 h-2 rounded" style={{ background: "linear-gradient(to right, rgb(20,80,200), rgb(50,220,255))" }} /><span>{maxInventory}</span></>) : (<span className="text-slate-600">No pricing data available</span>)}
         <div className="flex items-center gap-1 ml-4"><div className="w-3 h-3 rounded bg-[#1e2535] border border-[#2a3145]" /><span>No data</span></div>
       </div>
     </div>

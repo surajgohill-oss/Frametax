@@ -1,10 +1,9 @@
-FROM mcr.microsoft.com/playwright/python:v1.44.0-jammy
+FROM python:3.11-slim-bookworm
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq-dev gcc \
-    && rm -rf /var/lib/apt/lists/*
+# Trust the TLS intercept proxy for all pip and apt operations
+RUN mkdir -p /root/.config/pip && printf '[global]\ntrusted-host =\n    pypi.org\n    pypi.python.org\n    files.pythonhosted.org\n' > /root/.config/pip/pip.conf
 
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
@@ -12,6 +11,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ .
 
 RUN mkdir -p /app/browser_sessions /app/debug_screenshots /app/debug_html
+
+ENV PYTHONPATH=/app
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 EXPOSE 8000
 

@@ -1,10 +1,17 @@
 "use client";
+import { useState, useEffect } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
+import { api } from "@/lib/api";
 
 const COLORS: Record<string, string> = { stubhub: "#3b82f6", seatgeek: "#10b981" };
 
-export function InventoryChart({ data, height = 220 }: { data: any[]; height?: number }) {
+export function InventoryChart({ eventId, data: dataProp, height = 220 }: { eventId?: number; data?: any[]; height?: number }) {
+  const [data, setData] = useState<any[]>(dataProp ?? []);
+  useEffect(() => {
+    if (eventId != null) api.analytics.priceHistory(eventId).then(setData).catch(() => {});
+  }, [eventId]);
+
   const byTs: Record<string, any> = {};
   for (const pt of data) {
     if (!byTs[pt.ts]) byTs[pt.ts] = { ts: new Date(pt.ts).getTime() };

@@ -170,7 +170,7 @@ export default function EventDetailPage() {
               </button>
             ))}
           </div>
-          <SectionPriceBar listings={listings} />
+          <SectionPriceBar sections={listings} />
           <div className="bg-gray-800 rounded-xl overflow-hidden">
             <table className="w-full text-sm">
               <thead>
