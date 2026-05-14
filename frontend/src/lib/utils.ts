@@ -31,7 +31,5 @@ export const fmtRelative = timeAgo;
 export function priceColor(price: number, min: number, max: number): string {
   if (max === min) return "#3b82f6";
   const t = (price - min) / (max - min);
-  const r = Math.round(t * 220);
-  const g = Math.round((1 - t) * 180);
-  return `rgb(${r},${g},60)`;
+  return `rgb(${Math.round(t * 220)},${Math.round((1 - t) * 180)},60)`;
 }

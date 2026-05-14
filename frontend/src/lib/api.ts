@@ -19,19 +19,15 @@ export const api = {
   venues: {
     list: () => req<any[]>("/venues/"),
     get: (slug: string) => req<any>(`/venues/${slug}`),
-    sections: (slug?: string) =>
-      slug ? req<any[]>(`/venues/${slug}/sections`) : Promise.resolve([]),
+    sections: (slug?: string) => slug ? req<any[]>(`/venues/${slug}/sections`) : Promise.resolve([]),
   },
   listings: {
-    byEvent: (id: number, mp?: string) =>
-      req<any[]>(`/listings/events/${id}${mp ? `?marketplace=${mp}` : ""}`),
+    byEvent: (id: number, mp?: string) => req<any[]>(`/listings/events/${id}${mp ? `?marketplace=${mp}` : ""}`),
   },
   analytics: {
     summary: () => req<any>("/analytics/summary"),
-    eventSummary: (id: number, mp?: string) =>
-      req<any[]>(`/analytics/events/${id}/summary${mp ? `?marketplace=${mp}` : ""}`),
-    priceHistory: (id: number, hours = 168, mp?: string) =>
-      req<any[]>(`/analytics/events/${id}/price-history?hours=${hours}${mp ? `&marketplace=${mp}` : ""}`),
+    eventSummary: (id: number, mp?: string) => req<any[]>(`/analytics/events/${id}/summary${mp ? `?marketplace=${mp}` : ""}`),
+    priceHistory: (id: number, hours = 168, mp?: string) => req<any[]>(`/analytics/events/${id}/price-history?hours=${hours}${mp ? `&marketplace=${mp}` : ""}`),
     heatmap: (id: number) => req<any[]>(`/analytics/events/${id}/heatmap`),
     compare: (id: number) => req<any[]>(`/analytics/events/${id}/compare`),
   },
@@ -40,13 +36,11 @@ export const api = {
     runs: (id: number) => req<any[]>(`/poll/events/${id}/runs`),
   },
   debug: {
-    errors: (mp?: string, type?: string) =>
-      req<any[]>(`/debug/errors?limit=50${mp ? `&marketplace=${mp}` : ""}${type ? `&error_type=${type}` : ""}`),
+    errors: (mp?: string, type?: string) => req<any[]>(`/debug/errors?limit=50${mp ? `&marketplace=${mp}` : ""}${type ? `&error_type=${type}` : ""}`),
     errorSummary: () => req<any[]>("/debug/errors/summary"),
     memory: (mp?: string) => req<any[]>(`/debug/memory${mp ? `?marketplace=${mp}` : ""}`),
     deleteMemory: (id: number) => req<void>(`/debug/memory/${id}`, { method: "DELETE" }),
     clearMemory: (mp: string) => req<void>(`/debug/memory?marketplace=${mp}`, { method: "DELETE" }),
-    testCollect: (marketplace: string) =>
-      req<any>("/debug/test-collect", { method: "POST", body: JSON.stringify({ marketplace }) }),
+    testCollect: (marketplace: string) => req<any>("/debug/test-collect", { method: "POST", body: JSON.stringify({ marketplace }) }),
   },
 };

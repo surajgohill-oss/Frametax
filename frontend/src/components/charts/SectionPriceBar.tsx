@@ -13,13 +13,9 @@ export function SectionPriceBar({ sections, height = 280 }: { sections: any[]; h
         <CartesianGrid strokeDasharray="3 3" stroke="#2a3145" vertical={false} />
         <XAxis dataKey="display_name" tick={{ fill: "#6b7280", fontSize: 10 }} tickLine={false} axisLine={{ stroke: "#2a3145" }} angle={-45} textAnchor="end" interval={0} />
         <YAxis tickFormatter={(v) => `$${v}`} tick={{ fill: "#6b7280", fontSize: 11 }} tickLine={false} axisLine={false} width={55} />
-        <Tooltip contentStyle={{ background: "#1e2535", border: "1px solid #2a3145", borderRadius: "8px", fontSize: "12px", color: "#e2e8f0" }}
-          formatter={(v: number) => [fmt$(v), "Lowest Ask"]} />
-        <Bar dataKey="lowest_ask" radius={[3,3,0,0]} maxBarSize={32}>
-          {sorted.map((_, i) => {
-            const t = max === min ? 0.5 : ((sorted[i].lowest_ask ?? 0) - min) / (max - min);
-            return <Cell key={i} fill={`rgb(${Math.round(t*220)},${Math.round((1-t)*180)},60)`} />;
-          })}
+        <Tooltip contentStyle={{ background: "#1e2535", border: "1px solid #2a3145", borderRadius: "8px", fontSize: "12px", color: "#e2e8f0" }} formatter={(v: number) => [fmt$(v), "Lowest Ask"]} />
+        <Bar dataKey="lowest_ask" radius={[3, 3, 0, 0]} maxBarSize={32}>
+          {sorted.map((_, i) => { const t = max === min ? 0.5 : ((sorted[i].lowest_ask ?? 0) - min) / (max - min); return <Cell key={i} fill={`rgb(${Math.round(t * 220)},${Math.round((1 - t) * 180)},60)`} />; })}
         </Bar>
       </BarChart>
     </ResponsiveContainer>
