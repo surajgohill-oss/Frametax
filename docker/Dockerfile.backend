@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM mcr.microsoft.com/playwright/python:v1.44.0-jammy
 
 WORKDIR /app
 
@@ -9,9 +9,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-RUN playwright install chromium && playwright install-deps chromium
-
 COPY backend/ .
+
+RUN mkdir -p /app/browser_sessions /app/debug_screenshots /app/debug_html
 
 EXPOSE 8000
 
