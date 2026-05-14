@@ -5,6 +5,7 @@ const V = {
   secondary: "bg-slate-800 text-slate-400 border border-slate-700",
   success: "bg-emerald-600/20 text-emerald-400 border border-emerald-500/30",
   blue: "bg-blue-600/20 text-blue-400 border border-blue-500/30",
+  indigo: "bg-indigo-600/20 text-indigo-400 border border-indigo-500/30",
   green: "bg-emerald-600/20 text-emerald-400 border border-emerald-500/30",
   yellow: "bg-yellow-600/20 text-yellow-400 border border-yellow-500/30",
   red: "bg-red-600/20 text-red-400 border border-red-500/30",
