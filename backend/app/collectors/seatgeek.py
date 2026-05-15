@@ -28,12 +28,33 @@ class SeatGeekCollector(BaseCollector):
         self._session_path = Path(settings.browser_data_dir) / "seatgeek"
         self._http_client: Optional[httpx.AsyncClient] = None
 
+    async def resolve_external_event_id(self, tracked_event) -> Optional[str]:
+        if tracked_event.external_event_id:
+            return tracked_event.external_event_id
+
+        if tracked_event.external_url:
+            extracted = await self._extract_event_id(tracked_event.external_url)
+            if extracted:
+                self.logger.info("Resolved SeatGeek event ID %s from URL", extracted)
+                return extracted
+
+            slug = self._slug_from_url(tracked_event.external_url)
+            if slug:
+                resolved = await self._search_event_by_slug(slug)
+                if resolved:
+                    self.logger.info(
+                        "Resolved SeatGeek event ID %s via search (slug=%s)", resolved, slug
+                    )
+                    return resolved
+
+        self.logger.warning(
+            "Cannot resolve SeatGeek event ID for tracked_event %d (url=%s)",
+            tracked_event.id, tracked_event.external_url,
+        )
+        return None
+
     async def _fetch_listings(self, tracked_event) -> list[RawListing]:
         event_id = tracked_event.external_event_id
-        if not event_id and tracked_event.external_url:
-            event_id = await self._extract_event_id(tracked_event.external_url)
-        if not event_id:
-            raise ValueError("No SeatGeek event ID")
 
         if self._client_id:
             skip = await self.should_skip_pattern(SEATGEEK_OFFICIAL_API, "http_failure")
@@ -141,8 +162,34 @@ class SeatGeekCollector(BaseCollector):
         return listings
 
     async def _extract_event_id(self, url: str) -> Optional[str]:
-        m = re.search(r"/(\d+)(?:\?|$|#)", url)
-        return m.group(1) if m else None
+        # seatgeek.com/events/name--12345 or /e/12345 or trailing numeric segment
+        for pattern in (r"/e/(\d+)", r"--(\d{5,})(?:[/?#]|$)", r"/(\d{5,})(?:[/?#]|$)"):
+            m = re.search(pattern, url)
+            if m:
+                return m.group(1)
+        return None
+
+    def _slug_from_url(self, url: str) -> Optional[str]:
+        path = url.rstrip("/").rsplit("/", 1)[-1]
+        slug = re.sub(r"-tickets$", "", path, flags=re.IGNORECASE)
+        keywords = slug.replace("-", " ").strip()
+        return keywords if len(keywords) > 3 else None
+
+    async def _search_event_by_slug(self, keywords: str) -> Optional[str]:
+        """Best-effort search via SeatGeek internal events API."""
+        client = await self._get_http_client()
+        try:
+            resp = await client.get(
+                "https://seatgeek.com/api/events",
+                params={"q": keywords, "per_page": 1},
+            )
+            if resp.status_code == 200:
+                events = resp.json().get("events", [])
+                if events:
+                    return str(events[0]["id"])
+        except Exception as exc:
+            self.logger.debug("SeatGeek slug search failed: %s", exc)
+        return None
 
     async def _get_http_client(self) -> httpx.AsyncClient:
         if self._http_client is None or self._http_client.is_closed:

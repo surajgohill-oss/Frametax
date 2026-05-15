@@ -27,12 +27,33 @@ class StubHubCollector(BaseCollector):
         self._cookies_file = self._session_path / "cookies.json"
         self._http_client: Optional[httpx.AsyncClient] = None
 
+    async def resolve_external_event_id(self, tracked_event) -> Optional[str]:
+        if tracked_event.external_event_id:
+            return tracked_event.external_event_id
+
+        if tracked_event.external_url:
+            extracted = self._extract_event_id_from_url(tracked_event.external_url)
+            if extracted:
+                self.logger.info("Resolved StubHub event ID %s from URL", extracted)
+                return extracted
+
+            slug = self._slug_from_url(tracked_event.external_url)
+            if slug:
+                resolved = await self._search_event_by_slug(slug)
+                if resolved:
+                    self.logger.info(
+                        "Resolved StubHub event ID %s via search (slug=%s)", resolved, slug
+                    )
+                    return resolved
+
+        self.logger.warning(
+            "Cannot resolve StubHub event ID for tracked_event %d (url=%s)",
+            tracked_event.id, tracked_event.external_url,
+        )
+        return None
+
     async def _fetch_listings(self, tracked_event) -> list[RawListing]:
         event_id = tracked_event.external_event_id
-        if not event_id and tracked_event.external_url:
-            event_id = self._extract_event_id_from_url(tracked_event.external_url)
-        if not event_id:
-            raise ValueError("No StubHub event ID")
 
         skip_json = await self.should_skip_pattern(STUBHUB_SOLR_URL, "http_failure")
         listings = None
@@ -43,11 +64,7 @@ class StubHubCollector(BaseCollector):
         if listings is None:
             listings = await self._fetch_via_playwright(event_id, tracked_event.external_url)
 
-        if not listings:
-            async with self.telemetry("empty_response", event_id=event_id):
-                raise ValueError(f"StubHub returned 0 listings for event {event_id}")
-
-        return listings
+        return listings or []
 
     async def _fetch_via_json_api(self, event_id: str) -> Optional[list[RawListing]]:
         client = await self._get_http_client()
@@ -135,7 +152,35 @@ class StubHubCollector(BaseCollector):
 
     def _extract_event_id_from_url(self, url: str) -> Optional[str]:
         m = re.search(r"/event/(\d+)", url)
+        if m:
+            return m.group(1)
+        # also handles stubhub.com/tickets/.../12345 and trailing numeric segment
+        m = re.search(r"/(\d{6,})(?:[/?#]|$)", url)
         return m.group(1) if m else None
+
+    def _slug_from_url(self, url: str) -> Optional[str]:
+        path = url.rstrip("/").rsplit("/", 1)[-1]
+        slug = re.sub(r"-tickets$|-los-angeles$|-la$", "", path, flags=re.IGNORECASE)
+        keywords = slug.replace("-", " ").strip()
+        return keywords if len(keywords) > 3 else None
+
+    async def _search_event_by_slug(self, keywords: str) -> Optional[str]:
+        """Best-effort SOLR keyword search — returns first matching event_id."""
+        client = await self._get_http_client()
+        search_url = (
+            "https://www.stubhub.com/listingCatalog/select"
+            f"?q=event_name:*{keywords.replace(' ', '*')}*"
+            "&rows=1&fl=event_id&sort=event_date+asc&wt=json"
+        )
+        try:
+            resp = await client.get(search_url)
+            if resp.status_code == 200:
+                docs = resp.json().get("response", {}).get("docs", [])
+                if docs:
+                    return str(docs[0]["event_id"])
+        except Exception as exc:
+            self.logger.debug("StubHub slug search failed: %s", exc)
+        return None
 
     def normalize_section(self, raw_section: str) -> str:
         return re.sub(r"^(Section|Sec\.?)\s*", "", raw_section.strip(), flags=re.IGNORECASE).upper()
