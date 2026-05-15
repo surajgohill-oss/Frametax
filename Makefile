@@ -1,4 +1,4 @@
-.PHONY: up down reset logs status build verify debug-snapshot
+.PHONY: up down reset logs status build verify debug-snapshot verify-seed-code bootstrap-status
 
 up:
 	docker compose up --build -d
@@ -49,6 +49,75 @@ status:
 		&& echo "  frontend  ✓  http://localhost:3000" || echo "  frontend  ✗ not responding"
 	@echo ""
 
+# ── verify-seed-code ───────────────────────────────────────────────────────────
+# Proves that the running container has the latest seed code and demo IDs.
+# Does NOT check DB state — use bootstrap-status for that.
+verify-seed-code:
+	@echo "══════════════════════════════════════════"
+	@echo "  SEED CODE PRESENCE CHECK"
+	@echo "══════════════════════════════════════════"
+	@echo ""
+	@echo "── Script location inside container ──────"
+	@docker compose exec -T backend sh -c \
+		"ls -la /shared_scripts/seed_db_docker.py && md5sum /shared_scripts/seed_db_docker.py"
+	@echo ""
+	@echo "── Demo event IDs present ────────────────"
+	@docker compose exec -T backend sh -c \
+		"grep -c 'demo-sh-' /shared_scripts/seed_db_docker.py && echo 'stubhub demo IDs: ✓' || echo 'stubhub demo IDs: ✗ MISSING'"
+	@docker compose exec -T backend sh -c \
+		"grep -c 'demo-sg-' /shared_scripts/seed_db_docker.py && echo 'seatgeek demo IDs: ✓' || echo 'seatgeek demo IDs: ✗ MISSING'"
+	@echo ""
+	@echo "── Backfill logic present ────────────────"
+	@docker compose exec -T backend sh -c \
+		"grep -c 'phase2 backfill' /shared_scripts/seed_db_docker.py && echo 'backfill logic: ✓' || echo 'backfill logic: ✗ MISSING'"
+	@docker compose exec -T backend sh -c \
+		"grep -c 'sa_update' /shared_scripts/seed_db_docker.py && echo 'core UPDATE: ✓' || echo 'core UPDATE: ✗ MISSING'"
+	@echo ""
+	@echo "── Seed version string ───────────────────"
+	@docker compose exec -T backend sh -c \
+		"grep 'SEED_VERSION' /shared_scripts/seed_db_docker.py || echo 'SEED_VERSION: not found'"
+	@echo ""
+	@echo "── Host script vs container md5 ──────────"
+	@md5sum scripts/seed_db_docker.py 2>/dev/null && \
+		docker compose exec -T backend md5sum /shared_scripts/seed_db_docker.py || true
+	@echo ""
+
+# ── bootstrap-status ──────────────────────────────────────────────────────────
+# Shows the runtime state of the demo seed bootstrap from the DB perspective.
+bootstrap-status:
+	@echo "══════════════════════════════════════════"
+	@echo "  BOOTSTRAP STATUS"
+	@echo "══════════════════════════════════════════"
+	@echo ""
+	@echo "── Migration head ────────────────────────"
+	@docker compose exec -T backend alembic current 2>/dev/null || echo "  alembic not accessible"
+	@echo ""
+	@echo "── Backend seed log (last restart) ───────"
+	@docker compose logs backend --tail=500 2>/dev/null | grep -E "^.*SEED:" | tail -30 || echo "  no SEED: lines found"
+	@echo ""
+	@echo "── tracked_events resolution state ───────"
+	@docker compose exec -T db psql -U concert -d concert_tracker -c \
+		"SELECT te.id, m.slug, te.external_event_id, te.resolution_source, e.title \
+		 FROM tracked_events te \
+		 JOIN events e ON e.id = te.event_id \
+		 JOIN marketplaces m ON m.id = te.marketplace_id \
+		 ORDER BY e.title, m.slug;"
+	@echo ""
+	@echo "── Demo ID presence ──────────────────────"
+	@docker compose exec -T db psql -U concert -d concert_tracker -t -c \
+		"SELECT 'demo IDs present:  ' || COUNT(*) || '/' || \
+		        (SELECT COUNT(*) FROM tracked_events WHERE is_active=true) || ' tracked_events' \
+		 FROM tracked_events WHERE external_event_id LIKE 'demo-%';" | grep -v "^$$"
+	@docker compose exec -T db psql -U concert -d concert_tracker -t -c \
+		"SELECT 'resolution_source: seeded=' || \
+		        SUM(CASE WHEN resolution_source='seeded' THEN 1 ELSE 0 END) || \
+		        ' api=' || \
+		        SUM(CASE WHEN resolution_source LIKE 'resolved_%' THEN 1 ELSE 0 END) || \
+		        ' null=' || \
+		        SUM(CASE WHEN resolution_source IS NULL THEN 1 ELSE 0 END) \
+		 FROM tracked_events WHERE is_active=true;" | grep -v "^$$"
+	@echo ""
+
 debug-snapshot:
 	@echo "══════════════════════════════════════════"
 	@echo "  PIPELINE INVARIANT SNAPSHOT"
@@ -60,7 +129,7 @@ debug-snapshot:
 	@echo ""
 	@echo "── Stage 2: Resolution (external IDs) ────"
 	@docker compose exec -T db psql -U concert -d concert_tracker -c \
-		"SELECT te.id, m.slug AS marketplace, te.external_event_id, \
+		"SELECT te.id, m.slug AS marketplace, te.external_event_id, te.resolution_source, \
 		        CASE WHEN te.external_event_id IS NULL THEN 'PENDING' ELSE 'RESOLVED' END AS stage2, \
 		        e.title \
 		 FROM tracked_events te \
@@ -88,13 +157,13 @@ debug-snapshot:
 	@echo ""
 	@echo "── Collector + resolver log (errors/warns) "
 	@docker compose logs backend --tail=200 2>/dev/null | \
-		grep -iE "resolver|STAGE_GATE|ERROR|WARNING|Cannot resolve" | tail -20 || true
+		grep -iE "SEED:|resolver|STAGE_GATE|ERROR|WARNING|Cannot resolve" | tail -25 || true
 	@echo ""
 	@echo "── Stage 3 eligibility ───────────────────"
 	@docker compose exec -T db psql -U concert -d concert_tracker -c \
 		"SELECT e.title, m.slug, \
 		        CASE WHEN te.external_event_id IS NOT NULL THEN 'ELIGIBLE' ELSE 'BLOCKED' END AS stage3, \
-		        te.last_polled_at::time, te.next_poll_at::time \
+		        te.resolution_source, te.last_polled_at::time, te.next_poll_at::time \
 		 FROM tracked_events te \
 		 JOIN events e ON e.id = te.event_id \
 		 JOIN marketplaces m ON m.id = te.marketplace_id \
@@ -118,6 +187,14 @@ debug-snapshot:
 		 CASE WHEN COUNT(*) = 0 THEN 'PASS' \
 		      ELSE 'FAIL — ' || COUNT(*) || ' poll_run(s) with error=unresolved_event_id' END \
 		 FROM poll_runs WHERE error_message = 'unresolved_event_id';" | grep -v "^$$"
+	@docker compose exec -T db psql -U concert -d concert_tracker -t -c \
+		"SELECT 'Invariant D (Demo seed consistency):      ' || \
+		 CASE WHEN COUNT(*) = 0 THEN \
+		      'FAIL — 0 demo IDs in tracked_events (seed backfill did not execute)' \
+		 WHEN COUNT(*) < 6 THEN \
+		      'PARTIAL — ' || COUNT(*) || '/6 demo IDs seeded (check bootstrap-status)' \
+		 ELSE 'PASS — ' || COUNT(*) || '/6 demo tracked_events have seeded IDs' END \
+		 FROM tracked_events WHERE external_event_id LIKE 'demo-%' AND is_active = true;" | grep -v "^$$"
 	@echo ""
 
 build:

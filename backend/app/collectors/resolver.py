@@ -12,13 +12,15 @@ Resolution strategy per marketplace:
 import logging
 import re
 from datetime import timedelta
-from typing import Optional
+from typing import Optional, Tuple
 
 import httpx
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, update as sa_update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import TrackedEvent, Event, Marketplace
+
+_DEMO_ID_PREFIX = "demo-"
 
 logger = logging.getLogger(__name__)
 
@@ -68,9 +70,12 @@ class EventResolver:
     async def resolve_all_pending(self, session_factory) -> dict:
         """
         Find all active TrackedEvents with external_event_id=NULL and attempt
-        resolution for each. Returns {resolved, failed, already_set}.
+        resolution for each. Returns {resolved, failed, already_set, demo_skipped}.
+
+        TrackedEvents whose external_event_id already starts with the demo prefix
+        are counted as already_set and never sent to marketplace APIs.
         """
-        counts = {"resolved": 0, "failed": 0, "already_set": 0}
+        counts = {"resolved": 0, "failed": 0, "already_set": 0, "demo_skipped": 0}
 
         async with session_factory() as db:
             rows = (await db.execute(
@@ -85,17 +90,24 @@ class EventResolver:
 
         for te, event, mp in rows:
             if te.external_event_id:
-                counts["already_set"] += 1
+                if str(te.external_event_id).startswith(_DEMO_ID_PREFIX):
+                    counts["demo_skipped"] += 1
+                    logger.debug(
+                        "RESOLVER: DEMO_FIXTURE skip te_id=%d mp=%s eid=%s",
+                        te.id, mp.slug, te.external_event_id,
+                    )
+                else:
+                    counts["already_set"] += 1
                 continue
 
-            resolved = await self._resolve_for_marketplace(event, mp.slug, te.external_url)
+            resolved, source = await self._resolve_for_marketplace(event, mp.slug, te.external_url)
 
             if resolved:
-                await self._persist(session_factory, te.id, resolved)
+                await self._persist(session_factory, te.id, resolved, source)
                 counts["resolved"] += 1
                 logger.info(
-                    "RESOLVER: resolved %s event_id=%s event='%s' tracked_event=%d",
-                    mp.slug, resolved, event.title, te.id,
+                    "RESOLVER: resolved %s event_id=%s event='%s' tracked_event=%d source=%s",
+                    mp.slug, resolved, event.title, te.id, source,
                 )
             else:
                 counts["failed"] += 1
@@ -105,29 +117,34 @@ class EventResolver:
                     mp.slug, event.title, te.id,
                 )
 
-        if counts["resolved"] or counts["failed"]:
+        if counts["resolved"] or counts["failed"] or counts["demo_skipped"]:
             logger.info(
-                "RESOLVER: cycle complete resolved=%d failed=%d already_set=%d",
-                counts["resolved"], counts["failed"], counts["already_set"],
+                "RESOLVER: cycle complete resolved=%d failed=%d already_set=%d demo_skipped=%d",
+                counts["resolved"], counts["failed"], counts["already_set"], counts["demo_skipped"],
             )
         return counts
 
     # ── Marketplace dispatch ──────────────────────────────────────────────────
 
-    async def _resolve_for_marketplace(self, event: Event, slug: str, external_url: Optional[str] = None) -> Optional[str]:
+    async def _resolve_for_marketplace(
+        self, event: Event, slug: str, external_url: Optional[str] = None
+    ) -> Tuple[Optional[str], str]:
+        """Returns (resolved_id_or_None, source_label)."""
         if slug == "stubhub":
-            return await self._resolve_stubhub(event, external_url)
+            result = await self._resolve_stubhub(event, external_url)
+            return result
         if slug == "seatgeek":
-            return await self._resolve_seatgeek(event, external_url)
+            result = await self._resolve_seatgeek(event, external_url)
+            return result
         logger.debug("No resolver implemented for marketplace '%s'", slug)
-        return None
+        return None, "none"
 
     # ── StubHub ───────────────────────────────────────────────────────────────
 
-    async def _resolve_stubhub(self, event: Event, external_url: Optional[str] = None) -> Optional[str]:
+    async def _resolve_stubhub(self, event: Event, external_url: Optional[str] = None) -> Tuple[Optional[str], str]:
         keywords = _artist_keywords(event)
         if not keywords:
-            return None
+            return None, "none"
 
         date_before = (event.event_date - timedelta(days=1)).strftime("%Y-%m-%dT00:00:00Z")
         date_after = (event.event_date + timedelta(days=2)).strftime("%Y-%m-%dT00:00:00Z")
@@ -146,7 +163,7 @@ class EventResolver:
             if resp.status_code == 200:
                 docs = resp.json().get("response", {}).get("docs", [])
                 if docs:
-                    return str(docs[0]["event_id"])
+                    return str(docs[0]["event_id"]), "resolved_api"
         except Exception as exc:
             logger.debug("RESOLVER: StubHub SOLR error: %s", exc)
 
@@ -154,9 +171,9 @@ class EventResolver:
         if external_url:
             event_id = await self._stubhub_extract_from_page(client, external_url)
             if event_id:
-                return event_id
+                return event_id, "resolved_page_fetch"
 
-        return None
+        return None, "none"
 
     async def _stubhub_extract_from_page(self, client: httpx.AsyncClient, url: str) -> Optional[str]:
         """Fetch StubHub page and extract event ID from embedded script data."""
@@ -182,10 +199,10 @@ class EventResolver:
 
     # ── SeatGeek ──────────────────────────────────────────────────────────────
 
-    async def _resolve_seatgeek(self, event: Event, external_url: Optional[str] = None) -> Optional[str]:
+    async def _resolve_seatgeek(self, event: Event, external_url: Optional[str] = None) -> Tuple[Optional[str], str]:
         keywords = _artist_keywords(event)
         if not keywords:
-            return None
+            return None, "none"
 
         performer_slug = _to_performer_slug(keywords)
         date_gte = (event.event_date - timedelta(days=1)).strftime("%Y-%m-%d")
@@ -196,18 +213,20 @@ class EventResolver:
         if self.settings.seatgeek_client_id:
             result = await self._seatgeek_official_search(client, performer_slug, date_gte, date_lte)
             if result:
-                return result
+                return result, "resolved_api"
 
         # Path 2: Internal API (unauthenticated)
         result = await self._seatgeek_internal_search(client, keywords, date_gte, date_lte)
         if result:
-            return result
+            return result, "resolved_api"
 
         # Path 3: Fetch external_url page, extract event ID from __NEXT_DATA__
         if external_url:
-            return await self._seatgeek_extract_from_page(client, external_url)
+            page_result = await self._seatgeek_extract_from_page(client, external_url)
+            if page_result:
+                return page_result, "resolved_page_fetch"
 
-        return None
+        return None, "none"
 
     async def _seatgeek_extract_from_page(self, client: httpx.AsyncClient, url: str) -> Optional[str]:
         """Fetch SeatGeek page and extract event ID from __NEXT_DATA__ or HTML patterns."""
@@ -294,12 +313,11 @@ class EventResolver:
     # ── Persistence ───────────────────────────────────────────────────────────
 
     @staticmethod
-    async def _persist(session_factory, tracked_event_id: int, resolved_id: str) -> None:
-        from sqlalchemy import update as sa_update
+    async def _persist(session_factory, tracked_event_id: int, resolved_id: str, source: str = "resolved_api") -> None:
         async with session_factory() as db:
             await db.execute(
                 sa_update(TrackedEvent)
                 .where(TrackedEvent.id == tracked_event_id)
-                .values(external_event_id=resolved_id)
+                .values(external_event_id=resolved_id, resolution_source=source)
             )
             await db.commit()

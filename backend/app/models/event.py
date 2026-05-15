@@ -49,6 +49,7 @@ class TrackedEvent(Base):
     marketplace_id: Mapped[int] = mapped_column(Integer, ForeignKey("marketplaces.id"), nullable=False)
     external_event_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     external_url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    resolution_source: Mapped[str | None] = mapped_column(String(30), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     poll_interval_minutes: Mapped[int] = mapped_column(Integer, default=60)
     last_polled_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

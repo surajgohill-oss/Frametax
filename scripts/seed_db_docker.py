@@ -8,11 +8,14 @@ from pathlib import Path
 sys.path.insert(0, "/app")
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update as sa_update, text
 from app.models import Venue, VenueSection, Marketplace, Event, TrackedEvent, Listing
 
 VENUE_MAP_DIR = Path("/shared/venue_maps")
 DATABASE_URL = "postgresql+asyncpg://concert:concert@db:5432/concert_tracker"
+
+# Bump this string whenever the seed data changes — visible in bootstrap-status.
+SEED_VERSION = "v4-resolution-source"
 
 
 def _canonical_id(title: str, venue_slug: str, event_date: datetime) -> str:
@@ -76,6 +79,7 @@ async def seed_venues(db):
 
 async def seed_demo_events(db):
     """3 realistic demo events so the dashboard is populated on first boot."""
+    print("SEED: startup entered")
     now = datetime.utcnow()
 
     DEMO_EVENTS = [
@@ -145,13 +149,15 @@ async def seed_demo_events(db):
     sg_r = await db.execute(select(Marketplace).where(Marketplace.slug == "seatgeek"))
     sg_mp = sg_r.scalar_one_or_none()
 
+    # ── Phase 1: ensure events + tracked_events exist ────────────────────────
+
     created_count = 0
     skipped_venues = []
     for demo in DEMO_EVENTS:
         venue_r = await db.execute(select(Venue).where(Venue.slug == demo["venue_slug"]))
         venue = venue_r.scalar_one_or_none()
         if not venue:
-            print(f"  skip event (venue missing): {demo['venue_slug']}")
+            print(f"SEED: skip event (venue missing): {demo['venue_slug']}")
             skipped_venues.append(demo["venue_slug"])
             continue
 
@@ -169,12 +175,11 @@ async def seed_demo_events(db):
             db.add(event)
             await db.flush()
             created_count += 1
-            print(f"  created: {demo['title']}")
+            print(f"SEED: created event '{demo['title']}'")
         else:
             created_count += 1
-            print(f"  exists:  {demo['title']}")
+            print(f"SEED: exists  event '{demo['title']}' id={event.id}")
 
-        # TrackedEvents for both marketplaces
         mp_pairs = [
             (stub_mp, "stubhub_url", "stubhub_event_id"),
             (sg_mp,   "seatgeek_url", "seatgeek_event_id"),
@@ -196,13 +201,17 @@ async def seed_demo_events(db):
                     marketplace_id=mp.id,
                     external_url=demo[url_key],
                     external_event_id=demo_eid,
+                    resolution_source="seeded" if demo_eid else None,
                     is_active=True,
                     poll_interval_minutes=60,
                     next_poll_at=datetime.utcnow() + timedelta(hours=1),
                 ))
-            elif te.external_event_id is None and demo_eid:
-                # Backfill missing IDs on existing rows (e.g. after a reset-less redeploy)
-                te.external_event_id = demo_eid
+                print(f"SEED: created tracked_event event_id={event.id} mp={mp.slug} eid={demo_eid}")
+            else:
+                print(
+                    f"SEED: tracked_events queried event_id={event.id} mp={mp.slug} "
+                    f"te_id={te.id} current_eid={te.external_event_id!r}"
+                )
 
         # Demo listings (stubhub) so dashboard stat cards show real numbers
         if stub_mp:
@@ -230,19 +239,82 @@ async def seed_demo_events(db):
                     ))
 
     await db.flush()
+
     if created_count == 0:
         raise RuntimeError(
             f"SEED FAILURE: All {len(DEMO_EVENTS)} demo events were skipped — "
             f"venues not found: {skipped_venues}. "
             "Check that venue JSON files exist in /shared/venue_maps and slugs match."
         )
-    print(f"  seed_demo_events: {created_count}/{len(DEMO_EVENTS)} events processed")
+    print(f"SEED: seed_demo_events phase1 complete {created_count}/{len(DEMO_EVENTS)} events")
+
+    # ── Phase 2: backfill external_event_id on existing rows ─────────────────
+    # Uses explicit Core UPDATE (not ORM attribute assignment) to guarantee the
+    # UPDATE reaches the database regardless of SQLAlchemy session state.
+
+    print("SEED: phase2 backfill — querying rows missing external_event_id")
+    missing_r = await db.execute(
+        select(TrackedEvent).where(TrackedEvent.external_event_id.is_(None))
+    )
+    missing_rows = missing_r.scalars().all()
+    print(f"SEED: rows missing external_event_id: {len(missing_rows)}")
+
+    # Build lookup: (event_id, marketplace_slug) → demo_eid
+    # We need marketplace slugs, so join through marketplace
+    eid_map: dict[tuple[int, str], str] = {}
+    for demo in DEMO_EVENTS:
+        demo_eid_map = {
+            "stubhub":  demo.get("stubhub_event_id"),
+            "seatgeek": demo.get("seatgeek_event_id"),
+        }
+        canonical = _canonical_id(demo["title"], demo["venue_slug"], demo["event_date"])
+        ev_r = await db.execute(select(Event).where(Event.canonical_id == canonical))
+        event = ev_r.scalar_one_or_none()
+        if event:
+            for mp_slug, eid in demo_eid_map.items():
+                if eid:
+                    eid_map[(event.id, mp_slug)] = eid
+
+    updated_count = 0
+    skipped_count = 0
+    for te in missing_rows:
+        # Resolve marketplace slug for this tracked_event
+        mp_r = await db.execute(
+            select(Marketplace).where(Marketplace.id == te.marketplace_id)
+        )
+        mp = mp_r.scalar_one_or_none()
+        if not mp:
+            skipped_count += 1
+            continue
+
+        demo_eid = eid_map.get((te.event_id, mp.slug))
+        if not demo_eid:
+            skipped_count += 1
+            print(f"SEED: no demo eid for te_id={te.id} event_id={te.event_id} mp={mp.slug} — stays NULL")
+            continue
+
+        # Explicit Core UPDATE — bypasses ORM change-tracking completely
+        result = await db.execute(
+            sa_update(TrackedEvent)
+            .where(TrackedEvent.id == te.id)
+            .values(external_event_id=demo_eid, resolution_source="seeded")
+        )
+        updated_count += 1
+        print(
+            f"SEED: updated te_id={te.id} event_id={te.event_id} mp={mp.slug} "
+            f"eid={demo_eid} source=seeded rows_matched={result.rowcount}"
+        )
+
+    print(
+        f"SEED: phase2 backfill complete "
+        f"updated={updated_count} skipped={skipped_count} total_missing={len(missing_rows)}"
+    )
+    print("SEED: commit executed")
     return created_count
 
 
 async def main():
     # Alembic owns schema — do NOT call create_all here.
-    # create_all would duplicate indexes: ORM-named on top of migration-named.
     engine = create_async_engine(DATABASE_URL, echo=False)
     S = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     async with S() as db:
@@ -251,7 +323,7 @@ async def main():
         await seed_demo_events(db)
         await db.commit()
     await engine.dispose()
-    print("Seed complete.")
+    print(f"SEED: complete version={SEED_VERSION}")
 
 
 asyncio.run(main())
