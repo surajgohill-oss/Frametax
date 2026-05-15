@@ -2,10 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from app.database import get_db
+from app.database import get_db, AsyncSessionLocal
 from app.models import TrackedEvent, PollRun
+from app.config import get_settings
 
 router = APIRouter(prefix="/poll", tags=["poll"])
+settings = get_settings()
 
 
 @router.post("/events/{event_id}/trigger")
@@ -17,6 +19,20 @@ async def trigger_poll(event_id: int, background_tasks: BackgroundTasks, db: Asy
     for te in tracked:
         background_tasks.add_task(run_poll_for_tracked_event, te.id)
     return {"message": f"Triggered {len(tracked)} poll(s)", "count": len(tracked)}
+
+
+@router.post("/resolve-ids")
+async def trigger_resolve_ids(background_tasks: BackgroundTasks):
+    """Manually trigger the event ID resolution job for all pending TrackedEvents."""
+    from app.collectors.resolver import EventResolver
+    async def _run():
+        resolver = EventResolver(settings)
+        try:
+            return await resolver.resolve_all_pending(AsyncSessionLocal)
+        finally:
+            await resolver.close()
+    background_tasks.add_task(_run)
+    return {"message": "Event ID resolution triggered"}
 
 
 @router.get("/events/{event_id}/runs")

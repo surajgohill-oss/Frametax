@@ -10,6 +10,7 @@ from app.config import get_settings
 from app.database import AsyncSessionLocal
 from app.models import TrackedEvent, Event, Listing, ListingSnapshot, PollRun, Marketplace
 from app.collectors.registry import get_collector
+from app.collectors.resolver import EventResolver
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -71,8 +72,16 @@ async def start_scheduler():
         replace_existing=True,
         max_instances=1,
     )
+    _scheduler.add_job(
+        _resolve_pending_event_ids,
+        trigger=IntervalTrigger(minutes=30),
+        id="event_id_resolver",
+        replace_existing=True,
+        max_instances=1,
+        next_run_time=datetime.utcnow(),  # run immediately on startup
+    )
     _scheduler.start()
-    logger.info("Scheduler started — adaptive polling active")
+    logger.info("Scheduler started — adaptive polling + event ID resolver active")
 
 
 async def stop_scheduler():
@@ -82,6 +91,17 @@ async def stop_scheduler():
 
 
 # ── Core poll loop ─────────────────────────────────────────────────────────────
+
+async def _resolve_pending_event_ids():
+    """Enrich TrackedEvents that have no external_event_id by searching marketplaces."""
+    resolver = EventResolver(settings)
+    try:
+        counts = await resolver.resolve_all_pending(AsyncSessionLocal)
+        if counts["resolved"]:
+            logger.info("ID resolution: %d resolved, %d failed", counts["resolved"], counts["failed"])
+    finally:
+        await resolver.close()
+
 
 async def _check_due_events():
     async with AsyncSessionLocal() as db:
