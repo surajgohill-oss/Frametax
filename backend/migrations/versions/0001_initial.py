@@ -88,6 +88,7 @@ def upgrade() -> None:
         sa.Column("is_active", sa.Boolean(), default=True),
         sa.Column("first_seen_at", sa.DateTime(), server_default=sa.func.now()),
         sa.Column("last_seen_at", sa.DateTime(), server_default=sa.func.now()),
+        sa.Column("extra", postgresql.JSONB(), nullable=True),
         sa.UniqueConstraint("event_id", "marketplace_id", "external_listing_id"),
     )
     op.create_table("listing_snapshots",
