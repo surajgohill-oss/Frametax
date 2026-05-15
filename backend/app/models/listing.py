@@ -8,8 +8,8 @@ from app.database import Base
 class Listing(Base):
     __tablename__ = "listings"
     __table_args__ = (
-        Index("ix_listings_event_marketplace", "event_id", "marketplace_id"),
-        Index("ix_listings_event_section", "event_id", "section_id"),
+        Index("ix_listings_event_mp", "event_id", "marketplace_id"),
+        Index("ix_listings_event_sec", "event_id", "section_id"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -37,8 +37,8 @@ class Listing(Base):
 class ListingSnapshot(Base):
     __tablename__ = "listing_snapshots"
     __table_args__ = (
-        Index("ix_snapshots_event_ts", "event_id", "snapshot_at"),
-        Index("ix_snapshots_event_mp_ts", "event_id", "marketplace_id", "snapshot_at"),
+        Index("ix_snap_event_ts", "event_id", "snapshot_at"),
+        Index("ix_snap_event_mp_ts", "event_id", "marketplace_id", "snapshot_at"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)

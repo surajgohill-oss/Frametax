@@ -10,7 +10,6 @@ sys.path.insert(0, "/app")
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy import select
 from app.models import Venue, VenueSection, Marketplace, Event, TrackedEvent, Listing
-from app.database import Base
 
 VENUE_MAP_DIR = Path("/shared/venue_maps")
 DATABASE_URL = "postgresql+asyncpg://concert:concert@db:5432/concert_tracker"
@@ -226,9 +225,9 @@ async def seed_demo_events(db):
 
 
 async def main():
+    # Alembic owns schema — do NOT call create_all here.
+    # create_all would duplicate indexes: ORM-named on top of migration-named.
     engine = create_async_engine(DATABASE_URL, echo=False)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
     S = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     async with S() as db:
         await seed_marketplaces(db)

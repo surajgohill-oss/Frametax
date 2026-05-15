@@ -18,8 +18,37 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 
 
+_REQUIRED_COLUMNS = [
+    ("events",            "status"),
+    ("listings",          "extra"),
+    ("listings",          "fees"),
+    ("listings",          "all_in_price"),
+    ("listing_snapshots", "fees"),
+    ("listing_snapshots", "all_in_price"),
+]
+
+
+async def _assert_schema() -> None:
+    async with AsyncSessionLocal() as db:
+        for table, column in _REQUIRED_COLUMNS:
+            row = await db.execute(
+                text(
+                    "SELECT 1 FROM information_schema.columns "
+                    "WHERE table_name = :t AND column_name = :c"
+                ),
+                {"t": table, "c": column},
+            )
+            if not row.scalar_one_or_none():
+                raise RuntimeError(
+                    f"SCHEMA ASSERTION FAILED: {table}.{column} is missing. "
+                    "Run 'alembic upgrade head' and restart."
+                )
+    logger.info("Schema assertion passed — all required columns present")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    await _assert_schema()
     from app.scheduler import start_scheduler
     await start_scheduler()
     yield

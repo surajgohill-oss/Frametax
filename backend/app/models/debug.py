@@ -7,9 +7,9 @@ from app.database import Base
 class ScraperErrorLog(Base):
     __tablename__ = "scraper_error_logs"
     __table_args__ = (
-        Index("ix_errors_marketplace_ts", "marketplace", "timestamp"),
-        Index("ix_errors_event_id", "event_id"),
-        Index("ix_errors_type", "error_type"),
+        Index("ix_scraper_errors_mp_ts", "marketplace", "timestamp"),
+        Index("ix_scraper_errors_event", "event_id"),
+        Index("ix_scraper_errors_type", "error_type"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -39,7 +39,7 @@ class ScraperErrorLog(Base):
 class FailureMemory(Base):
     __tablename__ = "failure_memory"
     __table_args__ = (
-        Index("ix_failure_memory_marketplace", "marketplace", "error_type"),
+        Index("ix_failure_memory_mp_type", "marketplace", "error_type"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
