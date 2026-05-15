@@ -90,14 +90,34 @@ debug-snapshot:
 	@docker compose logs backend --tail=200 2>/dev/null | \
 		grep -iE "resolver|STAGE_GATE|ERROR|WARNING|Cannot resolve" | tail -20 || true
 	@echo ""
-	@echo "── Invariant violations ──────────────────"
+	@echo "── Stage 3 eligibility ───────────────────"
+	@docker compose exec -T db psql -U concert -d concert_tracker -c \
+		"SELECT e.title, m.slug, \
+		        CASE WHEN te.external_event_id IS NOT NULL THEN 'ELIGIBLE' ELSE 'BLOCKED' END AS stage3, \
+		        te.last_polled_at::time, te.next_poll_at::time \
+		 FROM tracked_events te \
+		 JOIN events e ON e.id = te.event_id \
+		 JOIN marketplaces m ON m.id = te.marketplace_id \
+		 WHERE te.is_active = true \
+		 ORDER BY e.title, m.slug;"
+	@echo ""
+	@echo "── Invariants ────────────────────────────"
 	@docker compose exec -T db psql -U concert -d concert_tracker -t -c \
-		"SELECT 'Stage 2 pending: ' || COUNT(*) || ' tracked_event(s) have no external_event_id' \
-		 FROM tracked_events WHERE external_event_id IS NULL AND is_active = true;" | grep -v "^$$" || true
+		"SELECT 'Invariant A (Stage 3 only on resolved): ' || \
+		 CASE WHEN COUNT(*) = 0 THEN 'PASS' ELSE 'FAIL — ' || COUNT(*) || ' poll_run(s) on unresolved events' END \
+		 FROM poll_runs pr \
+		 JOIN tracked_events te ON te.id = pr.tracked_event_id \
+		 WHERE te.external_event_id IS NULL AND pr.status != 'running';" | grep -v "^$$"
 	@docker compose exec -T db psql -U concert -d concert_tracker -t -c \
-		"SELECT 'Stage 3 empty: ' || COUNT(DISTINCT e.id) || ' event(s) have 0 active listings' \
-		 FROM events e WHERE NOT EXISTS \
-		   (SELECT 1 FROM listings l WHERE l.event_id = e.id AND l.is_active = true);" | grep -v "^$$" || true
+		"SELECT 'Invariant B (Stage 2 resolving):          ' || \
+		 CASE WHEN COUNT(*) = 0 THEN 'PASS — all active events resolved' \
+		      ELSE 'PENDING — ' || COUNT(*) || ' tracked_event(s) awaiting resolution' END \
+		 FROM tracked_events WHERE external_event_id IS NULL AND is_active = true;" | grep -v "^$$"
+	@docker compose exec -T db psql -U concert -d concert_tracker -t -c \
+		"SELECT 'Invariant C (No orphan poll_runs):        ' || \
+		 CASE WHEN COUNT(*) = 0 THEN 'PASS' \
+		      ELSE 'FAIL — ' || COUNT(*) || ' poll_run(s) with error=unresolved_event_id' END \
+		 FROM poll_runs WHERE error_message = 'unresolved_event_id';" | grep -v "^$$"
 	@echo ""
 
 build:

@@ -94,20 +94,20 @@ class EventResolver:
                 await self._persist(session_factory, te.id, resolved)
                 counts["resolved"] += 1
                 logger.info(
-                    "Resolved %s event ID %s for '%s' (tracked_event %d)",
+                    "RESOLVER: resolved %s event_id=%s event='%s' tracked_event=%d",
                     mp.slug, resolved, event.title, te.id,
                 )
             else:
                 counts["failed"] += 1
                 logger.warning(
-                    "Could not resolve %s event ID for '%s' (tracked_event %d) — "
-                    "will retry next cycle",
+                    "RESOLVER: DATA_GAP — could not resolve %s event_id for '%s' "
+                    "(tracked_event=%d) — will retry next cycle",
                     mp.slug, event.title, te.id,
                 )
 
         if counts["resolved"] or counts["failed"]:
             logger.info(
-                "EventResolver cycle complete — resolved=%d failed=%d already_set=%d",
+                "RESOLVER: cycle complete resolved=%d failed=%d already_set=%d",
                 counts["resolved"], counts["failed"], counts["already_set"],
             )
         return counts

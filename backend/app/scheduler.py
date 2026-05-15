@@ -97,8 +97,11 @@ async def _resolve_pending_event_ids():
     resolver = EventResolver(settings)
     try:
         counts = await resolver.resolve_all_pending(AsyncSessionLocal)
-        if counts["resolved"]:
-            logger.info("ID resolution: %d resolved, %d failed", counts["resolved"], counts["failed"])
+        if counts["resolved"] or counts["failed"]:
+            logger.info(
+                "RESOLVER: scheduler cycle resolved=%d failed=%d already_set=%d",
+                counts["resolved"], counts["failed"], counts["already_set"],
+            )
     finally:
         await resolver.close()
 
@@ -311,7 +314,7 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
 
         await db.commit()
         logger.info(
-            "Poll [event=%d %s]: %d listings, %d new, %d gone",
+            "COLLECTOR: poll event=%d %s listings=%d new=%d gone=%d",
             result.event_id, result.marketplace_slug,
             len(result.listings), new_count, disappeared,
         )

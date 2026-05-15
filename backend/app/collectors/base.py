@@ -69,7 +69,7 @@ class BaseCollector(DebugMixin, ABC):
                 listings=listings, fetched_at=datetime.utcnow(), raw_count=len(listings),
             )
         except Exception as exc:
-            self.logger.exception("Collection failed: %s", exc)
+            self.logger.exception("COLLECTOR: INTEGRATION_FAILURE %s — %s", self.marketplace_slug, exc)
             return CollectorResult(
                 marketplace_slug=self.marketplace_slug, event_id=tracked_event.event_id,
                 listings=[], fetched_at=datetime.utcnow(), raw_count=0, error=str(exc),
@@ -93,11 +93,11 @@ class BaseCollector(DebugMixin, ABC):
                 )
                 await db.commit()
             self.logger.info(
-                "Persisted resolved event ID %s for tracked_event %d",
+                "RESOLVER: persisted event_id=%s tracked_event=%d",
                 resolved_id, tracked_event_id,
             )
         except Exception as exc:
-            self.logger.warning("Failed to persist resolved event ID: %s", exc)
+            self.logger.warning("RESOLVER: failed to persist event_id — %s", exc)
 
     @abstractmethod
     async def _fetch_listings(self, tracked_event) -> list[RawListing]: ...
