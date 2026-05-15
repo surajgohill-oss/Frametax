@@ -24,12 +24,14 @@ logs-%:
 
 verify:
 	@echo "── Dependency check ──────────────────────"
-	@docker compose exec -T frontend node -e \
-		"try{require('tailwindcss');console.log('  tailwindcss  ✓')}catch(e){console.error('  tailwindcss  ✗ MISSING — run: make reset');process.exit(1)}"
-	@docker compose exec -T frontend node -e \
-		"try{require('./postcss.config.js');console.log('  postcss cfg  ✓')}catch(e){console.error('  postcss cfg  ✗',e.message);process.exit(1)}"
 	@docker compose exec -T frontend sh -c \
-		"ls tailwind.config.js >/dev/null 2>&1 && echo '  tailwind cfg ✓' || (echo '  tailwind cfg ✗ tailwind.config.js missing'; exit 1)"
+		"[ -f /deps/node_modules/.bin/next ] && echo '  next binary  ✓ (/deps)' || (echo '  next binary  ✗ MISSING'; exit 1)"
+	@docker compose exec -T frontend node -e \
+		"try{require('tailwindcss');console.log('  tailwindcss  ✓')}catch(e){console.error('  tailwindcss  ✗',e.message);process.exit(1)}"
+	@docker compose exec -T frontend sh -c \
+		"[ -f /app/tailwind.config.js ] && echo '  tailwind cfg ✓' || (echo '  tailwind cfg ✗ missing'; exit 1)"
+	@docker compose exec -T frontend sh -c \
+		"[ -f /app/postcss.config.js ] && echo '  postcss cfg  ✓' || (echo '  postcss cfg  ✗ missing'; exit 1)"
 	@echo ""
 
 status:
@@ -51,9 +53,18 @@ build:
 	docker compose build --no-cache
 
 _wait:
-	@echo "Waiting for services to become healthy..."
+	@echo "Waiting for db..."
 	@for i in $$(seq 1 30); do \
 		docker compose exec -T db pg_isready -U concert -q 2>/dev/null && break; \
 		sleep 2; \
 	done
-	@sleep 3
+	@echo "Waiting for backend..."
+	@for i in $$(seq 1 45); do \
+		curl -sf http://localhost:8000/api/health -o /dev/null 2>/dev/null && echo "  backend ready." && break; \
+		sleep 3; \
+	done
+	@echo "Waiting for frontend (Next.js cold start)..."
+	@for i in $$(seq 1 40); do \
+		curl -sf http://localhost:3000 -o /dev/null 2>/dev/null && echo "  frontend ready." && break; \
+		sleep 5; \
+	done

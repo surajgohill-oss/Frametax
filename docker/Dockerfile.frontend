@@ -1,11 +1,21 @@
 FROM node:20-alpine
 
-WORKDIR /app
-
+# Install ALL deps at /deps — permanently outside the ./frontend bind-mount zone.
+# Docker never mounts anything over /deps, so this directory survives:
+#   - docker compose up --build
+#   - docker compose down -v
+#   - bind mounts to /app
+# Zero anonymous-volume seeding quirks. Zero self-healing logic needed.
+WORKDIR /deps
 COPY package*.json ./
-
 RUN npm install
 
-EXPOSE 3000
+# Expose binaries and module resolution globally.
+# npm prepends ./node_modules/.bin when running scripts, but /deps/node_modules/.bin
+# is the fallback that always exists — so `next` is always found.
+ENV PATH="/deps/node_modules/.bin:${PATH}"
+ENV NODE_PATH="/deps/node_modules"
 
-CMD ["sh", "-c", "cd /app && ([ -f /app/node_modules/.bin/next ] || npm install) && npm run dev"]
+WORKDIR /app
+EXPOSE 3000
+CMD ["npm", "run", "dev"]
