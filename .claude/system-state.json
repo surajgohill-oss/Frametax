@@ -1,6 +1,6 @@
 {
-  "docker_status": "broken",
-  "backend_status": "unknown",
+  "docker_status": "broken — sandbox has no dockerd process; stale socket at /var/run/docker.sock (mtime May 14 17:25); no containerd process found",
+  "backend_status": "unknown — cannot reach; Docker daemon absent in sandbox",
   "runtime_verified_steps": [],
   "static_verified_steps": [
     "test_lifecycle_time_sim.py: all 55 boundary checks PASS (simulated against inline scheduler logic)",
@@ -15,16 +15,29 @@
     "55-check lifecycle time-sim full run: 55/55 PASS — executed against inlined scheduler logic without Docker"
   ],
   "open_tasks": [
-    "BLOCKING: Docker daemon not running — rebuild of Dockerfile.backend (Task C Playwright fix) cannot be verified",
-    "Stage 3 listings = 0: will self-resolve after Docker rebuild + Playwright fix, pending runtime confirmation"
+    "BLOCKING: No dockerd in sandbox — runtime verification requires user to run tests on their Mac directly",
+    "BLOCKING: Dockerfile.backend rebuild (Task C Playwright fix) cannot execute from this sandbox",
+    "Stage 3 listings = 0: pending runtime verification after Docker rebuild on Mac"
   ],
-  "failed_steps": [],
+  "failed_steps": [
+    "docker info — daemon unreachable (no dockerd process in sandbox, stale socket mtime May 14)"
+  ],
   "last_verified_step": "static audit of all modified files — commit 2b87eb8",
   "assumptions": [
-    "Docker Desktop runs on user's Mac, not in this sandbox",
-    "make reset / docker compose build --no-cache backend is required to activate Dockerfile.backend changes",
-    "lifecycle-time-sim test runs inside Docker container via make lifecycle-time-sim-test"
+    "This sandbox is a Linux container without a Docker daemon",
+    "Docker Desktop runs on the user's Mac — this agent cannot reach it",
+    "All code changes are committed and pushed (HEAD: a12eaff)",
+    "Runtime verification must be performed by the user on their Mac"
   ],
+  "infrastructure_diagnosis": {
+    "socket_exists": true,
+    "socket_path": "/var/run/docker.sock",
+    "socket_mtime": "2026-05-14T17:25:49Z",
+    "dockerd_process": false,
+    "containerd_process": false,
+    "systemd_available": false,
+    "sandbox_type": "Linux container (non-systemd, no init daemon)"
+  },
   "last_updated": "2026-05-15",
-  "head_commit": "2b87eb8"
+  "head_commit": "a12eaff"
 }
