@@ -1,4 +1,5 @@
-.PHONY: up down reset logs status build verify debug-snapshot verify-seed-code bootstrap-status
+.PHONY: up down reset logs status build verify debug-snapshot verify-seed-code bootstrap-status \
+        e2e-discovery-test discovery-dedupe-test lifecycle-time-sim-test
 
 up:
 	docker compose up --build -d
@@ -118,6 +119,47 @@ bootstrap-status:
 		 FROM tracked_events WHERE is_active=true;" | grep -v "^$$"
 	@echo ""
 
+# ── Validation harness ─────────────────────────────────────────────────────────
+
+e2e-discovery-test:
+	@echo "══════════════════════════════════════════"
+	@echo "  E2E DISCOVERY PIPELINE TEST"
+	@echo "══════════════════════════════════════════"
+	@docker compose exec -T backend python /shared_scripts/test_e2e_discovery.py; \
+		EXIT=$$?; \
+		if [ $$EXIT -eq 0 ]; then \
+			echo ""; echo "  ✓ e2e-discovery-test PASSED"; \
+		else \
+			echo ""; echo "  ✗ e2e-discovery-test FAILED (exit $$EXIT)"; \
+		fi; \
+		exit $$EXIT
+
+discovery-dedupe-test:
+	@echo "══════════════════════════════════════════"
+	@echo "  DISCOVERY DEDUPLICATION TEST"
+	@echo "══════════════════════════════════════════"
+	@docker compose exec -T backend python /shared_scripts/test_discovery_dedupe.py; \
+		EXIT=$$?; \
+		if [ $$EXIT -eq 0 ]; then \
+			echo ""; echo "  ✓ discovery-dedupe-test PASSED"; \
+		else \
+			echo ""; echo "  ✗ discovery-dedupe-test FAILED (exit $$EXIT)"; \
+		fi; \
+		exit $$EXIT
+
+lifecycle-time-sim-test:
+	@echo "══════════════════════════════════════════"
+	@echo "  LIFECYCLE + POLLING POLICY TIME-SIM"
+	@echo "══════════════════════════════════════════"
+	@docker compose exec -T backend python /shared_scripts/test_lifecycle_time_sim.py; \
+		EXIT=$$?; \
+		if [ $$EXIT -eq 0 ]; then \
+			echo ""; echo "  ✓ lifecycle-time-sim-test PASSED"; \
+		else \
+			echo ""; echo "  ✗ lifecycle-time-sim-test FAILED (exit $$EXIT)"; \
+		fi; \
+		exit $$EXIT
+
 debug-snapshot:
 	@echo "══════════════════════════════════════════"
 	@echo "  PIPELINE INVARIANT SNAPSHOT"
@@ -211,6 +253,20 @@ debug-snapshot:
 		 CASE WHEN COUNT(*) = 0 THEN 'PASS' \
 		      ELSE 'FAIL — ' || COUNT(*) || ' tracked_event(s) lifecycle_phase=completed but is_active=true' END \
 		 FROM tracked_events WHERE lifecycle_phase = 'completed' AND is_active = true;" | grep -v "^$$"
+	@echo ""
+	@echo "── Discovery metrics (current log window) ───"
+	@docker compose logs backend --tail=1000 2>/dev/null | \
+		grep -c "DISCOVERY: cycle complete" 2>/dev/null | \
+		xargs -I{} echo "  discovery_run_count (in log window): {}" || echo "  discovery_run_count: 0"
+	@docker compose logs backend --tail=1000 2>/dev/null | \
+		grep "DISCOVERY: cycle complete" | tail -1 | \
+		sed 's/backend-1  | //' | awk '{print "  last_discovery_run_at:              " $$1 " " $$2}' \
+		|| echo "  last_discovery_run_at:              (no cycles in log window)"
+	@docker compose logs backend --tail=1000 2>/dev/null | \
+		grep "DISCOVERY: cycle complete" | \
+		grep -oP 'duplicate=\K[0-9]+' | \
+		awk '{s+=$$1} END {print "  dedupe_skips_count (duplicates):    " (s ? s : 0)}' \
+		|| echo "  dedupe_skips_count: 0"
 	@echo ""
 
 build:
