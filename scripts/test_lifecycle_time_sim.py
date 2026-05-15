@@ -75,7 +75,7 @@ check("7h59m before → 15",    compute_poll_interval_minutes(at(hours=7, minute
 print()
 print("── Boundary: exactly 8 h (NOT < 8h → falls to 60 min tier) ")
 
-check("8h exact     → 60",    compute_poll_interval_minutes(at(hours=8)),         60,
+check("8h exact     → 60",    compute_poll_interval_minutes(at(hours=8, milliseconds=100)), 60,
       "8h = 28800s, NOT < 28800s")
 check("8h + 1 s     → 60",    compute_poll_interval_minutes(at(hours=8, seconds=1)), 60)
 check("8h - 1 s     → 15",    compute_poll_interval_minutes(at(hours=8) - timedelta(seconds=1)), 15)
@@ -90,7 +90,7 @@ check("47h59m before → 60",   compute_poll_interval_minutes(at(hours=47, minut
 print()
 print("── Boundary: exactly 2 d (NOT < 2d → falls to 240 min tier)")
 
-check("2d exact     → 240",   compute_poll_interval_minutes(at(days=2)),          240,
+check("2d exact     → 240",   compute_poll_interval_minutes(at(days=2, milliseconds=100)), 240,
       "2d = 172800s, NOT < 172800s")
 check("2d + 1 s     → 240",   compute_poll_interval_minutes(at(days=2, seconds=1)), 240)
 check("2d - 1 s     → 60",    compute_poll_interval_minutes(at(days=2) - timedelta(seconds=1)), 60)
@@ -105,7 +105,7 @@ check("9d23h before → 240",   compute_poll_interval_minutes(at(days=9, hours=2
 print()
 print("── Boundary: exactly 10 d (NOT < 10d → 1440 min tier) ─────")
 
-check("10d exact    → 1440",  compute_poll_interval_minutes(at(days=10)),         1440,
+check("10d exact    → 1440",  compute_poll_interval_minutes(at(days=10, milliseconds=100)), 1440,
       "10d = 864000s, NOT < 864000s")
 check("10d + 1 s    → 1440",  compute_poll_interval_minutes(at(days=10, seconds=1)), 1440)
 check("10d - 1 s    → 240",   compute_poll_interval_minutes(at(days=10) - timedelta(seconds=1)), 240)
@@ -123,21 +123,21 @@ print()
 print("── Monotonicity: interval never increases as event approaches ")
 
 _sequence = [
-    (at(days=30),                  1440),
-    (at(days=10),                  1440),   # boundary — still 1440
-    (at(days=10) - timedelta(seconds=1), 240),
-    (at(days=5),                    240),
-    (at(days=2),                    240),   # boundary — still 240
-    (at(days=2)  - timedelta(seconds=1),  60),
-    (at(hours=20),                   60),
-    (at(hours=8),                    60),   # boundary — still 60
-    (at(hours=8)  - timedelta(seconds=1), 15),
-    (at(hours=4),                    15),
-    (at(minutes=1),                  15),
-    (at(minutes=-1),                  5),
-    (at(minutes=-4),                  5),
-    (at(minutes=-6),               None),
-    (at(hours=-3),                 None),
+    (at(days=30),                          1440),
+    (at(days=10, milliseconds=100),        1440),   # boundary — still 1440
+    (at(days=10) - timedelta(seconds=1),    240),
+    (at(days=5),                            240),
+    (at(days=2, milliseconds=100),          240),   # boundary — still 240
+    (at(days=2)  - timedelta(seconds=1),     60),
+    (at(hours=20),                           60),
+    (at(hours=8, milliseconds=100),          60),   # boundary — still 60
+    (at(hours=8)  - timedelta(seconds=1),    15),
+    (at(hours=4),                            15),
+    (at(minutes=1),                          15),
+    (at(minutes=-1),                          5),
+    (at(minutes=-4),                          5),
+    (at(minutes=-6),                       None),
+    (at(hours=-3),                         None),
 ]
 
 prev_label = None
@@ -162,7 +162,7 @@ check("20d23h before → active",        compute_lifecycle_phase(at(days=20, hou
 print()
 print("── Boundary: exactly 21 d (NOT < 21d → pre_admission) ─────")
 
-check("21d exact     → pre_admission", compute_lifecycle_phase(at(days=21)),      "pre_admission",
+check("21d exact     → pre_admission", compute_lifecycle_phase(at(days=21, milliseconds=100)), "pre_admission",
       "21d = 1814400s, NOT < 1814400s")
 check("21d + 1 s     → pre_admission", compute_lifecycle_phase(at(days=21, seconds=1)), "pre_admission")
 check("21d - 1 s     → active",        compute_lifecycle_phase(at(days=21) - timedelta(seconds=1)), "active")

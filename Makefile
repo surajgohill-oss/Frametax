@@ -264,7 +264,7 @@ debug-snapshot:
 		|| echo "  last_discovery_run_at:              (no cycles in log window)"
 	@docker compose logs backend --tail=1000 2>/dev/null | \
 		grep "DISCOVERY: cycle complete" | \
-		grep -oP 'duplicate=\K[0-9]+' | \
+		grep -oE 'duplicate=[0-9]+' | grep -oE '[0-9]+' | \
 		awk '{s+=$$1} END {print "  dedupe_skips_count (duplicates):    " (s ? s : 0)}' \
 		|| echo "  dedupe_skips_count: 0"
 	@echo ""
