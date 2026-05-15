@@ -86,6 +86,8 @@ async def seed_demo_events(db):
             "event_date": now + timedelta(days=45),
             "stubhub_url": "https://www.stubhub.com/kendrick-lamar-los-angeles-tickets",
             "seatgeek_url": "https://seatgeek.com/kendrick-lamar-tickets",
+            "stubhub_event_id": "demo-sh-kendrick",
+            "seatgeek_event_id": "demo-sg-kendrick",
             "listings": [
                 {"section": "Floor GA",    "row": "GA", "qty": 2, "price": 285.00},
                 {"section": "Floor GA",    "row": "GA", "qty": 4, "price": 310.00},
@@ -104,6 +106,8 @@ async def seed_demo_events(db):
             "event_date": now + timedelta(days=72),
             "stubhub_url": "https://www.stubhub.com/taylor-swift-inglewood-tickets",
             "seatgeek_url": "https://seatgeek.com/taylor-swift-tickets",
+            "stubhub_event_id": "demo-sh-taylorswift",
+            "seatgeek_event_id": "demo-sg-taylorswift",
             "listings": [
                 {"section": "Field A",     "row": "1",  "qty": 2, "price": 750.00},
                 {"section": "Field B",     "row": "3",  "qty": 2, "price": 620.00},
@@ -123,6 +127,8 @@ async def seed_demo_events(db):
             "event_date": now + timedelta(days=28),
             "stubhub_url": "https://www.stubhub.com/dave-matthews-band-hollywood-tickets",
             "seatgeek_url": "https://seatgeek.com/dave-matthews-band-tickets",
+            "stubhub_event_id": "demo-sh-davematthews",
+            "seatgeek_event_id": "demo-sg-davematthews",
             "listings": [
                 {"section": "Box 1",       "row": "1",  "qty": 2, "price": 320.00},
                 {"section": "Box 5",       "row": "2",  "qty": 2, "price": 295.00},
@@ -169,24 +175,34 @@ async def seed_demo_events(db):
             print(f"  exists:  {demo['title']}")
 
         # TrackedEvents for both marketplaces
-        for mp, url_key in [(stub_mp, "stubhub_url"), (sg_mp, "seatgeek_url")]:
+        mp_pairs = [
+            (stub_mp, "stubhub_url", "stubhub_event_id"),
+            (sg_mp,   "seatgeek_url", "seatgeek_event_id"),
+        ]
+        for mp, url_key, eid_key in mp_pairs:
             if not mp:
                 continue
+            demo_eid = demo.get(eid_key)
             te_r = await db.execute(
                 select(TrackedEvent).where(
                     TrackedEvent.event_id == event.id,
                     TrackedEvent.marketplace_id == mp.id,
                 )
             )
-            if not te_r.scalar_one_or_none():
+            te = te_r.scalar_one_or_none()
+            if not te:
                 db.add(TrackedEvent(
                     event_id=event.id,
                     marketplace_id=mp.id,
                     external_url=demo[url_key],
+                    external_event_id=demo_eid,
                     is_active=True,
                     poll_interval_minutes=60,
                     next_poll_at=datetime.utcnow() + timedelta(hours=1),
                 ))
+            elif te.external_event_id is None and demo_eid:
+                # Backfill missing IDs on existing rows (e.g. after a reset-less redeploy)
+                te.external_event_id = demo_eid
 
         # Demo listings (stubhub) so dashboard stat cards show real numbers
         if stub_mp:
