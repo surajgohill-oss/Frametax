@@ -83,7 +83,7 @@ async def seed_demo_events(db):
         {
             "title": "Kendrick Lamar",
             "artist": "Kendrick Lamar",
-            "venue_slug": "crypto_arena",
+            "venue_slug": "crypto-arena",
             "event_date": now + timedelta(days=45),
             "stubhub_url": "https://www.stubhub.com/kendrick-lamar-los-angeles-tickets",
             "seatgeek_url": "https://seatgeek.com/kendrick-lamar-tickets",
@@ -101,7 +101,7 @@ async def seed_demo_events(db):
         {
             "title": "Taylor Swift | The Eras Tour",
             "artist": "Taylor Swift",
-            "venue_slug": "sofi_stadium",
+            "venue_slug": "sofi-stadium",
             "event_date": now + timedelta(days=72),
             "stubhub_url": "https://www.stubhub.com/taylor-swift-inglewood-tickets",
             "seatgeek_url": "https://seatgeek.com/taylor-swift-tickets",
@@ -120,7 +120,7 @@ async def seed_demo_events(db):
         {
             "title": "Dave Matthews Band",
             "artist": "Dave Matthews Band",
-            "venue_slug": "hollywood_bowl",
+            "venue_slug": "hollywood-bowl",
             "event_date": now + timedelta(days=28),
             "stubhub_url": "https://www.stubhub.com/dave-matthews-band-hollywood-tickets",
             "seatgeek_url": "https://seatgeek.com/dave-matthews-band-tickets",
