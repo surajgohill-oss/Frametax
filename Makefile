@@ -1,4 +1,4 @@
-.PHONY: up down reset logs status build verify
+.PHONY: up down reset logs status build verify debug-snapshot
 
 up:
 	docker compose up --build -d
@@ -47,6 +47,57 @@ status:
 		&& echo "  backend   ✓  http://localhost:8000" || echo "  backend   ✗ not responding"
 	@curl -sf http://localhost:3000 -o /dev/null 2>/dev/null \
 		&& echo "  frontend  ✓  http://localhost:3000" || echo "  frontend  ✗ not responding"
+	@echo ""
+
+debug-snapshot:
+	@echo "══════════════════════════════════════════"
+	@echo "  PIPELINE INVARIANT SNAPSHOT"
+	@echo "══════════════════════════════════════════"
+	@echo ""
+	@echo "── Stage 1: Events ───────────────────────"
+	@docker compose exec -T db psql -U concert -d concert_tracker -c \
+		"SELECT id, title, status, event_date::date FROM events ORDER BY event_date;"
+	@echo ""
+	@echo "── Stage 2: Resolution (external IDs) ────"
+	@docker compose exec -T db psql -U concert -d concert_tracker -c \
+		"SELECT te.id, m.slug AS marketplace, te.external_event_id, \
+		        CASE WHEN te.external_event_id IS NULL THEN 'PENDING' ELSE 'RESOLVED' END AS stage2, \
+		        e.title \
+		 FROM tracked_events te \
+		 JOIN events e ON e.id = te.event_id \
+		 JOIN marketplaces m ON m.id = te.marketplace_id \
+		 ORDER BY e.title, m.slug;"
+	@echo ""
+	@echo "── Stage 3: Listings ─────────────────────"
+	@docker compose exec -T db psql -U concert -d concert_tracker -c \
+		"SELECT e.title, m.slug AS marketplace, COUNT(l.id) AS listings, \
+		        MIN(l.price) AS lowest_ask \
+		 FROM events e \
+		 LEFT JOIN listings l ON l.event_id = e.id AND l.is_active = true \
+		 LEFT JOIN marketplaces m ON m.id = l.marketplace_id \
+		 GROUP BY e.title, m.slug ORDER BY e.title, m.slug;"
+	@echo ""
+	@echo "── Recent poll runs ──────────────────────"
+	@docker compose exec -T db psql -U concert -d concert_tracker -c \
+		"SELECT pr.id, e.title, pr.status, pr.listings_found, \
+		        pr.started_at::time, pr.error_message \
+		 FROM poll_runs pr \
+		 JOIN tracked_events te ON te.id = pr.tracked_event_id \
+		 JOIN events e ON e.id = te.event_id \
+		 ORDER BY pr.started_at DESC LIMIT 15;"
+	@echo ""
+	@echo "── Collector + resolver log (errors/warns) "
+	@docker compose logs backend --tail=200 2>/dev/null | \
+		grep -iE "resolver|STAGE_GATE|ERROR|WARNING|Cannot resolve" | tail -20 || true
+	@echo ""
+	@echo "── Invariant violations ──────────────────"
+	@docker compose exec -T db psql -U concert -d concert_tracker -t -c \
+		"SELECT 'Stage 2 pending: ' || COUNT(*) || ' tracked_event(s) have no external_event_id' \
+		 FROM tracked_events WHERE external_event_id IS NULL AND is_active = true;" | grep -v "^$$" || true
+	@docker compose exec -T db psql -U concert -d concert_tracker -t -c \
+		"SELECT 'Stage 3 empty: ' || COUNT(DISTINCT e.id) || ' event(s) have 0 active listings' \
+		 FROM events e WHERE NOT EXISTS \
+		   (SELECT 1 FROM listings l WHERE l.event_id = e.id AND l.is_active = true);" | grep -v "^$$" || true
 	@echo ""
 
 build:

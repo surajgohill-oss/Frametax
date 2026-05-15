@@ -47,9 +47,8 @@ class BaseCollector(DebugMixin, ABC):
         resolved_id = await self.resolve_external_event_id(tracked_event)
 
         if resolved_id is None:
-            self.logger.debug(
-                "Skipping collection: unresolved marketplace event id "
-                "for tracked_event %d (url=%s)",
+            self.logger.info(
+                "STAGE_GATE SKIPPED_MISSING_RESOLUTION tracked_event=%d url=%s",
                 tracked_event.id, tracked_event.external_url,
             )
             return CollectorResult(

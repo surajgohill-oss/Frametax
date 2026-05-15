@@ -109,12 +109,31 @@ async def _check_due_events():
             select(TrackedEvent).where(
                 and_(
                     TrackedEvent.is_active == True,
+                    TrackedEvent.external_event_id.is_not(None),  # Stage 2 must be complete
                     (TrackedEvent.next_poll_at <= datetime.utcnow())
                     | (TrackedEvent.next_poll_at.is_(None)),
                 )
             )
         )
         due = result.scalars().all()
+
+        # Log any events skipped due to pending Stage 2 resolution
+        pending_result = await db.execute(
+            select(TrackedEvent).where(
+                and_(
+                    TrackedEvent.is_active == True,
+                    TrackedEvent.external_event_id.is_(None),
+                )
+            )
+        )
+        pending = pending_result.scalars().all()
+        if pending:
+            logger.info(
+                "STAGE_GATE: %d tracked_event(s) skipped — awaiting Stage 2 resolution "
+                "(ids: %s)",
+                len(pending), [te.id for te in pending],
+            )
+
     for te in due:
         asyncio.create_task(run_poll_for_tracked_event(te.id))
 
