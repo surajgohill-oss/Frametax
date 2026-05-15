@@ -88,7 +88,7 @@ class EventResolver:
                 counts["already_set"] += 1
                 continue
 
-            resolved = await self._resolve_for_marketplace(event, mp.slug)
+            resolved = await self._resolve_for_marketplace(event, mp.slug, te.external_url)
 
             if resolved:
                 await self._persist(session_factory, te.id, resolved)
@@ -114,50 +114,75 @@ class EventResolver:
 
     # ── Marketplace dispatch ──────────────────────────────────────────────────
 
-    async def _resolve_for_marketplace(self, event: Event, slug: str) -> Optional[str]:
+    async def _resolve_for_marketplace(self, event: Event, slug: str, external_url: Optional[str] = None) -> Optional[str]:
         if slug == "stubhub":
-            return await self._resolve_stubhub(event)
+            return await self._resolve_stubhub(event, external_url)
         if slug == "seatgeek":
-            return await self._resolve_seatgeek(event)
+            return await self._resolve_seatgeek(event, external_url)
         logger.debug("No resolver implemented for marketplace '%s'", slug)
         return None
 
     # ── StubHub ───────────────────────────────────────────────────────────────
 
-    async def _resolve_stubhub(self, event: Event) -> Optional[str]:
+    async def _resolve_stubhub(self, event: Event, external_url: Optional[str] = None) -> Optional[str]:
         keywords = _artist_keywords(event)
         if not keywords:
             return None
 
-        date_str = event.event_date.strftime("%Y-%m-%d")
         date_before = (event.event_date - timedelta(days=1)).strftime("%Y-%m-%dT00:00:00Z")
         date_after = (event.event_date + timedelta(days=2)).strftime("%Y-%m-%dT00:00:00Z")
         kw_solr = keywords.replace(" ", "*")
-
         client = await self._get_client()
-        url = (
+
+        # Path 1: SOLR catalog search (requires auth cookies — often fails unauthenticated)
+        solr_url = (
             "https://www.stubhub.com/listingCatalog/select"
             f"?q=*:*&fq=event_name:*{kw_solr}*"
             f"&fq=event_date:[{date_before}+TO+{date_after}]"
             "&rows=5&fl=event_id,event_name,event_date_local&wt=json&sort=event_date+asc"
         )
         try:
-            resp = await client.get(url)
+            resp = await client.get(solr_url)
             if resp.status_code == 200:
                 docs = resp.json().get("response", {}).get("docs", [])
                 if docs:
                     return str(docs[0]["event_id"])
-            logger.debug(
-                "StubHub SOLR returned %d for '%s' on %s",
-                resp.status_code, keywords, date_str,
-            )
         except Exception as exc:
-            logger.debug("StubHub resolver HTTP error: %s", exc)
+            logger.debug("RESOLVER: StubHub SOLR error: %s", exc)
+
+        # Path 2: Fetch external_url page, extract event ID from embedded JSON/HTML
+        if external_url:
+            event_id = await self._stubhub_extract_from_page(client, external_url)
+            if event_id:
+                return event_id
+
+        return None
+
+    async def _stubhub_extract_from_page(self, client: httpx.AsyncClient, url: str) -> Optional[str]:
+        """Fetch StubHub page and extract event ID from embedded script data."""
+        try:
+            resp = await client.get(url)
+            if resp.status_code != 200:
+                return None
+            html = resp.text
+            # StubHub embeds event data in several patterns
+            for pattern in (
+                r'"eventId"\s*:\s*"?(\d+)"?',
+                r'"id"\s*:\s*(\d{7,})',          # long numeric ID in JSON blob
+                r'/event/(\d+)',                   # event URL reference in page
+                r'event_id["\s:]+(\d{6,})',
+            ):
+                m = re.search(pattern, html)
+                if m:
+                    logger.debug("RESOLVER: StubHub page extraction matched pattern '%s'", pattern)
+                    return m.group(1)
+        except Exception as exc:
+            logger.debug("RESOLVER: StubHub page fetch failed: %s", exc)
         return None
 
     # ── SeatGeek ──────────────────────────────────────────────────────────────
 
-    async def _resolve_seatgeek(self, event: Event) -> Optional[str]:
+    async def _resolve_seatgeek(self, event: Event, external_url: Optional[str] = None) -> Optional[str]:
         keywords = _artist_keywords(event)
         if not keywords:
             return None
@@ -167,16 +192,59 @@ class EventResolver:
         date_lte = (event.event_date + timedelta(days=2)).strftime("%Y-%m-%d")
         client = await self._get_client()
 
-        # Try official API if client_id configured
+        # Path 1: Official API (requires client_id)
         if self.settings.seatgeek_client_id:
-            result = await self._seatgeek_official_search(
-                client, performer_slug, date_gte, date_lte
-            )
+            result = await self._seatgeek_official_search(client, performer_slug, date_gte, date_lte)
             if result:
                 return result
 
-        # Fall back to internal API (no auth required)
-        return await self._seatgeek_internal_search(client, keywords, date_gte, date_lte)
+        # Path 2: Internal API (unauthenticated)
+        result = await self._seatgeek_internal_search(client, keywords, date_gte, date_lte)
+        if result:
+            return result
+
+        # Path 3: Fetch external_url page, extract event ID from __NEXT_DATA__
+        if external_url:
+            return await self._seatgeek_extract_from_page(client, external_url)
+
+        return None
+
+    async def _seatgeek_extract_from_page(self, client: httpx.AsyncClient, url: str) -> Optional[str]:
+        """Fetch SeatGeek page and extract event ID from __NEXT_DATA__ or HTML patterns."""
+        try:
+            resp = await client.get(url)
+            if resp.status_code != 200:
+                return None
+            html = resp.text
+            # Path 3a: __NEXT_DATA__ JSON (most reliable)
+            m = re.search(r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>', html, re.DOTALL)
+            if m:
+                try:
+                    page_data = __import__("json").loads(m.group(1))
+                    # Walk known paths to event id
+                    for path in (
+                        ["props", "pageProps", "event", "id"],
+                        ["props", "pageProps", "initialData", "event", "id"],
+                        ["props", "pageProps", "eventId"],
+                    ):
+                        node = page_data
+                        try:
+                            for key in path:
+                                node = node[key]
+                            if isinstance(node, int):
+                                return str(node)
+                        except (KeyError, TypeError):
+                            continue
+                except Exception:
+                    pass
+            # Path 3b: raw HTML patterns
+            for pattern in (r'"id"\s*:\s*(\d{6,})', r'/events?/[^/]+-(\d{5,})'):
+                m = re.search(pattern, html)
+                if m:
+                    return m.group(1)
+        except Exception as exc:
+            logger.debug("RESOLVER: SeatGeek page fetch failed: %s", exc)
+        return None
 
     async def _seatgeek_official_search(
         self, client: httpx.AsyncClient,
