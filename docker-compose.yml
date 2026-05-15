@@ -88,9 +88,8 @@ services:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3000 > /dev/null 2>&1 || exit 1"]
       interval: 10s
       timeout: 5s
-      retries: 6
-      start_period: 60s
-    command: npm run dev
+      retries: 12
+      start_period: 120s
 
 volumes:
   postgres_data:
