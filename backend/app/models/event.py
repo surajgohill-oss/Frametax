@@ -13,6 +13,7 @@ class Event(Base):
     artist: Mapped[str | None] = mapped_column(String(255), nullable=True)
     venue_id: Mapped[int] = mapped_column(Integer, ForeignKey("venues.id"), nullable=False)
     event_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="upcoming", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     venue: Mapped["Venue"] = relationship("Venue", back_populates="events")

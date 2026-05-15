@@ -140,11 +140,14 @@ async def seed_demo_events(db):
     sg_r = await db.execute(select(Marketplace).where(Marketplace.slug == "seatgeek"))
     sg_mp = sg_r.scalar_one_or_none()
 
+    created_count = 0
+    skipped_venues = []
     for demo in DEMO_EVENTS:
         venue_r = await db.execute(select(Venue).where(Venue.slug == demo["venue_slug"]))
         venue = venue_r.scalar_one_or_none()
         if not venue:
             print(f"  skip event (venue missing): {demo['venue_slug']}")
+            skipped_venues.append(demo["venue_slug"])
             continue
 
         canonical = _canonical_id(demo["title"], demo["venue_slug"], demo["event_date"])
@@ -160,8 +163,10 @@ async def seed_demo_events(db):
             )
             db.add(event)
             await db.flush()
+            created_count += 1
             print(f"  created: {demo['title']}")
         else:
+            created_count += 1
             print(f"  exists:  {demo['title']}")
 
         # TrackedEvents for both marketplaces
@@ -210,6 +215,14 @@ async def seed_demo_events(db):
                     ))
 
     await db.flush()
+    if created_count == 0:
+        raise RuntimeError(
+            f"SEED FAILURE: All {len(DEMO_EVENTS)} demo events were skipped — "
+            f"venues not found: {skipped_venues}. "
+            "Check that venue JSON files exist in /shared/venue_maps and slugs match."
+        )
+    print(f"  seed_demo_events: {created_count}/{len(DEMO_EVENTS)} events processed")
+    return created_count
 
 
 async def main():

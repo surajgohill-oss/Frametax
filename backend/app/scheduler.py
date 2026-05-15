@@ -4,11 +4,11 @@ from datetime import datetime, timedelta
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, update
 
 from app.config import get_settings
 from app.database import AsyncSessionLocal
-from app.models import TrackedEvent, Listing, ListingSnapshot, PollRun, Marketplace
+from app.models import TrackedEvent, Event, Listing, ListingSnapshot, PollRun, Marketplace
 from app.collectors.registry import get_collector
 
 logger = logging.getLogger(__name__)
@@ -16,6 +16,43 @@ settings = get_settings()
 
 _scheduler: AsyncIOScheduler | None = None
 
+
+# ── Adaptive polling cadence ───────────────────────────────────────────────────
+# > 14 days  → 360 min (6h)   prices stable, low value in frequent polling
+# 14d → 48h  → 60 min         demand building, moderate tracking
+# 48h → 6h   → 30 min         price movement accelerates
+# 6h → 0     → 15 min         high volatility, inventory thinning fast
+# in progress → 5 min         last-minute drops / inventory surges
+# completed   → None           deactivate, stop polling
+
+def compute_poll_interval_minutes(event_date: datetime) -> int | None:
+    now = datetime.utcnow()
+    seconds = (event_date - now).total_seconds()
+
+    if seconds < -3 * 3600:        # > 3h past start → completed
+        return None
+    elif seconds < 0:               # past start, within 3h → in progress
+        return 5
+    elif seconds < 6 * 3600:       # < 6h away
+        return 15
+    elif seconds < 48 * 3600:      # < 48h away
+        return 30
+    elif seconds < 14 * 24 * 3600: # < 14 days
+        return 60
+    else:                           # > 14 days
+        return 360
+
+
+def event_status_from_date(event_date: datetime) -> str:
+    seconds = (event_date - datetime.utcnow()).total_seconds()
+    if seconds < -3 * 3600:
+        return "completed"
+    elif seconds < 0:
+        return "in_progress"
+    return "upcoming"
+
+
+# ── Scheduler lifecycle ────────────────────────────────────────────────────────
 
 async def start_scheduler():
     global _scheduler
@@ -27,8 +64,15 @@ async def start_scheduler():
         replace_existing=True,
         max_instances=1,
     )
+    _scheduler.add_job(
+        _update_event_statuses,
+        trigger=IntervalTrigger(minutes=15),
+        id="event_status_updater",
+        replace_existing=True,
+        max_instances=1,
+    )
     _scheduler.start()
-    logger.info("Scheduler started")
+    logger.info("Scheduler started — adaptive polling active")
 
 
 async def stop_scheduler():
@@ -36,6 +80,8 @@ async def stop_scheduler():
     if _scheduler and _scheduler.running:
         _scheduler.shutdown(wait=False)
 
+
+# ── Core poll loop ─────────────────────────────────────────────────────────────
 
 async def _check_due_events():
     async with AsyncSessionLocal() as db:
@@ -53,27 +99,72 @@ async def _check_due_events():
         asyncio.create_task(run_poll_for_tracked_event(te.id))
 
 
+async def _update_event_statuses():
+    """Recalculate event.status every 15 min; deactivate completed events."""
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(select(Event))
+        for event in result.scalars().all():
+            new_status = event_status_from_date(event.event_date)
+            if event.status != new_status:
+                event.status = new_status
+                logger.info("Event %d '%s' status → %s", event.id, event.title, new_status)
+            if new_status == "completed":
+                await db.execute(
+                    update(TrackedEvent)
+                    .where(TrackedEvent.event_id == event.id, TrackedEvent.is_active == True)
+                    .values(is_active=False)
+                )
+        await db.commit()
+
+
+# ── Single event poll ──────────────────────────────────────────────────────────
+
 async def run_poll_for_tracked_event(tracked_event_id: int):
     async with AsyncSessionLocal() as db:
-        result = await db.execute(select(TrackedEvent).where(TrackedEvent.id == tracked_event_id))
-        te = result.scalar_one_or_none()
+        te = (await db.execute(
+            select(TrackedEvent).where(TrackedEvent.id == tracked_event_id)
+        )).scalar_one_or_none()
         if not te:
             return
-        mp_result = await db.execute(select(Marketplace).where(Marketplace.id == te.marketplace_id))
-        marketplace = mp_result.scalar_one_or_none()
+
+        event = (await db.execute(
+            select(Event).where(Event.id == te.event_id)
+        )).scalar_one_or_none()
+
+        marketplace = (await db.execute(
+            select(Marketplace).where(Marketplace.id == te.marketplace_id)
+        )).scalar_one_or_none()
         if not marketplace:
             return
+
+        interval = compute_poll_interval_minutes(event.event_date) if event else te.poll_interval_minutes
+
+        if interval is None:
+            te.is_active = False
+            if event:
+                event.status = "completed"
+            await db.commit()
+            logger.info("Event %d completed — tracked_event %d deactivated", te.event_id, te.id)
+            return
+
+        if event:
+            new_status = event_status_from_date(event.event_date)
+            if event.status != new_status:
+                event.status = new_status
 
         poll_run = PollRun(tracked_event_id=te.id, started_at=datetime.utcnow())
         db.add(poll_run)
         await db.flush()
         poll_run_id = poll_run.id
+
         te.last_polled_at = datetime.utcnow()
-        te.next_poll_at = datetime.utcnow() + timedelta(minutes=te.poll_interval_minutes)
+        te.poll_interval_minutes = interval
+        te.next_poll_at = datetime.utcnow() + timedelta(minutes=interval)
         await db.commit()
 
     collector = get_collector(marketplace.slug, settings)
     if not collector:
+        logger.warning("No collector registered for '%s'", marketplace.slug)
         return
     collector._db_session_factory = AsyncSessionLocal
 
@@ -84,12 +175,13 @@ async def run_poll_for_tracked_event(tracked_event_id: int):
         await collector.close()
 
 
+# ── Result processing ──────────────────────────────────────────────────────────
+
 async def _process_result(result, te: TrackedEvent, poll_run_id: int):
     async with AsyncSessionLocal() as db:
-        mp_result = await db.execute(
+        marketplace = (await db.execute(
             select(Marketplace).where(Marketplace.slug == result.marketplace_slug)
-        )
-        marketplace = mp_result.scalar_one_or_none()
+        )).scalar_one_or_none()
         if not marketplace:
             return
 
@@ -128,21 +220,35 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
                 l.last_seen_at = result.fetched_at
             else:
                 l = Listing(
-                    event_id=result.event_id, marketplace_id=marketplace.id,
-                    external_listing_id=raw.external_listing_id, section=raw.section,
-                    section_id=norm_section, row=raw.row, quantity=raw.quantity,
-                    price=raw.price, fees=raw.fees, all_in_price=raw.all_in_price,
-                    listing_url=raw.listing_url, first_seen_at=result.fetched_at,
-                    last_seen_at=result.fetched_at, extra=raw.extra,
+                    event_id=result.event_id,
+                    marketplace_id=marketplace.id,
+                    external_listing_id=raw.external_listing_id,
+                    section=raw.section,
+                    section_id=norm_section,
+                    row=raw.row,
+                    quantity=raw.quantity,
+                    price=raw.price,
+                    fees=raw.fees,
+                    all_in_price=raw.all_in_price,
+                    listing_url=raw.listing_url,
+                    first_seen_at=result.fetched_at,
+                    last_seen_at=result.fetched_at,
+                    extra=raw.extra,
                 )
                 db.add(l)
                 await db.flush()
                 new_count += 1
 
             snapshots.append(ListingSnapshot(
-                listing_id=l.id, event_id=result.event_id, marketplace_id=marketplace.id,
-                section_id=norm_section, quantity=raw.quantity, price=raw.price,
-                fees=raw.fees, all_in_price=raw.all_in_price, snapshot_at=result.fetched_at,
+                listing_id=l.id,
+                event_id=result.event_id,
+                marketplace_id=marketplace.id,
+                section_id=norm_section,
+                quantity=raw.quantity,
+                price=raw.price,
+                fees=raw.fees,
+                all_in_price=raw.all_in_price,
+                snapshot_at=result.fetched_at,
             ))
 
         disappeared = 0
@@ -153,8 +259,9 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
 
         db.add_all(snapshots)
 
-        pr_result = await db.execute(select(PollRun).where(PollRun.id == poll_run_id))
-        poll_run = pr_result.scalar_one_or_none()
+        poll_run = (await db.execute(
+            select(PollRun).where(PollRun.id == poll_run_id)
+        )).scalar_one_or_none()
         if poll_run:
             poll_run.completed_at = datetime.utcnow()
             poll_run.listings_found = len(result.listings)
@@ -164,4 +271,8 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
             poll_run.error_message = result.error
 
         await db.commit()
-        logger.info("Poll done: %d listings, %d new, %d gone", len(result.listings), new_count, disappeared)
+        logger.info(
+            "Poll [event=%d %s]: %d listings, %d new, %d gone",
+            result.event_id, result.marketplace_slug,
+            len(result.listings), new_count, disappeared,
+        )

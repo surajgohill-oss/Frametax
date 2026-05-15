@@ -1,10 +1,20 @@
+import logging
+import time
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 from app.config import get_settings
+from app.database import AsyncSessionLocal
 from app.api.routes import events, venues, analytics, listings, poll, debug as debug_routes
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)-8s %(name)s — %(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S",
+)
+logger = logging.getLogger(__name__)
 settings = get_settings()
 
 
@@ -42,4 +52,12 @@ app.include_router(debug_routes.router, prefix="/api")
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "app": settings.app_name}
+    t0 = time.monotonic()
+    try:
+        async with AsyncSessionLocal() as db:
+            await db.execute(text("SELECT 1"))
+        db_ms = round((time.monotonic() - t0) * 1000)
+        return {"status": "ok", "app": settings.app_name, "db": "ok", "db_ms": db_ms}
+    except Exception as exc:
+        logger.error("Health check DB ping failed: %s", exc)
+        return {"status": "degraded", "app": settings.app_name, "db": "error", "error": str(exc)}
