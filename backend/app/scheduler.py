@@ -18,39 +18,67 @@ settings = get_settings()
 _scheduler: AsyncIOScheduler | None = None
 
 
-# ── Adaptive polling cadence ───────────────────────────────────────────────────
-# > 14 days  → 360 min (6h)   prices stable, low value in frequent polling
-# 14d → 48h  → 60 min         demand building, moderate tracking
-# 48h → 6h   → 30 min         price movement accelerates
-# 6h → 0     → 15 min         high volatility, inventory thinning fast
-# in progress → 5 min         last-minute drops / inventory surges
-# completed   → None           deactivate, stop polling
+# ── Polling policy ─────────────────────────────────────────────────────────────
+# Strict piecewise function. No smoothing, no interpolation.
+#
+# > 10 days before event  →  1440 min  (24 h)
+# 10 days → 2 days        →   240 min  ( 4 h)
+# 2 days → 8 hours        →    60 min  ( 1 h)
+# 8 hours → event start   →    15 min
+# event start → +5 min    →     5 min
+# after +5 min            →  None  (deactivate)
 
 def compute_poll_interval_minutes(event_date: datetime) -> int | None:
-    now = datetime.utcnow()
-    seconds = (event_date - now).total_seconds()
+    seconds = (event_date - datetime.utcnow()).total_seconds()
 
-    if seconds < -3 * 3600:        # > 3h past start → completed
+    if seconds < -5 * 60:              # > 5 min past start → stop
         return None
-    elif seconds < 0:               # past start, within 3h → in progress
+    if seconds < 0:                    # within 5 min of start
         return 5
-    elif seconds < 6 * 3600:       # < 6h away
+    if seconds < 8 * 3600:            # < 8 h
         return 15
-    elif seconds < 48 * 3600:      # < 48h away
-        return 30
-    elif seconds < 14 * 24 * 3600: # < 14 days
+    if seconds < 2 * 24 * 3600:      # < 2 days
         return 60
-    else:                           # > 14 days
-        return 360
+    if seconds < 10 * 24 * 3600:     # < 10 days
+        return 240
+    return 1440                        # >= 10 days
 
+
+# ── Event status (display) ─────────────────────────────────────────────────────
+# events.status is for UI display only. Uses a longer completed window (3 h)
+# so the event card doesn't vanish the moment polling stops.
 
 def event_status_from_date(event_date: datetime) -> str:
     seconds = (event_date - datetime.utcnow()).total_seconds()
     if seconds < -3 * 3600:
         return "completed"
-    elif seconds < 0:
+    if seconds < 0:
         return "in_progress"
     return "upcoming"
+
+
+# ── Lifecycle phase (observability) ───────────────────────────────────────────
+# tracked_events.lifecycle_phase is observability-only. It does NOT gate
+# polling. Polling is exclusively controlled by compute_poll_interval_minutes.
+#
+# Thresholds:
+#   pre_admission : event > 21 days away (discovery hasn't admitted it yet)
+#   active        : event within 21 days (being tracked and polled)
+#   in_progress   : event started, within 5 min window
+#   completed     : polling stopped (> 5 min past start)
+
+_ADMISSION_DAYS = 21
+
+
+def compute_lifecycle_phase(event_date: datetime) -> str:
+    seconds = (event_date - datetime.utcnow()).total_seconds()
+    if seconds < -5 * 60:
+        return "completed"
+    if seconds < 0:
+        return "in_progress"
+    if seconds < _ADMISSION_DAYS * 24 * 3600:
+        return "active"
+    return "pre_admission"
 
 
 # ── Scheduler lifecycle ────────────────────────────────────────────────────────
@@ -71,6 +99,7 @@ async def start_scheduler():
         id="event_status_updater",
         replace_existing=True,
         max_instances=1,
+        next_run_time=datetime.utcnow(),  # populate lifecycle_phase immediately on startup
     )
     _scheduler.add_job(
         _resolve_pending_event_ids,
@@ -78,10 +107,20 @@ async def start_scheduler():
         id="event_id_resolver",
         replace_existing=True,
         max_instances=1,
-        next_run_time=datetime.utcnow(),  # run immediately on startup
+        next_run_time=datetime.utcnow(),
+    )
+    _scheduler.add_job(
+        _run_event_discovery,
+        trigger=IntervalTrigger(hours=6),
+        id="event_discovery",
+        replace_existing=True,
+        max_instances=1,
     )
     _scheduler.start()
-    logger.info("Scheduler started — adaptive polling + event ID resolver active")
+    logger.info(
+        "Scheduler started — polling_policy=piecewise resolver=active "
+        "discovery=6h lifecycle_phase=observability_only"
+    )
 
 
 async def stop_scheduler():
@@ -90,7 +129,7 @@ async def stop_scheduler():
         _scheduler.shutdown(wait=False)
 
 
-# ── Core poll loop ─────────────────────────────────────────────────────────────
+# ── Resolver job ───────────────────────────────────────────────────────────────
 
 async def _resolve_pending_event_ids():
     """Enrich TrackedEvents that have no external_event_id by searching marketplaces."""
@@ -106,6 +145,8 @@ async def _resolve_pending_event_ids():
         await resolver.close()
 
 
+# ── Poll gate ──────────────────────────────────────────────────────────────────
+
 async def _check_due_events():
     async with AsyncSessionLocal() as db:
         result = await db.execute(
@@ -120,7 +161,6 @@ async def _check_due_events():
         )
         due = result.scalars().all()
 
-        # Log any events skipped due to pending Stage 2 resolution
         pending_result = await db.execute(
             select(TrackedEvent).where(
                 and_(
@@ -141,22 +181,65 @@ async def _check_due_events():
         asyncio.create_task(run_poll_for_tracked_event(te.id))
 
 
+# ── Status + lifecycle updater ─────────────────────────────────────────────────
+
 async def _update_event_statuses():
-    """Recalculate event.status every 15 min; deactivate completed events."""
+    """
+    Runs every 15 min.
+    - Writes events.status (display)
+    - Writes tracked_events.lifecycle_phase (observability)
+    - Deactivates tracked_events for completed events (safety net — the poll
+      loop deactivates them first via compute_poll_interval_minutes → None)
+    """
     async with AsyncSessionLocal() as db:
         result = await db.execute(select(Event))
         for event in result.scalars().all():
             new_status = event_status_from_date(event.event_date)
             if event.status != new_status:
                 event.status = new_status
-                logger.info("Event %d '%s' status → %s", event.id, event.title, new_status)
-            if new_status == "completed":
+                logger.info("EVENT: %d '%s' status → %s", event.id, event.title, new_status)
+
+            new_phase = compute_lifecycle_phase(event.event_date)
+
+            if new_phase == "completed":
+                # Deactivate any still-active tracked_events (belt + suspenders)
                 await db.execute(
                     update(TrackedEvent)
-                    .where(TrackedEvent.event_id == event.id, TrackedEvent.is_active == True)
-                    .values(is_active=False)
+                    .where(
+                        TrackedEvent.event_id == event.id,
+                        TrackedEvent.is_active == True,
+                    )
+                    .values(is_active=False, lifecycle_phase="completed")
                 )
+            else:
+                # Write lifecycle_phase for observability
+                await db.execute(
+                    update(TrackedEvent)
+                    .where(TrackedEvent.event_id == event.id)
+                    .values(lifecycle_phase=new_phase)
+                )
+
         await db.commit()
+
+
+# ── Discovery job ──────────────────────────────────────────────────────────────
+
+async def _run_event_discovery():
+    """Scan marketplaces for new events within the admission window (14–21 days out)."""
+    from app.collectors.discovery import EventDiscovery
+    discovery = EventDiscovery(settings)
+    try:
+        counts = await discovery.run_discovery(AsyncSessionLocal)
+        logger.info(
+            "DISCOVERY: cycle complete new=%d duplicate=%d outside_window=%d "
+            "no_venue=%d failed=%d",
+            counts["new"], counts["duplicate"], counts["outside_window"],
+            counts["no_venue"], counts["failed"],
+        )
+    except Exception as exc:
+        logger.exception("DISCOVERY: cycle failed — %s", exc)
+    finally:
+        await discovery.close()
 
 
 # ── Single event poll ──────────────────────────────────────────────────────────
@@ -183,16 +266,21 @@ async def run_poll_for_tracked_event(tracked_event_id: int):
 
         if interval is None:
             te.is_active = False
+            te.lifecycle_phase = "completed"
             if event:
-                event.status = "completed"
+                event.status = event_status_from_date(event.event_date)
             await db.commit()
-            logger.info("Event %d completed — tracked_event %d deactivated", te.event_id, te.id)
+            logger.info(
+                "POLLING: tracked_event=%d event='%s' deactivated — past cutoff",
+                te.id, event.title if event else te.event_id,
+            )
             return
 
         if event:
             new_status = event_status_from_date(event.event_date)
             if event.status != new_status:
                 event.status = new_status
+            te.lifecycle_phase = compute_lifecycle_phase(event.event_date)
 
         poll_run = PollRun(tracked_event_id=te.id, started_at=datetime.utcnow())
         db.add(poll_run)

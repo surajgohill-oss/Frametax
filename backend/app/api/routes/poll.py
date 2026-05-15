@@ -35,6 +35,20 @@ async def trigger_resolve_ids(background_tasks: BackgroundTasks):
     return {"message": "Event ID resolution triggered"}
 
 
+@router.post("/discovery/trigger")
+async def trigger_discovery(background_tasks: BackgroundTasks):
+    """Manually trigger the event discovery scan for all active marketplaces."""
+    from app.collectors.discovery import EventDiscovery
+    async def _run():
+        discovery = EventDiscovery(settings)
+        try:
+            return await discovery.run_discovery(AsyncSessionLocal)
+        finally:
+            await discovery.close()
+    background_tasks.add_task(_run)
+    return {"message": "Event discovery scan triggered"}
+
+
 @router.get("/events/{event_id}/runs")
 async def poll_runs(event_id: int, limit: int = 20, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(PollRun).join(TrackedEvent).where(TrackedEvent.event_id == event_id).order_by(PollRun.started_at.desc()).limit(limit))

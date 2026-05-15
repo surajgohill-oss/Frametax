@@ -129,7 +129,8 @@ debug-snapshot:
 	@echo ""
 	@echo "── Stage 2: Resolution (external IDs) ────"
 	@docker compose exec -T db psql -U concert -d concert_tracker -c \
-		"SELECT te.id, m.slug AS marketplace, te.external_event_id, te.resolution_source, \
+		"SELECT te.id, m.slug AS marketplace, te.external_event_id, \
+		        te.resolution_source, te.lifecycle_phase, \
 		        CASE WHEN te.external_event_id IS NULL THEN 'PENDING' ELSE 'RESOLVED' END AS stage2, \
 		        e.title \
 		 FROM tracked_events te \
@@ -159,11 +160,21 @@ debug-snapshot:
 	@docker compose logs backend --tail=200 2>/dev/null | \
 		grep -iE "SEED:|resolver|STAGE_GATE|ERROR|WARNING|Cannot resolve" | tail -25 || true
 	@echo ""
-	@echo "── Stage 3 eligibility ───────────────────"
+	@echo "── Stage 3 eligibility + lifecycle ───────"
 	@docker compose exec -T db psql -U concert -d concert_tracker -c \
 		"SELECT e.title, m.slug, \
 		        CASE WHEN te.external_event_id IS NOT NULL THEN 'ELIGIBLE' ELSE 'BLOCKED' END AS stage3, \
-		        te.resolution_source, te.last_polled_at::time, te.next_poll_at::time \
+		        te.lifecycle_phase, \
+		        te.resolution_source, \
+		        CASE \
+		          WHEN (e.event_date - now()) < interval '-5 minutes'  THEN 'STOP' \
+		          WHEN (e.event_date - now()) < interval '0'           THEN '5min' \
+		          WHEN (e.event_date - now()) < interval '8 hours'     THEN '15min' \
+		          WHEN (e.event_date - now()) < interval '2 days'      THEN '60min' \
+		          WHEN (e.event_date - now()) < interval '10 days'     THEN '240min' \
+		          ELSE '1440min' \
+		        END AS poll_policy, \
+		        te.last_polled_at::time, te.next_poll_at::time \
 		 FROM tracked_events te \
 		 JOIN events e ON e.id = te.event_id \
 		 JOIN marketplaces m ON m.id = te.marketplace_id \
@@ -195,6 +206,11 @@ debug-snapshot:
 		      'PARTIAL — ' || COUNT(*) || '/6 demo IDs seeded (check bootstrap-status)' \
 		 ELSE 'PASS — ' || COUNT(*) || '/6 demo tracked_events have seeded IDs' END \
 		 FROM tracked_events WHERE external_event_id LIKE 'demo-%' AND is_active = true;" | grep -v "^$$"
+	@docker compose exec -T db psql -U concert -d concert_tracker -t -c \
+		"SELECT 'Invariant E (No completed-but-active):    ' || \
+		 CASE WHEN COUNT(*) = 0 THEN 'PASS' \
+		      ELSE 'FAIL — ' || COUNT(*) || ' tracked_event(s) lifecycle_phase=completed but is_active=true' END \
+		 FROM tracked_events WHERE lifecycle_phase = 'completed' AND is_active = true;" | grep -v "^$$"
 	@echo ""
 
 build:

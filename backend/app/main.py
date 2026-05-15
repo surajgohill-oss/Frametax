@@ -26,6 +26,7 @@ _REQUIRED_COLUMNS = [
     ("listing_snapshots", "fees"),
     ("listing_snapshots", "all_in_price"),
     ("tracked_events",    "resolution_source"),
+    ("tracked_events",    "lifecycle_phase"),
 ]
 
 
