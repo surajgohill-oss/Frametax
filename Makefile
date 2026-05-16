@@ -1,5 +1,6 @@
 .PHONY: up down reset logs status build verify debug-snapshot verify-seed-code bootstrap-status \
-        e2e-discovery-test discovery-dedupe-test lifecycle-time-sim-test
+        e2e-discovery-test discovery-dedupe-test lifecycle-time-sim-test \
+        gate-status test-invariants
 
 up:
 	docker compose up --build -d
@@ -269,6 +270,30 @@ debug-snapshot:
 		awk '{s+=$$1} END {print "  dedupe_skips_count (duplicates):    " (s ? s : 0)}' \
 		|| echo "  dedupe_skips_count: 0"
 	@echo ""
+	@echo "── Gate status (DB invariants) ───────────"
+	@docker compose exec -T backend python /shared_scripts/test_invariants.py 2>/dev/null | \
+		grep -E "RESULT:|Invariant [A-E]" | sed 's/^/  /' || \
+		echo "  gate status unavailable (backend not ready)"
+	@echo "  (run 'make gate-status' for full test suite)"
+	@echo ""
+
+# ── Gate aggregator ────────────────────────────────────────────────────────────
+
+gate-status:
+	@docker compose exec -T backend python /app/app/observability/gate_aggregator.py
+
+test-invariants:
+	@echo "══════════════════════════════════════════"
+	@echo "  DB INVARIANT GATE TEST"
+	@echo "══════════════════════════════════════════"
+	@docker compose exec -T backend python /shared_scripts/test_invariants.py; \
+		EXIT=$$?; \
+		if [ $$EXIT -eq 0 ]; then \
+			echo ""; echo "  ✓ db-invariants PASSED"; \
+		else \
+			echo ""; echo "  ✗ db-invariants FAILED (exit $$EXIT)"; \
+		fi; \
+		exit $$EXIT
 
 build:
 	docker compose build --no-cache
