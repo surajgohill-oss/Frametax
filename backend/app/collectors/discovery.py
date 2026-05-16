@@ -177,7 +177,7 @@ class EventDiscovery:
         try:
             resp = await client.get(api_url, params=params)
             if resp.status_code != 200:
-                logger.debug(
+                logger.warning(
                     "DISCOVERY: SeatGeek scan http=%d — DATA_GAP", resp.status_code
                 )
                 return []
@@ -247,7 +247,7 @@ class EventDiscovery:
         try:
             resp = await client.get(solr_url)
             if resp.status_code != 200:
-                logger.debug(
+                logger.warning(
                     "DISCOVERY: StubHub SOLR http=%d — DATA_GAP (auth required)",
                     resp.status_code,
                 )
