@@ -282,25 +282,56 @@ async def run_poll_for_tracked_event(tracked_event_id: int):
                 event.status = new_status
             te.lifecycle_phase = compute_lifecycle_phase(event.event_date)
 
-        poll_run = PollRun(tracked_event_id=te.id, started_at=datetime.utcnow())
-        db.add(poll_run)
-        await db.flush()
-        poll_run_id = poll_run.id
-
         te.last_polled_at = datetime.utcnow()
         te.poll_interval_minutes = interval
         te.next_poll_at = datetime.utcnow() + timedelta(minutes=interval)
         await db.commit()
 
-    collector = get_collector(marketplace.slug, settings)
+    # Fan out to every registered collector — all marketplaces, full isolation.
+    from app.collectors.registry import COLLECTOR_REGISTRY
+    collector_slugs = list(COLLECTOR_REGISTRY.keys())
+    event_title = event.title if event else str(te.event_id)
+    logger.info(
+        "POLLING: event_id=%d '%s' dispatching to %d collector(s): [%s]",
+        te.event_id, event_title, len(collector_slugs), ", ".join(collector_slugs),
+    )
+    await asyncio.gather(
+        *[_run_collector_for_event(slug, te) for slug in collector_slugs],
+        return_exceptions=True,
+    )
+
+
+async def _run_collector_for_event(collector_slug: str, te: TrackedEvent):
+    """
+    Run one collector against one tracked event.
+    Each invocation gets its own PollRun row.
+    Exceptions are caught here — a failing collector does not affect siblings.
+    """
+    collector = get_collector(collector_slug, settings)
     if not collector:
-        logger.warning("No collector registered for '%s'", marketplace.slug)
+        logger.debug("POLLING: no collector registered for '%s' — skipping", collector_slug)
         return
     collector._db_session_factory = AsyncSessionLocal
 
+    async with AsyncSessionLocal() as db:
+        poll_run = PollRun(tracked_event_id=te.id, started_at=datetime.utcnow())
+        db.add(poll_run)
+        await db.flush()
+        poll_run_id = poll_run.id
+        await db.commit()
+
     try:
         result = await collector.collect(te)
+        logger.info(
+            "POLLING: collector=%s event_id=%d listings=%d",
+            collector_slug, te.event_id, len(result.listings),
+        )
         await _process_result(result, te, poll_run_id)
+    except Exception as exc:
+        logger.exception(
+            "POLLING: collector=%s event_id=%d unhandled exception — %s",
+            collector_slug, te.event_id, exc,
+        )
     finally:
         await collector.close()
 
