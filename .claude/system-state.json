@@ -1,9 +1,18 @@
 {
-  "docker_status": "broken — sandbox has no dockerd process; stale socket at /var/run/docker.sock (mtime May 14 17:25); no containerd process found",
-  "backend_status": "unknown — cannot reach; Docker daemon absent in sandbox",
-  "runtime_verified_steps": [],
+  "docker_status": "running — host runtime confirmed healthy (Docker Desktop reinstalled)",
+  "backend_status": "healthy — boot successful, scheduler active, Playwright operational",
+  "runtime_verified_steps": [
+    "Docker daemon: healthy on host Mac (Server Version confirmed)",
+    "docker compose build --no-cache backend: completed — Playwright libs installed",
+    "docker compose up -d: all containers healthy",
+    "make lifecycle-time-sim-test: PASS (per host runtime report)",
+    "make debug-snapshot: Invariants A-E PASS (per host runtime report)",
+    "Playwright dependency fix: operational — BrowserType.launch_persistent_context no longer failing",
+    "Stage 3 eligibility: populated — seeded listings visible",
+    "Scheduler: active and running"
+  ],
   "static_verified_steps": [
-    "test_lifecycle_time_sim.py: all 55 boundary checks PASS (simulated against inline scheduler logic)",
+    "test_lifecycle_time_sim.py: all 55 boundary checks (simulated, now superseded by runtime pass)",
     "Makefile: grep -P removed, grep -oE portable replacement confirmed",
     "Dockerfile.backend: all 22 Chromium runtime libs present, --with-deps removed",
     "scheduler.py: all 6 piecewise thresholds match test file expectations",
@@ -11,32 +20,37 @@
     "All 37 backend .py files: syntax clean",
     "All 6 scripts/*.py files: syntax clean"
   ],
-  "simulated_steps": [
-    "55-check lifecycle time-sim full run: 55/55 PASS — executed against inlined scheduler logic without Docker"
-  ],
+  "simulated_steps": [],
   "open_tasks": [
-    "BLOCKING: No dockerd in sandbox — runtime verification requires user to run tests on their Mac directly",
-    "BLOCKING: Dockerfile.backend rebuild (Task C Playwright fix) cannot execute from this sandbox",
-    "Stage 3 listings = 0: pending runtime verification after Docker rebuild on Mac"
+    "Stage 3 polling execution: verify actual poll_runs being created by scheduler",
+    "Live Playwright collector: verify runs completing with real data (not seeded demo)",
+    "Dynamic listing ingestion: confirm listings beyond seeded demo rows",
+    "Scheduler end-to-end: confirm triggered collection lifecycle (queue -> poll_run -> listing)",
+    "Strict data separation: seeded/demo data vs live collector evidence must be distinguishable"
   ],
-  "failed_steps": [
-    "docker info — daemon unreachable (no dockerd process in sandbox, stale socket mtime May 14)"
-  ],
-  "last_verified_step": "static audit of all modified files — commit 2b87eb8",
+  "failed_steps": [],
+  "last_verified_step": "RUNTIME: full stack healthy — Invariants A-E PASS, Playwright fix confirmed",
   "assumptions": [
-    "This sandbox is a Linux container without a Docker daemon",
-    "Docker Desktop runs on the user's Mac — this agent cannot reach it",
-    "All code changes are committed and pushed (HEAD: a12eaff)",
-    "Runtime verification must be performed by the user on their Mac"
+    "Fresh bootstrap environment — Docker Desktop was reinstalled",
+    "Seeded demo data is present but must NOT be counted as live collector evidence",
+    "Stage 3 polling interval depends on event_date proximity (piecewise policy)",
+    "Demo events are 28-72 days out — poll interval = 1440 min (daily) per piecewise policy"
   ],
   "infrastructure_diagnosis": {
     "socket_exists": true,
-    "socket_path": "/var/run/docker.sock",
-    "socket_mtime": "2026-05-14T17:25:49Z",
-    "dockerd_process": false,
-    "containerd_process": false,
-    "systemd_available": false,
-    "sandbox_type": "Linux container (non-systemd, no init daemon)"
+    "dockerd_process": true,
+    "sandbox_type": "host Mac — Docker Desktop reinstalled",
+    "playwright_status": "operational"
+  },
+  "data_provenance": {
+    "seeded_demo_events": 6,
+    "seeded_resolution_source": "seeded",
+    "live_collector_evidence": "UNVERIFIED — pending Stage 3 poll_run confirmation",
+    "external_event_ids_seeded": [
+      "demo-sh-kendrick", "demo-sg-kendrick",
+      "demo-sh-taylorswift", "demo-sg-taylorswift",
+      "demo-sh-davematthews", "demo-sg-davematthews"
+    ]
   },
   "last_updated": "2026-05-15",
   "head_commit": "a12eaff"
