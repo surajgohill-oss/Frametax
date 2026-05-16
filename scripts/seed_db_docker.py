@@ -15,7 +15,7 @@ VENUE_MAP_DIR = Path("/shared/venue_maps")
 DATABASE_URL = "postgresql+asyncpg://concert:concert@db:5432/concert_tracker"
 
 # Bump this string whenever the seed data changes — visible in bootstrap-status.
-SEED_VERSION = "v5-ticketmaster"
+SEED_VERSION = "v6-tickpick-gametime"
 
 
 def _canonical_id(title: str, venue_slug: str, event_date: datetime) -> str:
@@ -24,16 +24,21 @@ def _canonical_id(title: str, venue_slug: str, event_date: datetime) -> str:
 
 
 async def seed_marketplaces(db):
-    for mp in [
-        {"slug": "stubhub",  "name": "StubHub",  "base_url": "https://www.stubhub.com",  "is_active": True},
-        {"slug": "seatgeek", "name": "SeatGeek", "base_url": "https://seatgeek.com",      "is_active": True},
-        {"slug": "tickpick", "name": "TickPick", "base_url": "https://www.tickpick.com",  "is_active": False},
-        {"slug": "gametime",     "name": "Gametime",     "base_url": "https://gametime.co",             "is_active": False},
+    _marketplaces = [
+        {"slug": "stubhub",      "name": "StubHub",      "base_url": "https://www.stubhub.com",        "is_active": True},
+        {"slug": "seatgeek",     "name": "SeatGeek",     "base_url": "https://seatgeek.com",           "is_active": True},
         {"slug": "ticketmaster", "name": "Ticketmaster", "base_url": "https://www.ticketmaster.com",   "is_active": True},
-    ]:
+        {"slug": "tickpick",     "name": "TickPick",     "base_url": "https://www.tickpick.com",       "is_active": True},
+        {"slug": "gametime",     "name": "Gametime",     "base_url": "https://gametime.co",            "is_active": True},
+    ]
+    for mp in _marketplaces:
         ex = await db.execute(select(Marketplace).where(Marketplace.slug == mp["slug"]))
-        if not ex.scalar_one_or_none():
+        row = ex.scalar_one_or_none()
+        if not row:
             db.add(Marketplace(**mp))
+        else:
+            # Sync is_active so previously-inactive rows get activated on upgrade
+            row.is_active = mp["is_active"]
     await db.flush()
 
 

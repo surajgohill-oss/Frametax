@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     seatgeek_client_id: str = ""
     seatgeek_client_secret: str = ""
     ticketmaster_api_key: str = ""
+    tickpick_api_key: str = ""
+    gametime_api_key: str = ""
 
     cors_origins: List[str] = ["http://localhost:3000"]
 

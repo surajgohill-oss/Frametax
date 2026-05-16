@@ -3,11 +3,15 @@ from app.collectors.base import BaseCollector
 from app.collectors.stubhub import StubHubCollector
 from app.collectors.seatgeek import SeatGeekCollector
 from app.collectors.ticketmaster import TicketmasterCollector
+from app.collectors.tickpick import TickPickCollector
+from app.collectors.gametime import GameTimeCollector
 
 COLLECTOR_REGISTRY: dict[str, Type[BaseCollector]] = {
     "stubhub":      StubHubCollector,
     "seatgeek":     SeatGeekCollector,
     "ticketmaster": TicketmasterCollector,
+    "tickpick":     TickPickCollector,
+    "gametime":     GameTimeCollector,
 }
 
 
