@@ -1,6 +1,6 @@
 .PHONY: up down reset logs status build verify debug-snapshot verify-seed-code bootstrap-status \
         e2e-discovery-test discovery-dedupe-test lifecycle-time-sim-test \
-        gate-status test-invariants signal-check
+        gate-status test-invariants
 
 up:
 	docker compose up --build -d
@@ -294,13 +294,6 @@ test-invariants:
 			echo ""; echo "  ✗ db-invariants FAILED (exit $$EXIT)"; \
 		fi; \
 		exit $$EXIT
-
-signal-check:
-	@echo "══════════════════════════════════════════"
-	@echo "  PHASE 5 SIGNAL ENGINE CHECK"
-	@echo "══════════════════════════════════════════"
-	@curl -sf http://localhost:8000/api/signals/ | python3 -m json.tool 2>/dev/null || \
-		echo "  signals API unavailable — is the backend running?"
 
 build:
 	docker compose build --no-cache
