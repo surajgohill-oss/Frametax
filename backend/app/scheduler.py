@@ -498,11 +498,23 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
         # Retire listings that were active before but absent from this poll.
         # Because existing is scoped to marketplace.id, only THIS marketplace's
         # rows are candidates — listings from all other marketplaces are unaffected.
+        #
+        # Safety rule: only retire when the collector returned real results.
+        # An empty result (API failure, unresolvable ID, rate-limit, partial error)
+        # is indistinguishable from a genuine "0 listings" response, so we preserve
+        # all existing rows rather than bulk-deactivating on ambiguous evidence.
         disappeared = 0
-        for ext_id, listing in existing.items():
-            if ext_id not in seen_ids:
-                listing.is_active = False
-                disappeared += 1
+        if result.listings:
+            for ext_id, listing in existing.items():
+                if ext_id not in seen_ids:
+                    listing.is_active = False
+                    disappeared += 1
+        elif existing:
+            logger.warning(
+                "RECONCILE: collector=%s event_id=%d returned 0 listings — "
+                "preserving %d existing listing(s), no deactivation",
+                result.marketplace_slug, result.event_id, len(existing),
+            )
 
         db.add_all(snapshots)
 
