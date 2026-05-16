@@ -361,6 +361,7 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
                     fees=raw.fees,
                     all_in_price=raw.all_in_price,
                     listing_url=raw.listing_url,
+                    market_segment=raw.market_segment,
                     first_seen_at=result.fetched_at,
                     last_seen_at=result.fetched_at,
                     extra=raw.extra,
@@ -378,6 +379,7 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
                 price=raw.price,
                 fees=raw.fees,
                 all_in_price=raw.all_in_price,
+                market_segment=raw.market_segment,
                 snapshot_at=result.fetched_at,
             ))
 

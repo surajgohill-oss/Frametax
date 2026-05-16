@@ -15,7 +15,7 @@ VENUE_MAP_DIR = Path("/shared/venue_maps")
 DATABASE_URL = "postgresql+asyncpg://concert:concert@db:5432/concert_tracker"
 
 # Bump this string whenever the seed data changes — visible in bootstrap-status.
-SEED_VERSION = "v4-resolution-source"
+SEED_VERSION = "v5-ticketmaster"
 
 
 def _canonical_id(title: str, venue_slug: str, event_date: datetime) -> str:
@@ -28,7 +28,8 @@ async def seed_marketplaces(db):
         {"slug": "stubhub",  "name": "StubHub",  "base_url": "https://www.stubhub.com",  "is_active": True},
         {"slug": "seatgeek", "name": "SeatGeek", "base_url": "https://seatgeek.com",      "is_active": True},
         {"slug": "tickpick", "name": "TickPick", "base_url": "https://www.tickpick.com",  "is_active": False},
-        {"slug": "gametime", "name": "Gametime", "base_url": "https://gametime.co",       "is_active": False},
+        {"slug": "gametime",     "name": "Gametime",     "base_url": "https://gametime.co",             "is_active": False},
+        {"slug": "ticketmaster", "name": "Ticketmaster", "base_url": "https://www.ticketmaster.com",   "is_active": True},
     ]:
         ex = await db.execute(select(Marketplace).where(Marketplace.slug == mp["slug"]))
         if not ex.scalar_one_or_none():

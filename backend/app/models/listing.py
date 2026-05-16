@@ -25,6 +25,7 @@ class Listing(Base):
     all_in_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
     listing_url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    market_segment: Mapped[str | None] = mapped_column(String(20), nullable=True)
     first_seen_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     last_seen_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     extra: Mapped[dict | None] = mapped_column(JSON, nullable=True)
@@ -50,6 +51,7 @@ class ListingSnapshot(Base):
     price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     fees: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
     all_in_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    market_segment: Mapped[str | None] = mapped_column(String(20), nullable=True)
     snapshot_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
 
     listing: Mapped["Listing"] = relationship("Listing", back_populates="snapshots")

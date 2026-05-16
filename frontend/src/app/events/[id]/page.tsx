@@ -158,7 +158,7 @@ export default function EventDetailPage() {
       {activeTab === 'overview' && (
         <div className="space-y-4">
           <div className="flex gap-2 mb-4">
-            {[['', 'All'], ['stubhub', 'StubHub'], ['seatgeek', 'SeatGeek']].map(([val, label]) => (
+            {[['', 'All'], ['stubhub', 'StubHub'], ['seatgeek', 'SeatGeek'], ['ticketmaster', 'Ticketmaster']].map(([val, label]) => (
               <button
                 key={val}
                 onClick={() => setMarketplace(val)}
@@ -189,10 +189,15 @@ export default function EventDetailPage() {
                     <td className="px-4 py-2.5 text-gray-300">{listing.row || '—'}</td>
                     <td className="px-4 py-2.5 text-right font-mono text-green-400">{fmt$(listing.price_each)}</td>
                     <td className="px-4 py-2.5 text-right text-gray-300">{listing.quantity}</td>
-                    <td className="px-4 py-2.5">
-                      <Badge variant={listing.marketplace_slug === 'stubhub' ? 'indigo' : 'blue'}>
+                    <td className="px-4 py-2.5 space-x-1">
+                      <Badge variant={listing.marketplace_slug === 'stubhub' ? 'indigo' : listing.marketplace_slug === 'ticketmaster' ? 'green' : 'blue'}>
                         {listing.marketplace_slug}
                       </Badge>
+                      {listing.market_segment && (
+                        <Badge variant="secondary">
+                          {listing.market_segment === 'verified_resale' ? 'resale' : listing.market_segment}
+                        </Badge>
+                      )}
                     </td>
                   </tr>
                 ))}

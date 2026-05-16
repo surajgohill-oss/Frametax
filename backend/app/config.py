@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     seatgeek_base_url: str = "https://seatgeek.com"
     seatgeek_client_id: str = ""
     seatgeek_client_secret: str = ""
+    ticketmaster_api_key: str = ""
 
     cors_origins: List[str] = ["http://localhost:3000"]
 

@@ -2,10 +2,12 @@ from typing import Type
 from app.collectors.base import BaseCollector
 from app.collectors.stubhub import StubHubCollector
 from app.collectors.seatgeek import SeatGeekCollector
+from app.collectors.ticketmaster import TicketmasterCollector
 
 COLLECTOR_REGISTRY: dict[str, Type[BaseCollector]] = {
-    "stubhub": StubHubCollector,
-    "seatgeek": SeatGeekCollector,
+    "stubhub":      StubHubCollector,
+    "seatgeek":     SeatGeekCollector,
+    "ticketmaster": TicketmasterCollector,
 }
 
 

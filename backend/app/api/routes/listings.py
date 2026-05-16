@@ -52,6 +52,7 @@ async def get_listings(
             "all_in_price":         float(l.all_in_price) if l.all_in_price else None,
             "listing_url":          l.listing_url,
             "marketplace_slug":     mp.slug,
+            "market_segment":       l.market_segment,
             "is_active":            l.is_active,
             "first_seen_at":        l.first_seen_at.isoformat() if l.first_seen_at else None,
             "last_seen_at":         l.last_seen_at.isoformat() if l.last_seen_at else None,

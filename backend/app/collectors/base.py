@@ -20,6 +20,7 @@ class RawListing:
     fees: Optional[Decimal] = None
     all_in_price: Optional[Decimal] = None
     listing_url: Optional[str] = None
+    market_segment: Optional[str] = None   # "primary" | "verified_resale" | None
     extra: dict = field(default_factory=dict)
 
 

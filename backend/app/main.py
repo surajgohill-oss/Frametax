@@ -23,8 +23,10 @@ _REQUIRED_COLUMNS = [
     ("listings",          "extra"),
     ("listings",          "fees"),
     ("listings",          "all_in_price"),
+    ("listings",          "market_segment"),
     ("listing_snapshots", "fees"),
     ("listing_snapshots", "all_in_price"),
+    ("listing_snapshots", "market_segment"),
     ("tracked_events",    "resolution_source"),
     ("tracked_events",    "lifecycle_phase"),
 ]
