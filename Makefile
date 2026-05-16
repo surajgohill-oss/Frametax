@@ -216,7 +216,8 @@ debug-snapshot:
 		          WHEN (e.event_date - now()) < interval '10 days'     THEN '240min' \
 		          ELSE '1440min' \
 		        END AS poll_policy, \
-		        te.last_polled_at::time, te.next_poll_at::time \
+		        to_char(te.last_polled_at, 'MM-DD HH24:MI:SS') AS last_polled_at, \
+		        to_char(te.next_poll_at,  'MM-DD HH24:MI:SS') AS next_poll_at \
 		 FROM tracked_events te \
 		 JOIN events e ON e.id = te.event_id \
 		 JOIN marketplaces m ON m.id = te.marketplace_id \
