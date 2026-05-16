@@ -87,13 +87,15 @@ class StubHubCollector(BaseCollector):
         listings = []
         for doc in data.get("response", {}).get("docs", []):
             try:
+                raw_id = doc.get("listing_id", "")
                 listings.append(RawListing(
-                    external_listing_id=str(doc.get("listing_id", "")),
+                    external_listing_id=f"sh-{raw_id}",
                     section=str(doc.get("section", "Unknown")), row=doc.get("row"),
                     quantity=int(doc.get("qty", 1)), price=Decimal(str(doc.get("current_price", 0))),
                     fees=Decimal(str(doc["fees"])) if doc.get("fees") else None,
                     all_in_price=Decimal(str(doc["all_in_price"])) if doc.get("all_in_price") else None,
                     listing_url=doc.get("listing_url"),
+                    market_segment="secondary_resale",
                 ))
             except Exception: pass
         return listings

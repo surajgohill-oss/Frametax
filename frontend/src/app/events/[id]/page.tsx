@@ -82,10 +82,8 @@ export default function EventDetailPage() {
     );
   }
 
-  const stubhubListings = listings.filter((l: any) => l.marketplace_slug === 'stubhub');
-  const seatgeekListings = listings.filter((l: any) => l.marketplace_slug === 'seatgeek');
-  const lowestStubhub = stubhubListings.length > 0 ? Math.min(...stubhubListings.map((l: any) => l.price_each)) : null;
-  const lowestSeatgeek = seatgeekListings.length > 0 ? Math.min(...seatgeekListings.map((l: any) => l.price_each)) : null;
+  const lowestAsk = listings.length > 0 ? Math.min(...listings.map((l: any) => l.price_each)) : null;
+  const marketsActive = new Set(listings.map((l: any) => l.marketplace_slug)).size;
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -120,12 +118,12 @@ export default function EventDetailPage() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
-          <p className="text-xs text-gray-400 mb-1">StubHub Low</p>
-          <p className="text-xl font-bold text-green-400">{fmt$(lowestStubhub)}</p>
+          <p className="text-xs text-gray-400 mb-1">Lowest Ask</p>
+          <p className="text-xl font-bold text-green-400">{fmt$(lowestAsk)}</p>
         </Card>
         <Card>
-          <p className="text-xs text-gray-400 mb-1">SeatGeek Low</p>
-          <p className="text-xl font-bold text-blue-400">{fmt$(lowestSeatgeek)}</p>
+          <p className="text-xs text-gray-400 mb-1">Markets Active</p>
+          <p className="text-xl font-bold text-white">{marketsActive || '—'}</p>
         </Card>
         <Card>
           <p className="text-xs text-gray-400 mb-1">Total Listings</p>

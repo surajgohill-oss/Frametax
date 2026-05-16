@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     max_tracked_events: int = 30
 
     stubhub_base_url: str = "https://www.stubhub.com"
+    stubhub_api_key: str = ""
     seatgeek_base_url: str = "https://seatgeek.com"
     seatgeek_client_id: str = ""
     seatgeek_client_secret: str = ""
