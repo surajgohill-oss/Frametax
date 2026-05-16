@@ -271,8 +271,8 @@ debug-snapshot:
 		|| echo "  dedupe_skips_count: 0"
 	@echo ""
 	@echo "── Gate status (DB invariants) ───────────"
-	@docker compose exec -T backend python /shared_scripts/test_invariants.py 2>/dev/null | \
-		grep -E "RESULT:|Invariant [A-E]" | sed 's/^/  /' || \
+	@docker compose exec -T backend python /app/app/observability/gate_aggregator.py db-invariants 2>/dev/null | \
+		grep -E "SYSTEM_STATUS:|✓|✗|~" | sed 's/^/  /' || \
 		echo "  gate status unavailable (backend not ready)"
 	@echo "  (run 'make gate-status' for full test suite)"
 	@echo ""

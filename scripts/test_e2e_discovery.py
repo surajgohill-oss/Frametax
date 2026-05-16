@@ -19,7 +19,9 @@ Cleans up all test rows on exit (pass or fail).
 Exit: 0 = PASS, 1 = FAIL
 """
 import asyncio
+import json
 import sys
+import time
 from datetime import datetime, timedelta
 
 sys.path.insert(0, "/app")
@@ -126,6 +128,7 @@ async def check_invariants(S) -> dict[str, bool]:
 
 
 async def main():
+    _t0 = time.monotonic()
     engine = create_async_engine(DATABASE_URL, echo=False)
     S = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     settings = get_settings()
@@ -343,12 +346,13 @@ async def main():
         print(f"  RESULT: {_RED}FAIL{_RESET} — {len(_failures)}/{total} check(s) failed")
         for f in _failures:
             print(f"    ✗ {f}")
-        sys.exit(1)
     else:
         print(f"  RESULT: {_GREEN}PASS{_RESET} — all {total} checks passed")
         print("  Discovery → Resolver → Stage 3 eligibility pipeline verified.")
         print("  Invariants A–E PASS throughout. System is pipeline-stable.")
-        sys.exit(0)
+    _status = "FAIL" if _failures else "PASS"
+    print(f"GATE_REPORT_JSON={json.dumps({'gate_name': 'e2e-discovery-test', 'status': _status, 'duration_ms': int((time.monotonic() - _t0) * 1000), 'details': {'total': total, 'passed': _passed, 'failed': len(_failures)}})}")
+    sys.exit(1 if _failures else 0)
 
 
 asyncio.run(main())

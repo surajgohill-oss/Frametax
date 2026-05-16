@@ -12,8 +12,12 @@ exercise every tier and every boundary condition.
 
 Exit: 0 = PASS, 1 = FAIL
 """
+import json
 import sys
+import time
 from datetime import datetime, timedelta
+
+_t0 = time.monotonic()
 
 sys.path.insert(0, "/app")
 
@@ -178,9 +182,10 @@ if _failures:
     print(f"  RESULT: {_RED}FAIL{_RESET} — {len(_failures)}/{total} assertion(s) failed")
     for f in _failures:
         print(f"    ✗ {f}")
-    sys.exit(1)
 else:
     print(f"  RESULT: {_GREEN}PASS{_RESET} — all {total} assertions correct")
     print("  Polling policy and lifecycle phase behave deterministically")
     print("  at all boundaries with no oscillation.")
-    sys.exit(0)
+_status = "FAIL" if _failures else "PASS"
+print(f"GATE_REPORT_JSON={json.dumps({'gate_name': 'lifecycle-time-sim-test', 'status': _status, 'duration_ms': int((time.monotonic() - _t0) * 1000), 'details': {'total': total, 'passed': _passed, 'failed': len(_failures)}})}")
+sys.exit(1 if _failures else 0)

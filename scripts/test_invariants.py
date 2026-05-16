@@ -13,7 +13,9 @@ Invariant classification:
 Exit: 0 = all hard gates PASS, 1 = any hard gate FAIL
 """
 import asyncio
+import json
 import sys
+import time
 
 sys.path.insert(0, "/app")
 
@@ -73,6 +75,7 @@ _INVARIANTS = [
 
 
 async def main() -> int:
+    _t0 = time.monotonic()
     engine = create_async_engine(DATABASE_URL, echo=False)
     S = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
@@ -111,14 +114,16 @@ async def main() -> int:
     await engine.dispose()
 
     total = len(_INVARIANTS)
+    failed = len(hard_failures)
+    _status = "FAIL" if hard_failures else "PASS"
     print()
     print("══════════════════════════════════════════")
     if hard_failures:
         print(f"  RESULT: {_RED}FAIL{_RESET} — hard gate failures: {', '.join(hard_failures)}")
-        return 1
     else:
         print(f"  RESULT: {_GREEN}PASS{_RESET} — all {total} invariants verified ({passed}/{total})")
-        return 0
+    print(f"GATE_REPORT_JSON={json.dumps({'gate_name': 'db-invariants', 'status': _status, 'duration_ms': int((time.monotonic() - _t0) * 1000), 'details': {'total': total, 'passed': passed, 'failed': failed, 'hard_failures': hard_failures}})}")
+    return 1 if hard_failures else 0
 
 
 sys.exit(asyncio.run(main()))
