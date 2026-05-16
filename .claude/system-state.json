@@ -18,7 +18,9 @@
     "SeatGeek internal API: HTTP 403 for demo-sg-* IDs (RUNTIME VERIFIED \u2014 3 log lines)",
     "COLLECTOR gone=8/6/9: _process_result correctly tombstoned seeded listings (RUNTIME VERIFIED)",
     "listings_found=0: root cause confirmed \u2014 synthetic demo IDs rejected by both APIs (RUNTIME VERIFIED)",
-    "make debug-snapshot: Invariants A-E all PASS \u2014 gold standard confirmed (2026-05-16 host runtime)"
+    "make debug-snapshot: Invariants A-E all PASS \u2014 gold standard confirmed (2026-05-16 host runtime)",
+    "DISCOVERY: SeatGeek http=403 DATA_GAP confirmed (RUNTIME VERIFIED \u2014 WARNING log line)",
+    "DISCOVERY: StubHub SOLR http=404 DATA_GAP confirmed (RUNTIME VERIFIED \u2014 WARNING log line)"
   ],
   "static_verified_steps": [
     "test_lifecycle_time_sim.py: all 55 boundary checks (simulated, superseded by runtime)",
@@ -31,17 +33,19 @@
   ],
   "simulated_steps": [],
   "open_tasks": [
-    "EventDiscovery: discovery_run_count=0 in log window \u2014 first 6h cycle not yet elapsed",
-    "next_poll_at::time display bug in Makefile snapshot \u2014 drops date, makes +24h look like +4\u00b5s",
-    "Live listing ingestion: BLOCKED (data) \u2014 requires real numeric IDs from EventDiscovery"
+    "SeatGeek discovery: BLOCKED (config) \u2014 set SEATGEEK_CLIENT_ID + SEATGEEK_CLIENT_SECRET in .env to unblock",
+    "StubHub discovery: BLOCKED (auth) \u2014 SOLR requires session token, no unauthenticated discovery path available",
+    "Live listing ingestion: BLOCKED (data) \u2014 depends on discovery finding real events first"
   ],
   "failed_steps": [
     "StubHub SOLR: HTTP 404 for demo-sh-* \u2014 synthetic IDs not valid SOLR event_id values (RUNTIME VERIFIED)",
     "SeatGeek internal API: HTTP 403 for demo-sg-* \u2014 synthetic IDs not valid SeatGeek event IDs (RUNTIME VERIFIED)",
     "Playwright (SeatGeek): FAILED per Rule 6 \u2014 no browser lifecycle, navigation, or interception logs observed",
-    "Playwright (StubHub): FAILED per Rule 6 \u2014 no browser lifecycle, navigation, or interception logs observed"
+    "Playwright (StubHub): FAILED per Rule 6 \u2014 no browser lifecycle, navigation, or interception logs observed",
+    "EventDiscovery SeatGeek: HTTP 403 \u2014 no client_id configured, internal API blocks unauthenticated access",
+    "EventDiscovery StubHub: HTTP 404 \u2014 SOLR endpoint requires session auth, no unauthenticated path"
   ],
-  "last_verified_step": "RUNTIME: make debug-snapshot \u2014 Invariants A-E PASS, pipeline structure correct, display bug identified in next_poll_at::time cast",
+  "last_verified_step": "RUNTIME: EventDiscovery DATA_GAP confirmed for both marketplaces \u2014 C. External API failure, missing credentials",
   "data_provenance": {
     "seeded_demo_events": 6,
     "seeded_resolution_source": "seeded",
