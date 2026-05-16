@@ -256,9 +256,15 @@ async def main():
     info(f"test tracked_events still unresolved after resolver: {still_null}/2 "
          f"(DATA_GAP from live APIs is expected for synthetic test events)")
     check("resolver did not crash on synthetic events", True, True)
-    check("demo events unaffected (still resolved)",
-          counts.get("demo_skipped", 0) + counts.get("already_set", 0), 6,
-          "6 demo tracked_events should be skipped by resolver")
+
+    # Verify demo rows are untouched — resolver filters them out at query level
+    # (WHERE external_event_id IS NULL), so we check directly in DB.
+    async with S() as db:
+        demo_count = (await db.execute(text(
+            "SELECT COUNT(*) FROM tracked_events "
+            "WHERE external_event_id LIKE 'demo-%' AND is_active = true"
+        ))).scalar_one()
+    check("demo tracked_events untouched (seeded IDs intact)", demo_count, 6)
 
     # ── Stage 2b: Simulated resolver success ──────────────────────────────────
     print()
