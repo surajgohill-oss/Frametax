@@ -204,7 +204,7 @@ async def seed_demo_events(db):
                     resolution_source="seeded" if demo_eid else None,
                     is_active=True,
                     poll_interval_minutes=60,
-                    next_poll_at=datetime.utcnow() + timedelta(hours=1),
+                    next_poll_at=None,
                 ))
                 print(f"SEED: created tracked_event event_id={event.id} mp={mp.slug} eid={demo_eid}")
             else:
