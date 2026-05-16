@@ -177,6 +177,18 @@ async def _check_due_events():
                 len(pending), [te.id for te in pending],
             )
 
+        if due:
+            logger.info(
+                "STAGE_GATE: %d tracked_event(s) due for polling — "
+                "%s",
+                len(due),
+                [
+                    f"te={te.id} event={te.event_id} mp={te.marketplace_id} "
+                    f"eid={te.external_event_id!r}"
+                    for te in due
+                ],
+            )
+
     for te in due:
         asyncio.create_task(run_poll_for_tracked_event(te.id))
 
@@ -313,6 +325,13 @@ async def _run_collector_for_event(collector_slug: str, te: TrackedEvent):
         return
     collector._db_session_factory = AsyncSessionLocal
 
+    logger.info(
+        "COLLECTOR_DISPATCH: slug=%s te_id=%d event_id=%d "
+        "te_marketplace_id=%d external_event_id=%r",
+        collector_slug, te.id, te.event_id,
+        te.marketplace_id, te.external_event_id,
+    )
+
     async with AsyncSessionLocal() as db:
         poll_run = PollRun(tracked_event_id=te.id, started_at=datetime.utcnow())
         db.add(poll_run)
@@ -322,15 +341,27 @@ async def _run_collector_for_event(collector_slug: str, te: TrackedEvent):
 
     try:
         result = await collector.collect(te)
-        logger.info(
-            "POLLING: collector=%s event_id=%d listings=%d",
-            collector_slug, te.event_id, len(result.listings),
-        )
+        if result.error:
+            logger.warning(
+                "COLLECTOR_RESULT: slug=%s event_id=%d listings=%d "
+                "error=%r external_event_id=%r",
+                collector_slug, te.event_id, len(result.listings),
+                result.error, te.external_event_id,
+            )
+        else:
+            logger.info(
+                "COLLECTOR_RESULT: slug=%s event_id=%d listings=%d "
+                "external_event_id=%r",
+                collector_slug, te.event_id, len(result.listings),
+                te.external_event_id,
+            )
         await _process_result(result, te, poll_run_id)
     except Exception as exc:
         logger.exception(
-            "POLLING: collector=%s event_id=%d unhandled exception — %s",
-            collector_slug, te.event_id, exc,
+            "COLLECTOR_EXCEPTION: slug=%s event_id=%d "
+            "external_event_id=%r exc_type=%s — %s",
+            collector_slug, te.event_id,
+            te.external_event_id, type(exc).__name__, exc,
         )
     finally:
         await collector.close()
