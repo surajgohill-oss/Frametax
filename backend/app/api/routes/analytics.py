@@ -1,3 +1,4 @@
+import dataclasses
 import statistics
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, Query
@@ -7,6 +8,7 @@ from typing import Optional
 
 from app.database import get_db
 from app.models import Event, Listing, ListingSnapshot, Marketplace, ScraperErrorLog
+from app.services.analytics import get_data_audit, get_event_analytics, get_venue_analytics
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
@@ -91,3 +93,36 @@ async def compare_marketplaces(event_id: int, db: AsyncSession = Depends(get_db)
         agg[k]["listing_count"] += 1
         agg[k]["inventory"] += l.quantity
     return [{"section_id": k[0], "marketplace": k[1], "display_name": v["display_name"], "lowest_ask": min(v["prices"]), "listing_count": v["listing_count"], "inventory": v["inventory"]} for k, v in agg.items()]
+
+
+# ── Phase 4: Value Extraction Layer ──────────────────────────────────────────
+# Read-only. No writes to any ingestion table.
+
+@router.get("/audit")
+async def data_audit(db: AsyncSession = Depends(get_db)):
+    """
+    STEP 1 audit — totals across events, tracked_events, poll_runs.
+    Read-only. Safe to call repeatedly.
+    """
+    result = await get_data_audit(db)
+    return dataclasses.asdict(result)
+
+
+@router.get("/events/overview")
+async def events_overview(db: AsyncSession = Depends(get_db)):
+    """
+    STEP 2 EventAnalyticsView — per-event coverage, resolution, and poll activity.
+    Read-only.
+    """
+    views = await get_event_analytics(db)
+    return [dataclasses.asdict(v) for v in views]
+
+
+@router.get("/venues/overview")
+async def venues_overview(db: AsyncSession = Depends(get_db)):
+    """
+    STEP 2 VenueAnalyticsView — venue-level rollup of events tracked and polling intensity.
+    Read-only.
+    """
+    views = await get_venue_analytics(db)
+    return [dataclasses.asdict(v) for v in views]
