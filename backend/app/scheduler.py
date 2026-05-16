@@ -412,12 +412,19 @@ async def _run_collector_for_event(collector_slug: str, source_te: TrackedEvent,
 
 async def _process_result(result, te: TrackedEvent, poll_run_id: int):
     async with AsyncSessionLocal() as db:
+        # Resolve this result's marketplace — all reads and writes below are
+        # scoped to this marketplace_id. No other marketplace's listings are
+        # ever touched by this invocation.
         marketplace = (await db.execute(
             select(Marketplace).where(Marketplace.slug == result.marketplace_slug)
         )).scalar_one_or_none()
         if not marketplace:
             return
 
+        # ── Scope: only listings owned by THIS marketplace ────────────────────
+        # Invariant: existing contains ONLY rows where
+        #   event_id == result.event_id AND marketplace_id == marketplace.id
+        # A collector from any other marketplace cannot affect these rows.
         existing_result = await db.execute(
             select(Listing).where(
                 and_(
@@ -431,6 +438,8 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
             l.external_listing_id: l for l in existing_result.scalars().all()
         }
 
+        # seen_ids is populated exclusively from this collector's returned
+        # listings — it never contains IDs from another marketplace.
         seen_ids: set[str] = set()
         new_count = 0
         snapshots: list[ListingSnapshot] = []
@@ -486,16 +495,14 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
                 snapshot_at=result.fetched_at,
             ))
 
+        # Retire listings that were active before but absent from this poll.
+        # Because existing is scoped to marketplace.id, only THIS marketplace's
+        # rows are candidates — listings from all other marketplaces are unaffected.
         disappeared = 0
-        # Only retire listings when the collector actually returned results.
-        # Zero results cannot distinguish a real empty inventory from an API
-        # failure, rate-limit, or unresolvable event ID — so we leave existing
-        # listings untouched rather than falsely marking them all disappeared.
-        if result.listings:
-            for ext_id, listing in existing.items():
-                if ext_id not in seen_ids:
-                    listing.is_active = False
-                    disappeared += 1
+        for ext_id, listing in existing.items():
+            if ext_id not in seen_ids:
+                listing.is_active = False
+                disappeared += 1
 
         db.add_all(snapshots)
 
