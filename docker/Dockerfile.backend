@@ -31,11 +31,30 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libexpat1 \
     && rm -rf /var/lib/apt/lists/*
 
+# Inject extra CA cert (e.g. TLS-inspection proxy in sandboxed environments).
+# No-ops when sandbox-ca.crt is absent or empty.
+COPY sandbox-ca.crt /usr/local/share/ca-certificates/sandbox-ca.crt
+RUN update-ca-certificates
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Trust the same CA in Python's certifi bundle so httpx picks it up.
+RUN python - <<'PY'
+import certifi, pathlib
+ca = pathlib.Path("/usr/local/share/ca-certificates/sandbox-ca.crt").read_text()
+bundle = pathlib.Path(certifi.where())
+if ca.strip() and ca.strip() not in bundle.read_text():
+    bundle.open("a").write("\n" + ca)
+    print("certifi: sandbox CA appended")
+else:
+    print("certifi: sandbox CA already present or empty — skipped")
+PY
+
 # Playwright: install Chromium browser binary (system libs installed above).
-RUN playwright install chromium || \
+# NODE_EXTRA_CA_CERTS ensures Node's downloader trusts the same proxy CA.
+RUN NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt \
+    playwright install chromium || \
     echo "WARNING: playwright chromium unavailable — browser scraping disabled"
 
 ENV PYTHONPATH=/app
