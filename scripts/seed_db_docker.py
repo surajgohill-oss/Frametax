@@ -15,7 +15,7 @@ VENUE_MAP_DIR = Path("/shared/venue_maps")
 DATABASE_URL = "postgresql+asyncpg://concert:concert@db:5432/concert_tracker"
 
 # Bump this string whenever the seed data changes — visible in bootstrap-status.
-SEED_VERSION = "v7-vividseats"
+SEED_VERSION = "v8-all-marketplace-tracked-events"
 
 
 def _canonical_id(title: str, venue_slug: str, event_date: datetime) -> str:
@@ -155,6 +155,14 @@ async def seed_demo_events(db):
     stub_mp = stub_r.scalar_one_or_none()
     sg_r = await db.execute(select(Marketplace).where(Marketplace.slug == "seatgeek"))
     sg_mp = sg_r.scalar_one_or_none()
+    tm_r = await db.execute(select(Marketplace).where(Marketplace.slug == "ticketmaster"))
+    tm_mp = tm_r.scalar_one_or_none()
+    tp_r = await db.execute(select(Marketplace).where(Marketplace.slug == "tickpick"))
+    tp_mp = tp_r.scalar_one_or_none()
+    gt_r = await db.execute(select(Marketplace).where(Marketplace.slug == "gametime"))
+    gt_mp = gt_r.scalar_one_or_none()
+    vs_r = await db.execute(select(Marketplace).where(Marketplace.slug == "vividseats"))
+    vs_mp = vs_r.scalar_one_or_none()
 
     # ── Phase 1: ensure events + tracked_events exist ────────────────────────
 
@@ -187,14 +195,23 @@ async def seed_demo_events(db):
             created_count += 1
             print(f"SEED: exists  event '{demo['title']}' id={event.id}")
 
+        # (mp, url_key_in_demo, eid_key_in_demo)
+        # url_key / eid_key are None for marketplaces with no pre-set demo IDs;
+        # those TrackedEvents start with external_event_id=NULL and are resolved
+        # on first poll via each collector's resolve_external_event_id() fallback.
         mp_pairs = [
-            (stub_mp, "stubhub_url", "stubhub_event_id"),
+            (stub_mp, "stubhub_url",  "stubhub_event_id"),
             (sg_mp,   "seatgeek_url", "seatgeek_event_id"),
+            (tm_mp,   None, None),
+            (tp_mp,   None, None),
+            (gt_mp,   None, None),
+            (vs_mp,   None, None),
         ]
         for mp, url_key, eid_key in mp_pairs:
             if not mp:
                 continue
-            demo_eid = demo.get(eid_key)
+            demo_eid = demo.get(eid_key) if eid_key else None
+            external_url = demo.get(url_key, "") if url_key else ""
             te_r = await db.execute(
                 select(TrackedEvent).where(
                     TrackedEvent.event_id == event.id,
@@ -206,7 +223,7 @@ async def seed_demo_events(db):
                 db.add(TrackedEvent(
                     event_id=event.id,
                     marketplace_id=mp.id,
-                    external_url=demo[url_key],
+                    external_url=external_url,
                     external_event_id=demo_eid,
                     resolution_source="seeded" if demo_eid else None,
                     is_active=True,

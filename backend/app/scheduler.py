@@ -308,16 +308,20 @@ async def run_poll_for_tracked_event(tracked_event_id: int):
         te.event_id, event_title, len(collector_slugs), ", ".join(collector_slugs),
     )
     await asyncio.gather(
-        *[_run_collector_for_event(slug, te) for slug in collector_slugs],
+        *[_run_collector_for_event(slug, te, event) for slug in collector_slugs],
         return_exceptions=True,
     )
 
 
-async def _run_collector_for_event(collector_slug: str, te: TrackedEvent):
+async def _run_collector_for_event(collector_slug: str, source_te: TrackedEvent, event):
     """
-    Run one collector against one tracked event.
-    Each invocation gets its own PollRun row.
-    Exceptions are caught here — a failing collector does not affect siblings.
+    Load (or lazily create) the collector's own marketplace-scoped TrackedEvent,
+    then run that collector using its own external_event_id.
+
+    Each invocation gets its own PollRun row. A missing external_event_id causes
+    the collector's resolve_external_event_id() fallback to fire (marketplace-
+    specific search). Exceptions are caught — a failing collector does not block
+    sibling collectors.
     """
     collector = get_collector(collector_slug, settings)
     if not collector:
@@ -325,19 +329,56 @@ async def _run_collector_for_event(collector_slug: str, te: TrackedEvent):
         return
     collector._db_session_factory = AsyncSessionLocal
 
-    logger.info(
-        "COLLECTOR_DISPATCH: slug=%s te_id=%d event_id=%d "
-        "te_marketplace_id=%d external_event_id=%r",
-        collector_slug, te.id, te.event_id,
-        te.marketplace_id, te.external_event_id,
-    )
-
     async with AsyncSessionLocal() as db:
+        mp = (await db.execute(
+            select(Marketplace).where(Marketplace.slug == collector_slug)
+        )).scalar_one_or_none()
+        if not mp:
+            logger.warning(
+                "COLLECTOR_DISPATCH: no marketplace row for slug=%s — skipping", collector_slug
+            )
+            return
+
+        te = (await db.execute(
+            select(TrackedEvent).where(
+                TrackedEvent.event_id == source_te.event_id,
+                TrackedEvent.marketplace_id == mp.id,
+            )
+        )).scalar_one_or_none()
+
+        if not te:
+            te = TrackedEvent(
+                event_id=source_te.event_id,
+                marketplace_id=mp.id,
+                external_url=None,
+                external_event_id=None,
+                resolution_source=None,
+                is_active=True,
+                poll_interval_minutes=source_te.poll_interval_minutes,
+                next_poll_at=None,
+            )
+            db.add(te)
+            await db.flush()
+            logger.info(
+                "COLLECTOR_DISPATCH: created TrackedEvent te_id=%d mp=%s event_id=%d",
+                te.id, collector_slug, source_te.event_id,
+            )
+
         poll_run = PollRun(tracked_event_id=te.id, started_at=datetime.utcnow())
         db.add(poll_run)
         await db.flush()
         poll_run_id = poll_run.id
         await db.commit()
+
+    # Attach Event object so resolver fallbacks can access event.title / event_date
+    te.event = event
+
+    logger.info(
+        "COLLECTOR_DISPATCH: slug=%s te_id=%d event_id=%d "
+        "mp_id=%d external_event_id=%r",
+        collector_slug, te.id, te.event_id,
+        te.marketplace_id, te.external_event_id,
+    )
 
     try:
         result = await collector.collect(te)
