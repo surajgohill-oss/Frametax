@@ -237,30 +237,42 @@ async def seed_demo_events(db):
                     f"te_id={te.id} current_eid={te.external_event_id!r}"
                 )
 
-        # Demo listings (stubhub) so dashboard stat cards show real numbers
+        # Demo listings (stubhub) so dashboard stat cards show real numbers.
+        # Query all rows (not just active) so we can reactivate any that were
+        # incorrectly deactivated by a zero-result poll (regression guard).
         if stub_mp:
-            existing_r = await db.execute(
+            existing_listings = (await db.execute(
                 select(Listing).where(
                     Listing.event_id == event.id,
                     Listing.marketplace_id == stub_mp.id,
                 )
-            )
-            if not existing_r.scalars().first():
-                for idx, l in enumerate(demo["listings"]):
-                    price = Decimal(str(l["price"]))
-                    db.add(Listing(
-                        event_id=event.id,
-                        marketplace_id=stub_mp.id,
-                        external_listing_id=f"demo-{canonical}-{idx}",
-                        section=l["section"],
-                        section_id=None,
-                        row=l["row"],
-                        quantity=l["qty"],
-                        price=price,
-                        fees=round(price * Decimal("0.27"), 2),
-                        all_in_price=round(price * Decimal("1.27"), 2),
-                        is_active=True,
-                    ))
+            )).scalars().all()
+
+            active_demo = [l for l in existing_listings if l.is_active]
+            if not active_demo:
+                # Re-activate any deactivated demo rows; create any missing ones.
+                existing_ids = {l.external_listing_id for l in existing_listings}
+                for l in existing_listings:
+                    if not l.is_active:
+                        l.is_active = True
+                        print(f"SEED: reactivated listing {l.external_listing_id}")
+                for idx, ldata in enumerate(demo["listings"]):
+                    lid = f"demo-{canonical}-{idx}"
+                    if lid not in existing_ids:
+                        price = Decimal(str(ldata["price"]))
+                        db.add(Listing(
+                            event_id=event.id,
+                            marketplace_id=stub_mp.id,
+                            external_listing_id=lid,
+                            section=ldata["section"],
+                            section_id=None,
+                            row=ldata["row"],
+                            quantity=ldata["qty"],
+                            price=price,
+                            fees=round(price * Decimal("0.27"), 2),
+                            all_in_price=round(price * Decimal("1.27"), 2),
+                            is_active=True,
+                        ))
 
     await db.flush()
 

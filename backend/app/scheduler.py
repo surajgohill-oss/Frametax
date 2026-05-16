@@ -487,10 +487,15 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
             ))
 
         disappeared = 0
-        for ext_id, listing in existing.items():
-            if ext_id not in seen_ids:
-                listing.is_active = False
-                disappeared += 1
+        # Only retire listings when the collector actually returned results.
+        # Zero results cannot distinguish a real empty inventory from an API
+        # failure, rate-limit, or unresolvable event ID — so we leave existing
+        # listings untouched rather than falsely marking them all disappeared.
+        if result.listings:
+            for ext_id, listing in existing.items():
+                if ext_id not in seen_ids:
+                    listing.is_active = False
+                    disappeared += 1
 
         db.add_all(snapshots)
 
