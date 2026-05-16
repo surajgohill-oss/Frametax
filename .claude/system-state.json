@@ -1,5 +1,5 @@
 {
-  "docker_status": "running \u2014 confirmed healthy",
+  "docker_status": "BLOCKED (sandbox environment) \u2014 running on host Mac per prior session",
   "backend_status": "healthy \u2014 scheduler active, collectors executing, poll_runs committed",
   "runtime_verified_steps": [
     "Docker daemon: healthy on host Mac (Server Version 29.4.3)",
@@ -30,13 +30,17 @@
   ],
   "simulated_steps": [],
   "open_tasks": [
-    "Live listing ingestion: requires real numeric marketplace event IDs from live EventDiscovery cycle (14-21 day window)"
+    "Live listing ingestion: BLOCKED (data) \u2014 requires real numeric marketplace event IDs from EventDiscovery",
+    "make debug-snapshot from host Mac: required for gold-standard invariant recheck (sandbox BLOCKED)",
+    "Playwright verification: requires browser lifecycle logs to reclassify from FAILED to RUNTIME VERIFIED"
   ],
   "failed_steps": [
-    "StubHub SOLR: HTTP 404 for demo-sh-* \u2014 synthetic IDs not valid SOLR event_id values",
-    "SeatGeek internal API: HTTP 403 for demo-sg-* \u2014 synthetic IDs not valid SeatGeek event IDs"
+    "StubHub SOLR: HTTP 404 for demo-sh-* \u2014 synthetic IDs not valid SOLR event_id values (RUNTIME VERIFIED)",
+    "SeatGeek internal API: HTTP 403 for demo-sg-* \u2014 synthetic IDs not valid SeatGeek event IDs (RUNTIME VERIFIED)",
+    "Playwright (SeatGeek): FAILED per Rule 6 \u2014 no browser lifecycle, navigation, or interception logs observed",
+    "Playwright (StubHub): FAILED per Rule 6 \u2014 no browser lifecycle, navigation, or interception logs observed"
   ],
-  "last_verified_step": "RUNTIME: both collector HTTP failure modes confirmed; root cause = synthetic demo IDs rejected by live APIs",
+  "last_verified_step": "RUNTIME: collector HTTP failures confirmed; Playwright reclassified FAILED per Rule 6 (zero-inference)",
   "data_provenance": {
     "seeded_demo_events": 6,
     "seeded_resolution_source": "seeded",
