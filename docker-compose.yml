@@ -49,6 +49,7 @@ services:
       TICKETMASTER_API_KEY: ${TICKETMASTER_API_KEY:-}
       TICKPICK_API_KEY: ${TICKPICK_API_KEY:-}
       GAMETIME_API_KEY: ${GAMETIME_API_KEY:-}
+      VIVIDSEATS_API_KEY: ${VIVIDSEATS_API_KEY:-}
     volumes:
       - ./backend:/app
       - browser_sessions:/app/browser_sessions

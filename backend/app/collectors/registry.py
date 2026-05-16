@@ -5,6 +5,7 @@ from app.collectors.seatgeek import SeatGeekCollector
 from app.collectors.ticketmaster import TicketmasterCollector
 from app.collectors.tickpick import TickPickCollector
 from app.collectors.gametime import GameTimeCollector
+from app.collectors.vividseats import VividSeatsCollector
 
 COLLECTOR_REGISTRY: dict[str, Type[BaseCollector]] = {
     "stubhub":      StubHubCollector,
@@ -12,6 +13,7 @@ COLLECTOR_REGISTRY: dict[str, Type[BaseCollector]] = {
     "ticketmaster": TicketmasterCollector,
     "tickpick":     TickPickCollector,
     "gametime":     GameTimeCollector,
+    "vividseats":   VividSeatsCollector,
 }
 
 

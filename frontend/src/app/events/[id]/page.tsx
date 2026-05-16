@@ -158,7 +158,7 @@ export default function EventDetailPage() {
       {activeTab === 'overview' && (
         <div className="space-y-4">
           <div className="flex gap-2 mb-4">
-            {[['', 'All'], ['seatgeek', 'SeatGeek'], ['stubhub', 'StubHub'], ['ticketmaster', 'Ticketmaster'], ['tickpick', 'TickPick'], ['gametime', 'GameTime']].map(([val, label]) => (
+            {[['', 'All'], ['seatgeek', 'SeatGeek'], ['stubhub', 'StubHub'], ['ticketmaster', 'Ticketmaster'], ['tickpick', 'TickPick'], ['gametime', 'GameTime'], ['vividseats', 'Vivid Seats']].map(([val, label]) => (
               <button
                 key={val}
                 onClick={() => setMarketplace(val)}
@@ -195,6 +195,7 @@ export default function EventDetailPage() {
                         listing.marketplace_slug === 'ticketmaster' ? 'green'   :
                         listing.marketplace_slug === 'tickpick'     ? 'orange'  :
                         listing.marketplace_slug === 'gametime'     ? 'yellow'  :
+                        listing.marketplace_slug === 'vividseats'   ? 'red'     :
                         'blue'
                       }>
                         {listing.marketplace_slug}

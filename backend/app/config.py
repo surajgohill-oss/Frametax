@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     ticketmaster_api_key: str = ""
     tickpick_api_key: str = ""
     gametime_api_key: str = ""
+    vividseats_api_key: str = ""
 
     cors_origins: List[str] = ["http://localhost:3000"]
 

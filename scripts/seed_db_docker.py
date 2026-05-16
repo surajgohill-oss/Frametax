@@ -15,7 +15,7 @@ VENUE_MAP_DIR = Path("/shared/venue_maps")
 DATABASE_URL = "postgresql+asyncpg://concert:concert@db:5432/concert_tracker"
 
 # Bump this string whenever the seed data changes — visible in bootstrap-status.
-SEED_VERSION = "v6-tickpick-gametime"
+SEED_VERSION = "v7-vividseats"
 
 
 def _canonical_id(title: str, venue_slug: str, event_date: datetime) -> str:
@@ -30,6 +30,7 @@ async def seed_marketplaces(db):
         {"slug": "ticketmaster", "name": "Ticketmaster", "base_url": "https://www.ticketmaster.com",   "is_active": True},
         {"slug": "tickpick",     "name": "TickPick",     "base_url": "https://www.tickpick.com",       "is_active": True},
         {"slug": "gametime",     "name": "Gametime",     "base_url": "https://gametime.co",            "is_active": True},
+        {"slug": "vividseats",   "name": "Vivid Seats",  "base_url": "https://www.vividseats.com",      "is_active": True},
     ]
     for mp in _marketplaces:
         ex = await db.execute(select(Marketplace).where(Marketplace.slug == mp["slug"]))
