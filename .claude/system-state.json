@@ -33,7 +33,7 @@
   ],
   "simulated_steps": [],
   "open_tasks": [
-    "SeatGeek discovery: BLOCKED (config) \u2014 set SEATGEEK_CLIENT_ID + SEATGEEK_CLIENT_SECRET in .env to unblock",
+    "SeatGeek discovery: BLOCKED (config) \u2014 set SEATGEEK_CLIENT_ID + SEATGEEK_CLIENT_SECRET in .env; restart backend; re-trigger discovery to unblock",
     "StubHub discovery: BLOCKED (auth) \u2014 SOLR requires session token, no unauthenticated discovery path available",
     "Live listing ingestion: BLOCKED (data) \u2014 depends on discovery finding real events first"
   ],
@@ -68,5 +68,5 @@
     "listings_found_zero": "Expected \u2014 demo external_event_ids are synthetic placeholders, not real SeatGeek/StubHub event IDs. Collectors reach marketplaces but return empty result sets. Not a code defect."
   },
   "last_updated": "2026-05-16",
-  "head_commit": "b90f847"
+  "head_commit": "463b0c5"
 }
