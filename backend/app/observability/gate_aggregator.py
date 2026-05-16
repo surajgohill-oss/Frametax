@@ -37,6 +37,7 @@ _ALL_GATES: list[tuple[str, list[str]]] = [
     ("discovery-dedupe-test",   [_PY, "/shared_scripts/test_discovery_dedupe.py"]),
     ("e2e-discovery-test",      [_PY, "/shared_scripts/test_e2e_discovery.py"]),
     ("db-invariants",           [_PY, "/shared_scripts/test_invariants.py"]),
+    ("phase5-signal-gate",      [_PY, "/shared_scripts/test_phase5_signals.py"]),
 ]
 
 _GATE_TIMEOUT = 180   # seconds per gate
