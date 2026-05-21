@@ -6,9 +6,10 @@ Reads backend logs, extracts emit_event_trace JSON lines, normalizes chains
 by event_id, and classifies broken pipeline stages.
 
 Usage:
-  python3 scripts/debug/analyze_event_trace.py --docker frametax-backend-1
+  # docker-compose service name is "backend"; container is <project>-backend-1
+  python3 scripts/debug/analyze_event_trace.py --docker $(docker compose ps -q backend)
   python3 scripts/debug/analyze_event_trace.py --file /path/to/backend.log
-  docker logs frametax-backend-1 2>&1 | python3 scripts/debug/analyze_event_trace.py
+  docker compose logs backend 2>&1 | python3 scripts/debug/analyze_event_trace.py
 """
 
 import argparse
