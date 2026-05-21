@@ -59,7 +59,7 @@ class BaseCollector(DebugMixin, ABC):
                 error="unresolved_event_id",
             )
 
-        if not tracked_event.external_event_id:
+        if tracked_event.external_event_id != resolved_id:
             tracked_event.external_event_id = resolved_id
             await self._persist_resolved_event_id(tracked_event.id, resolved_id)
 
