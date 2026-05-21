@@ -40,15 +40,27 @@ async def _enrich_event(db, event: Event, trace: dict | None = None) -> dict:
     if trace:
         add_stage(trace, "marketplace_merge_start")
 
-    for te, mp in result.all():
-        ask_result = await db.execute(
-            select(func.min(Listing.price)).where(
-                Listing.event_id == event.id, Listing.marketplace_id == mp.id, Listing.is_active == True,
+    tracked_rows = result.all()
+    marketplace_ids = [mp.id for _, mp in tracked_rows]
+
+    if marketplace_ids:
+        asks_result = await db.execute(
+            select(Listing.marketplace_id, func.min(Listing.price))
+            .where(
+                Listing.event_id == event.id,
+                Listing.marketplace_id.in_(marketplace_ids),
+                Listing.is_active == True,
             )
+            .group_by(Listing.marketplace_id)
         )
-        ask = ask_result.scalar_one_or_none()
+        asks_by_marketplace_id = {row[0]: float(row[1]) for row in asks_result.all()}
+    else:
+        asks_by_marketplace_id = {}
+
+    for te, mp in tracked_rows:
+        ask = asks_by_marketplace_id.get(mp.id)
         if ask is not None:
-            mp_asks[mp.slug] = float(ask)
+            mp_asks[mp.slug] = ask
 
         if trace:
             add_stage(trace, f"{mp.slug}_fetch", {"min_ask": mp_asks.get(mp.slug)})

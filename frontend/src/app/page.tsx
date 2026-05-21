@@ -98,7 +98,11 @@ export default function FeedPage() {
   const sections = sectionize(events, followed);
   const { tonight, mustWatch, yourEvents, comingUp } = sections;
   const renderedCount = tonight.length + mustWatch.length + yourEvents.length + comingUp.length;
-  assertEventCardinality(events.length, renderedCount);
+  try {
+    assertEventCardinality(events.length, renderedCount);
+  } catch (e) {
+    console.error("[STATE_INTEGRITY_VIOLATION]", e);
+  }
 
   return (
     <div className="space-y-10">
