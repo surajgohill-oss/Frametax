@@ -354,13 +354,12 @@ class EventDiscovery:
                     await db.commit()
                     return "duplicate"
 
-                # New tracked_event — no external_event_id yet; resolver picks it up
                 db.add(TrackedEvent(
                     event_id=event.id,
                     marketplace_id=mp.id,
                     external_url=item.external_url,
-                    external_event_id=None,
-                    resolution_source=None,
+                    external_event_id=item.external_event_id or None,
+                    resolution_source="resolved_api" if item.external_event_id else None,
                     is_active=True,
                     poll_interval_minutes=1440,
                     next_poll_at=now + timedelta(minutes=1440),
