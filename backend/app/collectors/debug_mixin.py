@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, TYPE_CHECKING
 
@@ -160,11 +160,17 @@ class DebugMixin:
             from sqlalchemy import select
             from app.models.debug import FailureMemory
             async with factory() as db:
-                result = await db.execute(select(FailureMemory.skip_failed).where(
+                result = await db.execute(select(FailureMemory).where(
                     FailureMemory.marketplace == self.marketplace_slug,
                     FailureMemory.failed_pattern == pattern,
                     FailureMemory.error_type == error_type,
                     FailureMemory.skip_failed == True,
                 ))
-                return result.scalar_one_or_none() is not None
+                record = result.scalar_one_or_none()
+                if record is None:
+                    return False
+                cooldown_hours = getattr(self.settings, "failure_cooldown_hours", 4)
+                if record.last_seen < datetime.utcnow() - timedelta(hours=cooldown_hours):
+                    return False  # cooldown expired — allow retry
+                return True
         except Exception: return False

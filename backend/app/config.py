@@ -17,6 +17,7 @@ class Settings(BaseSettings):
 
     default_poll_interval_minutes: int = 60
     max_tracked_events: int = 30
+    failure_cooldown_hours: int = 4
 
     stubhub_base_url: str = "https://www.stubhub.com"
     stubhub_api_key: str = ""
