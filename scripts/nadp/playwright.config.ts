@@ -1,4 +1,4 @@
-import { defineConfig, devices } from "@playwright/test";
+import { defineConfig } from "@playwright/test";
 import path from "path";
 
 export default defineConfig({
@@ -11,6 +11,6 @@ export default defineConfig({
   use: {
     baseURL: "http://localhost:3000",
     headless: true,
-    ...devices["Desktop Chrome"],
+    viewport: { width: 1280, height: 720 },
   },
 });

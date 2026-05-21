@@ -1,0 +1,10 @@
+{
+  "name": "nadp-capture",
+  "private": true,
+  "dependencies": {
+    "@playwright/test": "file:/opt/node22/lib/node_modules/playwright"
+  },
+  "imports": {
+    "#playwright-test": "/opt/node22/lib/node_modules/playwright/test.js"
+  }
+}
