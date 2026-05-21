@@ -4,6 +4,7 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 from datetime import datetime
 import hashlib
+import re
 
 from app.database import get_db
 from app.models import Event, TrackedEvent, Marketplace, Venue, Listing
@@ -17,6 +18,22 @@ settings = get_settings()
 def _canonical_id(title: str, venue_slug: str, event_date: datetime) -> str:
     raw = f"{venue_slug}|{event_date.date()}|{title.lower().strip()}"
     return hashlib.sha256(raw.encode()).hexdigest()[:16]
+
+
+def _extract_external_id_from_url(mp_slug: str, url: str) -> str | None:
+    """Extract marketplace event ID from URL without a network call."""
+    if mp_slug == "stubhub":
+        m = re.search(r"/event/(\d+)", url)
+        if m:
+            return m.group(1)
+        m = re.search(r"/(\d{6,})(?:[/?#]|$)", url)
+        return m.group(1) if m else None
+    if mp_slug == "seatgeek":
+        for pattern in (r"/e/(\d+)", r"--(\d{5,})(?:[/?#]|$)", r"/(\d{5,})(?:[/?#]|$)"):
+            m = re.search(pattern, url)
+            if m:
+                return m.group(1)
+    return None
 
 
 async def _get_event(db, event_id: int):
@@ -154,7 +171,8 @@ async def create_event(data: dict, db: AsyncSession = Depends(get_db)):
         if not mp: continue
         existing_te = await db.execute(select(TrackedEvent).where(TrackedEvent.event_id == event.id, TrackedEvent.marketplace_id == mp.id))
         if not existing_te.scalar_one_or_none():
-            db.add(TrackedEvent(event_id=event.id, marketplace_id=mp.id, external_url=url, poll_interval_minutes=poll_interval))
+            external_event_id = _extract_external_id_from_url(mp_slug, url)
+            db.add(TrackedEvent(event_id=event.id, marketplace_id=mp.id, external_url=url, poll_interval_minutes=poll_interval, external_event_id=external_event_id))
 
     await db.commit()
     event = await _get_event(db, event.id)
