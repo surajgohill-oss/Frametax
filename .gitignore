@@ -47,3 +47,4 @@ Thumbs.db
 .nadp-replay.json
 scripts/nadp/.artifacts/
 !scripts/nadp/node_modules/
+scripts/nadp/test-results/
