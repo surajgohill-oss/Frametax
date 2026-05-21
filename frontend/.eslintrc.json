@@ -1,0 +1,35 @@
+{
+  "extends": ["next/core-web-vitals"],
+  "rules": {
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "MemberExpression[property.name='tracked_events']",
+        "message": "DOMAIN VIOLATION: event.tracked_events is a backend relation array and must never be accessed in UI rendering. Use api.listings.byEvent() for listing data."
+      },
+      {
+        "selector": "CallExpression[callee.property.name='flatMap'][callee.object.name=/^events?$/i]",
+        "message": "CARDINALITY VIOLATION: flatMap over an events array can inflate event count beyond API cardinality. Use a partitioning function like sectionize() instead."
+      },
+      {
+        "selector": "LogicalExpression[operator='||'][left.type='Identifier'][left.name=/^events?$/i]",
+        "message": "FALLBACK VIOLATION: Fallback rendering paths for events are not permitted. If the API fails, render empty state. Never substitute an alternative event source."
+      }
+    ],
+    "no-restricted-globals": [
+      "error",
+      {
+        "name": "localStorage",
+        "message": "TRACKING VIOLATION: localStorage must not be accessed directly in components. Use the useFollowed() hook, which isolates localStorage to ID metadata only and never injects event objects."
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["src/hooks/useFollowed.ts"],
+      "rules": {
+        "no-restricted-globals": "off"
+      }
+    }
+  ]
+}

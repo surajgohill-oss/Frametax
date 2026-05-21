@@ -66,9 +66,44 @@ export interface Listing {
   last_seen_at: string | null;
 }
 
-/** Opaque brand: only Event[] may flow into event-card render paths. */
+/** Opaque brand: only Event[] may flow into event-card render paths.
+ *  Deliberately excludes tracked_events so the compiler rejects any attempt
+ *  to pass a TrackedEvent where an EventCardInput is expected. */
 export type EventCardInput = Pick<
   Event,
   "id" | "canonical_id" | "title" | "artist" | "venue_name" | "venue_slug"
   | "event_date" | "lowest_ask_stubhub" | "lowest_ask_seatgeek" | "is_active"
 >;
+
+// ── Runtime guards ────────────────────────────────────────────────────────────
+
+/** Throws if `value` is not a plain object with the minimum fields of an Event.
+ *  Use at API response boundaries to catch shape regressions early. */
+export function assertIsEvent(value: unknown): asserts value is Event {
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    typeof (value as Record<string, unknown>).id !== "number" ||
+    typeof (value as Record<string, unknown>).canonical_id !== "string" ||
+    typeof (value as Record<string, unknown>).title !== "string"
+  ) {
+    throw new Error(
+      `STATE_INTEGRITY_VIOLATION: value is not a canonical Event — got ${JSON.stringify(value)}`
+    );
+  }
+}
+
+/** Asserts that the rendered event count equals the API-returned count.
+ *  Call after sectionize() to guarantee no cards were added or dropped. */
+export function assertEventCardinality(
+  apiCount: number,
+  renderedCount: number
+): void {
+  if (renderedCount !== apiCount) {
+    throw new Error(
+      `STATE_INTEGRITY_VIOLATION: UI event cardinality (${renderedCount}) ` +
+      `does not match API event count (${apiCount}). ` +
+      `A merge, fallback, or flatMap path introduced extra events.`
+    );
+  }
+}

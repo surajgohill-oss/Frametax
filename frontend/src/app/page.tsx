@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { EventCard } from "@/components/EventCard";
 import { useFollowed } from "@/hooks/useFollowed";
 import type { Event } from "@/lib/types";
+import { assertEventCardinality } from "@/lib/types";
 
 function daysUntil(isoDate: string) {
   return Math.floor((new Date(isoDate).getTime() - Date.now()) / 86_400_000);
@@ -84,7 +85,10 @@ export default function FeedPage() {
     return <div className="flex items-center justify-center h-64 text-slate-500">Loading…</div>;
   }
 
-  const { tonight, mustWatch, yourEvents, comingUp } = sectionize(events, followed);
+  const sections = sectionize(events, followed);
+  const { tonight, mustWatch, yourEvents, comingUp } = sections;
+  const renderedCount = tonight.length + mustWatch.length + yourEvents.length + comingUp.length;
+  assertEventCardinality(events.length, renderedCount);
 
   return (
     <div className="space-y-10">
