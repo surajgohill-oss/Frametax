@@ -9,9 +9,17 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+async function listEvents(): Promise<any[]> {
+  const data = await req<any[]>("/events/");
+  if (typeof window !== "undefined") {
+    (window as any).__EVENT_TRACE__ = data.map((e: any) => e.__trace).filter(Boolean);
+  }
+  return data;
+}
+
 export const api = {
   events: {
-    list: () => req<any[]>("/events/"),
+    list: listEvents,
     get: (id: number) => req<any>(`/events/${id}`),
     create: (d: any) => req<any>("/events/", { method: "POST", body: JSON.stringify(d) }),
     update: (id: number, d: any) => req<any>(`/events/${id}`, { method: "PATCH", body: JSON.stringify(d) }),

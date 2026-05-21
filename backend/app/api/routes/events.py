@@ -8,6 +8,7 @@ import hashlib
 from app.database import get_db
 from app.models import Event, TrackedEvent, Marketplace, Venue, Listing
 from app.config import get_settings
+from app.utils.lineage import trace_event, add_stage
 
 router = APIRouter(prefix="/events", tags=["events"])
 settings = get_settings()
@@ -28,13 +29,17 @@ async def _get_event(db, event_id: int):
     return result.scalar_one_or_none()
 
 
-async def _enrich_event(db, event: Event) -> dict:
+async def _enrich_event(db, event: Event, trace: dict | None = None) -> dict:
     mp_asks: dict[str, float] = {}
     result = await db.execute(
         select(TrackedEvent, Marketplace)
         .join(Marketplace, TrackedEvent.marketplace_id == Marketplace.id)
         .where(TrackedEvent.event_id == event.id)
     )
+
+    if trace:
+        add_stage(trace, "marketplace_merge_start")
+
     for te, mp in result.all():
         ask_result = await db.execute(
             select(func.min(Listing.price)).where(
@@ -45,12 +50,18 @@ async def _enrich_event(db, event: Event) -> dict:
         if ask is not None:
             mp_asks[mp.slug] = float(ask)
 
+        if trace:
+            add_stage(trace, f"{mp.slug}_fetch", {"min_ask": mp_asks.get(mp.slug)})
+
+    if trace:
+        add_stage(trace, "marketplace_merge_complete", {"slugs": list(mp_asks.keys())})
+
     tracked = event.tracked_events or []
     stubhub_te = next((te for te in tracked if te.marketplace.slug == "stubhub"), None)
     seatgeek_te = next((te for te in tracked if te.marketplace.slug == "seatgeek"), None)
     times = [te.next_poll_at for te in tracked if te.next_poll_at and te.is_active]
 
-    return {
+    payload = {
         "id": event.id, "canonical_id": event.canonical_id, "title": event.title,
         "artist": event.artist, "venue_id": event.venue_id,
         "venue_name": event.venue.name if event.venue else None,
@@ -74,6 +85,12 @@ async def _enrich_event(db, event: Event) -> dict:
         ],
     }
 
+    if trace:
+        add_stage(trace, "response_built")
+        payload["__trace"] = trace
+
+    return payload
+
 
 @router.get("/")
 async def list_events(db: AsyncSession = Depends(get_db)):
@@ -83,7 +100,14 @@ async def list_events(db: AsyncSession = Depends(get_db)):
             selectinload(Event.tracked_events).selectinload(TrackedEvent.marketplace),
         ).order_by(Event.event_date)
     )
-    return [await _enrich_event(db, e) for e in result.scalars().all()]
+    output = []
+    for e in result.scalars().all():
+        trace = trace_event(str(e.id))
+        add_stage(trace, "db_read", {"canonical_id": e.canonical_id})
+        enriched = await _enrich_event(db, e, trace=trace)
+        add_stage(trace, "response_appended", {"list_position": len(output)})
+        output.append(enriched)
+    return output
 
 
 @router.post("/", status_code=201)
