@@ -1,6 +1,6 @@
 .PHONY: up down reset logs status build verify debug-snapshot verify-seed-code bootstrap-status \
         e2e-discovery-test discovery-dedupe-test lifecycle-time-sim-test \
-        gate-status test-invariants
+        gate-status test-invariants debug nadp
 
 up:
 	docker compose up --build -d
@@ -314,3 +314,9 @@ _wait:
 		curl -sf http://localhost:3000 -o /dev/null 2>/dev/null && echo "  frontend ready." && break; \
 		sleep 5; \
 	done
+
+# ── NADP v3 — Gated Debug Pipeline ───────────────────────────────────────────
+# Runs 5 layers in strict order. Stops and writes .nadp.json on first failure.
+# Usage: make debug   OR   make nadp
+debug nadp:
+	@bash scripts/nadp/nadp-run.sh
