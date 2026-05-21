@@ -64,7 +64,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8000/api/health || exit 1"]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')\" || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 6
@@ -83,8 +83,11 @@ services:
     restart: unless-stopped
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:8000
+      NODE_EXTRA_CA_CERTS: /sandbox-ca.crt
+      NODE_ENV: development
     volumes:
       - ./frontend:/app
+      - ./docker/sandbox-ca.crt:/sandbox-ca.crt:ro
     ports:
       - "3000:3000"
     depends_on:
@@ -96,6 +99,7 @@ services:
       timeout: 5s
       retries: 12
       start_period: 120s
+    command: sh -c "cd /app && npm install --prefer-offline 2>&1 | tail -3 && npm run dev"
 
 volumes:
   postgres_data:
