@@ -63,7 +63,7 @@ async def _enrich_event(db, event: Event, trace: dict | None = None) -> dict:
 
     if marketplace_ids:
         asks_result = await db.execute(
-            select(Listing.marketplace_id, func.min(Listing.price))
+            select(Listing.marketplace_id, func.min(Listing.price), func.count())
             .where(
                 Listing.event_id == event.id,
                 Listing.marketplace_id.in_(marketplace_ids),
@@ -71,9 +71,12 @@ async def _enrich_event(db, event: Event, trace: dict | None = None) -> dict:
             )
             .group_by(Listing.marketplace_id)
         )
-        asks_by_marketplace_id = {row[0]: float(row[1]) for row in asks_result.all()}
+        asks_rows = asks_result.all()
+        asks_by_marketplace_id = {row[0]: float(row[1]) for row in asks_rows}
+        total_listings_count = sum(row[2] for row in asks_rows)
     else:
         asks_by_marketplace_id = {}
+        total_listings_count = 0
 
     for te, mp in tracked_rows:
         ask = asks_by_marketplace_id.get(mp.id)
@@ -118,7 +121,8 @@ async def _enrich_event(db, event: Event, trace: dict | None = None) -> dict:
     payload["lineage"] = build_event_lineage(event, tracked, marketplace_ids)
 
     emit_event_trace("ENRICH", event.id, {
-        "listings_count": len(mp_asks),
+        "listings_count": total_listings_count,
+        "marketplace_count": len(mp_asks),
         "marketplaces": list(mp_asks.keys()),
     })
 
