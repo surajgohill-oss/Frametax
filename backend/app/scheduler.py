@@ -545,6 +545,14 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
             poll_run.error_message = result.error
 
         await db.commit()
+        emit_event_trace("DB_WRITE", result.event_id, {
+            "external_event_id": te.external_event_id,
+            "tracked_event_id": te.id,
+            "marketplace": result.marketplace_slug,
+            "listings_count": new_count,
+            "total_active": len(result.listings),
+            "disappeared": disappeared,
+        })
         logger.info(
             "COLLECTOR: poll event=%d %s listings=%d new=%d gone=%d",
             result.event_id, result.marketplace_slug,
