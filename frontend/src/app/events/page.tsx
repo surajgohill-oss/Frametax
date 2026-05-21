@@ -6,9 +6,10 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { fmtDate, fmtRelative, fmt$ } from "@/lib/utils";
 import { RefreshCw, Plus, Trash2, ExternalLink } from "lucide-react";
+import type { Event } from "@/lib/types";
 
 export default function EventsPage() {
-  const [events, setEvents] = useState<any[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [polling, setPolling] = useState<Record<string, boolean>>({});
 
