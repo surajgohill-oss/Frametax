@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+import asyncio
 
 from app.database import get_db, AsyncSessionLocal
 from app.models import TrackedEvent, PollRun
@@ -11,18 +12,29 @@ settings = get_settings()
 
 
 @router.post("/events/{event_id}/trigger")
-async def trigger_poll(event_id: int, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_db)):
+async def trigger_poll(
+    event_id: int,
+    background_tasks: BackgroundTasks,
+    sync: bool = Query(False),
+    db: AsyncSession = Depends(get_db),
+):
     from app.scheduler import run_poll_for_tracked_event
     result = await db.execute(select(TrackedEvent).where(TrackedEvent.event_id == event_id, TrackedEvent.is_active == True))
     tracked = result.scalars().all()
     if not tracked: raise HTTPException(404, "No active tracked events")
+    if sync:
+        await asyncio.gather(*[run_poll_for_tracked_event(te.id) for te in tracked], return_exceptions=True)
+        return {"message": f"Completed {len(tracked)} poll(s)", "count": len(tracked), "sync": True}
     for te in tracked:
         background_tasks.add_task(run_poll_for_tracked_event, te.id)
-    return {"message": f"Triggered {len(tracked)} poll(s)", "count": len(tracked)}
+    return {"message": f"Triggered {len(tracked)} poll(s)", "count": len(tracked), "sync": False}
 
 
 @router.post("/resolve-ids")
-async def trigger_resolve_ids(background_tasks: BackgroundTasks):
+async def trigger_resolve_ids(
+    background_tasks: BackgroundTasks,
+    sync: bool = Query(False),
+):
     """Manually trigger the event ID resolution job for all pending TrackedEvents."""
     from app.collectors.resolver import EventResolver
     async def _run():
@@ -31,8 +43,11 @@ async def trigger_resolve_ids(background_tasks: BackgroundTasks):
             return await resolver.resolve_all_pending(AsyncSessionLocal)
         finally:
             await resolver.close()
+    if sync:
+        counts = await _run()
+        return {"message": "Event ID resolution complete", "sync": True, "counts": counts}
     background_tasks.add_task(_run)
-    return {"message": "Event ID resolution triggered"}
+    return {"message": "Event ID resolution triggered", "sync": False}
 
 
 @router.post("/discovery/trigger")
