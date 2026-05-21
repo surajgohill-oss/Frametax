@@ -6,8 +6,19 @@ searches each marketplace using event metadata (artist, date, venue),
 and persists resolved IDs so the Stage 3 collector can proceed.
 
 Resolution strategy per marketplace:
-  StubHub  — SOLR catalog search filtered by performer keywords + ±1 day date window
-  SeatGeek — internal events API search by performer slug + date window
+  StubHub       — SOLR catalog search or page extraction
+  SeatGeek      — official API (with client_id) or internal search API
+  TickPick      — public search API, no credentials required
+  GameTime      — public mobile search API, no credentials required
+  VividSeats    — Hermes search API, no credentials required
+  Ticketmaster  — Discovery API (requires TICKETMASTER_API_KEY)
+
+  For TickPick/GameTime/VividSeats/Ticketmaster the resolver delegates to each
+  collector's own resolve_external_event_id() via a lightweight proxy object so
+  resolution logic is not duplicated.
+
+  Demo-prefixed IDs ("demo-*") are treated as unresolved placeholders and will
+  be replaced with real marketplace IDs on the first successful resolution cycle.
 """
 import logging
 import re
@@ -15,7 +26,7 @@ from datetime import timedelta
 from typing import Optional, Tuple
 
 import httpx
-from sqlalchemy import select, and_, update as sa_update
+from sqlalchemy import select, and_, or_, update as sa_update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import TrackedEvent, Event, Marketplace
@@ -69,13 +80,11 @@ class EventResolver:
 
     async def resolve_all_pending(self, session_factory) -> dict:
         """
-        Find all active TrackedEvents with external_event_id=NULL and attempt
-        resolution for each. Returns {resolved, failed, already_set, demo_skipped}.
-
-        TrackedEvents whose external_event_id already starts with the demo prefix
-        are counted as already_set and never sent to marketplace APIs.
+        Find all active TrackedEvents with external_event_id=NULL or a demo-prefixed
+        placeholder and attempt resolution for each.
+        Returns {resolved, failed, already_set}.
         """
-        counts = {"resolved": 0, "failed": 0, "already_set": 0, "demo_skipped": 0}
+        counts = {"resolved": 0, "failed": 0, "already_set": 0}
 
         async with session_factory() as db:
             rows = (await db.execute(
@@ -84,21 +93,18 @@ class EventResolver:
                 .join(Marketplace, TrackedEvent.marketplace_id == Marketplace.id)
                 .where(and_(
                     TrackedEvent.is_active == True,
-                    TrackedEvent.external_event_id.is_(None),
+                    or_(
+                        TrackedEvent.external_event_id.is_(None),
+                        TrackedEvent.external_event_id.like(f"{_DEMO_ID_PREFIX}%"),
+                    ),
                 ))
             )).all()
 
         for te, event, mp in rows:
-            if te.external_event_id:
-                if str(te.external_event_id).startswith(_DEMO_ID_PREFIX):
-                    counts["demo_skipped"] += 1
-                    logger.debug(
-                        "RESOLVER: DEMO_FIXTURE skip te_id=%d mp=%s eid=%s",
-                        te.id, mp.slug, te.external_event_id,
-                    )
-                else:
-                    counts["already_set"] += 1
+            if te.external_event_id and not str(te.external_event_id).startswith(_DEMO_ID_PREFIX):
+                counts["already_set"] += 1
                 continue
+            # NULL and demo-prefixed IDs both fall through to resolution
 
             resolved, source = await self._resolve_for_marketplace(event, mp.slug, te.external_url)
 
@@ -117,10 +123,10 @@ class EventResolver:
                     mp.slug, event.title, te.id,
                 )
 
-        if counts["resolved"] or counts["failed"] or counts["demo_skipped"]:
+        if counts["resolved"] or counts["failed"]:
             logger.info(
-                "RESOLVER: cycle complete resolved=%d failed=%d already_set=%d demo_skipped=%d",
-                counts["resolved"], counts["failed"], counts["already_set"], counts["demo_skipped"],
+                "RESOLVER: cycle complete resolved=%d failed=%d already_set=%d",
+                counts["resolved"], counts["failed"], counts["already_set"],
             )
         return counts
 
@@ -131,12 +137,31 @@ class EventResolver:
     ) -> Tuple[Optional[str], str]:
         """Returns (resolved_id_or_None, source_label)."""
         if slug == "stubhub":
-            result = await self._resolve_stubhub(event, external_url)
-            return result
+            return await self._resolve_stubhub(event, external_url)
         if slug == "seatgeek":
-            result = await self._resolve_seatgeek(event, external_url)
-            return result
-        logger.debug("No resolver implemented for marketplace '%s'", slug)
+            return await self._resolve_seatgeek(event, external_url)
+
+        # Delegate to the collector's own resolver for marketplaces with public
+        # search APIs (tickpick, gametime, vividseats). Ticketmaster requires an
+        # API key so its collector self-gates and returns None without credentials.
+        from app.collectors.registry import get_collector
+
+        collector = get_collector(slug, self.settings)
+        if collector is None:
+            logger.debug("No resolver or collector for marketplace '%s'", slug)
+            return None, "none"
+
+        class _Proxy:
+            __slots__ = ("external_event_id", "external_url", "event", "id")
+            def __init__(self, ev, url):
+                self.external_event_id = None
+                self.external_url = url
+                self.event = ev
+                self.id = None
+
+        resolved = await collector.resolve_external_event_id(_Proxy(event, external_url))
+        if resolved:
+            return resolved, "resolved_collector"
         return None, "none"
 
     # ── StubHub ───────────────────────────────────────────────────────────────

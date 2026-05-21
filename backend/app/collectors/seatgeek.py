@@ -29,8 +29,9 @@ class SeatGeekCollector(BaseCollector):
         self._http_client: Optional[httpx.AsyncClient] = None
 
     async def resolve_external_event_id(self, tracked_event) -> Optional[str]:
-        if tracked_event.external_event_id:
-            return tracked_event.external_event_id
+        eid = tracked_event.external_event_id
+        if eid and not eid.startswith("demo-"):
+            return eid  # real ID — use it directly
 
         if tracked_event.external_url:
             extracted = await self._extract_event_id(tracked_event.external_url)
