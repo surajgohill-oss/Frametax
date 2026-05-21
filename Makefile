@@ -1,6 +1,6 @@
 .PHONY: up down reset logs status build verify debug-snapshot verify-seed-code bootstrap-status \
         e2e-discovery-test discovery-dedupe-test lifecycle-time-sim-test \
-        gate-status test-invariants debug nadp context replay
+        gate-status test-invariants debug nadp context replay capture ci-debug install-playwright
 
 up:
 	docker compose up --build -d
@@ -331,3 +331,22 @@ context:
 # Reconstructs T0→T3, finds first non-reproducible step, writes .nadp-replay.json
 replay:
 	@bash scripts/nadp/replay.sh --json
+
+# ── Playwright CI Debug Kernel ─────────────────────────────────────────────────
+# install-playwright : one-time setup (run after npm install in frontend/)
+# capture            : collect 4 artifacts from running stack
+# ci-debug           : capture + kernel analysis in one pass
+
+install-playwright:
+	@cd frontend && npx playwright install chromium --with-deps
+
+capture:
+	@cd frontend && npx playwright test \
+		--config ../scripts/nadp/playwright.config.ts \
+		--reporter=line
+	@echo ""
+	@echo "Artifacts written to scripts/nadp/.artifacts/"
+	@echo "Run: make ci-debug  OR  python3 scripts/nadp/kernel.py"
+
+ci-debug: capture
+	@python3 scripts/nadp/kernel.py

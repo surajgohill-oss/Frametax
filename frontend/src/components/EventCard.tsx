@@ -18,7 +18,12 @@ export function EventCard({ event, followed, onFollowToggle }: Props) {
   const hasPrice = isFinite(lowestAsk);
 
   return (
-    <div className="bg-[#161b27] border border-[#2a3145] rounded-xl overflow-hidden hover:border-blue-500/40 transition-colors">
+    <div
+      data-testid="event-card"
+      data-event-id={event.id}
+      data-canonical-id={event.canonical_id}
+      className="bg-[#161b27] border border-[#2a3145] rounded-xl overflow-hidden hover:border-blue-500/40 transition-colors"
+    >
       <div className="px-5 pt-5 pb-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">

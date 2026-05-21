@@ -45,3 +45,4 @@ Thumbs.db
 .nadp.json
 .nadp-context.md
 .nadp-replay.json
+scripts/nadp/.artifacts/
