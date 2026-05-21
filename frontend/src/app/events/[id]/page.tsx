@@ -1,16 +1,66 @@
-'use client';
-import { useParams, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
-import { api } from '@/lib/api';
-import { fmt$, fmtDate, fmtDateTime, fmtRelative } from '@/lib/utils';
-import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
-import VenueHeatmap from '@/components/venue/VenueHeatmap';
-import PriceHistoryChart from '@/components/charts/PriceHistoryChart';
-import SectionPriceBar from '@/components/charts/SectionPriceBar';
-import InventoryChart from '@/components/charts/InventoryChart';
+"use client";
+import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { api } from "@/lib/api";
+import { fmt$, fmtDate } from "@/lib/utils";
+import { MapPin, CalendarDays, RefreshCw, ChevronLeft, Ticket, Star, Map } from "lucide-react";
+import { useFollowed } from "@/hooks/useFollowed";
 
-type Tab = 'overview' | 'heatmap' | 'history';
+function groupByMarketplace(listings: any[]): Record<string, any[]> {
+  return listings.reduce((acc, l) => {
+    (acc[l.marketplace_slug] ??= []).push(l);
+    return acc;
+  }, {} as Record<string, any[]>);
+}
+
+const MP_LABEL: Record<string, string> = {
+  stubhub: "StubHub",
+  seatgeek: "SeatGeek",
+  ticketmaster: "Ticketmaster",
+  tickpick: "TickPick",
+  gametime: "GameTime",
+  vividseats: "Vivid Seats",
+};
+
+const MP_COLOR: Record<string, string> = {
+  stubhub:      "bg-blue-500/10  text-blue-400  border-blue-500/30",
+  seatgeek:     "bg-green-500/10 text-green-400 border-green-500/30",
+  ticketmaster: "bg-sky-500/10   text-sky-400   border-sky-500/30",
+  tickpick:     "bg-orange-500/10 text-orange-400 border-orange-500/30",
+  gametime:     "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
+  vividseats:   "bg-red-500/10   text-red-400   border-red-500/30",
+};
+
+function ListingTable({ listings }: { listings: any[] }) {
+  if (listings.length === 0) return null;
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-left text-xs text-slate-500 border-b border-[#2a3145]">
+            <th className="pb-2 pr-4 font-medium">Section</th>
+            <th className="pb-2 pr-4 font-medium">Row</th>
+            <th className="pb-2 pr-4 font-medium text-right">Price</th>
+            <th className="pb-2 font-medium text-right">Qty</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-[#1e2535]">
+          {listings.slice(0, 30).map((l) => (
+            <tr key={l.id} className="hover:bg-[#1a2030]">
+              <td className="py-2 pr-4 text-slate-200">{l.section_name}</td>
+              <td className="py-2 pr-4 text-slate-400">{l.row || "—"}</td>
+              <td className="py-2 pr-4 text-right font-mono text-green-400">{fmt$(l.price_each)}</td>
+              <td className="py-2 text-right text-slate-400">{l.quantity}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {listings.length > 30 && (
+        <p className="text-xs text-slate-600 mt-2 text-center">+{listings.length - 30} more listings</p>
+      )}
+    </div>
+  );
+}
 
 export default function EventDetailPage() {
   const params = useParams();
@@ -19,56 +69,34 @@ export default function EventDetailPage() {
 
   const [event, setEvent] = useState<any>(null);
   const [listings, setListings] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [loading, setLoading] = useState(true);
-  const [pollLoading, setPollLoading] = useState(false);
-  const [marketplace, setMarketplace] = useState<string>('');
+  const [polling, setPolling] = useState(false);
+  const { followed, toggle } = useFollowed();
 
-  useEffect(() => { loadEvent(); }, [eventId]);
-  useEffect(() => { if (event) loadListings(); }, [event, marketplace]);
+  const isFollowed = followed.has(eventId);
 
-  async function loadEvent() {
-    try {
-      const data = await api.events.get(eventId);
-      setEvent(data);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  }
+  useEffect(() => {
+    Promise.all([api.events.get(eventId), api.listings.byEvent(eventId)])
+      .then(([ev, ls]) => { setEvent(ev); setListings(ls); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [eventId]);
 
-  async function loadListings() {
-    try {
-      const data = await api.listings.byEvent(eventId, marketplace || undefined);
-      setListings(data);
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
-  async function triggerPoll() {
-    setPollLoading(true);
+  async function handlePoll() {
+    setPolling(true);
     try {
       await api.poll.trigger(eventId);
-      await new Promise(r => setTimeout(r, 3000));
-      await loadEvent();
-      await loadListings();
-    } finally {
-      setPollLoading(false);
-    }
-  }
-
-  async function toggleActive() {
-    if (!event) return;
-    await api.events.update(eventId, { is_active: !event.is_active });
-    await loadEvent();
+      await new Promise((r) => setTimeout(r, 3000));
+      const [ev, ls] = await Promise.all([api.events.get(eventId), api.listings.byEvent(eventId)]);
+      setEvent(ev); setListings(ls);
+    } catch (e) { console.error(e); }
+    finally { setPolling(false); }
   }
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
       </div>
     );
   }
@@ -76,155 +104,130 @@ export default function EventDetailPage() {
   if (!event) {
     return (
       <div className="text-center py-16">
-        <p className="text-gray-400 mb-4">Event not found</p>
-        <button onClick={() => router.back()} className="text-indigo-400 hover:text-indigo-300">Go back</button>
+        <p className="text-slate-400 mb-4">Event not found.</p>
+        <button onClick={() => router.back()} className="text-blue-400 hover:text-blue-300 text-sm">← Go back</button>
       </div>
     );
   }
 
-  const lowestAsk = listings.length > 0 ? Math.min(...listings.map((l: any) => l.price_each)) : null;
-  const marketsActive = new Set(listings.map((l: any) => l.marketplace_slug)).size;
+  const grouped = groupByMarketplace(listings);
+  const marketplaces = Object.keys(grouped).sort();
+  const lowestOverall = listings.length > 0 ? Math.min(...listings.map((l) => l.price_each)) : null;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <button onClick={() => router.back()} className="text-sm text-gray-400 hover:text-white mb-2">
-            ← Back
-          </button>
-          <h1 className="text-2xl font-bold text-white">{event.title || 'Unnamed Event'}</h1>
-          <p className="text-gray-400 mt-1">
-            {event.venue_slug} &bull; {event.event_date ? fmtDate(event.event_date) : 'Date TBD'}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={triggerPoll}
-            disabled={pollLoading}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg text-sm font-medium"
-          >
-            {pollLoading ? 'Polling...' : 'Poll Now'}
-          </button>
-          <button
-            onClick={toggleActive}
-            className={`px-4 py-2 rounded-lg text-sm font-medium ${
-              event.is_active ? 'bg-gray-700 hover:bg-gray-600' : 'bg-green-700 hover:bg-green-600'
-            } text-white`}
-          >
-            {event.is_active ? 'Pause' : 'Resume'}
-          </button>
-        </div>
-      </div>
+    <div className="max-w-4xl mx-auto space-y-8">
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <p className="text-xs text-gray-400 mb-1">Lowest Ask</p>
-          <p className="text-xl font-bold text-green-400">{fmt$(lowestAsk)}</p>
-        </Card>
-        <Card>
-          <p className="text-xs text-gray-400 mb-1">Markets Active</p>
-          <p className="text-xl font-bold text-white">{marketsActive || '—'}</p>
-        </Card>
-        <Card>
-          <p className="text-xs text-gray-400 mb-1">Total Listings</p>
-          <p className="text-xl font-bold text-white">{listings.length}</p>
-        </Card>
-        <Card>
-          <p className="text-xs text-gray-400 mb-1">Last Polled</p>
-          <p className="text-xl font-bold text-white">
-            {event.last_polled_at ? fmtRelative(event.last_polled_at) : 'Never'}
-          </p>
-        </Card>
-      </div>
+      {/* ── Header ─────────────────────────────────────────── */}
+      <div>
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-300 mb-4 transition-colors"
+        >
+          <ChevronLeft size={16} /> Back
+        </button>
 
-      <div className="border-b border-gray-700">
-        <nav className="flex gap-6">
-          {(['overview', 'heatmap', 'history'] as Tab[]).map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`py-3 text-sm font-medium border-b-2 -mb-px capitalize ${
-                activeTab === tab ? 'border-indigo-500 text-white' : 'border-transparent text-gray-400 hover:text-white'
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </nav>
-      </div>
+        <div className="bg-[#161b27] border border-[#2a3145] rounded-2xl p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold text-white leading-tight">{event.title}</h1>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2 text-sm text-slate-400">
+                <span className="flex items-center gap-1.5">
+                  <MapPin size={14} className="shrink-0" />
+                  {event.venue_name || event.venue_slug}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <CalendarDays size={14} className="shrink-0" />
+                  {fmtDate(event.event_date)}
+                </span>
+              </div>
+              {lowestOverall != null && (
+                <p className="mt-3 text-slate-400 text-sm">
+                  From <span className="text-white font-bold text-xl">{fmt$(lowestOverall)}</span>
+                </p>
+              )}
+            </div>
 
-      {activeTab === 'overview' && (
-        <div className="space-y-4">
-          <div className="flex gap-2 mb-4">
-            {[['', 'All'], ['seatgeek', 'SeatGeek'], ['stubhub', 'StubHub'], ['ticketmaster', 'Ticketmaster'], ['tickpick', 'TickPick'], ['gametime', 'GameTime'], ['vividseats', 'Vivid Seats']].map(([val, label]) => (
+            <div className="flex flex-col items-end gap-2 shrink-0">
               <button
-                key={val}
-                onClick={() => setMarketplace(val)}
-                className={`px-3 py-1 rounded-full text-xs font-medium ${
-                  marketplace === val ? 'bg-indigo-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                onClick={() => toggle(eventId)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                  isFollowed
+                    ? "border-blue-500 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20"
+                    : "border-[#2a3145] text-slate-400 hover:border-slate-400 hover:text-white"
                 }`}
               >
-                {label}
+                <Star size={15} fill={isFollowed ? "currentColor" : "none"} />
+                {isFollowed ? "Following" : "Follow"}
               </button>
+              <button
+                onClick={handlePoll}
+                disabled={polling}
+                className="flex items-center gap-2 px-4 py-2 bg-[#1e2535] hover:bg-[#252d3d] border border-[#2a3145] rounded-lg text-sm text-slate-300 disabled:opacity-50 transition-colors"
+              >
+                <RefreshCw size={14} className={polling ? "animate-spin" : ""} />
+                {polling ? "Polling…" : "Refresh"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Listings ───────────────────────────────────────── */}
+      <section>
+        <div className="flex items-center gap-2 mb-4">
+          <Ticket size={16} className="text-slate-400" />
+          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Tickets</h2>
+          <span className="text-xs text-slate-600">({listings.length} listings)</span>
+        </div>
+
+        {listings.length === 0 ? (
+          <div className="bg-[#161b27] border border-[#2a3145] rounded-xl p-8 text-center text-slate-500">
+            <p>No listings available.</p>
+            <button onClick={handlePoll} className="text-blue-400 hover:text-blue-300 text-sm mt-2">
+              Try polling now →
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {marketplaces.map((mp) => (
+              <div key={mp} className={`border rounded-xl overflow-hidden ${MP_COLOR[mp] ?? "border-[#2a3145]"}`}>
+                <div className={`px-4 py-3 border-b flex items-center justify-between ${MP_COLOR[mp] ?? "border-[#2a3145]"}`}>
+                  <span className="text-sm font-semibold">{MP_LABEL[mp] ?? mp}</span>
+                  <span className="text-xs opacity-70">{grouped[mp].length} listings · from {fmt$(grouped[mp][0]?.price_each)}</span>
+                </div>
+                <div className="bg-[#161b27] px-4 py-3">
+                  <ListingTable listings={grouped[mp]} />
+                </div>
+              </div>
             ))}
           </div>
-          <SectionPriceBar sections={listings.map((l: any) => ({ display_name: l.section_name, lowest_ask: l.price_each }))} />
-          <div className="bg-gray-800 rounded-xl overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-700">
-                  <th className="px-4 py-3 text-left text-gray-400 font-medium">Section</th>
-                  <th className="px-4 py-3 text-left text-gray-400 font-medium">Row</th>
-                  <th className="px-4 py-3 text-right text-gray-400 font-medium">Price</th>
-                  <th className="px-4 py-3 text-right text-gray-400 font-medium">Qty</th>
-                  <th className="px-4 py-3 text-left text-gray-400 font-medium">Source</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-700">
-                {listings.slice(0, 50).map((listing: any) => (
-                  <tr key={listing.id} className="hover:bg-gray-750">
-                    <td className="px-4 py-2.5 text-white">{listing.section_name || '—'}</td>
-                    <td className="px-4 py-2.5 text-gray-300">{listing.row || '—'}</td>
-                    <td className="px-4 py-2.5 text-right font-mono text-green-400">{fmt$(listing.price_each)}</td>
-                    <td className="px-4 py-2.5 text-right text-gray-300">{listing.quantity}</td>
-                    <td className="px-4 py-2.5 space-x-1">
-                      <Badge variant={
-                        listing.marketplace_slug === 'stubhub'      ? 'indigo'  :
-                        listing.marketplace_slug === 'ticketmaster' ? 'green'   :
-                        listing.marketplace_slug === 'tickpick'     ? 'orange'  :
-                        listing.marketplace_slug === 'gametime'     ? 'yellow'  :
-                        listing.marketplace_slug === 'vividseats'   ? 'red'     :
-                        'blue'
-                      }>
-                        {listing.marketplace_slug}
-                      </Badge>
-                      {listing.market_segment && (
-                        <Badge variant="secondary">
-                          {listing.market_segment === 'verified_resale' ? 'resale' : listing.market_segment}
-                        </Badge>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {listings.length === 0 && (
-              <p className="text-center py-8 text-gray-400">No listings. Try polling.</p>
-            )}
-          </div>
-        </div>
-      )}
+        )}
+      </section>
 
-      {activeTab === 'heatmap' && event.venue_slug && (
-        <VenueHeatmap venueSlug={event.venue_slug} listings={listings} mode="price" />
-      )}
-
-      {activeTab === 'history' && (
-        <div className="space-y-4">
-          <PriceHistoryChart eventId={eventId} />
-          <InventoryChart eventId={eventId} />
+      {/* ── Highlights placeholder ─────────────────────────── */}
+      <section>
+        <div className="flex items-center gap-2 mb-4">
+          <Star size={16} className="text-slate-400" />
+          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Highlights</h2>
         </div>
-      )}
+        <div className="bg-[#161b27] border border-[#2a3145] rounded-xl p-8 text-center text-slate-600">
+          <p className="text-sm">Price drops, deal alerts, and trends will appear here.</p>
+          <p className="text-xs mt-1 text-slate-700">Coming soon</p>
+        </div>
+      </section>
+
+      {/* ── Venue Map placeholder ──────────────────────────── */}
+      <section>
+        <div className="flex items-center gap-2 mb-4">
+          <Map size={16} className="text-slate-400" />
+          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Venue Map</h2>
+        </div>
+        <div className="bg-[#161b27] border border-[#2a3145] border-dashed rounded-xl p-12 text-center text-slate-600">
+          <Map size={32} className="mx-auto mb-3 opacity-20" />
+          <p className="text-sm">Interactive seat map coming soon.</p>
+        </div>
+      </section>
+
     </div>
   );
 }

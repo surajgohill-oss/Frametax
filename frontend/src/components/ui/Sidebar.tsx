@@ -5,7 +5,7 @@ import { LayoutDashboard, CalendarDays, Map, ArrowLeftRight, Bug, Music2 } from 
 import { cn } from "@/lib/utils";
 
 const nav = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/", label: "Feed", icon: LayoutDashboard },
   { href: "/events", label: "Events", icon: CalendarDays },
   { href: "/heatmap", label: "Heatmap", icon: Map },
   { href: "/compare", label: "Compare", icon: ArrowLeftRight },
