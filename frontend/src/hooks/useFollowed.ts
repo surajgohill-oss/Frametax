@@ -4,9 +4,11 @@ import { useState, useEffect } from "react";
 const KEY = "followed_events";
 
 export function useFollowed() {
+  const [mounted, setMounted] = useState(false);
   const [followed, setFollowed] = useState<Set<number>>(new Set());
 
   useEffect(() => {
+    setMounted(true);
     try {
       const raw = localStorage.getItem(KEY);
       if (raw) setFollowed(new Set(JSON.parse(raw) as number[]));
@@ -23,5 +25,5 @@ export function useFollowed() {
     });
   }
 
-  return { followed, toggle };
+  return { followed, toggle, mounted };
 }

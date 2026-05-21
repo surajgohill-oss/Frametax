@@ -72,7 +72,7 @@ function FeedSection({ title, events, followed, onFollowToggle, emptyMessage }: 
 export default function FeedPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
-  const { followed, toggle } = useFollowed();
+  const { followed, toggle, mounted } = useFollowed();
 
   useEffect(() => {
     api.events.list()
@@ -81,7 +81,7 @@ export default function FeedPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) {
+  if (loading || !mounted) {
     return <div className="flex items-center justify-center h-64 text-slate-500">Loading…</div>;
   }
 
