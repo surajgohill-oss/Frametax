@@ -44,3 +44,4 @@ Thumbs.db
 *.swp
 .nadp.json
 .nadp-context.md
+.nadp-replay.json

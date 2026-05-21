@@ -1,6 +1,6 @@
 .PHONY: up down reset logs status build verify debug-snapshot verify-seed-code bootstrap-status \
         e2e-discovery-test discovery-dedupe-test lifecycle-time-sim-test \
-        gate-status test-invariants debug nadp context
+        gate-status test-invariants debug nadp context replay
 
 up:
 	docker compose up --build -d
@@ -326,3 +326,8 @@ debug nadp:
 # Run this before every debug session. Paste .nadp-context.md into Claude/Cursor.
 context:
 	@bash scripts/nadp/nadp-context.sh
+
+# ── NADP v11 — Replay-Based Divergence Engine ─────────────────────────────────
+# Reconstructs T0→T3, finds first non-reproducible step, writes .nadp-replay.json
+replay:
+	@bash scripts/nadp/replay.sh --json
