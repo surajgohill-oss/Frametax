@@ -15,7 +15,7 @@ VENUE_MAP_DIR = Path("/shared/venue_maps")
 DATABASE_URL = "postgresql+asyncpg://concert:concert@db:5432/concert_tracker"
 
 # Bump this string whenever the seed data changes — visible in bootstrap-status.
-SEED_VERSION = "v8-all-marketplace-tracked-events"
+SEED_VERSION = "v9-fixed-dates-seatgeek-listings"
 
 
 def _canonical_id(title: str, venue_slug: str, event_date: datetime) -> str:
@@ -87,14 +87,16 @@ async def seed_venues(db):
 async def seed_demo_events(db):
     """3 realistic demo events so the dashboard is populated on first boot."""
     print("SEED: startup entered")
-    now = datetime.utcnow()
+    # Fixed anchor — ensures canonical_id is stable across restarts regardless of
+    # when the seed runs. DO NOT change without bumping SEED_VERSION.
+    _ANCHOR = datetime(2026, 5, 16)
 
     DEMO_EVENTS = [
         {
             "title": "Kendrick Lamar",
             "artist": "Kendrick Lamar",
             "venue_slug": "crypto-arena",
-            "event_date": now + timedelta(days=45),
+            "event_date": _ANCHOR + timedelta(days=45),
             "stubhub_url": "https://www.stubhub.com/kendrick-lamar-los-angeles-tickets",
             "seatgeek_url": "https://seatgeek.com/kendrick-lamar-tickets",
             "stubhub_event_id": "demo-sh-kendrick",
@@ -114,7 +116,7 @@ async def seed_demo_events(db):
             "title": "Taylor Swift | The Eras Tour",
             "artist": "Taylor Swift",
             "venue_slug": "sofi-stadium",
-            "event_date": now + timedelta(days=72),
+            "event_date": _ANCHOR + timedelta(days=72),
             "stubhub_url": "https://www.stubhub.com/taylor-swift-inglewood-tickets",
             "seatgeek_url": "https://seatgeek.com/taylor-swift-tickets",
             "stubhub_event_id": "demo-sh-taylorswift",
@@ -135,7 +137,7 @@ async def seed_demo_events(db):
             "title": "Dave Matthews Band",
             "artist": "Dave Matthews Band",
             "venue_slug": "hollywood-bowl",
-            "event_date": now + timedelta(days=28),
+            "event_date": _ANCHOR + timedelta(days=28),
             "stubhub_url": "https://www.stubhub.com/dave-matthews-band-hollywood-tickets",
             "seatgeek_url": "https://seatgeek.com/dave-matthews-band-tickets",
             "stubhub_event_id": "demo-sh-davematthews",
@@ -237,14 +239,16 @@ async def seed_demo_events(db):
                     f"te_id={te.id} current_eid={te.external_event_id!r}"
                 )
 
-        # Demo listings (stubhub) so dashboard stat cards show real numbers.
-        # Query all rows (not just active) so we can reactivate any that were
-        # incorrectly deactivated by a zero-result poll (regression guard).
-        if stub_mp:
+        # Demo listings (stubhub + seatgeek) so dashboard stat cards show real
+        # numbers. Query all rows (not just active) so we can reactivate any that
+        # were incorrectly deactivated by a zero-result poll (regression guard).
+        for demo_mp, mp_prefix in [(stub_mp, "sh"), (sg_mp, "sg")]:
+            if not demo_mp:
+                continue
             existing_listings = (await db.execute(
                 select(Listing).where(
                     Listing.event_id == event.id,
-                    Listing.marketplace_id == stub_mp.id,
+                    Listing.marketplace_id == demo_mp.id,
                 )
             )).scalars().all()
 
@@ -257,12 +261,12 @@ async def seed_demo_events(db):
                         l.is_active = True
                         print(f"SEED: reactivated listing {l.external_listing_id}")
                 for idx, ldata in enumerate(demo["listings"]):
-                    lid = f"demo-{canonical}-{idx}"
+                    lid = f"demo-{mp_prefix}-{canonical}-{idx}"
                     if lid not in existing_ids:
                         price = Decimal(str(ldata["price"]))
                         db.add(Listing(
                             event_id=event.id,
-                            marketplace_id=stub_mp.id,
+                            marketplace_id=demo_mp.id,
                             external_listing_id=lid,
                             section=ldata["section"],
                             section_id=None,
