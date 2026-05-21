@@ -8,7 +8,7 @@ import hashlib
 from app.database import get_db
 from app.models import Event, TrackedEvent, Marketplace, Venue, Listing
 from app.config import get_settings
-from app.utils.lineage import trace_event, add_stage
+from app.utils.lineage import trace_event, add_stage, build_event_lineage
 
 router = APIRouter(prefix="/events", tags=["events"])
 settings = get_settings()
@@ -96,6 +96,8 @@ async def _enrich_event(db, event: Event, trace: dict | None = None) -> dict:
             } for te in tracked
         ],
     }
+
+    payload["lineage"] = build_event_lineage(event, tracked, marketplace_ids)
 
     if trace:
         add_stage(trace, "response_built")

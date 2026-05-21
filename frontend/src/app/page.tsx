@@ -7,6 +7,7 @@ import { EventCard } from "@/components/EventCard";
 import { useFollowed } from "@/hooks/useFollowed";
 import type { Event } from "@/lib/types";
 import { assertEventCardinality } from "@/lib/types";
+import { useEventTrace } from "@/lib/debug/useEventTrace";
 
 function daysUntil(isoDate: string) {
   return Math.floor((new Date(isoDate).getTime() - Date.now()) / 86_400_000);
@@ -74,6 +75,7 @@ export default function FeedPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const { followed, toggle, mounted } = useFollowed();
+  useEventTrace(events);
 
   useEffect(() => {
     api.events.list()
