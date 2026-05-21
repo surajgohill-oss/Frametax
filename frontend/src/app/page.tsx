@@ -77,7 +77,16 @@ export default function FeedPage() {
 
   useEffect(() => {
     api.events.list()
-      .then(setEvents)
+      .then((data) => {
+        if (typeof window !== "undefined") {
+          (window as any).__TRACE__ = {
+            apiLength: data?.length,
+            apiPayload: data,
+            timestamp: Date.now(),
+          };
+        }
+        setEvents(data);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
