@@ -23,6 +23,7 @@ import httpx
 from sqlalchemy import select
 
 from app.models import Event, Marketplace, TrackedEvent, Venue
+from app.utils.event_trace import emit_event_trace
 
 logger = logging.getLogger(__name__)
 
@@ -370,6 +371,11 @@ class EventDiscovery:
                 "DISCOVERY: ingested new tracked_event event='%s' mp=%s",
                 item.title, mp.slug,
             )
+            emit_event_trace("INGEST", event.id, {
+                "external_event_id": item.external_event_id or None,
+                "marketplace": mp.slug,
+                "source": "discovery",
+            })
             return "new"
 
         except Exception as exc:

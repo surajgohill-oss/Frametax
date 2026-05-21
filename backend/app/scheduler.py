@@ -6,6 +6,8 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy import select, and_, update
 
+from app.utils.event_trace import emit_event_trace
+
 from app.config import get_settings
 from app.database import AsyncSessionLocal
 from app.models import TrackedEvent, Event, Listing, ListingSnapshot, PollRun, Marketplace
@@ -379,23 +381,36 @@ async def _run_collector_for_event(collector_slug: str, source_te: TrackedEvent,
         collector_slug, te.id, te.event_id,
         te.marketplace_id, te.external_event_id,
     )
+    emit_event_trace("SCHEDULER", te.event_id, {
+        "tracked_event_id": te.id,
+        "external_event_id": te.external_event_id,
+        "marketplace": collector_slug,
+    })
 
     try:
         result = await collector.collect(te)
+        listings_count = len(result.listings)
         if result.error:
             logger.warning(
                 "COLLECTOR_RESULT: slug=%s event_id=%d listings=%d "
                 "error=%r external_event_id=%r",
-                collector_slug, te.event_id, len(result.listings),
+                collector_slug, te.event_id, listings_count,
                 result.error, te.external_event_id,
             )
         else:
             logger.info(
                 "COLLECTOR_RESULT: slug=%s event_id=%d listings=%d "
                 "external_event_id=%r",
-                collector_slug, te.event_id, len(result.listings),
+                collector_slug, te.event_id, listings_count,
                 te.external_event_id,
             )
+        emit_event_trace("COLLECT", te.event_id, {
+            "tracked_event_id": te.id,
+            "external_event_id": te.external_event_id,
+            "marketplace": collector_slug,
+            "listings_count": listings_count,
+            "error": result.error,
+        })
         await _process_result(result, te, poll_run_id)
     except Exception as exc:
         logger.exception(

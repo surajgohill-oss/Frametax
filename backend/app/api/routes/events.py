@@ -10,6 +10,7 @@ from app.database import get_db
 from app.models import Event, TrackedEvent, Marketplace, Venue, Listing
 from app.config import get_settings
 from app.utils.lineage import trace_event, add_stage, build_event_lineage
+from app.utils.event_trace import emit_event_trace
 
 router = APIRouter(prefix="/events", tags=["events"])
 settings = get_settings()
@@ -116,6 +117,11 @@ async def _enrich_event(db, event: Event, trace: dict | None = None) -> dict:
 
     payload["lineage"] = build_event_lineage(event, tracked, marketplace_ids)
 
+    emit_event_trace("ENRICH", event.id, {
+        "listings_count": len(mp_asks),
+        "marketplaces": list(mp_asks.keys()),
+    })
+
     if trace:
         add_stage(trace, "response_built")
         payload["__trace"] = trace
@@ -173,6 +179,11 @@ async def create_event(data: dict, db: AsyncSession = Depends(get_db)):
         if not existing_te.scalar_one_or_none():
             external_event_id = _extract_external_id_from_url(mp_slug, url)
             db.add(TrackedEvent(event_id=event.id, marketplace_id=mp.id, external_url=url, poll_interval_minutes=poll_interval, external_event_id=external_event_id))
+            emit_event_trace("INGEST", event.id, {
+                "external_event_id": external_event_id,
+                "marketplace": mp_slug,
+                "source": "api",
+            })
 
     await db.commit()
     event = await _get_event(db, event.id)
