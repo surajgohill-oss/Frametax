@@ -43,3 +43,4 @@ Thumbs.db
 .vscode/
 *.swp
 .nadp.json
+.nadp-context.md

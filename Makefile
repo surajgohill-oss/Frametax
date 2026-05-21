@@ -1,6 +1,6 @@
 .PHONY: up down reset logs status build verify debug-snapshot verify-seed-code bootstrap-status \
         e2e-discovery-test discovery-dedupe-test lifecycle-time-sim-test \
-        gate-status test-invariants debug nadp
+        gate-status test-invariants debug nadp context
 
 up:
 	docker compose up --build -d
@@ -320,3 +320,9 @@ _wait:
 # Usage: make debug   OR   make nadp
 debug nadp:
 	@bash scripts/nadp/nadp-run.sh
+
+# ── NADP Context Generator ────────────────────────────────────────────────────
+# Runs Layer 1 curl probes, writes .nadp-context.md + .nadp.json.
+# Run this before every debug session. Paste .nadp-context.md into Claude/Cursor.
+context:
+	@bash scripts/nadp/nadp-context.sh
