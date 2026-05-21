@@ -5,12 +5,13 @@ import { Plus } from "lucide-react";
 import { api } from "@/lib/api";
 import { EventCard } from "@/components/EventCard";
 import { useFollowed } from "@/hooks/useFollowed";
+import type { Event } from "@/lib/types";
 
 function daysUntil(isoDate: string) {
   return Math.floor((new Date(isoDate).getTime() - Date.now()) / 86_400_000);
 }
 
-function sectionize(events: any[], followed: Set<number>) {
+function sectionize(events: Event[], followed: Set<number>) {
   const assigned = new Set<number>();
   const tonight: any[] = [];
   const mustWatch: any[] = [];
@@ -38,7 +39,7 @@ function sectionize(events: any[], followed: Set<number>) {
 
 interface SectionProps {
   title: string;
-  events: any[];
+  events: Event[];
   followed: Set<number>;
   onFollowToggle: (id: number) => void;
   emptyMessage?: string;
@@ -68,7 +69,7 @@ function FeedSection({ title, events, followed, onFollowToggle, emptyMessage }: 
 }
 
 export default function FeedPage() {
-  const [events, setEvents] = useState<any[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const { followed, toggle } = useFollowed();
 

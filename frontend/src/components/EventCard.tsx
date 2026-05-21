@@ -2,9 +2,10 @@
 import Link from "next/link";
 import { MapPin, CalendarDays } from "lucide-react";
 import { fmt$, fmtDate } from "@/lib/utils";
+import type { EventCardInput } from "@/lib/types";
 
 interface Props {
-  event: any;
+  event: EventCardInput;
   followed: boolean;
   onFollowToggle: (id: number) => void;
 }
