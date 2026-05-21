@@ -29,6 +29,7 @@ export default function EventsPage() {
   }
 
   if (loading) return <div className="flex items-center justify-center h-64 text-slate-500">Loading…</div>;
+  if (!Array.isArray(events)) return null;
 
   return (
     <div className="space-y-6">

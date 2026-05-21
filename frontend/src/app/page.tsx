@@ -47,6 +47,7 @@ interface SectionProps {
 }
 
 function FeedSection({ title, events, followed, onFollowToggle, emptyMessage }: SectionProps) {
+  if (!Array.isArray(events)) return null;
   if (events.length === 0 && !emptyMessage) return null;
   return (
     <section>
