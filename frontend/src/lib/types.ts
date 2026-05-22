@@ -38,6 +38,9 @@ export interface Event {
   seatgeek_url: string | null;
   lowest_ask_stubhub: number | null;
   lowest_ask_seatgeek: number | null;
+  lowest_price: number | null;
+  total_listings: number | null;
+  marketplace_prices: Record<string, number> | null;
   next_poll_at: string | null;
   created_at: string | null;
   /** Marketplace tracking relations. Present on the API object but MUST NOT be
@@ -73,7 +76,21 @@ export type EventCardInput = Pick<
   Event,
   "id" | "canonical_id" | "title" | "artist" | "venue_name" | "venue_slug"
   | "event_date" | "lowest_ask_stubhub" | "lowest_ask_seatgeek" | "is_active"
+  | "total_listings" | "lowest_price"
 >;
+
+export type EventState = "POPULATED" | "PARTIAL" | "EMPTY" | "BLOCKED";
+
+/** Derives a display state from event data returned by the API. */
+export function deriveEventState(event: Pick<Event, "is_active" | "total_listings" | "lowest_ask_stubhub" | "lowest_ask_seatgeek">): EventState {
+  if (!event.is_active) return "BLOCKED";
+  const count = event.total_listings ?? 0;
+  if (count === 0) return "EMPTY";
+  const hasStubhub = event.lowest_ask_stubhub != null;
+  const hasSeatgeek = event.lowest_ask_seatgeek != null;
+  if (hasStubhub && hasSeatgeek) return "POPULATED";
+  return "PARTIAL";
+}
 
 // ── Runtime guards ────────────────────────────────────────────────────────────
 

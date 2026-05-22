@@ -2,7 +2,9 @@
 import Link from "next/link";
 import { MapPin, CalendarDays } from "lucide-react";
 import { fmt$, fmtDate } from "@/lib/utils";
-import type { EventCardInput } from "@/lib/types";
+import { Badge } from "@/components/ui/Badge";
+import { deriveEventState } from "@/lib/types";
+import type { EventCardInput, EventState } from "@/lib/types";
 
 interface Props {
   event: EventCardInput;
@@ -10,25 +12,50 @@ interface Props {
   onFollowToggle: (id: number) => void;
 }
 
+const STATE_BORDER: Record<EventState, string> = {
+  POPULATED: "border-emerald-500/50",
+  PARTIAL:   "border-yellow-500/50",
+  EMPTY:     "border-slate-600",
+  BLOCKED:   "border-red-500/50",
+};
+
+const STATE_BADGE: Record<EventState, { label: string; variant: "green" | "yellow" | "secondary" | "red" }> = {
+  POPULATED: { label: "LIVE",        variant: "green" },
+  PARTIAL:   { label: "LIMITED",     variant: "yellow" },
+  EMPTY:     { label: "NO DATA",     variant: "secondary" },
+  BLOCKED:   { label: "UNAVAILABLE", variant: "red" },
+};
+
+const STATE_PRICE_COLOR: Record<EventState, string> = {
+  POPULATED: "text-white",
+  PARTIAL:   "text-yellow-400",
+  EMPTY:     "text-slate-500",
+  BLOCKED:   "text-slate-500",
+};
+
 export function EventCard({ event, followed, onFollowToggle }: Props) {
-  const lowestAsk = Math.min(
-    event.lowest_ask_stubhub ?? Infinity,
-    event.lowest_ask_seatgeek ?? Infinity,
-  );
+  const state = deriveEventState(event);
+  const lowestAsk = event.lowest_price ??
+    Math.min(event.lowest_ask_stubhub ?? Infinity, event.lowest_ask_seatgeek ?? Infinity);
   const hasPrice = isFinite(lowestAsk);
+  const { label: badgeLabel, variant: badgeVariant } = STATE_BADGE[state];
 
   return (
     <div
       data-testid="event-card"
       data-event-id={event.id}
       data-canonical-id={event.canonical_id}
-      className="bg-[#161b27] border border-[#2a3145] rounded-xl overflow-hidden hover:border-blue-500/40 transition-colors"
+      data-state={state}
+      className={`bg-[#161b27] border ${STATE_BORDER[state]} rounded-xl overflow-hidden hover:border-blue-500/40 transition-colors`}
     >
       <div className="px-5 pt-5 pb-4">
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h3 className="text-base font-bold text-white leading-snug truncate">{event.title}</h3>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-xs text-slate-400">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-base font-bold text-white leading-snug truncate">{event.title}</h3>
+              <Badge variant={badgeVariant} className="shrink-0 text-[10px] px-1.5 py-0">{badgeLabel}</Badge>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
               <span className="flex items-center gap-1">
                 <MapPin size={12} className="shrink-0" />
                 {event.venue_name || event.venue_slug}
@@ -50,11 +77,12 @@ export function EventCard({ event, followed, onFollowToggle }: Props) {
             {followed ? "Following" : "Follow"}
           </button>
         </div>
-        {hasPrice && (
-          <p className="mt-3 text-sm text-slate-400">
-            From <span className="text-white font-semibold text-base">{fmt$(lowestAsk)}</span>
-          </p>
-        )}
+        <p className="mt-3 text-sm text-slate-400">
+          {hasPrice
+            ? <>From <span className={`font-semibold text-base ${STATE_PRICE_COLOR[state]}`}>{fmt$(lowestAsk)}</span></>
+            : <span className="text-slate-500 italic">No listings</span>
+          }
+        </p>
       </div>
       <div className="px-5 pb-5">
         <Link
