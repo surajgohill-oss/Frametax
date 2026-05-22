@@ -12,12 +12,11 @@ interface Props {
   onFollowToggle: (id: number) => void;
 }
 
-// DEBUG: exaggerated borders to make state visible at a glance
 const STATE_BORDER: Record<EventState, string> = {
-  POPULATED: "border-4 border-green-400",
-  PARTIAL:   "border-4 border-yellow-400",
-  EMPTY:     "border-4 border-gray-500",
-  BLOCKED:   "border-4 border-red-500",
+  POPULATED: "border-emerald-500/50",
+  PARTIAL:   "border-yellow-500/50",
+  EMPTY:     "border-slate-600",
+  BLOCKED:   "border-red-500/50",
 };
 
 const STATE_BADGE: Record<EventState, { label: string; variant: "green" | "yellow" | "secondary" | "red" }> = {
@@ -34,14 +33,6 @@ const STATE_PRICE_COLOR: Record<EventState, string> = {
   BLOCKED:   "text-slate-500",
 };
 
-// DEBUG: overlay background per state
-const DEBUG_BG: Record<EventState, string> = {
-  POPULATED: "bg-green-900 text-green-200",
-  PARTIAL:   "bg-yellow-900 text-yellow-200",
-  EMPTY:     "bg-gray-800 text-gray-300",
-  BLOCKED:   "bg-red-900 text-red-200",
-};
-
 export function EventCard({ event, followed, onFollowToggle }: Props) {
   const state = deriveEventState(event);
   const lowestAsk = event.lowest_price ??
@@ -50,23 +41,14 @@ export function EventCard({ event, followed, onFollowToggle }: Props) {
   const { label: badgeLabel, variant: badgeVariant } = STATE_BADGE[state];
 
   return (
-    <>
-    <div style={{position:'fixed',top:0,right:0,zIndex:99999,background:'red',color:'white',padding:'12px',fontSize:'24px',fontWeight:'bold'}}>EVENTCARD ACTIVE</div>
     <div
       data-testid="event-card"
       data-event-id={event.id}
       data-canonical-id={event.canonical_id}
       data-state={state}
-      className={`relative bg-[#161b27] ${STATE_BORDER[state]} rounded-xl overflow-hidden`}
+      className={`bg-[#161b27] border ${STATE_BORDER[state]} rounded-xl overflow-hidden hover:border-blue-500/40 transition-colors`}
     >
-      {/* DEBUG OVERLAY — remove before ship */}
-      <div className={`absolute top-0 left-0 z-50 px-2 py-1 text-[10px] font-mono leading-tight rounded-br-lg ${DEBUG_BG[state]}`}>
-        <div><strong>STATE:</strong> {state}</div>
-        <div><strong>listings:</strong> {event.total_listings ?? "null"}</div>
-        <div><strong>floor:</strong> {event.lowest_price != null ? fmt$(event.lowest_price) : "null"}</div>
-      </div>
-
-      <div className="px-5 pt-10 pb-4">
+      <div className="px-5 pt-5 pb-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 mb-1">
@@ -111,6 +93,5 @@ export function EventCard({ event, followed, onFollowToggle }: Props) {
         </Link>
       </div>
     </div>
-    </>
   );
 }

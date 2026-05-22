@@ -9,20 +9,11 @@ import { RefreshCw, Plus, Trash2, ExternalLink } from "lucide-react";
 import { deriveEventState } from "@/lib/types";
 import type { Event, EventState } from "@/lib/types";
 
-// DEBUG: exaggerated borders
 const STATE_BORDER: Record<EventState, string> = {
-  POPULATED: "border-4 border-green-400",
-  PARTIAL:   "border-4 border-yellow-400",
-  EMPTY:     "border-4 border-gray-500",
-  BLOCKED:   "border-4 border-red-500",
-};
-
-// DEBUG: overlay bg
-const DEBUG_BG: Record<EventState, string> = {
-  POPULATED: "bg-green-900 text-green-200",
-  PARTIAL:   "bg-yellow-900 text-yellow-200",
-  EMPTY:     "bg-gray-800 text-gray-300",
-  BLOCKED:   "bg-red-900 text-red-200",
+  POPULATED: "border-l-4 border-l-emerald-500",
+  PARTIAL:   "border-l-4 border-l-yellow-500",
+  EMPTY:     "border-l-4 border-l-slate-600",
+  BLOCKED:   "border-l-4 border-l-red-500",
 };
 
 const STATE_BADGE: Record<EventState, { label: string; variant: "green" | "yellow" | "secondary" | "red" }> = {
@@ -59,17 +50,11 @@ export default function EventsPage() {
     await api.events.delete(id); load();
   }
 
-  if (loading) return (
-    <>
-      <div style={{position:'fixed',top:0,left:0,zIndex:99999,background:'red',color:'white',padding:'12px',fontSize:'24px',fontWeight:'bold'}}>EVENTS PAGE ACTIVE</div>
-      <div className="flex items-center justify-center h-64 text-slate-500">Loading…</div>
-    </>
-  );
+  if (loading) return <div className="flex items-center justify-center h-64 text-slate-500">Loading…</div>;
   if (!Array.isArray(events)) return null;
 
   return (
     <div className="space-y-6">
-      <div style={{position:'fixed',top:0,left:0,zIndex:99999,background:'red',color:'white',padding:'12px',fontSize:'24px',fontWeight:'bold'}}>EVENTS PAGE ACTIVE</div>
       <div className="flex items-center justify-between">
         <div><h1 className="text-2xl font-bold text-white">Events</h1><p className="text-slate-400 text-sm mt-1">{events.length} / 30 slots used</p></div>
         <Link href="/events/new" className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors"><Plus className="w-4 h-4" /> Add Event</Link>
@@ -85,15 +70,7 @@ export default function EventsPage() {
             const lowestPrice = ev.lowest_price ?? Math.min(ev.lowest_ask_stubhub ?? Infinity, ev.lowest_ask_seatgeek ?? Infinity);
             const hasPrice = isFinite(lowestPrice);
             return (
-              <Card key={ev.id} className={`relative p-4 ${STATE_BORDER[state]}`}>
-                {/* DEBUG OVERLAY — remove before ship */}
-                <div className={`absolute top-0 right-0 z-50 px-2 py-1 text-[10px] font-mono leading-tight rounded-bl-lg ${DEBUG_BG[state]}`}>
-                  <span><strong>STATE:</strong> {state}</span>
-                  {" · "}
-                  <span><strong>listings:</strong> {ev.total_listings ?? "null"}</span>
-                  {" · "}
-                  <span><strong>floor:</strong> {ev.lowest_price != null ? fmt$(ev.lowest_price) : "null"}</span>
-                </div>
+              <Card key={ev.id} className={`p-4 ${STATE_BORDER[state]}`}>
                 <div className="flex items-start gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">

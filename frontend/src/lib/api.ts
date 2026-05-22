@@ -1,7 +1,8 @@
-const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
+// All requests go to the Next.js server via relative paths.
+// next.config.js rewrites /api/* → BACKEND_URL/api/* server-side,
+// so the browser never makes cross-origin calls to the backend directly.
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}/api${path}`, {
+  const res = await fetch(`/api${path}`, {
     headers: { "Content-Type": "application/json", ...init?.headers },
     ...init,
   });
