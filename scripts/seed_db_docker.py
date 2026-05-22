@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Idempotent seed — runs on every backend startup. Safe to re-run."""
-import asyncio, hashlib, json, sys
+import asyncio, hashlib, json, os, sys
 from datetime import datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
@@ -11,8 +11,11 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from sqlalchemy import select, update as sa_update, text
 from app.models import Venue, VenueSection, Marketplace, Event, TrackedEvent, Listing
 
-VENUE_MAP_DIR = Path("/shared/venue_maps")
-DATABASE_URL = "postgresql+asyncpg://concert:concert@db:5432/concert_tracker"
+VENUE_MAP_DIR = Path(os.getenv("VENUE_MAP_DIR", "/shared/venue_maps"))
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql+asyncpg://concert:concert@db:5432/concert_tracker",
+)
 
 # Bump this string whenever the seed data changes — visible in bootstrap-status.
 SEED_VERSION = "v9-fixed-dates-seatgeek-listings"

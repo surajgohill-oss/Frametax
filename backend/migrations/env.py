@@ -1,4 +1,5 @@
 import asyncio
+import os
 from logging.config import fileConfig
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
@@ -10,13 +11,26 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-import sys, os
+import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from app.database import Base
 from app.models import *  # noqa
 
 target_metadata = Base.metadata
+
+# Allow env vars to override alembic.ini (for local / non-Docker runs).
+# The async engine requires postgresql+asyncpg://; the offline sync runner
+# requires plain postgresql://. We build both from whatever env var is set.
+_env_url = os.getenv("DATABASE_URL") or os.getenv("DATABASE_SYNC_URL")
+if _env_url:
+    _async_url = _env_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    _sync_url  = _env_url.replace("postgresql+asyncpg://", "postgresql://", 1)
+    config.set_main_option("sqlalchemy.url", _async_url)
+    config.set_main_option("sqlalchemy.sync_url", _sync_url)
+else:
+    _async_url = config.get_main_option("sqlalchemy.url")
+    _sync_url  = _async_url.replace("postgresql+asyncpg://", "postgresql://", 1)
 
 
 def run_migrations_offline() -> None:
@@ -33,10 +47,8 @@ def do_run_migrations(connection: Connection) -> None:
 
 
 async def run_async_migrations() -> None:
-    connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.", poolclass=pool.NullPool,
-    )
+    from sqlalchemy.ext.asyncio import create_async_engine
+    connectable = create_async_engine(_async_url, poolclass=pool.NullPool)
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
     await connectable.dispose()
