@@ -9,11 +9,20 @@ import { RefreshCw, Plus, Trash2, ExternalLink } from "lucide-react";
 import { deriveEventState } from "@/lib/types";
 import type { Event, EventState } from "@/lib/types";
 
+// DEBUG: exaggerated borders
 const STATE_BORDER: Record<EventState, string> = {
-  POPULATED: "border-l-4 border-l-emerald-500",
-  PARTIAL:   "border-l-4 border-l-yellow-500",
-  EMPTY:     "border-l-4 border-l-slate-600",
-  BLOCKED:   "border-l-4 border-l-red-500",
+  POPULATED: "border-4 border-green-400",
+  PARTIAL:   "border-4 border-yellow-400",
+  EMPTY:     "border-4 border-gray-500",
+  BLOCKED:   "border-4 border-red-500",
+};
+
+// DEBUG: overlay bg
+const DEBUG_BG: Record<EventState, string> = {
+  POPULATED: "bg-green-900 text-green-200",
+  PARTIAL:   "bg-yellow-900 text-yellow-200",
+  EMPTY:     "bg-gray-800 text-gray-300",
+  BLOCKED:   "bg-red-900 text-red-200",
 };
 
 const STATE_BADGE: Record<EventState, { label: string; variant: "green" | "yellow" | "secondary" | "red" }> = {
@@ -70,7 +79,15 @@ export default function EventsPage() {
             const lowestPrice = ev.lowest_price ?? Math.min(ev.lowest_ask_stubhub ?? Infinity, ev.lowest_ask_seatgeek ?? Infinity);
             const hasPrice = isFinite(lowestPrice);
             return (
-              <Card key={ev.id} className={`p-4 ${STATE_BORDER[state]}`}>
+              <Card key={ev.id} className={`relative p-4 ${STATE_BORDER[state]}`}>
+                {/* DEBUG OVERLAY — remove before ship */}
+                <div className={`absolute top-0 right-0 z-50 px-2 py-1 text-[10px] font-mono leading-tight rounded-bl-lg ${DEBUG_BG[state]}`}>
+                  <span><strong>STATE:</strong> {state}</span>
+                  {" · "}
+                  <span><strong>listings:</strong> {ev.total_listings ?? "null"}</span>
+                  {" · "}
+                  <span><strong>floor:</strong> {ev.lowest_price != null ? fmt$(ev.lowest_price) : "null"}</span>
+                </div>
                 <div className="flex items-start gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
