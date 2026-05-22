@@ -29,6 +29,8 @@ class Settings(BaseSettings):
     gametime_api_key: str = ""
     vividseats_api_key: str = ""
 
+    env_mode: str = "prod"  # prod | mock
+
     cors_origins: List[str] = ["http://localhost:3000"]
 
     class Config:

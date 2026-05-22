@@ -38,6 +38,9 @@ async def hydrate(event_id: int = Query(..., description="DB events.id to hydrat
     """
     Synchronous end-to-end pipeline: resolve → collect → commit → verify.
     Returns atomic truth about DB listing state after execution.
+
+    When env_mode=mock: returns deterministic synthetic listings instantly,
+    no external calls made. Production path is completely unmodified.
     """
     # ── Validate event exists ─────────────────────────────────────────────────
     async with AsyncSessionLocal() as db:
@@ -47,6 +50,29 @@ async def hydrate(event_id: int = Query(..., description="DB events.id to hydrat
 
     if not event:
         raise HTTPException(status_code=404, detail=f"Event {event_id} not found")
+
+    # ── MOCK MODE: short-circuit before any external call ────────────────────
+    if settings.env_mode != "prod":
+        from app.mock_marketplaces import generate_mock_listings
+        by_marketplace = generate_mock_listings(event_id)
+        total = sum(v["total"] for v in by_marketplace.values())
+        real  = sum(v["real"]  for v in by_marketplace.values())
+        logger.info("HYDRATE: mock mode event_id=%d total=%d real=%d", event_id, total, real)
+        return {
+            "event_id": event_id,
+            "event_title": event.title,
+            "mode": "mock",
+            "status": "LIVE",
+            "resolver": {"resolved": len(by_marketplace), "failed": 0, "already_set": 0},
+            "collector": {"success": list(by_marketplace.keys()), "failed": []},
+            "db": {
+                "total_listings": total,
+                "real_listings": real,
+                "by_marketplace": by_marketplace,
+            },
+            "external_blockers": [],
+            "final_verdict": "POPULATED",
+        }
 
     # ── STEP 1: Force resolver ────────────────────────────────────────────────
     resolver_counts = {"resolved": 0, "failed": 0, "already_set": 0}
