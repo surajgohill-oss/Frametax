@@ -59,11 +59,17 @@ export default function EventsPage() {
     await api.events.delete(id); load();
   }
 
-  if (loading) return <div className="flex items-center justify-center h-64 text-slate-500">Loading…</div>;
+  if (loading) return (
+    <>
+      <div style={{position:'fixed',top:0,left:0,zIndex:99999,background:'red',color:'white',padding:'12px',fontSize:'24px',fontWeight:'bold'}}>EVENTS PAGE ACTIVE</div>
+      <div className="flex items-center justify-center h-64 text-slate-500">Loading…</div>
+    </>
+  );
   if (!Array.isArray(events)) return null;
 
   return (
     <div className="space-y-6">
+      <div style={{position:'fixed',top:0,left:0,zIndex:99999,background:'red',color:'white',padding:'12px',fontSize:'24px',fontWeight:'bold'}}>EVENTS PAGE ACTIVE</div>
       <div className="flex items-center justify-between">
         <div><h1 className="text-2xl font-bold text-white">Events</h1><p className="text-slate-400 text-sm mt-1">{events.length} / 30 slots used</p></div>
         <Link href="/events/new" className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors"><Plus className="w-4 h-4" /> Add Event</Link>

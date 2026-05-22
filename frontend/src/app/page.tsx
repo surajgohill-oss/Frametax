@@ -92,7 +92,12 @@ export default function FeedPage() {
   }, []);
 
   if (loading || !mounted) {
-    return <div className="flex items-center justify-center h-64 text-slate-500">Loading…</div>;
+    return (
+      <>
+        <div style={{position:'fixed',top:0,left:0,zIndex:99999,background:'red',color:'white',padding:'12px',fontSize:'24px',fontWeight:'bold'}}>HOME PAGE ACTIVE</div>
+        <div className="flex items-center justify-center h-64 text-slate-500">Loading…</div>
+      </>
+    );
   }
 
   const sections = sectionize(events, followed);
@@ -106,6 +111,7 @@ export default function FeedPage() {
 
   return (
     <div className="space-y-10">
+      <div style={{position:'fixed',top:0,left:0,zIndex:99999,background:'red',color:'white',padding:'12px',fontSize:'24px',fontWeight:'bold'}}>HOME PAGE ACTIVE</div>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Events</h1>

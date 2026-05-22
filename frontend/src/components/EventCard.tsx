@@ -50,6 +50,8 @@ export function EventCard({ event, followed, onFollowToggle }: Props) {
   const { label: badgeLabel, variant: badgeVariant } = STATE_BADGE[state];
 
   return (
+    <>
+    <div style={{position:'fixed',top:0,right:0,zIndex:99999,background:'red',color:'white',padding:'12px',fontSize:'24px',fontWeight:'bold'}}>EVENTCARD ACTIVE</div>
     <div
       data-testid="event-card"
       data-event-id={event.id}
@@ -109,5 +111,6 @@ export function EventCard({ event, followed, onFollowToggle }: Props) {
         </Link>
       </div>
     </div>
+    </>
   );
 }
