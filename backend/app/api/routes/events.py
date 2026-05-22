@@ -86,6 +86,9 @@ async def _enrich_event(db, event: Event, trace: dict | None = None) -> dict:
         if trace:
             add_stage(trace, f"{mp.slug}_fetch", {"min_ask": mp_asks.get(mp.slug)})
 
+    # lowest price across all marketplaces
+    lowest_price = min(mp_asks.values()) if mp_asks else None
+
     if trace:
         add_stage(trace, "marketplace_merge_complete", {"slugs": list(mp_asks.keys())})
 
@@ -103,8 +106,13 @@ async def _enrich_event(db, event: Event, trace: dict | None = None) -> dict:
         "is_active": any(te.is_active for te in tracked),
         "stubhub_url": stubhub_te.external_url if stubhub_te else None,
         "seatgeek_url": seatgeek_te.external_url if seatgeek_te else None,
+        # Legacy two-marketplace fields (kept for frontend compatibility)
         "lowest_ask_stubhub": mp_asks.get("stubhub"),
         "lowest_ask_seatgeek": mp_asks.get("seatgeek"),
+        # Full marketplace price floor (all marketplaces)
+        "lowest_price": lowest_price,
+        "total_listings": total_listings_count,
+        "marketplace_prices": {slug: ask for slug, ask in mp_asks.items()},
         "next_poll_at": min(times).isoformat() if times else None,
         "created_at": event.created_at.isoformat() if event.created_at else None,
         "tracked_events": [

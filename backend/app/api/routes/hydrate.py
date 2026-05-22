@@ -51,27 +51,66 @@ async def hydrate(event_id: int = Query(..., description="DB events.id to hydrat
     if not event:
         raise HTTPException(status_code=404, detail=f"Event {event_id} not found")
 
-    # ── MOCK MODE: short-circuit before any external call ────────────────────
+    # ── MOCK MODE: write to DB first, then query back (listings table = truth) ─
     if settings.env_mode != "prod":
-        from app.mock_marketplaces import generate_mock_listings
-        by_marketplace = generate_mock_listings(event_id)
-        total = sum(v["total"] for v in by_marketplace.values())
-        real  = sum(v["real"]  for v in by_marketplace.values())
-        logger.info("HYDRATE: mock mode event_id=%d total=%d real=%d", event_id, total, real)
+        from app.mock_marketplaces import write_mock_listings
+
+        await write_mock_listings(event_id, AsyncSessionLocal)
+
+        async with AsyncSessionLocal() as db:
+            rows = (await db.execute(
+                select(
+                    Marketplace.slug,
+                    func.count(Listing.id).label("total"),
+                    func.count(Listing.id).filter(
+                        ~Listing.external_listing_id.like("demo-%")
+                    ).label("real"),
+                    func.min(Listing.price).label("min_price"),
+                )
+                .join(Listing, and_(
+                    Listing.marketplace_id == Marketplace.id,
+                    Listing.event_id == event_id,
+                    Listing.is_active == True,
+                ), isouter=True)
+                .where(Marketplace.is_active == True)
+                .group_by(Marketplace.slug)
+            )).all()
+
+        by_marketplace = {
+            slug: {
+                "total": total or 0,
+                "real": real or 0,
+                "demo": (total or 0) - (real or 0),
+                "min_price": float(min_price) if min_price is not None else None,
+            }
+            for slug, total, real, min_price in rows
+        }
+        total_listings = sum(v["total"] for v in by_marketplace.values())
+        total_real = sum(v["real"] for v in by_marketplace.values())
+        verdict = "POPULATED" if total_real > 0 else "EMPTY"
+
+        logger.info(
+            "HYDRATE: mock mode event_id=%d total=%d real=%d verdict=%s",
+            event_id, total_listings, total_real, verdict,
+        )
         return {
             "event_id": event_id,
             "event_title": event.title,
             "mode": "mock",
-            "status": "LIVE",
-            "resolver": {"resolved": len(by_marketplace), "failed": 0, "already_set": 0},
+            "status": "LIVE" if total_real > 0 else "EMPTY",
+            "resolver": {
+                "resolved": sum(1 for v in by_marketplace.values() if v["total"] > 0),
+                "failed": 0,
+                "already_set": 0,
+            },
             "collector": {"success": list(by_marketplace.keys()), "failed": []},
             "db": {
-                "total_listings": total,
-                "real_listings": real,
+                "total_listings": total_listings,
+                "real_listings": total_real,
                 "by_marketplace": by_marketplace,
             },
             "external_blockers": [],
-            "final_verdict": "POPULATED",
+            "final_verdict": verdict,
         }
 
     # ── STEP 1: Force resolver ────────────────────────────────────────────────
