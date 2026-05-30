@@ -1,106 +1,1166 @@
-"use client";
-import { useParams, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
-import { api } from "@/lib/api";
-import { fmt$, fmtDate } from "@/lib/utils";
-import { MapPin, CalendarDays, RefreshCw, ChevronLeft, Ticket, Star, Map, AlertTriangle } from "lucide-react";
-import { useFollowed } from "@/hooks/useFollowed";
-import type { MarketplaceFreshness, FreshnessStatus } from "@/lib/types";
+'use client';
+import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { api } from '@/lib/api';
+import { fmt$, fmtDate, fmtRelative } from '@/lib/utils';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { EntityLogo } from '@/components/ui/EntityLogo';
+import { getEntityImage } from '@/lib/entityImages';
+import VenueHeatmap from '@/components/venue/VenueHeatmap';
+import PriceHistoryChart from '@/components/charts/PriceHistoryChart';
+import SectionPriceBar from '@/components/charts/SectionPriceBar';
+import InventoryChart from '@/components/charts/InventoryChart';
 
-function groupByMarketplace(listings: any[]): Record<string, any[]> {
-  return listings.reduce((acc, l) => {
-    (acc[l.marketplace_slug] ??= []).push(l);
-    return acc;
-  }, {} as Record<string, any[]>);
+// ── Entity theming (mirrors dashboard) ───────────────────────────────────────
+
+function getEventEntityTheme(title: string) {
+  const n = (title || '').toLowerCase();
+  const isNFL = /49ers|rams|chargers|raiders|chiefs|cowboys|eagles|packers|bears|seahawks|broncos|steelers/.test(n);
+  const isMLB = /rangers|angels|dodgers|giants|padres|yankees|cubs|red sox|astros|braves/.test(n);
+  const isNBA = /lakers|clippers|warriors|celtics|heat|bulls|nets|knicks/.test(n);
+  if (isNFL)  return { accent: '#E50914', accentRgb: '229,9,20',    gradFrom: '#2A0000', gradMid: '#180000' };
+  if (isMLB)  return { accent: '#F97316', accentRgb: '249,115,22',  gradFrom: '#1A0E00', gradMid: '#100800' };
+  if (isNBA)  return { accent: '#3B82F6', accentRgb: '59,130,246',  gradFrom: '#00101A', gradMid: '#000A12' };
+  return               { accent: '#E50914', accentRgb: '229,9,20',   gradFrom: '#2A0000', gradMid: '#160000' };
 }
 
-const MP_LABEL: Record<string, string> = {
-  stubhub: "StubHub",
-  seatgeek: "SeatGeek",
-  ticketmaster: "Ticketmaster",
-  tickpick: "TickPick",
-  gametime: "GameTime",
-  vividseats: "Vivid Seats",
+// ── Inventory Accounting types ────────────────────────────────────────────────
+
+interface MarketplaceAccounting {
+  marketplace_slug: string;
+  raw_rows: number;
+  active_rows: number;
+  stale_rows: number;
+  reactivated_rows: number;
+  estimated_ticket_count: number;
+  deduplicated_rows: number;
+  dedup_ticket_count: number;
+  duplicate_ratio: number;
+  low_ask: number | null;
+  median_ask: number | null;
+  health_flags: string[];
+}
+
+interface CrossMarketReconciliation {
+  marketplace_slugs: string[];
+  total_unique_seat_blocks: number;
+  mirrored_blocks: number;
+  mirrored_ratio: number;
+  only_on: Record<string, number>;
+}
+
+interface InventorySanity {
+  venue_capacity: number | null;
+  estimated_ticket_count: number;
+  cross_market_unique_blocks: number;
+  capacity_ratio: number | null;
+  flags: string[];
+}
+
+interface InventoryAccounting {
+  event_id: number;
+  per_marketplace: MarketplaceAccounting[];
+  cross_market: CrossMarketReconciliation;
+  sanity: InventorySanity;
+}
+
+const MARKETPLACES = [
+  { slug: 'stubhub',  label: 'StubHub',  color: 'indigo'  },
+  { slug: 'tickpick', label: 'TickPick', color: 'green'   },
+  { slug: 'gametime', label: 'Gametime', color: 'orange'  },
+] as const;
+
+type MarketplaceSlug = 'stubhub' | 'tickpick' | 'gametime';
+
+const MP_BADGE: Record<string, 'indigo' | 'blue' | 'green' | 'orange' | 'default'> = {
+  stubhub:  'indigo',
+  tickpick: 'green',
+  gametime: 'orange',
 };
 
-const MP_COLOR: Record<string, string> = {
-  stubhub:      "bg-blue-500/10  text-blue-400  border-blue-500/30",
-  seatgeek:     "bg-green-500/10 text-green-400 border-green-500/30",
-  ticketmaster: "bg-sky-500/10   text-sky-400   border-sky-500/30",
-  tickpick:     "bg-orange-500/10 text-orange-400 border-orange-500/30",
-  gametime:     "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
-  vividseats:   "bg-red-500/10   text-red-400   border-red-500/30",
+interface PollRun {
+  id: number;
+  tracked_event_id: number;
+  started_at: string;
+  completed_at: string | null;
+  listings_found: number;
+  new_listings: number;
+  reactivated_listings: number;
+  disappeared_listings: number;
+  status: string;
+  error_message: string | null;
+}
+
+const MP_COLORS: Record<string, string> = {
+  stubhub:  'text-indigo-400',
+  tickpick: 'text-green-400',
+  gametime: 'text-orange-400',
 };
 
-const FRESHNESS_BADGE: Record<FreshnessStatus, { label: string; className: string }> = {
-  fresh:  { label: "LIVE",  className: "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" },
-  late:   { label: "LATE",  className: "bg-yellow-500/15  text-yellow-400  border border-yellow-500/30"  },
-  stale:  { label: "STALE", className: "bg-orange-500/15  text-orange-400  border border-orange-500/30"  },
-  dead:   { label: "DEAD",  className: "bg-red-500/15     text-red-400     border border-red-500/30"     },
-};
+// ── Helper utilities ──────────────────────────────────────────────────────────
 
-function FreshnessBadge({ freshness }: { freshness: MarketplaceFreshness | undefined }) {
-  if (!freshness) return null;
-  const { label, className } = FRESHNESS_BADGE[freshness.freshness_status] ?? FRESHNESS_BADGE.stale;
-  const title = freshness.age_minutes != null
-    ? `Last collected ${Math.round(freshness.age_minutes / 60)}h ago${freshness.stale_reason ? ` · ${freshness.stale_reason}` : ""}`
-    : freshness.stale_reason ?? "";
+function daysUntil(iso: string): number {
+  const diff = new Date(iso).getTime() - Date.now();
+  return Math.ceil(diff / 86_400_000);
+}
+
+interface MarketStatus { label: string; cssClass: string; }
+function getMarketStatus(price: number | null): MarketStatus {
+  if (!price) return { label: '—', cssClass: 'status-value' };
+  if (price < 60)  return { label: 'Value',   cssClass: 'status-value'   };
+  if (price < 150) return { label: 'Active',  cssClass: 'status-active'  };
+  if (price < 300) return { label: 'Hot',     cssClass: 'status-hot'     };
+  return              { label: 'Premium', cssClass: 'status-premium' };
+}
+
+// ── Section 1: Editorial Split Hero ──────────────────────────────────────────
+
+function EventHero({
+  event,
+  lowestAsk,
+  totalListings,
+  canonicalCount,
+  onPoll,
+  pollLoading,
+  onBack,
+}: {
+  event: any;
+  lowestAsk: number | null;
+  totalListings: number;
+  canonicalCount: number;
+  onPoll: () => void;
+  pollLoading: boolean;
+  onBack: () => void;
+}) {
+  const ms = getMarketStatus(lowestAsk);
+  const title = event.title || '';
+  const initial = (event.artist || title || '?')[0].toUpperCase();
+  const isCompleted = event.status === 'completed' || event.status === 'archived';
+  const days = event.event_date ? daysUntil(event.event_date) : null;
+  const theme = getEventEntityTheme(title);
+  const imgCfg = getEntityImage(title);
+  const accent = imgCfg.accent ?? theme.accent;
+  const accentRgb = theme.accentRgb;
+
+  const venueName = event.venue_slug
+    ? event.venue_slug.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())
+    : null;
+
+  // Derive category chip label
+  const catLabel = (() => {
+    const n = title.toLowerCase();
+    if (/49ers|rams|chargers|raiders|chiefs|cowboys|eagles|packers|bears|seahawks|broncos|steelers/.test(n)) return 'NFL';
+    if (/rangers|angels|dodgers|giants|padres|yankees|cubs|red sox|astros|braves/.test(n)) return 'MLB';
+    if (/lakers|clippers|warriors|celtics|heat|bulls|nets|knicks/.test(n)) return 'NBA';
+    return 'Live Event';
+  })();
+
+  // Value signal: price notably below average (use $150 as soft avg proxy)
+  const isValue = lowestAsk != null && lowestAsk < 100;
+  const isHot   = lowestAsk != null && lowestAsk >= 100 && lowestAsk < 160;
+
   return (
-    <span
-      className={`ml-2 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${className}`}
-      title={title}
-    >
-      {label}
-    </span>
+    <div className="relative overflow-hidden" style={{ background: '#06000A' }}>
+      {/* ── Breadcrumb topnav ──────────────────────────────────────────────── */}
+      <div className="relative z-20 max-w-6xl mx-auto px-6 pt-5 pb-0">
+        <div className="flex items-center gap-2 text-[11px] text-gray-700">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1 hover:text-gray-400 transition-colors font-medium"
+          >
+            ← Back
+          </button>
+          <span className="text-gray-800">·</span>
+          <span className="text-gray-700">My Events</span>
+          <span className="text-gray-800">·</span>
+          <span className="text-gray-600 truncate max-w-xs">{title || 'Event'}</span>
+        </div>
+      </div>
+
+      {/* ── Editorial Split grid ───────────────────────────────────────────── */}
+      <div
+        className="relative"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1.25fr 1fr',
+          minHeight: '420px',
+        }}
+      >
+        {/* ── LEFT: Visual Atmosphere Panel ──────────────────────────────── */}
+        <div className="relative overflow-hidden" style={{
+          background: `linear-gradient(145deg, ${theme.gradFrom}FF 0%, ${theme.gradMid}F0 45%, rgba(8,2,14,1) 100%)`,
+        }}>
+          {/* Triple radial atmospheric glows */}
+          <div className="absolute inset-0 pointer-events-none" style={{ background: `
+            radial-gradient(ellipse 70% 90% at 15% 60%, rgba(${accentRgb},0.30) 0%, transparent 55%),
+            radial-gradient(ellipse 50% 65% at 85% 15%, rgba(${accentRgb},0.14) 0%, transparent 50%),
+            radial-gradient(ellipse 40% 50% at 50% 100%, rgba(${accentRgb},0.10) 0%, transparent 45%)
+          ` }} />
+
+          {/* Animated breathing orb */}
+          <div
+            className="atmosphere-orb absolute rounded-full pointer-events-none"
+            style={{
+              width: 500,
+              height: 500,
+              top: '-20%',
+              left: '-10%',
+              background: `radial-gradient(circle, rgba(${accentRgb},0.13) 0%, transparent 70%)`,
+            }}
+          />
+
+          {/* Dot grid texture */}
+          <div className="absolute inset-0 opacity-[0.045] pointer-events-none" style={{
+            backgroundImage: `radial-gradient(circle, ${accent} 1px, transparent 1px)`,
+            backgroundSize: '28px 28px',
+          }} />
+
+          {/* Large watermark initial */}
+          <div
+            className="absolute inset-0 flex items-center justify-end pr-6 select-none pointer-events-none"
+            aria-hidden
+          >
+            <span className="font-black" style={{
+              fontSize: '280px',
+              lineHeight: 1,
+              color: `rgba(${accentRgb}, 0.045)`,
+              WebkitTextStrokeWidth: '1px',
+              WebkitTextStrokeColor: `rgba(${accentRgb}, 0.07)`,
+              fontFamily: 'system-ui, -apple-system, sans-serif',
+              letterSpacing: '-0.06em',
+            }}>
+              {initial}
+            </span>
+          </div>
+
+          {/* Right edge fade into data panel */}
+          <div
+            className="absolute top-0 right-0 bottom-0 w-24 pointer-events-none"
+            style={{ background: 'linear-gradient(to right, transparent, #06000A)' }}
+          />
+
+          {/* Content: logo top-left, title + chips bottom */}
+          <div className="relative z-10 flex flex-col justify-between h-full p-7" style={{ minHeight: 420 }}>
+            {/* Entity logo — top left */}
+            <div>
+              <EntityLogo
+                entity={title}
+                initial={initial}
+                accent={accent}
+                gradFrom={theme.gradFrom}
+                gradMid={theme.gradMid}
+                size={64}
+              />
+            </div>
+
+            {/* Title + category chips — bottom */}
+            <div>
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
+                <span
+                  className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider"
+                  style={{
+                    background: `rgba(${accentRgb}, 0.12)`,
+                    border: `1px solid rgba(${accentRgb}, 0.25)`,
+                    color: accent,
+                  }}
+                >
+                  {catLabel}
+                </span>
+                <span
+                  className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider"
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: 'rgba(255,255,255,0.4)',
+                  }}
+                >
+                  ◈ Event Intelligence
+                </span>
+              </div>
+              <h1
+                className="text-3xl sm:text-4xl font-black text-white leading-tight"
+                style={{ letterSpacing: '-0.025em', textShadow: `0 2px 24px rgba(${accentRgb},0.3)` }}
+              >
+                {title || 'Unnamed Event'}
+              </h1>
+            </div>
+          </div>
+
+          {/* Bottom fade to background */}
+          <div
+            className="absolute bottom-0 left-0 right-0 h-12 pointer-events-none"
+            style={{ background: 'linear-gradient(transparent, #06000A)' }}
+          />
+        </div>
+
+        {/* ── RIGHT: Data Panel ───────────────────────────────────────────── */}
+        <div
+          className="relative flex flex-col justify-between"
+          style={{
+            background: 'rgba(6,0,10,0.97)',
+            borderLeft: '1px solid rgba(255,255,255,0.05)',
+            padding: '28px 32px',
+          }}
+        >
+          {/* Subtle top accent line */}
+          <div
+            className="absolute top-0 left-0 right-0 h-[1px]"
+            style={{ background: `linear-gradient(to right, transparent, rgba(${accentRgb},0.35), transparent)` }}
+          />
+
+          <div className="flex flex-col gap-5">
+            {/* ── Dominant price block ──────────────────────────────────── */}
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-gray-700 mb-1">
+                Lowest Ask
+              </div>
+              {lowestAsk != null ? (
+                <>
+                  <div
+                    className="font-black text-white leading-none"
+                    style={{ fontSize: '52px', letterSpacing: '-0.04em' }}
+                  >
+                    {fmt$(lowestAsk)}
+                  </div>
+                  <div className="text-xs text-gray-600 mt-1">per ticket · all-in price may vary</div>
+                </>
+              ) : (
+                <div
+                  className="font-black text-gray-700 leading-none"
+                  style={{ fontSize: '52px', letterSpacing: '-0.04em' }}
+                >
+                  —
+                </div>
+              )}
+
+              {/* Value / Hot signal box */}
+              {isValue && (
+                <div
+                  className="mt-3 flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
+                  style={{
+                    background: 'rgba(34,197,94,0.06)',
+                    border: '1px solid rgba(34,197,94,0.18)',
+                  }}
+                >
+                  <span
+                    className="w-1.5 h-1.5 rounded-full shrink-0"
+                    style={{ background: '#22c55e', boxShadow: '0 0 6px rgba(34,197,94,0.6)' }}
+                  />
+                  <div>
+                    <div className="text-[11px] font-bold text-green-400">Value Signal</div>
+                    <div className="text-[10px] text-gray-600 mt-0.5">Below typical market range — strong entry point</div>
+                  </div>
+                </div>
+              )}
+              {isHot && !isValue && (
+                <div
+                  className="mt-3 flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
+                  style={{
+                    background: 'rgba(249,115,22,0.06)',
+                    border: '1px solid rgba(249,115,22,0.18)',
+                  }}
+                >
+                  <span
+                    className="w-1.5 h-1.5 rounded-full shrink-0"
+                    style={{ background: '#f97316', boxShadow: '0 0 6px rgba(249,115,22,0.5)' }}
+                  />
+                  <div>
+                    <div className="text-[11px] font-bold text-orange-400">Watch Signal</div>
+                    <div className="text-[10px] text-gray-600 mt-0.5">Active market — prices may shift</div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ── Stats grid ───────────────────────────────────────────── */}
+            <div
+              className="grid grid-cols-2 gap-2"
+              style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '16px' }}
+            >
+              {[
+                { label: 'Listings',    value: totalListings > 0 ? totalListings.toLocaleString() : '—', accent: '#3B82F6' },
+                { label: 'Available',   value: canonicalCount > 0 ? canonicalCount.toLocaleString() : '—', accent: '#8B5CF6' },
+                { label: 'Market',      value: ms.label, accent: accent },
+                { label: 'Days Away',   value: days != null && days > 0 ? `${days}d` : days === 0 ? 'Today' : days != null && days < 0 ? 'Past' : '—', accent: '#E50914' },
+              ].map(({ label, value, accent: a }) => (
+                <div
+                  key={label}
+                  className="rounded-lg px-3 py-2.5"
+                  style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.05)' }}
+                >
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-gray-700">{label}</div>
+                  <div className="text-sm font-bold mt-0.5" style={{ color: a }}>{value}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* ── Event details rows ────────────────────────────────────── */}
+            <div className="space-y-2" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '14px' }}>
+              {event.event_date && (
+                <div className="flex items-baseline justify-between">
+                  <span className="text-[11px] text-gray-700 uppercase tracking-wider font-bold">Date</span>
+                  <span className="text-[12px] text-gray-300 font-medium">{fmtDate(event.event_date)}</span>
+                </div>
+              )}
+              {venueName && (
+                <div className="flex items-baseline justify-between">
+                  <span className="text-[11px] text-gray-700 uppercase tracking-wider font-bold">Venue</span>
+                  <span className="text-[12px] text-gray-300 font-medium truncate max-w-[180px] text-right">{venueName}</span>
+                </div>
+              )}
+              {event.city && (
+                <div className="flex items-baseline justify-between">
+                  <span className="text-[11px] text-gray-700 uppercase tracking-wider font-bold">City</span>
+                  <span className="text-[12px] text-gray-300 font-medium">{event.city}</span>
+                </div>
+              )}
+              <div className="flex items-baseline justify-between">
+                <span className="text-[11px] text-gray-700 uppercase tracking-wider font-bold">Category</span>
+                <span className="text-[12px] font-semibold" style={{ color: accent }}>{catLabel}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* ── CTAs + last updated ──────────────────────────────────────── */}
+          <div className="flex flex-col gap-2 mt-2">
+            {!isCompleted && (
+              <button
+                onClick={onPoll}
+                disabled={pollLoading}
+                className="w-full py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                style={{
+                  background: pollLoading ? `rgba(${accentRgb},0.3)` : `rgba(${accentRgb},0.85)`,
+                  color: 'white',
+                  border: `1px solid rgba(${accentRgb},0.4)`,
+                }}
+              >
+                {pollLoading ? '⟳  Refreshing...' : '↻  Refresh Now'}
+              </button>
+            )}
+            {isCompleted && (
+              <div
+                className="w-full py-2.5 rounded-xl text-xs flex items-center justify-center gap-2"
+                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.35)' }}
+              >
+                <span className={event.status === 'archived' ? 'text-gray-500' : 'text-amber-500/70'}>
+                  {event.status === 'archived' ? '🗄 Archived' : '✓ Completed'}
+                </span>
+                <span className="text-gray-700">·</span>
+                <span>Historical view</span>
+              </div>
+            )}
+            {event.last_polled_at && (
+              <div className="text-[10px] text-gray-700 text-center">
+                Last updated {fmtRelative(event.last_polled_at)} ago
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom fade to content */}
+      <div
+        className="absolute bottom-0 left-0 right-0 h-10 pointer-events-none"
+        style={{ background: 'linear-gradient(transparent, #06000A)' }}
+      />
+    </div>
   );
 }
 
-function StaleWarning({ freshness, mp }: { freshness: MarketplaceFreshness; mp: string }) {
-  const ageH = freshness.age_minutes != null ? Math.round(freshness.age_minutes / 60) : null;
-  const lastSeen = freshness.last_success_at
-    ? new Date(freshness.last_success_at).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
-    : "never";
+// ── Section 2: Market Overview ────────────────────────────────────────────────
+
+type MpFilter = 'all' | 'stubhub' | 'tickpick' | 'gametime';
+
+interface InvMovement {
+  original_listings: number;
+  current_listings: number;
+  net_difference: number;
+  normalized_blocks: number;
+  duplicate_listings: number;
+  website_comparable_count: number;
+  total_relists: number;
+  inferred_exits: number;
+  likely_sold: number;
+  low_ask: number | null;
+  avg_ask: number | null;
+  median_ask: number | null;
+  high_ask: number | null;
+  avg_ask_delta_pct: number | null;
+  price_trend_pct: number | null;
+  inventory_trend_pct: number | null;
+  relist_rate_pct: number | null;
+}
+
+function MarketOverviewPanel({
+  movement,
+  canonical,
+  listings,
+}: {
+  movement: { by_marketplace: Record<string, InvMovement> } | null;
+  canonical: CanonicalInventory | null;
+  listings: any[];
+}) {
+  const [mpFilter, setMpFilter] = useState<MpFilter>('all');
+
+  const data: InvMovement | null = movement?.by_marketplace?.[mpFilter] ?? null;
+
+  const fmtDelta = (n: number) => n === 0 ? '—' : n > 0 ? `+${n.toLocaleString()}` : n.toLocaleString();
+  const fmtPct = (n: number | null) => {
+    if (n == null) return '—';
+    if (n === 0) return '0.0%';
+    const arrow = n > 0 ? '↑' : '↓';
+    return `${arrow} ${Math.abs(n).toFixed(1)}%`;
+  };
+  const deltaColor = (n: number | null) => n == null ? 'text-gray-500' : n > 0 ? 'text-emerald-400' : n < 0 ? 'text-red-400' : 'text-gray-400';
+  const invDeltaColor = (n: number | null) => n == null ? 'text-gray-500' : n > 0 ? 'text-red-400' : n < 0 ? 'text-emerald-400' : 'text-gray-400';
+
+  const MP_TABS: { key: MpFilter; label: string; color: string }[] = [
+    { key: 'all',      label: 'All Markets', color: 'text-white'      },
+    { key: 'stubhub',  label: 'StubHub',     color: 'text-indigo-400' },
+    { key: 'tickpick', label: 'TickPick',    color: 'text-green-400'  },
+    { key: 'gametime', label: 'Gametime',    color: 'text-orange-400' },
+  ];
+
   return (
-    <div className="px-4 py-2 text-xs text-orange-400/80 bg-orange-500/5 border-t border-orange-500/20 flex items-center gap-1.5">
-      <AlertTriangle size={11} className="shrink-0" />
-      <span>
-        Stale data — last collected {ageH != null ? `${ageH}h ago` : "unknown"} ({lastSeen}).
-        Prices may not reflect the current market.
+    <div className="glass-card rounded-2xl overflow-hidden">
+      {/* Tab bar */}
+      <div className="flex items-center gap-1 px-5 pt-4 pb-3 border-b border-white/6">
+        {MP_TABS.map(t => (
+          <button
+            key={t.key}
+            onClick={() => setMpFilter(t.key)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              mpFilter === t.key
+                ? `bg-white/10 ${t.color} border border-white/15`
+                : 'text-gray-600 hover:text-gray-400 hover:bg-white/5'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Data grid */}
+      <div className="p-5">
+        {mpFilter === 'all' && canonical ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* INVENTORY */}
+            <div>
+              <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-3">Inventory</div>
+              <div className="space-y-2.5">
+                <div className="flex justify-between items-baseline">
+                  <span className="text-sm text-gray-400">Available</span>
+                  <span className="text-base font-bold text-indigo-300">{canonical.total_canonical_blocks.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-baseline">
+                  <span className="text-sm text-gray-400">Shared Listings</span>
+                  <span className="text-sm font-semibold text-amber-400">{canonical.mirrored_block_count.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-baseline">
+                  <span className="text-sm text-gray-400">Exclusive</span>
+                  <span className="text-sm font-semibold text-emerald-400">{(canonical.total_canonical_blocks - canonical.mirrored_block_count).toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* PRICE */}
+            <div>
+              <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-3">Price Range</div>
+              <div className="space-y-2.5">
+                <div className="flex justify-between items-baseline">
+                  <span className="text-sm text-gray-400">Low Ask</span>
+                  <span className="text-base font-bold text-emerald-400">{data?.low_ask != null ? fmt$(data.low_ask) : '—'}</span>
+                </div>
+                <div className="flex justify-between items-baseline">
+                  <span className="text-sm text-gray-400">Median</span>
+                  <span className="text-sm font-semibold text-gray-300">{data?.median_ask != null ? fmt$(data.median_ask) : '—'}</span>
+                </div>
+                <div className="flex justify-between items-baseline">
+                  <span className="text-sm text-gray-400">High Ask</span>
+                  <span className="text-sm text-gray-500">{data?.high_ask != null ? fmt$(data.high_ask) : '—'}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* MOVEMENT */}
+            <div>
+              <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-3">Signals</div>
+              <div className="space-y-2.5">
+                <div className="flex justify-between items-baseline">
+                  <span className="text-sm text-gray-400">Likely Sold</span>
+                  <span className="text-sm font-bold text-orange-400">{data ? data.likely_sold.toLocaleString() : '—'}</span>
+                </div>
+                <div className="flex justify-between items-baseline">
+                  <span className="text-sm text-gray-400">Price Trend</span>
+                  <span className={`text-sm font-semibold ${data ? deltaColor(data.price_trend_pct) : 'text-gray-600'}`}>
+                    {data ? fmtPct(data.price_trend_pct) : '—'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-baseline">
+                  <span className="text-sm text-gray-400">Supply Trend</span>
+                  <span className={`text-sm font-semibold ${data ? invDeltaColor(data.inventory_trend_pct) : 'text-gray-600'}`}>
+                    {data ? fmtPct(data.inventory_trend_pct) : '—'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-3">Inventory</div>
+              <div className="space-y-2.5">
+                <div className="flex justify-between items-baseline">
+                  <span className="text-sm text-gray-400">Listings</span>
+                  <span className="text-base font-bold text-white">
+                    {data ? ((data.website_comparable_count > 0 ? data.website_comparable_count : data.normalized_blocks) || 0).toLocaleString() : '—'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-baseline">
+                  <span className="text-sm text-gray-400">Net Change</span>
+                  <span className={`text-sm font-semibold ${data ? deltaColor(data.net_difference) : 'text-gray-600'}`}>
+                    {data ? fmtDelta(data.net_difference) : '—'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-baseline">
+                  <span className="text-sm text-gray-400">Likely Sold</span>
+                  <span className="text-sm font-semibold text-orange-400">{data ? data.likely_sold.toLocaleString() : '—'}</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-3">Price Range</div>
+              <div className="space-y-2.5">
+                <div className="flex justify-between items-baseline">
+                  <span className="text-sm text-gray-400">Low Ask</span>
+                  <span className="text-base font-bold text-emerald-400">{data?.low_ask != null ? fmt$(data.low_ask) : '—'}</span>
+                </div>
+                <div className="flex justify-between items-baseline">
+                  <span className="text-sm text-gray-400">Median</span>
+                  <span className="text-sm font-semibold text-gray-300">{data?.median_ask != null ? fmt$(data.median_ask) : '—'}</span>
+                </div>
+                <div className="flex justify-between items-baseline">
+                  <span className="text-sm text-gray-400">Avg</span>
+                  <span className="text-sm text-gray-400">{data?.avg_ask != null ? fmt$(data.avg_ask) : '—'}</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-3">Signals</div>
+              <div className="space-y-2.5">
+                <div className="flex justify-between items-baseline">
+                  <span className="text-sm text-gray-400">Price Trend</span>
+                  <span className={`text-sm font-semibold ${data ? deltaColor(data.price_trend_pct) : 'text-gray-600'}`}>
+                    {data ? fmtPct(data.price_trend_pct) : '—'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-baseline">
+                  <span className="text-sm text-gray-400">Supply Trend</span>
+                  <span className={`text-sm font-semibold ${data ? invDeltaColor(data.inventory_trend_pct) : 'text-gray-600'}`}>
+                    {data ? fmtPct(data.inventory_trend_pct) : '—'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-baseline">
+                  <span className="text-sm text-gray-400">Relist Rate</span>
+                  <span className="text-sm text-amber-400">{data?.relist_rate_pct != null ? `${data.relist_rate_pct.toFixed(1)}%` : '—'}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Footer note */}
+        <div className="mt-4 pt-3 border-t border-white/5 text-[10px] text-gray-700">
+          {mpFilter === 'all'
+            ? 'Available = unique seat blocks across all markets. Shared = same seats on 2+ platforms. Exclusive = single-platform only.'
+            : 'Listings = website-comparable count (qty 2–9, numbered section, known row). Likely sold = inferred exits.'}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Section 4: Premium Marketplace Cards ──────────────────────────────────────
+
+const MP_ACCENT: Record<string, { accent: string; glow: string; dot: string }> = {
+  stubhub:  { accent: 'rgba(99,102,241,0.9)',  glow: 'rgba(99,102,241,0.12)', dot: '#818CF8' },
+  tickpick: { accent: 'rgba(34,197,94,0.9)',   glow: 'rgba(34,197,94,0.10)',  dot: '#4ADE80' },
+  gametime: { accent: 'rgba(249,115,22,0.9)',  glow: 'rgba(249,115,22,0.10)', dot: '#FB923C' },
+};
+
+function PremiumMpCard({
+  mp,
+  listings,
+  run,
+  movementData,
+}: {
+  mp: typeof MARKETPLACES[number];
+  listings: any[];
+  run: PollRun | null;
+  movementData?: InvMovement | null;
+}) {
+  const mpListings = listings.filter((l: any) => l.marketplace_slug === mp.slug);
+  const listingCount =
+    (movementData?.website_comparable_count || 0) > 0
+      ? movementData!.website_comparable_count
+      : (movementData?.normalized_blocks || 0) > 0
+        ? movementData!.normalized_blocks
+        : mpListings.length;
+  const lowest = movementData?.low_ask ?? (mpListings.length > 0 ? Math.min(...mpListings.map((l: any) => l.price_each)) : null);
+  const theme = MP_ACCENT[mp.slug] ?? { accent: 'rgba(255,255,255,0.5)', glow: 'rgba(0,0,0,0)', dot: '#9ca3af' };
+
+  const isOk = run?.status === 'success';
+  const isErr = run?.status === 'error';
+  const isNoData = run?.status === 'no_data';
+  const statusDot = isOk ? theme.dot : isErr ? '#EF4444' : isNoData ? '#FBBF24' : '#4B5563';
+  const statusLabel = !run ? 'No data' : isOk ? 'Live' : isErr ? 'Error' : isNoData ? 'No data' : run.status;
+
+  // Error type parsing
+  let failureType: string | null = null;
+  if (run?.error_message) {
+    const m = run.error_message.match(/classification=(\S+)/);
+    if (m) failureType = m[1].replace(/_/g, ' ');
+  }
+
+  return (
+    <div className="mp-card p-5 relative overflow-hidden" style={{ boxShadow: `0 0 48px ${theme.glow}` }}>
+      {/* Accent bar */}
+      <div className="absolute top-0 left-0 right-0 h-[1.5px]" style={{ background: theme.accent }} />
+
+      {/* Header */}
+      <div className="flex items-start justify-between mb-5">
+        <div>
+          <div className="text-sm font-bold text-white tracking-wide">{mp.label}</div>
+          <div className="flex items-center gap-1.5 mt-1">
+            <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: statusDot }} />
+            <span className="text-xs text-gray-500">{statusLabel}</span>
+            {failureType && <span className="text-xs text-red-400">· {failureType}</span>}
+          </div>
+        </div>
+        <div className="text-right">
+          {lowest != null ? (
+            <>
+              <div className="text-2xl font-black text-white" style={{ letterSpacing: '-0.02em' }}>{fmt$(lowest)}</div>
+              <div className="text-[10px] text-gray-600 mt-0.5">from / ticket</div>
+            </>
+          ) : (
+            <div className="text-2xl font-black text-gray-700">—</div>
+          )}
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-2 mb-4">
+        <div className="glass-dark rounded-xl px-2 py-2.5 text-center">
+          <div className="text-base font-bold text-white">{listingCount.toLocaleString()}</div>
+          <div className="stat-label">Listings</div>
+        </div>
+        <div className="glass-dark rounded-xl px-2 py-2.5 text-center">
+          <div className="text-base font-bold text-emerald-400">+{run?.new_listings ?? 0}</div>
+          <div className="stat-label">New</div>
+        </div>
+        <div className="glass-dark rounded-xl px-2 py-2.5 text-center">
+          <div className="text-base font-bold text-red-400">−{run?.disappeared_listings ?? 0}</div>
+          <div className="stat-label">Gone</div>
+        </div>
+      </div>
+
+      {/* Last updated */}
+      {run?.completed_at && (
+        <div className="text-[10px] text-gray-700 border-t border-white/5 pt-3">
+          Updated {fmtRelative(run.completed_at)} ago
+        </div>
+      )}
+      {!run && (
+        <div className="text-[10px] text-gray-700 border-t border-white/5 pt-3 italic">
+          Never polled
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Inventory Accounting Panel (Advanced) ─────────────────────────────────────
+
+function DupeRatioBar({ ratio }: { ratio: number }) {
+  const pct = Math.round(ratio * 100);
+  const color = ratio < 0.10 ? 'bg-green-500' : ratio < 0.30 ? 'bg-yellow-500' : 'bg-orange-500';
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex-1 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+        <div className={`h-full ${color} rounded-full`} style={{ width: `${Math.min(pct, 100)}%` }} />
+      </div>
+      <span className={`text-xs font-mono tabular-nums ${ratio > 0.30 ? 'text-orange-400' : 'text-gray-300'}`}>
+        {pct}%
       </span>
     </div>
   );
 }
 
-function ListingTable({ listings }: { listings: any[] }) {
-  if (listings.length === 0) return null;
+function InventoryAccountingPanel({ accounting }: { accounting: InventoryAccounting | null }) {
+  if (!accounting) return null;
+  const { per_marketplace, cross_market, sanity } = accounting;
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="text-left text-xs text-slate-500 border-b border-[#2a3145]">
-            <th className="pb-2 pr-4 font-medium">Section</th>
-            <th className="pb-2 pr-4 font-medium">Row</th>
-            <th className="pb-2 pr-4 font-medium text-right">Price</th>
-            <th className="pb-2 font-medium text-right">Qty</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-[#1e2535]">
-          {listings.slice(0, 30).map((l) => (
-            <tr key={l.id} className="hover:bg-[#1a2030]">
-              <td className="py-2 pr-4 text-slate-200">{l.section_name}</td>
-              <td className="py-2 pr-4 text-slate-400">{l.row || "—"}</td>
-              <td className="py-2 pr-4 text-right font-mono text-green-400">{fmt$(l.price_each)}</td>
-              <td className="py-2 text-right text-slate-400">{l.quantity}</td>
-            </tr>
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        {per_marketplace.map(mp => {
+          const deduped = mp.deduplicated_rows;
+          const extra = mp.active_rows - deduped;
+          const mpColor = MP_COLORS[mp.marketplace_slug] || 'text-gray-300';
+          return (
+            <div key={mp.marketplace_slug} className="glass-dark hover-shimmer rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className={`text-xs font-semibold uppercase tracking-wider ${mpColor}`}>
+                  {mp.marketplace_slug}
+                </span>
+                {mp.health_flags.length > 0 && (
+                  <span className="text-xs text-orange-400 bg-orange-900/30 px-2 py-0.5 rounded-full">
+                    ⚠ {mp.health_flags[0].replace(/_/g, ' ')}
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <div className="text-gray-500 mb-0.5">Active listings</div>
+                  <div className="text-white font-semibold text-base">{mp.active_rows.toLocaleString()}</div>
+                </div>
+                <div>
+                  <div className="text-gray-500 mb-0.5">Unique seat blocks</div>
+                  <div className="text-white font-semibold text-base">{deduped.toLocaleString()}</div>
+                </div>
+                <div>
+                  <div className="text-gray-500 mb-0.5">Est. tickets (raw)</div>
+                  <div className="text-gray-300 font-medium">{mp.estimated_ticket_count.toLocaleString()}</div>
+                </div>
+                <div>
+                  <div className="text-gray-500 mb-0.5">Est. unique tickets</div>
+                  <div className="text-gray-300 font-medium">{mp.dedup_ticket_count.toLocaleString()}</div>
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-gray-500">Duplicate sellers</span>
+                  <span className="text-gray-400">{extra > 0 ? `+${extra} extra rows` : 'none'}</span>
+                </div>
+                <DupeRatioBar ratio={mp.duplicate_ratio} />
+              </div>
+              <div className="flex justify-between text-xs pt-1 border-t border-white/5">
+                <div>
+                  <span className="text-gray-500">Low ask </span>
+                  <span className="text-green-400 font-medium">{mp.low_ask != null ? fmt$(mp.low_ask) : '—'}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Median </span>
+                  <span className="text-gray-300">{mp.median_ask != null ? fmt$(mp.median_ask) : '—'}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Stale </span>
+                  <span className="text-gray-400">{mp.stale_rows.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {cross_market.marketplace_slugs.length > 1 && (
+        <div className="glass-panel rounded-xl p-4">
+          <div className="text-xs font-semibold text-gray-300 mb-3 uppercase tracking-wider">Cross-Market Reconciliation</div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+            <div>
+              <div className="text-gray-500 mb-1">Unique seat blocks</div>
+              <div className="text-white font-semibold text-lg">{cross_market.total_unique_seat_blocks.toLocaleString()}</div>
+            </div>
+            <div>
+              <div className="text-gray-500 mb-1">Mirrored blocks</div>
+              <div className="text-yellow-400 font-semibold text-lg">{cross_market.mirrored_blocks.toLocaleString()}</div>
+              <div className="text-gray-500">{Math.round(cross_market.mirrored_ratio * 100)}% on 2+ markets</div>
+            </div>
+            {cross_market.marketplace_slugs.map(slug => (
+              <div key={slug}>
+                <div className="text-gray-500 mb-1 capitalize">{slug} exclusive</div>
+                <div className={`font-semibold text-lg ${MP_COLORS[slug] || 'text-gray-300'}`}>
+                  {(cross_market.only_on[slug] ?? 0).toLocaleString()}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="glass-panel rounded-xl p-4">
+        <div className="text-xs font-semibold text-gray-300 mb-3 uppercase tracking-wider">Inventory Sanity</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+          <div>
+            <div className="text-gray-500 mb-1">Venue capacity</div>
+            <div className="text-white font-medium">{sanity.venue_capacity != null ? sanity.venue_capacity.toLocaleString() : 'Unknown'}</div>
+          </div>
+          <div>
+            <div className="text-gray-500 mb-1">Est. tickets listed</div>
+            <div className="text-white font-medium">{sanity.estimated_ticket_count.toLocaleString()}</div>
+          </div>
+          <div>
+            <div className="text-gray-500 mb-1">Capacity utilization</div>
+            <div className={`font-medium ${sanity.capacity_ratio != null && sanity.capacity_ratio > 1.5 ? 'text-red-400' : 'text-gray-300'}`}>
+              {sanity.capacity_ratio != null ? `${(sanity.capacity_ratio * 100).toFixed(1)}%` : '—'}
+            </div>
+          </div>
+          <div>
+            <div className="text-gray-500 mb-1">Health</div>
+            {sanity.flags.length === 0 ? (
+              <div className="text-green-400 font-medium">✓ No issues</div>
+            ) : (
+              <div className="space-y-1">
+                {sanity.flags.map(f => <div key={f} className="text-orange-400 text-xs">{f.replace(/_/g, ' ')}</div>)}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Canonical Inventory Panel (Advanced) ──────────────────────────────────────
+
+interface CanonicalBlock {
+  block_id: string;
+  section_id: string;
+  row: string | null;
+  quantity: number;
+  seller_count: number;
+  marketplace_slugs: string[];
+  low_ask: number;
+  high_ask: number;
+  median_ask: number;
+  price_spread_pct: number;
+  confidence_score: number;
+  confidence_factors: Record<string, number | string>;
+  last_seen_at: string | null;
+  freshness_label: 'fresh' | 'aging' | 'stale';
+  is_mirrored: boolean;
+  duplicate_explanation: string;
+}
+
+interface CanonicalInventory {
+  event_id: number;
+  as_of: string;
+  total_canonical_blocks: number;
+  total_raw_listings: number;
+  global_duplicate_ratio: number;
+  mirrored_block_count: number;
+  mirrored_ratio: number;
+  by_marketplace: Record<string, number>;
+  mean_confidence: number;
+  high_confidence_blocks: number;
+  low_confidence_blocks: number;
+  canonical_blocks: CanonicalBlock[];
+}
+
+const FRESHNESS_DOT: Record<string, string> = {
+  fresh: 'bg-emerald-400',
+  aging: 'bg-amber-400',
+  stale: 'bg-red-400',
+};
+
+function ConfidenceBar({ score }: { score: number }) {
+  const pct = Math.round(score * 100);
+  const color = score >= 0.80 ? 'bg-emerald-500' : score >= 0.50 ? 'bg-amber-500' : 'bg-red-500';
+  return (
+    <div className="flex items-center gap-1.5">
+      <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
+        <div className={`h-full ${color} rounded-full`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className="text-xs font-mono tabular-nums text-gray-300 w-8 text-right">{pct}%</span>
+    </div>
+  );
+}
+
+type BlockSortKey = 'price' | 'confidence' | 'spread' | 'freshness' | 'quantity' | 'sellers';
+
+function sortBlocks(blocks: CanonicalBlock[], sort: BlockSortKey): CanonicalBlock[] {
+  const sorted = [...blocks];
+  switch (sort) {
+    case 'price':      return sorted.sort((a, b) => a.low_ask - b.low_ask);
+    case 'confidence': return sorted.sort((a, b) => b.confidence_score - a.confidence_score);
+    case 'spread':     return sorted.sort((a, b) => b.price_spread_pct - a.price_spread_pct);
+    case 'quantity':   return sorted.sort((a, b) => b.quantity - a.quantity);
+    case 'sellers':    return sorted.sort((a, b) => b.seller_count - a.seller_count);
+    case 'freshness':  {
+      const order = { fresh: 0, aging: 1, stale: 2 };
+      return sorted.sort((a, b) => (order[a.freshness_label] ?? 1) - (order[b.freshness_label] ?? 1));
+    }
+    default: return sorted;
+  }
+}
+
+function CanonicalInventoryPanel({ canonical }: { canonical: CanonicalInventory | null }) {
+  const [blockFilter, setBlockFilter] = useState<'all' | 'mirrored' | 'exclusive' | 'high' | 'low'>('all');
+  const [blockSort, setBlockSort] = useState<BlockSortKey>('price');
+
+  if (!canonical) return null;
+
+  const {
+    total_canonical_blocks, total_raw_listings, global_duplicate_ratio,
+    mirrored_block_count, mirrored_ratio, by_marketplace,
+    mean_confidence, high_confidence_blocks, low_confidence_blocks, canonical_blocks,
+  } = canonical;
+
+  const brokerDupeCount = total_raw_listings - total_canonical_blocks;
+  const brokerDupePct = Math.round(global_duplicate_ratio * 100);
+  const exclusiveCount = total_canonical_blocks - mirrored_block_count;
+  const estUniqueTickets = canonical_blocks.reduce((s, b) => s + b.quantity, 0);
+
+  const filteredBlocks = sortBlocks(
+    canonical_blocks.filter(b => {
+      if (blockFilter === 'mirrored') return b.is_mirrored;
+      if (blockFilter === 'exclusive') return !b.is_mirrored;
+      if (blockFilter === 'high') return b.confidence_score >= 0.80;
+      if (blockFilter === 'low') return b.confidence_score < 0.50;
+      return true;
+    }),
+    blockSort,
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="glass-dark rounded-xl p-4 space-y-1">
+          <div className="text-xs text-gray-500 uppercase tracking-wider">Normalized Inventory</div>
+          <div className="text-2xl font-bold text-white">{total_canonical_blocks.toLocaleString()}</div>
+          <div className="text-xs text-gray-400">{total_raw_listings.toLocaleString()} raw → <span className="text-emerald-400">−{brokerDupeCount.toLocaleString()} dupes</span></div>
+        </div>
+        <div className="glass-dark rounded-xl p-4 space-y-1">
+          <div className="text-xs text-gray-500 uppercase tracking-wider">Broker Dupe Rate</div>
+          <div className="text-2xl font-bold text-amber-400">{brokerDupePct}%</div>
+          <div className="text-xs text-gray-400">same seat, different sellers</div>
+        </div>
+        <div className="glass-dark rounded-xl p-4 space-y-1">
+          <div className="text-xs text-gray-500 uppercase tracking-wider">Cross-Market Mirrors</div>
+          <div className="text-2xl font-bold text-indigo-400">{mirrored_block_count.toLocaleString()}</div>
+          <div className="text-xs text-gray-400">{exclusiveCount.toLocaleString()} single-market exclusive</div>
+        </div>
+        <div className="glass-dark rounded-xl p-4 space-y-1">
+          <div className="text-xs text-gray-500 uppercase tracking-wider">Est. Unique Tickets</div>
+          <div className="text-2xl font-bold text-white">{estUniqueTickets.toLocaleString()}</div>
+          <div className="text-xs text-gray-400">
+            <span className="text-emerald-400">{high_confidence_blocks} high</span> · <span className="text-red-400">{low_confidence_blocks} low</span> conf.
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-500">Filter:</span>
+          {([
+            ['all', `All (${total_canonical_blocks})`],
+            ['mirrored', `Mirrored (${mirrored_block_count})`],
+            ['exclusive', `Exclusive (${exclusiveCount})`],
+            ['high', `High conf. (${high_confidence_blocks})`],
+            ['low', `Low conf. (${low_confidence_blocks})`],
+          ] as const).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setBlockFilter(key)}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                blockFilter === key ? 'bg-indigo-600/80 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10 border border-white/8'
+              }`}
+            >
+              {label}
+            </button>
           ))}
-        </tbody>
-      </table>
-      {listings.length > 30 && (
-        <p className="text-xs text-slate-600 mt-2 text-center">+{listings.length - 30} more listings</p>
+        </div>
+        <div className="flex items-center gap-2 ml-auto">
+          <span className="text-xs text-gray-500">Sort:</span>
+          {([['price', 'Price ↑'], ['confidence', 'Confidence ↓'], ['spread', 'Spread ↓'], ['freshness', 'Freshness'], ['quantity', 'Qty ↓'], ['sellers', 'Sellers ↓']] as const).map(([key, label]) => (
+            <button key={key} onClick={() => setBlockSort(key)}
+              className={`px-2.5 py-1 rounded text-xs font-medium transition-all ${blockSort === key ? 'bg-emerald-700/60 text-emerald-200' : 'text-gray-500 hover:text-gray-300'}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="glass-panel rounded-xl overflow-hidden">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b border-white/8">
+              <th className="px-3 py-3 text-left text-gray-400 font-medium">Section</th>
+              <th className="px-3 py-3 text-left text-gray-400 font-medium">Row</th>
+              <th className="px-3 py-3 text-right text-gray-400 font-medium">Qty</th>
+              <th className="px-3 py-3 text-right text-gray-400 font-medium">Low Ask</th>
+              <th className="px-3 py-3 text-right text-gray-400 font-medium">Spread</th>
+              <th className="px-3 py-3 text-center text-gray-400 font-medium">Sellers</th>
+              <th className="px-3 py-3 text-left text-gray-400 font-medium">Markets</th>
+              <th className="px-3 py-3 text-left text-gray-400 font-medium w-40">Confidence</th>
+              <th className="px-3 py-3 text-center text-gray-400 font-medium">Fresh</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/5">
+            {filteredBlocks.slice(0, 150).map((block) => (
+              <tr key={block.block_id} className={`hover:bg-white/3 transition-colors ${block.is_mirrored ? 'bg-indigo-950/10' : ''}`}>
+                <td className="px-3 py-2.5 text-white font-medium">{block.section_id || '—'}</td>
+                <td className="px-3 py-2.5 text-gray-300">{block.row || '—'}</td>
+                <td className="px-3 py-2.5 text-right text-gray-300">{block.quantity}</td>
+                <td className="px-3 py-2.5 text-right font-mono text-emerald-400">{fmt$(block.low_ask)}</td>
+                <td className="px-3 py-2.5 text-right text-gray-400">{block.price_spread_pct > 0 ? `${block.price_spread_pct.toFixed(1)}%` : '—'}</td>
+                <td className="px-3 py-2.5 text-center">
+                  {block.seller_count > 1 ? <span className="text-amber-400 font-medium">{block.seller_count}×</span> : <span className="text-gray-600">1</span>}
+                </td>
+                <td className="px-3 py-2.5">
+                  <div className="flex gap-1 flex-wrap">
+                    {block.marketplace_slugs.map(mp => <span key={mp} className={`text-xs ${MP_COLORS[mp] || 'text-gray-400'}`}>{mp}</span>)}
+                  </div>
+                </td>
+                <td className="px-3 py-2.5 w-40"><ConfidenceBar score={block.confidence_score} /></td>
+                <td className="px-3 py-2.5 text-center">
+                  <span className={`inline-block w-2 h-2 rounded-full ${FRESHNESS_DOT[block.freshness_label] || 'bg-gray-500'}`} title={block.freshness_label} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {filteredBlocks.length === 0 && <p className="text-center py-8 text-gray-400">No blocks match current filter.</p>}
+        {filteredBlocks.length > 150 && (
+          <div className="px-4 py-3 border-t border-white/8 text-xs text-gray-400 text-center">
+            Showing 150 of {filteredBlocks.length.toLocaleString()} blocks
+          </div>
+        )}
+      </div>
+      <div className="text-xs text-gray-500 text-right">As of {new Date(canonical.as_of).toLocaleTimeString()}</div>
+    </div>
+  );
+}
+
+// ── Collapsible Advanced Section ──────────────────────────────────────────────
+
+function AdvancedSection({ children }: { children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="glass-dark rounded-2xl overflow-hidden border border-white/6">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-white/3 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">Advanced · Technical Intelligence</span>
+          <span className="text-[10px] text-gray-700">Canonical inventory · Accounting · Diagnostics</span>
+        </div>
+        <span className="text-gray-600 text-sm">{open ? '↑' : '↓'}</span>
+      </button>
+      {open && (
+        <div className="px-5 pb-6 space-y-6 border-t border-white/5">
+          {children}
+        </div>
       )}
     </div>
   );
 }
+
+// ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function EventDetailPage() {
   const params = useParams();
@@ -109,34 +1169,132 @@ export default function EventDetailPage() {
 
   const [event, setEvent] = useState<any>(null);
   const [listings, setListings] = useState<any[]>([]);
+  const [pollRuns, setPollRuns] = useState<PollRun[]>([]);
+  const [accounting, setAccounting] = useState<InventoryAccounting | null>(null);
+  const [canonical, setCanonical] = useState<CanonicalInventory | null>(null);
+  const [marketIntel, setMarketIntel] = useState<any>(null);
+  const [inventoryMovement, setInventoryMovement] = useState<any>(null);
+  const [sectionLiquidity, setSectionLiquidity] = useState<any>(null);
+  const [canonicalHistory, setCanonicalHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [polling, setPolling] = useState(false);
-  const { followed, toggle } = useFollowed();
+  const [pollLoading, setPollLoading] = useState(false);
 
-  const isFollowed = followed.has(eventId);
+  // Listings drilldown expanded state
+  const [listingsExpanded, setListingsExpanded] = useState(true);
+
+  // Filters
+  const [marketplace, setMarketplace] = useState<string>('');
+  const [sectionFilter, setSectionFilter] = useState<string>('');
+  const [rowFilter, setRowFilter] = useState<string>('');
+  const [minPrice, setMinPrice] = useState<string>('');
+  const [maxPrice, setMaxPrice] = useState<string>('');
+  const [minQty, setMinQty] = useState<string>('');
+  const [sort, setSort] = useState<string>('price_asc');
+  const [listingView, setListingView] = useState<'raw' | 'canonical' | 'mirrored'>('raw');
+
+  useEffect(() => { loadEvent(); }, [eventId]);
+  useEffect(() => {
+    if (event) {
+      loadListings(); loadPollRuns(); loadAccounting();
+      loadCanonical(); loadMarketIntel(); loadInventoryMovement();
+      loadSectionLiquidity(); loadCanonicalHistory();
+    }
+  }, [event]);
 
   useEffect(() => {
-    Promise.all([api.events.get(eventId), api.listings.byEvent(eventId)])
-      .then(([ev, ls]) => { setEvent(ev); setListings(ls); })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [eventId]);
+    if (event) loadListings();
+  }, [marketplace, sectionFilter, rowFilter, minPrice, maxPrice, minQty, sort]);
 
-  async function handlePoll() {
-    setPolling(true);
+  async function loadEvent() {
+    try {
+      const data = await api.events.get(eventId);
+      setEvent(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadListings() {
+    try {
+      const data = await api.listings.byEventFiltered(eventId, {
+        marketplace:  marketplace  || undefined,
+        section_id:   sectionFilter || undefined,
+        row:          rowFilter    || undefined,
+        minPrice:     minPrice     || undefined,
+        maxPrice:     maxPrice     || undefined,
+        minQuantity:  minQty       || undefined,
+        sort:         sort         || undefined,
+      });
+      setListings(data);
+    } catch (e) { console.error(e); }
+  }
+
+  async function loadPollRuns() {
+    try { setPollRuns(await api.poll.runs(eventId)); }
+    catch (e) { console.error(e); }
+  }
+
+  async function loadAccounting() {
+    try { setAccounting(await api.analytics.inventoryAccounting(eventId)); }
+    catch (e) { console.error('inventory-accounting error:', e); }
+  }
+
+  async function loadCanonical() {
+    try { setCanonical(await api.analytics.canonicalInventory(eventId)); }
+    catch (e) { console.error('canonical-inventory error:', e); }
+  }
+
+  async function loadMarketIntel() {
+    try { setMarketIntel(await api.analytics.marketIntelligence(eventId)); }
+    catch (e) { console.error('market-intelligence error:', e); }
+  }
+
+  async function loadInventoryMovement() {
+    try { setInventoryMovement(await api.analytics.inventoryMovement(eventId)); }
+    catch (e) { console.error('inventory-movement error:', e); }
+  }
+
+  async function loadSectionLiquidity() {
+    try { setSectionLiquidity(await api.analytics.sectionLiquidity(eventId)); }
+    catch (e) { console.error('section-liquidity error:', e); }
+  }
+
+  async function loadCanonicalHistory() {
+    try {
+      const data = await api.analytics.canonicalHistory(eventId, 48);
+      setCanonicalHistory(Array.isArray(data) ? data : []);
+    } catch (e) { console.error('canonical-history error:', e); }
+  }
+
+  async function triggerPoll() {
+    setPollLoading(true);
     try {
       await api.poll.trigger(eventId);
-      await new Promise((r) => setTimeout(r, 3000));
-      const [ev, ls] = await Promise.all([api.events.get(eventId), api.listings.byEvent(eventId)]);
-      setEvent(ev); setListings(ls);
-    } catch (e) { console.error(e); }
-    finally { setPolling(false); }
+      await new Promise(r => setTimeout(r, 4000));
+      await Promise.all([
+        loadEvent(), loadListings(), loadPollRuns(), loadAccounting(),
+        loadCanonical(), loadMarketIntel(), loadInventoryMovement(),
+        loadSectionLiquidity(), loadCanonicalHistory(),
+      ]);
+    } finally {
+      setPollLoading(false);
+    }
   }
+
+  async function toggleActive() {
+    if (!event) return;
+    await api.events.update(eventId, { is_active: !event.is_active });
+    await loadEvent();
+  }
+
+  // ── Loading / not found states ──────────────────────────────────────────────
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600" />
       </div>
     );
   }
@@ -144,153 +1302,519 @@ export default function EventDetailPage() {
   if (!event) {
     return (
       <div className="text-center py-16">
-        <p className="text-slate-400 mb-4">Event not found.</p>
-        <button onClick={() => router.back()} className="text-blue-400 hover:text-blue-300 text-sm">← Go back</button>
+        <p className="text-gray-400 mb-4">Event not found</p>
+        <button onClick={() => router.back()} className="text-red-400 hover:text-red-300">Go back</button>
       </div>
     );
   }
 
-  const grouped = groupByMarketplace(listings);
-  const marketplaces = Object.keys(grouped).sort();
-  // Use the backend-computed fresh price floor (stale marketplaces excluded)
-  // Fall back to historical price only if no fresh data exists (for context)
-  const lowestOverall = event.lowest_price ?? null;
-  const historicalFloor = event.historical_lowest_price ?? null;
-  const freshness = event.marketplace_freshness ?? {};
+  // ── Derived values ──────────────────────────────────────────────────────────
+
+  // Per-marketplace latest poll run
+  const latestByTracked = new Map<number, PollRun>();
+  for (const run of pollRuns) {
+    if (!latestByTracked.has(run.tracked_event_id)) latestByTracked.set(run.tracked_event_id, run);
+  }
+  const mpLatestRun: Record<string, PollRun | null> = { stubhub: null, tickpick: null, gametime: null };
+  for (const [, run] of latestByTracked.entries()) {
+    const msg = run.error_message || '';
+    if (msg.startsWith('stubhub:'))       mpLatestRun.stubhub  = mpLatestRun.stubhub  ?? run;
+    else if (msg.startsWith('tickpick:')) mpLatestRun.tickpick = mpLatestRun.tickpick ?? run;
+    else if (msg.startsWith('gametime:')) mpLatestRun.gametime = mpLatestRun.gametime ?? run;
+    else if (run.status === 'success' || run.status === 'no_data') {
+      const mpCounts: Record<string, number> = {};
+      for (const slug of ['stubhub', 'tickpick', 'gametime'])
+        mpCounts[slug] = listings.filter(l => l.marketplace_slug === slug).length;
+      for (const slug of ['tickpick', 'stubhub', 'gametime']) {
+        if (!mpLatestRun[slug] && run.listings_found > 0 && run.listings_found === mpCounts[slug]) {
+          mpLatestRun[slug] = run; break;
+        }
+      }
+    }
+  }
+
+  const totalListings = listings.length;
+  const lowestAskRaw = listings.length > 0 ? Math.min(...listings.map(l => l.price_each)) : null;
+  const canonicalCount = canonical?.total_canonical_blocks ?? 0;
+
+  // Canonical / mirrored key sets for view-mode filtering
+  const sellerCounts = new Map<string, number>();
+  for (const l of listings) {
+    const key = `${(l.section_id || '').toUpperCase()}|${(l.row || '').toUpperCase()}|${l.quantity}`;
+    sellerCounts.set(key, (sellerCounts.get(key) || 0) + 1);
+  }
+  const canonicalKeys = new Set<string>();
+  const mirroredKeys  = new Set<string>();
+  if (canonical?.canonical_blocks) {
+    for (const b of canonical.canonical_blocks) {
+      const key = `${(b.section_id || '').toUpperCase()}|${(b.row || '').toUpperCase()}|${b.quantity}`;
+      canonicalKeys.add(key);
+      if (b.is_mirrored) mirroredKeys.add(key);
+    }
+  }
+  const viewFilteredListings = listings.filter(l => {
+    if (listingView === 'raw') return true;
+    const key = `${(l.section_id || '').toUpperCase()}|${(l.row || '').toUpperCase()}|${l.quantity}`;
+    if (listingView === 'canonical') return canonicalKeys.has(key);
+    if (listingView === 'mirrored')  return mirroredKeys.has(key);
+    return true;
+  });
+
+  // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div>
+      {/* ── SECTION 1: Executive Hero ───────────────────────────────────────── */}
+      <EventHero
+        event={event}
+        lowestAsk={lowestAskRaw}
+        totalListings={totalListings}
+        canonicalCount={canonicalCount}
+        onPoll={triggerPoll}
+        pollLoading={pollLoading}
+        onBack={() => router.back()}
+      />
 
-      {/* ── Header ─────────────────────────────────────────── */}
-      <div>
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-300 mb-4 transition-colors"
-        >
-          <ChevronLeft size={16} /> Back
-        </button>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-10 py-8">
 
-        <div className="bg-[#161b27] border border-[#2a3145] rounded-2xl p-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0">
-              <h1 className="text-2xl font-bold text-white leading-tight">{event.title}</h1>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2 text-sm text-slate-400">
-                <span className="flex items-center gap-1.5">
-                  <MapPin size={14} className="shrink-0" />
-                  {event.venue_name || event.venue_slug}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <CalendarDays size={14} className="shrink-0" />
-                  {fmtDate(event.event_date)}
-                </span>
-              </div>
-              {lowestOverall != null ? (
-                <p className="mt-3 text-slate-400 text-sm">
-                  From <span className="text-white font-bold text-xl">{fmt$(lowestOverall)}</span>
-                  <span className="ml-2 text-[10px] text-emerald-500/70 uppercase tracking-wide">live</span>
-                </p>
-              ) : historicalFloor != null ? (
-                <p className="mt-3 text-slate-400 text-sm">
-                  <span className="text-orange-400/70 text-xs uppercase tracking-wide mr-1">stale</span>
-                  <span className="text-slate-500 line-through">{fmt$(historicalFloor)}</span>
-                  <span className="ml-2 text-xs text-slate-600">· no fresh data</span>
-                </p>
-              ) : null}
-            </div>
-
-            <div className="flex flex-col items-end gap-2 shrink-0">
-              <button
-                onClick={() => toggle(eventId)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
-                  isFollowed
-                    ? "border-blue-500 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20"
-                    : "border-[#2a3145] text-slate-400 hover:border-slate-400 hover:text-white"
-                }`}
-              >
-                <Star size={15} fill={isFollowed ? "currentColor" : "none"} />
-                {isFollowed ? "Following" : "Follow"}
-              </button>
-              <button
-                onClick={handlePoll}
-                disabled={polling}
-                className="flex items-center gap-2 px-4 py-2 bg-[#1e2535] hover:bg-[#252d3d] border border-[#2a3145] rounded-lg text-sm text-slate-300 disabled:opacity-50 transition-colors"
-              >
-                <RefreshCw size={14} className={polling ? "animate-spin" : ""} />
-                {polling ? "Polling…" : "Refresh"}
-              </button>
-            </div>
+        {/* ── SECTION 2: Market Overview ──────────────────────────────────── */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <div className="section-label">◈ Market Overview</div>
+            {event.last_polled_at && (
+              <span className="text-[10px] text-gray-700">
+                Data as of {fmtRelative(event.last_polled_at)} ago
+              </span>
+            )}
           </div>
-        </div>
-      </div>
+          <MarketOverviewPanel
+            movement={inventoryMovement}
+            canonical={canonical}
+            listings={listings}
+          />
+        </section>
 
-      {/* ── Listings ───────────────────────────────────────── */}
-      <section>
-        <div className="flex items-center gap-2 mb-4">
-          <Ticket size={16} className="text-slate-400" />
-          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Tickets</h2>
-          <span className="text-xs text-slate-600">({listings.length} listings)</span>
-        </div>
+        {/* ── SECTION 3: Market Movement ──────────────────────────────────── */}
+        <section className="space-y-4">
+          <div className="section-label mb-1">↗ Market Movement</div>
+          <div className="chart-container">
+            <PriceHistoryChart eventId={eventId} />
+          </div>
+          <div className="chart-container">
+            <InventoryChart eventId={eventId} />
+          </div>
+          <SectionPriceBar
+            sections={listings.map((l: any) => ({ display_name: l.section_name, lowest_ask: l.price_each }))}
+          />
+          {event.venue_slug && (
+            <VenueHeatmap venueSlug={event.venue_slug} listings={listings} mode="price" />
+          )}
+        </section>
 
-        {listings.length === 0 ? (
-          <div className="bg-[#161b27] border border-[#2a3145] rounded-xl p-8 text-center text-slate-500">
-            <p>No listings available.</p>
-            <button onClick={handlePoll} className="text-blue-400 hover:text-blue-300 text-sm mt-2">
-              Try polling now →
+        {/* ── SECTION 4: Marketplace Breakdown ────────────────────────────── */}
+        <section>
+          <div className="section-label mb-3">⊡ Marketplace Breakdown</div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {MARKETPLACES.map(mp => (
+              <PremiumMpCard
+                key={mp.slug}
+                mp={mp}
+                listings={listings}
+                run={mpLatestRun[mp.slug]}
+                movementData={inventoryMovement?.by_marketplace?.[mp.slug] ?? null}
+              />
+            ))}
+          </div>
+        </section>
+
+        {/* Section divider */}
+        <div className="section-divider" />
+
+        {/* ── SECTION 5: Listings Drilldown ───────────────────────────────── */}
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="section-label">≡ Listings Drilldown</div>
+              <span className="text-xs text-gray-600">{totalListings.toLocaleString()} listings</span>
+            </div>
+            <button
+              onClick={() => setListingsExpanded(o => !o)}
+              className="text-xs text-gray-600 hover:text-gray-400 transition-colors"
+            >
+              {listingsExpanded ? 'Collapse ↑' : 'Expand ↓'}
             </button>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {marketplaces.map((mp) => {
-              const mpFreshness = freshness[mp] as MarketplaceFreshness | undefined;
-              const isStale = mpFreshness && !["fresh", "late"].includes(mpFreshness.freshness_status);
-              return (
-                <div key={mp} className={`border rounded-xl overflow-hidden ${MP_COLOR[mp] ?? "border-[#2a3145]"}`}>
-                  <div className={`px-4 py-3 border-b flex items-center justify-between ${MP_COLOR[mp] ?? "border-[#2a3145]"}`}>
-                    <span className="text-sm font-semibold flex items-center">
-                      {MP_LABEL[mp] ?? mp}
-                      <FreshnessBadge freshness={mpFreshness} />
-                    </span>
-                    <span className="text-xs opacity-70">
-                      {grouped[mp].length} listings · from {fmt$(grouped[mp][0]?.price_each)}
-                    </span>
+
+          {listingsExpanded && (
+            <div className="space-y-4">
+              {/* Filter bar */}
+              <div className="glass-panel rounded-2xl p-4 space-y-3">
+                {/* Row 1: Marketplace */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-gray-600 w-16 shrink-0 font-medium">Market</span>
+                  {[['', 'All'], ...MARKETPLACES.map(m => [m.slug, m.label])].map(([val, label]) => (
+                    <button
+                      key={val}
+                      onClick={() => setMarketplace(val as string)}
+                      className={`filter-chip ${marketplace === val ? 'active' : ''}`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Row 2: Section + Row */}
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="text-xs text-gray-600 w-16 shrink-0 font-medium">Section</span>
+                  <select
+                    value={sectionFilter}
+                    onChange={e => setSectionFilter(e.target.value)}
+                    className="bg-white/5 text-gray-200 text-xs rounded-lg px-2 py-1.5 border border-white/10 focus:border-red-800 outline-none min-w-[120px]"
+                  >
+                    <option value="">All sections</option>
+                    {Array.from(new Set(
+                      listings.map(l => l.section_id).filter(Boolean)
+                        .sort((a: string, b: string) => {
+                          const na = Number(a), nb = Number(b);
+                          return !isNaN(na) && !isNaN(nb) ? na - nb : a.localeCompare(b);
+                        })
+                    )).map((sid: any) => <option key={sid} value={sid}>{sid}</option>)}
+                  </select>
+                  <span className="text-xs text-gray-600 font-medium">Row</span>
+                  <input
+                    type="text"
+                    placeholder="e.g. K"
+                    value={rowFilter}
+                    onChange={e => setRowFilter(e.target.value.toUpperCase())}
+                    className="w-16 bg-white/5 text-gray-200 text-xs rounded-lg px-2 py-1.5 border border-white/10 focus:border-red-800 outline-none uppercase"
+                  />
+                </div>
+
+                {/* Row 3: Price / Qty / Sort */}
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="text-xs text-gray-600 w-16 shrink-0 font-medium">Price</span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-700">$</span>
+                    <input type="number" placeholder="min" value={minPrice} onChange={e => setMinPrice(e.target.value)}
+                      className="w-20 bg-white/5 text-gray-200 text-xs rounded-lg px-2 py-1.5 border border-white/10 focus:border-red-800 outline-none" />
+                    <span className="text-gray-700 text-xs">–</span>
+                    <input type="number" placeholder="max" value={maxPrice} onChange={e => setMaxPrice(e.target.value)}
+                      className="w-20 bg-white/5 text-gray-200 text-xs rounded-lg px-2 py-1.5 border border-white/10 focus:border-red-800 outline-none" />
                   </div>
-                  {isStale && mpFreshness && (
-                    <StaleWarning freshness={mpFreshness} mp={mp} />
+                  <span className="text-xs text-gray-600 font-medium">Min qty</span>
+                  <input type="number" placeholder="1" value={minQty} onChange={e => setMinQty(e.target.value)}
+                    className="w-16 bg-white/5 text-gray-200 text-xs rounded-lg px-2 py-1.5 border border-white/10 focus:border-red-800 outline-none" />
+                  <span className="text-xs text-gray-600 font-medium">Sort</span>
+                  <select value={sort} onChange={e => setSort(e.target.value)}
+                    className="bg-white/5 text-gray-200 text-xs rounded-lg px-2 py-1.5 border border-white/10 focus:border-red-800 outline-none">
+                    <option value="price_asc">Price ↑</option>
+                    <option value="price_desc">Price ↓</option>
+                    <option value="quantity_desc">Qty ↓</option>
+                    <option value="quantity_asc">Qty ↑</option>
+                    <option value="section">Section</option>
+                    <option value="newest">Newest</option>
+                  </select>
+                  {(minPrice || maxPrice || minQty || marketplace || sectionFilter || rowFilter) && (
+                    <button
+                      onClick={() => { setMinPrice(''); setMaxPrice(''); setMinQty(''); setMarketplace(''); setSectionFilter(''); setRowFilter(''); }}
+                      className="text-xs text-red-500 hover:text-red-400 underline ml-1"
+                    >
+                      Clear all
+                    </button>
                   )}
-                  <div className="bg-[#161b27] px-4 py-3">
-                    <ListingTable listings={grouped[mp]} />
+                </div>
+
+                {/* Row 4: View mode */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-gray-600 w-16 shrink-0 font-medium">View</span>
+                  {([
+                    ['raw',       `Raw (${totalListings.toLocaleString()})`,             'text-gray-200'],
+                    ['canonical', `Canonical (${canonicalKeys.size.toLocaleString()})`,  'text-indigo-300'],
+                    ['mirrored',  `Mirrored (${mirroredKeys.size.toLocaleString()})`,    'text-amber-300'],
+                  ] as const).map(([val, label, color]) => (
+                    <button
+                      key={val}
+                      onClick={() => setListingView(val)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                        listingView === val
+                          ? `bg-white/15 ${color} border border-white/20`
+                          : 'bg-white/5 text-gray-500 hover:bg-white/10 hover:text-gray-300 border border-white/8'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                  <span className="ml-auto text-xs text-gray-600">
+                    {viewFilteredListings.length.toLocaleString()} shown
+                    {listingView !== 'raw' && ` · ${listingView} filter`}
+                  </span>
+                </div>
+              </div>
+
+              {/* Listings table */}
+              <div className="glass-panel rounded-2xl overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-white/8">
+                      <th className="px-4 py-3 text-left text-gray-500 font-medium text-xs uppercase tracking-wider">Section</th>
+                      <th className="px-4 py-3 text-left text-gray-500 font-medium text-xs uppercase tracking-wider">Row</th>
+                      <th className="px-4 py-3 text-right text-gray-500 font-medium text-xs uppercase tracking-wider">Price</th>
+                      <th className="px-4 py-3 text-right text-gray-500 font-medium text-xs uppercase tracking-wider">All-in</th>
+                      <th className="px-4 py-3 text-right text-gray-500 font-medium text-xs uppercase tracking-wider">Qty</th>
+                      <th className="px-4 py-3 text-left text-gray-500 font-medium text-xs uppercase tracking-wider">Market</th>
+                      <th className="px-4 py-3 text-left text-gray-500 font-medium text-xs uppercase tracking-wider">Sellers</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {viewFilteredListings.slice(0, 200).map((listing: any) => {
+                      const seatKey = `${(listing.section_id || '').toUpperCase()}|${(listing.row || '').toUpperCase()}|${listing.quantity}`;
+                      const nSellers = sellerCounts.get(seatKey) || 1;
+                      const isMirrored = mirroredKeys.has(seatKey);
+                      return (
+                        <tr key={listing.id} className={`hover:bg-white/3 transition-colors ${isMirrored ? 'bg-indigo-950/10' : ''}`}>
+                          <td className="px-4 py-2.5 text-white">
+                            {listing.section_name || '—'}
+                            {isMirrored && <span className="ml-1.5 text-[10px] text-indigo-400">↔</span>}
+                          </td>
+                          <td className="px-4 py-2.5 text-gray-300">{listing.row || '—'}</td>
+                          <td className="px-4 py-2.5 text-right font-mono font-bold text-emerald-400">{fmt$(listing.price_each)}</td>
+                          <td className="px-4 py-2.5 text-right font-mono text-emerald-300 text-xs">
+                            {listing.all_in_price ? fmt$(listing.all_in_price) : '—'}
+                          </td>
+                          <td className="px-4 py-2.5 text-right text-gray-300">{listing.quantity}</td>
+                          <td className="px-4 py-2.5">
+                            <Badge variant={(MP_BADGE as any)[listing.marketplace_slug] || 'default'}>
+                              {listing.marketplace_slug}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-2.5">
+                            {nSellers > 1
+                              ? <span className="text-xs text-amber-500 tabular-nums">{nSellers}×</span>
+                              : <span className="text-xs text-gray-700">—</span>}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {viewFilteredListings.length === 0 && (
+                  <p className="text-center py-8 text-gray-500 text-sm">No listings match current filters.</p>
+                )}
+                {viewFilteredListings.length > 200 && (
+                  <div className="px-4 py-3 border-t border-white/8 text-xs text-gray-500 text-center">
+                    Showing 200 of {viewFilteredListings.length.toLocaleString()} — narrow filters to see more
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* ── Advanced Technical Intelligence (collapsed) ─────────────────── */}
+        <AdvancedSection>
+          {/* Section Liquidity */}
+          {sectionLiquidity?.sections && sectionLiquidity.sections.length > 0 && (
+            <div>
+              <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 pt-6">Section Liquidity</div>
+              <div className="glass-panel rounded-xl overflow-hidden">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-white/5">
+                      <th className="px-3 py-2 text-left text-gray-500 font-medium">Section</th>
+                      <th className="px-3 py-2 text-right text-gray-500 font-medium">Blocks</th>
+                      <th className="px-3 py-2 text-right text-gray-500 font-medium">Tickets</th>
+                      <th className="px-3 py-2 text-right text-gray-500 font-medium">Low Ask</th>
+                      <th className="px-3 py-2 text-right text-gray-500 font-medium">Median</th>
+                      <th className="px-3 py-2 text-right text-gray-500 font-medium">Mirrored</th>
+                      <th className="px-3 py-2 text-right text-gray-500 font-medium">Confidence</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {sectionLiquidity.sections
+                      .sort((a: any, b: any) => b.active_blocks - a.active_blocks)
+                      .slice(0, 20)
+                      .map((sec: any) => (
+                      <tr key={sec.section_id} className="hover:bg-white/3 transition-colors">
+                        <td className="px-3 py-2 text-white font-medium">{sec.section_id}</td>
+                        <td className="px-3 py-2 text-right text-gray-300">{sec.active_blocks}</td>
+                        <td className="px-3 py-2 text-right text-gray-400">{sec.active_tickets}</td>
+                        <td className="px-3 py-2 text-right font-mono text-emerald-400">{fmt$(sec.low_ask)}</td>
+                        <td className="px-3 py-2 text-right font-mono text-gray-400">{fmt$(sec.median_ask)}</td>
+                        <td className="px-3 py-2 text-right">
+                          {sec.mirrored_pct > 0 ? <span className="text-indigo-400">{Math.round(sec.mirrored_pct * 100)}%</span> : <span className="text-gray-700">—</span>}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          <span className={sec.high_confidence_pct > 0.5 ? 'text-emerald-400' : sec.high_confidence_pct > 0.2 ? 'text-amber-400' : 'text-gray-500'}>
+                            {Math.round(sec.high_confidence_pct * 100)}%
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Inventory Accounting */}
+          {accounting && (
+            <div>
+              <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Inventory Accounting</div>
+              <InventoryAccountingPanel accounting={accounting} />
+            </div>
+          )}
+
+          {/* Market Intelligence primitives */}
+          {marketIntel?.primitives && (
+            <div>
+              <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Market Intelligence</div>
+              <div className="glass-panel rounded-xl p-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                  <div>
+                    <div className="text-gray-500 mb-1">Stale Inventory</div>
+                    <div className={`text-base font-bold ${marketIntel.primitives.stale_inventory_rate > 0.5 ? 'text-amber-400' : 'text-gray-300'}`}>
+                      {Math.round(marketIntel.primitives.stale_inventory_rate * 100)}%
+                    </div>
+                    <div className="text-gray-600">{marketIntel.primitives.stale_active_blocks} blocks</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500 mb-1">Broker Duplication</div>
+                    <div className={`text-base font-bold ${marketIntel.primitives.broker_duplication_rate > 0.1 ? 'text-orange-400' : 'text-gray-300'}`}>
+                      {(marketIntel.primitives.broker_duplication_rate * 100).toFixed(1)}%
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500 mb-1">Blocks Ever Seen</div>
+                    <div className="text-base font-bold text-white">{marketIntel.primitives.total_blocks_ever}</div>
+                    <div className="text-gray-600">{marketIntel.primitives.disappeared_blocks} disappeared</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500 mb-1">Time Tracked</div>
+                    <div className="text-base font-bold text-white">
+                      {marketIntel.primitives.hours_tracked < 1
+                        ? `${Math.round(marketIntel.primitives.hours_tracked * 60)}m`
+                        : `${marketIntel.primitives.hours_tracked.toFixed(1)}h`}
+                    </div>
+                    <div className="text-gray-600">{marketIntel.primitives.snapshot_count} snapshots</div>
                   </div>
                 </div>
-              );
-            })}
+              </div>
+            </div>
+          )}
+
+          {/* Canonical inventory */}
+          {canonical && (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Normalized Inventory Intelligence</div>
+                <button
+                  onClick={() => { loadCanonical(); loadMarketIntel(); loadSectionLiquidity(); loadCanonicalHistory(); }}
+                  className="text-xs text-indigo-400 hover:text-indigo-300 px-3 py-1.5 glass-dark rounded-lg border border-white/10"
+                >
+                  Refresh
+                </button>
+              </div>
+              <CanonicalInventoryPanel canonical={canonical} />
+            </div>
+          )}
+
+          {/* Canonical snapshot history */}
+          {canonicalHistory.length > 0 && (
+            <div>
+              <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Snapshot History</div>
+              <div className="glass-panel rounded-xl overflow-hidden">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-white/5">
+                      <th className="px-3 py-2 text-left text-gray-500 font-medium">Time</th>
+                      <th className="px-3 py-2 text-right text-gray-500 font-medium">Blocks</th>
+                      <th className="px-3 py-2 text-right text-gray-500 font-medium">Raw</th>
+                      <th className="px-3 py-2 text-right text-gray-500 font-medium">Dupe%</th>
+                      <th className="px-3 py-2 text-right text-gray-500 font-medium">Mirrored</th>
+                      <th className="px-3 py-2 text-right text-gray-500 font-medium">Confidence</th>
+                      <th className="px-3 py-2 text-right text-gray-500 font-medium">Low Ask</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {[...canonicalHistory].reverse().map((snap: any) => (
+                      <tr key={snap.snapshot_id} className="hover:bg-white/3 transition-colors">
+                        <td className="px-3 py-2 text-gray-400">{fmtRelative(snap.snapshot_at)}</td>
+                        <td className="px-3 py-2 text-right text-white font-medium">{snap.total_canonical_blocks.toLocaleString()}</td>
+                        <td className="px-3 py-2 text-right text-gray-500">{snap.total_raw_listings.toLocaleString()}</td>
+                        <td className="px-3 py-2 text-right text-amber-400">{Math.round(snap.global_duplicate_ratio * 100)}%</td>
+                        <td className="px-3 py-2 text-right text-indigo-400">{snap.mirrored_block_count}</td>
+                        <td className="px-3 py-2 text-right">
+                          <span className={snap.mean_confidence >= 0.8 ? 'text-emerald-400' : snap.mean_confidence >= 0.5 ? 'text-amber-400' : 'text-red-400'}>
+                            {Math.round(snap.mean_confidence * 100)}%
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-right font-mono text-emerald-400">
+                          {snap.low_ask != null ? fmt$(snap.low_ask) : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Poll run diagnostics */}
+          <div>
+            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Poll Run History</div>
+            <div className="glass-panel rounded-xl overflow-hidden">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-white/8 text-gray-500">
+                    <th className="px-3 py-2 text-left">Run</th>
+                    <th className="px-3 py-2 text-left">TE</th>
+                    <th className="px-3 py-2 text-left">Started</th>
+                    <th className="px-3 py-2 text-left">Duration</th>
+                    <th className="px-3 py-2 text-right">Found</th>
+                    <th className="px-3 py-2 text-right text-emerald-600">New</th>
+                    <th className="px-3 py-2 text-right text-sky-600">React</th>
+                    <th className="px-3 py-2 text-right text-orange-600">Gone</th>
+                    <th className="px-3 py-2 text-left">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {pollRuns.map(run => {
+                    const durMs = run.completed_at && run.started_at
+                      ? new Date(run.completed_at).getTime() - new Date(run.started_at).getTime()
+                      : null;
+                    const durStr = durMs == null ? '…' : durMs < 1000 ? `${durMs}ms` : `${(durMs/1000).toFixed(1)}s`;
+                    const statusColor = run.status === 'success' ? 'text-emerald-400' : run.status === 'error' ? 'text-red-400' : run.status === 'no_data' ? 'text-amber-400' : 'text-gray-400';
+                    return (
+                      <tr key={run.id} className="hover:bg-white/3 transition-colors">
+                        <td className="px-3 py-2 text-gray-500">#{run.id}</td>
+                        <td className="px-3 py-2 text-gray-400">te={run.tracked_event_id}</td>
+                        <td className="px-3 py-2 text-gray-400">{fmtRelative(run.started_at)} ago</td>
+                        <td className="px-3 py-2 text-gray-500">{durStr}</td>
+                        <td className="px-3 py-2 text-right text-white">{run.listings_found}</td>
+                        <td className="px-3 py-2 text-right text-emerald-400">+{run.new_listings}</td>
+                        <td className="px-3 py-2 text-right text-sky-400">↺{run.reactivated_listings}</td>
+                        <td className="px-3 py-2 text-right text-orange-400">−{run.disappeared_listings}</td>
+                        <td className="px-3 py-2">
+                          <span className={`font-medium ${statusColor}`}>{run.status}</span>
+                          {run.error_message && (
+                            <span className="ml-2 text-gray-600 truncate max-w-xs block" title={run.error_message}>
+                              {run.error_message.slice(0, 80)}{run.error_message.length > 80 ? '…' : ''}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {pollRuns.length === 0 && <p className="text-center py-6 text-gray-500">No poll runs recorded.</p>}
+            </div>
           </div>
-        )}
-      </section>
+        </AdvancedSection>
 
-      {/* ── Highlights placeholder ─────────────────────────── */}
-      <section>
-        <div className="flex items-center gap-2 mb-4">
-          <Star size={16} className="text-slate-400" />
-          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Highlights</h2>
-        </div>
-        <div className="bg-[#161b27] border border-[#2a3145] rounded-xl p-8 text-center text-slate-600">
-          <p className="text-sm">Price drops, deal alerts, and trends will appear here.</p>
-          <p className="text-xs mt-1 text-slate-700">Coming soon</p>
-        </div>
-      </section>
-
-      {/* ── Venue Map placeholder ──────────────────────────── */}
-      <section>
-        <div className="flex items-center gap-2 mb-4">
-          <Map size={16} className="text-slate-400" />
-          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Venue Map</h2>
-        </div>
-        <div className="bg-[#161b27] border border-[#2a3145] border-dashed rounded-xl p-12 text-center text-slate-600">
-          <Map size={32} className="mx-auto mb-3 opacity-20" />
-          <p className="text-sm">Interactive seat map coming soon.</p>
-        </div>
-      </section>
-
+        {/* Bottom padding */}
+        <div className="h-8" />
+      </div>
     </div>
   );
 }
