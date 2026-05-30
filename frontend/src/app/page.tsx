@@ -9,14 +9,60 @@ import { Plus, Calendar, TrendingUp, Activity, ChevronRight, Ticket } from "luci
 
 // ── Entity helpers ─────────────────────────────────────────────────────────────
 
+// Specific full-title overrides (tour/show subtitle → canonical artist name)
+const ENTITY_OVERRIDES: Record<string, string> = {
+  'My Chemical Romance: The Black Parade': 'My Chemical Romance',
+};
+
+// Sports team shorthand → full display name (applied after " at " stripping)
+const TEAM_MAP: Record<string, string> = {
+  'NFL Preseason: 49ers':    'San Francisco 49ers',
+  'NFL Preseason: Chargers': 'Los Angeles Chargers',
+  'NFL Preseason: Rams':     'Los Angeles Rams',
+  'NFL Preseason: Raiders':  'Las Vegas Raiders',
+  'NFL Preseason: Angels':   'Los Angeles Angels',
+  'NFL Preseason: Dodgers':  'Los Angeles Dodgers',
+  'NFL Preseason: Lakers':   'Los Angeles Lakers',
+  'NFL Preseason: Clippers': 'Los Angeles Clippers',
+  '49ers':    'San Francisco 49ers',
+  'Chargers': 'Los Angeles Chargers',
+  'Rams':     'Los Angeles Rams',
+  'Raiders':  'Las Vegas Raiders',
+  'Angels':   'Los Angeles Angels',
+  'Dodgers':  'Los Angeles Dodgers',
+  'Lakers':   'Los Angeles Lakers',
+  'Clippers': 'Los Angeles Clippers',
+};
+
 function getEntityName(title: string): string {
-  const atIdx = title.search(/ at /i);
-  if (atIdx > -1) return title.slice(0, atIdx).trim();
-  const vsIdx = title.search(/ vs\.? /i);
-  if (vsIdx > -1) return title.slice(0, vsIdx).trim();
-  const withIdx = title.search(/ with /i);
-  if (withIdx > -1) return title.slice(0, withIdx).trim();
-  return title;
+  // 1. Specific full-title overrides
+  if (ENTITY_OVERRIDES[title]) return ENTITY_OVERRIDES[title];
+
+  let name = title;
+
+  // 2. Strip " at [venue/opponent]", " vs [team]", " with [opener]"
+  const atIdx = name.search(/ at /i);
+  if (atIdx > -1) name = name.slice(0, atIdx).trim();
+  const vsIdx = name.search(/ vs\.? /i);
+  if (vsIdx > -1) name = name.slice(0, vsIdx).trim();
+  const withIdx = name.search(/ with /i);
+  if (withIdx > -1) name = name.slice(0, withIdx).trim();
+
+  // 3. Sports team normalization (after stripping " at ")
+  if (TEAM_MAP[name]) return TEAM_MAP[name];
+
+  // 4. Strip tour subtitle after colon if subtitle contains "Tour"
+  //    e.g. "Ariana Grande: Eternal Sunshine Tour" → "Ariana Grande"
+  const colonIdx = name.indexOf(': ');
+  if (colonIdx > -1 && /\btour\b/i.test(name.slice(colonIdx + 2))) {
+    name = name.slice(0, colonIdx).trim();
+  }
+
+  // 5. Strip "World Tour" / "Tour" bare suffix
+  //    e.g. "BTS World Tour" → "BTS"
+  name = name.replace(/\s+World Tour$/i, '').replace(/\s+Tour$/i, '').trim();
+
+  return name;
 }
 
 interface EntityTheme {
