@@ -22,8 +22,11 @@ import sys
 
 
 def _log(msg: str) -> None:
-    """Write directly to stderr with immediate flush (not via logging module)."""
-    sys.stderr.write(msg + "\n")
+    """Write to both stdout and stderr so Railway captures it regardless of stream."""
+    line = msg + "\n"
+    sys.stdout.write(line)
+    sys.stdout.flush()
+    sys.stderr.write(line)
     sys.stderr.flush()
 
 
@@ -62,9 +65,18 @@ smoke = subprocess.run(
      "import sys; sys.exit(0) if __import__('app.main', fromlist=['app']) else sys.exit(1)"],
     env=os.environ,
     cwd="/app",
+    capture_output=True,
+    text=True,
 )
+# Always print smoke-test output so Railway sees import tracebacks
+if smoke.stdout:
+    sys.stdout.write("[smoke stdout] " + smoke.stdout)
+    sys.stdout.flush()
+if smoke.stderr:
+    sys.stdout.write("[smoke stderr] " + smoke.stderr)
+    sys.stdout.flush()
 if smoke.returncode != 0:
-    _log(f"[entrypoint] SMOKE-TEST FAILED (exit {smoke.returncode}) — import error above")
+    _log(f"[entrypoint] SMOKE-TEST FAILED (exit {smoke.returncode}) — see smoke stderr above")
     sys.exit(1)
 _log("[entrypoint] Smoke-test passed — app.main imports cleanly")
 
