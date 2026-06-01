@@ -60,23 +60,16 @@ _log("[entrypoint] alembic upgrade head succeeded")
 # app.main's own TRACE-0..TRACE-3c log lines will also appear, giving the
 # full module-level import trace.
 _log("[entrypoint] Running app.main import smoke-test …")
+# NOTE: do NOT use capture_output=True here.  Railway's log capture only sees
+# subprocess writes (inherited fd), NOT direct writes from PID-1.  Leaving
+# stdout/stderr uninherited lets the full traceback stream to Railway logs.
 smoke = subprocess.run(
     [sys.executable, "-c",
      "import sys; sys.exit(0) if __import__('app.main', fromlist=['app']) else sys.exit(1)"],
     env=os.environ,
     cwd="/app",
-    capture_output=True,
-    text=True,
 )
-# Always print smoke-test output so Railway sees import tracebacks
-if smoke.stdout:
-    sys.stdout.write("[smoke stdout] " + smoke.stdout)
-    sys.stdout.flush()
-if smoke.stderr:
-    sys.stdout.write("[smoke stderr] " + smoke.stderr)
-    sys.stdout.flush()
 if smoke.returncode != 0:
-    _log(f"[entrypoint] SMOKE-TEST FAILED (exit {smoke.returncode}) — see smoke stderr above")
     sys.exit(1)
 _log("[entrypoint] Smoke-test passed — app.main imports cleanly")
 
