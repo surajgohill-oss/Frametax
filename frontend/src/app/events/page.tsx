@@ -5,9 +5,9 @@ import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { fmtDate, fmtRelative, fmt$ } from "@/lib/utils";
-import { RefreshCw, Plus, Trash2, ExternalLink } from "lucide-react";
+import { RefreshCw, Plus, Trash2, ExternalLink, AlertTriangle } from "lucide-react";
 import { deriveEventState } from "@/lib/types";
-import type { Event, EventState } from "@/lib/types";
+import type { Event, EventState, FreshnessStatus } from "@/lib/types";
 
 const STATE_BORDER: Record<EventState, string> = {
   POPULATED: "border-l-4 border-l-emerald-500",
@@ -29,6 +29,26 @@ const STATE_PRICE_COLOR: Record<EventState, string> = {
   EMPTY:     "text-slate-500",
   BLOCKED:   "text-slate-500",
 };
+
+/** Map freshness status → a compact chip style for the event row. */
+const FRESHNESS_CHIP: Partial<Record<FreshnessStatus, string>> = {
+  stale: "text-orange-400/80 bg-orange-500/10 border border-orange-500/25",
+  dead:  "text-red-400/80    bg-red-500/10    border border-red-500/25",
+};
+
+/** Return the worst freshness status across all anchor marketplaces. */
+function anchorFreshnessWarning(ev: Event): { status: FreshnessStatus; label: string } | null {
+  const freshness = ev.marketplace_freshness ?? {};
+  // Anchor marketplaces: stubhub first, then others
+  const anchors = ["stubhub", "tickpick", "gametime", "seatgeek"];
+  for (const slug of anchors) {
+    const f = freshness[slug];
+    if (!f) continue;
+    if (f.freshness_status === "dead")  return { status: "dead",  label: `${slug} dead`  };
+    if (f.freshness_status === "stale") return { status: "stale", label: `${slug} stale` };
+  }
+  return null;
+}
 
 export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -67,18 +87,27 @@ export default function EventsPage() {
             const state = deriveEventState(ev);
             const { label: badgeLabel, variant: badgeVariant } = STATE_BADGE[state];
             const priceColor = STATE_PRICE_COLOR[state];
-            const lowestPrice = ev.lowest_price ?? Math.min(ev.lowest_ask_stubhub ?? Infinity, ev.lowest_ask_seatgeek ?? Infinity);
-            const hasPrice = isFinite(lowestPrice);
+            // Use fresh-only price floor; fall back to historical only when fresh is absent
+            const lowestPrice = ev.lowest_price ?? null;
+            const hasPrice = lowestPrice != null;
+            const warning = anchorFreshnessWarning(ev);
+
             return (
               <Card key={ev.id} className={`p-4 ${STATE_BORDER[state]}`}>
                 <div className="flex items-start gap-4">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <Link href={`/events/${ev.id}`} className="font-medium text-white hover:text-blue-300 transition-colors">{ev.title}</Link>
                       <Badge variant={badgeVariant} className="text-[10px] px-1.5 py-0">{badgeLabel}</Badge>
+                      {warning && (
+                        <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-medium ${FRESHNESS_CHIP[warning.status] ?? ""}`}>
+                          <AlertTriangle size={9} />
+                          {warning.label}
+                        </span>
+                      )}
                     </div>
                     <div className="text-xs text-slate-400 mt-0.5">{ev.venue_slug?.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())} · {fmtDate(ev.event_date)}</div>
-                    <div className="flex items-center gap-3 mt-2">
+                    <div className="flex items-center gap-3 mt-2 flex-wrap">
                       {hasPrice
                         ? (
                           <>
@@ -94,11 +123,21 @@ export default function EventsPage() {
                             )}
                           </>
                         )
-                        : <span className="text-xs text-slate-500 italic">No listings</span>
+                        : (
+                          <span className="text-xs text-slate-500 italic">
+                            {(ev.fresh_total_listings ?? 0) === 0 && (ev.total_listings ?? 0) > 0
+                              ? "No fresh data"
+                              : "No listings"}
+                          </span>
+                        )
                       }
                       {ev.next_poll_at && <span className="text-xs text-slate-500">Next poll {fmtRelative(ev.next_poll_at)}</span>}
-                      {ev.total_listings != null && ev.total_listings > 0 && (
-                        <span className="text-xs text-slate-500">{ev.total_listings} listings</span>
+                      {/* Show fresh listing count when available, otherwise stale-inclusive */}
+                      {(ev.fresh_total_listings ?? 0) > 0 && (
+                        <span className="text-xs text-slate-500">{ev.fresh_total_listings} listings</span>
+                      )}
+                      {(ev.fresh_total_listings ?? 0) === 0 && (ev.total_listings ?? 0) > 0 && (
+                        <span className="text-xs text-orange-500/60">{ev.total_listings} stale listings</span>
                       )}
                     </div>
                   </div>

@@ -3,8 +3,9 @@ import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { fmt$, fmtDate } from "@/lib/utils";
-import { MapPin, CalendarDays, RefreshCw, ChevronLeft, Ticket, Star, Map } from "lucide-react";
+import { MapPin, CalendarDays, RefreshCw, ChevronLeft, Ticket, Star, Map, AlertTriangle } from "lucide-react";
 import { useFollowed } from "@/hooks/useFollowed";
+import type { MarketplaceFreshness, FreshnessStatus } from "@/lib/types";
 
 function groupByMarketplace(listings: any[]): Record<string, any[]> {
   return listings.reduce((acc, l) => {
@@ -30,6 +31,45 @@ const MP_COLOR: Record<string, string> = {
   gametime:     "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
   vividseats:   "bg-red-500/10   text-red-400   border-red-500/30",
 };
+
+const FRESHNESS_BADGE: Record<FreshnessStatus, { label: string; className: string }> = {
+  fresh:  { label: "LIVE",  className: "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" },
+  late:   { label: "LATE",  className: "bg-yellow-500/15  text-yellow-400  border border-yellow-500/30"  },
+  stale:  { label: "STALE", className: "bg-orange-500/15  text-orange-400  border border-orange-500/30"  },
+  dead:   { label: "DEAD",  className: "bg-red-500/15     text-red-400     border border-red-500/30"     },
+};
+
+function FreshnessBadge({ freshness }: { freshness: MarketplaceFreshness | undefined }) {
+  if (!freshness) return null;
+  const { label, className } = FRESHNESS_BADGE[freshness.freshness_status] ?? FRESHNESS_BADGE.stale;
+  const title = freshness.age_minutes != null
+    ? `Last collected ${Math.round(freshness.age_minutes / 60)}h ago${freshness.stale_reason ? ` · ${freshness.stale_reason}` : ""}`
+    : freshness.stale_reason ?? "";
+  return (
+    <span
+      className={`ml-2 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${className}`}
+      title={title}
+    >
+      {label}
+    </span>
+  );
+}
+
+function StaleWarning({ freshness, mp }: { freshness: MarketplaceFreshness; mp: string }) {
+  const ageH = freshness.age_minutes != null ? Math.round(freshness.age_minutes / 60) : null;
+  const lastSeen = freshness.last_success_at
+    ? new Date(freshness.last_success_at).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+    : "never";
+  return (
+    <div className="px-4 py-2 text-xs text-orange-400/80 bg-orange-500/5 border-t border-orange-500/20 flex items-center gap-1.5">
+      <AlertTriangle size={11} className="shrink-0" />
+      <span>
+        Stale data — last collected {ageH != null ? `${ageH}h ago` : "unknown"} ({lastSeen}).
+        Prices may not reflect the current market.
+      </span>
+    </div>
+  );
+}
 
 function ListingTable({ listings }: { listings: any[] }) {
   if (listings.length === 0) return null;
@@ -112,7 +152,11 @@ export default function EventDetailPage() {
 
   const grouped = groupByMarketplace(listings);
   const marketplaces = Object.keys(grouped).sort();
-  const lowestOverall = listings.length > 0 ? Math.min(...listings.map((l) => l.price_each)) : null;
+  // Use the backend-computed fresh price floor (stale marketplaces excluded)
+  // Fall back to historical price only if no fresh data exists (for context)
+  const lowestOverall = event.lowest_price ?? null;
+  const historicalFloor = event.historical_lowest_price ?? null;
+  const freshness = event.marketplace_freshness ?? {};
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -140,11 +184,18 @@ export default function EventDetailPage() {
                   {fmtDate(event.event_date)}
                 </span>
               </div>
-              {lowestOverall != null && (
+              {lowestOverall != null ? (
                 <p className="mt-3 text-slate-400 text-sm">
                   From <span className="text-white font-bold text-xl">{fmt$(lowestOverall)}</span>
+                  <span className="ml-2 text-[10px] text-emerald-500/70 uppercase tracking-wide">live</span>
                 </p>
-              )}
+              ) : historicalFloor != null ? (
+                <p className="mt-3 text-slate-400 text-sm">
+                  <span className="text-orange-400/70 text-xs uppercase tracking-wide mr-1">stale</span>
+                  <span className="text-slate-500 line-through">{fmt$(historicalFloor)}</span>
+                  <span className="ml-2 text-xs text-slate-600">· no fresh data</span>
+                </p>
+              ) : null}
             </div>
 
             <div className="flex flex-col items-end gap-2 shrink-0">
@@ -189,17 +240,29 @@ export default function EventDetailPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {marketplaces.map((mp) => (
-              <div key={mp} className={`border rounded-xl overflow-hidden ${MP_COLOR[mp] ?? "border-[#2a3145]"}`}>
-                <div className={`px-4 py-3 border-b flex items-center justify-between ${MP_COLOR[mp] ?? "border-[#2a3145]"}`}>
-                  <span className="text-sm font-semibold">{MP_LABEL[mp] ?? mp}</span>
-                  <span className="text-xs opacity-70">{grouped[mp].length} listings · from {fmt$(grouped[mp][0]?.price_each)}</span>
+            {marketplaces.map((mp) => {
+              const mpFreshness = freshness[mp] as MarketplaceFreshness | undefined;
+              const isStale = mpFreshness && !["fresh", "late"].includes(mpFreshness.freshness_status);
+              return (
+                <div key={mp} className={`border rounded-xl overflow-hidden ${MP_COLOR[mp] ?? "border-[#2a3145]"}`}>
+                  <div className={`px-4 py-3 border-b flex items-center justify-between ${MP_COLOR[mp] ?? "border-[#2a3145]"}`}>
+                    <span className="text-sm font-semibold flex items-center">
+                      {MP_LABEL[mp] ?? mp}
+                      <FreshnessBadge freshness={mpFreshness} />
+                    </span>
+                    <span className="text-xs opacity-70">
+                      {grouped[mp].length} listings · from {fmt$(grouped[mp][0]?.price_each)}
+                    </span>
+                  </div>
+                  {isStale && mpFreshness && (
+                    <StaleWarning freshness={mpFreshness} mp={mp} />
+                  )}
+                  <div className="bg-[#161b27] px-4 py-3">
+                    <ListingTable listings={grouped[mp]} />
+                  </div>
                 </div>
-                <div className="bg-[#161b27] px-4 py-3">
-                  <ListingTable listings={grouped[mp]} />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>

@@ -11,6 +11,18 @@
  * TrackedEvent[] must never flow into a component that renders event cards.
  */
 
+/** Freshness status for a single (marketplace, event) pair. */
+export type FreshnessStatus = "fresh" | "late" | "stale" | "dead";
+
+export interface MarketplaceFreshness {
+  freshness_status: FreshnessStatus;
+  last_success_at: string | null;
+  age_minutes: number | null;
+  consecutive_failures: number;
+  stale_reason: string | null;
+  expected_interval_minutes: number;
+}
+
 /** A marketplace tracking relation embedded inside an Event API response. */
 export interface TrackedEvent {
   id: number;
@@ -21,6 +33,13 @@ export interface TrackedEvent {
   poll_interval_minutes: number;
   last_polled_at: string | null;
   next_poll_at: string | null;
+  // Freshness fields (injected by backend)
+  freshness_status?: FreshnessStatus;
+  last_success_at?: string | null;
+  age_minutes?: number | null;
+  consecutive_failures?: number;
+  stale_reason?: string | null;
+  expected_interval_minutes?: number;
 }
 
 /** A canonical event as returned by GET /api/events/. */
@@ -36,11 +55,24 @@ export interface Event {
   is_active: boolean;
   stubhub_url: string | null;
   seatgeek_url: string | null;
+  /** Fresh/late price floor for StubHub (null when stale — not current market truth). */
   lowest_ask_stubhub: number | null;
+  /** Fresh/late price floor for SeatGeek (null when stale — not current market truth). */
   lowest_ask_seatgeek: number | null;
+  /** Current market floor — fresh/late marketplaces only. */
   lowest_price: number | null;
+  /** Historical floor including stale data (display reference only, NOT market truth). */
+  historical_lowest_price: number | null;
+  /** All active listings count (stale-inclusive, for marketplace breakdown). */
   total_listings: number | null;
+  /** Fresh+late listings count (for current summary display). */
+  fresh_total_listings: number | null;
+  /** Fresh/late marketplace prices only (current market truth). */
   marketplace_prices: Record<string, number> | null;
+  /** All marketplace prices including stale (for breakdown display). */
+  all_marketplace_prices: Record<string, number> | null;
+  /** Per-marketplace freshness classification. */
+  marketplace_freshness: Record<string, MarketplaceFreshness> | null;
   next_poll_at: string | null;
   created_at: string | null;
   /** Marketplace tracking relations. Present on the API object but MUST NOT be

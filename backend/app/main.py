@@ -7,7 +7,7 @@ from sqlalchemy import text
 
 from app.config import get_settings
 from app.database import AsyncSessionLocal
-from app.api.routes import events, venues, analytics, listings, poll, debug as debug_routes, hydrate as hydrate_routes
+from app.api.routes import events, venues, analytics, listings, poll, debug as debug_routes, hydrate as hydrate_routes, health as health_routes
 
 logging.basicConfig(
     level=logging.INFO,
@@ -82,6 +82,7 @@ app.include_router(listings.router, prefix="/api")
 app.include_router(poll.router, prefix="/api")
 app.include_router(debug_routes.router, prefix="/api")
 app.include_router(hydrate_routes.router, prefix="/api")
+app.include_router(health_routes.router, prefix="/api")
 
 
 @app.get("/api/health")
