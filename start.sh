@@ -7,18 +7,23 @@ if [ -n "$DATABASE_URL" ]; then
 fi
 
 echo "[start.sh] Running alembic migrations..."
-# If the DB is at a revision our migration files don't know about (applied from
-# a different branch), stamp our head so alembic recognises the current state,
-# then upgrade (no-op) so any future migrations apply cleanly.
+# Railway DB may have been migrated from a different branch (e.g. Frametax 0013)
+# whose revision IDs are not present in the concert-tracker migration files.
+# Strategy:
+#   1. Try alembic upgrade head normally.
+#   2. On failure (unknown revision), purge the stale version entry and stamp our
+#      codebase head so alembic's version table is consistent, then upgrade (no-op).
+# --purge wipes alembic_version before writing the target revision, so it works
+# even when the current DB revision is completely unknown to our migration tree.
 set +e
-alembic upgrade head 2>&1
+alembic upgrade head
 ALEMBIC_EXIT=$?
-set -e
 if [ $ALEMBIC_EXIT -ne 0 ]; then
-    echo "[start.sh] alembic upgrade failed (exit $ALEMBIC_EXIT) — DB revision ahead of local files. Stamping head and retrying."
-    alembic stamp head
-    alembic upgrade head
+    echo "[start.sh] alembic upgrade head failed (exit $ALEMBIC_EXIT) — purging stale revision and stamping head."
+    alembic stamp --purge head
+    alembic upgrade head  # no-op once stamp succeeds
 fi
+set -e
 
 echo "[start.sh] Starting uvicorn..."
 exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}"
