@@ -18,6 +18,61 @@ from datetime import datetime, timedelta
 from typing import Optional
 import logging
 
+# ── Parking filter (module-level, compiled once) ──────────────────────────────
+#
+# TickPick listings include parking passes alongside event tickets.
+# These must be excluded upstream — before DB insert, canonical block
+# creation, snapshot persistence, and aggregate calculations.
+#
+# Three-tier classification:
+#   Tier 1: section name alone is definitive.
+#   Tier 2: section contains "lot" AND row matches a parking label.
+#   Tier 3: row starts with "PRK" (universal parking shorthand — no seat
+#           row at any major venue uses this prefix).
+#
+# Confirmed against live TickPick data (2026-05-31 audit).
+
+_PARKING_SECTION_RE = re.compile(r"\bparking\b", re.IGNORECASE)
+_GARAGE_SECTION_RE  = re.compile(r"\bgarage\b",  re.IGNORECASE)
+_TAILGATE_RE        = re.compile(r"\btailgate\b", re.IGNORECASE)
+_PASS_ONLY_RE       = re.compile(r"\bpass\s+only\b", re.IGNORECASE)
+_LOT_ID_RE          = re.compile(r"\blot\s*[A-Z0-9]+\b", re.IGNORECASE)
+_ZONE_LOT_RE        = re.compile(
+    r"\b(?:blue|green|orange|brown|red|yellow|gold|purple|white|black|"
+    r"silver|gray|grey|flower|retail)\s+(?:zone\s+)?lot\b",
+    re.IGNORECASE,
+)
+_PARKING_ROW_EXACT: frozenset = frozenset({
+    "park", "parking", "vp", "vip", "vip lot", "vip parking",
+    "prk", "prk1", "lot", "pass",
+    "ga", "ga parking", "ga park",
+    "onsite parking", "on-site ga parking", "on-site parking",
+})
+
+
+def _is_parking_listing(section: str, row: Optional[str]) -> bool:
+    """Return True if this listing is a parking pass, not an event ticket."""
+    if not section:
+        return False
+    # Tier 1 — section name is definitive
+    if _PARKING_SECTION_RE.search(section): return True
+    if _GARAGE_SECTION_RE.search(section):  return True
+    if _TAILGATE_RE.search(section):        return True
+    if _PASS_ONLY_RE.search(section):       return True
+    if _LOT_ID_RE.search(section):          return True
+    if _ZONE_LOT_RE.search(section):        return True
+    # Tier 2 — section contains "lot" AND row signals parking
+    if "lot" in section.lower():
+        row_norm = (row or "").strip().upper()
+        if row_norm in {r.upper() for r in _PARKING_ROW_EXACT}: return True
+        if row_norm.startswith("GA") and row_norm[2:].replace(" ", "").isalnum(): return True
+        if "PARKING" in row_norm or row_norm.startswith("PARK"): return True
+        if row_norm.startswith("PRK"): return True
+    # Tier 3 — PRK row prefix is unambiguous (e.g. section="G" row="PRK" = lot G)
+    if (row or "").strip().upper().startswith("PRK"):
+        return True
+    return False
+
 import httpx
 
 from app.collectors.base import BaseCollector, RawListing
@@ -148,6 +203,7 @@ class TickPickCollector(BaseCollector):
             or []
         )
         results: list[RawListing] = []
+        parking_count = 0
 
         for item in raw_listings:
             raw_id  = item.get("id") or item.get("listingId") or ""
@@ -177,6 +233,12 @@ class TickPickCollector(BaseCollector):
             row = item.get("r") or item.get("row") or None
             qty = int(item.get("q") or item.get("quantity") or 1)
 
+            # ── Parking filter ────────────────────────────────────────────────
+            if _is_parking_listing(str(section), str(row) if row else None):
+                parking_count += 1
+                logger.debug("TP: parking excluded section=%r row=%r price=%s", section, row, price)
+                continue
+
             results.append(RawListing(
                 external_listing_id=f"tp-{raw_id}",
                 section=str(section),
@@ -187,6 +249,10 @@ class TickPickCollector(BaseCollector):
                 listing_url=item.get("url") or f"https://www.tickpick.com/buy-tickets/{event_id}/",
             ))
 
+        logger.info(
+            "TP collector: event=%s raw=%d parking_excluded=%d tickets_retained=%d",
+            event_id, len(raw_listings), parking_count, len(results),
+        )
         return results
 
     # ── Section normalisation ─────────────────────────────────────────────────
