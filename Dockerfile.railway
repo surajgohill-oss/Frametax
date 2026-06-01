@@ -25,7 +25,8 @@ ENV PYTHONUNBUFFERED=1
 
 EXPOSE 8000
 
-# cache-bust-v4
+# cache-bust-v5: switch to Python entrypoint
 COPY start.sh /app/start.sh
-RUN chmod +x /app/start.sh && echo "=== start.sh content ===" && cat /app/start.sh && echo "=== end start.sh ==="
-CMD ["/app/start.sh"]
+RUN chmod +x /app/start.sh
+COPY entrypoint.py /app/entrypoint.py
+CMD ["python3", "/app/entrypoint.py"]
