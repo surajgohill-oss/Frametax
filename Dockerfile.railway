@@ -25,7 +25,7 @@ ENV PYTHONUNBUFFERED=1
 
 EXPOSE 8000
 
-# cache-bust-v3: force rebuild of start.sh layer
+# cache-bust-v4
 COPY start.sh /app/start.sh
-RUN chmod +x /app/start.sh
+RUN chmod +x /app/start.sh && echo "=== start.sh content ===" && cat /app/start.sh && echo "=== end start.sh ==="
 CMD ["/app/start.sh"]
