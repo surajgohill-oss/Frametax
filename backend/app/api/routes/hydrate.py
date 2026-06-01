@@ -20,13 +20,15 @@ from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.collectors.registry import COLLECTOR_REGISTRY, get_collector
-from app.collectors.resolver import EventResolver
 from app.config import get_settings
 from app.database import AsyncSessionLocal
 from app.models import Listing, Marketplace, TrackedEvent
 from app.models.event import Event
-from app.scheduler import _run_collector_for_event
+
+# NOTE: app.collectors.registry and app.scheduler are imported lazily (inside
+# the route handler) so they don't pull in the full collector chain (playwright
+# etc.) at module-level during app startup.  Module-level imports of those
+# packages prevented uvicorn from starting on Railway.
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/hydrate", tags=["hydrate"])
@@ -112,6 +114,12 @@ async def hydrate(event_id: int = Query(..., description="DB events.id to hydrat
             "external_blockers": [],
             "final_verdict": verdict,
         }
+
+    # ── Lazy imports (kept out of module-level to avoid pulling playwright etc. ──
+    # into app startup — see module docstring note above).
+    from app.collectors.registry import COLLECTOR_REGISTRY, get_collector  # noqa: PLC0415
+    from app.collectors.resolver import EventResolver  # noqa: PLC0415
+    from app.scheduler import _run_collector_for_event  # noqa: PLC0415
 
     # ── STEP 1: Force resolver ────────────────────────────────────────────────
     resolver_counts = {"resolved": 0, "failed": 0, "already_set": 0}
