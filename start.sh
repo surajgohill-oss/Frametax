@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -ex  # -x: trace each command to stderr so Railway logs capture it
 
 # Railway provides DATABASE_URL as postgresql:// but asyncpg requires postgresql+asyncpg://
 if [ -n "$DATABASE_URL" ]; then
