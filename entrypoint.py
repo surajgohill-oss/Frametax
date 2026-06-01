@@ -1,36 +1,27 @@
 """
 Railway container entrypoint (PID 1).
 
-Keeps PID 1 alive and runs uvicorn as a child process so that Railway's log
-capture sees continuous output from a stable process.  Previously, os.execv()
-replaced the PID-1 image with uvicorn and Railway lost the log stream in the
-brief re-subscription window, making all uvicorn output (including import
-errors) invisible.
-
-Strategy:
+Minimal approach:
   1. Normalise DATABASE_URL
-  2. Run alembic as subprocess (same as before)
-  3. Run an import smoke-test as subprocess — any ImportError in app.main
-     will be printed to stderr and show up in Railway logs
-  4. Run uvicorn as subprocess.Popen with SIGTERM/SIGINT forwarding
-  5. Wait for uvicorn; exit with its return code
+  2. Run alembic migrations as subprocess
+  3. os.execv → replace PID-1 with uvicorn so its stdout/stderr are PID-1's
+
+With os.execv, uvicorn IS PID-1 and all its output (including import errors
+and TRACE-* startup logs from app.main) flows directly to Railway's log
+capture.  The brief re-subscription race is not a concern for import errors
+because they happen during uvicorn startup, well after Railway has attached.
 """
 import os
-import signal
 import subprocess
 import sys
 
 
-def _log(msg: str) -> None:
-    """Write to both stdout and stderr so Railway captures it regardless of stream."""
-    line = msg + "\n"
-    sys.stdout.write(line)
-    sys.stdout.flush()
-    sys.stderr.write(line)
+def _stderr(msg: str) -> None:
+    sys.stderr.write(msg + "\n")
     sys.stderr.flush()
 
 
-_log(f"[entrypoint] Container starting — python={sys.executable} pid={os.getpid()}")
+_stderr(f"[entrypoint] starting — pid={os.getpid()}")
 
 # ── 1. Normalise DATABASE_URL ─────────────────────────────────────────────────
 db_url = os.environ.get("DATABASE_URL", "")
@@ -39,65 +30,28 @@ if db_url:
     if "postgresql://" in db_url and "postgresql+asyncpg://" not in db_url:
         db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
     os.environ["DATABASE_URL"] = db_url
-    _log("[entrypoint] DATABASE_URL normalised to asyncpg driver")
-else:
-    _log("[entrypoint] WARNING: DATABASE_URL not set — using default")
 
 # ── 2. Run alembic migrations ─────────────────────────────────────────────────
-_log("[entrypoint] Running alembic upgrade head …")
-alembic_result = subprocess.run(
+result = subprocess.run(
     [sys.executable, "-m", "alembic", "upgrade", "head"],
     env=os.environ,
-)
-if alembic_result.returncode != 0:
-    _log(f"[entrypoint] alembic upgrade head FAILED (exit {alembic_result.returncode})")
-    sys.exit(alembic_result.returncode)
-_log("[entrypoint] alembic upgrade head succeeded")
-
-# ── 3. Import smoke-test ──────────────────────────────────────────────────────
-# Runs app.main in a fresh subprocess. Any ImportError or RuntimeError shows
-# up in Railway logs here, before we attempt to start the server.
-# app.main's own TRACE-0..TRACE-3c log lines will also appear, giving the
-# full module-level import trace.
-_log("[entrypoint] Running app.main import smoke-test …")
-# NOTE: do NOT use capture_output=True here.  Railway's log capture only sees
-# subprocess writes (inherited fd), NOT direct writes from PID-1.  Leaving
-# stdout/stderr uninherited lets the full traceback stream to Railway logs.
-smoke = subprocess.run(
-    [sys.executable, "-c",
-     "import sys; sys.exit(0) if __import__('app.main', fromlist=['app']) else sys.exit(1)"],
-    env=os.environ,
     cwd="/app",
 )
-if smoke.returncode != 0:
-    sys.exit(1)
-_log("[entrypoint] Smoke-test passed — app.main imports cleanly")
+if result.returncode != 0:
+    sys.exit(result.returncode)
 
-# ── 4. Launch uvicorn as subprocess ──────────────────────────────────────────
+# ── 3. exec uvicorn as PID-1 ─────────────────────────────────────────────────
+# os.execv replaces this process with uvicorn.  All uvicorn output (including
+# TRACE-* logs from app.main, any ImportError, lifespan errors) goes directly
+# to the container stdout/stderr that Railway captures.
 port = os.environ.get("PORT", "8000")
-_log(f"[entrypoint] Launching uvicorn on 0.0.0.0:{port} …")
-
-proc = subprocess.Popen(
-    [sys.executable, "-m", "uvicorn", "app.main:app",
-     "--host", "0.0.0.0", "--port", port,
-     "--log-level", "info"],
-    env=os.environ,
-    cwd="/app",
+_stderr(f"[entrypoint] exec uvicorn on port {port}")
+os.execv(
+    sys.executable,
+    [
+        sys.executable, "-m", "uvicorn", "app.main:app",
+        "--host", "0.0.0.0",
+        "--port", port,
+        "--log-level", "info",
+    ],
 )
-
-# Forward SIGTERM / SIGINT so uvicorn shuts down gracefully when Railway
-# stops the container (Docker sends SIGTERM to PID 1).
-def _forward_signal(sig, _frame):
-    _log(f"[entrypoint] Forwarding signal {sig} to uvicorn (pid={proc.pid})")
-    try:
-        proc.send_signal(sig)
-    except ProcessLookupError:
-        pass  # uvicorn already exited
-
-signal.signal(signal.SIGTERM, _forward_signal)
-signal.signal(signal.SIGINT, _forward_signal)
-
-_log(f"[entrypoint] uvicorn started (pid={proc.pid}), waiting …")
-rc = proc.wait()
-_log(f"[entrypoint] uvicorn exited with code {rc}")
-sys.exit(rc)
