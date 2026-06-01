@@ -1,5 +1,6 @@
 from functools import lru_cache
 from pydantic_settings import BaseSettings
+from pydantic import field_validator
 from typing import List
 
 
@@ -9,6 +10,23 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+asyncpg://concert:concert@db:5432/concert_tracker"
     database_sync_url: str = "postgresql://concert:concert@db:5432/concert_tracker"
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def ensure_asyncpg_driver(cls, v: str) -> str:
+        """
+        Railway (and some other hosts) inject DATABASE_URL as postgresql://
+        which selects psycopg2.  SQLAlchemy's asyncio extension requires the
+        asyncpg driver.  Normalise here so the app never depends on the host
+        using the right prefix.
+        """
+        # Handle short 'postgres://' alias first, then the full prefix
+        if isinstance(v, str):
+            v = v.replace("postgres://", "postgresql+asyncpg://", 1)
+            # Replace plain postgresql:// only (not already postgresql+asyncpg://)
+            if "postgresql://" in v and "postgresql+asyncpg://" not in v:
+                v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return v
     redis_url: str = "redis://redis:6379/0"
 
     browser_data_dir: str = "/app/browser_sessions"
