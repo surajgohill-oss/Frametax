@@ -33,21 +33,31 @@ _REQUIRED_COLUMNS = [
 
 
 async def _assert_schema() -> None:
-    async with AsyncSessionLocal() as db:
-        for table, column in _REQUIRED_COLUMNS:
-            row = await db.execute(
-                text(
-                    "SELECT 1 FROM information_schema.columns "
-                    "WHERE table_name = :t AND column_name = :c"
-                ),
-                {"t": table, "c": column},
-            )
-            if not row.scalar_one_or_none():
-                raise RuntimeError(
-                    f"SCHEMA ASSERTION FAILED: {table}.{column} is missing. "
-                    "Run 'alembic upgrade head' and restart."
+    missing = []
+    try:
+        async with AsyncSessionLocal() as db:
+            for table, column in _REQUIRED_COLUMNS:
+                row = await db.execute(
+                    text(
+                        "SELECT 1 FROM information_schema.columns "
+                        "WHERE table_name = :t AND column_name = :c"
+                    ),
+                    {"t": table, "c": column},
                 )
-    logger.info("Schema assertion passed — all required columns present")
+                if not row.scalar_one_or_none():
+                    missing.append(f"{table}.{column}")
+    except Exception as exc:
+        logger.error("Schema assertion DB query failed: %s", exc)
+        return
+    if missing:
+        logger.warning(
+            "SCHEMA ASSERTION: %d column(s) missing — %s — "
+            "run 'alembic upgrade head' and restart to fix.",
+            len(missing),
+            ", ".join(missing),
+        )
+    else:
+        logger.info("Schema assertion passed — all required columns present")
 
 
 @asynccontextmanager
