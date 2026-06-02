@@ -544,9 +544,8 @@ export default function DashboardPage() {
   }, []);
 
   const activeEvents = events.filter((e:any)=> {
-    if (e.lowest_ask_stubhub != null || e.lowest_ask_tickpick != null) return true;
     const te:any[] = e.tracked_events ?? [];
-    return te.some((t:any)=> t.marketplace_slug !== "seatgeek" && t.is_active === true && t.validation_status === "validated");
+    return te.some((t:any)=> t.marketplace_slug !== "seatgeek" && t.is_active === true);
   });
 
   const groups = groupEvents(activeEvents);
