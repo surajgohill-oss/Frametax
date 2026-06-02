@@ -350,7 +350,11 @@ async def delete_event(event_id: int, db: AsyncSession = Depends(get_db)):
 @router.patch("/tracked/{te_id}")
 async def patch_tracked_event(te_id: int, body: dict, db: AsyncSession = Depends(get_db)):
     """Update mutable fields on a tracked event (external_url, external_event_id, is_active, poll_interval_minutes)."""
-    result = await db.execute(select(TrackedEvent).where(TrackedEvent.id == te_id))
+    result = await db.execute(
+        select(TrackedEvent)
+        .options(selectinload(TrackedEvent.marketplace))
+        .where(TrackedEvent.id == te_id)
+    )
     te = result.scalar_one_or_none()
     if not te:
         raise HTTPException(404, f"TrackedEvent {te_id} not found")
@@ -364,7 +368,8 @@ async def patch_tracked_event(te_id: int, body: dict, db: AsyncSession = Depends
 
     # Auto-extract external_event_id from URL if not explicitly provided
     if "external_url" in updated and "external_event_id" not in body:
-        extracted = _extract_external_id_from_url(te.marketplace.slug if te.marketplace else "", updated["external_url"])
+        mp_slug = te.marketplace.slug if te.marketplace else ""
+        extracted = _extract_external_id_from_url(mp_slug, updated["external_url"])
         if extracted:
             te.external_event_id = extracted
             updated["external_event_id"] = extracted
