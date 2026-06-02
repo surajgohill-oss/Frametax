@@ -2,6 +2,7 @@
 dockerfilePath = "Dockerfile.railway"
 
 [deploy]
+startCommand = "python3 /app/entrypoint.py"
 healthcheckPath = "/api/health"
 healthcheckTimeout = 60
 restartPolicyType = "ON_FAILURE"
