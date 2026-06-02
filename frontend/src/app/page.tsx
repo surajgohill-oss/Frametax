@@ -117,7 +117,7 @@ function groupEvents(events: any[]): EventGroup[] {
   }
   const groups: EventGroup[] = [];
   for (const [entity, evs] of map) {
-    const prices = evs.map((e:any)=> e.lowest_ask_stubhub ?? e.lowest_ask_tickpick).filter(Boolean) as number[];
+    const prices = evs.map((e:any)=> e.lowest_ask_stubhub ?? e.marketplace_prices?.tickpick ?? e.marketplace_prices?.gametime).filter(Boolean) as number[];
     groups.push({
       entity,
       theme: getEntityTheme(entity),
@@ -168,7 +168,7 @@ function MarketTape({ summary, eventCount, groupCount }: { summary:any; eventCou
 
 function FeaturedHero({ event }: { event: any }) {
   const theme  = getEntityTheme(getEntityName(event.title));
-  const price  = event.lowest_ask_stubhub ?? event.lowest_ask_tickpick;
+  const price  = event.lowest_ask_stubhub ?? event.marketplace_prices?.tickpick ?? event.marketplace_prices?.gametime;
   const status = getMarketStatus(price);
   const days   = daysUntil(event.event_date);
   const venue  = fmtVenue(event.venue_slug);
@@ -318,7 +318,7 @@ function FeaturedHero({ event }: { event: any }) {
 // ── Event Row ──────────────────────────────────────────────────────────────────
 
 function EventRow({ ev, theme }: { ev: any; theme: EntityTheme }) {
-  const price  = ev.lowest_ask_stubhub ?? ev.lowest_ask_tickpick;
+  const price  = ev.lowest_ask_stubhub ?? ev.marketplace_prices?.tickpick ?? ev.marketplace_prices?.gametime;
   const status = getMarketStatus(price);
   const venue  = fmtVenue(ev.venue_slug);
   const days   = daysUntil(ev.event_date);
@@ -551,7 +551,7 @@ export default function DashboardPage() {
   const groups = groupEvents(activeEvents);
 
   const featuredEvent = activeEvents
-    .filter((e:any)=> { const d=daysUntil(e.event_date); const p=e.lowest_ask_stubhub??e.lowest_ask_tickpick; return d>0 && p!=null; })
+    .filter((e:any)=> { const d=daysUntil(e.event_date); const p=e.lowest_ask_stubhub??e.marketplace_prices?.tickpick??e.marketplace_prices?.gametime; return d>0 && p!=null; })
     .sort((a:any,b:any)=> new Date(a.event_date).getTime()-new Date(b.event_date).getTime())[0] ?? null;
 
   if (loading) {
