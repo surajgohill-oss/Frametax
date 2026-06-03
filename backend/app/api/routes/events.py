@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -17,6 +18,7 @@ from app.utils.freshness import compute_freshness, is_current
 
 router = APIRouter(prefix="/events", tags=["events"])
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 def _canonical_id(title: str, venue_slug: str, event_date: datetime) -> str:
@@ -270,6 +272,18 @@ async def list_events(db: AsyncSession = Depends(get_db)):
 
 @router.post("/", status_code=201)
 async def create_event(data: dict, db: AsyncSession = Depends(get_db)):
+    if settings.discovery_freeze:
+        logger.warning(
+            "EVENT_FREEZE_ACTIVE: POST /api/events/ rejected — reason=frozen"
+        )
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "EVENT_FREEZE_ACTIVE: Event creation is frozen while duplicate "
+                "reconciliation is in progress. No new events may be added."
+            ),
+        )
+
     count_result = await db.execute(select(func.count()).select_from(Event))
     if count_result.scalar_one() >= settings.max_tracked_events:
         raise HTTPException(400, f"Maximum {settings.max_tracked_events} events reached")

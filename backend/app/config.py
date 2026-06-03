@@ -49,6 +49,12 @@ class Settings(BaseSettings):
 
     env_mode: str = "prod"  # prod | mock
 
+    # ── Event integrity controls ──────────────────────────────────────────────
+    # DISCOVERY_FREEZE=true: discovery may scan/log but must not create Event or
+    # TrackedEvent rows.  POST /api/events/ and TrackedEvent creation in hydrate
+    # are also blocked.  Existing polling continues unaffected.
+    discovery_freeze: bool = False
+
     cors_origins: List[str] = ["http://localhost:3000"]
 
     class Config:

@@ -141,8 +141,22 @@ async def hydrate(event_id: int = Query(..., description="DB events.id to hydrat
             )
         )).scalars().all()
 
-    # If no TrackedEvents exist yet, create them for all known marketplaces.
+    # If no TrackedEvents exist yet, create them for all known marketplaces —
+    # unless the event freeze is active.
     if not te_rows:
+        if settings.discovery_freeze:
+            logger.warning(
+                "EVENT_FREEZE_ACTIVE: hydrate blocked from creating new TrackedEvents "
+                "for event_id=%d — reason=frozen",
+                event_id,
+            )
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "EVENT_FREEZE_ACTIVE: TrackedEvent creation is frozen while "
+                    "duplicate reconciliation is in progress."
+                ),
+            )
         async with AsyncSessionLocal() as db:
             marketplaces = (await db.execute(
                 select(Marketplace).where(Marketplace.is_active == True)
