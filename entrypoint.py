@@ -1,27 +1,23 @@
 """
 Railway container entrypoint (PID 1).
 
-Minimal approach:
-  1. Normalise DATABASE_URL
-  2. Run alembic migrations as subprocess
-  3. os.execv → replace PID-1 with uvicorn so its stdout/stderr are PID-1's
+Responsibilities:
+  1. Normalise DATABASE_URL (postgres:// → postgresql+asyncpg://)
+  2. exec uvicorn as PID-1
 
-With os.execv, uvicorn IS PID-1 and all its output (including import errors
-and TRACE-* startup logs from app.main) flows directly to Railway's log
-capture.  The brief re-subscription race is not a concern for import errors
-because they happen during uvicorn startup, well after Railway has attached.
+Alembic migrations are handled by railway.toml preDeployCommand
+and must NOT be run here (would duplicate work and slow startup).
 """
 import os
-import subprocess
 import sys
 
 
-def _stderr(msg: str) -> None:
-    sys.stderr.write(msg + "\n")
-    sys.stderr.flush()
+def _log(msg: str) -> None:
+    sys.stdout.write(msg + "\n")
+    sys.stdout.flush()
 
 
-_stderr(f"[entrypoint] starting — pid={os.getpid()}")
+_log(f"[entrypoint] starting — pid={os.getpid()}")
 
 # ── 1. Normalise DATABASE_URL ─────────────────────────────────────────────────
 db_url = os.environ.get("DATABASE_URL", "")
@@ -30,28 +26,23 @@ if db_url:
     if "postgresql://" in db_url and "postgresql+asyncpg://" not in db_url:
         db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
     os.environ["DATABASE_URL"] = db_url
+    _log(f"[entrypoint] DATABASE_URL normalised")
 
-# ── 2. Run alembic migrations ─────────────────────────────────────────────────
-result = subprocess.run(
-    [sys.executable, "-m", "alembic", "upgrade", "head"],
-    env=os.environ,
-    cwd="/app",
-)
-if result.returncode != 0:
-    sys.exit(result.returncode)
-
-# ── 3. exec uvicorn as PID-1 ─────────────────────────────────────────────────
-# os.execv replaces this process with uvicorn.  All uvicorn output (including
-# TRACE-* logs from app.main, any ImportError, lifespan errors) goes directly
-# to the container stdout/stderr that Railway captures.
+# ── 2. exec uvicorn as PID-1 ─────────────────────────────────────────────────
 port = os.environ.get("PORT", "8000")
-_stderr(f"[entrypoint] exec uvicorn on port {port}")
-os.execv(
-    sys.executable,
-    [
-        sys.executable, "-m", "uvicorn", "app.main:app",
-        "--host", "0.0.0.0",
-        "--port", port,
-        "--log-level", "info",
-    ],
-)
+_log(f"[entrypoint] exec uvicorn on port {port}")
+
+try:
+    os.execv(
+        sys.executable,
+        [
+            sys.executable, "-m", "uvicorn", "app.main:app",
+            "--host", "0.0.0.0",
+            "--port", port,
+            "--log-level", "info",
+        ],
+    )
+except Exception as exc:
+    sys.stdout.write(f"[entrypoint] os.execv FAILED: {exc}\n")
+    sys.stdout.flush()
+    sys.exit(1)
