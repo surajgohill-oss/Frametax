@@ -54,7 +54,21 @@ _SEC_PS_RE = re.compile(r"\bPS-\d+\b", re.IGNORECASE)
 # Distance patterns that appear in TickPick parking-lot section names:
 #   "0.47 MI AWAY", "0.6 MI FROM VENUE", "6 MINUTE WALK", "14 MIN WALK"
 _SEC_DISTANCE_RE = re.compile(
-    r"\b\d+(?:\.\d+)?\s+(?:mi(?:le)?s?\s+(?:away|from)|min(?:ute)?s?\s+walk)\b",
+    # Handles both "0.47 MI AWAY" and "1.2mi away" (no space before unit)
+    r"\b\d+(?:\.\d+)?\s*(?:mi(?:le)?s?\s+(?:away|from)|min(?:ute)?s?\s+walk)\b",
+    re.IGNORECASE,
+)
+
+# Street address sections: "323 N PRAIRIE AVE.", "1415 S. HILL ST.",
+# "725 GRAND AVE", "200 W PICO BLVD", etc.
+# Pattern: starts with house number → optional cardinal → street name →
+#          ends with a recognised street-type abbreviation.
+# Guards: seating sections are bare numbers ("101"), letters ("A", "Floor"),
+#         or shorthand codes ("4SE 1A") — none end with a street-type word.
+_SEC_STREET_ADDR_RE = re.compile(
+    r"^\d+\s+(?:[NSEWnsew]\.?\s+)?"          # house number + optional N/S/E/W
+    r"[A-Za-z]"                               # street name starts with a letter
+    r".*\b(?:st|ave|blvd|dr|rd|ln|way|pkwy|hwy|ct|pl)\b\.?\s*$",
     re.IGNORECASE,
 )
 
@@ -70,9 +84,15 @@ _SECTION_PATTERNS: tuple[re.Pattern, ...] = (
     _SEC_COLOR_ZONE_RE,
     _SEC_PS_RE,
     _SEC_DISTANCE_RE,
+    _SEC_STREET_ADDR_RE,
 )
 
-# ── Tier 2: row exact-match set ───────────────────────────────────────────────
+# ── Tier 2: row keyword search ────────────────────────────────────────────────
+# Catches rows that CONTAIN "parking" but are not exact matches:
+#   "PARKING WITHIN 1 MILE", "ONSITE PARKING", "PARKING WI" (truncated), etc.
+_ROW_PARKING_WORD_RE = re.compile(r"\bparking\b", re.IGNORECASE)
+
+# ── Tier 2b: row exact-match set ─────────────────────────────────────────────
 # Matches when the *entire* normalised row value is one of these tokens.
 # "ga" is deliberately excluded — see module docstring.
 _PARKING_ROW_EXACT: frozenset[str] = frozenset(
@@ -135,6 +155,12 @@ def is_parking_listing(
     False
     >>> is_parking_listing("Floor", "GA")  # GA floor ticket, NOT parking
     False
+    >>> is_parking_listing("JJ", "ONSITE PARKING")   # row word match
+    True
+    >>> is_parking_listing("323 N PRAIRIE AVE.", "GA")  # street address section
+    True
+    >>> is_parking_listing("323 N PRAIRIE AVE.", "PARKING WITHIN 1 MILE")
+    True
     """
     sec = (section or "").strip()
     rw  = (row or "").strip()
@@ -144,7 +170,12 @@ def is_parking_listing(
         if pattern.search(sec):
             return True
 
-    # ── Tier 2: row exact-match (unambiguous parking-only values) ─────────────
+    # ── Tier 2: row contains the word "parking" ───────────────────────────────
+    # Catches "PARKING WITHIN 1 MILE", "ONSITE PARKING", "PARKING WI" (truncated)
+    if _ROW_PARKING_WORD_RE.search(rw):
+        return True
+
+    # ── Tier 2b: row exact-match (unambiguous parking-only values) ────────────
     if rw.lower() in _PARKING_ROW_EXACT:
         return True
 

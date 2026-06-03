@@ -286,3 +286,32 @@ class TestProductionCombos:
     def test_forum_lot(self):
         parking("KAREEM SOUTH ENTRANCE - KIA FORUM LOT", "GA")
         parking("LOT G",  "PARKING")
+
+    def test_row_parking_word_not_exact(self):
+        """Row contains 'parking' as a word but is not the bare word 'PARKING'."""
+        parking("323 N PRAIRIE AVE.",   "PARKING WITHIN 1 MILE")
+        parking("PRAIRIE AVE.",         "PARKING WI")        # truncated row value
+        parking("JJ",                   "ONSITE PARKING")
+        parking("N PRAIRIE AVE.",       "PARKING WITHIN 0.5 MILES")
+
+    def test_street_address_section(self):
+        """Sections that are street addresses = parking lots."""
+        parking("323 N PRAIRIE AVE.",   "GA")
+        parking("301 N PRAIRIE AVE",    "GA")
+        parking("310 N. PRAIRIE AVE.",  "GA")
+        parking("1415 S. HILL ST.",     "GA")
+        parking("1611 S. HOPE ST.",     "GA")
+        parking("725 GRAND AVE",        "GA")
+        parking("200 W PICO BLVD",      "GA")
+        parking("945 W. 8TH ST.",       "GA")
+
+    def test_distance_no_space_before_unit(self):
+        """Distance pattern: '1.2mi away' without space between number and 'mi'."""
+        parking("323 N. PRAIRIE AVE. 1.2mi away",  "GA")
+        parking("720 S GRAND AVE 0.5mi from venue", "GA")
+
+    def test_street_addr_false_positive_guards(self):
+        """Alphanumeric section designators must NOT be caught by street addr pattern."""
+        not_parking("4SE 1A",   "GA")   # section code, not a street address
+        not_parking("101",      "12")   # pure numeric section
+        not_parking("100",      "GA")   # normal numbered section with GA row
