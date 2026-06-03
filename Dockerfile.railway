@@ -13,9 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Skip Playwright browser install (Railway datacenter IPs are blocked by
-# airline bot-detection; browser scraping runs on the Mac host-side
-# collectors instead). Keeps the image lean and build fast.
+RUN python -m playwright install chromium
 
 COPY backend/ .
 
