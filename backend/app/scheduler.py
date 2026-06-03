@@ -13,6 +13,7 @@ from app.database import AsyncSessionLocal
 from app.models import TrackedEvent, Event, Listing, ListingSnapshot, PollRun, Marketplace
 from app.collectors.registry import get_collector
 from app.collectors.resolver import EventResolver
+from app.collectors.normalize import is_parking_listing
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -467,10 +468,33 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
         # listings — it never contains IDs from another marketplace.
         seen_ids: set[str] = set()
         new_count = 0
+        parking_dropped = 0
         snapshots: list[ListingSnapshot] = []
         collector = get_collector(result.marketplace_slug, settings)
 
+        # ── Parking pre-filter ────────────────────────────────────────────────
+        # Drop parking passes before any upsert so they never enter the
+        # listings table.  Applied to ALL sources (Railway collectors AND
+        # Mac-host manual-ingest scripts that POST to /api/poll/.../manual-ingest)
+        # because this is the single shared ingestion choke-point.
+        clean_listings = []
         for raw in result.listings:
+            if is_parking_listing(raw.section, raw.row):
+                parking_dropped += 1
+                logger.debug(
+                    "PARKING_FILTER: dropped section=%r row=%r event_id=%d %s",
+                    raw.section, raw.row, result.event_id, result.marketplace_slug,
+                )
+            else:
+                clean_listings.append(raw)
+
+        if parking_dropped:
+            logger.info(
+                "PARKING_FILTER: dropped %d parking listing(s) event_id=%d %s",
+                parking_dropped, result.event_id, result.marketplace_slug,
+            )
+
+        for raw in clean_listings:
             try:
                 norm_section = collector.normalize_section(raw.section) if collector else raw.section
             except Exception:
@@ -532,6 +556,8 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
         # An empty result (API failure, unresolvable ID, rate-limit, partial error)
         # is indistinguishable from a genuine "0 listings" response, so we preserve
         # all existing rows rather than bulk-deactivating on ambiguous evidence.
+        # Note: we use clean_listings (post-filter) for the retirement check so that
+        # a poll returning only parking listings is still treated as a real result.
         disappeared = 0
         if result.listings:
             for ext_id in was_active:
@@ -552,9 +578,10 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
         )).scalar_one_or_none()
         if poll_run:
             poll_run.completed_at = datetime.utcnow()
-            poll_run.listings_found = len(result.listings)
+            poll_run.listings_found = len(clean_listings)
             poll_run.new_listings = new_count
             poll_run.disappeared_listings = disappeared
+            poll_run.parking_dropped = parking_dropped
             poll_run.status = "success" if not result.error else "error"
             poll_run.error_message = result.error
 
@@ -564,11 +591,12 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
             "tracked_event_id": te.id,
             "marketplace": result.marketplace_slug,
             "listings_count": new_count,
-            "total_active": len(result.listings),
+            "total_active": len(clean_listings),
+            "parking_dropped": parking_dropped,
             "disappeared": disappeared,
         })
         logger.info(
-            "COLLECTOR: poll event=%d %s listings=%d new=%d gone=%d",
+            "COLLECTOR: poll event=%d %s listings=%d new=%d gone=%d parking_dropped=%d",
             result.event_id, result.marketplace_slug,
-            len(result.listings), new_count, disappeared,
+            len(clean_listings), new_count, disappeared, parking_dropped,
         )

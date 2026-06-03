@@ -67,5 +67,6 @@ class PollRun(Base):
     listings_found: Mapped[int] = mapped_column(Integer, default=0)
     new_listings: Mapped[int] = mapped_column(Integer, default=0)
     disappeared_listings: Mapped[int] = mapped_column(Integer, default=0)
+    parking_dropped: Mapped[int] = mapped_column(Integer, default=0)
     status: Mapped[str] = mapped_column(String(20), default="running")
     error_message: Mapped[str | None] = mapped_column(String(2000), nullable=True)
