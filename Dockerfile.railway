@@ -25,8 +25,7 @@ ENV PYTHONUNBUFFERED=1
 
 EXPOSE 8000
 
-# cache-bust-v5: switch to Python entrypoint
-COPY start.sh /app/start.sh
-RUN chmod +x /app/start.sh
-COPY entrypoint.py /app/entrypoint.py
-CMD ["python3", "/app/entrypoint.py"]
+# cache-bust-v6: direct uvicorn CMD via shell wrapper
+# Shell form expands $PORT (set by Railway) with fallback to 8000.
+# alembic is run by railway.toml preDeployCommand — not here.
+CMD ["sh", "-c", "echo RUNTIME_START && python3 -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
