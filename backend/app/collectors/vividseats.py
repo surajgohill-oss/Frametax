@@ -12,11 +12,27 @@ Market model note:
 API surface:
   Listings: GET https://www.vividseats.com/hermes/api/v1/listings
               ?productionId={event_id}&qty=1
-  Search:   GET https://www.vividseats.com/hermes/api/v1/productions/search
-              ?searchTerm={query}&rows=5
+  Event search: GET https://www.vividseats.com/hermes/api/v1/productions
+              ?startDate=YYYY-MM-DD&pageSize=25&pageNumber=N
+              (Note: /productions/search requires auth; not used here)
 
 Pricing note:
-  Vivid Seats returns prices in dollars (float). Use as-is.
+  Vivid Seats returns prices in dollars (float).
+  Ticket fields:
+    p   = base price per ticket (before service charges)
+    aip = all-in price per ticket (base + all fees, checkout-equivalent)
+  showAip=true / defaultAipOn=true on all observed events.
+  Stored as: price=p, all_in_price=aip.
+
+Bot protection:
+  Standard browser UA triggers PerimeterX challenge page.
+  iOS mobile UA bypasses it and receives JSON directly.
+
+Parking:
+  parkingPid on the production record is a SEPARATE production.
+  Parking tickets are NOT included in the main event's listings response.
+  Confirmed: 0 parking tickets observed in listings for all pilot events.
+  Scheduler parking choke-point still applied as safety net.
 """
 from __future__ import annotations
 
@@ -29,6 +45,7 @@ import logging
 import httpx
 
 from app.collectors.base import BaseCollector, RawListing
+from app.collectors.normalize import is_parking_listing as _is_parking_listing
 
 logger = logging.getLogger("collector.vividseats")
 
@@ -57,7 +74,9 @@ class VividSeatsCollector(BaseCollector):
         if self._http is None or self._http.is_closed:
             headers = {
                 "Accept":     "application/json",
-                "User-Agent": "Mozilla/5.0",
+                # iOS mobile UA required — standard browser UA triggers PerimeterX
+                # challenge-validation page and returns HTML instead of JSON.
+                "User-Agent": "VividSeats-iOS/8.0 (iPhone; iOS 16.0; Scale/3.00)",
             }
             if self._api_key:
                 headers["Authorization"] = f"Bearer {self._api_key}"
@@ -87,37 +106,48 @@ class VividSeatsCollector(BaseCollector):
             return None
 
     async def _search_event(self, title: str, event_date: Optional[datetime]) -> Optional[str]:
-        params: dict = {"searchTerm": title[:100], "rows": "5"}
-        if event_date:
-            params["startDate"] = event_date.strftime("%Y-%m-%d")
-            params["endDate"]   = (event_date + timedelta(days=1)).strftime("%Y-%m-%d")
+        """
+        Search via /productions with startDate filter.
+        /productions/search requires auth (returns 400 without token) — not used.
+        Scans up to 10 pages (250 events) on the target date, title-matched.
+        """
+        if not event_date:
+            logger.info("VS resolver: no event_date — cannot resolve '%s'", title)
+            return None
+
+        date_str = event_date.strftime("%Y-%m-%d")
+        title_lower = title.lower()
 
         try:
-            resp = await self._client().get(
-                f"{_VS_API_BASE}/productions/search", params=params
-            )
-            resp.raise_for_status()
-            data = resp.json()
+            for page in range(1, 11):
+                resp = await self._client().get(
+                    f"{_VS_API_BASE}/productions",
+                    params={"startDate": date_str, "pageSize": "25", "pageNumber": str(page)},
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                items = data.get("items") or []
+                if not items:
+                    break
+                for item in items:
+                    item_date = (item.get("localDate") or "")[:10]
+                    if item_date != date_str:
+                        continue
+                    name = (item.get("name") or "").lower()
+                    if any(word in name for word in title_lower.split() if len(word) > 3):
+                        vs_id = str(item.get("id") or "")
+                        if vs_id:
+                            logger.info(
+                                "VS resolver: matched '%s' → '%s' id=%s",
+                                title, item.get("name"), vs_id,
+                            )
+                            return vs_id
         except Exception as exc:
             logger.warning("VS resolver: HTTP failure — %s", exc)
             return None
 
-        productions = (
-            data.get("productions")
-            or data.get("results")
-            or (data if isinstance(data, list) else [])
-        )
-        if not productions:
-            logger.info("VS resolver: no results for '%s'", title)
-            return None
-
-        prod = productions[0]
-        vs_id = str(prod.get("id") or prod.get("productionId") or "")
-        if not vs_id:
-            return None
-
-        logger.info("VS resolver: matched '%s' → VS production_id=%s", title, vs_id)
-        return vs_id
+        logger.info("VS resolver: no results for '%s' on %s", title, date_str)
+        return None
 
     # ── Listings fetch ────────────────────────────────────────────────────────
 
@@ -147,63 +177,86 @@ class VividSeatsCollector(BaseCollector):
             return []
 
         listings = self._parse(event_id, data)
-        logger.info("VS collector: event=%s listings=%d", event_id, len(listings))
+        raw_count = len(data.get("tickets") or [])
+        logger.info(
+            "VS collector: event=%s raw=%d retained=%d",
+            event_id, raw_count, len(listings),
+        )
         return listings
 
     def _parse(self, event_id: str, data: dict) -> list[RawListing]:
-        raw_listings = (
-            data.get("listings")
-            or data.get("ticketListings")
-            or (data if isinstance(data, list) else [])
-        )
+        """
+        Parse the /hermes/api/v1/listings response.
+
+        Response shape (confirmed from live API):
+          data["tickets"] — list of listing objects
+          data["global"]  — event-level metadata (listingCount, lowestAip, etc.)
+
+        Ticket field mapping (abbreviated keys are canonical):
+          i / listingId         → external_listing_id
+          p                     → price (base, pre-fee, in USD)
+          aip / allInPricePerTicket → all_in_price (checkout-equivalent, in USD)
+          s / sectionName       → section
+          r / row               → row (string)
+          q / quantity          → quantity
+        """
+        raw_listings: list = data.get("tickets") or []
         results: list[RawListing] = []
+        parking_count = 0
 
         for item in raw_listings:
-            raw_id = item.get("id") or item.get("listingId") or ""
+            raw_id = item.get("i") or item.get("listingId") or item.get("id") or ""
             if not raw_id:
                 continue
 
-            raw_price = (
-                item.get("pricePerTicket")
-                or item.get("price")
-                or item.get("amount")
-            )
+            # Base price — abbreviated key "p" is authoritative
+            raw_price = item.get("p") or item.get("pricePerTicket") or item.get("price")
             price = _to_decimal(raw_price)
             if price is None or price <= 0:
                 continue
 
-            all_in_raw = item.get("totalPrice") or item.get("allInPrice")
-            all_in     = _to_decimal(all_in_raw)
-            fees_val   = _to_decimal(item.get("fees") or item.get("serviceFee"))
-            if fees_val is None and all_in is not None and all_in > price:
+            # All-in price — "aip" or long-form
+            all_in_raw = item.get("aip") or item.get("allInPricePerTicket") or item.get("totalPrice")
+            all_in = _to_decimal(all_in_raw)
+
+            # Derive fees if both values present
+            fees_val: Optional[Decimal] = None
+            if all_in is not None and all_in > price:
                 fees_val = all_in - price
 
             section = (
-                item.get("section")
-                or item.get("sectionName")
-                or item.get("row", {}).get("section") if isinstance(item.get("row"), dict) else None
+                item.get("sectionName")
+                or item.get("s")
+                or item.get("section")
                 or "General"
             )
-            row = (
-                item.get("row") if isinstance(item.get("row"), str) else None
-            ) or item.get("rowId") or None
-            qty = int(item.get("quantity") or item.get("availableCount") or 1)
+            row_raw = item.get("row") or item.get("r") or None
+            row = str(row_raw) if row_raw and not isinstance(row_raw, dict) else None
+
+            qty_raw = item.get("quantity") or item.get("q") or item.get("availableCount")
+            qty = int(qty_raw) if qty_raw else 1
+
+            # Parking filter — safety net (parking is a separate production on VS,
+            # so this should almost never trigger, but apply shared logic anyway)
+            if _is_parking_listing(str(section), row):
+                parking_count += 1
+                logger.debug("VS: parking excluded section=%r row=%r", section, row)
+                continue
 
             results.append(RawListing(
                 external_listing_id=f"vs-{raw_id}",
                 section=str(section),
-                row=str(row) if row else None,
+                row=row,
                 quantity=qty,
                 price=price,
                 fees=fees_val if fees_val and fees_val > 0 else None,
                 all_in_price=all_in,
                 market_segment=_SEGMENT,
-                listing_url=(
-                    item.get("listingUrl")
-                    or f"https://www.vividseats.com/production/{event_id}"
-                ),
+                listing_url=f"https://www.vividseats.com/production/{event_id}",
             ))
 
+        if parking_count:
+            logger.info("VS collector: event=%s parking_excluded=%d", event_id, parking_count)
         return results
 
     # ── Section normalisation ─────────────────────────────────────────────────
