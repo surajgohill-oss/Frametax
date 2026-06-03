@@ -37,6 +37,10 @@ _SEC_PARKING_ONLY_RE = re.compile(r"\bparking\s+only\b", re.IGNORECASE)
 # "BROWN ZONE LOT", "SOUTH PARK LOT", "THE FORUM LOT", etc.
 _SEC_LOT_RE = re.compile(r"\blot\b", re.IGNORECASE)
 
+# "LOT" concatenated with identifier, no space: "LOTC", "LOTA", "LOT1", etc.
+# TickPick sometimes omits the space between LOT and the lot letter/number.
+_SEC_LOT_CONCAT_RE = re.compile(r"\bLOT[A-Z0-9]+\b", re.IGNORECASE)
+
 # Valet parking passes
 _SEC_VALET_RE = re.compile(r"\bvalet\b", re.IGNORECASE)
 
@@ -45,6 +49,23 @@ _SEC_VALET_RE = re.compile(r"\bvalet\b", re.IGNORECASE)
 _SEC_COLOR_ZONE_RE = re.compile(
     r"\b(?:blue|green|orange|brown|red|yellow|gold|purple|white|black|"
     r"silver|gray|grey|pink|teal|maroon|crimson|flower|retail)\s+(?:zone|lot)\b",
+    re.IGNORECASE,
+)
+
+# Bare colour name that IS the entire section field.
+# "BROWN" alone = Brown Zone parking lot at SoFi/Crypto.com area venues.
+# Seating sections never use a bare colour word as their sole identifier
+# (they say "Blue Level", "Green Club", "Gold Circle", etc.).
+_SEC_BARE_COLOR_RE = re.compile(
+    r"^\s*(?:blue|green|orange|brown|red|yellow|gold|purple|white|black|"
+    r"silver|gray|grey|pink|teal|maroon|crimson)\s*$",
+    re.IGNORECASE,
+)
+
+# Known TickPick parking abbreviations that contain no generic parking keyword.
+#   PREFRD = Preferred Parking
+_SEC_KNOWN_ABBREV_RE = re.compile(
+    r"^\s*PREFRD\s*$",
     re.IGNORECASE,
 )
 
@@ -80,8 +101,11 @@ _SECTION_PATTERNS: tuple[re.Pattern, ...] = (
     _SEC_PASS_ONLY_RE,
     _SEC_PARKING_ONLY_RE,
     _SEC_LOT_RE,
+    _SEC_LOT_CONCAT_RE,
     _SEC_VALET_RE,
     _SEC_COLOR_ZONE_RE,
+    _SEC_BARE_COLOR_RE,
+    _SEC_KNOWN_ABBREV_RE,
     _SEC_PS_RE,
     _SEC_DISTANCE_RE,
     _SEC_STREET_ADDR_RE,

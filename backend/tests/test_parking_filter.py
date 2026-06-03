@@ -315,3 +315,25 @@ class TestProductionCombos:
         not_parking("4SE 1A",   "GA")   # section code, not a street address
         not_parking("101",      "12")   # pure numeric section
         not_parking("100",      "GA")   # normal numbered section with GA row
+
+    def test_lot_concatenated(self):
+        """LOTC, LOTA, LOT1 — parking lot identifier with no space."""
+        parking("LOTC",  "GA0")
+        parking("LOTA",  "GA")
+        parking("LOTB",  "PARKING")
+        parking("LOT1",  "GA")
+
+    def test_bare_color_section(self):
+        """Bare colour name as entire section = parking zone (not a seating level)."""
+        parking("BROWN",   "GA")
+        parking("BROWN",   "C2")    # SoFi Brown Zone row C2
+        parking("GREEN",   "GA")
+        parking("ORANGE",  "GA")
+        parking("BLUE",    "GA")
+        # Section 'BROWN' alone is parking; 'BROWN SECTION' or 'BROWN LEVEL' might not be
+        not_parking("BROWN LEVEL",   "GA")   # seating level (falls through; no bare-color match)
+
+    def test_known_abbreviations(self):
+        """PREFRD = Preferred Parking — TickPick-specific abbreviation."""
+        parking("PREFRD", "GA")
+        parking("PREFRD", None)
