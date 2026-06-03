@@ -440,17 +440,27 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
         # Invariant: existing contains ONLY rows where
         #   event_id == result.event_id AND marketplace_id == marketplace.id
         # A collector from any other marketplace cannot affect these rows.
+        #
+        # Query ALL listings regardless of is_active so that previously-deactivated
+        # listings can be reactivated rather than re-inserted.  Inserting a new row
+        # for a previously-seen (event_id, marketplace_id, external_listing_id)
+        # would violate the UNIQUE constraint added in migration 0001.
         existing_result = await db.execute(
             select(Listing).where(
                 and_(
                     Listing.event_id == result.event_id,
                     Listing.marketplace_id == marketplace.id,
-                    Listing.is_active == True,
                 )
             )
         )
+        all_known_listings = existing_result.scalars().all()
         existing: dict[str, Listing] = {
-            l.external_listing_id: l for l in existing_result.scalars().all()
+            l.external_listing_id: l for l in all_known_listings
+        }
+        # Track which were active before this poll so the disappeared calculation
+        # only deactivates rows that were previously live.
+        was_active: set[str] = {
+            l.external_listing_id for l in all_known_listings if l.is_active
         }
 
         # seen_ids is populated exclusively from this collector's returned
@@ -469,12 +479,15 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
             seen_ids.add(raw.external_listing_id)
 
             if raw.external_listing_id in existing:
+                # Update existing row — reactivate if it was previously deactivated.
                 l = existing[raw.external_listing_id]
                 l.price = raw.price
                 l.fees = raw.fees
                 l.all_in_price = raw.all_in_price
                 l.quantity = raw.quantity
                 l.last_seen_at = result.fetched_at
+                if not l.is_active:
+                    l.is_active = True   # reactivate; do not increment new_count
             else:
                 l = Listing(
                     event_id=result.event_id,
@@ -510,9 +523,10 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
                 snapshot_at=result.fetched_at,
             ))
 
-        # Retire listings that were active before but absent from this poll.
-        # Because existing is scoped to marketplace.id, only THIS marketplace's
-        # rows are candidates — listings from all other marketplaces are unaffected.
+        # Retire listings that were active before this poll but absent from it.
+        # Use was_active (pre-poll snapshot) rather than existing so that already-
+        # inactive rows are not double-counted and inactive rows introduced by
+        # concurrent collectors are left alone.
         #
         # Safety rule: only retire when the collector returned real results.
         # An empty result (API failure, unresolvable ID, rate-limit, partial error)
@@ -520,9 +534,9 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
         # all existing rows rather than bulk-deactivating on ambiguous evidence.
         disappeared = 0
         if result.listings:
-            for ext_id, listing in existing.items():
+            for ext_id in was_active:
                 if ext_id not in seen_ids:
-                    listing.is_active = False
+                    existing[ext_id].is_active = False
                     disappeared += 1
         elif existing:
             logger.warning(
