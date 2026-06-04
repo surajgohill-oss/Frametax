@@ -412,16 +412,20 @@ async def get_canonical_inventory(
     # Build SellerEntry objects with seat intelligence
     def _build_seller(l: Listing, slug: str) -> SellerEntry:
         # Resolve seat data: exact hash > parse seat_numbers > infer from range
+        # Use getattr for seat fields — they may not be present on all Listing model versions.
         seats = None
-        s_hash = l.seat_group_hash  # populated by collectors (e.g. Gametime)
+        s_hash = getattr(l, "seat_group_hash", None)
 
-        if not s_hash and l.seat_numbers:
-            seats = parse_seat_numbers(l.seat_numbers)
+        seat_numbers = getattr(l, "seat_numbers", None)
+        if not s_hash and seat_numbers:
+            seats = parse_seat_numbers(seat_numbers)
             if seats:
                 s_hash = seat_group_hash(seats)
 
-        if not s_hash and l.seat_start is not None:
-            seats = infer_seat_range(l.seat_start, l.seat_end, l.quantity)
+        seat_start = getattr(l, "seat_start", None)
+        seat_end = getattr(l, "seat_end", None)
+        if not s_hash and seat_start is not None:
+            seats = infer_seat_range(seat_start, seat_end, l.quantity)
             if seats:
                 s_hash = seat_group_hash(seats)
 
