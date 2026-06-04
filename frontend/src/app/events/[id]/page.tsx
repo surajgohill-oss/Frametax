@@ -11,6 +11,8 @@ import VenueHeatmap from '@/components/venue/VenueHeatmap';
 import PriceHistoryChart from '@/components/charts/PriceHistoryChart';
 import SectionPriceBar from '@/components/charts/SectionPriceBar';
 import InventoryChart from '@/components/charts/InventoryChart';
+import { useFollowed } from '@/hooks/useFollowed';
+import { useMyEvents } from '@/hooks/useMyEvents';
 
 // ── Entity theming (mirrors dashboard) ───────────────────────────────────────
 
@@ -1587,43 +1589,13 @@ export default function EventDetailPage() {
   const [loading, setLoading] = useState(true);
   const [pollLoading, setPollLoading] = useState(false);
 
-  // ── My Event / Follow state (localStorage) ─────────────────────────────────
-  const [isMyEvent,   setIsMyEvent]   = useState(false);
-  const [isFollowing, setIsFollowing] = useState(false);
-
-  useEffect(() => {
-    if (!eventId) return;
-    try {
-      const me = new Set(JSON.parse(localStorage.getItem('my_events') ?? '[]'));
-      setIsMyEvent(me.has(eventId));
-      const fw = new Set(JSON.parse(localStorage.getItem('followed_events') ?? '[]'));
-      setIsFollowing(fw.has(eventId));
-    } catch {}
-  }, [eventId]);
-
-  const toggleMyEvent = useCallback(() => {
-    setIsMyEvent(prev => {
-      const next = !prev;
-      try {
-        const s = new Set<number>(JSON.parse(localStorage.getItem('my_events') ?? '[]'));
-        if (next) s.add(eventId); else s.delete(eventId);
-        localStorage.setItem('my_events', JSON.stringify([...s]));
-      } catch {}
-      return next;
-    });
-  }, [eventId]);
-
-  const toggleFollow = useCallback(() => {
-    setIsFollowing(prev => {
-      const next = !prev;
-      try {
-        const s = new Set<number>(JSON.parse(localStorage.getItem('followed_events') ?? '[]'));
-        if (next) s.add(eventId); else s.delete(eventId);
-        localStorage.setItem('followed_events', JSON.stringify([...s]));
-      } catch {}
-      return next;
-    });
-  }, [eventId]);
+  // ── My Event / Follow state (via hooks) ───────────────────────────────────
+  const { myEvents, toggle: toggleMyEventSet } = useMyEvents();
+  const { followed, toggle: toggleFollowSet }  = useFollowed();
+  const isMyEvent   = myEvents.has(eventId);
+  const isFollowing = followed.has(eventId);
+  const toggleMyEvent = useCallback(() => toggleMyEventSet(eventId), [eventId, toggleMyEventSet]);
+  const toggleFollow  = useCallback(() => toggleFollowSet(eventId),  [eventId, toggleFollowSet]);
 
   // Listings drilldown expanded state
   const [listingsExpanded, setListingsExpanded] = useState(true);
@@ -1883,8 +1855,8 @@ export default function EventDetailPage() {
             {' — '}
             {event.is_active === false
               ? 'Event is inactive. Reactivate to resume tracking.'
-              : event.tracked_events?.length === 0
-                ? 'No marketplaces are being tracked for this event.'
+              : invSummary == null
+                ? 'Inventory data is loading or not yet available.'
                 : 'No listings found across tracked marketplaces. Refresh to pull latest data.'}
           </div>
         </div>

@@ -7,7 +7,7 @@ export function useEventTrace(events: any[]) {
     const traces = events.map((e) => ({
       id: e.id,
       canonical_id: e.canonical_id,
-      tracked_event_count: e.lineage?.tracked_event_count ?? e.tracked_events?.length ?? 0,
+      tracked_event_count: e.lineage?.tracked_event_count ?? 0, // tracked_events not used in UI layer
       marketplaces: e.lineage?.marketplaces ?? [],
       query_path: e.lineage?.query_path ?? [],
     }));

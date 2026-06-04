@@ -26,7 +26,7 @@
   },
   "overrides": [
     {
-      "files": ["src/hooks/useFollowed.ts"],
+      "files": ["src/hooks/useFollowed.ts", "src/hooks/useMyEvents.ts", "src/hooks/useHeroEvent.ts"],
       "rules": {
         "no-restricted-globals": "off"
       }

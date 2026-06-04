@@ -1,31 +1,13 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { fmtDate, fmt$ } from "@/lib/utils";
 import { getEntityImage } from "@/lib/entityImages";
 import { EntityLogo } from "@/components/ui/EntityLogo";
 import { Plus, Calendar, TrendingUp, Activity, ChevronRight, Ticket, Star, Zap } from "lucide-react";
-
-// ── localStorage helpers ────────────────────────────────────────────────────────
-
-function lsGetSet(key: string): Set<number> {
-  if (typeof window === "undefined") return new Set();
-  try { return new Set(JSON.parse(localStorage.getItem(key) ?? "[]")); }
-  catch { return new Set(); }
-}
-function lsSaveSet(key: string, s: Set<number>) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(key, JSON.stringify([...s]));
-}
-function lsGet(key: string): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem(key);
-}
-function lsSet(key: string, val: string | null) {
-  if (typeof window === "undefined") return;
-  if (val === null) localStorage.removeItem(key); else localStorage.setItem(key, val);
-}
+import { useMyEvents } from "@/hooks/useMyEvents";
+import { useHeroEvent } from "@/hooks/useHeroEvent";
 
 // ── Entity helpers ─────────────────────────────────────────────────────────────
 
@@ -649,37 +631,9 @@ export default function DashboardPage() {
   const [loading,    setLoading]    = useState(true);
   const [showPast,   setShowPast]   = useState(false);
 
-  // ── localStorage: My Events & Hero ─────────────────────────────────────────
-  const [myEvents,    setMyEvents]    = useState<Set<number>>(new Set());
-  const [heroEventId, setHeroEventId] = useState<number | null>(null);
-
-  useEffect(() => {
-    setMyEvents(lsGetSet("my_events"));
-    const h = lsGet("hero_event_id");
-    setHeroEventId(h ? parseInt(h, 10) : null);
-  }, []);
-
-  const toggleMyEvent = useCallback((id: number) => {
-    setMyEvents(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      lsSaveSet("my_events", next);
-      return next;
-    });
-  }, []);
-
-  const setHero = useCallback((id: number) => {
-    setHeroEventId(prev => {
-      const next = prev === id ? null : id;
-      lsSet("hero_event_id", next !== null ? String(next) : null);
-      return next;
-    });
-  }, []);
-
-  const clearHero = useCallback(() => {
-    setHeroEventId(null);
-    lsSet("hero_event_id", null);
-  }, []);
+  // ── localStorage: My Events & Hero (via hooks) ────────────────────────────
+  const { myEvents, toggle: toggleMyEvent } = useMyEvents();
+  const { heroEventId, setHero, clearHero } = useHeroEvent();
 
   useEffect(() => {
     Promise.all([
@@ -697,9 +651,12 @@ export default function DashboardPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Filter to events that have at least one non-SeatGeek price signal
+  // (tracked_events is a backend relation — use marketplace_prices instead)
   const activeEvents = events.filter((e:any)=> {
-    const te:any[] = e.tracked_events ?? [];
-    return te.some((t:any)=> t.marketplace_slug !== "seatgeek" && t.is_active === true);
+    const mp = e.marketplace_prices ?? e.all_marketplace_prices ?? {};
+    const hasNonSG = Object.keys(mp).some(k => k !== "seatgeek" && mp[k] != null);
+    return hasNonSG || e.is_active !== false;
   });
 
   const groups = groupEvents(activeEvents);
