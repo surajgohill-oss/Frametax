@@ -612,8 +612,10 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
                 poll_run_id=poll_run_id,
             )
             if snap_id:
-                logger.debug("CANONICAL: event=%d snap_id=%d", result.event_id, snap_id)
+                await db.commit()  # flush() inside snapshot_canonical_inventory — must commit here
+                logger.info("CANONICAL: event=%d snap_id=%d written", result.event_id, snap_id)
         except Exception as canon_exc:
+            await db.rollback()
             logger.warning(
                 "CANONICAL: snapshot failed event=%d — %s (poll result unaffected)",
                 result.event_id, canon_exc,
