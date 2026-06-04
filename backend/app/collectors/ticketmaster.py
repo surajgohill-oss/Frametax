@@ -87,12 +87,19 @@ class TicketmasterCollector(BaseCollector):
             logger.warning("TM resolver: search failed — %s", exc)
             return None
 
+    # Regex patterns for resolver guards
+    _PARKING_RE = re.compile(r"\bpark(?:ing)?\b", re.IGNORECASE)
+    _PUNCT_RE   = re.compile(r"\W+")
+
     async def _search_event(self, title: str, event_date: Optional[datetime]) -> Optional[str]:
+        # Fix 3: punctuation-safe keyword — strip non-word chars before sending
+        safe_keyword = self._PUNCT_RE.sub(" ", title).strip()[:100]
+
         params: dict = {
-            "apikey": self._api_key,
-            "keyword": title[:100],
-            "city":    "Los Angeles",
-            "size":    "5",
+            "apikey":  self._api_key,
+            "keyword": safe_keyword,
+            # Fix 2: removed hardcoded city="Los Angeles" — date window is sufficient
+            "size":    "20",
         }
         if event_date:
             start = (event_date - timedelta(days=1)).strftime("%Y-%m-%dT00:00:00Z")
@@ -109,10 +116,30 @@ class TicketmasterCollector(BaseCollector):
             logger.info("TM resolver: no results for '%s'", title)
             return None
 
-        event = events[0]
-        tm_id = event.get("id")
-        logger.info("TM resolver: matched '%s' → TM event_id=%s", title, tm_id)
-        return tm_id
+        # Fix 1: skip parking catalog events that may sort ahead of the concert.
+        # Check (a) event name contains "park(ing)" and (b) the event's own
+        # classifications list has type.name == "Parking".
+        # NOTE: event.products[] are upsell attachments on the concert (e.g. ParkWhiz
+        # lots linked to a show) — those must NOT be used to filter the event itself.
+        for event in events:
+            name = event.get("name") or ""
+            if self._PARKING_RE.search(name):
+                logger.debug("TM resolver: skipping parking-named event '%s'", name)
+                continue
+            own_classifs = event.get("classifications") or []
+            is_parking_event = any(
+                (c.get("type") or {}).get("name") == "Parking"
+                for c in own_classifs
+            )
+            if is_parking_event:
+                logger.debug("TM resolver: skipping parking-classified event '%s'", name)
+                continue
+            tm_id = event.get("id")
+            logger.info("TM resolver: matched '%s' → TM event_id=%s name='%s'", title, tm_id, name)
+            return tm_id
+
+        logger.info("TM resolver: no non-parking results for '%s'", title)
+        return None
 
     # ── Listings fetch ────────────────────────────────────────────────────────
 
