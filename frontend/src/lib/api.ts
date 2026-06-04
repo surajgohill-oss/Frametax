@@ -42,6 +42,30 @@ export const api = {
   },
   listings: {
     byEvent: (id: number, mp?: string) => req<any[]>(`/listings/events/${id}${mp ? `?marketplace=${mp}` : ""}`),
+    byEventPaged: (id: number, opts: { marketplace?: string; after_id?: number; limit?: number } = {}) => {
+      const p = new URLSearchParams();
+      if (opts.marketplace) p.set("marketplace", opts.marketplace);
+      if (opts.after_id != null) p.set("after_id", String(opts.after_id));
+      if (opts.limit != null) p.set("limit", String(opts.limit));
+      const qs = p.toString();
+      return req<any[]>(`/listings/events/${id}${qs ? "?" + qs : ""}`);
+    },
+    /** Walk all cursor pages and return the complete listing set (no LIMIT 500 cap). */
+    byEventAll: async (id: number, marketplace?: string): Promise<any[]> => {
+      const PAGE = 500;
+      let all: any[] = [];
+      let afterId: number | undefined;
+      while (true) {
+        const p = new URLSearchParams({ limit: String(PAGE) });
+        if (marketplace) p.set("marketplace", marketplace);
+        if (afterId != null) p.set("after_id", String(afterId));
+        const page: any[] = await req<any[]>(`/listings/events/${id}?${p.toString()}`);
+        all = all.concat(page);
+        if (page.length < PAGE) break;
+        afterId = page[page.length - 1].id;
+      }
+      return all;
+    },
     byEventFiltered: (
       id: number,
       opts: {
@@ -72,12 +96,14 @@ export const api = {
     priceHistory: (id: number, hours = 168, mp?: string) => req<any[]>(`/analytics/events/${id}/price-history?hours=${hours}${mp ? `&marketplace=${mp}` : ""}`),
     heatmap: (id: number) => req<any[]>(`/analytics/events/${id}/heatmap`),
     compare: (id: number) => req<any[]>(`/analytics/events/${id}/compare`),
+    inventorySummary: (id: number) => req<any>(`/analytics/events/${id}/inventory-summary`),
     inventoryAccounting: (id: number) => req<any>(`/analytics/events/${id}/inventory-accounting`),
     canonicalInventory: (id: number) => req<any>(`/analytics/events/${id}/canonical-inventory`),
     canonicalHistory: (id: number, limit = 48) => req<any>(`/analytics/events/${id}/canonical-history?limit=${limit}`),
     sectionLiquidity: (id: number) => req<any>(`/analytics/events/${id}/section-liquidity`),
     marketIntelligence: (id: number) => req<any>(`/analytics/events/${id}/market-intelligence`),
     inventoryMovement: (id: number) => req<any>(`/analytics/events/${id}/inventory-movement`),
+    baseline: (id: number) => req<any>(`/analytics/events/${id}/baseline`),
     blockLifecycle: (eventId: number, blockId: string) => req<any>(`/analytics/events/${eventId}/blocks/${blockId}/lifecycle`),
   },
   poll: {

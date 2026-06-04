@@ -1,6 +1,6 @@
 'use client';
 import { useParams, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { fmt$, fmtDate, fmtRelative } from '@/lib/utils';
 import { Card } from '@/components/ui/Card';
@@ -66,17 +66,19 @@ interface InventoryAccounting {
 }
 
 const MARKETPLACES = [
-  { slug: 'stubhub',  label: 'StubHub',  color: 'indigo'  },
-  { slug: 'tickpick', label: 'TickPick', color: 'green'   },
-  { slug: 'gametime', label: 'Gametime', color: 'orange'  },
+  { slug: 'stubhub',    label: 'StubHub',     color: 'indigo' },
+  { slug: 'tickpick',   label: 'TickPick',    color: 'green'  },
+  { slug: 'gametime',   label: 'Gametime',    color: 'orange' },
+  { slug: 'vividseats', label: 'Vivid Seats', color: 'pink'   },
 ] as const;
 
-type MarketplaceSlug = 'stubhub' | 'tickpick' | 'gametime';
+type MarketplaceSlug = 'stubhub' | 'tickpick' | 'gametime' | 'vividseats';
 
 const MP_BADGE: Record<string, 'indigo' | 'blue' | 'green' | 'orange' | 'default'> = {
-  stubhub:  'indigo',
-  tickpick: 'green',
-  gametime: 'orange',
+  stubhub:    'indigo',
+  tickpick:   'green',
+  gametime:   'orange',
+  vividseats: 'blue',
 };
 
 interface PollRun {
@@ -93,9 +95,10 @@ interface PollRun {
 }
 
 const MP_COLORS: Record<string, string> = {
-  stubhub:  'text-indigo-400',
-  tickpick: 'text-green-400',
-  gametime: 'text-orange-400',
+  stubhub:    'text-indigo-400',
+  tickpick:   'text-green-400',
+  gametime:   'text-orange-400',
+  vividseats: 'text-pink-400',
 };
 
 // ── Helper utilities ──────────────────────────────────────────────────────────
@@ -121,6 +124,7 @@ function EventHero({
   lowestAsk,
   totalListings,
   canonicalCount,
+  mirrorRate,
   onPoll,
   pollLoading,
   onBack,
@@ -129,6 +133,7 @@ function EventHero({
   lowestAsk: number | null;
   totalListings: number;
   canonicalCount: number;
+  mirrorRate?: number | null;
   onPoll: () => void;
   pollLoading: boolean;
   onBack: () => void;
@@ -379,10 +384,10 @@ function EventHero({
               style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '16px' }}
             >
               {[
-                { label: 'Listings',    value: totalListings > 0 ? totalListings.toLocaleString() : '—', accent: '#3B82F6' },
-                { label: 'Available',   value: canonicalCount > 0 ? canonicalCount.toLocaleString() : '—', accent: '#8B5CF6' },
-                { label: 'Market',      value: ms.label, accent: accent },
-                { label: 'Days Away',   value: days != null && days > 0 ? `${days}d` : days === 0 ? 'Today' : days != null && days < 0 ? 'Past' : '—', accent: '#E50914' },
+                { label: 'Listings',      value: totalListings > 0 ? totalListings.toLocaleString() : '—', accent: '#3B82F6' },
+                { label: 'Unique Seats',  value: canonicalCount > 0 ? canonicalCount.toLocaleString() : '—', accent: '#8B5CF6' },
+                { label: 'Mirror Rate',   value: mirrorRate != null ? `${(mirrorRate * 100).toFixed(1)}%` : '—', accent: mirrorRate != null && mirrorRate > 0.15 ? '#F59E0B' : '#6B7280' },
+                { label: 'Days Away',     value: days != null && days > 0 ? `${days}d` : days === 0 ? 'Today' : days != null && days < 0 ? 'Past' : '—', accent: '#E50914' },
               ].map(({ label, value, accent: a }) => (
                 <div
                   key={label}
@@ -468,9 +473,147 @@ function EventHero({
   );
 }
 
+// ── Market Baseline Section ───────────────────────────────────────────────────
+// Source: /api/analytics/events/{id}/baseline  (canonical_inventory_snapshots)
+// Read-only. No predictions. No buy/wait signals.
+
+function MarketBaselineSection({ baseline }: { baseline: any }) {
+  if (!baseline) return null;
+  const cur = baseline.current;
+  if (!cur) return null;
+
+  const depth = baseline.history_depth_days ?? 0;
+
+  function DeltaChip({ delta, unit = '' }: { delta: any; unit?: string }) {
+    if (!delta || delta.reason) {
+      return <span className="text-[10px] text-gray-600">—</span>;
+    }
+    const abs = delta.absolute;
+    const pct = delta.pct;
+    if (abs === null || abs === undefined) return <span className="text-[10px] text-gray-600">—</span>;
+    const pos = abs > 0;
+    const neg = abs < 0;
+    const color = pos ? 'text-emerald-400' : neg ? 'text-red-400' : 'text-gray-500';
+    const sign = pos ? '+' : '';
+    const pctStr = pct != null ? ` (${pos ? '+' : ''}${pct.toFixed(1)}%)` : '';
+    return (
+      <span className={`text-[10px] font-mono tabular-nums ${color}`}>
+        {sign}{typeof abs === 'number' ? (unit === '$' ? `$${Math.abs(abs).toFixed(2)}` : abs.toLocaleString()) : abs}{unit !== '$' ? unit : ''}{pctStr}
+      </span>
+    );
+  }
+
+  const rows = [
+    {
+      label: 'Listings',
+      current: cur.raw_listings?.toLocaleString() ?? '—',
+      d24: baseline.deltas_24h?.raw_listings,
+      d7d: baseline.deltas_7d?.raw_listings,
+      unit: '',
+    },
+    {
+      label: 'Unique Tickets',
+      current: cur.unique_tickets?.toLocaleString() ?? '—',
+      d24: baseline.deltas_24h?.unique_tickets,
+      d7d: baseline.deltas_7d?.unique_tickets,
+      unit: '',
+    },
+    {
+      label: 'Lowest Ask',
+      current: cur.lowest_ask != null ? `$${cur.lowest_ask.toFixed(2)}` : '—',
+      d24: baseline.deltas_24h?.low_ask,
+      d7d: baseline.deltas_7d?.low_ask,
+      unit: '$',
+    },
+    {
+      label: 'Mirror Rate',
+      current: cur.mirror_rate != null ? `${(cur.mirror_rate * 100).toFixed(1)}%` : '—',
+      d24: baseline.deltas_24h?.mirror_rate,
+      d7d: baseline.deltas_7d?.mirror_rate,
+      unit: '',
+    },
+  ];
+
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Historical Snapshot Trends</span>
+        <span className="text-[10px] text-gray-600">{depth}d history · from snapshots</span>
+      </div>
+      <div className="text-[10px] text-gray-700 mb-3 italic">
+        Historical baseline comes from stored snapshots and may lag live inventory.
+      </div>
+
+      {/* Top-level trend table */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="text-gray-600 border-b border-white/5">
+              <th className="text-left pb-1.5 pr-4 font-normal">Metric</th>
+              <th className="text-right pb-1.5 pr-4 font-normal">Current</th>
+              <th className="text-right pb-1.5 pr-4 font-normal">24h Δ</th>
+              <th className="text-right pb-1.5 font-normal">7d Δ</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(row => (
+              <tr key={row.label} className="border-b border-white/[0.04] last:border-0">
+                <td className="py-1.5 pr-4 text-gray-400">{row.label}</td>
+                <td className="py-1.5 pr-4 text-right font-mono tabular-nums text-gray-200">{row.current}</td>
+                <td className="py-1.5 pr-4 text-right"><DeltaChip delta={row.d24} unit={row.unit} /></td>
+                <td className="py-1.5 text-right"><DeltaChip delta={row.d7d} unit={row.unit} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Per-marketplace breakdown (compact) */}
+      {baseline.per_marketplace?.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-white/5">
+          <div className="text-[10px] text-gray-600 mb-2 uppercase tracking-widest">By Marketplace</div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {baseline.per_marketplace.map((mp: any) => {
+              const c24 = mp.listings_change_24h;
+              const c7d = mp.listings_change_7d;
+              const has24 = c24 && c24.reason === null && c24.absolute !== null;
+              const has7d = c7d && c7d.reason === null && c7d.absolute !== null;
+              return (
+                <div key={mp.marketplace_slug} className="rounded-lg bg-white/[0.04] px-2.5 py-2">
+                  <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{mp.marketplace_slug}</div>
+                  <div className="text-sm font-bold text-gray-200">{(mp.current_listings ?? 0).toLocaleString()}</div>
+                  {mp.current_lowest_ask != null && (
+                    <div className="text-[10px] text-gray-500">${mp.current_lowest_ask.toFixed(2)} ask</div>
+                  )}
+                  <div className="flex gap-2 mt-0.5">
+                    {has24 && (
+                      <span className={`text-[9px] font-mono tabular-nums ${c24.absolute > 0 ? 'text-emerald-400' : c24.absolute < 0 ? 'text-red-400' : 'text-gray-600'}`}>
+                        {c24.absolute > 0 ? '+' : ''}{c24.absolute} 24h
+                      </span>
+                    )}
+                    {has7d && (
+                      <span className={`text-[9px] font-mono tabular-nums ${c7d.absolute > 0 ? 'text-emerald-400' : c7d.absolute < 0 ? 'text-red-400' : 'text-gray-600'}`}>
+                        {c7d.absolute > 0 ? '+' : ''}{c7d.absolute} 7d
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div className="mt-2 text-[9px] text-gray-700">
+        Data source: canonical_inventory_snapshots · No predictions
+      </div>
+    </div>
+  );
+}
+
 // ── Section 2: Market Overview ────────────────────────────────────────────────
 
-type MpFilter = 'all' | 'stubhub' | 'tickpick' | 'gametime';
+type MpFilter = 'all' | 'stubhub' | 'tickpick' | 'gametime' | 'vividseats';
 
 interface InvMovement {
   original_listings: number;
@@ -492,35 +635,48 @@ interface InvMovement {
   relist_rate_pct: number | null;
 }
 
+// Data source: invSummary.per_marketplace (Priority 1 — full DB count, not capped).
+// inventory-movement and inventory-accounting endpoints do not exist in production (404).
+// This component does NOT depend on those endpoints.
 function MarketOverviewPanel({
-  movement,
+  invSummary,
   canonical,
-  listings,
 }: {
-  movement: { by_marketplace: Record<string, InvMovement> } | null;
+  invSummary: any;
   canonical: CanonicalInventory | null;
-  listings: any[];
 }) {
   const [mpFilter, setMpFilter] = useState<MpFilter>('all');
 
-  const data: InvMovement | null = movement?.by_marketplace?.[mpFilter] ?? null;
-
-  const fmtDelta = (n: number) => n === 0 ? '—' : n > 0 ? `+${n.toLocaleString()}` : n.toLocaleString();
-  const fmtPct = (n: number | null) => {
-    if (n == null) return '—';
-    if (n === 0) return '0.0%';
-    const arrow = n > 0 ? '↑' : '↓';
-    return `${arrow} ${Math.abs(n).toFixed(1)}%`;
-  };
-  const deltaColor = (n: number | null) => n == null ? 'text-gray-500' : n > 0 ? 'text-emerald-400' : n < 0 ? 'text-red-400' : 'text-gray-400';
-  const invDeltaColor = (n: number | null) => n == null ? 'text-gray-500' : n > 0 ? 'text-red-400' : n < 0 ? 'text-emerald-400' : 'text-gray-400';
-
   const MP_TABS: { key: MpFilter; label: string; color: string }[] = [
-    { key: 'all',      label: 'All Markets', color: 'text-white'      },
-    { key: 'stubhub',  label: 'StubHub',     color: 'text-indigo-400' },
-    { key: 'tickpick', label: 'TickPick',    color: 'text-green-400'  },
-    { key: 'gametime', label: 'Gametime',    color: 'text-orange-400' },
+    { key: 'all',        label: 'All Markets', color: 'text-white'      },
+    { key: 'stubhub',    label: 'StubHub',     color: 'text-indigo-400' },
+    { key: 'tickpick',   label: 'TickPick',    color: 'text-green-400'  },
+    { key: 'gametime',   label: 'Gametime',    color: 'text-orange-400' },
+    { key: 'vividseats', label: 'Vivid',       color: 'text-pink-400'   },
   ];
+
+  const MP_META: Record<string, { label: string; dot: string; colorCls: string }> = {
+    stubhub:    { label: 'StubHub',     dot: '#818CF8', colorCls: 'text-indigo-400' },
+    tickpick:   { label: 'TickPick',    dot: '#4ADE80', colorCls: 'text-green-400'  },
+    gametime:   { label: 'Gametime',    dot: '#FB923C', colorCls: 'text-orange-400' },
+    vividseats: { label: 'Vivid Seats', dot: '#F472B6', colorCls: 'text-pink-400'   },
+  };
+
+  // Per-marketplace data from invSummary (Priority 1 source — full DB counts)
+  const perMp: any[] = invSummary?.per_marketplace ?? [];
+  const totalListings: number = invSummary?.raw_listings ?? 0;
+
+  // For "all" view — aggregate across all marketplaces
+  const allLowest = perMp.length > 0
+    ? Math.min(...perMp.map((m: any) => m.normalized_lowest_ask ?? Infinity).filter(isFinite))
+    : null;
+
+  // For single-marketplace view
+  const mpData = mpFilter !== 'all'
+    ? perMp.find((m: any) => m.marketplace_slug === mpFilter) ?? null
+    : null;
+
+  const hasData = invSummary != null;
 
   return (
     <div className="glass-card rounded-2xl overflow-hidden">
@@ -543,140 +699,224 @@ function MarketOverviewPanel({
 
       {/* Data grid */}
       <div className="p-5">
-        {mpFilter === 'all' && canonical ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* INVENTORY */}
-            <div>
-              <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-3">Inventory</div>
-              <div className="space-y-2.5">
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-gray-400">Available</span>
-                  <span className="text-base font-bold text-indigo-300">{canonical.total_canonical_blocks.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-gray-400">Shared Listings</span>
-                  <span className="text-sm font-semibold text-amber-400">{canonical.mirrored_block_count.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-gray-400">Exclusive</span>
-                  <span className="text-sm font-semibold text-emerald-400">{(canonical.total_canonical_blocks - canonical.mirrored_block_count).toLocaleString()}</span>
+        {mpFilter === 'all' ? (
+          /* ── ALL MARKETS view ─────────────────────────────────────────── */
+          <div className="space-y-5">
+            {/* Summary row */}
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-1">Listings</div>
+                <div className="text-xl font-bold text-white">{hasData ? totalListings.toLocaleString() : '—'}</div>
+                {invSummary?.exclusive_listings != null && (
+                  <div className="text-[10px] text-gray-600 mt-0.5">{invSummary.exclusive_listings.toLocaleString()} excl · {invSummary.mirror_listings?.toLocaleString()} mirrors</div>
+                )}
+              </div>
+              <div>
+                <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-1">Lowest Ask</div>
+                <div className="text-xl font-bold text-emerald-400">{allLowest != null && isFinite(allLowest) ? fmt$(allLowest) : '—'}</div>
+              </div>
+              <div>
+                <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-1">Mirror Rate</div>
+                <div className={`text-xl font-bold ${invSummary?.mirror_rate > 0.15 ? 'text-amber-400' : 'text-gray-300'}`}>
+                  {invSummary?.mirror_rate != null ? `${(invSummary.mirror_rate * 100).toFixed(1)}%` : '—'}
                 </div>
               </div>
             </div>
 
-            {/* PRICE */}
-            <div>
-              <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-3">Price Range</div>
-              <div className="space-y-2.5">
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-gray-400">Low Ask</span>
-                  <span className="text-base font-bold text-emerald-400">{data?.low_ask != null ? fmt$(data.low_ask) : '—'}</span>
-                </div>
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-gray-400">Median</span>
-                  <span className="text-sm font-semibold text-gray-300">{data?.median_ask != null ? fmt$(data.median_ask) : '—'}</span>
-                </div>
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-gray-400">High Ask</span>
-                  <span className="text-sm text-gray-500">{data?.high_ask != null ? fmt$(data.high_ask) : '—'}</span>
-                </div>
+            {/* Ticket reconciliation row — explains Unique Available vs gross marketplace totals */}
+            {invSummary?.raw_tickets != null && invSummary?.unique_tickets_available != null && (
+              <div
+                className="rounded-xl px-4 py-3 flex items-center gap-4 text-xs flex-wrap"
+                style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.12)' }}
+              >
+                <span className="text-gray-500 font-bold uppercase tracking-widest text-[9px] shrink-0">Ticket Reconciliation</span>
+                <span className="flex items-center gap-1.5 text-gray-400">
+                  <span className="font-mono font-bold text-white">{invSummary.raw_tickets.toLocaleString()}</span>
+                  <span className="text-gray-600">gross marketplace tickets</span>
+                </span>
+                <span className="text-gray-700">−</span>
+                <span className="flex items-center gap-1.5 text-gray-400">
+                  <span className="font-mono font-bold text-amber-400">
+                    {(invSummary.raw_tickets - invSummary.unique_tickets_available).toLocaleString()}
+                  </span>
+                  <span className="text-gray-600">mirror/duplicate deduction</span>
+                </span>
+                <span className="text-gray-700">=</span>
+                <span className="flex items-center gap-1.5">
+                  <span className="font-mono font-bold text-emerald-400">{invSummary.unique_tickets_available.toLocaleString()}</span>
+                  <span className="text-gray-500">unique tickets available</span>
+                </span>
+                <span
+                  className="ml-auto text-[9px] text-gray-600 hidden sm:block"
+                  title="Each seat block listed on multiple platforms is counted once in the unique total"
+                >
+                  Same seats on multiple platforms → counted once
+                </span>
               </div>
-            </div>
+            )}
 
-            {/* MOVEMENT */}
-            <div>
-              <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-3">Signals</div>
-              <div className="space-y-2.5">
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-gray-400">Likely Sold</span>
-                  <span className="text-sm font-bold text-orange-400">{data ? data.likely_sold.toLocaleString() : '—'}</span>
-                </div>
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-gray-400">Price Trend</span>
-                  <span className={`text-sm font-semibold ${data ? deltaColor(data.price_trend_pct) : 'text-gray-600'}`}>
-                    {data ? fmtPct(data.price_trend_pct) : '—'}
+            {/* Per-marketplace breakdown table */}
+            {perMp.length > 0 ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-4 mb-1">
+                  <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">By Marketplace</span>
+                  <span className="ml-auto flex items-center gap-5 text-[9px] font-bold text-gray-700 uppercase tracking-wider pr-1">
+                    <span className="w-14 text-right">Listings</span>
+                    <span className="w-14 text-right">Tickets</span>
+                    <span className="w-10 text-right">Share</span>
+                    <span className="w-16 text-right">Low Ask</span>
                   </span>
                 </div>
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-gray-400">Supply Trend</span>
-                  <span className={`text-sm font-semibold ${data ? invDeltaColor(data.inventory_trend_pct) : 'text-gray-600'}`}>
-                    {data ? fmtPct(data.inventory_trend_pct) : '—'}
-                  </span>
+                <div className="space-y-1.5">
+                  {['stubhub','tickpick','gametime','vividseats'].map(slug => {
+                    const m = perMp.find((x: any) => x.marketplace_slug === slug);
+                    const meta = MP_META[slug];
+                    const count = m?.raw_listings ?? 0;
+                    const tickets = m?.raw_tickets ?? 0;
+                    const sharePct = totalListings > 0 ? (count / totalListings * 100) : 0;
+                    return (
+                      <div key={slug} className="flex items-center gap-3">
+                        <span style={{ color: meta.dot }} className="text-[10px]">●</span>
+                        <span className="text-sm text-gray-400 w-24">{meta.label}</span>
+                        <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full"
+                            style={{ width: `${Math.min(sharePct, 100)}%`, backgroundColor: meta.dot, opacity: 0.7 }}
+                          />
+                        </div>
+                        <span className={`text-sm font-semibold tabular-nums w-14 text-right ${meta.colorCls}`}>
+                          {m ? count.toLocaleString() : '—'}
+                        </span>
+                        <span className="text-sm tabular-nums w-14 text-right text-gray-500">
+                          {m && tickets > 0 ? tickets.toLocaleString() : '—'}
+                        </span>
+                        <span className="text-xs text-gray-600 w-10 text-right">
+                          {m ? `${sharePct.toFixed(0)}%` : '—'}
+                        </span>
+                        <span className="text-sm font-semibold text-emerald-400 w-16 text-right tabular-nums">
+                          {m?.normalized_lowest_ask != null ? fmt$(m.normalized_lowest_ask) : '—'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  {/* Placeholders */}
+                  {[
+                    { slug: 'seatgeek', label: 'SeatGeek', badge: 'DEFERRED' },
+                    { slug: 'ticketmaster', label: 'Ticketmaster', badge: 'PLANNED' },
+                  ].map(p => (
+                    <div key={p.slug} className="flex items-center gap-3 opacity-35">
+                      <span className="text-[10px] text-gray-700">●</span>
+                      <span className="text-sm text-gray-600 w-24">{p.label}</span>
+                      <div className="flex-1 h-1 bg-white/5 rounded-full" />
+                      <span className="text-xs text-gray-700 w-14 text-right">—</span>
+                      <span className="text-xs text-gray-700 w-10 text-right">—</span>
+                      <span className="text-[9px] text-gray-600 w-16 text-right font-mono">{p.badge}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
+            ) : hasData ? (
+              <div className="text-sm text-gray-600">No per-marketplace data available.</div>
+            ) : (
+              <div className="text-sm text-gray-600">Loading market data…</div>
+            )}
+
+            {/* Canonical inventory row if available */}
+            {canonical && (
+              <div className="pt-3 border-t border-white/5 grid grid-cols-3 gap-4">
+                <div>
+                  <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-1">Canonical Blocks</div>
+                  <div className="text-base font-bold text-indigo-300">{canonical.total_canonical_blocks.toLocaleString()}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-1">Shared Blocks</div>
+                  <div className="text-base font-semibold text-amber-400">{canonical.mirrored_block_count.toLocaleString()}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-1">Exclusive Blocks</div>
+                  <div className="text-base font-semibold text-emerald-400">{(canonical.total_canonical_blocks - canonical.mirrored_block_count).toLocaleString()}</div>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-3">Inventory</div>
-              <div className="space-y-2.5">
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-gray-400">Listings</span>
-                  <span className="text-base font-bold text-white">
-                    {data ? ((data.website_comparable_count > 0 ? data.website_comparable_count : data.normalized_blocks) || 0).toLocaleString() : '—'}
-                  </span>
+          /* ── SINGLE MARKETPLACE view ──────────────────────────────────── */
+          <div className="space-y-4">
+            {mpData ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-3">Inventory</div>
+                  <div className="space-y-2.5">
+                    <div className="flex justify-between items-baseline">
+                      <span className="text-sm text-gray-400">Listings</span>
+                      <span className={`text-base font-bold tabular-nums ${MP_META[mpFilter]?.colorCls ?? 'text-white'}`}>
+                        {mpData.raw_listings?.toLocaleString() ?? '—'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-baseline">
+                      <span className="text-sm text-gray-400">Market Share</span>
+                      <span className="text-sm font-semibold text-gray-300">
+                        {totalListings > 0 && mpData.raw_listings != null
+                          ? `${(mpData.raw_listings / totalListings * 100).toFixed(1)}%`
+                          : '—'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-baseline">
+                      <span className="text-sm text-gray-400">Status</span>
+                      <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${
+                        mpData.raw_listings > 0 ? 'bg-emerald-500/15 text-emerald-400' : 'bg-gray-800 text-gray-500'
+                      }`}>
+                        {mpData.raw_listings > 0 ? 'LIVE' : 'EMPTY'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-gray-400">Net Change</span>
-                  <span className={`text-sm font-semibold ${data ? deltaColor(data.net_difference) : 'text-gray-600'}`}>
-                    {data ? fmtDelta(data.net_difference) : '—'}
-                  </span>
-                </div>
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-gray-400">Likely Sold</span>
-                  <span className="text-sm font-semibold text-orange-400">{data ? data.likely_sold.toLocaleString() : '—'}</span>
-                </div>
-              </div>
-            </div>
 
-            <div>
-              <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-3">Price Range</div>
-              <div className="space-y-2.5">
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-gray-400">Low Ask</span>
-                  <span className="text-base font-bold text-emerald-400">{data?.low_ask != null ? fmt$(data.low_ask) : '—'}</span>
+                <div>
+                  <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-3">Pricing</div>
+                  <div className="space-y-2.5">
+                    <div className="flex justify-between items-baseline">
+                      <span className="text-sm text-gray-400">Lowest Ask</span>
+                      <span className="text-base font-bold text-emerald-400">
+                        {mpData.normalized_lowest_ask != null ? fmt$(mpData.normalized_lowest_ask) : '—'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-baseline">
+                      <span className="text-sm text-gray-400">Source</span>
+                      <span className="text-xs text-gray-600">inventory-summary</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-gray-400">Median</span>
-                  <span className="text-sm font-semibold text-gray-300">{data?.median_ask != null ? fmt$(data.median_ask) : '—'}</span>
-                </div>
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-gray-400">Avg</span>
-                  <span className="text-sm text-gray-400">{data?.avg_ask != null ? fmt$(data.avg_ask) : '—'}</span>
-                </div>
-              </div>
-            </div>
 
-            <div>
-              <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-3">Signals</div>
-              <div className="space-y-2.5">
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-gray-400">Price Trend</span>
-                  <span className={`text-sm font-semibold ${data ? deltaColor(data.price_trend_pct) : 'text-gray-600'}`}>
-                    {data ? fmtPct(data.price_trend_pct) : '—'}
-                  </span>
-                </div>
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-gray-400">Supply Trend</span>
-                  <span className={`text-sm font-semibold ${data ? invDeltaColor(data.inventory_trend_pct) : 'text-gray-600'}`}>
-                    {data ? fmtPct(data.inventory_trend_pct) : '—'}
-                  </span>
-                </div>
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-gray-400">Relist Rate</span>
-                  <span className="text-sm text-amber-400">{data?.relist_rate_pct != null ? `${data.relist_rate_pct.toFixed(1)}%` : '—'}</span>
+                <div>
+                  <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-3">Cross-Market</div>
+                  <div className="space-y-2.5">
+                    <div className="flex justify-between items-baseline">
+                      <span className="text-sm text-gray-400">All Markets Low</span>
+                      <span className="text-sm font-semibold text-gray-300">
+                        {allLowest != null && isFinite(allLowest) ? fmt$(allLowest) : '—'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-baseline">
+                      <span className="text-sm text-gray-400">All Markets Total</span>
+                      <span className="text-sm font-semibold text-gray-300">{totalListings.toLocaleString()}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : hasData ? (
+              <div className="text-sm text-gray-500">No listings found for {MP_META[mpFilter]?.label ?? mpFilter} on this event.</div>
+            ) : (
+              <div className="text-sm text-gray-600">Loading…</div>
+            )}
           </div>
         )}
 
         {/* Footer note */}
         <div className="mt-4 pt-3 border-t border-white/5 text-[10px] text-gray-700">
           {mpFilter === 'all'
-            ? 'Available = unique seat blocks across all markets. Shared = same seats on 2+ platforms. Exclusive = single-platform only.'
-            : 'Listings = website-comparable count (qty 2–9, numbered section, known row). Likely sold = inferred exits.'}
+            ? 'Data source: inventory-summary (full DB counts). Counts are not capped. Share % = marketplace listings ÷ total raw listings.'
+            : 'Data source: inventory-summary.per_marketplace. Lowest ask is normalized (all-in price).'}
         </div>
       </div>
     </div>
@@ -686,9 +926,10 @@ function MarketOverviewPanel({
 // ── Section 4: Premium Marketplace Cards ──────────────────────────────────────
 
 const MP_ACCENT: Record<string, { accent: string; glow: string; dot: string }> = {
-  stubhub:  { accent: 'rgba(99,102,241,0.9)',  glow: 'rgba(99,102,241,0.12)', dot: '#818CF8' },
-  tickpick: { accent: 'rgba(34,197,94,0.9)',   glow: 'rgba(34,197,94,0.10)',  dot: '#4ADE80' },
-  gametime: { accent: 'rgba(249,115,22,0.9)',  glow: 'rgba(249,115,22,0.10)', dot: '#FB923C' },
+  stubhub:    { accent: 'rgba(99,102,241,0.9)',  glow: 'rgba(99,102,241,0.12)',  dot: '#818CF8' },
+  tickpick:   { accent: 'rgba(34,197,94,0.9)',   glow: 'rgba(34,197,94,0.10)',   dot: '#4ADE80' },
+  gametime:   { accent: 'rgba(249,115,22,0.9)',  glow: 'rgba(249,115,22,0.10)',  dot: '#FB923C' },
+  vividseats: { accent: 'rgba(244,114,182,0.9)', glow: 'rgba(244,114,182,0.10)', dot: '#F472B6' },
 };
 
 function PremiumMpCard({
@@ -696,27 +937,38 @@ function PremiumMpCard({
   listings,
   run,
   movementData,
+  invMp,
+  acctMp,
 }: {
   mp: typeof MARKETPLACES[number];
   listings: any[];
   run: PollRun | null;
   movementData?: InvMovement | null;
+  invMp?: any;
+  acctMp?: MarketplaceAccounting | null;
 }) {
   const mpListings = listings.filter((l: any) => l.marketplace_slug === mp.slug);
+  // Prefer full-DB counts from invSummary/accounting over the capped listings array
   const listingCount =
-    (movementData?.website_comparable_count || 0) > 0
+    invMp?.raw_listings ??
+    acctMp?.active_rows ??
+    ((movementData?.website_comparable_count || 0) > 0
       ? movementData!.website_comparable_count
       : (movementData?.normalized_blocks || 0) > 0
         ? movementData!.normalized_blocks
-        : mpListings.length;
-  const lowest = movementData?.low_ask ?? (mpListings.length > 0 ? Math.min(...mpListings.map((l: any) => l.price_each)) : null);
+        : mpListings.length);
+  const lowest =
+    invMp?.normalized_lowest_ask ??
+    acctMp?.low_ask ??
+    movementData?.low_ask ??
+    (mpListings.length > 0 ? Math.min(...mpListings.map((l: any) => l.price_each)) : null);
   const theme = MP_ACCENT[mp.slug] ?? { accent: 'rgba(255,255,255,0.5)', glow: 'rgba(0,0,0,0)', dot: '#9ca3af' };
 
-  const isOk = run?.status === 'success';
+  const isOk = run?.status === 'success' || (!run && listingCount > 0);
   const isErr = run?.status === 'error';
   const isNoData = run?.status === 'no_data';
   const statusDot = isOk ? theme.dot : isErr ? '#EF4444' : isNoData ? '#FBBF24' : '#4B5563';
-  const statusLabel = !run ? 'No data' : isOk ? 'Live' : isErr ? 'Error' : isNoData ? 'No data' : run.status;
+  const statusLabel = isOk ? 'Live' : isErr ? 'Error' : isNoData ? 'No data' : !run ? (listingCount > 0 ? 'Live' : 'No data') : run.status;
 
   // Error type parsing
   let failureType: string | null = null;
@@ -1160,6 +1412,160 @@ function AdvancedSection({ children }: { children: React.ReactNode }) {
   );
 }
 
+// ── Marketplace Snapshot Row ──────────────────────────────────────────────────
+
+const SNAPSHOT_MARKETPLACES = [
+  { slug: 'stubhub',      label: 'StubHub',      dot: '#818CF8', live: true  },
+  { slug: 'tickpick',     label: 'TickPick',      dot: '#4ADE80', live: true  },
+  { slug: 'gametime',     label: 'Gametime',      dot: '#FB923C', live: true  },
+  { slug: 'vividseats',   label: 'Vivid Seats',   dot: '#F472B6', live: true  },
+  { slug: 'seatgeek',     label: 'SeatGeek',      dot: '#6B7280', live: false, status: 'DEFERRED', msg: 'Deferred / blocked'  },
+  { slug: 'ticketmaster', label: 'Ticketmaster',  dot: '#4B5563', live: false, status: 'PLANNED',  msg: 'Planned marketplace' },
+] as const;
+
+function MarketplaceSnapshotCards({
+  invSummary,
+  lastPolledAt,
+  mpLatestRun,
+}: {
+  invSummary: any;
+  lastPolledAt?: string;
+  mpLatestRun: Record<string, PollRun | null>;
+}) {
+  return (
+    <div className="space-y-3">
+      {/* Duplication visibility strip */}
+      <div className="flex items-center gap-5 px-1 flex-wrap">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-600">Mirror Rate</span>
+          <span className={`text-sm font-bold tabular-nums ${invSummary?.mirror_rate > 0.15 ? 'text-amber-400' : 'text-gray-300'}`}>
+            {invSummary?.mirror_rate != null
+              ? `${(invSummary.mirror_rate * 100).toFixed(1)}%`
+              : '—'}
+          </span>
+          {invSummary?.mirror_listings != null && (
+            <span className="text-xs text-indigo-400 tabular-nums">
+              ({invSummary.mirror_listings.toLocaleString()} mirrored listings)
+            </span>
+          )}
+        </div>
+        {invSummary?.unique_tickets_available != null && (
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-600">Unique Available</span>
+            <span className="text-sm font-bold text-emerald-400 tabular-nums">
+              {invSummary.unique_tickets_available.toLocaleString()}
+            </span>
+          </div>
+        )}
+        {/* Pairwise overlap: shows which pair of platforms mirrors the most */}
+        <div className="flex items-center gap-1.5 text-[10px] text-gray-700 italic">
+          <span>Pairwise overlap detail</span>
+          <span className="px-1.5 py-0.5 rounded bg-gray-800 text-gray-500 not-italic font-bold text-[9px] uppercase tracking-wider">COMING LATER</span>
+        </div>
+        {lastPolledAt && (
+          <span className="ml-auto text-[10px] text-gray-700">
+            Data as of {fmtRelative(lastPolledAt)} ago
+          </span>
+        )}
+      </div>
+
+      {/* Six cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {SNAPSHOT_MARKETPLACES.map(mp => {
+          if (!mp.live) {
+            return (
+              <div
+                key={mp.slug}
+                className="rounded-xl p-4 border border-white/5"
+                style={{ background: 'rgba(255,255,255,0.015)' }}
+              >
+                <div className="flex items-center gap-1.5 mb-2">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: mp.dot }} />
+                  <span className="text-xs font-bold text-gray-500">{mp.label}</span>
+                </div>
+                <div className="mb-2">
+                  <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-gray-800 text-gray-500">
+                    {mp.status}
+                  </span>
+                </div>
+                <div className="text-[10px] text-gray-600 leading-snug">{mp.msg}</div>
+              </div>
+            );
+          }
+
+          // Live marketplace — source: invSummary.per_marketplace (full DB count, never capped)
+          const invMp      = invSummary?.per_marketplace?.find((m: any) => m.marketplace_slug === mp.slug);
+          const listingCount = invMp?.raw_listings ?? 0;
+          const lowestAsk    = invMp?.normalized_lowest_ask ?? null;
+          const totalRaw     = invSummary?.raw_listings ?? 0;
+          const sharePct     = totalRaw > 0 && listingCount > 0 ? (listingCount / totalRaw * 100) : null;
+          const isLive       = listingCount > 0;
+          const theme        = MP_ACCENT[mp.slug] ?? { accent: 'rgba(255,255,255,0.3)', glow: 'rgba(0,0,0,0)', dot: '#9ca3af' };
+          const run          = mpLatestRun[mp.slug] ?? null;
+
+          return (
+            <div
+              key={mp.slug}
+              className="relative rounded-xl p-4 border border-white/6 transition-colors hover:border-white/10"
+              style={{ background: 'rgba(255,255,255,0.025)', boxShadow: isLive ? `0 0 20px ${theme.glow}` : 'none' }}
+            >
+              {/* Accent top line */}
+              {isLive && (
+                <div className="absolute top-0 left-0 right-0 h-[1.5px] rounded-t-xl" style={{ background: theme.accent }} />
+              )}
+              {/* Header row */}
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: isLive ? mp.dot : '#4B5563' }} />
+                  <span className="text-xs font-bold text-white">{mp.label}</span>
+                </div>
+                <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                  isLive ? 'bg-emerald-900/40 text-emerald-400' : 'bg-gray-800 text-gray-500'
+                }`}>
+                  {isLive ? 'LIVE' : 'EMPTY'}
+                </span>
+              </div>
+              {/* Price */}
+              {lowestAsk != null ? (
+                <div className="mb-2">
+                  <div className="text-xl font-black text-white" style={{ letterSpacing: '-0.02em' }}>{fmt$(lowestAsk)}</div>
+                  <div className="text-[10px] text-gray-600">from / ticket</div>
+                </div>
+              ) : (
+                <div className="text-xl font-black text-gray-700 mb-2">—</div>
+              )}
+              {/* Listings + Gross Tickets + share */}
+              <div className="space-y-0.5">
+                <div className="text-[11px] text-gray-500">
+                  {listingCount > 0
+                    ? <><span className="text-gray-300 font-semibold">{listingCount.toLocaleString()}</span> <span className="text-gray-600">listings</span></>
+                    : <span className="text-gray-600">No data</span>}
+                  {sharePct != null && (
+                    <span className="text-gray-700 ml-1.5">· {sharePct.toFixed(0)}% share</span>
+                  )}
+                </div>
+                {invMp?.raw_tickets != null && invMp.raw_tickets > 0 && (
+                  <div className="text-[10px] text-gray-600">
+                    <span className="text-gray-500 tabular-nums">{invMp.raw_tickets.toLocaleString()}</span> gross tickets
+                  </div>
+                )}
+              </div>
+              {/* Freshness */}
+              {run?.completed_at ? (
+                <div className="text-[10px] text-gray-700 mt-1.5 border-t border-white/5 pt-1.5">
+                  {fmtRelative(run.completed_at)} ago
+                </div>
+              ) : !run && isLive ? (
+                <div className="text-[10px] text-gray-700 mt-1.5 border-t border-white/5 pt-1.5 italic">Poll pending</div>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function EventDetailPage() {
@@ -1176,8 +1582,48 @@ export default function EventDetailPage() {
   const [inventoryMovement, setInventoryMovement] = useState<any>(null);
   const [sectionLiquidity, setSectionLiquidity] = useState<any>(null);
   const [canonicalHistory, setCanonicalHistory] = useState<any[]>([]);
+  const [invSummary, setInvSummary] = useState<any>(null);
+  const [baseline, setBaseline] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [pollLoading, setPollLoading] = useState(false);
+
+  // ── My Event / Follow state (localStorage) ─────────────────────────────────
+  const [isMyEvent,   setIsMyEvent]   = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+
+  useEffect(() => {
+    if (!eventId) return;
+    try {
+      const me = new Set(JSON.parse(localStorage.getItem('my_events') ?? '[]'));
+      setIsMyEvent(me.has(eventId));
+      const fw = new Set(JSON.parse(localStorage.getItem('followed_events') ?? '[]'));
+      setIsFollowing(fw.has(eventId));
+    } catch {}
+  }, [eventId]);
+
+  const toggleMyEvent = useCallback(() => {
+    setIsMyEvent(prev => {
+      const next = !prev;
+      try {
+        const s = new Set<number>(JSON.parse(localStorage.getItem('my_events') ?? '[]'));
+        if (next) s.add(eventId); else s.delete(eventId);
+        localStorage.setItem('my_events', JSON.stringify([...s]));
+      } catch {}
+      return next;
+    });
+  }, [eventId]);
+
+  const toggleFollow = useCallback(() => {
+    setIsFollowing(prev => {
+      const next = !prev;
+      try {
+        const s = new Set<number>(JSON.parse(localStorage.getItem('followed_events') ?? '[]'));
+        if (next) s.add(eventId); else s.delete(eventId);
+        localStorage.setItem('followed_events', JSON.stringify([...s]));
+      } catch {}
+      return next;
+    });
+  }, [eventId]);
 
   // Listings drilldown expanded state
   const [listingsExpanded, setListingsExpanded] = useState(true);
@@ -1197,7 +1643,7 @@ export default function EventDetailPage() {
     if (event) {
       loadListings(); loadPollRuns(); loadAccounting();
       loadCanonical(); loadMarketIntel(); loadInventoryMovement();
-      loadSectionLiquidity(); loadCanonicalHistory();
+      loadSectionLiquidity(); loadCanonicalHistory(); loadInvSummary(); loadBaseline();
     }
   }, [event]);
 
@@ -1256,6 +1702,16 @@ export default function EventDetailPage() {
     catch (e) { console.error('inventory-movement error:', e); }
   }
 
+  async function loadInvSummary() {
+    try { setInvSummary(await api.analytics.inventorySummary(eventId)); }
+    catch (e) { console.error('inventory-summary error:', e); }
+  }
+
+  async function loadBaseline() {
+    try { setBaseline(await api.analytics.baseline(eventId)); }
+    catch (e) { console.error('baseline error:', e); }
+  }
+
   async function loadSectionLiquidity() {
     try { setSectionLiquidity(await api.analytics.sectionLiquidity(eventId)); }
     catch (e) { console.error('section-liquidity error:', e); }
@@ -1276,7 +1732,7 @@ export default function EventDetailPage() {
       await Promise.all([
         loadEvent(), loadListings(), loadPollRuns(), loadAccounting(),
         loadCanonical(), loadMarketIntel(), loadInventoryMovement(),
-        loadSectionLiquidity(), loadCanonicalHistory(),
+        loadSectionLiquidity(), loadCanonicalHistory(), loadInvSummary(), loadBaseline(),
       ]);
     } finally {
       setPollLoading(false);
@@ -1301,40 +1757,79 @@ export default function EventDetailPage() {
 
   if (!event) {
     return (
-      <div className="text-center py-16">
-        <p className="text-gray-400 mb-4">Event not found</p>
-        <button onClick={() => router.back()} className="text-red-400 hover:text-red-300">Go back</button>
+      <div className="flex flex-col items-center justify-center py-24 gap-4">
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
+          style={{ background: 'rgba(229,9,20,0.07)', border: '1px solid rgba(229,9,20,0.15)' }}>
+          <span style={{ fontSize: 28, opacity: 0.4 }}>?</span>
+        </div>
+        <div className="text-center">
+          <p className="text-gray-300 font-semibold text-base">Event not found</p>
+          <p className="text-gray-600 text-sm mt-1">This event may have been removed or the ID is invalid.</p>
+        </div>
+        <button onClick={() => router.back()} className="text-red-400 hover:text-red-300 text-sm">← Go back</button>
       </div>
     );
   }
 
   // ── Derived values ──────────────────────────────────────────────────────────
 
-  // Per-marketplace latest poll run
+  // Per-marketplace latest poll run.
+  // Match runs to marketplaces using accounting active_rows counts as a heuristic,
+  // then fall back to assigning successful runs in order to unmatched marketplaces.
   const latestByTracked = new Map<number, PollRun>();
   for (const run of pollRuns) {
     if (!latestByTracked.has(run.tracked_event_id)) latestByTracked.set(run.tracked_event_id, run);
   }
-  const mpLatestRun: Record<string, PollRun | null> = { stubhub: null, tickpick: null, gametime: null };
-  for (const [, run] of latestByTracked.entries()) {
-    const msg = run.error_message || '';
-    if (msg.startsWith('stubhub:'))       mpLatestRun.stubhub  = mpLatestRun.stubhub  ?? run;
-    else if (msg.startsWith('tickpick:')) mpLatestRun.tickpick = mpLatestRun.tickpick ?? run;
-    else if (msg.startsWith('gametime:')) mpLatestRun.gametime = mpLatestRun.gametime ?? run;
-    else if (run.status === 'success' || run.status === 'no_data') {
-      const mpCounts: Record<string, number> = {};
-      for (const slug of ['stubhub', 'tickpick', 'gametime'])
-        mpCounts[slug] = listings.filter(l => l.marketplace_slug === slug).length;
-      for (const slug of ['tickpick', 'stubhub', 'gametime']) {
-        if (!mpLatestRun[slug] && run.listings_found > 0 && run.listings_found === mpCounts[slug]) {
-          mpLatestRun[slug] = run; break;
-        }
+  const mpLatestRun: Record<string, PollRun | null> = {
+    stubhub: null, tickpick: null, gametime: null, vividseats: null,
+  };
+  // Build per-marketplace listing counts from accounting (full DB counts, not capped)
+  const acctBySlug: Record<string, number> = {};
+  if (accounting) {
+    for (const m of accounting.per_marketplace) {
+      acctBySlug[m.marketplace_slug] = m.active_rows;
+    }
+  }
+  // Try to match each run to a marketplace by its listings_found count
+  const assignedTeIds = new Set<number>();
+  for (const [teId, run] of latestByTracked.entries()) {
+    if (run.status !== 'success' && run.status !== 'no_data') continue;
+    for (const slug of ['stubhub', 'tickpick', 'gametime', 'vividseats'] as const) {
+      if (mpLatestRun[slug]) continue;
+      const expected = acctBySlug[slug];
+      if (expected != null && Math.abs(run.listings_found - expected) <= 5) {
+        mpLatestRun[slug] = run;
+        assignedTeIds.add(teId);
+        break;
       }
     }
   }
+  // For any marketplace still unmatched, assign remaining successful runs in order
+  for (const [teId, run] of latestByTracked.entries()) {
+    if (assignedTeIds.has(teId)) continue;
+    if (run.status !== 'success' && run.status !== 'no_data') continue;
+    for (const slug of ['stubhub', 'tickpick', 'gametime', 'vividseats'] as const) {
+      if (!mpLatestRun[slug]) { mpLatestRun[slug] = run; assignedTeIds.add(teId); break; }
+    }
+  }
 
-  const totalListings = listings.length;
-  const lowestAskRaw = listings.length > 0 ? Math.min(...listings.map(l => l.price_each)) : null;
+  // ── SOURCE OF TRUTH HIERARCHY ────────────────────────────────────────────────
+  // Priority 1 (counts/prices): invSummary.per_marketplace — full DB, never capped
+  // Priority 2 (freshness):     pollRuns / event.last_polled_at
+  // Drilldown only:             listings array — capped at 500 by byEventFiltered, NOT used for summary totals
+  const invPerMp: any[] = invSummary?.per_marketplace ?? [];
+  const _invLowest = invPerMp.length > 0
+    ? Math.min(...invPerMp.map((m: any) => m.normalized_lowest_ask ?? Infinity).filter(isFinite))
+    : Infinity;
+  const heroLowestAsk: number | null = isFinite(_invLowest) ? _invLowest
+    : (listings.length > 0 ? Math.min(...listings.map((l: any) => l.price_each)) : null);
+  const heroTotalListings: number = invSummary?.raw_listings ?? listings.length;
+  const heroUniqueTickets: number | null = invSummary?.unique_tickets_available ?? null;
+  const heroMirrorRate: number | null = invSummary?.mirror_rate ?? null;
+
+  // Legacy aliases — keep for drilldown/canonical panel which legitimately use listings array
+  const totalListings = listings.length;   // drilldown display only — not used in summary hero
+  const lowestAskRaw = heroLowestAsk;      // unified
   const canonicalCount = canonical?.total_canonical_blocks ?? 0;
 
   // Canonical / mirrored key sets for view-mode filtering
@@ -1367,34 +1862,92 @@ export default function EventDetailPage() {
       {/* ── SECTION 1: Executive Hero ───────────────────────────────────────── */}
       <EventHero
         event={event}
-        lowestAsk={lowestAskRaw}
-        totalListings={totalListings}
-        canonicalCount={canonicalCount}
+        lowestAsk={heroLowestAsk}
+        totalListings={heroTotalListings}
+        canonicalCount={heroUniqueTickets ?? canonicalCount}
+        mirrorRate={heroMirrorRate}
         onPoll={triggerPoll}
         pollLoading={pollLoading}
         onBack={() => router.back()}
       />
 
+      {/* ── No-inventory banner (shown when event has zero listings across all markets) */}
+      {invSummary != null && heroTotalListings === 0 && (
+        <div
+          className="mx-4 sm:mx-6 mt-3 rounded-xl px-4 py-3 flex items-center gap-3"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+        >
+          <span className="text-yellow-500/70 text-sm shrink-0">⚠</span>
+          <div className="text-xs text-gray-500">
+            <span className="font-semibold text-gray-400">No current inventory</span>
+            {' — '}
+            {event.is_active === false
+              ? 'Event is inactive. Reactivate to resume tracking.'
+              : event.tracked_events?.length === 0
+                ? 'No marketplaces are being tracked for this event.'
+                : 'No listings found across tracked marketplaces. Refresh to pull latest data.'}
+          </div>
+        </div>
+      )}
+
+      {/* ── Quick actions: My Event + Follow ─────────────────────────────────── */}
+      <div className="flex items-center gap-2 px-1 mt-3 mb-1">
+        <button
+          onClick={toggleMyEvent}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+          style={isMyEvent
+            ? { background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.4)', color: '#F59E0B' }
+            : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#6B7280' }
+          }
+          title={isMyEvent ? "Remove from My Events" : "Mark as My Event"}
+        >
+          <span style={{ fontSize: 11 }}>{isMyEvent ? '★' : '☆'}</span>
+          {isMyEvent ? 'My Event' : 'Mark as Mine'}
+        </button>
+        <button
+          onClick={toggleFollow}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+          style={isFollowing
+            ? { background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.4)', color: '#8B5CF6' }
+            : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#6B7280' }
+          }
+          title={isFollowing ? "Unfollow alerts" : "Follow for price alerts (coming soon)"}
+        >
+          <span style={{ fontSize: 11 }}>{isFollowing ? '🔔' : '🔕'}</span>
+          {isFollowing ? 'Following' : 'Follow'}
+        </button>
+      </div>
+
       <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-10 py-8">
 
-        {/* ── SECTION 2: Market Overview ──────────────────────────────────── */}
+        {/* ── SECTION 2: Marketplace Snapshot ─────────────────────────────── */}
         <section>
-          <div className="flex items-center justify-between mb-3">
-            <div className="section-label">◈ Market Overview</div>
-            {event.last_polled_at && (
-              <span className="text-[10px] text-gray-700">
-                Data as of {fmtRelative(event.last_polled_at)} ago
-              </span>
-            )}
-          </div>
-          <MarketOverviewPanel
-            movement={inventoryMovement}
-            canonical={canonical}
-            listings={listings}
+          <div className="section-label mb-3">⊡ Live Marketplace Inventory</div>
+          <MarketplaceSnapshotCards
+            invSummary={invSummary}
+            lastPolledAt={event.last_polled_at}
+            mpLatestRun={mpLatestRun}
           />
         </section>
 
-        {/* ── SECTION 3: Market Movement ──────────────────────────────────── */}
+        {/* ── SECTION 3a: Historical Snapshot Trends ──────────────────────── */}
+        {baseline?.current && (
+          <section>
+            <div className="section-label mb-3">⟳ Historical Snapshot Trends</div>
+            <MarketBaselineSection baseline={baseline} />
+          </section>
+        )}
+
+        {/* ── SECTION 3b: Market Overview ─────────────────────────────────── */}
+        <section>
+          <div className="section-label mb-3">◈ Live Market Breakdown</div>
+          <MarketOverviewPanel
+            invSummary={invSummary}
+            canonical={canonical}
+          />
+        </section>
+
+        {/* ── SECTION 4: Market Movement / Charts ─────────────────────────── */}
         <section className="space-y-4">
           <div className="section-label mb-1">↗ Market Movement</div>
           <div className="chart-container">
@@ -1403,28 +1956,15 @@ export default function EventDetailPage() {
           <div className="chart-container">
             <InventoryChart eventId={eventId} />
           </div>
-          <SectionPriceBar
-            sections={listings.map((l: any) => ({ display_name: l.section_name, lowest_ask: l.price_each }))}
-          />
+          {/* SectionPriceBar removed — low-value horizontal bar above venue, replaced by listings table */}
+          {/* TODO: Replace generic VenueHeatmap with real SVG venue maps:
+                - preserve hover stats
+                - click section → filter in-app listings
+                - add external marketplace deep links per section
+                Currently showing placeholder heatmap. */}
           {event.venue_slug && (
             <VenueHeatmap venueSlug={event.venue_slug} listings={listings} mode="price" />
           )}
-        </section>
-
-        {/* ── SECTION 4: Marketplace Breakdown ────────────────────────────── */}
-        <section>
-          <div className="section-label mb-3">⊡ Marketplace Breakdown</div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {MARKETPLACES.map(mp => (
-              <PremiumMpCard
-                key={mp.slug}
-                mp={mp}
-                listings={listings}
-                run={mpLatestRun[mp.slug]}
-                movementData={inventoryMovement?.by_marketplace?.[mp.slug] ?? null}
-              />
-            ))}
-          </div>
         </section>
 
         {/* Section divider */}
@@ -1435,7 +1975,7 @@ export default function EventDetailPage() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="section-label">≡ Listings Drilldown</div>
-              <span className="text-xs text-gray-600">{totalListings.toLocaleString()} listings</span>
+              <span className="text-xs text-gray-600">{heroTotalListings.toLocaleString()} listings</span>
             </div>
             <button
               onClick={() => setListingsExpanded(o => !o)}
@@ -1452,7 +1992,7 @@ export default function EventDetailPage() {
                 {/* Row 1: Marketplace */}
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs text-gray-600 w-16 shrink-0 font-medium">Market</span>
-                  {[['', 'All'], ...MARKETPLACES.map(m => [m.slug, m.label])].map(([val, label]) => (
+                  {([['', 'All'], ...MARKETPLACES.map(m => [m.slug, m.label])] as [string,string][]).map(([val, label]) => (
                     <button
                       key={val}
                       onClick={() => setMarketplace(val as string)}
@@ -1551,6 +2091,10 @@ export default function EventDetailPage() {
                 </div>
               </div>
 
+              {/* TODO: Add parking-pass toggle — hide/show listings where is_parking=true
+                    once backend exposes is_parking flag per listing.  Filter is already
+                    applied at ingest; this would let power users see the raw catalog. */}
+
               {/* Listings table */}
               <div className="glass-panel rounded-2xl overflow-hidden">
                 <table className="w-full text-sm">
@@ -1598,7 +2142,22 @@ export default function EventDetailPage() {
                   </tbody>
                 </table>
                 {viewFilteredListings.length === 0 && (
-                  <p className="text-center py-8 text-gray-500 text-sm">No listings match current filters.</p>
+                  <div className="py-10 flex flex-col items-center gap-2">
+                    {heroTotalListings === 0 ? (
+                      <>
+                        <div className="text-gray-600 text-sm font-medium">No inventory yet</div>
+                        <div className="text-gray-700 text-xs text-center max-w-xs">
+                          {event.is_active === false
+                            ? 'This event is inactive. Reactivate to resume polling.'
+                            : invSummary == null
+                              ? 'Inventory data is loading or not yet available.'
+                              : 'No listings found across tracked marketplaces. Try refreshing.'}
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-gray-500 text-sm">No listings match current filters.</p>
+                    )}
+                  </div>
                 )}
                 {viewFilteredListings.length > 200 && (
                   <div className="px-4 py-3 border-t border-white/8 text-xs text-gray-500 text-center">
@@ -1609,6 +2168,48 @@ export default function EventDetailPage() {
             </div>
           )}
         </section>
+
+        {/* ── Phase 1E-F: Normalization Layer ─────────────────────────────── */}
+        {invSummary && (
+          <section className="glass-dark rounded-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Normalization Layer</h2>
+              <span className="text-[10px] text-gray-700">Phase 1E-F · Mirror dedup · All marketplaces</span>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="glass-panel rounded-xl p-4">
+                <div className="text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">Unique Tickets Available</div>
+                <div className="text-2xl font-bold text-emerald-400">{invSummary.unique_tickets_available?.toLocaleString() ?? '—'}</div>
+                <div className="text-xs text-gray-600 mt-0.5">after mirror dedup</div>
+              </div>
+              <div className="glass-panel rounded-xl p-4">
+                <div className="text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">Listings Available</div>
+                <div className="text-2xl font-bold text-white">{invSummary.raw_listings?.toLocaleString() ?? '—'}</div>
+                <div className="text-xs text-gray-600 mt-0.5">{invSummary.exclusive_listings?.toLocaleString()} excl · {invSummary.mirror_listings?.toLocaleString()} mirrors</div>
+              </div>
+              <div className="glass-panel rounded-xl p-4">
+                <div className="text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">Mirror Rate</div>
+                <div className={`text-2xl font-bold ${invSummary.mirror_rate > 0.15 ? 'text-amber-400' : 'text-gray-300'}`}>
+                  {invSummary.mirror_rate != null ? `${(invSummary.mirror_rate * 100).toFixed(1)}%` : '—'}
+                </div>
+                <div className="text-xs text-gray-600 mt-0.5">cross-marketplace</div>
+              </div>
+            </div>
+            {invSummary.per_marketplace?.length > 0 && (
+              <div className="flex flex-wrap gap-4 pt-1 border-t border-white/5">
+                {invSummary.per_marketplace.map((mp: any) => (
+                  <div key={mp.marketplace_slug} className="flex items-center gap-2 text-xs">
+                    <span className="font-bold text-gray-400 uppercase tracking-wide">{mp.marketplace_slug}</span>
+                    <span className="text-gray-600">{mp.raw_listings?.toLocaleString()} listings</span>
+                    {mp.normalized_lowest_ask != null && (
+                      <span className="text-emerald-500 font-mono tabular-nums">${mp.normalized_lowest_ask.toFixed(0)}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
 
         {/* ── Advanced Technical Intelligence (collapsed) ─────────────────── */}
         <AdvancedSection>

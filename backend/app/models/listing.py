@@ -29,6 +29,8 @@ class Listing(Base):
     first_seen_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     last_seen_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     extra: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    mirror_group_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    mirror_confidence: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
     event: Mapped["Event"] = relationship("Event", back_populates="listings")
     marketplace: Mapped["Marketplace"] = relationship("Marketplace", back_populates="listings")

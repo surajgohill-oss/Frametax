@@ -15,6 +15,9 @@ Design notes
 * False-positive guard: section="G" / row="GA" is General Admission floor
   seating, NOT parking.  "GA" is intentionally absent from the row exact-
   match set; only the PRK* row prefix is matched row-only.
+* "VP" in the exact-match row set = Valet Pass abbreviation (TickPick).
+  Confirmed via full-catalog audit: 12/12 VP-row listings across 3951 active
+  TickPick records were parking passes, none were real seat rows.
 * "GA" as a row value is only treated as parking when the section already
   matches a parking keyword (handled automatically because the section check
   fires first and returns True before the row check is ever reached).
@@ -72,6 +75,23 @@ _SEC_KNOWN_ABBREV_RE = re.compile(
 # Parking Structure shorthand: PS-2, PS-3, etc.
 _SEC_PS_RE = re.compile(r"\bPS-\d+\b", re.IGNORECASE)
 
+# Building name sections — "FREEMAN MEDICAL BUILDING", "PARKING STRUCTURE BUILDING B"
+# No legitimate seating section uses "BUILDING" as part of its name.
+# This catches TickPick parking passes listed under nearby building addresses.
+_SEC_BUILDING_RE = re.compile(r"\bBUILDING\b", re.IGNORECASE)
+
+# Entrance sections — "PRAIRIE ENTRANCE", "SOUTH ENTRANCE", "PARKING STRUCTURE ENTRANCE B"
+# No legitimate seating section uses "ENTRANCE" as part of its name.
+# This catches TickPick parking passes listed under venue entrance/gate addresses.
+_SEC_ENTRANCE_RE = re.compile(r"\bENTRANCE\b", re.IGNORECASE)
+
+# Nearby property sections — "HOPE & FLOWER APARTMENTS", "HOTEL FIG", etc.
+# TickPick lists parking/proximity passes under the names of hotels and apartment
+# buildings adjacent to the venue.  No seating section is ever named after a hotel
+# or apartment complex.
+_SEC_APARTMENTS_RE = re.compile(r"\bAPARTMENTS?\b", re.IGNORECASE)
+_SEC_HOTEL_RE      = re.compile(r"\bHOTEL\b",       re.IGNORECASE)
+
 # Distance patterns that appear in TickPick parking-lot section names:
 #   "0.47 MI AWAY", "0.6 MI FROM VENUE", "6 MINUTE WALK", "14 MIN WALK"
 _SEC_DISTANCE_RE = re.compile(
@@ -109,6 +129,10 @@ _SECTION_PATTERNS: tuple[re.Pattern, ...] = (
     _SEC_PS_RE,
     _SEC_DISTANCE_RE,
     _SEC_STREET_ADDR_RE,
+    _SEC_BUILDING_RE,
+    _SEC_ENTRANCE_RE,
+    _SEC_APARTMENTS_RE,
+    _SEC_HOTEL_RE,
 )
 
 # ── Tier 2: row keyword search ────────────────────────────────────────────────
@@ -129,6 +153,8 @@ _PARKING_ROW_EXACT: frozenset[str] = frozenset(
         "prk3",
         "lot",
         "valet",
+        "vp",   # Valet Pass abbreviation used by TickPick (confirmed via audit: 12/12 VP-row
+                # listings across 3951 TickPick records are parking, never a real row letter)
     }
 )
 

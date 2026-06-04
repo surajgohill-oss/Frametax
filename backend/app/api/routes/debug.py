@@ -47,6 +47,50 @@ async def clear_memory(marketplace: str = Query(...), db: AsyncSession = Depends
     await db.commit()
 
 
+@router.get("/vivid-search")
+async def vivid_search_probe(date: str, q: Optional[str] = None, pages: int = 2):
+    """
+    Probe the Vivid Seats /productions API from Railway server.
+    Returns raw items so we can verify response structure + event presence.
+    date=YYYY-MM-DD, q=optional title filter, pages=how many to scan
+    """
+    import httpx
+    _VS_API_BASE = "https://www.vividseats.com/hermes/api/v1"
+    headers = {
+        "Accept": "application/json",
+        "User-Agent": "VividSeats-iOS/8.0 (iPhone; iOS 16.0; Scale/3.00)",
+    }
+    results = []
+    raw_pages = []
+    async with httpx.AsyncClient(timeout=15.0, follow_redirects=True, headers=headers) as client:
+        for page in range(1, pages + 1):
+            try:
+                resp = await client.get(
+                    f"{_VS_API_BASE}/productions",
+                    params={"startDate": date, "endDate": date, "pageSize": "50", "pageNumber": str(page)},
+                )
+                ct = resp.headers.get("content-type", "")
+                if "json" not in ct:
+                    raw_pages.append({"page": page, "status": resp.status_code, "error": "non-json", "preview": resp.text[:200]})
+                    break
+                data = resp.json()
+                top_keys = list(data.keys())[:10]
+                items = data.get("items") or data.get("productions") or (data if isinstance(data, list) else [])
+                raw_pages.append({"page": page, "status": resp.status_code, "top_keys": top_keys, "item_count": len(items)})
+                for item in items:
+                    item_date = (item.get("localDate") or "")[:10]
+                    name = item.get("name", "")
+                    if q and q.lower() not in name.lower():
+                        continue
+                    results.append({"id": item.get("id"), "name": name, "localDate": item_date, "venue": item.get("venue", {}).get("name", "") if isinstance(item.get("venue"), dict) else str(item.get("venue", ""))})
+                if len(items) < 50:
+                    break
+            except Exception as e:
+                raw_pages.append({"page": page, "error": str(e)})
+                break
+    return {"date": date, "query": q, "pages_fetched": raw_pages, "matches": results}
+
+
 @router.post("/test-collect")
 async def test_collect(marketplace: str, event_id: str = "", background_tasks: BackgroundTasks = None, url: Optional[str] = None):
     async def _run():

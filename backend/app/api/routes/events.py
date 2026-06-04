@@ -391,3 +391,57 @@ async def patch_tracked_event(te_id: int, body: dict, db: AsyncSession = Depends
     await db.commit()
     await db.refresh(te)
     return {"te_id": te_id, "updated": updated, "external_url": te.external_url, "external_event_id": te.external_event_id}
+
+
+@router.post("/{event_id}/tracked", status_code=201)
+async def add_tracked_event(event_id: int, body: dict, db: AsyncSession = Depends(get_db)):
+    """Add a new tracked_event for an existing event on a given marketplace.
+    Body: { marketplace_slug: str, external_event_id?: str, external_url?: str, poll_interval_minutes?: int }
+    """
+    event = await _get_event(db, event_id)
+    if not event:
+        raise HTTPException(404, "Event not found")
+
+    mp_slug = body.get("marketplace_slug", "").strip()
+    if not mp_slug:
+        raise HTTPException(400, "marketplace_slug required")
+
+    mp_result = await db.execute(select(Marketplace).where(Marketplace.slug == mp_slug))
+    mp = mp_result.scalar_one_or_none()
+    if not mp:
+        raise HTTPException(404, f"Marketplace '{mp_slug}' not found")
+
+    existing = (await db.execute(
+        select(TrackedEvent).where(
+            TrackedEvent.event_id == event_id,
+            TrackedEvent.marketplace_id == mp.id,
+        )
+    )).scalar_one_or_none()
+    if existing:
+        raise HTTPException(409, f"TrackedEvent for {mp_slug} already exists (te_id={existing.id})")
+
+    ext_url = (body.get("external_url") or "").strip() or None
+    ext_id  = (body.get("external_event_id") or "").strip() or None
+    if not ext_id and ext_url:
+        ext_id = _extract_external_id_from_url(mp_slug, ext_url)
+
+    poll_interval = int(body.get("poll_interval_minutes", 60))
+    te = TrackedEvent(
+        event_id=event_id,
+        marketplace_id=mp.id,
+        external_url=ext_url,
+        external_event_id=ext_id,
+        poll_interval_minutes=poll_interval,
+        is_active=True,
+    )
+    db.add(te)
+    await db.commit()
+    await db.refresh(te)
+    return {
+        "te_id": te.id,
+        "event_id": event_id,
+        "marketplace_slug": mp_slug,
+        "external_event_id": te.external_event_id,
+        "external_url": te.external_url,
+        "poll_interval_minutes": te.poll_interval_minutes,
+    }

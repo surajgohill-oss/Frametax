@@ -117,12 +117,20 @@ class VividSeatsCollector(BaseCollector):
 
         date_str = event_date.strftime("%Y-%m-%d")
         title_lower = title.lower()
+        # Build keyword set — all words > 3 chars from title (strips punctuation)
+        import re as _re
+        kw_set = {w for w in _re.split(r'\W+', title_lower) if len(w) > 3}
 
         try:
-            for page in range(1, 11):
+            for page in range(1, 21):  # up to 20 pages × 50 = 1000 items
                 resp = await self._client().get(
                     f"{_VS_API_BASE}/productions",
-                    params={"startDate": date_str, "pageSize": "25", "pageNumber": str(page)},
+                    params={
+                        "startDate":  date_str,
+                        "endDate":    date_str,   # CRITICAL: without endDate, API returns multi-day
+                        "pageSize":   "50",       # max page size; 25 only gives 250 items total
+                        "pageNumber": str(page),
+                    },
                 )
                 resp.raise_for_status()
                 data = resp.json()
@@ -134,14 +142,20 @@ class VividSeatsCollector(BaseCollector):
                     if item_date != date_str:
                         continue
                     name = (item.get("name") or "").lower()
-                    if any(word in name for word in title_lower.split() if len(word) > 3):
+                    name_words = set(_re.split(r'\W+', name))
+                    if kw_set & name_words:  # any keyword overlap
                         vs_id = str(item.get("id") or "")
                         if vs_id:
                             logger.info(
-                                "VS resolver: matched '%s' → '%s' id=%s",
+                                "VS resolver: matched '%s' → '%s' id=%s (kw=%s)",
                                 title, item.get("name"), vs_id,
+                                kw_set & name_words,
                             )
                             return vs_id
+                # Stop early if we've passed the last page
+                total_pages = data.get("numberOfPages") or 9999
+                if page >= total_pages:
+                    break
         except Exception as exc:
             logger.warning("VS resolver: HTTP failure — %s", exc)
             return None

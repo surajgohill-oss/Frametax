@@ -1,11 +1,31 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { fmtDate, fmt$ } from "@/lib/utils";
 import { getEntityImage } from "@/lib/entityImages";
 import { EntityLogo } from "@/components/ui/EntityLogo";
-import { Plus, Calendar, TrendingUp, Activity, ChevronRight, Ticket } from "lucide-react";
+import { Plus, Calendar, TrendingUp, Activity, ChevronRight, Ticket, Star, Zap } from "lucide-react";
+
+// ── localStorage helpers ────────────────────────────────────────────────────────
+
+function lsGetSet(key: string): Set<number> {
+  if (typeof window === "undefined") return new Set();
+  try { return new Set(JSON.parse(localStorage.getItem(key) ?? "[]")); }
+  catch { return new Set(); }
+}
+function lsSaveSet(key: string, s: Set<number>) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(key, JSON.stringify([...s]));
+}
+function lsGet(key: string): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(key);
+}
+function lsSet(key: string, val: string | null) {
+  if (typeof window === "undefined") return;
+  if (val === null) localStorage.removeItem(key); else localStorage.setItem(key, val);
+}
 
 // ── Entity helpers ─────────────────────────────────────────────────────────────
 
@@ -166,7 +186,7 @@ function MarketTape({ summary, eventCount, groupCount }: { summary:any; eventCou
 
 // ── Featured Hero ──────────────────────────────────────────────────────────────
 
-function FeaturedHero({ event }: { event: any }) {
+function FeaturedHero({ event, onClearHero }: { event: any; onClearHero?: () => void }) {
   const theme  = getEntityTheme(getEntityName(event.title));
   const price  = event.lowest_ask_stubhub ?? event.marketplace_prices?.tickpick ?? event.marketplace_prices?.gametime;
   const status = getMarketStatus(price);
@@ -232,6 +252,16 @@ function FeaturedHero({ event }: { event: any }) {
         <div className="relative z-10 p-8 sm:p-10 flex flex-col justify-between h-full" style={{ minHeight:340 }}>
           {/* Top row: logo + chips + days */}
           <div className="flex items-start justify-between gap-4">
+            {onClearHero && (
+              <button
+                onClick={(e) => { e.preventDefault(); onClearHero(); }}
+                className="absolute top-3 right-3 z-20 text-[10px] font-bold px-2 py-1 rounded-md opacity-40 hover:opacity-80 transition-opacity"
+                style={{ background: "rgba(0,0,0,0.5)", color: "#fff", border: "1px solid rgba(255,255,255,0.15)" }}
+                title="Remove pinned hero"
+              >
+                ✕ Unpin
+              </button>
+            )}
             <div className="flex items-center gap-3">
               <EntityLogo entity={entity} initial={theme.initial} accent={theme.accent}
                 gradFrom={theme.gradFrom} gradMid={theme.gradMid} size={44} />
@@ -317,7 +347,10 @@ function FeaturedHero({ event }: { event: any }) {
 
 // ── Event Row ──────────────────────────────────────────────────────────────────
 
-function EventRow({ ev, theme }: { ev: any; theme: EntityTheme }) {
+function EventRow({ ev, theme, isMyEvent, onToggleMyEvent }: {
+  ev: any; theme: EntityTheme;
+  isMyEvent?: boolean; onToggleMyEvent?: (id: number) => void;
+}) {
   const price  = ev.lowest_ask_stubhub ?? ev.marketplace_prices?.tickpick ?? ev.marketplace_prices?.gametime;
   const status = getMarketStatus(price);
   const venue  = fmtVenue(ev.venue_slug);
@@ -366,31 +399,75 @@ function EventRow({ ev, theme }: { ev: any; theme: EntityTheme }) {
         </div>
       </div>
 
-      {/* Price */}
-      <div className="w-18 shrink-0 text-right pl-3">
+      {/* Price — show lowest ask + per-market mini prices */}
+      <div className="w-28 shrink-0 text-right pl-3">
         <div
           className="text-[15px] font-bold leading-none"
-          style={{ letterSpacing:"-0.03em", color: isValue ? "#22c55e" : "#fff" }}
+          style={{ letterSpacing:"-0.03em", color: price == null ? "#374151" : isValue ? "#22c55e" : "#fff" }}
         >
           {price != null ? fmt$(price) : "—"}
         </div>
+        {/* Per-marketplace mini prices */}
+        {(() => {
+          const mp = ev.marketplace_prices || ev.all_marketplace_prices || {};
+          const dots = [
+            { slug: 'stubhub', color: '#818CF8' },
+            { slug: 'tickpick', color: '#4ADE80' },
+            { slug: 'gametime', color: '#FB923C' },
+            { slug: 'vividseats', color: '#F472B6' },
+          ].filter(d => mp[d.slug] != null);
+          if (dots.length < 2) return null;
+          return (
+            <div className="flex items-center gap-1.5 justify-end mt-0.5">
+              {dots.map(d => (
+                <span key={d.slug} className="text-[9px] tabular-nums font-mono" style={{ color: d.color, opacity: 0.7 }}>
+                  {fmt$(mp[d.slug])}
+                </span>
+              ))}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Badge */}
       <div className="w-16 shrink-0 text-right pl-2">
-        {price != null && (
+        {price != null ? (
           <span className={`text-[9px] font-bold px-2 py-1 rounded-md ${status.cssClass}`}>
             {status.label}
           </span>
+        ) : (
+          <span className="text-[9px] text-slate-700 px-1">No data</span>
         )}
       </div>
+
+      {/* My Event star toggle */}
+      {onToggleMyEvent && (
+        <button
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleMyEvent(ev.id); }}
+          className="w-7 shrink-0 flex items-center justify-center ml-1 opacity-30 hover:opacity-90 transition-opacity"
+          title={isMyEvent ? "Remove from My Events" : "Mark as My Event"}
+        >
+          <Star
+            size={12}
+            fill={isMyEvent ? "#F59E0B" : "none"}
+            stroke={isMyEvent ? "#F59E0B" : "currentColor"}
+            className="text-slate-500"
+          />
+        </button>
+      )}
     </Link>
   );
 }
 
 // ── Entity Block ───────────────────────────────────────────────────────────────
 
-function EntityBlock({ group }: { group: EventGroup }) {
+function EntityBlock({ group, myEvents, onToggleMyEvent, heroEventId, onSetHero }: {
+  group: EventGroup;
+  myEvents: Set<number>;
+  onToggleMyEvent: (id: number) => void;
+  heroEventId: number | null;
+  onSetHero: (id: number) => void;
+}) {
   const { entity, theme, events, minPrice, totalListings } = group;
   const status    = getMarketStatus(minPrice);
   const nextEvent = events[0];
@@ -454,12 +531,55 @@ function EntityBlock({ group }: { group: EventGroup }) {
           </div>
         </div>
 
-        {/* Status pill */}
-        {minPrice != null && (
-          <span className={`text-[10px] font-bold px-2.5 py-1.5 rounded-lg shrink-0 ${status.cssClass}`}>
-            {status.emoji} {status.label}
-          </span>
-        )}
+        {/* Status pill + marketplace dots + Make Hero */}
+        <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+          {/* Marketplace availability dots */}
+          <div className="flex items-center gap-1 mr-1" title="Live marketplaces">
+            {[
+              { slug: 'stubhub',    dot: '#818CF8', label: 'SH' },
+              { slug: 'tickpick',   dot: '#4ADE80', label: 'TP' },
+              { slug: 'gametime',   dot: '#FB923C', label: 'GT' },
+              { slug: 'vividseats', dot: '#F472B6', label: 'VS' },
+            ].map(({ slug, dot, label }) => {
+              const hasData = events.some((ev: any) => {
+                const prices = ev.marketplace_prices || ev.all_marketplace_prices || {};
+                return prices[slug] != null;
+              });
+              return (
+                <span
+                  key={slug}
+                  className="inline-block w-1.5 h-1.5 rounded-full"
+                  style={{ background: hasData ? dot : 'rgba(255,255,255,0.1)', opacity: hasData ? 0.9 : 0.4 }}
+                  title={`${label}: ${hasData ? 'live' : 'no data'}`}
+                />
+              );
+            })}
+          </div>
+          {minPrice != null && (
+            <span className={`text-[10px] font-bold px-2.5 py-1.5 rounded-lg ${status.cssClass}`}>
+              {status.emoji} {status.label}
+            </span>
+          )}
+          {minPrice == null && (
+            <span className="text-[9px] font-medium px-2 py-1 rounded-lg text-gray-600"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              No inventory
+            </span>
+          )}
+          {/* Make Hero: pin next event from this group as the featured hero */}
+          <button
+            onClick={() => onSetHero(nextEvent.id)}
+            title={heroEventId === nextEvent.id ? "Pinned as hero" : "Pin as featured hero"}
+            className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-all"
+            style={heroEventId === nextEvent.id
+              ? { background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.4)", color: "#F59E0B" }
+              : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", color: "#4B5563" }
+            }
+          >
+            <Zap size={9} fill={heroEventId === nextEvent.id ? "#F59E0B" : "none"}/>
+            {heroEventId === nextEvent.id ? "Hero" : "Pin"}
+          </button>
+        </div>
       </div>
 
       {/* Event rows — the table */}
@@ -475,11 +595,13 @@ function EntityBlock({ group }: { group: EventGroup }) {
           <div className="w-18 shrink-0 text-right pl-3 text-[9px] text-slate-800 uppercase tracking-wider font-bold">Price</div>
           <div className="w-16 shrink-0" />
         </div>
-        {events.map((ev, i) => (
+        {events.map((ev) => (
           <EventRow
             key={ev.id}
             ev={ev}
             theme={theme}
+            isMyEvent={myEvents.has(ev.id)}
+            onToggleMyEvent={onToggleMyEvent}
           />
         ))}
       </div>
@@ -527,6 +649,38 @@ export default function DashboardPage() {
   const [loading,    setLoading]    = useState(true);
   const [showPast,   setShowPast]   = useState(false);
 
+  // ── localStorage: My Events & Hero ─────────────────────────────────────────
+  const [myEvents,    setMyEvents]    = useState<Set<number>>(new Set());
+  const [heroEventId, setHeroEventId] = useState<number | null>(null);
+
+  useEffect(() => {
+    setMyEvents(lsGetSet("my_events"));
+    const h = lsGet("hero_event_id");
+    setHeroEventId(h ? parseInt(h, 10) : null);
+  }, []);
+
+  const toggleMyEvent = useCallback((id: number) => {
+    setMyEvents(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      lsSaveSet("my_events", next);
+      return next;
+    });
+  }, []);
+
+  const setHero = useCallback((id: number) => {
+    setHeroEventId(prev => {
+      const next = prev === id ? null : id;
+      lsSet("hero_event_id", next !== null ? String(next) : null);
+      return next;
+    });
+  }, []);
+
+  const clearHero = useCallback(() => {
+    setHeroEventId(null);
+    lsSet("hero_event_id", null);
+  }, []);
+
   useEffect(() => {
     Promise.all([
       api.events.list(),
@@ -550,9 +704,13 @@ export default function DashboardPage() {
 
   const groups = groupEvents(activeEvents);
 
-  const featuredEvent = activeEvents
+  const autoFeaturedEvent = activeEvents
     .filter((e:any)=> { const d=daysUntil(e.event_date); const p=e.lowest_ask_stubhub??e.marketplace_prices?.tickpick??e.marketplace_prices?.gametime; return d>0 && p!=null; })
     .sort((a:any,b:any)=> new Date(a.event_date).getTime()-new Date(b.event_date).getTime())[0] ?? null;
+
+  const featuredEvent = heroEventId
+    ? (activeEvents.find((e:any) => e.id === heroEventId) ?? autoFeaturedEvent)
+    : autoFeaturedEvent;
 
   if (loading) {
     return (
@@ -612,9 +770,14 @@ export default function DashboardPage() {
         <div className="fade-up-2">
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp size={13} style={{ color:"#E50914" }}/>
-            <span className="section-label">Featured Event</span>
+            <span className="section-label">
+              {heroEventId && featuredEvent?.id === heroEventId ? "Pinned Hero" : "Featured Event"}
+            </span>
           </div>
-          <FeaturedHero event={featuredEvent}/>
+          <FeaturedHero
+            event={featuredEvent}
+            onClearHero={heroEventId && featuredEvent?.id === heroEventId ? clearHero : undefined}
+          />
         </div>
       )}
 
@@ -640,13 +803,29 @@ export default function DashboardPage() {
       {/* ── Entity Groups — Concept C entity blocks ──────────────────────────── */}
       {groups.length > 0 && (
         <div className="fade-up-3">
-          <div className="flex items-center gap-2 mb-5">
-            <Activity size={13} style={{ color:"#E50914" }}/>
-            <span className="section-label">Your Watchlist</span>
+          <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <Activity size={13} style={{ color:"#E50914" }}/>
+              <span className="section-label">Your Watchlist</span>
+              <span className="text-[10px] text-slate-700 font-semibold">{activeEvents.length} events · {groups.length} entities</span>
+            </div>
+            {myEvents.size > 0 && (
+              <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                <Star size={10} fill="#F59E0B" stroke="#F59E0B"/>
+                <span>{myEvents.size} marked as My Event</span>
+              </div>
+            )}
           </div>
           <div className="space-y-4">
             {groups.map(group => (
-              <EntityBlock key={group.entity} group={group}/>
+              <EntityBlock
+                key={group.entity}
+                group={group}
+                myEvents={myEvents}
+                onToggleMyEvent={toggleMyEvent}
+                heroEventId={heroEventId}
+                onSetHero={setHero}
+              />
             ))}
           </div>
         </div>
