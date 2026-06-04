@@ -600,3 +600,21 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
             result.event_id, result.marketplace_slug,
             len(clean_listings), new_count, disappeared, parking_dropped,
         )
+
+        # ── Phase 3B: canonical snapshot (runs after listings are committed) ──
+        # Writes one row to canonical_inventory_snapshots per successful poll.
+        # Failure here is non-fatal — poll result is already committed above.
+        try:
+            from app.services.canonical_inventory import snapshot_canonical_inventory
+            snap_id = await snapshot_canonical_inventory(
+                event_id=result.event_id,
+                db=db,
+                poll_run_id=poll_run_id,
+            )
+            if snap_id:
+                logger.debug("CANONICAL: event=%d snap_id=%d", result.event_id, snap_id)
+        except Exception as canon_exc:
+            logger.warning(
+                "CANONICAL: snapshot failed event=%d — %s (poll result unaffected)",
+                result.event_id, canon_exc,
+            )
