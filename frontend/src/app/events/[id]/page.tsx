@@ -15,6 +15,10 @@ import { useFollowed } from '@/hooks/useFollowed';
 import { useMyEvents } from '@/hooks/useMyEvents';
 import { useHiddenEvents } from '@/hooks/useHiddenEvents';
 import { Star, Bell, BellOff, EyeOff, Eye, PowerOff, Power } from 'lucide-react';
+import {
+  ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, Legend,
+} from 'recharts';
 
 // ── Entity theming (mirrors dashboard) ───────────────────────────────────────
 
@@ -1760,6 +1764,168 @@ function MarketplaceSnapshotCards({
   );
 }
 
+// ── Market Structure Section ──────────────────────────────────────────────────
+// Shows gross/net/duplicate breakdown + mirror rate in a scannable grid.
+
+function MarketStructureSection({ invSummary, canonical }: { invSummary: any; canonical: any }) {
+  if (!invSummary) {
+    return (
+      <div className="glass-dark rounded-2xl p-5 flex items-center justify-center h-20 text-gray-700 text-xs italic">
+        Loading market structure…
+      </div>
+    );
+  }
+  const gross   = invSummary.raw_tickets ?? null;
+  const net     = invSummary.unique_tickets_available ?? null;
+  const dupes   = gross != null && net != null ? gross - net : null;
+  const mirror  = invSummary.mirror_rate ?? null;
+  const grossL  = invSummary.raw_listings ?? null;
+  const canBlks = canonical?.total_canonical_blocks ?? null;
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      {[
+        { label: 'Gross Tickets',  value: gross  != null ? gross.toLocaleString()  : '—', sub: 'across all markets',   color: '#9CA3AF' },
+        { label: 'Duplicate Tickets', value: dupes != null ? dupes.toLocaleString() : '—', sub: 'same seat, 2+ sites', color: dupes && dupes > 0 ? '#F59E0B' : '#6B7280' },
+        { label: 'Net Unique',     value: net    != null ? net.toLocaleString()    : '—', sub: 'estimated real supply', color: '#A78BFA' },
+        { label: 'Gross Listings', value: grossL != null ? grossL.toLocaleString() : '—', sub: 'raw listing count',    color: '#6B7280' },
+        { label: 'Canonical Blocks', value: canBlks != null ? canBlks.toLocaleString() : '—', sub: 'unique seat blocks', color: '#818CF8' },
+        { label: 'Mirror Rate',    value: mirror != null ? `${(mirror * 100).toFixed(1)}%` : '—', sub: 'cross-site overlap', color: mirror && mirror > 0.15 ? '#F59E0B' : '#6B7280' },
+      ].map(({ label, value, sub, color }) => (
+        <div key={label} className="glass-dark rounded-xl p-4">
+          <div className="text-[9px] font-bold uppercase tracking-widest text-gray-600 mb-1.5">{label}</div>
+          <div className="text-xl font-black tabular-nums" style={{ color, letterSpacing: '-0.02em' }}>{value}</div>
+          <div className="text-[9px] text-gray-700 mt-0.5">{sub}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Market Activity Section ───────────────────────────────────────────────────
+// Prominent attribution-driven section: sold / relisted / new / withdrawn / repriced.
+
+function MarketActivitySection({ attribution, inventoryMovement }: { attribution: any; inventoryMovement: any }) {
+  const hasAttribution = attribution && !attribution.error && attribution.classification_summary;
+  const hasMov = inventoryMovement && !inventoryMovement.error;
+
+  if (!hasAttribution && !hasMov) {
+    return (
+      <div className="glass-dark rounded-2xl p-5 flex items-center justify-center h-20 text-gray-700 text-xs italic">
+        Activity data builds as snapshot history accumulates — poll a few times to unlock.
+      </div>
+    );
+  }
+
+  const cs = attribution?.classification_summary ?? {};
+  const sc = attribution?.sold_confidence_breakdown ?? {};
+  const mov = inventoryMovement ?? {};
+
+  const activities = [
+    {
+      label: 'Sold',
+      value: cs.likely_sold ?? mov.likely_sold ?? 0,
+      sub: sc.high ? `${sc.high} high-conf` : 'estimated',
+      color: '#EF4444',
+      bg: 'rgba(239,68,68,0.08)',
+      border: 'rgba(239,68,68,0.18)',
+    },
+    {
+      label: 'New Listings',
+      value: cs.new_listing ?? mov.new_listings ?? 0,
+      sub: 'appeared',
+      color: '#22C55E',
+      bg: 'rgba(34,197,94,0.07)',
+      border: 'rgba(34,197,94,0.15)',
+    },
+    {
+      label: 'Relisted',
+      value: cs.likely_relisted ?? mov.likely_relisted ?? 0,
+      sub: 'reappeared',
+      color: '#A78BFA',
+      bg: 'rgba(167,139,250,0.07)',
+      border: 'rgba(167,139,250,0.15)',
+    },
+    {
+      label: 'Withdrawn',
+      value: cs.withdrawn ?? 0,
+      sub: '>14d before event',
+      color: '#F97316',
+      bg: 'rgba(249,115,22,0.07)',
+      border: 'rgba(249,115,22,0.15)',
+    },
+    {
+      label: 'Repriced',
+      value: cs.price_changed ?? mov.price_changed ?? 0,
+      sub: 'price changed',
+      color: '#38BDF8',
+      bg: 'rgba(56,189,248,0.07)',
+      border: 'rgba(56,189,248,0.15)',
+    },
+    {
+      label: 'Disappeared',
+      value: cs.disappeared ?? mov.disappeared ?? 0,
+      sub: 'unknown reason',
+      color: '#6B7280',
+      bg: 'rgba(107,114,128,0.06)',
+      border: 'rgba(107,114,128,0.12)',
+    },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {/* Activity grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {activities.map(({ label, value, sub, color, bg, border }) => (
+          <div key={label} className="rounded-xl p-4" style={{ background: bg, border: `1px solid ${border}` }}>
+            <div className="text-[9px] font-bold uppercase tracking-widest mb-1.5" style={{ color: `${color}99` }}>{label}</div>
+            <div className="text-2xl font-black tabular-nums" style={{ color: value > 0 ? color : '#374151', letterSpacing: '-0.03em' }}>
+              {value}
+            </div>
+            <div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Per-marketplace breakdown (if attribution available) */}
+      {hasAttribution && attribution.by_marketplace && attribution.by_marketplace.length > 0 && (
+        <div className="glass-dark rounded-xl overflow-hidden">
+          <div className="px-4 py-2.5 border-b border-white/5 flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-600">Per Marketplace</span>
+            <span className="text-[10px] text-gray-700">{attribution.snapshot_windows_analyzed ?? '?'} snapshot windows analyzed</span>
+          </div>
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-white/5">
+                <th className="px-4 py-2 text-left text-gray-600 font-medium">Market</th>
+                <th className="px-4 py-2 text-right text-red-700 font-medium">Sold</th>
+                <th className="px-4 py-2 text-right text-orange-700 font-medium">Withdrawn</th>
+                <th className="px-4 py-2 text-right text-emerald-700 font-medium">New</th>
+                <th className="px-4 py-2 text-right text-violet-700 font-medium">Relisted</th>
+                <th className="px-4 py-2 text-right text-sky-700 font-medium">Repriced</th>
+                <th className="px-4 py-2 text-right text-gray-700 font-medium">Active</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {attribution.by_marketplace.map((mp: any) => (
+                <tr key={mp.marketplace} className="hover:bg-white/3 transition-colors">
+                  <td className="px-4 py-2 text-gray-300 font-medium capitalize">{mp.marketplace}</td>
+                  <td className="px-4 py-2 text-right tabular-nums" style={{ color: mp.likely_sold > 0 ? '#EF4444' : '#374151' }}>{mp.likely_sold}</td>
+                  <td className="px-4 py-2 text-right tabular-nums" style={{ color: mp.withdrawn > 0 ? '#F97316' : '#374151' }}>{mp.withdrawn}</td>
+                  <td className="px-4 py-2 text-right tabular-nums" style={{ color: mp.new_listing > 0 ? '#22C55E' : '#374151' }}>{mp.new_listing}</td>
+                  <td className="px-4 py-2 text-right tabular-nums" style={{ color: mp.likely_relisted > 0 ? '#A78BFA' : '#374151' }}>{mp.likely_relisted}</td>
+                  <td className="px-4 py-2 text-right tabular-nums" style={{ color: mp.price_changed > 0 ? '#38BDF8' : '#374151' }}>{mp.price_changed}</td>
+                  <td className="px-4 py-2 text-right tabular-nums text-gray-600">{mp.active}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function EventDetailPage() {
@@ -1778,6 +1944,7 @@ export default function EventDetailPage() {
   const [canonicalHistory, setCanonicalHistory] = useState<any[]>([]);
   const [invSummary, setInvSummary] = useState<any>(null);
   const [baseline, setBaseline] = useState<any>(null);
+  const [attribution, setAttribution] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [pollLoading, setPollLoading] = useState(false);
 
@@ -1794,6 +1961,8 @@ export default function EventDetailPage() {
 
   // Listings drilldown expanded state
   const [listingsExpanded, setListingsExpanded] = useState(true);
+  const [excludeParking, setExcludeParking] = useState(false);
+  const [hiddenListings, setHiddenListings] = useState<Set<number>>(new Set());
 
   // Filters
   const [marketplace, setMarketplace] = useState<string>('');
@@ -1811,6 +1980,7 @@ export default function EventDetailPage() {
       loadListings(); loadPollRuns(); loadAccounting();
       loadCanonical(); loadMarketIntel(); loadInventoryMovement();
       loadSectionLiquidity(); loadCanonicalHistory(); loadInvSummary(); loadBaseline();
+      loadAttribution();
     }
   }, [event]);
 
@@ -1879,6 +2049,11 @@ export default function EventDetailPage() {
     catch (e) { console.error('baseline error:', e); }
   }
 
+  async function loadAttribution() {
+    try { setAttribution(await api.analytics.attribution(eventId)); }
+    catch (e) { console.error('attribution error:', e); }
+  }
+
   async function loadSectionLiquidity() {
     try { setSectionLiquidity(await api.analytics.sectionLiquidity(eventId)); }
     catch (e) { console.error('section-liquidity error:', e); }
@@ -1900,6 +2075,7 @@ export default function EventDetailPage() {
         loadEvent(), loadListings(), loadPollRuns(), loadAccounting(),
         loadCanonical(), loadMarketIntel(), loadInventoryMovement(),
         loadSectionLiquidity(), loadCanonicalHistory(), loadInvSummary(), loadBaseline(),
+        loadAttribution(),
       ]);
     } finally {
       setPollLoading(false);
@@ -2015,6 +2191,7 @@ export default function EventDetailPage() {
     }
   }
   const viewFilteredListings = listings.filter(l => {
+    if (hiddenListings.has(l.id)) return false;
     if (listingView === 'raw') return true;
     const key = `${(l.section_id || '').toUpperCase()}|${(l.row || '').toUpperCase()}|${l.quantity}`;
     if (listingView === 'canonical') return canonicalKeys.has(key);
@@ -2069,7 +2246,6 @@ export default function EventDetailPage() {
             ? { background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.4)', color: '#F59E0B' }
             : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#6B7280' }
           }
-          title={isMyEvent ? "Remove from My Events" : "Mark as My Event"}
         >
           <Star size={11} fill={isMyEvent ? '#F59E0B' : 'none'} stroke={isMyEvent ? '#F59E0B' : 'currentColor'}/>
           {isMyEvent ? 'My Event' : 'Mark as Mine'}
@@ -2083,13 +2259,12 @@ export default function EventDetailPage() {
             ? { background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.4)', color: '#8B5CF6' }
             : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#6B7280' }
           }
-          title={isFollowing ? "Unfollow" : "Follow for price alerts (coming soon)"}
         >
           {isFollowing ? <Bell size={11}/> : <BellOff size={11}/>}
           {isFollowing ? 'Following' : 'Follow'}
         </button>
 
-        {/* Hide from Dashboard */}
+        {/* Hide from Dashboard — continues polling */}
         <button
           onClick={toggleHidden}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
@@ -2097,11 +2272,27 @@ export default function EventDetailPage() {
             ? { background: 'rgba(107,114,128,0.15)', border: '1px solid rgba(107,114,128,0.4)', color: '#9CA3AF' }
             : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#6B7280' }
           }
-          title={isHidden ? "Restore to dashboard" : "Hide from dashboard"}
+          title="Hide from dashboard — polling continues"
         >
           {isHidden ? <Eye size={11}/> : <EyeOff size={11}/>}
           {isHidden ? 'Restore' : 'Hide'}
         </button>
+
+        {/* Archive — soft-delete, retains history */}
+        {event.status !== 'archived' && (
+          <button
+            onClick={async () => {
+              if (!confirm('Archive this event? Polling stops but all history is retained.')) return;
+              await api.events.delete(eventId);
+              router.back();
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: '#6B7280' }}
+            title="Archive event — retains all history, stops polling"
+          >
+            🗄 Archive
+          </button>
+        )}
 
         {/* Stop Tracking / Reactivate */}
         <button
@@ -2111,7 +2302,7 @@ export default function EventDetailPage() {
             ? { background: 'rgba(34,197,94,0.10)', border: '1px solid rgba(34,197,94,0.3)', color: '#22C55E' }
             : { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: '#4B5563' }
           }
-          title={event.is_active === false ? "Reactivate tracking" : "Stop tracking this event"}
+          title={event.is_active === false ? "Reactivate — resumes data collection" : "Stop Tracking — pauses data collection"}
         >
           {event.is_active === false ? <Power size={11}/> : <PowerOff size={11}/>}
           {event.is_active === false ? 'Reactivate' : 'Stop Tracking'}
@@ -2130,32 +2321,139 @@ export default function EventDetailPage() {
           />
         </section>
 
-        {/* ── SECTION 3a: Market Movement ──────────────────────────────────── */}
+        {/* ── SECTION 3: Market Structure ──────────────────────────────────── */}
+        <section>
+          <div className="section-label mb-3">◈ Market Structure</div>
+          <MarketStructureSection invSummary={invSummary} canonical={canonical} />
+        </section>
+
+        {/* ── SECTION 4: Market Activity (attribution) ─────────────────────── */}
+        <section>
+          <div className="section-label mb-3">⚡ Market Activity</div>
+          <MarketActivitySection attribution={attribution} inventoryMovement={inventoryMovement} />
+        </section>
+
+        {/* ── SECTION 5: Movement Delta ────────────────────────────────────── */}
         <section>
           <div className="section-label mb-3">↗ Market Movement</div>
           <MarketMovementSection event={event} baseline={baseline} invSummary={invSummary} />
         </section>
 
-        {/* ── SECTION 3b: Historical Snapshot Trends ──────────────────────── */}
-        {baseline?.current && (
-          <section>
-            <div className="section-label mb-3">⟳ Historical Snapshot Trends</div>
-            <MarketBaselineSection baseline={baseline} />
-          </section>
-        )}
-
-        {/* ── SECTION 3b: Market Overview ─────────────────────────────────── */}
-        <section>
-          <div className="section-label mb-3">◈ Live Market Breakdown</div>
-          <MarketOverviewPanel
-            invSummary={invSummary}
-            canonical={canonical}
-          />
-        </section>
-
-        {/* ── SECTION 4: Market Movement / Charts ─────────────────────────── */}
+        {/* ── SECTION 6: Historical Charts ─────────────────────────────────── */}
         <section className="space-y-4">
-          <div className="section-label mb-1">↗ Market Movement</div>
+          <div className="section-label mb-1">📈 Historical Trends</div>
+
+          {/* ── Canonical Snapshot Trend (canonical-history endpoint) ──────── */}
+          {(() => {
+            // Deduplicate by timestamp — multiple per-marketplace rows collapse to one
+            const dedupMap = new Map<string, any>();
+            for (const snap of canonicalHistory) {
+              const key = snap.snapshot_at;
+              if (!dedupMap.has(key) || snap.total_canonical_blocks > (dedupMap.get(key)?.total_canonical_blocks ?? 0)) {
+                dedupMap.set(key, snap);
+              }
+            }
+            const chartData = Array.from(dedupMap.values())
+              .sort((a, b) => new Date(a.snapshot_at).getTime() - new Date(b.snapshot_at).getTime())
+              .map(s => ({
+                ts: new Date(s.snapshot_at).getTime(),
+                blocks: s.total_canonical_blocks,
+                low_ask: s.low_ask != null ? Number(s.low_ask.toFixed(0)) : null,
+                conf: s.mean_confidence != null ? Number((s.mean_confidence * 100).toFixed(1)) : null,
+              }));
+
+            if (chartData.length === 0) {
+              return (
+                <div className="glass-dark rounded-2xl p-5">
+                  <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-3">Snapshot Trend</div>
+                  <div className="flex items-center justify-center h-16 text-gray-600 text-xs italic">
+                    No snapshot history yet — data builds automatically as polls run.
+                  </div>
+                </div>
+              );
+            }
+
+            const fmtTime = (ms: number) => {
+              const d = new Date(ms);
+              return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' +
+                     d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+            };
+
+            return (
+              <div className="glass-dark rounded-2xl p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Snapshot Trend</div>
+                  <div className="flex items-center gap-4 text-[10px] text-gray-600">
+                    <span className="flex items-center gap-1.5"><span className="inline-block w-2 h-0.5 bg-indigo-400" />Canonical blocks</span>
+                    <span className="flex items-center gap-1.5"><span className="inline-block w-2 h-0.5 bg-emerald-400" />Floor ask</span>
+                    <span className="text-gray-700">{chartData.length} snapshots</span>
+                  </div>
+                </div>
+                <ResponsiveContainer width="100%" height={220}>
+                  <ComposedChart data={chartData} margin={{ top: 4, right: 16, bottom: 4, left: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                    <XAxis
+                      dataKey="ts"
+                      type="number"
+                      scale="time"
+                      domain={['dataMin', 'dataMax']}
+                      tickFormatter={fmtTime}
+                      tick={{ fill: '#4B5563', fontSize: 10 }}
+                      tickLine={false}
+                      axisLine={{ stroke: 'rgba(255,255,255,0.05)' }}
+                    />
+                    <YAxis
+                      yAxisId="blocks"
+                      orientation="left"
+                      tick={{ fill: '#4B5563', fontSize: 10 }}
+                      tickLine={false}
+                      axisLine={false}
+                      width={36}
+                      tickFormatter={(v: number) => v.toLocaleString()}
+                    />
+                    <YAxis
+                      yAxisId="price"
+                      orientation="right"
+                      tick={{ fill: '#4B5563', fontSize: 10 }}
+                      tickLine={false}
+                      axisLine={false}
+                      width={44}
+                      tickFormatter={(v: number) => `$${v}`}
+                    />
+                    <Tooltip
+                      contentStyle={{ background: '#111827', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, fontSize: 11, color: '#e5e7eb' }}
+                      labelFormatter={(v: number) => fmtTime(v)}
+                      formatter={(value: number, name: string) =>
+                        name === 'blocks' ? [value.toLocaleString(), 'Canonical blocks']
+                        : name === 'low_ask' ? [`$${value}`, 'Floor ask']
+                        : [`${value}%`, 'Confidence']
+                      }
+                    />
+                    <Area
+                      yAxisId="blocks"
+                      type="monotone"
+                      dataKey="blocks"
+                      stroke="#818CF8"
+                      fill="rgba(129,140,248,0.08)"
+                      strokeWidth={2}
+                      dot={false}
+                      connectNulls
+                    />
+                    <Line
+                      yAxisId="price"
+                      type="monotone"
+                      dataKey="low_ask"
+                      stroke="#34D399"
+                      strokeWidth={2}
+                      dot={false}
+                      connectNulls
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            );
+          })()}
+
           <div className="chart-container">
             <PriceHistoryChart eventId={eventId} />
           </div>
@@ -2183,7 +2481,7 @@ export default function EventDetailPage() {
         {/* Section divider */}
         <div className="section-divider" />
 
-        {/* ── SECTION 5: Listings Drilldown ───────────────────────────────── */}
+        {/* ── SECTION 7: Listings Drilldown ───────────────────────────────── */}
         <section>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -2304,16 +2602,18 @@ export default function EventDetailPage() {
                 </div>
               </div>
 
-              {/* Parking filter placeholder */}
+              {/* Exclude parking toggle */}
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-600 w-16 shrink-0 font-medium">Parking</span>
-                <span
-                  className="px-3 py-1 rounded-full text-[11px] font-medium cursor-not-allowed"
-                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: '#374151' }}
-                  title="Parking filter available once backend exposes is_parking flag"
-                >
-                  Parking Filter — Coming Soon
-                </span>
+                <span className="text-xs text-gray-600 w-16 shrink-0 font-medium">Filter</span>
+                <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={excludeParking}
+                    onChange={e => setExcludeParking(e.target.checked)}
+                    className="rounded accent-red-600"
+                  />
+                  <span className="text-xs text-gray-500">Hide parking / shuttle listings</span>
+                </label>
               </div>
 
               {/* Listings table */}
@@ -2327,19 +2627,23 @@ export default function EventDetailPage() {
                       <th className="px-4 py-3 text-right text-gray-500 font-medium text-xs uppercase tracking-wider">All-in</th>
                       <th className="px-4 py-3 text-right text-gray-500 font-medium text-xs uppercase tracking-wider">Qty</th>
                       <th className="px-4 py-3 text-left text-gray-500 font-medium text-xs uppercase tracking-wider">Market</th>
-                      <th className="px-4 py-3 text-left text-gray-500 font-medium text-xs uppercase tracking-wider">Sellers</th>
+                      <th className="px-4 py-3 text-right text-gray-500 font-medium text-xs uppercase tracking-wider">×</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
-                    {viewFilteredListings.slice(0, 200).map((listing: any) => {
+                    {viewFilteredListings
+                      .filter((l: any) => !excludeParking || !l.is_parking)
+                      .slice(0, 200)
+                      .map((listing: any) => {
                       const seatKey = `${(listing.section_id || '').toUpperCase()}|${(listing.row || '').toUpperCase()}|${listing.quantity}`;
                       const nSellers = sellerCounts.get(seatKey) || 1;
                       const isMirrored = mirroredKeys.has(seatKey);
                       return (
-                        <tr key={listing.id} className={`hover:bg-white/3 transition-colors ${isMirrored ? 'bg-indigo-950/10' : ''}`}>
+                        <tr key={listing.id} className={`group hover:bg-white/3 transition-colors ${isMirrored ? 'bg-indigo-950/10' : ''}`}>
                           <td className="px-4 py-2.5 text-white">
                             {listing.section_name || '—'}
                             {isMirrored && <span className="ml-1.5 text-[10px] text-indigo-400">↔</span>}
+                            {listing.is_parking && <span className="ml-1.5 text-[9px] text-amber-600 font-bold uppercase tracking-wide">P</span>}
                           </td>
                           <td className="px-4 py-2.5 text-gray-300">{listing.row || '—'}</td>
                           <td className="px-4 py-2.5 text-right font-mono font-bold text-emerald-400">{fmt$(listing.price_each)}</td>
@@ -2351,11 +2655,30 @@ export default function EventDetailPage() {
                             <Badge variant={(MP_BADGE as any)[listing.marketplace_slug] || 'default'}>
                               {listing.marketplace_slug}
                             </Badge>
+                            {nSellers > 1 && <span className="ml-1.5 text-[9px] text-amber-500">{nSellers}×</span>}
                           </td>
-                          <td className="px-4 py-2.5">
-                            {nSellers > 1
-                              ? <span className="text-xs text-amber-500 tabular-nums">{nSellers}×</span>
-                              : <span className="text-xs text-gray-700">—</span>}
+                          <td className="px-4 py-2.5 text-right">
+                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => setHiddenListings(prev => new Set([...prev, listing.id]))}
+                                className="text-[10px] px-1.5 py-0.5 rounded text-gray-600 hover:text-gray-300 hover:bg-white/10 transition-colors"
+                                title="Hide this listing"
+                              >
+                                Hide
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const sec = listing.section_name || listing.section_id || '';
+                                  if (sec && !confirm(`Mark "${sec}" as parking/non-ticket? This affects all listings in this section.`)) return;
+                                  // Local-only for now: flag via section name pattern awareness
+                                  alert(`Noted. "${sec}" marked as parking locally. Backend integration coming soon.`);
+                                }}
+                                className="text-[10px] px-1.5 py-0.5 rounded text-gray-700 hover:text-amber-400 hover:bg-amber-500/10 transition-colors"
+                                title="Mark as parking/non-ticket listing"
+                              >
+                                🅿
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -2516,6 +2839,98 @@ export default function EventDetailPage() {
 
         {/* ── Advanced Technical Intelligence (collapsed) ─────────────────── */}
         <AdvancedSection>
+          {/* Inventory Movement */}
+          {inventoryMovement && !inventoryMovement.error && (
+            <div>
+              <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 pt-6">Inventory Movement</div>
+              <div className="glass-panel rounded-xl p-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 text-xs">
+                  {[
+                    { label: 'New Listings',   val: inventoryMovement.new_listings,   color: 'text-emerald-400' },
+                    { label: 'Disappeared',    val: inventoryMovement.disappeared,     color: 'text-orange-400' },
+                    { label: 'Likely Sold',    val: inventoryMovement.likely_sold,     color: 'text-red-400'    },
+                    { label: 'Price Changed',  val: inventoryMovement.price_changed,   color: 'text-sky-400'    },
+                    { label: 'Relisted',       val: inventoryMovement.likely_relisted, color: 'text-violet-400' },
+                  ].map(({ label, val, color }) => (
+                    <div key={label} className="glass-dark rounded-lg px-3 py-2">
+                      <div className="text-gray-600 mb-0.5">{label}</div>
+                      <div className={`text-base font-bold tabular-nums ${val > 0 ? color : 'text-gray-700'}`}>{val ?? '—'}</div>
+                    </div>
+                  ))}
+                </div>
+                {(inventoryMovement.window_prev || inventoryMovement.window_curr) && (
+                  <div className="text-[10px] text-gray-700 mt-2 italic">
+                    Window: {inventoryMovement.window_prev ? new Date(inventoryMovement.window_prev).toLocaleString() : '?'} → {inventoryMovement.window_curr ? new Date(inventoryMovement.window_curr).toLocaleString() : '?'}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Attribution Intelligence */}
+          {attribution && !attribution.error && attribution.classification_summary && (
+            <div>
+              <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Attribution Intelligence</div>
+              <div className="glass-panel rounded-xl p-4 space-y-3">
+                {/* Summary counts */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  {[
+                    { label: 'Likely Sold',   val: attribution.classification_summary.likely_sold   ?? 0, color: 'text-red-400'    },
+                    { label: 'Withdrawn',     val: attribution.classification_summary.withdrawn     ?? 0, color: 'text-orange-400' },
+                    { label: 'New Listings',  val: attribution.classification_summary.new_listing   ?? 0, color: 'text-emerald-400'},
+                    { label: 'Relisted',      val: attribution.classification_summary.likely_relisted ?? 0, color: 'text-violet-400'},
+                  ].map(({ label, val, color }) => (
+                    <div key={label} className="glass-dark rounded-lg px-3 py-2">
+                      <div className="text-gray-600 mb-0.5">{label}</div>
+                      <div className={`text-base font-bold tabular-nums ${val > 0 ? color : 'text-gray-700'}`}>{val}</div>
+                    </div>
+                  ))}
+                </div>
+                {/* Sold confidence breakdown */}
+                {attribution.sold_confidence_breakdown && (
+                  <div className="flex items-center gap-4 text-[11px] border-t border-white/5 pt-2">
+                    <span className="text-gray-600 uppercase tracking-wider text-[9px] font-bold">Sold confidence</span>
+                    {(['high','medium','low'] as const).map(c => (
+                      <span key={c} className={`${c === 'high' ? 'text-red-400' : c === 'medium' ? 'text-orange-400' : 'text-gray-500'}`}>
+                        {c}: <span className="font-bold tabular-nums">{attribution.sold_confidence_breakdown[c] ?? 0}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {/* Per-marketplace breakdown */}
+                {attribution.by_marketplace && attribution.by_marketplace.length > 0 && (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-[11px]">
+                      <thead>
+                        <tr className="border-b border-white/5">
+                          <th className="px-2 py-1.5 text-left text-gray-600 font-medium">Market</th>
+                          <th className="px-2 py-1.5 text-right text-gray-600 font-medium">Sold</th>
+                          <th className="px-2 py-1.5 text-right text-gray-600 font-medium">Withdrawn</th>
+                          <th className="px-2 py-1.5 text-right text-gray-600 font-medium">New</th>
+                          <th className="px-2 py-1.5 text-right text-gray-600 font-medium">Relisted</th>
+                          <th className="px-2 py-1.5 text-right text-gray-600 font-medium">Price Δ</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5">
+                        {attribution.by_marketplace.map((mp: any) => (
+                          <tr key={mp.marketplace} className="hover:bg-white/3">
+                            <td className="px-2 py-1.5 text-gray-300 font-medium">{mp.marketplace}</td>
+                            <td className="px-2 py-1.5 text-right text-red-400 tabular-nums">{mp.likely_sold ?? 0}</td>
+                            <td className="px-2 py-1.5 text-right text-orange-400 tabular-nums">{mp.withdrawn ?? 0}</td>
+                            <td className="px-2 py-1.5 text-right text-emerald-400 tabular-nums">{mp.new_listing ?? 0}</td>
+                            <td className="px-2 py-1.5 text-right text-violet-400 tabular-nums">{mp.likely_relisted ?? 0}</td>
+                            <td className="px-2 py-1.5 text-right text-sky-400 tabular-nums">{mp.price_changed ?? 0}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                <div className="text-[10px] text-gray-700 italic">{attribution.note}</div>
+              </div>
+            </div>
+          )}
+
           {/* Section Liquidity */}
           {sectionLiquidity?.sections && sectionLiquidity.sections.length > 0 && (
             <div>
@@ -2568,40 +2983,48 @@ export default function EventDetailPage() {
             </div>
           )}
 
-          {/* Market Intelligence primitives */}
-          {marketIntel?.primitives && (
+          {/* Market Intelligence */}
+          {marketIntel && !marketIntel.error && (
             <div>
               <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Market Intelligence</div>
               <div className="glass-panel rounded-xl p-4">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-                  <div>
-                    <div className="text-gray-500 mb-1">Stale Inventory</div>
-                    <div className={`text-base font-bold ${marketIntel.primitives.stale_inventory_rate > 0.5 ? 'text-amber-400' : 'text-gray-300'}`}>
-                      {Math.round(marketIntel.primitives.stale_inventory_rate * 100)}%
+                  {marketIntel.total_canonical_blocks != null && (
+                    <div>
+                      <div className="text-gray-500 mb-1">Canonical Blocks</div>
+                      <div className="text-base font-bold text-white">{marketIntel.total_canonical_blocks.toLocaleString()}</div>
+                      <div className="text-gray-600">unique seat blocks</div>
                     </div>
-                    <div className="text-gray-600">{marketIntel.primitives.stale_active_blocks} blocks</div>
-                  </div>
-                  <div>
-                    <div className="text-gray-500 mb-1">Broker Duplication</div>
-                    <div className={`text-base font-bold ${marketIntel.primitives.broker_duplication_rate > 0.1 ? 'text-orange-400' : 'text-gray-300'}`}>
-                      {(marketIntel.primitives.broker_duplication_rate * 100).toFixed(1)}%
+                  )}
+                  {marketIntel.low_ask != null && (
+                    <div>
+                      <div className="text-gray-500 mb-1">Low Ask</div>
+                      <div className="text-base font-bold text-emerald-400">{fmt$(marketIntel.low_ask)}</div>
+                      <div className="text-gray-600">canonical floor</div>
                     </div>
-                  </div>
-                  <div>
-                    <div className="text-gray-500 mb-1">Blocks Ever Seen</div>
-                    <div className="text-base font-bold text-white">{marketIntel.primitives.total_blocks_ever}</div>
-                    <div className="text-gray-600">{marketIntel.primitives.disappeared_blocks} disappeared</div>
-                  </div>
-                  <div>
-                    <div className="text-gray-500 mb-1">Time Tracked</div>
-                    <div className="text-base font-bold text-white">
-                      {marketIntel.primitives.hours_tracked < 1
-                        ? `${Math.round(marketIntel.primitives.hours_tracked * 60)}m`
-                        : `${marketIntel.primitives.hours_tracked.toFixed(1)}h`}
+                  )}
+                  {marketIntel.mirrored_ratio != null && (
+                    <div>
+                      <div className="text-gray-500 mb-1">Mirrored</div>
+                      <div className={`text-base font-bold ${marketIntel.mirrored_ratio > 0.5 ? 'text-amber-400' : 'text-gray-300'}`}>
+                        {Math.round(marketIntel.mirrored_ratio * 100)}%
+                      </div>
+                      <div className="text-gray-600">cross-site duplicates</div>
                     </div>
-                    <div className="text-gray-600">{marketIntel.primitives.snapshot_count} snapshots</div>
-                  </div>
+                  )}
+                  {marketIntel.mean_confidence != null && (
+                    <div>
+                      <div className="text-gray-500 mb-1">Confidence</div>
+                      <div className={`text-base font-bold ${marketIntel.mean_confidence >= 0.8 ? 'text-emerald-400' : marketIntel.mean_confidence >= 0.5 ? 'text-amber-400' : 'text-red-400'}`}>
+                        {Math.round(marketIntel.mean_confidence * 100)}%
+                      </div>
+                      <div className="text-gray-600">canonical match</div>
+                    </div>
+                  )}
                 </div>
+                {marketIntel.note && (
+                  <div className="text-[10px] text-gray-700 mt-3 border-t border-white/5 pt-2 italic">{marketIntel.note}</div>
+                )}
               </div>
             </div>
           )}

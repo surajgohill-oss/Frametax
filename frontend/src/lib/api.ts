@@ -104,6 +104,7 @@ export const api = {
     marketIntelligence: (id: number) => req<any>(`/analytics/events/${id}/market-intelligence`),
     inventoryMovement: (id: number) => req<any>(`/analytics/events/${id}/inventory-movement`),
     baseline: (id: number) => req<any>(`/analytics/events/${id}/baseline`),
+    attribution: (id: number) => req<any>(`/analytics/events/${id}/attribution`),
     blockLifecycle: (eventId: number, blockId: string) => req<any>(`/analytics/events/${eventId}/blocks/${blockId}/lifecycle`),
   },
   poll: {

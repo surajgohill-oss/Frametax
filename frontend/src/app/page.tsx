@@ -427,34 +427,32 @@ function EventRow({ ev, theme, isMyEvent, onToggleMyEvent }: {
         </div>
       </div>
 
-      {/* Price — show lowest ask + per-market mini prices */}
-      <div className="w-28 shrink-0 text-right pl-3">
+      {/* Price — floor price + vs historical low */}
+      <div className="w-32 shrink-0 text-right pl-3">
         <div
-          className="text-[15px] font-bold leading-none"
+          className="text-[15px] font-bold leading-none tabular-nums"
           style={{ letterSpacing:"-0.03em", color: price == null ? "#374151" : isValue ? "#22c55e" : "#fff" }}
         >
           {price != null ? fmt$(price) : "—"}
         </div>
-        {/* Per-marketplace mini prices */}
+        {/* Price vs historical low */}
         {(() => {
-          const mp = ev.marketplace_prices || ev.all_marketplace_prices || {};
-          const dots = [
-            { slug: 'stubhub', color: '#818CF8' },
-            { slug: 'tickpick', color: '#4ADE80' },
-            { slug: 'gametime', color: '#FB923C' },
-            { slug: 'vividseats', color: '#F472B6' },
-          ].filter(d => mp[d.slug] != null);
-          if (dots.length < 2) return null;
+          const hist = ev.historical_lowest_price;
+          if (price == null || hist == null || hist === 0) return null;
+          const pct = ((price - hist) / hist) * 100;
+          if (Math.abs(pct) < 1) return null;
           return (
-            <div className="flex items-center gap-1.5 justify-end mt-0.5">
-              {dots.map(d => (
-                <span key={d.slug} className="text-[9px] tabular-nums font-mono" style={{ color: d.color, opacity: 0.7 }}>
-                  {fmt$(mp[d.slug])}
-                </span>
-              ))}
+            <div className="text-[9px] tabular-nums mt-0.5" style={{ color: pct <= 0 ? '#22C55E' : '#F59E0B' }}>
+              {pct > 0 ? `+${pct.toFixed(0)}%` : `${pct.toFixed(0)}%`} vs low
             </div>
           );
         })()}
+        {/* Inventory count */}
+        {ev.total_listings > 0 && (
+          <div className="text-[9px] tabular-nums mt-0.5 text-slate-700">
+            {ev.total_listings.toLocaleString()} listings
+          </div>
+        )}
       </div>
 
       {/* Badge */}
@@ -527,7 +525,7 @@ function EntityBlock({ group, myEvents, onToggleMyEvent, heroEventId, onSetHero,
       >
         <EntityLogo
           entity={entity} initial={theme.initial} accent={theme.accent}
-          gradFrom={theme.gradFrom} gradMid={theme.gradMid} size={52}
+          gradFrom={theme.gradFrom} gradMid={theme.gradMid} size={64}
         />
 
         <div className="flex-1 min-w-0">

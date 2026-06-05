@@ -5,10 +5,10 @@ import { LayoutDashboard, CalendarDays, Map, ArrowLeftRight, Bug, Zap } from "lu
 import { cn } from "@/lib/utils";
 
 const primaryNav = [
-  { href: "/",       label: "My Events",  icon: LayoutDashboard },
-  { href: "/events", label: "All Events", icon: CalendarDays    },
-  { href: "/compare", label: "Compare",  icon: ArrowLeftRight  },
-  { href: "/heatmap", label: "Heatmap",  icon: Map             },
+  { href: "/",        label: "My Events",  icon: LayoutDashboard },
+  { href: "/events",  label: "All Events", icon: CalendarDays    },
+  { href: "/compare", label: "Compare",    icon: ArrowLeftRight  },
+  { href: "/heatmap", label: "Heatmap",    icon: Map             },
 ];
 
 const secondaryNav = [
@@ -18,22 +18,31 @@ const secondaryNav = [
 export function Sidebar() {
   const path = usePathname();
 
-  const NavLink = ({ href, label, icon: Icon, dim = false }: { href: string; label: string; icon: any; dim?: boolean }) => {
+  const NavLink = ({ href, label, icon: Icon, dim = false }: {
+    href: string; label: string; icon: any; dim?: boolean;
+  }) => {
     const active = path === href || (href !== "/" && path.startsWith(href));
     return (
       <Link
         href={href}
         className={cn(
-          "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150",
+          "flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-150",
           active
-            ? "text-red-300 border border-transparent shadow-sm"
+            ? "text-white"
             : dim
-              ? "text-slate-600 hover:text-slate-400 hover:bg-white/4 border border-transparent"
-              : "text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent"
+              ? "text-[#3A3A3A] hover:text-[#666] hover:bg-white/[0.03]"
+              : "text-[#666] hover:text-[#aaa] hover:bg-white/[0.04]"
         )}
-        style={active ? { background: "rgba(229,9,20,0.12)", borderColor: "rgba(229,9,20,0.22)" } : {}}
+        style={active ? {
+          background: "rgba(229,9,20,0.15)",
+          border: "1px solid rgba(229,9,20,0.28)",
+          boxShadow: "inset 0 0 12px rgba(229,9,20,0.06)",
+        } : { border: "1px solid transparent" }}
       >
-        <Icon size={15} style={active ? { color: "#E50914" } : dim ? { color: "#374151" } : {}} />
+        <Icon
+          size={14}
+          style={active ? { color: "#FF2020" } : dim ? { color: "#333" } : { color: "#555" }}
+        />
         {label}
       </Link>
     );
@@ -43,46 +52,48 @@ export function Sidebar() {
     <aside
       className="hidden md:flex fixed left-0 top-0 h-screen w-56 flex-col z-10"
       style={{
-        background: "rgba(6, 0, 4, 0.94)",
-        backdropFilter: "blur(24px)",
-        WebkitBackdropFilter: "blur(24px)",
-        borderRight: "1px solid rgba(255, 255, 255, 0.06)",
+        background: "rgba(10,10,12,0.98)",
+        backdropFilter: "blur(32px)",
+        WebkitBackdropFilter: "blur(32px)",
+        borderRight: "1px solid rgba(255,255,255,0.05)",
       }}
     >
       {/* Brand */}
       <div
         className="flex items-center gap-3 px-4 py-5"
-        style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.06)" }}
+        style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
       >
         <div
           className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-          style={{ background: "rgba(229,9,20,0.18)", border: "1px solid rgba(229,9,20,0.35)" }}
+          style={{
+            background: "rgba(229,9,20,0.2)",
+            border: "1px solid rgba(229,9,20,0.4)",
+            boxShadow: "0 0 12px rgba(229,9,20,0.15)",
+          }}
         >
-          <Zap style={{ color: "#E50914" }} size={15} />
+          <Zap style={{ color: "#FF2020" }} size={14} />
         </div>
         <div>
-          <p className="text-sm font-bold leading-tight text-white tracking-tight">Event Intel</p>
-          <p className="text-[10px] text-slate-600 leading-tight mt-0.5 uppercase tracking-wider">Live Market</p>
+          <p className="text-[13px] font-bold leading-tight text-white tracking-tight">Event Intel</p>
+          <p className="text-[10px] leading-tight mt-0.5 uppercase tracking-widest" style={{ color: "#444" }}>Live Market</p>
         </div>
       </div>
 
       {/* Primary nav */}
-      <nav className="flex-1 p-3 space-y-0.5">
+      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
         {primaryNav.map(item => <NavLink key={item.href} {...item} />)}
 
-        {/* Divider */}
-        <div className="my-3" style={{ height: '1px', background: 'rgba(255,255,255,0.04)' }} />
+        <div className="my-3" style={{ height: "1px", background: "rgba(255,255,255,0.04)" }} />
 
-        {/* Secondary nav (debug, etc.) — visually de-emphasized */}
         {secondaryNav.map(item => <NavLink key={item.href} {...item} dim />)}
       </nav>
 
       {/* Footer */}
       <div
         className="px-4 py-3"
-        style={{ borderTop: "1px solid rgba(255, 255, 255, 0.05)" }}
+        style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}
       >
-        <p className="text-[10px] text-slate-700 uppercase tracking-widest">Los Angeles</p>
+        <p className="text-[10px] uppercase tracking-widest" style={{ color: "#333" }}>Los Angeles</p>
       </div>
     </aside>
   );
