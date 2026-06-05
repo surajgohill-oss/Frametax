@@ -159,9 +159,37 @@ function getTmArtworkUrl(event: any): string | null {
   return `https://s1.ticketmaster.com/dbimages/arena/events/${tmId}.jpg`;
 }
 
+/**
+ * Static image map for top tracked events.
+ * Only covers well-known artists/events where a stable public image exists.
+ * Keys are lowercase substrings of event title.
+ */
+const STATIC_ART: [RegExp, string][] = [
+  [/ariana grande/i,    'https://images.sk-static.com/images/media/profile_images/artists/5466476/huge_avatar'],
+  [/bts\b/i,            'https://images.sk-static.com/images/media/profile_images/artists/8521933/huge_avatar'],
+  [/rush\b/i,           'https://images.sk-static.com/images/media/profile_images/artists/29315/huge_avatar'],
+  [/rod stewart/i,      'https://images.sk-static.com/images/media/profile_images/artists/31204/huge_avatar'],
+  [/louis tomlinson/i,  'https://images.sk-static.com/images/media/profile_images/artists/8943923/huge_avatar'],
+  [/parker mccollum/i,  'https://images.sk-static.com/images/media/profile_images/artists/8789617/huge_avatar'],
+  [/diljit dosanjh/i,   'https://images.sk-static.com/images/media/profile_images/artists/8996629/huge_avatar'],
+  [/chance the rapper/i,'https://images.sk-static.com/images/media/profile_images/artists/6821629/huge_avatar'],
+  [/fifa|world cup/i,   'https://upload.wikimedia.org/wikipedia/en/thumb/e/e3/2026_FIFA_World_Cup_emblem.svg/220px-2026_FIFA_World_Cup_emblem.svg.png'],
+];
+
+function getStaticArtUrl(title: string): string | null {
+  for (const [re, url] of STATIC_ART) {
+    if (re.test(title)) return url;
+  }
+  return null;
+}
+
 /** Return the best available artwork URL for an event, or null if none. */
 function getEventArtworkUrl(event: any): string | null {
-  return event?.image_url || event?.poster_url || getTmArtworkUrl(event) || null;
+  return event?.image_url
+      || event?.poster_url
+      || getTmArtworkUrl(event)
+      || getStaticArtUrl(event?.title ?? '')
+      || null;
 }
 
 // ── Section 1: Editorial Split Hero ──────────────────────────────────────────
@@ -2568,12 +2596,14 @@ export default function EventDetailPage() {
         </section>
 
         {/* ── SECTION 7: Historical Charts ─────────────────────────────────── */}
-        <section className="space-y-4">
+        <section className="space-y-3">
           <div className="section-label mb-1">📈 Historical Trends</div>
 
-          {/* ── Canonical Snapshot Trend (canonical-history endpoint) ──────── */}
+          {/* 2-column grid on desktop, 1 column on mobile */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          {/* ── Net Tickets + Floor Ask Trend ──────────────────────────────── */}
           {(() => {
-            // Deduplicate by timestamp — multiple per-marketplace rows collapse to one
             const dedupMap = new Map<string, any>();
             for (const snap of canonicalHistory) {
               const key = snap.snapshot_at;
@@ -2587,102 +2617,48 @@ export default function EventDetailPage() {
                 ts: new Date(s.snapshot_at).getTime(),
                 blocks: s.total_canonical_blocks,
                 low_ask: s.low_ask != null ? Number(s.low_ask.toFixed(0)) : null,
-                conf: s.mean_confidence != null ? Number((s.mean_confidence * 100).toFixed(1)) : null,
               }));
 
-            if (chartData.length === 0) {
-              return (
-                <div className="glass-dark rounded-2xl p-5">
-                  <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-3">Snapshot Trend</div>
-                  <div className="flex items-center justify-center h-16 text-gray-600 text-xs italic">
-                    No snapshot history yet — data builds automatically as polls run.
-                  </div>
-                </div>
-              );
-            }
+            const fmtT = (ms: number) => new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-            const fmtTime = (ms: number) => {
-              const d = new Date(ms);
-              return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' +
-                     d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-            };
+            if (chartData.length === 0) return (
+              <div className="glass-dark rounded-2xl p-4">
+                <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-2">Net Tickets &amp; Floor Ask</div>
+                <div className="flex items-center justify-center h-[130px] text-gray-600 text-xs italic">
+                  No snapshot history yet.
+                </div>
+              </div>
+            );
 
             return (
-              <div className="glass-dark rounded-2xl p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Snapshot Trend</div>
-                  <div className="flex items-center gap-4 text-[10px] text-gray-600">
-                    <span className="flex items-center gap-1.5"><span className="inline-block w-2 h-0.5 bg-indigo-400" />Net Tickets</span>
-                    <span className="flex items-center gap-1.5"><span className="inline-block w-2 h-0.5 bg-emerald-400" />Floor Ask</span>
-                    <span className="text-gray-700">{chartData.length} snapshots</span>
+              <div className="glass-dark rounded-2xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Net Tickets &amp; Floor Ask</div>
+                  <div className="flex items-center gap-3 text-[10px] text-gray-600">
+                    <span className="flex items-center gap-1"><span className="inline-block w-2 h-0.5 bg-violet-400" />Tickets</span>
+                    <span className="flex items-center gap-1"><span className="inline-block w-2 h-0.5 bg-emerald-400" />Ask</span>
                   </div>
                 </div>
-                <ResponsiveContainer width="100%" height={220}>
-                  <ComposedChart data={chartData} margin={{ top: 4, right: 16, bottom: 4, left: 0 }}>
+                <ResponsiveContainer width="100%" height={150}>
+                  <ComposedChart data={chartData} margin={{ top: 2, right: 36, bottom: 2, left: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-                    <XAxis
-                      dataKey="ts"
-                      type="number"
-                      scale="time"
-                      domain={['dataMin', 'dataMax']}
-                      tickFormatter={fmtTime}
-                      tick={{ fill: '#4B5563', fontSize: 10 }}
-                      tickLine={false}
-                      axisLine={{ stroke: 'rgba(255,255,255,0.05)' }}
-                    />
-                    <YAxis
-                      yAxisId="blocks"
-                      orientation="left"
-                      tick={{ fill: '#4B5563', fontSize: 10 }}
-                      tickLine={false}
-                      axisLine={false}
-                      width={36}
-                      tickFormatter={(v: number) => v.toLocaleString()}
-                    />
-                    <YAxis
-                      yAxisId="price"
-                      orientation="right"
-                      tick={{ fill: '#4B5563', fontSize: 10 }}
-                      tickLine={false}
-                      axisLine={false}
-                      width={44}
-                      tickFormatter={(v: number) => `$${v}`}
-                    />
-                    <Tooltip
-                      contentStyle={{ background: '#111827', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, fontSize: 11, color: '#e5e7eb' }}
-                      labelFormatter={(v: number) => fmtTime(v)}
-                      formatter={(value: number, name: string) =>
-                        name === 'blocks' ? [value.toLocaleString(), 'Net Tickets']
-                        : name === 'low_ask' ? [`$${value}`, 'Floor ask']
-                        : [`${value}%`, 'Confidence']
-                      }
-                    />
-                    <Area
-                      yAxisId="blocks"
-                      type="monotone"
-                      dataKey="blocks"
-                      stroke="#818CF8"
-                      fill="rgba(129,140,248,0.08)"
-                      strokeWidth={2}
-                      dot={false}
-                      connectNulls
-                    />
-                    <Line
-                      yAxisId="price"
-                      type="monotone"
-                      dataKey="low_ask"
-                      stroke="#34D399"
-                      strokeWidth={2}
-                      dot={false}
-                      connectNulls
-                    />
+                    <XAxis dataKey="ts" type="number" scale="time" domain={['dataMin','dataMax']}
+                      tickFormatter={fmtT} tick={{ fill:'#4B5563', fontSize:9 }} tickLine={false}
+                      axisLine={{ stroke:'rgba(255,255,255,0.05)' }} />
+                    <YAxis yAxisId="l" orientation="left" tick={{ fill:'#4B5563', fontSize:9 }} tickLine={false} axisLine={false} width={32} tickFormatter={(v:number) => v.toLocaleString()} />
+                    <YAxis yAxisId="r" orientation="right" tick={{ fill:'#4B5563', fontSize:9 }} tickLine={false} axisLine={false} width={36} tickFormatter={(v:number) => `$${v}`} />
+                    <Tooltip contentStyle={{ background:'#111827', border:'1px solid rgba(255,255,255,0.08)', borderRadius:8, fontSize:11, color:'#e5e7eb' }}
+                      labelFormatter={fmtT}
+                      formatter={(v:number, n:string) => n==='blocks' ? [v.toLocaleString(),'Net Tickets'] : [`$${v}`,'Floor Ask']} />
+                    <Area yAxisId="l" type="monotone" dataKey="blocks" stroke="#A78BFA" fill="rgba(167,139,250,0.10)" strokeWidth={2} dot={false} connectNulls />
+                    <Line yAxisId="r" type="monotone" dataKey="low_ask" stroke="#34D399" strokeWidth={2} dot={false} connectNulls />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
             );
           })()}
 
-          {/* ── Gross vs Net Ticket Trend ──────────────────────────── */}
+          {/* ── Gross vs Net Inventory Trend ───────────────────────────────── */}
           {(() => {
             const dedupMap2 = new Map<string, any>();
             for (const snap of canonicalHistory) {
@@ -2697,43 +2673,34 @@ export default function EventDetailPage() {
                 ts: new Date(s.snapshot_at).getTime(),
                 gross: s.total_raw_listings ?? null,
                 net: s.total_canonical_blocks ?? null,
-                dupes: (s.total_raw_listings != null && s.total_canonical_blocks != null)
-                  ? s.total_raw_listings - s.total_canonical_blocks : null,
-              }))
-              .filter(d => d.gross != null || d.net != null);
+                dupes: (s.total_raw_listings != null && s.total_canonical_blocks != null) ? s.total_raw_listings - s.total_canonical_blocks : null,
+              })).filter(d => d.gross != null || d.net != null);
 
             if (chartData2.length < 2) return null;
-            const fmtTime2 = (ms: number) => new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            const fmtT2 = (ms: number) => new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
             return (
-              <div className="glass-dark rounded-2xl p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Gross vs Net Inventory Trend</div>
-                  <div className="flex items-center gap-4 text-[10px] text-gray-600">
-                    <span className="flex items-center gap-1.5"><span className="inline-block w-2 h-0.5 bg-gray-500" />Gross listings</span>
-                    <span className="flex items-center gap-1.5"><span className="inline-block w-2 h-0.5 bg-violet-400" />Net Tickets</span>
-                    <span className="flex items-center gap-1.5"><span className="inline-block w-2 h-0.5 bg-amber-400" />Duplicates</span>
+              <div className="glass-dark rounded-2xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Gross vs Net Inventory</div>
+                  <div className="flex items-center gap-3 text-[10px] text-gray-600">
+                    <span className="flex items-center gap-1"><span className="inline-block w-2 h-0.5 bg-gray-500" />Gross</span>
+                    <span className="flex items-center gap-1"><span className="inline-block w-2 h-0.5 bg-violet-400" />Net</span>
+                    <span className="flex items-center gap-1"><span className="inline-block w-2 h-0.5 bg-amber-400" />Dupes</span>
                   </div>
                 </div>
-                <ResponsiveContainer width="100%" height={200}>
-                  <ComposedChart data={chartData2} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+                <ResponsiveContainer width="100%" height={150}>
+                  <ComposedChart data={chartData2} margin={{ top: 2, right: 8, bottom: 2, left: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
                     <XAxis dataKey="ts" type="number" scale="time" domain={['dataMin','dataMax']}
-                      tickFormatter={fmtTime2} tick={{ fill:'#4B5563', fontSize:10 }} tickLine={false}
+                      tickFormatter={fmtT2} tick={{ fill:'#4B5563', fontSize:9 }} tickLine={false}
                       axisLine={{ stroke:'rgba(255,255,255,0.05)' }} />
-                    <YAxis tick={{ fill:'#4B5563', fontSize:10 }} tickLine={false} axisLine={false} width={36}
-                      tickFormatter={(v:number) => v.toLocaleString()} />
-                    <Tooltip
-                      contentStyle={{ background:'#111827', border:'1px solid rgba(255,255,255,0.08)', borderRadius:8, fontSize:11, color:'#e5e7eb' }}
-                      labelFormatter={(v:number) => fmtTime2(v)}
-                      formatter={(value:number, name:string) =>
-                        name === 'gross' ? [value.toLocaleString(), 'Gross listings']
-                        : name === 'net'  ? [value.toLocaleString(), 'Net Tickets']
-                        : [value.toLocaleString(), 'Duplicate listings']
-                      }
-                    />
-                    <Area type="monotone" dataKey="gross" stroke="#6B7280" fill="rgba(107,114,128,0.08)" strokeWidth={1.5} dot={false} connectNulls />
-                    <Area type="monotone" dataKey="net" stroke="#A78BFA" fill="rgba(167,139,250,0.08)" strokeWidth={2} dot={false} connectNulls />
+                    <YAxis tick={{ fill:'#4B5563', fontSize:9 }} tickLine={false} axisLine={false} width={32} tickFormatter={(v:number) => v.toLocaleString()} />
+                    <Tooltip contentStyle={{ background:'#111827', border:'1px solid rgba(255,255,255,0.08)', borderRadius:8, fontSize:11, color:'#e5e7eb' }}
+                      labelFormatter={fmtT2}
+                      formatter={(v:number, n:string) => n==='gross' ? [v.toLocaleString(),'Gross Tickets'] : n==='net' ? [v.toLocaleString(),'Net Tickets'] : [v.toLocaleString(),'Duplicates']} />
+                    <Area type="monotone" dataKey="gross" stroke="#6B7280" fill="rgba(107,114,128,0.07)" strokeWidth={1.5} dot={false} connectNulls />
+                    <Area type="monotone" dataKey="net" stroke="#A78BFA" fill="rgba(167,139,250,0.10)" strokeWidth={2} dot={false} connectNulls />
                     <Line type="monotone" dataKey="dupes" stroke="#F59E0B" strokeWidth={1.5} dot={false} connectNulls strokeDasharray="4 3" />
                   </ComposedChart>
                 </ResponsiveContainer>
@@ -2741,7 +2708,7 @@ export default function EventDetailPage() {
             );
           })()}
 
-          {/* ── Duplicate Rate Trend ───────────────────────────────── */}
+          {/* ── Duplicate &amp; Mirror Rate Trend ───────────────────────────── */}
           {(() => {
             const dedupMap3 = new Map<string, any>();
             for (const snap of canonicalHistory) {
@@ -2756,48 +2723,45 @@ export default function EventDetailPage() {
                 ts: new Date(s.snapshot_at).getTime(),
                 dupRate: s.global_duplicate_ratio != null ? Number((s.global_duplicate_ratio * 100).toFixed(1)) : null,
                 mirrorRate: s.mirrored_ratio != null ? Number((s.mirrored_ratio * 100).toFixed(1)) : null,
-              }))
-              .filter(d => d.dupRate != null || d.mirrorRate != null);
+              })).filter(d => d.dupRate != null || d.mirrorRate != null);
 
             if (chartData3.length < 2) return null;
-            const fmtTime3 = (ms: number) => new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            const fmtT3 = (ms: number) => new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
             return (
-              <div className="glass-dark rounded-2xl p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Duplicate &amp; Mirror Rate Trend</div>
-                  <div className="flex items-center gap-4 text-[10px] text-gray-600">
-                    <span className="flex items-center gap-1.5"><span className="inline-block w-2 h-0.5 bg-amber-400" />Duplicate rate %</span>
-                    <span className="flex items-center gap-1.5"><span className="inline-block w-2 h-0.5 bg-sky-400" />Mirror rate %</span>
+              <div className="glass-dark rounded-2xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Duplicate &amp; Mirror Rate</div>
+                  <div className="flex items-center gap-3 text-[10px] text-gray-600">
+                    <span className="flex items-center gap-1"><span className="inline-block w-2 h-0.5 bg-amber-400" />Dup %</span>
+                    <span className="flex items-center gap-1"><span className="inline-block w-2 h-0.5 bg-cyan-400" />Mirror %</span>
                   </div>
                 </div>
-                <ResponsiveContainer width="100%" height={160}>
-                  <ComposedChart data={chartData3} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+                <ResponsiveContainer width="100%" height={150}>
+                  <ComposedChart data={chartData3} margin={{ top: 2, right: 8, bottom: 2, left: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
                     <XAxis dataKey="ts" type="number" scale="time" domain={['dataMin','dataMax']}
-                      tickFormatter={fmtTime3} tick={{ fill:'#4B5563', fontSize:10 }} tickLine={false}
+                      tickFormatter={fmtT3} tick={{ fill:'#4B5563', fontSize:9 }} tickLine={false}
                       axisLine={{ stroke:'rgba(255,255,255,0.05)' }} />
-                    <YAxis tick={{ fill:'#4B5563', fontSize:10 }} tickLine={false} axisLine={false} width={36}
-                      tickFormatter={(v:number) => `${v}%`} />
-                    <Tooltip
-                      contentStyle={{ background:'#111827', border:'1px solid rgba(255,255,255,0.08)', borderRadius:8, fontSize:11, color:'#e5e7eb' }}
-                      labelFormatter={(v:number) => fmtTime3(v)}
-                      formatter={(value:number, name:string) =>
-                        name === 'dupRate' ? [`${value}%`, 'Duplicate rate']
-                        : [`${value}%`, 'Mirror rate']
-                      }
-                    />
-                    <Line type="monotone" dataKey="dupRate" stroke="#F59E0B" strokeWidth={2} dot={false} connectNulls />
-                    <Line type="monotone" dataKey="mirrorRate" stroke="#38BDF8" strokeWidth={2} dot={false} connectNulls />
+                    <YAxis tick={{ fill:'#4B5563', fontSize:9 }} tickLine={false} axisLine={false} width={32} tickFormatter={(v:number) => `${v}%`} />
+                    <Tooltip contentStyle={{ background:'#111827', border:'1px solid rgba(255,255,255,0.08)', borderRadius:8, fontSize:11, color:'#e5e7eb' }}
+                      labelFormatter={fmtT3}
+                      formatter={(v:number, n:string) => [`${v}%`, n==='dupRate' ? 'Duplicate Rate' : 'Mirror Rate']} />
+                    <Line type="monotone" dataKey="dupRate"    stroke="#F59E0B" strokeWidth={2} dot={false} connectNulls />
+                    <Line type="monotone" dataKey="mirrorRate" stroke="#22D3EE" strokeWidth={2} dot={false} connectNulls />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
             );
           })()}
 
-          <div className="chart-container">
+          {/* ── Price History (existing component) ────────────────────────── */}
+          <div className="glass-dark rounded-2xl overflow-hidden">
             <PriceHistoryChart eventId={eventId} />
           </div>
+
+          </div>{/* end 2-col grid */}
+
           <div className="chart-container">
             <InventoryChart eventId={eventId} />
           </div>
