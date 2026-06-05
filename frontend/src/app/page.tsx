@@ -427,14 +427,24 @@ function EventRow({ ev, theme, isMyEvent, onToggleMyEvent }: {
         </div>
       </div>
 
-      {/* Price — floor price + vs historical low */}
-      <div className="w-32 shrink-0 text-right pl-3">
+      {/* Price — floor price + vs historical low + inventory */}
+      <div className="w-36 shrink-0 text-right pl-3">
         <div
           className="text-[15px] font-bold leading-none tabular-nums"
           style={{ letterSpacing:"-0.03em", color: price == null ? "#374151" : isValue ? "#22c55e" : "#fff" }}
         >
           {price != null ? fmt$(price) : "—"}
         </div>
+        {/* 24h price change if available */}
+        {(() => {
+          const p24 = ev.price_change_24h ?? ev.marketplace_prices?.price_change_24h;
+          if (p24 == null || Math.abs(p24) < 0.5) return null;
+          return (
+            <div className="text-[9px] tabular-nums mt-0.5 font-medium" style={{ color: p24 <= 0 ? '#22C55E' : '#EF4444' }}>
+              {p24 > 0 ? '+' : ''}{p24 > 0 ? fmt$(p24) : `-${fmt$(Math.abs(p24))}`} 24h
+            </div>
+          );
+        })()}
         {/* Price vs historical low */}
         {(() => {
           const hist = ev.historical_lowest_price;
@@ -450,7 +460,7 @@ function EventRow({ ev, theme, isMyEvent, onToggleMyEvent }: {
         {/* Inventory count */}
         {ev.total_listings > 0 && (
           <div className="text-[9px] tabular-nums mt-0.5 text-slate-700">
-            {ev.total_listings.toLocaleString()} listings
+            {ev.total_listings.toLocaleString()} in
           </div>
         )}
       </div>
@@ -519,13 +529,13 @@ function EntityBlock({ group, myEvents, onToggleMyEvent, heroEventId, onSetHero,
 
       {/* Entity header — click to expand/collapse */}
       <div
-        className="flex items-center gap-4 pl-6 pr-5 py-4 cursor-pointer select-none"
+        className="flex items-center gap-4 pl-5 pr-5 py-4 cursor-pointer select-none"
         style={{ borderBottom: expanded ? "1px solid rgba(255,255,255,0.04)" : "none" }}
         onClick={() => setExpanded(v => !v)}
       >
         <EntityLogo
           entity={entity} initial={theme.initial} accent={theme.accent}
-          gradFrom={theme.gradFrom} gradMid={theme.gradMid} size={64}
+          gradFrom={theme.gradFrom} gradMid={theme.gradMid} size={72}
         />
 
         <div className="flex-1 min-w-0">

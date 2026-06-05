@@ -125,6 +125,23 @@ function getMarketStatus(price: number | null): MarketStatus {
   return              { label: 'Premium', cssClass: 'status-premium' };
 }
 
+// ── Key art URL helpers ───────────────────────────────────────────────────────
+
+/** Build Ticketmaster CDN artwork URL when external_event_id looks like a TM numeric ID. */
+function getTmArtworkUrl(extId: string | null | undefined): string | null {
+  if (!extId) return null;
+  // TM IDs are typically numeric strings like "Z7r9jZ1AdeXvk"  or pure numeric "59007A0"
+  // Use the standard TM image endpoint pattern
+  const clean = String(extId).trim();
+  if (clean.length < 4) return null;
+  return `https://s1.ticketmaster.com/dbimages/arena/events/${clean}.jpg`;
+}
+
+/** Return the best available artwork URL for an event, or null if none. */
+function getEventArtworkUrl(event: any): string | null {
+  return event?.image_url || event?.poster_url || getTmArtworkUrl(event?.external_event_id) || null;
+}
+
 // ── Section 1: Editorial Split Hero ──────────────────────────────────────────
 
 function EventHero({
@@ -150,6 +167,7 @@ function EventHero({
   pollLoading: boolean;
   onBack: () => void;
 }) {
+  const [artErr, setArtErr] = useState(false);
   const ms = getMarketStatus(lowestAsk);
   const title = event.title || '';
   const initial = (event.artist || title || '?')[0].toUpperCase();
@@ -160,9 +178,14 @@ function EventHero({
   const accent = imgCfg.accent ?? theme.accent;
   const accentRgb = theme.accentRgb;
 
+  // Key art fallback chain: event.image_url → event.poster_url → TM CDN → entity logo → null
+  const artworkUrl = artErr ? null : getEventArtworkUrl(event);
+  const entityLogoUrl = !artworkUrl ? (imgCfg.logo ?? null) : null;
+
   const venueName = event.venue_slug
     ? event.venue_slug.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())
     : null;
+  const venueInitial = venueName ? venueName[0].toUpperCase() : 'V';
 
   // Derive category chip label
   const catLabel = (() => {
@@ -191,6 +214,7 @@ function EventHero({
   const origTickets = (curTickets != null && tickDelta != null) ? curTickets - tickDelta : null;
 
   const depth = baseline?.history_depth_days ?? 0;
+  const histLow = event?.historical_lowest_price ?? null;
 
   return (
     <div className="relative overflow-hidden" style={{ background: '#06000A' }}>
@@ -248,23 +272,54 @@ function EventHero({
             backgroundSize: '28px 28px',
           }} />
 
-          {/* Large watermark initial */}
-          <div
-            className="absolute inset-0 flex items-center justify-end pr-6 select-none pointer-events-none"
-            aria-hidden
-          >
-            <span className="font-black" style={{
-              fontSize: '280px',
-              lineHeight: 1,
-              color: `rgba(${accentRgb}, 0.10)`,
-              WebkitTextStrokeWidth: '1px',
-              WebkitTextStrokeColor: `rgba(${accentRgb}, 0.16)`,
-              fontFamily: 'system-ui, -apple-system, sans-serif',
-              letterSpacing: '-0.06em',
-            }}>
-              {initial}
-            </span>
-          </div>
+          {/* Key art image (when available) or entity logo or watermark initial */}
+          {artworkUrl ? (
+            <div className="absolute inset-0 flex items-center justify-end pointer-events-none select-none" aria-hidden>
+              <div className="absolute inset-0" style={{
+                background: 'linear-gradient(to right, rgba(6,0,10,0.92) 0%, rgba(6,0,10,0.5) 40%, rgba(6,0,10,0.15) 80%)',
+              }} />
+              <img
+                src={artworkUrl}
+                alt={title}
+                onError={() => setArtErr(true)}
+                style={{
+                  position: 'absolute', inset: 0, width: '100%', height: '100%',
+                  objectFit: 'cover', objectPosition: 'center top',
+                  opacity: 0.55, filter: 'saturate(1.15) brightness(0.85)',
+                }}
+              />
+            </div>
+          ) : entityLogoUrl ? (
+            <div className="absolute inset-0 flex items-center justify-end pr-8 pointer-events-none select-none" aria-hidden>
+              <div className="absolute inset-0" style={{
+                background: 'linear-gradient(to right, rgba(6,0,10,0.95) 0%, rgba(6,0,10,0.4) 50%, transparent 80%)',
+              }} />
+              <img
+                src={entityLogoUrl}
+                alt={title}
+                style={{ width: '44%', height: '80%', objectFit: 'contain', objectPosition: 'center right', opacity: 0.65,
+                  filter: 'drop-shadow(0 0 40px rgba(0,0,0,0.7))', position: 'relative', zIndex: 1 }}
+              />
+            </div>
+          ) : (
+            /* Watermark letter fallback */
+            <div
+              className="absolute inset-0 flex items-center justify-end pr-6 select-none pointer-events-none"
+              aria-hidden
+            >
+              <span className="font-black" style={{
+                fontSize: '280px',
+                lineHeight: 1,
+                color: `rgba(${accentRgb}, 0.10)`,
+                WebkitTextStrokeWidth: '1px',
+                WebkitTextStrokeColor: `rgba(${accentRgb}, 0.16)`,
+                fontFamily: 'system-ui, -apple-system, sans-serif',
+                letterSpacing: '-0.06em',
+              }}>
+                {initial}
+              </span>
+            </div>
+          )}
 
           {/* Right edge fade into data panel */}
           <div
@@ -326,13 +381,12 @@ function EventHero({
           />
         </div>
 
-        {/* ── RIGHT: Data Panel ───────────────────────────────────────────── */}
+        {/* ── RIGHT: Venue Card + Metrics Panel ──────────────────────────── */}
         <div
-          className="relative flex flex-col justify-between"
+          className="relative flex flex-col"
           style={{
             background: 'rgba(6,0,10,0.97)',
             borderLeft: '1px solid rgba(255,255,255,0.05)',
-            padding: '28px 32px',
           }}
         >
           {/* Subtle top accent line */}
@@ -341,147 +395,105 @@ function EventHero({
             style={{ background: `linear-gradient(to right, transparent, rgba(${accentRgb},0.35), transparent)` }}
           />
 
-          <div className="flex flex-col gap-5">
-
-            {/* ── LOWEST ASK — ticket-centric primary metric ───────────── */}
-            <div>
-              <div className="text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-3">
-                Lowest Ask
-              </div>
-              <div className="flex items-end gap-4">
-                {/* Original */}
-                {origAsk != null && (
-                  <div className="flex flex-col">
-                    <span className="text-[9px] text-gray-700 uppercase tracking-wider font-bold mb-1">Original</span>
-                    <span className="font-bold text-gray-600 leading-none tabular-nums"
-                      style={{ fontSize: '22px', letterSpacing: '-0.03em', textDecoration: 'line-through', textDecorationColor: 'rgba(255,255,255,0.12)' }}>
-                      {fmt$(origAsk)}
-                    </span>
-                  </div>
-                )}
-                {/* Arrow */}
-                {origAsk != null && <span className="text-gray-700 mb-1 text-sm">→</span>}
-                {/* Current */}
-                <div className="flex flex-col">
-                  {origAsk != null && <span className="text-[9px] text-gray-700 uppercase tracking-wider font-bold mb-1">Now</span>}
-                  <span className="font-black text-white leading-none tabular-nums"
-                    style={{ fontSize: origAsk != null ? '36px' : '52px', letterSpacing: '-0.04em' }}>
-                    {curAsk != null ? fmt$(curAsk) : '—'}
-                  </span>
-                </div>
-                {/* Change % */}
-                {askPct != null && askPct !== 0 && (
-                  <div className="mb-1 flex flex-col items-end">
-                    <span className="text-[9px] text-gray-700 uppercase tracking-wider font-bold mb-1">Δ</span>
-                    <span
-                      className="text-sm font-bold tabular-nums"
-                      style={{ color: askPct < 0 ? '#22c55e' : '#EF4444' }}
-                    >
-                      {askPct > 0 ? '+' : ''}{askPct.toFixed(1)}%
-                    </span>
-                  </div>
-                )}
-              </div>
-              {/* Value / Hot signal — compact */}
-              {isValue && (
-                <div className="mt-2 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#22c55e' }}/>
-                  <span className="text-[10px] font-semibold text-green-400">Value Signal</span>
-                  <span className="text-[10px] text-gray-700">· below typical range</span>
-                </div>
-              )}
-              {isHot && !isValue && (
-                <div className="mt-2 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#f97316' }}/>
-                  <span className="text-[10px] font-semibold text-orange-400">Watch</span>
-                  <span className="text-[10px] text-gray-700">· active market</span>
-                </div>
-              )}
+          {/* ── VENUE CARD ────────────────────────────────────────────────── */}
+          <div
+            className="relative overflow-hidden flex-shrink-0"
+            style={{
+              minHeight: 190,
+              background: `linear-gradient(145deg, rgba(${accentRgb},0.07) 0%, rgba(6,0,10,0.5) 100%)`,
+              borderBottom: '1px solid rgba(255,255,255,0.06)',
+            }}
+          >
+            <div className="absolute inset-0 pointer-events-none" style={{
+              background: `radial-gradient(ellipse 80% 80% at 15% 85%, rgba(${accentRgb},0.11) 0%, transparent 60%)`,
+            }} />
+            <div className="absolute right-4 top-0 bottom-0 flex items-center pointer-events-none select-none" aria-hidden>
+              <span style={{
+                fontSize: '130px', fontWeight: 900, lineHeight: 1,
+                color: `rgba(${accentRgb},0.06)`,
+                WebkitTextStrokeWidth: '1px',
+                WebkitTextStrokeColor: `rgba(${accentRgb},0.10)`,
+                letterSpacing: '-0.06em',
+              }}>{venueInitial}</span>
             </div>
-
-            {/* ── TICKETS AVAILABLE ────────────────────────────────────── */}
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '16px' }}>
-              <div className="text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-3">
-                Tickets Available
-              </div>
-              <div className="flex items-end gap-4">
-                {origTickets != null && (
-                  <div className="flex flex-col">
-                    <span className="text-[9px] text-gray-700 uppercase tracking-wider font-bold mb-1">Original</span>
-                    <span className="font-bold text-gray-600 leading-none tabular-nums"
-                      style={{ fontSize: '22px', letterSpacing: '-0.03em' }}>
-                      {origTickets.toLocaleString()}
-                    </span>
-                  </div>
-                )}
-                {origTickets != null && <span className="text-gray-700 mb-1 text-sm">→</span>}
-                <div className="flex flex-col">
-                  {origTickets != null && <span className="text-[9px] text-gray-700 uppercase tracking-wider font-bold mb-1">Now</span>}
-                  <span className="font-black leading-none tabular-nums"
-                    style={{ fontSize: origTickets != null ? '36px' : '32px', letterSpacing: '-0.04em', color: '#A78BFA' }}>
-                    {curTickets != null ? curTickets.toLocaleString() : '—'}
-                  </span>
+            <div className="relative z-10 p-6 flex flex-col justify-between" style={{ minHeight: 190 }}>
+              <div>
+                <div className="text-[9px] font-bold uppercase tracking-widest mb-2.5" style={{ color: `rgba(${accentRgb},0.45)` }}>
+                  📍 Venue
                 </div>
-                {tickPct != null && tickPct !== 0 && (
-                  <div className="mb-1 flex flex-col items-end">
-                    <span className="text-[9px] text-gray-700 uppercase tracking-wider font-bold mb-1">Δ</span>
-                    <span
-                      className="text-sm font-bold tabular-nums"
-                      style={{ color: tickPct < 0 ? '#22c55e' : '#F59E0B' }}
-                    >
-                      {tickPct > 0 ? '+' : ''}{tickPct.toFixed(1)}%
-                    </span>
+                <div className="font-black text-white leading-tight mb-1"
+                  style={{ fontSize: venueName && venueName.length > 22 ? '17px' : '21px', letterSpacing: '-0.025em' }}>
+                  {venueName || 'Venue TBD'}
+                </div>
+                {event.city && (
+                  <div className="text-sm font-medium mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                    {event.city}
                   </div>
                 )}
               </div>
-              {depth > 0 && (
-                <div className="mt-1.5 text-[9px] text-gray-700">{depth}d snapshot window</div>
-              )}
-            </div>
-
-            {/* ── Days Away chip ───────────────────────────────────────── */}
-            {days != null && (
-              <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '14px' }}>
-                <div className="flex items-center gap-3">
-                  <div className="rounded-lg px-3 py-2" style={{ background: 'rgba(229,9,20,0.08)', border: '1px solid rgba(229,9,20,0.2)' }}>
-                    <div className="text-[9px] font-bold uppercase tracking-wider text-gray-600">Days Away</div>
-                    <div className="text-sm font-bold mt-0.5 text-red-400">
-                      {days > 0 ? `${days}d` : days === 0 ? 'Today' : 'Past'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ── Event details rows ────────────────────────────────────── */}
-            <div className="space-y-2" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '14px' }}>
               {event.event_date && (
-                <div className="flex items-baseline justify-between">
-                  <span className="text-[11px] text-gray-700 uppercase tracking-wider font-bold">Date</span>
-                  <span className="text-[12px] text-gray-300 font-medium">{fmtDate(event.event_date)}</span>
+                <div className="mt-4">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold"
+                    style={{ background: `rgba(${accentRgb},0.1)`, border: `1px solid rgba(${accentRgb},0.2)`, color: accent }}>
+                    {fmtDate(event.event_date)}
+                    {days != null && days > 0 && <span className="opacity-60">· {days}d away</span>}
+                    {days === 0 && <span className="opacity-60">· Today</span>}
+                  </div>
+                  {isCompleted && (
+                    <span className="ml-2 text-[10px] px-2 py-1 rounded font-bold"
+                      style={{ background: 'rgba(255,255,255,0.04)', color: '#6B7280' }}>
+                      {event.status === 'archived' ? '🗄 Archived' : '✓ Past'}
+                    </span>
+                  )}
                 </div>
               )}
-              {venueName && (
-                <div className="flex items-baseline justify-between">
-                  <span className="text-[11px] text-gray-700 uppercase tracking-wider font-bold">Venue</span>
-                  <span className="text-[12px] text-gray-300 font-medium truncate max-w-[180px] text-right">{venueName}</span>
-                </div>
-              )}
-              {event.city && (
-                <div className="flex items-baseline justify-between">
-                  <span className="text-[11px] text-gray-700 uppercase tracking-wider font-bold">City</span>
-                  <span className="text-[12px] text-gray-300 font-medium">{event.city}</span>
-                </div>
-              )}
-              <div className="flex items-baseline justify-between">
-                <span className="text-[11px] text-gray-700 uppercase tracking-wider font-bold">Category</span>
-                <span className="text-[12px] font-semibold" style={{ color: accent }}>{catLabel}</span>
-              </div>
             </div>
           </div>
 
+          {/* ── METRICS (compact grid) + CTAs ─────────────────────────────── */}
+          <div className="flex flex-col flex-1 p-5 gap-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-xl p-3.5" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="text-[9px] font-bold uppercase tracking-widest text-gray-600 mb-1.5">Floor Ask</div>
+                <div className="font-black text-white leading-none tabular-nums" style={{ fontSize: '26px', letterSpacing: '-0.04em' }}>
+                  {curAsk != null ? fmt$(curAsk) : '—'}
+                </div>
+                {askPct != null && askPct !== 0 && (
+                  <div className="text-[10px] font-bold mt-1 tabular-nums" style={{ color: askPct < 0 ? '#22c55e' : '#EF4444' }}>
+                    {askPct > 0 ? '+' : ''}{askPct.toFixed(1)}% 7d
+                  </div>
+                )}
+                {isValue && <div className="text-[9px] text-green-400 mt-0.5">↑ Value signal</div>}
+              </div>
+              <div className="rounded-xl p-3.5" style={{ background: 'rgba(167,139,250,0.05)', border: '1px solid rgba(167,139,250,0.14)' }}>
+                <div className="text-[9px] font-bold uppercase tracking-widest text-gray-600 mb-1.5">Net Tickets</div>
+                <div className="font-black leading-none tabular-nums" style={{ fontSize: '26px', letterSpacing: '-0.04em', color: '#A78BFA' }}>
+                  {curTickets != null ? curTickets.toLocaleString() : '—'}
+                </div>
+                {tickPct != null && tickPct !== 0 && (
+                  <div className="text-[10px] font-bold mt-1 tabular-nums" style={{ color: tickPct < 0 ? '#22c55e' : '#F59E0B' }}>
+                    {tickPct > 0 ? '+' : ''}{tickPct.toFixed(1)}% 7d
+                  </div>
+                )}
+                {depth > 0 && !tickPct && <div className="text-[9px] text-gray-700 mt-0.5">{depth}d window</div>}
+              </div>
+            </div>
+
+          <div className="flex flex-col gap-5">
+
+            {/* Spacer — category label */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded"
+                style={{ background: `rgba(${accentRgb},0.1)`, color: accent }}>{catLabel}</span>
+              {histLow != null && (
+                <span className="text-[9px] text-amber-500 font-mono">All-time low: {fmt$(histLow)}</span>
+              )}
+            </div>
+
+          </div>
+
           {/* ── CTAs + last updated ──────────────────────────────────────── */}
-          <div className="flex flex-col gap-2 mt-2">
+          <div className="flex flex-col gap-2 mt-auto">
             {!isCompleted && (
               <button
                 onClick={onPoll}
@@ -496,24 +508,13 @@ function EventHero({
                 {pollLoading ? '⟳  Refreshing...' : '↻  Refresh Now'}
               </button>
             )}
-            {isCompleted && (
-              <div
-                className="w-full py-2.5 rounded-xl text-xs flex items-center justify-center gap-2"
-                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.35)' }}
-              >
-                <span className={event.status === 'archived' ? 'text-gray-500' : 'text-amber-500/70'}>
-                  {event.status === 'archived' ? '🗄 Archived' : '✓ Completed'}
-                </span>
-                <span className="text-gray-700">·</span>
-                <span>Historical view</span>
-              </div>
-            )}
             {event.last_polled_at && (
               <div className="text-[10px] text-gray-700 text-center">
                 Last updated {fmtRelative(event.last_polled_at)} ago
               </div>
             )}
           </div>
+          </div>{/* end flex-col flex-1 p-5 */}
         </div>
       </div>
 
@@ -530,32 +531,54 @@ function EventHero({
 // Primary story: original → current change in price + tickets.
 // No new API calls — derives from already-loaded event + baseline.
 
+type MovWindow = 'last_poll' | '24h' | '7d' | 'all';
+const MOV_WINDOWS: { key: MovWindow; label: string }[] = [
+  { key: 'last_poll', label: 'Last Poll' },
+  { key: '24h',       label: '24h' },
+  { key: '7d',        label: '7d' },
+  { key: 'all',       label: 'All Time' },
+];
+
 function MarketMovementSection({ event, baseline, invSummary }: {
   event: any; baseline: any | null; invSummary: any | null;
 }) {
+  const [window_, setWindow] = useState<MovWindow>('7d');
+
   const f$   = (v: number) => `$${Math.round(v).toLocaleString()}`;
   const fmtD = (iso: string) => new Date(iso).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
 
   const trackingStarted = event?.created_at ? fmtD(event.created_at) : null;
   const histLow         = event?.historical_lowest_price ?? null;
   const cur             = baseline?.current;
-  const d7              = baseline?.deltas_7d;
   const depth           = baseline?.history_depth_days ?? 0;
 
+  // Pick deltas for selected window
+  const deltas = window_ === '24h' ? baseline?.deltas_24h
+               : window_ === '7d'  ? baseline?.deltas_7d
+               : null; // last_poll and all handled specially
+
   const curTickets  = invSummary?.unique_tickets_available ?? cur?.unique_tickets ?? null;
-  // Prefer live ask: min of per_marketplace normalized_lowest_ask from invSummary
   const liveAsk = invSummary?.per_marketplace?.length
     ? Math.min(...invSummary.per_marketplace
         .map((m: any) => m.normalized_lowest_ask)
         .filter((v: any) => v != null && v > 0))
     : null;
-  const curAsk      = (liveAsk != null && isFinite(liveAsk) ? liveAsk : null) ?? cur?.lowest_ask ?? null;
-  const tickDelta   = d7?.unique_tickets?.absolute ?? null;
-  const tickPct     = d7?.unique_tickets?.pct      ?? null;
-  const askDelta    = d7?.low_ask?.absolute ?? null;
-  const askPct      = d7?.low_ask?.pct      ?? null;
-  const origTickets = curTickets != null && tickDelta != null ? curTickets - tickDelta : null;
-  const origAsk     = curAsk != null && askDelta != null ? curAsk - askDelta : null;
+  const curAsk = (liveAsk != null && isFinite(liveAsk) ? liveAsk : null) ?? cur?.lowest_ask ?? null;
+
+  // Delta values for chosen window
+  const tickDelta   = deltas?.unique_tickets?.absolute ?? null;
+  const tickPct     = deltas?.unique_tickets?.pct      ?? null;
+  const askDelta    = deltas?.low_ask?.absolute ?? null;
+  const askPct      = deltas?.low_ask?.pct      ?? null;
+
+  // For "All Time" window: use histLow as original ask
+  const askPctAll = (window_ === 'all' && histLow != null && curAsk != null && histLow > 0)
+    ? ((curAsk - histLow) / histLow) * 100 : null;
+
+  const displayAskPct     = window_ === 'all' ? askPctAll : askPct;
+  const displayAskOrig    = window_ === 'all' ? histLow   : (curAsk != null && askDelta != null ? curAsk - askDelta : null);
+  const displayTickOrig   = curTickets != null && tickDelta != null ? curTickets - tickDelta : null;
+  const displayTickPct    = tickPct;
 
   if (!trackingStarted && curTickets == null && curAsk == null) return null;
 
@@ -598,52 +621,58 @@ function MarketMovementSection({ event, baseline, invSummary }: {
 
   return (
     <div className="space-y-3">
-      {/* Metadata row: tracking started + depth */}
-      <div className="flex items-center gap-4 flex-wrap">
-        {trackingStarted && (
-          <div className="flex items-center gap-1.5 text-[10px]">
-            <span className="text-gray-700 uppercase tracking-wider font-bold">Tracking Started</span>
-            <span className="text-gray-400 font-medium">{trackingStarted}</span>
-          </div>
-        )}
-        {depth > 0 && (
-          <div className="flex items-center gap-1.5 text-[10px]">
-            <span className="text-gray-700 uppercase tracking-wider font-bold">History Depth</span>
-            <span className="px-1.5 py-0.5 rounded font-mono text-gray-500"
-              style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)' }}>
-              {depth}d
-            </span>
-          </div>
-        )}
-        {histLow != null && (
-          <div className="flex items-center gap-1.5 text-[10px] ml-auto">
-            <span className="text-gray-700 uppercase tracking-wider font-bold">All-time Low</span>
-            <span className="text-amber-400 font-semibold font-mono">{f$(histLow)}</span>
-          </div>
-        )}
+      {/* Window selector tabs */}
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {MOV_WINDOWS.map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setWindow(key)}
+            className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+            style={window_ === key
+              ? { background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff' }
+              : { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: '#4B5563' }
+            }
+          >
+            {label}
+          </button>
+        ))}
+        <div className="ml-auto flex items-center gap-3 text-[10px]">
+          {trackingStarted && (
+            <span className="text-gray-700">Since {trackingStarted}</span>
+          )}
+          {depth > 0 && (
+            <span className="text-gray-700">{depth}d history</span>
+          )}
+          {histLow != null && (
+            <span className="text-amber-500 font-mono font-semibold">All-time low: {f$(histLow)}</span>
+          )}
+        </div>
       </div>
 
       {/* Movement blocks */}
       <div className="flex gap-3 flex-wrap sm:flex-nowrap">
         <MovementBlock
-          label="Lowest Ask"
-          origVal={origAsk != null ? f$(origAsk) : null}
+          label={`Floor Ask${window_ === 'all' ? ' vs All-time Low' : window_ === 'last_poll' ? '' : ` (${window_})`}`}
+          origVal={displayAskOrig != null ? f$(displayAskOrig) : null}
           curVal={curAsk != null ? f$(curAsk) : null}
-          pct={askPct}
+          pct={displayAskPct}
           curColor="#fff"
           invertPct
         />
         <MovementBlock
-          label="Tickets Available"
-          origVal={origTickets != null ? origTickets.toLocaleString() : null}
+          label={`Net Tickets${window_ === 'last_poll' ? '' : ` (${window_})`}`}
+          origVal={displayTickOrig != null ? displayTickOrig.toLocaleString() : null}
           curVal={curTickets != null ? curTickets.toLocaleString() : null}
-          pct={tickPct}
+          pct={displayTickPct}
           curColor="#A78BFA"
           invertPct
         />
       </div>
 
-      {depth === 0 && (
+      {window_ === 'last_poll' && (
+        <p className="text-[10px] text-gray-600 italic px-1">Last Poll: showing current values — per-poll delta not available in snapshot data.</p>
+      )}
+      {depth === 0 && window_ !== 'last_poll' && (
         <p className="text-[10px] text-gray-700 italic px-1">Snapshot window not yet available — movement data will appear after the next poll run.</p>
       )}
     </div>
@@ -2448,6 +2477,119 @@ export default function EventDetailPage() {
                       dot={false}
                       connectNulls
                     />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            );
+          })()}
+
+          {/* ── Gross vs Net Ticket Trend ──────────────────────────── */}
+          {(() => {
+            const dedupMap2 = new Map<string, any>();
+            for (const snap of canonicalHistory) {
+              const key = snap.snapshot_at;
+              if (!dedupMap2.has(key) || snap.total_canonical_blocks > (dedupMap2.get(key)?.total_canonical_blocks ?? 0)) {
+                dedupMap2.set(key, snap);
+              }
+            }
+            const chartData2 = Array.from(dedupMap2.values())
+              .sort((a, b) => new Date(a.snapshot_at).getTime() - new Date(b.snapshot_at).getTime())
+              .map(s => ({
+                ts: new Date(s.snapshot_at).getTime(),
+                gross: s.total_raw_listings ?? null,
+                net: s.total_canonical_blocks ?? null,
+                dupes: (s.total_raw_listings != null && s.total_canonical_blocks != null)
+                  ? s.total_raw_listings - s.total_canonical_blocks : null,
+              }))
+              .filter(d => d.gross != null || d.net != null);
+
+            if (chartData2.length < 2) return null;
+            const fmtTime2 = (ms: number) => new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+            return (
+              <div className="glass-dark rounded-2xl p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Gross vs Net Inventory Trend</div>
+                  <div className="flex items-center gap-4 text-[10px] text-gray-600">
+                    <span className="flex items-center gap-1.5"><span className="inline-block w-2 h-0.5 bg-gray-500" />Gross listings</span>
+                    <span className="flex items-center gap-1.5"><span className="inline-block w-2 h-0.5 bg-violet-400" />Net canonical blocks</span>
+                    <span className="flex items-center gap-1.5"><span className="inline-block w-2 h-0.5 bg-amber-400" />Duplicates</span>
+                  </div>
+                </div>
+                <ResponsiveContainer width="100%" height={200}>
+                  <ComposedChart data={chartData2} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                    <XAxis dataKey="ts" type="number" scale="time" domain={['dataMin','dataMax']}
+                      tickFormatter={fmtTime2} tick={{ fill:'#4B5563', fontSize:10 }} tickLine={false}
+                      axisLine={{ stroke:'rgba(255,255,255,0.05)' }} />
+                    <YAxis tick={{ fill:'#4B5563', fontSize:10 }} tickLine={false} axisLine={false} width={36}
+                      tickFormatter={(v:number) => v.toLocaleString()} />
+                    <Tooltip
+                      contentStyle={{ background:'#111827', border:'1px solid rgba(255,255,255,0.08)', borderRadius:8, fontSize:11, color:'#e5e7eb' }}
+                      labelFormatter={(v:number) => fmtTime2(v)}
+                      formatter={(value:number, name:string) =>
+                        name === 'gross' ? [value.toLocaleString(), 'Gross listings']
+                        : name === 'net'  ? [value.toLocaleString(), 'Net canonical blocks']
+                        : [value.toLocaleString(), 'Duplicate listings']
+                      }
+                    />
+                    <Area type="monotone" dataKey="gross" stroke="#6B7280" fill="rgba(107,114,128,0.08)" strokeWidth={1.5} dot={false} connectNulls />
+                    <Area type="monotone" dataKey="net" stroke="#A78BFA" fill="rgba(167,139,250,0.08)" strokeWidth={2} dot={false} connectNulls />
+                    <Line type="monotone" dataKey="dupes" stroke="#F59E0B" strokeWidth={1.5} dot={false} connectNulls strokeDasharray="4 3" />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            );
+          })()}
+
+          {/* ── Duplicate Rate Trend ───────────────────────────────── */}
+          {(() => {
+            const dedupMap3 = new Map<string, any>();
+            for (const snap of canonicalHistory) {
+              const key = snap.snapshot_at;
+              if (!dedupMap3.has(key) || snap.total_canonical_blocks > (dedupMap3.get(key)?.total_canonical_blocks ?? 0)) {
+                dedupMap3.set(key, snap);
+              }
+            }
+            const chartData3 = Array.from(dedupMap3.values())
+              .sort((a, b) => new Date(a.snapshot_at).getTime() - new Date(b.snapshot_at).getTime())
+              .map(s => ({
+                ts: new Date(s.snapshot_at).getTime(),
+                dupRate: s.global_duplicate_ratio != null ? Number((s.global_duplicate_ratio * 100).toFixed(1)) : null,
+                mirrorRate: s.mirrored_ratio != null ? Number((s.mirrored_ratio * 100).toFixed(1)) : null,
+              }))
+              .filter(d => d.dupRate != null || d.mirrorRate != null);
+
+            if (chartData3.length < 2) return null;
+            const fmtTime3 = (ms: number) => new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+            return (
+              <div className="glass-dark rounded-2xl p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Duplicate &amp; Mirror Rate Trend</div>
+                  <div className="flex items-center gap-4 text-[10px] text-gray-600">
+                    <span className="flex items-center gap-1.5"><span className="inline-block w-2 h-0.5 bg-amber-400" />Duplicate rate %</span>
+                    <span className="flex items-center gap-1.5"><span className="inline-block w-2 h-0.5 bg-sky-400" />Mirror rate %</span>
+                  </div>
+                </div>
+                <ResponsiveContainer width="100%" height={160}>
+                  <ComposedChart data={chartData3} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                    <XAxis dataKey="ts" type="number" scale="time" domain={['dataMin','dataMax']}
+                      tickFormatter={fmtTime3} tick={{ fill:'#4B5563', fontSize:10 }} tickLine={false}
+                      axisLine={{ stroke:'rgba(255,255,255,0.05)' }} />
+                    <YAxis tick={{ fill:'#4B5563', fontSize:10 }} tickLine={false} axisLine={false} width={36}
+                      tickFormatter={(v:number) => `${v}%`} />
+                    <Tooltip
+                      contentStyle={{ background:'#111827', border:'1px solid rgba(255,255,255,0.08)', borderRadius:8, fontSize:11, color:'#e5e7eb' }}
+                      labelFormatter={(v:number) => fmtTime3(v)}
+                      formatter={(value:number, name:string) =>
+                        name === 'dupRate' ? [`${value}%`, 'Duplicate rate']
+                        : [`${value}%`, 'Mirror rate']
+                      }
+                    />
+                    <Line type="monotone" dataKey="dupRate" stroke="#F59E0B" strokeWidth={2} dot={false} connectNulls />
+                    <Line type="monotone" dataKey="mirrorRate" stroke="#38BDF8" strokeWidth={2} dot={false} connectNulls />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
