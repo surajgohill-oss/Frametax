@@ -5,9 +5,11 @@ import { api } from "@/lib/api";
 import { fmtDate, fmt$ } from "@/lib/utils";
 import { getEntityImage } from "@/lib/entityImages";
 import { EntityLogo } from "@/components/ui/EntityLogo";
-import { Plus, Calendar, TrendingUp, Activity, ChevronRight, Ticket, Star, Zap } from "lucide-react";
+import { Plus, Calendar, TrendingUp, Activity, ChevronRight, ChevronDown, Ticket, Star, Zap, EyeOff, Eye } from "lucide-react";
 import { useMyEvents } from "@/hooks/useMyEvents";
 import { useHeroEvent } from "@/hooks/useHeroEvent";
+import { useFollowed } from "@/hooks/useFollowed";
+import { useHiddenEvents } from "@/hooks/useHiddenEvents";
 
 // ── Entity helpers ─────────────────────────────────────────────────────────────
 
@@ -159,7 +161,7 @@ function MarketTape({ summary, eventCount, groupCount }: { summary:any; eventCou
           {/* Color top border */}
           <div className="absolute top-0 left-0 right-0 h-[2px] rounded-t-xl" style={{ background: accent }} />
           <div className="text-white font-black text-xl leading-none mt-1" style={{ letterSpacing:"-0.04em" }}>{num}</div>
-          <div className="text-[9px] font-bold uppercase tracking-widest mt-1.5" style={{ color:"#2a2a2a" }}>{label}</div>
+          <div className="text-[9px] font-bold uppercase tracking-widest mt-1.5" style={{ color:"#6B7280" }}>{label}</div>
         </div>
       ))}
     </div>
@@ -169,6 +171,7 @@ function MarketTape({ summary, eventCount, groupCount }: { summary:any; eventCou
 // ── Featured Hero ──────────────────────────────────────────────────────────────
 
 function FeaturedHero({ event, onClearHero }: { event: any; onClearHero?: () => void }) {
+  const [heroImgErr, setHeroImgErr] = useState(false);
   const theme  = getEntityTheme(getEntityName(event.title));
   const price  = event.lowest_ask_stubhub ?? event.marketplace_prices?.tickpick ?? event.marketplace_prices?.gametime;
   const status = getMarketStatus(price);
@@ -177,6 +180,7 @@ function FeaturedHero({ event, onClearHero }: { event: any; onClearHero?: () => 
   const entity = getEntityName(event.title);
   const subtitle = event.title !== entity ? event.title.replace(entity,"").replace(/^[\s·–—]/,"").trim() : "";
   const isValue  = price != null && price < 100;
+  const heroImgUrl = !heroImgErr ? getEntityImage(entity).logo : undefined;
 
   return (
     <Link href={`/events/${event.id}`} className="block group">
@@ -216,19 +220,41 @@ function FeaturedHero({ event, onClearHero }: { event: any; onClearHero?: () => 
         <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none"
           style={{ background:"linear-gradient(0deg, rgba(6,0,4,0.6) 0%, transparent 100%)" }}/>
 
-        {/* === Layer 6: Large watermark initial === */}
-        <div
-          className="absolute right-0 top-0 bottom-0 flex items-center pr-8 select-none pointer-events-none"
-          style={{
-            fontSize:"clamp(140px, 22vw, 260px)", fontWeight:900,
-            color:`rgba(${theme.accentRgb}, 0.05)`,
-            WebkitTextStrokeWidth:"1.5px",
-            WebkitTextStrokeColor:`rgba(${theme.accentRgb}, 0.085)`,
-            lineHeight:1, letterSpacing:"-0.06em",
-          }}
-        >
-          {theme.initial}
-        </div>
+        {/* === Layer 6: Entity image (when available) or large watermark initial === */}
+        {heroImgUrl ? (
+          <div
+            className="absolute right-0 top-0 bottom-0 flex items-center justify-end pointer-events-none select-none"
+            style={{ width:"42%", paddingRight:"5%" }}
+          >
+            {/* Gradient scrim — left edge fade so image doesn't bleed into text */}
+            <div className="absolute inset-0" style={{
+              background:"linear-gradient(to right, rgba(6,0,4,0.95) 0%, rgba(6,0,4,0.3) 35%, transparent 70%)"
+            }}/>
+            <img
+              src={heroImgUrl}
+              alt={entity}
+              onError={() => setHeroImgErr(true)}
+              style={{
+                width:"100%", height:"92%", objectFit:"contain", objectPosition:"center right",
+                opacity:0.72, filter:"drop-shadow(0 0 40px rgba(0,0,0,0.6))",
+                position:"relative", zIndex:1,
+              }}
+            />
+          </div>
+        ) : (
+          <div
+            className="absolute right-0 top-0 bottom-0 flex items-center pr-8 select-none pointer-events-none"
+            style={{
+              fontSize:"clamp(140px, 22vw, 260px)", fontWeight:900,
+              color:`rgba(${theme.accentRgb}, 0.14)`,
+              WebkitTextStrokeWidth:"1.5px",
+              WebkitTextStrokeColor:`rgba(${theme.accentRgb}, 0.20)`,
+              lineHeight:1, letterSpacing:"-0.06em",
+            }}
+          >
+            {theme.initial}
+          </div>
+        )}
 
         {/* Content */}
         <div className="relative z-10 p-8 sm:p-10 flex flex-col justify-between h-full" style={{ minHeight:340 }}>
@@ -246,7 +272,7 @@ function FeaturedHero({ event, onClearHero }: { event: any; onClearHero?: () => 
             )}
             <div className="flex items-center gap-3">
               <EntityLogo entity={entity} initial={theme.initial} accent={theme.accent}
-                gradFrom={theme.gradFrom} gradMid={theme.gradMid} size={44} />
+                gradFrom={theme.gradFrom} gradMid={theme.gradMid} size={56} />
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full pulse-live" style={{ background:"#00F2FF" }}/>
@@ -286,14 +312,20 @@ function FeaturedHero({ event, onClearHero }: { event: any; onClearHero?: () => 
                 </div>
                 <div className="stat-label mt-1">Lowest ask</div>
               </div>
-              {event.total_listings > 0 && (
-                <div className="pb-0.5">
-                  <div className="text-white/50 font-bold text-xl" style={{ letterSpacing:"-0.02em" }}>
-                    {event.total_listings.toLocaleString()}
+              {/* Marketplace coverage */}
+              {(() => {
+                const mp = event.marketplace_prices || event.all_marketplace_prices || {};
+                const count = ['stubhub','tickpick','gametime','vividseats'].filter(k => mp[k] != null).length;
+                if (count === 0) return null;
+                return (
+                  <div className="pb-0.5">
+                    <div className="text-white/50 font-bold text-xl" style={{ letterSpacing:"-0.02em" }}>
+                      {count}/4
+                    </div>
+                    <div className="stat-label">Markets</div>
                   </div>
-                  <div className="stat-label">Listings</div>
-                </div>
-              )}
+                );
+              })()}
             </div>
 
             {/* Right: value signal + status + CTA */}
@@ -358,8 +390,22 @@ function EventRow({ ev, theme, isMyEvent, onToggleMyEvent }: {
       className="flex items-center px-5 py-3 hover:bg-white/[0.025] transition-colors group"
       style={{ borderBottom:"1px solid rgba(255,255,255,0.035)" }}
     >
+      {/* Entity color tile */}
+      <div
+        className="w-5 h-5 rounded shrink-0 mr-0 flex items-center justify-center"
+        style={{
+          background:`linear-gradient(135deg, ${theme.gradFrom} 0%, ${theme.gradMid} 100%)`,
+          border:`1px solid rgba(${theme.accentRgb}, 0.25)`,
+          boxShadow:`0 0 6px rgba(${theme.accentRgb}, 0.15)`,
+        }}
+      >
+        <span style={{ fontSize:8, fontWeight:900, color:theme.accent, lineHeight:1 }}>
+          {theme.initial}
+        </span>
+      </div>
+
       {/* Date column */}
-      <div className="w-14 shrink-0">
+      <div className="w-14 shrink-0 ml-2">
         <div className="text-[10px] font-bold text-slate-600 uppercase tracking-wider leading-tight">{shortDate}</div>
         {days > 0 && days <= 60 && (
           <div className="text-[9px] text-slate-700 mt-0.5">{days}d</div>
@@ -374,9 +420,9 @@ function EventRow({ ev, theme, isMyEvent, onToggleMyEvent }: {
         <div className="text-[10px] text-slate-700 truncate mt-0.5 hidden sm:block">{venue}</div>
       </div>
 
-      {/* Listings — hidden on small screens */}
+      {/* Inventory — hidden on small screens */}
       <div className="w-16 shrink-0 text-right hidden lg:block">
-        <div className="text-[11px] text-slate-700">
+        <div className="text-[11px] text-slate-700 tabular-nums">
           {ev.total_listings ? ev.total_listings.toLocaleString() : "—"}
         </div>
       </div>
@@ -443,19 +489,24 @@ function EventRow({ ev, theme, isMyEvent, onToggleMyEvent }: {
 
 // ── Entity Block ───────────────────────────────────────────────────────────────
 
-function EntityBlock({ group, myEvents, onToggleMyEvent, heroEventId, onSetHero }: {
+function EntityBlock({ group, myEvents, onToggleMyEvent, heroEventId, onSetHero, onHide }: {
   group: EventGroup;
   myEvents: Set<number>;
   onToggleMyEvent: (id: number) => void;
   heroEventId: number | null;
   onSetHero: (id: number) => void;
+  onHide: (ids: number[]) => void;
 }) {
   const { entity, theme, events, minPrice, totalListings } = group;
+  // Multi-event groups start collapsed; single-event groups start expanded
+  const [expanded, setExpanded] = useState(events.length === 1);
   const status    = getMarketStatus(minPrice);
   const nextEvent = events[0];
   const days      = nextEvent ? daysUntil(nextEvent.event_date) : null;
   const isValue   = minPrice != null && minPrice < 100;
   const isHot     = minPrice != null && minPrice >= 100 && minPrice < 150;
+  const hasMyEvent = events.some((ev: any) => myEvents.has(ev.id));
+  const isHero     = events.some((ev: any) => ev.id === heroEventId);
 
   return (
     <section
@@ -468,18 +519,19 @@ function EntityBlock({ group, myEvents, onToggleMyEvent, heroEventId, onSetHero 
         style={{ background:`linear-gradient(180deg, ${theme.accent}, rgba(${theme.accentRgb}, 0.08))` }}
       />
 
-      {/* Entity header */}
+      {/* Entity header — click to expand/collapse */}
       <div
-        className="flex items-center gap-4 pl-6 pr-5 py-4"
-        style={{ borderBottom:"1px solid rgba(255,255,255,0.04)" }}
+        className="flex items-center gap-4 pl-6 pr-5 py-4 cursor-pointer select-none"
+        style={{ borderBottom: expanded ? "1px solid rgba(255,255,255,0.04)" : "none" }}
+        onClick={() => setExpanded(v => !v)}
       >
         <EntityLogo
           entity={entity} initial={theme.initial} accent={theme.accent}
-          gradFrom={theme.gradFrom} gradMid={theme.gradMid} size={40}
+          gradFrom={theme.gradFrom} gradMid={theme.gradMid} size={52}
         />
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 flex-wrap">
             <h2 className="text-white font-bold text-[15px] leading-none" style={{ letterSpacing:"-0.02em" }}>
               {entity}
             </h2>
@@ -489,8 +541,20 @@ function EntityBlock({ group, myEvents, onToggleMyEvent, heroEventId, onSetHero 
             >
               {theme.category}
             </span>
+            {hasMyEvent && (
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded"
+                style={{ background:"rgba(245,158,11,0.12)", color:"#F59E0B", border:"1px solid rgba(245,158,11,0.3)" }}>
+                ★ My Event
+              </span>
+            )}
+            {isHero && (
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded"
+                style={{ background:"rgba(139,92,246,0.12)", color:"#8B5CF6", border:"1px solid rgba(139,92,246,0.3)" }}>
+                ⚡ Hero
+              </span>
+            )}
           </div>
-          <div className="flex items-center gap-2 mt-1.5">
+          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
             <span className="text-slate-600 text-[11px]">
               {events.length} {events.length===1?"event":"events"}
             </span>
@@ -510,33 +574,64 @@ function EntityBlock({ group, myEvents, onToggleMyEvent, heroEventId, onSetHero 
                 </span>
               </>
             )}
+            {(() => {
+              const slugs = ['stubhub','tickpick','gametime','vividseats'];
+              const count = slugs.filter(slug =>
+                events.some((ev: any) => {
+                  const mp = ev.marketplace_prices || ev.all_marketplace_prices || {};
+                  return mp[slug] != null;
+                })
+              ).length;
+              if (count === 0) return null;
+              return (
+                <>
+                  <span className="text-slate-700 text-xs">·</span>
+                  <span className="text-[11px]" style={{ color: count >= 3 ? '#4ADE80' : count >= 2 ? '#FB923C' : '#6B7280' }}>
+                    {count}/4 markets
+                  </span>
+                </>
+              );
+            })()}
           </div>
         </div>
 
-        {/* Status pill + marketplace dots + Make Hero */}
-        <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-          {/* Marketplace availability dots */}
-          <div className="flex items-center gap-1 mr-1" title="Live marketplaces">
-            {[
+        {/* Status pill + marketplace coverage + Make Hero */}
+        <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end" onClick={e => e.stopPropagation()}>
+          {/* Marketplace coverage — dots + count */}
+          {(() => {
+            const markets = [
               { slug: 'stubhub',    dot: '#818CF8', label: 'SH' },
               { slug: 'tickpick',   dot: '#4ADE80', label: 'TP' },
               { slug: 'gametime',   dot: '#FB923C', label: 'GT' },
               { slug: 'vividseats', dot: '#F472B6', label: 'VS' },
-            ].map(({ slug, dot, label }) => {
-              const hasData = events.some((ev: any) => {
+            ];
+            const covered = markets.filter(({ slug }) =>
+              events.some((ev: any) => {
                 const prices = ev.marketplace_prices || ev.all_marketplace_prices || {};
                 return prices[slug] != null;
-              });
-              return (
-                <span
-                  key={slug}
-                  className="inline-block w-1.5 h-1.5 rounded-full"
-                  style={{ background: hasData ? dot : 'rgba(255,255,255,0.1)', opacity: hasData ? 0.9 : 0.4 }}
-                  title={`${label}: ${hasData ? 'live' : 'no data'}`}
-                />
-              );
-            })}
-          </div>
+              })
+            );
+            return (
+              <div className="flex items-center gap-1.5" title={`${covered.length} of ${markets.length} marketplaces live`}>
+                {markets.map(({ slug, dot, label }) => {
+                  const hasData = covered.some(m => m.slug === slug);
+                  return (
+                    <span
+                      key={slug}
+                      className="inline-block w-1.5 h-1.5 rounded-full"
+                      style={{ background: hasData ? dot : 'rgba(255,255,255,0.1)', opacity: hasData ? 0.9 : 0.3 }}
+                      title={`${label}: ${hasData ? 'live' : 'no data'}`}
+                    />
+                  );
+                })}
+                <span className="text-[9px] font-semibold tabular-nums ml-0.5"
+                  style={{ color: covered.length >= 3 ? '#4ADE80' : covered.length >= 2 ? '#FB923C' : '#6B7280' }}>
+                  {covered.length}/{markets.length}
+                </span>
+              </div>
+            );
+          })()}
+
           {minPrice != null && (
             <span className={`text-[10px] font-bold px-2.5 py-1.5 rounded-lg ${status.cssClass}`}>
               {status.emoji} {status.label}
@@ -561,64 +656,161 @@ function EntityBlock({ group, myEvents, onToggleMyEvent, heroEventId, onSetHero 
             <Zap size={9} fill={heroEventId === nextEvent.id ? "#F59E0B" : "none"}/>
             {heroEventId === nextEvent.id ? "Hero" : "Pin"}
           </button>
+          {/* Hide all events in this entity group */}
+          <button
+            onClick={(e) => { e.stopPropagation(); onHide(events.map((ev: any) => ev.id)); }}
+            title={`Hide ${entity} from dashboard`}
+            className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-all"
+            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "#374151" }}
+          >
+            <EyeOff size={9}/>
+          </button>
+          {/* Expand/collapse chevron */}
+          <div className="flex items-center justify-center w-6 h-6 ml-1 pointer-events-none">
+            <ChevronDown
+              size={13}
+              className="transition-transform duration-200"
+              style={{ color:"#374151", transform: expanded ? "rotate(180deg)" : "rotate(0deg)" }}
+            />
+          </div>
         </div>
       </div>
 
-      {/* Event rows — the table */}
-      <div>
-        {/* Column header — subtle */}
-        <div
-          className="flex items-center px-5 py-1.5"
-          style={{ borderBottom:"1px solid rgba(255,255,255,0.03)" }}
-        >
-          <div className="w-14 shrink-0 text-[9px] text-slate-800 uppercase tracking-wider font-bold">Date</div>
-          <div className="flex-1 px-3 text-[9px] text-slate-800 uppercase tracking-wider font-bold">Event</div>
-          <div className="w-16 shrink-0 text-right hidden lg:block text-[9px] text-slate-800 uppercase tracking-wider font-bold">Listings</div>
-          <div className="w-18 shrink-0 text-right pl-3 text-[9px] text-slate-800 uppercase tracking-wider font-bold">Price</div>
-          <div className="w-16 shrink-0" />
-        </div>
-        {events.map((ev) => (
-          <EventRow
-            key={ev.id}
-            ev={ev}
-            theme={theme}
-            isMyEvent={myEvents.has(ev.id)}
-            onToggleMyEvent={onToggleMyEvent}
-          />
-        ))}
-      </div>
+      {/* Expandable body */}
+      {expanded && (
+        <>
+          {/* Event rows — the table */}
+          <div>
+            {/* Column header — subtle */}
+            <div
+              className="flex items-center px-5 py-1.5"
+              style={{ borderBottom:"1px solid rgba(255,255,255,0.03)" }}
+            >
+              <div className="w-5 shrink-0"/>
+              <div className="w-14 shrink-0 text-[9px] text-slate-800 uppercase tracking-wider font-bold">Date</div>
+              <div className="flex-1 px-3 text-[9px] text-slate-800 uppercase tracking-wider font-bold">Event</div>
+              <div className="w-16 shrink-0 text-right hidden lg:block text-[9px] text-slate-800 uppercase tracking-wider font-bold">Inventory</div>
+              <div className="w-28 shrink-0 text-right pl-3 text-[9px] text-slate-800 uppercase tracking-wider font-bold">Price</div>
+              <div className="w-16 shrink-0" />
+            </div>
+            {events.map((ev) => (
+              <EventRow
+                key={ev.id}
+                ev={ev}
+                theme={theme}
+                isMyEvent={myEvents.has(ev.id)}
+                onToggleMyEvent={onToggleMyEvent}
+              />
+            ))}
+          </div>
 
-      {/* Market insight footer — only shown when there's a real signal */}
-      {isValue && (
-        <div
-          className="flex items-center gap-3 pl-6 pr-5 py-2.5"
-          style={{
-            background:"rgba(34,197,94,0.03)",
-            borderTop:"1px solid rgba(34,197,94,0.1)",
-          }}
-        >
-          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background:"#22c55e" }}/>
-          <span className="text-[11px] text-slate-600">
-            <span className="text-green-400/80 font-semibold">Value signal</span> — lowest ask{" "}
-            {fmt$(minPrice!)} is below typical market range for this category
-          </span>
-        </div>
-      )}
-      {isHot && (
-        <div
-          className="flex items-center gap-3 pl-6 pr-5 py-2.5"
-          style={{
-            background:"rgba(249,115,22,0.03)",
-            borderTop:"1px solid rgba(249,115,22,0.08)",
-          }}
-        >
-          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background:"#f97316" }}/>
-          <span className="text-[11px] text-slate-600">
-            <span className="text-orange-400/80 font-semibold">Watch</span> — market active, price may move before event
-          </span>
-        </div>
+          {/* Market insight footer — only shown when there's a real signal */}
+          {isValue && (
+            <div
+              className="flex items-center gap-3 pl-6 pr-5 py-2.5"
+              style={{ background:"rgba(34,197,94,0.03)", borderTop:"1px solid rgba(34,197,94,0.1)" }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background:"#22c55e" }}/>
+              <span className="text-[11px] text-slate-600">
+                <span className="text-green-400/80 font-semibold">Value signal</span> — lowest ask{" "}
+                {fmt$(minPrice!)} is below typical market range for this category
+              </span>
+            </div>
+          )}
+          {isHot && (
+            <div
+              className="flex items-center gap-3 pl-6 pr-5 py-2.5"
+              style={{ background:"rgba(249,115,22,0.03)", borderTop:"1px solid rgba(249,115,22,0.08)" }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background:"#f97316" }}/>
+              <span className="text-[11px] text-slate-600">
+                <span className="text-orange-400/80 font-semibold">Watch</span> — market active, price may move before event
+              </span>
+            </div>
+          )}
+        </>
       )}
     </section>
+  );
+}
+
+// ── Quick Filter Bar ──────────────────────────────────────────────────────────
+
+type DashFilter = "all" | "concerts" | "sports" | "myevents" | "following";
+
+function FilterBar({ active, onChange, myCount, followCount }: {
+  active: DashFilter;
+  onChange: (f: DashFilter) => void;
+  myCount: number;
+  followCount: number;
+}) {
+  const chips: { id: DashFilter; label: string; count?: number }[] = [
+    { id: "all",       label: "All" },
+    { id: "concerts",  label: "Concerts" },
+    { id: "sports",    label: "Sports" },
+    { id: "myevents",  label: "My Events", count: myCount },
+    { id: "following", label: "Following",  count: followCount },
+  ];
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap">
+      {chips.map(({ id, label, count }) => (
+        <button
+          key={id}
+          onClick={() => onChange(id)}
+          className={`filter-chip ${active === id ? "active" : ""}`}
+        >
+          {label}
+          {count != null && count > 0 && (
+            <span className="ml-1.5 text-[9px] opacity-70">{count}</span>
+          )}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ── Following Row ─────────────────────────────────────────────────────────────
+
+function FollowingRow({ events, followed, onUnfollow }: {
+  events: any[];
+  followed: Set<number>;
+  onUnfollow: (id: number) => void;
+}) {
+  const followedEvents = events.filter((e: any) => followed.has(e.id));
+  if (followedEvents.length === 0) return null;
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-3">
+        <Activity size={13} style={{ color:"#E50914" }}/>
+        <span className="section-label">Following</span>
+        <span className="text-[10px] text-slate-700 font-semibold">{followedEvents.length}</span>
+      </div>
+      <div className="scroll-row pb-1" style={{ display:"flex", gap:10, overflowX:"auto", scrollbarWidth:"none" }}>
+        {followedEvents.map((ev: any) => {
+          const theme = getEntityTheme(getEntityName(ev.title));
+          const price = ev.lowest_ask_stubhub ?? ev.marketplace_prices?.tickpick ?? ev.marketplace_prices?.gametime;
+          return (
+            <Link key={ev.id} href={`/events/${ev.id}`} className="shrink-0 group">
+              <div
+                className="flex flex-col items-center gap-2 p-3 rounded-xl transition-all"
+                style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", minWidth:76 }}
+              >
+                <EntityLogo entity={getEntityName(ev.title)} initial={theme.initial} accent={theme.accent}
+                  gradFrom={theme.gradFrom} gradMid={theme.gradMid} size={36}/>
+                <div className="text-center">
+                  <div className="text-[10px] text-slate-400 font-medium truncate max-w-[64px] group-hover:text-white transition-colors">
+                    {getEntityName(ev.title)}
+                  </div>
+                  {price != null && (
+                    <div className="text-[9px] text-slate-600 font-mono">{fmt$(price)}</div>
+                  )}
+                </div>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -630,10 +822,14 @@ export default function DashboardPage() {
   const [summary,    setSummary]    = useState<any>(null);
   const [loading,    setLoading]    = useState(true);
   const [showPast,   setShowPast]   = useState(false);
+  const [filter,     setFilter]     = useState<DashFilter>("all");
+  const [showHidden, setShowHidden] = useState(false);
 
-  // ── localStorage: My Events & Hero (via hooks) ────────────────────────────
-  const { myEvents, toggle: toggleMyEvent } = useMyEvents();
-  const { heroEventId, setHero, clearHero } = useHeroEvent();
+  // ── localStorage hooks ────────────────────────────────────────────────────
+  const { myEvents, toggle: toggleMyEvent }        = useMyEvents();
+  const { heroEventId, setHero, clearHero }         = useHeroEvent();
+  const { followed, toggle: toggleFollow }           = useFollowed();
+  const { hiddenEvents, hide: hideEvent, unhide }    = useHiddenEvents();
 
   useEffect(() => {
     Promise.all([
@@ -652,21 +848,40 @@ export default function DashboardPage() {
   }, []);
 
   // Filter to events that have at least one non-SeatGeek price signal
-  // (tracked_events is a backend relation — use marketplace_prices instead)
   const activeEvents = events.filter((e:any)=> {
     const mp = e.marketplace_prices ?? e.all_marketplace_prices ?? {};
     const hasNonSG = Object.keys(mp).some(k => k !== "seatgeek" && mp[k] != null);
     return hasNonSG || e.is_active !== false;
   });
 
-  const groups = groupEvents(activeEvents);
+  // Separate visible and hidden events
+  const visibleEvents  = activeEvents.filter((e: any) => !hiddenEvents.has(e.id));
+  const hiddenEventList = activeEvents.filter((e: any) => hiddenEvents.has(e.id));
 
-  const autoFeaturedEvent = activeEvents
+  // Apply quick filter
+  const filteredEvents = visibleEvents.filter((e: any) => {
+    if (filter === "myevents")  return myEvents.has(e.id);
+    if (filter === "following") return followed.has(e.id);
+    if (filter === "sports") {
+      const n = (e.title || "").toLowerCase();
+      return /nfl|nba|mlb|mls|nhl|fifa|soccer|football|basketball|baseball|preseason|chargers|lakers|dodgers|rams|raiders|49ers|angels|clippers/.test(n);
+    }
+    if (filter === "concerts") {
+      const n = (e.title || "").toLowerCase();
+      return !/nfl|nba|mlb|mls|nhl|fifa|soccer|football|basketball|baseball|preseason|chargers|lakers|dodgers|rams|raiders|49ers|angels|clippers/.test(n);
+    }
+    return true;
+  });
+
+  const groups = groupEvents(filteredEvents);
+  const allGroups = groupEvents(visibleEvents);
+
+  const autoFeaturedEvent = visibleEvents
     .filter((e:any)=> { const d=daysUntil(e.event_date); const p=e.lowest_ask_stubhub??e.marketplace_prices?.tickpick??e.marketplace_prices?.gametime; return d>0 && p!=null; })
     .sort((a:any,b:any)=> new Date(a.event_date).getTime()-new Date(b.event_date).getTime())[0] ?? null;
 
   const featuredEvent = heroEventId
-    ? (activeEvents.find((e:any) => e.id === heroEventId) ?? autoFeaturedEvent)
+    ? (visibleEvents.find((e:any) => e.id === heroEventId) ?? autoFeaturedEvent)
     : autoFeaturedEvent;
 
   if (loading) {
@@ -718,7 +933,14 @@ export default function DashboardPage() {
       {/* ── Market Tape ──────────────────────────────────────────────────────── */}
       {activeEvents.length > 0 && (
         <div className="fade-up-1">
-          <MarketTape summary={summary} eventCount={activeEvents.length} groupCount={groups.length}/>
+          <MarketTape summary={summary} eventCount={visibleEvents.length} groupCount={allGroups.length}/>
+        </div>
+      )}
+
+      {/* ── Following Row ────────────────────────────────────────────────────── */}
+      {followed.size > 0 && (
+        <div className="fade-up-1">
+          <FollowingRow events={visibleEvents} followed={followed} onUnfollow={toggleFollow}/>
         </div>
       )}
 
@@ -738,8 +960,20 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* ── Quick filter bar ─────────────────────────────────────────────────── */}
+      {activeEvents.length > 0 && (
+        <div className="fade-up-2">
+          <FilterBar
+            active={filter}
+            onChange={setFilter}
+            myCount={myEvents.size}
+            followCount={followed.size}
+          />
+        </div>
+      )}
+
       {/* ── Empty state ──────────────────────────────────────────────────────── */}
-      {groups.length === 0 && (
+      {groups.length === 0 && activeEvents.length === 0 && (
         <div className="flex flex-col items-center justify-center py-28 gap-5">
           <div className="w-18 h-18 rounded-2xl flex items-center justify-center"
             style={{ background:"rgba(229,9,20,0.07)", border:"1px solid rgba(229,9,20,0.18)" }}>
@@ -757,14 +991,24 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ── Entity Groups — Concept C entity blocks ──────────────────────────── */}
+      {/* ── Filter empty state ───────────────────────────────────────────────── */}
+      {groups.length === 0 && activeEvents.length > 0 && (
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <p className="text-slate-500 text-sm">No events match this filter.</p>
+          <button onClick={() => setFilter("all")} className="text-xs text-red-500 hover:text-red-400 transition-colors">
+            Show all →
+          </button>
+        </div>
+      )}
+
+      {/* ── Entity Groups ────────────────────────────────────────────────────── */}
       {groups.length > 0 && (
         <div className="fade-up-3">
           <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
             <div className="flex items-center gap-2">
               <Activity size={13} style={{ color:"#E50914" }}/>
               <span className="section-label">Your Watchlist</span>
-              <span className="text-[10px] text-slate-700 font-semibold">{activeEvents.length} events · {groups.length} entities</span>
+              <span className="text-[10px] text-slate-700 font-semibold">{filteredEvents.length} events · {groups.length} entities</span>
             </div>
             {myEvents.size > 0 && (
               <div className="flex items-center gap-2 text-[11px] text-slate-500">
@@ -782,10 +1026,48 @@ export default function DashboardPage() {
                 onToggleMyEvent={toggleMyEvent}
                 heroEventId={heroEventId}
                 onSetHero={setHero}
+                onHide={(ids) => ids.forEach(id => hideEvent(id))}
               />
             ))}
           </div>
         </div>
+      )}
+
+      {/* ── Hidden events strip ──────────────────────────────────────────────── */}
+      {hiddenEventList.length > 0 && (
+        <div className="section-divider my-2"/>
+      )}
+      {hiddenEventList.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setShowHidden(v => !v)}
+              className="flex items-center gap-2 text-[11px] text-slate-700 hover:text-slate-500 transition-colors font-medium"
+            >
+              <EyeOff size={11}/>
+              {hiddenEventList.length} hidden {hiddenEventList.length === 1 ? "event" : "events"}
+              <span className="text-[10px]">{showHidden ? "▲" : "▼"}</span>
+            </button>
+          </div>
+          {showHidden && (
+            <div className="mt-3 rounded-xl overflow-hidden divide-y divide-white/[0.03]"
+              style={{ background:"rgba(255,255,255,0.015)", border:"1px solid rgba(255,255,255,0.05)" }}>
+              {hiddenEventList.map((ev: any) => (
+                <div key={ev.id} className="flex items-center gap-3 px-4 py-2.5 opacity-40 hover:opacity-70 transition-opacity">
+                  <span className="flex-1 text-slate-400 text-xs truncate">{ev.title}</span>
+                  <button
+                    onClick={() => unhide(ev.id)}
+                    className="flex items-center gap-1 text-[10px] text-slate-600 hover:text-slate-400 transition-colors"
+                    title="Restore to dashboard"
+                  >
+                    <Eye size={10}/>
+                    Restore
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       )}
 
       {/* ── Past Events ──────────────────────────────────────────────────────── */}

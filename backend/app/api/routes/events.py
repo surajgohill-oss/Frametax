@@ -258,7 +258,7 @@ async def list_events(db: AsyncSession = Depends(get_db)):
         select(Event).options(
             selectinload(Event.venue),
             selectinload(Event.tracked_events).selectinload(TrackedEvent.marketplace),
-        ).order_by(Event.event_date)
+        ).where(Event.status != "archived").order_by(Event.event_date)
     )
     output = []
     for e in result.scalars().all():
@@ -354,10 +354,20 @@ async def get_event(event_id: int, db: AsyncSession = Depends(get_db)):
 
 @router.delete("/{event_id}", status_code=204)
 async def delete_event(event_id: int, db: AsyncSession = Depends(get_db)):
+    """
+    Soft-delete: mark event status='archived', deactivate all TrackedEvents.
+    Hard delete is blocked by FK constraints (listings, tracked_events, snapshots).
+    Frontend watchlist remove uses this endpoint.
+    """
     event = await _get_event(db, event_id)
     if not event:
         raise HTTPException(404, "Event not found")
-    await db.delete(event)
+    event.status = "archived"
+    te_rows = (await db.execute(
+        select(TrackedEvent).where(TrackedEvent.event_id == event_id)
+    )).scalars().all()
+    for te in te_rows:
+        te.is_active = False
     await db.commit()
 
 

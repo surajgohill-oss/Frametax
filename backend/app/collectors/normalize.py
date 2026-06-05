@@ -92,6 +92,27 @@ _SEC_ENTRANCE_RE = re.compile(r"\bENTRANCE\b", re.IGNORECASE)
 _SEC_APARTMENTS_RE = re.compile(r"\bAPARTMENTS?\b", re.IGNORECASE)
 _SEC_HOTEL_RE      = re.compile(r"\bHOTEL\b",       re.IGNORECASE)
 
+# School / church / named-landmark sections used by TickPick for nearby parking lots.
+# "WILLIAM KELSO ELEMENTARY SCHOOL" is a Hollywood Bowl adjacent parking lot sold as
+# a parking pass on TickPick.  No seating section at any venue is ever named after a
+# school, church, or religious institution.
+# Covers: "KELSO ELEMENTARY SCHOOL", "WILSHIRE TEMPLE", "FIRST METHODIST CHURCH", etc.
+_SEC_SCHOOL_RE = re.compile(
+    r"\b(?:school|elementary|middle\s+school|high\s+school|church|temple|synagogue|mosque)\b",
+    re.IGNORECASE,
+)
+
+# Shuttle / transportation pass sections.
+# "HOLLYWOOD BOWL SHUTTLE", "SHUTTLE BUS", "EXPRESS SHUTTLE", "COACH BUS", etc.
+# No seating section is ever named after a shuttle or bus service.
+# Using \bSHUTTLE\b catches compound names; \bCOACH\s+BUS\b is more precise to
+# avoid false-positives on "Coach" (a section name abbreviation at some venues).
+_SEC_SHUTTLE_RE = re.compile(r"\bSHUTTLE\b", re.IGNORECASE)
+_SEC_COACH_BUS_RE = re.compile(r"\bCOACH\s+BUS\b", re.IGNORECASE)
+_SEC_TRANSPORT_PASS_RE = re.compile(
+    r"\bTRANSPORT(?:ATION)?\s+PASS\b", re.IGNORECASE
+)
+
 # Distance patterns that appear in TickPick parking-lot section names:
 #   "0.47 MI AWAY", "0.6 MI FROM VENUE", "6 MINUTE WALK", "14 MIN WALK"
 _SEC_DISTANCE_RE = re.compile(
@@ -133,12 +154,19 @@ _SECTION_PATTERNS: tuple[re.Pattern, ...] = (
     _SEC_ENTRANCE_RE,
     _SEC_APARTMENTS_RE,
     _SEC_HOTEL_RE,
+    _SEC_SCHOOL_RE,
+    _SEC_SHUTTLE_RE,
+    _SEC_COACH_BUS_RE,
+    _SEC_TRANSPORT_PASS_RE,
 )
 
 # ── Tier 2: row keyword search ────────────────────────────────────────────────
 # Catches rows that CONTAIN "parking" but are not exact matches:
 #   "PARKING WITHIN 1 MILE", "ONSITE PARKING", "PARKING WI" (truncated), etc.
 _ROW_PARKING_WORD_RE = re.compile(r"\bparking\b", re.IGNORECASE)
+
+# Catches rows containing "shuttle" — "SHUTTLE PASS", "SHUTTLE BUS PASS", etc.
+_ROW_SHUTTLE_WORD_RE = re.compile(r"\bshuttle\b", re.IGNORECASE)
 
 # ── Tier 2b: row exact-match set ─────────────────────────────────────────────
 # Matches when the *entire* normalised row value is one of these tokens.
@@ -155,6 +183,11 @@ _PARKING_ROW_EXACT: frozenset[str] = frozenset(
         "valet",
         "vp",   # Valet Pass abbreviation used by TickPick (confirmed via audit: 12/12 VP-row
                 # listings across 3951 TickPick records are parking, never a real row letter)
+        "shuttle",
+        "shuttle pass",
+        "bus pass",
+        "transport pass",
+        "transportation pass",
     }
 )
 
@@ -220,12 +253,14 @@ def is_parking_listing(
         if pattern.search(sec):
             return True
 
-    # ── Tier 2: row contains the word "parking" ───────────────────────────────
-    # Catches "PARKING WITHIN 1 MILE", "ONSITE PARKING", "PARKING WI" (truncated)
+    # ── Tier 2: row contains "parking" or "shuttle" ──────────────────────────
+    # Catches "PARKING WITHIN 1 MILE", "ONSITE PARKING", "SHUTTLE PASS", etc.
     if _ROW_PARKING_WORD_RE.search(rw):
         return True
+    if _ROW_SHUTTLE_WORD_RE.search(rw):
+        return True
 
-    # ── Tier 2b: row exact-match (unambiguous parking-only values) ────────────
+    # ── Tier 2b: row exact-match (unambiguous non-ticket values) ─────────────
     if rw.lower() in _PARKING_ROW_EXACT:
         return True
 

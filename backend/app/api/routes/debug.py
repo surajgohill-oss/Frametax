@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, Query, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc, delete, func
-from typing import Optional
+from sqlalchemy import select, desc, delete, func, update
+from typing import Optional, List
 
 from app.database import get_db
 from app.models.debug import ScraperErrorLog, FailureMemory
+from app.models.listing import Listing
 
 router = APIRouter(prefix="/debug", tags=["debug"])
 
@@ -89,6 +90,95 @@ async def vivid_search_probe(date: str, q: Optional[str] = None, pages: int = 2)
                 raw_pages.append({"page": page, "error": str(e)})
                 break
     return {"date": date, "query": q, "pages_fetched": raw_pages, "matches": results}
+
+
+@router.post("/deactivate-parking")
+async def deactivate_parking_listings(
+    event_id: int = Query(..., description="Event ID to scope the cleanup"),
+    dry_run: bool = Query(True, description="Set false to actually deactivate"),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Deactivate (is_active=False) listings whose section matches known parking-only
+    patterns that slipped past the ingest filter (e.g. WILLIAM KELSO ELEMENTARY SCHOOL).
+    Does NOT delete rows — marks is_active=False and sets a note in extra JSON.
+
+    Always dry_run=True by default. Pass ?dry_run=false to commit.
+    """
+    from app.collectors.normalize import is_parking_listing
+
+    rows = await db.execute(
+        select(Listing.id, Listing.section, Listing.row)
+        .where(Listing.event_id == event_id, Listing.is_active == True)
+    )
+    to_deactivate: List[int] = []
+    for lid, sec, row in rows.all():
+        if is_parking_listing(sec, row):
+            to_deactivate.append(lid)
+
+    if not to_deactivate:
+        return {"event_id": event_id, "dry_run": dry_run, "deactivated": 0, "ids": []}
+
+    if not dry_run:
+        await db.execute(
+            update(Listing)
+            .where(Listing.id.in_(to_deactivate))
+            .values(is_active=False)
+        )
+        await db.commit()
+
+    return {
+        "event_id": event_id,
+        "dry_run": dry_run,
+        "deactivated": len(to_deactivate),
+        "ids": to_deactivate,
+    }
+
+
+@router.post("/ensure-tracked-event")
+async def ensure_tracked_event(
+    event_id: int = Query(...),
+    marketplace_slug: str = Query(...),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Ensure a TrackedEvent row exists for (event_id, marketplace_slug).
+    Creates one with external_event_id=NULL if missing, so the resolver
+    can then fill it in.  Safe to call multiple times (idempotent).
+    """
+    from app.models import Marketplace, TrackedEvent, Event
+
+    event = (await db.execute(select(Event).where(Event.id == event_id))).scalar_one_or_none()
+    if not event:
+        return {"error": f"event {event_id} not found"}
+
+    mp = (await db.execute(select(Marketplace).where(Marketplace.slug == marketplace_slug))).scalar_one_or_none()
+    if not mp:
+        return {"error": f"marketplace {marketplace_slug!r} not found"}
+
+    te = (await db.execute(
+        select(TrackedEvent).where(TrackedEvent.event_id == event_id, TrackedEvent.marketplace_id == mp.id)
+    )).scalar_one_or_none()
+
+    if te:
+        return {
+            "created": False,
+            "te_id": te.id,
+            "external_event_id": te.external_event_id,
+            "is_active": te.is_active,
+        }
+
+    te = TrackedEvent(
+        event_id=event_id,
+        marketplace_id=mp.id,
+        external_event_id=None,
+        is_active=True,
+        poll_interval_minutes=60,
+    )
+    db.add(te)
+    await db.commit()
+    await db.refresh(te)
+    return {"created": True, "te_id": te.id, "external_event_id": None}
 
 
 @router.post("/test-collect")

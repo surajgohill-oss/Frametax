@@ -97,6 +97,23 @@ class VividSeatsCollector(BaseCollector):
         if tracked_event.external_event_id:
             return tracked_event.external_event_id
 
+        # Fast path: if external_url already contains a VividSeats production ID,
+        # extract it directly — avoids the catalog scan entirely.
+        # Handles URLs like: https://www.vividseats.com/...production-6118266
+        #                    https://www.vividseats.com/production/6118266
+        ext_url = getattr(tracked_event, "external_url", None) or ""
+        if ext_url:
+            import re as _re
+            _m = _re.search(r"production[/-](\d+)", ext_url, _re.IGNORECASE)
+            if _m:
+                pid = _m.group(1)
+                logger.info(
+                    "VS resolver: extracted production_id=%s from external_url for '%s'",
+                    pid,
+                    getattr(tracked_event, "event", {}).title if hasattr(getattr(tracked_event, "event", None), "title") else "?",
+                )
+                return pid
+
         try:
             title = tracked_event.event.title if hasattr(tracked_event, "event") else ""
             event_date = tracked_event.event.event_date if hasattr(tracked_event, "event") else None
@@ -122,7 +139,7 @@ class VividSeatsCollector(BaseCollector):
         kw_set = {w for w in _re.split(r'\W+', title_lower) if len(w) > 3}
 
         try:
-            for page in range(1, 21):  # up to 20 pages × 50 = 1000 items
+            for page in range(1, 61):  # up to 60 pages × 50 = 3000 items (covers busy dates)
                 resp = await self._client().get(
                     f"{_VS_API_BASE}/productions",
                     params={

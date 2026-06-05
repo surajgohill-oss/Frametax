@@ -141,9 +141,18 @@ async def hydrate(event_id: int = Query(..., description="DB events.id to hydrat
             )
         )).scalars().all()
 
-    # If no TrackedEvents exist yet, create them for all known marketplaces —
-    # unless the event freeze is active.
-    if not te_rows:
+    # Ensure every active marketplace has a TrackedEvent row.
+    # Previous logic only created rows when ZERO rows existed, which left
+    # late-added marketplaces (e.g. vividseats) without rows when other
+    # marketplaces were already tracked.  Now we fill any gaps.
+    existing_mp_ids = {te.marketplace_id for te in te_rows}
+    async with AsyncSessionLocal() as db:
+        all_marketplaces = (await db.execute(
+            select(Marketplace).where(Marketplace.is_active == True)
+        )).scalars().all()
+        missing = [mp for mp in all_marketplaces if mp.id not in existing_mp_ids]
+
+    if missing:
         if settings.discovery_freeze:
             logger.warning(
                 "EVENT_FREEZE_ACTIVE: hydrate blocked from creating new TrackedEvents "
@@ -158,10 +167,7 @@ async def hydrate(event_id: int = Query(..., description="DB events.id to hydrat
                 ),
             )
         async with AsyncSessionLocal() as db:
-            marketplaces = (await db.execute(
-                select(Marketplace).where(Marketplace.is_active == True)
-            )).scalars().all()
-            for mp in marketplaces:
+            for mp in missing:
                 te = TrackedEvent(
                     event_id=event_id,
                     marketplace_id=mp.id,
@@ -169,6 +175,10 @@ async def hydrate(event_id: int = Query(..., description="DB events.id to hydrat
                     poll_interval_minutes=60,
                 )
                 db.add(te)
+                logger.info(
+                    "HYDRATE: created missing TrackedEvent event_id=%d mp=%s",
+                    event_id, mp.slug,
+                )
             await db.commit()
 
         async with AsyncSessionLocal() as db:

@@ -13,6 +13,8 @@ import SectionPriceBar from '@/components/charts/SectionPriceBar';
 import InventoryChart from '@/components/charts/InventoryChart';
 import { useFollowed } from '@/hooks/useFollowed';
 import { useMyEvents } from '@/hooks/useMyEvents';
+import { useHiddenEvents } from '@/hooks/useHiddenEvents';
+import { Star, Bell, BellOff, EyeOff, Eye, PowerOff, Power } from 'lucide-react';
 
 // ── Entity theming (mirrors dashboard) ───────────────────────────────────────
 
@@ -127,6 +129,8 @@ function EventHero({
   totalListings,
   canonicalCount,
   mirrorRate,
+  baseline,
+  invSummary,
   onPoll,
   pollLoading,
   onBack,
@@ -136,6 +140,8 @@ function EventHero({
   totalListings: number;
   canonicalCount: number;
   mirrorRate?: number | null;
+  baseline?: any;
+  invSummary?: any;
   onPoll: () => void;
   pollLoading: boolean;
   onBack: () => void;
@@ -163,9 +169,24 @@ function EventHero({
     return 'Live Event';
   })();
 
-  // Value signal: price notably below average (use $150 as soft avg proxy)
+  // Value signal
   const isValue = lowestAsk != null && lowestAsk < 100;
   const isHot   = lowestAsk != null && lowestAsk >= 100 && lowestAsk < 160;
+
+  // Ticket-centric hero metrics derived from baseline + invSummary (no new API calls)
+  const bCur   = baseline?.current;
+  const bD7    = baseline?.deltas_7d;
+  const curAsk     = lowestAsk             ?? bCur?.lowest_ask;
+  const askDelta   = bD7?.low_ask?.absolute ?? null;
+  const askPct     = bD7?.low_ask?.pct      ?? null;
+  const origAsk    = (curAsk != null && askDelta != null) ? curAsk - askDelta : null;
+
+  const curTickets  = invSummary?.unique_tickets_available ?? bCur?.unique_tickets ?? null;
+  const tickDelta   = bD7?.unique_tickets?.absolute ?? null;
+  const tickPct     = bD7?.unique_tickets?.pct      ?? null;
+  const origTickets = (curTickets != null && tickDelta != null) ? curTickets - tickDelta : null;
+
+  const depth = baseline?.history_depth_days ?? 0;
 
   return (
     <div className="relative overflow-hidden" style={{ background: '#06000A' }}>
@@ -231,9 +252,9 @@ function EventHero({
             <span className="font-black" style={{
               fontSize: '280px',
               lineHeight: 1,
-              color: `rgba(${accentRgb}, 0.045)`,
+              color: `rgba(${accentRgb}, 0.10)`,
               WebkitTextStrokeWidth: '1px',
-              WebkitTextStrokeColor: `rgba(${accentRgb}, 0.07)`,
+              WebkitTextStrokeColor: `rgba(${accentRgb}, 0.16)`,
               fontFamily: 'system-ui, -apple-system, sans-serif',
               letterSpacing: '-0.06em',
             }}>
@@ -317,90 +338,116 @@ function EventHero({
           />
 
           <div className="flex flex-col gap-5">
-            {/* ── Dominant price block ──────────────────────────────────── */}
+
+            {/* ── LOWEST ASK — ticket-centric primary metric ───────────── */}
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-widest text-gray-700 mb-1">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-3">
                 Lowest Ask
               </div>
-              {lowestAsk != null ? (
-                <>
-                  <div
-                    className="font-black text-white leading-none"
-                    style={{ fontSize: '52px', letterSpacing: '-0.04em' }}
-                  >
-                    {fmt$(lowestAsk)}
+              <div className="flex items-end gap-4">
+                {/* Original */}
+                {origAsk != null && (
+                  <div className="flex flex-col">
+                    <span className="text-[9px] text-gray-700 uppercase tracking-wider font-bold mb-1">Original</span>
+                    <span className="font-bold text-gray-600 leading-none tabular-nums"
+                      style={{ fontSize: '22px', letterSpacing: '-0.03em', textDecoration: 'line-through', textDecorationColor: 'rgba(255,255,255,0.12)' }}>
+                      {fmt$(origAsk)}
+                    </span>
                   </div>
-                  <div className="text-xs text-gray-600 mt-1">per ticket · all-in price may vary</div>
-                </>
-              ) : (
-                <div
-                  className="font-black text-gray-700 leading-none"
-                  style={{ fontSize: '52px', letterSpacing: '-0.04em' }}
-                >
-                  —
+                )}
+                {/* Arrow */}
+                {origAsk != null && <span className="text-gray-700 mb-1 text-sm">→</span>}
+                {/* Current */}
+                <div className="flex flex-col">
+                  {origAsk != null && <span className="text-[9px] text-gray-700 uppercase tracking-wider font-bold mb-1">Now</span>}
+                  <span className="font-black text-white leading-none tabular-nums"
+                    style={{ fontSize: origAsk != null ? '36px' : '52px', letterSpacing: '-0.04em' }}>
+                    {curAsk != null ? fmt$(curAsk) : '—'}
+                  </span>
                 </div>
-              )}
-
-              {/* Value / Hot signal box */}
-              {isValue && (
-                <div
-                  className="mt-3 flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
-                  style={{
-                    background: 'rgba(34,197,94,0.06)',
-                    border: '1px solid rgba(34,197,94,0.18)',
-                  }}
-                >
-                  <span
-                    className="w-1.5 h-1.5 rounded-full shrink-0"
-                    style={{ background: '#22c55e', boxShadow: '0 0 6px rgba(34,197,94,0.6)' }}
-                  />
-                  <div>
-                    <div className="text-[11px] font-bold text-green-400">Value Signal</div>
-                    <div className="text-[10px] text-gray-600 mt-0.5">Below typical market range — strong entry point</div>
+                {/* Change % */}
+                {askPct != null && askPct !== 0 && (
+                  <div className="mb-1 flex flex-col items-end">
+                    <span className="text-[9px] text-gray-700 uppercase tracking-wider font-bold mb-1">Δ</span>
+                    <span
+                      className="text-sm font-bold tabular-nums"
+                      style={{ color: askPct < 0 ? '#22c55e' : '#EF4444' }}
+                    >
+                      {askPct > 0 ? '+' : ''}{askPct.toFixed(1)}%
+                    </span>
                   </div>
+                )}
+              </div>
+              {/* Value / Hot signal — compact */}
+              {isValue && (
+                <div className="mt-2 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#22c55e' }}/>
+                  <span className="text-[10px] font-semibold text-green-400">Value Signal</span>
+                  <span className="text-[10px] text-gray-700">· below typical range</span>
                 </div>
               )}
               {isHot && !isValue && (
-                <div
-                  className="mt-3 flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
-                  style={{
-                    background: 'rgba(249,115,22,0.06)',
-                    border: '1px solid rgba(249,115,22,0.18)',
-                  }}
-                >
-                  <span
-                    className="w-1.5 h-1.5 rounded-full shrink-0"
-                    style={{ background: '#f97316', boxShadow: '0 0 6px rgba(249,115,22,0.5)' }}
-                  />
-                  <div>
-                    <div className="text-[11px] font-bold text-orange-400">Watch Signal</div>
-                    <div className="text-[10px] text-gray-600 mt-0.5">Active market — prices may shift</div>
-                  </div>
+                <div className="mt-2 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#f97316' }}/>
+                  <span className="text-[10px] font-semibold text-orange-400">Watch</span>
+                  <span className="text-[10px] text-gray-700">· active market</span>
                 </div>
               )}
             </div>
 
-            {/* ── Stats grid ───────────────────────────────────────────── */}
-            <div
-              className="grid grid-cols-2 gap-2"
-              style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '16px' }}
-            >
-              {[
-                { label: 'Listings',      value: totalListings > 0 ? totalListings.toLocaleString() : '—', accent: '#3B82F6' },
-                { label: 'Unique Seats',  value: canonicalCount > 0 ? canonicalCount.toLocaleString() : '—', accent: '#8B5CF6' },
-                { label: 'Mirror Rate',   value: mirrorRate != null ? `${(mirrorRate * 100).toFixed(1)}%` : '—', accent: mirrorRate != null && mirrorRate > 0.15 ? '#F59E0B' : '#6B7280' },
-                { label: 'Days Away',     value: days != null && days > 0 ? `${days}d` : days === 0 ? 'Today' : days != null && days < 0 ? 'Past' : '—', accent: '#E50914' },
-              ].map(({ label, value, accent: a }) => (
-                <div
-                  key={label}
-                  className="rounded-lg px-3 py-2.5"
-                  style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.05)' }}
-                >
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-gray-700">{label}</div>
-                  <div className="text-sm font-bold mt-0.5" style={{ color: a }}>{value}</div>
+            {/* ── TICKETS AVAILABLE ────────────────────────────────────── */}
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '16px' }}>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-3">
+                Tickets Available
+              </div>
+              <div className="flex items-end gap-4">
+                {origTickets != null && (
+                  <div className="flex flex-col">
+                    <span className="text-[9px] text-gray-700 uppercase tracking-wider font-bold mb-1">Original</span>
+                    <span className="font-bold text-gray-600 leading-none tabular-nums"
+                      style={{ fontSize: '22px', letterSpacing: '-0.03em' }}>
+                      {origTickets.toLocaleString()}
+                    </span>
+                  </div>
+                )}
+                {origTickets != null && <span className="text-gray-700 mb-1 text-sm">→</span>}
+                <div className="flex flex-col">
+                  {origTickets != null && <span className="text-[9px] text-gray-700 uppercase tracking-wider font-bold mb-1">Now</span>}
+                  <span className="font-black leading-none tabular-nums"
+                    style={{ fontSize: origTickets != null ? '36px' : '32px', letterSpacing: '-0.04em', color: '#A78BFA' }}>
+                    {curTickets != null ? curTickets.toLocaleString() : '—'}
+                  </span>
                 </div>
-              ))}
+                {tickPct != null && tickPct !== 0 && (
+                  <div className="mb-1 flex flex-col items-end">
+                    <span className="text-[9px] text-gray-700 uppercase tracking-wider font-bold mb-1">Δ</span>
+                    <span
+                      className="text-sm font-bold tabular-nums"
+                      style={{ color: tickPct < 0 ? '#22c55e' : '#F59E0B' }}
+                    >
+                      {tickPct > 0 ? '+' : ''}{tickPct.toFixed(1)}%
+                    </span>
+                  </div>
+                )}
+              </div>
+              {depth > 0 && (
+                <div className="mt-1.5 text-[9px] text-gray-700">{depth}d snapshot window</div>
+              )}
             </div>
+
+            {/* ── Days Away chip ───────────────────────────────────────── */}
+            {days != null && (
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '14px' }}>
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg px-3 py-2" style={{ background: 'rgba(229,9,20,0.08)', border: '1px solid rgba(229,9,20,0.2)' }}>
+                    <div className="text-[9px] font-bold uppercase tracking-wider text-gray-600">Days Away</div>
+                    <div className="text-sm font-bold mt-0.5 text-red-400">
+                      {days > 0 ? `${days}d` : days === 0 ? 'Today' : 'Past'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* ── Event details rows ────────────────────────────────────── */}
             <div className="space-y-2" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '14px' }}>
@@ -475,6 +522,130 @@ function EventHero({
   );
 }
 
+// ── Market Movement Section ───────────────────────────────────────────────────
+// Primary story: original → current change in price + tickets.
+// No new API calls — derives from already-loaded event + baseline.
+
+function MarketMovementSection({ event, baseline, invSummary }: {
+  event: any; baseline: any | null; invSummary: any | null;
+}) {
+  const f$   = (v: number) => `$${Math.round(v).toLocaleString()}`;
+  const fmtD = (iso: string) => new Date(iso).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+
+  const trackingStarted = event?.created_at ? fmtD(event.created_at) : null;
+  const histLow         = event?.historical_lowest_price ?? null;
+  const cur             = baseline?.current;
+  const d7              = baseline?.deltas_7d;
+  const depth           = baseline?.history_depth_days ?? 0;
+
+  const curTickets  = invSummary?.unique_tickets_available ?? cur?.unique_tickets ?? null;
+  // Prefer live ask: min of per_marketplace normalized_lowest_ask from invSummary
+  const liveAsk = invSummary?.per_marketplace?.length
+    ? Math.min(...invSummary.per_marketplace
+        .map((m: any) => m.normalized_lowest_ask)
+        .filter((v: any) => v != null && v > 0))
+    : null;
+  const curAsk      = (liveAsk != null && isFinite(liveAsk) ? liveAsk : null) ?? cur?.lowest_ask ?? null;
+  const tickDelta   = d7?.unique_tickets?.absolute ?? null;
+  const tickPct     = d7?.unique_tickets?.pct      ?? null;
+  const askDelta    = d7?.low_ask?.absolute ?? null;
+  const askPct      = d7?.low_ask?.pct      ?? null;
+  const origTickets = curTickets != null && tickDelta != null ? curTickets - tickDelta : null;
+  const origAsk     = curAsk != null && askDelta != null ? curAsk - askDelta : null;
+
+  if (!trackingStarted && curTickets == null && curAsk == null) return null;
+
+  function MovementBlock({ label, origVal, curVal, pct, curColor, invertPct = false }: {
+    label: string; origVal: string | null; curVal: string | null;
+    pct: number | null; curColor: string; invertPct?: boolean;
+  }) {
+    const pctPositive = pct != null && (invertPct ? pct < 0 : pct > 0);
+    const pctColor = pct == null || pct === 0 ? '#4B5563'
+      : pctPositive ? '#22c55e' : '#EF4444';
+    return (
+      <div className="flex-1 rounded-xl p-4" style={{ background:'rgba(255,255,255,0.025)', border:'1px solid rgba(255,255,255,0.06)' }}>
+        <div className="text-[9px] font-bold uppercase tracking-widest text-gray-600 mb-3">{label}</div>
+        <div className="flex items-end gap-3 flex-wrap">
+          {origVal && (
+            <div>
+              <div className="text-[9px] text-gray-700 uppercase tracking-wider mb-0.5">Original</div>
+              <div className="text-lg font-bold text-gray-600 tabular-nums leading-none">{origVal}</div>
+            </div>
+          )}
+          {origVal && <span className="text-gray-700 text-xs mb-0.5">→</span>}
+          <div>
+            {origVal && <div className="text-[9px] text-gray-700 uppercase tracking-wider mb-0.5">Now</div>}
+            <div className="tabular-nums leading-none font-black" style={{ fontSize:'28px', color: curColor, letterSpacing:'-0.03em' }}>
+              {curVal ?? '—'}
+            </div>
+          </div>
+          {pct != null && pct !== 0 && (
+            <div className="mb-0.5">
+              <div className="text-[9px] text-gray-700 uppercase tracking-wider mb-0.5">Change</div>
+              <div className="text-sm font-bold tabular-nums" style={{ color: pctColor }}>
+                {pct > 0 ? '+' : ''}{pct.toFixed(1)}%
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {/* Metadata row: tracking started + depth */}
+      <div className="flex items-center gap-4 flex-wrap">
+        {trackingStarted && (
+          <div className="flex items-center gap-1.5 text-[10px]">
+            <span className="text-gray-700 uppercase tracking-wider font-bold">Tracking Started</span>
+            <span className="text-gray-400 font-medium">{trackingStarted}</span>
+          </div>
+        )}
+        {depth > 0 && (
+          <div className="flex items-center gap-1.5 text-[10px]">
+            <span className="text-gray-700 uppercase tracking-wider font-bold">History Depth</span>
+            <span className="px-1.5 py-0.5 rounded font-mono text-gray-500"
+              style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)' }}>
+              {depth}d
+            </span>
+          </div>
+        )}
+        {histLow != null && (
+          <div className="flex items-center gap-1.5 text-[10px] ml-auto">
+            <span className="text-gray-700 uppercase tracking-wider font-bold">All-time Low</span>
+            <span className="text-amber-400 font-semibold font-mono">{f$(histLow)}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Movement blocks */}
+      <div className="flex gap-3 flex-wrap sm:flex-nowrap">
+        <MovementBlock
+          label="Lowest Ask"
+          origVal={origAsk != null ? f$(origAsk) : null}
+          curVal={curAsk != null ? f$(curAsk) : null}
+          pct={askPct}
+          curColor="#fff"
+          invertPct
+        />
+        <MovementBlock
+          label="Tickets Available"
+          origVal={origTickets != null ? origTickets.toLocaleString() : null}
+          curVal={curTickets != null ? curTickets.toLocaleString() : null}
+          pct={tickPct}
+          curColor="#A78BFA"
+          invertPct
+        />
+      </div>
+
+      {depth === 0 && (
+        <p className="text-[10px] text-gray-700 italic px-1">Snapshot window not yet available — movement data will appear after the next poll run.</p>
+      )}
+    </div>
+  );
+}
+
 // ── Market Baseline Section ───────────────────────────────────────────────────
 // Source: /api/analytics/events/{id}/baseline  (canonical_inventory_snapshots)
 // Read-only. No predictions. No buy/wait signals.
@@ -485,6 +656,9 @@ function MarketBaselineSection({ baseline }: { baseline: any }) {
   if (!cur) return null;
 
   const depth = baseline.history_depth_days ?? 0;
+  const snapshotAt = cur.snapshot_at
+    ? new Date(cur.snapshot_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+    : null;
 
   function DeltaChip({ delta, unit = '' }: { delta: any; unit?: string }) {
     if (!delta || delta.reason) {
@@ -538,12 +712,23 @@ function MarketBaselineSection({ baseline }: { baseline: any }) {
 
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Historical Snapshot Trends</span>
-        <span className="text-[10px] text-gray-600">{depth}d history · from snapshots</span>
+      <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Historical Snapshot Trends</span>
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider"
+            style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.18)', color: '#FCD34D' }}>
+            Snapshot · Not Live
+          </span>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          {snapshotAt && (
+            <span className="text-[10px] text-amber-600/80 font-mono">as of {snapshotAt}</span>
+          )}
+          <span className="text-[10px] text-gray-600">{depth}d history</span>
+        </div>
       </div>
-      <div className="text-[10px] text-gray-700 mb-3 italic">
-        Historical baseline comes from stored snapshots and may lag live inventory.
+      <div className="text-[10px] text-gray-700 mb-3">
+        Stored snapshot data — values may lag live inventory by up to several hours. For current figures see Live Inventory above.
       </div>
 
       {/* Top-level trend table */}
@@ -552,7 +737,7 @@ function MarketBaselineSection({ baseline }: { baseline: any }) {
           <thead>
             <tr className="text-gray-600 border-b border-white/5">
               <th className="text-left pb-1.5 pr-4 font-normal">Metric</th>
-              <th className="text-right pb-1.5 pr-4 font-normal">Current</th>
+              <th className="text-right pb-1.5 pr-4 font-normal text-amber-700/70">Snapshot</th>
               <th className="text-right pb-1.5 pr-4 font-normal">24h Δ</th>
               <th className="text-right pb-1.5 font-normal">7d Δ</th>
             </tr>
@@ -704,13 +889,17 @@ function MarketOverviewPanel({
         {mpFilter === 'all' ? (
           /* ── ALL MARKETS view ─────────────────────────────────────────── */
           <div className="space-y-5">
-            {/* Summary row */}
+            {/* Summary row — net tickets primary */}
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-1">Listings</div>
-                <div className="text-xl font-bold text-white">{hasData ? totalListings.toLocaleString() : '—'}</div>
-                {invSummary?.exclusive_listings != null && (
-                  <div className="text-[10px] text-gray-600 mt-0.5">{invSummary.exclusive_listings.toLocaleString()} excl · {invSummary.mirror_listings?.toLocaleString()} mirrors</div>
+                <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-1">Net Unique Tickets</div>
+                <div className="text-xl font-bold text-violet-400 tabular-nums">
+                  {invSummary?.unique_tickets_available != null ? invSummary.unique_tickets_available.toLocaleString() : '—'}
+                </div>
+                {invSummary?.raw_tickets != null && (
+                  <div className="text-[10px] text-gray-700 mt-0.5 tabular-nums">
+                    {invSummary.raw_tickets.toLocaleString()} gross
+                  </div>
                 )}
               </div>
               <div>
@@ -718,10 +907,13 @@ function MarketOverviewPanel({
                 <div className="text-xl font-bold text-emerald-400">{allLowest != null && isFinite(allLowest) ? fmt$(allLowest) : '—'}</div>
               </div>
               <div>
-                <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-1">Mirror Rate</div>
-                <div className={`text-xl font-bold ${invSummary?.mirror_rate > 0.15 ? 'text-amber-400' : 'text-gray-300'}`}>
-                  {invSummary?.mirror_rate != null ? `${(invSummary.mirror_rate * 100).toFixed(1)}%` : '—'}
-                </div>
+                <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-1">Gross Listings</div>
+                <div className="text-xl font-bold text-gray-400 tabular-nums">{hasData ? totalListings.toLocaleString() : '—'}</div>
+                {invSummary?.mirror_rate != null && (
+                  <div className="text-[10px] text-gray-700 mt-0.5">
+                    {(invSummary.mirror_rate * 100).toFixed(1)}% mirror rate
+                  </div>
+                )}
               </div>
             </div>
 
@@ -763,8 +955,8 @@ function MarketOverviewPanel({
                 <div className="flex items-center gap-4 mb-1">
                   <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">By Marketplace</span>
                   <span className="ml-auto flex items-center gap-5 text-[9px] font-bold text-gray-700 uppercase tracking-wider pr-1">
-                    <span className="w-14 text-right">Listings</span>
-                    <span className="w-14 text-right">Tickets</span>
+                    <span className="w-20 text-right">Gross Listings</span>
+                    <span className="w-20 text-right">Gross Tickets</span>
                     <span className="w-10 text-right">Share</span>
                     <span className="w-16 text-right">Low Ask</span>
                   </span>
@@ -786,10 +978,10 @@ function MarketOverviewPanel({
                             style={{ width: `${Math.min(sharePct, 100)}%`, backgroundColor: meta.dot, opacity: 0.7 }}
                           />
                         </div>
-                        <span className={`text-sm font-semibold tabular-nums w-14 text-right ${meta.colorCls}`}>
+                        <span className={`text-sm font-semibold tabular-nums w-20 text-right ${meta.colorCls}`}>
                           {m ? count.toLocaleString() : '—'}
                         </span>
-                        <span className="text-sm tabular-nums w-14 text-right text-gray-500">
+                        <span className="text-sm tabular-nums w-20 text-right text-gray-500">
                           {m && tickets > 0 ? tickets.toLocaleString() : '—'}
                         </span>
                         <span className="text-xs text-gray-600 w-10 text-right">
@@ -810,7 +1002,7 @@ function MarketOverviewPanel({
                       <span className="text-[10px] text-gray-700">●</span>
                       <span className="text-sm text-gray-600 w-24">{p.label}</span>
                       <div className="flex-1 h-1 bg-white/5 rounded-full" />
-                      <span className="text-xs text-gray-700 w-14 text-right">—</span>
+                      <span className="text-xs text-gray-700 w-20 text-right">—</span>
                       <span className="text-xs text-gray-700 w-10 text-right">—</span>
                       <span className="text-[9px] text-gray-600 w-16 text-right font-mono">{p.badge}</span>
                     </div>
@@ -1436,33 +1628,31 @@ function MarketplaceSnapshotCards({
 }) {
   return (
     <div className="space-y-3">
-      {/* Duplication visibility strip */}
+      {/* Net ticket summary strip */}
       <div className="flex items-center gap-5 px-1 flex-wrap">
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-600">Mirror Rate</span>
-          <span className={`text-sm font-bold tabular-nums ${invSummary?.mirror_rate > 0.15 ? 'text-amber-400' : 'text-gray-300'}`}>
-            {invSummary?.mirror_rate != null
-              ? `${(invSummary.mirror_rate * 100).toFixed(1)}%`
-              : '—'}
-          </span>
-          {invSummary?.mirror_listings != null && (
-            <span className="text-xs text-indigo-400 tabular-nums">
-              ({invSummary.mirror_listings.toLocaleString()} mirrored listings)
-            </span>
-          )}
-        </div>
         {invSummary?.unique_tickets_available != null && (
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-600">Unique Available</span>
-            <span className="text-sm font-bold text-emerald-400 tabular-nums">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-600">Net Unique Tickets</span>
+            <span className="text-sm font-bold text-violet-400 tabular-nums">
               {invSummary.unique_tickets_available.toLocaleString()}
+            </span>
+            <span className="text-[9px] text-gray-700">cross-market deduped</span>
+          </div>
+        )}
+        {invSummary?.raw_tickets != null && invSummary?.unique_tickets_available != null && (
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-600">Gross Tickets</span>
+            <span className="text-sm font-bold text-gray-500 tabular-nums line-through decoration-white/20">
+              {invSummary.raw_tickets.toLocaleString()}
+            </span>
+            <span className="text-[9px] text-amber-500 tabular-nums">
+              −{(invSummary.raw_tickets - invSummary.unique_tickets_available).toLocaleString()} dupes
             </span>
           </div>
         )}
-        {/* Pairwise overlap: shows which pair of platforms mirrors the most */}
-        <div className="flex items-center gap-1.5 text-[10px] text-gray-700 italic">
-          <span>Pairwise overlap detail</span>
-          <span className="px-1.5 py-0.5 rounded bg-gray-800 text-gray-500 not-italic font-bold text-[9px] uppercase tracking-wider">COMING LATER</span>
+        <div className="flex items-center gap-1.5 text-[9px] text-gray-700 italic">
+          <span>Per-marketplace net tickets</span>
+          <span className="px-1.5 py-0.5 rounded bg-gray-800/60 text-gray-500 not-italic font-bold text-[8px] uppercase tracking-wider">coming soon</span>
         </div>
         {lastPolledAt && (
           <span className="ml-auto text-[10px] text-gray-700">
@@ -1536,21 +1726,23 @@ function MarketplaceSnapshotCards({
               ) : (
                 <div className="text-xl font-black text-gray-700 mb-2">—</div>
               )}
-              {/* Listings + Gross Tickets + share */}
+              {/* Gross listings + gross tickets — clearly labeled */}
               <div className="space-y-0.5">
                 <div className="text-[11px] text-gray-500">
                   {listingCount > 0
-                    ? <><span className="text-gray-300 font-semibold">{listingCount.toLocaleString()}</span> <span className="text-gray-600">listings</span></>
+                    ? <><span className="text-gray-400 font-semibold tabular-nums">{listingCount.toLocaleString()}</span> <span className="text-gray-600">gross listings</span></>
                     : <span className="text-gray-600">No data</span>}
                   {sharePct != null && (
-                    <span className="text-gray-700 ml-1.5">· {sharePct.toFixed(0)}% share</span>
+                    <span className="text-gray-700 ml-1.5">· {sharePct.toFixed(0)}%</span>
                   )}
                 </div>
                 {invMp?.raw_tickets != null && invMp.raw_tickets > 0 && (
                   <div className="text-[10px] text-gray-600">
-                    <span className="text-gray-500 tabular-nums">{invMp.raw_tickets.toLocaleString()}</span> gross tickets
+                    <span className="text-gray-500 tabular-nums">{invMp.raw_tickets.toLocaleString()}</span>
+                    <span className="text-gray-700"> gross tickets</span>
                   </div>
                 )}
+                <div className="text-[9px] text-gray-800 italic mt-0.5">net per-site coming soon</div>
               </div>
               {/* Freshness */}
               {run?.completed_at ? (
@@ -1589,13 +1781,16 @@ export default function EventDetailPage() {
   const [loading, setLoading] = useState(true);
   const [pollLoading, setPollLoading] = useState(false);
 
-  // ── My Event / Follow state (via hooks) ───────────────────────────────────
-  const { myEvents, toggle: toggleMyEventSet } = useMyEvents();
-  const { followed, toggle: toggleFollowSet }  = useFollowed();
+  // ── My Event / Follow / Hidden state (via hooks) ─────────────────────────
+  const { myEvents, toggle: toggleMyEventSet }    = useMyEvents();
+  const { followed, toggle: toggleFollowSet }      = useFollowed();
+  const { hiddenEvents, toggle: toggleHiddenSet }  = useHiddenEvents();
   const isMyEvent   = myEvents.has(eventId);
   const isFollowing = followed.has(eventId);
-  const toggleMyEvent = useCallback(() => toggleMyEventSet(eventId), [eventId, toggleMyEventSet]);
-  const toggleFollow  = useCallback(() => toggleFollowSet(eventId),  [eventId, toggleFollowSet]);
+  const isHidden    = hiddenEvents.has(eventId);
+  const toggleMyEvent  = useCallback(() => toggleMyEventSet(eventId),  [eventId, toggleMyEventSet]);
+  const toggleFollow   = useCallback(() => toggleFollowSet(eventId),   [eventId, toggleFollowSet]);
+  const toggleHidden   = useCallback(() => toggleHiddenSet(eventId),   [eventId, toggleHiddenSet]);
 
   // Listings drilldown expanded state
   const [listingsExpanded, setListingsExpanded] = useState(true);
@@ -1838,6 +2033,8 @@ export default function EventDetailPage() {
         totalListings={heroTotalListings}
         canonicalCount={heroUniqueTickets ?? canonicalCount}
         mirrorRate={heroMirrorRate}
+        baseline={baseline}
+        invSummary={invSummary}
         onPoll={triggerPoll}
         pollLoading={pollLoading}
         onBack={() => router.back()}
@@ -1862,8 +2059,9 @@ export default function EventDetailPage() {
         </div>
       )}
 
-      {/* ── Quick actions: My Event + Follow ─────────────────────────────────── */}
-      <div className="flex items-center gap-2 px-1 mt-3 mb-1">
+      {/* ── Quick actions bar ────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-2 px-1 mt-3 mb-1 flex-wrap">
+        {/* My Event */}
         <button
           onClick={toggleMyEvent}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
@@ -1873,9 +2071,11 @@ export default function EventDetailPage() {
           }
           title={isMyEvent ? "Remove from My Events" : "Mark as My Event"}
         >
-          <span style={{ fontSize: 11 }}>{isMyEvent ? '★' : '☆'}</span>
+          <Star size={11} fill={isMyEvent ? '#F59E0B' : 'none'} stroke={isMyEvent ? '#F59E0B' : 'currentColor'}/>
           {isMyEvent ? 'My Event' : 'Mark as Mine'}
         </button>
+
+        {/* Follow */}
         <button
           onClick={toggleFollow}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
@@ -1883,10 +2083,38 @@ export default function EventDetailPage() {
             ? { background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.4)', color: '#8B5CF6' }
             : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#6B7280' }
           }
-          title={isFollowing ? "Unfollow alerts" : "Follow for price alerts (coming soon)"}
+          title={isFollowing ? "Unfollow" : "Follow for price alerts (coming soon)"}
         >
-          <span style={{ fontSize: 11 }}>{isFollowing ? '🔔' : '🔕'}</span>
+          {isFollowing ? <Bell size={11}/> : <BellOff size={11}/>}
           {isFollowing ? 'Following' : 'Follow'}
+        </button>
+
+        {/* Hide from Dashboard */}
+        <button
+          onClick={toggleHidden}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+          style={isHidden
+            ? { background: 'rgba(107,114,128,0.15)', border: '1px solid rgba(107,114,128,0.4)', color: '#9CA3AF' }
+            : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#6B7280' }
+          }
+          title={isHidden ? "Restore to dashboard" : "Hide from dashboard"}
+        >
+          {isHidden ? <Eye size={11}/> : <EyeOff size={11}/>}
+          {isHidden ? 'Restore' : 'Hide'}
+        </button>
+
+        {/* Stop Tracking / Reactivate */}
+        <button
+          onClick={toggleActive}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ml-auto"
+          style={event.is_active === false
+            ? { background: 'rgba(34,197,94,0.10)', border: '1px solid rgba(34,197,94,0.3)', color: '#22C55E' }
+            : { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: '#4B5563' }
+          }
+          title={event.is_active === false ? "Reactivate tracking" : "Stop tracking this event"}
+        >
+          {event.is_active === false ? <Power size={11}/> : <PowerOff size={11}/>}
+          {event.is_active === false ? 'Reactivate' : 'Stop Tracking'}
         </button>
       </div>
 
@@ -1902,7 +2130,13 @@ export default function EventDetailPage() {
           />
         </section>
 
-        {/* ── SECTION 3a: Historical Snapshot Trends ──────────────────────── */}
+        {/* ── SECTION 3a: Market Movement ──────────────────────────────────── */}
+        <section>
+          <div className="section-label mb-3">↗ Market Movement</div>
+          <MarketMovementSection event={event} baseline={baseline} invSummary={invSummary} />
+        </section>
+
+        {/* ── SECTION 3b: Historical Snapshot Trends ──────────────────────── */}
         {baseline?.current && (
           <section>
             <div className="section-label mb-3">⟳ Historical Snapshot Trends</div>
@@ -1929,13 +2163,20 @@ export default function EventDetailPage() {
             <InventoryChart eventId={eventId} />
           </div>
           {/* SectionPriceBar removed — low-value horizontal bar above venue, replaced by listings table */}
-          {/* TODO: Replace generic VenueHeatmap with real SVG venue maps:
-                - preserve hover stats
-                - click section → filter in-app listings
-                - add external marketplace deep links per section
-                Currently showing placeholder heatmap. */}
           {event.venue_slug && (
-            <VenueHeatmap venueSlug={event.venue_slug} listings={listings} mode="price" />
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">Venue Map</span>
+                <span
+                  className="px-2 py-0.5 rounded-full text-[10px] font-medium cursor-not-allowed"
+                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: '#374151' }}
+                  title="Click-to-filter venue map in development"
+                >
+                  Interactive Venue Map — Coming Soon
+                </span>
+              </div>
+              <VenueHeatmap venueSlug={event.venue_slug} listings={listings} mode="price" />
+            </div>
           )}
         </section>
 
@@ -2063,9 +2304,17 @@ export default function EventDetailPage() {
                 </div>
               </div>
 
-              {/* TODO: Add parking-pass toggle — hide/show listings where is_parking=true
-                    once backend exposes is_parking flag per listing.  Filter is already
-                    applied at ingest; this would let power users see the raw catalog. */}
+              {/* Parking filter placeholder */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-600 w-16 shrink-0 font-medium">Parking</span>
+                <span
+                  className="px-3 py-1 rounded-full text-[11px] font-medium cursor-not-allowed"
+                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: '#374151' }}
+                  title="Parking filter available once backend exposes is_parking flag"
+                >
+                  Parking Filter — Coming Soon
+                </span>
+              </div>
 
               {/* Listings table */}
               <div className="glass-panel rounded-2xl overflow-hidden">
@@ -2141,47 +2390,129 @@ export default function EventDetailPage() {
           )}
         </section>
 
-        {/* ── Phase 1E-F: Normalization Layer ─────────────────────────────── */}
+        {/* ── Inventory Accounting ─────────────────────────────────────────── */}
         {invSummary && (
           <section className="glass-dark rounded-2xl p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Normalization Layer</h2>
-              <span className="text-[10px] text-gray-700">Phase 1E-F · Mirror dedup · All marketplaces</span>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Inventory Accounting</h2>
+              <span className="text-[10px] text-gray-700">All marketplaces · duplicate-adjusted</span>
             </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="glass-panel rounded-xl p-4">
-                <div className="text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">Unique Tickets Available</div>
-                <div className="text-2xl font-bold text-emerald-400">{invSummary.unique_tickets_available?.toLocaleString() ?? '—'}</div>
-                <div className="text-xs text-gray-600 mt-0.5">after mirror dedup</div>
-              </div>
-              <div className="glass-panel rounded-xl p-4">
-                <div className="text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">Listings Available</div>
-                <div className="text-2xl font-bold text-white">{invSummary.raw_listings?.toLocaleString() ?? '—'}</div>
-                <div className="text-xs text-gray-600 mt-0.5">{invSummary.exclusive_listings?.toLocaleString()} excl · {invSummary.mirror_listings?.toLocaleString()} mirrors</div>
-              </div>
-              <div className="glass-panel rounded-xl p-4">
-                <div className="text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">Mirror Rate</div>
-                <div className={`text-2xl font-bold ${invSummary.mirror_rate > 0.15 ? 'text-amber-400' : 'text-gray-300'}`}>
-                  {invSummary.mirror_rate != null ? `${(invSummary.mirror_rate * 100).toFixed(1)}%` : '—'}
+
+            {/* Plain-language explanation */}
+            <p className="text-[11px] text-gray-600 leading-relaxed">
+              Marketplace inventory often appears on multiple sites simultaneously. Duplicate tickets are removed to estimate actual supply.
+            </p>
+
+            {/* Ticket-centric three-step breakdown */}
+            {invSummary.raw_tickets != null && invSummary.unique_tickets_available != null && (
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="glass-panel rounded-xl px-4 py-3 flex flex-col gap-0.5">
+                  <div className="text-[9px] font-bold text-gray-600 uppercase tracking-wider">Gross Tickets</div>
+                  <div className="text-xl font-black text-white tabular-nums">{invSummary.raw_tickets.toLocaleString()}</div>
+                  <div className="text-[9px] text-gray-700">across all marketplaces</div>
                 </div>
-                <div className="text-xs text-gray-600 mt-0.5">cross-marketplace</div>
-              </div>
-            </div>
-            {invSummary.per_marketplace?.length > 0 && (
-              <div className="flex flex-wrap gap-4 pt-1 border-t border-white/5">
-                {invSummary.per_marketplace.map((mp: any) => (
-                  <div key={mp.marketplace_slug} className="flex items-center gap-2 text-xs">
-                    <span className="font-bold text-gray-400 uppercase tracking-wide">{mp.marketplace_slug}</span>
-                    <span className="text-gray-600">{mp.raw_listings?.toLocaleString()} listings</span>
-                    {mp.normalized_lowest_ask != null && (
-                      <span className="text-emerald-500 font-mono tabular-nums">${mp.normalized_lowest_ask.toFixed(0)}</span>
-                    )}
+                <div className="text-gray-700 text-lg font-thin">−</div>
+                <div className="glass-panel rounded-xl px-4 py-3 flex flex-col gap-0.5">
+                  <div className="text-[9px] font-bold text-gray-600 uppercase tracking-wider">Duplicates Removed</div>
+                  <div className="text-xl font-black text-amber-500 tabular-nums">
+                    {(invSummary.raw_tickets - invSummary.unique_tickets_available).toLocaleString()}
                   </div>
-                ))}
+                  <div className="text-[9px] text-gray-700">same ticket on multiple sites</div>
+                </div>
+                <div className="text-gray-700 text-lg font-thin">=</div>
+                <div className="glass-panel rounded-xl px-4 py-3 flex flex-col gap-0.5" style={{ border:'1px solid rgba(167,139,250,0.2)' }}>
+                  <div className="text-[9px] font-bold text-gray-600 uppercase tracking-wider">Unique Available</div>
+                  <div className="text-xl font-black text-violet-400 tabular-nums">{invSummary.unique_tickets_available.toLocaleString()}</div>
+                  <div className="text-[9px] text-gray-700">estimated actual supply</div>
+                </div>
+              </div>
+            )}
+
+            {/* Reconciliation detail — secondary */}
+            {invSummary.mirror_rate != null && (
+              <div className="flex items-center gap-3 pt-1 border-t border-white/5 text-[10px] text-gray-700">
+                <span>Mirror rate:</span>
+                <span className={invSummary.mirror_rate > 0.15 ? 'text-amber-400 font-semibold' : 'text-gray-500'}>
+                  {(invSummary.mirror_rate * 100).toFixed(1)}%
+                </span>
+                {invSummary.exclusive_listings != null && (
+                  <><span>·</span><span>{invSummary.exclusive_listings.toLocaleString()} exclusive listings</span></>
+                )}
               </div>
             )}
           </section>
         )}
+
+        {/* ── Duplicate Monitor ────────────────────────────────────────────── */}
+        <section className="glass-dark rounded-2xl p-5 space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Duplicate Monitor</h2>
+            <span className="text-[10px] text-gray-700">Cross-marketplace overlap</span>
+          </div>
+
+          {/* Three-tier ticket breakdown */}
+          {invSummary?.raw_tickets != null && invSummary?.unique_tickets_available != null ? (
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="glass-panel rounded-xl px-4 py-3 flex flex-col gap-0.5 min-w-[110px]">
+                <div className="text-[9px] font-bold text-gray-600 uppercase tracking-wider">Gross Tickets</div>
+                <div className="text-xl font-black text-gray-400 tabular-nums">{invSummary.raw_tickets.toLocaleString()}</div>
+                <div className="text-[9px] text-gray-700">raw across all markets</div>
+              </div>
+              <div className="text-gray-600 text-base font-thin">−</div>
+              <div className="glass-panel rounded-xl px-4 py-3 flex flex-col gap-0.5 min-w-[110px]">
+                <div className="text-[9px] font-bold text-gray-600 uppercase tracking-wider">Duplicates Removed</div>
+                <div className="text-xl font-black text-amber-400 tabular-nums">
+                  {(invSummary.raw_tickets - invSummary.unique_tickets_available).toLocaleString()}
+                </div>
+                <div className="text-[9px] text-gray-700">same seat on 2+ sites</div>
+              </div>
+              <div className="text-gray-600 text-base font-thin">=</div>
+              <div className="glass-panel rounded-xl px-4 py-3 flex flex-col gap-0.5 min-w-[110px]" style={{ border: '1px solid rgba(167,139,250,0.2)' }}>
+                <div className="text-[9px] font-bold text-gray-600 uppercase tracking-wider">Net Unique Tickets</div>
+                <div className="text-xl font-black text-violet-400 tabular-nums">{invSummary.unique_tickets_available.toLocaleString()}</div>
+                <div className="text-[9px] text-gray-700">estimated real supply</div>
+              </div>
+            </div>
+          ) : invSummary != null ? (
+            <p className="text-[11px] text-gray-700 italic">Ticket breakdown data not yet available for this event.</p>
+          ) : null}
+
+          {/* Cross-site pairwise overlap */}
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '14px' }}>
+            <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-3">Cross-Site Pairwise Overlap</div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {[
+                { a: 'StubHub',   dotA: '#818CF8', b: 'TickPick',    dotB: '#4ADE80' },
+                { a: 'StubHub',   dotA: '#818CF8', b: 'Gametime',    dotB: '#FB923C' },
+                { a: 'StubHub',   dotA: '#818CF8', b: 'Vivid Seats', dotB: '#F472B6' },
+                { a: 'TickPick',  dotA: '#4ADE80', b: 'Gametime',    dotB: '#FB923C' },
+                { a: 'TickPick',  dotA: '#4ADE80', b: 'Vivid Seats', dotB: '#F472B6' },
+                { a: 'Gametime',  dotA: '#FB923C', b: 'Vivid Seats', dotB: '#F472B6' },
+              ].map(({ a, dotA, b, dotB }) => (
+                <div
+                  key={`${a}-${b}`}
+                  className="flex items-center justify-between rounded-lg px-3 py-2"
+                  style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}
+                >
+                  <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
+                    <span style={{ color: dotA }}>●</span>
+                    <span>{a}</span>
+                    <span className="text-gray-700">↔</span>
+                    <span style={{ color: dotB }}>●</span>
+                    <span>{b}</span>
+                  </div>
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded ml-2"
+                    style={{ background: 'rgba(255,255,255,0.04)', color: '#4B5563', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    Soon
+                  </span>
+                </div>
+              ))}
+            </div>
+            <p className="text-[10px] text-gray-700 italic mt-2">
+              Cross-marketplace overlap detail coming soon. Will show % of seats listed on both platforms.
+            </p>
+          </div>
+        </section>
 
         {/* ── Advanced Technical Intelligence (collapsed) ─────────────────── */}
         <AdvancedSection>

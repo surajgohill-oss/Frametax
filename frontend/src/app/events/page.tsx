@@ -4,10 +4,24 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { EntityLogo } from "@/components/ui/EntityLogo";
 import { fmtDate, fmtRelative, fmt$ } from "@/lib/utils";
 import { RefreshCw, Plus, Trash2, ExternalLink, AlertTriangle } from "lucide-react";
 import { deriveEventState } from "@/lib/types";
 import type { Event, EventState, FreshnessStatus } from "@/lib/types";
+
+// Minimal entity theming for logo placeholder — mirrors home page logic
+const ACCENT_DEFAULT = "#8B5CF6";
+const GRAD_DEFAULT   = { from: "#0D0018", mid: "#070010" };
+
+function evAccent(title: string): string {
+  const n = title.toLowerCase();
+  if (/nfl|49ers|rams|chargers|raiders|chiefs/.test(n))  return "#E50914";
+  if (/mlb|angels|dodgers|giants|yankees/.test(n))        return "#F97316";
+  if (/nba|lakers|clippers|warriors|celtics/.test(n))     return "#3B82F6";
+  if (/metallica|rolling stones|u2|foo fighters/.test(n)) return "#A78BFA";
+  return ACCENT_DEFAULT;
+}
 
 const STATE_BORDER: Record<EventState, string> = {
   POPULATED: "border-l-4 border-l-emerald-500",
@@ -95,6 +109,15 @@ export default function EventsPage() {
             return (
               <Card key={ev.id} className={`p-4 ${STATE_BORDER[state]}`}>
                 <div className="flex items-start gap-4">
+                  {/* Entity logo / placeholder */}
+                  <EntityLogo
+                    entity={ev.title}
+                    initial={ev.title[0]?.toUpperCase() ?? "?"}
+                    accent={evAccent(ev.title)}
+                    gradFrom={GRAD_DEFAULT.from}
+                    gradMid={GRAD_DEFAULT.mid}
+                    size={36}
+                  />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <Link href={`/events/${ev.id}`} className="font-medium text-white hover:text-blue-300 transition-colors">{ev.title}</Link>

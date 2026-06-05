@@ -8,7 +8,9 @@ from typing import Optional
 
 from app.database import get_db
 from app.models import Event, Listing, ListingSnapshot, Marketplace, ScraperErrorLog
+from app.models.canonical import CanonicalInventorySnapshot
 from app.services.analytics import get_data_audit, get_event_analytics, get_venue_analytics
+from app.services.canonical_inventory import get_canonical_inventory
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
@@ -446,4 +448,308 @@ async def event_baseline(event_id: int, db: AsyncSession = Depends(get_db)):
         "deltas_24h": deltas_24h,
         "deltas_7d": deltas_7d,
         "per_marketplace": per_marketplace,
+    }
+
+
+# ── canonical-history ─────────────────────────────────────────────────────────
+# Returns the last N canonical_inventory_snapshots for an event.
+# Frontend: /analytics/events/{id}/canonical-history
+
+@router.get("/events/{event_id}/canonical-history")
+async def canonical_history(
+    event_id: int,
+    limit: int = Query(48, ge=1, le=200),
+    db: AsyncSession = Depends(get_db),
+):
+    rows = (await db.execute(
+        select(CanonicalInventorySnapshot)
+        .where(CanonicalInventorySnapshot.event_id == event_id)
+        .order_by(CanonicalInventorySnapshot.snapshot_at.desc())
+        .limit(limit)
+    )).scalars().all()
+
+    return [
+        {
+            "snapshot_id": s.id,
+            "snapshot_at": s.snapshot_at.isoformat(),
+            "total_canonical_blocks": s.total_canonical_blocks,
+            "total_raw_listings": s.total_raw_listings,
+            "global_duplicate_ratio": float(s.global_duplicate_ratio),
+            "mirrored_block_count": s.mirrored_block_count,
+            "mirrored_ratio": float(s.mirrored_ratio),
+            "mean_confidence": float(s.mean_confidence),
+            "high_confidence_blocks": s.high_confidence_blocks,
+            "low_confidence_blocks": s.low_confidence_blocks,
+            "low_ask": float(s.low_ask) if s.low_ask is not None else None,
+            "by_marketplace": s.by_marketplace or {},
+        }
+        for s in reversed(rows)  # oldest-first for charting; frontend reverses for table display
+    ]
+
+
+# ── canonical-inventory ───────────────────────────────────────────────────────
+# Returns live canonical view computed from active listings.
+# Frontend: /analytics/events/{id}/canonical-inventory
+
+@router.get("/events/{event_id}/canonical-inventory")
+async def canonical_inventory_endpoint(
+    event_id: int,
+    max_blocks: int = Query(500, ge=1, le=2000),
+    db: AsyncSession = Depends(get_db),
+):
+    view = await get_canonical_inventory(event_id, db, max_blocks=max_blocks)
+
+    def _block(b) -> dict:
+        return {
+            "block_id": b.block_id,
+            "section_id": b.section_id,
+            "row": b.row,
+            "quantity": b.quantity,
+            "seller_count": b.seller_count,
+            "marketplace_slugs": b.marketplace_slugs,
+            "low_ask": b.low_ask,
+            "high_ask": b.high_ask,
+            "median_ask": b.median_ask,
+            "price_spread_pct": b.price_spread_pct,
+            "confidence_score": b.confidence_score,
+            "confidence_factors": b.confidence_factors,
+            "last_seen_at": b.last_seen_at.isoformat() if b.last_seen_at else None,
+            "freshness_label": b.freshness_label,
+            "is_mirrored": b.is_mirrored,
+            "duplicate_explanation": b.duplicate_explanation,
+        }
+
+    return {
+        "event_id": view.event_id,
+        "as_of": view.as_of.isoformat(),
+        "total_canonical_blocks": view.total_canonical_blocks,
+        "total_raw_listings": view.total_raw_listings,
+        "global_duplicate_ratio": view.global_duplicate_ratio,
+        "mirrored_block_count": view.mirrored_block_count,
+        "mirrored_ratio": view.mirrored_ratio,
+        "by_marketplace": view.by_marketplace,
+        "mean_confidence": view.mean_confidence,
+        "high_confidence_blocks": view.high_confidence_blocks,
+        "low_confidence_blocks": view.low_confidence_blocks,
+        "canonical_blocks": [_block(b) for b in view.canonical_blocks],
+    }
+
+
+# ── inventory-accounting ──────────────────────────────────────────────────────
+# Per-marketplace listing accounting (active/stale/dedup stats).
+# Frontend: /analytics/events/{id}/inventory-accounting
+
+@router.get("/events/{event_id}/inventory-accounting")
+async def inventory_accounting(
+    event_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    from collections import defaultdict
+    from app.services.canonical_inventory import normalize_section
+
+    now = datetime.utcnow()
+    stale_hours = 4.0
+
+    rows = (await db.execute(
+        select(Listing, Marketplace.slug)
+        .join(Marketplace, Listing.marketplace_id == Marketplace.id)
+        .where(Listing.event_id == event_id)
+    )).all()
+
+    mp_data: dict[str, dict] = defaultdict(lambda: {
+        "raw_rows": 0, "active_rows": 0, "stale_rows": 0, "reactivated_rows": 0,
+        "prices": [], "qtys": [],
+    })
+
+    for listing, slug in rows:
+        d = mp_data[slug]
+        d["raw_rows"] += 1
+        if listing.is_active:
+            d["active_rows"] += 1
+            d["prices"].append(float(listing.price))
+            d["qtys"].append(listing.quantity)
+            if listing.last_seen_at:
+                age_h = (now - listing.last_seen_at).total_seconds() / 3600
+                if age_h > stale_hours:
+                    d["stale_rows"] += 1
+        else:
+            d["reactivated_rows"] += 1
+
+    # Cross-market dedup via (section_id, row, qty)
+    anchor_counts: dict[tuple, set] = defaultdict(set)
+    for listing, slug in rows:
+        if not listing.is_active:
+            continue
+        key = (listing.section_id or normalize_section(listing.section or ""), listing.row or "", listing.quantity)
+        anchor_counts[key].add(slug)
+
+    mirrored_keys = {k for k, slugs in anchor_counts.items() if len(slugs) >= 2}
+    all_slugs = sorted(mp_data.keys())
+
+    per_marketplace = []
+    for slug in all_slugs:
+        d = mp_data[slug]
+        active = d["active_rows"]
+        prices = d["prices"]
+        qtys = d["qtys"]
+
+        dedup_rows = 0
+        dedup_qty = 0
+        for listing, ls in rows:
+            if ls != slug or not listing.is_active:
+                continue
+            key = (listing.section_id or normalize_section(listing.section or ""), listing.row or "", listing.quantity)
+            if key in mirrored_keys:
+                dedup_rows += 1
+                dedup_qty += listing.quantity
+
+        per_marketplace.append({
+            "marketplace_slug": slug,
+            "raw_rows": d["raw_rows"],
+            "active_rows": active,
+            "stale_rows": d["stale_rows"],
+            "reactivated_rows": d["reactivated_rows"],
+            "estimated_ticket_count": sum(qtys),
+            "deduplicated_rows": dedup_rows,
+            "dedup_ticket_count": dedup_qty,
+            "duplicate_ratio": round(dedup_rows / active, 3) if active else 0.0,
+            "low_ask": min(prices) if prices else None,
+            "median_ask": statistics.median(prices) if prices else None,
+            "health_flags": (
+                (["stale"] if d["stale_rows"] > active * 0.5 else []) +
+                (["no_listings"] if active == 0 else [])
+            ),
+        })
+
+    total_unique_blocks = len(anchor_counts)
+    mirrored_blocks = len(mirrored_keys)
+    only_on: dict[str, int] = defaultdict(int)
+    for key, slugs in anchor_counts.items():
+        if len(slugs) == 1:
+            only_on[next(iter(slugs))] += 1
+
+    return {
+        "event_id": event_id,
+        "per_marketplace": per_marketplace,
+        "cross_market": {
+            "marketplace_slugs": all_slugs,
+            "total_unique_seat_blocks": total_unique_blocks,
+            "mirrored_blocks": mirrored_blocks,
+            "mirrored_ratio": round(mirrored_blocks / total_unique_blocks, 3) if total_unique_blocks else 0.0,
+            "only_on": dict(only_on),
+        },
+        "sanity": {
+            "venue_capacity": None,
+            "estimated_ticket_count": sum(sum(d["qtys"]) for d in mp_data.values()),
+            "cross_market_unique_blocks": total_unique_blocks,
+            "capacity_ratio": None,
+            "flags": [],
+        },
+    }
+
+
+# ── section-liquidity ─────────────────────────────────────────────────────────
+@router.get("/events/{event_id}/section-liquidity")
+async def section_liquidity(event_id: int, db: AsyncSession = Depends(get_db)):
+    from collections import defaultdict
+    rows = (await db.execute(
+        select(Listing, Marketplace.slug)
+        .join(Marketplace, Listing.marketplace_id == Marketplace.id)
+        .where(and_(Listing.event_id == event_id, Listing.is_active == True))
+    )).all()
+
+    sections: dict[str, dict] = defaultdict(lambda: {"prices": [], "qty": 0, "slugs": set()})
+    for listing, slug in rows:
+        key = listing.section_id or listing.section or "UNKNOWN"
+        sections[key]["prices"].append(float(listing.price))
+        sections[key]["qty"] += listing.quantity
+        sections[key]["slugs"].add(slug)
+
+    result = []
+    for sec, d in sorted(sections.items(), key=lambda x: min(x[1]["prices"])):
+        prices = d["prices"]
+        result.append({
+            "section_id": sec,
+            "listing_count": len(prices),
+            "ticket_count": d["qty"],
+            "low_ask": min(prices),
+            "median_ask": statistics.median(prices),
+            "high_ask": max(prices),
+            "marketplace_count": len(d["slugs"]),
+            "marketplaces": sorted(d["slugs"]),
+        })
+
+    return {"event_id": event_id, "sections": result, "total_sections": len(result)}
+
+
+# ── market-intelligence ───────────────────────────────────────────────────────
+@router.get("/events/{event_id}/market-intelligence")
+async def market_intelligence(event_id: int, db: AsyncSession = Depends(get_db)):
+    event = (await db.execute(select(Event).where(Event.id == event_id))).scalar_one_or_none()
+    if not event:
+        return {"error": "event not found"}
+
+    snap = (await db.execute(
+        select(CanonicalInventorySnapshot)
+        .where(CanonicalInventorySnapshot.event_id == event_id)
+        .order_by(CanonicalInventorySnapshot.snapshot_at.desc())
+        .limit(1)
+    )).scalar_one_or_none()
+
+    return {
+        "event_id": event_id,
+        "title": event.title,
+        "snapshot_at": snap.snapshot_at.isoformat() if snap else None,
+        "total_canonical_blocks": snap.total_canonical_blocks if snap else 0,
+        "low_ask": float(snap.low_ask) if snap and snap.low_ask else None,
+        "mirrored_ratio": float(snap.mirrored_ratio) if snap else 0.0,
+        "mean_confidence": float(snap.mean_confidence) if snap else 0.0,
+        "note": "full market-intelligence (velocity, absorption) requires ≥7d snapshot history",
+    }
+
+
+# ── inventory-movement ────────────────────────────────────────────────────────
+@router.get("/events/{event_id}/inventory-movement")
+async def inventory_movement(event_id: int, db: AsyncSession = Depends(get_db)):
+    win_result = await db.execute(
+        text("""
+            SELECT DISTINCT DATE_TRUNC('hour', snapshot_at) AS w
+            FROM listing_snapshots WHERE event_id = :eid
+            ORDER BY w DESC LIMIT 5
+        """),
+        {"eid": event_id},
+    )
+    windows = sorted([r[0] for r in win_result.fetchall()])
+
+    if len(windows) < 2:
+        return {
+            "event_id": event_id,
+            "verdict": "insufficient_history",
+            "note": f"Need ≥2 snapshot windows, found {len(windows)}",
+            "new_listings": 0, "disappeared": 0, "likely_sold": 0,
+            "price_changed": 0, "likely_relisted": 0,
+        }
+
+    w_prev, w_curr = windows[-2], windows[-1]
+    row_sql = text("""
+        SELECT listing_id, quantity, price FROM listing_snapshots
+        WHERE event_id=:eid AND DATE_TRUNC('hour', snapshot_at)=CAST(:w AS timestamp)
+    """)
+    prev_rows = {r[0]: (r[1], float(r[2])) for r in (await db.execute(row_sql, {"eid": event_id, "w": w_prev})).fetchall()}
+    curr_rows = {r[0]: (r[1], float(r[2])) for r in (await db.execute(row_sql, {"eid": event_id, "w": w_curr})).fetchall()}
+
+    new = len(set(curr_rows) - set(prev_rows))
+    gone = len(set(prev_rows) - set(curr_rows))
+    changed = sum(1 for lid in (set(prev_rows) & set(curr_rows)) if abs(curr_rows[lid][1] - prev_rows[lid][1]) > 0.50)
+
+    return {
+        "event_id": event_id,
+        "window_prev": w_prev.isoformat(),
+        "window_curr": w_curr.isoformat(),
+        "new_listings": new,
+        "disappeared": gone,
+        "likely_sold": gone,
+        "price_changed": changed,
+        "likely_relisted": 0,
+        "note": "simplified 1-window delta; use /analytics/events/{id}/attribution for full analysis",
     }
