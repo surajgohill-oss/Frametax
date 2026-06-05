@@ -34,7 +34,9 @@ class Settings(BaseSettings):
     html_snapshots_dir: str = "/app/debug_html"
 
     default_poll_interval_minutes: int = 60
-    max_tracked_events: int = 30
+    # Cap is intentionally high — limit by polling cost / scheduler health, not
+    # an arbitrary count ceiling.  Set MAX_TRACKED_EVENTS in env to override.
+    max_tracked_events: int = 500
     failure_cooldown_hours: int = 4
 
     stubhub_base_url: str = "https://www.stubhub.com"
