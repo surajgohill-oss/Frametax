@@ -24,13 +24,15 @@ import {
 
 function getEventEntityTheme(title: string) {
   const n = (title || '').toLowerCase();
-  const isNFL = /49ers|rams|chargers|raiders|chiefs|cowboys|eagles|packers|bears|seahawks|broncos|steelers/.test(n);
-  const isMLB = /rangers|angels|dodgers|giants|padres|yankees|cubs|red sox|astros|braves/.test(n);
-  const isNBA = /lakers|clippers|warriors|celtics|heat|bulls|nets|knicks/.test(n);
-  if (isNFL)  return { accent: '#E50914', accentRgb: '229,9,20',    gradFrom: '#2A0000', gradMid: '#180000' };
-  if (isMLB)  return { accent: '#F97316', accentRgb: '249,115,22',  gradFrom: '#1A0E00', gradMid: '#100800' };
-  if (isNBA)  return { accent: '#3B82F6', accentRgb: '59,130,246',  gradFrom: '#00101A', gradMid: '#000A12' };
-  return               { accent: '#E50914', accentRgb: '229,9,20',   gradFrom: '#2A0000', gradMid: '#160000' };
+  const isNFL    = /49ers|rams|chargers|raiders|chiefs|cowboys|eagles|packers|bears|seahawks|broncos|steelers/.test(n);
+  const isMLB    = /rangers|angels|dodgers|giants|padres|yankees|cubs|red sox|astros|braves/.test(n);
+  const isNBA    = /lakers|clippers|warriors|celtics|heat|bulls|nets|knicks/.test(n);
+  const isSoccer = /fifa|mls|soccer|copa america|world cup|premier league|champions league|la liga/.test(n);
+  if (isNFL)    return { accent: '#E50914', accentRgb: '229,9,20',    gradFrom: '#2A0000', gradMid: '#180000' };
+  if (isMLB)    return { accent: '#F97316', accentRgb: '249,115,22',  gradFrom: '#1A0E00', gradMid: '#100800' };
+  if (isNBA)    return { accent: '#3B82F6', accentRgb: '59,130,246',  gradFrom: '#00101A', gradMid: '#000A12' };
+  if (isSoccer) return { accent: '#10B981', accentRgb: '16,185,129',  gradFrom: '#001A0D', gradMid: '#001008' };
+  return                { accent: '#E50914', accentRgb: '229,9,20',   gradFrom: '#2A0000', gradMid: '#160000' };
 }
 
 // ── Inventory Accounting types ────────────────────────────────────────────────
@@ -127,19 +129,39 @@ function getMarketStatus(price: number | null): MarketStatus {
 
 // ── Key art URL helpers ───────────────────────────────────────────────────────
 
-/** Build Ticketmaster CDN artwork URL when external_event_id looks like a TM numeric ID. */
-function getTmArtworkUrl(extId: string | null | undefined): string | null {
-  if (!extId) return null;
-  // TM IDs are typically numeric strings like "Z7r9jZ1AdeXvk"  or pure numeric "59007A0"
-  // Use the standard TM image endpoint pattern
-  const clean = String(extId).trim();
-  if (clean.length < 4) return null;
-  return `https://s1.ticketmaster.com/dbimages/arena/events/${clean}.jpg`;
+/**
+ * Extract the Ticketmaster external_event_id from the tracked_events array.
+ * The events API returns tracked_events[].marketplace_slug and .external_event_id.
+ * TM IDs look like alphanumeric strings (e.g. "Z7r9jZ1AdeXvk", "1A0E0G0G0G4FE73" etc.)
+ */
+function getTmEventId(event: any): string | null {
+  const tracked: any[] = event?.tracked_events ?? [];
+  // Look for a ticketmaster-slug tracked event with a non-mock external ID
+  const tmTe = tracked.find((te: any) =>
+    te.marketplace_slug === 'ticketmaster' && te.external_event_id &&
+    !String(te.external_event_id).startsWith('mock-') &&
+    !String(te.external_event_id).startsWith('demo-')
+  );
+  if (tmTe?.external_event_id) return String(tmTe.external_event_id);
+  // Fallback: check event.external_event_id if it looks like a real TM ID (not mock/demo)
+  const extId = event?.external_event_id;
+  if (extId && !String(extId).startsWith('mock-') && !String(extId).startsWith('demo-') && String(extId).length > 5) {
+    return String(extId);
+  }
+  return null;
+}
+
+/** Build Ticketmaster CDN artwork URL from a TM event ID. */
+function getTmArtworkUrl(event: any): string | null {
+  const tmId = getTmEventId(event);
+  if (!tmId) return null;
+  // TM uses multiple image patterns; try the most common one
+  return `https://s1.ticketmaster.com/dbimages/arena/events/${tmId}.jpg`;
 }
 
 /** Return the best available artwork URL for an event, or null if none. */
 function getEventArtworkUrl(event: any): string | null {
-  return event?.image_url || event?.poster_url || getTmArtworkUrl(event?.external_event_id) || null;
+  return event?.image_url || event?.poster_url || getTmArtworkUrl(event) || null;
 }
 
 // ── Section 1: Editorial Split Hero ──────────────────────────────────────────
@@ -193,6 +215,7 @@ function EventHero({
     if (/49ers|rams|chargers|raiders|chiefs|cowboys|eagles|packers|bears|seahawks|broncos|steelers/.test(n)) return 'NFL';
     if (/rangers|angels|dodgers|giants|padres|yankees|cubs|red sox|astros|braves/.test(n)) return 'MLB';
     if (/lakers|clippers|warriors|celtics|heat|bulls|nets|knicks/.test(n)) return 'NBA';
+    if (/fifa|mls|soccer|copa america|world cup|premier league|champions league|la liga/.test(n)) return 'Soccer';
     return 'Live Event';
   })();
 
@@ -539,8 +562,8 @@ const MOV_WINDOWS: { key: MovWindow; label: string }[] = [
   { key: 'all',       label: 'All Time' },
 ];
 
-function MarketMovementSection({ event, baseline, invSummary }: {
-  event: any; baseline: any | null; invSummary: any | null;
+function MarketMovementSection({ event, baseline, invSummary, canonicalHistory }: {
+  event: any; baseline: any | null; invSummary: any | null; canonicalHistory: any[];
 }) {
   const [window_, setWindow] = useState<MovWindow>('7d');
 
@@ -552,10 +575,23 @@ function MarketMovementSection({ event, baseline, invSummary }: {
   const cur             = baseline?.current;
   const depth           = baseline?.history_depth_days ?? 0;
 
+  // For Last Poll: derive from two most recent canonical-history snapshots
+  // Dedup canonical history by timestamp, keep highest total_canonical_blocks
+  const dedupedHistory = (() => {
+    const m = new Map<string, any>();
+    for (const s of canonicalHistory) {
+      const k = s.snapshot_at;
+      if (!m.has(k) || s.total_canonical_blocks > (m.get(k)?.total_canonical_blocks ?? 0)) m.set(k, s);
+    }
+    return Array.from(m.values()).sort((a, b) => new Date(a.snapshot_at).getTime() - new Date(b.snapshot_at).getTime());
+  })();
+  const lastSnap = dedupedHistory[dedupedHistory.length - 1] ?? null;
+  const prevSnap = dedupedHistory[dedupedHistory.length - 2] ?? null;
+
   // Pick deltas for selected window
   const deltas = window_ === '24h' ? baseline?.deltas_24h
                : window_ === '7d'  ? baseline?.deltas_7d
-               : null; // last_poll and all handled specially
+               : null;
 
   const curTickets  = invSummary?.unique_tickets_available ?? cur?.unique_tickets ?? null;
   const liveAsk = invSummary?.per_marketplace?.length
@@ -565,20 +601,57 @@ function MarketMovementSection({ event, baseline, invSummary }: {
     : null;
   const curAsk = (liveAsk != null && isFinite(liveAsk) ? liveAsk : null) ?? cur?.lowest_ask ?? null;
 
+  // Compute Last Poll snapshot deltas from canonicalHistory
+  const lastPollDeltas = (lastSnap && prevSnap) ? {
+    netBlocks:    { cur: lastSnap.total_canonical_blocks,  prev: prevSnap.total_canonical_blocks },
+    grossListings:{ cur: lastSnap.total_raw_listings,      prev: prevSnap.total_raw_listings      },
+    lowAsk:       { cur: lastSnap.low_ask,                 prev: prevSnap.low_ask                 },
+    mirrorRate:   { cur: lastSnap.mirrored_ratio,          prev: prevSnap.mirrored_ratio          },
+    dupRatio:     { cur: lastSnap.global_duplicate_ratio,  prev: prevSnap.global_duplicate_ratio  },
+  } : null;
+
   // Delta values for chosen window
   const tickDelta   = deltas?.unique_tickets?.absolute ?? null;
   const tickPct     = deltas?.unique_tickets?.pct      ?? null;
   const askDelta    = deltas?.low_ask?.absolute ?? null;
   const askPct      = deltas?.low_ask?.pct      ?? null;
 
-  // For "All Time" window: use histLow as original ask
+  // All-time: use histLow as original ask
   const askPctAll = (window_ === 'all' && histLow != null && curAsk != null && histLow > 0)
     ? ((curAsk - histLow) / histLow) * 100 : null;
 
-  const displayAskPct     = window_ === 'all' ? askPctAll : askPct;
-  const displayAskOrig    = window_ === 'all' ? histLow   : (curAsk != null && askDelta != null ? curAsk - askDelta : null);
-  const displayTickOrig   = curTickets != null && tickDelta != null ? curTickets - tickDelta : null;
-  const displayTickPct    = tickPct;
+  // Compute display values per window
+  const displayAskPct = window_ === 'all' ? askPctAll
+    : window_ === 'last_poll' ? (lastPollDeltas?.lowAsk.cur != null && lastPollDeltas.lowAsk.prev != null && lastPollDeltas.lowAsk.prev > 0
+        ? ((lastPollDeltas.lowAsk.cur - lastPollDeltas.lowAsk.prev) / lastPollDeltas.lowAsk.prev) * 100 : null)
+    : askPct;
+  const displayAskOrig = window_ === 'all' ? histLow
+    : window_ === 'last_poll' ? (lastPollDeltas?.lowAsk.prev ?? null)
+    : (curAsk != null && askDelta != null ? curAsk - askDelta : null);
+  const displayAskCur  = window_ === 'last_poll' ? (lastPollDeltas?.lowAsk.cur ?? curAsk) : curAsk;
+
+  const displayNetPrev = window_ === 'last_poll' ? (lastPollDeltas?.netBlocks.prev ?? null)
+    : (curTickets != null && tickDelta != null ? curTickets - tickDelta : null);
+  const displayNetCur  = window_ === 'last_poll' ? (lastPollDeltas?.netBlocks.cur ?? curTickets) : curTickets;
+  const displayNetPct  = window_ === 'last_poll'
+    ? (displayNetPrev != null && displayNetCur != null && displayNetPrev > 0
+        ? ((displayNetCur - displayNetPrev) / displayNetPrev) * 100 : null)
+    : tickPct;
+
+  const grossPrev = window_ === 'last_poll' ? (lastPollDeltas?.grossListings.prev ?? null) : null;
+  const grossCur  = window_ === 'last_poll' ? (lastPollDeltas?.grossListings.cur ?? invSummary?.raw_listings ?? null)
+                  : (invSummary?.raw_listings ?? null);
+  const grossPct  = (grossPrev != null && grossCur != null && grossPrev > 0)
+    ? ((grossCur - grossPrev) / grossPrev) * 100 : null;
+
+  const dupePrev = window_ === 'last_poll' && lastPollDeltas
+    ? (lastPollDeltas.grossListings.prev != null && lastPollDeltas.netBlocks.prev != null
+        ? lastPollDeltas.grossListings.prev - lastPollDeltas.netBlocks.prev : null) : null;
+  const dupeCur  = invSummary?.raw_tickets != null && invSummary?.unique_tickets_available != null
+    ? invSummary.raw_tickets - invSummary.unique_tickets_available : null;
+
+  const mirrorPrev = window_ === 'last_poll' ? (lastPollDeltas?.mirrorRate.prev ?? null) : null;
+  const mirrorCur  = invSummary?.mirror_rate ?? lastPollDeltas?.mirrorRate.cur ?? null;
 
   if (!trackingStarted && curTickets == null && curAsk == null) return null;
 
@@ -649,30 +722,54 @@ function MarketMovementSection({ event, baseline, invSummary }: {
         </div>
       </div>
 
-      {/* Movement blocks */}
-      <div className="flex gap-3 flex-wrap sm:flex-nowrap">
+      {/* Movement blocks — 5 metrics */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <MovementBlock
-          label={`Floor Ask${window_ === 'all' ? ' vs All-time Low' : window_ === 'last_poll' ? '' : ` (${window_})`}`}
+          label={window_ === 'all' ? 'Floor Ask vs All-time Low' : 'Floor Ask'}
           origVal={displayAskOrig != null ? f$(displayAskOrig) : null}
-          curVal={curAsk != null ? f$(curAsk) : null}
+          curVal={displayAskCur != null ? f$(displayAskCur) : null}
           pct={displayAskPct}
           curColor="#fff"
           invertPct
         />
         <MovementBlock
-          label={`Net Tickets${window_ === 'last_poll' ? '' : ` (${window_})`}`}
-          origVal={displayTickOrig != null ? displayTickOrig.toLocaleString() : null}
-          curVal={curTickets != null ? curTickets.toLocaleString() : null}
-          pct={displayTickPct}
+          label="Net Tickets"
+          origVal={displayNetPrev != null ? displayNetPrev.toLocaleString() : null}
+          curVal={displayNetCur != null ? displayNetCur.toLocaleString() : null}
+          pct={displayNetPct}
           curColor="#A78BFA"
+          invertPct
+        />
+        <MovementBlock
+          label="Gross Tickets"
+          origVal={grossPrev != null ? grossPrev.toLocaleString() : null}
+          curVal={grossCur != null ? grossCur.toLocaleString() : null}
+          pct={grossPct}
+          curColor="#9CA3AF"
+          invertPct
+        />
+        <MovementBlock
+          label="Duplicate Tickets"
+          origVal={dupePrev != null ? dupePrev.toLocaleString() : null}
+          curVal={dupeCur != null ? dupeCur.toLocaleString() : null}
+          pct={null}
+          curColor={dupeCur != null && dupeCur > 0 ? '#F59E0B' : '#6B7280'}
+          invertPct
+        />
+        <MovementBlock
+          label="Mirror Rate"
+          origVal={mirrorPrev != null ? `${(mirrorPrev * 100).toFixed(1)}%` : null}
+          curVal={mirrorCur != null ? `${(mirrorCur * 100).toFixed(1)}%` : null}
+          pct={null}
+          curColor={mirrorCur != null && mirrorCur > 0.15 ? '#F59E0B' : '#6B7280'}
           invertPct
         />
       </div>
 
-      {window_ === 'last_poll' && (
-        <p className="text-[10px] text-gray-600 italic px-1">Last Poll: showing current values — per-poll delta not available in snapshot data.</p>
+      {!lastPollDeltas && window_ === 'last_poll' && (
+        <p className="text-[10px] text-gray-600 italic px-1">Last Poll: need ≥2 snapshot windows — poll again to unlock per-poll comparison.</p>
       )}
-      {depth === 0 && window_ !== 'last_poll' && (
+      {depth === 0 && window_ !== 'last_poll' && window_ !== 'all' && (
         <p className="text-[10px] text-gray-700 italic px-1">Snapshot window not yet available — movement data will appear after the next poll run.</p>
       )}
     </div>
@@ -2365,7 +2462,7 @@ export default function EventDetailPage() {
         {/* ── SECTION 5: Movement Delta ────────────────────────────────────── */}
         <section>
           <div className="section-label mb-3">↗ Market Movement</div>
-          <MarketMovementSection event={event} baseline={baseline} invSummary={invSummary} />
+          <MarketMovementSection event={event} baseline={baseline} invSummary={invSummary} canonicalHistory={canonicalHistory} />
         </section>
 
         {/* ── SECTION 6: Historical Charts ─────────────────────────────────── */}
@@ -2512,7 +2609,7 @@ export default function EventDetailPage() {
                   <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Gross vs Net Inventory Trend</div>
                   <div className="flex items-center gap-4 text-[10px] text-gray-600">
                     <span className="flex items-center gap-1.5"><span className="inline-block w-2 h-0.5 bg-gray-500" />Gross listings</span>
-                    <span className="flex items-center gap-1.5"><span className="inline-block w-2 h-0.5 bg-violet-400" />Net canonical blocks</span>
+                    <span className="flex items-center gap-1.5"><span className="inline-block w-2 h-0.5 bg-violet-400" />Net Tickets</span>
                     <span className="flex items-center gap-1.5"><span className="inline-block w-2 h-0.5 bg-amber-400" />Duplicates</span>
                   </div>
                 </div>
@@ -2529,7 +2626,7 @@ export default function EventDetailPage() {
                       labelFormatter={(v:number) => fmtTime2(v)}
                       formatter={(value:number, name:string) =>
                         name === 'gross' ? [value.toLocaleString(), 'Gross listings']
-                        : name === 'net'  ? [value.toLocaleString(), 'Net canonical blocks']
+                        : name === 'net'  ? [value.toLocaleString(), 'Net Tickets']
                         : [value.toLocaleString(), 'Duplicate listings']
                       }
                     />

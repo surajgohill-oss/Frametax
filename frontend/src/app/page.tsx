@@ -77,16 +77,18 @@ interface EntityTheme {
 
 function getEntityTheme(name: string): EntityTheme {
   const n = name.toLowerCase();
-  const isNFL  = /49ers|rams|chargers|raiders|chiefs|cowboys|eagles|packers|bears/.test(n);
-  const isMLB  = /rangers|angels|dodgers|giants|padres|yankees|cubs|red sox/.test(n);
-  const isNBA  = /lakers|clippers|warriors|celtics|heat|bulls/.test(n);
-  const isRock = /metallica|rolling stones|u2|foo fighters|guns n|led zep/.test(n);
-  const initial = name[0]?.toUpperCase() ?? "?";
-  if (isNFL)  return { gradFrom:"#2A0000", gradMid:"#180000", gradTo:"#0D0000", accent:"#E50914", accentDim:"rgba(229,9,20,0.18)",   accentRgb:"229,9,20",    category:"NFL",   initial };
-  if (isMLB)  return { gradFrom:"#1A0E00", gradMid:"#100800", gradTo:"#060200", accent:"#F97316", accentDim:"rgba(249,115,22,0.18)", accentRgb:"249,115,22",  category:"MLB",   initial };
-  if (isNBA)  return { gradFrom:"#00101A", gradMid:"#000A12", gradTo:"#000509", accent:"#3B82F6", accentDim:"rgba(59,130,246,0.18)",  accentRgb:"59,130,246",  category:"NBA",   initial };
-  if (isRock) return { gradFrom:"#0A0A1A", gradMid:"#060610", gradTo:"#030308", accent:"#A78BFA", accentDim:"rgba(167,139,250,0.18)", accentRgb:"167,139,250", category:"ROCK",  initial };
-  return        { gradFrom:"#0D0018", gradMid:"#070010", gradTo:"#040008", accent:"#8B5CF6", accentDim:"rgba(139,92,246,0.18)",   accentRgb:"139,92,246",  category:"MUSIC", initial };
+  const isNFL    = /49ers|rams|chargers|raiders|chiefs|cowboys|eagles|packers|bears/.test(n);
+  const isMLB    = /rangers|angels|dodgers|giants|padres|yankees|cubs|red sox/.test(n);
+  const isNBA    = /lakers|clippers|warriors|celtics|heat|bulls/.test(n);
+  const isSoccer = /fifa|mls|soccer|copa america|world cup|premier league|champions league|la liga/.test(n);
+  const isRock   = /metallica|rolling stones|u2|foo fighters|guns n|led zep/.test(n);
+  const initial  = name[0]?.toUpperCase() ?? "?";
+  if (isNFL)    return { gradFrom:"#2A0000", gradMid:"#180000", gradTo:"#0D0000", accent:"#E50914", accentDim:"rgba(229,9,20,0.18)",   accentRgb:"229,9,20",    category:"NFL",    initial };
+  if (isMLB)    return { gradFrom:"#1A0E00", gradMid:"#100800", gradTo:"#060200", accent:"#F97316", accentDim:"rgba(249,115,22,0.18)", accentRgb:"249,115,22",  category:"MLB",    initial };
+  if (isNBA)    return { gradFrom:"#00101A", gradMid:"#000A12", gradTo:"#000509", accent:"#3B82F6", accentDim:"rgba(59,130,246,0.18)",  accentRgb:"59,130,246",  category:"NBA",    initial };
+  if (isSoccer) return { gradFrom:"#001A0D", gradMid:"#001008", gradTo:"#000904", accent:"#10B981", accentDim:"rgba(16,185,129,0.18)",  accentRgb:"16,185,129",  category:"SOCCER", initial };
+  if (isRock)   return { gradFrom:"#0A0A1A", gradMid:"#060610", gradTo:"#030308", accent:"#A78BFA", accentDim:"rgba(167,139,250,0.18)", accentRgb:"167,139,250", category:"ROCK",   initial };
+  return          { gradFrom:"#0D0018", gradMid:"#070010", gradTo:"#040008", accent:"#8B5CF6", accentDim:"rgba(139,92,246,0.18)",   accentRgb:"139,92,246",  category:"MUSIC",  initial };
 }
 
 interface MarketStatus { label: string; emoji: string; cssClass: string; }
