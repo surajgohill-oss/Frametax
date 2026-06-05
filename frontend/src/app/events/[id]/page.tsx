@@ -550,9 +550,123 @@ function EventHero({
   );
 }
 
+// ── Market Indicator Box ──────────────────────────────────────────────────────
+// Prominent BUY / WAIT / MONITOR signal derived from available data.
+// No new API calls.
+
+function MarketIndicatorBox({ baseline, invSummary, attribution, inventoryMovement }: {
+  baseline: any | null; invSummary: any | null; attribution: any | null; inventoryMovement: any | null;
+}) {
+  const d24   = baseline?.deltas_24h;
+  const d7    = baseline?.deltas_7d;
+  const cur   = baseline?.current;
+
+  const askDelta24   = d24?.low_ask?.absolute   ?? null;
+  const tickDelta24  = d24?.unique_tickets?.absolute ?? null;
+  const askDelta7    = d7?.low_ask?.absolute    ?? null;
+  const tickDelta7   = d7?.unique_tickets?.absolute ?? null;
+
+  const askPct24  = d24?.low_ask?.pct  ?? null;
+  const tickPct24 = d24?.unique_tickets?.pct ?? null;
+
+  const sold      = attribution?.classification_summary?.likely_sold   ?? 0;
+  const relisted  = attribution?.classification_summary?.likely_relisted ?? 0;
+  const newL      = attribution?.classification_summary?.new_listing    ?? 0;
+
+  const netTickets = invSummary?.unique_tickets_available ?? cur?.unique_tickets ?? null;
+  const grossT     = invSummary?.raw_tickets              ?? null;
+  const dupCount   = grossT != null && netTickets != null ? grossT - netTickets : null;
+  const dupRate    = grossT != null && grossT > 0 && dupCount != null ? dupCount / grossT : null;
+  const mirrorRate = invSummary?.mirror_rate ?? null;
+
+  // Derive signal
+  type Signal = 'BUY' | 'WAIT' | 'MONITOR';
+  let signal: Signal = 'MONITOR';
+  let summary = 'Market is stable. No strong directional signal.';
+
+  const priceRising   = askDelta24 != null && askDelta24 > 0;
+  const priceFalling  = askDelta24 != null && askDelta24 < 0;
+  const supplyFalling = tickDelta24 != null && tickDelta24 < 0;
+  const supplyRising  = tickDelta24 != null && tickDelta24 > 0;
+  const activeSales   = sold > 2;
+  const highDupes     = dupRate != null && dupRate > 0.30;
+
+  if (priceRising && supplyFalling) {
+    signal  = 'BUY';
+    summary = 'Inventory is tightening while floor price is rising. Sellers have pricing power — buy before prices climb further.';
+  } else if (priceFalling && supplyRising) {
+    signal  = 'WAIT';
+    summary = 'Supply is growing while price is falling. More inventory is entering the market — waiting may yield better prices.';
+  } else if (activeSales && supplyFalling) {
+    signal  = 'BUY';
+    summary = 'Active sell-through with declining supply. Demand is absorbing inventory — good window to act.';
+  } else if (priceFalling) {
+    signal  = 'WAIT';
+    summary = 'Floor price is trending down. No urgency — monitoring for further drops is reasonable.';
+  } else if (priceRising) {
+    signal  = 'MONITOR';
+    summary = 'Price is rising but supply is stable. Monitor for further movement before acting.';
+  } else if (highDupes) {
+    signal  = 'MONITOR';
+    summary = 'High duplicate rate — multiple brokers listing the same seats. Real supply is lower than it appears.';
+  }
+
+  const sigColor = signal === 'BUY' ? '#22c55e' : signal === 'WAIT' ? '#F59E0B' : '#60A5FA';
+  const sigBg    = signal === 'BUY' ? 'rgba(34,197,94,0.08)' : signal === 'WAIT' ? 'rgba(245,158,11,0.08)' : 'rgba(96,165,250,0.08)';
+  const sigBorder = signal === 'BUY' ? 'rgba(34,197,94,0.22)' : signal === 'WAIT' ? 'rgba(245,158,11,0.22)' : 'rgba(96,165,250,0.22)';
+
+  const noData = d24 == null && d7 == null && invSummary == null;
+  if (noData) return null;
+
+  function Pill({ label, val, positive }: { label: string; val: string | null; positive?: boolean | null }) {
+    if (val == null) return null;
+    return (
+      <div className="flex flex-col gap-0.5">
+        <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.3)' }}>{label}</span>
+        <span className="text-xs font-bold tabular-nums" style={{ color: positive === true ? '#22c55e' : positive === false ? '#EF4444' : '#9CA3AF' }}>{val}</span>
+      </div>
+    );
+  }
+
+  const fmtPct = (v: number | null) => v == null ? null : `${v > 0 ? '+' : ''}${v.toFixed(1)}%`;
+  const fmtAbs = (v: number | null, prefix = '') => v == null ? null : `${v > 0 ? '+' : ''}${prefix}${Math.abs(v).toLocaleString()}`;
+
+  return (
+    <div className="rounded-2xl p-5" style={{ background: sigBg, border: `1px solid ${sigBorder}` }}>
+      <div className="flex items-start gap-5 flex-wrap">
+        {/* Signal badge */}
+        <div className="shrink-0 flex flex-col items-center gap-1 pt-0.5">
+          <div
+            className="text-[11px] font-black uppercase tracking-widest px-4 py-2 rounded-xl"
+            style={{ background: sigBg, border: `2px solid ${sigColor}`, color: sigColor, letterSpacing: '0.12em' }}
+          >
+            {signal}
+          </div>
+          <div className="text-[9px] text-gray-600 uppercase tracking-widest">Signal</div>
+        </div>
+
+        {/* Summary text */}
+        <div className="flex-1 min-w-[180px]">
+          <p className="text-sm font-medium leading-snug" style={{ color: 'rgba(255,255,255,0.75)' }}>{summary}</p>
+        </div>
+
+        {/* Metrics strip */}
+        <div className="flex items-start gap-5 flex-wrap">
+          <Pill label="Price 24h"     val={fmtPct(askPct24)}    positive={askPct24 != null ? askPct24 < 0 : null} />
+          <Pill label="Tickets 24h"   val={fmtPct(tickPct24)}   positive={tickPct24 != null ? tickPct24 < 0 : null} />
+          <Pill label="Sold"          val={sold > 0 ? String(sold) : null}  positive={null} />
+          <Pill label="Relisted"      val={relisted > 0 ? String(relisted) : null} positive={null} />
+          <Pill label="Dup Rate"      val={dupRate != null ? `${(dupRate * 100).toFixed(0)}%` : null} positive={dupRate != null ? dupRate < 0.2 : null} />
+          <Pill label="Mirror Rate"   val={mirrorRate != null ? `${(mirrorRate * 100).toFixed(0)}%` : null} positive={mirrorRate != null ? mirrorRate < 0.15 : null} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Market Movement Section ───────────────────────────────────────────────────
-// Primary story: original → current change in price + tickets.
-// No new API calls — derives from already-loaded event + baseline.
+// Table: Metric | Start | Current | Change
+// No new API calls — derives from already-loaded event + baseline + canonicalHistory.
 
 type MovWindow = 'last_poll' | '24h' | '7d' | 'all';
 const MOV_WINDOWS: { key: MovWindow; label: string }[] = [
@@ -655,42 +769,43 @@ function MarketMovementSection({ event, baseline, invSummary, canonicalHistory }
 
   if (!trackingStarted && curTickets == null && curAsk == null) return null;
 
-  function MovementBlock({ label, origVal, curVal, pct, curColor, invertPct = false }: {
-    label: string; origVal: string | null; curVal: string | null;
-    pct: number | null; curColor: string; invertPct?: boolean;
-  }) {
-    const pctPositive = pct != null && (invertPct ? pct < 0 : pct > 0);
-    const pctColor = pct == null || pct === 0 ? '#4B5563'
-      : pctPositive ? '#22c55e' : '#EF4444';
-    return (
-      <div className="flex-1 rounded-xl p-4" style={{ background:'rgba(255,255,255,0.025)', border:'1px solid rgba(255,255,255,0.06)' }}>
-        <div className="text-[9px] font-bold uppercase tracking-widest text-gray-600 mb-3">{label}</div>
-        <div className="flex items-end gap-3 flex-wrap">
-          {origVal && (
-            <div>
-              <div className="text-[9px] text-gray-700 uppercase tracking-wider mb-0.5">Original</div>
-              <div className="text-lg font-bold text-gray-600 tabular-nums leading-none">{origVal}</div>
-            </div>
-          )}
-          {origVal && <span className="text-gray-700 text-xs mb-0.5">→</span>}
-          <div>
-            {origVal && <div className="text-[9px] text-gray-700 uppercase tracking-wider mb-0.5">Now</div>}
-            <div className="tabular-nums leading-none font-black" style={{ fontSize:'28px', color: curColor, letterSpacing:'-0.03em' }}>
-              {curVal ?? '—'}
-            </div>
-          </div>
-          {pct != null && pct !== 0 && (
-            <div className="mb-0.5">
-              <div className="text-[9px] text-gray-700 uppercase tracking-wider mb-0.5">Change</div>
-              <div className="text-sm font-bold tabular-nums" style={{ color: pctColor }}>
-                {pct > 0 ? '+' : ''}{pct.toFixed(1)}%
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
+  // Build table rows
+  type TRow = { label: string; start: string | null; current: string | null; change: string | null; changeColor: string };
+  const rows: TRow[] = [];
+
+  function mkRow(label: string, startVal: number | null, curVal: number | null,
+    fmt: (v: number) => string, invertGood = false): TRow {
+    const startStr   = startVal != null ? fmt(startVal) : null;
+    const curStr     = curVal   != null ? fmt(curVal)   : null;
+    let changeStr: string | null = null;
+    let changeColor = '#4B5563';
+    if (startVal != null && curVal != null && startVal !== 0) {
+      const pct = ((curVal - startVal) / Math.abs(startVal)) * 100;
+      const abs = curVal - startVal;
+      const sign = abs > 0 ? '+' : '';
+      changeStr = `${sign}${fmt(abs)} (${pct > 0 ? '+' : ''}${pct.toFixed(1)}%)`;
+      const isGood = invertGood ? abs < 0 : abs > 0;
+      changeColor = abs === 0 ? '#4B5563' : isGood ? '#22c55e' : '#EF4444';
+    }
+    return { label, start: startStr, current: curStr, change: changeStr, changeColor };
   }
+
+  rows.push(mkRow('Lowest Ask',        displayAskOrig,   displayAskCur,   v => `$${Math.round(Math.abs(v)).toLocaleString()}`, true));
+  rows.push(mkRow('Net Tickets',       displayNetPrev,   displayNetCur,   v => Math.round(Math.abs(v)).toLocaleString(),       true));
+  rows.push(mkRow('Gross Tickets',     grossPrev,        grossCur,        v => Math.round(Math.abs(v)).toLocaleString(),       true));
+  rows.push(mkRow('Duplicate Tickets', dupePrev,         dupeCur,         v => Math.round(Math.abs(v)).toLocaleString(),       true));
+  // Mirror rate: format as %
+  const mirrorStartStr  = mirrorPrev != null ? `${(mirrorPrev  * 100).toFixed(1)}%` : null;
+  const mirrorCurStr    = mirrorCur  != null ? `${(mirrorCur   * 100).toFixed(1)}%` : null;
+  let mirrorChangeStr: string | null = null;
+  let mirrorChangeColor = '#4B5563';
+  if (mirrorPrev != null && mirrorCur != null) {
+    const diff = mirrorCur - mirrorPrev;
+    const sign = diff > 0 ? '+' : '';
+    mirrorChangeStr  = `${sign}${(diff * 100).toFixed(1)}pp`;
+    mirrorChangeColor = diff < 0 ? '#22c55e' : diff > 0 ? '#EF4444' : '#4B5563';
+  }
+  rows.push({ label: 'Mirror Rate', start: mirrorStartStr, current: mirrorCurStr, change: mirrorChangeStr, changeColor: mirrorChangeColor });
 
   return (
     <div className="space-y-3">
@@ -710,67 +825,43 @@ function MarketMovementSection({ event, baseline, invSummary, canonicalHistory }
           </button>
         ))}
         <div className="ml-auto flex items-center gap-3 text-[10px]">
-          {trackingStarted && (
-            <span className="text-gray-700">Since {trackingStarted}</span>
-          )}
-          {depth > 0 && (
-            <span className="text-gray-700">{depth}d history</span>
-          )}
-          {histLow != null && (
-            <span className="text-amber-500 font-mono font-semibold">All-time low: {f$(histLow)}</span>
-          )}
+          {trackingStarted && <span className="text-gray-700">Since {trackingStarted}</span>}
+          {histLow != null && <span className="text-amber-500 font-mono font-semibold">All-time low: {f$(histLow)}</span>}
         </div>
       </div>
 
-      {/* Movement blocks — 5 metrics */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <MovementBlock
-          label={window_ === 'all' ? 'Floor Ask vs All-time Low' : 'Floor Ask'}
-          origVal={displayAskOrig != null ? f$(displayAskOrig) : null}
-          curVal={displayAskCur != null ? f$(displayAskCur) : null}
-          pct={displayAskPct}
-          curColor="#fff"
-          invertPct
-        />
-        <MovementBlock
-          label="Net Tickets"
-          origVal={displayNetPrev != null ? displayNetPrev.toLocaleString() : null}
-          curVal={displayNetCur != null ? displayNetCur.toLocaleString() : null}
-          pct={displayNetPct}
-          curColor="#A78BFA"
-          invertPct
-        />
-        <MovementBlock
-          label="Gross Tickets"
-          origVal={grossPrev != null ? grossPrev.toLocaleString() : null}
-          curVal={grossCur != null ? grossCur.toLocaleString() : null}
-          pct={grossPct}
-          curColor="#9CA3AF"
-          invertPct
-        />
-        <MovementBlock
-          label="Duplicate Tickets"
-          origVal={dupePrev != null ? dupePrev.toLocaleString() : null}
-          curVal={dupeCur != null ? dupeCur.toLocaleString() : null}
-          pct={null}
-          curColor={dupeCur != null && dupeCur > 0 ? '#F59E0B' : '#6B7280'}
-          invertPct
-        />
-        <MovementBlock
-          label="Mirror Rate"
-          origVal={mirrorPrev != null ? `${(mirrorPrev * 100).toFixed(1)}%` : null}
-          curVal={mirrorCur != null ? `${(mirrorCur * 100).toFixed(1)}%` : null}
-          pct={null}
-          curColor={mirrorCur != null && mirrorCur > 0.15 ? '#F59E0B' : '#6B7280'}
-          invertPct
-        />
+      {/* Movement table */}
+      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.07)' }}>
+        <table className="w-full text-sm">
+          <thead>
+            <tr style={{ background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <th className="text-left px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-gray-600">Metric</th>
+              <th className="text-right px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-gray-600">Start</th>
+              <th className="text-right px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-gray-600">Current</th>
+              <th className="text-right px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-gray-600">Change</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(row => (
+              <tr key={row.label} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+                className="hover:bg-white/[0.02] transition-colors">
+                <td className="px-4 py-3 text-gray-300 font-medium text-xs">{row.label}</td>
+                <td className="px-4 py-3 text-right font-mono text-gray-600 text-xs tabular-nums">{row.start ?? '—'}</td>
+                <td className="px-4 py-3 text-right font-bold text-white text-xs tabular-nums">{row.current ?? '—'}</td>
+                <td className="px-4 py-3 text-right font-bold text-xs tabular-nums" style={{ color: row.changeColor }}>
+                  {row.change ?? (row.start == null ? <span className="text-gray-700 font-normal text-[10px]">no prior data</span> : '—')}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {!lastPollDeltas && window_ === 'last_poll' && (
         <p className="text-[10px] text-gray-600 italic px-1">Last Poll: need ≥2 snapshot windows — poll again to unlock per-poll comparison.</p>
       )}
       {depth === 0 && window_ !== 'last_poll' && window_ !== 'all' && (
-        <p className="text-[10px] text-gray-700 italic px-1">Snapshot window not yet available — movement data will appear after the next poll run.</p>
+        <p className="text-[10px] text-gray-700 italic px-1">Movement data builds as snapshot history accumulates.</p>
       )}
     </div>
   );
@@ -2437,7 +2528,18 @@ export default function EventDetailPage() {
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-10 py-8">
 
-        {/* ── SECTION 2: Marketplace Snapshot ─────────────────────────────── */}
+        {/* ── SECTION 2: Market Indicator ──────────────────────────────────── */}
+        <section>
+          <div className="section-label mb-3">◎ Market Signal</div>
+          <MarketIndicatorBox
+            baseline={baseline}
+            invSummary={invSummary}
+            attribution={attribution}
+            inventoryMovement={inventoryMovement}
+          />
+        </section>
+
+        {/* ── SECTION 3: Marketplace Snapshot ─────────────────────────────── */}
         <section>
           <div className="section-label mb-3">⊡ Live Marketplace Inventory</div>
           <MarketplaceSnapshotCards
@@ -2445,12 +2547,6 @@ export default function EventDetailPage() {
             lastPolledAt={event.last_polled_at}
             mpLatestRun={mpLatestRun}
           />
-        </section>
-
-        {/* ── SECTION 3: Market Structure ──────────────────────────────────── */}
-        <section>
-          <div className="section-label mb-3">◈ Market Structure</div>
-          <MarketStructureSection invSummary={invSummary} canonical={canonical} />
         </section>
 
         {/* ── SECTION 4: Market Activity (attribution) ─────────────────────── */}
@@ -2465,7 +2561,13 @@ export default function EventDetailPage() {
           <MarketMovementSection event={event} baseline={baseline} invSummary={invSummary} canonicalHistory={canonicalHistory} />
         </section>
 
-        {/* ── SECTION 6: Historical Charts ─────────────────────────────────── */}
+        {/* ── SECTION 6: Market Structure (secondary) ──────────────────────── */}
+        <section>
+          <div className="section-label mb-3">◈ Market Structure</div>
+          <MarketStructureSection invSummary={invSummary} canonical={canonical} />
+        </section>
+
+        {/* ── SECTION 7: Historical Charts ─────────────────────────────────── */}
         <section className="space-y-4">
           <div className="section-label mb-1">📈 Historical Trends</div>
 
@@ -2510,8 +2612,8 @@ export default function EventDetailPage() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Snapshot Trend</div>
                   <div className="flex items-center gap-4 text-[10px] text-gray-600">
-                    <span className="flex items-center gap-1.5"><span className="inline-block w-2 h-0.5 bg-indigo-400" />Canonical blocks</span>
-                    <span className="flex items-center gap-1.5"><span className="inline-block w-2 h-0.5 bg-emerald-400" />Floor ask</span>
+                    <span className="flex items-center gap-1.5"><span className="inline-block w-2 h-0.5 bg-indigo-400" />Net Tickets</span>
+                    <span className="flex items-center gap-1.5"><span className="inline-block w-2 h-0.5 bg-emerald-400" />Floor Ask</span>
                     <span className="text-gray-700">{chartData.length} snapshots</span>
                   </div>
                 </div>
@@ -2550,7 +2652,7 @@ export default function EventDetailPage() {
                       contentStyle={{ background: '#111827', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, fontSize: 11, color: '#e5e7eb' }}
                       labelFormatter={(v: number) => fmtTime(v)}
                       formatter={(value: number, name: string) =>
-                        name === 'blocks' ? [value.toLocaleString(), 'Canonical blocks']
+                        name === 'blocks' ? [value.toLocaleString(), 'Net Tickets']
                         : name === 'low_ask' ? [`$${value}`, 'Floor ask']
                         : [`${value}%`, 'Confidence']
                       }
