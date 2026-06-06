@@ -73,33 +73,50 @@ async def _assert_schema() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    import os
     logger.info("TRACE-4: lifespan() entered")
 
     logger.info("TRACE-5: calling _assert_schema()")
     await _assert_schema()
     logger.info("TRACE-6: _assert_schema() done")
 
-    logger.info("TRACE-7: importing start_scheduler")
-    try:
-        from app.scheduler import start_scheduler
-        logger.info("TRACE-8: start_scheduler imported OK")
-    except Exception as exc:
-        logger.error("TRACE-8err: failed to import start_scheduler: %s", exc, exc_info=True)
-        raise
+    # ── Scheduler gate ────────────────────────────────────────────────────────
+    # Only start the APScheduler polling loop on the dedicated worker service.
+    # Gate is controlled by the WORKER_MODE env var (set to "1" on worker,
+    # absent on the backend API service).  Running the scheduler on both
+    # services caused duplicate fan-out: every event was polled 2× per minute,
+    # the resolver ran concurrently from two processes, DB writes doubled,
+    # and Playwright sessions were launched on both services — leading to
+    # memory exhaustion and repeated Railway restarts.
+    _is_worker = os.environ.get("WORKER_MODE", "0").strip() == "1"
+    if _is_worker:
+        logger.info("TRACE-7: WORKER_MODE=1 — importing start_scheduler")
+        try:
+            from app.scheduler import start_scheduler
+            logger.info("TRACE-8: start_scheduler imported OK")
+        except Exception as exc:
+            logger.error("TRACE-8err: failed to import start_scheduler: %s", exc, exc_info=True)
+            raise
 
-    logger.info("TRACE-9: calling start_scheduler()")
-    try:
-        await start_scheduler()
-        logger.info("TRACE-10: start_scheduler() done")
-    except Exception as exc:
-        logger.error("TRACE-10err: start_scheduler() raised: %s", exc, exc_info=True)
-        raise
+        logger.info("TRACE-9: calling start_scheduler()")
+        try:
+            await start_scheduler()
+            logger.info("TRACE-10: start_scheduler() done")
+        except Exception as exc:
+            logger.error("TRACE-10err: start_scheduler() raised: %s", exc, exc_info=True)
+            raise
+    else:
+        logger.info(
+            "TRACE-7: WORKER_MODE not set — scheduler disabled on this instance "
+            "(backend API only, no polling)"
+        )
 
     logger.info("TRACE-11: yielding — server should now accept requests")
     yield
 
-    from app.scheduler import stop_scheduler
-    await stop_scheduler()
+    if _is_worker:
+        from app.scheduler import stop_scheduler
+        await stop_scheduler()
 
 
 logger.info("TRACE-3b: building FastAPI app")
