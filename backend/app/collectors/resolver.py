@@ -22,7 +22,7 @@ Resolution strategy per marketplace:
 """
 import logging
 import re
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Optional, Tuple
 
 import httpx
@@ -30,6 +30,15 @@ from sqlalchemy import select, and_, or_, update as sa_update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import TrackedEvent, Event, Marketplace
+
+# ── VS resolver backoff ───────────────────────────────────────────────────────
+# VividSeats catalog scans (even with the page cap) are expensive.  After
+# _VS_BACKOFF_THRESHOLD consecutive failures for the same tracked_event, the
+# resolver skips that event for _VS_BACKOFF_HOURS hours.
+# Uses the existing FailureMemory table — no migration needed.
+# Pattern key: f"vs_resolve:{te.id}"   error_type: "resolve_no_match"
+_VS_BACKOFF_THRESHOLD = 3     # failures before cooldown kicks in
+_VS_BACKOFF_HOURS     = 12    # hours to pause after threshold reached
 
 _DEMO_ID_PREFIX = "demo-"
 
@@ -106,9 +115,26 @@ class EventResolver:
                 continue
             # NULL and demo-prefixed IDs both fall through to resolution
 
+            # ── VividSeats backoff gate ────────────────────────────────────────
+            # Skip VS resolution if this event has hit the failure threshold and
+            # the cooldown window has not elapsed.  Prevents repeated expensive
+            # catalog scans for events that are genuinely not listed on VS yet.
+            if mp.slug == "vividseats":
+                in_backoff = await self._vs_in_backoff(session_factory, te.id)
+                if in_backoff:
+                    counts["already_set"] += 1  # treated as deferred, not failed
+                    logger.debug(
+                        "VS resolver: te=%d '%s' in backoff — deferring resolution",
+                        te.id, event.title,
+                    )
+                    continue
+
             resolved, source = await self._resolve_for_marketplace(event, mp.slug, te.external_url)
 
             if resolved:
+                # Clear any VS backoff on success
+                if mp.slug == "vividseats":
+                    await self._vs_clear_backoff(session_factory, te.id)
                 await self._persist(session_factory, te.id, resolved, source)
                 counts["resolved"] += 1
                 logger.info(
@@ -122,6 +148,9 @@ class EventResolver:
                     "(tracked_event=%d) — will retry next cycle",
                     mp.slug, event.title, te.id,
                 )
+                # Record VS failure for backoff tracking
+                if mp.slug == "vividseats":
+                    await self._vs_record_failure(session_factory, te.id, event.title)
 
         if counts["resolved"] or counts["failed"]:
             logger.info(
@@ -346,3 +375,93 @@ class EventResolver:
                 .values(external_event_id=resolved_id, resolution_source=source)
             )
             await db.commit()
+
+    # ── VividSeats resolver backoff helpers ───────────────────────────────────
+
+    @staticmethod
+    async def _vs_backoff_key(tracked_event_id: int) -> str:
+        return f"vs_resolve:{tracked_event_id}"
+
+    @classmethod
+    async def _vs_in_backoff(cls, session_factory, tracked_event_id: int) -> bool:
+        """Return True if this VS tracked_event is within its cooldown window."""
+        from app.models.debug import FailureMemory
+        pattern = await cls._vs_backoff_key(tracked_event_id)
+        try:
+            async with session_factory() as db:
+                result = await db.execute(
+                    select(FailureMemory).where(
+                        FailureMemory.marketplace == "vividseats",
+                        FailureMemory.error_type == "resolve_no_match",
+                        FailureMemory.failed_pattern == pattern,
+                        FailureMemory.skip_failed == True,
+                    )
+                )
+                rec = result.scalar_one_or_none()
+                if rec is None:
+                    return False
+                cutoff = datetime.utcnow() - timedelta(hours=_VS_BACKOFF_HOURS)
+                return rec.last_seen >= cutoff
+        except Exception as exc:
+            logger.debug("VS backoff check failed (ignored): %s", exc)
+            return False
+
+    @classmethod
+    async def _vs_record_failure(cls, session_factory, tracked_event_id: int, title: str) -> None:
+        """Upsert a VS resolution failure; set skip_failed after threshold."""
+        from app.models.debug import FailureMemory
+        pattern = await cls._vs_backoff_key(tracked_event_id)
+        try:
+            async with session_factory() as db:
+                result = await db.execute(
+                    select(FailureMemory).where(
+                        FailureMemory.marketplace == "vividseats",
+                        FailureMemory.error_type == "resolve_no_match",
+                        FailureMemory.failed_pattern == pattern,
+                    )
+                )
+                rec = result.scalar_one_or_none()
+                if rec:
+                    rec.failure_count += 1
+                    rec.last_seen = datetime.utcnow()
+                    if rec.failure_count >= _VS_BACKOFF_THRESHOLD:
+                        rec.skip_failed = True
+                        logger.info(
+                            "VS resolver: te=%d '%s' hit backoff threshold (%d failures) "
+                            "— deferring for %dh",
+                            tracked_event_id, title, rec.failure_count, _VS_BACKOFF_HOURS,
+                        )
+                else:
+                    db.add(FailureMemory(
+                        marketplace="vividseats",
+                        error_type="resolve_no_match",
+                        failed_pattern=pattern,
+                        failure_count=1,
+                        skip_failed=False,
+                    ))
+                await db.commit()
+        except Exception as exc:
+            logger.debug("VS failure record failed (ignored): %s", exc)
+
+    @classmethod
+    async def _vs_clear_backoff(cls, session_factory, tracked_event_id: int) -> None:
+        """Clear VS backoff on successful resolution."""
+        from app.models.debug import FailureMemory
+        pattern = await cls._vs_backoff_key(tracked_event_id)
+        try:
+            async with session_factory() as db:
+                result = await db.execute(
+                    select(FailureMemory).where(
+                        FailureMemory.marketplace == "vividseats",
+                        FailureMemory.error_type == "resolve_no_match",
+                        FailureMemory.failed_pattern == pattern,
+                    )
+                )
+                rec = result.scalar_one_or_none()
+                if rec:
+                    rec.skip_failed = False
+                    rec.failure_count = 0
+                    rec.last_success = datetime.utcnow()
+                    await db.commit()
+        except Exception as exc:
+            logger.debug("VS backoff clear failed (ignored): %s", exc)

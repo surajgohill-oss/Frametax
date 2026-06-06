@@ -36,6 +36,7 @@ Parking:
 """
 from __future__ import annotations
 
+import asyncio
 import re
 from decimal import Decimal, InvalidOperation
 from datetime import datetime, timedelta
@@ -51,6 +52,25 @@ logger = logging.getLogger("collector.vividseats")
 
 _VS_API_BASE = "https://www.vividseats.com/hermes/api/v1"
 _SEGMENT     = "secondary_resale"
+
+# ── OOM guardrails ────────────────────────────────────────────────────────────
+# 60-page default caused OOM on Railway (3 000 items scanned per unresolved event,
+# 30-minute resolver cycle hitting every unresolved VS event sequentially).
+#
+# _VS_SEARCH_MAX_PAGES: hard cap on catalog pages per date-search.
+#   5 pages × 50 items = 250 events max — covers all but the busiest festival dates.
+#   Busy dates (e.g. 2026-09-17) hit 7+ pages before; 5 is sufficient for most matches
+#   since strong-match events typically appear in the first 1–2 pages.
+#
+# _VS_SEARCH_SEMAPHORE: global asyncio semaphore limiting concurrent VS discovery
+#   searches. The resolver fires one search per unresolved event sequentially, but
+#   concurrent hydrate calls or task fan-out can stack searches. Cap at 2.
+#
+# _VS_SEARCH_TIMEOUT_S: per-request timeout for /productions search pages only.
+#   Listing fetches use the full 30 s client timeout.
+_VS_SEARCH_MAX_PAGES   = 5      # was 60 — hard cap, prevents runaway scans
+_VS_SEARCH_TIMEOUT_S   = 10.0   # per /productions page request
+_VS_SEARCH_SEMAPHORE   = asyncio.Semaphore(2)  # max 2 concurrent VS discovery searches
 
 
 def _to_decimal(value) -> Optional[Decimal]:
@@ -126,7 +146,12 @@ class VividSeatsCollector(BaseCollector):
         """
         Search via /productions with startDate filter.
         /productions/search requires auth (returns 400 without token) — not used.
-        Scans up to 10 pages (250 events) on the target date, title-matched.
+
+        OOM guardrails (see module-level constants):
+          - Hard cap of _VS_SEARCH_MAX_PAGES pages (5) per search call.
+          - Per-request timeout of _VS_SEARCH_TIMEOUT_S (10 s).
+          - Global semaphore _VS_SEARCH_SEMAPHORE (2 concurrent searches max).
+          - Exits immediately on first keyword match (no accumulation).
         """
         if not event_date:
             logger.info("VS resolver: no event_date — cannot resolve '%s'", title)
@@ -138,46 +163,66 @@ class VividSeatsCollector(BaseCollector):
         import re as _re
         kw_set = {w for w in _re.split(r'\W+', title_lower) if len(w) > 3}
 
-        try:
-            for page in range(1, 61):  # up to 60 pages × 50 = 3000 items (covers busy dates)
-                resp = await self._client().get(
-                    f"{_VS_API_BASE}/productions",
-                    params={
-                        "startDate":  date_str,
-                        "endDate":    date_str,   # CRITICAL: without endDate, API returns multi-day
-                        "pageSize":   "50",       # max page size; 25 only gives 250 items total
-                        "pageNumber": str(page),
-                    },
-                )
-                resp.raise_for_status()
-                data = resp.json()
-                items = data.get("items") or []
-                if not items:
-                    break
-                for item in items:
-                    item_date = (item.get("localDate") or "")[:10]
-                    if item_date != date_str:
-                        continue
-                    name = (item.get("name") or "").lower()
-                    name_words = set(_re.split(r'\W+', name))
-                    if kw_set & name_words:  # any keyword overlap
-                        vs_id = str(item.get("id") or "")
-                        if vs_id:
-                            logger.info(
-                                "VS resolver: matched '%s' → '%s' id=%s (kw=%s)",
-                                title, item.get("name"), vs_id,
-                                kw_set & name_words,
-                            )
-                            return vs_id
-                # Stop early if we've passed the last page
-                total_pages = data.get("numberOfPages") or 9999
-                if page >= total_pages:
-                    break
-        except Exception as exc:
-            logger.warning("VS resolver: HTTP failure — %s", exc)
-            return None
+        async with _VS_SEARCH_SEMAPHORE:
+            try:
+                for page in range(1, _VS_SEARCH_MAX_PAGES + 1):
+                    try:
+                        resp = await asyncio.wait_for(
+                            self._client().get(
+                                f"{_VS_API_BASE}/productions",
+                                params={
+                                    "startDate":  date_str,
+                                    "endDate":    date_str,   # CRITICAL: without endDate API returns multi-day
+                                    "pageSize":   "50",
+                                    "pageNumber": str(page),
+                                },
+                            ),
+                            timeout=_VS_SEARCH_TIMEOUT_S,
+                        )
+                    except asyncio.TimeoutError:
+                        logger.warning(
+                            "VS resolver: page %d timed out after %.0fs for '%s' on %s — stopping",
+                            page, _VS_SEARCH_TIMEOUT_S, title, date_str,
+                        )
+                        break
+                    resp.raise_for_status()
+                    data = resp.json()
+                    items = data.get("items") or []
+                    if not items:
+                        break
+                    for item in items:
+                        item_date = (item.get("localDate") or "")[:10]
+                        if item_date != date_str:
+                            continue
+                        name = (item.get("name") or "").lower()
+                        name_words = set(_re.split(r'\W+', name))
+                        if kw_set & name_words:  # any keyword overlap → immediate return
+                            vs_id = str(item.get("id") or "")
+                            if vs_id:
+                                logger.info(
+                                    "VS resolver: matched '%s' → '%s' id=%s page=%d (kw=%s)",
+                                    title, item.get("name"), vs_id, page,
+                                    kw_set & name_words,
+                                )
+                                return vs_id
+                    # Stop early if we've reached the last catalogue page
+                    total_pages = data.get("numberOfPages") or 9999
+                    if page >= total_pages:
+                        logger.info(
+                            "VS resolver: exhausted %d/%d page(s) for '%s' on %s — no match",
+                            page, total_pages, title, date_str,
+                        )
+                        break
+                    if page == _VS_SEARCH_MAX_PAGES:
+                        logger.info(
+                            "VS resolver: reached page cap (%d) for '%s' on %s — no match within cap",
+                            _VS_SEARCH_MAX_PAGES, title, date_str,
+                        )
+            except Exception as exc:
+                logger.warning("VS resolver: HTTP failure for '%s' on %s — %s", title, date_str, exc)
+                return None
 
-        logger.info("VS resolver: no results for '%s' on %s", title, date_str)
+        logger.info("VS resolver: no match for '%s' on %s", title, date_str)
         return None
 
     # ── Listings fetch ────────────────────────────────────────────────────────
