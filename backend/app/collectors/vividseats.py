@@ -340,5 +340,18 @@ class VividSeatsCollector(BaseCollector):
     def normalize_section(self, raw_section: str) -> str:
         if not raw_section:
             return ""
-        s = re.sub(r"(?i)^(section|sec\.?)\s*", "", raw_section.strip())
+        s = raw_section.strip()
+        # Strip generic "Section"/"Sec." prefix (shared with all other collectors)
+        s = re.sub(r"(?i)^(section|sec\.?)\s*", "", s)
+        # VividSeats-specific: strip venue-tier qualifiers that other markets omit.
+        # e.g. "Lower Bowl 101" → "101", "Upper Level 205" → "205",
+        #      "Lower Level GA" → "GA", "Floor GA" → "GA"
+        # This aligns VS section IDs with GameTime / StubHub / TickPick for cross-market dedup.
+        s = re.sub(
+            r"(?i)^(lower bowl|upper bowl|lower level|upper level|lower deck|upper deck"
+            r"|lower tier|upper tier|club level|loge level|mezzanine level|mezzanine"
+            r"|terrace level|terrace|field level|field|suite level|suite|box)\s+",
+            "",
+            s,
+        )
         return s.upper()
