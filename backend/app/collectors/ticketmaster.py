@@ -106,7 +106,7 @@ class TicketmasterCollector(BaseCollector):
         full = punct_re.sub(" ", title).strip()[:100]
         candidates.append(full)
         # 2. First segment before ":", "&", " vs ", " with ", " feat"
-        seg = _re.split(r"[:\|]|(?i)\s+(&|vs\.?|with|feat\.?)\s+", title)[0].strip()
+        seg = _re.split(r"[:\|]|\s+(?:&|vs\.?|with|feat\.?)\s+", title, flags=_re.IGNORECASE)[0].strip()
         short = punct_re.sub(" ", seg).strip()[:100]
         if short and short != full:
             candidates.append(short)
