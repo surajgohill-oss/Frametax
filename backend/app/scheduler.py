@@ -155,10 +155,53 @@ async def stop_scheduler():
         _scheduler.shutdown(wait=False)
 
 
+# ── StubHub cookie bootstrap ───────────────────────────────────────────────────
+
+async def _bootstrap_stubhub_session_if_needed() -> None:
+    """Ensure StubHub browser cookies exist before the SOLR resolver runs.
+
+    After a Railway deploy the ephemeral filesystem is wiped, so
+    browser_sessions/stubhub/cookies.json is gone.  The StubHub SOLR API
+    returns 404 without browser-session cookies, making the resolver useless
+    for the first 30-minute cycle.
+
+    This function detects a missing cookies.json and triggers a single minimal
+    Playwright navigation against a known, stable upcoming event to re-create
+    the session.  The listing results are discarded — only the cookies matter.
+
+    Bootstrap anchor: Rush @ Kia Forum 2026-06-11 / StubHub ID 159580568
+    (188 active listings as of 2026-06-07; slug URL confirmed working)
+    """
+    from pathlib import Path
+    cookie_path = Path(settings.browser_data_dir) / "stubhub" / "cookies.json"
+    if cookie_path.exists():
+        logger.debug("STUBHUB_BOOTSTRAP: cookies.json present — skipping")
+        return
+
+    logger.info("STUBHUB_BOOTSTRAP: cookies.json missing after deploy — running bootstrap Playwright navigation")
+    try:
+        from app.collectors.stubhub import StubHubCollector
+        collector = StubHubCollector(settings)
+        _BOOTSTRAP_EVENT_ID = "159580568"
+        _BOOTSTRAP_URL = "https://www.stubhub.com/rush-inglewood-tickets-6-11-2026/event/159580568/"
+        listings = await collector._fetch_via_playwright(_BOOTSTRAP_EVENT_ID, _BOOTSTRAP_URL)
+        logger.info(
+            "STUBHUB_BOOTSTRAP: complete — %d listing(s) captured; cookies.json written",
+            len(listings),
+        )
+    except Exception as exc:
+        logger.warning(
+            "STUBHUB_BOOTSTRAP: Playwright navigation failed — %s; "
+            "SOLR resolver may return 404 this cycle",
+            exc,
+        )
+
+
 # ── Resolver job ───────────────────────────────────────────────────────────────
 
 async def _resolve_pending_event_ids():
     """Enrich TrackedEvents that have no external_event_id by searching marketplaces."""
+    await _bootstrap_stubhub_session_if_needed()
     resolver = EventResolver(settings)
     try:
         counts = await resolver.resolve_all_pending(AsyncSessionLocal)
