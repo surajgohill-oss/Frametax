@@ -89,6 +89,7 @@ class TicketmasterCollector(BaseCollector):
 
     # Regex patterns for resolver guards
     _PARKING_RE = re.compile(r"\bpark(?:ing)?\b", re.IGNORECASE)
+    _TRIBUTE_RE = re.compile(r"\btribute\b|\bcover\b|\bcover\s+band\b", re.IGNORECASE)
     _PUNCT_RE   = re.compile(r"\W+")
 
     @staticmethod
@@ -149,6 +150,9 @@ class TicketmasterCollector(BaseCollector):
             name = event.get("name") or ""
             if self._PARKING_RE.search(name):
                 logger.debug("TM resolver: skipping parking-named event '%s'", name)
+                continue
+            if self._TRIBUTE_RE.search(name):
+                logger.debug("TM resolver: skipping tribute/cover event '%s'", name)
                 continue
             own_classifs = event.get("classifications") or []
             is_parking_event = any(
