@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Optional
 
 import httpx
-from playwright.async_api import async_playwright, BrowserContext
 
 from app.collectors.base import BaseCollector, RawListing
 from app.config import Settings
@@ -20,10 +19,7 @@ STUBHUB_SOLR_URL = (
 # Global semaphore: only ONE Playwright instance runs at a time across all
 # StubHub collectors.  Chromium under Docker with limited /dev/shm OOM-kills
 # when 2+ instances run concurrently (--disable-dev-shm-usage reduces risk but
-# does not eliminate it under Railway's memory limits).  Serializing Playwright
-# runs trades throughput for reliability: a 30-second Playwright run blocks
-# other StubHub polls for 30 seconds, but avoids the crash that would leave all
-# of them with 0 results.
+# does not eliminate it under Railway's memory limits).
 _PLAYWRIGHT_SEM: asyncio.Semaphore | None = None
 
 
@@ -32,6 +28,12 @@ def _get_playwright_sem() -> asyncio.Semaphore:
     if _PLAYWRIGHT_SEM is None:
         _PLAYWRIGHT_SEM = asyncio.Semaphore(1)
     return _PLAYWRIGHT_SEM
+
+
+class StubHubNoListingPayloadError(Exception):
+    """Raised when StubHub Playwright ran but no listing container found in DOM
+    (page may have been bot-blocked or redirected).  Caller should preserve
+    existing listings rather than overwriting with empty."""
 
 
 class StubHubCollector(BaseCollector):
@@ -79,7 +81,16 @@ class StubHubCollector(BaseCollector):
                 listings = await self._fetch_via_json_api(event_id)
 
         if listings is None:
-            listings = await self._fetch_via_playwright(event_id, tracked_event.external_url)
+            try:
+                listings = await self._fetch_via_playwright(event_id, tracked_event.external_url)
+            except StubHubNoListingPayloadError as exc:
+                # Page loaded but no listing container found — bot-blocked or page error.
+                # Return [] so RECONCILE preserves existing active listings rather than
+                # overwriting with an empty set.
+                self.logger.error(
+                    "STUBHUB: %s — preserving existing listings via RECONCILE", exc
+                )
+                return []
 
         return listings or []
 
@@ -123,43 +134,223 @@ class StubHubCollector(BaseCollector):
 
     async def _fetch_via_playwright_inner(self, event_id: str, fallback_url: Optional[str]) -> list[RawListing]:
         self._session_path.mkdir(parents=True, exist_ok=True)
-        captured: list[dict] = []
+        captured_solr: list[dict] = []
+
+        # Prefer rebrowser-playwright (patches CDP to evade bot detection fingerprinting).
+        # Falls back to standard playwright if not installed.
+        try:
+            from rebrowser_playwright.async_api import async_playwright as _async_playwright
+            self.logger.debug("STUBHUB: using rebrowser-playwright")
+        except ImportError:
+            from playwright.async_api import async_playwright as _async_playwright  # type: ignore
+            self.logger.debug("STUBHUB: using standard playwright (rebrowser-playwright not found)")
+
         cdp_url = getattr(self.settings, "cdp_url", None)
 
-        async with async_playwright() as p:
+        async with _async_playwright() as p:
             if cdp_url:
                 browser = await p.chromium.connect_over_cdp(cdp_url)
                 context = browser.contexts[0] if browser.contexts else await browser.new_context()
             else:
                 context = await p.chromium.launch_persistent_context(
-                    str(self._session_path), headless=not self.debug_mode,
+                    str(self._session_path),
+                    headless=True,
                     slow_mo=self.slow_mo_ms if self.debug_mode else 0,
-                    args=["--no-sandbox", "--disable-dev-shm-usage", "--disable-blink-features=AutomationControlled"],
-                    user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                    args=[
+                        "--no-sandbox",
+                        "--disable-dev-shm-usage",
+                        "--disable-blink-features=AutomationControlled",
+                    ],
+                    user_agent=(
+                        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+                        "Chrome/124.0.0.0 Safari/537.36"
+                    ),
+                    locale="en-US",
+                    timezone_id="America/Los_Angeles",
+                    viewport={"width": 1920, "height": 1080},
+                    device_scale_factor=1,
                 )
 
             page = await context.new_page()
             self._current_page = page
 
+            # Patch navigator.webdriver and other automation markers that bot detectors check
+            await page.add_init_script("""
+                Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+                Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
+                Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3] });
+            """)
+
+            # Belt-and-suspenders: still intercept listingCatalog if it fires
             async def intercept_response(response):
                 if "listingCatalog" in response.url and response.status == 200:
-                    try: captured.append(await response.json())
+                    try: captured_solr.append(await response.json())
                     except Exception: pass
 
             page.on("response", intercept_response)
+
             url = fallback_url or f"https://www.stubhub.com/event/{event_id}"
-            await page.goto(url, wait_until="networkidle", timeout=30000)
-            await asyncio.sleep(2)
-            cookies = await context.cookies()
-            self._cookies_file.write_text(json.dumps(cookies, indent=2))
+            self.logger.info("STUBHUB: Playwright navigating to %s", url)
+
+            try:
+                await page.goto(url, wait_until="domcontentloaded", timeout=45000)
+            except Exception as nav_exc:
+                self.logger.warning("STUBHUB: page.goto exception (continuing): %s", nav_exc)
+                await asyncio.sleep(3)
+
+            # Wait for the listing container — this is the DOM element StubHub renders listings into
+            container_found = False
+            try:
+                await page.wait_for_selector('[data-testid="listings-container"]', timeout=20000)
+                container_found = True
+            except Exception:
+                self.logger.warning("STUBHUB: listings-container not found after 20s — event_id=%s", event_id)
+
+            if container_found:
+                # Click "Show more" up to 10 times to load more listings (page starts with 10)
+                for _ in range(10):
+                    try:
+                        show_more = await page.query_selector('button:has-text("Show more")')
+                        if not show_more:
+                            break
+                        await show_more.click()
+                        await asyncio.sleep(1.5)
+                    except Exception:
+                        break
+
+            # Save cookies regardless (keeps session warm for next run)
+            try:
+                cookies = await context.cookies()
+                self._cookies_file.write_text(json.dumps(cookies, indent=2))
+            except Exception:
+                pass
+
+            # Extract listings from DOM
+            dom_listings: list[RawListing] = []
+            if container_found:
+                dom_listings = await self._extract_dom_listings(page, event_id)
+
             self._current_page = None
             if not cdp_url:
                 await context.close()
 
+        # Prefer SOLR data if captured (more fields), else use DOM extraction
+        if captured_solr:
+            self.logger.info("STUBHUB: captured %d SOLR response(s) — parsing", len(captured_solr))
+            result = []
+            for data in captured_solr:
+                result.extend(self._parse_solr_response(data))
+            return result
+
+        if dom_listings:
+            self.logger.info("STUBHUB: DOM extraction returned %d listings for event_id=%s", len(dom_listings), event_id)
+            return dom_listings
+
+        if not container_found:
+            # Page did not render the listing container — likely bot-blocked or page error
+            raise StubHubNoListingPayloadError(
+                f"stubhub_no_listing_payload event_id={event_id} url={url}"
+            )
+
+        # Container was found but empty — event may genuinely have 0 listings
+        self.logger.warning("STUBHUB: listings-container found but empty for event_id=%s", event_id)
+        return []
+
+    # ------------------------------------------------------------------ #
+    #  DOM listing extraction                                              #
+    # ------------------------------------------------------------------ #
+
+    async def _extract_dom_listings(self, page, event_id: str) -> list[RawListing]:
+        """Extract listing cards from StubHub's SSR DOM.
+
+        StubHub renders listings server-side inside [data-testid="listings-container"].
+        Each card exposes data-listing-id, data-price, data-is-sold as data attributes
+        on nested elements.  The innerText contains section/row/quantity in plain text.
+        No API call is made — the data is already in the initial HTML.
+        """
+        try:
+            raw_cards = await page.evaluate("""
+            () => {
+                const container = document.querySelector('[data-testid="listings-container"]');
+                if (!container) return null;
+                const cards = Array.from(container.children);
+                return cards.map(el => {
+                    // listing_id, price, is_sold are nested data attributes
+                    let listing_id = null, price_raw = null, is_sold = '0';
+                    for (const c of el.querySelectorAll('*')) {
+                        if (!listing_id) listing_id = c.getAttribute('data-listing-id');
+                        if (!price_raw)  price_raw  = c.getAttribute('data-price');
+                        const sold = c.getAttribute('data-is-sold');
+                        if (sold !== null) { is_sold = sold; break; }
+                    }
+                    return { listing_id, price_raw, is_sold, text: el.innerText || '' };
+                }).filter(r => r.listing_id && r.price_raw);
+            }
+            """)
+        except Exception as exc:
+            self.logger.warning("STUBHUB: DOM evaluate failed: %s", exc)
+            return []
+
+        if not raw_cards:
+            return []
+
+        return self._parse_dom_cards(raw_cards, event_id)
+
+    def _parse_dom_cards(self, cards: list[dict], event_id: str) -> list[RawListing]:
+        """Parse raw DOM card data into RawListing objects."""
         listings = []
-        for data in captured:
-            listings.extend(self._parse_solr_response(data))
+        for card in cards:
+            try:
+                # Skip sold listings
+                if card.get("is_sold") == "1":
+                    continue
+
+                listing_id = card["listing_id"]
+                price_str = card["price_raw"].replace("$", "").replace(",", "").strip()
+                price = Decimal(price_str)
+
+                # Parse section, row, quantity from innerText
+                # Example: "Section 213\nRow 20\nSeats 9 - 10\n2 tickets together\nClear view\n$916\nincl. fees"
+                lines = [ln.strip() for ln in card.get("text", "").split("\n") if ln.strip()]
+
+                section = "Unknown"
+                row: Optional[str] = None
+                quantity = 2  # StubHub default filter is 2 tickets
+
+                for line in lines:
+                    low = line.lower()
+                    if low.startswith("section ") and section == "Unknown":
+                        section = line[len("section "):].strip()
+                    elif low.startswith("row ") and "row row" not in low and row is None:
+                        # "Row 20" or "Row 20 | Seats 9 - 10" → strip seats
+                        row_raw = line[len("row "):].strip()
+                        row = row_raw.split("|")[0].strip()
+                    elif "ticket" in low:
+                        m = re.match(r"^(\d+)\s+ticket", low)
+                        if m:
+                            quantity = int(m.group(1))
+
+                listing_url = f"https://www.stubhub.com/event/{event_id}/?listingId={listing_id}"
+
+                listings.append(RawListing(
+                    external_listing_id=f"sh-{listing_id}",
+                    section=self.normalize_section(section),
+                    row=row,
+                    quantity=quantity,
+                    price=price,
+                    fees=None,
+                    all_in_price=price,  # StubHub displays all-in prices
+                    listing_url=listing_url,
+                    market_segment="secondary_resale",
+                ))
+            except Exception:
+                pass
         return listings
+
+    # ------------------------------------------------------------------ #
+    #  HTTP client / helpers                                               #
+    # ------------------------------------------------------------------ #
 
     async def _get_http_client(self) -> httpx.AsyncClient:
         if self._http_client is None or self._http_client.is_closed:
@@ -177,7 +368,6 @@ class StubHubCollector(BaseCollector):
         m = re.search(r"/event/(\d+)", url)
         if m:
             return m.group(1)
-        # also handles stubhub.com/tickets/.../12345 and trailing numeric segment
         m = re.search(r"/(\d{6,})(?:[/?#]|$)", url)
         return m.group(1) if m else None
 
