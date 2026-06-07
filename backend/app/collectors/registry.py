@@ -1,15 +1,16 @@
 from typing import Type
 from app.collectors.base import BaseCollector
 from app.collectors.stubhub import StubHubCollector
-from app.collectors.seatgeek import SeatGeekCollector
 from app.collectors.ticketmaster import TicketmasterCollector
 from app.collectors.tickpick import TickPickCollector
 from app.collectors.gametime import GameTimeCollector
 from app.collectors.vividseats import VividSeatsCollector
 
+# SeatGeek removed: API returns 403 on every request, Playwright fallback launches
+# a full Chromium per event (27 concurrent browsers = OOM crash). Not a priority
+# marketplace per project spec.
 COLLECTOR_REGISTRY: dict[str, Type[BaseCollector]] = {
     "stubhub":      StubHubCollector,
-    "seatgeek":     SeatGeekCollector,
     "ticketmaster": TicketmasterCollector,
     "tickpick":     TickPickCollector,
     "gametime":     GameTimeCollector,
