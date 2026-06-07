@@ -28,6 +28,21 @@ _scheduler: AsyncIOScheduler | None = None
 # task runs per event_id at a time.
 _in_flight_event_ids: set[int] = set()
 
+# ── Concurrency limiter ────────────────────────────────────────────────────────
+# Caps simultaneous event polls to prevent thundering-herd OOM on startup.
+# Without this, all N events with next_poll_at=None fire at once on the first
+# scheduler tick: 27 events × 5 collectors = 135 concurrent calls + 27 large
+# VividSeats snapshot batches = memory exhaustion -> SIGKILL.
+# 4 concurrent polls × 5 collectors = 20 concurrent calls at peak.
+_poll_semaphore: asyncio.Semaphore | None = None
+
+
+def _get_poll_semaphore() -> asyncio.Semaphore:
+    global _poll_semaphore
+    if _poll_semaphore is None:
+        _poll_semaphore = asyncio.Semaphore(4)
+    return _poll_semaphore
+
 
 # ── Polling policy ─────────────────────────────────────────────────────────────
 # Strict piecewise function. No smoothing, no interpolation.
@@ -226,12 +241,15 @@ async def _check_due_events():
 
 
 async def _poll_with_inflight_guard(tracked_event_id: int, event_id: int):
-    """Wrapper that releases the in-flight guard after run_poll_for_tracked_event completes."""
+    """Wrapper that rate-limits concurrent polls and releases the in-flight guard."""
+    sem = _get_poll_semaphore()
     try:
-        await run_poll_for_tracked_event(tracked_event_id)
+        async with sem:
+            logger.debug("POLL_GATE: event_id=%d acquired semaphore (slot used)", event_id)
+            await run_poll_for_tracked_event(tracked_event_id)
     finally:
         _in_flight_event_ids.discard(event_id)
-        logger.debug("POLL_GATE: event_id=%d released from in-flight guard", event_id)
+        logger.debug("POLL_GATE: event_id=%d released", event_id)
 
 
 # ── Status + lifecycle updater ─────────────────────────────────────────────────
