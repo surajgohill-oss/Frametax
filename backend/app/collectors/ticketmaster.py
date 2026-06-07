@@ -91,29 +91,53 @@ class TicketmasterCollector(BaseCollector):
     _PARKING_RE = re.compile(r"\bpark(?:ing)?\b", re.IGNORECASE)
     _PUNCT_RE   = re.compile(r"\W+")
 
+    @staticmethod
+    def _keyword_candidates(title: str) -> list[str]:
+        """Return progressively shorter keyword variants for a title.
+
+        TM event names often differ from our canonical titles
+        (e.g. "My Chemical Romance: The Black Parade" → "My Chemical Romance with Special Guest Thrice").
+        Trying just the artist/first-segment greatly increases hit rate.
+        """
+        import re as _re
+        punct_re = _re.compile(r"\W+")
+        candidates: list[str] = []
+        # 1. Full cleaned title
+        full = punct_re.sub(" ", title).strip()[:100]
+        candidates.append(full)
+        # 2. First segment before ":", "&", " vs ", " with ", " feat"
+        seg = _re.split(r"[:\|]|(?i)\s+(&|vs\.?|with|feat\.?)\s+", title)[0].strip()
+        short = punct_re.sub(" ", seg).strip()[:100]
+        if short and short != full:
+            candidates.append(short)
+        # Deduplicate while preserving order
+        seen: set[str] = set()
+        return [c for c in candidates if c not in seen and not seen.add(c)]  # type: ignore[func-returns-value]
+
     async def _search_event(self, title: str, event_date: Optional[datetime]) -> Optional[str]:
-        # Fix 3: punctuation-safe keyword — strip non-word chars before sending
-        safe_keyword = self._PUNCT_RE.sub(" ", title).strip()[:100]
+        keywords_to_try = self._keyword_candidates(title)
 
-        params: dict = {
-            "apikey":  self._api_key,
-            "keyword": safe_keyword,
-            # Fix 2: removed hardcoded city="Los Angeles" — date window is sufficient
-            "size":    "20",
-        }
+        base_params: dict = {"apikey": self._api_key, "size": "20"}
         if event_date:
-            start = (event_date - timedelta(days=1)).strftime("%Y-%m-%dT00:00:00Z")
-            end   = (event_date + timedelta(days=1)).strftime("%Y-%m-%dT23:59:59Z")
-            params["startDateTime"] = start
-            params["endDateTime"]   = end
+            base_params["startDateTime"] = (event_date - timedelta(days=1)).strftime("%Y-%m-%dT00:00:00Z")
+            base_params["endDateTime"]   = (event_date + timedelta(days=1)).strftime("%Y-%m-%dT23:59:59Z")
 
-        resp = await self._client().get(f"{_TM_DISCOVERY_BASE}/events.json", params=params)
-        resp.raise_for_status()
-        data = resp.json()
+        events: list = []
+        for kw in keywords_to_try:
+            resp = await self._client().get(
+                f"{_TM_DISCOVERY_BASE}/events.json",
+                params={**base_params, "keyword": kw},
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            events = (data.get("_embedded") or {}).get("events") or []
+            if events:
+                logger.debug("TM resolver: keyword='%s' returned %d result(s) for '%s'", kw, len(events), title)
+                break
+            logger.debug("TM resolver: keyword='%s' returned 0 results — trying next variant", kw)
 
-        events = (data.get("_embedded") or {}).get("events") or []
         if not events:
-            logger.info("TM resolver: no results for '%s'", title)
+            logger.info("TM resolver: no results for '%s' (tried %d keyword variant(s))", title, len(keywords_to_try))
             return None
 
         # Fix 1: skip parking catalog events that may sort ahead of the concert.
