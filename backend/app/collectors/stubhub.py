@@ -114,7 +114,7 @@ class StubHubCollector(BaseCollector):
                 context = await p.chromium.launch_persistent_context(
                     str(self._session_path), headless=not self.debug_mode,
                     slow_mo=self.slow_mo_ms if self.debug_mode else 0,
-                    args=["--no-sandbox", "--disable-blink-features=AutomationControlled"],
+                    args=["--no-sandbox", "--disable-dev-shm-usage", "--disable-blink-features=AutomationControlled"],
                     user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
                 )
 
