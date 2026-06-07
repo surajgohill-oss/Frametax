@@ -20,6 +20,14 @@ settings = get_settings()
 
 _scheduler: AsyncIOScheduler | None = None
 
+# ── In-flight guard ────────────────────────────────────────────────────────────
+# Prevents _check_due_events from spawning duplicate poll tasks for the same
+# event_id.  Without this guard, each event has N marketplace-specific
+# TrackedEvents that all appear "due" simultaneously, causing N full fan-outs
+# (N × 6 collector calls) instead of 1.  The guard ensures exactly one poll
+# task runs per event_id at a time.
+_in_flight_event_ids: set[int] = set()
+
 
 # ── Polling policy ─────────────────────────────────────────────────────────────
 # Strict piecewise function. No smoothing, no interpolation.
@@ -192,8 +200,38 @@ async def _check_due_events():
                 ],
             )
 
+    seen_event_ids: set[int] = set()
     for te in due:
-        asyncio.create_task(run_poll_for_tracked_event(te.id))
+        if te.event_id in _in_flight_event_ids:
+            logger.debug(
+                "POLL_GATE: event_id=%d already in-flight — skipping duplicate te=%d",
+                te.event_id, te.id,
+            )
+            continue
+        if te.event_id in seen_event_ids:
+            logger.debug(
+                "POLL_GATE: event_id=%d already scheduled this tick — skipping te=%d",
+                te.event_id, te.id,
+            )
+            continue
+        seen_event_ids.add(te.event_id)
+        _in_flight_event_ids.add(te.event_id)
+        asyncio.create_task(_poll_with_inflight_guard(te.id, te.event_id))
+
+    if seen_event_ids:
+        logger.info(
+            "POLL_GATE: dispatched %d event poll(s) this tick — event_ids=%s",
+            len(seen_event_ids), sorted(seen_event_ids),
+        )
+
+
+async def _poll_with_inflight_guard(tracked_event_id: int, event_id: int):
+    """Wrapper that releases the in-flight guard after run_poll_for_tracked_event completes."""
+    try:
+        await run_poll_for_tracked_event(tracked_event_id)
+    finally:
+        _in_flight_event_ids.discard(event_id)
+        logger.debug("POLL_GATE: event_id=%d released from in-flight guard", event_id)
 
 
 # ── Status + lifecycle updater ─────────────────────────────────────────────────
