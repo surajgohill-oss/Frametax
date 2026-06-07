@@ -244,7 +244,28 @@ class EventResolver:
         # Use cookie-bearing client so SOLR doesn't return 404
         client = await self._get_stubhub_client()
 
-        # Path 1: SOLR catalog search (requires auth cookies — often fails unauthenticated)
+        # Path 1: StubHub public search page (no auth required — returns 200 with embedded event data)
+        # https://www.stubhub.com/search?type=events&q=ARTIST&dateRangeStart=DATE&dateRangeEnd=DATE
+        # Parse event IDs and slug URLs from HTML — no cookies needed, confirmed working 2026-06-07.
+        date_start = (event.event_date - timedelta(days=1)).strftime("%Y-%m-%d")
+        date_end   = (event.event_date + timedelta(days=1)).strftime("%Y-%m-%d")
+        search_url = (
+            "https://www.stubhub.com/search"
+            f"?type=events&q={keywords.replace(' ', '+')}"
+            f"&dateRangeStart={date_start}&dateRangeEnd={date_end}"
+        )
+        try:
+            resp = await client.get(search_url)
+            if resp.status_code == 200 and len(resp.text) > 1000:
+                result = self._parse_stubhub_search_html(resp.text, event)
+                if result:
+                    event_id, slug_url = result
+                    return event_id, slug_url, "resolved_search"
+        except Exception as exc:
+            logger.debug("RESOLVER: StubHub search error: %s", exc)
+
+        # Path 2: SOLR catalog search (requires auth cookies — returns 404 unauthenticated)
+        # Kept as fallback for when a valid cookie session exists (e.g. after a Playwright run).
         solr_url = (
             "https://www.stubhub.com/listingCatalog/select"
             f"?q=*:*&fq=event_name:*{kw_solr}*"
@@ -257,14 +278,12 @@ class EventResolver:
                 docs = resp.json().get("response", {}).get("docs", [])
                 if docs:
                     event_id = str(docs[0]["event_id"])
-                    # Bare URL — good enough for Playwright; slug preferred but
-                    # not always derivable from SOLR response fields alone.
                     resolved_url = f"https://www.stubhub.com/event/{event_id}/"
                     return event_id, resolved_url, "resolved_api"
         except Exception as exc:
             logger.debug("RESOLVER: StubHub SOLR error: %s", exc)
 
-        # Path 2: Fetch external_url page, extract event ID from embedded JSON/HTML
+        # Path 3: Fetch external_url page, extract event ID from embedded JSON/HTML
         # The provided external_url IS the slug URL — preserve it.
         if external_url:
             event_id = await self._stubhub_extract_from_page(client, external_url)
@@ -272,6 +291,64 @@ class EventResolver:
                 return event_id, external_url, "resolved_page_fetch"
 
         return None, None, "none"
+
+    def _parse_stubhub_search_html(self, html: str, event) -> Optional[tuple]:
+        """Parse StubHub search result HTML to find the best matching event.
+
+        Returns (event_id, slug_url) or None.
+
+        The public search page embeds event data as HTML with /event/{id}/ URLs
+        inside slug href patterns like /artist-city-tickets-MM-DD-YYYY/event/ID/.
+        Confirmed working without auth cookies as of 2026-06-07.
+        """
+        import re as _re
+
+        # Build target date string variants for matching (event_date is UTC midnight)
+        target_date = event.event_date
+        date_strs = [
+            target_date.strftime("%-m-%-d-%Y"),   # 6-9-2026
+            target_date.strftime("%m-%d-%Y"),       # 06-09-2026
+            target_date.strftime("%m/%d/%Y"),       # 06/09/2026
+            target_date.strftime("%Y-%m-%d"),       # 2026-06-09
+        ]
+
+        # Find all (event_id, slug_url) pairs in the HTML
+        pairs: list[tuple[str, str]] = []
+        for m in _re.finditer(r'(/[a-z][a-z0-9-]+-tickets-\d+-\d+-\d+/event/(\d{6,})/)', html):
+            slug_path, event_id = m.group(1), m.group(2)
+            pairs.append((event_id, f"https://www.stubhub.com{slug_path}"))
+
+        if not pairs:
+            return None
+
+        # Filter to events whose slug date matches the target date
+        date_matched: list[tuple[str, str]] = []
+        for event_id, slug_url in pairs:
+            for ds in date_strs:
+                if ds in slug_url:
+                    date_matched.append((event_id, slug_url))
+                    break
+
+        candidates = date_matched if date_matched else pairs
+
+        # Deduplicate (same event_id may appear multiple times in search results)
+        seen: set[str] = set()
+        unique: list[tuple[str, str]] = []
+        for pair in candidates:
+            if pair[0] not in seen:
+                seen.add(pair[0])
+                unique.append(pair)
+
+        if not unique:
+            return None
+
+        # If >1 candidate, prefer the one whose slug contains artist keywords
+        kw_slug = _to_performer_slug(_artist_keywords(event))
+        for event_id, slug_url in unique:
+            if kw_slug and kw_slug.split("-")[0] in slug_url:
+                return event_id, slug_url
+
+        return unique[0]  # fall back to first match
 
     async def _stubhub_extract_from_page(self, client: httpx.AsyncClient, url: str) -> Optional[str]:
         """Fetch StubHub page and extract event ID from embedded script data."""
