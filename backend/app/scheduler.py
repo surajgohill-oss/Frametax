@@ -438,6 +438,20 @@ async def _run_collector_for_event(collector_slug: str, source_te: TrackedEvent,
         collector_slug, te.id, te.event_id,
         te.marketplace_id, te.external_event_id,
     )
+
+    # Guard: StubHub Playwright requires external_url to load the correct event
+    # page (bare /event/{id} works but slug URL is preferred).  If external_url
+    # is NULL after Stage 2 resolution, synthesize a bare URL so the collector
+    # never navigates blind.  Log ONBOARDING_INCOMPLETE so ops can notice.
+    if collector_slug == "stubhub" and te.external_event_id and not te.external_url:
+        bare_url = f"https://www.stubhub.com/event/{te.external_event_id}/"
+        logger.warning(
+            "ONBOARDING_INCOMPLETE: StubHub te=%d event_id=%d has external_event_id=%r "
+            "but external_url=NULL — synthesizing bare URL %s. "
+            "Resolve the slug URL and backfill external_url for best results.",
+            te.id, te.event_id, te.external_event_id, bare_url,
+        )
+        te.external_url = bare_url
     emit_event_trace("SCHEDULER", te.event_id, {
         "tracked_event_id": te.id,
         "external_event_id": te.external_event_id,

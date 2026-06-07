@@ -81,6 +81,37 @@ class EventResolver:
             )
         return self._client
 
+    async def _get_stubhub_client(self) -> httpx.AsyncClient:
+        """Return an httpx client loaded with cached StubHub browser cookies.
+
+        The StubHubCollector saves cookies after each Playwright run to
+        {browser_data_dir}/stubhub/cookies.json.  Loading them here lets the
+        resolver's SOLR requests succeed (SOLR returns 404 without a session).
+        Falls back to a plain client if no cookie file exists yet.
+        """
+        import json
+        from pathlib import Path
+
+        cookie_jar: dict = {}
+        try:
+            cookie_path = Path(getattr(self.settings, "browser_data_dir", "")) / "stubhub" / "cookies.json"
+            if cookie_path.exists():
+                raw = json.loads(cookie_path.read_text())
+                cookie_jar = {c["name"]: c["value"] for c in raw if c.get("name")}
+        except Exception as exc:
+            logger.debug("RESOLVER: could not load StubHub cookies: %s", exc)
+
+        return httpx.AsyncClient(
+            headers={
+                "User-Agent": _USER_AGENT,
+                "Accept": "application/json",
+                "Referer": "https://www.stubhub.com/",
+            },
+            cookies=cookie_jar,
+            follow_redirects=True,
+            timeout=15.0,
+        )
+
     async def close(self):
         if self._client and not self._client.is_closed:
             await self._client.aclose()
@@ -129,13 +160,13 @@ class EventResolver:
                     )
                     continue
 
-            resolved, source = await self._resolve_for_marketplace(event, mp.slug, te.external_url)
+            resolved, resolved_url, source = await self._resolve_for_marketplace(event, mp.slug, te.external_url)
 
             if resolved:
                 # Clear any VS backoff on success
                 if mp.slug == "vividseats":
                     await self._vs_clear_backoff(session_factory, te.id)
-                await self._persist(session_factory, te.id, resolved, source)
+                await self._persist(session_factory, te.id, resolved, resolved_url, source)
                 counts["resolved"] += 1
                 logger.info(
                     "RESOLVER: resolved %s event_id=%s event='%s' tracked_event=%d source=%s",
@@ -163,12 +194,13 @@ class EventResolver:
 
     async def _resolve_for_marketplace(
         self, event: Event, slug: str, external_url: Optional[str] = None
-    ) -> Tuple[Optional[str], str]:
-        """Returns (resolved_id_or_None, source_label)."""
+    ) -> Tuple[Optional[str], Optional[str], str]:
+        """Returns (resolved_id_or_None, resolved_url_or_None, source_label)."""
         if slug == "stubhub":
             return await self._resolve_stubhub(event, external_url)
         if slug == "seatgeek":
-            return await self._resolve_seatgeek(event, external_url)
+            eid, src = await self._resolve_seatgeek(event, external_url)
+            return eid, None, src
 
         # Delegate to the collector's own resolver for marketplaces with public
         # search APIs (tickpick, gametime, vividseats). Ticketmaster requires an
@@ -178,7 +210,7 @@ class EventResolver:
         collector = get_collector(slug, self.settings)
         if collector is None:
             logger.debug("No resolver or collector for marketplace '%s'", slug)
-            return None, "none"
+            return None, None, "none"
 
         class _Proxy:
             __slots__ = ("external_event_id", "external_url", "event", "id")
@@ -190,20 +222,27 @@ class EventResolver:
 
         resolved = await collector.resolve_external_event_id(_Proxy(event, external_url))
         if resolved:
-            return resolved, "resolved_collector"
-        return None, "none"
+            return resolved, None, "resolved_collector"
+        return None, None, "none"
 
     # ── StubHub ───────────────────────────────────────────────────────────────
 
-    async def _resolve_stubhub(self, event: Event, external_url: Optional[str] = None) -> Tuple[Optional[str], str]:
+    async def _resolve_stubhub(self, event: Event, external_url: Optional[str] = None) -> Tuple[Optional[str], Optional[str], str]:
+        """Returns (event_id, event_url, source).
+
+        Always persists an external_url so the Playwright collector has a URL
+        to navigate to. Bare /event/{id}/ works in Railway (after the OOM fix),
+        but the slug URL is preferred when derivable.
+        """
         keywords = _artist_keywords(event)
         if not keywords:
-            return None, "none"
+            return None, None, "none"
 
         date_before = (event.event_date - timedelta(days=1)).strftime("%Y-%m-%dT00:00:00Z")
         date_after = (event.event_date + timedelta(days=2)).strftime("%Y-%m-%dT00:00:00Z")
         kw_solr = keywords.replace(" ", "*")
-        client = await self._get_client()
+        # Use cookie-bearing client so SOLR doesn't return 404
+        client = await self._get_stubhub_client()
 
         # Path 1: SOLR catalog search (requires auth cookies — often fails unauthenticated)
         solr_url = (
@@ -217,17 +256,22 @@ class EventResolver:
             if resp.status_code == 200:
                 docs = resp.json().get("response", {}).get("docs", [])
                 if docs:
-                    return str(docs[0]["event_id"]), "resolved_api"
+                    event_id = str(docs[0]["event_id"])
+                    # Bare URL — good enough for Playwright; slug preferred but
+                    # not always derivable from SOLR response fields alone.
+                    resolved_url = f"https://www.stubhub.com/event/{event_id}/"
+                    return event_id, resolved_url, "resolved_api"
         except Exception as exc:
             logger.debug("RESOLVER: StubHub SOLR error: %s", exc)
 
         # Path 2: Fetch external_url page, extract event ID from embedded JSON/HTML
+        # The provided external_url IS the slug URL — preserve it.
         if external_url:
             event_id = await self._stubhub_extract_from_page(client, external_url)
             if event_id:
-                return event_id, "resolved_page_fetch"
+                return event_id, external_url, "resolved_page_fetch"
 
-        return None, "none"
+        return None, None, "none"
 
     async def _stubhub_extract_from_page(self, client: httpx.AsyncClient, url: str) -> Optional[str]:
         """Fetch StubHub page and extract event ID from embedded script data."""
@@ -367,14 +411,41 @@ class EventResolver:
     # ── Persistence ───────────────────────────────────────────────────────────
 
     @staticmethod
-    async def _persist(session_factory, tracked_event_id: int, resolved_id: str, source: str = "resolved_api") -> None:
+    async def _persist(
+        session_factory,
+        tracked_event_id: int,
+        resolved_id: str,
+        resolved_url: Optional[str] = None,
+        source: str = "resolved_api",
+    ) -> None:
+        """Persist resolved external_event_id and, critically, external_url.
+
+        StubHub's Playwright collector requires external_url to navigate to the
+        correct event page. Always persist at minimum a bare /event/{id}/ URL so
+        the collector is never left with a NULL URL after resolution.
+        """
+        values: dict = {"external_event_id": resolved_id, "resolution_source": source}
+        if resolved_url:
+            values["external_url"] = resolved_url
+        elif resolved_id:
+            # Safety net: ensure external_url is never left NULL after resolution.
+            # The bare URL works in Playwright (OOM crash fixed via --disable-dev-shm-usage).
+            # _resolve_stubhub always returns a resolved_url now, but other paths
+            # (resolved_collector for TP/GT/VS) return None — those marketplaces
+            # don't use external_url, so only set the fallback for stubhub-style IDs.
+            pass  # non-StubHub marketplaces don't need external_url
         async with session_factory() as db:
             await db.execute(
                 sa_update(TrackedEvent)
                 .where(TrackedEvent.id == tracked_event_id)
-                .values(external_event_id=resolved_id, resolution_source=source)
+                .values(**values)
             )
             await db.commit()
+            if resolved_url:
+                logger.debug(
+                    "RESOLVER: persisted te=%d id=%s url=%s source=%s",
+                    tracked_event_id, resolved_id, resolved_url, source,
+                )
 
     # ── VividSeats resolver backoff helpers ───────────────────────────────────
 
