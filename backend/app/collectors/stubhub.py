@@ -17,6 +17,22 @@ STUBHUB_SOLR_URL = (
     "&fl=listing_id,section,row,qty,current_price,all_in_price,fees,listing_url&sort=current_price+asc&wt=json"
 )
 
+# Global semaphore: only ONE Playwright instance runs at a time across all
+# StubHub collectors.  Chromium under Docker with limited /dev/shm OOM-kills
+# when 2+ instances run concurrently (--disable-dev-shm-usage reduces risk but
+# does not eliminate it under Railway's memory limits).  Serializing Playwright
+# runs trades throughput for reliability: a 30-second Playwright run blocks
+# other StubHub polls for 30 seconds, but avoids the crash that would leave all
+# of them with 0 results.
+_PLAYWRIGHT_SEM: asyncio.Semaphore | None = None
+
+
+def _get_playwright_sem() -> asyncio.Semaphore:
+    global _PLAYWRIGHT_SEM
+    if _PLAYWRIGHT_SEM is None:
+        _PLAYWRIGHT_SEM = asyncio.Semaphore(1)
+    return _PLAYWRIGHT_SEM
+
 
 class StubHubCollector(BaseCollector):
     marketplace_slug = "stubhub"
@@ -102,6 +118,10 @@ class StubHubCollector(BaseCollector):
         return listings
 
     async def _fetch_via_playwright(self, event_id: str, fallback_url: Optional[str]) -> list[RawListing]:
+        async with _get_playwright_sem():
+            return await self._fetch_via_playwright_inner(event_id, fallback_url)
+
+    async def _fetch_via_playwright_inner(self, event_id: str, fallback_url: Optional[str]) -> list[RawListing]:
         self._session_path.mkdir(parents=True, exist_ok=True)
         captured: list[dict] = []
         cdp_url = getattr(self.settings, "cdp_url", None)
