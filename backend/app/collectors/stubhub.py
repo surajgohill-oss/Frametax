@@ -199,13 +199,27 @@ class StubHubCollector(BaseCollector):
                 self.logger.warning("STUBHUB: page.goto exception (continuing): %s", nav_exc)
                 await asyncio.sleep(3)
 
-            # Wait for the listing container — this is the DOM element StubHub renders listings into
+            # Wait for the listing container AND at least one listing card inside it.
+            # StubHub SSR puts listings directly in the HTML, so [data-listing-id] should
+            # appear almost immediately.  If it never appears, DataDome blocked the render.
             container_found = False
             try:
                 await page.wait_for_selector('[data-testid="listings-container"]', timeout=20000)
                 container_found = True
+                self.logger.info("STUBHUB: listings-container found — event_id=%s", event_id)
             except Exception:
                 self.logger.warning("STUBHUB: listings-container not found after 20s — event_id=%s", event_id)
+
+            if container_found:
+                # Also wait for at least one listing card (confirms SSR data arrived)
+                try:
+                    await page.wait_for_selector('[data-listing-id]', timeout=10000)
+                    self.logger.info("STUBHUB: listing cards present in DOM — event_id=%s", event_id)
+                except Exception:
+                    self.logger.warning(
+                        "STUBHUB: container found but no [data-listing-id] after 10s — "
+                        "possible DataDome empty-shell render — event_id=%s", event_id
+                    )
 
             if container_found:
                 # Click "Show more" up to 10 times to load more listings (page starts with 10)

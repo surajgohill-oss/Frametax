@@ -14,6 +14,7 @@ COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 RUN python -m playwright install chromium
+RUN rebrowser-playwright install chromium
 
 COPY backend/ .
 
