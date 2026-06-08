@@ -172,6 +172,19 @@ class StubHubCollector(BaseCollector):
                     device_scale_factor=1,
                 )
 
+            # Inject seed cookies (DataDome + AWS WAF tokens) from PostgreSQL before first nav.
+            # Without valid anti-bot cookies, DataDome blocks the React API calls that populate
+            # the listings container, resulting in an empty DOM regardless of bot-detection patches.
+            seed_cookies = await self._load_seed_cookies()
+            if seed_cookies:
+                try:
+                    await context.add_cookies(seed_cookies)
+                    self.logger.info("STUBHUB: injected %d seed cookies into context", len(seed_cookies))
+                except Exception as ck_err:
+                    self.logger.warning("STUBHUB: seed cookie injection failed: %s", ck_err)
+            else:
+                self.logger.warning("STUBHUB: no seed cookies found — DataDome may block listings")
+
             page = await context.new_page()
             self._current_page = page
 
@@ -233,10 +246,11 @@ class StubHubCollector(BaseCollector):
                     except Exception:
                         break
 
-            # Save cookies regardless (keeps session warm for next run)
+            # Save cookies back to PostgreSQL (keeps DataDome/WAF tokens fresh for next run)
             try:
                 cookies = await context.cookies()
                 self._cookies_file.write_text(json.dumps(cookies, indent=2))
+                await self._save_seed_cookies(cookies)
             except Exception:
                 pass
 
@@ -270,6 +284,58 @@ class StubHubCollector(BaseCollector):
         # Container was found but empty — event may genuinely have 0 listings
         self.logger.warning("STUBHUB: listings-container found but empty for event_id=%s", event_id)
         return []
+
+    # ------------------------------------------------------------------ #
+    #  Seed cookie persistence (DataDome / AWS WAF bypass)                #
+    # ------------------------------------------------------------------ #
+
+    async def _load_seed_cookies(self) -> list[dict]:
+        """Load previously stored anti-bot cookies from PostgreSQL.
+        Stored by _save_seed_cookies after each successful Playwright run, and
+        bootstrapped manually via the failure_memory row (error_type='session_cookies').
+        """
+        factory = getattr(self, "_db_session_factory", None)
+        if factory is None:
+            return []
+        try:
+            from sqlalchemy import text
+            async with factory() as db:
+                result = await db.execute(text(
+                    "SELECT notes FROM failure_memory "
+                    "WHERE marketplace='stubhub' AND error_type='session_cookies' "
+                    "AND failed_pattern='playwright_seed' LIMIT 1"
+                ))
+                row = result.fetchone()
+                if row and row[0]:
+                    return json.loads(row[0])
+        except Exception as e:
+            self.logger.warning("STUBHUB: _load_seed_cookies failed: %s", e)
+        return []
+
+    async def _save_seed_cookies(self, cookies: list[dict]) -> None:
+        """Persist fresh Playwright cookies back to PostgreSQL after a successful run.
+        Only retains the anti-bot critical cookies (DataDome, AWS WAF, StubHub session).
+        """
+        factory = getattr(self, "_db_session_factory", None)
+        if factory is None:
+            return
+        KEEP = {"d", "datadome", "aws-waf-token", "s", "wsso-session", "wsso", "ctattr", "uis"}
+        critical = [c for c in cookies if c.get("name") in KEEP]
+        if not critical:
+            return
+        try:
+            from sqlalchemy import text
+            cookies_json = json.dumps(critical)
+            async with factory() as db:
+                await db.execute(text(
+                    "UPDATE failure_memory SET notes=:notes, last_seen=NOW() "
+                    "WHERE marketplace='stubhub' AND error_type='session_cookies' "
+                    "AND failed_pattern='playwright_seed'"
+                ), {"notes": cookies_json})
+                await db.commit()
+            self.logger.info("STUBHUB: saved %d seed cookies to PostgreSQL", len(critical))
+        except Exception as e:
+            self.logger.warning("STUBHUB: _save_seed_cookies failed: %s", e)
 
     # ------------------------------------------------------------------ #
     #  DOM listing extraction                                              #
