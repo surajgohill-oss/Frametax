@@ -829,6 +829,10 @@ async def sales_attribution(
     sold_high = 0
     sold_medium = 0
     sold_low = 0
+    # Repricing stats — computed from ALL transitions before capping
+    repriced_up = 0
+    repriced_down = 0
+    repricing_deltas: list[float] = []
     for t in transitions:
         total_by_class[t["classification"]] += 1
         if t["classification"] == "likely_sold":
@@ -838,6 +842,61 @@ async def sales_attribution(
                 sold_medium += 1
             else:
                 sold_low += 1
+        if t["classification"] == "price_changed" and t.get("price_delta") is not None:
+            delta_val = t["price_delta"]
+            if delta_val > 0:
+                repriced_up += 1
+            elif delta_val < 0:
+                repriced_down += 1
+            repricing_deltas.append(abs(delta_val))
+
+    # Repricing summary stats
+    avg_repricing_delta = round(sum(repricing_deltas) / len(repricing_deltas), 2) if repricing_deltas else None
+    median_repricing_delta = None
+    largest_repricing_delta = None
+    if repricing_deltas:
+        sorted_deltas = sorted(repricing_deltas)
+        n = len(sorted_deltas)
+        median_repricing_delta = round(
+            sorted_deltas[n // 2] if n % 2 == 1
+            else (sorted_deltas[n // 2 - 1] + sorted_deltas[n // 2]) / 2,
+            2
+        )
+        largest_repricing_delta = round(max(repricing_deltas), 2)
+
+    # Buyer-facing attribution summary (no Withdrawn/Disappeared exposed to UI)
+    # disappeared + withdrawn → sold_estimated (conservative — anything that left may be sold)
+    buyer_sold_estimated = (
+        total_by_class.get("likely_sold", 0)
+        + total_by_class.get("disappeared", 0)
+        + total_by_class.get("withdrawn", 0)
+    )
+    buyer_relisted = total_by_class.get("likely_relisted", 0)
+
+    # Marketplace-level cheapest tracking (for Post-Event leadership)
+    # Count how many snapshot windows each MP had the lowest ask across all MPs
+    mp_cheapest_counts: dict[str, int] = defaultdict(int)
+    for i in range(len(snap_windows) - 1):
+        w = snap_windows[i]
+        # Get lowest ask per MP in this window from transitions
+        window_asks: dict[str, list[float]] = defaultdict(list)
+        for t in transitions:
+            if t.get("window_prev") == w.isoformat() and t.get("prev_price") is not None:
+                window_asks[t["marketplace"]].append(t["prev_price"])
+        if window_asks:
+            mp_mins = {mp: min(prices) for mp, prices in window_asks.items()}
+            cheapest_mp = min(mp_mins, key=lambda x: mp_mins[x])
+            mp_cheapest_counts[cheapest_mp] += 1
+
+    total_cheapest_windows = sum(mp_cheapest_counts.values())
+    marketplace_leadership = [
+        {
+            "marketplace": mp,
+            "cheapest_windows": cnt,
+            "cheapest_pct": round(cnt / total_cheapest_windows * 100, 1) if total_cheapest_windows else 0,
+        }
+        for mp, cnt in sorted(mp_cheapest_counts.items(), key=lambda x: -x[1])
+    ]
 
     # ── Top sold/disappeared per marketplace ───────────────────────────────────
     mp_summary = []
@@ -852,6 +911,13 @@ async def sales_attribution(
             "withdrawn": counts.get("withdrawn", 0),
             "likely_relisted": counts.get("likely_relisted", 0),
             "quantity_changed": counts.get("quantity_changed", 0),
+            # buyer-facing
+            "sold_estimated": (
+                counts.get("likely_sold", 0)
+                + counts.get("disappeared", 0)
+                + counts.get("withdrawn", 0)
+            ),
+            "relisted": counts.get("likely_relisted", 0),
         })
 
     return {
@@ -866,11 +932,27 @@ async def sales_attribution(
         },
         "total_transitions_analyzed": len(transitions),
         "classification_summary": dict(total_by_class),
+        # Buyer-facing summary (no Withdrawn/Disappeared)
+        "buyer_summary": {
+            "sold_estimated": buyer_sold_estimated,
+            "relisted": buyer_relisted,
+            "repriced": total_by_class.get("price_changed", 0),
+            "new_listings": total_by_class.get("new_listing", 0),
+        },
+        "repricing_stats": {
+            "total": total_by_class.get("price_changed", 0),
+            "repriced_up": repriced_up,
+            "repriced_down": repriced_down,
+            "avg_delta": avg_repricing_delta,
+            "median_delta": median_repricing_delta,
+            "largest_delta": largest_repricing_delta,
+        },
         "sold_confidence_breakdown": {
             "high": sold_high,
             "medium": sold_medium,
             "low": sold_low,
         },
+        "marketplace_leadership": marketplace_leadership,
         "by_marketplace": mp_summary,
         # Include transitions only if not too large (cap at 500 for readability)
         "transitions": transitions[:500] if len(transitions) <= 500 else None,
