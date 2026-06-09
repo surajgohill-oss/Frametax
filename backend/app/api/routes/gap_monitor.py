@@ -6,10 +6,19 @@ Routes:
   POST /api/data-health/gaps/heal    — same scan, fires self-fixes synchronously, returns what changed
 
 Gap types:
-  COLLECTION_GAP    — poll late, repeated failures, or unresolved external_event_id
+  UNRESOLVED_ID     — external_event_id is NULL; event cannot be polled until resolved
+                      NOTE: UNRESOLVED != not_listed. NULL only means resolver hasn't found
+                      the marketplace ID. The event may exist; manual patch is required.
+  COLLECTION_GAP    — poll late, repeated failures
   PROCESSING_GAP    — poll succeeded with listings, no canonical snapshot followed
   SNAPSHOT_GAP      — canonical snapshot stale relative to poll cadence
   LIVE_STATS_GAP    — snapshot claims inventory > 0 but live listing table shows 0
+
+Status taxonomy (do not confuse):
+  UNRESOLVED        — external_event_id = NULL (resolver failed or not yet run)
+  POLL_FAILED       — external_event_id set but poll returned error
+  ZERO_INVENTORY    — external_event_id set, poll succeeded, 0 listings returned
+  NOT_LISTED        — only valid when direct marketplace URL/API confirms no event exists
 
 Self-fix rules (safe recovery only):
   COLLECTION_GAP (late)   → asyncio.create_task(run_poll_for_tracked_event(te_id))
@@ -240,18 +249,29 @@ async def _run_gap_scan(db: AsyncSession, *, heal: bool = False) -> dict:
 
         # ── 1. COLLECTION_GAP ─────────────────────────────────────────────
 
-        # 1a. No external event ID (never resolved)
-        if not te.external_event_id and not polls:
+        # 1a. No external event ID — UNRESOLVED (never found, cannot be polled)
+        # NOTE: This is UNRESOLVED, NOT "not_listed". NULL external_event_id only means
+        # the resolver hasn't found the event ID yet. It does NOT mean the event is
+        # unavailable on this marketplace. Do not surface as "not_listed".
+        if not te.external_event_id:
             alerts.append(_make_alert(
                 event_id=ev.id, title=ev.title, marketplace=slug,
-                gap_type="COLLECTION_GAP",
+                gap_type="UNRESOLVED_ID",
                 severity="warning",
                 last_success=None, last_failure=None,
                 expected_cadence_minutes=interval,
                 current_age_minutes=None,
                 result="alert_only",
-                recommended_action="Run /api/poll/resolve-ids to attempt external ID resolution.",
-                note="No external_event_id and no poll runs. Event cannot be polled until resolved.",
+                recommended_action=(
+                    "Manually set external_event_id via PATCH /api/events/tracked/{te_id} "
+                    "or run /api/poll/resolve-ids to attempt auto-resolution. "
+                    "NOTE: UNRESOLVED != not_listed. The event may exist on this marketplace."
+                ),
+                note=(
+                    f"external_event_id is NULL — resolver has not found this event's ID. "
+                    f"Status: UNRESOLVED (not poll_failed, not not_listed). "
+                    f"Poll run count: {len(polls)}."
+                ),
             ))
             continue
 

@@ -45,29 +45,69 @@ def _get_poll_semaphore() -> asyncio.Semaphore:
 
 
 # ── Polling policy ─────────────────────────────────────────────────────────────
-# Strict piecewise function. No smoothing, no interpolation.
+# Canonical 12-tier cadence. Strict piecewise function. No smoothing.
 #
-# > 10 days before event  →  1440 min  (24 h)
-# 10 days → 2 days        →   240 min  ( 4 h)
-# 2 days → 8 hours        →    60 min  ( 1 h)
-# 8 hours → event start   →    15 min
-# event start → +5 min    →     5 min
-# after +5 min            →  None  (deactivate)
+# Countdown       Interval    Notes
+# ─────────────   ────────    ──────────────────────────────────────────────────
+# > 30 days       1440 min    once per day
+# 14–30 days       720 min    twice per day
+# 7–14 days        480 min    every 8 h
+# 3–7 days         240 min    every 4 h
+# 24 h–3 days       60 min    hourly
+# 6–24 h             30 min    every 30 min
+# 90 min–6 h         15 min    every 15 min
+# 30–90 min           5 min    every 5 min
+# 0–30 min            2 min    every 2 min
+# event → +30 min     2 min    every 2 min (in-progress window)
+# after +30 min       None     stop — deactivate tracked_event
+#
+# DO NOT reintroduce +2h polling. Stop is at +30 min, not +2 h.
 
 def compute_poll_interval_minutes(event_date: datetime) -> int | None:
     seconds = (event_date - datetime.utcnow()).total_seconds()
 
-    if seconds < -5 * 60:              # > 5 min past start → stop
+    # Past the +30 min post-event window → stop polling
+    if seconds < -30 * 60:
         return None
-    if seconds < 0:                    # within 5 min of start
+
+    # 0 → +30 min (event in-progress window)
+    if seconds < 0:
+        return 2
+
+    # 0–30 min before event
+    if seconds < 30 * 60:
+        return 2
+
+    # 30–90 min before event
+    if seconds < 90 * 60:
         return 5
-    if seconds < 8 * 3600:            # < 8 h
+
+    # 90 min–6 h before event
+    if seconds < 6 * 3600:
         return 15
-    if seconds < 2 * 24 * 3600:      # < 2 days
+
+    # 6–24 h before event
+    if seconds < 24 * 3600:
+        return 30
+
+    # 24 h–3 days before event
+    if seconds < 3 * 24 * 3600:
         return 60
-    if seconds < 10 * 24 * 3600:     # < 10 days
+
+    # 3–7 days before event
+    if seconds < 7 * 24 * 3600:
         return 240
-    return 1440                        # >= 10 days
+
+    # 7–14 days before event
+    if seconds < 14 * 24 * 3600:
+        return 480
+
+    # 14–30 days before event
+    if seconds < 30 * 24 * 3600:
+        return 720
+
+    # > 30 days before event
+    return 1440
 
 
 # ── Event status (display) ─────────────────────────────────────────────────────
@@ -90,15 +130,15 @@ def event_status_from_date(event_date: datetime) -> str:
 # Thresholds:
 #   pre_admission : event > 21 days away (discovery hasn't admitted it yet)
 #   active        : event within 21 days (being tracked and polled)
-#   in_progress   : event started, within 5 min window
-#   completed     : polling stopped (> 5 min past start)
+#   in_progress   : event started, within +30 min window (mirrors poll stop)
+#   completed     : polling stopped (> +30 min past start)
 
 _ADMISSION_DAYS = 21
 
 
 def compute_lifecycle_phase(event_date: datetime) -> str:
     seconds = (event_date - datetime.utcnow()).total_seconds()
-    if seconds < -5 * 60:
+    if seconds < -30 * 60:        # > +30 min past start → completed (matches poll stop)
         return "completed"
     if seconds < 0:
         return "in_progress"
@@ -141,6 +181,14 @@ async def start_scheduler():
         id="event_discovery",
         replace_existing=True,
         max_instances=1,
+    )
+    _scheduler.add_job(
+        _run_retention_maintenance,
+        trigger=IntervalTrigger(hours=6),
+        id="retention_maintenance",
+        replace_existing=True,
+        max_instances=1,
+        next_run_time=datetime.utcnow() + timedelta(minutes=30),  # 30 min after startup
     )
     _scheduler.start()
     logger.info(
@@ -334,6 +382,224 @@ async def _update_event_statuses():
                 )
 
         await db.commit()
+
+
+# ── Retention maintenance job ──────────────────────────────────────────────────
+#
+# Runs every 6 h. Enforces tiered raw listing_snapshot retention:
+#
+#   Completed / inactive events  → archive all raw snapshots to local CSV.gz, delete all
+#   > 30d away                   → keep latest 48 h + one daily sample per day, delete rest
+#   14–30d away                  → keep last 7d, delete older
+#   7–14d away                   → keep last 14d, delete older
+#   < 7d away                    → keep all (no deletion)
+#
+# Never touches: canonical_inventory_snapshots, canonical_block_history, listings.
+# Archives written to /tmp/retention_archives/ (ephemeral on Railway — local only).
+# The archive step is best-effort: if the filesystem is full, deletion still proceeds
+# so storage is never blocked by archival I/O.
+#
+# "One daily sample" for >30d events: the row whose snapshot_at is closest to midnight
+# UTC for each calendar day in the 48h–30d window.
+
+async def _run_retention_maintenance():
+    import csv
+    import gzip
+    import io
+    import os
+    from pathlib import Path
+    import asyncpg
+
+    db_url = settings.database_url  # SQLAlchemy async URL
+    # Convert to sync psycopg2 URL for raw bulk operations
+    sync_url = db_url.replace("postgresql+asyncpg://", "postgresql://").replace("postgresql+psycopg2://", "postgresql://")
+
+    logger.info("RETENTION: starting maintenance cycle")
+
+    try:
+        import psycopg2
+    except ImportError:
+        logger.warning("RETENTION: psycopg2 not available — skipping")
+        return
+
+    try:
+        conn = psycopg2.connect(sync_url)
+        conn.autocommit = True
+        cur = conn.cursor()
+    except Exception as exc:
+        logger.error("RETENTION: DB connect failed — %s", exc)
+        return
+
+    now = datetime.utcnow()
+    archive_root = Path("/tmp/retention_archives") / now.strftime("%Y%m%d_%H%M%S")
+
+    total_deleted = 0
+
+    try:
+        # Fetch all events with snapshots
+        cur.execute("""
+            SELECT e.id, e.title, e.event_date, e.status,
+                   COUNT(ls.id) AS snap_count
+            FROM events e
+            JOIN listing_snapshots ls ON ls.event_id = e.id
+            GROUP BY e.id, e.title, e.event_date, e.status
+            HAVING COUNT(ls.id) > 0
+            ORDER BY e.event_date
+        """)
+        events = cur.fetchall()
+
+        for (eid, title, event_date, status, snap_count) in events:
+            if isinstance(event_date, str):
+                from datetime import datetime as dt
+                event_date = dt.fromisoformat(event_date)
+
+            seconds_to_event = (event_date - now).total_seconds()
+            days_to_event = seconds_to_event / 86400
+
+            # Determine action
+            if status in ("completed", "inactive", "cancelled") or seconds_to_event < 0:
+                # Archive all, delete all
+                tier = "completed"
+                cutoff = None  # delete ALL
+            elif days_to_event > 30:
+                # Keep last 48h + one sample per day beyond that
+                tier = ">30d"
+                cutoff = now - timedelta(hours=48)
+            elif days_to_event > 14:
+                tier = "14-30d"
+                cutoff = now - timedelta(days=7)
+            elif days_to_event > 7:
+                tier = "7-14d"
+                cutoff = now - timedelta(days=14)
+            else:
+                # <7d — keep all
+                continue
+
+            # Count rows to delete
+            if cutoff is None:
+                cur.execute("SELECT COUNT(*) FROM listing_snapshots WHERE event_id = %s", (eid,))
+            else:
+                if tier == ">30d":
+                    # Keep: last 48h (snapshot_at >= cutoff) + one row per calendar day
+                    # Delete: rows older than 48h that are NOT the daily representative
+                    cur.execute("""
+                        SELECT COUNT(*) FROM listing_snapshots ls
+                        WHERE ls.event_id = %s
+                          AND ls.snapshot_at < %s
+                          AND ls.id NOT IN (
+                              SELECT DISTINCT ON (DATE(snapshot_at)) id
+                              FROM listing_snapshots
+                              WHERE event_id = %s AND snapshot_at < %s
+                              ORDER BY DATE(snapshot_at), snapshot_at
+                          )
+                    """, (eid, cutoff, eid, cutoff))
+                else:
+                    cur.execute(
+                        "SELECT COUNT(*) FROM listing_snapshots WHERE event_id = %s AND snapshot_at < %s",
+                        (eid, cutoff),
+                    )
+
+            to_delete = cur.fetchone()[0]
+            if to_delete == 0:
+                continue
+
+            # Best-effort archive (write to /tmp — ephemeral on Railway)
+            archived = 0
+            try:
+                archive_root.mkdir(parents=True, exist_ok=True)
+                event_dir = archive_root / f"event_{eid}_{str(event_date)[:10]}"
+                event_dir.mkdir(exist_ok=True)
+                gz_path = event_dir / "listing_snapshots.csv.gz"
+
+                # Use a dedicated connection with autocommit=False for named cursor
+                arc_conn = psycopg2.connect(sync_url)
+                arc_conn.autocommit = False
+                arc_cur_name = f"arc_{eid}_{int(now.timestamp())}"
+                arc_cur = arc_conn.cursor(arc_cur_name)
+
+                ls_cols = ["id", "event_id", "marketplace_id", "listing_id", "section_id",
+                           "price", "quantity", "snapshot_at", "fees", "all_in_price", "market_segment"]
+                if cutoff is None:
+                    arc_cur.execute(
+                        f"SELECT {', '.join(ls_cols)} FROM listing_snapshots WHERE event_id = %s",
+                        (eid,),
+                    )
+                else:
+                    arc_cur.execute(
+                        f"SELECT {', '.join(ls_cols)} FROM listing_snapshots WHERE event_id = %s AND snapshot_at < %s",
+                        (eid, cutoff),
+                    )
+
+                buf = io.BytesIO()
+                with gzip.GzipFile(fileobj=buf, mode="wb") as gz:
+                    import io as _io
+                    wrapper = _io.TextIOWrapper(gz, newline="", write_through=True)
+                    writer = csv.writer(wrapper)
+                    writer.writerow(ls_cols)
+                    while True:
+                        rows = arc_cur.fetchmany(5000)
+                        if not rows:
+                            break
+                        for row in rows:
+                            writer.writerow(list(row))
+                            archived += 1
+                    wrapper.detach()
+
+                arc_cur.close()
+                arc_conn.rollback()
+                arc_conn.close()
+                gz_path.write_bytes(buf.getvalue())
+            except Exception as arc_exc:
+                logger.warning("RETENTION: archive failed event=%d — %s (proceeding with delete)", eid, arc_exc)
+
+            # Delete
+            if cutoff is None:
+                cur.execute("DELETE FROM listing_snapshots WHERE event_id = %s", (eid,))
+            elif tier == ">30d":
+                cur.execute("""
+                    DELETE FROM listing_snapshots
+                    WHERE event_id = %s
+                      AND snapshot_at < %s
+                      AND id NOT IN (
+                          SELECT DISTINCT ON (DATE(snapshot_at)) id
+                          FROM listing_snapshots
+                          WHERE event_id = %s AND snapshot_at < %s
+                          ORDER BY DATE(snapshot_at), snapshot_at
+                      )
+                """, (eid, cutoff, eid, cutoff))
+            else:
+                cur.execute(
+                    "DELETE FROM listing_snapshots WHERE event_id = %s AND snapshot_at < %s",
+                    (eid, cutoff),
+                )
+
+            deleted = cur.rowcount
+            total_deleted += deleted
+            logger.info(
+                "RETENTION: event=%d '%s' tier=%s snap_count=%d archived=%d deleted=%d",
+                eid, title[:40], tier, snap_count, archived, deleted,
+            )
+
+        if total_deleted > 0:
+            cur.execute("VACUUM ANALYZE listing_snapshots")
+            cur.execute("SELECT COUNT(*) FROM listing_snapshots")
+            final_count = cur.fetchone()[0]
+            cur.execute("SELECT pg_size_pretty(pg_database_size(current_database()))")
+            db_size = cur.fetchone()[0]
+            logger.info(
+                "RETENTION: cycle complete total_deleted=%d listing_snapshots=%d db=%s",
+                total_deleted, final_count, db_size,
+            )
+        else:
+            logger.info("RETENTION: cycle complete — nothing to prune")
+
+    except Exception as exc:
+        logger.exception("RETENTION: maintenance cycle failed — %s", exc)
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
 
 
 # ── Discovery job ──────────────────────────────────────────────────────────────
