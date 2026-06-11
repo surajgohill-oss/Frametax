@@ -359,6 +359,8 @@ async def compute_event(event_id: int, db: AsyncSession) -> dict:
     This is the single source of truth for all intelligence data.
     """
     now = datetime.now(timezone.utc)
+    # SQL parameters must be naive UTC (listing_snapshots/poll_runs use TIMESTAMP WITHOUT TIME ZONE)
+    now_sql = now.replace(tzinfo=None)
 
     # ── Event meta ─────────────────────────────────────────────────────────────
     event_row = (await db.execute(
@@ -393,7 +395,7 @@ async def compute_event(event_id: int, db: AsyncSession) -> dict:
     # ── Window price comparisons ───────────────────────────────────────────────
     async def _window_price(hours_back: int) -> Optional[tuple]:
         """Returns (median, listings) for a snapshot window hours_back ago (±1h)."""
-        center = now - timedelta(hours=hours_back)
+        center = now_sql - timedelta(hours=hours_back)
         w_start = center - timedelta(hours=1)
         w_end   = center + timedelta(hours=1)
         row = (await db.execute(_WINDOW_PRICE_SQL, {
@@ -526,7 +528,7 @@ async def compute_event(event_id: int, db: AsyncSession) -> dict:
         })
 
     # ── Seller behavior (poll_run aggregates) ──────────────────────────────────
-    since_24h = now - timedelta(hours=24)
+    since_24h = now_sql - timedelta(hours=24)
     sb_row = (await db.execute(_SELLER_BEHAVIOR_SQL, {
         "event_id": event_id,
         "since_24h": since_24h,
@@ -571,10 +573,10 @@ async def compute_event(event_id: int, db: AsyncSession) -> dict:
 
     if history_hours and history_hours >= 2:
         # Survival: of listings seen 12h ago, how many are still in latest window?
-        t_base_start = now - timedelta(hours=14)
-        t_base_end   = now - timedelta(hours=12)
-        t_later_start = now - timedelta(hours=1)
-        t_later_end   = now
+        t_base_start = now_sql - timedelta(hours=14)
+        t_base_end   = now_sql - timedelta(hours=12)
+        t_later_start = now_sql - timedelta(hours=1)
+        t_later_end   = now_sql
         surv = (await db.execute(_SURVIVAL_RATE_SQL, {
             "event_id": event_id,
             "t_start": t_base_start,
@@ -606,7 +608,7 @@ async def compute_event(event_id: int, db: AsyncSession) -> dict:
     # 7d history at 6h resolution (if data exists)
     ph_buckets_7d = []
     if history_hours and history_hours >= 12:
-        w7d_start = now - timedelta(days=7) if (history_hours or 0) >= 168 else history_oldest
+        w7d_start = now_sql - timedelta(days=7) if (history_hours or 0) >= 168 else history_oldest
         ph_rows_7d = (await db.execute(_PRICE_HISTORY_BUCKETS_SQL, {
             "event_id": event_id,
             "bucket_size": "6 hours",
@@ -691,7 +693,7 @@ async def compute_event(event_id: int, db: AsyncSession) -> dict:
 
     result = (await db.execute(insert_sql, {
         "event_id": event_id,
-        "computed_at": now,
+        "computed_at": now_sql,
         "signal": signal,
         "current_low_ask": current_low,
         "current_median_ask": current_median,
