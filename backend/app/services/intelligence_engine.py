@@ -699,8 +699,8 @@ async def compute_event(event_id: int, db: AsyncSession) -> dict:
             :market_tightness, :market_depth, :inventory_velocity,
             :seller_aggression, :seller_confidence, :capitulation_score, :relist_pressure,
             :opportunity_score, :days_until_event, :history_hours,
-            :marketplace_metrics::jsonb, :section_metrics::jsonb, :seller_behavior::jsonb,
-            :price_history_24h::jsonb, :window_histories::jsonb
+            CAST(:marketplace_metrics AS JSONB), CAST(:section_metrics AS JSONB), CAST(:seller_behavior AS JSONB),
+            CAST(:price_history_24h AS JSONB), CAST(:window_histories AS JSONB)
         )
         RETURNING id, computed_at
     """)
