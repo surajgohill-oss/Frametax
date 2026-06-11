@@ -198,6 +198,23 @@ _PRICE_HISTORY_BUCKETS_SQL = text("""
     ORDER BY bucket
 """)
 
+# 6-hour bucket variant — DATE_TRUNC doesn't accept "6 hours", use epoch floor instead
+_PRICE_HISTORY_6H_SQL = text("""
+    SELECT
+        to_timestamp(floor(extract(epoch from snapshot_at) / 21600) * 21600) AS bucket,
+        MIN(price)                                           AS low_ask,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY price)  AS median_ask,
+        PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY price)  AS high_ask,
+        COUNT(DISTINCT listing_id)                           AS listings,
+        SUM(quantity)                                        AS tickets
+    FROM listing_snapshots
+    WHERE event_id = :event_id
+      AND snapshot_at >= :window_start
+      AND price > 0
+    GROUP BY bucket
+    ORDER BY bucket
+""")
+
 _SURVIVAL_RATE_SQL = text("""
     WITH base_window AS (
         SELECT DISTINCT listing_id
@@ -609,9 +626,8 @@ async def compute_event(event_id: int, db: AsyncSession) -> dict:
     ph_buckets_7d = []
     if history_hours and history_hours >= 12:
         w7d_start = now_sql - timedelta(days=7) if (history_hours or 0) >= 168 else history_oldest
-        ph_rows_7d = (await db.execute(_PRICE_HISTORY_BUCKETS_SQL, {
+        ph_rows_7d = (await db.execute(_PRICE_HISTORY_6H_SQL, {
             "event_id": event_id,
-            "bucket_size": "6 hours",
             "window_start": w7d_start,
         })).fetchall()
         for r in ph_rows_7d:
