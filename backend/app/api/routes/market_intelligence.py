@@ -550,6 +550,7 @@ async def historical_graph_data(
     """
     await _require_event(event_id, db)
     now = datetime.now(timezone.utc)
+    now_sql = now.replace(tzinfo=None)  # naive UTC for TIMESTAMP WITHOUT TIME ZONE SQL params
 
     # Determine window and bucket size
     window_map = {
@@ -560,7 +561,7 @@ async def historical_graph_data(
         "all":  (None,                 "6 hours"),  # will use actual earliest
     }
     td, bucket_size = window_map[window]
-    window_start = (now - td) if td else None
+    window_start = (now_sql - td) if td else None
 
     # Find actual data range
     depth_row = (await db.execute(text("""
@@ -593,10 +594,21 @@ async def historical_graph_data(
 
     series = []
 
+    # Build bucket expression: DATE_TRUNC only accepts single-unit strings.
+    # For multi-hour buckets use epoch-floor arithmetic instead.
+    _MULTI_HOUR_SECONDS = {"3 hours": 10800, "6 hours": 21600, "12 hours": 43200}
+
+    def _bucket_expr(col: str, bkt: str) -> str:
+        if bkt in _MULTI_HOUR_SECONDS:
+            secs = _MULTI_HOUR_SECONDS[bkt]
+            return f"to_timestamp(floor(extract(epoch from {col}) / {secs}) * {secs})"
+        return f"DATE_TRUNC('{bkt}', {col})"
+
     if metric == "price":
-        rows = (await db.execute(text("""
+        bkt_sql = _bucket_expr("snapshot_at", bucket_size)
+        rows = (await db.execute(text(f"""
             SELECT
-                DATE_TRUNC(:bkt, snapshot_at)                               AS bucket,
+                {bkt_sql}                                                        AS bucket,
                 MIN(price)                                                   AS low_ask,
                 PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY price)          AS median_ask,
                 PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY price)          AS high_ask,
@@ -610,7 +622,7 @@ async def historical_graph_data(
               AND price > 0
             GROUP BY bucket
             ORDER BY bucket ASC
-        """), {"eid": event_id, "bkt": bucket_size, "win_start": effective_start})).fetchall()
+        """), {"eid": event_id, "win_start": effective_start})).fetchall()
 
         for r in rows:
             series.append({
@@ -625,10 +637,11 @@ async def historical_graph_data(
             })
 
     elif metric == "inventory":
+        bkt_sql = _bucket_expr("pr.started_at", bucket_size)
         # From poll_runs (includes new/disappeared breakdown)
-        rows = (await db.execute(text("""
+        rows = (await db.execute(text(f"""
             SELECT
-                DATE_TRUNC(:bkt, pr.started_at)           AS bucket,
+                {bkt_sql}                                  AS bucket,
                 SUM(pr.listings_found)                     AS total_found,
                 SUM(pr.new_listings)                       AS new_listings,
                 SUM(pr.disappeared_listings)               AS disappeared,
@@ -640,7 +653,7 @@ async def historical_graph_data(
               AND pr.started_at >= CAST(:win_start AS timestamp)
             GROUP BY bucket
             ORDER BY bucket ASC
-        """), {"eid": event_id, "bkt": bucket_size, "win_start": effective_start})).fetchall()
+        """), {"eid": event_id, "win_start": effective_start})).fetchall()
 
         for r in rows:
             series.append({
@@ -652,9 +665,10 @@ async def historical_graph_data(
             })
 
     elif metric == "marketplace":
-        rows = (await db.execute(text("""
+        bkt_sql = _bucket_expr("ls.snapshot_at", bucket_size)
+        rows = (await db.execute(text(f"""
             SELECT
-                DATE_TRUNC(:bkt, ls.snapshot_at)                              AS bucket,
+                {bkt_sql}                                                      AS bucket,
                 m.slug                                                         AS marketplace,
                 COUNT(DISTINCT ls.listing_id)                                 AS listings,
                 PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY ls.price)        AS median_ask,
@@ -666,7 +680,7 @@ async def historical_graph_data(
               AND ls.price > 0
             GROUP BY bucket, m.slug
             ORDER BY bucket ASC, listings DESC
-        """), {"eid": event_id, "bkt": bucket_size, "win_start": effective_start})).fetchall()
+        """), {"eid": event_id, "win_start": effective_start})).fetchall()
 
         # Group into {ts → {marketplace → data}}
         from collections import defaultdict
@@ -682,11 +696,12 @@ async def historical_graph_data(
                   for ts, data in sorted(bucket_map.items())]
 
     elif metric == "seller":
-        rows = (await db.execute(text("""
+        bkt_sql = _bucket_expr("pr.started_at", bucket_size)
+        rows = (await db.execute(text(f"""
             SELECT
-                DATE_TRUNC(:bkt, pr.started_at)  AS bucket,
-                SUM(pr.new_listings)              AS new_listings,
-                SUM(pr.disappeared_listings)      AS disappeared
+                {bkt_sql}                 AS bucket,
+                SUM(pr.new_listings)      AS new_listings,
+                SUM(pr.disappeared_listings) AS disappeared
             FROM poll_runs pr
             JOIN tracked_events te ON te.id = pr.tracked_event_id
             WHERE te.event_id = :eid
@@ -694,7 +709,7 @@ async def historical_graph_data(
               AND pr.started_at >= CAST(:win_start AS timestamp)
             GROUP BY bucket
             ORDER BY bucket ASC
-        """), {"eid": event_id, "bkt": bucket_size, "win_start": effective_start})).fetchall()
+        """), {"eid": event_id, "win_start": effective_start})).fetchall()
 
         for r in rows:
             series.append({
@@ -758,7 +773,7 @@ async def seller_behavior(
     rates  = intel.get("rates", {})
 
     now = datetime.now(timezone.utc)
-    since_24h = now - timedelta(hours=24)
+    since_24h = (now - timedelta(hours=24)).replace(tzinfo=None)  # naive for TIMESTAMP col
 
     # Per-marketplace seller behavior (new + disappeared from poll_runs)
     mp_sb = (await db.execute(text("""
