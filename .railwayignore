@@ -1,0 +1,6 @@
+frontend/node_modules/
+scripts/nadp/node_modules/
+**/__pycache__/
+**/*.pyc
+backend/browser_sessions/
+.git/

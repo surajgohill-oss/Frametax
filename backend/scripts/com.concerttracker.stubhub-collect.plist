@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.concerttracker.stubhub-collect</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/python3</string>
+        <string>/Users/Suraj/dev/concert-tracker/backend/scripts/collect_stubhub.py</string>
+        <string>--backend</string>
+        <string>https://backend-production-509f.up.railway.app</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/Suraj/dev/concert-tracker/backend</string>
+
+    <!--
+      Fires every 30 minutes. The script itself checks whether the cadence tier
+      requires a new poll yet, and exits early if not due:
+        - Event >30 days out  → actual collection once/day   (1440 min tier)
+        - Event 14-30 days    → actual collection every 6h   (360 min tier)
+        - Event 7-14 days     → actual collection every 4h   (240 min tier)
+        - Event 2-7 days      → actual collection hourly     (60 min tier)
+        - Event 24-48h out    → actual collection every 30m  (30 min tier)
+        - Event 6-24h out     → actual collection every 15m
+        - Event 2-6h out      → actual collection every 5m
+      For final-hour cadence, trigger manually:
+        launchctl start com.concerttracker.stubhub-collect
+    -->
+    <key>StartInterval</key>
+    <integer>1800</integer>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/stubhub-collect.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/tmp/stubhub-collect.log</string>
+
+    <key>ProcessType</key>
+    <string>Background</string>
+</dict>
+</plist>
