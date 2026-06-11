@@ -73,11 +73,13 @@ export const CONSUMER_LABELS = {
   seller_aggression:   "Seller Pressure",
   capitulation_score:  "Price Cutting Activity",
   tightness:           "Ticket Availability",
-  liquidity_score:     "Inventory Depth",
-  churn_rate:          "Listing Churn",
-  reprice_rate:        "Reprice Rate",
+  liquidity_score:     "Coverage Score",
+  churn_rate:          "Listing Turnover",
+  reprice_rate:        "Pricing Activity",
   seller_confidence:   "Seller Confidence",
-  velocity:            "Market Velocity",
+  velocity:            "Trading Activity",
+  market_stress:       "Market Heat",
+  share_of_inventory:  "Market Share",
 } as const;
 
 // ── Lifecycle context ─────────────────────────────────────────────────────────

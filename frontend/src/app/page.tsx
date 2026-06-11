@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import { Eye, RefreshCw, TrendingUp, TrendingDown, Minus, AlertCircle, ChevronDown, ChevronRight } from "lucide-react";
+import { Eye, RefreshCw, TrendingUp, TrendingDown, Minus, AlertCircle, ChevronDown, ChevronRight, BarChart2 } from "lucide-react";
 import { format, parseISO, differenceInDays } from "date-fns";
 import { api } from "@/lib/api";
 import type { EventSummary, HistoryResponse } from "@/lib/types";
@@ -123,28 +123,36 @@ function HeadlineEvent({
 
           {/* RIGHT — prices + inventory */}
           <div className="flex flex-col justify-center gap-3 flex-shrink-0 sm:text-right">
+            {/* Price grid */}
             <div>
-              <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1">Price Range</p>
-              <div className="space-y-0.5">
-                <div className="flex sm:justify-end items-baseline gap-2">
-                  <span className="text-[10px] text-white/40 w-12">Low</span>
-                  <span className="text-lg font-bold text-white">{fmt$$(priceLow)}</span>
+              <p className="text-[10px] text-white/40 uppercase tracking-wider mb-2">Price Range</p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 sm:text-right">
+                <div>
+                  <p className="text-[9px] text-white/35 uppercase tracking-wide">Low Ask</p>
+                  <p className="text-xl font-bold text-white tabular-nums">{fmt$$(priceLow)}</p>
                 </div>
-                <div className="flex sm:justify-end items-baseline gap-2">
-                  <span className="text-[10px] text-white/40 w-12">Median</span>
-                  <span className="text-sm font-medium text-white/80">{fmt$$(priceMed)}</span>
-                </div>
-                <div className="flex sm:justify-end items-baseline gap-2">
-                  <span className="text-[10px] text-white/40 w-12">High</span>
-                  <span className="text-sm text-white/50">{fmt$$(priceHigh)}</span>
+                <div>
+                  <p className="text-[9px] text-white/35 uppercase tracking-wide">Median</p>
+                  <p className="text-xl font-bold text-white/80 tabular-nums">{fmt$$(priceMed)}</p>
                 </div>
               </div>
+              {priceHigh != null && (
+                <p className="text-[10px] text-white/30 mt-1 tabular-nums sm:text-right">
+                  high {fmt$$(priceHigh)}
+                </p>
+              )}
             </div>
             <div className="pt-2 border-t border-white/10">
-              <p className="text-[10px] text-white/40 uppercase tracking-wider mb-0.5">Inventory</p>
-              <p className="text-sm font-semibold text-white/80">{fmtNum(event.inventory?.total_listings)} listings</p>
+              <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1">Inventory</p>
+              <p className="text-sm font-semibold text-white/80">
+                <BarChart2 size={11} className="inline mr-1 opacity-50" />
+                {fmtNum(event.inventory?.total_listings)} listings
+              </p>
+              <p className="text-[10px] text-white/35 mt-0.5">
+                {fmtNum(event.inventory?.total_tickets)} tickets
+              </p>
               {depth != null && (
-                <p className={`text-[10px] mt-0.5 ${depth >= 7 ? "text-emerald-400" : "text-amber-400"}`}>
+                <p className={`text-[10px] mt-1 font-medium ${depth >= 7 ? "text-emerald-400" : "text-amber-400"}`}>
                   {depth >= 1 ? `${Math.round(depth)}d of history` : "Live data only"}
                 </p>
               )}

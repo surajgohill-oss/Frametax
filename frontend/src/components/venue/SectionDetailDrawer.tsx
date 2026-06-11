@@ -147,14 +147,14 @@ export default function SectionDetailDrawer({ section, mode, onClose }: Props) {
                   <InfoCell
                     label="24h Change"
                     val={`${m.price_delta_24h > 0 ? "+" : ""}$${Math.abs(Math.round(m.price_delta_24h))}`}
-                    accent={m.price_delta_24h < 0 ? "text-emerald-400" : m.price_delta_24h > 0 ? "text-red-400" : undefined}
+                    accent={m.price_delta_24h > 0 ? "text-emerald-400" : m.price_delta_24h < 0 ? "text-red-400" : undefined}
                   />
                 )}
                 {m.price_delta_pct_24h != null && (
                   <InfoCell
                     label="24h %"
                     val={`${m.price_delta_pct_24h > 0 ? "+" : ""}${m.price_delta_pct_24h.toFixed(1)}%`}
-                    accent={m.price_delta_pct_24h < 0 ? "text-emerald-400" : m.price_delta_pct_24h > 0 ? "text-red-400" : undefined}
+                    accent={m.price_delta_pct_24h > 0 ? "text-emerald-400" : m.price_delta_pct_24h < 0 ? "text-red-400" : undefined}
                   />
                 )}
               </div>

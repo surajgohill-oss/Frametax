@@ -122,7 +122,7 @@ function DeltaChip({ pct, size = "sm" }: { pct: number | null | undefined; size?
   const textSize = size === "md" ? "text-sm" : "text-[11px]";
   return (
     <span className={cn("inline-flex items-center gap-0.5 font-medium", textSize,
-      up ? "text-red-400" : pct < 0 ? "text-emerald-400" : "text-slate-500")}>
+      up ? "text-emerald-400" : pct < 0 ? "text-red-400" : "text-slate-500")}>
       <Icon size={size === "md" ? 13 : 10} />
       {fmtPct(pct)}
     </span>
@@ -454,7 +454,7 @@ export default function EventDetailPage() {
             <ScoreMeter label={CONSUMER_LABELS.tightness}          value={hero.market?.tightness}          color="#f87171" />
             <ScoreMeter label={CONSUMER_LABELS.seller_aggression}  value={hero.market?.seller_aggression}  color="#fb923c" />
             <ScoreMeter label={CONSUMER_LABELS.capitulation_score} value={hero.market?.capitulation_score} color="#34d399" />
-            <ScoreMeter label="Market Velocity"                    value={
+            <ScoreMeter label={CONSUMER_LABELS.velocity}           value={
               hero.market?.velocity != null ? Math.min(hero.market.velocity / 50, 1) : null
             } color="#60a5fa" />
             <ScoreMeter label={CONSUMER_LABELS.reprice_rate}       value={hero.rates?.reprice_rate}        color="#a78bfa" />
@@ -478,35 +478,95 @@ export default function EventDetailPage() {
 
     return (
       <div className="space-y-5">
+        {/* Market overview summary strip */}
+        {(market.trends?.price_change_24h_pct != null || market.inventory_movement?.net_change_24h != null) && (
+          <div className="grid grid-cols-2 gap-2">
+            {market.trends?.price_change_24h_pct != null && (
+              <div className="rounded-xl border border-white/7 bg-[#161b27] px-4 py-3">
+                <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Price (24h)</p>
+                <div className="flex items-center gap-1.5">
+                  {market.trends.price_change_24h_pct > 0
+                    ? <TrendingUp size={14} className="text-emerald-400" />
+                    : market.trends.price_change_24h_pct < 0
+                    ? <TrendingDown size={14} className="text-red-400" />
+                    : <Minus size={14} className="text-slate-500" />}
+                  <span className={cn("text-sm font-semibold tabular-nums",
+                    market.trends.price_change_24h_pct > 0 ? "text-emerald-400" :
+                    market.trends.price_change_24h_pct < 0 ? "text-red-400" : "text-slate-400"
+                  )}>
+                    {market.trends.price_change_24h_pct > 0 ? "+" : ""}
+                    {market.trends.price_change_24h_pct.toFixed(1)}%
+                  </span>
+                  <span className="text-[10px] text-slate-600">overall</span>
+                </div>
+              </div>
+            )}
+            {market.inventory_movement?.net_change_24h != null && (
+              <div className="rounded-xl border border-white/7 bg-[#161b27] px-4 py-3">
+                <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Inventory (24h)</p>
+                <div className="flex items-center gap-1.5">
+                  {(market.inventory_movement.net_change_24h ?? 0) > 0
+                    ? <TrendingUp size={14} className="text-emerald-400" />
+                    : <TrendingDown size={14} className="text-red-400" />}
+                  <span className={cn("text-sm font-semibold tabular-nums",
+                    (market.inventory_movement.net_change_24h ?? 0) > 0 ? "text-emerald-400" : "text-red-400"
+                  )}>
+                    {fmtDelta(market.inventory_movement.net_change_24h)}
+                  </span>
+                  <span className="text-[10px] text-slate-600">listings</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         <div>
           <h3 className="text-xs text-slate-500 uppercase tracking-wider mb-2">Marketplaces</h3>
-          <div className="rounded-xl border border-white/7 bg-[#161b27] overflow-x-auto">
-            <table className="w-full text-xs min-w-[500px]">
-              <thead>
-                <tr className="border-b border-white/5">
-                  {["Platform", "Low", "Median", "High", "Listings", "Share", "Depth"].map((h) => (
-                    <th key={h} className="text-left px-3 py-2.5 text-[10px] text-slate-500 uppercase tracking-wider font-medium">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {(market.marketplaces ?? []).map((mp, i) => (
-                  <tr key={i} className="border-b border-white/4 last:border-0 hover:bg-white/2">
-                    <td className="px-3 py-2.5 font-semibold text-slate-200">{mp.name}</td>
-                    <td className="px-3 py-2.5 text-slate-300 tabular-nums">{fmt$$(mp.low_ask)}</td>
-                    <td className="px-3 py-2.5 text-slate-300 tabular-nums">{fmt$$(mp.median_ask)}</td>
-                    <td className="px-3 py-2.5 text-slate-400 tabular-nums">{fmt$$(mp.high_ask)}</td>
-                    <td className="px-3 py-2.5 text-slate-400 tabular-nums">{fmtNum(mp.listings)}</td>
-                    <td className="px-3 py-2.5 text-slate-400 tabular-nums">
-                      {mp.share_of_inventory != null ? `${(mp.share_of_inventory * 100).toFixed(0)}%` : "—"}
-                    </td>
-                    <td className="px-3 py-2.5 text-slate-400 tabular-nums">
-                      {mp.liquidity_score != null ? mp.liquidity_score.toFixed(2) : "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {/* Marketplace cards */}
+          <div className="space-y-2">
+            {(market.marketplaces ?? []).map((mp, i) => {
+              const sharePct = mp.share_of_inventory != null ? mp.share_of_inventory * 100 : null;
+              return (
+                <div key={i} className="rounded-xl border border-white/7 bg-[#161b27] p-3">
+                  <div className="flex items-center justify-between mb-2.5">
+                    <span className="text-sm font-semibold text-slate-200">{mp.name}</span>
+                    {sharePct != null && (
+                      <span className="text-[10px] text-slate-500 tabular-nums">{sharePct.toFixed(0)}% of market</span>
+                    )}
+                  </div>
+                  {/* Share bar */}
+                  {sharePct != null && (
+                    <div className="h-0.5 bg-white/5 rounded-full mb-3 overflow-hidden">
+                      <div className="h-full bg-blue-500/50 rounded-full" style={{ width: `${Math.min(sharePct, 100)}%` }} />
+                    </div>
+                  )}
+                  <div className="grid grid-cols-4 gap-3">
+                    <div>
+                      <p className="text-[9px] text-slate-600 uppercase tracking-wide mb-0.5">Low Ask</p>
+                      <p className="text-xs font-semibold text-slate-200 tabular-nums">{fmt$$(mp.low_ask)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] text-slate-600 uppercase tracking-wide mb-0.5">Median</p>
+                      <p className="text-xs font-semibold text-slate-200 tabular-nums">{fmt$$(mp.median_ask)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] text-slate-600 uppercase tracking-wide mb-0.5">High</p>
+                      <p className="text-xs text-slate-400 tabular-nums">{fmt$$(mp.high_ask)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] text-slate-600 uppercase tracking-wide mb-0.5">Listings</p>
+                      <p className="text-xs text-slate-400 tabular-nums">{fmtNum(mp.listings)}</p>
+                    </div>
+                  </div>
+                  {mp.liquidity_score != null && (
+                    <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-between text-[10px]">
+                      <span className="text-slate-600">Coverage Score</span>
+                      <span className="text-slate-500 tabular-nums">{mp.liquidity_score.toFixed(2)}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -543,9 +603,9 @@ export default function EventDetailPage() {
         </div>
 
         <div>
-          <h3 className="text-xs text-slate-500 uppercase tracking-wider mb-3">Market Stress</h3>
+          <h3 className="text-xs text-slate-500 uppercase tracking-wider mb-3">Market Heat</h3>
           <div className="rounded-xl border border-white/7 bg-[#161b27] p-4 space-y-3">
-            <ScoreMeter label="Overall Stress"            value={market.market_stress?.composite_score} color="#fb923c" />
+            <ScoreMeter label="Overall Heat"              value={market.market_stress?.composite_score} color="#fb923c" />
             <ScoreMeter label={CONSUMER_LABELS.tightness} value={market.market_stress?.tightness}       color="#f87171" />
             <ScoreMeter label="Price Cutting Activity"    value={market.market_stress?.capitulation}    color="#34d399" />
           </div>
@@ -900,7 +960,7 @@ export default function EventDetailPage() {
             label="Median Price Change"
             value={
               seller.median_reprice_delta != null ? (
-                <span className={seller.median_reprice_delta < 0 ? "text-emerald-400" : "text-red-400"}>
+                <span className={seller.median_reprice_delta > 0 ? "text-emerald-400" : "text-red-400"}>
                   {fmtDelta(Math.round(seller.median_reprice_delta))}
                 </span>
               ) : "—"
@@ -924,7 +984,7 @@ export default function EventDetailPage() {
               note={capScore > 0.7 ? "Active discounting underway" : undefined}
             />
             <ScoreMeter
-              label="Listing Churn"
+              label={CONSUMER_LABELS.churn_rate}
               value={seller.churn_rate != null ? Math.min(seller.churn_rate / 10, 1) : null}
               color="#fb923c"
             />
@@ -951,7 +1011,7 @@ export default function EventDetailPage() {
                       <td className="px-3 py-2 text-slate-300 max-w-[160px] truncate">{row.section}</td>
                       <td className="px-3 py-2 text-slate-500 tabular-nums">{fmt$$(row.old_price)}</td>
                       <td className="px-3 py-2 text-slate-300 tabular-nums font-medium">{fmt$$(row.new_price)}</td>
-                      <td className="px-3 py-2 text-emerald-400 tabular-nums font-semibold">{fmt$$(Math.abs(row.delta))}</td>
+                      <td className="px-3 py-2 text-red-400 tabular-nums font-semibold">-{fmt$$(Math.abs(row.delta))}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -978,7 +1038,7 @@ export default function EventDetailPage() {
                       <td className="px-3 py-2 text-slate-300 max-w-[160px] truncate">{row.section}</td>
                       <td className="px-3 py-2 text-slate-500 tabular-nums">{fmt$$(row.old_price)}</td>
                       <td className="px-3 py-2 text-slate-300 tabular-nums font-medium">{fmt$$(row.new_price)}</td>
-                      <td className="px-3 py-2 text-red-400 tabular-nums font-semibold">+{fmt$$(row.delta)}</td>
+                      <td className="px-3 py-2 text-emerald-400 tabular-nums font-semibold">+{fmt$$(row.delta)}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -105,14 +105,22 @@ export default function EventCard({ event, meta, dataDepthDays, onHide, isSelect
           </div>
         )}
 
-        {/* price band */}
+        {/* price band — two labeled cells */}
+        <div className="grid grid-cols-2 gap-2 mb-1.5">
+          <div>
+            <p className="text-[9px] text-slate-600 uppercase tracking-wide mb-0.5">Low Ask</p>
+            <p className="text-xs font-semibold text-slate-200 tabular-nums">{fmt$$(event.price?.low_ask)}</p>
+          </div>
+          <div>
+            <p className="text-[9px] text-slate-600 uppercase tracking-wide mb-0.5">Median</p>
+            <p className="text-xs font-semibold text-slate-300 tabular-nums">{fmt$$(event.price?.median_ask)}</p>
+          </div>
+        </div>
         <div className="flex items-center justify-between text-[10px]">
-          <span className="text-slate-500">
-            <span className="text-slate-300 font-medium">{fmt$$(event.price?.low_ask)}</span>
-            {" – "}
-            <span className="text-slate-400">{fmt$$(event.price?.median_ask)}</span>
-          </span>
           <span className="text-slate-600 tabular-nums">{fmtNum(event.inventory?.total_listings)} listings</span>
+          {event.price?.high_ask != null && (
+            <span className="text-slate-700 tabular-nums">high {fmt$$(event.price.high_ask)}</span>
+          )}
         </div>
 
         {/* SoFi venue intelligence chip */}
