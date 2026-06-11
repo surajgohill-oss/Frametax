@@ -9,6 +9,7 @@ import type {
   EventMeta,
   VenueIntelligenceResponse,
   VenueClassificationsResponse,
+  BaselineResponse,
 } from "./types";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://backend-production-509f.up.railway.app";
@@ -29,6 +30,9 @@ export const api = {
       get<HistoryResponse>(`/api/intelligence/events/${id}/history?window=${window}&metric=price`),
     sections: (id: number) => get<SectionsResponse>(`/api/intelligence/events/${id}/sections`),
     seller: (id: number) => get<SellerResponse>(`/api/intelligence/events/${id}/seller`),
+  },
+  analytics: {
+    baseline: (id: number) => get<BaselineResponse>(`/api/analytics/events/${id}/baseline`),
   },
   venues: {
     intelligence: (slug: string, eventId: number) =>

@@ -128,11 +128,11 @@ function HeadlineEvent({
               <p className="text-[10px] text-white/40 uppercase tracking-wider mb-2">Price Range</p>
               <div className="grid grid-cols-2 gap-x-4 gap-y-1 sm:text-right">
                 <div>
-                  <p className="text-[9px] text-white/35 uppercase tracking-wide">Low Ask</p>
+                  <p className="text-[9px] text-white/35 uppercase tracking-wide">Lowest Price</p>
                   <p className="text-xl font-bold text-white tabular-nums">{fmt$$(priceLow)}</p>
                 </div>
                 <div>
-                  <p className="text-[9px] text-white/35 uppercase tracking-wide">Median</p>
+                  <p className="text-[9px] text-white/35 uppercase tracking-wide">Median Price</p>
                   <p className="text-xl font-bold text-white/80 tabular-nums">{fmt$$(priceMed)}</p>
                 </div>
               </div>

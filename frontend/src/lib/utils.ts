@@ -82,6 +82,20 @@ export const CONSUMER_LABELS = {
   share_of_inventory:  "Market Share",
 } as const;
 
+// ── Compact signal phrase (for card-level display) ───────────────────────────
+
+const SIGNAL_PHRASES: Record<Signal, { text: string; dir: "up" | "down" | "flat" }> = {
+  deepening:    { text: "Prices rising",  dir: "up"   },
+  capitulating: { text: "Prices falling", dir: "down" },
+  loosening:    { text: "Prices softening", dir: "down" },
+  stable:       { text: "Market stable",  dir: "flat" },
+  mixed:        { text: "Mixed signals",  dir: "flat" },
+};
+
+export function signalPhrase(signal: Signal | string | null | undefined): { text: string; dir: "up" | "down" | "flat" } {
+  return SIGNAL_PHRASES[(signal as Signal) ?? "stable"] ?? SIGNAL_PHRASES.stable;
+}
+
 // ── Lifecycle context ─────────────────────────────────────────────────────────
 
 export function lifecycleContext(

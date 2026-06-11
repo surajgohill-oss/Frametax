@@ -28,6 +28,21 @@ export interface EventsListResponse {
 }
 
 // ── /api/events/{id} ──────────────────────────────────────────────────────────
+export interface MarketplaceFreshness {
+  freshness_status: "fresh" | "late" | "stale";
+  last_success_at: string | null;
+  age_minutes: number | null;
+  consecutive_failures: number;
+}
+
+export interface TrackedEventEntry {
+  marketplace_slug: string;
+  external_url: string | null;
+  freshness_status: "fresh" | "late" | "stale";
+  last_success_at: string | null;
+  is_active: boolean;
+}
+
 export interface EventMeta {
   id: number;
   title: string;
@@ -37,6 +52,39 @@ export interface EventMeta {
   venue_slug?: string;
   event_date?: string;
   performers?: string;
+  // marketplace data from backend
+  marketplace_prices?: Record<string, number | null>;
+  marketplace_freshness?: Record<string, MarketplaceFreshness>;
+  tracked_events?: TrackedEventEntry[];
+  lowest_price?: number | null;
+}
+
+// ── /api/analytics/events/{id}/baseline ──────────────────────────────────────
+export interface MarketplaceBaseline {
+  marketplace_slug: string;
+  current_listings: number;
+  current_lowest_ask: number | null;
+  listings_change_24h: { absolute: number | null; pct: number | null; reason: string | null };
+  listings_change_7d:  { absolute: number | null; pct: number | null; reason: string | null };
+}
+
+export interface BaselineResponse {
+  event_id: number;
+  history_depth_days: number;
+  current: {
+    snapshot_at: string;
+    raw_listings: number;
+    lowest_ask: number | null;
+  } | null;
+  deltas_24h: {
+    low_ask: { absolute: number | null; pct: number | null; reason: string | null };
+    raw_listings: { absolute: number | null; pct: number | null; reason: string | null };
+  } | null;
+  deltas_7d: {
+    low_ask: { absolute: number | null; pct: number | null; reason: string | null };
+    raw_listings: { absolute: number | null; pct: number | null; reason: string | null };
+  } | null;
+  per_marketplace: MarketplaceBaseline[];
 }
 
 // ── /api/intelligence/events/{id}/hero ────────────────────────────────────────

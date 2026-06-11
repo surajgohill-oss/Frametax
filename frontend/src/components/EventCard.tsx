@@ -4,7 +4,7 @@ import Link from "next/link";
 import { EyeOff, Calendar, Clock } from "lucide-react";
 import { format, parseISO, differenceInDays } from "date-fns";
 import type { EventSummary } from "@/lib/types";
-import { fmt$$, fmtNum, signalToAction, actionColors } from "@/lib/utils";
+import { fmt$$, fmtNum, signalToAction, actionColors, signalPhrase } from "@/lib/utils";
 import { getEventGradient, gradientBg } from "@/lib/entityimages";
 
 interface Props {
@@ -27,6 +27,7 @@ export default function EventCard({ event, meta, dataDepthDays, onHide, isSelect
   const action = signalToAction(event.signal);
   const colors = actionColors(action);
   const gradient = getEventGradient(artist, title);
+  const phrase = signalPhrase(event.signal);
 
   let daysOut: number | null = null;
   let dateLabel = "";
@@ -108,19 +109,22 @@ export default function EventCard({ event, meta, dataDepthDays, onHide, isSelect
         {/* price band — two labeled cells */}
         <div className="grid grid-cols-2 gap-2 mb-1.5">
           <div>
-            <p className="text-[9px] text-slate-600 uppercase tracking-wide mb-0.5">Low Ask</p>
+            <p className="text-[9px] text-slate-600 uppercase tracking-wide mb-0.5">Lowest Price</p>
             <p className="text-xs font-semibold text-slate-200 tabular-nums">{fmt$$(event.price?.low_ask)}</p>
           </div>
           <div>
-            <p className="text-[9px] text-slate-600 uppercase tracking-wide mb-0.5">Median</p>
+            <p className="text-[9px] text-slate-600 uppercase tracking-wide mb-0.5">Median Price</p>
             <p className="text-xs font-semibold text-slate-300 tabular-nums">{fmt$$(event.price?.median_ask)}</p>
           </div>
         </div>
-        <div className="flex items-center justify-between text-[10px]">
-          <span className="text-slate-600 tabular-nums">{fmtNum(event.inventory?.total_listings)} listings</span>
-          {event.price?.high_ask != null && (
-            <span className="text-slate-700 tabular-nums">high {fmt$$(event.price.high_ask)}</span>
-          )}
+        {/* price movement phrase + listings */}
+        <div className="flex items-center justify-between text-[10px] mt-0.5">
+          <span className={
+            phrase.dir === "up" ? "text-emerald-600 font-medium" :
+            phrase.dir === "down" ? "text-red-600 font-medium" :
+            "text-slate-600"
+          }>{phrase.text}</span>
+          <span className="text-slate-600 tabular-nums">{fmtNum(event.inventory?.total_listings)}</span>
         </div>
 
         {/* SoFi venue intelligence chip */}

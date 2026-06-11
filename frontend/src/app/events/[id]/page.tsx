@@ -17,6 +17,7 @@ import {
   EyeOff,
   RotateCcw,
   Info,
+  ParkingCircle,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { api } from "@/lib/api";
@@ -28,6 +29,7 @@ import type {
   SectionsResponse,
   SellerResponse,
   EventMeta,
+  BaselineResponse,
 } from "@/lib/types";
 import {
   fmt$$, fmtNum, fmtPct, fmtDelta, cn,
@@ -172,6 +174,7 @@ export default function EventDetailPage() {
   const [eventMeta, setEventMeta] = useState<EventMeta | null>(null);
   const [hero, setHero] = useState<HeroResponse | null>(null);
   const [market, setMarket] = useState<MarketResponse | null>(null);
+  const [baseline, setBaseline] = useState<BaselineResponse | null>(null);
   const [history, setHistory] = useState<HistoryResponse | null>(null);
   const [sections, setSections] = useState<SectionsResponse | null>(null);
   const [seller, setSeller] = useState<SellerResponse | null>(null);
@@ -202,7 +205,11 @@ export default function EventDetailPage() {
     setLoad(t, true);
     setErr(t, null);
     try {
-      if (t === "market")   setMarket(await api.events.market(id));
+      if (t === "market") {
+        const [m, b] = await Promise.allSettled([api.events.market(id), api.analytics.baseline(id)]);
+        if (m.status === "fulfilled") setMarket(m.value);
+        if (b.status === "fulfilled") setBaseline(b.value);
+      }
       if (t === "history")  setHistory(await api.events.history(id, histWindow));
       if (t === "sections") setSections(await api.events.sections(id));
       if (t === "seller")   setSeller(await api.events.seller(id));
@@ -393,8 +400,8 @@ export default function EventDetailPage() {
               }
               sub="listings added/removed"
             />
-            <StatCard label="Low Ask"    value={fmt$$(hero.price?.low_ask)} />
-            <StatCard label="Median Ask" value={fmt$$(hero.price?.median_ask)} />
+            <StatCard label="Lowest Price"  value={fmt$$(hero.price?.low_ask)} />
+            <StatCard label="Median Price" value={fmt$$(hero.price?.median_ask)} />
           </div>
         </div>
 
@@ -526,13 +533,28 @@ export default function EventDetailPage() {
           <div className="space-y-2">
             {(market.marketplaces ?? []).map((mp, i) => {
               const sharePct = mp.share_of_inventory != null ? mp.share_of_inventory * 100 : null;
+              // merge baseline listings_change_24h for this marketplace
+              const mpSlug = mp.name.toLowerCase().replace(/\s+/g, "");
+              const bLine = baseline?.per_marketplace?.find(
+                (b) => b.marketplace_slug === mpSlug || b.marketplace_slug.replace(/\s+/g, "") === mpSlug
+              );
+              const listDelta = bLine?.listings_change_24h?.absolute;
               return (
                 <div key={i} className="rounded-xl border border-white/7 bg-[#161b27] p-3">
                   <div className="flex items-center justify-between mb-2.5">
                     <span className="text-sm font-semibold text-slate-200">{mp.name}</span>
-                    {sharePct != null && (
-                      <span className="text-[10px] text-slate-500 tabular-nums">{sharePct.toFixed(0)}% of market</span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {listDelta != null && (
+                        <span className={cn("text-[10px] tabular-nums font-medium",
+                          listDelta > 0 ? "text-emerald-500" : listDelta < 0 ? "text-red-500" : "text-slate-600"
+                        )}>
+                          {listDelta > 0 ? "+" : ""}{listDelta} 24h
+                        </span>
+                      )}
+                      {sharePct != null && (
+                        <span className="text-[10px] text-slate-500 tabular-nums">{sharePct.toFixed(0)}% of market</span>
+                      )}
+                    </div>
                   </div>
                   {/* Share bar */}
                   {sharePct != null && (
@@ -542,15 +564,15 @@ export default function EventDetailPage() {
                   )}
                   <div className="grid grid-cols-4 gap-3">
                     <div>
-                      <p className="text-[9px] text-slate-600 uppercase tracking-wide mb-0.5">Low Ask</p>
+                      <p className="text-[9px] text-slate-600 uppercase tracking-wide mb-0.5">Lowest Price</p>
                       <p className="text-xs font-semibold text-slate-200 tabular-nums">{fmt$$(mp.low_ask)}</p>
                     </div>
                     <div>
-                      <p className="text-[9px] text-slate-600 uppercase tracking-wide mb-0.5">Median</p>
+                      <p className="text-[9px] text-slate-600 uppercase tracking-wide mb-0.5">Median Price</p>
                       <p className="text-xs font-semibold text-slate-200 tabular-nums">{fmt$$(mp.median_ask)}</p>
                     </div>
                     <div>
-                      <p className="text-[9px] text-slate-600 uppercase tracking-wide mb-0.5">High</p>
+                      <p className="text-[9px] text-slate-600 uppercase tracking-wide mb-0.5">Highest Price</p>
                       <p className="text-xs text-slate-400 tabular-nums">{fmt$$(mp.high_ask)}</p>
                     </div>
                     <div>
@@ -569,6 +591,47 @@ export default function EventDetailPage() {
             })}
           </div>
         </div>
+
+        {/* Marketplace Coverage — freshness status per marketplace */}
+        {eventMeta?.marketplace_freshness && Object.keys(eventMeta.marketplace_freshness).length > 0 && (
+          <div>
+            <h3 className="text-xs text-slate-500 uppercase tracking-wider mb-2">Marketplace Coverage</h3>
+            <div className="rounded-xl border border-white/7 bg-[#161b27] p-3 space-y-2">
+              {(["stubhub", "gametime", "tickpick", "vividseats"] as const).map((slug) => {
+                const f = eventMeta.marketplace_freshness?.[slug];
+                const tracked = eventMeta.tracked_events?.find((t) => t.marketplace_slug === slug);
+                const displayName = slug === "stubhub" ? "StubHub" : slug === "gametime" ? "Gametime" : slug === "tickpick" ? "TickPick" : "Vivid Seats";
+                if (!f) return null;
+                const freshColor = f.freshness_status === "fresh" ? "text-emerald-400" : f.freshness_status === "late" ? "text-amber-400" : "text-red-400";
+                const freshDot = f.freshness_status === "fresh" ? "bg-emerald-400" : f.freshness_status === "late" ? "bg-amber-400" : "bg-red-400";
+                const ageLabel = f.age_minutes != null ? (f.age_minutes < 60 ? `${f.age_minutes}m ago` : `${Math.round(f.age_minutes / 60)}h ago`) : null;
+                return (
+                  <div key={slug} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${freshDot}`} />
+                      <span className="text-xs text-slate-300">{displayName}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {ageLabel && <span className="text-[10px] text-slate-600">{ageLabel}</span>}
+                      <span className={`text-[10px] font-medium capitalize ${freshColor}`}>{f.freshness_status}</span>
+                      {tracked?.external_url && (
+                        <a href={tracked.external_url} target="_blank" rel="noopener noreferrer"
+                          className="text-[10px] text-blue-500 hover:text-blue-400 transition-colors">
+                          View ↗
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              {/* Add URL placeholder */}
+              <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-between">
+                <span className="text-[10px] text-slate-600">Add marketplace URL</span>
+                <span className="text-[10px] text-slate-700 italic">Coming soon</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {dist && (
           <div>
@@ -836,7 +899,7 @@ export default function EventDetailPage() {
             <table className="w-full text-xs min-w-[640px]">
               <thead>
                 <tr className="border-b border-white/5">
-                  {["Section", "Tier", "Listings", "Low", "Median", "High", "Value", "Activity", ""].map((h) => (
+                  {["Section", "Tier", "Listings", "Low", "Median", "High", "Value", "Activity", "", ""].map((h) => (
                     <th key={h} className="text-left px-3 py-2.5 text-[10px] text-slate-500 uppercase tracking-wider font-medium last:w-8">{h}</th>
                   ))}
                 </tr>
@@ -878,6 +941,16 @@ export default function EventDetailPage() {
                           className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-white/8 text-slate-600 hover:text-amber-400"
                         >
                           <EyeOff size={11} />
+                        </button>
+                      </td>
+                      {/* parking action — visible on row hover */}
+                      <td className="px-2 py-2">
+                        <button
+                          onClick={() => exclude(s.display_name, "parking")}
+                          title="Move to Parking (exclude from analysis)"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-white/8 text-slate-600 hover:text-blue-400"
+                        >
+                          <ParkingCircle size={11} />
                         </button>
                       </td>
                     </tr>
