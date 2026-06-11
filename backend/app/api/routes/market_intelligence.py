@@ -554,23 +554,39 @@ async def historical_graph_data(
 
     # Determine window and bucket size
     window_map = {
-        "24h":  (timedelta(hours=24),  "hour"),
-        "7d":   (timedelta(days=7),    "6 hours"),
-        "14d":  (timedelta(days=14),   "12 hours"),
-        "30d":  (timedelta(days=30),   "day"),
-        "all":  (None,                 "6 hours"),  # will use actual earliest
+        "24h":  (timedelta(hours=24),  "1h",   "hour"),
+        "7d":   (timedelta(days=7),    "6h",   "6 hours"),
+        "14d":  (timedelta(days=14),   "12h",  "12 hours"),
+        "30d":  (timedelta(days=30),   "1d",   "day"),
+        "all":  (None,                 "6h",   "6 hours"),
     }
-    td, bucket_size = window_map[window]
+    td, agg_bucket_label, bucket_size = window_map[window]
     window_start = (now_sql - td) if td else None
 
-    # Find actual data range
+    # ── Find live data range ──────────────────────────────────────────────────
     depth_row = (await db.execute(text("""
         SELECT MIN(snapshot_at), MAX(snapshot_at), COUNT(*)
         FROM listing_snapshots WHERE event_id = :eid
     """), {"eid": event_id})).fetchone()
-    actual_oldest = depth_row[0]
-    actual_newest = depth_row[1]
-    snap_count = depth_row[2] or 0
+    live_oldest  = depth_row[0]
+    live_newest  = depth_row[1]
+    snap_count   = depth_row[2] or 0
+
+    # ── Find archive aggregate range ─────────────────────────────────────────
+    agg_row = (await db.execute(text("""
+        SELECT MIN(bucket_ts), MAX(bucket_ts), COUNT(*)
+        FROM event_price_history_agg
+        WHERE railway_event_id = :eid AND bucket_size = :bkt
+    """), {"eid": event_id, "bkt": agg_bucket_label})).fetchone()
+    agg_oldest   = agg_row[0] if agg_row else None
+    agg_newest   = agg_row[1] if agg_row else None
+    agg_count    = (agg_row[2] or 0) if agg_row else 0
+
+    # Determine combined range
+    candidates_oldest = [x for x in [live_oldest, agg_oldest] if x is not None]
+    candidates_newest = [x for x in [live_newest, agg_newest] if x is not None]
+    actual_oldest = min(candidates_oldest) if candidates_oldest else None
+    actual_newest = max(candidates_newest) if candidates_newest else None
 
     if not actual_oldest:
         return {
@@ -580,17 +596,30 @@ async def historical_graph_data(
             "data_depth_hours": 0,
             "bucket_size": bucket_size,
             "series": [],
+            "source": "none",
             "note": "No listing snapshot data available yet",
         }
 
     effective_start = max(window_start, actual_oldest) if window_start else actual_oldest
     data_hours = (actual_newest - effective_start).total_seconds() / 3600 if actual_newest else 0
 
+    # Determine data source label
+    has_live    = live_oldest is not None
+    has_archive = agg_oldest is not None and agg_count > 0
+    if has_live and has_archive:
+        data_source = "combined"
+    elif has_archive:
+        data_source = "archive_aggregate"
+    else:
+        data_source = "live"
+
     # Auto-adjust bucket for 'all' with limited data
     if window == "all" and data_hours < 24:
         bucket_size = "hour"
+        agg_bucket_label = "1h"
     elif window == "all" and data_hours < 72:
         bucket_size = "3 hours"
+        agg_bucket_label = "6h"  # closest available
 
     series = []
 
@@ -605,36 +634,69 @@ async def historical_graph_data(
         return f"DATE_TRUNC('{bkt}', {col})"
 
     if metric == "price":
-        bkt_sql = _bucket_expr("snapshot_at", bucket_size)
-        rows = (await db.execute(text(f"""
-            SELECT
-                {bkt_sql}                                                        AS bucket,
-                MIN(price)                                                   AS low_ask,
-                PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY price)          AS median_ask,
-                PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY price)          AS high_ask,
-                PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY price)         AS p25_ask,
-                PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY price)         AS p75_ask,
-                COUNT(DISTINCT listing_id)                                   AS listings,
-                SUM(quantity)                                                AS tickets
-            FROM listing_snapshots
-            WHERE event_id = :eid
-              AND snapshot_at >= CAST(:win_start AS timestamp)
-              AND price > 0
-            GROUP BY bucket
-            ORDER BY bucket ASC
-        """), {"eid": event_id, "win_start": effective_start})).fetchall()
+        # ── Archive aggregate rows (pre-rebuild history) ──────────────────────
+        agg_series: dict = {}
+        if has_archive:
+            agg_rows = (await db.execute(text("""
+                SELECT bucket_ts, low_ask, median_ask, high_ask, p25_ask, p75_ask,
+                       listing_count, ticket_count
+                FROM event_price_history_agg
+                WHERE railway_event_id = :eid
+                  AND bucket_size = :bkt
+                  AND bucket_ts >= CAST(:win_start AS timestamp)
+                ORDER BY bucket_ts ASC
+            """), {"eid": event_id, "bkt": agg_bucket_label,
+                   "win_start": effective_start})).fetchall()
+            for r in agg_rows:
+                ts_key = r[0].isoformat()
+                agg_series[ts_key] = {
+                    "ts": ts_key, "_source": "archive",
+                    "low_ask":    round(float(r[1]), 2) if r[1] else None,
+                    "median_ask": round(float(r[2]), 2) if r[2] else None,
+                    "high_ask":   round(float(r[3]), 2) if r[3] else None,
+                    "p25_ask":    round(float(r[4]), 2) if r[4] else None,
+                    "p75_ask":    round(float(r[5]), 2) if r[5] else None,
+                    "listings":   int(r[6] or 0),
+                    "tickets":    int(r[7] or 0),
+                }
 
-        for r in rows:
-            series.append({
-                "ts": r[0].isoformat() if r[0] else None,
-                "low_ask":    round(float(r[1]), 2) if r[1] else None,
-                "median_ask": round(float(r[2]), 2) if r[2] else None,
-                "high_ask":   round(float(r[3]), 2) if r[3] else None,
-                "p25_ask":    round(float(r[4]), 2) if r[4] else None,
-                "p75_ask":    round(float(r[5]), 2) if r[5] else None,
-                "listings":   int(r[6] or 0),
-                "tickets":    int(r[7] or 0),
-            })
+        # ── Live listing_snapshots rows ───────────────────────────────────────
+        live_start = max(window_start, live_oldest) if (window_start and live_oldest) else (live_oldest or window_start)
+        if has_live and live_start is not None:
+            bkt_sql = _bucket_expr("snapshot_at", bucket_size)
+            live_rows = (await db.execute(text(f"""
+                SELECT
+                    {bkt_sql}                                                        AS bucket,
+                    MIN(price)                                                   AS low_ask,
+                    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY price)          AS median_ask,
+                    PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY price)          AS high_ask,
+                    PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY price)         AS p25_ask,
+                    PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY price)         AS p75_ask,
+                    COUNT(DISTINCT listing_id)                                   AS listings,
+                    SUM(quantity)                                                AS tickets
+                FROM listing_snapshots
+                WHERE event_id = :eid
+                  AND snapshot_at >= CAST(:win_start AS timestamp)
+                  AND price > 0
+                GROUP BY bucket
+                ORDER BY bucket ASC
+            """), {"eid": event_id, "win_start": live_start})).fetchall()
+            for r in live_rows:
+                ts_key = r[0].isoformat() if r[0] else None
+                if ts_key:
+                    # Live data overrides archive for same bucket
+                    agg_series[ts_key] = {
+                        "ts": ts_key, "_source": "live",
+                        "low_ask":    round(float(r[1]), 2) if r[1] else None,
+                        "median_ask": round(float(r[2]), 2) if r[2] else None,
+                        "high_ask":   round(float(r[3]), 2) if r[3] else None,
+                        "p25_ask":    round(float(r[4]), 2) if r[4] else None,
+                        "p75_ask":    round(float(r[5]), 2) if r[5] else None,
+                        "listings":   int(r[6] or 0),
+                        "tickets":    int(r[7] or 0),
+                    }
+
+        series = sorted(agg_series.values(), key=lambda x: x["ts"])
 
     elif metric == "inventory":
         bkt_sql = _bucket_expr("pr.started_at", bucket_size)
@@ -719,6 +781,14 @@ async def historical_graph_data(
                 "net_change": int((r[1] or 0) - (r[2] or 0)),
             })
 
+    # Compute true data depth from combined oldest
+    true_oldest = min(x for x in [
+        actual_oldest,
+        (agg_oldest if has_archive else None),
+    ] if x is not None) if actual_oldest or (has_archive and agg_oldest) else effective_start
+    true_depth_hours = (actual_newest - true_oldest).total_seconds() / 3600 if (actual_newest and true_oldest) else data_hours
+    true_depth_days  = round(true_depth_hours / 24, 1)
+
     return {
         "event_id": event_id,
         "window": window,
@@ -727,8 +797,13 @@ async def historical_graph_data(
         "window_start": effective_start.isoformat(),
         "window_end": actual_newest.isoformat() if actual_newest else None,
         "data_depth_hours": round(data_hours, 1),
+        "data_depth_days":  true_depth_days,
         "total_snapshots": snap_count,
+        "archive_bucket_count": agg_count if has_archive else 0,
         "point_count": len(series),
+        "source": data_source,           # "live" | "archive_aggregate" | "combined" | "none"
+        "oldest_timestamp": true_oldest.isoformat() if true_oldest else None,
+        "newest_timestamp": actual_newest.isoformat() if actual_newest else None,
         "series": series,
     }
 
