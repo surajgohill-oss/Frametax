@@ -43,7 +43,7 @@ Marketplace IDs (from Railway marketplaces table):
 from __future__ import annotations
 from typing import TypedDict, Optional
 
-VENUE_SLUG = "sofi_stadium"
+VENUE_SLUG = "sofi-stadium"
 VENUE_NAME = "SoFi Stadium"
 VENUE_CITY = "Inglewood"
 VENUE_STATE = "CA"
