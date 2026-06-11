@@ -23,7 +23,7 @@ When a window has < 2 data points, its delta fields are NULL (not zero).
 from __future__ import annotations
 
 import math
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Optional
 
@@ -358,7 +358,7 @@ async def compute_event(event_id: int, db: AsyncSession) -> dict:
 
     This is the single source of truth for all intelligence data.
     """
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     # ── Event meta ─────────────────────────────────────────────────────────────
     event_row = (await db.execute(

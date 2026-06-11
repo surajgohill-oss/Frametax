@@ -23,7 +23,7 @@ Design rules:
 from __future__ import annotations
 
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, Query, HTTPException
@@ -45,7 +45,7 @@ async def _get_or_compute(event_id: int, db: AsyncSession, force: bool = False) 
 
     if not force and cached:
         computed_at = datetime.fromisoformat(cached["computed_at"])
-        age_minutes = (datetime.utcnow() - computed_at).total_seconds() / 60
+        age_minutes = (datetime.now(timezone.utc) - computed_at).total_seconds() / 60
         if age_minutes < _CACHE_TTL_MINUTES:
             cached["_cache_age_minutes"] = round(age_minutes, 1)
             cached["_from_cache"] = True
@@ -94,7 +94,7 @@ async def compute_all_events(
     Compute and cache intelligence for ALL active future events.
     Runs sequentially. Use for initial population or scheduled refresh.
     """
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     events_q = await db.execute(
         select(Event).where(Event.event_date >= now).order_by(Event.event_date)
     )
@@ -145,7 +145,7 @@ async def all_events_intelligence(
       market: {tightness, marketplace_leader, seller_aggression}
       history_hours
     """
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     events_q = await db.execute(
         select(Event).where(Event.event_date >= now).order_by(Event.event_date)
     )
@@ -547,7 +547,7 @@ async def historical_graph_data(
     Includes data_depth_hours so UI can show "based on Xh of data" caveat.
     """
     await _require_event(event_id, db)
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     # Determine window and bucket size
     window_map = {
@@ -755,7 +755,7 @@ async def seller_behavior(
     market = intel.get("market", {})
     rates  = intel.get("rates", {})
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     since_24h = now - timedelta(hours=24)
 
     # Per-marketplace seller behavior (new + disappeared from poll_runs)
