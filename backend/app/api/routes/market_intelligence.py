@@ -45,6 +45,8 @@ async def _get_or_compute(event_id: int, db: AsyncSession, force: bool = False) 
 
     if not force and cached:
         computed_at = datetime.fromisoformat(cached["computed_at"])
+        if computed_at.tzinfo is None:
+            computed_at = computed_at.replace(tzinfo=timezone.utc)
         age_minutes = (datetime.now(timezone.utc) - computed_at).total_seconds() / 60
         if age_minutes < _CACHE_TTL_MINUTES:
             cached["_cache_age_minutes"] = round(age_minutes, 1)
