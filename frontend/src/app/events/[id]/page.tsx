@@ -243,12 +243,86 @@ export default function EventDetailPage() {
   const aColors   = actionColors(action);
 
   const daysOut: number | null = hero?.days_until_event ?? null;
+  // Archive mode: event is in the past
+  const isCompleted = dateStr ? new Date(dateStr) < new Date() : false;
   let dateLabel = "";
   if (dateStr) {
     try { dateLabel = format(parseISO(dateStr), "EEEE, MMMM d, yyyy"); } catch {}
   }
 
-  // ── Hero ────────────────────────────────────────────────────────────────────
+  // ── Archive Hero (completed events) ─────────────────────────────────────────
+  function renderArchiveHero() {
+    return (
+      <div
+        className="rounded-2xl overflow-hidden border border-white/8 mb-6"
+        style={{ background: gradientBg(gradient, "high") }}
+      >
+        <div
+          className="relative"
+          style={{
+            background: "linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.55) 45%, rgba(0,0,0,0.8) 100%)",
+          }}
+        >
+          <div className="flex flex-col sm:flex-row items-stretch p-6 gap-6">
+            {/* LEFT — event identity */}
+            <div className="flex-1 flex flex-col justify-center">
+              {/* Completed badge */}
+              <div className="flex items-center gap-2 mb-2">
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-slate-300 bg-white/10 border border-white/15 rounded-full px-2.5 py-1">
+                  ✓ Completed
+                </span>
+              </div>
+              {artist && (
+                <p className="text-[11px] text-white/45 uppercase tracking-widest font-semibold mb-1">{artist}</p>
+              )}
+              <h1 className="text-xl font-bold text-white leading-tight mb-2">{title}</h1>
+              {venue && <p className="text-sm text-white/55 mb-1">{venue}</p>}
+              {dateLabel && <p className="text-sm text-white/45">{dateLabel}</p>}
+            </div>
+
+            {/* RIGHT — final snapshot prices */}
+            <div className="flex flex-col justify-center gap-4 flex-shrink-0">
+              <div>
+                <p className="text-[10px] text-white/35 uppercase tracking-wider mb-2">Final Snapshot</p>
+                <div className="space-y-1">
+                  {[
+                    { label: "Low",    val: hero?.price?.low_ask,    bold: true  },
+                    { label: "Median", val: hero?.price?.median_ask, bold: false },
+                    { label: "High",   val: hero?.price?.high_ask,   bold: false },
+                  ].map(({ label, val, bold }) => (
+                    <div key={label} className="flex items-baseline justify-between gap-6">
+                      <span className="text-[10px] text-white/35 w-10">{label}</span>
+                      <span className={cn("tabular-nums", bold ? "text-lg font-bold text-white" : "text-sm text-white/65")}>
+                        {fmt$$(val)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="border-t border-white/10 pt-3">
+                <p className="text-[10px] text-white/35 uppercase tracking-wider mb-1">Final Inventory</p>
+                <p className="text-sm font-semibold text-white/80">
+                  {fmtNum(hero?.inventory?.total_listings)} listings
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Archive notice strip */}
+          <div className="px-6 pb-4">
+            <div className="rounded-lg bg-white/4 border border-white/8 px-3 py-2 flex items-center gap-2">
+              <span className="text-[10px] text-slate-500 leading-relaxed">
+                Historical archive — data reflects the final collection snapshot before this event occurred.
+                No live pricing or availability.
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Live Hero ────────────────────────────────────────────────────────────────
   function renderHero() {
     return (
       <div
@@ -371,10 +445,23 @@ export default function EventDetailPage() {
     if (!hero) return null;
 
     const changes = hero.changes ?? {};
-    const lifecycleTxt = lifecycleContext(daysOut, hero.signal, changes.h24?.inventory_delta);
+    const lifecycleTxt = isCompleted ? null : lifecycleContext(daysOut, hero.signal, changes.h24?.inventory_delta);
 
     return (
       <div className="space-y-6">
+        {isCompleted && (
+          <div className="rounded-xl border border-white/7 bg-[#161b27] px-4 py-3">
+            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1">Market Outcome Summary</p>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              {hero.price?.low_ask != null
+                ? `Final low ask was ${fmt$$(hero.price.low_ask)} with ${fmtNum(hero.inventory?.total_listings)} listings remaining at last snapshot.`
+                : "No price data was collected for this event."}
+              {hero.price?.median_ask != null
+                ? ` Median price ended at ${fmt$$(hero.price.median_ask)}.`
+                : ""}
+            </p>
+          </div>
+        )}
         {lifecycleTxt && (
           <div className="rounded-xl border border-white/7 bg-[#161b27] px-4 py-3">
             <p className="text-xs text-slate-400 leading-relaxed">{lifecycleTxt}</p>
@@ -382,7 +469,7 @@ export default function EventDetailPage() {
         )}
 
         <div>
-          <h3 className="text-xs text-slate-500 uppercase tracking-wider mb-3">What Changed</h3>
+          <h3 className="text-xs text-slate-500 uppercase tracking-wider mb-3">{isCompleted ? "Final Snapshot" : "What Changed"}</h3>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <StatCard
               label="Price (24h)"
@@ -470,6 +557,41 @@ export default function EventDetailPage() {
 
         {hero.history_context?.data_note && (
           <p className="text-[11px] text-slate-600 italic">{hero.history_context.data_note}</p>
+        )}
+
+        {/* Archive only: Lessons Learned + Comparable Events placeholder */}
+        {isCompleted && (
+          <>
+            <div>
+              <h3 className="text-xs text-slate-500 uppercase tracking-wider mb-3">Lessons Learned</h3>
+              <div className="rounded-xl border border-white/7 bg-[#161b27] p-4 space-y-2">
+                {(hero.price?.low_ask ?? 0) > 0 && (
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    • Final low ask was {fmt$$(hero.price?.low_ask)} — use as the floor benchmark for comparable future events at this venue.
+                  </p>
+                )}
+                {(hero.inventory?.total_listings ?? 0) > 0 && (
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    • {fmtNum(hero.inventory?.total_listings)} listings remained at final snapshot — indicating
+                    {(hero.inventory?.total_listings ?? 0) > 200 ? " soft demand relative to supply." : " a relatively tight market near showtime."}
+                  </p>
+                )}
+                {(hero.price?.low_ask ?? 0) === 0 && (
+                  <p className="text-xs text-slate-500 leading-relaxed italic">
+                    Insufficient data collected to derive insights for this event.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-xs text-slate-500 uppercase tracking-wider mb-3">Comparable Events</h3>
+              <div className="rounded-xl border border-dashed border-white/8 p-4 text-center">
+                <p className="text-xs text-slate-600">Comparable event matching coming soon.</p>
+                <p className="text-[10px] text-slate-700 mt-1">Will surface similar artist / venue / timing benchmarks.</p>
+              </div>
+            </div>
+          </>
         )}
       </div>
     );
@@ -1159,11 +1281,31 @@ export default function EventDetailPage() {
         </Link>
       </div>
 
-      {renderHero()}
+      {isCompleted ? renderArchiveHero() : renderHero()}
+
+      {/* Archive mode: back link to completed archive */}
+      {isCompleted && (
+        <div className="mb-3">
+          <Link
+            href="/completed"
+            className="inline-flex items-center gap-1.5 text-[11px] text-slate-600 hover:text-slate-400 transition-colors"
+          >
+            ← All completed events
+          </Link>
+        </div>
+      )}
 
       <div className="flex gap-0.5 mb-5 border-b border-white/5 overflow-x-auto">
         {TABS.map(({ id: tid, label, icon: Icon }) => {
-          // Only show Venue tab when we know the venue (optimistic: show it always, VenueIntelligence handles fallback)
+          // Archive mode: relabel tabs for historical report framing
+          const archiveLabels: Partial<Record<typeof tid, string>> = {
+            overview: "Summary",
+            market:   "Market Outcome",
+            history:  "Price Journey",
+            sections: "Section Report",
+            seller:   "Seller Retrospective",
+          };
+          const displayLabel = isCompleted ? (archiveLabels[tid] ?? label) : label;
           return (
             <button
               key={tid}
@@ -1176,7 +1318,7 @@ export default function EventDetailPage() {
               )}
             >
               <Icon size={12} />
-              {label}
+              {displayLabel}
               {/* Venue tab: show a subtle dot when SoFi */}
               {tid === "venue" && eventMeta?.venue_slug === "sofi-stadium" && (
                 <span className="w-1 h-1 rounded-full bg-emerald-500 ml-0.5" />

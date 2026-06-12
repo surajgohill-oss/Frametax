@@ -65,5 +65,10 @@ export const api = {
         method: "POST",
         cache: "no-store",
       }).then((r) => r.json()),
+    seedFromCatalog: (slug: string): Promise<{ sections_seeded: number }> =>
+      fetch(`${BASE}/api/venues/${slug}/seed-from-catalog`, {
+        method: "POST",
+        cache: "no-store",
+      }).then((r) => r.json()),
   },
 };

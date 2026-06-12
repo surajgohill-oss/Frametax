@@ -30,9 +30,75 @@ _data_dir = _os.path.join(_os.path.dirname(__file__), "..", "..", "..", "data")
 if _os.path.isdir(_os.path.abspath(_data_dir)):
     sys.path.insert(0, _os.path.abspath(_data_dir))
 try:
-    from data.sofi_catalog import ALIAS_LOOKUP, SECTION_BY_ID, VENUE_SLUG, SECTIONS
+    from data.sofi_catalog import (
+        ALIAS_LOOKUP as _SOFI_ALIAS_LOOKUP,
+        SECTION_BY_ID as _SOFI_SECTION_BY_ID,
+        VENUE_SLUG, SECTIONS as _SOFI_SECTIONS,
+    )
+    from data.crypto_arena_catalog import (
+        ALIAS_LOOKUP as _CRYPTO_ALIAS_LOOKUP,
+        SECTION_BY_ID as _CRYPTO_SECTION_BY_ID,
+        SECTIONS as _CRYPTO_SECTIONS,
+    )
+    from data.kia_forum_catalog import (
+        ALIAS_LOOKUP as _KIA_ALIAS_LOOKUP,
+        SECTION_BY_ID as _KIA_SECTION_BY_ID,
+        SECTIONS as _KIA_SECTIONS,
+    )
+    from data.hollywood_bowl_catalog import (
+        ALIAS_LOOKUP as _BOWL_ALIAS_LOOKUP,
+        SECTION_BY_ID as _BOWL_SECTION_BY_ID,
+        SECTIONS as _BOWL_SECTIONS,
+    )
+    from data.greek_theatre_catalog import (
+        ALIAS_LOOKUP as _GREEK_ALIAS_LOOKUP,
+        SECTION_BY_ID as _GREEK_SECTION_BY_ID,
+        SECTIONS as _GREEK_SECTIONS,
+    )
 except ImportError:
-    from sofi_catalog import ALIAS_LOOKUP, SECTION_BY_ID, VENUE_SLUG, SECTIONS
+    from sofi_catalog import (
+        ALIAS_LOOKUP as _SOFI_ALIAS_LOOKUP,
+        SECTION_BY_ID as _SOFI_SECTION_BY_ID,
+        VENUE_SLUG, SECTIONS as _SOFI_SECTIONS,
+    )
+    from crypto_arena_catalog import (
+        ALIAS_LOOKUP as _CRYPTO_ALIAS_LOOKUP,
+        SECTION_BY_ID as _CRYPTO_SECTION_BY_ID,
+        SECTIONS as _CRYPTO_SECTIONS,
+    )
+    from kia_forum_catalog import (
+        ALIAS_LOOKUP as _KIA_ALIAS_LOOKUP,
+        SECTION_BY_ID as _KIA_SECTION_BY_ID,
+        SECTIONS as _KIA_SECTIONS,
+    )
+    from hollywood_bowl_catalog import (
+        ALIAS_LOOKUP as _BOWL_ALIAS_LOOKUP,
+        SECTION_BY_ID as _BOWL_SECTION_BY_ID,
+        SECTIONS as _BOWL_SECTIONS,
+    )
+    from greek_theatre_catalog import (
+        ALIAS_LOOKUP as _GREEK_ALIAS_LOOKUP,
+        SECTION_BY_ID as _GREEK_SECTION_BY_ID,
+        SECTIONS as _GREEK_SECTIONS,
+    )
+
+# Compatibility aliases for SoFi (used in normalize_section)
+ALIAS_LOOKUP = _SOFI_ALIAS_LOOKUP
+SECTION_BY_ID = _SOFI_SECTION_BY_ID
+SECTIONS = _SOFI_SECTIONS
+
+# Per-venue catalog registry
+_VENUE_CATALOGS: dict[str, dict] = {
+    "sofi-stadium":  {"alias_lookup": _SOFI_ALIAS_LOOKUP,   "section_by_id": _SOFI_SECTION_BY_ID,   "sections": _SOFI_SECTIONS},
+    "crypto-arena":  {"alias_lookup": _CRYPTO_ALIAS_LOOKUP,  "section_by_id": _CRYPTO_SECTION_BY_ID,  "sections": _CRYPTO_SECTIONS},
+    "kia-forum":     {"alias_lookup": _KIA_ALIAS_LOOKUP,     "section_by_id": _KIA_SECTION_BY_ID,     "sections": _KIA_SECTIONS},
+    "hollywood-bowl":{"alias_lookup": _BOWL_ALIAS_LOOKUP,    "section_by_id": _BOWL_SECTION_BY_ID,    "sections": _BOWL_SECTIONS},
+    "greek-theatre": {"alias_lookup": _GREEK_ALIAS_LOOKUP,   "section_by_id": _GREEK_SECTION_BY_ID,   "sections": _GREEK_SECTIONS},
+}
+
+def get_catalog(venue_slug: str) -> dict | None:
+    """Return the in-memory catalog for a venue slug, or None if not registered."""
+    return _VENUE_CATALOGS.get(venue_slug)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -312,18 +378,35 @@ async def compute_section_metrics(
     # 4. Resolve each raw section → canonical section_id + aggregate by canonical
     canonical: dict[str, dict] = {}  # canonical section_id → aggregated data
     _is_sofi = (venue_slug == VENUE_SLUG)
+    _catalog = get_catalog(venue_slug)
+    _catalog_lookup = _catalog["alias_lookup"] if _catalog else None
+
+    def _resolve_sid(raw_section_id, raw_section, mp_id) -> Optional[str]:
+        """Resolve a raw section string to a canonical section_id."""
+        raw = raw_section or ""
+        if _is_sofi:
+            return normalize_section(raw_section_id, mp_id) or normalize_section(raw, mp_id)
+        if _catalog_lookup is not None:
+            # Use per-venue alias lookup
+            norm_raw_id = _norm(raw_section_id or "")
+            norm_raw    = _norm(raw)
+            # Try marketplace-specific, then universal, for raw_section_id first, then raw_section
+            for probe in [raw_section_id, raw]:
+                if not probe: continue
+                n = _norm(probe)
+                sid = _catalog_lookup.get((mp_id, n)) or _catalog_lookup.get((None, n))
+                if sid:
+                    return sid
+        # Fallback: direct section_id matching against DB sections
+        return (
+            normalize_section_generic(raw_section_id, vs_by_sid)
+            or normalize_section_generic(raw, vs_by_sid)
+        )
 
     for row in price_rows:
         raw = row.raw_section or ""
         mp_id = row.marketplace_id
-        # Try resolve: SoFi uses catalog lookup; other venues use direct matching
-        if _is_sofi:
-            sid = normalize_section(row.raw_section_id, mp_id) or normalize_section(raw, mp_id)
-        else:
-            sid = (
-                normalize_section_generic(row.raw_section_id, vs_by_sid)
-                or normalize_section_generic(raw, vs_by_sid)
-            )
+        sid = _resolve_sid(row.raw_section_id, raw, mp_id)
         if sid is None or sid not in vs_by_sid:
             continue
 

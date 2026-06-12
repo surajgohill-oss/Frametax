@@ -16,6 +16,19 @@ import type { VenueIntelligenceResponse, VenueClassificationsResponse } from "@/
 import { cn } from "@/lib/utils";
 import SofiVenueMap, { type VenueMode } from "./SofiVenueMap";
 import GenericVenueMap from "./GenericVenueMap";
+import CryptoArenaMap from "./CryptoArenaMap";
+import KiaForumMap from "./KiaForumMap";
+import HollywoodBowlMap from "./HollywoodBowlMap";
+import GreekTheatreMap from "./GreekTheatreMap";
+
+// Venues with dedicated schematic maps (never fall back to generic)
+const VENUE_MAP_SLUGS = new Set([
+  "sofi-stadium",
+  "crypto-arena",
+  "kia-forum",
+  "hollywood-bowl",
+  "greek-theatre",
+]);
 import SectionDetailDrawer from "./SectionDetailDrawer";
 import SectionOpportunityBoard from "./SectionOpportunityBoard";
 
@@ -105,12 +118,19 @@ export default function VenueIntelligence({ eventId, venueSlug, venueName }: Pro
     loadData();
   }, [loadData]);
 
+  const hasDedicatedMap = VENUE_MAP_SLUGS.has(slug);
+
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      if (!isSoFi && intelligence && intelligence.sections_total === 0) {
-        // Seed sections from listing data first, then compute
-        await api.venues.seedFromListings(slug, eventId);
+      if (intelligence && intelligence.sections_total === 0) {
+        if (hasDedicatedMap && !isSoFi) {
+          // Seed from authoritative Python catalog (all 4 non-SoFi venues)
+          await api.venues.seedFromCatalog(slug);
+        } else if (!isSoFi) {
+          // Fallback: seed from listings for venues without a catalog
+          await api.venues.seedFromListings(slug, eventId);
+        }
       }
       await api.venues.compute(slug, eventId);
       await loadData();
@@ -240,18 +260,42 @@ export default function VenueIntelligence({ eventId, venueSlug, venueName }: Pro
               sections={intelligence.sections}
               mode={mode}
               selectedId={selectedId}
-              onSelectSection={(id) =>
-                setSelectedId((prev) => (prev === id ? null : id))
-              }
+              onSelectSection={(id) => setSelectedId((prev) => (prev === id ? null : id))}
+            />
+          ) : slug === "crypto-arena" ? (
+            <CryptoArenaMap
+              sections={intelligence.sections}
+              mode={mode}
+              selectedId={selectedId}
+              onSelectSection={(id) => setSelectedId((prev) => (prev === id ? null : id))}
+            />
+          ) : slug === "kia-forum" ? (
+            <KiaForumMap
+              sections={intelligence.sections}
+              mode={mode}
+              selectedId={selectedId}
+              onSelectSection={(id) => setSelectedId((prev) => (prev === id ? null : id))}
+            />
+          ) : slug === "hollywood-bowl" ? (
+            <HollywoodBowlMap
+              sections={intelligence.sections}
+              mode={mode}
+              selectedId={selectedId}
+              onSelectSection={(id) => setSelectedId((prev) => (prev === id ? null : id))}
+            />
+          ) : slug === "greek-theatre" ? (
+            <GreekTheatreMap
+              sections={intelligence.sections}
+              mode={mode}
+              selectedId={selectedId}
+              onSelectSection={(id) => setSelectedId((prev) => (prev === id ? null : id))}
             />
           ) : (
             <GenericVenueMap
               sections={intelligence.sections}
               mode={mode}
               selectedId={selectedId}
-              onSelectSection={(id) =>
-                setSelectedId((prev) => (prev === id ? null : id))
-              }
+              onSelectSection={(id) => setSelectedId((prev) => (prev === id ? null : id))}
               venueName={venueName}
             />
           )}

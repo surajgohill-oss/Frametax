@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import type { RawEvent } from "@/lib/types";
-import { CheckCircle2, TrendingUp, Package, Calendar, ChevronRight, BarChart3 } from "lucide-react";
+import { CheckCircle2, Calendar, ChevronRight, BarChart3 } from "lucide-react";
+import { getEventGradient, gradientBg } from "@/lib/entityimages";
 
 const fmt$ = (v: number | null | undefined) =>
   v == null ? "—" : `$${v.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
@@ -92,10 +93,17 @@ export default function CompletedPage() {
 function CompletedEventCard({ event: ev }: { event: RawEvent }) {
   const hasData = (ev.historical_lowest_price ?? 0) > 0 || (ev.total_listings ?? 0) > 0;
   const marketplaces = Object.keys(ev.all_marketplace_prices ?? {});
+  const gradient = getEventGradient(ev.artist, ev.title);
 
   return (
     <Link href={`/events/${ev.id}`} className="block group">
-      <div className="relative rounded-xl border border-white/8 bg-white/3 hover:bg-white/5 hover:border-white/12 transition-all p-4 space-y-3">
+      <div
+        className="relative rounded-xl border border-white/8 hover:border-white/15 transition-all overflow-hidden"
+        style={{ background: gradientBg(gradient, "low") }}
+      >
+      {/* gradient overlay for readability */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 to-black/70 pointer-events-none" />
+      <div className="relative p-4 space-y-3">
         {/* Completed badge */}
         <div className="flex items-center justify-between">
           <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500 bg-white/5 rounded-full px-2 py-0.5">
@@ -155,7 +163,8 @@ function CompletedEventCard({ event: ev }: { event: RawEvent }) {
           <BarChart3 size={11} />
           <span>View Final Report</span>
         </div>
-      </div>
+      </div>{/* end relative inner */}
+      </div>{/* end card */}
     </Link>
   );
 }

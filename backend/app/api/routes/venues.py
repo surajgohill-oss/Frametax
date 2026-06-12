@@ -10,6 +10,7 @@ from app.services.venue_intelligence import (
     compute_section_metrics,
     get_venue_intelligence,
     get_classifications,
+    get_catalog,
 )
 
 router = APIRouter(prefix="/venues", tags=["venues"])
@@ -241,6 +242,57 @@ async def seed_sections_from_listings(
         "event_id": event_id,
         "sections_seeded": len(new_sections),
         "sections": [{"section_id": s["section_id"], "tier": s["tier"]} for s in new_sections[:20]],
+    }
+
+
+@router.post("/{slug}/seed-from-catalog")
+async def seed_sections_from_catalog(
+    slug: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Seed venue_sections from the in-memory Python catalog for this venue.
+    This is the authoritative seeding path — replaces heuristic seed-from-listings.
+
+    Available catalogs: sofi-stadium, crypto-arena, kia-forum, hollywood-bowl, greek-theatre.
+    Safe to re-run (idempotent).
+    """
+    catalog = get_catalog(slug)
+    if not catalog:
+        raise HTTPException(422, detail=f"No catalog registered for venue '{slug}'. Available: sofi-stadium, crypto-arena, kia-forum, hollywood-bowl, greek-theatre")
+
+    result = await db.execute(select(Venue).where(Venue.slug == slug))
+    venue = result.scalar_one_or_none()
+    if not venue:
+        raise HTTPException(404, "Venue not found")
+
+    sections = catalog["sections"]
+
+    # Delete existing sections for this venue
+    await db.execute(delete(VenueSection).where(VenueSection.venue_id == venue.id))
+
+    # Insert catalog sections
+    for s in sections:
+        db.add(VenueSection(
+            venue_id=venue.id,
+            section_id=s["section_id"],
+            display_name=s["display_name"],
+            tier=s["tier"],
+            quality_score=s["quality_score"],
+            level=s.get("level"),
+            zone=s.get("zone"),
+            side=s.get("side"),
+            is_premium=s.get("is_premium", False),
+            future_map_key=s.get("future_map_key"),
+            stubhub_aliases=None,
+            seatgeek_aliases=None,
+        ))
+
+    await db.commit()
+    return {
+        "venue_slug": slug,
+        "sections_seeded": len(sections),
+        "sections": [{"section_id": s["section_id"], "tier": s["tier"]} for s in sections[:20]],
     }
 
 
