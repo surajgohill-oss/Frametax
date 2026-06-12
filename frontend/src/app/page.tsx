@@ -208,7 +208,7 @@ function EventGroup({
       </button>
 
       {!collapsed && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {events.map((event) => (
             <EventCard
               key={event.event_id}
@@ -380,9 +380,9 @@ export default function DashboardPage() {
       {loading && events.length === 0 && (
         <div className="space-y-6">
           <div className="h-56 rounded-2xl border border-white/5 bg-[#161b27] animate-pulse" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-40 rounded-xl border border-white/5 bg-[#161b27] animate-pulse" />
+              <div key={i} className="h-48 rounded-xl border border-white/5 bg-[#161b27] animate-pulse" />
             ))}
           </div>
         </div>

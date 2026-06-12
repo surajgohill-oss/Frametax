@@ -22,7 +22,8 @@ export default function EventCard({ event, meta, dataDepthDays, onHide, isSelect
   const venueSlug = meta?.venue_slug;
   const dateStr = meta?.event_date;
   const artist = meta?.artist;
-  const isSoFi = venueSlug === "sofi-stadium";
+  const INTEL_VENUES = new Set(["sofi-stadium", "crypto-arena", "kia-forum", "hollywood-bowl", "greek-theatre"]);
+  const hasVenueIntel = INTEL_VENUES.has(venueSlug ?? "");
 
   const action = signalToAction(event.signal);
   const colors = actionColors(action);
@@ -57,7 +58,7 @@ export default function EventCard({ event, meta, dataDepthDays, onHide, isSelect
     >
       {/* art strip */}
       <div
-        className="h-16 w-full relative"
+        className="h-20 w-full relative"
         style={{ background: gradientBg(gradient, "medium") }}
       >
         {/* action badge */}
@@ -127,8 +128,8 @@ export default function EventCard({ event, meta, dataDepthDays, onHide, isSelect
           <span className="text-slate-600 tabular-nums">{fmtNum(event.inventory?.total_listings)}</span>
         </div>
 
-        {/* SoFi venue intelligence chip */}
-        {isSoFi && (
+        {/* Venue intelligence chip */}
+        {hasVenueIntel && (
           <div className="mt-2 flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
             <span className="text-[9px] text-emerald-600 font-medium">Venue Intel available</span>
