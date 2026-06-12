@@ -205,3 +205,76 @@ async def test_collect(marketplace: str, event_id: str = "", background_tasks: B
     if background_tasks:
         background_tasks.add_task(_run)
     return {"message": f"Test collection triggered for {marketplace}"}
+
+
+@router.post("/create-event-bypass-freeze")
+async def create_event_bypass_freeze(data: dict, db: AsyncSession = Depends(get_db)):
+    """
+    Create a new event bypassing the discovery_freeze guard.
+    Used for manual event ingestion when freeze is active.
+    Requires: title, artist, venue_slug, event_date
+    Optional: marketplace_urls (dict of slug -> url)
+    """
+    from datetime import datetime
+    from app.models import Event, Venue, Marketplace, TrackedEvent
+    import hashlib
+
+    venue_result = await db.execute(select(Venue).where(Venue.slug == data["venue_slug"]))
+    venue = venue_result.scalar_one_or_none()
+    if not venue:
+        return {"error": f"Venue '{data['venue_slug']}' not found"}
+
+    event_date = datetime.fromisoformat(data["event_date"].replace("Z", "+00:00"))
+    canonical_src = f"{data['title'].lower().strip()}|{data['venue_slug']}|{event_date.strftime('%Y-%m-%d')}"
+    canonical_id = hashlib.sha256(canonical_src.encode()).hexdigest()[:16]
+
+    existing = await db.execute(select(Event).where(Event.canonical_id == canonical_id))
+    event = existing.scalar_one_or_none()
+    created = False
+    if not event:
+        event = Event(
+            canonical_id=canonical_id,
+            title=data["title"],
+            artist=data.get("artist"),
+            venue_id=venue.id,
+            event_date=event_date,
+            is_active=True,
+        )
+        db.add(event)
+        await db.flush()
+        created = True
+
+    # Add tracked events for any provided marketplace URLs
+    tracked = []
+    for mp_slug, url in (data.get("marketplace_urls") or {}).items():
+        if not url:
+            continue
+        mp_res = await db.execute(select(Marketplace).where(Marketplace.slug == mp_slug))
+        mp = mp_res.scalar_one_or_none()
+        if not mp:
+            continue
+        te_res = await db.execute(
+            select(TrackedEvent).where(TrackedEvent.event_id == event.id, TrackedEvent.marketplace_id == mp.id)
+        )
+        te = te_res.scalar_one_or_none()
+        if not te:
+            te = TrackedEvent(
+                event_id=event.id,
+                marketplace_id=mp.id,
+                external_url=url,
+                is_active=True,
+                poll_interval_minutes=60,
+            )
+            db.add(te)
+        tracked.append(mp_slug)
+
+    await db.commit()
+    return {
+        "event_id": event.id,
+        "canonical_id": canonical_id,
+        "created": created,
+        "title": event.title,
+        "venue": venue.name,
+        "event_date": event.event_date.isoformat(),
+        "tracked_marketplaces": tracked,
+    }
