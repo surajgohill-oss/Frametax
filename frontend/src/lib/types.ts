@@ -287,6 +287,23 @@ export interface VenueClassificationsResponse {
   };
 }
 
+// ── /api/events/ (raw list) ───────────────────────────────────────────────────
+export interface RawEvent {
+  id: number;
+  title: string;
+  artist?: string;
+  venue_name?: string;
+  venue_slug?: string;
+  event_date: string;
+  is_active: boolean;
+  lowest_price?: number | null;
+  historical_lowest_price?: number | null;
+  total_listings?: number;
+  fresh_total_listings?: number;
+  marketplace_prices?: Record<string, number | null>;
+  all_marketplace_prices?: Record<string, number | null>;
+}
+
 // ── /api/intelligence/events/{id}/seller ──────────────────────────────────────
 export interface SellerResponse {
   new_listings_24h: number | null;

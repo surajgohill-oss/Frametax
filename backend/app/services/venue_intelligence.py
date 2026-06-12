@@ -70,6 +70,7 @@ def normalize_section(
       3. Numeric fallback: if norm is a bare integer, check SECTION_BY_ID
 
     Returns canonical section_id str or None if no match.
+    NOTE: This is SoFi-only.  For other venues use normalize_section_generic().
     """
     if not raw:
         return None
@@ -89,6 +90,36 @@ def normalize_section(
     # 3. bare number → try direct section_id lookup
     if norm.isdigit() and norm in SECTION_BY_ID:
         return norm
+
+    return None
+
+
+def normalize_section_generic(
+    raw: str,
+    vs_by_sid: dict,
+) -> Optional[str]:
+    """
+    Generic section normalizer for non-SoFi venues.
+
+    Lookup order:
+      1. Direct _norm(raw) == _norm(section_id) in vs_by_sid
+      2. Exact raw == section_id (case-insensitive)
+      3. Strip 'section ' prefix and try again
+    """
+    if not raw:
+        return None
+
+    norm_raw = _norm(raw)
+
+    # Build normalised lookup once if not already cached
+    # Direct match: norm(raw) == norm(section_id)
+    for sid in vs_by_sid:
+        if _norm(sid) == norm_raw:
+            return sid
+
+    # Also try the raw_section_id (already a string integer sometimes)
+    if norm_raw in vs_by_sid:
+        return norm_raw
 
     return None
 
@@ -280,12 +311,19 @@ async def compute_section_metrics(
 
     # 4. Resolve each raw section → canonical section_id + aggregate by canonical
     canonical: dict[str, dict] = {}  # canonical section_id → aggregated data
+    _is_sofi = (venue_slug == VENUE_SLUG)
 
     for row in price_rows:
         raw = row.raw_section or ""
         mp_id = row.marketplace_id
-        # Try resolve: raw_section_id first (already normalized by ingest), then raw section text
-        sid = normalize_section(row.raw_section_id, mp_id) or normalize_section(raw, mp_id)
+        # Try resolve: SoFi uses catalog lookup; other venues use direct matching
+        if _is_sofi:
+            sid = normalize_section(row.raw_section_id, mp_id) or normalize_section(raw, mp_id)
+        else:
+            sid = (
+                normalize_section_generic(row.raw_section_id, vs_by_sid)
+                or normalize_section_generic(raw, vs_by_sid)
+            )
         if sid is None or sid not in vs_by_sid:
             continue
 
