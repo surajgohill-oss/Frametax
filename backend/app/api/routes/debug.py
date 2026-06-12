@@ -238,7 +238,6 @@ async def create_event_bypass_freeze(data: dict, db: AsyncSession = Depends(get_
             artist=data.get("artist"),
             venue_id=venue.id,
             event_date=event_date,
-            is_active=True,
         )
         db.add(event)
         await db.flush()
