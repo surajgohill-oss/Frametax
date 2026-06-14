@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Eye, RefreshCw, TrendingUp, TrendingDown, Minus, AlertCircle, ChevronDown, ChevronRight, BarChart2 } from "lucide-react";
 import { format, parseISO, differenceInDays } from "date-fns";
 import { api } from "@/lib/api";
-import type { EventSummary, HistoryResponse } from "@/lib/types";
+import type { EventSummary } from "@/lib/types";
 import { fmt$$, fmtNum, signalToAction, actionColors, signalDescription } from "@/lib/utils";
 import { getEventGradient, gradientBg, extractGroupKey } from "@/lib/entityimages";
 import { useHiddenEvents } from "@/hooks/useHiddenEvents";
@@ -14,19 +14,6 @@ import EventCard from "@/components/EventCard";
 type SortKey = "date" | "opportunity" | "signal";
 const SIGNAL_ORDER = ["deepening", "capitulating", "mixed", "stable", "loosening"];
 
-// Depth cache
-const depthCache: Record<number, number | null> = {};
-async function fetchDepth(id: number): Promise<number | null> {
-  if (id in depthCache) return depthCache[id];
-  try {
-    const r: HistoryResponse = await api.events.history(id, "all");
-    depthCache[id] = r.data_depth_days ?? null;
-    return depthCache[id];
-  } catch {
-    depthCache[id] = null;
-    return null;
-  }
-}
 
 type MetaMap = Record<number, { title?: string; venue_name?: string; venue_slug?: string; event_date?: string; artist?: string }>;
 
@@ -269,12 +256,10 @@ export default function DashboardPage() {
       });
       setMetas(metaMap);
 
-      // Fetch data depths in background
-      const depthResults = await Promise.allSettled(evts.map((e) => fetchDepth(e.event_id)));
+      // Compute depths from history_hours already in the list response
       const depthMap: Record<number, number | null> = {};
-      evts.forEach((e, i) => {
-        const r = depthResults[i];
-        depthMap[e.event_id] = r.status === "fulfilled" ? r.value : null;
+      evts.forEach((e) => {
+        depthMap[e.event_id] = e.history_hours != null ? e.history_hours / 24 : null;
       });
       setDepths(depthMap);
     } catch (e) {

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { EyeOff, Calendar, Clock } from "lucide-react";
 import { format, parseISO, differenceInDays } from "date-fns";
 import type { EventSummary } from "@/lib/types";
-import { fmt$$, fmtNum, signalToAction, actionColors, signalPhrase } from "@/lib/utils";
+import { fmt$$, fmtNum, fmtPct, signalToAction, actionColors, signalPhrase } from "@/lib/utils";
 import { getEventGradient, gradientBg } from "@/lib/entityimages";
 
 interface Props {
@@ -111,14 +111,26 @@ export default function EventCard({ event, meta, dataDepthDays, onHide, isSelect
             </div>
           </div>
 
-          {/* price movement phrase + listings */}
+          {/* price movement phrase + 24h delta */}
           <div className="flex items-center justify-between text-[10px] mt-0.5">
             <span className={
               phrase.dir === "up" ? "text-emerald-600 font-medium" :
               phrase.dir === "down" ? "text-red-600 font-medium" :
               "text-slate-600"
             }>{phrase.text}</span>
-            <span className="text-slate-600 tabular-nums">{fmtNum(event.inventory?.total_listings)}</span>
+            {event.history_hours != null ? (
+              <span className={
+                (event.changes?.h24?.price_delta_pct ?? 0) > 0 ? "text-emerald-500 tabular-nums font-medium" :
+                (event.changes?.h24?.price_delta_pct ?? 0) < 0 ? "text-red-500 tabular-nums font-medium" :
+                "text-slate-500 tabular-nums"
+              }>
+                {event.changes?.h24?.price_delta_pct != null
+                  ? fmtPct(event.changes.h24.price_delta_pct) + " 24h"
+                  : "—"}
+              </span>
+            ) : (
+              <span className="text-slate-600 tabular-nums text-[9px]">Collecting</span>
+            )}
           </div>
 
           {/* Venue intelligence chip */}

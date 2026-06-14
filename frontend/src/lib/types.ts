@@ -3,7 +3,9 @@ export type Signal =
   | "loosening"
   | "stable"
   | "capitulating"
-  | "mixed";
+  | "mixed"
+  | "tightening"
+  | "unknown";
 
 // ── /api/intelligence/events ──────────────────────────────────────────────────
 export interface EventSummary {
@@ -16,10 +18,18 @@ export interface EventSummary {
     median_ask: number | null;
     high_ask: number | null;
   };
+  changes?: {
+    h24?: {
+      price_delta?: number | null;
+      price_delta_pct?: number | null;
+      inventory_delta?: number | null;
+    };
+  };
   inventory: {
     total_listings: number;
     total_tickets: number;
   };
+  history_hours?: number | null;
 }
 
 export interface EventsListResponse {

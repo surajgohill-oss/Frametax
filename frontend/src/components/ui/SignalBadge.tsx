@@ -7,6 +7,8 @@ const CONFIG: Record<Signal, { label: string; classes: string }> = {
   stable:      { label: "Stable",      classes: "bg-slate-500/15 text-slate-400 border-slate-500/25" },
   capitulating:{ label: "Capitulating",classes: "bg-amber-500/15 text-amber-400 border-amber-500/25" },
   mixed:       { label: "Mixed",       classes: "bg-yellow-500/15 text-yellow-400 border-yellow-500/25" },
+  tightening:  { label: "Tightening",  classes: "bg-red-500/15 text-red-400 border-red-500/25" },
+  unknown:     { label: "Unknown",     classes: "bg-slate-500/15 text-slate-400 border-slate-500/25" },
 };
 
 export default function SignalBadge({

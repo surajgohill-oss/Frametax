@@ -35,9 +35,11 @@ export type ActionWord = "BUY" | "WAIT" | "MONITOR";
 const SIGNAL_ACTION: Record<Signal, ActionWord> = {
   deepening:    "BUY",
   capitulating: "BUY",
+  tightening:   "BUY",
   loosening:    "WAIT",
   stable:       "MONITOR",
   mixed:        "MONITOR",
+  unknown:      "MONITOR",
 };
 
 const ACTION_COLORS: Record<ActionWord, { bg: string; text: string; border: string; glow: string }> = {
@@ -49,9 +51,11 @@ const ACTION_COLORS: Record<ActionWord, { bg: string; text: string; border: stri
 const SIGNAL_DESCRIPTIONS: Record<Signal, string> = {
   deepening:    "Market is tightening. Prices have been rising.",
   capitulating: "Sellers are cutting prices. Deals available now.",
+  tightening:   "Demand is outpacing supply. Prices trending up.",
   loosening:    "Prices are falling. Better deals may be ahead.",
   stable:       "Market is stable. No immediate pressure to act.",
   mixed:        "Market signals are mixed. Monitor for changes.",
+  unknown:      "Not enough data yet to determine market direction.",
 };
 
 export function signalToAction(signal: Signal | string | null | undefined): ActionWord {
@@ -85,11 +89,13 @@ export const CONSUMER_LABELS = {
 // ── Compact signal phrase (for card-level display) ───────────────────────────
 
 const SIGNAL_PHRASES: Record<Signal, { text: string; dir: "up" | "down" | "flat" }> = {
-  deepening:    { text: "Prices rising",  dir: "up"   },
-  capitulating: { text: "Prices falling", dir: "down" },
+  deepening:    { text: "Prices rising",    dir: "up"   },
+  capitulating: { text: "Prices falling",   dir: "down" },
+  tightening:   { text: "Market tightening", dir: "up"  },
   loosening:    { text: "Prices softening", dir: "down" },
-  stable:       { text: "Market stable",  dir: "flat" },
-  mixed:        { text: "Mixed signals",  dir: "flat" },
+  stable:       { text: "Market stable",    dir: "flat" },
+  mixed:        { text: "Mixed signals",    dir: "flat" },
+  unknown:      { text: "Monitoring",       dir: "flat" },
 };
 
 export function signalPhrase(signal: Signal | string | null | undefined): { text: string; dir: "up" | "down" | "flat" } {
