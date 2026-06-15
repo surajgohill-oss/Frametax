@@ -297,9 +297,9 @@ async def run_poll_for_tracked_event(tracked_event_id: int):
                 event.status = new_status
             te.lifecycle_phase = compute_lifecycle_phase(event.event_date)
 
-        te.last_polled_at = datetime.now(timezone.utc)
+        te.last_polled_at = datetime.utcnow()
         te.poll_interval_minutes = interval
-        te.next_poll_at = datetime.now(timezone.utc) + timedelta(minutes=interval)
+        te.next_poll_at = datetime.utcnow() + timedelta(minutes=interval)
         await db.commit()
 
     # Fan out to every registered collector — all marketplaces, full isolation.
@@ -608,7 +608,7 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
             select(PollRun).where(PollRun.id == poll_run_id)
         )).scalar_one_or_none()
         if poll_run:
-            poll_run.completed_at = datetime.now(timezone.utc)
+            poll_run.completed_at = datetime.utcnow()
             poll_run.listings_found = len(clean_listings)
             poll_run.new_listings = new_count
             poll_run.disappeared_listings = disappeared
@@ -623,7 +623,7 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
             select(TrackedEvent).where(TrackedEvent.id == te.id)
         )).scalar_one_or_none()
         if te_row and not result.error:
-            te_row.last_polled_at = datetime.now(timezone.utc)
+            te_row.last_polled_at = datetime.utcnow()
             await db.commit()
 
         emit_event_trace("DB_WRITE", result.event_id, {
