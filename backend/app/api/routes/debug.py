@@ -279,6 +279,48 @@ async def create_event_bypass_freeze(data: dict, db: AsyncSession = Depends(get_
     }
 
 
+@router.post("/collect-te-sync")
+async def collect_te_sync(
+    te_id: int = Query(..., description="TrackedEvent.id to collect"),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Directly invoke the collector for a TrackedEvent and return the result synchronously.
+    Used to diagnose why the scheduler fan-out isn't creating PollRuns for a TE.
+    """
+    from app.models import TrackedEvent, Marketplace, PollRun
+    from app.collectors.registry import get_collector
+    from app.config import get_settings
+    settings = get_settings()
+
+    te = (await db.execute(select(TrackedEvent).where(TrackedEvent.id == te_id))).scalar_one_or_none()
+    if not te:
+        return {"error": f"TrackedEvent {te_id} not found"}
+
+    mp = (await db.execute(select(Marketplace).where(Marketplace.id == te.marketplace_id))).scalar_one_or_none()
+    if not mp:
+        return {"error": f"Marketplace id={te.marketplace_id} not found"}
+
+    collector = get_collector(mp.slug, settings)
+    if not collector:
+        return {"error": f"No collector for slug={mp.slug}"}
+
+    collector._db_session_factory = lambda: db.__class__(bind=db.get_bind())
+
+    try:
+        result = await collector.collect(te)
+        return {
+            "te_id": te_id,
+            "marketplace": mp.slug,
+            "external_event_id": te.external_event_id,
+            "error": result.error,
+            "listings_count": len(result.listings),
+            "sample": result.listings[:3] if result.listings else [],
+        }
+    except Exception as e:
+        return {"te_id": te_id, "exception": type(e).__name__, "detail": str(e)}
+
+
 @router.post("/patch-tracked-event")
 async def patch_tracked_event(
     te_id: int = Query(..., description="TrackedEvent.id to patch"),
