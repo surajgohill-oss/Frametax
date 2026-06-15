@@ -169,7 +169,7 @@ function EventGroup({
   onSelect: (id: number) => void;
   selectedId: number | null;
 }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const topAction = signalToAction(events[0]?.signal);
   const topColors = actionColors(topAction);
 
