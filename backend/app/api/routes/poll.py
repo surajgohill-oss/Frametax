@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any, Optional
 
@@ -118,7 +118,7 @@ async def manual_ingest(te_id: int, body: ManualIngestRequest):
     async with AsyncSessionLocal() as db:
         poll_run = PollRun(
             tracked_event_id=te_id,
-            started_at=datetime.utcnow(),
+            started_at=datetime.now(timezone.utc),
             status="running",
         )
         db.add(poll_run)
@@ -133,9 +133,9 @@ async def manual_ingest(te_id: int, body: ManualIngestRequest):
             if fetched_at.tzinfo is not None:
                 fetched_at = fetched_at.replace(tzinfo=None)   # _process_result expects naive UTC
         else:
-            fetched_at = datetime.utcnow()
+            fetched_at = datetime.now(timezone.utc).replace(tzinfo=None)
     except Exception:
-        fetched_at = datetime.utcnow()
+        fetched_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
     # ── Build CollectorResult ─────────────────────────────────────────────────
     raw_listings = [

@@ -610,6 +610,15 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
             poll_run.error_message = result.error
 
         await db.commit()
+
+        # Update marketplace-specific TrackedEvent.last_polled_at
+        te_row = (await db.execute(
+            select(TrackedEvent).where(TrackedEvent.id == te.id)
+        )).scalar_one_or_none()
+        if te_row and not result.error:
+            te_row.last_polled_at = datetime.now(timezone.utc)
+            await db.commit()
+
         emit_event_trace("DB_WRITE", result.event_id, {
             "external_event_id": te.external_event_id,
             "tracked_event_id": te.id,
