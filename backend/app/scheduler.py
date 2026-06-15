@@ -310,10 +310,17 @@ async def run_poll_for_tracked_event(tracked_event_id: int):
         "POLLING: event_id=%d '%s' dispatching to %d collector(s): [%s]",
         te.event_id, event_title, len(collector_slugs), ", ".join(collector_slugs),
     )
-    await asyncio.gather(
+    results = await asyncio.gather(
         *[_run_collector_for_event(slug, te, event) for slug in collector_slugs],
         return_exceptions=True,
     )
+    for slug, r in zip(collector_slugs, results):
+        if isinstance(r, BaseException):
+            logger.error(
+                "COLLECTOR_FATAL: slug=%s event_id=%d exc_type=%s — %s",
+                slug, te.event_id, type(r).__name__, r,
+                exc_info=r,
+            )
 
 
 async def _run_collector_for_event(collector_slug: str, source_te: TrackedEvent, event):

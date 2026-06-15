@@ -277,3 +277,55 @@ async def create_event_bypass_freeze(data: dict, db: AsyncSession = Depends(get_
         "event_date": event.event_date.isoformat(),
         "tracked_marketplaces": tracked,
     }
+
+
+@router.post("/import-history-agg")
+async def import_history_agg(payload: dict, db: AsyncSession = Depends(get_db)):
+    """
+    Bulk-upsert pre-aggregated historical rows into event_price_history_agg.
+
+    Payload: { "rows": [ {railway_event_id, bucket_ts, bucket_size, low_ask,
+                           median_ask, high_ask, p25_ask, p75_ask,
+                           listing_count, ticket_count, marketplace_count}, ... ] }
+
+    ON CONFLICT (railway_event_id, bucket_ts, bucket_size) DO NOTHING — safe
+    to call multiple times (idempotent).
+    """
+    from sqlalchemy import text as _text
+    rows = payload.get("rows", [])
+    if not rows:
+        return {"inserted": 0, "skipped": 0, "total": 0}
+
+    inserted = 0
+    skipped = 0
+    for row in rows:
+        result = await db.execute(_text("""
+            INSERT INTO event_price_history_agg
+              (railway_event_id, bucket_ts, bucket_size,
+               low_ask, median_ask, high_ask, p25_ask, p75_ask,
+               listing_count, ticket_count, marketplace_count)
+            VALUES
+              (:railway_event_id, CAST(:bucket_ts AS timestamp), :bucket_size,
+               :low_ask, :median_ask, :high_ask, :p25_ask, :p75_ask,
+               :listing_count, :ticket_count, :marketplace_count)
+            ON CONFLICT (railway_event_id, bucket_ts, bucket_size) DO NOTHING
+        """), {
+            "railway_event_id": row["railway_event_id"],
+            "bucket_ts":        row["bucket_ts"],
+            "bucket_size":      row["bucket_size"],
+            "low_ask":          row.get("low_ask"),
+            "median_ask":       row.get("median_ask"),
+            "high_ask":         row.get("high_ask"),
+            "p25_ask":          row.get("p25_ask"),
+            "p75_ask":          row.get("p75_ask"),
+            "listing_count":    row.get("listing_count"),
+            "ticket_count":     row.get("ticket_count"),
+            "marketplace_count": row.get("marketplace_count"),
+        })
+        if result.rowcount and result.rowcount > 0:
+            inserted += 1
+        else:
+            skipped += 1
+
+    await db.commit()
+    return {"inserted": inserted, "skipped": skipped, "total": len(rows)}
