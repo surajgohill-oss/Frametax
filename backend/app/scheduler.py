@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
@@ -32,7 +32,7 @@ _scheduler: AsyncIOScheduler | None = None
 # after +5 min            →  None  (deactivate)
 
 def compute_poll_interval_minutes(event_date: datetime) -> int | None:
-    seconds = (event_date - datetime.utcnow()).total_seconds()
+    seconds = (event_date - datetime.now(timezone.utc)).total_seconds()
 
     if seconds < -5 * 60:              # > 5 min past start → stop
         return None
@@ -52,7 +52,7 @@ def compute_poll_interval_minutes(event_date: datetime) -> int | None:
 # so the event card doesn't vanish the moment polling stops.
 
 def event_status_from_date(event_date: datetime) -> str:
-    seconds = (event_date - datetime.utcnow()).total_seconds()
+    seconds = (event_date - datetime.now(timezone.utc)).total_seconds()
     if seconds < -3 * 3600:
         return "completed"
     if seconds < 0:
@@ -74,7 +74,7 @@ _ADMISSION_DAYS = 21
 
 
 def compute_lifecycle_phase(event_date: datetime) -> str:
-    seconds = (event_date - datetime.utcnow()).total_seconds()
+    seconds = (event_date - datetime.now(timezone.utc)).total_seconds()
     if seconds < -5 * 60:
         return "completed"
     if seconds < 0:
@@ -102,7 +102,7 @@ async def start_scheduler():
         id="event_status_updater",
         replace_existing=True,
         max_instances=1,
-        next_run_time=datetime.utcnow(),  # populate lifecycle_phase immediately on startup
+        next_run_time=datetime.now(timezone.utc),  # populate lifecycle_phase immediately on startup
     )
     _scheduler.add_job(
         _resolve_pending_event_ids,
@@ -110,7 +110,7 @@ async def start_scheduler():
         id="event_id_resolver",
         replace_existing=True,
         max_instances=1,
-        next_run_time=datetime.utcnow(),
+        next_run_time=datetime.now(timezone.utc),
     )
     _scheduler.add_job(
         _run_event_discovery,
@@ -157,7 +157,7 @@ async def _check_due_events():
                 and_(
                     TrackedEvent.is_active == True,
                     TrackedEvent.external_event_id.is_not(None),  # Stage 2 must be complete
-                    (TrackedEvent.next_poll_at <= datetime.utcnow())
+                    (TrackedEvent.next_poll_at <= datetime.now(timezone.utc))
                     | (TrackedEvent.next_poll_at.is_(None)),
                 )
             )
@@ -297,9 +297,9 @@ async def run_poll_for_tracked_event(tracked_event_id: int):
                 event.status = new_status
             te.lifecycle_phase = compute_lifecycle_phase(event.event_date)
 
-        te.last_polled_at = datetime.utcnow()
+        te.last_polled_at = datetime.now(timezone.utc)
         te.poll_interval_minutes = interval
-        te.next_poll_at = datetime.utcnow() + timedelta(minutes=interval)
+        te.next_poll_at = datetime.now(timezone.utc) + timedelta(minutes=interval)
         await db.commit()
 
     # Fan out to every registered collector — all marketplaces, full isolation.
@@ -367,7 +367,7 @@ async def _run_collector_for_event(collector_slug: str, source_te: TrackedEvent,
                 te.id, collector_slug, source_te.event_id,
             )
 
-        poll_run = PollRun(tracked_event_id=te.id, started_at=datetime.utcnow())
+        poll_run = PollRun(tracked_event_id=te.id, started_at=datetime.now(timezone.utc))
         db.add(poll_run)
         await db.flush()
         poll_run_id = poll_run.id
@@ -601,7 +601,7 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
             select(PollRun).where(PollRun.id == poll_run_id)
         )).scalar_one_or_none()
         if poll_run:
-            poll_run.completed_at = datetime.utcnow()
+            poll_run.completed_at = datetime.now(timezone.utc)
             poll_run.listings_found = len(clean_listings)
             poll_run.new_listings = new_count
             poll_run.disappeared_listings = disappeared
