@@ -374,7 +374,7 @@ async def _run_collector_for_event(collector_slug: str, source_te: TrackedEvent,
                 te.id, collector_slug, source_te.event_id,
             )
 
-        poll_run = PollRun(tracked_event_id=te.id, started_at=datetime.now(timezone.utc))
+        poll_run = PollRun(tracked_event_id=te.id, started_at=datetime.utcnow())
         db.add(poll_run)
         await db.flush()
         poll_run_id = poll_run.id
