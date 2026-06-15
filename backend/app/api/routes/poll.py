@@ -118,7 +118,7 @@ async def manual_ingest(te_id: int, body: ManualIngestRequest):
     async with AsyncSessionLocal() as db:
         poll_run = PollRun(
             tracked_event_id=te_id,
-            started_at=datetime.now(timezone.utc),
+            started_at=datetime.utcnow(),
             status="running",
         )
         db.add(poll_run)
