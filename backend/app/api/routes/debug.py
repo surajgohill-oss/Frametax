@@ -279,6 +279,53 @@ async def create_event_bypass_freeze(data: dict, db: AsyncSession = Depends(get_
     }
 
 
+@router.post("/run-collector-for-event-sync")
+async def run_collector_for_event_sync(
+    te_id: int = Query(..., description="Source TrackedEvent.id (used to get event_id)"),
+    slug: str = Query(..., description="Collector slug to run"),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Directly call _run_collector_for_event(slug, source_te, event) and return
+    whether a PollRun was created, what happened, and any exception.
+    """
+    from app.models import TrackedEvent, Event
+    from app.scheduler import _run_collector_for_event
+    import traceback
+
+    te = (await db.execute(select(TrackedEvent).where(TrackedEvent.id == te_id))).scalar_one_or_none()
+    if not te:
+        return {"error": f"TrackedEvent {te_id} not found"}
+
+    event = (await db.execute(select(Event).where(Event.id == te.event_id))).scalar_one_or_none()
+
+    # Count PollRuns for this te_id before
+    from app.models.listing import PollRun
+    from sqlalchemy import func
+    before_count = (await db.execute(
+        select(func.count()).where(PollRun.tracked_event_id == te_id)
+    )).scalar()
+
+    exc_info = None
+    try:
+        await _run_collector_for_event(slug, te, event)
+    except Exception as e:
+        exc_info = {"type": type(e).__name__, "msg": str(e), "tb": traceback.format_exc()[-500:]}
+
+    after_count = (await db.execute(
+        select(func.count()).where(PollRun.tracked_event_id == te_id)
+    )).scalar()
+
+    return {
+        "te_id": te_id,
+        "slug": slug,
+        "poll_runs_before": before_count,
+        "poll_runs_after": after_count,
+        "new_runs_created": after_count - before_count,
+        "exception": exc_info,
+    }
+
+
 @router.post("/collect-te-sync")
 async def collect_te_sync(
     te_id: int = Query(..., description="TrackedEvent.id to collect"),
