@@ -279,6 +279,28 @@ async def create_event_bypass_freeze(data: dict, db: AsyncSession = Depends(get_
     }
 
 
+@router.post("/patch-tracked-event")
+async def patch_tracked_event(
+    te_id: int = Query(..., description="TrackedEvent.id to patch"),
+    external_event_id: str = Query(..., description="VS production ID to set"),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Directly set external_event_id on an existing TrackedEvent.
+    Used for manual resolution when the auto-resolver can't find the event.
+    """
+    from app.models import TrackedEvent
+
+    te = (await db.execute(select(TrackedEvent).where(TrackedEvent.id == te_id))).scalar_one_or_none()
+    if not te:
+        return {"error": f"TrackedEvent {te_id} not found"}
+
+    old_id = te.external_event_id
+    te.external_event_id = external_event_id
+    await db.commit()
+    return {"te_id": te_id, "old_external_event_id": old_id, "new_external_event_id": external_event_id, "ok": True}
+
+
 @router.post("/import-history-agg")
 async def import_history_agg(payload: dict, db: AsyncSession = Depends(get_db)):
     """
