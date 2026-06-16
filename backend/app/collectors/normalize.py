@@ -42,7 +42,8 @@ _SEC_LOT_RE = re.compile(r"\blot\b", re.IGNORECASE)
 
 # "LOT" concatenated with identifier, no space: "LOTC", "LOTA", "LOT1", etc.
 # TickPick sometimes omits the space between LOT and the lot letter/number.
-_SEC_LOT_CONCAT_RE = re.compile(r"\bLOT[A-Z0-9]+\b", re.IGNORECASE)
+# Also covers "LOT_UC", "LOT_A" — TickPick uses underscore as separator.
+_SEC_LOT_CONCAT_RE = re.compile(r"\bLOT[A-Z0-9_]+\b", re.IGNORECASE)
 
 # Valet parking passes
 _SEC_VALET_RE = re.compile(r"\bvalet\b", re.IGNORECASE)
@@ -256,6 +257,8 @@ def is_parking_listing(
     # ── Tier 2: row contains "parking" or "shuttle" ──────────────────────────
     # Catches "PARKING WITHIN 1 MILE", "ONSITE PARKING", "SHUTTLE PASS", etc.
     if _ROW_PARKING_WORD_RE.search(rw):
+        return True
+    if _SEC_DISTANCE_RE.search(rw):
         return True
     if _ROW_SHUTTLE_WORD_RE.search(rw):
         return True

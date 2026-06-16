@@ -153,9 +153,45 @@ async def all_events_intelligence(
     )
     events = events_q.scalars().all()
 
+    event_ids = [e.id for e in events]
+
+    # ── First-tracked median: one batch query for all events ──────────────────
+    # Fetches PERCENTILE_CONT(0.5) of price at the earliest snapshot window
+    # (first hour of data) from listing_snapshots only. This is the "tracking
+    # start" baseline used to compute long-run change %.
+    first_tracked_medians: dict[int, float | None] = {}
+    if event_ids:
+        ft_rows = (await db.execute(text("""
+            WITH first_windows AS (
+                SELECT event_id, MIN(snapshot_at) AS first_snap
+                FROM listing_snapshots
+                WHERE event_id = ANY(:eids)
+                GROUP BY event_id
+            )
+            SELECT ls.event_id,
+                   PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY ls.price) AS first_median
+            FROM listing_snapshots ls
+            JOIN first_windows fw
+              ON fw.event_id = ls.event_id
+             AND ls.snapshot_at BETWEEN fw.first_snap AND fw.first_snap + INTERVAL '1 hour'
+            WHERE ls.is_active = true
+            GROUP BY ls.event_id
+        """), {"eids": event_ids})).fetchall()
+        for row in ft_rows:
+            first_tracked_medians[row[0]] = float(row[1]) if row[1] else None
+
     summary = []
     for event in events:
         intel = await _get_or_compute(event.id, db)
+        current_median = (intel.get("price") or {}).get("median_ask")
+        first_median = first_tracked_medians.get(event.id)
+        first_tracked_change: dict | None = None
+        if first_median and current_median and first_median > 0:
+            delta_pct = round((current_median - first_median) / first_median * 100, 1)
+            first_tracked_change = {
+                "first_median": round(first_median, 2),
+                "price_delta_pct": delta_pct,
+            }
         summary.append({
             "event_id": event.id,
             "title": event.title,
@@ -166,6 +202,7 @@ async def all_events_intelligence(
             "price": intel.get("price", {}),
             "changes": {
                 "h24": intel.get("changes", {}).get("h24", {}),
+                "first_tracked": first_tracked_change,
             },
             "inventory": intel.get("inventory", {}),
             "market": {
