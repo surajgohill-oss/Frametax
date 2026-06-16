@@ -11,7 +11,7 @@ import { getEventGradient, gradientBg, extractGroupKey } from "@/lib/entityimage
 import { useHiddenEvents } from "@/hooks/useHiddenEvents";
 import EventCard from "@/components/EventCard";
 
-type SortKey = "date" | "opportunity" | "signal";
+type SortKey = "date" | "opportunity" | "signal" | "price";
 const SIGNAL_ORDER = ["deepening", "capitulating", "mixed", "stable", "loosening"];
 
 
@@ -361,6 +361,7 @@ export default function DashboardPage() {
     return [...base].sort((a, b) => {
       if (sort === "opportunity") return (b.opportunity_score ?? 0) - (a.opportunity_score ?? 0);
       if (sort === "signal") return SIGNAL_ORDER.indexOf(a.signal) - SIGNAL_ORDER.indexOf(b.signal);
+      if (sort === "price") return (a.price?.low_ask ?? 999999) - (b.price?.low_ask ?? 999999);
       const da = metas[a.event_id]?.event_date ?? "";
       const db = metas[b.event_id]?.event_date ?? "";
       return da.localeCompare(db);
@@ -402,7 +403,7 @@ export default function DashboardPage() {
         </div>
         <div className="flex items-center gap-2">
           <div className="flex rounded-lg border border-white/7 overflow-hidden text-xs">
-            {(["opportunity", "date", "signal"] as SortKey[]).map((k) => (
+            {(["opportunity", "price", "date", "signal"] as SortKey[]).map((k) => (
               <button
                 key={k}
                 onClick={() => setSort(k)}

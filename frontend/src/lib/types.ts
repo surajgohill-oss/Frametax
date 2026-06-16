@@ -337,3 +337,20 @@ export interface SellerResponse {
   largest_price_gains: { section: string; old_price: number; new_price: number; delta: number }[];
   aggressive_sections: { section: string; score: number }[];
 }
+
+// ── /api/listings/events/{id} ─────────────────────────────────────────────────
+export interface Listing {
+  id: number;
+  external_listing_id: string;
+  section: string | null;
+  section_name: string | null;
+  row: string | null;
+  quantity: number;
+  price: number;
+  price_each: number;
+  fees: number | null;
+  all_in_price: number | null;
+  marketplace_slug: string;
+  is_active: boolean;
+  listing_url: string | null;
+}

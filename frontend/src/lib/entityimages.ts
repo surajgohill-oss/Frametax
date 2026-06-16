@@ -52,16 +52,15 @@ export function getEventGradient(artist: string | null | undefined, title = ""):
   return FALLBACK_GRADIENTS[idx];
 }
 
-/** CSS background string — cinematic radial gradient, no image needed */
+/** CSS background string — artist-identity gradient, readable on dark cards */
 export function gradientBg(colors: GradientPair, intensity: "low" | "medium" | "high" = "medium"): string {
   const [c1, c2] = colors;
-  // opacity hex suffixes — boosted from previous values so art reads clearly
-  const a1 = intensity === "low" ? "66" : intensity === "medium" ? "99" : "cc";
-  const a2 = intensity === "low" ? "55" : intensity === "medium" ? "88" : "bb";
+  // opacity hex suffixes — calibrated for readability: visible identity, not wallpaper
+  const a1 = intensity === "low" ? "30" : intensity === "medium" ? "55" : "77";
+  const a2 = intensity === "low" ? "28" : intensity === "medium" ? "44" : "66";
   return [
     `radial-gradient(ellipse at 15% 65%, ${c1}${a1} 0%, transparent 60%)`,
     `radial-gradient(ellipse at 85% 30%, ${c2}${a2} 0%, transparent 55%)`,
-    `radial-gradient(ellipse at 50% 50%, ${c1}22 0%, transparent 80%)`,
     "#0d1117",
   ].join(", ");
 }
