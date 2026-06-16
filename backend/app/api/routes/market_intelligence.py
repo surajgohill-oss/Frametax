@@ -176,7 +176,6 @@ async def all_events_intelligence(
             JOIN first_windows fw
               ON fw.event_id = ls.event_id
              AND ls.snapshot_at BETWEEN fw.first_snap AND fw.first_snap + INTERVAL '1 hour'
-            WHERE ls.is_active = true
             GROUP BY ls.event_id
         """))).fetchall()
         for row in ft_rows:
