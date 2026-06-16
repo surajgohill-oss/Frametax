@@ -5,7 +5,7 @@ import { EyeOff, Calendar, Clock } from "lucide-react";
 import { format, parseISO, differenceInDays } from "date-fns";
 import type { EventSummary } from "@/lib/types";
 import { fmt$$, fmtNum, fmtPct, signalToAction, actionColors, signalPhrase } from "@/lib/utils";
-import { getEventGradient, gradientBg } from "@/lib/entityimages";
+import { getEventGradient, gradientBg, getEventArtworkUrl } from "@/lib/entityimages";
 
 interface Props {
   event: EventSummary;
@@ -28,6 +28,7 @@ export default function EventCard({ event, meta, dataDepthDays, onHide, isSelect
   const action = signalToAction(event.signal);
   const colors = actionColors(action);
   const gradient = getEventGradient(artist, title);
+  const artworkUrl = getEventArtworkUrl(artist, title);
   const phrase = signalPhrase(event.signal);
 
   let daysOut: number | null = null;
@@ -56,11 +57,26 @@ export default function EventCard({ event, meta, dataDepthDays, onHide, isSelect
     >
       {/* Full-card link — wraps both art strip and body */}
       <Link href={`/events/${event.event_id}`} onClick={handleClick} className="block cursor-pointer">
-        {/* art strip — taller for visible key art */}
+        {/* art strip */}
         <div
-          className="h-28 w-full relative"
-          style={{ background: gradientBg(gradient, "high") }}
+          className="h-28 w-full relative overflow-hidden"
+          style={{ background: gradientBg(gradient, artworkUrl ? "low" : "high") }}
         >
+          {/* real artwork image — covers gradient when available */}
+          {artworkUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={artworkUrl}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover object-top opacity-60"
+              loading="lazy"
+            />
+          )}
+          {/* dark vignette so text is readable over photo */}
+          {artworkUrl && (
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/30" />
+          )}
+
           {/* signal badge */}
           <span
             className="absolute top-2 left-3 text-[10px] font-black tracking-widest px-2 py-0.5 rounded-md border"

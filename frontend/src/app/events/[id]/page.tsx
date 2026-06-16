@@ -37,7 +37,7 @@ import {
   signalToAction, actionColors, signalDescription, lifecycleContext,
   CONSUMER_LABELS,
 } from "@/lib/utils";
-import { getEventGradient, gradientBg } from "@/lib/entityimages";
+import { getEventGradient, gradientBg, getEventArtworkUrl } from "@/lib/entityimages";
 import ActionSignal from "@/components/ui/ActionSignal";
 import PriceHistoryChart from "@/components/charts/PriceHistoryChart";
 import { useExclusions } from "@/hooks/useExclusions";
@@ -242,6 +242,7 @@ export default function EventDetailPage() {
   const dateStr   = eventMeta?.event_date;
   const artist    = eventMeta?.artist;
   const gradient  = getEventGradient(artist, title);
+  const artworkUrl = getEventArtworkUrl(artist, title);
   const action    = signalToAction(hero?.signal);
   const aColors   = actionColors(action);
 
@@ -257,9 +258,13 @@ export default function EventDetailPage() {
   function renderArchiveHero() {
     return (
       <div
-        className="rounded-2xl overflow-hidden border border-white/8 mb-6"
-        style={{ background: gradientBg(gradient, "high") }}
+        className="rounded-2xl overflow-hidden border border-white/8 mb-6 relative"
+        style={{ background: gradientBg(gradient, artworkUrl ? "low" : "high") }}
       >
+        {artworkUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={artworkUrl} alt="" className="absolute inset-0 w-full h-full object-cover object-top opacity-40" />
+        )}
         <div
           className="relative"
           style={{
@@ -329,9 +334,13 @@ export default function EventDetailPage() {
   function renderHero() {
     return (
       <div
-        className="rounded-2xl overflow-hidden border border-white/8 mb-6"
-        style={{ background: gradientBg(gradient, "high") }}
+        className="rounded-2xl overflow-hidden border border-white/8 mb-6 relative"
+        style={{ background: gradientBg(gradient, artworkUrl ? "low" : "high") }}
       >
+        {artworkUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={artworkUrl} alt="" className="absolute inset-0 w-full h-full object-cover object-top opacity-40" />
+        )}
         <div
           className="relative"
           style={{

@@ -7,7 +7,7 @@ import { format, parseISO, differenceInDays } from "date-fns";
 import { api } from "@/lib/api";
 import type { EventSummary } from "@/lib/types";
 import { fmt$$, fmtNum, fmtPct, signalToAction, actionColors, signalDescription } from "@/lib/utils";
-import { getEventGradient, gradientBg, extractGroupKey } from "@/lib/entityimages";
+import { getEventGradient, gradientBg, extractGroupKey, getEventArtworkUrl } from "@/lib/entityimages";
 import { useHiddenEvents } from "@/hooks/useHiddenEvents";
 import EventCard from "@/components/EventCard";
 
@@ -37,6 +37,7 @@ function HeadlineEvent({
   const action = signalToAction(event.signal);
   const colors = actionColors(action);
   const gradient = getEventGradient(artist, title);
+  const artworkUrl = getEventArtworkUrl(artist, title);
 
   let daysOut: number | null = null;
   let dateLabel = "";
@@ -57,8 +58,17 @@ function HeadlineEvent({
     <Link href={`/events/${event.event_id}`}>
       <div
         className="relative w-full rounded-2xl overflow-hidden border border-white/8 mb-8"
-        style={{ minHeight: 220, background: gradientBg(gradient, "high") }}
+        style={{ minHeight: 220, background: gradientBg(gradient, artworkUrl ? "low" : "high") }}
       >
+        {/* real artwork — behind overlay */}
+        {artworkUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={artworkUrl}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover object-top opacity-50"
+          />
+        )}
         {/* dark overlay for readability */}
         <div
           className="absolute inset-0"
@@ -217,16 +227,27 @@ function EventGroup({
   }, null);
   const firstMeta = metas[events[0]?.event_id];
   const gradient = getEventGradient(firstMeta?.artist, firstMeta?.title ?? events[0]?.title ?? groupKey);
+  const artworkUrl = getEventArtworkUrl(firstMeta?.artist, firstMeta?.title ?? events[0]?.title ?? groupKey);
 
   return (
     <div className="mb-3">
       {/* Collapsed summary card */}
       <button
         onClick={() => setCollapsed(v => !v)}
-        className="w-full text-left rounded-xl border border-white/8 overflow-hidden transition-all hover:border-white/15 focus:outline-none"
-        style={{ background: gradientBg(gradient, "low") }}
+        className="w-full text-left rounded-xl border border-white/8 overflow-hidden transition-all hover:border-white/15 focus:outline-none relative"
+        style={{ background: gradientBg(gradient, artworkUrl ? "low" : "low") }}
       >
-        <div className="flex items-center gap-4 px-4 py-3">
+        {/* artwork thumbnail strip */}
+        {artworkUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={artworkUrl}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover object-top opacity-15"
+            loading="lazy"
+          />
+        )}
+        <div className="relative flex items-center gap-4 px-4 py-3">
           {/* color swatch strip */}
           <div
             className="w-1 self-stretch rounded-full flex-shrink-0"

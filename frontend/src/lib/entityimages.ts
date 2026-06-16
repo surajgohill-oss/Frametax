@@ -1,4 +1,4 @@
-// Deterministic gradient art system for events — no external image dependencies
+// Gradient art + static image system for events
 
 type GradientPair = [string, string];
 
@@ -29,11 +29,25 @@ const FALLBACK_GRADIENTS: GradientPair[] = [
   ["#2d1b69", "#11998e"],
 ];
 
+/**
+ * Static artist image map — Songkick CDN (verified 200 OK).
+ * Each entry: [match pattern, image URL]
+ * Used as a fallback when no backend image_url is available.
+ */
+const STATIC_ART: [RegExp, string][] = [
+  [/ariana grande/i,  "https://images.sk-static.com/images/media/profile_images/artists/5466476/huge_avatar"],
+  [/bts\b/i,          "https://images.sk-static.com/images/media/profile_images/artists/8521933/huge_avatar"],
+  [/kid cudi/i,       "https://images.sk-static.com/images/media/profile_images/artists/3017714/huge_avatar"],
+  [/ed sheeran/i,     "https://images.sk-static.com/images/media/profile_images/artists/137952/huge_avatar"],
+  [/foo fighters/i,   "https://images.sk-static.com/images/media/profile_images/artists/485568/huge_avatar"],
+  [/morgan jay/i,     "https://images.sk-static.com/images/media/profile_images/artists/8789617/huge_avatar"],
+];
+
 function djb2(str: string): number {
   let hash = 5381;
   for (let i = 0; i < str.length; i++) {
     hash = ((hash << 5) + hash) + str.charCodeAt(i);
-    hash = hash & hash; // force 32-bit int
+    hash = hash & hash;
   }
   return Math.abs(hash);
 }
@@ -43,7 +57,6 @@ export function getEventGradient(artist: string | null | undefined, title = ""):
   for (const [pattern, grad] of Object.entries(ARTIST_GRADIENTS)) {
     if (key.includes(pattern)) return grad;
   }
-  // Also try title
   const titleKey = title.toLowerCase();
   for (const [pattern, grad] of Object.entries(ARTIST_GRADIENTS)) {
     if (titleKey.includes(pattern)) return grad;
@@ -52,10 +65,41 @@ export function getEventGradient(artist: string | null | undefined, title = ""):
   return FALLBACK_GRADIENTS[idx];
 }
 
+/**
+ * Return a static artist image URL for an event, or null if none is mapped.
+ * Matches against artist field first, then event title.
+ */
+export function getStaticArtUrl(artist: string | null | undefined, title = ""): string | null {
+  const haystack = (artist ?? title).toLowerCase();
+  for (const [re, url] of STATIC_ART) {
+    if (re.test(haystack)) return url;
+  }
+  const titleLower = title.toLowerCase();
+  for (const [re, url] of STATIC_ART) {
+    if (re.test(titleLower)) return url;
+  }
+  return null;
+}
+
+/**
+ * Full artwork URL fallback chain:
+ *   1. event.image_url (backend field, if ever populated)
+ *   2. event.poster_url (backend field, if ever populated)
+ *   3. static curated image (Songkick CDN)
+ *   4. null → caller falls back to gradient
+ */
+export function getEventArtworkUrl(
+  artist: string | null | undefined,
+  title: string,
+  imageUrl?: string | null,
+  posterUrl?: string | null,
+): string | null {
+  return imageUrl || posterUrl || getStaticArtUrl(artist, title) || null;
+}
+
 /** CSS background string — artist-identity gradient, readable on dark cards */
 export function gradientBg(colors: GradientPair, intensity: "low" | "medium" | "high" = "medium"): string {
   const [c1, c2] = colors;
-  // opacity hex suffixes — calibrated for readability: visible identity, not wallpaper
   const a1 = intensity === "low" ? "30" : intensity === "medium" ? "55" : "77";
   const a2 = intensity === "low" ? "28" : intensity === "medium" ? "44" : "66";
   return [
@@ -68,7 +112,6 @@ export function gradientBg(colors: GradientPair, intensity: "low" | "medium" | "
 /** Extract grouping artist key from event title */
 export function extractGroupKey(artist: string | null | undefined, title: string): string {
   if (artist) {
-    // Normalize NFL variants to single "NFL" group
     if (artist.toLowerCase().startsWith("nfl") || title.toLowerCase().startsWith("nfl")) return "NFL";
     return artist;
   }
