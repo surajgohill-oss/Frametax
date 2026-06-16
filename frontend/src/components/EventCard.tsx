@@ -56,12 +56,12 @@ export default function EventCard({ event, meta, dataDepthDays, onHide, isSelect
     >
       {/* Full-card link — wraps both art strip and body */}
       <Link href={`/events/${event.event_id}`} onClick={handleClick} className="block cursor-pointer">
-        {/* art strip */}
+        {/* art strip — taller for visible key art */}
         <div
-          className="h-20 w-full relative"
-          style={{ background: gradientBg(gradient, "medium") }}
+          className="h-28 w-full relative"
+          style={{ background: gradientBg(gradient, "high") }}
         >
-          {/* action badge */}
+          {/* signal badge */}
           <span
             className="absolute top-2 left-3 text-[10px] font-black tracking-widest px-2 py-0.5 rounded-md border"
             style={{ color: colors.text, background: colors.bg, borderColor: colors.border }}
@@ -69,9 +69,16 @@ export default function EventCard({ event, meta, dataDepthDays, onHide, isSelect
             {action}
           </span>
 
+          {/* artist name watermark — bottom-left of art strip */}
+          {artist && (
+            <span className="absolute bottom-2 left-3 text-[10px] font-semibold text-white/60 uppercase tracking-widest truncate max-w-[60%]">
+              {artist}
+            </span>
+          )}
+
           {/* depth chip */}
           {dataDepthDays != null && (
-            <span className={`absolute bottom-2 right-2 text-[9px] px-1.5 py-0.5 rounded font-medium ${
+            <span className={`absolute top-2 right-2 text-[9px] px-1.5 py-0.5 rounded font-medium ${
               dataDepthDays >= 7 ? "bg-emerald-500/20 text-emerald-500" : "bg-amber-500/20 text-amber-500"
             }`}>
               {dataDepthDays >= 1 ? `${Math.round(dataDepthDays)}d history` : "live only"}
@@ -111,23 +118,35 @@ export default function EventCard({ event, meta, dataDepthDays, onHide, isSelect
             </div>
           </div>
 
-          {/* price movement phrase + 24h delta */}
-          <div className="flex items-center justify-between text-[10px] mt-0.5">
+          {/* change indicators */}
+          <div className="flex items-center justify-between text-[10px] mt-1">
             <span className={
               phrase.dir === "up" ? "text-emerald-600 font-medium" :
               phrase.dir === "down" ? "text-red-600 font-medium" :
               "text-slate-600"
             }>{phrase.text}</span>
             {event.history_hours != null ? (
-              <span className={
-                (event.changes?.h24?.price_delta_pct ?? 0) > 0 ? "text-emerald-500 tabular-nums font-medium" :
-                (event.changes?.h24?.price_delta_pct ?? 0) < 0 ? "text-red-500 tabular-nums font-medium" :
-                "text-slate-500 tabular-nums"
-              }>
-                {event.changes?.h24?.price_delta_pct != null
-                  ? fmtPct(event.changes.h24.price_delta_pct) + " 24h"
-                  : "—"}
-              </span>
+              <div className="flex flex-col items-end gap-0.5">
+                {event.changes?.first_tracked?.price_delta_pct != null ? (
+                  <span className={`tabular-nums font-semibold text-[11px] ${
+                    event.changes.first_tracked.price_delta_pct > 0 ? "text-emerald-400" :
+                    event.changes.first_tracked.price_delta_pct < 0 ? "text-red-400" :
+                    "text-slate-400"
+                  }`}>
+                    {fmtPct(event.changes.first_tracked.price_delta_pct)}
+                    <span className="text-[9px] text-slate-600 font-normal ml-0.5">tracked</span>
+                  </span>
+                ) : null}
+                <span className={`tabular-nums text-[9px] ${
+                  (event.changes?.h24?.price_delta_pct ?? 0) > 0 ? "text-emerald-600" :
+                  (event.changes?.h24?.price_delta_pct ?? 0) < 0 ? "text-red-600" :
+                  "text-slate-600"
+                }`}>
+                  {event.changes?.h24?.price_delta_pct != null
+                    ? fmtPct(event.changes.h24.price_delta_pct) + " 24h"
+                    : "—"}
+                </span>
+              </div>
             ) : (
               <span className="text-slate-600 tabular-nums text-[9px]">Collecting</span>
             )}

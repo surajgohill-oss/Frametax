@@ -6,7 +6,7 @@ import { Eye, RefreshCw, TrendingUp, TrendingDown, Minus, AlertCircle, ChevronDo
 import { format, parseISO, differenceInDays } from "date-fns";
 import { api } from "@/lib/api";
 import type { EventSummary } from "@/lib/types";
-import { fmt$$, fmtNum, signalToAction, actionColors, signalDescription } from "@/lib/utils";
+import { fmt$$, fmtNum, fmtPct, signalToAction, actionColors, signalDescription } from "@/lib/utils";
 import { getEventGradient, gradientBg, extractGroupKey } from "@/lib/entityimages";
 import { useHiddenEvents } from "@/hooks/useHiddenEvents";
 import EventCard from "@/components/EventCard";
@@ -22,10 +22,12 @@ function HeadlineEvent({
   event,
   meta,
   depth,
+  firstTrackedPct,
 }: {
   event: EventSummary;
   meta: MetaMap[number] | undefined;
   depth: number | null | undefined;
+  firstTrackedPct?: number | null;
 }) {
   const title = meta?.title ?? event.title;
   const venue = meta?.venue_name;
@@ -108,29 +110,54 @@ function HeadlineEvent({
             <p className="text-[11px] text-white/50 text-center max-w-[180px] leading-relaxed">{desc}</p>
           </div>
 
-          {/* RIGHT — prices + inventory */}
-          <div className="flex flex-col justify-center gap-3 flex-shrink-0 sm:text-right">
+          {/* RIGHT — prices + deltas + inventory */}
+          <div className="flex flex-col justify-center gap-3 flex-shrink-0 sm:text-right min-w-[180px]">
             {/* Price grid */}
             <div>
               <p className="text-[10px] text-white/40 uppercase tracking-wider mb-2">Price Range</p>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1 sm:text-right">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                 <div>
-                  <p className="text-[9px] text-white/35 uppercase tracking-wide">Lowest Price</p>
+                  <p className="text-[9px] text-white/35 uppercase tracking-wide">Low</p>
                   <p className="text-xl font-bold text-white tabular-nums">{fmt$$(priceLow)}</p>
                 </div>
                 <div>
-                  <p className="text-[9px] text-white/35 uppercase tracking-wide">Median Price</p>
+                  <p className="text-[9px] text-white/35 uppercase tracking-wide">Median</p>
                   <p className="text-xl font-bold text-white/80 tabular-nums">{fmt$$(priceMed)}</p>
                 </div>
               </div>
               {priceHigh != null && (
-                <p className="text-[10px] text-white/30 mt-1 tabular-nums sm:text-right">
+                <p className="text-[10px] text-white/30 mt-0.5 tabular-nums sm:text-right">
                   high {fmt$$(priceHigh)}
                 </p>
               )}
             </div>
+
+            {/* Change indicators */}
+            <div className="flex flex-col gap-1 pt-2 border-t border-white/10">
+              {firstTrackedPct != null ? (
+                <div className="flex items-center justify-between sm:justify-end gap-2">
+                  <span className="text-[9px] text-white/35 uppercase tracking-wide">Since tracked</span>
+                  <span className={`text-xs font-semibold tabular-nums ${
+                    firstTrackedPct > 0 ? "text-emerald-400" :
+                    firstTrackedPct < 0 ? "text-red-400" :
+                    "text-white/40"
+                  }`}>{fmtPct(firstTrackedPct)}</span>
+                </div>
+              ) : null}
+              {event.changes?.h24?.price_delta_pct != null && (
+                <div className="flex items-center justify-between sm:justify-end gap-2">
+                  <span className="text-[9px] text-white/35 uppercase tracking-wide">24h</span>
+                  <span className={`text-xs tabular-nums ${
+                    (event.changes.h24.price_delta_pct) > 0 ? "text-emerald-500" :
+                    (event.changes.h24.price_delta_pct) < 0 ? "text-red-500" :
+                    "text-white/40"
+                  }`}>{fmtPct(event.changes.h24.price_delta_pct)}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Inventory + depth */}
             <div className="pt-2 border-t border-white/10">
-              <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1">Inventory</p>
               <p className="text-sm font-semibold text-white/80">
                 <BarChart2 size={11} className="inline mr-1 opacity-50" />
                 {fmtNum(event.inventory?.total_listings)} listings
@@ -170,32 +197,86 @@ function EventGroup({
   selectedId: number | null;
 }) {
   const [collapsed, setCollapsed] = useState(true);
+
+  // Derive group-level summary from constituent events
   const topAction = signalToAction(events[0]?.signal);
   const topColors = actionColors(topAction);
+  const lowestPrice = events.reduce<number | null>((min, e) => {
+    const p = e.price?.low_ask;
+    return p != null ? (min == null ? p : Math.min(min, p)) : min;
+  }, null);
+  const medianPrices = events.map(e => e.price?.median_ask).filter((p): p is number => p != null);
+  const medianRange = medianPrices.length > 0
+    ? medianPrices.length === 1
+      ? fmt$$(medianPrices[0])
+      : `${fmt$$(Math.min(...medianPrices))}–${fmt$$(Math.max(...medianPrices))}`
+    : null;
+  const maxDepth = events.reduce<number | null>((max, e) => {
+    const d = depths[e.event_id];
+    return d != null ? (max == null ? d : Math.max(max, d)) : max;
+  }, null);
+  const firstMeta = metas[events[0]?.event_id];
+  const gradient = getEventGradient(firstMeta?.artist, firstMeta?.title ?? events[0]?.title ?? groupKey);
 
   return (
-    <div className="mb-6">
+    <div className="mb-3">
+      {/* Collapsed summary card */}
       <button
         onClick={() => setCollapsed(v => !v)}
-        className="flex items-center gap-2 mb-3 group"
+        className="w-full text-left rounded-xl border border-white/8 overflow-hidden transition-all hover:border-white/15 focus:outline-none"
+        style={{ background: gradientBg(gradient, "low") }}
       >
-        <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">{groupKey}</span>
-        <span className="text-[10px] text-slate-600 font-normal">
-          {events.length} {events.length === 1 ? "event" : "events"}
-        </span>
-        <span
-          className="text-[9px] font-black tracking-widest px-1.5 py-0.5 rounded border ml-1"
-          style={{ color: topColors.text, background: topColors.bg, borderColor: topColors.border }}
-        >
-          {topAction}
-        </span>
-        <span className="text-slate-600 ml-1">
-          {collapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
-        </span>
+        <div className="flex items-center gap-4 px-4 py-3">
+          {/* color swatch strip */}
+          <div
+            className="w-1 self-stretch rounded-full flex-shrink-0"
+            style={{ background: `linear-gradient(to bottom, ${gradient[0]}, ${gradient[1]})` }}
+          />
+
+          {/* artist + event count */}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-slate-100 truncate">{groupKey}</p>
+            <p className="text-[10px] text-slate-500 mt-0.5">
+              {events.length} {events.length === 1 ? "event" : "events"}
+              {maxDepth != null && (
+                <span className={`ml-2 ${maxDepth >= 7 ? "text-emerald-600" : "text-amber-600"}`}>
+                  · {maxDepth >= 1 ? `${Math.round(maxDepth)}d data` : "live only"}
+                </span>
+              )}
+            </p>
+          </div>
+
+          {/* price summary */}
+          <div className="flex items-center gap-4 flex-shrink-0">
+            {lowestPrice != null && (
+              <div className="text-right hidden sm:block">
+                <p className="text-[9px] text-slate-600 uppercase tracking-wide">From</p>
+                <p className="text-sm font-bold text-slate-100 tabular-nums">{fmt$$(lowestPrice)}</p>
+              </div>
+            )}
+            {medianRange && (
+              <div className="text-right hidden md:block">
+                <p className="text-[9px] text-slate-600 uppercase tracking-wide">Median</p>
+                <p className="text-xs text-slate-300 tabular-nums">{medianRange}</p>
+              </div>
+            )}
+            {/* signal badge */}
+            <span
+              className="text-[9px] font-black tracking-widest px-2 py-1 rounded-md border flex-shrink-0"
+              style={{ color: topColors.text, background: topColors.bg, borderColor: topColors.border }}
+            >
+              {topAction}
+            </span>
+            <span className="text-slate-600">
+              {collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+            </span>
+          </div>
+        </div>
       </button>
 
+      {/* Expanded event cards */}
       {!collapsed && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
           {events.map((event) => (
             <EventCard
               key={event.event_id}
@@ -314,7 +395,7 @@ export default function DashboardPage() {
       {/* page header */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-lg font-semibold text-slate-100">Watchlist</h1>
+          <h1 className="text-lg font-semibold text-slate-100">Active Markets</h1>
           <p className="text-xs text-slate-500 mt-0.5">
             {loading ? "Loading…" : `${events.length} events · ${groups.length} artists`}
           </p>
@@ -390,6 +471,7 @@ export default function DashboardPage() {
               event={selectedEvent}
               meta={metas[selectedEvent.event_id]}
               depth={depths[selectedEvent.event_id]}
+              firstTrackedPct={selectedEvent.changes?.first_tracked?.price_delta_pct}
             />
           )}
 

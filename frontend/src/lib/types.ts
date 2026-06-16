@@ -24,6 +24,10 @@ export interface EventSummary {
       price_delta_pct?: number | null;
       inventory_delta?: number | null;
     };
+    first_tracked?: {
+      first_median?: number | null;
+      price_delta_pct?: number | null;
+    } | null;
   };
   inventory: {
     total_listings: number;

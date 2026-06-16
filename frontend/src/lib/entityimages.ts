@@ -3,18 +3,19 @@
 type GradientPair = [string, string];
 
 const ARTIST_GRADIENTS: Record<string, GradientPair> = {
-  "ariana grande":     ["#c850c0", "#4158d0"],
-  "bts":               ["#667eea", "#764ba2"],
-  "bts world tour":    ["#667eea", "#764ba2"],
-  "fifa":              ["#1a6b3a", "#0052cc"],
-  "fifa world cup":    ["#1a6b3a", "#0052cc"],
-  "nfl":               ["#013369", "#d50a0a"],
+  "ariana grande":     ["#e040fb", "#3d5afe"],
+  "bts":               ["#7c4dff", "#448aff"],
+  "bts world tour":    ["#7c4dff", "#448aff"],
+  "kid cudi":          ["#00e5ff", "#d500f9"],
+  "fifa":              ["#00c853", "#0091ea"],
+  "fifa world cup":    ["#00c853", "#0091ea"],
+  "nfl":               ["#002244", "#d50a0a"],
   "49ers":             ["#aa0000", "#b5832c"],
-  "ed sheeran":        ["#c97b2a", "#e8c34a"],
-  "foo fighters":      ["#1c1c1c", "#c41230"],
-  "la philharmonic":   ["#614385", "#c7903c"],
-  "morgan jay":        ["#005c97", "#363795"],
-  "morgan wallen":     ["#373b44", "#4286f4"],
+  "ed sheeran":        ["#ff6d00", "#ffea00"],
+  "foo fighters":      ["#b71c1c", "#212121"],
+  "la philharmonic":   ["#6a1b9a", "#e65100"],
+  "morgan jay":        ["#0288d1", "#283593"],
+  "morgan wallen":     ["#37474f", "#1565c0"],
 };
 
 const FALLBACK_GRADIENTS: GradientPair[] = [
@@ -54,11 +55,13 @@ export function getEventGradient(artist: string | null | undefined, title = ""):
 /** CSS background string — cinematic radial gradient, no image needed */
 export function gradientBg(colors: GradientPair, intensity: "low" | "medium" | "high" = "medium"): string {
   const [c1, c2] = colors;
-  const a1 = intensity === "low" ? "44" : intensity === "medium" ? "66" : "88";
-  const a2 = intensity === "low" ? "33" : intensity === "medium" ? "55" : "77";
+  // opacity hex suffixes — boosted from previous values so art reads clearly
+  const a1 = intensity === "low" ? "66" : intensity === "medium" ? "99" : "cc";
+  const a2 = intensity === "low" ? "55" : intensity === "medium" ? "88" : "bb";
   return [
-    `radial-gradient(ellipse at 20% 60%, ${c1}${a1} 0%, transparent 55%)`,
-    `radial-gradient(ellipse at 80% 35%, ${c2}${a2} 0%, transparent 50%)`,
+    `radial-gradient(ellipse at 15% 65%, ${c1}${a1} 0%, transparent 60%)`,
+    `radial-gradient(ellipse at 85% 30%, ${c2}${a2} 0%, transparent 55%)`,
+    `radial-gradient(ellipse at 50% 50%, ${c1}22 0%, transparent 80%)`,
     "#0d1117",
   ].join(", ");
 }
