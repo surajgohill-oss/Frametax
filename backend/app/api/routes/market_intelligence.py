@@ -161,11 +161,13 @@ async def all_events_intelligence(
     # start" baseline used to compute long-run change %.
     first_tracked_medians: dict[int, float | None] = {}
     if event_ids:
-        ft_rows = (await db.execute(text("""
+        # Build a literal IN list — safe because event_ids are ints from our own DB
+        ids_literal = ", ".join(str(i) for i in event_ids)
+        ft_rows = (await db.execute(text(f"""
             WITH first_windows AS (
                 SELECT event_id, MIN(snapshot_at) AS first_snap
                 FROM listing_snapshots
-                WHERE event_id = ANY(:eids)
+                WHERE event_id IN ({ids_literal})
                 GROUP BY event_id
             )
             SELECT ls.event_id,
@@ -176,7 +178,7 @@ async def all_events_intelligence(
              AND ls.snapshot_at BETWEEN fw.first_snap AND fw.first_snap + INTERVAL '1 hour'
             WHERE ls.is_active = true
             GROUP BY ls.event_id
-        """), {"eids": event_ids})).fetchall()
+        """))).fetchall()
         for row in ft_rows:
             first_tracked_medians[row[0]] = float(row[1]) if row[1] else None
 
