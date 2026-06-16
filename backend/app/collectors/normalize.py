@@ -197,6 +197,17 @@ _PARKING_ROW_EXACT: frozenset[str] = frozenset(
 # parking regardless of section content.
 _ROW_PRK_PREFIX_RE = re.compile(r"^PRK", re.IGNORECASE)
 
+# ── Tier 4: VIP + GA package detection ───────────────────────────────────────
+# Section exactly "VIP" (case-insensitive) with row "GA" is a VIP experience
+# package / hospitality bundle, not an assigned seat.  Confirmed on TickPick:
+# real concert VIP areas use "VIP Floor", "VIP Pit", numbered rows like "V1",
+# or specific row letters.  Bare "VIP" + "GA" = a package listing priced far
+# below surrounding real-seat inventory (e.g. $127 vs $612+ for the same event).
+# This pattern fires only when BOTH conditions hold so it never hits genuine
+# VIP Floor/Pit sections that happen to have GA standing.
+_SEC_VIP_EXACT_RE = re.compile(r"^\s*VIP\s*$", re.IGNORECASE)
+_ROW_GA_EXACT_RE  = re.compile(r"^\s*GA\s*$",  re.IGNORECASE)
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -269,6 +280,10 @@ def is_parking_listing(
 
     # ── Tier 3: row PRK* prefix ───────────────────────────────────────────────
     if _ROW_PRK_PREFIX_RE.match(rw):
+        return True
+
+    # ── Tier 4: VIP section + GA row = hospitality package, not a seat ────────
+    if _SEC_VIP_EXACT_RE.match(sec) and _ROW_GA_EXACT_RE.match(rw):
         return True
 
     return False

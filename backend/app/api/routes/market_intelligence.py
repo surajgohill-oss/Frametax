@@ -155,6 +155,24 @@ async def all_events_intelligence(
 
     event_ids = [e.id for e in events]
 
+    # ── Archive depth: batch-query event_price_history_agg for true oldest date ─
+    # history_hours stored in EventIntelligence reflects listing_snapshots only (live window).
+    # Archive aggregates can extend the range by weeks. Surface the true combined depth
+    # so the dashboard chip shows actual history depth, not just the live window.
+    archive_oldest_by_event: dict[int, float | None] = {}
+    if event_ids:
+        ids_literal_tmp = ", ".join(str(i) for i in event_ids)
+        agg_rows = (await db.execute(text(f"""
+            SELECT railway_event_id, MIN(bucket_ts)
+            FROM event_price_history_agg
+            WHERE railway_event_id IN ({ids_literal_tmp})
+            GROUP BY railway_event_id
+        """))).fetchall()
+        now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+        for agg_eid, agg_old in agg_rows:
+            if agg_old:
+                archive_oldest_by_event[agg_eid] = (now_utc - agg_old).total_seconds() / 3600
+
     # ── First-tracked median: one batch query for all events ──────────────────
     # Fetches PERCENTILE_CONT(0.5) of price at the earliest snapshot window
     # (first hour of data) from listing_snapshots only. This is the "tracking
@@ -211,7 +229,10 @@ async def all_events_intelligence(
                 "marketplace_leader": intel.get("market", {}).get("marketplace_leader"),
                 "seller_aggression": intel.get("market", {}).get("seller_aggression"),
             },
-            "history_hours": intel.get("history_hours"),
+            "history_hours": max(
+                intel.get("history_hours") or 0,
+                archive_oldest_by_event.get(event.id) or 0,
+            ) or None,
             "_from_cache": intel.get("_from_cache"),
         })
 
