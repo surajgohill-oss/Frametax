@@ -124,58 +124,62 @@ class VividSeatsCollector(BaseCollector):
 
     async def _search_event(self, title: str, event_date: Optional[datetime]) -> Optional[str]:
         """
-        Search via /productions with startDate filter.
-        /productions/search requires auth (returns 400 without token) — not used.
-        Scans up to 10 pages (250 events) on the target date, title-matched.
+        Search via /productions?query=<title> then filter by date.
+
+        The date-scan approach (?startDate=...&endDate=...) only returns
+        popular/featured productions and misses most concerts. The query= param
+        returns ALL productions matching the artist/event name and is reliable.
         """
-        if not event_date:
-            logger.info("VS resolver: no event_date — cannot resolve '%s'", title)
+        if not title:
             return None
 
-        date_str = event_date.strftime("%Y-%m-%d")
-        title_lower = title.lower()
-        # Build keyword set — all words > 3 chars from title (strips punctuation)
+        date_str = event_date.strftime("%Y-%m-%d") if event_date else None
+
         import re as _re
-        kw_set = {w for w in _re.split(r'\W+', title_lower) if len(w) > 3}
+        title_lower = title.lower()
+        kw_set = {w for w in _re.split(r'\W+', title_lower) if len(w) > 2}
 
         try:
-            for page in range(1, 61):  # up to 60 pages × 50 = 3000 items (covers busy dates)
-                resp = await self._client().get(
-                    f"{_VS_API_BASE}/productions",
-                    params={
-                        "startDate":  date_str,
-                        "endDate":    date_str,   # CRITICAL: without endDate, API returns multi-day
-                        "pageSize":   "50",       # max page size; 25 only gives 250 items total
-                        "pageNumber": str(page),
-                    },
-                )
-                resp.raise_for_status()
-                data = resp.json()
-                items = data.get("items") or []
-                if not items:
-                    break
-                for item in items:
-                    item_date = (item.get("localDate") or "")[:10]
-                    if item_date != date_str:
-                        continue
-                    name = (item.get("name") or "").lower()
-                    name_words = set(_re.split(r'\W+', name))
-                    if kw_set & name_words:  # any keyword overlap
-                        vs_id = str(item.get("id") or "")
-                        if vs_id:
-                            logger.info(
-                                "VS resolver: matched '%s' → '%s' id=%s (kw=%s)",
-                                title, item.get("name"), vs_id,
-                                kw_set & name_words,
-                            )
-                            return vs_id
-                # Stop early if we've passed the last page
-                total_pages = data.get("numberOfPages") or 9999
-                if page >= total_pages:
-                    break
+            resp = await self._client().get(
+                f"{_VS_API_BASE}/productions",
+                params={"query": title, "pageSize": "50"},
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            items = data.get("productions") or data.get("items") or []
         except Exception as exc:
-            logger.warning("VS resolver: HTTP failure — %s", exc)
+            logger.warning("VS resolver: query search failed — %s", exc)
             return None
+
+        best_match = None
+        for item in items:
+            item_date = (item.get("localDate") or "")[:10]
+            name = (item.get("name") or "").lower()
+            name_words = set(_re.split(r'\W+', name))
+            overlap = kw_set & name_words
+            if not overlap:
+                continue
+            vs_id = str(item.get("id") or "")
+            if not vs_id:
+                continue
+            if date_str and item_date == date_str:
+                logger.info(
+                    "VS resolver: matched '%s' → '%s' id=%s date=%s",
+                    title, item.get("name"), vs_id, item_date,
+                )
+                return vs_id
+            # Keep first keyword-match as fallback if no exact date match
+            if best_match is None and (not date_str or abs(
+                (datetime.strptime(item_date, "%Y-%m-%d") - event_date.replace(tzinfo=None)).days
+            ) <= 1 if item_date and date_str else True):
+                best_match = (vs_id, item.get("name"), item_date)
+
+        if best_match:
+            logger.info(
+                "VS resolver: fuzzy-date match '%s' → '%s' id=%s date=%s (expected %s)",
+                title, best_match[1], best_match[0], best_match[2], date_str,
+            )
+            return best_match[0]
 
         logger.info("VS resolver: no results for '%s' on %s", title, date_str)
         return None
