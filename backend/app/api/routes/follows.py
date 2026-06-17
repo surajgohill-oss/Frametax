@@ -193,6 +193,8 @@ async def list_follow_events(db: AsyncSession = Depends(get_db)):
     MIN_HOURS_ELIGIBLE  = 72
     MIN_HOURS_PARTIAL   = 24
 
+    # Identify follow-acquired events by matching events.artist against active user_follows.
+    # No 'source' column on events table — we use artist name match as the signal.
     rows = (await db.execute(text("""
         SELECT
             e.id          AS event_id,
@@ -200,39 +202,35 @@ async def list_follow_events(db: AsyncSession = Depends(get_db)):
             e.artist,
             e.event_date,
             e.status,
-            e.source,
-            -- Per-marketplace tracked event counts
-            COUNT(DISTINCT te.id)                    AS te_count,
-            COUNT(DISTINCT CASE WHEN te.external_event_id IS NOT NULL THEN te.id END) AS resolved_count,
+            uf.display_name AS follow_display_name,
             -- Listing counts per marketplace (to infer population status)
             SUM(CASE WHEN m.slug='gametime'   AND l.id IS NOT NULL THEN 1 ELSE 0 END) AS gt_listings,
             SUM(CASE WHEN m.slug='stubhub'    AND l.id IS NOT NULL THEN 1 ELSE 0 END) AS sh_listings,
             SUM(CASE WHEN m.slug='tickpick'   AND l.id IS NOT NULL THEN 1 ELSE 0 END) AS tp_listings,
             SUM(CASE WHEN m.slug='vividseats' AND l.id IS NOT NULL THEN 1 ELSE 0 END) AS vs_listings,
-            -- History depth
+            -- History depth from listing_snapshots
             MIN(ls.snapshot_at)   AS snap_oldest,
             MAX(ls.snapshot_at)   AS snap_newest,
             COUNT(DISTINCT ls.id) AS snap_count,
-            -- Floor price (lowest listing)
+            -- Floor price (lowest active listing)
             MIN(l.price)          AS floor_price
         FROM events e
+        JOIN user_follows uf ON (
+            LOWER(e.artist) = uf.entity_key
+            OR LOWER(e.artist) LIKE '%' || uf.entity_key || '%'
+            OR uf.entity_key LIKE '%' || LOWER(e.artist) || '%'
+        ) AND uf.status = 'active'
         LEFT JOIN tracked_events te ON te.event_id = e.id AND te.is_active = true
         LEFT JOIN marketplaces m ON m.id = te.marketplace_id
         LEFT JOIN listings l ON l.event_id = e.id AND l.marketplace_id = te.marketplace_id AND l.is_active = true
         LEFT JOIN listing_snapshots ls ON ls.event_id = e.id
-        WHERE e.source IN ('follow', 'follow_acquisition', 'gametime_follow')
-           OR EXISTS (
-               SELECT 1 FROM tracked_events te2
-               WHERE te2.event_id = e.id AND te2.discovery_source = 'follow'
-           )
-        GROUP BY e.id, e.title, e.artist, e.event_date, e.status, e.source
+        GROUP BY e.id, e.title, e.artist, e.event_date, e.status, uf.display_name
         ORDER BY e.event_date ASC
     """))).fetchall()
 
     events_out = []
     for row in rows:
-        (event_id, title, artist, event_date, status, source,
-         te_count, resolved_count,
+        (event_id, title, artist, event_date, status, follow_display_name,
          gt_listings, sh_listings, tp_listings, vs_listings,
          snap_oldest, snap_newest, snap_count,
          floor_price) = row
@@ -297,7 +295,7 @@ async def list_follow_events(db: AsyncSession = Depends(get_db)):
             "event_date":         event_date.isoformat() if event_date else None,
             "status":             status,
             "hours_until_event":  hours_until_event,
-            "source":             source,
+            "follow_display_name": follow_display_name,
             "population": {
                 "overall":          overall_status,
                 "per_marketplace":  mp_status,
