@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Plus, CheckCircle2, BarChart2 } from "lucide-react";
+import { Plus, CheckCircle2, BarChart2, Bookmark, List, Link2, Users } from "lucide-react";
 import AddEventModal from "./AddEventModal";
 
 export default function NavBar() {
@@ -27,9 +27,21 @@ export default function NavBar() {
               <BarChart2 size={13} />
               <span>Active</span>
             </NavLink>
+            <NavLink href="/watchlist" active={pathname === "/watchlist"}>
+              <Bookmark size={13} />
+              <span>Watchlist</span>
+            </NavLink>
+            <NavLink href="/all-events" active={pathname === "/all-events"}>
+              <List size={13} />
+              <span>All Events</span>
+            </NavLink>
             <NavLink href="/completed" active={pathname === "/completed"}>
               <CheckCircle2 size={13} />
               <span>Completed</span>
+            </NavLink>
+            <NavLink href="/follows" active={pathname === "/follows"}>
+              <Users size={13} />
+              <span>Follows</span>
             </NavLink>
           </nav>
 
@@ -37,6 +49,11 @@ export default function NavBar() {
           <div className="flex-1" />
 
           {/* Add event */}
+          <NavLink href="/url-intake" active={pathname === "/url-intake"}>
+            <Link2 size={13} />
+            <span className="hidden sm:inline">URL Intake</span>
+          </NavLink>
+
           <button
             onClick={() => setShowAdd(true)}
             className="flex items-center gap-1.5 text-xs font-medium text-white/70 hover:text-white bg-white/6 hover:bg-white/10 border border-white/8 hover:border-white/15 rounded-lg px-3 py-1.5 transition-all"
