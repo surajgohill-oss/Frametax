@@ -1022,13 +1022,13 @@ export default function EventDetailPage() {
               : <span className="text-sm text-amber-500/50 italic font-medium">—</span>
             }
           </div>
-          {/* Tickets Sold */}
+          {/* Disappeared Listings */}
           <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-3">
               <span className="text-lg opacity-50">🎟</span>
               <div>
-                <p className="text-sm font-semibold text-slate-300">Tickets Sold (est.)</p>
-                <p className="text-[11px] text-slate-500">Estimated purchases based on listing disappearances</p>
+                <p className="text-sm font-semibold text-slate-300">Disappeared Listings (24h)</p>
+                <p className="text-[11px] text-slate-500">Listings removed in 24h — sold, pulled, or expired</p>
               </div>
             </div>
             {seller?.removed_listings_24h != null
@@ -1036,13 +1036,13 @@ export default function EventDetailPage() {
               : <span className="text-sm text-amber-500/50 italic font-medium">—</span>
             }
           </div>
-          {/* Tickets Added */}
+          {/* New Listings */}
           <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-3">
               <span className="text-lg opacity-50">➕</span>
               <div>
-                <p className="text-sm font-semibold text-slate-300">Tickets Added (est.)</p>
-                <p className="text-[11px] text-slate-500">Estimated new inventory entering market today</p>
+                <p className="text-sm font-semibold text-slate-300">New Listings (24h)</p>
+                <p className="text-[11px] text-slate-500">Listings added in 24h — new entries and relists</p>
               </div>
             </div>
             {seller?.new_listings_24h != null

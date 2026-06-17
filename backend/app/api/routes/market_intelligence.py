@@ -1501,6 +1501,8 @@ async def event_intelligence_snapshot(
     mp_7d_trends: dict = {}
     if hist_hours >= 24:
         window_start_7d = now_sql - timedelta(days=min(7, hist_hours / 24))
+        # Use the most recent snapshot per marketplace within the last 6h
+        # (not 2h — most events poll every 3-4h, so 2h misses most events).
         mp_hist = (await db.execute(text("""
             SELECT m.slug,
                    MIN(ls.price)                                            AS floor_now,
@@ -1509,10 +1511,10 @@ async def event_intelligence_snapshot(
             FROM listing_snapshots ls
             JOIN marketplaces m ON m.id = ls.marketplace_id
             WHERE ls.event_id = :eid
-              AND ls.snapshot_at >= :since_1h
+              AND ls.snapshot_at >= :since_6h
               AND ls.price > 0
             GROUP BY m.slug
-        """), {"eid": event_id, "since_1h": now_sql - timedelta(hours=2)})).fetchall()
+        """), {"eid": event_id, "since_6h": now_sql - timedelta(hours=6)})).fetchall()
 
         mp_hist_old = (await db.execute(text("""
             SELECT m.slug,
