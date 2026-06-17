@@ -33,6 +33,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models import Event
 from app.services.intelligence_engine import compute_event, get_latest_intelligence
+from app.services.listing_lifecycle import compute_lifecycle
+from app.services.buy_window import compute_buy_signal
 
 router = APIRouter(prefix="/intelligence", tags=["market-intelligence"])
 
@@ -1715,3 +1717,61 @@ async def intelligence_readiness_audit(db: AsyncSession = Depends(get_db)):
         },
         "events": events_out,
     }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PHASE 2B — LISTING LIFECYCLE INTELLIGENCE V1
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.get("/events/{event_id}/lifecycle")
+async def listing_lifecycle_endpoint(
+    event_id: int,
+    hours_window: int = Query(default=168, ge=24, le=720),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Phase 2B — Listing Lifecycle Intelligence V1.
+
+    Classifies every disappeared listing into:
+      probable_sale, probable_relist, probable_pull, probable_expiration, unknown
+
+    Computes at event, marketplace, and section level:
+      absorption_rate, relist_rate, repricing_rate, churn_rate,
+      seller_aggression_score, seller_capitulation_score
+
+    Returns section-level velocity and liquidity data (Phase 2C).
+    API-only; no UI changes.
+    """
+    await _require_event(event_id, db)
+    return await compute_lifecycle(event_id, db, hours_window=hours_window)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PHASE 2D — BUY WINDOW ENGINE V1
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.get("/events/{event_id}/buy-signal")
+async def buy_signal_endpoint(
+    event_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Phase 2D — Buy Window Engine V1.
+
+    Generates a BUY / WAIT / MONITOR signal using:
+      - Market classification (capitulation_score, price trend, classification)
+      - Listing lifecycle (absorption_rate, relist_rate, seller_capitulation)
+      - Days until event
+      - 7-day price trend from archive
+
+    Every signal includes:
+      - signal: BUY | WAIT | MONITOR
+      - confidence: 0.0–1.0
+      - supporting_metrics: the exact inputs that drove the signal
+      - explanation: human-readable reasoning
+
+    No black-box scoring. All weights documented in buy_window.py.
+    API-only; no UI changes.
+    """
+    await _require_event(event_id, db)
+    return await compute_buy_signal(event_id, db)
