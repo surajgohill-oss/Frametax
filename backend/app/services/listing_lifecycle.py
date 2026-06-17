@@ -145,7 +145,7 @@ async def compute_lifecycle(
     # ── 3. Repricing stats ───────────────────────────────────────────────────
     reprice_row = (await db.execute(text("""
         SELECT
-            COUNT(DISTINCT ls.listing_id) AS total_with_snaps,
+            COUNT(DISTINCT snap_prices.listing_id) AS total_with_snaps,
             SUM(CASE WHEN snap_prices.price_changes > 1 THEN 1 ELSE 0 END) AS repriced_count,
             ROUND(AVG(snap_prices.price_range_pct)::numeric, 1) AS avg_price_range_pct
         FROM (
@@ -158,8 +158,6 @@ async def compute_lifecycle(
             WHERE event_id = :eid
             GROUP BY listing_id
         ) snap_prices
-        JOIN listings l ON l.id = snap_prices.listing_id
-        WHERE l.event_id = :eid
     """), {"eid": event_id})).fetchone()
 
     # ── 4. Seller scores at event level ──────────────────────────────────────
