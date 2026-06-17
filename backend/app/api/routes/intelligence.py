@@ -23,6 +23,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models import Event, Listing, ListingSnapshot, Marketplace, TrackedEvent, PollRun
+from app.services.event_history import get_event_history_depth
 
 router = APIRouter(prefix="/analytics", tags=["intelligence"])
 
@@ -304,7 +305,7 @@ async def snapshot_consistency(event_id: int, db: AsyncSession = Depends(get_db)
         }
         snap_lag_hours = round((now - snap_row[0]).total_seconds() / 3600, 2)
 
-    # Snapshot count + oldest
+    # Snapshot count + history depth (combined: listing_snapshots + event_price_history_agg)
     snap_stats_sql = text("""
         SELECT COUNT(*), MIN(snapshot_at), MAX(snapshot_at)
         FROM canonical_inventory_snapshots
@@ -312,9 +313,11 @@ async def snapshot_consistency(event_id: int, db: AsyncSession = Depends(get_db)
     """)
     snap_stats = (await db.execute(snap_stats_sql, {"event_id": event_id})).fetchone()
     snapshot_count = snap_stats[0] if snap_stats else 0
-    history_depth_days = 0
-    if snap_stats and snap_stats[1] and snap_stats[2]:
-        history_depth_days = (snap_stats[2] - snap_stats[1]).days
+    # Use combined history depth (live snapshots + pre-import agg buckets)
+    hist_depth = await get_event_history_depth(event_id, db)
+    history_depth_days = int(hist_depth.combined_days)
+    history_depth_hours = hist_depth.combined_hours
+    history_source = hist_depth.source
 
     # ── Latest listing_snapshots (per marketplace) ─────────────────────────────
     ls_sql = text("""
@@ -403,6 +406,8 @@ async def snapshot_consistency(event_id: int, db: AsyncSession = Depends(get_db)
         "poll_is_fresh": poll_is_fresh,
         "snapshot_count": snapshot_count,
         "history_depth_days": history_depth_days,
+        "history_depth_hours": history_depth_hours,
+        "history_source": history_source,
         "live": {
             "total_listings": live_total_listings,
             "total_tickets": live_total_tickets,

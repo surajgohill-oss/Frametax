@@ -20,36 +20,57 @@ settings = get_settings()
 
 _scheduler: AsyncIOScheduler | None = None
 
+# Number of consecutive successful zero-inventory polls required post-start
+# before an event is considered exhausted and marked completed.
+_EXHAUSTION_THRESHOLD = 5
 
-# ── Polling policy ─────────────────────────────────────────────────────────────
-# Strict piecewise function. No smoothing, no interpolation.
+
+# ── Polling cadence ────────────────────────────────────────────────────────────
+# Strict piecewise function.  Always returns a positive integer — NEVER None.
+# Deactivation is handled exclusively by inventory-exhaustion logic in
+# _process_result(), which fires only after event_start has passed.
 #
-# > 10 days before event  →  1440 min  (24 h)
-# 10 days → 2 days        →   240 min  ( 4 h)
-# 2 days → 8 hours        →    60 min  ( 1 h)
-# 8 hours → event start   →    15 min
-# event start → +5 min    →     5 min
-# after +5 min            →  None  (deactivate)
+# Pre-event zero inventory does NOT trigger completion — it indicates collector
+# failure, marketplace outage, anti-bot blocks, or temporary delisting.
+#
+#  > 30 days   →  1440 min  (daily)
+#  14–30 days  →   720 min  (12 h)
+#   7–14 days  →   480 min  ( 8 h)
+#    3–7 days  →   240 min  ( 4 h)
+#   24h–3d     →    60 min  ( 1 h)
+#    6h–24h    →    30 min
+#   90m–6h     →    15 min
+#   30–90m     →     5 min
+#    0–30m     →     2 min
+#  post-start  →     2 min  (until exhaustion confirmed)
 
-def compute_poll_interval_minutes(event_date: datetime) -> int | None:
+def compute_poll_interval_minutes(event_date: datetime) -> int:
     seconds = (event_date - datetime.now(timezone.utc)).total_seconds()
 
-    if seconds < -5 * 60:              # > 5 min past start → stop
-        return None
-    if seconds < 0:                    # within 5 min of start
+    if seconds < 0:                          # post-start  → LIVE polling
+        return 2
+    if seconds < 30 * 60:                    # 0–30 min
+        return 2
+    if seconds < 90 * 60:                    # 30–90 min
         return 5
-    if seconds < 8 * 3600:            # < 8 h
+    if seconds < 6 * 3600:                   # 90 min – 6 h
         return 15
-    if seconds < 2 * 24 * 3600:      # < 2 days
+    if seconds < 24 * 3600:                  # 6–24 h
+        return 30
+    if seconds < 3 * 24 * 3600:             # 1–3 days
         return 60
-    if seconds < 10 * 24 * 3600:     # < 10 days
+    if seconds < 7 * 24 * 3600:             # 3–7 days
         return 240
-    return 1440                        # >= 10 days
+    if seconds < 14 * 24 * 3600:            # 7–14 days
+        return 480
+    if seconds < 30 * 24 * 3600:            # 14–30 days
+        return 720
+    return 1440                               # > 30 days → daily
 
 
-# ── Event status (display) ─────────────────────────────────────────────────────
-# events.status is for UI display only. Uses a longer completed window (3 h)
-# so the event card doesn't vanish the moment polling stops.
+# ── Event display status ───────────────────────────────────────────────────────
+# events.status drives UI display only.  Uses a 3-hour grace window so the
+# event card remains visible after showtime.
 
 def event_status_from_date(event_date: datetime) -> str:
     seconds = (event_date - datetime.now(timezone.utc)).total_seconds()
@@ -60,28 +81,33 @@ def event_status_from_date(event_date: datetime) -> str:
     return "upcoming"
 
 
-# ── Lifecycle phase (observability) ───────────────────────────────────────────
-# tracked_events.lifecycle_phase is observability-only. It does NOT gate
-# polling. Polling is exclusively controlled by compute_poll_interval_minutes.
+# ── Lifecycle phase ────────────────────────────────────────────────────────────
+# tracked_events.lifecycle_phase is observability-only metadata.
+# It does NOT gate polling; polling is controlled by is_active.
 #
-# Thresholds:
-#   pre_admission : event > 21 days away (discovery hasn't admitted it yet)
-#   active        : event within 21 days (being tracked and polled)
-#   in_progress   : event started, within 5 min window
-#   completed     : polling stopped (> 5 min past start)
+# Phases:
+#   pre_admission    — event > 21 days out (discovery not yet admitted)
+#   active           — within 21 days, before event_start
+#   live             — post-start, inventory still being found
+#   exhaustion_pending — post-start, 1–4 consecutive zero cycles
+#   completed        — 5 consecutive zero cycles after event_start
 
 _ADMISSION_DAYS = 21
 
 
-def compute_lifecycle_phase(event_date: datetime) -> str:
+def compute_lifecycle_phase(event_date: datetime, consecutive_zero: int = 0) -> str:
     seconds = (event_date - datetime.now(timezone.utc)).total_seconds()
-    if seconds < -5 * 60:
-        return "completed"
-    if seconds < 0:
-        return "in_progress"
-    if seconds < _ADMISSION_DAYS * 24 * 3600:
+    if seconds >= 0:
+        # Pre-start — zero inventory never advances lifecycle here
+        if seconds >= _ADMISSION_DAYS * 24 * 3600:
+            return "pre_admission"
         return "active"
-    return "pre_admission"
+    # Post-start
+    if consecutive_zero >= _EXHAUSTION_THRESHOLD:
+        return "completed"
+    if consecutive_zero > 0:
+        return "exhaustion_pending"
+    return "live"
 
 
 # ── Scheduler lifecycle ────────────────────────────────────────────────────────
@@ -102,7 +128,7 @@ async def start_scheduler():
         id="event_status_updater",
         replace_existing=True,
         max_instances=1,
-        next_run_time=datetime.now(timezone.utc),  # populate lifecycle_phase immediately on startup
+        next_run_time=datetime.now(timezone.utc),
     )
     _scheduler.add_job(
         _resolve_pending_event_ids,
@@ -119,10 +145,27 @@ async def start_scheduler():
         replace_existing=True,
         max_instances=1,
     )
+    _scheduler.add_job(
+        _run_follow_acquisition,
+        trigger=IntervalTrigger(hours=6),
+        id="follow_acquisition",
+        replace_existing=True,
+        max_instances=1,
+        next_run_time=datetime.now(timezone.utc),  # run once at startup
+    )
+    _scheduler.add_job(
+        _run_price_history_agg,
+        trigger=IntervalTrigger(hours=1),
+        id="price_history_agg",
+        replace_existing=True,
+        max_instances=1,
+        next_run_time=datetime.now(timezone.utc),  # backfill immediately at startup
+    )
     _scheduler.start()
     logger.info(
-        "Scheduler started — polling_policy=piecewise resolver=active "
-        "discovery=6h lifecycle_phase=observability_only"
+        "Scheduler started — cadence=piecewise_2m_to_daily exhaustion_threshold=%d "
+        "resolver=active discovery=6h lifecycle_phase=observability_only",
+        _EXHAUSTION_THRESHOLD,
     )
 
 
@@ -135,13 +178,12 @@ async def stop_scheduler():
 # ── Resolver job ───────────────────────────────────────────────────────────────
 
 async def _resolve_pending_event_ids():
-    """Enrich TrackedEvents that have no external_event_id by searching marketplaces."""
     resolver = EventResolver(settings)
     try:
         counts = await resolver.resolve_all_pending(AsyncSessionLocal)
         if counts["resolved"] or counts["failed"]:
             logger.info(
-                "RESOLVER: scheduler cycle resolved=%d failed=%d already_set=%d",
+                "RESOLVER: cycle resolved=%d failed=%d already_set=%d",
                 counts["resolved"], counts["failed"], counts["already_set"],
             )
     finally:
@@ -152,12 +194,13 @@ async def _resolve_pending_event_ids():
 
 async def _check_due_events():
     async with AsyncSessionLocal() as db:
+        now_naive = datetime.utcnow()  # next_poll_at is TIMESTAMP WITHOUT TIME ZONE
         result = await db.execute(
             select(TrackedEvent).where(
                 and_(
                     TrackedEvent.is_active == True,
-                    TrackedEvent.external_event_id.is_not(None),  # Stage 2 must be complete
-                    (TrackedEvent.next_poll_at <= datetime.now(timezone.utc))
+                    TrackedEvent.external_event_id.is_not(None),
+                    (TrackedEvent.next_poll_at <= now_naive)
                     | (TrackedEvent.next_poll_at.is_(None)),
                 )
             )
@@ -182,8 +225,7 @@ async def _check_due_events():
 
         if due:
             logger.info(
-                "STAGE_GATE: %d tracked_event(s) due for polling — "
-                "%s",
+                "STAGE_GATE: %d tracked_event(s) due for polling — %s",
                 len(due),
                 [
                     f"te={te.id} event={te.event_id} mp={te.marketplace_id} "
@@ -201,10 +243,10 @@ async def _check_due_events():
 async def _update_event_statuses():
     """
     Runs every 15 min.
-    - Writes events.status (display)
-    - Writes tracked_events.lifecycle_phase (observability)
-    - Deactivates tracked_events for completed events (safety net — the poll
-      loop deactivates them first via compute_poll_interval_minutes → None)
+    - Updates events.status (display field only)
+    - Updates tracked_events.lifecycle_phase (observability only)
+    - Does NOT deactivate tracked_events — that is handled exclusively by
+      inventory-exhaustion logic in _process_result() and only after event_start.
     """
     async with AsyncSessionLocal() as db:
         result = await db.execute(select(Event))
@@ -214,25 +256,17 @@ async def _update_event_statuses():
                 event.status = new_status
                 logger.info("EVENT: %d '%s' status → %s", event.id, event.title, new_status)
 
-            new_phase = compute_lifecycle_phase(event.event_date)
-
-            if new_phase == "completed":
-                # Deactivate any still-active tracked_events (belt + suspenders)
-                await db.execute(
-                    update(TrackedEvent)
-                    .where(
-                        TrackedEvent.event_id == event.id,
-                        TrackedEvent.is_active == True,
-                    )
-                    .values(is_active=False, lifecycle_phase="completed")
+            # Update lifecycle_phase on all active tracked_events for observability
+            te_result = await db.execute(
+                select(TrackedEvent).where(
+                    TrackedEvent.event_id == event.id,
+                    TrackedEvent.is_active == True,
                 )
-            else:
-                # Write lifecycle_phase for observability
-                await db.execute(
-                    update(TrackedEvent)
-                    .where(TrackedEvent.event_id == event.id)
-                    .values(lifecycle_phase=new_phase)
-                )
+            )
+            for te in te_result.scalars().all():
+                new_phase = compute_lifecycle_phase(event.event_date, te.consecutive_zero_inventory_count)
+                if te.lifecycle_phase != new_phase:
+                    te.lifecycle_phase = new_phase
 
         await db.commit()
 
@@ -240,7 +274,6 @@ async def _update_event_statuses():
 # ── Discovery job ──────────────────────────────────────────────────────────────
 
 async def _run_event_discovery():
-    """Scan marketplaces for new events within the admission window (14–21 days out)."""
     from app.collectors.discovery import EventDiscovery
     discovery = EventDiscovery(settings)
     try:
@@ -255,6 +288,34 @@ async def _run_event_discovery():
         logger.exception("DISCOVERY: cycle failed — %s", exc)
     finally:
         await discovery.close()
+
+
+async def _run_follow_acquisition():
+    from app.services.follow_acquisition import run_follow_acquisition
+    try:
+        summary = await run_follow_acquisition(AsyncSessionLocal)
+        for entity, info in summary.items():
+            logger.info(
+                "FOLLOW_ACQUISITION: entity='%s' scope=%s already=%d added=%d total=%d errors=%s",
+                entity, info.get("scope"), info.get("already_tracked"),
+                info.get("enrolled", 0), info.get("total_after", 0),
+                info.get("errors", []),
+            )
+    except Exception as exc:
+        logger.exception("FOLLOW_ACQUISITION: cycle failed — %s", exc)
+
+
+async def _run_price_history_agg():
+    from app.services.price_history_agg import run_price_history_agg
+    try:
+        result = await run_price_history_agg(AsyncSessionLocal)
+        logger.info(
+            "PRICE_HISTORY_AGG: events=%d inserted=%d skipped=%d errors=%d",
+            result["events_processed"], result["buckets_inserted"],
+            result["buckets_skipped"], result["errors"],
+        )
+    except Exception as exc:
+        logger.exception("PRICE_HISTORY_AGG: cycle failed — %s", exc)
 
 
 # ── Single event poll ──────────────────────────────────────────────────────────
@@ -279,30 +340,19 @@ async def run_poll_for_tracked_event(tracked_event_id: int):
 
         interval = compute_poll_interval_minutes(event.event_date) if event else te.poll_interval_minutes
 
-        if interval is None:
-            te.is_active = False
-            te.lifecycle_phase = "completed"
-            if event:
-                event.status = event_status_from_date(event.event_date)
-            await db.commit()
-            logger.info(
-                "POLLING: tracked_event=%d event='%s' deactivated — past cutoff",
-                te.id, event.title if event else te.event_id,
-            )
-            return
-
         if event:
             new_status = event_status_from_date(event.event_date)
             if event.status != new_status:
                 event.status = new_status
-            te.lifecycle_phase = compute_lifecycle_phase(event.event_date)
+            te.lifecycle_phase = compute_lifecycle_phase(
+                event.event_date, te.consecutive_zero_inventory_count
+            )
 
         te.last_polled_at = datetime.utcnow()
         te.poll_interval_minutes = interval
         te.next_poll_at = datetime.utcnow() + timedelta(minutes=interval)
         await db.commit()
 
-    # Fan out to every registered collector — all marketplaces, full isolation.
     from app.collectors.registry import COLLECTOR_REGISTRY
     collector_slugs = list(COLLECTOR_REGISTRY.keys())
     event_title = event.title if event else str(te.event_id)
@@ -324,15 +374,6 @@ async def run_poll_for_tracked_event(tracked_event_id: int):
 
 
 async def _run_collector_for_event(collector_slug: str, source_te: TrackedEvent, event):
-    """
-    Load (or lazily create) the collector's own marketplace-scoped TrackedEvent,
-    then run that collector using its own external_event_id.
-
-    Each invocation gets its own PollRun row. A missing external_event_id causes
-    the collector's resolve_external_event_id() fallback to fire (marketplace-
-    specific search). Exceptions are caught — a failing collector does not block
-    sibling collectors.
-    """
     collector = get_collector(collector_slug, settings)
     if not collector:
         logger.debug("POLLING: no collector registered for '%s' — skipping", collector_slug)
@@ -366,6 +407,7 @@ async def _run_collector_for_event(collector_slug: str, source_te: TrackedEvent,
                 is_active=True,
                 poll_interval_minutes=source_te.poll_interval_minutes,
                 next_poll_at=None,
+                consecutive_zero_inventory_count=0,
             )
             db.add(te)
             await db.flush()
@@ -380,7 +422,6 @@ async def _run_collector_for_event(collector_slug: str, source_te: TrackedEvent,
         poll_run_id = poll_run.id
         await db.commit()
 
-    # Attach Event object so resolver fallbacks can access event.title / event_date
     te.event = event
 
     logger.info(
@@ -419,7 +460,7 @@ async def _run_collector_for_event(collector_slug: str, source_te: TrackedEvent,
             "listings_count": listings_count,
             "error": result.error,
         })
-        await _process_result(result, te, poll_run_id)
+        await _process_result(result, te, poll_run_id, event)
     except Exception as exc:
         logger.exception(
             "COLLECTOR_EXCEPTION: slug=%s event_id=%d "
@@ -433,26 +474,14 @@ async def _run_collector_for_event(collector_slug: str, source_te: TrackedEvent,
 
 # ── Result processing ──────────────────────────────────────────────────────────
 
-async def _process_result(result, te: TrackedEvent, poll_run_id: int):
+async def _process_result(result, te: TrackedEvent, poll_run_id: int, event=None):
     async with AsyncSessionLocal() as db:
-        # Resolve this result's marketplace — all reads and writes below are
-        # scoped to this marketplace_id. No other marketplace's listings are
-        # ever touched by this invocation.
         marketplace = (await db.execute(
             select(Marketplace).where(Marketplace.slug == result.marketplace_slug)
         )).scalar_one_or_none()
         if not marketplace:
             return
 
-        # ── Scope: only listings owned by THIS marketplace ────────────────────
-        # Invariant: existing contains ONLY rows where
-        #   event_id == result.event_id AND marketplace_id == marketplace.id
-        # A collector from any other marketplace cannot affect these rows.
-        #
-        # Query ALL listings regardless of is_active so that previously-deactivated
-        # listings can be reactivated rather than re-inserted.  Inserting a new row
-        # for a previously-seen (event_id, marketplace_id, external_listing_id)
-        # would violate the UNIQUE constraint added in migration 0001.
         existing_result = await db.execute(
             select(Listing).where(
                 and_(
@@ -465,25 +494,16 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
         existing: dict[str, Listing] = {
             l.external_listing_id: l for l in all_known_listings
         }
-        # Track which were active before this poll so the disappeared calculation
-        # only deactivates rows that were previously live.
         was_active: set[str] = {
             l.external_listing_id for l in all_known_listings if l.is_active
         }
 
-        # seen_ids is populated exclusively from this collector's returned
-        # listings — it never contains IDs from another marketplace.
         seen_ids: set[str] = set()
         new_count = 0
         parking_dropped = 0
         snapshots: list[ListingSnapshot] = []
         collector = get_collector(result.marketplace_slug, settings)
 
-        # ── Parking pre-filter ────────────────────────────────────────────────
-        # Drop parking passes before any upsert so they never enter the
-        # listings table.  Applied to ALL sources (Railway collectors AND
-        # Mac-host manual-ingest scripts that POST to /api/poll/.../manual-ingest)
-        # because this is the single shared ingestion choke-point.
         clean_listings = []
         for raw in result.listings:
             if is_parking_listing(raw.section, raw.row):
@@ -510,7 +530,6 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
             seen_ids.add(raw.external_listing_id)
 
             if raw.external_listing_id in existing:
-                # Update existing row — reactivate if it was previously deactivated.
                 l = existing[raw.external_listing_id]
                 l.price = raw.price
                 l.fees = raw.fees
@@ -518,7 +537,7 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
                 l.quantity = raw.quantity
                 l.last_seen_at = result.fetched_at
                 if not l.is_active:
-                    l.is_active = True   # reactivate; do not increment new_count
+                    l.is_active = True
             else:
                 l = Listing(
                     event_id=result.event_id,
@@ -554,25 +573,6 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
                 snapshot_at=result.fetched_at,
             ))
 
-        # Retire listings that were active before this poll but absent from it.
-        # Use was_active (pre-poll snapshot) rather than existing so that already-
-        # inactive rows are not double-counted and inactive rows introduced by
-        # concurrent collectors are left alone.
-        #
-        # Safety rule 1: only retire when the collector returned real results.
-        # An empty result (API failure, unresolvable ID, rate-limit, partial error)
-        # is indistinguishable from a genuine "0 listings" response, so we preserve
-        # all existing rows rather than bulk-deactivating on ambiguous evidence.
-        # Note: we use clean_listings (post-filter) for the retirement check so that
-        # a poll returning only parking listings is still treated as a real result.
-        #
-        # Safety rule 2: partial-result protection.
-        # When a collector returns significantly fewer listings than already active
-        # (e.g. Railway-side SH Playwright gets first-page only, host-side got 400+),
-        # treat the new result as partial rather than authoritative. Threshold: if the
-        # new count is < 20% of the current active count AND the active count exceeds
-        # 50, skip deactivation. This prevents the Railway-side partial scrape from
-        # wiping host-side collected data.
         _PARTIAL_RATIO_THRESHOLD = 0.20
         _PARTIAL_MIN_ACTIVE = 50
         disappeared = 0
@@ -589,8 +589,7 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
         elif _partial_result:
             logger.warning(
                 "RECONCILE: collector=%s event_id=%d returned %d listings vs %d active "
-                "(ratio=%.2f < %.2f threshold) — partial result, preserving existing, "
-                "no deactivation",
+                "(ratio=%.2f < %.2f threshold) — partial result, preserving existing",
                 result.marketplace_slug, result.event_id, len(result.listings),
                 len(was_active), len(result.listings) / len(was_active),
                 _PARTIAL_RATIO_THRESHOLD,
@@ -618,12 +617,54 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
 
         await db.commit()
 
-        # Update marketplace-specific TrackedEvent.last_polled_at
         te_row = (await db.execute(
             select(TrackedEvent).where(TrackedEvent.id == te.id)
         )).scalar_one_or_none()
         if te_row and not result.error:
             te_row.last_polled_at = datetime.utcnow()
+
+            # ── Exhaustion logic (post-start only) ─────────────────────────────
+            # CRITICAL: Pre-event zero inventory is NEVER a completion signal.
+            # It may indicate collector failure, anti-bot blocks, or outage.
+            # Only after event_start may exhaustion logic activate.
+            event_obj = event or (await db.execute(
+                select(Event).where(Event.id == te_row.event_id)
+            )).scalar_one_or_none()
+
+            if event_obj:
+                event_has_started = event_obj.event_date <= datetime.now(timezone.utc)
+                if event_has_started:
+                    if len(clean_listings) == 0:
+                        te_row.consecutive_zero_inventory_count += 1
+                        logger.info(
+                            "EXHAUSTION: event=%d %s zero_count=%d/%d",
+                            result.event_id, result.marketplace_slug,
+                            te_row.consecutive_zero_inventory_count, _EXHAUSTION_THRESHOLD,
+                        )
+                    else:
+                        if te_row.consecutive_zero_inventory_count > 0:
+                            logger.info(
+                                "EXHAUSTION: event=%d %s inventory restored — resetting zero_count",
+                                result.event_id, result.marketplace_slug,
+                            )
+                        te_row.consecutive_zero_inventory_count = 0
+
+                    te_row.lifecycle_phase = compute_lifecycle_phase(
+                        event_obj.event_date, te_row.consecutive_zero_inventory_count
+                    )
+
+                    # Check if all active tracked_events for this event have reached threshold
+                    if te_row.consecutive_zero_inventory_count >= _EXHAUSTION_THRESHOLD:
+                        await _check_event_exhaustion(db, result.event_id, event_obj)
+                else:
+                    # Pre-event — flag data quality warning if repeated zeros but stay ACTIVE
+                    if len(clean_listings) == 0:
+                        logger.warning(
+                            "DATA_QUALITY_WARNING: event=%d %s returned 0 listings "
+                            "BEFORE event_start — keeping ACTIVE (may be collector/outage issue)",
+                            result.event_id, result.marketplace_slug,
+                        )
+
             await db.commit()
 
         emit_event_trace("DB_WRITE", result.event_id, {
@@ -641,9 +682,6 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
             len(clean_listings), new_count, disappeared, parking_dropped,
         )
 
-        # ── Phase 3B: canonical snapshot (runs after listings are committed) ──
-        # Writes one row to canonical_inventory_snapshots per successful poll.
-        # Failure here is non-fatal — poll result is already committed above.
         try:
             from app.services.canonical_inventory import snapshot_canonical_inventory
             snap_id = await snapshot_canonical_inventory(
@@ -652,7 +690,7 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
                 poll_run_id=poll_run_id,
             )
             if snap_id:
-                await db.commit()  # flush() inside snapshot_canonical_inventory — must commit here
+                await db.commit()
                 logger.info("CANONICAL: event=%d snap_id=%d written", result.event_id, snap_id)
         except Exception as canon_exc:
             await db.rollback()
@@ -660,3 +698,45 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int):
                 "CANONICAL: snapshot failed event=%d — %s (poll result unaffected)",
                 result.event_id, canon_exc,
             )
+
+
+async def _check_event_exhaustion(db, event_id: int, event_obj):
+    """
+    Called after any per-marketplace zero count reaches the threshold.
+    Checks whether ALL active tracked_events for the event have hit the
+    threshold.  If so, marks the event completed and deactivates all tracking.
+    """
+    all_te_result = await db.execute(
+        select(TrackedEvent).where(
+            TrackedEvent.event_id == event_id,
+            TrackedEvent.is_active == True,
+        )
+    )
+    all_active_te = all_te_result.scalars().all()
+
+    if not all_active_te:
+        return
+
+    exhausted_count = sum(
+        1 for te in all_active_te
+        if te.consecutive_zero_inventory_count >= _EXHAUSTION_THRESHOLD
+    )
+
+    if exhausted_count < len(all_active_te):
+        logger.info(
+            "EXHAUSTION: event=%d — %d/%d marketplaces exhausted, not completing yet",
+            event_id, exhausted_count, len(all_active_te),
+        )
+        return
+
+    # All active tracked_events exhausted — complete the event
+    logger.info(
+        "EXHAUSTION: event=%d ALL %d marketplace(s) exhausted — marking COMPLETED",
+        event_id, len(all_active_te),
+    )
+    for te in all_active_te:
+        te.is_active = False
+        te.lifecycle_phase = "completed"
+
+    event_obj.status = "completed"
+    # db.commit() is called by the caller (_process_result) after this returns
