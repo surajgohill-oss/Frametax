@@ -12,6 +12,7 @@ import type {
   VenueClassificationsResponse,
   BaselineResponse,
   Listing,
+  EventSnapshotResponse,
 } from "./types";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://backend-production-509f.up.railway.app";
@@ -33,6 +34,7 @@ export const api = {
       get<HistoryResponse>(`/api/intelligence/events/${id}/history?window=${window}&metric=price`),
     sections: (id: number) => get<SectionsResponse>(`/api/intelligence/events/${id}/sections`),
     seller: (id: number) => get<SellerResponse>(`/api/intelligence/events/${id}/seller`),
+    snapshot: (id: number) => get<EventSnapshotResponse>(`/api/intelligence/events/${id}/snapshot`),
     listings: (id: number, limit = 8) => get<Listing[]>(`/api/listings/events/${id}?limit=${limit}&sort=price`),
     create: (body: { stubhub_url?: string; seatgeek_url?: string; title?: string; venue?: string; event_date?: string }) =>
       fetch(`${BASE}/api/events/`, {

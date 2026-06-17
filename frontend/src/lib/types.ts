@@ -68,6 +68,7 @@ export interface EventMeta {
   performers?: string;
   // marketplace data from backend
   marketplace_prices?: Record<string, number | null>;
+  all_marketplace_prices?: Record<string, number | null>;
   marketplace_freshness?: Record<string, MarketplaceFreshness>;
   tracked_events?: TrackedEventEntry[];
   lowest_price?: number | null;
@@ -353,4 +354,51 @@ export interface Listing {
   marketplace_slug: string;
   is_active: boolean;
   listing_url: string | null;
+}
+
+// ── /api/intelligence/events/{id}/snapshot ────────────────────────────────────
+export interface MarketplaceTrend {
+  floor_now: number | null;
+  floor_change: number | null;
+  floor_change_pct: number | null;
+  median_now: number | null;
+  median_change: number | null;
+  listings_now: number | null;
+  listings_change: number | null;
+  window_hours: number | null;
+}
+
+export interface EventSnapshotResponse {
+  event_id: number;
+  computed_at: string | null;
+  hours_of_data: number | null;
+  data_note: string | null;
+  price: {
+    floor_now: number | null;
+    floor_24h_change: number | null;
+    floor_7d_change: number | null;
+    median_now: number | null;
+    median_24h_change: number | null;
+    median_24h_change_pct: number | null;
+    median_7d_change: number | null;
+    median_7d_change_pct: number | null;
+  };
+  inventory: {
+    inventory_now: number | null;
+    inventory_24h_change: number | null;
+    inventory_7d_change: number | null;
+  };
+  velocity: {
+    inventory_removed_24h: number | null;
+    inventory_added_24h: number | null;
+    net_inventory_change: number | null;
+  };
+  marketplace: {
+    marketplace_leading_price_drop: string | null;
+    marketplace_leading_inventory_loss: string | null;
+    marketplace_lowest_floor: string | null;
+  };
+  classification: string | null;
+  classification_confidence: number | null;
+  per_marketplace_trends: Record<string, MarketplaceTrend>;
 }

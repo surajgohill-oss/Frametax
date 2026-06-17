@@ -265,7 +265,14 @@ async def list_follow_events(db: AsyncSession = Depends(get_db)):
             if listing_count and listing_count > 0:
                 return "POPULATED"
             if mp_slug == "stubhub":
-                return "BLOCKED"   # StubHub requires browser session
+                # StubHub resolver requires external_url (Follow creates with null)
+                # and /listingCatalog/select SOLR returns 404 without auth.
+                # No unauthenticated search path available.
+                return "NEEDS_MARKETPLACE_URL"
+            if mp_slug == "tickpick":
+                # TickPick /1.0/performances/search returns 404 — API is dead.
+                # Cannot resolve without a working search endpoint.
+                return "NEEDS_MARKETPLACE_URL"
             return "NO_ID"
 
         mp_status = {

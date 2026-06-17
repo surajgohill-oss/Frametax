@@ -1071,3 +1071,645 @@ async def full_intelligence_dump(
     """
     await _require_event(event_id, db)
     return await _get_or_compute(event_id, db, force=refresh)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# INTELLIGENCE PHASE 1A — HISTORICAL CURVE + ABSORPTION
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.get("/event/{event_id}")
+async def historical_intelligence(
+    event_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Historical intelligence for a completed or in-flight event.
+
+    Queries listing_snapshots to build a normalized price/inventory curve
+    (one point per hour, sorted oldest→newest), computes key timing markers,
+    runs absorption classification on consecutive transitions, and optionally
+    cross-references the Ariana Grande aggregate profile when the artist matches.
+
+    Response:
+      event_id, title, event_date, is_completed
+      tracking_start_hours_before   — how far before event we started collecting
+      data_points                   — hourly buckets available
+      curve[]                       — {hours_to_event, floor_price, inventory}
+      lowest_floor, lowest_floor_hours_to_event
+      inventory_peak, inventory_peak_hours_to_event
+      inventory_collapse_hours_to_event  — first point after peak where inv < 50% peak (null if not yet)
+      marketplace_analysis           — per-mp {min_floor, max_floor, max_inv, floor_trend_pct}
+      absorption                     — {transitions[], summary{}, dominant}
+      artist_profile                 — Ariana aggregate context (null if not applicable)
+    """
+    # ── Load event ────────────────────────────────────────────────────────────
+    event_row = (await db.execute(
+        select(Event).where(Event.id == event_id)
+    )).scalar_one_or_none()
+    if not event_row:
+        raise HTTPException(status_code=404, detail=f"Event {event_id} not found")
+
+    now = datetime.now(timezone.utc)
+    event_dt = event_row.event_date.replace(tzinfo=timezone.utc) if event_row.event_date.tzinfo is None else event_row.event_date
+    is_completed = event_dt < now
+
+    # ── Pull hourly price/inventory from listing_snapshots ────────────────────
+    rows = (await db.execute(text("""
+        SELECT
+            DATE_TRUNC('hour', ls.snapshot_at)               AS bucket,
+            MIN(ls.price)                                     AS floor_price,
+            PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY ls.price) AS median_price,
+            COUNT(DISTINCT ls.listing_id)                    AS listings,
+            SUM(ls.quantity)                                 AS tickets,
+            m.slug                                           AS marketplace
+        FROM listing_snapshots ls
+        JOIN marketplaces m ON m.id = ls.marketplace_id
+        WHERE ls.event_id = :eid
+          AND ls.price > 0
+        GROUP BY DATE_TRUNC('hour', ls.snapshot_at), m.slug
+        ORDER BY bucket ASC
+    """), {"eid": event_id})).fetchall()
+
+    if not rows:
+        return {
+            "event_id": event_id,
+            "title": event_row.title,
+            "event_date": event_dt.isoformat(),
+            "is_completed": is_completed,
+            "data_points": 0,
+            "note": "No listing snapshot data available",
+        }
+
+    # ── Aggregate across marketplaces per hour ────────────────────────────────
+    from collections import defaultdict
+
+    hour_data: dict = defaultdict(lambda: {"prices": [], "inventory": 0, "mp": defaultdict(lambda: {"prices": [], "inv": 0})})
+    for r in rows:
+        bucket, floor, median, listings, tickets, mp = r
+        hour_data[bucket]["prices"].append(float(floor))
+        hour_data[bucket]["inventory"] += int(tickets or listings or 0)
+        hour_data[bucket]["mp"][mp]["prices"].append(float(floor))
+        hour_data[bucket]["mp"][mp]["inv"] += int(tickets or listings or 0)
+
+    def _hours_to(bucket_dt, ev_dt):
+        b = bucket_dt.replace(tzinfo=timezone.utc) if bucket_dt.tzinfo is None else bucket_dt
+        return (ev_dt - b).total_seconds() / 3600
+
+    # Build curve: only include points before event
+    curve = sorted([
+        {
+            "hours_to_event": round(_hours_to(bucket, event_dt), 2),
+            "floor_price": min(d["prices"]),
+            "inventory": d["inventory"],
+        }
+        for bucket, d in hour_data.items()
+        if _hours_to(bucket, event_dt) >= 0
+    ], key=lambda x: x["hours_to_event"], reverse=True)  # oldest first (highest hours)
+
+    if not curve:
+        return {
+            "event_id": event_id,
+            "title": event_row.title,
+            "event_date": event_dt.isoformat(),
+            "is_completed": is_completed,
+            "data_points": 0,
+            "note": "No pre-event snapshot data",
+        }
+
+    # ── Key timing markers ────────────────────────────────────────────────────
+    min_floor_row = min(curve, key=lambda x: x["floor_price"])
+    max_inv_row   = max(curve, key=lambda x: x["inventory"])
+    peak_idx      = curve.index(max_inv_row)
+
+    # Inventory collapse: first point AFTER peak where inv < 50% of peak
+    collapse_row = None
+    for pt in curve[peak_idx:]:
+        if pt["inventory"] < max_inv_row["inventory"] * 0.5:
+            collapse_row = pt
+            break
+
+    # ── Marketplace-level analysis ────────────────────────────────────────────
+    mp_analysis: dict = {}
+    for bucket, d in hour_data.items():
+        hrs = _hours_to(bucket, event_dt)
+        if hrs < 0:
+            continue
+        for mp, mpd in d["mp"].items():
+            if not mpd["prices"]:
+                continue
+            floor = min(mpd["prices"])
+            inv   = mpd["inv"]
+            if mp not in mp_analysis:
+                mp_analysis[mp] = {"floors": [], "invs": [], "first_floor": floor, "last_floor": floor}
+            mp_analysis[mp]["floors"].append(floor)
+            mp_analysis[mp]["invs"].append(inv)
+            mp_analysis[mp]["last_floor"] = floor  # rows sorted asc so last = most recent
+
+    mp_summary = {}
+    for mp, d in mp_analysis.items():
+        start = d["first_floor"]
+        end   = d["last_floor"]
+        trend_pct = round((end - start) / start * 100, 1) if start else None
+        mp_summary[mp] = {
+            "min_floor":      round(min(d["floors"]), 2),
+            "max_floor":      round(max(d["floors"]), 2),
+            "max_inv":        max(d["invs"]),
+            "floor_trend_pct": trend_pct,
+        }
+
+    # ── Absorption classification ─────────────────────────────────────────────
+    def _classify(inv_delta, price_delta):
+        inv_down  = inv_delta < -5
+        inv_up    = inv_delta > 5
+        price_up  = price_delta > 2
+        price_down = price_delta < -2
+        if inv_down and price_up:    return "demand"
+        if inv_up   and price_down:  return "oversupply"
+        if inv_down and price_down:  return "capitulation"
+        if inv_up   and price_up:    return "repricing"
+        return "stable"
+
+    from collections import Counter
+    transitions = []
+    for i in range(1, len(curve)):
+        prev = curve[i - 1]
+        curr = curve[i]
+        inv_delta   = curr["inventory"] - prev["inventory"]
+        price_delta = curr["floor_price"] - prev["floor_price"]
+        transitions.append({
+            "hours_to_event":   round(curr["hours_to_event"], 1),
+            "inv_delta":        inv_delta,
+            "price_delta":      round(price_delta, 2),
+            "classification":   _classify(inv_delta, price_delta),
+        })
+
+    absorption_counts = dict(Counter(t["classification"] for t in transitions))
+    dominant = Counter(t["classification"] for t in transitions).most_common(1)
+
+    # ── Ariana profile context (hardcoded from Phase 1A computation) ──────────
+    artist_profile = None
+    title_lower = (event_row.title or "").lower()
+    if "ariana" in title_lower:
+        artist_profile = {
+            "artist": "ariana_grande",
+            "events_analyzed": 2,
+            "timing": {
+                "avg_lowest_floor_hours_to_event": 50.5,
+                "avg_inventory_peak_hours_to_event": 15.0,
+                "avg_inventory_collapse_hours_to_event": 13.0,
+            },
+            "marketplace_findings": {
+                "lowest_floor_source": "tickpick",
+                "highest_inventory_source": "tickpick",
+                "leads_price_decline": "gametime",
+                "price_decline_pct": -36.6,
+            },
+            "absorption_dominant": "stable",
+            "note": "Computed from 2 completed SoFi events (June 13-14 2026)",
+        }
+
+    return {
+        "event_id": event_id,
+        "title": event_row.title,
+        "event_date": event_dt.isoformat(),
+        "is_completed": is_completed,
+        "tracking_start_hours_before": round(curve[0]["hours_to_event"], 1),
+        "data_points": len(curve),
+
+        # ── Curve ────────────────────────────────────────────────────────────
+        "curve": curve,
+
+        # ── Key timing markers ───────────────────────────────────────────────
+        "lowest_floor": round(min_floor_row["floor_price"], 2),
+        "lowest_floor_hours_to_event": round(min_floor_row["hours_to_event"], 1),
+        "inventory_peak": max_inv_row["inventory"],
+        "inventory_peak_hours_to_event": round(max_inv_row["hours_to_event"], 1),
+        "inventory_collapse_hours_to_event": round(collapse_row["hours_to_event"], 1) if collapse_row else None,
+
+        # ── Marketplace breakdown ────────────────────────────────────────────
+        "marketplace_analysis": mp_summary,
+
+        # ── Absorption ───────────────────────────────────────────────────────
+        "absorption": {
+            "transitions": transitions,
+            "summary": absorption_counts,
+            "dominant": dominant[0][0] if dominant else "unknown",
+        },
+
+        # ── Artist profile context ───────────────────────────────────────────
+        "artist_profile": artist_profile,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TASK B — EVENT INTELLIGENCE V1 SNAPSHOT
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _classify_market(
+    inv24h: Optional[float],
+    price_delta_24h: Optional[float],
+    price_delta_pct_24h: Optional[float],
+    seller_aggression: Optional[float],
+    inventory_added: int,
+    inventory_removed: int,
+) -> tuple[str, float]:
+    """
+    Classify current market state.
+
+    DEMAND:       Inventory shrinking + price rising (buyers competing)
+    OVERSUPPLY:   Inventory growing + price falling (sellers competing)
+    CAPITULATION: High seller aggression + significant price drop (panic cuts)
+    REPRICING:    Price moving > 3% with minimal inventory change (market reset)
+    STABLE:       No significant movement in any dimension
+    """
+    price_chg = price_delta_pct_24h or 0.0
+    inv_chg   = inv24h or 0.0
+    aggression = seller_aggression or 0.0
+
+    # CAPITULATION: sellers slashing prices aggressively
+    if aggression > 0.6 and price_chg < -3:
+        confidence = min(1.0, aggression * 0.7 + abs(price_chg) / 20 * 0.3)
+        return "CAPITULATION", round(confidence, 3)
+
+    # DEMAND: inventory falling, price steady or rising
+    if inv_chg < -10 and price_chg >= -1:
+        confidence = min(1.0, abs(inv_chg) / 50 * 0.6 + max(0, price_chg / 5) * 0.4)
+        return "DEMAND", round(confidence, 3)
+
+    # OVERSUPPLY: inventory growing, price falling
+    if inv_chg > 10 and price_chg < -1:
+        confidence = min(1.0, inv_chg / 50 * 0.5 + abs(price_chg) / 10 * 0.5)
+        return "OVERSUPPLY", round(confidence, 3)
+
+    # REPRICING: price moved > 3% but inventory stable
+    if abs(price_chg) > 3 and abs(inv_chg) < 5:
+        confidence = min(1.0, abs(price_chg) / 15)
+        return "REPRICING", round(confidence, 3)
+
+    return "STABLE", 0.5
+
+
+@router.get("/events/{event_id}/snapshot")
+async def event_intelligence_snapshot(
+    event_id: int,
+    refresh: bool = Query(False),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Task B — Event Intelligence V1 Snapshot.
+
+    Returns structured price/inventory/velocity/marketplace/classification
+    for one event. Serves from computed intelligence cache.
+
+    Fields:
+      price:        floor_now, floor_24h_change, floor_7d_change,
+                    median_now, median_24h_change, median_7d_change
+      inventory:    inventory_now, inventory_24h_change, inventory_7d_change
+      velocity:     inventory_removed_24h, inventory_added_24h, net_inventory_change
+      marketplace:  leading_price_drop, leading_inventory_loss, lowest_floor, lowest_floor_mp
+      classification: DEMAND | OVERSUPPLY | CAPITULATION | REPRICING | STABLE
+    """
+    await _require_event(event_id, db)
+    intel = await _get_or_compute(event_id, db, force=refresh)
+
+    now_sql = datetime.now(timezone.utc).replace(tzinfo=None)
+
+    # ── Floor deltas from window snapshots ────────────────────────────────────
+    # _WINDOW_PRICE_SQL returns (median, low_ask, listing_count)
+    # We need to query directly for the floor comparison windows.
+
+    async def _floor_at_window(hours_back: int) -> Optional[float]:
+        center = now_sql - timedelta(hours=hours_back)
+        row = (await db.execute(text("""
+            SELECT MIN(price)
+            FROM listing_snapshots
+            WHERE event_id = :eid
+              AND snapshot_at >= :w_start
+              AND snapshot_at < :w_end
+              AND price > 0
+        """), {
+            "eid": event_id,
+            "w_start": center - timedelta(hours=1),
+            "w_end":   center + timedelta(hours=1),
+        })).fetchone()
+        return float(row[0]) if row and row[0] else None
+
+    floor_now = intel.get("price", {}).get("low_ask")
+
+    # Try 24h window; fall back to agg table if no live snapshots
+    floor_24h_ago = await _floor_at_window(24)
+    floor_7d_ago  = await _floor_at_window(168) if (intel.get("history_hours") or 0) >= 168 else None
+
+    # Agg fallback for 24h if live snapshots don't go back that far
+    if floor_24h_ago is None:
+        agg_row = (await db.execute(text("""
+            SELECT low_ask FROM event_price_history_agg
+            WHERE railway_event_id = :eid
+              AND bucket_ts >= :since
+            ORDER BY bucket_ts ASC LIMIT 1
+        """), {"eid": event_id, "since": now_sql - timedelta(hours=26)})).fetchone()
+        if agg_row and agg_row[0]:
+            floor_24h_ago = float(agg_row[0])
+
+    floor_24h_change = round(floor_now - floor_24h_ago, 2) if (floor_now and floor_24h_ago) else None
+    floor_7d_change  = round(floor_now - floor_7d_ago, 2)  if (floor_now and floor_7d_ago)  else None
+
+    # ── Median deltas (from stored intelligence) ──────────────────────────────
+    changes  = intel.get("changes", {})
+    median_now          = intel.get("price", {}).get("median_ask")
+    median_24h_change   = changes.get("h24", {}).get("price_delta")
+    median_7d_change    = changes.get("d7", {}).get("price_delta")
+
+    # ── Inventory ─────────────────────────────────────────────────────────────
+    inventory_now        = intel.get("inventory", {}).get("total_listings")
+    inventory_24h_change = changes.get("h24", {}).get("inventory_delta")
+    inventory_7d_change  = changes.get("d7", {}).get("inventory_delta")
+
+    # ── Velocity ──────────────────────────────────────────────────────────────
+    sb = intel.get("seller_behavior", {})
+    inv_added   = int(sb.get("new_24h") or 0)
+    inv_removed = int(sb.get("removed_24h") or 0)
+
+    # ── Marketplace leaders ───────────────────────────────────────────────────
+    # Per-marketplace 24h activity from poll_runs
+    since_24h = now_sql - timedelta(hours=24)
+    mp_activity = (await db.execute(text("""
+        SELECT m.slug,
+               SUM(pr.new_listings)         AS added,
+               SUM(pr.disappeared_listings) AS removed
+        FROM poll_runs pr
+        JOIN tracked_events te ON te.id = pr.tracked_event_id
+        JOIN marketplaces m    ON m.id  = te.marketplace_id
+        WHERE te.event_id = :eid
+          AND pr.status   = 'success'
+          AND pr.started_at >= :since
+        GROUP BY m.slug
+    """), {"eid": event_id, "since": since_24h})).fetchall()
+
+    mp_lead_price_drop = None  # marketplace with most pricing cuts (from repriced SQL)
+    mp_lead_inv_loss   = None
+    mp_lowest_floor    = None
+    mp_lowest_floor_val = float("inf")
+
+    for r in mp_activity:
+        slug, added, removed = r[0], int(r[1] or 0), int(r[2] or 0)
+        if removed > (int(mp_lead_inv_loss[1]) if mp_lead_inv_loss else -1):
+            mp_lead_inv_loss = (slug, removed)
+
+    for mp in (intel.get("marketplace_metrics") or []):
+        if mp.get("low_ask") and mp["low_ask"] < mp_lowest_floor_val:
+            mp_lowest_floor_val = mp["low_ask"]
+            mp_lowest_floor     = mp["name"]
+
+    # Leading price drop: marketplace where most price cuts happened
+    # Use existing repriced data from the intelligence cache if available
+    mp_price_drops_row = (await db.execute(text("""
+        WITH reprice AS (
+            SELECT m.slug,
+                   COUNT(*) FILTER (
+                       WHERE ls2.price < ls1.price
+                   ) AS drops
+            FROM listing_snapshots ls1
+            JOIN listing_snapshots ls2
+              ON ls2.listing_id = ls1.listing_id
+             AND ls2.snapshot_at > ls1.snapshot_at
+            JOIN listings l  ON l.id = ls1.listing_id
+            JOIN marketplaces m ON m.id = ls1.marketplace_id
+            WHERE ls1.event_id = :eid
+              AND ls1.snapshot_at >= :since
+            GROUP BY m.slug
+        )
+        SELECT slug, drops FROM reprice ORDER BY drops DESC LIMIT 1
+    """), {"eid": event_id, "since": since_24h})).fetchone()
+
+    if mp_price_drops_row and mp_price_drops_row[1]:
+        mp_lead_price_drop = mp_price_drops_row[0]
+
+    # ── Classification ────────────────────────────────────────────────────────
+    market = intel.get("market", {})
+    classification, classification_confidence = _classify_market(
+        inv24h=inventory_24h_change,
+        price_delta_24h=median_24h_change,
+        price_delta_pct_24h=changes.get("h24", {}).get("price_delta_pct"),
+        seller_aggression=market.get("seller_aggression"),
+        inventory_added=inv_added,
+        inventory_removed=inv_removed,
+    )
+
+    # ── Per-marketplace 7d floor trend ────────────────────────────────────────
+    hist_hours = intel.get("history_hours") or 0
+    mp_7d_trends: dict = {}
+    if hist_hours >= 24:
+        window_start_7d = now_sql - timedelta(days=min(7, hist_hours / 24))
+        mp_hist = (await db.execute(text("""
+            SELECT m.slug,
+                   MIN(ls.price)                                            AS floor_now,
+                   PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY ls.price)   AS median_now,
+                   COUNT(DISTINCT ls.listing_id)                            AS listings_now
+            FROM listing_snapshots ls
+            JOIN marketplaces m ON m.id = ls.marketplace_id
+            WHERE ls.event_id = :eid
+              AND ls.snapshot_at >= :since_1h
+              AND ls.price > 0
+            GROUP BY m.slug
+        """), {"eid": event_id, "since_1h": now_sql - timedelta(hours=2)})).fetchall()
+
+        mp_hist_old = (await db.execute(text("""
+            SELECT m.slug,
+                   MIN(ls.price)                                            AS floor_old,
+                   PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY ls.price)   AS median_old,
+                   COUNT(DISTINCT ls.listing_id)                            AS listings_old
+            FROM listing_snapshots ls
+            JOIN marketplaces m ON m.id = ls.marketplace_id
+            WHERE ls.event_id = :eid
+              AND ls.snapshot_at BETWEEN :w_start AND :w_end
+              AND ls.price > 0
+            GROUP BY m.slug
+        """), {
+            "eid": event_id,
+            "w_start": window_start_7d - timedelta(hours=1),
+            "w_end":   window_start_7d + timedelta(hours=1),
+        })).fetchall()
+
+        old_by_mp = {r[0]: r for r in mp_hist_old}
+
+        for r in mp_hist:
+            slug = r[0]
+            old  = old_by_mp.get(slug)
+            floor_now_mp   = float(r[1]) if r[1] else None
+            floor_old_mp   = float(old[1]) if old and old[1] else None
+            median_now_mp  = float(r[2]) if r[2] else None
+            median_old_mp  = float(old[2]) if old and old[2] else None
+            listings_now_mp = int(r[3] or 0)
+            listings_old_mp = int(old[3] or 0) if old else None
+
+            floor_trend  = round(floor_now_mp  - floor_old_mp,  2) if (floor_now_mp  and floor_old_mp)  else None
+            median_trend = round(median_now_mp - median_old_mp, 2) if (median_now_mp and median_old_mp) else None
+            inv_trend    = (listings_now_mp - listings_old_mp) if listings_old_mp is not None else None
+
+            mp_7d_trends[slug] = {
+                "floor_now":    round(floor_now_mp, 2) if floor_now_mp else None,
+                "floor_change": floor_trend,
+                "floor_change_pct": round((floor_trend / floor_old_mp) * 100, 1) if (floor_trend and floor_old_mp) else None,
+                "median_now":   round(median_now_mp, 2) if median_now_mp else None,
+                "median_change": median_trend,
+                "listings_now": listings_now_mp,
+                "listings_change": inv_trend,
+                "window_hours": round(min(7 * 24, hist_hours), 0),
+            }
+
+    return {
+        "event_id": event_id,
+        "computed_at": intel.get("computed_at"),
+        "history_hours": hist_hours,
+        "price": {
+            "floor_now":          floor_now,
+            "floor_24h_change":   floor_24h_change,
+            "floor_7d_change":    floor_7d_change,
+            "median_now":         median_now,
+            "median_24h_change":  median_24h_change,
+            "median_24h_change_pct": changes.get("h24", {}).get("price_delta_pct"),
+            "median_7d_change":   median_7d_change,
+            "median_7d_change_pct": changes.get("d7", {}).get("price_delta_pct"),
+        },
+        "inventory": {
+            "inventory_now":         inventory_now,
+            "inventory_24h_change":  inventory_24h_change,
+            "inventory_7d_change":   inventory_7d_change,
+        },
+        "velocity": {
+            "inventory_removed_24h": inv_removed,
+            "inventory_added_24h":   inv_added,
+            "net_inventory_change":  inv_added - inv_removed,
+        },
+        "marketplace": {
+            "marketplace_leading_price_drop":    mp_lead_price_drop,
+            "marketplace_leading_inventory_loss": mp_lead_inv_loss[0] if mp_lead_inv_loss else None,
+            "marketplace_leading_inventory_loss_count": mp_lead_inv_loss[1] if mp_lead_inv_loss else None,
+            "marketplace_lowest_floor":          mp_lowest_floor,
+            "marketplace_lowest_floor_price":    round(mp_lowest_floor_val, 2) if mp_lowest_floor_val != float("inf") else None,
+        },
+        "classification": classification,
+        "classification_confidence": classification_confidence,
+        "per_marketplace_trends": mp_7d_trends,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TASK D — INTELLIGENCE READINESS AUDIT
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.get("/readiness")
+async def intelligence_readiness_audit(db: AsyncSession = Depends(get_db)):
+    """
+    Task D — Intelligence Readiness Audit.
+
+    Lists ALL tracked events with:
+      - hours_tracked (from listing_snapshots)
+      - history_source: live | archive | combined | none
+      - intelligence_eligible: yes | partial | insufficient
+      - data_note
+
+    Thresholds: <24h = insufficient, 24-72h = partial, 72h+ = eligible
+    """
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+
+    rows = (await db.execute(text("""
+        SELECT
+            e.id,
+            e.title,
+            e.artist,
+            e.event_date::date                             AS event_date,
+            e.status,
+            MIN(ls.snapshot_at)                            AS snap_oldest,
+            MAX(ls.snapshot_at)                            AS snap_newest,
+            COUNT(DISTINCT ls.id)                          AS snap_count,
+            MIN(agg.bucket_ts)                             AS agg_oldest,
+            MAX(agg.bucket_ts)                             AS agg_newest,
+            COUNT(DISTINCT agg.id)                         AS agg_count
+        FROM events e
+        LEFT JOIN listing_snapshots ls ON ls.event_id = e.id
+        LEFT JOIN event_price_history_agg agg ON agg.railway_event_id = e.id
+        GROUP BY e.id, e.title, e.artist, e.event_date, e.status
+        ORDER BY e.event_date ASC
+    """))).fetchall()
+
+    events_out = []
+    for r in rows:
+        (eid, title, artist, event_date, status,
+         snap_old, snap_new, snap_count,
+         agg_old, agg_new, agg_count) = r
+
+        # Combined oldest = min(snap_oldest, agg_oldest)
+        oldest = None
+        newest = snap_new
+        if snap_old and agg_old:
+            oldest = min(snap_old, agg_old)
+        elif snap_old:
+            oldest = snap_old
+        elif agg_old:
+            oldest = agg_old
+            newest = agg_new
+
+        hours_tracked = 0.0
+        if oldest and newest:
+            hours_tracked = round((newest - oldest).total_seconds() / 3600, 1)
+
+        # Determine source
+        has_live = (snap_count or 0) > 0
+        has_agg  = (agg_count  or 0) > 0
+        if has_live and has_agg:
+            source = "combined"
+        elif has_live:
+            source = "live"
+        elif has_agg:
+            source = "archive"
+        else:
+            source = "none"
+
+        # Eligibility
+        if hours_tracked >= 72:
+            eligible = "eligible"
+            data_note = f"{hours_tracked}h tracked — full intelligence available"
+        elif hours_tracked >= 24:
+            eligible = "partial"
+            data_note = f"{hours_tracked}h tracked — partial (72h needed for full confidence)"
+        else:
+            eligible = "insufficient"
+            data_note = f"{hours_tracked}h tracked — insufficient (<24h)"
+
+        hours_until = None
+        if event_date:
+            from datetime import date
+            days_diff = (event_date - date.today()).days
+            hours_until = days_diff * 24
+
+        events_out.append({
+            "event_id":         eid,
+            "title":            title,
+            "artist":           artist,
+            "event_date":       str(event_date),
+            "status":           status,
+            "hours_until_event": hours_until,
+            "hours_tracked":    hours_tracked,
+            "history_source":   source,
+            "snap_count":       int(snap_count or 0),
+            "agg_bucket_count": int(agg_count or 0),
+            "intelligence_eligible": eligible,
+            "data_note":        data_note,
+        })
+
+    eligible_count   = sum(1 for e in events_out if e["intelligence_eligible"] == "eligible")
+    partial_count    = sum(1 for e in events_out if e["intelligence_eligible"] == "partial")
+    insufficient_count = sum(1 for e in events_out if e["intelligence_eligible"] == "insufficient")
+
+    return {
+        "audit_at": now.isoformat(),
+        "summary": {
+            "total":        len(events_out),
+            "eligible":     eligible_count,
+            "partial":      partial_count,
+            "insufficient": insufficient_count,
+        },
+        "events": events_out,
+    }

@@ -55,13 +55,14 @@ interface FollowEventsSummary {
 }
 
 const MP_COLORS: Record<string, string> = {
-  POPULATED:         "bg-emerald-900/50 text-emerald-300 border-emerald-700/50",
-  PARTIAL_POPULATION: "bg-amber-900/50 text-amber-300 border-amber-700/50",
-  NO_ID:             "bg-zinc-800/60 text-zinc-400 border-zinc-700/50",
-  BLOCKED:           "bg-red-900/30 text-red-400 border-red-800/50",
-  DEFERRED:          "bg-blue-900/30 text-blue-400 border-blue-700/50",
-  ERROR:             "bg-red-900/50 text-red-300 border-red-700/50",
-  UNKNOWN:           "bg-zinc-800/40 text-zinc-500 border-zinc-700/30",
+  POPULATED:              "bg-emerald-900/50 text-emerald-300 border-emerald-700/50",
+  PARTIAL_POPULATION:     "bg-amber-900/50 text-amber-300 border-amber-700/50",
+  NO_ID:                  "bg-zinc-800/60 text-zinc-400 border-zinc-700/50",
+  BLOCKED:                "bg-red-900/30 text-red-400 border-red-800/50",
+  NEEDS_MARKETPLACE_URL:  "bg-orange-900/30 text-orange-400 border-orange-800/50",
+  DEFERRED:               "bg-blue-900/30 text-blue-400 border-blue-700/50",
+  ERROR:                  "bg-red-900/50 text-red-300 border-red-700/50",
+  UNKNOWN:                "bg-zinc-800/40 text-zinc-500 border-zinc-700/30",
 };
 
 const MP_LABELS: Record<string, string> = {
