@@ -48,10 +48,14 @@ _AMOUNT_RE = re.compile(r"[\$£€]?\s*([\d,]+(?:\.\d{0,2})?)\s*([KkMm]?)")
 
 
 def _parse_amount(s: str) -> float | None:
-    """Parse a monetary string like '$1,250,000' or '1.25M' to float."""
+    """Parse a monetary string like '$1,250,000' or '1.25M' or '(150,000)' to float."""
     if not s:
         return None
-    s = s.strip().replace(",", "")
+    s = s.strip()
+    negative = s.startswith("(") and s.endswith(")")
+    if negative:
+        s = s[1:-1]
+    s = s.replace(",", "")
     m = _AMOUNT_RE.search(s)
     if not m:
         return None
@@ -62,7 +66,7 @@ def _parse_amount(s: str) -> float | None:
             value *= 1_000
         elif suffix == "M":
             value *= 1_000_000
-        return value
+        return -value if negative else value
     except (ValueError, AttributeError):
         return None
 

@@ -93,9 +93,8 @@ def upgrade() -> None:
         jrow(US_ID, None, "United States", "US", "US", "country", "USD", "US"),
         jrow(CA_COUNTRY_ID, None, "Canada", "CA", "CA", "country", "CAD", "CA"),
         jrow(GB_ID, None, "United Kingdom", "GB", "GB", "country", "GBP", "GB"),
-        jrow(CA_FEDERAL_ID, US_ID, "California", "US-CA", "US-CA", "state", "USD", "US",
+        jrow(US_CA_ID, US_ID, "California", "US-CA", "US-CA", "state", "USD", "US",
              "Los Angeles baseline jurisdiction for BTL cost benchmarks"),
-        jrow(US_CA_ID, US_ID, "California", "US-CA", "US-CA", "state", "USD", "US"),
         jrow(US_GA_ID, US_ID, "Georgia", "US-GA", "US-GA", "state", "USD", "US"),
         jrow(US_NY_ID, US_ID, "New York", "US-NY", "US-NY", "state", "USD", "US"),
         jrow(US_NM_ID, US_ID, "New Mexico", "US-NM", "US-NM", "state", "USD", "US"),
@@ -308,4 +307,4 @@ def downgrade() -> None:
                "'ca_federal_cptc','uk_avec')")
     op.execute("DELETE FROM qualification_tests WHERE slug IN "
                "('uk_bfi_cultural_test','cavco_canadian_content_test')")
-    op.execute(f"DELETE FROM jurisdictions WHERE id IN ({','.join(repr(x) for x in [US_ID, CA_COUNTRY_ID, GB_ID, CA_FEDERAL_ID, US_CA_ID, US_GA_ID, US_NY_ID, US_NM_ID, US_LA_ID, CA_ON_ID, CA_BC_ID, CA_QC_ID])})")
+    op.execute(f"DELETE FROM jurisdictions WHERE id IN ({','.join(repr(x) for x in [US_ID, CA_COUNTRY_ID, GB_ID, US_CA_ID, US_GA_ID, US_NY_ID, US_NM_ID, US_LA_ID, CA_ON_ID, CA_BC_ID, CA_QC_ID])})")
