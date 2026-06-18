@@ -10,7 +10,7 @@ import re
 
 from app.database import get_db
 from app.models import Event, TrackedEvent, Marketplace, Venue, Listing
-from app.models.listing import PollRun
+from app.models.listing import PollRun, ListingSnapshot
 from app.config import get_settings
 from app.utils.lineage import trace_event, add_stage, build_event_lineage
 from app.utils.event_trace import emit_event_trace
@@ -631,8 +631,122 @@ async def event_health_alerts(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Task 1 — Health alerts for one event (core marketplaces only).
-    Alert types: MARKETPLACE_STALE, MARKETPLACE_BLOCKED, MARKETPLACE_PENDING,
-                 LOW_COVERAGE, NEEDS_URL, RESOLUTION_FAILED.
+    Health alerts for one event.
+    Marketplace alert types: MARKETPLACE_STALE, MARKETPLACE_BLOCKED, MARKETPLACE_PENDING,
+                             LOW_COVERAGE, NEEDS_URL, RESOLUTION_FAILED.
+    Poll-failure alert types: POLL_TASK_CRASH, COLLECTOR_ERROR, SNAPSHOT_NOT_WRITTEN,
+                              POLL_STALE, MARKETPLACE_STALE, NEEDS_MARKETPLACE_URL, BLOCKED.
     """
-    return await _get_mp_alerts(event_id, db)
+    base = await _get_mp_alerts(event_id, db)
+    poll_alerts = await _poll_failure_alerts(event_id, db)
+    if poll_alerts:
+        base["alerts"] = poll_alerts + base["alerts"]
+        base["alert_count"] = len(base["alerts"])
+        base["has_critical"] = any(a["severity"] == "RED" for a in base["alerts"])
+    return base
+
+
+async def _poll_failure_alerts(event_id: int, db: AsyncSession) -> list:
+    """Returns poll-failure alert entries for tracked_events belonging to this event."""
+
+    now = datetime.utcnow()
+    stale_threshold = now - timedelta(hours=6)
+    snapshot_threshold = now - timedelta(hours=24)
+
+    alerts = []
+
+    # All tracked_events for this event
+    te_rows = (await db.execute(
+        select(TrackedEvent).where(TrackedEvent.event_id == event_id)
+    )).scalars().all()
+
+    for te in te_rows:
+        mp = (await db.execute(
+            select(Marketplace).where(Marketplace.id == te.marketplace_id)
+        )).scalar_one_or_none()
+        slug = mp.slug if mp else f"marketplace_id={te.marketplace_id}"
+
+        # Most recent poll_run for this tracked_event
+        last_poll = (await db.execute(
+            select(PollRun)
+            .where(PollRun.tracked_event_id == te.id)
+            .order_by(PollRun.started_at.desc())
+            .limit(1)
+        )).scalar_one_or_none()
+
+        if not last_poll:
+            # Never polled at all
+            if not te.external_url:
+                alerts.append({
+                    "type": "NEEDS_MARKETPLACE_URL",
+                    "marketplace": slug,
+                    "severity": "RED",
+                    "message": f"{slug}: no external URL and never polled",
+                    "remediation": "Set external_url on tracked_event or run discovery.",
+                })
+            continue
+
+        if last_poll.status == "error":
+            msg = last_poll.error_message or "unknown error"
+            alerts.append({
+                "type": "COLLECTOR_ERROR",
+                "marketplace": slug,
+                "severity": "RED",
+                "message": f"{slug}: last poll failed — {msg[:120]}",
+                "remediation": "Check collector logs. Possibly bot detection or auth issue.",
+            })
+
+        # Check poll staleness
+        if last_poll.started_at < stale_threshold:
+            hours_ago = (now - last_poll.started_at).total_seconds() / 3600
+            alerts.append({
+                "type": "POLL_STALE",
+                "marketplace": slug,
+                "severity": "YELLOW",
+                "message": f"{slug}: last poll {hours_ago:.1f}h ago (threshold 6h)",
+                "remediation": "Check if scheduler is running and next_poll_at is being set.",
+            })
+
+        # Check snapshot staleness
+        last_snap = (await db.execute(
+            select(ListingSnapshot.created_at)
+            .where(ListingSnapshot.tracked_event_id == te.id)
+            .order_by(ListingSnapshot.created_at.desc())
+            .limit(1)
+        )).scalar_one_or_none()
+
+        if last_snap is None:
+            alerts.append({
+                "type": "SNAPSHOT_NOT_WRITTEN",
+                "marketplace": slug,
+                "severity": "YELLOW",
+                "message": f"{slug}: no listing snapshot ever written",
+                "remediation": "Confirm collector is returning listings and _process_result is writing snapshots.",
+            })
+        elif last_snap < snapshot_threshold:
+            hours_ago = (now - last_snap).total_seconds() / 3600
+            alerts.append({
+                "type": "SNAPSHOT_NOT_WRITTEN",
+                "marketplace": slug,
+                "severity": "YELLOW",
+                "message": f"{slug}: last snapshot {hours_ago:.1f}h ago (threshold 24h)",
+                "remediation": "Check if polls are succeeding and returning non-empty listings.",
+            })
+
+    # Global scheduler crash alert from ring buffer (affects all events)
+    try:
+        from app.scheduler import get_reliability_state
+        state = get_reliability_state()
+        sig = state.get("active_crash_signature")
+        if sig:
+            alerts.insert(0, {
+                "type": "POLL_TASK_CRASH",
+                "marketplace": None,
+                "severity": "RED",
+                "message": f"Scheduler crash active: {sig[:150]}",
+                "remediation": "Fix the root cause in scheduler.py / TrackedEvent model and redeploy.",
+            })
+    except Exception:
+        pass
+
+    return alerts

@@ -55,6 +55,7 @@ class TrackedEvent(Base):
     poll_interval_minutes: Mapped[int] = mapped_column(Integer, default=60)
     last_polled_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     next_poll_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    consecutive_zero_inventory_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False, server_default="0")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     event: Mapped["Event"] = relationship("Event", back_populates="tracked_events")

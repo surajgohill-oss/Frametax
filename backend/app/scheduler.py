@@ -1,6 +1,8 @@
 import asyncio
+import collections
 import logging
 from datetime import datetime, timedelta, timezone
+from typing import Any
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
@@ -17,6 +19,52 @@ from app.collectors.normalize import is_parking_listing
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
+
+# ── Reliability ring buffer ────────────────────────────────────────────────────
+# Stores last 50 scheduler/task exceptions in memory. Exposed via
+# GET /api/system/reliability. No DB persistence needed — Railway redeploy
+# resets it, which is fine (a fresh deploy with no errors = healthy).
+_MAX_ERRORS = 50
+_error_ring: collections.deque[dict[str, Any]] = collections.deque(maxlen=_MAX_ERRORS)
+_last_success_at: datetime | None = None
+_last_error_at: datetime | None = None
+_total_poll_failures = 0   # since process start
+
+
+def _record_scheduler_error(exc: BaseException, context: str) -> None:
+    global _last_error_at, _total_poll_failures
+    _last_error_at = datetime.utcnow()
+    _total_poll_failures += 1
+    entry: dict[str, Any] = {
+        "ts": _last_error_at.isoformat(),
+        "context": context,
+        "exc_type": type(exc).__name__,
+        "exc_msg": str(exc),
+    }
+    _error_ring.append(entry)
+    logger.error("SCHEDULER_ERROR: %s — %s: %s", context, type(exc).__name__, exc)
+
+
+def _record_scheduler_success() -> None:
+    global _last_success_at
+    _last_success_at = datetime.utcnow()
+
+
+def get_reliability_state() -> dict[str, Any]:
+    """Return in-memory reliability snapshot for /api/system/reliability."""
+    errors = list(_error_ring)
+    active_sig = None
+    if errors:
+        # Most recent crash signature
+        last = errors[-1]
+        active_sig = f"{last['exc_type']}: {last['exc_msg'][:120]}"
+    return {
+        "recent_errors": errors,
+        "last_success_at": _last_success_at.isoformat() if _last_success_at else None,
+        "last_error_at": _last_error_at.isoformat() if _last_error_at else None,
+        "total_poll_failures_since_start": _total_poll_failures,
+        "active_crash_signature": active_sig,
+    }
 
 _scheduler: AsyncIOScheduler | None = None
 
@@ -235,7 +283,16 @@ async def _check_due_events():
             )
 
     for te in due:
-        asyncio.create_task(run_poll_for_tracked_event(te.id))
+        asyncio.create_task(_poll_with_reliability_tracking(te.id))
+
+
+async def _poll_with_reliability_tracking(tracked_event_id: int) -> None:
+    """Wraps run_poll_for_tracked_event so exceptions are recorded in the ring buffer."""
+    try:
+        await run_poll_for_tracked_event(tracked_event_id)
+        _record_scheduler_success()
+    except Exception as exc:
+        _record_scheduler_error(exc, f"run_poll_for_tracked_event(te_id={tracked_event_id})")
 
 
 # ── Status + lifecycle updater ─────────────────────────────────────────────────
@@ -248,27 +305,30 @@ async def _update_event_statuses():
     - Does NOT deactivate tracked_events — that is handled exclusively by
       inventory-exhaustion logic in _process_result() and only after event_start.
     """
-    async with AsyncSessionLocal() as db:
-        result = await db.execute(select(Event))
-        for event in result.scalars().all():
-            new_status = event_status_from_date(event.event_date)
-            if event.status != new_status:
-                event.status = new_status
-                logger.info("EVENT: %d '%s' status → %s", event.id, event.title, new_status)
+    try:
+        async with AsyncSessionLocal() as db:
+            result = await db.execute(select(Event))
+            for event in result.scalars().all():
+                new_status = event_status_from_date(event.event_date)
+                if event.status != new_status:
+                    event.status = new_status
+                    logger.info("EVENT: %d '%s' status → %s", event.id, event.title, new_status)
 
-            # Update lifecycle_phase on all active tracked_events for observability
-            te_result = await db.execute(
-                select(TrackedEvent).where(
-                    TrackedEvent.event_id == event.id,
-                    TrackedEvent.is_active == True,
+                # Update lifecycle_phase on all active tracked_events for observability
+                te_result = await db.execute(
+                    select(TrackedEvent).where(
+                        TrackedEvent.event_id == event.id,
+                        TrackedEvent.is_active == True,
+                    )
                 )
-            )
-            for te in te_result.scalars().all():
-                new_phase = compute_lifecycle_phase(event.event_date, te.consecutive_zero_inventory_count)
-                if te.lifecycle_phase != new_phase:
-                    te.lifecycle_phase = new_phase
+                for te in te_result.scalars().all():
+                    new_phase = compute_lifecycle_phase(event.event_date, te.consecutive_zero_inventory_count)
+                    if te.lifecycle_phase != new_phase:
+                        te.lifecycle_phase = new_phase
 
-        await db.commit()
+            await db.commit()
+    except Exception as exc:
+        _record_scheduler_error(exc, "_update_event_statuses")
 
 
 # ── Discovery job ──────────────────────────────────────────────────────────────
