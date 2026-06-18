@@ -206,11 +206,15 @@ def run_full_analysis(
         )
 
         # 4c. Calculate incentive economic value
+        cb = qs_result.category_breakdown
         iv_result = calculate_incentive_value(
             qualifying_spend_usd=capped.adjusted_qualifying_spend_usd,
             program=program,
             uplifts=uplifts,
             production_details=production_details,
+            vfx_spend_usd=float(cb.get("vfx", 0.0)),
+            music_spend_usd=float(cb.get("music", 0.0)),
+            resident_labor_usd=float(cb.get("btl_resident_labor", 0.0)),
         )
         iv_dict = iv_result.__dict__.copy()
         iv_dict["confidence_tier"] = program.get("confidence_tier", "DISCOVERY")

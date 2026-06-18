@@ -201,4 +201,5 @@ FIXTURE_GEORGIA_VERIFIED_WITH_UPLIFT = {
         }
     ],
     "stacking_rules": [],
+    "production_details": {"georgia_logo_displayed": True},
 }

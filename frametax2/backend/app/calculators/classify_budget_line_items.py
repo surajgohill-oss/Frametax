@@ -86,6 +86,10 @@ _RULES: list[ClassificationRule] = [
                        ATLBTLCategory.BTL, SpendCategory.BTL_CATERING, False, False),
 
     # --- BTL Labor ---
+    ClassificationRule(r"resident.*labor|resident.*crew|local.*hire|local.*labor",
+                       ATLBTLCategory.BTL, SpendCategory.BTL_RESIDENT_LABOR, False, True),
+    ClassificationRule(r"nonresident.*labor|non.?resident.*labor|out.?of.?state.*labor",
+                       ATLBTLCategory.BTL, SpendCategory.BTL_NONRESIDENT_LABOR, False, True),
     ClassificationRule(r"crew|dp|cinematographer|gaffer|key grip|production design|costum|makeup|hair",
                        ATLBTLCategory.BTL, SpendCategory.BTL_CREW_LABOR, False, True),
     ClassificationRule(r"payroll|fringe|pension|health|iatse|teamster|guild",

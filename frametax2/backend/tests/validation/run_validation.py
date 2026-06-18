@@ -28,6 +28,14 @@ from tests.fixtures.ny_nm_or_validation import (
     NY_EXPECTED_UPSTATE,
     OR_EXPECTED,
 )
+from tests.fixtures.ca_la_validation import (
+    CA_EXPECTED,
+    CA_PROGRAM,
+    FIXTURE_CA,
+    FIXTURE_LA,
+    LA_EXPECTED,
+    LA_PROGRAM,
+)
 
 
 @dataclass
@@ -228,6 +236,131 @@ def _build_or_cases() -> list[ValidationCase]:
     ]
 
 
+def _build_ca_cases() -> list[ValidationCase]:
+    ca = _run_fixture(FIXTURE_CA)
+    qs = _qs(ca)
+
+    atl_ca = sum(
+        r.get("category_breakdown", {}).get("atl_director", 0)
+        + r.get("category_breakdown", {}).get("atl_cast", 0)
+        for r in ca.qualified_spend_results
+    )
+
+    vfx_uplift_credit = 0.0
+    music_uplift_credit = 0.0
+    for iv in ca.incentive_results:
+        if iv.get("program_slug") == "ca_film_30":
+            for u in iv.get("uplifts_applied", []):
+                if u.get("name") == "California VFX Uplift":
+                    vfx_uplift_credit = u.get("credit_usd", 0)
+                if u.get("name") == "California Music Recording Uplift":
+                    music_uplift_credit = u.get("credit_usd", 0)
+
+    competitive_warned = any(
+        "competitive" in n.lower()
+        for iv in ca.incentive_results
+        if iv.get("program_slug") == "ca_film_30"
+        for n in iv.get("notes", [])
+    )
+
+    return [
+        ValidationCase("Total input budget",     CA_EXPECTED["total_budget_usd"],
+                        ca.total_input_budget_usd,
+                        source="Sum of line items", jurisdiction="California"),
+        ValidationCase("ATL excluded (= $0)",    0.0, atl_ca,
+                        source="CA Gov Code § 17053.98 — BTL only", jurisdiction="California"),
+        ValidationCase("Qualifying spend (±1%)", CA_EXPECTED["qualifying_spend_usd"],
+                        qs, tolerance_pct=1.0,
+                        source="BTL+Post only at 100% CA", jurisdiction="California"),
+        ValidationCase("VFX uplift exact",       CA_EXPECTED["vfx_uplift_usd"],
+                        vfx_uplift_credit, tolerance_pct=1.0,
+                        source="$300K VFX × 5%", jurisdiction="California"),
+        ValidationCase("Music uplift exact",     CA_EXPECTED["music_uplift_usd"],
+                        music_uplift_credit, tolerance_pct=1.0,
+                        source="$100K music × 5%", jurisdiction="California"),
+        ValidationCase("Economic value (±2%)",   CA_EXPECTED["economic_value_usd"],
+                        ca.total_incentive_economic_value_usd, tolerance_pct=2.0,
+                        source="$444K × 92% transfer", jurisdiction="California"),
+        ValidationCase("Net cost < gross",        True,
+                        ca.true_net_cost_usd < ca.total_input_budget_usd,
+                        source="Positive incentive value", jurisdiction="California"),
+        ValidationCase("Net cost non-negative",  True,
+                        ca.true_net_cost_usd >= 0,
+                        source="Engine invariant", jurisdiction="California"),
+        ValidationCase("True net cost (±2%)",    CA_EXPECTED["true_net_cost_usd"],
+                        ca.true_net_cost_usd, tolerance_pct=2.0,
+                        source="ATL+BTL − $408,480", jurisdiction="California"),
+        ValidationCase("Competitive warned",     True,
+                        competitive_warned,
+                        source="is_competitive=True → note required", jurisdiction="California"),
+        ValidationCase("Confidence tier = PARSED", "PARSED",
+                        CA_PROGRAM["confidence_tier"],
+                        source="Not DISCOVERY, not VERIFIED", jurisdiction="California"),
+        ValidationCase("Engine trace populated", True,
+                        len(ca.calculation_trace.get("steps", [])) > 0,
+                        source="Audit requirement", jurisdiction="California"),
+    ]
+
+
+def _build_la_cases() -> list[ValidationCase]:
+    la = _run_fixture(FIXTURE_LA)
+    qs = _qs(la)
+
+    atl_la = sum(
+        r.get("category_breakdown", {}).get("atl_director", 0)
+        + r.get("category_breakdown", {}).get("atl_cast", 0)
+        for r in la.qualified_spend_results
+    )
+
+    resident_labor_qs = sum(
+        r.get("category_breakdown", {}).get("btl_resident_labor", 0)
+        for r in la.qualified_spend_results
+    )
+
+    resident_uplift_credit = 0.0
+    for iv in la.incentive_results:
+        if iv.get("program_slug") == "la_film_production":
+            for u in iv.get("uplifts_applied", []):
+                if u.get("name") == "Louisiana Resident Payroll Uplift":
+                    resident_uplift_credit = u.get("credit_usd", 0)
+
+    return [
+        ValidationCase("Total input budget",     LA_EXPECTED["total_budget_usd"],
+                        la.total_input_budget_usd,
+                        source="Sum of line items", jurisdiction="Louisiana"),
+        ValidationCase("ATL qualifies (> $0)",   True,
+                        atl_la > 0,
+                        source="RS § 47:6007 broad definition — PARSED", jurisdiction="Louisiana"),
+        ValidationCase("Qualifying spend (±1%)", LA_EXPECTED["qualifying_spend_usd"],
+                        qs, tolerance_pct=1.0,
+                        source="ATL+BTL+Post all qualify", jurisdiction="Louisiana"),
+        ValidationCase("Resident labor basis",   LA_EXPECTED["resident_labor_usd"],
+                        resident_labor_qs, tolerance_pct=1.0,
+                        source="btl_resident_labor category", jurisdiction="Louisiana"),
+        ValidationCase("Resident uplift exact",  LA_EXPECTED["resident_uplift_usd"],
+                        resident_uplift_credit, tolerance_pct=1.0,
+                        source="$300K × 10% RS § 47:6007(B)(2)", jurisdiction="Louisiana"),
+        ValidationCase("Economic value (±2%)",   LA_EXPECTED["economic_value_usd"],
+                        la.total_incentive_economic_value_usd, tolerance_pct=2.0,
+                        source="$2,450K×25% + $300K×10% refundable", jurisdiction="Louisiana"),
+        ValidationCase("Net cost < gross",        True,
+                        la.true_net_cost_usd < la.total_input_budget_usd,
+                        source="Positive incentive value", jurisdiction="Louisiana"),
+        ValidationCase("Net cost non-negative",  True,
+                        la.true_net_cost_usd >= 0,
+                        source="Engine invariant", jurisdiction="Louisiana"),
+        ValidationCase("True net cost (±2%)",    LA_EXPECTED["true_net_cost_usd"],
+                        la.true_net_cost_usd, tolerance_pct=2.0,
+                        source="ATL+BTL − $642,500", jurisdiction="Louisiana"),
+        ValidationCase("Confidence tier = PARSED", "PARSED",
+                        LA_PROGRAM["confidence_tier"],
+                        source="Not DISCOVERY, not VERIFIED", jurisdiction="Louisiana"),
+        ValidationCase("Engine trace populated", True,
+                        len(la.calculation_trace.get("steps", [])) > 0,
+                        source="Audit requirement", jurisdiction="Louisiana"),
+    ]
+
+
 def _fmt_value(v) -> str:
     if isinstance(v, bool):
         return str(v)
@@ -244,6 +377,8 @@ def main() -> int:
         ("New York",      "NY Tax Law § 24 — PARSED",            _build_ny_cases),
         ("New Mexico",    "NMSA 1978 § 7-2F-1 — PARSED",        _build_nm_cases),
         ("Oregon OPIF",   "ORS § 284.368 — PARSED",              _build_or_cases),
+        ("California",    "CA Gov Code § 17053.98 — PARSED",     _build_ca_cases),
+        ("Louisiana",     "LA RS § 47:6007 — PARSED",            _build_la_cases),
     ]
 
     col_jur  = 14
@@ -253,7 +388,7 @@ def main() -> int:
 
     print()
     print("=" * 100)
-    print("  FrameTax Validation Harness — GA + NY + NM + OR")
+    print("  FrameTax Validation Harness — GA + NY + NM + OR + CA + LA")
     print("=" * 100)
 
     for section_name, section_source, builder in sections:

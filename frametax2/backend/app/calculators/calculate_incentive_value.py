@@ -43,12 +43,16 @@ def calculate_incentive_value(
     production_details: dict | None = None,
     vfx_spend_usd: float = 0.0,
     music_spend_usd: float = 0.0,
+    resident_labor_usd: float = 0.0,
     annual_cap_usd: float | None = None,
 ) -> IncentiveValueResult:
     """
     program: IncentiveProgram-shaped dict
     uplifts: list of ProgramUplift-shaped dicts
     production_details: dict for evaluating uplift conditions
+    vfx_spend_usd: qualifying VFX spend in jurisdiction (for vfx_spend_only uplifts)
+    music_spend_usd: qualifying music spend in jurisdiction (for music_spend_only uplifts)
+    resident_labor_usd: qualifying resident-labor spend (for resident_labor_only uplifts)
     """
     production_details = production_details or {}
     notes: list[str] = []
@@ -83,6 +87,8 @@ def calculate_incentive_value(
             basis = vfx_spend_usd
         elif applies_to == "music_spend_only":
             basis = music_spend_usd
+        elif applies_to == "resident_labor_only":
+            basis = resident_labor_usd
         else:
             basis = qualifying_spend_usd
 
@@ -159,9 +165,23 @@ def _evaluate_uplift_condition(
     condition_text: str,
     production_details: dict,
 ) -> bool:
-    """Evaluate whether an uplift condition is satisfied."""
-    if condition_type == "uses_logo":
-        return bool(production_details.get("uses_georgia_logo"))
+    """
+    Evaluate whether an uplift condition is satisfied.
+
+    SAFETY RULE: Unknown condition_type values return False.
+    Only explicitly recognized condition types can activate an uplift.
+    An empty or None condition_type is treated as unconditional (always True).
+    """
+    # Unconditional uplift — no condition required
+    if not condition_type or condition_type in ("always", "unconditional"):
+        return True
+
+    if condition_type in ("uses_logo", "georgia_logo_displayed"):
+        # Accepts either key for backwards compatibility
+        return bool(
+            production_details.get("uses_georgia_logo")
+            or production_details.get("georgia_logo_displayed")
+        )
     if condition_type == "shooting_location":
         return production_details.get("shooting_location", "") == condition_text
     if condition_type == "spend_category_pct":
@@ -171,10 +191,18 @@ def _evaluate_uplift_condition(
     if condition_type == "labor_pct":
         val = float(production_details.get("local_labor_pct") or 0.0)
         return val >= float(condition_threshold or 0.0)
+    if condition_type == "resident_labor_pct":
+        val = float(production_details.get("resident_labor_pct") or 0.0)
+        return val >= float(condition_threshold or 0.0)
     if condition_type == "budget_under":
-        total = float(production_details.get("total_budget_usd") or 0.0)
-        return total <= float(condition_threshold or 0.0)
+        total = production_details.get("total_budget_usd")
+        if total is None:
+            return False  # unknown budget → do not apply uplift
+        return float(total) <= float(condition_threshold or 0.0)
     if condition_type == "is_independent":
         return bool(production_details.get("is_independent_film"))
-    # Default: treat as true if no specific evaluation defined
-    return True
+
+    # SAFETY: Unknown condition type → do NOT apply uplift
+    # Returning True here would silently overstate incentives for any future
+    # condition type that has not yet been implemented in the engine.
+    return False

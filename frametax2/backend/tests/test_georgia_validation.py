@@ -27,7 +27,7 @@ def _run(fixture: dict):
         cost_benchmark=None,
         union_fringe_rules=[],
         fx_rates=None,
-        production_details=None,
+        production_details=fixture.get("production_details"),
         home_jurisdiction_id=fixture.get("home_jurisdiction_id"),
     )
 
