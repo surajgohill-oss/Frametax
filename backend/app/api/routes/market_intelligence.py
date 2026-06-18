@@ -1563,7 +1563,7 @@ async def event_intelligence_snapshot(
                 "window_hours": round(min(7 * 24, hist_hours), 0),
             }
 
-    return {
+    resp = {
         "event_id": event_id,
         "computed_at": intel.get("computed_at"),
         "history_hours": hist_hours,
