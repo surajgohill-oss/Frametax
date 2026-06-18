@@ -1623,7 +1623,9 @@ async def event_intelligence_snapshot(
     except Exception as _lc_err:
         import logging as _lg
         _lg.getLogger(__name__).warning("lifecycle enrichment failed for event %s: %s", event_id, _lc_err)
-        resp["lifecycle"] = None
+        import traceback as _tb
+        _lg.getLogger(__name__).warning("lifecycle traceback: %s", _tb.format_exc())
+        resp["lifecycle"] = {"error": str(_lc_err)[:200], "type": type(_lc_err).__name__}
 
     return resp
 
