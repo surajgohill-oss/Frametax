@@ -1602,8 +1602,10 @@ async def event_intelligence_snapshot(
     }
 
     # Task E: enrich snapshot with lifecycle intelligence
+    # Use begin_nested (savepoint) to isolate from any prior session state
     try:
-        lifecycle = await compute_lifecycle(event_id, db)
+        async with db.begin_nested():
+            lifecycle = await compute_lifecycle(event_id, db)
         lc_summary = lifecycle.get("summary", {})
         resp["lifecycle"] = {
             "assumed_sales":            lc_summary.get("assumed_sales"),
