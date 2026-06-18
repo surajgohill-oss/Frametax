@@ -221,9 +221,19 @@ class EventResolver:
                 except Exception as exc:
                     logger.debug("RESOLVER: StubHub performer SOLR error: %s", exc)
 
-            event_id = await self._stubhub_extract_from_page(client, external_url)
-            if event_id:
-                return event_id, "resolved_page_fetch"
+            # Performer page URLs cannot yield an event_id via page extraction — the
+            # only ID embedded in the page/HTML is the performer_id itself, which
+            # would be misidentified as an event_id.  Skip page extraction for
+            # performer pages; resolution requires a direct event URL.
+            logger.debug(
+                "RESOLVER: StubHub performer page %s — SOLR failed, cannot resolve without auth",
+                external_url,
+            )
+            return None, "none"
+
+        event_id = await self._stubhub_extract_from_page(client, external_url)
+        if event_id:
+            return event_id, "resolved_page_fetch"
 
         return None, "none"
 
