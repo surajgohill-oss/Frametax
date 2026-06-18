@@ -15,6 +15,8 @@ class Event(Base):
     event_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     status: Mapped[str] = mapped_column(String(20), default="upcoming", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    spotify_artist_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    spotify_artist_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     venue: Mapped["Venue"] = relationship("Venue", back_populates="events")
     tracked_events: Mapped[list["TrackedEvent"]] = relationship(

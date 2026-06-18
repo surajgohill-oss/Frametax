@@ -209,6 +209,14 @@ async def start_scheduler():
         max_instances=1,
         next_run_time=datetime.now(timezone.utc),  # backfill immediately at startup
     )
+    _scheduler.add_job(
+        _resolve_spotify_artists,
+        trigger=IntervalTrigger(hours=6),
+        id="spotify_artist_resolver",
+        replace_existing=True,
+        max_instances=1,
+        next_run_time=datetime.now(timezone.utc),  # run once at startup to backfill
+    )
     _scheduler.start()
     logger.info(
         "Scheduler started — cadence=piecewise_2m_to_daily exhaustion_threshold=%d "
@@ -234,6 +242,26 @@ async def _resolve_pending_event_ids():
                 "RESOLVER: cycle resolved=%d failed=%d already_set=%d",
                 counts["resolved"], counts["failed"], counts["already_set"],
             )
+    finally:
+        await resolver.close()
+
+
+# ── Spotify resolver job ──────────────────────────────────────────────────────
+
+async def _resolve_spotify_artists():
+    from app.services.spotify_resolver import SpotifyResolver
+    resolver = SpotifyResolver(settings.spotify_client_id, settings.spotify_client_secret)
+    try:
+        counts = await resolver.resolve_all_events(AsyncSessionLocal)
+        if counts.get("api_not_configured"):
+            logger.debug("SPOTIFY_RESOLVER: credentials not configured — skipping")
+        elif counts["resolved"] or counts["not_found"]:
+            logger.info(
+                "SPOTIFY_RESOLVER: cycle resolved=%d not_found=%d ambiguous=%d",
+                counts["resolved"], counts["not_found"], counts["ambiguous"],
+            )
+    except Exception as exc:
+        logger.error("SPOTIFY_RESOLVER: unexpected error — %s", exc)
     finally:
         await resolver.close()
 

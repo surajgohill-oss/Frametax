@@ -48,6 +48,8 @@ class Settings(BaseSettings):
     tickpick_api_key: str = ""
     gametime_api_key: str = ""
     vividseats_api_key: str = ""
+    spotify_client_id: str = ""
+    spotify_client_secret: str = ""
 
     env_mode: str = "prod"  # prod | mock
 

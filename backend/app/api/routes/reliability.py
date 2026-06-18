@@ -146,6 +146,97 @@ async def system_reliability():
     elif active_sig:
         remediation = f"Investigate crash: {active_sig[:200]}"
 
+    # ── System-level alert list ──────────────────────────────────────────────
+    system_alerts: list[dict] = []
+
+    if active_sig:
+        system_alerts.append({
+            "type": "SCHEDULER_CRASH",
+            "severity": "RED",
+            "message": f"Active scheduler crash: {active_sig[:150]}",
+            "remediation": remediation or "Investigate and redeploy.",
+        })
+
+    # No successful poll within last 2h
+    last_succ_str = mem.get("last_success_at") or scheduler_last_success_at_db
+    if last_succ_str:
+        try:
+            ts = datetime.fromisoformat(last_succ_str)
+            age_h = (now - ts.replace(tzinfo=None)).total_seconds() / 3600
+            if age_h > 2:
+                system_alerts.append({
+                    "type": "SCHEDULER_STALE",
+                    "severity": "RED",
+                    "message": f"No successful poll in {age_h:.1f}h (threshold 2h)",
+                    "remediation": "Check if scheduler job is running on Railway.",
+                })
+        except Exception:
+            pass
+    else:
+        system_alerts.append({
+            "type": "SCHEDULER_STALE",
+            "severity": "RED",
+            "message": "No successful poll recorded",
+            "remediation": "Scheduler may not have started. Check Railway logs.",
+        })
+
+    # Poll success rate
+    total_polls = success_polls_24h + failed_polls_24h
+    if total_polls > 10 and success_polls_24h / total_polls < 0.5:
+        rate_pct = 100 * success_polls_24h / total_polls
+        system_alerts.append({
+            "type": "POLL_SUCCESS_RATE_LOW",
+            "severity": "RED" if rate_pct < 20 else "YELLOW",
+            "message": f"Poll success rate {rate_pct:.0f}% over last 24h ({success_polls_24h}/{total_polls})",
+            "remediation": "Check collector logs for bot detection or auth failures.",
+        })
+
+    # Latest snapshot stale > 8h
+    if latest_snapshot_at:
+        try:
+            snap_age_h = (now - datetime.fromisoformat(latest_snapshot_at)).total_seconds() / 3600
+            if snap_age_h > 8:
+                system_alerts.append({
+                    "type": "SNAPSHOT_STALE",
+                    "severity": "YELLOW",
+                    "message": f"Latest listing snapshot {snap_age_h:.1f}h old (threshold 8h)",
+                    "remediation": "Confirm at least one collector is writing snapshots.",
+                })
+        except Exception:
+            pass
+
+    # Unresolved marketplaces (NEEDS_MARKETPLACE_URL) — system-wide count
+    try:
+        async with AsyncSessionLocal() as db:
+            from app.models import TrackedEvent as TE
+            unresolved_count_row = await db.execute(
+                text(
+                    "SELECT COUNT(*) FROM tracked_events "
+                    "WHERE external_event_id IS NULL AND is_active=true"
+                )
+            )
+            unresolved_count = unresolved_count_row.scalar() or 0
+            if unresolved_count > 0:
+                system_alerts.append({
+                    "type": "NEEDS_MARKETPLACE_URL",
+                    "severity": "YELLOW",
+                    "message": f"{unresolved_count} tracked event(s) have no external_event_id",
+                    "remediation": "Use POST /api/events/{id}/marketplace-url to attach direct event URLs.",
+                })
+    except Exception:
+        pass
+
+    # ── Email-ready payload ──────────────────────────────────────────────────
+    # Callers check status; if EMAIL_DELIVERY_NOT_CONFIGURED they know to configure SMTP/SendGrid.
+    critical_alerts = [a for a in system_alerts if a["severity"] == "RED"]
+    pending_email_alerts: dict = {
+        "delivery_status": "EMAIL_DELIVERY_NOT_CONFIGURED",
+        "would_send": len(critical_alerts) > 0,
+        "recipient": "surajgohill@gmail.com",
+        "subject": f"[Concert Tracker] {len(critical_alerts)} critical alert(s)" if critical_alerts else None,
+        "alerts": critical_alerts,
+    }
+
     return {
         "status": status,
         "recent_errors": mem.get("recent_errors", []),
@@ -158,4 +249,6 @@ async def system_reliability():
         "affected_marketplaces": affected_marketplaces,
         "latest_snapshot_at": latest_snapshot_at,
         "remediation": remediation,
+        "alerts": system_alerts,
+        "pending_email_alerts": pending_email_alerts,
     }

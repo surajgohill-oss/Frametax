@@ -149,7 +149,7 @@ class TickPickCollector(BaseCollector):
                 else:
                     page_dt = datetime.strptime(start_date_str, "%Y-%m-%d")
                 delta = abs((page_dt.date() - event_date.date()).days)
-                if delta <= 1:
+                if delta == 0:  # exact date match only — ±1 day caused cross-event contamination
                     candidates.append((delta, tp_id, start_date_str))
             except Exception:
                 continue
