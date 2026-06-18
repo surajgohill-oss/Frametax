@@ -29,16 +29,27 @@ logger.info("TRACE-3: settings loaded OK — db_url_prefix=%s", settings.databas
 
 
 _REQUIRED_COLUMNS = [
-    ("events",            "status"),
-    ("listings",          "extra"),
-    ("listings",          "fees"),
-    ("listings",          "all_in_price"),
-    ("listings",          "market_segment"),
-    ("listing_snapshots", "fees"),
-    ("listing_snapshots", "all_in_price"),
-    ("listing_snapshots", "market_segment"),
-    ("tracked_events",    "resolution_source"),
-    ("tracked_events",    "lifecycle_phase"),
+    # Core collection
+    ("events",                "status"),
+    ("events",                "starting_inventory"),
+    ("events",                "first_snapshot_at"),
+    ("listings",              "extra"),
+    ("listings",              "fees"),
+    ("listings",              "all_in_price"),
+    ("listings",              "market_segment"),
+    ("listing_snapshots",     "fees"),
+    ("listing_snapshots",     "all_in_price"),
+    ("listing_snapshots",     "market_segment"),
+    ("tracked_events",        "resolution_source"),
+    ("tracked_events",        "lifecycle_phase"),
+    # Intelligence layer (Phase 1-3)
+    ("event_outcomes",        "postshow_clearance_rate"),
+    ("event_outcomes",        "seller_pressure_score"),
+    ("artist_market_profiles","avg_clearance_rate"),
+    ("event_type_benchmarks", "p50_clearance_rate"),
+    ("market_intelligence",   "relisting_rate"),
+    # Reliability
+    ("scheduler_heartbeats",  "beat_at"),
 ]
 
 
@@ -71,6 +82,33 @@ async def _assert_schema() -> None:
         logger.info("TRACE-5c: schema assertion passed — all required columns present")
 
 
+async def _cleanup_zombie_poll_runs() -> None:
+    """Mark poll_runs stuck in 'running' for >10 minutes as 'error' on startup."""
+    try:
+        async with AsyncSessionLocal() as db:
+            result = await db.execute(
+                text(
+                    "UPDATE poll_runs SET status='error', "
+                    "error_message='Cleaned up by startup — process restarted while poll was running', "
+                    "completed_at=NOW() "
+                    "WHERE status='running' AND started_at < NOW() - INTERVAL '10 minutes' "
+                    "RETURNING id"
+                )
+            )
+            cleaned = len(result.fetchall())
+            await db.commit()
+        if cleaned:
+            logger.warning(
+                "STARTUP_CLEANUP: marked %d zombie poll_run(s) as error "
+                "(were stuck in 'running' before restart)",
+                cleaned,
+            )
+        else:
+            logger.info("STARTUP_CLEANUP: no zombie poll_runs found")
+    except Exception as exc:
+        logger.error("STARTUP_CLEANUP: zombie cleanup failed — %s", exc)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("TRACE-4: lifespan() entered")
@@ -78,6 +116,9 @@ async def lifespan(app: FastAPI):
     logger.info("TRACE-5: calling _assert_schema()")
     await _assert_schema()
     logger.info("TRACE-6: _assert_schema() done")
+
+    logger.info("TRACE-6b: cleaning up zombie poll_runs from prior process")
+    await _cleanup_zombie_poll_runs()
 
     logger.info("TRACE-7: importing start_scheduler")
     try:
@@ -141,12 +182,34 @@ logger.info("TRACE-3c: app.main module fully loaded — routers registered")
 
 @app.get("/api/health")
 async def health():
+    import os
     t0 = time.monotonic()
+    commit = (
+        os.environ.get("RAILWAY_GIT_COMMIT_SHA")
+        or os.environ.get("GIT_COMMIT")
+        or "unknown"
+    )
+    commit = commit[:12]  # short hash
     try:
         async with AsyncSessionLocal() as db:
             await db.execute(text("SELECT 1"))
+            migration_row = await db.execute(text("SELECT version_num FROM alembic_version"))
+            migration = (migration_row.scalar_one_or_none() or "unknown")
         db_ms = round((time.monotonic() - t0) * 1000)
-        return {"status": "ok", "app": settings.app_name, "db": "ok", "db_ms": db_ms}
+        return {
+            "status": "ok",
+            "app": settings.app_name,
+            "db": "ok",
+            "db_ms": db_ms,
+            "commit": commit,
+            "migration": migration,
+        }
     except Exception as exc:
         logger.error("Health check DB ping failed: %s", exc)
-        return {"status": "degraded", "app": settings.app_name, "db": "error", "error": str(exc)}
+        return {
+            "status": "degraded",
+            "app": settings.app_name,
+            "db": "error",
+            "error": str(exc),
+            "commit": commit,
+        }

@@ -10,6 +10,7 @@ Returns in-memory + DB-sourced reliability state:
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import datetime, timedelta
 
@@ -314,16 +315,50 @@ async def system_reliability():
     except Exception:
         pass
 
-    # ── Email-ready payload ──────────────────────────────────────────────────
-    # Callers check status; if EMAIL_DELIVERY_NOT_CONFIGURED they know to configure SMTP/SendGrid.
-    critical_alerts = [a for a in system_alerts if a["severity"] == "RED"]
-    pending_email_alerts: dict = {
-        "delivery_status": "EMAIL_DELIVERY_NOT_CONFIGURED",
-        "would_send": len(critical_alerts) > 0,
-        "recipient": "surajgohill@gmail.com",
-        "subject": f"[Concert Tracker] {len(critical_alerts)} critical alert(s)" if critical_alerts else None,
-        "alerts": critical_alerts,
-    }
+    # ── Scheduler heartbeat staleness ────────────────────────────────────────
+    try:
+        async with AsyncSessionLocal() as db:
+            hb_row = await db.execute(text(
+                "SELECT MAX(beat_at) AS last_beat FROM scheduler_heartbeats"
+            ))
+            last_beat = hb_row.scalar_one_or_none()
+            if last_beat is None:
+                system_alerts.append({
+                    "type": "HEARTBEAT_NEVER_WRITTEN",
+                    "severity": "YELLOW",
+                    "message": "No scheduler heartbeat has ever been written (may be new deploy)",
+                    "remediation": "Heartbeats write every 10 poll ticks (~10 min). Wait and recheck.",
+                })
+            else:
+                beat_age_min = (now - last_beat.replace(tzinfo=None)).total_seconds() / 60
+                if beat_age_min > 15:
+                    system_alerts.append({
+                        "type": "HEARTBEAT_STALE",
+                        "severity": "RED" if beat_age_min > 60 else "YELLOW",
+                        "message": (
+                            f"Scheduler heartbeat is {beat_age_min:.0f} min old "
+                            f"(last: {str(last_beat)[:19]})"
+                        ),
+                        "remediation": "Check if scheduler is running on Railway.",
+                    })
+    except Exception as exc:
+        logger.error("reliability: heartbeat check failed — %s", exc)
+
+    # ── Alert delivery status ────────────────────────────────────────────────
+    from app.services.alert_sender import alert_delivery_status
+    delivery = alert_delivery_status()
+
+    # ── Fire any RED alerts that just appeared ───────────────────────────────
+    red_alerts = [a for a in system_alerts if a["severity"] == "RED"]
+    if red_alerts:
+        try:
+            from app.services.alert_sender import fire_alert
+            for a in red_alerts[:3]:  # cap at 3 to avoid flooding on first call
+                asyncio.create_task(
+                    fire_alert(a["type"], "RED", a["message"])
+                )
+        except Exception as exc:
+            logger.error("reliability: failed to fire RED alert — %s", exc)
 
     return {
         "status": status,
@@ -338,5 +373,5 @@ async def system_reliability():
         "latest_snapshot_at": latest_snapshot_at,
         "remediation": remediation,
         "alerts": system_alerts,
-        "pending_email_alerts": pending_email_alerts,
+        "alert_delivery": delivery,
     }

@@ -1,6 +1,8 @@
 import asyncio
 import collections
 import logging
+import os
+import socket
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -9,6 +11,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy import select, and_, update
 
 from app.utils.event_trace import emit_event_trace
+from sqlalchemy import text as _sa_text
 
 from app.config import get_settings
 from app.database import AsyncSessionLocal
@@ -19,6 +22,10 @@ from app.collectors.normalize import is_parking_listing
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
+
+# ── Heartbeat counter ─────────────────────────────────────────────────────────
+_jobs_ran_total: int = 0
+_HEARTBEAT_INTERVAL = 10  # write to DB every N poll ticks
 
 # ── Reliability ring buffer ────────────────────────────────────────────────────
 # Stores last 50 scheduler/task exceptions in memory. Exposed via
@@ -65,6 +72,37 @@ def get_reliability_state() -> dict[str, Any]:
         "total_poll_failures_since_start": _total_poll_failures,
         "active_crash_signature": active_sig,
     }
+
+
+async def _write_heartbeat() -> None:
+    """Persist scheduler heartbeat to DB. Called every _HEARTBEAT_INTERVAL poll ticks."""
+    global _jobs_ran_total
+    try:
+        async with AsyncSessionLocal() as db:
+            await db.execute(_sa_text("""
+                INSERT INTO scheduler_heartbeats (beat_at, hostname, pid, jobs_ran)
+                VALUES (NOW(), :host, :pid, :jobs)
+            """), {"host": socket.gethostname(), "pid": os.getpid(), "jobs": _jobs_ran_total})
+            # Keep only last 500 rows to avoid table bloat
+            await db.execute(_sa_text("""
+                DELETE FROM scheduler_heartbeats
+                WHERE id NOT IN (
+                    SELECT id FROM scheduler_heartbeats ORDER BY beat_at DESC LIMIT 500
+                )
+            """))
+            await db.commit()
+    except Exception as exc:
+        logger.warning("HEARTBEAT: write failed — %s", exc)
+
+
+async def _fire_red_alert(alert_type: str, message: str, details: dict | None = None) -> None:
+    """Fire a RED-severity alert via email + SMS (rate-limited, non-blocking)."""
+    try:
+        from app.services.alert_sender import fire_alert
+        await fire_alert(alert_type, "RED", message, details)
+    except Exception as exc:
+        logger.error("ALERT_FIRE: failed to fire %s — %s", alert_type, exc)
+
 
 _scheduler: AsyncIOScheduler | None = None
 
@@ -266,8 +304,19 @@ async def _compute_event_outcomes():
                 "OUTCOME_ENGINE: cycle computed=%d failed=%d no_data=%d",
                 counts["computed"], counts["failed"], counts["no_data"],
             )
+        if counts["failed"]:
+            await _fire_red_alert(
+                "OUTCOME_GENERATION_FAILURE",
+                f"Event outcome engine failed for {counts['failed']} event(s). "
+                "Benchmark data may be stale.",
+                {"failed_count": counts["failed"]},
+            )
     except Exception as exc:
         logger.error("OUTCOME_ENGINE: unexpected error — %s", exc)
+        await _fire_red_alert(
+            "OUTCOME_GENERATION_FAILURE",
+            f"Outcome engine crashed: {exc}",
+        )
 
 
 # ── Spotify resolver job ──────────────────────────────────────────────────────
@@ -293,6 +342,11 @@ async def _resolve_spotify_artists():
 # ── Poll gate ──────────────────────────────────────────────────────────────────
 
 async def _check_due_events():
+    global _jobs_ran_total
+    _jobs_ran_total += 1
+    if _jobs_ran_total % _HEARTBEAT_INTERVAL == 0:
+        asyncio.create_task(_write_heartbeat())
+
     async with AsyncSessionLocal() as db:
         now_naive = datetime.utcnow()  # next_poll_at is TIMESTAMP WITHOUT TIME ZONE
         result = await db.execute(
@@ -345,6 +399,13 @@ async def _poll_with_reliability_tracking(tracked_event_id: int) -> None:
         _record_scheduler_success()
     except Exception as exc:
         _record_scheduler_error(exc, f"run_poll_for_tracked_event(te_id={tracked_event_id})")
+        # Fire RED alert only for crash-class errors (not routine collector failures)
+        sig = f"{type(exc).__name__}: {str(exc)[:80]}"
+        if not any(kw in str(exc) for kw in ("unresolved_event_id", "Errno 11", "Timeout")):
+            await _fire_red_alert(
+                "SCHEDULER_CRASH",
+                f"Unexpected scheduler crash on te_id={tracked_event_id}: {sig}",
+            )
 
 
 # ── Status + lifecycle updater ─────────────────────────────────────────────────
