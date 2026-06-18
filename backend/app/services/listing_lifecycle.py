@@ -296,23 +296,23 @@ async def compute_lifecycle(
     # ── 6b. Post-show state counts (listings seen after event start / post-show window) ─
     postshow_row = None
     try:
-        postshow_row = (await db.execute(text("""
-            SELECT
-                e.event_date::timestamp AS event_date,
-                COUNT(*) FILTER (
-                    WHERE l.last_seen_at IS NOT NULL
-                      AND e.event_date IS NOT NULL
-                      AND l.last_seen_at >= e.event_date::timestamp
-                ) AS still_active_at_event_start,
-                COUNT(*) FILTER (
-                    WHERE l.last_seen_at IS NOT NULL
-                      AND e.event_date IS NOT NULL
-                      AND l.last_seen_at >= (e.event_date::timestamp + INTERVAL '4 hours')
-                ) AS still_active_after_postshow
-            FROM listings l
-            JOIN events e ON e.id = l.event_id
-            WHERE l.event_id = :eid
-        """), {"eid": event_id})).fetchone()
+        async with db.begin_nested():
+            postshow_row = (await db.execute(text("""
+                SELECT
+                    COUNT(*) FILTER (
+                        WHERE l.last_seen_at IS NOT NULL
+                          AND e.event_date IS NOT NULL
+                          AND l.last_seen_at >= e.event_date
+                    ) AS still_active_at_event_start,
+                    COUNT(*) FILTER (
+                        WHERE l.last_seen_at IS NOT NULL
+                          AND e.event_date IS NOT NULL
+                          AND l.last_seen_at >= (e.event_date + INTERVAL '4 hours')
+                    ) AS still_active_after_postshow
+                FROM listings l
+                JOIN events e ON e.id = l.event_id
+                WHERE l.event_id = :eid
+            """), {"eid": event_id})).fetchone()
     except Exception:
         pass
 
