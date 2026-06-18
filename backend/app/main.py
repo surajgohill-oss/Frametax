@@ -145,7 +145,7 @@ async def health():
         async with AsyncSessionLocal() as db:
             await db.execute(text("SELECT 1"))
         db_ms = round((time.monotonic() - t0) * 1000)
-        return {"status": "ok", "app": settings.app_name, "db": "ok", "db_ms": db_ms, "version": "v2dd3446d"}
+        return {"status": "ok", "app": settings.app_name, "db": "ok", "db_ms": db_ms}
     except Exception as exc:
         logger.error("Health check DB ping failed: %s", exc)
         return {"status": "degraded", "app": settings.app_name, "db": "error", "error": str(exc)}
