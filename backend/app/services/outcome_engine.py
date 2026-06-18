@@ -1066,6 +1066,24 @@ async def compute_active_comparison(event_id: int, db: AsyncSession) -> dict:
     current_listings = int(mi_row.current_listings or 0) if mi_row else None
     days_until       = _f(mi_row.days_until_event)    if mi_row else None
 
+    # Compute confidence score based on benchmark pool size
+    n = len(bench_rows)
+    if n >= 10:
+        confidence_score = 0.85
+        confidence_label = "ADEQUATE"
+    elif n >= 5:
+        confidence_score = 0.65
+        confidence_label = "MARGINAL"
+    elif n >= 3:
+        confidence_score = 0.45
+        confidence_label = "LOW"
+    elif n >= 1:
+        confidence_score = 0.25
+        confidence_label = "INSUFFICIENT"
+    else:
+        confidence_score = 0.0
+        confidence_label = "NO_DATA"
+
     event_date = ev_row.event_date
     if event_date and hasattr(event_date, 'tzinfo') and event_date.tzinfo:
         event_date = event_date.replace(tzinfo=None)
@@ -1083,8 +1101,10 @@ async def compute_active_comparison(event_id: int, db: AsyncSession) -> dict:
         "days_until_event":  days_until,
         "event_type":        event_type,
         "benchmark_pool": {
-            "size":       len(bench_rows),
-            "event_ids":  [r.event_id for r in bench_rows],
+            "size":             n,
+            "event_ids":        [r.event_id for r in bench_rows],
+            "confidence_score": confidence_score,
+            "confidence_label": confidence_label,
         },
         "current_market": {
             "listings_active":  current_listings,

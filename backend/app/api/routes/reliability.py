@@ -241,6 +241,58 @@ async def system_reliability():
     except Exception as exc:
         logger.error("reliability: per-event snapshot check failed — %s", exc)
 
+    # Intelligence layer: completed events with no outcome row
+    try:
+        async with AsyncSessionLocal() as db:
+            missing_rows = await db.execute(text("""
+                SELECT e.id, e.title
+                FROM events e
+                LEFT JOIN event_outcomes eo ON eo.event_id = e.id
+                WHERE e.status = 'completed' AND eo.id IS NULL
+            """))
+            missing = missing_rows.fetchall()
+            if missing:
+                system_alerts.append({
+                    "type": "OUTCOME_MISSING",
+                    "severity": "YELLOW",
+                    "message": (
+                        f"{len(missing)} completed event(s) have no outcome row — "
+                        f"benchmark pool is incomplete"
+                    ),
+                    "affected_events": [
+                        {"event_id": r[0], "title": r[1]} for r in missing
+                    ],
+                    "remediation": (
+                        "POST /api/intelligence/outcomes/compute-all to recompute. "
+                        "Events with no snapshot data will be skipped with NO_SNAPSHOT_DATA status."
+                    ),
+                })
+    except Exception as exc:
+        logger.error("reliability: outcome-missing check failed — %s", exc)
+
+    # Intelligence layer: stale benchmark distributions
+    try:
+        async with AsyncSessionLocal() as db:
+            stale_bench = await db.execute(text("""
+                SELECT event_type, computed_at,
+                       NOW() - computed_at AS age
+                FROM event_type_benchmarks
+                WHERE computed_at < NOW() - INTERVAL '7 days'
+            """))
+            stale = stale_bench.fetchall()
+            if stale:
+                system_alerts.append({
+                    "type": "BENCHMARK_STALE",
+                    "severity": "YELLOW",
+                    "message": (
+                        f"{len(stale)} event-type benchmark(s) not recomputed in >7 days"
+                    ),
+                    "affected_types": [r[0] for r in stale],
+                    "remediation": "POST /api/intelligence/benchmarks/event-types/compute",
+                })
+    except Exception as exc:
+        logger.error("reliability: benchmark-stale check failed — %s", exc)
+
     # Unresolved marketplaces (NEEDS_MARKETPLACE_URL) — system-wide count
     try:
         async with AsyncSessionLocal() as db:

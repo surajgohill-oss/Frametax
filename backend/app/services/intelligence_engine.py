@@ -658,7 +658,30 @@ async def compute_event(event_id: int, db: AsyncSession) -> dict:
         # High aggression + high churn = sellers capitulating
         capitulation_score = _clamp01(0.6 * seller_aggression + 0.4 * churn_rate)
 
-    relist_pressure = None  # will be non-null once reappearance data accumulates
+    relist_pressure = None
+
+    # Relisting rate: fraction of inactive listings that reappeared in same section/row at similar price
+    relisting_rate: Optional[float] = None
+    try:
+        relist_row = (await db.execute(text("""
+            SELECT
+                COUNT(*) FILTER (WHERE NOT l.is_active)                          AS disappeared,
+                COUNT(*) FILTER (WHERE NOT l.is_active AND EXISTS (
+                    SELECT 1 FROM listings l2
+                    WHERE l2.event_id = l.event_id
+                      AND l2.section  = l.section
+                      AND l2.row      = l.row
+                      AND l2.is_active = TRUE
+                      AND l2.price > 0 AND l.price > 0
+                      AND ABS(l2.price - l.price) / l.price < 0.25
+                ))                                                                AS relisted
+            FROM listings l
+            WHERE l.event_id = :eid
+        """), {"eid": event_id})).fetchone()
+        if relist_row and relist_row.disappeared and relist_row.disappeared > 0:
+            relisting_rate = round(relist_row.relisted / relist_row.disappeared, 4)
+    except Exception:
+        pass
 
     opportunity_score = _compute_opportunity_score(
         price_delta_24h=pd24h,
@@ -733,7 +756,7 @@ async def compute_event(event_id: int, db: AsyncSession) -> dict:
         "churn_rate": churn_rate,
         "listing_survival": listing_survival,
         "reappearance_rate": reappearance_rate,
-        "relisting_rate": None,  # requires multi-cycle history
+        "relisting_rate": relisting_rate,
         "market_tightness": market_tightness,
         "market_depth": market_depth,
         "inventory_velocity": inventory_velocity,
