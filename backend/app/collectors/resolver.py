@@ -192,8 +192,35 @@ class EventResolver:
         except Exception as exc:
             logger.debug("RESOLVER: StubHub SOLR error: %s", exc)
 
-        # Path 2: Fetch external_url page, extract event ID from embedded JSON/HTML
+        # Path 2: Fetch external_url page, extract event ID from embedded JSON/HTML.
+        # Handles both event-specific pages and performer pages (/performer/{id}).
+        # Note: StubHub currently returns 202 (bot challenge) for performer pages
+        # without auth cookies — this path succeeds when the user has attached a
+        # direct event URL via POST /api/events/{id}/marketplace-url.
         if external_url:
+            # Performer page: extract performer_id and try SOLR with performerid filter
+            performer_match = re.search(r"/performer/(\d+)", external_url)
+            if performer_match:
+                performer_id = performer_match.group(1)
+                solr_perf_url = (
+                    "https://www.stubhub.com/listingCatalog/select"
+                    f"?q=*:*&fq=performerid:{performer_id}"
+                    f"&fq=event_date:[{date_before}+TO+{date_after}]"
+                    "&rows=5&fl=event_id,event_name,event_date_local&wt=json&sort=event_date+asc"
+                )
+                try:
+                    resp2 = await client.get(solr_perf_url)
+                    if resp2.status_code == 200:
+                        docs = resp2.json().get("response", {}).get("docs", [])
+                        if docs:
+                            logger.info(
+                                "RESOLVER: StubHub performer page matched performer_id=%s → event_id=%s",
+                                performer_id, docs[0]["event_id"],
+                            )
+                            return str(docs[0]["event_id"]), "resolved_performer_page"
+                except Exception as exc:
+                    logger.debug("RESOLVER: StubHub performer SOLR error: %s", exc)
+
             event_id = await self._stubhub_extract_from_page(client, external_url)
             if event_id:
                 return event_id, "resolved_page_fetch"

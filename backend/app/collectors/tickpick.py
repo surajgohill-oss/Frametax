@@ -77,13 +77,95 @@ class TickPickCollector(BaseCollector):
         if tracked_event.external_event_id:
             return tracked_event.external_event_id
 
+        event_date = getattr(getattr(tracked_event, "event", None), "event_date", None)
+
+        # Path 1: performer/category page URL (e.g. /comedy/morgan-jay-tickets/)
+        # TickPick category pages embed MusicEvent JSON-LD with event IDs and dates.
+        ext_url = getattr(tracked_event, "external_url", None)
+        if ext_url and "tickpick.com" in ext_url:
+            result = await self._resolve_from_performer_page(ext_url, event_date)
+            if result:
+                return result
+
+        # Path 2: title + date search via API (returns 404 as of 2026 — kept as
+        # fallback in case the endpoint is restored; silently returns None on 404)
         try:
-            title = tracked_event.event.title if hasattr(tracked_event, "event") else ""
-            event_date = tracked_event.event.event_date if hasattr(tracked_event, "event") else None
-            return await self._search_event(title, event_date)
+            title = getattr(getattr(tracked_event, "event", None), "title", "") or ""
+            if title:
+                return await self._search_event(title, event_date)
         except Exception as exc:
             logger.warning("TP resolver: search failed — %s", exc)
+        return None
+
+    async def _resolve_from_performer_page(
+        self, page_url: str, event_date: Optional[datetime]
+    ) -> Optional[str]:
+        """
+        Fetch a TickPick performer/category page and extract event ID from
+        MusicEvent JSON-LD entries, matching by date (±1 day).
+        """
+        import json as _json
+        import re as _re
+
+        try:
+            resp = await self._client().get(page_url)
+            if resp.status_code != 200:
+                logger.debug("TP performer page: HTTP %s for %s", resp.status_code, page_url)
+                return None
+        except Exception as exc:
+            logger.warning("TP performer page: fetch failed — %s", exc)
             return None
+
+        html = resp.text
+        jsonld_blocks = _re.findall(
+            r'<script[^>]+type="application/ld\+json"[^>]*>(.*?)</script>',
+            html, _re.DOTALL,
+        )
+        # Collect candidates with their match quality (lower delta = better)
+        candidates: list[tuple[int, str, str]] = []  # (delta_days, tp_id, date_str)
+
+        for block in jsonld_blocks:
+            try:
+                d = _json.loads(block)
+            except Exception:
+                continue
+            schema_type = d.get("@type", "")
+            if not (schema_type == "Event" or schema_type.endswith("Event")):
+                continue
+            url = d.get("url", "")
+            # Extract event ID from URL: /buy-artist-tickets-venue-date/{id}/
+            m = _re.search(r"/(\d{5,})/?$", url.rstrip("/"))
+            if not m:
+                continue
+            tp_id = m.group(1)
+
+            if event_date is None:
+                return tp_id
+
+            start_date_str = d.get("startDate", "")
+            try:
+                if "T" in start_date_str:
+                    page_dt = datetime.fromisoformat(start_date_str)
+                else:
+                    page_dt = datetime.strptime(start_date_str, "%Y-%m-%d")
+                delta = abs((page_dt.date() - event_date.date()).days)
+                if delta <= 1:
+                    candidates.append((delta, tp_id, start_date_str))
+            except Exception:
+                continue
+
+        if not candidates:
+            logger.debug("TP performer page: no date match on %s for %s", page_url, event_date)
+            return None
+
+        # Prefer exact match (delta=0) over ±1 day match
+        candidates.sort(key=lambda x: x[0])
+        best_delta, best_id, best_date = candidates[0]
+        logger.info(
+            "TP performer page: matched date=%s id=%s url=%s",
+            best_date, best_id, page_url,
+        )
+        return best_id
 
     async def _search_event(self, title: str, event_date: Optional[datetime]) -> Optional[str]:
         params: dict = {"q": title[:100], "limit": "5"}
@@ -92,6 +174,9 @@ class TickPickCollector(BaseCollector):
 
         try:
             resp = await self._client().get(f"{_TP_API_BASE}/performances/search", params=params)
+            if resp.status_code == 404:
+                # API endpoint removed as of 2026 — performer page path is the fallback
+                return None
             resp.raise_for_status()
             data = resp.json()
         except Exception as exc:

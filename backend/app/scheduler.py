@@ -476,6 +476,18 @@ async def _run_collector_for_event(collector_slug: str, source_te: TrackedEvent,
                 te.id, collector_slug, source_te.event_id,
             )
 
+        # T2: skip collector entirely if there is no external_event_id and no
+        # external_url — the collector cannot resolve anything and would only
+        # create a failed poll_run.  The resolver job will populate the ID when
+        # a performer page URL or direct event URL is attached.
+        if not te.external_event_id and not te.external_url:
+            logger.debug(
+                "COLLECTOR_DISPATCH: skip slug=%s te_id=%d — no ext_id or ext_url "
+                "(NEEDS_MARKETPLACE_URL)",
+                collector_slug, te.id,
+            )
+            return
+
         poll_run = PollRun(tracked_event_id=te.id, started_at=datetime.utcnow())
         db.add(poll_run)
         await db.flush()
