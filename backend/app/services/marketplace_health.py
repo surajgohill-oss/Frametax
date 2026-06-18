@@ -35,6 +35,10 @@ from typing import Optional
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+# Core marketplaces for coverage scoring.  SeatGeek and TicketMaster are
+# tracked/displayed but excluded from the core health / coverage score.
+_CORE_MARKETPLACES = {"gametime", "stubhub", "tickpick", "vividseats"}
+
 
 def _f(v) -> Optional[float]:
     if v is None:
@@ -202,6 +206,7 @@ async def get_event_marketplace_health(event_id: int, db: AsyncSession) -> dict:
 
         marketplaces_out.append({
             "marketplace":          slug,
+            "is_core":              slug in _CORE_MARKETPLACES,
             "status":               status,
             "warning_level":        warning_level,
             "external_id_present":  bool(row.external_event_id and row.external_event_id.strip()),
@@ -217,19 +222,33 @@ async def get_event_marketplace_health(event_id: int, db: AsyncSession) -> dict:
             "remediation":          remediation,
         })
 
-    populated = [m for m in marketplaces_out if m["status"] == "POPULATED"]
-    warnings  = [m for m in marketplaces_out if m["warning_level"] in ("YELLOW", "RED")]
+    core_mps      = [m for m in marketplaces_out if m["is_core"]]
+    core_populated = [m for m in core_mps if m["status"] == "POPULATED"]
+
+    # Coverage classification uses CORE marketplaces only
+    core_pop_count = len(core_populated)
+    if core_pop_count >= 4:
+        core_coverage = "FULL"
+    elif core_pop_count >= 2:
+        core_coverage = "PARTIAL"
+    elif core_pop_count == 1:
+        core_coverage = "LIMITED"
+    else:
+        core_coverage = "BROKEN"
 
     return {
         "event_id":     event_id,
         "computed_at":  now_utc.isoformat(),
         "marketplaces": marketplaces_out,
         "summary": {
-            "total_marketplaces": len(marketplaces_out),
-            "populated":          len(populated),
-            "green":  sum(1 for m in marketplaces_out if m["warning_level"] == "GREEN"),
-            "yellow": sum(1 for m in marketplaces_out if m["warning_level"] == "YELLOW"),
-            "red":    sum(1 for m in marketplaces_out if m["warning_level"] == "RED"),
+            "total_marketplaces":  len(marketplaces_out),
+            "core_marketplaces":   len(core_mps),
+            "populated":           sum(1 for m in marketplaces_out if m["status"] == "POPULATED"),
+            "core_populated":      core_pop_count,
+            "core_coverage":       core_coverage,
+            "green":   sum(1 for m in core_mps if m["warning_level"] == "GREEN"),
+            "yellow":  sum(1 for m in core_mps if m["warning_level"] == "YELLOW"),
+            "red":     sum(1 for m in core_mps if m["warning_level"] == "RED"),
         },
     }
 
@@ -311,6 +330,7 @@ async def get_coverage_audit(db: AsyncSession) -> dict:
 
         events[eid]["marketplaces"].append({
             "marketplace":   row.slug,
+            "is_core":       row.slug in _CORE_MARKETPLACES,
             "status":        status,
             "warning_level": warning_level,
             "listings":      active_listings,
@@ -320,10 +340,11 @@ async def get_coverage_audit(db: AsyncSession) -> dict:
     # Build coverage summary per event
     event_list = []
     for eid, ev in events.items():
-        populated_count = sum(1 for m in ev["marketplaces"] if m["status"] == "POPULATED")
-        total_mps       = len(ev["marketplaces"])
-        populated_mps   = [m["marketplace"] for m in ev["marketplaces"] if m["status"] == "POPULATED"]
-        missing_mps     = [m["marketplace"] for m in ev["marketplaces"] if m["status"] not in ("POPULATED",)]
+        core_mps        = [m for m in ev["marketplaces"] if m["is_core"]]
+        populated_count = sum(1 for m in core_mps if m["status"] == "POPULATED")
+        total_mps       = len(core_mps)
+        populated_mps   = [m["marketplace"] for m in core_mps if m["status"] == "POPULATED"]
+        missing_mps     = [m["marketplace"] for m in core_mps if m["status"] != "POPULATED"]
 
         if populated_count >= 4:
             coverage = "FULL"
@@ -337,15 +358,15 @@ async def get_coverage_audit(db: AsyncSession) -> dict:
         coverage_pct = round(populated_count / total_mps * 100) if total_mps > 0 else 0
 
         event_list.append({
-            "event_id":         eid,
-            "title":            ev["title"],
-            "event_date":       ev["event_date"],
-            "coverage":         coverage,
-            "coverage_pct":     coverage_pct,
-            "populated_count":  populated_count,
+            "event_id":          eid,
+            "title":             ev["title"],
+            "event_date":        ev["event_date"],
+            "coverage":          coverage,
+            "coverage_pct":      coverage_pct,
+            "populated_count":   populated_count,
             "marketplace_count": total_mps,
             "populated_marketplaces": populated_mps,
-            "missing_coverage": missing_mps,
+            "missing_coverage":  missing_mps,
             "marketplace_detail": ev["marketplaces"],
         })
 
@@ -378,10 +399,13 @@ async def get_event_alerts(event_id: int, db: AsyncSession) -> dict:
     now_utc = datetime.now(timezone.utc)
 
     alerts = []
-    populated = health["summary"]["populated"]
-    total     = health["summary"]["total_marketplaces"]
+    populated = health["summary"]["core_populated"]
+    total     = health["summary"]["core_marketplaces"]
 
     for mp in health["marketplaces"]:
+        # Only emit alerts for core marketplaces
+        if not mp.get("is_core", True):
+            continue
         status = mp["status"]
         slug   = mp["marketplace"]
         fresh  = mp["freshness_hours"]

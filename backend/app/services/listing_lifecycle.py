@@ -112,19 +112,20 @@ async def compute_lifecycle(
 
     # ── 1. Per-listing lifecycle state with relist matching ─────────────────
     #
-    # Logic:
-    #   is_active=false → candidate for DISAPPEARED_ASSUMED_SOLD or RELISTED
-    #   relist match: new listing in same section+row, price within 30%, appeared after last_seen_at
+    # Cross-marketplace matching is included: a listing can be relisted on a
+    # different marketplace (same section+row+price, different marketplace_id).
     #
     lifecycle_rows = (await db.execute(text("""
         WITH inactive AS (
-            SELECT l.id, l.event_id, l.marketplace_id, l.section, l.row,
+            SELECT l.id, l.event_id, l.marketplace_id, m_orig.slug AS orig_mp_slug,
+                   l.section, l.row,
                    l.price AS last_price,
                    l.first_seen_at, l.last_seen_at,
                    EXTRACT(EPOCH FROM (l.last_seen_at - l.first_seen_at)) / 3600 AS lifetime_hours,
                    e.event_date::timestamp AS event_date
             FROM listings l
             JOIN events e ON e.id = l.event_id
+            JOIN marketplaces m_orig ON m_orig.id = l.marketplace_id
             WHERE l.event_id = :eid AND l.is_active = false
               AND l.last_seen_at IS NOT NULL
         ),
@@ -132,16 +133,19 @@ async def compute_lifecycle(
             SELECT
                 inact.id                                                  AS inactive_id,
                 newl.id                                                   AS new_listing_id,
+                newl.marketplace_id                                       AS relist_marketplace_id,
+                m_new.slug                                                AS relist_mp_slug,
+                (inact.marketplace_id != newl.marketplace_id)             AS cross_marketplace,
                 newl.section                                              AS new_section,
                 newl.row                                                  AS new_row,
                 newl.price                                                AS new_price,
+                newl.is_active                                            AS new_is_active,
                 newl.first_seen_at                                        AS reappeared_at,
                 EXTRACT(EPOCH FROM (newl.first_seen_at - inact.last_seen_at)) / 3600
                                                                           AS relist_delay_hours,
                 CASE WHEN inact.last_price > 0
                      THEN ABS(newl.price - inact.last_price) / inact.last_price * 100
                      ELSE NULL END                                        AS price_diff_pct,
-                -- confidence tier (inline)
                 CASE
                     WHEN inact.section = newl.section
                          AND (inact.row = newl.row OR
@@ -161,32 +165,35 @@ async def compute_lifecycle(
                     ELSE NULL
                 END AS confidence
             FROM inactive inact
+            -- Allow cross-marketplace: join on event+section only (not marketplace)
             JOIN listings newl ON
-                newl.event_id      = inact.event_id
-                AND newl.marketplace_id = inact.marketplace_id
-                AND newl.section   = inact.section
+                newl.event_id    = inact.event_id
+                AND newl.section = inact.section
                 AND newl.first_seen_at > inact.last_seen_at
-                AND newl.id        != inact.id
+                AND newl.id     != inact.id
                 AND CASE WHEN inact.last_price > 0
                          THEN ABS(newl.price - inact.last_price) / inact.last_price * 100 <= 30
                          ELSE false END
+            JOIN marketplaces m_new ON m_new.id = newl.marketplace_id
         )
         SELECT
-            i.id, i.marketplace_id, i.section, i.row,
+            i.id, i.marketplace_id, i.orig_mp_slug, i.section, i.row,
             i.last_price AS original_price, i.first_seen_at, i.last_seen_at,
             i.lifetime_hours, i.event_date,
-            rc.new_listing_id, rc.new_price AS relist_price,
+            rc.new_listing_id, rc.relist_marketplace_id, rc.relist_mp_slug,
+            rc.cross_marketplace, rc.new_price AS relist_price,
+            rc.new_is_active AS relist_still_active,
             rc.reappeared_at, rc.relist_delay_hours,
             rc.price_diff_pct,
             rc.confidence,
-            CASE WHEN inact.last_price > 0
-                 THEN (rc.new_price - inact.last_price) / inact.last_price * 100
+            CASE WHEN i.last_price > 0
+                 THEN (rc.new_price - i.last_price) / i.last_price * 100
                  ELSE NULL END AS price_delta_pct
         FROM inactive i
-        LEFT JOIN inactive inact ON inact.id = i.id
         LEFT JOIN (
             SELECT DISTINCT ON (inactive_id)
-                inactive_id, new_listing_id, new_price, reappeared_at,
+                inactive_id, new_listing_id, relist_marketplace_id, relist_mp_slug,
+                cross_marketplace, new_price, new_is_active, reappeared_at,
                 relist_delay_hours, price_diff_pct, confidence
             FROM relist_candidates
             WHERE confidence IS NOT NULL
@@ -286,20 +293,56 @@ async def compute_lifecycle(
         GROUP BY m.slug ORDER BY active DESC
     """), {"eid": event_id, "since_24h": since_24h})).fetchall()
 
+    # ── 6b. Post-show state counts (listings seen after event start / post-show window) ─
+    postshow_row = None
+    try:
+        postshow_row = (await db.execute(text("""
+            SELECT
+                e.event_date::timestamp AS event_date,
+                COUNT(*) FILTER (
+                    WHERE l.last_seen_at IS NOT NULL
+                      AND e.event_date IS NOT NULL
+                      AND l.last_seen_at >= e.event_date::timestamp
+                ) AS still_active_at_event_start,
+                COUNT(*) FILTER (
+                    WHERE l.last_seen_at IS NOT NULL
+                      AND e.event_date IS NOT NULL
+                      AND l.last_seen_at >= (e.event_date::timestamp + INTERVAL '4 hours')
+                ) AS still_active_after_postshow
+            FROM listings l
+            JOIN events e ON e.id = l.event_id
+            WHERE l.event_id = :eid
+        """), {"eid": event_id})).fetchone()
+    except Exception:
+        pass
+
     # ── Assemble lifecycle state counts from per-listing rows ────────────────
-    assumed_sales   = 0
-    relisted_count  = 0
-    relist_matches  = []
+    assumed_sales         = 0
+    relisted_count        = 0
+    sold_after_relist     = 0
+    cross_mp_relist_count = 0
+    relist_matches        = []
 
     for row in lifecycle_rows:
         if row.new_listing_id is not None:
             relisted_count += 1
             price_delta = _f(row.relist_price) - _f(row.original_price) if row.relist_price and row.original_price else None
             price_delta_pct = _f(row.price_delta_pct)
+            is_cross = bool(row.cross_marketplace) if row.cross_marketplace is not None else False
+            if is_cross:
+                cross_mp_relist_count += 1
+            # relist_still_active=False → the relisted listing also disappeared → SOLD_AFTER_RELIST
+            relist_is_sold = (row.relist_still_active is False)
+            if relist_is_sold:
+                sold_after_relist += 1
             relist_matches.append({
                 "original_listing_id":  row.id,
                 "new_listing_id":       row.new_listing_id,
                 "marketplace_id":       row.marketplace_id,
+                "original_marketplace": row.orig_mp_slug,
+                "relist_marketplace":   row.relist_mp_slug,
+                "cross_marketplace":    is_cross,
+                "lifecycle_state":      "SOLD_AFTER_RELIST" if relist_is_sold else "RELISTED",
                 "section":              row.section,
                 "row":                  row.row,
                 "original_price":       _f(row.original_price),
@@ -310,10 +353,15 @@ async def compute_lifecycle(
                 "last_seen_at":         row.last_seen_at.isoformat() if row.last_seen_at else None,
                 "reappeared_at":        row.reappeared_at.isoformat() if row.reappeared_at else None,
                 "relist_delay_hours":   _round(_f(row.relist_delay_hours), 1),
+                "time_away_hours":      _round(_f(row.relist_delay_hours), 1),
                 "confidence":           row.confidence,
             })
         else:
             assumed_sales += 1
+
+    direct_assumed_sales = assumed_sales  # inactive with no relist match at all
+    still_at_start  = int(postshow_row.still_active_at_event_start or 0) if postshow_row else 0
+    still_postshow  = int(postshow_row.still_active_after_postshow or 0) if postshow_row else 0
 
     total_tracked   = int(summary_row.total_tracked or 0)
     active_listings = int(summary_row.active_listings or 0)
@@ -365,15 +413,20 @@ async def compute_lifecycle(
             "appeared_24h":             appeared_24h,
             "disappeared_24h":          disappeared_24h,
             # Lifecycle state counts
-            "assumed_sales":            assumed_sales,           # DISAPPEARED_ASSUMED_SOLD
-            "relisted_count":           relisted_count,          # RELISTED
-            "repriced_count":           repriced_count,          # REPRICED (multi-price listings)
+            "assumed_sales":                    assumed_sales,            # DISAPPEARED_ASSUMED_SOLD
+            "direct_assumed_sales":             direct_assumed_sales,     # inactive, no relist match
+            "relisted_count":                   relisted_count,           # RELISTED (active relist)
+            "sold_after_relist_count":          sold_after_relist,        # SOLD_AFTER_RELIST
+            "cross_marketplace_relist_count":   cross_mp_relist_count,    # cross-marketplace relists
+            "still_active_at_event_start":      still_at_start,           # STILL_ACTIVE_AT_EVENT_START
+            "still_active_after_postshow":      still_postshow,           # STILL_ACTIVE_AFTER_POSTSHOW_WINDOW
+            "repriced_count":                   repriced_count,           # REPRICED
             # Legacy names kept for backward compat
-            "probable_sale":            assumed_sales,
-            "probable_relist":          relisted_count,
-            "probable_pull":            0,
-            "probable_expiration":      0,
-            "unknown":                  0,
+            "probable_sale":                    assumed_sales,
+            "probable_relist":                  relisted_count,
+            "probable_pull":                    0,
+            "probable_expiration":              0,
+            "unknown":                          0,
             # Rates
             "absorption_rate":          absorption_rate,
             "relist_rate":              relist_rate,

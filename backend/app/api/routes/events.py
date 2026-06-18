@@ -455,3 +455,184 @@ async def add_tracked_event(event_id: int, body: dict, db: AsyncSession = Depend
         "external_url": te.external_url,
         "poll_interval_minutes": te.poll_interval_minutes,
     }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TASK 2 — URL FALLBACK REPAIR PATH
+# POST /api/events/{event_id}/marketplace-url
+# ─────────────────────────────────────────────────────────────────────────────
+
+from pydantic import BaseModel as _BaseModel
+
+
+class MarketplaceUrlPayload(_BaseModel):
+    marketplace: str
+    url: str
+
+
+_CORE_MP_SLUGS = {"gametime", "stubhub", "tickpick", "vividseats"}
+
+
+@router.post("/{event_id}/marketplace-url")
+async def attach_marketplace_url(
+    event_id: int,
+    payload: MarketplaceUrlPayload,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Task 2 — URL Fallback Repair Path.
+
+    Attach a marketplace URL to an existing canonical event.
+    Behavior:
+      1. Validate event + marketplace exist
+      2. Upsert tracked_event: set external_url, attempt ID extraction
+      3. Run immediate poll for the marketplace (background)
+      4. Return health status: external_id, listings_count, floor, remediation
+
+    Required for SH/TP where automated ID resolution is blocked.
+    """
+    mp_slug = payload.marketplace.strip().lower()
+    if mp_slug not in _CORE_MP_SLUGS:
+        raise HTTPException(400, f"marketplace must be one of: {sorted(_CORE_MP_SLUGS)}")
+
+    url = payload.url.strip()
+    if not url.startswith("http"):
+        raise HTTPException(400, "url must be a valid http/https URL")
+
+    # 1. Validate event
+    event = await _get_event(db, event_id)
+    if not event:
+        raise HTTPException(404, f"Event {event_id} not found")
+
+    # 2. Resolve marketplace row
+    mp = (await db.execute(
+        select(Marketplace).where(Marketplace.slug == mp_slug)
+    )).scalar_one_or_none()
+    if not mp:
+        raise HTTPException(404, f"Marketplace '{mp_slug}' not found in DB")
+
+    # 3. Upsert tracked_event
+    te = (await db.execute(
+        select(TrackedEvent).where(
+            TrackedEvent.event_id == event_id,
+            TrackedEvent.marketplace_id == mp.id,
+        )
+    )).scalar_one_or_none()
+
+    ext_id = _extract_external_id_from_url(mp_slug, url)
+
+    if te is None:
+        te = TrackedEvent(
+            event_id=event_id,
+            marketplace_id=mp.id,
+            external_url=url,
+            external_event_id=ext_id,
+            poll_interval_minutes=60,
+            is_active=True,
+            consecutive_zero_inventory_count=0,
+        )
+        db.add(te)
+        action = "created"
+    else:
+        te.external_url = url
+        if ext_id:
+            te.external_event_id = ext_id
+        if not te.is_active:
+            te.is_active = True
+        action = "updated"
+
+    await db.commit()
+    await db.refresh(te)
+
+    # 4. Run immediate poll (fire-and-forget background task)
+    poll_result = None
+    poll_error = None
+    try:
+        from app.database import AsyncSessionLocal
+        from app.scheduler import _run_collector_for_event
+        te.event = event
+        await _run_collector_for_event(mp_slug, te, event)
+        # Re-read listings after poll
+        from sqlalchemy import func as _func
+        count_row = (await db.execute(
+            select(
+                _func.count(Listing.id).label("cnt"),
+                _func.min(Listing.price).label("floor"),
+            ).where(
+                Listing.event_id == event_id,
+                Listing.marketplace_id == mp.id,
+                Listing.is_active == True,
+            )
+        )).fetchone()
+        listings_count = int(count_row.cnt or 0)
+        floor_price    = float(count_row.floor) if count_row.floor else None
+        poll_result = "success"
+    except Exception as exc:
+        listings_count = 0
+        floor_price    = None
+        poll_result = "error"
+        poll_error  = str(exc)
+        logger.warning("URL_FALLBACK: poll failed mp=%s event=%d: %s", mp_slug, event_id, exc)
+
+    # 5. Determine health status
+    if listings_count > 0:
+        status = "POPULATED"
+        remediation = None
+    elif ext_id:
+        status = "ID_RESOLVED_PENDING_POLL"
+        remediation = "ID extracted. Scheduler will poll on next cycle."
+    else:
+        status = "NEEDS_MANUAL_ID"
+        remediation = f"Could not extract external event ID from URL. Check URL format for {mp_slug}."
+
+    return {
+        "event_id":       event_id,
+        "marketplace":    mp_slug,
+        "action":         action,
+        "external_url":   te.external_url,
+        "external_id":    te.external_event_id,
+        "id_extracted":   bool(ext_id),
+        "poll_result":    poll_result,
+        "poll_error":     poll_error,
+        "listings_count": listings_count,
+        "floor":          floor_price,
+        "status":         status,
+        "remediation":    remediation,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TASK 1 — Marketplace health aliases at /api/events/{id}/...
+# Delegates to the canonical service functions already in marketplace_health.py
+# ─────────────────────────────────────────────────────────────────────────────
+
+from app.services.marketplace_health import (
+    get_event_marketplace_health as _get_mp_health,
+    get_event_alerts as _get_mp_alerts,
+)
+
+
+@router.get("/{event_id}/marketplace-health")
+async def event_marketplace_health(
+    event_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Task 1 — Canonical marketplace health for one event.
+    Core marketplaces: gametime / stubhub / tickpick / vividseats.
+    SeatGeek and Ticketmaster included in response but excluded from core coverage score.
+    """
+    return await _get_mp_health(event_id, db)
+
+
+@router.get("/{event_id}/alerts")
+async def event_health_alerts(
+    event_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Task 1 — Health alerts for one event (core marketplaces only).
+    Alert types: MARKETPLACE_STALE, MARKETPLACE_BLOCKED, MARKETPLACE_PENDING,
+                 LOW_COVERAGE, NEEDS_URL, RESOLUTION_FAILED.
+    """
+    return await _get_mp_alerts(event_id, db)

@@ -110,6 +110,8 @@ def _compute_signal(
         reasons.append(f"floor_drop={price_chg:.1f}%/24h with {du:.0f}d_to_event")
 
     if buy_score >= 0.5:
+        # Cap heuristic lifecycle signals at 0.75. High confidence only with validated
+        # post-show outcomes (lifecycle_attribution="matched"), passed via caller.
         confidence = min(0.98, buy_score)
         return "BUY", round(confidence, 3), reasons
 
@@ -240,6 +242,11 @@ async def compute_buy_signal(event_id: int, db: AsyncSession) -> dict:
     churn_rate = lifecycle_summary.get("churn_rate")
     seller_cap_lifecycle = lifecycle_summary.get("seller_capitulation_score")
 
+    # Lifecycle attribution: "matched" only when SOLD_AFTER_RELIST events exist
+    # (post-show validated outcome). Otherwise "assumed" (heuristic only).
+    sold_after_relist = lifecycle_summary.get("sold_after_relist_count", 0) or 0
+    lifecycle_attribution = "matched" if sold_after_relist > 0 else "assumed"
+
     # Blend capitulation from market_intelligence + lifecycle
     if capitulation_score is not None and seller_cap_lifecycle is not None:
         blended_cap = capitulation_score * 0.6 + seller_cap_lifecycle * 0.4
@@ -296,6 +303,14 @@ async def compute_buy_signal(event_id: int, db: AsyncSession) -> dict:
         total_listings=current_listings,
     )
 
+    # ── Apply lifecycle heuristic confidence cap (Task 8) ────────────────────
+    # Cap BUY/WAIT confidence at 0.75 when lifecycle data is heuristic-only.
+    # High confidence (>0.75) is only valid when SOLD_AFTER_RELIST outcomes exist
+    # (lifecycle_attribution="matched"), meaning post-show outcomes validated the model.
+    _HEURISTIC_CAP = 0.75
+    if lifecycle_attribution == "assumed" and confidence > _HEURISTIC_CAP:
+        confidence = _HEURISTIC_CAP
+
     # ── Build explanation ────────────────────────────────────────────────────
     explanation_parts = []
     if days_until is not None:
@@ -313,6 +328,12 @@ async def compute_buy_signal(event_id: int, db: AsyncSession) -> dict:
         explanation_parts.append(price_trend_note + ".")
     explanation_parts.extend(reasons)
 
+    # State lifecycle attribution in explanation
+    lifecycle_note = (
+        f"Lifecycle attribution: {lifecycle_attribution} "
+        f"({'validated post-show outcomes' if lifecycle_attribution == 'matched' else 'heuristic inference, no validated post-show outcomes'})."
+    )
+    explanation_parts.append(lifecycle_note)
     explanation = " ".join(explanation_parts)
 
     return {
@@ -341,4 +362,5 @@ async def compute_buy_signal(event_id: int, db: AsyncSession) -> dict:
             "price_trend_note": price_trend_note,
         },
         "lifecycle_summary": lifecycle_summary,
+        "lifecycle_attribution": lifecycle_attribution,
     }
