@@ -1616,7 +1616,9 @@ async def event_intelligence_snapshot(
             "churn_rate":               lc_summary.get("churn_rate"),
             "relist_delay_p50_hours":   lc_summary.get("relist_delay_p50_hours"),
         }
-    except Exception:
+    except Exception as _lc_err:
+        import logging as _lg
+        _lg.getLogger(__name__).warning("lifecycle enrichment failed for event %s: %s", event_id, _lc_err)
         resp["lifecycle"] = None
 
     return resp
