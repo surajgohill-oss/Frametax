@@ -1,0 +1,148 @@
+import enum
+
+
+class ConfidenceTier(str, enum.Enum):
+    VERIFIED = "VERIFIED"    # Reviewed against source document; safe for deterministic recommendation
+    PARSED = "PARSED"        # Extracted from authoritative source; not yet fully reviewed
+    DISCOVERY = "DISCOVERY"  # Found via search/crawl; not normalized or approved
+
+
+class ReviewStatus(str, enum.Enum):
+    PENDING = "pending"
+    IN_REVIEW = "in_review"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    STALE = "stale"
+
+
+class ProgramType(str, enum.Enum):
+    TAX_CREDIT = "tax_credit"
+    CASH_REBATE = "cash_rebate"
+    GRANT = "grant"
+    SUBSIDY = "subsidy"
+    TAX_EXEMPTION = "tax_exemption"
+
+
+class CreditBasis(str, enum.Enum):
+    QUALIFYING_SPEND = "qualifying_spend"
+    QUALIFYING_LABOR = "qualifying_labor"
+    TOTAL_BUDGET = "total_budget"
+    NET_COST = "net_cost"
+
+
+class RuleType(str, enum.Enum):
+    MINIMUM_TOTAL_BUDGET = "minimum_total_budget"
+    MINIMUM_QUALIFIED_SPEND = "minimum_qualified_spend"
+    MINIMUM_JURISDICTION_SPEND_PCT = "minimum_jurisdiction_spend_pct"
+    MINIMUM_SHOOTING_DAYS_PCT = "minimum_shooting_days_pct"
+    REQUIRED_ENTITY_TYPE = "required_entity_type"
+    MINIMUM_LOCAL_LABOR_PCT = "minimum_local_labor_pct"
+    MINIMUM_CULTURAL_SCORE = "minimum_cultural_score"
+    MAXIMUM_ATL_PCT = "maximum_atl_pct"
+    MAXIMUM_BUDGET_FOR_UPLIFT = "maximum_budget_for_uplift"
+    QUALIFYING_FILM_TEST = "qualifying_film_test"
+    SPEND_CAP_PCT = "spend_cap_pct"
+
+
+class FailAction(str, enum.Enum):
+    DISQUALIFY = "disqualify"
+    REDUCE_CREDIT = "reduce_credit"
+    WARN = "warn"
+    FLAG_FOR_REVIEW = "flag_for_review"
+
+
+class StackingRuleType(str, enum.Enum):
+    ALLOWED = "allowed"
+    PROHIBITED = "prohibited"
+    CONDITIONAL = "conditional"
+
+
+class JurisdictionLevel(str, enum.Enum):
+    COUNTRY = "country"
+    STATE = "state"
+    PROVINCE = "province"
+    REGION = "region"
+    COUNTY = "county"
+    CITY = "city"
+
+
+class ATLBTLCategory(str, enum.Enum):
+    ATL = "atl"
+    BTL = "btl"
+    POST = "post"
+    OTHER = "other"
+
+
+class SpendCategory(str, enum.Enum):
+    # ATL
+    ATL_DIRECTOR = "atl_director"
+    ATL_WRITER = "atl_writer"
+    ATL_PRODUCER = "atl_producer"
+    ATL_CAST = "atl_cast"
+    ATL_RIGHTS = "atl_rights"
+    # BTL Labor
+    BTL_CREW_LABOR = "btl_crew_labor"
+    BTL_RESIDENT_LABOR = "btl_resident_labor"
+    BTL_NONRESIDENT_LABOR = "btl_nonresident_labor"
+    # BTL Non-labor
+    BTL_EQUIPMENT_RENTAL = "btl_equipment_rental"
+    BTL_STAGE_FACILITY = "btl_stage_facility"
+    BTL_LOCATION_FEES = "btl_location_fees"
+    BTL_SET_CONSTRUCTION = "btl_set_construction"
+    BTL_TRANSPORTATION = "btl_transportation"
+    BTL_CATERING = "btl_catering"
+    # Post
+    POST_PRODUCTION = "post_production"
+    VFX = "vfx"
+    MUSIC = "music"
+    SOUND = "sound"
+    # Excluded / special
+    FINANCE_COSTS = "finance_costs"
+    INSURANCE = "insurance"
+    COMPLETION_BOND = "completion_bond"
+    CONTINGENCY = "contingency"
+    PAYROLL_FRINGES = "payroll_fringes"
+    # Non-cash compensation
+    DEFERMENT = "deferment"
+    EQUITY_PARTICIPATION = "equity_participation"
+    IN_KIND = "in_kind"
+    REINVESTMENT = "reinvestment"
+    # Other
+    TRAVEL = "travel"
+    LODGING = "lodging"
+    MISCELLANEOUS = "miscellaneous"
+
+
+class CompensationType(str, enum.Enum):
+    CASH = "cash"
+    DEFERRED = "deferred"
+    EQUITY = "equity"
+    IN_KIND = "in_kind"
+    REINVESTMENT = "reinvestment"
+
+
+class DocumentType(str, enum.Enum):
+    BUDGET = "budget"
+    SCREENPLAY = "screenplay"
+    INCENTIVE_GUIDE = "incentive_guide"
+    CULTURAL_TEST = "cultural_test"
+    TREATY_TEXT = "treaty_text"
+    UNION_AGREEMENT = "union_agreement"
+    REGULATION = "regulation"
+    OTHER = "other"
+
+
+class IngestionStatus(str, enum.Enum):
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    PARTIAL = "partial"
+
+
+class StructureStatus(str, enum.Enum):
+    DRAFT = "draft"
+    CALCULATING = "calculating"
+    COMPLETE = "complete"
+    ERROR = "error"
+    ARCHIVED = "archived"
