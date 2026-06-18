@@ -707,15 +707,18 @@ async def _poll_failure_alerts(event_id: int, db: AsyncSession) -> list:
                 "remediation": "Check if scheduler is running and next_poll_at is being set.",
             })
 
-        # Check snapshot staleness
-        last_snap = (await db.execute(
-            select(ListingSnapshot.created_at)
-            .where(ListingSnapshot.tracked_event_id == te.id)
-            .order_by(ListingSnapshot.created_at.desc())
+        # Check snapshot staleness (listing_snapshots uses event_id + marketplace_id, not tracked_event_id)
+        last_snap_ts = (await db.execute(
+            select(ListingSnapshot.snapshot_at)
+            .where(
+                ListingSnapshot.event_id == te.event_id,
+                ListingSnapshot.marketplace_id == te.marketplace_id,
+            )
+            .order_by(ListingSnapshot.snapshot_at.desc())
             .limit(1)
         )).scalar_one_or_none()
 
-        if last_snap is None:
+        if last_snap_ts is None:
             alerts.append({
                 "type": "SNAPSHOT_NOT_WRITTEN",
                 "marketplace": slug,
@@ -723,8 +726,8 @@ async def _poll_failure_alerts(event_id: int, db: AsyncSession) -> list:
                 "message": f"{slug}: no listing snapshot ever written",
                 "remediation": "Confirm collector is returning listings and _process_result is writing snapshots.",
             })
-        elif last_snap < snapshot_threshold:
-            hours_ago = (now - last_snap).total_seconds() / 3600
+        elif last_snap_ts < snapshot_threshold:
+            hours_ago = (now - last_snap_ts).total_seconds() / 3600
             alerts.append({
                 "type": "SNAPSHOT_NOT_WRITTEN",
                 "marketplace": slug,
