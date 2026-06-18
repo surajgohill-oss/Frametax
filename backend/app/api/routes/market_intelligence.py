@@ -1601,9 +1601,15 @@ async def event_intelligence_snapshot(
         "lifecycle": None,  # populated below
     }
 
-    # Task E: enrich snapshot with lifecycle intelligence
-    # Use begin_nested (savepoint) to isolate from any prior session state
+    # Task E: enrich snapshot with lifecycle intelligence.
+    # Rollback any aborted transaction state first (read-only snapshot — all data
+    # already in Python variables so the rollback is safe).  Then use begin_nested
+    # (savepoint) to isolate the lifecycle query from anything that follows.
     try:
+        try:
+            await db.rollback()
+        except Exception:
+            pass
         async with db.begin_nested():
             lifecycle = await compute_lifecycle(event_id, db)
         lc_summary = lifecycle.get("summary", {})
