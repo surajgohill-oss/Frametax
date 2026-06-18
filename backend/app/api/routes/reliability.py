@@ -205,6 +205,42 @@ async def system_reliability():
         except Exception:
             pass
 
+    # Per-event snapshot staleness (genuine gap: global check misses event-specific failures)
+    try:
+        async with AsyncSessionLocal() as db:
+            stale_event_rows = await db.execute(text("""
+                SELECT e.id, e.title, MAX(ls.snapshot_at) AS last_snap
+                FROM tracked_events te
+                JOIN events e ON e.id = te.event_id
+                LEFT JOIN listing_snapshots ls ON ls.event_id = e.id
+                WHERE e.status = 'upcoming' AND te.is_active = true
+                GROUP BY e.id, e.title
+                HAVING MAX(ls.snapshot_at) IS NULL
+                    OR MAX(ls.snapshot_at) < NOW() - INTERVAL '4 hours'
+            """))
+            stale_events = stale_event_rows.fetchall()
+            if stale_events:
+                stale_list = [
+                    {"event_id": r[0], "title": r[1],
+                     "last_snapshot_at": r[2].isoformat() if r[2] else None}
+                    for r in stale_events
+                ]
+                system_alerts.append({
+                    "type": "PER_EVENT_SNAPSHOT_STALE",
+                    "severity": "YELLOW",
+                    "message": (
+                        f"{len(stale_events)} actively-tracked event(s) have no snapshot "
+                        f"in the last 4h while system-level polling is running"
+                    ),
+                    "affected_events": stale_list,
+                    "remediation": (
+                        "Check the specific marketplace collector for these events. "
+                        "May indicate a collector crash or auth failure for specific event."
+                    ),
+                })
+    except Exception as exc:
+        logger.error("reliability: per-event snapshot check failed — %s", exc)
+
     # Unresolved marketplaces (NEEDS_MARKETPLACE_URL) — system-wide count
     try:
         async with AsyncSessionLocal() as db:

@@ -1911,10 +1911,53 @@ async def get_outcome_sections(event_id: int, db: AsyncSession = Depends(get_db)
     if not row:
         raise HTTPException(404, "No outcome computed for this event. POST /compute first.")
 
-    import json as _json
     return {
         "event_id":                event_id,
         "computed_at":             row.computed_at.isoformat() if row.computed_at else None,
         "top_absorbed_sections":   row.top_absorbed_sections or [],
         "worst_absorbed_sections": row.worst_absorbed_sections or [],
     }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Intelligence Phase 2 — benchmarks and active comparison
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.get("/benchmarks/event-types")
+async def list_event_type_benchmarks(db: AsyncSession = Depends(get_db)):
+    """List all event-type benchmark distributions."""
+    from app.services.outcome_engine import get_event_type_benchmarks
+    rows = await get_event_type_benchmarks(db)
+    if not rows:
+        # Auto-compute if nothing stored yet
+        from app.services.outcome_engine import compute_event_type_benchmarks
+        benchmarks = await compute_event_type_benchmarks(db)
+        return list(benchmarks.values())
+    return rows
+
+
+@router.post("/benchmarks/event-types/compute")
+async def compute_benchmarks(db: AsyncSession = Depends(get_db)):
+    """(Re)compute event-type benchmark distributions from all completed event outcomes."""
+    from app.services.outcome_engine import compute_event_type_benchmarks
+    result = await compute_event_type_benchmarks(db)
+    return {"status": "complete", "categories_computed": list(result.keys()), **result}
+
+
+@router.get("/compare/{event_id}")
+async def compare_active_to_benchmarks(event_id: int, db: AsyncSession = Depends(get_db)):
+    """
+    Compare an active (upcoming) event's current market metrics against the
+    completed-event benchmark pool.
+
+    Returns percentile ranks for seller pressure and relist activity.
+    Clearance percentile is deferred (event has not yet occurred).
+    No buy/wait signals are generated.
+    """
+    from app.services.outcome_engine import compute_active_comparison
+    ev = (await db.execute(text(
+        "SELECT id FROM events WHERE id = :eid"
+    ), {"eid": event_id})).fetchone()
+    if not ev:
+        raise HTTPException(404, f"Event {event_id} not found")
+    return await compute_active_comparison(event_id, db)

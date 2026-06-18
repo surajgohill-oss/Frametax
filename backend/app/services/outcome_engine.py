@@ -22,7 +22,10 @@ Entry points:
 """
 from __future__ import annotations
 
+import json
 import logging
+import re
+from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -30,6 +33,69 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Section normalization
+# ─────────────────────────────────────────────────────────────────────────────
+
+_SECTION_PREFIX_RE = re.compile(
+    r'^(?:section|sec|upper\s+bowl|lower\s+bowl)\s+',
+    re.IGNORECASE,
+)
+
+
+def normalize_section(raw: Optional[str]) -> Optional[str]:
+    """
+    Strip marketplace-specific prefixes to produce a canonical section identifier.
+
+    Examples:
+      "Section 214"    → "214"
+      "SEC 214"        → "214"
+      "Upper Bowl 214" → "214"
+      "Lower Bowl 107" → "107"
+      "214"            → "214"      (already canonical)
+      "Floor GA"       → "Floor GA" (no prefix to strip)
+    """
+    if not raw:
+        return raw
+    return _SECTION_PREFIX_RE.sub("", raw.strip()).strip() or raw.strip()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Event-type classification
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _classify_event_type(title: str, venue_name: str) -> str:
+    """
+    Classify event into benchmark category from title + venue name.
+    Returns one of: 'arena_concert', 'stadium_concert',
+                    'amphitheater_concert', 'comedy', 'sports'
+    """
+    t = (title or "").lower()
+    v = (venue_name or "").lower()
+
+    # Sports first — most unambiguous
+    sports_kw = ["fifa", "world cup", " vs ", "nfl", "nba", "mlb", "nhl", "mls",
+                 "championship", "playoff", "super bowl", "soccer", "football"]
+    if any(k in t for k in sports_kw):
+        return "sports"
+
+    # Comedy
+    if any(k in t for k in ["comedy", "stand-up", "stand up", "comedian"]):
+        return "comedy"
+
+    # Amphitheater (outdoor)
+    if any(k in v for k in ["amphitheater", "amphitheatre", "hollywood bowl",
+                             "greek theatre", "shoreline", "cascades"]):
+        return "amphitheater_concert"
+
+    # Stadium (capacity > ~50k venues)
+    if any(k in v for k in ["stadium", "levi", "sofi", "mercedes-benz",
+                             "at&t stadium", "arrowhead", "metlife"]):
+        return "stadium_concert"
+
+    # Default: arena
+    return "arena_concert"
 
 
 def _f(v) -> Optional[float]:
@@ -337,18 +403,33 @@ async def _compute_section_absorption(event_id: int, db: AsyncSession) -> dict:
     sec_rows = (await db.execute(text("""
         WITH sec_base AS (
             SELECT
-                COALESCE(l.section, 'Unknown') AS section,
+                -- normalize section names: strip "Section ", "SEC ", "Upper Bowl ", "Lower Bowl "
+                COALESCE(
+                    REGEXP_REPLACE(
+                        REGEXP_REPLACE(l.section,
+                            '^(section|sec) ', '', 'i'),
+                        '^(upper bowl|lower bowl) ', '', 'i'),
+                    'Unknown') AS section,
                 COUNT(*)                        AS inventory_introduced,
                 SUM(CASE WHEN NOT l.is_active THEN 1 ELSE 0 END) AS absorbed,
                 SUM(CASE WHEN l.is_active THEN 1 ELSE 0 END) AS still_active
             FROM listings l
             WHERE l.event_id = :eid
-            GROUP BY l.section
+            GROUP BY COALESCE(
+                    REGEXP_REPLACE(
+                        REGEXP_REPLACE(l.section,
+                            '^(section|sec) ', '', 'i'),
+                        '^(upper bowl|lower bowl) ', '', 'i'),
+                    'Unknown')
             HAVING COUNT(*) >= 5
         ),
         sec_relist AS (
-            -- count relisted listings per section (new listing appeared after disappearance)
-            SELECT COALESCE(l.section, 'Unknown') AS section,
+            -- count relisted listings per normalized section
+            SELECT COALESCE(
+                       REGEXP_REPLACE(
+                           REGEXP_REPLACE(l.section, '^(section|sec) ', '', 'i'),
+                           '^(upper bowl|lower bowl) ', '', 'i'),
+                       'Unknown') AS section,
                    COUNT(*) AS relisted
             FROM listings orig
             JOIN listings l ON l.id = orig.id
@@ -361,15 +442,27 @@ async def _compute_section_absorption(event_id: int, db: AsyncSession) -> dict:
                     THEN ABS(new_l.price - orig.price) / orig.price * 100 <= 30
                     ELSE false END
             WHERE orig.event_id = :eid AND orig.is_active = false
-            GROUP BY l.section
+            GROUP BY COALESCE(
+                       REGEXP_REPLACE(
+                           REGEXP_REPLACE(l.section, '^(section|sec) ', '', 'i'),
+                           '^(upper bowl|lower bowl) ', '', 'i'),
+                       'Unknown')
         ),
         sec_reprice AS (
-            SELECT COALESCE(l.section, 'Unknown') AS section,
+            SELECT COALESCE(
+                       REGEXP_REPLACE(
+                           REGEXP_REPLACE(l.section, '^(section|sec) ', '', 'i'),
+                           '^(upper bowl|lower bowl) ', '', 'i'),
+                       'Unknown') AS section,
                    COUNT(DISTINCT ls.listing_id) AS repriced
             FROM listing_snapshots ls
             JOIN listings l ON l.id = ls.listing_id
             WHERE ls.event_id = :eid
-            GROUP BY l.section, ls.listing_id
+            GROUP BY COALESCE(
+                       REGEXP_REPLACE(
+                           REGEXP_REPLACE(l.section, '^(section|sec) ', '', 'i'),
+                           '^(upper bowl|lower bowl) ', '', 'i'),
+                       'Unknown'), ls.listing_id
             HAVING COUNT(DISTINCT ls.price) > 1
         ),
         sec_reprice_agg AS (
@@ -794,3 +887,238 @@ async def compute_all_pending(db: AsyncSession) -> dict:
             logger.error("ARTIST_PROFILE: failed '%s' — %s", artist, exc)
 
     return counts
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Event-type benchmark computation
+# ─────────────────────────────────────────────────────────────────────────────
+
+async def compute_event_type_benchmarks(db: AsyncSession) -> dict:
+    """
+    Group completed event outcomes by event type and compute benchmark distributions.
+    Upserts into event_type_benchmarks. Returns dict keyed by event_type.
+    """
+    rows = (await db.execute(text("""
+        SELECT eo.event_id,
+               eo.postshow_clearance_rate, eo.remaining_inventory_rate,
+               eo.relist_percentage, eo.sold_after_relist_pct,
+               eo.seller_pressure_score, eo.seller_strength_score,
+               eo.repricing_frequency,
+               e.title, e.artist,
+               v.name AS venue_name
+        FROM event_outcomes eo
+        JOIN events e ON e.id = eo.event_id
+        JOIN venues v ON v.id = e.venue_id
+        WHERE e.status = 'completed' AND eo.postshow_clearance_rate IS NOT NULL
+    """))).fetchall()
+
+    groups: dict[str, list] = defaultdict(list)
+    for r in rows:
+        etype = _classify_event_type(r.title, r.venue_name)
+        groups[etype].append(r)
+
+    results = {}
+    for etype, events in groups.items():
+        def _avg(field: str) -> Optional[float]:
+            vals = [_f(r._mapping.get(field)) for r in events if _f(r._mapping.get(field)) is not None]
+            return _r(sum(vals) / len(vals)) if vals else None
+
+        def _pN(field: str, n: int) -> Optional[float]:
+            vals = sorted(_f(r._mapping.get(field)) for r in events if _f(r._mapping.get(field)) is not None)
+            if not vals:
+                return None
+            idx = max(0, int(len(vals) * n / 100) - 1)
+            return _r(vals[idx])
+
+        event_ids = [r.event_id for r in events]
+        benchmark = {
+            "event_type":              etype,
+            "event_count":             len(events),
+            "event_ids":               event_ids,
+            "avg_clearance_rate":      _avg("postshow_clearance_rate"),
+            "p25_clearance_rate":      _pN("postshow_clearance_rate", 25),
+            "p50_clearance_rate":      _pN("postshow_clearance_rate", 50),
+            "p75_clearance_rate":      _pN("postshow_clearance_rate", 75),
+            "avg_relist_pct":          _avg("relist_percentage"),
+            "p50_relist_pct":          _pN("relist_percentage", 50),
+            "avg_seller_pressure":     _avg("seller_pressure_score"),
+            "p50_seller_pressure":     _pN("seller_pressure_score", 50),
+            "avg_inventory_remaining": _avg("remaining_inventory_rate"),
+            "p50_inventory_remaining": _pN("remaining_inventory_rate", 50),
+        }
+
+        await db.execute(text("""
+            INSERT INTO event_type_benchmarks (
+                event_type, event_count, event_ids,
+                avg_clearance_rate, p25_clearance_rate, p50_clearance_rate, p75_clearance_rate,
+                avg_relist_pct, p50_relist_pct,
+                avg_seller_pressure, p50_seller_pressure,
+                avg_inventory_remaining, p50_inventory_remaining,
+                computed_at
+            ) VALUES (
+                :event_type, :event_count, CAST(:event_ids AS jsonb),
+                :avg_clearance_rate, :p25_clearance_rate, :p50_clearance_rate, :p75_clearance_rate,
+                :avg_relist_pct, :p50_relist_pct,
+                :avg_seller_pressure, :p50_seller_pressure,
+                :avg_inventory_remaining, :p50_inventory_remaining,
+                NOW()
+            )
+            ON CONFLICT (event_type) DO UPDATE SET
+                event_count              = EXCLUDED.event_count,
+                event_ids                = EXCLUDED.event_ids,
+                avg_clearance_rate       = EXCLUDED.avg_clearance_rate,
+                p25_clearance_rate       = EXCLUDED.p25_clearance_rate,
+                p50_clearance_rate       = EXCLUDED.p50_clearance_rate,
+                p75_clearance_rate       = EXCLUDED.p75_clearance_rate,
+                avg_relist_pct           = EXCLUDED.avg_relist_pct,
+                p50_relist_pct           = EXCLUDED.p50_relist_pct,
+                avg_seller_pressure      = EXCLUDED.avg_seller_pressure,
+                p50_seller_pressure      = EXCLUDED.p50_seller_pressure,
+                avg_inventory_remaining  = EXCLUDED.avg_inventory_remaining,
+                p50_inventory_remaining  = EXCLUDED.p50_inventory_remaining,
+                computed_at              = NOW()
+        """), {**benchmark, "event_ids": json.dumps(event_ids)})
+        results[etype] = benchmark
+
+    await db.commit()
+    logger.info("EVENT_TYPE_BENCHMARKS: computed %d categories", len(results))
+    return results
+
+
+async def get_event_type_benchmarks(db: AsyncSession) -> list[dict]:
+    """Read event type benchmarks from cache."""
+    rows = (await db.execute(text(
+        "SELECT * FROM event_type_benchmarks ORDER BY event_type"
+    ))).fetchall()
+    return [dict(r._mapping) for r in rows]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Active-vs-historical comparison (percentile ranking)
+# ─────────────────────────────────────────────────────────────────────────────
+
+async def compute_active_comparison(event_id: int, db: AsyncSession) -> dict:
+    """
+    Compare an active (upcoming) event's current market metrics to the
+    completed-event benchmark pool.
+
+    Returns percentile ranks for seller pressure and relist activity.
+    Clearance percentile is deferred (event has not occurred yet).
+    No buy/wait signals are generated.
+    """
+    ev_row = (await db.execute(text(
+        "SELECT id, title, artist, event_date, status FROM events WHERE id = :eid"
+    ), {"eid": event_id})).fetchone()
+
+    if not ev_row:
+        raise ValueError(f"Event {event_id} not found")
+
+    # Load completed benchmark distribution
+    bench_rows = (await db.execute(text("""
+        SELECT event_id,
+               postshow_clearance_rate,
+               seller_pressure_score,
+               relist_percentage,
+               remaining_inventory_rate,
+               repricing_frequency
+        FROM event_outcomes
+        WHERE postshow_clearance_rate IS NOT NULL
+        ORDER BY event_id
+    """))).fetchall()
+
+    if not bench_rows:
+        return {"event_id": event_id, "status": "NO_BENCHMARK_DATA",
+                "note": "No completed events with outcomes available for comparison."}
+
+    # Current live market: most recent market_intelligence record
+    mi_row = (await db.execute(text("""
+        SELECT seller_aggression, capitulation_score, relisting_rate,
+               relist_pressure, current_listings, days_until_event
+        FROM market_intelligence
+        WHERE event_id = :eid
+        ORDER BY computed_at DESC
+        LIMIT 1
+    """), {"eid": event_id})).fetchone()
+
+    # Build distributions from completed events
+    def _dist(field: str) -> list[float]:
+        return sorted(_f(r._mapping.get(field)) for r in bench_rows
+                      if _f(r._mapping.get(field)) is not None)
+
+    def _pct_rank(value: Optional[float], dist: list[float]) -> Optional[float]:
+        """Fraction of benchmark values <= value (lower = rarer)."""
+        if value is None or not dist:
+            return None
+        return _r(sum(1 for v in dist if v <= value) / len(dist))
+
+    def _pN(dist: list[float], n: int) -> Optional[float]:
+        if not dist:
+            return None
+        idx = max(0, int(len(dist) * n / 100) - 1)
+        return _r(dist[idx])
+
+    pressure_dist = _dist("seller_pressure_score")
+    relist_dist   = _dist("relist_percentage")
+    remain_dist   = _dist("remaining_inventory_rate")
+
+    current_pressure = _f(mi_row.seller_aggression)   if mi_row else None
+    current_relist   = _f(mi_row.relisting_rate)      if mi_row else None
+    current_listings = int(mi_row.current_listings or 0) if mi_row else None
+    days_until       = _f(mi_row.days_until_event)    if mi_row else None
+
+    event_date = ev_row.event_date
+    if event_date and hasattr(event_date, 'tzinfo') and event_date.tzinfo:
+        event_date = event_date.replace(tzinfo=None)
+
+    # Infer event type for contextual benchmark
+    venue_row = (await db.execute(text(
+        "SELECT v.name FROM events e JOIN venues v ON v.id=e.venue_id WHERE e.id=:eid"
+    ), {"eid": event_id})).fetchone()
+    event_type = _classify_event_type(ev_row.title, venue_row.name if venue_row else "")
+
+    return {
+        "event_id":          event_id,
+        "event_title":       ev_row.title,
+        "event_date":        event_date.isoformat() if event_date else None,
+        "days_until_event":  days_until,
+        "event_type":        event_type,
+        "benchmark_pool": {
+            "size":       len(bench_rows),
+            "event_ids":  [r.event_id for r in bench_rows],
+        },
+        "current_market": {
+            "listings_active":  current_listings,
+            "seller_aggression": current_pressure,
+            "relisting_rate":   current_relist,
+        },
+        "percentiles": {
+            # How does this event's current seller pressure rank vs completed events?
+            "seller_pressure_pct": _pct_rank(current_pressure, pressure_dist),
+            # How does relisting activity rank?
+            "relist_activity_pct": _pct_rank(current_relist, relist_dist),
+            # Clearance: not applicable until event occurs
+            "clearance_pct": None,
+        },
+        "benchmark_distribution": {
+            "seller_pressure": {
+                "p25": _pN(pressure_dist, 25),
+                "p50": _pN(pressure_dist, 50),
+                "p75": _pN(pressure_dist, 75),
+            },
+            "relist_activity": {
+                "p25": _pN(relist_dist, 25),
+                "p50": _pN(relist_dist, 50),
+                "p75": _pN(relist_dist, 75),
+            },
+            "inventory_remaining": {
+                "p25": _pN(remain_dist, 25),
+                "p50": _pN(remain_dist, 50),
+                "p75": _pN(remain_dist, 75),
+            },
+        },
+        "note": (
+            "Percentiles rank current market metrics against the completed-event baseline. "
+            "Clearance percentile is deferred until after the event. "
+            "No buy/wait signals are generated."
+        ),
+    }
