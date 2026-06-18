@@ -49,7 +49,16 @@ var CHAT_SUGGESTIONS = [
   "Which destination has the most flexible cultural test?"
 ];
 
-async function callClaude(messages, useSearch, maxTok) {
+async function fetchFXRates() {
+  try {
+    var res = await fetch("https://open.er-api.com/v6/latest/USD");
+    if (!res.ok) return null;
+    var data = await res.json();
+    return (data && data.rates) ? data.rates : null;
+  } catch(e) { return null; }
+}
+
+async function callClaude(messages, useSearch, maxTok, apiKey) {
   if (!maxTok) maxTok = 4000;
   var body = {
     model: "claude-sonnet-4-20250514",
@@ -59,9 +68,11 @@ async function callClaude(messages, useSearch, maxTok) {
   if (useSearch) {
     body.tools = [{ type: "web_search_20250305", name: "web_search" }];
   }
+  var headers = { "Content-Type": "application/json", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" };
+  if (apiKey) headers["x-api-key"] = apiKey;
   var res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: headers,
     body: JSON.stringify(body)
   });
   if (!res.ok) throw new Error("API error " + res.status);
@@ -273,7 +284,7 @@ function DrivePicker(props) {
           {err && (
             <div style={{ fontFamily:"'DM Mono',monospace", fontSize:".78rem", color:"#E07070", background:"rgba(224,112,112,.06)", border:"1px solid rgba(224,112,112,.2)", padding:"1rem", lineHeight:1.6 }}>
               {err}
-              <div style={{ marginTop:".5rem", color:"#8A8070", fontSize:".7rem" }}>Make sure your Google Drive is connected in Claude settings (Settings > Connectors).</div>
+              <div style={{ marginTop:".5rem", color:"#8A8070", fontSize:".7rem" }}>Make sure your Google Drive is connected in Claude settings (Settings {'>'} Connectors).</div>
             </div>
           )}
           {!loading && !err && files.length === 0 && (
@@ -350,6 +361,16 @@ function HomeBaseCard(props) {
           {hb.noIncentiveReason && !hasIncentive && (
             <div style={{ background:"rgba(224,112,112,.06)", border:"1px solid rgba(224,112,112,.2)", padding:".75rem 1rem", fontFamily:"'DM Mono',monospace", fontSize:".78rem", color:"#E07070" }}>
               {hb.noIncentiveReason}
+            </div>
+          )}
+          {(hb.sourceLabel || hb.sourceUrl) && (
+            <div style={{ display:"flex", flexWrap:"wrap", alignItems:"baseline", gap:".4rem", fontFamily:"'DM Mono',monospace", fontSize:".68rem", marginTop:".75rem", color:"#8A8070" }}>
+              <span style={{ color: hb.confidenceTier === "verified" ? "#5A9A5A" : hb.confidenceTier === "stale" ? "#E07070" : "#C9801C", border:"1px solid " + (hb.confidenceTier === "verified" ? "#5A9A5A40" : hb.confidenceTier === "stale" ? "#E0707040" : "#C9801C40"), background: hb.confidenceTier === "verified" ? "#5A9A5A12" : hb.confidenceTier === "stale" ? "#E0707012" : "#C9801C12", padding:".1rem .4rem" }}>
+                {hb.confidenceTier === "verified" ? "VERIFIED" : hb.confidenceTier === "stale" ? "STALE DATA" : "RECENT"}
+              </span>
+              {hb.sourceLabel && <span>{hb.sourceLabel}</span>}
+              {hb.lastVerified && <span>{"as of " + hb.lastVerified}</span>}
+              {hb.sourceUrl && <span style={{ color:"#C9A84C", wordBreak:"break-all" }}>{hb.sourceUrl}</span>}
             </div>
           )}
         </div>
@@ -790,6 +811,17 @@ function DestCard(props) {
             </p>
           )}
 
+          {(dest.sourceLabel || dest.sourceUrl) && (
+            <div style={{ display:"flex", flexWrap:"wrap", alignItems:"baseline", gap:".4rem", fontFamily:"'DM Mono',monospace", fontSize:".68rem", marginBottom:".75rem", color:"#8A8070" }}>
+              <span style={{ color: dest.confidenceTier === "verified" ? "#5A9A5A" : dest.confidenceTier === "stale" ? "#E07070" : "#C9801C", border:"1px solid " + (dest.confidenceTier === "verified" ? "#5A9A5A40" : dest.confidenceTier === "stale" ? "#E0707040" : "#C9801C40"), background: dest.confidenceTier === "verified" ? "#5A9A5A12" : dest.confidenceTier === "stale" ? "#E0707012" : "#C9801C12", padding:".1rem .4rem" }}>
+                {dest.confidenceTier === "verified" ? "VERIFIED" : dest.confidenceTier === "stale" ? "STALE DATA" : "RECENT"}
+              </span>
+              {dest.sourceLabel && <span>{dest.sourceLabel}</span>}
+              {dest.lastVerified && <span>{"as of " + dest.lastVerified}</span>}
+              {dest.sourceUrl && <span style={{ color:"#C9A84C", wordBreak:"break-all" }}>{dest.sourceUrl}</span>}
+            </div>
+          )}
+
           {dest.qualifications && dest.qualifications.length > 0 && (
             <div>
               <div style={{ fontFamily:"'DM Mono',monospace", fontSize:".68rem", color:"#C9A84C", letterSpacing:".15em", textTransform:"uppercase", margin:"1rem 0 .5rem" }}>Qualification Analysis</div>
@@ -924,11 +956,24 @@ export default function FrameTax() {
   var [overrideResults, setOverrideResults] = useState({});
   var [overridePending, setOverridePending] = useState(null);
   var [driveOpen,      setDriveOpen]      = useState(false);
+  var [apiKey,      setApiKey]      = useState(function() { try { return localStorage.getItem("frametax-api-key") || ""; } catch(e) { return ""; } });
+  var [apiKeyInput, setApiKeyInput] = useState("");
   var [driveSearch,    setDriveSearch]    = useState("");
   var [driveFiles,     setDriveFiles]     = useState([]);
   var [driveLoading,   setDriveLoading]   = useState(false);
   var [driveTarget,    setDriveTarget]    = useState("budget"); // "budget" or "script"
   var [driveErr,       setDriveErr]       = useState(null);
+
+  function saveApiKey(key) {
+    try { localStorage.setItem("frametax-api-key", key); } catch(e) {}
+    setApiKey(key);
+    setApiKeyInput("");
+  }
+
+  function clearApiKey() {
+    try { localStorage.removeItem("frametax-api-key"); } catch(e) {}
+    setApiKey("");
+  }
 
   // Load library from storage on mount
   useEffect(function() {
@@ -953,13 +998,9 @@ export default function FrameTax() {
       totalBudget: parsed && parsed.totalBudget,
       answers: answers,
       pref: pref,
-      results: results ? {
-        overallRecommendation: results.overallRecommendation,
-        budgetOrigin: results.budgetOrigin,
-        destinations: (results.destinations || []).map(function(d) {
-          return { rank:d.rank, country:d.country, flag:d.flag, creditRate:d.creditRate, trueNetCost:d.trueNetCost, vsSavings:d.vsSavings };
-        })
-      } : null
+      results: results || null,
+      parsed: parsed || null,
+      intel: intel || null
     };
     var updated = [entry].concat(library.slice(0, 19)); // keep max 20
     setLibrary(updated);
@@ -980,10 +1021,16 @@ export default function FrameTax() {
     setBudget(entry.budgetText || "");
     setAnswers(entry.answers || {});
     setPref(entry.pref || []);
+    if (entry.parsed) setParsed(entry.parsed);
+    if (entry.intel) setIntel(entry.intel);
     if (entry.results) {
-      // show a summary - user can re-run full analysis
+      setResults(entry.results);
+      setOverrideResults({});
+      var openInit = {};
+      if (entry.results.destinations && entry.results.destinations[0]) openInit[0] = true;
+      setOpenCards(openInit);
       setShowLib(false);
-      setPage("upload");
+      setPage("results");
     } else {
       setShowLib(false);
       setPage("upload");
@@ -1054,7 +1101,7 @@ export default function FrameTax() {
         + "isFixed=true for ATL talent/rights. isFixed=false for BTL crew/equipment/locations.\n"
         + "BUDGET:\n" + budget;
 
-      var raw = await callClaude([{ role:"user", content:prompt }], false, 4000);
+      var raw = await callClaude([{ role:"user", content:prompt }], false, 4000, apiKey);
       var d = parseJSON(raw);
       setIntel({
         director: d.director || null,
@@ -1082,13 +1129,15 @@ export default function FrameTax() {
     setPage("analyzing"); setLStep(0); setErr(null);
     var lr = locReqs;
 
+    var fxRates = await fetchFXRates();
+
     if (script && !lr) {
       try {
         var p2 = "Analyze this script. Output ONLY valid JSON - no markdown, no backticks. Start with { end with }.\n"
           + "Schema: {\"writerName\":null,\"writerNationality\":null,\"environments\":[],\"climateNeeds\":[],"
           + "\"specificLocations\":[],\"wouldNotWorkIn\":[]}\n"
           + "SCRIPT:\n" + script.slice(0, 15000);
-        var r2 = await callClaude([{ role:"user", content:p2 }], false, 4000);
+        var r2 = await callClaude([{ role:"user", content:p2 }], false, 4000, apiKey);
         lr = parseJSON(r2); setLocReqs(lr);
       } catch(e) { lr = null; }
     }
@@ -1101,7 +1150,7 @@ export default function FrameTax() {
       var p3 = "Search IMDb for attachments to the film \"" + title + "\"" + dirPart + ".\n"
         + "Output ONLY valid JSON - no markdown, no backticks. Start with { end with }.\n"
         + "Schema: {\"found\":false,\"directorName\":null,\"directorNationality\":null,\"castAttachments\":[]}";
-      var r3 = await callClaude([{ role:"user", content:p3 }], true, 4000);
+      var r3 = await callClaude([{ role:"user", content:p3 }], true, 4000, apiKey);
       imd = parseJSON(r3);
     } catch(e) { imd = null; }
     setLStep(2);
@@ -1144,30 +1193,38 @@ export default function FrameTax() {
       var finNote = ci.hasFinance ? "IN budget " + fmt(ci.financeAmt) : "NOT in budget";
       var insNote = ci.hasInsurance ? "IN budget " + fmt(ci.insuranceAmt) : "NOT in budget";
 
+      var fxNote = fxRates
+        ? "LIVE FX RATES (USD base, fetched now): " + ["GBP","EUR","CAD","AUD","NZD","MXN","CZK","HUF","ZAR","KRW","JPY","AED","GEL","RSD","PLN","MAD","ILS","THB","SGD","NOK","SEK","DKK"].map(function(c) { return c + "=" + (fxRates[c] ? fxRates[c].toFixed(4) : "N/A"); }).join(", ") + "\n"
+        : "FX RATES: Use current market rates from your training data as fallback.\n";
+
       var prompt = "World-leading film production finance expert.\n\n"
         + "INTEL: Film=\"" + filmTitle + "\" | Total=" + fmt(total)
         + " | Origin=" + origin + " | RateBase=" + rateBase + "\n"
         + "FixedATL=" + fmt(fATL) + " (do NOT adjust) | VariableBTL=" + fmt(vBTL) + " (MUST rebase to local rates)\n"
         + "Finance=" + finNote + " | Insurance=" + insNote + "\n"
-        + "Director=" + dirName + " (" + dirNat + ") | Writer nat.=" + wNat + " | Cast=" + cast + "\n\n"
+        + "Director=" + dirName + " (" + dirNat + ") | Writer nat.=" + wNat + " | Cast=" + cast + "\n"
+        + fxNote + "\n"
         + "Q&A:\n" + qaText + prefNote + sNote + "\n\n"
         + "TASK 1: Analyze the HOME BASE (where the budget is priced - " + origin + "). What incentives exist in the home country/state? What is the true net cost if filming at home?\n"
-        + "TASK 2: Analyze top 5 international filming destinations. Rebase BTL, apply live FX, calculate credits, add travel.\n"
+        + "TASK 2: Analyze top 5 international filming destinations. Rebase BTL, apply live FX (use the rates above), calculate credits, add travel.\n"
         + "Output ONLY valid JSON - no markdown, no backticks. Start with { end with }.\n"
         + "Top-level: homeCurrency,budgetOrigin,budgetRateBase,variableBTLBase,fixedATLBase,"
         + "directorIntel{name,nationality,imdbFound},writerIntel{nationality},"
         + "financeFlagged,insuranceFlagged,overallRecommendation,travelNote,currencyNote,"
-        + "homeBase{country,flag,incentiveProgram,creditRate,estimatedCredit,trueNetCost,notes,noIncentiveReason},"
+        + "homeBase{country,flag,incentiveProgram,creditRate,estimatedCredit,trueNetCost,notes,noIncentiveReason,"
+        + "sourceLabel,sourceUrl,lastVerified,confidenceTier},"
         + "destinations[].\n"
         + "Per dest: rank,country,flag,incentiveProgram,creditRate,estimatedCredit,baseRateMultiplier,"
         + "localCostUSD,travelCost,trueNetCost,vsSavings,vsPercent,exchangeRate,currencyRisk,"
         + "rateAdjustmentNote,qualifications[]{test,status,detail},atLStatus,insuranceStatus,"
         + "financeStatus,financeEligibleAmount,insuranceEligibleAmount,coproOpportunity,"
-        + "qualGap,structuringTip,locationFit,highlights[].\n"
+        + "qualGap,structuringTip,locationFit,highlights[],"
+        + "sourceLabel,sourceUrl,lastVerified,confidenceTier.\n"
+        + "sourceLabel=e.g. 'Film Georgia'. sourceUrl=official program URL. lastVerified=e.g. '2025 Q1'. confidenceTier='verified'|'recent'|'stale'.\n"
         + "Max 4 quals and 3 highlights per dest. Strings under 120 chars.";
 
       setLStep(4);
-      var raw = await callClaude([{ role:"user", content:prompt }], true, 8000);
+      var raw = await callClaude([{ role:"user", content:prompt }], true, 8000, apiKey);
       var data = parseJSON(raw);
 
       // --- TREATY OPTIMIZER ---
@@ -1212,7 +1269,7 @@ export default function FrameTax() {
           + "\"quickWins\":[{\"action\":\"Register Scottish subsidiary\",\"timeframe\":\"3 months\",\"value\":\"Up to $280K additional\"}],"
           + "\"warnings\":[\"Do not stack X with Y - treaty prevents this\"]}";
 
-        var tRaw = await callClaude([{ role:"user", content:tPrompt }], true, 6000);
+        var tRaw = await callClaude([{ role:"user", content:tPrompt }], true, 6000, apiKey);
         treatyData = parseJSON(tRaw);
       } catch(e) {
         // Try to recover partial data from the raw response
@@ -1408,7 +1465,7 @@ export default function FrameTax() {
         + "\"executiveSummary\": \"2-3 sentence plain English summary of the override scenario\"\n"
         + "}";
 
-      var raw = await callClaude([{ role:"user", content:prompt }], true, 5000);
+      var raw = await callClaude([{ role:"user", content:prompt }], true, 5000, apiKey);
       var data = parseJSON(raw);
       setOverrideResults(function(prev) {
         var n = Object.assign({}, prev);
@@ -1451,7 +1508,7 @@ export default function FrameTax() {
         { role:"user", content:ctx },
         { role:"assistant", content:"Full context loaded. Ready for questions." }
       ].concat(hist).concat([{ role:"user", content:msg }]);
-      var reply = await callClaude(allMsgs, true, 1000);
+      var reply = await callClaude(allMsgs, true, 1000, apiKey);
       setMsgs(function(p) { return p.concat([{ role:"assistant", text:reply }]); });
     } catch(e) {
       setMsgs(function(p) { return p.concat([{ role:"assistant", text:"Sorry, could not process that." }]); });
@@ -1480,6 +1537,41 @@ export default function FrameTax() {
 
   var navSteps = ["upload","review","qa","results"];
 
+  if (!apiKey) {
+    return (
+      <div className="fta" style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", padding:"2rem" }}>
+        <style>{CSS}</style>
+        <div style={{ width:"min(480px,100%)", border:"1px solid #2A2520", padding:"2.5rem", background:"#0C0C0C" }}>
+          <div style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"1.6rem", letterSpacing:".08em", marginBottom:".5rem" }}>
+            FRAME<span style={{ color:"#C9A84C" }}>TAX</span>
+          </div>
+          <div style={{ fontFamily:"'DM Mono',monospace", fontSize:".72rem", color:"#8A8070", marginBottom:"2rem" }}>Film Production Finance Intelligence</div>
+          <div style={{ fontFamily:"'DM Mono',monospace", fontSize:".75rem", color:"#C9A84C", letterSpacing:".12em", textTransform:"uppercase", marginBottom:".5rem" }}>Anthropic API Key Required</div>
+          <div style={{ fontSize:".84rem", color:"#8A8070", lineHeight:1.7, marginBottom:"1.5rem" }}>
+            FrameTax calls the Claude API directly from your browser. Enter your Anthropic API key to get started. The key is stored only in your browser and never sent to any server other than Anthropic.
+          </div>
+          <input
+            type="password"
+            value={apiKeyInput}
+            onChange={function(e) { setApiKeyInput(e.target.value); }}
+            onKeyDown={function(e) { if (e.key === "Enter" && apiKeyInput.trim().startsWith("sk-")) saveApiKey(apiKeyInput.trim()); }}
+            placeholder="sk-ant-api03-..."
+            style={{ width:"100%", background:"#080808", border:"1px solid #2A2520", color:"#F0EAD6", fontFamily:"'DM Mono',monospace", fontSize:".88rem", padding:".75rem 1rem", outline:"none", marginBottom:".75rem" }}
+          />
+          <button
+            onClick={function() { if (apiKeyInput.trim().startsWith("sk-")) saveApiKey(apiKeyInput.trim()); }}
+            disabled={!apiKeyInput.trim().startsWith("sk-")}
+            style={{ background: apiKeyInput.trim().startsWith("sk-") ? "#C9A84C" : "#2A2520", color: apiKeyInput.trim().startsWith("sk-") ? "#080808" : "#5A5040", border:"none", fontFamily:"'Jost',sans-serif", fontSize:".85rem", fontWeight:700, letterSpacing:".08em", padding:".85rem 1.5rem", cursor: apiKeyInput.trim().startsWith("sk-") ? "pointer" : "not-allowed", width:"100%", textTransform:"uppercase" }}>
+            Save Key and Continue
+          </button>
+          <div style={{ fontFamily:"'DM Mono',monospace", fontSize:".68rem", color:"#5A5040", marginTop:"1rem", lineHeight:1.6 }}>
+            Get a key at console.anthropic.com. Usage billed to your Anthropic account.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fta">
       <style>{CSS}</style>
@@ -1502,6 +1594,11 @@ export default function FrameTax() {
             <button onClick={function() { setShowLib(function(v) { return !v; }); }}
               style={{ background:"transparent", color: showLib ? "#C9A84C" : "#8A8070", fontFamily:"'DM Mono',monospace", fontSize:".75rem", padding:".4rem .85rem", border:"1px solid " + (showLib ? "#C9A84C" : "#2A2520"), cursor:"pointer", transition:"all .2s" }}>
               {"Library" + (library.length > 0 ? " (" + library.length + ")" : "")}
+            </button>
+            <button onClick={clearApiKey}
+              style={{ background:"transparent", color:"#5A5040", fontFamily:"'DM Mono',monospace", fontSize:".7rem", padding:".4rem .7rem", border:"1px solid #2A2520", cursor:"pointer" }}
+              title="Clear API key and re-enter">
+              API Key
             </button>
             <GhostBtn onClick={reset}>Start over</GhostBtn>
           </div>
@@ -1693,7 +1790,6 @@ export default function FrameTax() {
                 <span style={{ background:"linear-gradient(135deg,#4285F4,#34A853)", color:"white", fontFamily:"DM Mono,monospace", fontSize:".58rem", fontWeight:700, padding:".1rem .3rem", borderRadius:2, letterSpacing:".05em" }}>Drive</span>
                 Browse Google Drive for Script
               </button>
-            </div>
             </div>
             {script && <GhostBtn onClick={function() { setScript(""); setSName(""); setLocReqs(null); }}>Remove script</GhostBtn>}
           </div>
@@ -2037,3 +2133,6 @@ export default function FrameTax() {
     </div>
   );
 }
+
+import { createRoot } from "react-dom/client";
+createRoot(document.getElementById("root")).render(React.createElement(FrameTax));
