@@ -476,13 +476,22 @@ async def _run_collector_for_event(collector_slug: str, source_te: TrackedEvent,
                 te.id, collector_slug, source_te.event_id,
             )
 
-        # T2: skip collector entirely if there is no external_event_id and no
-        # external_url — the collector cannot resolve anything and would only
-        # create a failed poll_run.  The resolver job will populate the ID when
-        # a performer page URL or direct event URL is attached.
-        if not te.external_event_id and not te.external_url:
+        # T2: skip collector if there is nothing actionable.
+        # Case A: no external_event_id and no external_url — resolver has no
+        #         starting point; collector would always return unresolved_event_id.
+        # Case B: StubHub performer-page URL with no external_event_id — SOLR
+        #         catalog requires auth cookies that the Railway collector lacks;
+        #         the performer page cannot yield an event_id without a browser.
+        #         Attempting the scrape would create a failed poll_run every cycle.
+        _is_stubhub_performer_page = (
+            collector_slug == "stubhub"
+            and not te.external_event_id
+            and te.external_url
+            and "/performer/" in te.external_url
+        )
+        if (not te.external_event_id and not te.external_url) or _is_stubhub_performer_page:
             logger.debug(
-                "COLLECTOR_DISPATCH: skip slug=%s te_id=%d — no ext_id or ext_url "
+                "COLLECTOR_DISPATCH: skip slug=%s te_id=%d — no actionable id/url "
                 "(NEEDS_MARKETPLACE_URL)",
                 collector_slug, te.id,
             )
