@@ -106,10 +106,10 @@ class EventResolver:
                 continue
             # NULL and demo-prefixed IDs both fall through to resolution
 
-            resolved, source = await self._resolve_for_marketplace(event, mp.slug, te.external_url)
+            resolved, source, resolved_url = await self._resolve_for_marketplace(event, mp.slug, te.external_url)
 
             if resolved:
-                await self._persist(session_factory, te.id, resolved, source)
+                await self._persist(session_factory, te.id, resolved, source, resolved_url)
                 counts["resolved"] += 1
                 logger.info(
                     "RESOLVER: resolved %s event_id=%s event='%s' tracked_event=%d source=%s",
@@ -134,12 +134,13 @@ class EventResolver:
 
     async def _resolve_for_marketplace(
         self, event: Event, slug: str, external_url: Optional[str] = None
-    ) -> Tuple[Optional[str], str]:
-        """Returns (resolved_id_or_None, source_label)."""
+    ) -> Tuple[Optional[str], str, Optional[str]]:
+        """Returns (resolved_id_or_None, source_label, resolved_event_url_or_None)."""
         if slug == "stubhub":
             return await self._resolve_stubhub(event, external_url)
         if slug == "seatgeek":
-            return await self._resolve_seatgeek(event, external_url)
+            id_, src = await self._resolve_seatgeek(event, external_url)
+            return id_, src, None
 
         # Delegate to the collector's own resolver for marketplaces with public
         # search APIs (tickpick, gametime, vividseats). Ticketmaster requires an
@@ -149,7 +150,7 @@ class EventResolver:
         collector = get_collector(slug, self.settings)
         if collector is None:
             logger.debug("No resolver or collector for marketplace '%s'", slug)
-            return None, "none"
+            return None, "none", None
 
         class _Proxy:
             __slots__ = ("external_event_id", "external_url", "event", "id")
@@ -161,22 +162,23 @@ class EventResolver:
 
         resolved = await collector.resolve_external_event_id(_Proxy(event, external_url))
         if resolved:
-            return resolved, "resolved_collector"
-        return None, "none"
+            return resolved, "resolved_collector", None
+        return None, "none", None
 
     # ── StubHub ───────────────────────────────────────────────────────────────
 
-    async def _resolve_stubhub(self, event: Event, external_url: Optional[str] = None) -> Tuple[Optional[str], str]:
+    async def _resolve_stubhub(self, event: Event, external_url: Optional[str] = None) -> Tuple[Optional[str], str, Optional[str]]:
         keywords = _artist_keywords(event)
         if not keywords:
-            return None, "none"
+            return None, "none", None
 
-        date_before = (event.event_date - timedelta(days=1)).strftime("%Y-%m-%dT00:00:00Z")
-        date_after = (event.event_date + timedelta(days=2)).strftime("%Y-%m-%dT00:00:00Z")
-        kw_solr = keywords.replace(" ", "*")
         client = await self._get_client()
 
-        # Path 1: SOLR catalog search (requires auth cookies — often fails unauthenticated)
+        # Path 1: SOLR catalog search (legacy — was the primary path; now returns 404.
+        # Kept for forward-compatibility in case endpoint is restored.)
+        date_before = (event.event_date - timedelta(days=1)).strftime("%Y-%m-%dT00:00:00Z")
+        date_after  = (event.event_date + timedelta(days=2)).strftime("%Y-%m-%dT00:00:00Z")
+        kw_solr = keywords.replace(" ", "*")
         solr_url = (
             "https://www.stubhub.com/listingCatalog/select"
             f"?q=*:*&fq=event_name:*{kw_solr}*"
@@ -188,54 +190,113 @@ class EventResolver:
             if resp.status_code == 200:
                 docs = resp.json().get("response", {}).get("docs", [])
                 if docs:
-                    return str(docs[0]["event_id"]), "resolved_api"
+                    return str(docs[0]["event_id"]), "resolved_api", None
         except Exception as exc:
             logger.debug("RESOLVER: StubHub SOLR error: %s", exc)
 
-        # Path 2: Fetch external_url page, extract event ID from embedded JSON/HTML.
-        # Handles both event-specific pages and performer pages (/performer/{id}).
-        # Note: StubHub currently returns 202 (bot challenge) for performer pages
-        # without auth cookies — this path succeeds when the user has attached a
-        # direct event URL via POST /api/events/{id}/marketplace-url.
-        if external_url:
-            # Performer page: extract performer_id and try SOLR with performerid filter
-            performer_match = re.search(r"/performer/(\d+)", external_url)
-            if performer_match:
-                performer_id = performer_match.group(1)
-                solr_perf_url = (
-                    "https://www.stubhub.com/listingCatalog/select"
-                    f"?q=*:*&fq=performerid:{performer_id}"
-                    f"&fq=event_date:[{date_before}+TO+{date_after}]"
-                    "&rows=5&fl=event_id,event_name,event_date_local&wt=json&sort=event_date+asc"
-                )
-                try:
-                    resp2 = await client.get(solr_perf_url)
-                    if resp2.status_code == 200:
-                        docs = resp2.json().get("response", {}).get("docs", [])
-                        if docs:
-                            logger.info(
-                                "RESOLVER: StubHub performer page matched performer_id=%s → event_id=%s",
-                                performer_id, docs[0]["event_id"],
-                            )
-                            return str(docs[0]["event_id"]), "resolved_performer_page"
-                except Exception as exc:
-                    logger.debug("RESOLVER: StubHub performer SOLR error: %s", exc)
+        # Path 2: StubHub search-page HTML extraction — primary unauthenticated path.
+        # The search results page at /search?q=<artist>&category=Concerts embeds event
+        # URLs with date slugs (e.g. /kid-cudi-los-angeles-tickets-6-26-2026/event/160354751/)
+        # in its HTML body. No auth or cookies required. Parse and match by event date.
+        search_result = await self._stubhub_search_page(client, keywords, event.event_date)
+        if search_result:
+            event_id_str, event_url = search_result
+            logger.info(
+                "RESOLVER: StubHub search-page matched '%s' %s → event_id=%s url=%s",
+                keywords, event.event_date.date(), event_id_str, event_url,
+            )
+            return event_id_str, "resolved_search", event_url
 
-            # Performer page URLs cannot yield an event_id via page extraction — the
-            # only ID embedded in the page/HTML is the performer_id itself, which
-            # would be misidentified as an event_id.  Skip page extraction for
-            # performer pages; resolution requires a direct event URL.
+        # Path 3: Direct event URL page extraction (used when user supplies an event URL
+        # via POST /api/events/{id}/marketplace-url, or for URLs from archive imports).
+        # Skip performer pages — they return 202 bot challenge and the only ID embedded
+        # is the performer_id, which would be misidentified as an event_id.
+        if external_url and "/performer/" not in external_url:
+            event_id = await self._stubhub_extract_from_page(client, external_url)
+            if event_id:
+                return event_id, "resolved_page_fetch", None
+
+        if external_url and "/performer/" in external_url:
             logger.debug(
-                "RESOLVER: StubHub performer page %s — SOLR failed, cannot resolve without auth",
+                "RESOLVER: StubHub performer page %s — search-page path also failed; "
+                "event not in StubHub catalog or not yet listed",
                 external_url,
             )
-            return None, "none"
 
-        event_id = await self._stubhub_extract_from_page(client, external_url)
-        if event_id:
-            return event_id, "resolved_page_fetch"
+        return None, "none", None
 
-        return None, "none"
+    async def _stubhub_search_page(
+        self,
+        client: httpx.AsyncClient,
+        artist_name: str,
+        event_date,
+    ) -> Optional[tuple]:
+        """
+        Fetch StubHub search results page and extract a matching event ID by date.
+
+        StubHub search embeds event URLs in the format:
+            /artist-city-tickets-M-D-YYYY/event/{event_id}/
+        These are visible in the HTML without auth. Returns (event_id, event_url) or None.
+        """
+        import urllib.parse as _urlparse
+        import json as _json
+
+        query = _urlparse.quote_plus(artist_name)
+        url = f"https://www.stubhub.com/search?q={query}&category=Concerts"
+
+        try:
+            resp = await client.get(url, timeout=15)
+            if resp.status_code != 200:
+                logger.debug("RESOLVER: StubHub search page HTTP %s for '%s'", resp.status_code, artist_name)
+                return None
+        except Exception as exc:
+            logger.debug("RESOLVER: StubHub search page fetch error: %s", exc)
+            return None
+
+        text = resp.text
+        # Event URLs are embedded as: /some-slug-tickets-M-D-YYYY/event/{id}/
+        pattern = re.compile(
+            r'(?:href=)?["\']?(/[^"\']+/event/(\d{8,9})/)["\']?'
+        )
+        # Also capture the date from the slug
+        date_slug_re = re.compile(r'tickets-(\d{1,2})-(\d{1,2})-(\d{4})/event/\d{8,9}')
+
+        candidates: list[tuple[int, str, str]] = []  # (delta_days, event_id, full_url)
+
+        seen_ids: set[str] = set()
+        for m in re.finditer(r'/event/(\d{8,9})/', text):
+            eid = m.group(1)
+            if eid in seen_ids:
+                continue
+            seen_ids.add(eid)
+
+            # Find the URL slug for this event_id in the surrounding text
+            idx = m.start()
+            chunk = text[max(0, idx - 200): idx + 50]
+            slug_m = date_slug_re.search(chunk)
+            if not slug_m:
+                continue
+
+            try:
+                mo, dy, yr = int(slug_m.group(1)), int(slug_m.group(2)), int(slug_m.group(3))
+                from datetime import date as _date
+                page_date = _date(yr, mo, dy)
+                delta = abs((page_date - event_date.date()).days)
+                if delta <= 1:
+                    # Reconstruct the partial URL
+                    slug_start = chunk.rfind("/", 0, slug_m.start()) + 1 if "/" in chunk[:slug_m.start()] else 0
+                    event_path = f"https://www.stubhub.com{text[text.rfind('/', 0, m.start()):m.end()]}"
+                    candidates.append((delta, eid, event_path))
+            except (ValueError, TypeError):
+                continue
+
+        if not candidates:
+            logger.debug("RESOLVER: StubHub search-page: no date match for '%s' on %s", artist_name, event_date.date())
+            return None
+
+        candidates.sort(key=lambda x: x[0])
+        best_delta, best_id, best_url = candidates[0]
+        return best_id, best_url
 
     async def _stubhub_extract_from_page(self, client: httpx.AsyncClient, url: str) -> Optional[str]:
         """Fetch StubHub page and extract event ID from embedded script data."""
@@ -375,11 +436,20 @@ class EventResolver:
     # ── Persistence ───────────────────────────────────────────────────────────
 
     @staticmethod
-    async def _persist(session_factory, tracked_event_id: int, resolved_id: str, source: str = "resolved_api") -> None:
+    async def _persist(
+        session_factory,
+        tracked_event_id: int,
+        resolved_id: str,
+        source: str = "resolved_api",
+        external_url: Optional[str] = None,
+    ) -> None:
+        values = {"external_event_id": resolved_id, "resolution_source": source}
+        if external_url:
+            values["external_url"] = external_url
         async with session_factory() as db:
             await db.execute(
                 sa_update(TrackedEvent)
                 .where(TrackedEvent.id == tracked_event_id)
-                .values(external_event_id=resolved_id, resolution_source=source)
+                .values(**values)
             )
             await db.commit()
