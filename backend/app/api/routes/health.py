@@ -41,6 +41,11 @@ from app.database import get_db
 from app.models import Event, TrackedEvent, Marketplace
 from app.models.listing import PollRun
 from app.utils.freshness import compute_freshness, is_current, FRESH, LATE, STALE, DEAD
+from app.services.marketplace_health import (
+    get_event_marketplace_health,
+    get_coverage_audit,
+    get_event_alerts,
+)
 
 router = APIRouter(prefix="/health", tags=["health"])
 
@@ -167,3 +172,92 @@ async def freshness_report(db: AsyncSession = Depends(get_db)):
         "dead_events":  dead_events,
         "fresh_events": fresh_events,
     }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TASK A — MARKETPLACE HEALTH LAYER
+# ───────────────────────��─────────────────────────────��───────────────────────
+
+from fastapi import Path
+
+@router.get("/events/{event_id}/marketplace-health")
+async def marketplace_health(
+    event_id: int = Path(..., ge=1),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Task A — Canonical Marketplace Health for one event.
+
+    Returns per-marketplace status, warning level, and remediation.
+
+    Statuses:
+      POPULATED                  — listings present, fresh data
+      STALE                      — listings present, data older than 2× cadence
+      ID_RESOLVED_PENDING_POLL   — ID known, awaiting first successful poll
+      AUTOMATED_RESOLUTION_FAILED — resolver ran, no match found
+      NEEDS_MARKETPLACE_URL       — no external ID or URL; manual entry required
+      BLOCKED                    — repeated failures, no data
+      NO_DATA                    — poll succeeded, 0 listings
+
+    Warning levels: GREEN / YELLOW / RED
+    """
+    return await get_event_marketplace_health(event_id, db)
+
+
+# ──��────────────────────────────��──────────────────────────���──────────────────
+# TASK B — INGESTION COVERAGE AUDIT (ALL ACTIVE EVENTS)
+# ───────────────��──────────────────────────────────��──────────────────────────
+
+@router.get("/coverage")
+async def ingestion_coverage_audit(
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Task B — Ingestion Coverage Audit for ALL active future events.
+
+    For every event, returns:
+      - coverage: FULL | PARTIAL | LIMITED | BROKEN
+      - coverage_pct: % of marketplaces populated
+      - populated_count / marketplace_count
+      - populated_marketplaces: list of slugs with actual data
+      - missing_coverage: list of slugs not populated
+      - marketplace_detail: per-marketplace health status
+
+    FULL    = 4+ marketplaces POPULATED
+    PARTIAL = 2-3 POPULATED
+    LIMITED = 1 POPULATED
+    BROKEN  = 0 POPULATED
+    """
+    return await get_coverage_audit(db)
+
+
+# ────────────────────────────────��────────────────────────────���───────────────
+# TASK F — HEALTH ALERTS
+# ───────────────────────���────────────────────────���────────────────────────────
+
+@router.get("/events/{event_id}/alerts")
+async def event_health_alerts(
+    event_id: int = Path(..., ge=1),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Task F — Health Alerts for one event.
+
+    Emits structured alerts when:
+      - A marketplace is stale (data older than 2× cadence)
+      - A marketplace is blocked (repeated failures)
+      - A marketplace is pending (ID resolved, no poll data yet)
+      - Coverage drops below threshold (< 50% = RED, < 80% = YELLOW)
+      - A marketplace needs manual URL entry
+
+    Alert types:
+      MARKETPLACE_STALE
+      MARKETPLACE_BLOCKED
+      MARKETPLACE_PENDING
+      LOW_COVERAGE
+      NEEDS_URL
+      RESOLUTION_FAILED
+
+    Severity: RED | YELLOW
+    """
+    return await get_event_alerts(event_id, db)

@@ -35,6 +35,7 @@ from app.models import Event
 from app.services.intelligence_engine import compute_event, get_latest_intelligence
 from app.services.listing_lifecycle import compute_lifecycle
 from app.services.buy_window import compute_buy_signal
+from app.services.marketplace_health import get_coverage_audit
 
 router = APIRouter(prefix="/intelligence", tags=["market-intelligence"])
 
@@ -1596,7 +1597,29 @@ async def event_intelligence_snapshot(
         "classification": classification,
         "classification_confidence": classification_confidence,
         "per_marketplace_trends": mp_7d_trends,
+        # Task E — Lifecycle expansion (computed on demand)
+        "lifecycle": None,  # populated below
     }
+
+    # Task E: enrich snapshot with lifecycle intelligence
+    try:
+        lifecycle = await compute_lifecycle(event_id, db)
+        lc_summary = lifecycle.get("summary", {})
+        resp["lifecycle"] = {
+            "assumed_sales":            lc_summary.get("assumed_sales"),
+            "relisted_count":           lc_summary.get("relisted_count"),
+            "repriced_count":           lc_summary.get("repriced_count"),
+            "relist_rate":              lc_summary.get("relist_rate"),
+            "repricing_rate":           lc_summary.get("repricing_rate"),
+            "seller_aggression_score":  lc_summary.get("seller_aggression_score"),
+            "seller_capitulation_score": lc_summary.get("seller_capitulation_score"),
+            "churn_rate":               lc_summary.get("churn_rate"),
+            "relist_delay_p50_hours":   lc_summary.get("relist_delay_p50_hours"),
+        }
+    except Exception:
+        resp["lifecycle"] = None
+
+    return resp
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1775,3 +1798,22 @@ async def buy_signal_endpoint(
     """
     await _require_event(event_id, db)
     return await compute_buy_signal(event_id, db)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TASK B (also wired here) — COVERAGE AUDIT via intelligence router
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.get("/coverage")
+async def intelligence_coverage_audit(
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Task B — Ingestion Coverage Audit for all active future events.
+    Also available at GET /api/health/coverage.
+
+    Returns per-event coverage classification:
+      FULL (4+), PARTIAL (2-3), LIMITED (1), BROKEN (0)
+    with per-marketplace health status for each event.
+    """
+    return await get_coverage_audit(db)
