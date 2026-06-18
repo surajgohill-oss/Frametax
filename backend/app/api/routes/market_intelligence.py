@@ -1823,3 +1823,98 @@ async def intelligence_coverage_audit(
     with per-marketplace health status for each event.
     """
     return await get_coverage_audit(db)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PHASE INTELLIGENCE — Event Outcome Engine (Phases 1-6)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.get("/outcomes")
+async def list_outcomes(db: AsyncSession = Depends(get_db)):
+    """All persisted event outcomes (completed events only)."""
+    from app.services.outcome_engine import compute_all_pending
+    rows = (await db.execute(text("""
+        SELECT eo.*, e.title, e.artist, e.event_date, e.status
+        FROM event_outcomes eo
+        JOIN events e ON e.id = eo.event_id
+        ORDER BY e.event_date DESC
+    """))).fetchall()
+    return [dict(r._mapping) for r in rows]
+
+
+@router.get("/outcomes/{event_id}")
+async def get_outcome(event_id: int, refresh: bool = False, db: AsyncSession = Depends(get_db)):
+    """
+    Get event outcome metrics for a completed event.
+    Returns cached result if available (< 24h old) unless refresh=true.
+    """
+    from app.services.outcome_engine import get_event_outcome, compute_event_outcome
+
+    event = (await db.execute(text(
+        "SELECT id, status FROM events WHERE id = :eid"
+    ), {"eid": event_id})).fetchone()
+
+    if not event:
+        raise HTTPException(404, f"Event {event_id} not found")
+
+    if not refresh:
+        cached = await get_event_outcome(event_id, db)
+        if cached:
+            return {**cached, "_from_cache": True}
+
+    result = await compute_event_outcome(event_id, db)
+    return {**result, "_from_cache": False}
+
+
+@router.post("/outcomes/{event_id}/compute")
+async def compute_outcome(event_id: int, db: AsyncSession = Depends(get_db)):
+    """Force recompute event outcome metrics."""
+    from app.services.outcome_engine import compute_event_outcome
+    return await compute_event_outcome(event_id, db)
+
+
+@router.post("/outcomes/compute-all")
+async def compute_all_outcomes(db: AsyncSession = Depends(get_db)):
+    """Compute outcomes for all completed events without a cached result."""
+    from app.services.outcome_engine import compute_all_pending
+    counts = await compute_all_pending(db)
+    return {"status": "complete", **counts}
+
+
+@router.get("/artist/{artist}")
+async def get_artist_profile(artist: str, refresh: bool = False, db: AsyncSession = Depends(get_db)):
+    """
+    Get aggregated market profile for an artist across all completed events.
+    Returns cached profile if < 24h old unless refresh=true.
+    """
+    from app.services.outcome_engine import build_artist_profile
+
+    if not refresh:
+        cached = (await db.execute(text("""
+            SELECT * FROM artist_market_profiles
+            WHERE artist ILIKE :artist
+              AND computed_at > NOW() - INTERVAL '24 hours'
+        """), {"artist": artist})).fetchone()
+        if cached:
+            return {**dict(cached._mapping), "_from_cache": True}
+
+    return {**(await build_artist_profile(artist, db)), "_from_cache": False}
+
+
+@router.get("/outcomes/{event_id}/sections")
+async def get_outcome_sections(event_id: int, db: AsyncSession = Depends(get_db)):
+    """Section absorption detail for a completed event."""
+    row = (await db.execute(text(
+        "SELECT top_absorbed_sections, worst_absorbed_sections, computed_at FROM event_outcomes WHERE event_id = :eid"
+    ), {"eid": event_id})).fetchone()
+
+    if not row:
+        raise HTTPException(404, "No outcome computed for this event. POST /compute first.")
+
+    import json as _json
+    return {
+        "event_id":                event_id,
+        "computed_at":             row.computed_at.isoformat() if row.computed_at else None,
+        "top_absorbed_sections":   row.top_absorbed_sections or [],
+        "worst_absorbed_sections": row.worst_absorbed_sections or [],
+    }

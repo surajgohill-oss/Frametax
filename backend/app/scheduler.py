@@ -217,6 +217,14 @@ async def start_scheduler():
         max_instances=1,
         next_run_time=datetime.now(timezone.utc),  # run once at startup to backfill
     )
+    _scheduler.add_job(
+        _compute_event_outcomes,
+        trigger=IntervalTrigger(hours=6),
+        id="event_outcome_engine",
+        replace_existing=True,
+        max_instances=1,
+        next_run_time=datetime.now(timezone.utc),  # backfill completed events immediately
+    )
     _scheduler.start()
     logger.info(
         "Scheduler started — cadence=piecewise_2m_to_daily exhaustion_threshold=%d "
@@ -244,6 +252,22 @@ async def _resolve_pending_event_ids():
             )
     finally:
         await resolver.close()
+
+
+# ── Event Outcome Engine job ──────────────────────────────────────────────────
+
+async def _compute_event_outcomes():
+    from app.services.outcome_engine import compute_all_pending
+    try:
+        async with AsyncSessionLocal() as db:
+            counts = await compute_all_pending(db)
+        if counts["computed"] or counts["failed"]:
+            logger.info(
+                "OUTCOME_ENGINE: cycle computed=%d failed=%d no_data=%d",
+                counts["computed"], counts["failed"], counts["no_data"],
+            )
+    except Exception as exc:
+        logger.error("OUTCOME_ENGINE: unexpected error — %s", exc)
 
 
 # ── Spotify resolver job ──────────────────────────────────────────────────────
