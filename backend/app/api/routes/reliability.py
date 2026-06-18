@@ -115,7 +115,7 @@ async def system_reliability():
 
             # Latest snapshot timestamp
             snap = await db.execute(
-                text("SELECT MAX(created_at) FROM listing_snapshots")
+                text("SELECT MAX(snapshot_at) FROM listing_snapshots")
             )
             v = snap.scalar_one_or_none()
             latest_snapshot_at = v.isoformat() if v else None
