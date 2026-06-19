@@ -148,6 +148,340 @@ def parse_budget_csv(
     )
 
 
+# ─── Film budget account-number format ────────────────────────────────────────
+# Matches "XX-00" or "XX-01" style account codes at the start of a line.
+_ACCT_CODE_RE = re.compile(r"^\d{2}-\d{2}$")
+_ACCT_CODE_INLINE_RE = re.compile(r"^\d{2}-\d{2}\s+")
+# "Account Total for XX-00"
+_ACCT_TOTAL_LINE_RE = re.compile(r"^Account Total for \d{2}-\d{2}\s*$")
+# Section sentinels (ATL / BTL) — used to tag department
+_ATL_SENTINEL_RE = re.compile(
+    r"Total Above.The.Line|Above.The.Line", re.IGNORECASE
+)
+_BTL_SECTION_RE = re.compile(
+    r"Total Production|Total Post Production|Total Other", re.IGNORECASE
+)
+_GRAND_TOTAL_RE = re.compile(r"^Grand Total\s*$", re.IGNORECASE)
+
+
+def _is_film_budget_format(text: str) -> bool:
+    """Return True if text looks like a film budget with account codes."""
+    return bool(
+        re.search(r"Account Total for \d{2}-\d{2}", text)
+        or re.search(r"\d{2}-\d{2}\s{2,}[A-Z]", text)
+    )
+
+
+def _parse_film_budget(
+    pages: list[str],
+    filename: str,
+    currency_code: str,
+) -> BudgetParseResult:
+    """
+    Parse a film budget PDF whose text was extracted page-by-page.
+
+    Two passes:
+      1. Top-sheet pass (first page with "Acct#" header): extract XX-00 account totals.
+      2. Detail-page pass (remaining pages): extract "Account Total for XX-00" lines
+         as the authoritative per-account amounts, overriding the top-sheet if present.
+
+    ATL / BTL grouping is inferred from section sentinels encountered while scanning.
+    """
+    # Pass 1: top-sheet pages — extract XX-00 account totals.
+    # All pages that contain "Acct#" + "Category Description" are top-sheet pages
+    # (the DMH budget has two such pages: the main listing and a continuation).
+    # Top-sheet layout (pymupdf linearises columns): after the 4-token header row
+    # (Acct#, Category Description, Page, Total), each account appears as either:
+    #   A) one line: "XX-00  DESCRIPTION" → next line(s): optional page ref, then amount
+    #   B) two lines: "XX-00" then "DESCRIPTION" → optional page ref, then amount
+    acct_totals: dict[str, tuple[str, float]] = {}  # unique_key -> (description, amount)
+    _acct_seen: dict[str, int] = {}  # acct_code -> count (for dedup of shared codes)
+    grand_total: float | None = None
+    warnings: list[str] = []
+
+    top_sheet_pages = [
+        p for p in pages if "Acct#" in p and "Category Description" in p
+    ]
+    for top_sheet_page in top_sheet_pages:
+        lines = [l.strip() for l in top_sheet_page.splitlines() if l.strip()]
+        try:
+            start = lines.index("Total") + 1  # skip header row tokens
+        except ValueError:
+            start = 0
+        i = start
+        def _register(acct: str, desc: str, amt: float) -> None:
+            n = _acct_seen.get(acct, 0) + 1
+            _acct_seen[acct] = n
+            key = acct if n == 1 else f"{acct}_{n}"
+            acct_totals[key] = (desc, amt)
+
+        while i < len(lines):
+            line = lines[i]
+            m_inline = re.match(r"^(\d{2}-\d{2})\s+(.+)$", line)
+            m_bare = re.match(r"^(\d{2}-\d{2})$", line)
+
+            if m_inline:
+                acct = m_inline.group(1)
+                desc = m_inline.group(2).strip()
+                if i + 1 < len(lines):
+                    next1 = lines[i + 1]
+                    if re.match(r"^\d{1,2}$", next1) and i + 2 < len(lines):
+                        amt = _parse_amount(lines[i + 2])
+                        if amt is not None:
+                            _register(acct, desc, amt)
+                        i += 3
+                    else:
+                        amt = _parse_amount(next1)
+                        if amt is not None:
+                            _register(acct, desc, amt)
+                        i += 2
+                else:
+                    i += 1
+            elif m_bare:
+                acct = m_bare.group(1)
+                if i + 2 < len(lines):
+                    desc = lines[i + 1]
+                    maybe_page = lines[i + 2]
+                    if re.match(r"^\d{1,2}$", maybe_page) and i + 3 < len(lines):
+                        amt = _parse_amount(lines[i + 3])
+                        if amt is not None:
+                            _register(acct, desc, amt)
+                        i += 4
+                    else:
+                        amt = _parse_amount(maybe_page)
+                        if amt is not None:
+                            _register(acct, desc, amt)
+                        i += 3
+                else:
+                    i += 1
+            elif _GRAND_TOTAL_RE.match(line):
+                if i + 1 < len(lines):
+                    grand_total = _parse_amount(lines[i + 1])
+                i += 2
+            else:
+                i += 1
+
+    # Pass 2: detail pages — "Account Total for XX-00\nAMOUNT" overrides top-sheet
+    for page in pages:
+        lines = [l.strip() for l in page.splitlines() if l.strip()]
+        for j, line in enumerate(lines):
+            if _ACCT_TOTAL_LINE_RE.match(line):
+                acct = re.search(r"(\d{2}-\d{2})", line).group(1)
+                if j + 1 < len(lines):
+                    amt = _parse_amount(lines[j + 1])
+                    if amt is not None and acct in acct_totals:
+                        # Update amount, keep description
+                        desc = acct_totals[acct][0]
+                        acct_totals[acct] = (desc, amt)
+            if _GRAND_TOTAL_RE.match(line) and grand_total is None:
+                if j + 1 < len(lines):
+                    grand_total = _parse_amount(lines[j + 1])
+
+    if not acct_totals:
+        warnings.append("Film budget format detected but no account totals found")
+        return BudgetParseResult(
+            filename=filename,
+            currency_code=currency_code,
+            total_budget_raw=None,
+            origin_note="film budget — no accounts extracted",
+            line_items=[],
+            parse_warnings=warnings,
+            line_count=0,
+        )
+
+    # ATL / BTL assignment: infer from account code ranges
+    # 10-19 = ATL; 20-49 = Production (BTL); 50-59 = Post (BTL); 60-69 = Other (BTL)
+    # 80-89 = Insurance/contingency
+    def _dept_for_acct(acct: str) -> str:
+        prefix = int(acct.split("-")[0])
+        if prefix < 20:
+            return "Above The Line"
+        if prefix < 50:
+            return "Production"
+        if prefix < 60:
+            return "Post Production"
+        if prefix < 70:
+            return "Other"
+        return "Below The Line"
+
+    items: list[ParsedLineItem] = []
+    for row_num, (key, (desc, amt)) in enumerate(sorted(acct_totals.items())):
+        # key may have a dedup suffix like "85-00_2" — strip it for display/dept lookup
+        base_acct = re.match(r"(\d{2}-\d{2})", key).group(1)
+        items.append(ParsedLineItem(
+            description=f"{base_acct} {desc}",
+            department=_dept_for_acct(base_acct),
+            amount_raw=str(amt),
+            amount_usd=amt,
+            currency_code=currency_code,
+            source_row=row_num,
+            source_page=1,
+        ))
+
+    computed_total = sum(i.amount_usd for i in items if i.amount_usd)
+    return BudgetParseResult(
+        filename=filename,
+        currency_code=currency_code,
+        total_budget_raw=grand_total or computed_total,
+        origin_note="parsed from film budget PDF (account-code format)",
+        line_items=items,
+        parse_warnings=warnings,
+        line_count=len(items),
+    )
+
+
+_TEXT_ROW_RE = re.compile(
+    r"^(?P<dept>[A-Z][A-Z &/\-]{1,30})?\s*"
+    r"(?P<desc>[A-Za-z][A-Za-z0-9 &/()\-,'.]{2,60})\s+"
+    r"(?P<amount>[\$£€]?\s*[\d,]+(?:\.\d{0,2})?\s*[KkMm]?)\s*$"
+)
+
+_DEPT_HEADER_RE = re.compile(
+    r"^(?P<dept>[A-Z][A-Z &/\-]{2,40})\s*$"
+)
+
+_TOTAL_KEYWORD_RE = re.compile(
+    r"\b(total|subtotal|grand\s+total|budget\s+total)\b",
+    re.IGNORECASE,
+)
+
+
+def parse_budget_from_text(
+    text: str,
+    filename: str = "budget.pdf",
+    currency_code: str = "USD",
+) -> BudgetParseResult:
+    """
+    Parse budget line items from free-form extracted PDF text.
+
+    Handles common film budget export formats (Movie Magic, AICP, generic
+    tabular). Rows are matched heuristically — lines with a recognisable
+    monetary amount and a description are captured. Department headers
+    (ALL-CAPS labels without an amount) carry forward to subsequent rows.
+
+    No LLM calls. Results may be less complete than CSV parsing; use
+    classify_parsed_items() to tag ATL/BTL categories afterwards.
+
+    Automatically detects film-budget account-code format (Movie Magic / EP-style)
+    and delegates to _parse_film_budget for accurate extraction.
+    """
+    # Detect page-separated text from pymupdf (\x0c page breaks) vs plain text
+    pages = text.split("\x0c")
+
+    # Dispatch to specialized parser for account-code film budgets
+    if _is_film_budget_format(text):
+        return _parse_film_budget(pages, filename, currency_code)
+
+    items: list[ParsedLineItem] = []
+    warnings: list[str] = []
+    current_dept: str | None = None
+    total_budget: float | None = None
+    row_num = 0
+
+    for page_num, page_text in enumerate(pages, start=1):
+        for line in page_text.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+
+            # Detect total-budget sentinel lines (skip, capture value if present)
+            if _TOTAL_KEYWORD_RE.search(line):
+                amt = _parse_amount_from_line(line)
+                if amt is not None and total_budget is None:
+                    total_budget = amt
+                continue
+
+            # Detect ALL-CAPS department headers (no amount on the line)
+            if _DEPT_HEADER_RE.match(line) and _parse_amount_from_line(line) is None:
+                current_dept = line.strip().title()
+                continue
+
+            # Try to parse a line that contains at least a description + amount
+            parsed = _parse_text_line(line, row_num, page_num, current_dept, currency_code)
+            if parsed is not None:
+                items.append(parsed)
+                row_num += 1
+
+    if not items:
+        warnings.append(
+            "No line items could be parsed from text — format may require manual review"
+        )
+
+    computed_total = sum(i.amount_usd for i in items if i.amount_usd is not None)
+
+    return BudgetParseResult(
+        filename=filename,
+        currency_code=currency_code,
+        total_budget_raw=total_budget or (computed_total if items else None),
+        origin_note="parsed from PDF text",
+        line_items=items,
+        parse_warnings=warnings,
+        line_count=len(items),
+    )
+
+
+def _parse_amount_from_line(line: str) -> float | None:
+    """Return the first parseable monetary amount found anywhere in the line."""
+    # Match amounts like $1,250,000 or 1,250,000.00 or 1.25M
+    m = re.search(
+        r"[\$£€]?\s*([\d,]{1,15}(?:\.\d{0,2})?)\s*([KkMm]?)\b",
+        line,
+    )
+    if not m:
+        return None
+    raw = m.group(1).replace(",", "")
+    try:
+        value = float(raw)
+    except ValueError:
+        return None
+    suffix = (m.group(2) or "").upper()
+    if suffix == "K":
+        value *= 1_000
+    elif suffix == "M":
+        value *= 1_000_000
+    # Ignore suspiciously small numbers (page numbers, line numbers)
+    if value < 10:
+        return None
+    return value
+
+
+def _parse_text_line(
+    line: str,
+    row_num: int,
+    page_num: int,
+    current_dept: str | None,
+    currency_code: str,
+) -> ParsedLineItem | None:
+    """
+    Attempt to extract a (description, amount) pair from one text line.
+    Returns None if the line doesn't look like a budget row.
+    """
+    amount = _parse_amount_from_line(line)
+    if amount is None:
+        return None
+
+    # Remove the amount portion to get the description remainder
+    desc = re.sub(
+        r"[\$£€]?\s*[\d,]{1,15}(?:\.\d{0,2})?\s*[KkMm]?\b",
+        "",
+        line,
+    ).strip(" \t|,-")
+
+    # Heuristic: description must be at least 3 chars and not purely numeric
+    if len(desc) < 3 or re.match(r"^\d+$", desc):
+        return None
+
+    return ParsedLineItem(
+        description=desc,
+        department=current_dept,
+        amount_raw=line,
+        amount_usd=amount,
+        currency_code=currency_code,
+        source_row=row_num,
+        source_page=page_num,
+    )
+
+
 def classify_parsed_items(result: BudgetParseResult) -> BudgetParseResult:
     """
     Run deterministic classification on all parsed line items.
