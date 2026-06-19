@@ -33,6 +33,9 @@ class SourceDocument(Base):
     raw_text: Mapped[str | None] = mapped_column(Text)
     page_count: Mapped[int | None] = mapped_column(Integer)
     notes: Mapped[str | None] = mapped_column(Text)
+    superseded_by_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("source_documents.id"), nullable=True
+    )
 
     # Relationships
     jurisdiction: Mapped["Jurisdiction | None"] = relationship()

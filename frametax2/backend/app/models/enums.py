@@ -2,9 +2,10 @@ import enum
 
 
 class ConfidenceTier(str, enum.Enum):
-    VERIFIED = "VERIFIED"    # Reviewed against source document; safe for deterministic recommendation
-    PARSED = "PARSED"        # Extracted from authoritative source; not yet fully reviewed
-    DISCOVERY = "DISCOVERY"  # Found via search/crawl; not normalized or approved
+    VERIFIED = "VERIFIED"      # Reviewed against source document; safe for deterministic recommendation
+    PARSED = "PARSED"          # Extracted from authoritative source; not yet fully reviewed
+    DISCOVERY = "DISCOVERY"    # Found via search/crawl; not normalized or approved
+    SUPERSEDED = "SUPERSEDED"  # Replaced by a newer source document; retained for audit trail
 
 
 class ReviewStatus(str, enum.Enum):
