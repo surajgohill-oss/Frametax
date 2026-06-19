@@ -82,6 +82,56 @@ async def _assert_schema() -> None:
         logger.info("TRACE-5c: schema assertion passed — all required columns present")
 
 
+async def _backfill_starting_inventory() -> None:
+    """Backfill events.starting_inventory and first_snapshot_at from listing_snapshots.
+    Runs at startup after migration; safe to run multiple times (WHERE IS NULL guard).
+    """
+    try:
+        async with AsyncSessionLocal() as db:
+            # first_snapshot_at: MIN(snapshot_at) per event
+            r1 = await db.execute(text("""
+                UPDATE events e
+                SET first_snapshot_at = sub.first_snap
+                FROM (
+                    SELECT event_id, MIN(snapshot_at) AS first_snap
+                    FROM listing_snapshots
+                    GROUP BY event_id
+                ) sub
+                WHERE e.id = sub.event_id
+                  AND e.first_snapshot_at IS NULL
+            """))
+            await db.commit()
+            updated_dates = r1.rowcount
+
+            # starting_inventory: count distinct listing_id at the first snapshot time
+            r2 = await db.execute(text("""
+                UPDATE events e
+                SET starting_inventory = sub.cnt
+                FROM (
+                    SELECT ls.event_id, COUNT(DISTINCT ls.listing_id) AS cnt
+                    FROM listing_snapshots ls
+                    INNER JOIN (
+                        SELECT event_id, MIN(snapshot_at) AS first_snap
+                        FROM listing_snapshots
+                        GROUP BY event_id
+                    ) fs ON fs.event_id = ls.event_id
+                       AND ls.snapshot_at = fs.first_snap
+                    GROUP BY ls.event_id
+                ) sub
+                WHERE e.id = sub.event_id
+                  AND e.starting_inventory IS NULL
+            """))
+            await db.commit()
+            updated_inv = r2.rowcount
+
+        logger.info(
+            "STARTUP_BACKFILL: first_snapshot_at updated=%d, starting_inventory updated=%d",
+            updated_dates, updated_inv,
+        )
+    except Exception as exc:
+        logger.error("STARTUP_BACKFILL: failed — %s", exc)
+
+
 async def _cleanup_zombie_poll_runs() -> None:
     """Mark poll_runs stuck in 'running' for >10 minutes as 'error' on startup."""
     try:
@@ -119,6 +169,9 @@ async def lifespan(app: FastAPI):
 
     logger.info("TRACE-6b: cleaning up zombie poll_runs from prior process")
     await _cleanup_zombie_poll_runs()
+
+    logger.info("TRACE-6c: backfilling starting_inventory from listing_snapshots")
+    await _backfill_starting_inventory()
 
     logger.info("TRACE-7: importing start_scheduler")
     try:

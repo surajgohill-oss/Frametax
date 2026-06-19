@@ -148,6 +148,16 @@ async def system_reliability():
         remediation = f"Investigate crash: {active_sig[:200]}"
 
     # ── System-level alert list ──────────────────────────────────────────────
+    # Alert policy:
+    #   RED (email+SMS): outage-level — no successful snapshot for >3h across ALL active events.
+    #                    Scheduler crash. Heartbeat gone for >60 min.
+    #   YELLOW (log/dashboard only): marketplace-specific degradation, per-event stale,
+    #                                benchmark freshness, unresolved IDs.
+    #   Never page for transient errors if fresh snapshots are still being written.
+    #   30-minute rate-limit prevents alert floods.
+    _RED_OUTAGE_H = 3.0   # hours without any snapshot before RED fires
+    _RED_STALE_H  = 3.0   # hours without successful poll before RED fires
+
     system_alerts: list[dict] = []
 
     if active_sig:
@@ -158,55 +168,95 @@ async def system_reliability():
             "remediation": remediation or "Investigate and redeploy.",
         })
 
-    # No successful poll within last 2h
-    last_succ_str = mem.get("last_success_at") or scheduler_last_success_at_db
-    if last_succ_str:
+    # Global snapshot freshness check — RED only if ALL snapshots are stale >3h.
+    # If fresh snapshots are still being written (any marketplace), do NOT page.
+    snap_age_h: float | None = None
+    if latest_snapshot_at:
         try:
-            ts = datetime.fromisoformat(last_succ_str)
-            age_h = (now - ts.replace(tzinfo=None)).total_seconds() / 3600
-            if age_h > 2:
+            snap_age_h = (now - datetime.fromisoformat(latest_snapshot_at)).total_seconds() / 3600
+            if snap_age_h > _RED_OUTAGE_H:
                 system_alerts.append({
-                    "type": "SCHEDULER_STALE",
+                    "type": "SNAPSHOT_OUTAGE",
                     "severity": "RED",
-                    "message": f"No successful poll in {age_h:.1f}h (threshold 2h)",
-                    "remediation": "Check if scheduler job is running on Railway.",
+                    "message": (
+                        f"No listing snapshot written in {snap_age_h:.1f}h "
+                        f"(threshold {_RED_OUTAGE_H}h) — ALL marketplaces may be down"
+                    ),
+                    "remediation": "Check Railway logs; all collectors may be failing.",
                 })
         except Exception:
             pass
     else:
+        # No snapshots ever — could be brand-new or total failure
         system_alerts.append({
-            "type": "SCHEDULER_STALE",
-            "severity": "RED",
-            "message": "No successful poll recorded",
-            "remediation": "Scheduler may not have started. Check Railway logs.",
+            "type": "SNAPSHOT_OUTAGE",
+            "severity": "YELLOW",
+            "message": "No listing snapshots found in database",
+            "remediation": "Confirm at least one event is being polled.",
         })
 
-    # Poll success rate
-    total_polls = success_polls_24h + failed_polls_24h
-    if total_polls > 10 and success_polls_24h / total_polls < 0.5:
-        rate_pct = 100 * success_polls_24h / total_polls
-        system_alerts.append({
-            "type": "POLL_SUCCESS_RATE_LOW",
-            "severity": "RED" if rate_pct < 20 else "YELLOW",
-            "message": f"Poll success rate {rate_pct:.0f}% over last 24h ({success_polls_24h}/{total_polls})",
-            "remediation": "Check collector logs for bot detection or auth failures.",
-        })
-
-    # Latest snapshot stale > 8h
-    if latest_snapshot_at:
+    # Scheduler poll staleness — RED only after _RED_STALE_H with no success.
+    # Skip this RED if fresh snapshots exist (snapshots prove polling is working).
+    last_succ_str = mem.get("last_success_at") or scheduler_last_success_at_db
+    if last_succ_str:
         try:
-            snap_age_h = (now - datetime.fromisoformat(latest_snapshot_at)).total_seconds() / 3600
-            if snap_age_h > 8:
+            ts = datetime.fromisoformat(last_succ_str)
+            poll_age_h = (now - ts.replace(tzinfo=None)).total_seconds() / 3600
+            # Only RED if snapshots are also stale — avoids false alarm when poll_runs
+            # fail but data is still being collected via another path
+            snapshots_fresh = snap_age_h is not None and snap_age_h < _RED_OUTAGE_H
+            if poll_age_h > _RED_STALE_H and not snapshots_fresh:
                 system_alerts.append({
-                    "type": "SNAPSHOT_STALE",
+                    "type": "SCHEDULER_STALE",
+                    "severity": "RED",
+                    "message": (
+                        f"No successful poll in {poll_age_h:.1f}h and no fresh snapshots "
+                        f"(threshold {_RED_STALE_H}h)"
+                    ),
+                    "remediation": "Check if scheduler job is running on Railway.",
+                })
+            elif poll_age_h > _RED_STALE_H:
+                system_alerts.append({
+                    "type": "SCHEDULER_STALE",
                     "severity": "YELLOW",
-                    "message": f"Latest listing snapshot {snap_age_h:.1f}h old (threshold 8h)",
-                    "remediation": "Confirm at least one collector is writing snapshots.",
+                    "message": (
+                        f"No successful poll_run recorded in {poll_age_h:.1f}h, "
+                        f"but snapshots are fresh — transient poll_run tracking gap"
+                    ),
+                    "remediation": "Monitor; data collection appears healthy.",
                 })
         except Exception:
             pass
+    else:
+        # No poll success ever recorded in-memory or DB
+        # Don't immediately RED — could be first deploy
+        system_alerts.append({
+            "type": "SCHEDULER_STALE",
+            "severity": "YELLOW",
+            "message": "No successful poll recorded (may be new deployment)",
+            "remediation": "Wait 10 min; if still absent check Railway scheduler logs.",
+        })
 
-    # Per-event snapshot staleness (genuine gap: global check misses event-specific failures)
+    # Poll success rate — YELLOW only, and only if snapshots are also stale
+    # (transient error bursts with healthy snapshots are not worth paging)
+    total_polls = success_polls_24h + failed_polls_24h
+    snapshots_healthy = snap_age_h is not None and snap_age_h < _RED_OUTAGE_H
+    if total_polls > 20 and not snapshots_healthy:
+        rate_pct = 100 * success_polls_24h / total_polls if total_polls else 0
+        if rate_pct < 30:
+            system_alerts.append({
+                "type": "POLL_SUCCESS_RATE_LOW",
+                "severity": "YELLOW",
+                "message": (
+                    f"Poll success rate {rate_pct:.0f}% over last 24h "
+                    f"({success_polls_24h}/{total_polls}) and snapshots are stale"
+                ),
+                "remediation": "Check collector logs for persistent bot detection or auth failures.",
+            })
+
+    # Per-event snapshot staleness — YELLOW only, marketplace-specific.
+    # This fires even when the global snapshot is fresh (some events may have
+    # individual collector failures while others succeed).
     try:
         async with AsyncSessionLocal() as db:
             stale_event_rows = await db.execute(text("""
@@ -217,7 +267,7 @@ async def system_reliability():
                 WHERE e.status = 'upcoming' AND te.is_active = true
                 GROUP BY e.id, e.title
                 HAVING MAX(ls.snapshot_at) IS NULL
-                    OR MAX(ls.snapshot_at) < NOW() - INTERVAL '4 hours'
+                    OR MAX(ls.snapshot_at) < NOW() - INTERVAL '6 hours'
             """))
             stale_events = stale_event_rows.fetchall()
             if stale_events:
@@ -231,12 +281,12 @@ async def system_reliability():
                     "severity": "YELLOW",
                     "message": (
                         f"{len(stale_events)} actively-tracked event(s) have no snapshot "
-                        f"in the last 4h while system-level polling is running"
+                        f"in the last 6h — marketplace-specific degradation possible"
                     ),
                     "affected_events": stale_list,
                     "remediation": (
-                        "Check the specific marketplace collector for these events. "
-                        "May indicate a collector crash or auth failure for specific event."
+                        "Check specific marketplace collector for these events. "
+                        "Other events may be healthy. Do not page unless SNAPSHOT_OUTAGE also fires."
                     ),
                 })
     except Exception as exc:
@@ -348,12 +398,18 @@ async def system_reliability():
     from app.services.alert_sender import alert_delivery_status
     delivery = alert_delivery_status()
 
-    # ── Fire any RED alerts that just appeared ───────────────────────────────
-    red_alerts = [a for a in system_alerts if a["severity"] == "RED"]
+    # ── Fire RED alerts (outage-class only) ─────────────────────────────────
+    # Only fire alerts that represent a genuine outage needing human action.
+    # PER_EVENT_SNAPSHOT_STALE and BENCHMARK_STALE are YELLOW — never paged.
+    _PAGEABLE_TYPES = {"SCHEDULER_CRASH", "SNAPSHOT_OUTAGE", "SCHEDULER_STALE", "HEARTBEAT_STALE", "OUTCOME_GENERATION_FAILURE"}
+    red_alerts = [
+        a for a in system_alerts
+        if a["severity"] == "RED" and a["type"] in _PAGEABLE_TYPES
+    ]
     if red_alerts:
         try:
             from app.services.alert_sender import fire_alert
-            for a in red_alerts[:3]:  # cap at 3 to avoid flooding on first call
+            for a in red_alerts[:2]:  # max 2 alert types per reliability check
                 asyncio.create_task(
                     fire_alert(a["type"], "RED", a["message"])
                 )
