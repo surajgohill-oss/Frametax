@@ -36,25 +36,32 @@ def upgrade():
         "ALTER TABLE events ADD COLUMN IF NOT EXISTS first_snapshot_at TIMESTAMP"
     )
 
-    # Backfill starting_inventory + first_snapshot_at for all existing events
+    # Backfill first_snapshot_at (simple MIN per event)
     op.execute("""
         UPDATE events e
-        SET
-            first_snapshot_at = sub.first_snap,
-            starting_inventory = sub.cnt
+        SET first_snapshot_at = sub.first_snap
         FROM (
-            SELECT
-                ls.event_id,
-                MIN(ls.snapshot_at)       AS first_snap,
-                COUNT(DISTINCT ls2.listing_id) AS cnt
+            SELECT event_id, MIN(snapshot_at) AS first_snap
+            FROM listing_snapshots
+            GROUP BY event_id
+        ) sub
+        WHERE e.id = sub.event_id
+          AND e.first_snapshot_at IS NULL
+    """)
+
+    # Backfill starting_inventory: count listings at the first snapshot time
+    op.execute("""
+        UPDATE events e
+        SET starting_inventory = sub.cnt
+        FROM (
+            SELECT ls.event_id, COUNT(DISTINCT ls.listing_id) AS cnt
             FROM listing_snapshots ls
-            JOIN listing_snapshots ls2
-              ON ls2.event_id = ls.event_id
-             AND ls2.snapshot_at = (
-                    SELECT MIN(ls3.snapshot_at)
-                    FROM listing_snapshots ls3
-                    WHERE ls3.event_id = ls.event_id
-                 )
+            INNER JOIN (
+                SELECT event_id, MIN(snapshot_at) AS first_snap
+                FROM listing_snapshots
+                GROUP BY event_id
+            ) fs ON fs.event_id = ls.event_id
+               AND ls.snapshot_at = fs.first_snap
             GROUP BY ls.event_id
         ) sub
         WHERE e.id = sub.event_id
