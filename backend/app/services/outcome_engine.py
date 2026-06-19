@@ -182,11 +182,12 @@ async def _compute_clearance(event_id: int, event_date: datetime, db: AsyncSessi
     event_start_clearance = _r(
         (at_start_l - post_1h_l) / at_start_l if at_start_l > 0 else None
     )
+    # Require actual snapshots in the 6h_post window; zero means no data, not zero listings
     postshow_clearance = _r(
-        (at_start_l - post_6h_l) / at_start_l if at_start_l > 0 else None
+        (at_start_l - post_6h_l) / at_start_l if (at_start_l > 0 and post_6h_l > 0) else None
     )
     remaining_inventory = _r(
-        post_6h_l / at_start_l if at_start_l > 0 else None
+        post_6h_l / at_start_l if (at_start_l > 0 and post_6h_l > 0) else None
     )
 
     # Data coverage (hours from first to last snapshot)
@@ -900,7 +901,8 @@ async def compute_event_type_benchmarks(db: AsyncSession) -> dict:
     """
     rows = (await db.execute(text("""
         SELECT eo.event_id,
-               eo.postshow_clearance_rate, eo.remaining_inventory_rate,
+               eo.postshow_clearance_rate, eo.event_start_clearance_rate,
+               eo.remaining_inventory_rate,
                eo.relist_percentage, eo.sold_after_relist_pct,
                eo.seller_pressure_score, eo.seller_strength_score,
                eo.repricing_frequency,
@@ -909,7 +911,7 @@ async def compute_event_type_benchmarks(db: AsyncSession) -> dict:
         FROM event_outcomes eo
         JOIN events e ON e.id = eo.event_id
         JOIN venues v ON v.id = e.venue_id
-        WHERE e.status = 'completed' AND eo.postshow_clearance_rate IS NOT NULL
+        WHERE e.status = 'completed' AND eo.relist_percentage IS NOT NULL
     """))).fetchall()
 
     groups: dict[str, list] = defaultdict(list)
@@ -930,15 +932,31 @@ async def compute_event_type_benchmarks(db: AsyncSession) -> dict:
             idx = max(0, int(len(vals) * n / 100) - 1)
             return _r(vals[idx])
 
+        def _best_clearance(r) -> Optional[float]:
+            """Use postshow if available, fall back to event_start clearance."""
+            v = _f(r._mapping.get("postshow_clearance_rate"))
+            return v if v is not None else _f(r._mapping.get("event_start_clearance_rate"))
+
+        def _avg_clearance() -> Optional[float]:
+            vals = [v for r in events if (v := _best_clearance(r)) is not None]
+            return _r(sum(vals) / len(vals)) if vals else None
+
+        def _pN_clearance(n: int) -> Optional[float]:
+            vals = sorted(v for r in events if (v := _best_clearance(r)) is not None)
+            if not vals:
+                return None
+            idx = max(0, int(len(vals) * n / 100) - 1)
+            return _r(vals[idx])
+
         event_ids = [r.event_id for r in events]
         benchmark = {
             "event_type":              etype,
             "event_count":             len(events),
             "event_ids":               event_ids,
-            "avg_clearance_rate":      _avg("postshow_clearance_rate"),
-            "p25_clearance_rate":      _pN("postshow_clearance_rate", 25),
-            "p50_clearance_rate":      _pN("postshow_clearance_rate", 50),
-            "p75_clearance_rate":      _pN("postshow_clearance_rate", 75),
+            "avg_clearance_rate":      _avg_clearance(),
+            "p25_clearance_rate":      _pN_clearance(25),
+            "p50_clearance_rate":      _pN_clearance(50),
+            "p75_clearance_rate":      _pN_clearance(75),
             "avg_relist_pct":          _avg("relist_percentage"),
             "p50_relist_pct":          _pN("relist_percentage", 50),
             "avg_seller_pressure":     _avg("seller_pressure_score"),
