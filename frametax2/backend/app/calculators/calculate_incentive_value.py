@@ -57,6 +57,33 @@ def calculate_incentive_value(
     production_details = production_details or {}
     notes: list[str] = []
 
+    # Fixed-amount grants (discretionary_fund, regional_fund, grant) bypass rate math
+    fixed_grant = float(program.get("fixed_grant_amount_usd") or 0.0)
+    if fixed_grant > 0.0:
+        if program.get("is_competitive"):
+            notes.append(
+                "WARNING: This program has competitive allocation — "
+                "grant is not guaranteed even if qualified"
+            )
+        return IncentiveValueResult(
+            program_id=str(program.get("id", "")),
+            program_slug=program.get("slug", ""),
+            program_type=program.get("program_type", ""),
+            qualifying_spend_usd=qualifying_spend_usd,
+            base_rate=0.0,
+            base_credit_usd=fixed_grant,
+            uplifts_applied=[],
+            total_credit_usd=fixed_grant,
+            effective_rate=0.0,
+            is_refundable=program.get("is_refundable"),
+            is_transferable=program.get("is_transferable"),
+            transferable_value_pct=float(program.get("transferable_value_pct") or 1.0),
+            economic_value_usd=fixed_grant,
+            cap_applied=False,
+            cap_limit_usd=None,
+            notes=notes,
+        )
+
     base_rate = float(program.get("base_rate") or 0.0)
     base_credit = qualifying_spend_usd * base_rate
 

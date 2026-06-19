@@ -22,6 +22,8 @@ class ProgramType(str, enum.Enum):
     GRANT = "grant"
     SUBSIDY = "subsidy"
     TAX_EXEMPTION = "tax_exemption"
+    REGIONAL_FUND = "regional_fund"
+    DISCRETIONARY_FUND = "discretionary_fund"
 
 
 class CreditBasis(str, enum.Enum):
@@ -56,6 +58,9 @@ class StackingRuleType(str, enum.Enum):
     ALLOWED = "allowed"
     PROHIBITED = "prohibited"
     CONDITIONAL = "conditional"
+    SPEND_REDUCTION = "spend_reduction"
+    VALUE_CAP = "value_cap"
+    MUTUALLY_EXCLUSIVE = "mutually_exclusive"
 
 
 class JurisdictionLevel(str, enum.Enum):

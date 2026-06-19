@@ -9,10 +9,11 @@ No LLM calls. All math is in downstream modules.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field  # noqa: F401 — field used by StructureAnalysisResult
 
 from app.calculators.apply_caps_floors_exclusions import apply_caps_and_exclusions
 from app.calculators.apply_fx_rates import convert_to_usd
+from app.calculators.apply_stacking_adjustments import apply_stacking_adjustments
 from app.calculators.apply_union_fringe_rules import apply_union_fringes
 from app.calculators.calculate_incentive_value import calculate_incentive_value
 from app.calculators.calculate_net_budget import calculate_key_crew_travel, calculate_net_budget
@@ -69,6 +70,9 @@ class StructureAnalysisResult:
     calculation_trace: dict
 
     engine_version: str = ENGINE_VERSION
+    # Stacking math (populated when stacking_rules are present)
+    stacking_adjustments: list[dict] = field(default_factory=list)
+    stacking_adjusted_economic_value_usd: float = 0.0
 
 
 def run_full_analysis(
@@ -228,6 +232,21 @@ def run_full_analysis(
     })
 
     # -------------------------------------------------------------------------
+    # Step 4d: Apply stacking adjustments
+    # -------------------------------------------------------------------------
+    stacking_adj = apply_stacking_adjustments(
+        incentive_results=incentive_results,
+        stacking_rules=stacking_rules,
+    )
+    stacking_adjusted_total = stacking_adj.total_adjusted_value_usd
+    _trace("stacking_adjustments", {
+        "total_raw_value_usd": stacking_adj.total_raw_value_usd,
+        "total_adjusted_value_usd": stacking_adjusted_total,
+        "adjustments_applied": len(stacking_adj.adjustments),
+        "legal_review_flags": stacking_adj.legal_review_flags,
+    })
+
+    # -------------------------------------------------------------------------
     # Step 5: Net budget
     # -------------------------------------------------------------------------
     jurisdiction_id = str(jurisdiction.get("id", ""))
@@ -244,7 +263,7 @@ def run_full_analysis(
         variable_btl_usd=variable_btl_usd,
         cost_benchmark=cost_benchmark,
         travel_cost_usd=travel_cost,
-        total_incentive_economic_value_usd=total_incentive_economic_value,
+        total_incentive_economic_value_usd=stacking_adjusted_total,
     )
     _trace("net_budget", net_result.__dict__)
 
@@ -253,7 +272,7 @@ def run_full_analysis(
     # -------------------------------------------------------------------------
     risk_result = calculate_risk_adjusted_net(
         true_net_cost_usd=net_result.true_net_cost_usd,
-        total_incentive_value_usd=total_incentive_economic_value,
+        total_incentive_value_usd=stacking_adjusted_total,
         program_results=incentive_results,
         has_qualification_gaps=False,
     )
@@ -317,6 +336,8 @@ def run_full_analysis(
         stacking_conditionals=[c.__dict__ for c in stacking_result.conditionals],
         qualification_scores=qualification_scores,
         calculation_trace=trace,
+        stacking_adjustments=[a.__dict__ for a in stacking_adj.adjustments],
+        stacking_adjusted_economic_value_usd=stacking_adjusted_total,
     )
 
 

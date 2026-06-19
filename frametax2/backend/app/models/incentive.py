@@ -33,6 +33,7 @@ class IncentiveProgram(Base):
     transferable_value_pct: Mapped[float | None] = mapped_column(Numeric(7, 6))
     is_competitive: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     annual_cap_local: Mapped[float | None] = mapped_column(Numeric(18, 2))
+    fixed_grant_amount_usd: Mapped[float | None] = mapped_column(Numeric(18, 2))
     requires_cultural_test: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     cultural_test_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("qualification_tests.id"), nullable=True

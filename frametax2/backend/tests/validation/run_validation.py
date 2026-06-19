@@ -36,6 +36,12 @@ from tests.fixtures.ca_la_validation import (
     LA_EXPECTED,
     LA_PROGRAM,
 )
+from tests.fixtures.canada_stacking_validation import (
+    CA_CPTC_NOHFC_EXPECTED,
+    FIXTURE_CA_CPTC_NOHFC,
+    FIXTURE_ON_OFTTC_NOHFC,
+    ON_OFTTC_NOHFC_EXPECTED,
+)
 
 
 @dataclass
@@ -361,6 +367,111 @@ def _build_la_cases() -> list[ValidationCase]:
     ]
 
 
+def _build_stacking_cases() -> list[ValidationCase]:
+    ofttc_nohfc = _run_fixture(FIXTURE_ON_OFTTC_NOHFC)
+    cptc_nohfc  = _run_fixture(FIXTURE_CA_CPTC_NOHFC)
+
+    # Raw values from incentive_results (pre-stacking)
+    def _raw(result, slug):
+        for iv in result.incentive_results:
+            if iv.get("program_slug") == slug:
+                return iv["economic_value_usd"]
+        return 0.0
+
+    ofttc_adj = next(
+        (a for a in ofttc_nohfc.stacking_adjustments
+         if a.get("program_b_id") == "prog-on-ofttc"),
+        {},
+    )
+    cptc_adj = next(
+        (a for a in cptc_nohfc.stacking_adjustments
+         if a.get("program_b_id") == "prog-ca-cptc"),
+        {},
+    )
+
+    return [
+        ValidationCase(
+            "OFTTC raw value",
+            ON_OFTTC_NOHFC_EXPECTED["ofttc_raw_value_usd"],
+            _raw(ofttc_nohfc, "on_ofttc"),
+            tolerance_pct=1.0,
+            source="1,400,000 × 35%",
+            jurisdiction="ON OFTTC+NOHFC",
+        ),
+        ValidationCase(
+            "NOHFC fixed grant (OFTTC scenario)",
+            ON_OFTTC_NOHFC_EXPECTED["nohfc_raw_value_usd"],
+            _raw(ofttc_nohfc, "nohfc_production_fund"),
+            source="Fixed $500,000 discretionary grant",
+            jurisdiction="ON OFTTC+NOHFC",
+        ),
+        ValidationCase(
+            "Total raw incentive",
+            ON_OFTTC_NOHFC_EXPECTED["total_raw_incentive_usd"],
+            ofttc_nohfc.total_incentive_economic_value_usd,
+            tolerance_pct=1.0,
+            source="490K + 500K before stacking",
+            jurisdiction="ON OFTTC+NOHFC",
+        ),
+        ValidationCase(
+            "Stacking adjustment (spend_reduction)",
+            ON_OFTTC_NOHFC_EXPECTED["stacking_adjustment_usd"],
+            ofttc_adj.get("adjustment_usd", 0.0),
+            tolerance_pct=1.0,
+            source="500K × 35% = −175,000",
+            jurisdiction="ON OFTTC+NOHFC",
+        ),
+        ValidationCase(
+            "Total adjusted incentive",
+            ON_OFTTC_NOHFC_EXPECTED["total_adjusted_incentive_usd"],
+            ofttc_nohfc.stacking_adjusted_economic_value_usd,
+            tolerance_pct=1.0,
+            source="315K + 500K = 815,000",
+            jurisdiction="ON OFTTC+NOHFC",
+        ),
+        ValidationCase(
+            "True net (uses adjusted) (±1%)",
+            ON_OFTTC_NOHFC_EXPECTED["true_net_cost_usd"],
+            ofttc_nohfc.true_net_cost_usd,
+            tolerance_pct=1.0,
+            source="400K + 1,200K − 815K = 785,000",
+            jurisdiction="ON OFTTC+NOHFC",
+        ),
+        ValidationCase(
+            "CPTC raw value",
+            CA_CPTC_NOHFC_EXPECTED["cptc_raw_value_usd"],
+            _raw(cptc_nohfc, "ca_federal_cptc"),
+            tolerance_pct=1.0,
+            source="1,800,000 × 25%",
+            jurisdiction="CPTC+NOHFC",
+        ),
+        ValidationCase(
+            "CPTC stacking adjustment",
+            CA_CPTC_NOHFC_EXPECTED["stacking_adjustment_usd"],
+            cptc_adj.get("adjustment_usd", 0.0),
+            tolerance_pct=1.0,
+            source="500K × 25% = −125,000 (ITA § 125.4)",
+            jurisdiction="CPTC+NOHFC",
+        ),
+        ValidationCase(
+            "Total adjusted incentive",
+            CA_CPTC_NOHFC_EXPECTED["total_adjusted_incentive_usd"],
+            cptc_nohfc.stacking_adjusted_economic_value_usd,
+            tolerance_pct=1.0,
+            source="325K + 500K = 825,000",
+            jurisdiction="CPTC+NOHFC",
+        ),
+        ValidationCase(
+            "True net CPTC+NOHFC (±1%)",
+            CA_CPTC_NOHFC_EXPECTED["true_net_cost_usd"],
+            cptc_nohfc.true_net_cost_usd,
+            tolerance_pct=1.0,
+            source="800K + 1,400K − 825K = 1,375,000",
+            jurisdiction="CPTC+NOHFC",
+        ),
+    ]
+
+
 def _fmt_value(v) -> str:
     if isinstance(v, bool):
         return str(v)
@@ -379,6 +490,7 @@ def main() -> int:
         ("Oregon OPIF",   "ORS § 284.368 — PARSED",              _build_or_cases),
         ("California",    "CA Gov Code § 17053.98 — PARSED",     _build_ca_cases),
         ("Louisiana",     "LA RS § 47:6007 — PARSED",            _build_la_cases),
+        ("Stacking Engine", "NOHFC spend_reduction — PARSED",    _build_stacking_cases),
     ]
 
     col_jur  = 14
@@ -388,7 +500,7 @@ def main() -> int:
 
     print()
     print("=" * 100)
-    print("  FrameTax Validation Harness — GA + NY + NM + OR + CA + LA")
+    print("  FrameTax Validation Harness — GA + NY + NM + OR + CA + LA + Stacking Engine")
     print("=" * 100)
 
     for section_name, section_source, builder in sections:
