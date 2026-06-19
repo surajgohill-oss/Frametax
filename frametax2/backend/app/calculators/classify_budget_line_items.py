@@ -72,6 +72,9 @@ _RULES: list[ClassificationRule] = [
                        ATLBTLCategory.POST, SpendCategory.POST_PRODUCTION, False, False),
 
     # --- BTL Non-labor ---
+    # Vessel/marine must precede generic equipment so "marine equipment" routes correctly
+    ClassificationRule(r"vessel|yacht|charter boat|boat (hire|charter|rental)|marine (equip|gear|support|unit)|dive boat|underwater camera|speedboat|speed boat",
+                       ATLBTLCategory.BTL, SpendCategory.VESSEL_MARINE, False, False),
     ClassificationRule(r"equipment( rental)?|camera rental|lighting rental|grip",
                        ATLBTLCategory.BTL, SpendCategory.BTL_EQUIPMENT_RENTAL, False, False),
     ClassificationRule(r"stage|studio rental|backlot|sound stage",

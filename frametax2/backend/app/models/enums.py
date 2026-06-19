@@ -97,6 +97,7 @@ class SpendCategory(str, enum.Enum):
     BTL_SET_CONSTRUCTION = "btl_set_construction"
     BTL_TRANSPORTATION = "btl_transportation"
     BTL_CATERING = "btl_catering"
+    VESSEL_MARINE = "vessel_marine"
     # Post
     POST_PRODUCTION = "post_production"
     VFX = "vfx"
