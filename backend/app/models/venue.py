@@ -16,6 +16,7 @@ class Venue(Base):
     city: Mapped[str] = mapped_column(String(100), default="Los Angeles")
     state: Mapped[str] = mapped_column(String(2), default="CA")
     capacity: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    timezone: Mapped[str] = mapped_column(String(50), nullable=False, default="America/Los_Angeles")
     # kept for backward compat with existing map route
     map_width: Mapped[int] = mapped_column(Integer, default=700)
     map_height: Mapped[int] = mapped_column(Integer, default=500)

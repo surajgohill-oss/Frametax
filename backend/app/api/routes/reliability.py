@@ -394,6 +394,37 @@ async def system_reliability():
     except Exception as exc:
         logger.error("reliability: heartbeat check failed — %s", exc)
 
+    # ── Timezone mismatch detection ──────────────────────────────────────────
+    # Detect events where the stored UTC time looks like a naive local time.
+    # Pattern: CA venue event with UTC hour in 14-23 (8pm local stored as 8pm UTC).
+    # Ariana events 25-28 were fixed manually; this catches any future recurrence.
+    try:
+        tz_rows = (await db.execute(text("""
+            SELECT e.id, e.title, e.event_date,
+                   EXTRACT(HOUR FROM e.event_date AT TIME ZONE 'UTC') AS utc_hour
+            FROM events e
+            JOIN venues v ON v.id = e.venue_id
+            WHERE e.status = 'upcoming'
+              AND v.state IN ('CA', 'WA', 'OR', 'NV')
+              AND EXTRACT(HOUR FROM e.event_date AT TIME ZONE 'UTC') BETWEEN 14 AND 23
+            ORDER BY e.id
+        """))).fetchall()
+        if tz_rows:
+            bad_ids = [r[0] for r in tz_rows]
+            system_alerts.append({
+                "type": "TIMEZONE_MISMATCH",
+                "severity": "YELLOW",
+                "message": (
+                    f"{len(tz_rows)} upcoming event(s) may have timezone-naive storage bug "
+                    f"(local time stored as UTC). Event IDs: {bad_ids}. "
+                    "Run UPDATE events SET event_date = event_date + INTERVAL '7 hours' WHERE id IN (...) "
+                    "then recompute outcomes."
+                ),
+                "event_ids": bad_ids,
+            })
+    except Exception as exc:
+        logger.error("reliability: timezone mismatch check failed — %s", exc)
+
     # ── Alert delivery status ────────────────────────────────────────────────
     from app.services.alert_sender import alert_delivery_status
     delivery = alert_delivery_status()

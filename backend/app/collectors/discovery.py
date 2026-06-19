@@ -458,11 +458,16 @@ class EventDiscovery:
                 event = ev_result.scalar_one_or_none()
 
                 if not event:
-                    # 4b. Near-duplicate check: same venue + same local date
+                    # 4b. Near-duplicate check: same venue + same local date.
+                    # Compare after converting stored event_date to LA local time so
+                    # both old events (stored as naive-UTC-wrong) and new events
+                    # (stored as proper UTC) resolve to the same local calendar date.
                     nearby_result = await db.execute(
                         select(Event).where(
                             Event.venue_id == venue.id,
-                            func.date(Event.event_date) == local_date,
+                            func.date(
+                                func.timezone("America/Los_Angeles", Event.event_date)
+                            ) == local_date,
                         )
                     )
                     nearby_events = nearby_result.scalars().all()
@@ -533,12 +538,17 @@ class EventDiscovery:
                             )
                             return "cap_reached"
 
+                        # Convert naive venue-local datetime to UTC-aware before storing.
+                        # item.event_date is a naive LA-local datetime; attaching _LA_TZ
+                        # and letting PostgreSQL handle the UTC conversion prevents the
+                        # "local time stored as UTC" bug that affected Ariana events 25-28.
+                        event_date_utc = item.event_date.replace(tzinfo=_LA_TZ)
                         event = Event(
                             canonical_id=canonical,
                             title=item.title,
                             artist=item.artist,
                             venue_id=venue.id,
-                            event_date=item.event_date,
+                            event_date=event_date_utc,
                         )
                         db.add(event)
                         await db.flush()  # assigns event.id

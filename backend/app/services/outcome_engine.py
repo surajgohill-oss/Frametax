@@ -580,7 +580,34 @@ async def compute_event_outcome(event_id: int, db: AsyncSession) -> dict:
             "relist_activity":   _signal(relist.get("relist_percentage"), 0.05, 0.15),
             "inventory_remaining": _signal(clearance.get("remaining_inventory_rate"), 0.1, 0.3),
         },
+        # Coverage confidence (T2)
+        "coverage_confidence_score": None,  # populated after _conf_score computed below
+        "coverage_confidence_label": None,
     }
+
+    # Coverage confidence score (T2)
+    _at_start = clearance.get("listings_at_event_start") or 0
+    _post_1h  = clearance.get("listings_1h_post") or 0
+    _cov_hrs  = clearance.get("data_coverage_hours") or 0
+    _total    = clearance.get("total_listings_seen") or 0
+    _conf_score = round(
+        (0.40 if _at_start > 0 else 0.0)
+        + (0.30 if _post_1h  > 0 else 0.0)
+        + (0.20 if _cov_hrs > 48 else 0.15 if _cov_hrs > 24 else 0.10 if _cov_hrs > 12 else 0.05 if _cov_hrs > 6 else 0.0)
+        + (0.10 if _total > 500 else 0.0),
+        3,
+    )
+    if _conf_score >= 0.85:
+        _conf_label = "HIGH"
+    elif _conf_score >= 0.60:
+        _conf_label = "MEDIUM"
+    elif _conf_score >= 0.30:
+        _conf_label = "LOW"
+    else:
+        _conf_label = "INSUFFICIENT"
+
+    outcome["coverage_confidence_score"] = _conf_score
+    outcome["coverage_confidence_label"] = _conf_label
 
     # Persist to event_outcomes
     await db.execute(text("""
@@ -601,6 +628,7 @@ async def compute_event_outcome(event_id: int, db: AsyncSession) -> dict:
             repricing_frequency, seller_pressure_score, seller_strength_score,
             top_absorbed_sections, worst_absorbed_sections,
             data_coverage_hours, has_postshow_data, marketplaces_tracked,
+            coverage_confidence_score, coverage_confidence_label,
             computed_at
         ) VALUES (
             :event_id,
@@ -619,6 +647,7 @@ async def compute_event_outcome(event_id: int, db: AsyncSession) -> dict:
             :repricing_frequency, :seller_pressure_score, :seller_strength_score,
             CAST(:top_absorbed_sections AS jsonb), CAST(:worst_absorbed_sections AS jsonb),
             :data_coverage_hours, :has_postshow_data, :marketplaces_tracked,
+            :coverage_confidence_score, :coverage_confidence_label,
             NOW()
         )
         ON CONFLICT (event_id) DO UPDATE SET
@@ -656,6 +685,8 @@ async def compute_event_outcome(event_id: int, db: AsyncSession) -> dict:
             data_coverage_hours           = EXCLUDED.data_coverage_hours,
             has_postshow_data             = EXCLUDED.has_postshow_data,
             marketplaces_tracked          = EXCLUDED.marketplaces_tracked,
+            coverage_confidence_score     = EXCLUDED.coverage_confidence_score,
+            coverage_confidence_label     = EXCLUDED.coverage_confidence_label,
             computed_at                   = NOW()
     """), {
         "event_id": event_id,
@@ -693,6 +724,8 @@ async def compute_event_outcome(event_id: int, db: AsyncSession) -> dict:
         "data_coverage_hours":          clearance["data_coverage_hours"],
         "has_postshow_data":            clearance["has_postshow_data"],
         "marketplaces_tracked":         int(mp_count or 0),
+        "coverage_confidence_score":    _conf_score,
+        "coverage_confidence_label":    _conf_label,
     })
     await db.commit()
 
