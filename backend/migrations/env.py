@@ -14,6 +14,10 @@ if config.config_file_name is not None:
 # Override sqlalchemy.url from DATABASE_URL environment variable (Railway / production)
 database_url = os.environ.get("DATABASE_URL")
 if database_url:
+    # Railway injects postgresql:// — asyncpg requires postgresql+asyncpg://
+    database_url = database_url.replace("postgres://", "postgresql+asyncpg://", 1)
+    if "postgresql://" in database_url and "postgresql+asyncpg://" not in database_url:
+        database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
     config.set_main_option("sqlalchemy.url", database_url)
 
 import sys
