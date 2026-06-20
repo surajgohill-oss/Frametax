@@ -767,6 +767,354 @@ async def extract_tickpick_listings(event_id: str, url: str = ""):
     }
 
 
+@router.get("/stubhub-pagination-probe")
+async def stubhub_pagination_probe(event_id: str, url: str = ""):
+    """
+    Deep investigation of StubHub full inventory retrieval.
+    1. Fetches the event page HTML and extracts grid metadata (totalListings, pagination tokens, cursor).
+    2. Parses out any embedded API endpoint patterns (fetch/XHR URLs).
+    3. Attempts paginated fetches via multiple discovered parameter patterns.
+    4. Tries the StubHub internal inventory API with discovered tokens.
+    """
+    import httpx, re, json as _json
+
+    headers_html = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Referer": "https://www.google.com/",
+        "Cache-Control": "no-cache",
+    }
+    headers_api = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": f"https://www.stubhub.com/event/{event_id}/",
+        "Origin": "https://www.stubhub.com",
+    }
+
+    target_url = url or f"https://www.stubhub.com/event/{event_id}/"
+    result = {"event_id": event_id, "url": target_url, "steps": {}}
+
+    async with httpx.AsyncClient(follow_redirects=True, timeout=60.0) as client:
+        # Step 1: Fetch event page HTML
+        try:
+            resp = await client.get(target_url, headers=headers_html)
+            html = resp.text
+            result["steps"]["html_fetch"] = {"status": resp.status_code, "size": len(html)}
+        except Exception as exc:
+            result["steps"]["html_fetch"] = {"error": str(exc)}
+            return result
+
+        # Step 2: Extract grid data
+        grid_data = None
+        for chunk in html.split("</script>"):
+            if '"appName":"viagogo-event"' in chunk and '"grid"' in chunk:
+                start = chunk.rfind('{"appName":"viagogo-event"')
+                if start >= 0:
+                    try:
+                        grid_data = _json.loads(chunk[start:])
+                        break
+                    except Exception:
+                        pass
+
+        if not grid_data:
+            result["steps"]["grid_extract"] = {"error": "no grid found", "total_listings_re": re.findall(r'"totalListings"\s*:\s*(\d+)', html)}
+            return result
+
+        grid = grid_data.get("grid") or {}
+        items = grid.get("items") or []
+        result["steps"]["grid_extract"] = {
+            "items_in_page": len(items),
+            "total_listings": grid_data.get("totalListings"),
+            "grid_keys": list(grid.keys()),
+            "grid_data_keys": list(grid_data.keys()),
+        }
+
+        # Step 3: Check pagination metadata in grid
+        pagination_keys = {k: grid[k] for k in grid if any(x in k.lower() for x in ["page", "cursor", "token", "next", "total", "offset", "size", "limit", "more"])}
+        result["steps"]["pagination_meta"] = pagination_keys
+
+        # Step 4: Check for cursor/token in full grid_data
+        top_level_pagination = {k: grid_data[k] for k in grid_data if any(x in k.lower() for x in ["page", "cursor", "token", "next", "total", "offset", "size", "limit", "more", "sort", "filter"])}
+        result["steps"]["top_level_pagination"] = top_level_pagination
+
+        # Step 5: Extract API URLs embedded in page source
+        # Look for fetch() calls, XHR URLs, next-page API patterns
+        api_patterns = []
+        for pattern in [
+            r'https://www\.stubhub\.com/listingCatalog[^\'">\s]+',
+            r'https://api\.stubhub\.com/[^\'">\s]+',
+            r'/api/[^\'">\s]*listing[^\'">\s]+',
+            r'inventoryModule[^\'">\s]+',
+            r'selectionModule[^\'">\s]+',
+            r'["\']([^"\']+(?:catalog|listing|inventory|selection)[^"\']{10,})["\']',
+        ]:
+            found = re.findall(pattern, html)[:5]
+            if found:
+                api_patterns.extend(found[:3])
+        result["steps"]["embedded_api_patterns"] = list(set(api_patterns))[:10]
+
+        # Step 6: Look for page/offset parameters in the grid API call pattern
+        # StubHub typically uses: start=0&rows=N
+        # Try offset-based pagination with the Solr endpoint
+        solr_urls_to_try = [
+            (f"https://www.stubhub.com/listingCatalog/select?q=*:*&fq=event_id:{event_id}&rows=500&start=0&fl=listing_id,section,row,qty,current_price,all_in_price,listing_url&sort=current_price+asc&wt=json", "solr_500_start0"),
+            (f"https://www.stubhub.com/listingCatalog/select?q=*:*&fq=event_id:{event_id}&rows=200&start=0&wt=json", "solr_200_start0"),
+        ]
+        result["steps"]["api_probes"] = {}
+        for probe_url, label in solr_urls_to_try:
+            try:
+                r = await client.get(probe_url, headers=headers_api, timeout=15.0)
+                ct = r.headers.get("content-type", "")
+                is_json = "json" in ct
+                count = None
+                if is_json:
+                    try:
+                        d = r.json()
+                        count = (d.get("response") or {}).get("numFound") or len((d.get("response") or {}).get("docs") or [])
+                    except Exception:
+                        pass
+                result["steps"]["api_probes"][label] = {"status": r.status_code, "size": len(r.content), "is_json": is_json, "count": count, "preview": r.text[:200]}
+            except Exception as exc:
+                result["steps"]["api_probes"][label] = {"error": str(exc)[:80]}
+
+        # Step 7: Try the internal StubHub inventory API (found in page source of some events)
+        # Pattern: /event/{id}/inventoryModule/selection
+        internal_urls = [
+            f"https://www.stubhub.com/event/{event_id}/inventoryModule/selection?quantity=0&listingId=0&_source=grid",
+            f"https://www.stubhub.com/api/listings/v3?eventId={event_id}&rows=200&start=0",
+            f"https://www.stubhub.com/api/search/listings?eventId={event_id}&rows=200",
+        ]
+        result["steps"]["internal_api_probes"] = {}
+        for iurl in internal_urls:
+            label = iurl.split("/")[-1].split("?")[0] or iurl[30:60]
+            try:
+                r = await client.get(iurl, headers=headers_api, timeout=15.0)
+                is_json = "json" in r.headers.get("content-type", "")
+                count = None
+                if is_json:
+                    try:
+                        d = r.json()
+                        for key in ("listings", "listing", "docs", "data", "items"):
+                            v = d.get(key)
+                            if isinstance(v, list): count = len(v); break
+                    except Exception:
+                        pass
+                result["steps"]["internal_api_probes"][label] = {"url": iurl[:80], "status": r.status_code, "size": len(r.content), "is_json": is_json, "count": count, "preview": r.text[:300]}
+            except Exception as exc:
+                result["steps"]["internal_api_probes"][label] = {"url": iurl[:80], "error": str(exc)[:80]}
+
+        # Step 8: Try fetching with cursor-based pagination if any cursor found in grid
+        cursor = grid.get("nextCursor") or grid.get("cursor") or grid_data.get("nextCursor") or grid_data.get("pageToken")
+        result["steps"]["cursor_found"] = cursor
+
+        # Step 9: Try the full-page approach with different sort/page URL parameters
+        page2_urls = [
+            (f"{target_url}?sort=price&page=2", "page2_url_param"),
+            (f"https://www.stubhub.com/event/{event_id}/?start=10&rows=50", "start_10_rows_50"),
+        ]
+        result["steps"]["page2_probes"] = {}
+        for p2url, p2label in page2_urls:
+            try:
+                r = await client.get(p2url, headers=headers_html, timeout=20.0)
+                html2 = r.text
+                # Check if this page also has a grid
+                found_grid = '"appName":"viagogo-event"' in html2 and '"grid"' in html2
+                item_count2 = 0
+                if found_grid:
+                    for chunk in html2.split("</script>"):
+                        if '"appName":"viagogo-event"' in chunk and '"items"' in chunk:
+                            s2 = chunk.rfind('{"appName":"viagogo-event"')
+                            if s2 >= 0:
+                                try:
+                                    gd2 = _json.loads(chunk[s2:])
+                                    item_count2 = len((gd2.get("grid") or {}).get("items") or [])
+                                except Exception:
+                                    pass
+                            break
+                result["steps"]["page2_probes"][p2label] = {"status": r.status_code, "size": len(html2), "has_grid": found_grid, "items": item_count2}
+            except Exception as exc:
+                result["steps"]["page2_probes"][p2label] = {"error": str(exc)[:80]}
+
+    return result
+
+
+@router.get("/tickpick-full-probe")
+async def tickpick_full_probe(event_id: str, url: str = ""):
+    """
+    Exhaustive TickPick collection path investigation.
+    Tries every known data extraction path: API endpoints, SSR data, hydration JSON,
+    RSC payloads, mobile endpoints, GraphQL, embedded blobs, and alternate HTML routes.
+    """
+    import httpx, re, json as _json
+
+    headers_desktop = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Referer": "https://www.google.com/",
+    }
+    headers_mobile = {
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+        "Accept": "text/html,application/xhtml+xml",
+        "Accept-Language": "en-US,en;q=0.9",
+    }
+    headers_json = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": f"https://www.tickpick.com/buy-tickets/{event_id}/",
+        "Origin": "https://www.tickpick.com",
+    }
+
+    result = {"event_id": event_id, "probes": {}}
+
+    async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
+
+        # 1. Original JSON API
+        try:
+            r = await client.get(f"https://api.tickpick.com/1.0/listings/event/{event_id}?needidd=true", headers=headers_json)
+            count = None
+            if r.status_code == 200:
+                try: count = len(r.json().get("listing", []))
+                except Exception: pass
+            result["probes"]["api_v1_listings"] = {"status": r.status_code, "count": count, "preview": r.text[:200]}
+        except Exception as exc:
+            result["probes"]["api_v1_listings"] = {"error": str(exc)[:80]}
+
+        # 2. www.tickpick.com/api (internal)
+        for api_path in [
+            f"/api/listings/event/{event_id}",
+            f"/api/v1/listings/event/{event_id}",
+            f"/api/event/{event_id}/listings",
+        ]:
+            try:
+                r = await client.get(f"https://www.tickpick.com{api_path}", headers=headers_json, timeout=10.0)
+                result["probes"][f"www_api_{api_path.split('/')[2]}"] = {"status": r.status_code, "size": len(r.content), "preview": r.text[:200]}
+            except Exception as exc:
+                result["probes"][f"www_api{api_path[:20]}"] = {"error": str(exc)[:60]}
+
+        # 3. Next.js RSC (React Server Component) data endpoint
+        # Next.js 13+ apps expose /_next/data/{buildId}/... for SSR data
+        try:
+            # First get build ID from HTML
+            r_html = await client.get(f"https://www.tickpick.com/buy-tickets/{event_id}/", headers=headers_desktop, timeout=20.0)
+            html = r_html.text
+            result["probes"]["html_fetch"] = {"status": r_html.status_code, "size": len(html)}
+
+            build_id = None
+            m = re.search(r'"buildId"\s*:\s*"([^"]+)"', html)
+            if m:
+                build_id = m.group(1)
+
+            # Also look for RSC payload in HTML (self.__next_f.push patterns)
+            rsc_payloads = re.findall(r'self\.__next_f\.push\(\[.*?\]\)', html, re.DOTALL)
+            result["probes"]["rsc_payloads_count"] = len(rsc_payloads)
+            if rsc_payloads:
+                result["probes"]["rsc_sample"] = rsc_payloads[0][:300]
+
+            # Listing-related patterns in any format
+            all_numbers = re.findall(r'"p"\s*:\s*(\d{4,6})', html)[:20]  # TP price in cents
+            section_data = re.findall(r'"s"\s*:\s*"([A-Z0-9 ]{2,15})"', html)[:10]
+            listing_ids = re.findall(r'"id"\s*:\s*(\d{7,9})', html)[:10]
+            result["probes"]["html_listing_signals"] = {
+                "price_fields_p": all_numbers,
+                "section_fields_s": section_data,
+                "listing_ids": listing_ids,
+            }
+
+            # Check for hydration data chunks (Next.js app router embeds RSC as script chunks)
+            script_chunks = re.findall(r'<script[^>]*>([^<]{200,})</script>', html)
+            for chunk in script_chunks:
+                # Look for listing-shaped data: has "id" and "p" (price) and "s" (section)
+                if '"p":' in chunk and '"s":' in chunk and '"id":' in chunk and len(chunk) > 1000:
+                    result["probes"]["hydration_listing_chunk"] = {"size": len(chunk), "preview": chunk[:400]}
+                    break
+
+            # Build ID based Next.js data fetch
+            if build_id:
+                result["probes"]["build_id"] = build_id
+                nxt_url = f"https://www.tickpick.com/_next/data/{build_id}/buy-tickets/{event_id}.json"
+                try:
+                    r2 = await client.get(nxt_url, headers=headers_json, timeout=15.0)
+                    is_json = "json" in r2.headers.get("content-type", "")
+                    count2 = None
+                    if is_json and r2.status_code == 200:
+                        try:
+                            d2 = r2.json()
+                            pp = (d2.get("pageProps") or {})
+                            for key in ("listings", "listing", "initialListings"):
+                                v = pp.get(key)
+                                if isinstance(v, list): count2 = len(v); break
+                        except Exception:
+                            pass
+                    result["probes"]["nextjs_data_fetch"] = {"url": nxt_url[:80], "status": r2.status_code, "is_json": is_json, "count": count2, "preview": r2.text[:300]}
+                except Exception as exc:
+                    result["probes"]["nextjs_data_fetch"] = {"error": str(exc)[:80]}
+
+        except Exception as exc:
+            result["probes"]["html_phase"] = {"error": str(exc)[:100]}
+
+        # 4. Mobile app API endpoints
+        for mob_path in [
+            f"https://api.tickpick.com/1.0/listings/event/{event_id}?platform=ios",
+            f"https://api.tickpick.com/1.0/event/{event_id}",
+            f"https://api.tickpick.com/1.0/performances/event/{event_id}",
+        ]:
+            label = mob_path.split("/")[-1].split("?")[0]
+            try:
+                r = await client.get(mob_path, headers={**headers_json, "User-Agent": "TickPick/7.0.0 (iPhone; iOS 17.0; Scale/3.00)"}, timeout=10.0)
+                count = None
+                if r.status_code == 200:
+                    try:
+                        d = r.json()
+                        for k in ("listing", "listings", "data", "results"):
+                            v = d.get(k)
+                            if isinstance(v, list): count = len(v); break
+                    except Exception:
+                        pass
+                result["probes"][f"mobile_{label}"] = {"status": r.status_code, "size": len(r.content), "count": count, "preview": r.text[:200]}
+            except Exception as exc:
+                result["probes"][f"mobile_{label}"] = {"error": str(exc)[:60]}
+
+        # 5. GraphQL probe
+        try:
+            gql_r = await client.post(
+                "https://api.tickpick.com/graphql",
+                json={"query": f'{{ event(id: "{event_id}") {{ id listings {{ id price section row }} }} }}'},
+                headers={**headers_json, "Content-Type": "application/json"},
+                timeout=10.0,
+            )
+            result["probes"]["graphql"] = {"status": gql_r.status_code, "size": len(gql_r.content), "preview": gql_r.text[:300]}
+        except Exception as exc:
+            result["probes"]["graphql"] = {"error": str(exc)[:60]}
+
+        # 6. Slug-based HTML URL (if event has one)
+        try:
+            r_slug = await client.get(url or f"https://www.tickpick.com/buy-tickets/{event_id}/", headers=headers_mobile, timeout=20.0)
+            html_mob = r_slug.text
+            mob_prices = re.findall(r'"p"\s*:\s*(\d{4,6})', html_mob)[:20]
+            mob_sections = re.findall(r'"s"\s*:\s*"([A-Z0-9 ]{2,15})"', html_mob)[:10]
+            result["probes"]["mobile_html"] = {"status": r_slug.status_code, "size": len(html_mob), "price_p_fields": mob_prices, "section_s_fields": mob_sections}
+        except Exception as exc:
+            result["probes"]["mobile_html"] = {"error": str(exc)[:80]}
+
+        # 7. Try slug event URL if available
+        if url and "tickpick.com/buy-" in url and "buy-tickets" not in url:
+            try:
+                r_slug2 = await client.get(url, headers=headers_desktop, timeout=20.0)
+                html_slug2 = r_slug2.text
+                slug_prices = re.findall(r'"p"\s*:\s*(\d{4,6})', html_slug2)[:20]
+                result["probes"]["slug_url_html"] = {"status": r_slug2.status_code, "size": len(html_slug2), "price_p_fields": slug_prices}
+            except Exception as exc:
+                result["probes"]["slug_url_html"] = {"error": str(exc)[:80]}
+
+    return result
+
+
 @router.get("/extract-stubhub-grid-v2")
 async def extract_stubhub_grid_v2(event_id: str, url: str = ""):
     """Debug: try multiple regex patterns to find the viagogo-event script."""
