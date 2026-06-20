@@ -24,6 +24,7 @@ from app.calculators.jurisdiction_comparison import (
     TIER1_PROFILES,
     SECONDARY_PROFILES,
     ALL_PROFILES,
+    GAP_MATRIX,
     MarineSuitability,
     CrewDepth,
     FinancingFriction,
@@ -150,14 +151,14 @@ class TestMauritiusProfile:
     def mu(self):
         return TIER1_PROFILES["MU"]
 
-    def test_discovery_tier(self, mu):
-        assert mu.confidence_tier == "DISCOVERY"
+    def test_parsed_tier(self, mu):
+        assert mu.confidence_tier == "PARSED"
 
-    def test_no_base_rate(self, mu):
-        assert mu.base_rate is None, "Mauritius has no verified base rate"
+    def test_base_rate_35(self, mu):
+        assert mu.base_rate == 0.35, "Budget evidence sets rate at 35% (not yet verified from EDB statute)"
 
-    def test_no_max_rate(self, mu):
-        assert mu.max_rate is None
+    def test_max_rate_35(self, mu):
+        assert mu.max_rate == 0.35
 
     def test_no_cashflow_timing(self, mu):
         assert mu.cashflow_timing_weeks is None
@@ -177,8 +178,17 @@ class TestMauritiusProfile:
     def test_data_gaps_populated(self, mu):
         assert len(mu.data_gaps) >= 5
 
-    def test_vessel_marine_unknown(self, mu):
-        assert mu.vessel_marine_qualifies is None
+    def test_vessel_marine_confirmed(self, mu):
+        assert mu.vessel_marine_qualifies is True
+
+    def test_vat_not_recoverable(self, mu):
+        assert mu.vat_recoverable is False
+
+    def test_high_financing_friction(self, mu):
+        assert mu.financing_friction == FinancingFriction.HIGH
+
+    def test_atl_unknown(self, mu):
+        assert mu.atl_qualifies is None, "ATL scope unconfirmed from EDB source"
 
 
 class TestMaltaProfile:
@@ -327,3 +337,58 @@ class TestProfileIntegrity:
     def test_ireland_transferable(self):
         ie = SECONDARY_PROFILES["IE"]
         assert ie.is_transferable is True, "Section 481 is assignable to gap lender"
+
+
+# ---------------------------------------------------------------------------
+# GAP_MATRIX
+# ---------------------------------------------------------------------------
+
+TIER1_GAP_KEYS = {
+    "rate_verified", "atl_treatment", "foreign_labor", "vessel_marine",
+    "accommodation_per_diem", "vat_customs", "finance_timing", "grants_support",
+}
+
+
+class TestGapMatrix:
+    def test_all_tier1_codes_in_gap_matrix(self):
+        assert set(GAP_MATRIX.keys()) == TIER1_CODES
+
+    @pytest.mark.parametrize("code", list(TIER1_CODES))
+    def test_all_required_keys_present(self, code):
+        assert TIER1_GAP_KEYS.issubset(GAP_MATRIX[code].keys()), (
+            f"{code} gap matrix missing keys: {TIER1_GAP_KEYS - GAP_MATRIX[code].keys()}"
+        )
+
+    def test_mauritius_rate_not_verified(self):
+        assert GAP_MATRIX["MU"]["rate_verified"] is False
+
+    def test_mauritius_vessel_marine_confirmed(self):
+        assert GAP_MATRIX["MU"]["vessel_marine"] is True
+
+    def test_mauritius_vat_non_recoverable_noted(self):
+        assert "non_recoverable" in str(GAP_MATRIX["MU"]["vat_customs"])
+
+    def test_mauritius_atl_unknown(self):
+        assert GAP_MATRIX["MU"]["atl_treatment"] is None
+
+    def test_malta_vessel_confirmed(self):
+        assert GAP_MATRIX["MT"]["vessel_marine"] is True
+
+    def test_malta_atl_confirmed(self):
+        assert GAP_MATRIX["MT"]["atl_treatment"] is True
+
+    def test_greece_vessel_confirmed(self):
+        assert GAP_MATRIX["GR"]["vessel_marine"] is True
+
+    def test_greece_rate_not_verified(self):
+        assert GAP_MATRIX["GR"]["rate_verified"] is False
+
+    def test_cyprus_rate_not_verified(self):
+        assert GAP_MATRIX["CY"]["rate_verified"] is False
+
+    def test_no_tier1_has_verified_rate(self):
+        """All Tier 1 rates are PARSED or DISCOVERY — none fully verified from statute."""
+        for code in TIER1_CODES:
+            assert GAP_MATRIX[code]["rate_verified"] is False, (
+                f"{code}: rate_verified should be False until statute text reviewed"
+            )

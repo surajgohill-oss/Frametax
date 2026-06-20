@@ -219,21 +219,21 @@ _MAURITIUS = JurisdictionIncentiveProfile(
     jurisdiction_code="MU",
     jurisdiction_name="Mauritius",
     program_slug="mu_edb_incentive",
-    program_name="Mauritius EDB Production Incentive (Unverified)",
-    confidence_tier="DISCOVERY",
+    program_name="Mauritius EDB Production Incentive (Budget-Evidenced 35%)",
+    confidence_tier="PARSED",
     incentive_type="cash_rebate",
-    base_rate=None,
-    max_rate=None,
+    base_rate=0.35,
+    max_rate=0.35,
     is_refundable=None,
     is_transferable=None,
     annual_cap_local=None,
     min_spend_local=None,
     requires_cultural_test=False,
     atl_qualifies=None,
-    btl_qualifies=None,
+    btl_qualifies=True,
     vfx_qualifies=None,
     music_qualifies=None,
-    vessel_marine_qualifies=None,
+    vessel_marine_qualifies=True,
     resident_labor_uplift_available=False,
     cashflow_timing_weeks=None,
     marine_suitability=MarineSuitability.STRONG,
@@ -250,25 +250,34 @@ _MAURITIUS = JurisdictionIncentiveProfile(
     authority_name="Economic Development Board Mauritius (EDB) / Mauritius Film Development Corp.",
     authority_url_hint="edbmauritius.org",
     notes=(
-        "No verified structured film production incentive comparable to Malta or Greece. "
-        "Mauritius Film Development Corporation (MFDC) facilitates permits and locations; "
-        "it does not administer a confirmed cash rebate. Secondary sources reference a 30% rebate "
-        "but this is unverified from primary source. "
-        "Indian Ocean warm water, clear visibility — excellent for yacht-heavy and diving sequences. "
+        "PARSED tier: base rate of 35% inferred from production budget evidence "
+        "(budget line 'EDB Rebate at 35%: $(1,275,411)' applied to ~$3.64M QPE). "
+        "This rate has NOT been verified against EDB statute text or primary source documentation. "
+        "Promote to VERIFIED only after reviewing current EDB Film Production Incentive guidelines. "
+        "Vessel and marine costs (charter, safety boats, underwater equipment) included in "
+        "budget QPE per production team's Groups report — treated as qualifying BTL spend. "
+        "VAT: Mauritius 15% VAT is non-recoverable for foreign film productions "
+        "($92,439 confirmed embedded in gross budget; excluded from QPE). "
+        "ATL qualifying scope unknown — director/producer/cast fee treatment not confirmed. "
+        "Frogsquad (SA-based marine team): largest single QPE uncertainty; "
+        "routing through Mauritius SPV vs. offshore SA entity swings qualifying spend by ~$72K-$100K. "
+        "Finance cost on rebate receivable: $0 in budget but estimated $70K-$77K at 8%/9-month delay. "
+        "Indian Ocean warm water, clear visibility — excellent for yacht and diving sequences. "
         "Limited local film crew base: effectively a full import production. "
-        "Benchmark as a location, not as an incentive jurisdiction. "
-        "If production is currently domiciled in Mauritius for tax/entity reasons rather than "
-        "for an incentive, that distinction should be evaluated separately."
+        "SPV required to claim rebate — setup and compliance cost unquantified."
     ),
     data_gaps=[
-        "Existence and rate of any film production cash rebate not confirmed from primary source",
+        "Base rate of 35% not verified from EDB statute text — inferred from budget only",
+        "ATL qualifying scope (director, producer, cast fees) unknown",
+        "Frogsquad routing: SA offshore vs. Mauritius SPV — swings QPE by ~$72K-$100K",
+        "Accommodation and per diem qualifying treatment not confirmed",
         "WHT on international cast/crew payments unverified",
-        "VAT recoverability for foreign productions unverified",
         "Minimum spend threshold unknown",
         "Annual program budget/cap unknown",
-        "Cashflow timing unknown (no structured rebate confirmed)",
-        "ATL/BTL qualifying scope unknown",
-        "Vessel/marine explicit qualifying treatment unknown",
+        "Cashflow timing unknown — no confirmed processing SLA from EDB",
+        "Rebate assignability to gap lender not confirmed",
+        "Finance cost on rebate receivable not modeled in production budget",
+        "SPV setup and compliance cost not estimated",
     ],
 )
 
@@ -880,4 +889,57 @@ SECONDARY_PROFILES: dict[str, JurisdictionIncentiveProfile] = {
 ALL_PROFILES: dict[str, JurisdictionIncentiveProfile] = {
     **TIER1_PROFILES,
     **SECONDARY_PROFILES,
+}
+
+
+# ---------------------------------------------------------------------------
+# Tier 1 Gap Matrix (Mauritius vs Malta / Greece / Cyprus)
+#
+# Values: True = confirmed, False = confirmed-no, None = unknown/unverified,
+#         str = descriptive status note where boolean is insufficient.
+# Source tier: same as profile.confidence_tier.
+# Do not promote any cell to True without a primary-source citation.
+# ---------------------------------------------------------------------------
+
+GAP_MATRIX: dict[str, dict[str, object]] = {
+    "MU": {
+        "rate_verified": False,          # 35% from budget evidence only, not EDB statute
+        "atl_treatment": None,           # Director/producer/cast qualifying scope unknown
+        "foreign_labor": None,           # International crew routing rules unconfirmed
+        "vessel_marine": True,           # Confirmed in production budget QPE (Groups report)
+        "accommodation_per_diem": None,  # Mauritius per-diem qualifying treatment unconfirmed
+        "vat_customs": "15pct_non_recoverable",  # Confirmed: $92,439 embedded in gross budget
+        "finance_timing": None,          # No confirmed EDB processing SLA
+        "grants_support": None,          # Location/permit facilitation via MFDC; no confirmed grant
+    },
+    "MT": {
+        "rate_verified": False,          # 25%-40% from public MFC summary; statute text unverified
+        "atl_treatment": True,           # ATL explicitly eligible per MFC published guidelines
+        "foreign_labor": True,           # No restriction on imported crew BTL costs
+        "vessel_marine": True,           # Vessel charter and marine logistics explicitly qualify
+        "accommodation_per_diem": True,  # Qualifying Malta expenditure includes accommodation
+        "vat_customs": "recoverable_eu", # EU VAT registration available; recoverable
+        "finance_timing": "20_weeks_estimated",  # ~60 working days per MFC — not SLA-confirmed
+        "grants_support": None,          # No confirmed direct production grant separate from rebate
+    },
+    "GR": {
+        "rate_verified": False,          # 40% from Enterprise Greece summary; statute text unverified
+        "atl_treatment": True,           # ATL costs stated as qualifying in program overview
+        "foreign_labor": None,           # Qualifying scope for non-Greek crew costs unverified
+        "vessel_marine": True,           # Vessel and marine support stated as qualifying
+        "accommodation_per_diem": None,  # Accommodation qualifying scope not confirmed
+        "vat_customs": "recoverable_eu", # EU VAT registration available; recoverable
+        "finance_timing": "39_weeks_estimated",  # 9-12 month market reports; no official SLA
+        "grants_support": None,          # Annual allocation cap exists; competitive risk unquantified
+    },
+    "CY": {
+        "rate_verified": False,          # 35% from DISCOVERY sources; not verified from statute
+        "atl_treatment": None,           # ATL scope confirmed as eligible in profile but not from statute
+        "foreign_labor": None,           # Rules on international crew costs unconfirmed
+        "vessel_marine": True,           # Expected to qualify; not confirmed from program text
+        "accommodation_per_diem": None,  # Qualifying treatment unconfirmed
+        "vat_customs": "recoverable_eu", # EU VAT registration available; recoverable
+        "finance_timing": "26_weeks_estimated",  # Estimated only
+        "grants_support": None,          # No confirmed supplementary grant program identified
+    },
 }

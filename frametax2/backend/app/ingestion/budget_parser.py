@@ -163,6 +163,14 @@ _BTL_SECTION_RE = re.compile(
 )
 _GRAND_TOTAL_RE = re.compile(r"^Grand Total\s*$", re.IGNORECASE)
 
+# Lines that must never contribute to parsed spend totals:
+# rebate/credit/net-total rows are budget assumptions, not gross spend.
+_REBATE_EXCLUSION_RE = re.compile(
+    r"edb\s+rebate|tax\s+credit|net\s+total|rebate\s+at\s+\d|incentive\s+rebate"
+    r"|credit\s+at\s+\d|tax\s+rebate\s+at|film\s+rebate|incentive\s+line",
+    re.IGNORECASE,
+)
+
 
 def _is_film_budget_format(text: str) -> bool:
     """Return True if text looks like a film budget with account codes."""
@@ -217,6 +225,10 @@ def _parse_film_budget(
 
         while i < len(lines):
             line = lines[i]
+            # Rebate/credit/net-total lines are budget assumptions — skip entirely
+            if _REBATE_EXCLUSION_RE.search(line):
+                i += 1
+                continue
             m_inline = re.match(r"^(\d{2}-\d{2})\s+(.+)$", line)
             m_bare = re.match(r"^(\d{2}-\d{2})$", line)
 
@@ -382,6 +394,10 @@ def parse_budget_from_text(
         for line in page_text.splitlines():
             line = line.strip()
             if not line:
+                continue
+
+            # Skip rebate/credit/net-total lines — budget assumptions, not gross spend
+            if _REBATE_EXCLUSION_RE.search(line):
                 continue
 
             # Detect total-budget sentinel lines (skip, capture value if present)
