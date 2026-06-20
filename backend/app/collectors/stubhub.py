@@ -88,6 +88,9 @@ class StubHubCollector(BaseCollector):
         Primary fetch strategy: parse the 'viagogo-event' JSON blob embedded in StubHub's
         event page HTML. The page returns HTTP 200 from Railway IPs even though the Solr
         JSON API and Playwright XHR interception are blocked by DataDome.
+
+        The grid is paginated (10 items initial load). This captures the first page
+        which is enough to prove chain health; full inventory requires the XHR API.
         """
         client = await self._get_http_client(html_mode=True)
         try:
@@ -100,59 +103,70 @@ class StubHubCollector(BaseCollector):
             return None
 
         html = resp.text
-        # Find the <script> tag containing the viagogo-event JSON blob
-        # It always contains both "appName":"viagogo-event" and "grid"
-        script_match = re.search(
-            r'<script[^>]*>(\{"appName":"viagogo-event".*?)</script>',
-            html, re.DOTALL
-        )
-        if not script_match:
-            self.logger.warning("StubHub HTML: viagogo-event script not found (size=%d)", len(html))
+        # Split on </script> to find the chunk containing the viagogo-event grid blob.
+        # Regex fails on the 240KB script (lazy .* matches too broadly); split is reliable.
+        grid_data = None
+        for chunk in html.split("</script>"):
+            if '"appName":"viagogo-event"' in chunk and '"grid"' in chunk and '"items"' in chunk:
+                start = chunk.rfind('{"appName":"viagogo-event"')
+                if start >= 0:
+                    try:
+                        grid_data = json.loads(chunk[start:])
+                        break
+                    except Exception as exc:
+                        self.logger.warning("StubHub HTML: JSON parse error on grid chunk: %s", exc)
+                        await self.record_failure("stubhub_html_grid", "parse_error")
+                        return None
+
+        if grid_data is None:
+            self.logger.warning("StubHub HTML: viagogo-event grid script not found (size=%d)", len(html))
             await self.record_failure("stubhub_html_grid", "selector_failure")
             return None
 
-        try:
-            data = json.loads(script_match.group(1))
-        except Exception as exc:
-            self.logger.warning("StubHub HTML: JSON parse error: %s", exc)
-            await self.record_failure("stubhub_html_grid", "parse_error")
-            return None
+        items = (grid_data.get("grid") or {}).get("items", [])
+        total_listings = grid_data.get("totalListings", 0)
+        self.logger.info("StubHub HTML grid: items=%d totalListings=%s url=%s", len(items), total_listings, url)
 
-        items = (data.get("grid") or {}).get("items", [])
         if not items:
-            # Grid present but empty — truly no listings (sold out or pre-sale)
-            total = re.findall(r'"totalListings"\s*:\s*(\d+)', html)
-            self.logger.info("StubHub HTML grid: 0 items, totalListings=%s", total)
             return []
 
         return self._parse_grid_items(items, event_id)
 
     def _parse_grid_items(self, items: list, event_id: str) -> list[RawListing]:
+        """
+        Map StubHub HTML grid items to RawListing.
+        Confirmed field names from live response (2026-06-20):
+          id / listingId — listing identifier
+          section / sectionMapName — section string
+          row — row string
+          availableTickets — quantity (NOT quantity/qty)
+          rawPrice — numeric price in listing currency (confirmed present)
+          currentPrice — formatted string "$112" (NOT numeric)
+          formattedTotalPrice — all-in formatted string
+          vfsUrl — listing URL
+        """
         results = []
         for item in items:
             try:
-                raw_id = item.get("id") or item.get("listingId", "")
-                section = str(item.get("section") or item.get("sectionName") or "Unknown")
-                row = item.get("row") or item.get("rowName")
-                qty = int(item.get("quantity") or item.get("qty") or 1)
+                raw_id = item.get("listingId") or item.get("id") or ""
+                section = str(item.get("section") or item.get("sectionMapName") or "Unknown")
+                row = item.get("row") or item.get("rowContent")
+                qty = int(item.get("availableTickets") or item.get("quantity") or item.get("qty") or 1)
 
-                # Price fields: currentPrice (face), allInPrice (all-in)
-                price_raw = (
-                    item.get("currentPrice")
-                    or item.get("current_price")
-                    or item.get("price")
-                    or 0
-                )
-                all_in_raw = item.get("allInPrice") or item.get("all_in_price")
+                # rawPrice is numeric; currentPrice is formatted "$112"
+                price_raw = item.get("rawPrice") or item.get("price")
+                if price_raw is None:
+                    # Extract numeric from "$112" formatted string
+                    cp = str(item.get("currentPrice") or "0")
+                    price_raw = re.sub(r"[^\d.]", "", cp) or "0"
 
-                price = Decimal(str(price_raw)) if price_raw else None
-                all_in = Decimal(str(all_in_raw)) if all_in_raw else None
-
-                if not price or price <= 0:
+                price = Decimal(str(price_raw))
+                if price <= 0:
                     continue
 
                 listing_url = (
-                    item.get("listingUrl")
+                    item.get("vfsUrl")
+                    or item.get("listingUrl")
                     or item.get("listing_url")
                     or f"https://www.stubhub.com/event/{event_id}/"
                 )
@@ -163,7 +177,6 @@ class StubHubCollector(BaseCollector):
                     row=str(row) if row else None,
                     quantity=qty,
                     price=price,
-                    all_in_price=all_in,
                     listing_url=str(listing_url),
                     market_segment="secondary_resale",
                 ))
