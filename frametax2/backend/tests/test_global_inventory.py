@@ -456,3 +456,178 @@ class TestCustomInventory:
         jc = report.by_jurisdiction[0]
         assert "confirmed_rate" in jc.unknown_fields
         assert "processing_timeline" in jc.unknown_fields
+
+
+# ---------------------------------------------------------------------------
+# Batch 1 verification: official source acquisition (MU, MT, GR, CY)
+# ---------------------------------------------------------------------------
+
+class TestBatch1OfficialSources:
+    """
+    Verify results of June 2026 official source acquisition batch.
+    Only fields directly supported by official source text are promoted.
+    No program should be marked VERIFIED — core fields are still unresolved.
+    """
+
+    def _get(self, code: str) -> GlobalProgramEntry:
+        return next(p for p in ALL_PROGRAMS if p.jurisdiction_code == code)
+
+    # --- No premature VERIFIED promotion ---
+
+    def test_no_programs_verified(self):
+        verified = [p for p in ALL_PROGRAMS if p.confidence_tier == "VERIFIED"]
+        assert verified == [], (
+            f"Premature VERIFIED promotion: {[p.jurisdiction_code for p in verified]}"
+        )
+
+    def test_batch1_jurisdictions_not_verified(self):
+        for code in ("MU", "MT", "GR", "CY"):
+            p = self._get(code)
+            assert p.confidence_tier != "VERIFIED", \
+                f"{code} should not be VERIFIED — core fields still unresolved"
+
+    # --- Official source URLs ---
+
+    def test_mauritius_has_official_url(self):
+        mu = self._get("MU")
+        assert mu.source_url is not None
+        assert "edbmauritius.org" in mu.source_url
+
+    def test_malta_has_specific_rebate_page_url(self):
+        mt = self._get("MT")
+        assert mt.source_url is not None
+        assert "maltafilmcommission.com" in mt.source_url
+        assert "rebate" in mt.source_url.lower() or "incentive" in mt.source_url.lower()
+
+    def test_greece_has_enterprise_greece_url(self):
+        gr = self._get("GR")
+        assert gr.source_url is not None
+        assert "enterprisegreece.gov.gr" in gr.source_url
+
+    def test_cyprus_source_url_is_none(self):
+        # Official source not found during acquisition — must not have a guessed URL
+        cy = self._get("CY")
+        assert cy.source_url is None, \
+            "Cyprus source_url should be None — official source not confirmed"
+
+    def test_cyprus_source_title_notes_not_acquired(self):
+        cy = self._get("CY")
+        title_lower = cy.source_title.lower()
+        notes_lower = cy.notes.lower()
+        assert "not yet" in title_lower or "not found" in title_lower or \
+               "not yet" in notes_lower or "not found" in notes_lower or \
+               "source not" in title_lower or "source not" in notes_lower
+
+    # --- MU: max_rate updated from official source ---
+
+    def test_mauritius_max_rate_is_40pct(self):
+        mu = self._get("MU")
+        assert mu.max_rate == pytest.approx(0.40), \
+            "MU max_rate should be 0.40 — 'up to 40%' confirmed from EDB official page"
+
+    def test_mauritius_base_rate_unchanged(self):
+        # base_rate=0.35 from budget evidence; NOT yet confirmed from full PDF read
+        mu = self._get("MU")
+        assert mu.base_rate == pytest.approx(0.35)
+
+    def test_mauritius_requires_local_entity_updated(self):
+        # EDB confirms locally registered company required
+        mu = self._get("MU")
+        assert mu.requires_local_entity is True
+
+    def test_mauritius_foreign_crew_cap_in_notes(self):
+        mu = self._get("MU")
+        assert "40%" in mu.notes and ("foreign" in mu.notes.lower() or "crew" in mu.notes.lower())
+
+    # --- MU: unsupported fields remain UNKNOWN ---
+
+    def test_mauritius_atl_scope_still_unknown(self):
+        mu = self._get("MU")
+        assert "atl_qualifying_scope" in mu.unknown_fields
+
+    def test_mauritius_annual_cap_still_unknown(self):
+        mu = self._get("MU")
+        assert "annual_cap" in mu.unknown_fields
+
+    def test_mauritius_payment_timeline_still_unknown(self):
+        mu = self._get("MU")
+        assert "payment_timeline" in mu.unknown_fields
+
+    def test_mauritius_rebate_assignability_still_unknown(self):
+        mu = self._get("MU")
+        assert "rebate_assignability" in mu.unknown_fields
+
+    # --- MT: max rate confirmed ---
+
+    def test_malta_max_rate_confirmed_40(self):
+        mt = self._get("MT")
+        assert mt.max_rate == pytest.approx(0.40)
+
+    def test_malta_base_rate_confirmation_in_unknown_fields(self):
+        # base_rate could not be confirmed from page read (403 blocked)
+        mt = self._get("MT")
+        uf_joined = " ".join(mt.unknown_fields)
+        assert "base_rate" in uf_joined
+
+    def test_malta_uplift_thresholds_still_unknown(self):
+        mt = self._get("MT")
+        uf_joined = " ".join(mt.unknown_fields)
+        assert "uplift" in uf_joined
+
+    def test_malta_annual_cap_still_unknown(self):
+        mt = self._get("MT")
+        assert "annual_programme_allocation_cap" in mt.unknown_fields
+
+    def test_malta_processing_timeline_still_unknown(self):
+        mt = self._get("MT")
+        uf_joined = " ".join(mt.unknown_fields)
+        assert "processing_timeline" in uf_joined
+
+    # --- GR: official rate and authority confirmed ---
+
+    def test_greece_rate_40_confirmed(self):
+        gr = self._get("GR")
+        assert gr.base_rate == pytest.approx(0.40)
+        assert gr.max_rate == pytest.approx(0.40)
+
+    def test_greece_notes_mention_ekome(self):
+        gr = self._get("GR")
+        assert "EKOME" in gr.notes or "ekome" in gr.notes.lower()
+
+    def test_greece_notes_mention_stacking_cap(self):
+        gr = self._get("GR")
+        assert "50%" in gr.notes
+
+    def test_greece_annual_cap_still_unknown(self):
+        gr = self._get("GR")
+        assert "annual_allocation_cap_amount" in gr.unknown_fields
+
+    def test_greece_wht_still_unknown(self):
+        gr = self._get("GR")
+        assert "wht_on_international_cast_reduction" in gr.unknown_fields
+
+    def test_greece_processing_timeline_still_unknown(self):
+        gr = self._get("GR")
+        assert "confirmed_processing_timeline" in gr.unknown_fields
+
+    # --- CY: all fields still UNKNOWN ---
+
+    def test_cyprus_confirmed_rate_still_unknown(self):
+        cy = self._get("CY")
+        assert "confirmed_rate" in cy.unknown_fields
+
+    def test_cyprus_programme_active_status_unknown(self):
+        cy = self._get("CY")
+        assert "programme_active_status" in cy.unknown_fields
+
+    def test_cyprus_official_url_unknown(self):
+        cy = self._get("CY")
+        assert "official_programme_url" in cy.unknown_fields
+
+    def test_cyprus_processing_timeline_still_unknown(self):
+        cy = self._get("CY")
+        assert "processing_timeline" in cy.unknown_fields
+
+    def test_cyprus_is_still_discovery(self):
+        cy = self._get("CY")
+        assert cy.confidence_tier == "DISCOVERY"

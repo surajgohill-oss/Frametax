@@ -170,19 +170,24 @@ ALL_PROGRAMS: list[GlobalProgramEntry] = [
         requires_cultural_test=False,
         requires_local_entity=False,
         confidence_tier="PARSED",
-        source_title="Malta Film Commission Rebate Programme Guidelines",
-        source_url="https://maltafilmcommission.com/rebate",
+        source_title="Malta Film Commission — Cash Rebate Incentives for the Audiovisual Industry (Official Programme Page)",
+        source_url="https://maltafilmcommission.com/malta-cash-rebate-incentives-for-the-audiovisual-industry/",
         effective_from="2022-01-01",
         notes=(
-            "Base 25%, uplifted to 40% on Maltese content/digital platforms uplift. "
-            "All ATL and BTL qualifying. Vessel/marine qualifying. No cultural test. "
-            "MFS water tank available."
+            "Max rate 40% confirmed from official MFC programme page. "
+            "Base rate 25% from prior market review; base_rate_confirmation required against 2024 updated guidelines "
+            "(MFC issued updated guidelines in 2024 per NAO audit report Nov-2024). "
+            "All ATL and BTL qualifying per market knowledge. Vessel/marine qualifying. No cultural test. "
+            "MFS 750,000-gal outdoor water tank available. "
+            "Official source: maltafilmcommission.com/malta-cash-rebate-incentives-for-the-audiovisual-industry/"
         ),
         unknown_fields=[
-            "exact_uplift_thresholds",
+            "base_rate_confirmation_vs_2024_guidelines",
+            "exact_uplift_thresholds_and_conditions",
             "annual_programme_allocation_cap",
             "rebate_assignability_to_gap_lender",
             "confirmed_processing_timeline",
+            "foreign_crew_qualifying_cap",
         ],
     ),
     GlobalProgramEntry(
@@ -199,12 +204,19 @@ ALL_PROGRAMS: list[GlobalProgramEntry] = [
         requires_cultural_test=False,
         requires_local_entity=False,
         confidence_tier="PARSED",
-        source_title="Enterprise Greece — Film Investment Office",
-        source_url="https://enterprisegreece.gov.gr",
+        source_title="Enterprise Greece — Audiovisual Productions (Official Investment Promotion Page)",
+        source_url="https://www.enterprisegreece.gov.gr/en/invest-in-greece/sectors-for-growth/audiovisual-productions",
         effective_from="2020-01-01",
         notes=(
-            "40% on qualifying Greek expenditure. ATL and BTL including marine qualifying. "
-            "Processing 9-12 months per market reports."
+            "40% cash rebate confirmed from official Enterprise Greece audiovisual page "
+            "(rate raised from 35% to 40%). "
+            "Administered jointly by EKOME (National Centre of Audiovisual Media and Communication) "
+            "and Enterprise Greece. "
+            "Eligible: feature films, TV series, documentaries, animation, digital games. "
+            "Stacking with other public incentives allowed up to 50% total of production cost. "
+            "Also offers 30% tax relief option as alternative mechanism. "
+            "Additional source: ekome.media. "
+            "Processing 9-12 months per market reports (not yet confirmed from official source)."
         ),
         unknown_fields=[
             "annual_allocation_cap_amount",
@@ -212,6 +224,8 @@ ALL_PROGRAMS: list[GlobalProgramEntry] = [
             "rebate_assignability_to_financier",
             "confirmed_processing_timeline",
             "foreign_crew_local_entity_requirements",
+            "atl_qualifying_scope_confirmed",
+            "min_spend_exact_eur_threshold_confirmed",
         ],
     ),
     GlobalProgramEntry(
@@ -228,16 +242,22 @@ ALL_PROGRAMS: list[GlobalProgramEntry] = [
         requires_cultural_test=False,
         requires_local_entity=None,
         confidence_tier="DISCOVERY",
-        source_title="CIPA / Deputy Ministry of Tourism — Film Production Rebate [NOT YET ACQUIRED]",
-        source_url="https://cipa.org.cy",
+        source_title="CIPA / Deputy Ministry of Tourism — Film Production Rebate [SOURCE NOT YET LOCATED]",
+        source_url=None,
         effective_from=None,
         notes=(
-            "35% rate assumed from DISCOVERY sources. Programme run jointly by CIPA and "
-            "Deputy Ministry of Tourism. Cyprus 12.5% corporate tax useful for "
-            "co-production entity domicile."
+            "35% rate assumed from DISCOVERY sources — not found in official source search. "
+            "Source acquisition attempted: visitcyprus.com (returned tourism incentives only, "
+            "not film production rebate); cipa.org.cy (not fetched). "
+            "Programme reportedly run jointly by CIPA and Deputy Ministry of Tourism. "
+            "Cyprus 12.5% corporate tax useful for co-production entity domicile independent "
+            "of whether film production rebate is available. "
+            "PRIORITY: Acquire primary source from Cyprus Film Commission (filmcy.org or "
+            "cipa.org.cy) before using for any budget modelling."
         ),
         unknown_fields=[
             "confirmed_rate",
+            "official_programme_url",
             "atl_qualifying_scope",
             "foreign_crew_qualifying_treatment",
             "accommodation_per_diem_qualifying",
@@ -245,33 +265,44 @@ ALL_PROGRAMS: list[GlobalProgramEntry] = [
             "annual_cap",
             "rebate_assignability",
             "processing_timeline",
+            "programme_active_status",
         ],
     ),
     GlobalProgramEntry(
         jurisdiction_code="MU",
         jurisdiction_name="Mauritius",
-        program_name="Mauritius EDB Film Production Incentive",
+        program_name="Mauritius EDB Film Rebate Scheme",
         program_type="cash_rebate",
         base_rate=0.35,
-        max_rate=0.35,
+        max_rate=0.40,
         is_refundable=True,
         is_transferable=None,
         min_spend_usd=None,
         annual_cap_usd=None,
         requires_cultural_test=None,
-        requires_local_entity=None,
+        requires_local_entity=True,
         confidence_tier="PARSED",
-        source_title="EDB Mauritius — Production Budget Evidence (The Little Utopia, June 2025)",
-        source_url=None,
+        source_title="EDB Mauritius — Film Rebate Scheme (Official EDB Programme Page)",
+        source_url="https://www.edbmauritius.org/schemes/film-rebate-scheme/",
         effective_from=None,
         notes=(
-            "35% rate evidenced from production budget; not yet verified against EDB primary "
-            "source document. All BTL qualifying assumed. ATL qualifying unknown. "
-            "Marine/vessel qualifying via MFDC."
+            "Official EDB Mauritius programme page confirms: 'A cash rebate of up to 40% for "
+            "high end Feature film and TV series is reimbursed to eligible film producers on "
+            "all Qualifying Production Expenditure (QPE) incurred and spent in Mauritius.' "
+            "max_rate updated to 0.40 from official source. "
+            "base_rate=0.35 retained from production budget evidence pending full PDF review. "
+            "Eligible productions confirmed: Feature Film, Commercials, TV series/programmes, "
+            "documentary programmes, Music videos, dubbing. "
+            "Foreign crew/cast cap confirmed: total remuneration to foreign cast and crew "
+            "shall not exceed 40% of total Mauritius production budget; "
+            "rebate not applicable to remuneration exceeding this 40% threshold. "
+            "Locally registered company required (bank account with Mauritius commercial bank). "
+            "QPE full definition requires reviewing PDF guidelines: "
+            "https://edbmauritius.org/wp-content/uploads/2022/10/Guideline-Online-Application-FRS.pdf"
         ),
         unknown_fields=[
+            "base_rate_exact_tiering_by_production_type",
             "atl_qualifying_scope",
-            "foreign_crew_treatment",
             "accommodation_per_diem_qualifying",
             "minimum_spend_threshold",
             "annual_cap",
