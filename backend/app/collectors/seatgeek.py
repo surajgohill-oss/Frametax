@@ -129,7 +129,7 @@ class SeatGeekCollector(BaseCollector):
                 browser = await p.chromium.connect_over_cdp(cdp_url)
                 context = browser.contexts[0] if browser.contexts else await browser.new_context()
             else:
-                context = await p.chromium.launch_persistent_context(str(self._session_path), headless=not self.debug_mode, args=["--no-sandbox"])
+                context = await p.chromium.launch_persistent_context(str(self._session_path), headless=not self.debug_mode, args=["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"])
             page = await context.new_page()
             self._current_page = page
             async def intercept(response):
