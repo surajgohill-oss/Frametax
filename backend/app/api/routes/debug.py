@@ -440,3 +440,90 @@ async def import_history_agg(payload: dict, db: AsyncSession = Depends(get_db)):
 
     await db.commit()
     return {"inserted": inserted, "skipped": skipped, "total": len(rows)}
+
+
+@router.get("/probe-marketplace")
+async def probe_marketplace(marketplace: str, event_id: str, url: str = ""):
+    """
+    Probe a marketplace endpoint from Railway's IP with multiple strategies.
+    Returns raw status + body size for each strategy so we can identify what works.
+    """
+    import httpx
+    results = {}
+
+    headers_base = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+    }
+
+    async with httpx.AsyncClient(follow_redirects=True, timeout=15.0) as client:
+        if marketplace == "stubhub":
+            probes = [
+                # 1. Solr API with proper headers
+                ("solr_json", "GET", f"https://www.stubhub.com/listingCatalog/select?q=*:*&fq=event_id:{event_id}&rows=5&wt=json",
+                 {**headers_base, "Referer": "https://www.stubhub.com/", "Origin": "https://www.stubhub.com"}),
+                # 2. StubHub internal listings API
+                ("internal_listings", "GET", f"https://www.stubhub.com/api/search/listings?eventId={event_id}&rows=5",
+                 {**headers_base, "Referer": f"https://www.stubhub.com/event/{event_id}/"}),
+                # 3. StubHub mobile API
+                ("mobile_api", "GET", f"https://m.stubhub.com/api/search/listings?eventId={event_id}&rows=5",
+                 {**headers_base, "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1"}),
+                # 4. StubHub catalog endpoint
+                ("catalog_v2", "GET", f"https://api.stubhub.com/sellers/search/events/v3?id={event_id}",
+                 {**headers_base, "Referer": "https://www.stubhub.com/"}),
+                # 5. Alternative JSON endpoint
+                ("alt_json", "GET", f"https://www.stubhub.com/event/{event_id}/inventoryModule/selection?quantity=2&listingId=0",
+                 {**headers_base, "Referer": f"https://www.stubhub.com/event/{event_id}/"}),
+                # 6. Event page HTML (check if we get real page or bot wall)
+                ("event_html", "GET", url or f"https://www.stubhub.com/event/{event_id}/",
+                 {**headers_base, "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"}),
+            ]
+        elif marketplace == "tickpick":
+            probes = [
+                # 1. Original API
+                ("api_v1", "GET", f"https://api.tickpick.com/1.0/listings/event/{event_id}?needidd=true", headers_base),
+                # 2. www subdomain
+                ("www_api", "GET", f"https://www.tickpick.com/api/listings/event/{event_id}", headers_base),
+                # 3. TickPick internal event page HTML
+                ("event_html", "GET", url or f"https://www.tickpick.com/buy-tickets/{event_id}/",
+                 {**headers_base, "Accept": "text/html,application/xhtml+xml"}),
+                # 4. TickPick mobile
+                ("mobile", "GET", f"https://www.tickpick.com/buy-tickets/{event_id}/",
+                 {**headers_base, "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1"}),
+                # 5. TickPick performers search
+                ("search", "GET", f"https://api.tickpick.com/1.0/performances/event/{event_id}", headers_base),
+            ]
+        else:
+            return {"error": f"Unknown marketplace: {marketplace}"}
+
+        for name, method, probe_url, hdrs in probes:
+            try:
+                resp = await client.request(method, probe_url, headers=hdrs)
+                body = resp.text[:500]
+                is_json = False
+                item_count = None
+                try:
+                    parsed = resp.json()
+                    is_json = True
+                    # Try to count items
+                    for key in ("docs", "listings", "listing", "events", "data", "results"):
+                        val = parsed.get(key) or (parsed.get("response", {}) or {}).get(key)
+                        if isinstance(val, list):
+                            item_count = len(val)
+                            break
+                except Exception:
+                    pass
+                results[name] = {
+                    "url": probe_url[:80],
+                    "status": resp.status_code,
+                    "size": len(resp.content),
+                    "is_json": is_json,
+                    "item_count": item_count,
+                    "preview": body[:200],
+                }
+            except Exception as exc:
+                results[name] = {"url": probe_url[:80], "error": str(exc)[:100]}
+
+    return results
