@@ -128,6 +128,16 @@ class CompensationType(str, enum.Enum):
     REINVESTMENT = "reinvestment"
 
 
+class ContributionType(str, enum.Enum):
+    CASH = "cash"
+    DEFERRED = "deferred"
+    EQUITY = "equity"
+    IN_KIND = "in_kind"
+    SPONSORSHIP = "sponsorship"
+    GOVERNMENT_SUPPORT = "government_support"
+    VENDOR_FINANCING = "vendor_financing"
+
+
 class DocumentType(str, enum.Enum):
     BUDGET = "budget"
     SCREENPLAY = "screenplay"

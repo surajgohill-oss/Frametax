@@ -32,3 +32,4 @@ class Project(Base):
     budget_documents: Mapped[list["BudgetDocument"]] = relationship(back_populates="project")
     screenplay_documents: Mapped[list["ScreenplayDocument"]] = relationship(back_populates="project")
     production_structures: Mapped[list["ProductionStructure"]] = relationship(back_populates="project")
+    contributions: Mapped[list["ProductionContribution"]] = relationship(back_populates="project")
