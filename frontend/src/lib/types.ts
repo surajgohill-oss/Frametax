@@ -31,6 +31,7 @@ export interface EventSummary {
   };
   inventory: {
     total_listings: number;
+    fresh_total_listings?: number;
     total_tickets: number;
   };
   history_hours?: number | null;
@@ -43,7 +44,7 @@ export interface EventsListResponse {
 
 // ── /api/events/{id} ──────────────────────────────────────────────────────────
 export interface MarketplaceFreshness {
-  freshness_status: "fresh" | "late" | "stale";
+  freshness_status: "fresh" | "late" | "stale" | "dead";
   last_success_at: string | null;
   age_minutes: number | null;
   consecutive_failures: number;
@@ -52,7 +53,7 @@ export interface MarketplaceFreshness {
 export interface TrackedEventEntry {
   marketplace_slug: string;
   external_url: string | null;
-  freshness_status: "fresh" | "late" | "stale";
+  freshness_status: "fresh" | "late" | "stale" | "dead";
   last_success_at: string | null;
   is_active: boolean;
 }
@@ -102,6 +103,21 @@ export interface BaselineResponse {
   per_marketplace: MarketplaceBaseline[];
 }
 
+// ── /api/events/{id}/alerts ──────────────────────────────────────────────────
+export interface AlertRecord {
+  type: string;
+  severity: "RED" | "YELLOW";
+  marketplace: string | null;
+  message: string;
+}
+
+export interface AlertResponse {
+  event_id: number;
+  alert_count: number;
+  has_critical: boolean;
+  alerts: AlertRecord[];
+}
+
 // ── /api/intelligence/events/{id}/hero ────────────────────────────────────────
 export interface HeroResponse {
   event_id: number;
@@ -123,6 +139,7 @@ export interface HeroResponse {
   };
   inventory: {
     total_listings: number;
+    fresh_total_listings?: number;
     total_tickets: number;
   };
   market: {

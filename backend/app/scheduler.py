@@ -2,6 +2,7 @@ import asyncio
 import collections
 import logging
 import os
+import random
 import socket
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -26,6 +27,25 @@ settings = get_settings()
 # ── Heartbeat counter ─────────────────────────────────────────────────────────
 _jobs_ran_total: int = 0
 _HEARTBEAT_INTERVAL = 10  # write to DB every N poll ticks
+
+# ── Poll concurrency limiter ───────────────────────────────────────────────────
+# Global cap: max concurrent per-event poll tasks. With collectors running
+# sequentially (not gathered), each task holds at most 2 DB sessions at once.
+# 8 × 2 = 16 peak connections — well within pool_size=10 + max_overflow=20.
+_POLL_SEMAPHORE = asyncio.Semaphore(8)
+
+# ── Per-marketplace concurrency caps ─────────────────────────────────────────
+# Prevent burst against a single domain. Applied inside _run_collector_for_event.
+# SeatGeek = 1 (effectively rate-limited; classification-only intent).
+_MP_SEMAPHORES: dict[str, asyncio.Semaphore] = {
+    "stubhub":      asyncio.Semaphore(2),
+    "tickpick":     asyncio.Semaphore(3),
+    "gametime":     asyncio.Semaphore(2),
+    "vividseats":   asyncio.Semaphore(2),
+    "ticketmaster": asyncio.Semaphore(2),
+    "seatgeek":     asyncio.Semaphore(1),
+}
+_MP_SEMAPHORE_DEFAULT = asyncio.Semaphore(2)
 
 # ── Reliability ring buffer ────────────────────────────────────────────────────
 # Stores last 50 scheduler/task exceptions in memory. Exposed via
@@ -378,34 +398,52 @@ async def _check_due_events():
             )
 
         if due:
+            # Deduplicate by event_id: one poll task per event per cycle.
+            # run_poll_for_tracked_event dispatches to ALL collectors regardless
+            # of which TE triggers it, so firing 6 tasks per event is pure waste
+            # and causes O(n²) DB session explosion.
+            seen_event_ids: set[int] = set()
+            deduplicated: list[TrackedEvent] = []
+            for te in due:
+                if te.event_id not in seen_event_ids:
+                    seen_event_ids.add(te.event_id)
+                    deduplicated.append(te)
+
+            skipped = len(due) - len(deduplicated)
             logger.info(
-                "STAGE_GATE: %d tracked_event(s) due for polling — %s",
-                len(due),
-                [
-                    f"te={te.id} event={te.event_id} mp={te.marketplace_id} "
-                    f"eid={te.external_event_id!r}"
-                    for te in due
-                ],
+                "STAGE_GATE: %d tracked_event(s) due → %d unique events dispatched "
+                "(%d duplicate marketplace TEs suppressed)",
+                len(due), len(deduplicated), skipped,
             )
 
-    for te in due:
-        asyncio.create_task(_poll_with_reliability_tracking(te.id))
+    # Stagger task starts: 0–2s random jitter per task to avoid simultaneous
+    # scraper launches against multiple domains at the exact same moment.
+    for i, te in enumerate(deduplicated):
+        jitter = random.uniform(0.0, min(2.0, 0.15 * i))
+        asyncio.create_task(_jittered_poll(te.id, jitter))
+
+
+async def _jittered_poll(te_id: int, delay_s: float) -> None:
+    if delay_s > 0:
+        await asyncio.sleep(delay_s)
+    await _poll_with_reliability_tracking(te_id)
 
 
 async def _poll_with_reliability_tracking(tracked_event_id: int) -> None:
     """Wraps run_poll_for_tracked_event so exceptions are recorded in the ring buffer."""
-    try:
-        await run_poll_for_tracked_event(tracked_event_id)
-        _record_scheduler_success()
-    except Exception as exc:
-        _record_scheduler_error(exc, f"run_poll_for_tracked_event(te_id={tracked_event_id})")
-        # Fire RED alert only for crash-class errors (not routine collector failures)
-        sig = f"{type(exc).__name__}: {str(exc)[:80]}"
-        if not any(kw in str(exc) for kw in ("unresolved_event_id", "Errno 11", "Timeout")):
-            await _fire_red_alert(
-                "SCHEDULER_CRASH",
-                f"Unexpected scheduler crash on te_id={tracked_event_id}: {sig}",
-            )
+    async with _POLL_SEMAPHORE:
+        try:
+            await run_poll_for_tracked_event(tracked_event_id)
+            _record_scheduler_success()
+        except Exception as exc:
+            _record_scheduler_error(exc, f"run_poll_for_tracked_event(te_id={tracked_event_id})")
+            # Fire RED alert only for crash-class errors (not routine collector failures)
+            sig = f"{type(exc).__name__}: {str(exc)[:80]}"
+            if not any(kw in str(exc) for kw in ("unresolved_event_id", "Errno 11", "Timeout")):
+                await _fire_red_alert(
+                    "SCHEDULER_CRASH",
+                    f"Unexpected scheduler crash on te_id={tracked_event_id}: {sig}",
+                )
 
 
 # ── Status + lifecycle updater ─────────────────────────────────────────────────
@@ -521,29 +559,50 @@ async def run_poll_for_tracked_event(tracked_event_id: int):
                 event.event_date, te.consecutive_zero_inventory_count
             )
 
-        te.last_polled_at = datetime.utcnow()
+        now_ts = datetime.utcnow()
+        next_poll = now_ts + timedelta(minutes=interval)
+        te.last_polled_at = now_ts
         te.poll_interval_minutes = interval
-        te.next_poll_at = datetime.utcnow() + timedelta(minutes=interval)
+        te.next_poll_at = next_poll
+
+        # Bulk-update ALL marketplace TEs for this event so the deduplication in
+        # _check_due_events is durable: sibling TEs won't become due again next tick.
+        await db.execute(
+            update(TrackedEvent)
+            .where(
+                TrackedEvent.event_id == te.event_id,
+                TrackedEvent.is_active == True,
+            )
+            .values(next_poll_at=next_poll, poll_interval_minutes=interval)
+        )
         await db.commit()
+        event_id_for_log = te.event_id
 
     from app.collectors.registry import COLLECTOR_REGISTRY
     collector_slugs = list(COLLECTOR_REGISTRY.keys())
     event_title = event.title if event else str(te.event_id)
     logger.info(
-        "POLLING: event_id=%d '%s' dispatching to %d collector(s): [%s]",
+        "POLLING: event_id=%d '%s' dispatching to %d collector(s) sequentially: [%s]",
         te.event_id, event_title, len(collector_slugs), ", ".join(collector_slugs),
     )
-    results = await asyncio.gather(
-        *[_run_collector_for_event(slug, te, event) for slug in collector_slugs],
-        return_exceptions=True,
-    )
-    for slug, r in zip(collector_slugs, results):
-        if isinstance(r, BaseException):
+
+    # Run collectors sequentially with per-marketplace semaphores and jitter.
+    # Replaces asyncio.gather() which caused concurrent DB session explosion
+    # (6 collectors × 2 sessions each = 12 sessions per outer task × 8 concurrent = 96).
+    # Sequential execution: at most 2 DB sessions open at any time per task.
+    for slug in collector_slugs:
+        try:
+            mp_sem = _MP_SEMAPHORES.get(slug, _MP_SEMAPHORE_DEFAULT)
+            async with mp_sem:
+                await _run_collector_for_event(slug, te, event)
+        except Exception as exc:
             logger.error(
                 "COLLECTOR_FATAL: slug=%s event_id=%d exc_type=%s — %s",
-                slug, te.event_id, type(r).__name__, r,
-                exc_info=r,
+                slug, te.event_id, type(exc).__name__, exc,
+                exc_info=exc,
             )
+        # Jitter between collectors: spread requests across different domains
+        await asyncio.sleep(random.uniform(0.1, 0.5))
 
 
 async def _run_collector_for_event(collector_slug: str, source_te: TrackedEvent, event):

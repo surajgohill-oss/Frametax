@@ -594,6 +594,8 @@ export default function EventDetailPage() {
   const id       = Number(params.id);
   const [histWindow, setHistWindow] = useState<HistoryWindow>("7d");
   const [showFollowPanel, setShowFollowPanel] = useState(false);
+  const [activeTab, setActiveTab] = useState<"Overview" | "Sections" | "Venue Intel">("Overview");
+  const [diagOpen, setDiagOpen] = useState(false);
   const followRef = useRef<HTMLDivElement>(null);
 
   const [eventMeta, setEventMeta] = useState<EventMeta | null>(null);
@@ -605,6 +607,7 @@ export default function EventDetailPage() {
   const [listings, setListings]   = useState<Listing[] | null>(null);
   const [baseline, setBaseline]   = useState<BaselineResponse | null>(null);
   const [snapshot, setSnapshot]   = useState<EventSnapshotResponse | null>(null);
+  const [alerts, setAlerts]       = useState<import("@/lib/types").AlertResponse | null>(null);
   const [loadingAll, setLoadingAll]         = useState(true);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
@@ -641,6 +644,7 @@ export default function EventDetailPage() {
       api.events.listings(id, 10).then(setListings),
       api.analytics.baseline(id).then(setBaseline).catch(() => {}),
       api.events.snapshot(id).then(setSnapshot).catch(() => {}),
+      api.events.alerts(id).then(setAlerts).catch(() => {}),
     ]).finally(() => setLoadingAll(false));
   }, [id]);
 
@@ -673,7 +677,8 @@ export default function EventDetailPage() {
 
   const { headline, bullets } = buildSignalReason(action, hero);
   const pct24h      = hero?.changes?.h24?.price_delta_pct ?? null;
-  const invDelta24  = hero?.changes?.h24?.inventory_delta ?? null;
+  // Use canonical baseline for inventory delta (accurate) instead of hero listing_snapshots (fallback bug)
+  const invDelta24  = baseline?.deltas_24h?.raw_listings?.absolute ?? hero?.changes?.h24?.inventory_delta ?? null;
   const marketplaces = (market?.marketplaces ?? []).sort((a, b) => (a.low_ask ?? 9999) - (b.low_ask ?? 9999));
 
   const sincePct = (() => {
@@ -683,6 +688,18 @@ export default function EventDetailPage() {
     if (!first || !last) return null;
     return ((last - first) / first) * 100;
   })();
+
+  // Freshness label for Section 2
+  const freshLabel = (() => {
+    const entries = Object.values(eventMeta?.marketplace_freshness ?? {});
+    if (!entries.length) return null;
+    const ages = entries.map((e: unknown) => ((e as { age_minutes?: number }).age_minutes ?? 0)).filter(Boolean);
+    if (!ages.length) return null;
+    const maxAge = Math.max(...ages);
+    return maxAge < 60 ? `${maxAge} minutes ago` : `${Math.round(maxAge / 60)} hours ago`;
+  })();
+
+  const MP_SLUGS: Array<keyof typeof MP_META> = ["stubhub", "tickpick", "gametime", "vividseats"];
 
   // ─── Skeleton ────────────────────────────────────────────────────────────────
   if (loadingAll && !hero && !eventMeta) {
@@ -700,9 +717,9 @@ export default function EventDetailPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-5">
+    <div className="max-w-7xl mx-auto space-y-6">
 
-      {/* UI BUILD MARKER — remove after screenshot verification */}
+      {/* UI BUILD MARKER */}
       <div className="fixed top-2 right-2 z-50 text-[9px] font-mono bg-amber-400 text-black px-2 py-0.5 rounded opacity-80 pointer-events-none select-none">
         UI BUILD {new Date().toISOString().slice(0,16).replace("T"," ")}
       </div>
@@ -712,67 +729,47 @@ export default function EventDetailPage() {
         <Link href="/" className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors">
           <ArrowLeft size={12} /> Active Markets
         </Link>
-
         <div className="flex items-center gap-1.5 flex-wrap">
-          {/* Watch */}
           <button onClick={() => toggleWatch(id)}
             className={cn("inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-all",
               isWatched ? "border-blue-500/40 bg-blue-500/10 text-blue-400" : "border-white/10 bg-white/5 text-slate-500 hover:text-slate-300 hover:border-white/20")}>
             <Bookmark size={11} className={isWatched ? "fill-blue-400" : ""} />
             {isWatched ? "Watching" : "Watch"}
           </button>
-
-          {/* Follow (functional dropdown) */}
           {artist && (
             <div className="relative" ref={followRef}>
-              <button
-                onClick={() => setShowFollowPanel(v => !v)}
+              <button onClick={() => setShowFollowPanel(v => !v)}
                 className={cn("inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-all",
-                  showFollowPanel ? "border-blue-500/40 bg-blue-500/10 text-blue-400" : "border-white/10 bg-white/5 text-slate-400 hover:text-slate-200 hover:border-white/20")}
-              >
+                  showFollowPanel ? "border-blue-500/40 bg-blue-500/10 text-blue-400" : "border-white/10 bg-white/5 text-slate-400 hover:text-slate-200 hover:border-white/20")}>
                 <Bell size={11} />
                 Follow
                 <ChevronDown size={9} className={cn("transition-transform", showFollowPanel && "rotate-180")} />
               </button>
-              {showFollowPanel && (
-                <FollowPanel artist={artist} onClose={() => setShowFollowPanel(false)} />
-              )}
+              {showFollowPanel && <FollowPanel artist={artist} onClose={() => setShowFollowPanel(false)} />}
             </div>
           )}
-
-          {/* Archive */}
           <button onClick={() => toggleArchive(id)}
-            title={isArchived ? "Restore from archive" : "Archive event"}
             className={cn("inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-all",
               isArchived ? "border-amber-500/40 bg-amber-500/10 text-amber-400" : "border-white/10 bg-white/5 text-slate-500 hover:text-slate-300 hover:border-white/20")}>
             <Archive size={11} />
             {isArchived ? "Archived" : "Archive"}
           </button>
-
-          {/* Hide */}
           <button onClick={() => toggleHide(id)}
-            title={isHidden ? "Unhide from dashboard" : "Hide from dashboard"}
             className={cn("inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-all",
               isHidden ? "border-slate-500/40 bg-slate-500/10 text-slate-300" : "border-white/10 bg-white/5 text-slate-500 hover:text-slate-300 hover:border-white/20")}>
             <EyeOff size={11} />
             {isHidden ? "Hidden" : "Hide"}
           </button>
-
-          {/* Spotify link — hidden for sports events */}
           {!isSports && (spotify.spotifyArtistUrl ? (
             <a href={spotify.spotifyArtistUrl} target="_blank" rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border border-[#1db954]/30 bg-[#1db954]/8 text-[#1db954] hover:bg-[#1db954]/15 transition-all">
-              <Music size={11} />
-              Spotify
+              <Music size={11} /> Spotify
             </a>
           ) : (
             <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border border-dashed border-[#1db954]/20 text-[#1db954]/30">
-              <Music size={11} />
-              Spotify pending
+              <Music size={11} /> Spotify pending
             </span>
           ))}
-
-          {/* Add Marketplace URL */}
           <AddMarketplaceUrl />
         </div>
       </div>
@@ -791,35 +788,31 @@ export default function EventDetailPage() {
         </div>
       )}
 
-      {/* ═══════════════ HERO ═══════════════ */}
-      <div className="rounded-2xl overflow-hidden border border-white/10 relative" style={{ backdropFilter: "blur(12px)", background: "rgba(14,17,23,0.88)" }}>
-        <div className="relative z-10 flex flex-col sm:flex-row min-h-[340px]">
+      {/* ════════════════════════════════════════
+          SECTION 1 — EVENT HERO
+          ════════════════════════════════════════ */}
+      <div className="rounded-2xl overflow-hidden border border-white/10"
+        style={{ backdropFilter: "blur(12px)", background: "rgba(14,17,23,0.88)", minHeight: "460px" }}>
+        <div className="relative z-10 flex flex-col sm:flex-row" style={{ minHeight: "460px" }}>
 
-          {/* LEFT — Artwork panel (wider) */}
-          <div
-            className="relative w-full sm:w-[320px] lg:w-[380px] flex-shrink-0 min-h-[200px] sm:min-h-[380px] overflow-hidden"
-            style={{ background: `linear-gradient(145deg, ${gradient[0]} 0%, ${gradient[1]} 60%, ${gradient[0]}88 100%)` }}
-          >
+          {/* LEFT — Artwork (40%) */}
+          <div className="relative w-full sm:w-[40%] flex-shrink-0 min-h-[220px] sm:min-h-[460px] overflow-hidden"
+            style={{ background: `linear-gradient(145deg, ${gradient[0]} 0%, ${gradient[1]} 60%, ${gradient[0]}88 100%)` }}>
             {artworkUrl ? (
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={artworkUrl}
-                  alt={artist ?? title}
+                <img src={artworkUrl} alt={artist ?? title}
                   className="absolute inset-0 w-full h-full object-cover object-top"
-                  onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-                />
-                {/* subtle gradient over photo for readability edge */}
+                  onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
                 <div className="absolute inset-0"
-                  style={{ background: `linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, transparent 40%, rgba(14,17,23,0.6) 100%), linear-gradient(to right, transparent 70%, rgba(14,17,23,0.7) 100%)` }}
-                />
+                  style={{ background: `linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, transparent 40%, rgba(14,17,23,0.6) 100%), linear-gradient(to right, transparent 70%, rgba(14,17,23,0.7) 100%)` }} />
               </>
             ) : (
               <>
                 <div className="absolute inset-0 opacity-40"
                   style={{ background: `radial-gradient(ellipse at 40% 35%, rgba(255,255,255,0.25) 0%, transparent 65%)` }} />
                 <div className="absolute inset-0 flex flex-col items-center justify-center select-none">
-                  <div className="text-7xl font-black leading-none mb-2 opacity-90"
+                  <div className="text-8xl font-black leading-none mb-2 opacity-90"
                     style={{ color: "rgba(255,255,255,0.9)", textShadow: "0 2px 20px rgba(0,0,0,0.4)" }}>
                     {(artist ?? title).slice(0, 1).toUpperCase()}
                   </div>
@@ -830,839 +823,673 @@ export default function EventDetailPage() {
                 </div>
               </>
             )}
-
-            {/* Completed badge */}
             {isCompleted && (
               <div className="absolute top-3 left-3">
                 <span className="text-[9px] font-bold uppercase tracking-widest bg-white/15 border border-white/20 text-white/70 rounded-full px-2 py-0.5">Completed</span>
               </div>
             )}
-
-            {/* Spotify pill on artwork — hidden for sports */}
             {!isSports && spotify.spotifyArtistUrl && (
               <div className="absolute bottom-3 left-3">
                 <a href={spotify.spotifyArtistUrl} target="_blank" rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-1 rounded-full bg-[#1db954]/90 text-black hover:bg-[#1db954] transition-colors">
-                  <Music size={8} />
-                  Open in Spotify
+                  <Music size={8} /> Open in Spotify
                 </a>
               </div>
             )}
           </div>
 
-          {/* RIGHT — Event info + signal */}
-          <div className="flex-1 flex flex-col">
-            <div className="flex-1 p-5 pb-3"
-              style={{ background: `linear-gradient(to right, ${gradient[0]}18 0%, ${gradient[1]}08 100%)` }}>
-              {artist && (
-                <p className="text-xs text-white/50 uppercase tracking-widest font-semibold mb-1">{artist}</p>
-              )}
-              <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-2">{title}</h1>
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-base text-white/60 mb-3">
-                {venue    && <span className="flex items-center gap-1"><MapPin   size={10} />{venue}</span>}
-                {dateLabel && <span className="flex items-center gap-1"><Calendar size={10} />{dateLabel}</span>}
-              </div>
-              {daysOut != null && (
-                <div className="mb-3">
-                  <span className="text-xs font-bold px-2.5 py-1 rounded-full border"
-                    style={{ color: aColors.text, background: aColors.bg, borderColor: aColors.border }}>
-                    {isCompleted ? "Event passed" : daysOut < 1 ? "Happening today" : daysOut < 2 ? "Tomorrow" : `${Math.round(daysOut)} days away`}
-                  </span>
-                </div>
-              )}
-
-              {/* Signal + explanation */}
-              <div className="rounded-xl border p-3 mb-2"
-                style={{ borderColor: aColors.border + "60", background: aColors.bg + "30" }}>
-                <span className="inline-block text-sm font-black tracking-[0.15em] px-3 py-1 rounded-md border mb-2"
-                  style={{ color: aColors.text, background: aColors.bg, borderColor: aColors.border }}>
-                  {action}
-                </span>
-                <p className="text-lg font-semibold text-slate-200 leading-snug mb-2">{headline}</p>
-                {bullets.length > 0 && (
-                  <ul className="space-y-1">
-                    {bullets.map((b, i) => (
-                      <li key={i} className="flex items-start gap-1.5 text-sm text-slate-400">
-                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-slate-500 flex-shrink-0" />
-                        {b}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+          {/* RIGHT — Identity only (60%) */}
+          <div className="flex-1 flex flex-col justify-center p-8 sm:p-10 lg:p-14"
+            style={{ background: `linear-gradient(to right, ${gradient[0]}14 0%, transparent 70%)` }}>
+            {artist && (
+              <p className="text-[12px] text-white/45 uppercase tracking-[0.22em] font-bold mb-4">{artist}</p>
+            )}
+            <h1 className="text-[52px] sm:text-[62px] lg:text-[68px] font-black text-white leading-[1.02] mb-5">{title}</h1>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[16px] text-white/50 mb-5">
+              {venue    && <span className="flex items-center gap-1.5"><MapPin size={13} className="opacity-60" />{venue}</span>}
+              {dateLabel && <span className="flex items-center gap-1.5"><Calendar size={13} className="opacity-60" />{dateLabel}</span>}
             </div>
-
-            {/* Bottom: 6 key metrics */}
-            <div className="px-5 pb-5 pt-4 bg-[#0e1117]/90 border-t border-white/8">
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
-                <div>
-                  <p className="text-[11px] text-slate-400 uppercase tracking-wider mb-1.5 font-semibold">Floor</p>
-                  <p className="text-3xl font-black text-white tabular-nums">{fmt$$(hero?.price?.low_ask)}</p>
-                </div>
-                <div>
-                  <p className="text-[11px] text-slate-400 uppercase tracking-wider mb-1.5 font-semibold">Median</p>
-                  <p className="text-3xl font-bold text-slate-200 tabular-nums">{fmt$$(hero?.price?.median_ask)}</p>
-                </div>
-                <div>
-                  <p className="text-[11px] text-slate-400 uppercase tracking-wider mb-1.5 font-semibold">High</p>
-                  <p className="text-3xl font-semibold text-slate-400 tabular-nums">{fmt$$(hero?.price?.high_ask)}</p>
-                </div>
-                <div>
-                  <p className="text-[11px] text-slate-400 uppercase tracking-wider mb-1.5 font-semibold">24h Δ</p>
-                  <div className="mt-0.5">
-                    {pct24h != null ? <DeltaChip pct={pct24h} size="md" /> : <span className="text-xl text-slate-600">—</span>}
-                  </div>
-                </div>
-                <div>
-                  <p className="text-[11px] text-slate-400 uppercase tracking-wider mb-1.5 font-semibold">7d Δ</p>
-                  <div className="mt-0.5">
-                    {hero?.changes?.d7?.price_delta_pct != null
-                      ? <DeltaChip pct={hero.changes.d7.price_delta_pct} size="md" />
-                      : <span className="text-xl text-slate-600">—</span>}
-                  </div>
-                </div>
-                <div>
-                  <p className="text-[11px] text-slate-400 uppercase tracking-wider mb-1.5 font-semibold">Inventory</p>
-                  <p className="text-3xl font-bold text-slate-200 tabular-nums">{fmtNum(hero?.inventory?.total_listings)}</p>
-                  {invDelta24 != null && (
-                    <div className="flex items-center gap-0.5 mt-0.5">
-                      <span className={cn("text-xs font-medium tabular-nums flex items-center gap-0.5",
-                        invDelta24 > 0 ? "text-emerald-400" : "text-red-400")}>
-                        {invDelta24 > 0 ? <ArrowUpRight size={10}/> : <ArrowDownRight size={10}/>}
-                        {invDelta24 > 0 ? "+" : ""}{invDelta24}
-                      </span>
-                      <span className="text-xs text-slate-600">24h</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-              {hero?.history_context?.hours_available != null && (
-                <div className="mt-2 pt-2 flex items-center justify-between border-t border-white/5">
-                  <span className="text-[10px] text-slate-600 flex items-center gap-1">
-                    <Clock size={9} />
-                    {hero.history_context.hours_available > 24
-                      ? `${Math.round(hero.history_context.hours_available / 24)}d of price history`
-                      : "Live data only"}
-                  </span>
-                  {sincePct != null && (
-                    <div className="flex items-center gap-1">
-                      <DeltaChip pct={sincePct} />
-                      <span className="text-[10px] text-slate-600">since tracking</span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+            {daysOut != null && (
+              <span className="inline-block text-[16px] font-bold px-4 py-2 rounded-full"
+                style={{ color: aColors.text, background: aColors.bg + "60", border: `1px solid ${aColors.border}` }}>
+                {isCompleted ? "Event passed" : daysOut < 1 ? "Happening today" : daysOut < 2 ? "Tomorrow" : `${Math.round(daysOut)} days away`}
+              </span>
+            )}
           </div>
         </div>
       </div>
 
-      {/* ═══════════════ SPOTIFY EMBED (concerts only) ═══════════════ */}
+      {/* ════════════════════════════════════════
+          ALERT BANNER (RED alerts only)
+          ════════════════════════════════════════ */}
+      {alerts && alerts.alerts.filter(a => a.severity === "RED").length > 0 && (
+        <div className="rounded-xl border border-red-500/40 bg-red-500/8 px-5 py-4">
+          <div className="flex items-start gap-3">
+            <span className="text-red-400 text-base font-black mt-0.5 flex-shrink-0">⚠</span>
+            <div>
+              <p className="text-red-400 text-xs font-bold uppercase tracking-widest mb-1.5">Data Alerts</p>
+              <ul className="space-y-1">
+                {alerts.alerts.filter(a => a.severity === "RED").map((a, i) => (
+                  <li key={i} className="text-red-300/80 text-xs leading-snug">
+                    {a.marketplace ? <span className="font-semibold text-red-300 capitalize">{a.marketplace}: </span> : null}
+                    {a.message.split("\n")[0].slice(0, 140)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════
+          SECTION 2 — BUY WINDOW FORECAST
+          ════════════════════════════════════════ */}
+      <section className="rounded-2xl p-6 sm:p-8"
+        style={{ background: aColors.bg + "22", borderLeft: `4px solid ${aColors.text}` }}>
+        {/* Signal badge */}
+        <span className="text-[36px] sm:text-[40px] font-black tracking-[0.15em] leading-none block mb-4"
+          style={{ color: aColors.text }}>
+          {action}
+        </span>
+        {/* Headline */}
+        <p className="text-[28px] sm:text-[32px] font-bold text-white leading-[1.15] mb-5">{headline}</p>
+        {/* Bullets */}
+        {bullets.length > 0 && (
+          <ul className="space-y-2.5 mb-6">
+            {bullets.map((b, i) => (
+              <li key={i} className="flex items-start gap-2.5 text-[15px] text-slate-300 leading-relaxed">
+                <span className="mt-2.5 w-1.5 h-1.5 rounded-full bg-slate-500 flex-shrink-0" />
+                {b}
+              </li>
+            ))}
+          </ul>
+        )}
+        {/* Freshness row */}
+        <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-white/8 text-xs">
+          {freshLabel && (
+            <span className="text-white/35 flex items-center gap-1.5">
+              <Clock size={10} /> Updated {freshLabel}
+            </span>
+          )}
+          {MP_SLUGS.map(slug => {
+            const f    = eventMeta?.marketplace_freshness?.[slug] as { freshness_status?: string; age_minutes?: number } | undefined;
+            const info = MP_META[slug];
+            if (!info) return null;
+            const st  = f?.freshness_status ?? "unknown";
+            const cls = st === "fresh" ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/8"
+                      : st === "late"  ? "text-amber-400 border-amber-500/30 bg-amber-500/8"
+                      : st === "dead"  ? "text-red-500 border-red-500/30 bg-red-500/8"
+                      : "text-slate-600 border-white/8 bg-white/3";
+            return (
+              <span key={slug} className={`text-[10px] font-bold px-2 py-0.5 rounded border ${cls}`}>
+                {info.short} {st === "fresh" ? "✓" : st === "late" ? "~" : st === "dead" ? "✗" : "—"}
+              </span>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════
+          SECTION 3 — MARKET SNAPSHOT
+          ════════════════════════════════════════ */}
+      <section>
+        <p className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-4">Market Snapshot</p>
+        <div className="flex flex-wrap gap-x-10 gap-y-5">
+          <div>
+            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-1">Median</p>
+            <p className="text-[44px] font-black text-white tabular-nums leading-none">{fmt$$(hero?.price?.median_ask) ?? "—"}</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-1">Floor</p>
+            <p className="text-[40px] font-bold text-emerald-300 tabular-nums leading-none">{fmt$$(hero?.price?.low_ask) ?? "—"}</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-1">Inventory</p>
+            <p className="text-[40px] font-bold text-slate-300 tabular-nums leading-none">{fmtNum(baseline?.current?.raw_listings ?? hero?.inventory?.total_listings) ?? "—"}</p>
+            {invDelta24 != null && (
+              <div className="flex items-center gap-0.5 mt-1">
+                <span className={cn("text-sm font-medium tabular-nums flex items-center gap-0.5",
+                  invDelta24 > 0 ? "text-emerald-400" : "text-red-400")}>
+                  {invDelta24 > 0 ? <ArrowUpRight size={11}/> : <ArrowDownRight size={11}/>}
+                  {invDelta24 > 0 ? "+" : ""}{invDelta24}
+                </span>
+                <span className="text-xs text-slate-600 ml-0.5">24h</span>
+              </div>
+            )}
+          </div>
+          <div>
+            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-1">24h Δ</p>
+            <div className="mt-2">
+              {pct24h != null ? <DeltaChip pct={pct24h} size="md" /> : <span className="text-[28px] text-slate-600">—</span>}
+            </div>
+          </div>
+          <div>
+            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-1">7d Δ</p>
+            <div className="mt-2">
+              {hero?.changes?.d7?.price_delta_pct != null
+                ? <DeltaChip pct={hero.changes.d7.price_delta_pct} size="md" />
+                : <span className="text-[28px] text-slate-600">—</span>}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════
+          SECTION 4 — MARKETPLACE COMPARISON
+          ════════════════════════════════════════ */}
+      <section>
+        <p className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-3">Marketplace Comparison</p>
+        <div className="rounded-xl border border-white/8 bg-[#161b27] overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-white/6">
+                {["Marketplace","Floor","Listings","Freshness","Updated"].map(h => (
+                  <th key={h} className="text-left px-4 py-3 text-[10px] text-slate-500 uppercase tracking-widest font-medium first:pl-5">{h}</th>
+                ))}
+                <th className="px-4 py-3" />
+              </tr>
+            </thead>
+            <tbody>
+              {MP_SLUGS.map(slug => {
+                const info    = MP_META[slug]!;
+                const mpData  = marketplaces.find(m => m.name.toLowerCase().replace(/\s+/g, "") === slug);
+                const fresh   = eventMeta?.marketplace_freshness?.[slug] as { freshness_status?: string; age_minutes?: number } | undefined;
+                const tracked = eventMeta?.tracked_events?.find(t => t.marketplace_slug === slug);
+                const isBest  = mpData != null && marketplaces.length > 0 && mpData.low_ask === marketplaces[0].low_ask;
+                const st      = fresh?.freshness_status ?? "unknown";
+                const freshCls = st === "fresh" ? "text-emerald-400" : st === "late" ? "text-amber-400" : st === "dead" ? "text-red-500" : "text-slate-600";
+                const ageLabel = fresh?.age_minutes != null
+                  ? fresh.age_minutes < 60 ? `${fresh.age_minutes}m ago` : `${Math.round(fresh.age_minutes / 60)}h ago`
+                  : "—";
+                return (
+                  <tr key={slug} className="border-b border-white/5 last:border-0 hover:bg-white/2 transition-colors">
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-2 h-5 rounded-sm flex-shrink-0" style={{ background: info.color }} />
+                        <span className="text-sm font-bold" style={{ color: info.color }}>{info.short}</span>
+                        <span className="text-sm text-slate-400 hidden sm:inline">{info.label}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      {mpData?.low_ask != null
+                        ? <span className={cn("text-base font-bold tabular-nums", isBest ? "text-emerald-300" : "text-white")}>{fmt$$(mpData.low_ask)}</span>
+                        : <span className="text-slate-600">—</span>}
+                    </td>
+                    <td className="px-4 py-3.5 text-sm text-slate-400 tabular-nums">
+                      {mpData?.listings != null ? fmtNum(mpData.listings) : <span className="text-slate-600">—</span>}
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <span className={`text-xs font-semibold capitalize ${freshCls}`}>{st === "unknown" ? "—" : st}</span>
+                    </td>
+                    <td className="px-4 py-3.5 text-xs text-slate-500">{ageLabel}</td>
+                    <td className="px-4 py-3.5 text-right">
+                      {tracked?.external_url
+                        ? <a href={tracked.external_url} target="_blank" rel="noopener noreferrer"
+                            className="text-xs font-bold px-3 py-1.5 rounded-lg border transition-all"
+                            style={{ color: info.color, borderColor: info.color + "50", background: info.color + "12" }}>
+                            Buy ↗
+                          </a>
+                        : <span className="text-[11px] text-slate-700">No link</span>}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════
+          SECTION 5 — INTELLIGENCE TABS
+          ════════════════════════════════════════ */}
+      <section>
+        {/* Tab bar */}
+        <div className="flex border-b border-white/8 mb-5">
+          {(["Overview", "Sections", "Venue Intel"] as const).map(tab => (
+            <button key={tab} onClick={() => setActiveTab(tab)}
+              className={cn(
+                "px-4 py-2.5 text-sm font-semibold transition-colors border-b-2 -mb-[1px]",
+                activeTab === tab
+                  ? "border-blue-500 text-blue-300"
+                  : "border-transparent text-slate-500 hover:text-slate-300"
+              )}>
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        {/* ── TAB A: Overview ── */}
+        {activeTab === "Overview" && (
+          <div className="space-y-5">
+            {/* Price Trend Chart */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Price Trend</h3>
+                <div className="flex rounded-lg border border-white/7 overflow-hidden text-xs">
+                  {WINDOWS.map(w => (
+                    <button key={w.id} onClick={() => setHistWindow(w.id)} disabled={loadingHistory}
+                      className={cn("px-2.5 py-1 transition-colors",
+                        histWindow === w.id ? "bg-white/10 text-slate-200" : "text-slate-500 hover:text-slate-300 hover:bg-white/5")}>
+                      {w.label}
+                    </button>
+                  ))}
+                  {loadingHistory && <span className="px-2 flex items-center"><RefreshCw size={9} className="animate-spin text-slate-500" /></span>}
+                </div>
+              </div>
+              <div className="rounded-xl border border-white/7 bg-[#161b27]">
+                {history?.source && (
+                  <div className={cn("px-4 py-2.5 border-b border-white/5 flex items-center justify-between",
+                    history.source === "combined" ? "bg-emerald-500/5" : history.source === "live" ? "bg-amber-500/5" : "")}>
+                    <span className={cn("text-xs font-medium",
+                      history.source === "combined" ? "text-emerald-400" : history.source === "live" ? "text-amber-400" : "text-blue-400")}>
+                      {history.source === "combined"
+                        ? `${Math.round(history.data_depth_days ?? 0)} days of history`
+                        : history.source === "live" ? "Live data · limited trend signal" : `${Math.round(history.data_depth_days ?? 0)}d archive`}
+                    </span>
+                    <span className="text-[10px] text-slate-600">{history.point_count ?? 0} points</span>
+                  </div>
+                )}
+                <div className="p-4">
+                  {history?.series?.length
+                    ? <PriceHistoryChart series={history.series} window={histWindow} height={220} />
+                    : <div className="h-[220px] flex items-center justify-center text-xs text-slate-600">Not enough data yet</div>}
+                </div>
+                {hero && (
+                  <div className="px-4 pb-3 grid grid-cols-4 gap-2 border-t border-white/5">
+                    {[
+                      { label: "Floor",  val: hero.price?.low_ask    },
+                      { label: "p25",    val: hero.price?.p25_ask    },
+                      { label: "Median", val: hero.price?.median_ask },
+                      { label: "p75",    val: hero.price?.p75_ask    },
+                    ].map(({ label, val }) => (
+                      <div key={label} className="text-center pt-2">
+                        <div className="text-[9px] text-slate-600 uppercase tracking-wide mb-0.5">{label}</div>
+                        <div className="text-xs font-semibold text-slate-300 tabular-nums">{fmt$$(val)}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Inventory Trend */}
+            <div>
+              <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Inventory Trend</h3>
+              <div className="rounded-xl border border-white/7 bg-[#161b27] p-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-3">
+                  {[
+                    { label: "Total Now",   val: fmtNum(hero?.inventory?.total_listings) },
+                    { label: "24h Net",     val: invDelta24 != null ? (invDelta24 > 0 ? `+${invDelta24}` : `${invDelta24}`) : null },
+                    { label: "Added 24h",   val: seller?.new_listings_24h != null ? `+${fmtNum(seller.new_listings_24h)}` : null },
+                    { label: "Removed 24h", val: seller?.removed_listings_24h != null ? fmtNum(seller.removed_listings_24h) : null },
+                  ].map(({ label, val }) => (
+                    <div key={label}>
+                      <p className="text-[10px] text-slate-600 uppercase tracking-wider mb-0.5">{label}</p>
+                      <p className="text-sm font-bold text-slate-300 tabular-nums">{val ?? "—"}</p>
+                    </div>
+                  ))}
+                </div>
+                {seller && (
+                  <div className="grid grid-cols-2 gap-3 pt-3 border-t border-white/5">
+                    <div>
+                      <p className="text-[10px] text-slate-600 uppercase tracking-wider mb-0.5">Repriced 24h</p>
+                      <p className="text-sm font-bold text-amber-400 tabular-nums">{fmtNum(seller.repriced_24h) ?? "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-slate-600 uppercase tracking-wider mb-0.5">Price Drops 24h</p>
+                      <p className="text-sm font-bold text-red-400 tabular-nums">{fmtNum(seller.price_drops_24h) ?? "—"}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Opportunity Notes */}
+            <div>
+              <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Opportunity Notes</h3>
+              <div className="rounded-xl border border-white/7 bg-[#161b27] p-4 space-y-2.5">
+                {bullets.map((b, i) => (
+                  <p key={i} className="flex items-start gap-2.5 text-sm text-slate-300 leading-relaxed">
+                    <span className="mt-2 w-1.5 h-1.5 rounded-full bg-slate-500 flex-shrink-0" />
+                    {b}
+                  </p>
+                ))}
+                {hero?.history_context?.hours_available != null && (
+                  <p className="text-xs text-slate-600 pt-2 border-t border-white/5 flex items-center gap-1.5">
+                    <Clock size={9} />
+                    {hero.history_context.hours_available > 24
+                      ? `${Math.round(hero.history_context.hours_available / 24)}d of price history`
+                      : "Live data only"}
+                    {sincePct != null && (
+                      <span className="ml-2 flex items-center gap-1">
+                        <DeltaChip pct={sincePct} />
+                        <span className="text-slate-600">since tracking</span>
+                      </span>
+                    )}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Marketplace Commentary */}
+            {baseline?.per_marketplace && baseline.per_marketplace.length > 0 && (
+              <div>
+                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Marketplace Commentary</h3>
+                <div className="rounded-xl border border-white/7 bg-[#161b27] overflow-hidden">
+                  <div className="grid border-b border-white/5 px-4 py-2 text-xs text-slate-500 uppercase tracking-wider"
+                    style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr" }}>
+                    {["Marketplace","Floor","Inv","24h","7d","Signal"].map(h => <div key={h}>{h}</div>)}
+                  </div>
+                  {baseline.per_marketplace.map((mp) => {
+                    const inv24 = mp.listings_change_24h?.absolute ?? null;
+                    const inv7d = mp.listings_change_7d?.absolute ?? null;
+                    const slug  = mp.marketplace_slug;
+                    const mpInfo = MP_META[slug] ?? { label: slug, short: slug.slice(0,2).toUpperCase(), color: "#64748b" };
+                    const direction = inv24 != null ? (inv24 < -5 ? "↓ Tight" : inv24 > 5 ? "↑ Grow" : "Stable") : "—";
+                    const dirCls = inv24 != null ? (inv24 < -5 ? "text-emerald-400" : inv24 > 5 ? "text-red-400" : "text-slate-500") : "text-slate-600";
+                    return (
+                      <div key={slug} className="grid items-center px-4 py-2.5 border-b border-white/4 last:border-0 hover:bg-white/2"
+                        style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr" }}>
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full" style={{ background: mpInfo.color }} />
+                          <span className="text-xs font-bold uppercase" style={{ color: mpInfo.color }}>{mpInfo.short}</span>
+                        </div>
+                        <div className="text-xs font-bold text-white tabular-nums">{fmt$$(mp.current_lowest_ask)}</div>
+                        <div className="text-xs text-slate-300 tabular-nums">{fmtNum(mp.current_listings)}</div>
+                        <div className="text-xs">
+                          {inv24 != null
+                            ? <span className={inv24 < 0 ? "text-emerald-400" : "text-red-400"}>{inv24 > 0 ? "+" : ""}{inv24}</span>
+                            : <span className="text-slate-600">—</span>}
+                        </div>
+                        <div className="text-xs">
+                          {inv7d != null
+                            ? <span className={inv7d < 0 ? "text-emerald-400" : "text-red-400"}>{inv7d > 0 ? "+" : ""}{inv7d}</span>
+                            : <span className="text-slate-600">—</span>}
+                        </div>
+                        <div className={`text-xs font-semibold ${dirCls}`}>{direction}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── TAB B: Sections ── */}
+        {activeTab === "Sections" && (
+          <div className="space-y-4">
+            {sections?.sections && sections.sections.length > 0
+              ? <SectionBreakdown sections={sections.sections} />
+              : <div className="rounded-xl border border-white/7 bg-[#161b27] py-8 text-center text-xs text-slate-600">No section data available</div>
+            }
+            {listings && listings.length > 0 && (
+              <div>
+                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Lowest Available Tickets</h3>
+                <div className="rounded-xl border border-white/7 bg-[#161b27] overflow-x-auto">
+                  <table className="w-full text-xs min-w-[480px]">
+                    <thead>
+                      <tr className="border-b border-white/5">
+                        {["#","Price","Section","Row","Qty","Marketplace","Move",""].map(h => (
+                          <th key={h} className="text-left px-3 py-2 text-[9px] text-slate-500 uppercase tracking-wider font-medium first:pl-4">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {listings.map((l, i) => {
+                        const slug   = l.marketplace_slug;
+                        const mpInfo = MP_META[slug] ?? null;
+                        return (
+                          <tr key={l.id} className="border-b border-white/4 last:border-0 hover:bg-white/2 transition-colors">
+                            <td className="pl-4 pr-2 py-2.5 text-slate-600 tabular-nums">{i + 1}</td>
+                            <td className="px-3 py-2.5 font-bold text-slate-100 tabular-nums">{fmt$$(l.price)}</td>
+                            <td className="px-3 py-2.5 text-slate-300 max-w-[140px] truncate">{l.section_name ?? l.section ?? "—"}</td>
+                            <td className="px-3 py-2.5 text-slate-400">{l.row ?? "—"}</td>
+                            <td className="px-3 py-2.5 text-slate-500 tabular-nums">{l.quantity}</td>
+                            <td className="px-3 py-2.5">
+                              {mpInfo
+                                ? <span className="inline-flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: mpInfo.color }} />
+                                    <span className="text-slate-400">{mpInfo.short}</span>
+                                  </span>
+                                : <span className="text-slate-500 capitalize">{slug}</span>}
+                            </td>
+                            <td className="px-3 py-2.5"><ListingMoveMenu listingId={l.id} /></td>
+                            <td className="px-3 py-2.5 text-right">
+                              {l.listing_url && (
+                                <a href={l.listing_url} target="_blank" rel="noopener noreferrer"
+                                  className="text-[10px] text-blue-500 hover:text-blue-400 transition-colors">buy ↗</a>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── TAB C: Venue Intel ── */}
+        {activeTab === "Venue Intel" && (
+          <div>
+            {eventMeta?.venue_slug
+              ? <>
+                  <VenueSummaryCard venueSlug={eventMeta.venue_slug} />
+                  <VenueIntelligence venueSlug={eventMeta.venue_slug} eventId={id} />
+                </>
+              : <div className="rounded-xl border border-white/7 bg-[#161b27] py-8 text-center text-xs text-slate-600">No venue data available</div>
+            }
+          </div>
+        )}
+      </section>
+
+      {/* ════════════════════════════════════════
+          SECTION 6 — SPOTIFY
+          ════════════════════════════════════════ */}
       {!isSports && spotify.spotifyArtistUrl && (
         <SpotifyEmbed artistUrl={spotify.spotifyArtistUrl} playlistUrl={spotify.spotifyPlaylistUrl} />
       )}
 
-      {/* ═══════════════ TODAY'S MOVEMENT ═══════════════ */}
-      <section className="rounded-xl border border-amber-500/15 bg-amber-500/3 p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-amber-400/60 animate-pulse flex-shrink-0" />
-            <h2 className="text-sm font-bold text-amber-300/80 uppercase tracking-wider">Today&apos;s Movement</h2>
-          </div>
-          {!snapshot && (
-            <span className="text-[10px] font-bold uppercase tracking-widest text-amber-500/50 border border-amber-500/20 rounded px-2 py-0.5 bg-amber-500/5">Pending Intelligence Phase</span>
-          )}
-        </div>
-        <div className="rounded-xl border border-amber-500/10 bg-[#0e1117]/80 divide-y divide-white/4">
-          {/* Hourly Floor Movement */}
-          <div className="flex items-center justify-between px-4 py-3">
-            <div className="flex items-center gap-3">
-              <span className="text-lg opacity-50">📉</span>
-              <div>
-                <p className="text-sm font-semibold text-slate-300">Hourly Floor Movement</p>
-                <p className="text-[11px] text-slate-500">Floor price change per hour today</p>
-              </div>
-            </div>
-            {snapshot?.price?.floor_24h_change != null
-              ? <span className={cn("text-sm font-bold tabular-nums", snapshot.price.floor_24h_change < 0 ? "text-red-400" : "text-emerald-400")}>
-                  {snapshot.price.floor_24h_change < 0 ? "-" : "+"}{fmt$$(Math.abs(snapshot.price.floor_24h_change / 24))}/hr
-                </span>
-              : <span className="text-sm text-amber-500/50 italic font-medium">—</span>
-            }
-          </div>
-          {/* Hourly Median Movement */}
-          <div className="flex items-center justify-between px-4 py-3">
-            <div className="flex items-center gap-3">
-              <span className="text-lg opacity-50">📊</span>
-              <div>
-                <p className="text-sm font-semibold text-slate-300">Hourly Median Movement</p>
-                <p className="text-[11px] text-slate-500">Median price change per hour today</p>
-              </div>
-            </div>
-            {snapshot?.price?.median_24h_change != null
-              ? <span className={cn("text-sm font-bold tabular-nums", snapshot.price.median_24h_change < 0 ? "text-red-400" : "text-emerald-400")}>
-                  {snapshot.price.median_24h_change < 0 ? "-" : "+"}{fmt$$(Math.abs(snapshot.price.median_24h_change / 24))}/hr
-                </span>
-              : <span className="text-sm text-amber-500/50 italic font-medium">—</span>
-            }
-          </div>
-          {/* Hourly Inventory Change */}
-          <div className="flex items-center justify-between px-4 py-3">
-            <div className="flex items-center gap-3">
-              <span className="text-lg opacity-50">📦</span>
-              <div>
-                <p className="text-sm font-semibold text-slate-300">Hourly Inventory Change</p>
-                <p className="text-[11px] text-slate-500">Net listing count change per hour today</p>
-              </div>
-            </div>
-            {snapshot?.inventory?.inventory_24h_change != null
-              ? <span className={cn("text-sm font-bold tabular-nums", snapshot.inventory.inventory_24h_change < 0 ? "text-red-400" : "text-emerald-400")}>
-                  {snapshot.inventory.inventory_24h_change < 0 ? "" : "+"}{(snapshot.inventory.inventory_24h_change / 24).toFixed(1)}/hr
-                </span>
-              : <span className="text-sm text-amber-500/50 italic font-medium">—</span>
-            }
-          </div>
-          {/* Disappeared Listings */}
-          <div className="flex items-center justify-between px-4 py-3">
-            <div className="flex items-center gap-3">
-              <span className="text-lg opacity-50">🎟</span>
-              <div>
-                <p className="text-sm font-semibold text-slate-300">Disappeared Listings (24h)</p>
-                <p className="text-[11px] text-slate-500">Listings removed in 24h — sold, pulled, or expired</p>
-              </div>
-            </div>
-            {seller?.removed_listings_24h != null
-              ? <span className="text-sm font-bold tabular-nums text-red-400">{fmtNum(seller.removed_listings_24h)}</span>
-              : <span className="text-sm text-amber-500/50 italic font-medium">—</span>
-            }
-          </div>
-          {/* New Listings */}
-          <div className="flex items-center justify-between px-4 py-3">
-            <div className="flex items-center gap-3">
-              <span className="text-lg opacity-50">➕</span>
-              <div>
-                <p className="text-sm font-semibold text-slate-300">New Listings (24h)</p>
-                <p className="text-[11px] text-slate-500">Listings added in 24h — new entries and relists</p>
-              </div>
-            </div>
-            {seller?.new_listings_24h != null
-              ? <span className="text-sm font-bold tabular-nums text-emerald-400">+{fmtNum(seller.new_listings_24h)}</span>
-              : <span className="text-sm text-amber-500/50 italic font-medium">—</span>
-            }
-          </div>
-          {/* Day-of Buy Window — forecast only, always pending */}
-          <div className="flex items-center justify-between px-4 py-3">
-            <div className="flex items-center gap-3">
-              <span className="text-lg opacity-50">⏰</span>
-              <div>
-                <p className="text-sm font-semibold text-slate-300">Day-of Buy Window</p>
-                <p className="text-[11px] text-slate-500">Forecast best time to purchase today</p>
-              </div>
-            </div>
-            <span className="text-sm text-amber-500/50 italic font-medium">Pending</span>
-          </div>
-        </div>
-      </section>
+      {/* ════════════════════════════════════════
+          SECTION 7 — DIAGNOSTICS (collapsed by default)
+          ════════════════════════════════════════ */}
+      <section className="border-t border-white/6 pt-4">
+        <button onClick={() => setDiagOpen(v => !v)}
+          className="flex items-center gap-2 text-xs text-slate-600 hover:text-slate-400 transition-colors py-1 w-full">
+          {diagOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+          <span className="uppercase tracking-widest font-semibold">Diagnostics</span>
+          {!diagOpen && <span className="text-slate-700 normal-case tracking-normal font-normal ml-1">— internal data, market movement, pending intelligence</span>}
+        </button>
 
-      {/* ═══════════════ MARKETPLACE SNAPSHOT ═══════════════ */}
-      <section>
-        <h2 className="text-base font-bold text-slate-200 uppercase tracking-wider mb-4">Where to Buy</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {marketplaces.length === 0 && (
-            <div className="col-span-full rounded-xl border border-white/5 bg-[#161b27] py-8 text-center text-sm text-slate-600">
-              No marketplace data available
-            </div>
-          )}
-          {marketplaces.map((mp, i) => {
-            const slug = mp.name.toLowerCase().replace(/\s+/g, "");
-            const info = MP_META[slug] ?? { label: mp.name, short: mp.name.slice(0, 2).toUpperCase(), color: "#60a5fa" };
-            const isCheapest = i === 0;
-            const tracked    = eventMeta?.tracked_events?.find(
-              t => t.marketplace_slug === slug || t.marketplace_slug.replace(/\s+/g, "") === slug
-            );
-            const freshness = eventMeta?.marketplace_freshness?.[slug];
-            return (
-              <div key={i} className={cn("relative rounded-xl border p-5 transition-all",
-                isCheapest ? "border-emerald-500/50 bg-emerald-500/6" : "border-white/9 bg-[#161b27]")}>
-                {isCheapest && (
-                  <div className="absolute -top-2.5 left-4">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-[#0e1117] border border-emerald-500/40 rounded px-2 py-0.5">Best Price</span>
-                  </div>
-                )}
-                {/* Header: marketplace name + freshness */}
-                <div className="flex items-center gap-2 mb-4 mt-1">
-                  <div className="w-1.5 h-6 rounded-full" style={{ background: info.color }} />
-                  <span className="text-sm font-bold text-slate-100">{info.label}</span>
-                  {freshness && (
-                    <span className={cn("text-xs ml-auto",
-                      freshness.freshness_status === "fresh" ? "text-emerald-500" :
-                      freshness.freshness_status === "late"  ? "text-amber-400"   : "text-slate-600")}>
-                      {freshness.age_minutes != null
-                        ? freshness.age_minutes < 60 ? `${freshness.age_minutes}m ago` : `${Math.round(freshness.age_minutes / 60)}h ago`
-                        : ""}
-                    </span>
-                  )}
-                </div>
-                {/* Price metrics */}
-                <div className="space-y-2.5">
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-xs text-slate-500 uppercase tracking-wide">Floor</span>
-                    <span className={cn("text-xl font-bold tabular-nums", isCheapest ? "text-emerald-300" : "text-slate-100")}>
-                      {fmt$$(mp.low_ask)}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-xs text-slate-500 uppercase tracking-wide">Median</span>
-                    <span className="text-base font-semibold text-slate-300 tabular-nums">{fmt$$(mp.median_ask)}</span>
-                  </div>
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-xs text-slate-500 uppercase tracking-wide">Listings</span>
-                    <span className="text-sm text-slate-400 tabular-nums">{fmtNum(mp.listings)}</span>
-                  </div>
-                </div>
-                {tracked?.external_url ? (
-                  <a href={tracked.external_url} target="_blank" rel="noopener noreferrer"
-                    className="mt-4 block w-full text-center text-sm font-bold py-2.5 rounded-xl border transition-all"
-                    style={{
-                      color: isCheapest ? "#34d399" : info.color,
-                      borderColor: isCheapest ? "#34d39950" : info.color + "50",
-                      background:  isCheapest ? "#34d39912" : info.color + "12",
-                    }}>
-                    Buy on {info.label} ↗
-                  </a>
-                ) : (
-                  <div className="mt-4 block w-full text-center text-xs text-slate-600 py-2 rounded-xl border border-white/5">
-                    No direct link
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </section>
+        {diagOpen && (
+          <div className="mt-4 space-y-5">
 
-      {/* ═══════════════ MARKET MOVEMENT ═══════════════ */}
-      <section>
-        <h2 className="text-base font-bold text-slate-200 uppercase tracking-wider mb-4">Market Movement</h2>
-        {/* 4-column panel: Tracking Start | 7d | 24h | Now */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Tracking Start */}
-          <div className="rounded-xl border border-white/7 bg-[#161b27] p-5">
-            <p className="text-xs text-slate-500 uppercase tracking-wider mb-3">Tracking Start</p>
-            <div className="space-y-3">
+            {/* Data Context */}
+            {hero?.history_context && (
               <div>
-                <p className="text-[10px] text-slate-600 mb-0.5">Floor</p>
-                <p className="text-xl font-bold text-slate-300 tabular-nums">{fmt$$(history?.series?.[0]?.low_ask) ?? "—"}</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-slate-600 mb-0.5">Median</p>
-                <p className="text-lg font-semibold text-slate-400 tabular-nums">{fmt$$(history?.series?.[0]?.median_ask) ?? "—"}</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-slate-600 mb-0.5">Inventory</p>
-                <p className="text-base text-slate-400 tabular-nums">{fmtNum(history?.series?.[0]?.listings) ?? "—"}</p>
-              </div>
-            </div>
-          </div>
-          {/* 7d Change */}
-          <div className="rounded-xl border border-white/7 bg-[#161b27] p-5">
-            <p className="text-xs text-slate-500 uppercase tracking-wider mb-3">7d Change</p>
-            <div className="space-y-3">
-              <div>
-                <p className="text-[10px] text-slate-600 mb-0.5">Since start</p>
-                <div className="text-xl font-bold">{sincePct != null ? <DeltaChip pct={sincePct} size="md" /> : <span className="text-slate-600">—</span>}</div>
-              </div>
-              <div>
-                <p className="text-[10px] text-slate-600 mb-0.5">Median</p>
-                <div className="text-lg">{hero?.changes?.d7?.price_delta_pct != null ? <DeltaChip pct={hero.changes.d7.price_delta_pct} size="md" /> : <span className="text-slate-600 text-sm">—</span>}</div>
-              </div>
-              <div>
-                <p className="text-[10px] text-slate-600 mb-0.5">Inventory</p>
-                <div className="text-base">{hero?.changes?.d7?.inventory_delta != null ? <DeltaChip abs={hero.changes.d7.inventory_delta} size="md" /> : <span className="text-slate-600 text-sm">—</span>}</div>
-              </div>
-            </div>
-          </div>
-          {/* 24h Change */}
-          <div className="rounded-xl border border-white/7 bg-[#161b27] p-5">
-            <p className="text-xs text-slate-500 uppercase tracking-wider mb-3">24h Change</p>
-            <div className="space-y-3">
-              <div>
-                <p className="text-[10px] text-slate-600 mb-0.5">Floor</p>
-                <div className="text-xl font-bold">
-                  {snapshot?.price?.floor_24h_change != null
-                    ? <DeltaChip abs={snapshot.price.floor_24h_change} size="md" />
-                    : <span className="text-slate-600">—</span>}
+                <h3 className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-2">Data Context</h3>
+                <div className="rounded-xl border border-white/6 bg-[#161b27] p-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {[
+                    { label: "History Available", val: hero.history_context.hours_available != null ? `${Math.round(hero.history_context.hours_available)}h` : "—" },
+                    { label: "Data Depth",        val: (hero.history_context as { data_depth?: string }).data_depth ?? "—" },
+                    { label: "Since Tracking",    val: sincePct != null ? fmtPct(sincePct) : "—" },
+                  ].map(({ label, val }) => (
+                    <div key={label}>
+                      <p className="text-[9px] text-slate-600 uppercase tracking-wider mb-0.5">{label}</p>
+                      <p className="text-sm font-semibold text-slate-400">{val}</p>
+                    </div>
+                  ))}
                 </div>
-              </div>
-              <div>
-                <p className="text-[10px] text-slate-600 mb-0.5">Median</p>
-                <div className="text-lg">{pct24h != null ? <DeltaChip pct={pct24h} size="md" /> : <span className="text-slate-600 text-sm">—</span>}</div>
-              </div>
-              <div>
-                <p className="text-[10px] text-slate-600 mb-0.5">Inventory</p>
-                <div className="text-base">{invDelta24 != null ? <DeltaChip abs={invDelta24} size="md" /> : <span className="text-slate-600 text-sm">—</span>}</div>
-              </div>
-            </div>
-          </div>
-          {/* Now */}
-          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/4 p-5">
-            <p className="text-xs text-emerald-500/70 uppercase tracking-wider mb-3">Now</p>
-            <div className="space-y-3">
-              <div>
-                <p className="text-[10px] text-slate-600 mb-0.5">Floor</p>
-                <p className="text-2xl font-black text-white tabular-nums">{fmt$$(hero?.price?.low_ask) ?? "—"}</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-slate-600 mb-0.5">Median</p>
-                <p className="text-xl font-bold text-slate-200 tabular-nums">{fmt$$(hero?.price?.median_ask) ?? "—"}</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-slate-600 mb-0.5">Inventory</p>
-                <p className="text-base font-semibold text-slate-300 tabular-nums">{fmtNum(hero?.inventory?.total_listings) ?? "—"}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Inventory flow */}
-        {(seller?.new_listings_24h != null || seller?.removed_listings_24h != null) && (
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            {seller?.new_listings_24h != null && (
-              <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-emerald-500/15 bg-emerald-500/4">
-                <div>
-                  <p className="text-xs text-slate-500 uppercase tracking-wider">Added 24h</p>
-                  <p className="text-[10px] text-slate-700 italic mt-0.5">gross — includes relists</p>
-                </div>
-                <span className="text-lg font-bold text-emerald-400 tabular-nums">+{fmtNum(seller.new_listings_24h)}</span>
               </div>
             )}
-            {seller?.removed_listings_24h != null && (
-              <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-red-500/15 bg-red-500/4">
-                <div>
-                  <p className="text-xs text-slate-500 uppercase tracking-wider">Disappeared 24h</p>
-                  <p className="text-[10px] text-slate-700 italic mt-0.5">sold, expired, or delisted</p>
-                </div>
-                <span className="text-lg font-bold text-red-400 tabular-nums">{fmtNum(seller.removed_listings_24h)}</span>
-              </div>
-            )}
-          </div>
-        )}
-      </section>
 
-      {/* ═══════════════ MARKETPLACE TRENDS ═══════════════ */}
-      <section className="pb-2">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-bold text-slate-200 uppercase tracking-wider">Marketplace Trends</h2>
-          {!snapshot && (
-            <span className="text-[10px] font-bold uppercase tracking-widest text-amber-500/60 border border-amber-500/25 rounded-lg px-2.5 py-1 bg-amber-500/5">Pending Intelligence Phase</span>
-          )}
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {([
-            { slug: "stubhub",    short: "SH", label: "StubHub",     color: "#1c64f2" },
-            { slug: "tickpick",   short: "TP", label: "TickPick",    color: "#7c3aed" },
-            { slug: "gametime",   short: "GT", label: "Gametime",    color: "#0ea5e9" },
-            { slug: "vividseats", short: "VS", label: "Vivid Seats", color: "#059669" },
-          ] as const).map(({ slug, short, label, color }) => {
-            const mp = snapshot?.per_marketplace_trends?.[slug];
-            return (
-              <div key={short} className="rounded-xl border border-white/7 bg-[#161b27] p-5">
-                <div className="flex items-center gap-2.5 mb-4">
-                  <span className="w-2 h-8 rounded flex-shrink-0" style={{ background: color }} />
-                  <div>
-                    <p className="text-sm font-bold uppercase tracking-wide" style={{ color }}>{short}</p>
-                    <p className="text-xs text-slate-500">{label}</p>
+            {/* Marketplace Status */}
+            <div>
+              <h3 className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-2">Marketplace Status</h3>
+              {eventMeta?.marketplace_freshness
+                ? <div className="rounded-xl border border-white/6 bg-[#161b27] overflow-hidden">
+                    {Object.entries(eventMeta.marketplace_freshness).map(([slug, f]: [string, unknown]) => {
+                      const fr = f as { freshness_status?: string; age_minutes?: number };
+                      const info = MP_META[slug] ?? { label: slug, short: slug.slice(0,2).toUpperCase(), color: "#64748b" };
+                      const st = fr.freshness_status ?? "unknown";
+                      const freshCls = st === "fresh" ? "text-emerald-400" : st === "late" ? "text-amber-400" : "text-slate-600";
+                      return (
+                        <div key={slug} className="flex items-center justify-between px-4 py-2.5 border-b border-white/4 last:border-0">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full" style={{ background: info.color }} />
+                            <span className="text-xs text-slate-400">{info.label}</span>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <span className={`text-xs font-semibold ${freshCls}`}>{st}</span>
+                            <span className="text-xs text-slate-600">
+                              {fr.age_minutes != null
+                                ? fr.age_minutes < 60 ? `${fr.age_minutes}m ago` : `${Math.round(fr.age_minutes / 60)}h ago`
+                                : "—"}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-500">Floor Now</span>
-                    {mp?.floor_now != null
-                      ? <span className="text-xs font-bold text-slate-200 tabular-nums">{fmt$$(mp.floor_now)}</span>
-                      : <span className="text-xs text-slate-600">—</span>}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-500">Floor 24h</span>
-                    {mp?.floor_change_pct != null
-                      ? <DeltaChip pct={mp.floor_change_pct} />
-                      : <span className="text-xs text-slate-600">—</span>}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-500">Inventory 24h</span>
-                    {mp?.listings_change != null
-                      ? <DeltaChip abs={mp.listings_change} />
-                      : <span className="text-xs text-slate-600">—</span>}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-500">Listings</span>
-                    {mp?.listings_now != null
-                      ? <span className="text-xs text-slate-400 tabular-nums">{fmtNum(mp.listings_now)}</span>
-                      : <span className="text-xs text-slate-600">—</span>}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* ═══════════════ MARKETPLACE MOVEMENT ═══════════════ */}
-      <section>
-        <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Marketplace Movement</h2>
-        {baseline?.per_marketplace && baseline.per_marketplace.length > 0 ? (
-          <div className="rounded-xl border border-white/7 bg-[#161b27] overflow-hidden">
-            <div className="grid border-b border-white/5 px-4 py-2.5 text-xs text-slate-500 uppercase tracking-wider"
-              style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr" }}>
-              <div>Marketplace</div>
-              <div className="text-right">Floor</div>
-              <div className="text-right">Inv</div>
-              <div className="text-right">24h</div>
-              <div className="text-right">7d</div>
-              <div className="text-right">Signal</div>
+                : <p className="text-xs text-slate-700">No freshness data</p>
+              }
             </div>
-            {baseline.per_marketplace.map((mp) => {
-              const inv24 = mp.listings_change_24h?.absolute ?? null;
-              const inv7d = mp.listings_change_7d?.absolute ?? null;
-              const pct24 = mp.listings_change_24h?.pct ?? null;
-              const slug = mp.marketplace_slug;
-              const mpInfo = MP_META[slug] ?? { label: slug, short: slug.slice(0, 2).toUpperCase(), color: "#64748b" };
-              const direction = inv24 != null ? (inv24 < -5 ? "↓ Tight" : inv24 > 5 ? "↑ Grow" : "Stable") : "—";
-              const dirCls = inv24 != null ? (inv24 < -5 ? "text-emerald-400" : inv24 > 5 ? "text-red-400" : "text-slate-500") : "text-slate-600";
-              return (
-                <div key={slug} className="grid items-center px-4 py-3 border-b border-white/4 last:border-0 hover:bg-white/2"
-                  style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr" }}>
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: mpInfo.color }} />
-                    <span className="text-sm font-bold uppercase tracking-wide flex-shrink-0" style={{ color: mpInfo.color }}>{mpInfo.short}</span>
-                    <span className="text-xs text-slate-400 truncate hidden sm:inline">{mpInfo.label}</span>
-                  </div>
-                  <div className="text-right text-sm font-bold text-white tabular-nums">{fmt$$(mp.current_lowest_ask)}</div>
-                  <div className="text-right text-sm text-slate-300 tabular-nums">{fmtNum(mp.current_listings)}</div>
-                  <div className="text-right">
-                    {inv24 != null
-                      ? <span className={`text-sm font-semibold tabular-nums ${inv24 < 0 ? "text-emerald-400" : "text-red-400"}`}>
-                          {inv24 > 0 ? "+" : ""}{inv24}
-                          {pct24 != null && <span className="text-xs ml-1 opacity-60">({fmtPct(pct24)})</span>}
-                        </span>
-                      : <span className="text-slate-500 text-sm">—</span>}
-                  </div>
-                  <div className="text-right">
-                    {inv7d != null
-                      ? <span className={`text-sm font-semibold tabular-nums ${inv7d < 0 ? "text-emerald-400" : "text-red-400"}`}>
-                          {inv7d > 0 ? "+" : ""}{inv7d}
-                        </span>
-                      : <span className="text-slate-500 text-sm">—</span>}
-                  </div>
-                  <div className={`text-right text-sm font-semibold ${dirCls}`}>{direction}</div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="rounded-xl border border-white/7 bg-[#161b27] px-4 py-6 text-center">
-            <p className="text-xs text-slate-500">Marketplace history pending.</p>
-            <p className="text-[10px] text-slate-700 mt-1">Per-marketplace movement data will appear once baseline tracking accumulates.</p>
-          </div>
-        )}
-      </section>
 
-      {/* ═══════════════ ARTIST INTELLIGENCE ═══════════════ */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Artist Intelligence</h2>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-amber-500/50 border border-amber-500/20 rounded px-2 py-0.5 bg-amber-500/5">Pending Intelligence Phase</span>
-        </div>
-        <div className="rounded-xl border border-white/7 bg-[#161b27] divide-y divide-white/5">
-          {([
-            { label: "Previous City Performance", desc: "Last time this artist played this market — sell-through, price trajectory, and final floor." },
-            { label: "Tour Pattern",              desc: "Where this date ranks across all tour stops by demand signal and expected sell-through." },
-            { label: "Typical Price Curve",       desc: "Historical median price curve for this artist tier: early-bird, mid-cycle, and final-week." },
-            { label: "Typical Inventory Curve",   desc: "How quickly this artist's inventory typically depletes — by section and price tier." },
-            { label: "Average Day-Of Drop",       desc: "Average last-minute floor drop percentage for comparable events by this artist." },
-          ] as const).map(({ label, desc }) => (
-            <div key={label} className="flex items-start justify-between px-4 py-3 gap-4">
-              <div>
-                <p className="text-xs font-semibold text-slate-400">{label}</p>
-                <p className="text-[10px] text-slate-600 mt-0.5 leading-relaxed">{desc}</p>
-              </div>
-              <span className="text-xs text-amber-500/40 italic font-medium flex-shrink-0 mt-0.5">Pending</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ═══════════════ CITY INTELLIGENCE ═══════════════ */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">City Intelligence</h2>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-amber-500/50 border border-amber-500/20 rounded px-2 py-0.5 bg-amber-500/5">Pending Intelligence Phase</span>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {([
-            { city: "Oakland",     abbr: "OAK", color: "#f59e0b" },
-            { city: "Los Angeles", abbr: "LA",  color: "#3b82f6" },
-            { city: "Phoenix",     abbr: "PHX", color: "#ef4444" },
-            { city: "San Diego",   abbr: "SD",  color: "#10b981" },
-          ] as const).map(({ city, abbr, color }) => (
-            <div key={city} className="rounded-xl border border-white/7 bg-[#161b27] p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="w-1.5 h-5 rounded-sm flex-shrink-0" style={{ background: color }} />
-                <div>
-                  <p className="text-xs font-bold" style={{ color }}>{abbr}</p>
-                  <p className="text-[10px] text-slate-600">{city}</p>
-                </div>
-              </div>
-              <div className="space-y-2">
-                {(["Comparable Events", "Market Demand", "Avg Floor"] as const).map(metric => (
-                  <div key={metric} className="flex items-center justify-between">
-                    <span className="text-[10px] text-slate-600">{metric}</span>
-                    <span className="text-[10px] text-amber-500/40 italic">Pending</span>
+            {/* Today's Movement */}
+            <div>
+              <h3 className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-2">Today&apos;s Movement</h3>
+              <div className="rounded-xl border border-white/6 bg-[#161b27] divide-y divide-white/4">
+                {[
+                  { label: "Hourly Floor Δ",    sub: "Floor change per hour",            val: snapshot?.price?.floor_24h_change != null ? `${snapshot.price.floor_24h_change < 0 ? "-" : "+"}${fmt$$(Math.abs(snapshot.price.floor_24h_change / 24))}/hr` : null },
+                  { label: "Hourly Median Δ",   sub: "Median change per hour",           val: snapshot?.price?.median_24h_change != null ? `${snapshot.price.median_24h_change < 0 ? "-" : "+"}${fmt$$(Math.abs(snapshot.price.median_24h_change / 24))}/hr` : null },
+                  { label: "Hourly Inventory Δ",sub: "Net listing change per hour",       val: snapshot?.inventory?.inventory_24h_change != null ? `${(snapshot.inventory.inventory_24h_change / 24).toFixed(1)}/hr` : null },
+                  { label: "Disappeared 24h",   sub: "Sold, pulled, or expired",         val: seller?.removed_listings_24h != null ? fmtNum(seller.removed_listings_24h) : null },
+                  { label: "New Listings 24h",  sub: "Added (incl. relists)",            val: seller?.new_listings_24h != null ? `+${fmtNum(seller.new_listings_24h)}` : null },
+                ].map(({ label, sub, val }) => (
+                  <div key={label} className="flex items-center justify-between px-4 py-2.5">
+                    <div>
+                      <p className="text-xs text-slate-400 font-medium">{label}</p>
+                      <p className="text-[10px] text-slate-600">{sub}</p>
+                    </div>
+                    <span className="text-sm font-bold text-slate-300 tabular-nums">{val ?? "—"}</span>
                   </div>
                 ))}
               </div>
             </div>
-          ))}
-        </div>
-      </section>
 
-      {/* ═══════════════ BUY WINDOW FORECAST ═══════════════ */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Buy Window Forecast</h2>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-amber-500/50 border border-amber-500/20 rounded px-2 py-0.5 bg-amber-500/5">Pending Intelligence Phase</span>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {([
-            { label: "Expected Floor",    desc: "Predicted floor on the optimal buy date." },
-            { label: "Expected Median",   desc: "Predicted median price at optimal buy." },
-            { label: "Expected Buy Time", desc: "Days before event to purchase." },
-            { label: "Confidence",        desc: "Model confidence in this forecast." },
-          ] as const).map(({ label, desc }) => (
-            <div key={label} className="rounded-xl border border-white/7 bg-[#161b27] p-4">
-              <p className="text-xs font-semibold text-slate-400 mb-1">{label}</p>
-              <p className="text-[10px] text-slate-600 leading-relaxed mb-3">{desc}</p>
-              <span className="text-lg font-bold text-amber-500/20">—</span>
+            {/* Market Movement */}
+            <div>
+              <h3 className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-2">Market Movement</h3>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                {[
+                  { label: "Tracking Start", items: [
+                    { k: "Floor",  v: fmt$$(history?.series?.[0]?.low_ask)    },
+                    { k: "Median", v: fmt$$(history?.series?.[0]?.median_ask) },
+                    { k: "Inv",    v: fmtNum(history?.series?.[0]?.listings)  },
+                  ]},
+                  { label: "7d Change", items: [
+                    { k: "Median Δ", v: hero?.changes?.d7?.price_delta_pct != null ? fmtPct(hero.changes.d7.price_delta_pct) : "—" },
+                    { k: "Inv Δ",    v: hero?.changes?.d7?.inventory_delta != null ? `${hero.changes.d7.inventory_delta > 0 ? "+" : ""}${hero.changes.d7.inventory_delta}` : "—" },
+                  ]},
+                  { label: "24h Change", items: [
+                    { k: "Floor Δ",  v: snapshot?.price?.floor_24h_change != null ? fmt$$(snapshot.price.floor_24h_change) : "—" },
+                    { k: "Median Δ", v: pct24h != null ? fmtPct(pct24h) : "—" },
+                    { k: "Inv Δ",    v: invDelta24 != null ? `${invDelta24 > 0 ? "+" : ""}${invDelta24}` : "—" },
+                  ]},
+                  { label: "Now", items: [
+                    { k: "Floor",  v: fmt$$(hero?.price?.low_ask)             },
+                    { k: "Median", v: fmt$$(hero?.price?.median_ask)          },
+                    { k: "Inv",    v: fmtNum(hero?.inventory?.total_listings) },
+                  ]},
+                ].map(({ label, items }) => (
+                  <div key={label} className="rounded-xl border border-white/6 bg-[#161b27]/50 p-3">
+                    <p className="text-[9px] text-slate-600 uppercase tracking-widest font-semibold mb-2">{label}</p>
+                    <div className="space-y-1.5">
+                      {items.map(({ k, v }) => (
+                        <div key={k} className="flex items-center justify-between">
+                          <span className="text-[10px] text-slate-600">{k}</span>
+                          <span className="text-xs font-semibold text-slate-400 tabular-nums">{v ?? "—"}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
-        </div>
-      </section>
 
-      {/* ═══════════════ DUPLICATE / SHARED INVENTORY ═══════════════ */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Duplicate &amp; Shared Inventory</h2>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-amber-500/50 border border-amber-500/20 rounded px-2 py-0.5 bg-amber-500/5">Pending Intelligence Phase</span>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          {([
-            { label: "Net Listings",    desc: "Deduplicated unique listing count." },
-            { label: "Net Tickets",     desc: "Deduplicated unique ticket count." },
-            { label: "Shared Listings", desc: "Listings appearing on 2+ marketplaces." },
-            { label: "Shared Tickets",  desc: "Tickets in cross-listed inventory." },
-            { label: "Duplicate Rate",  desc: "% of inventory that is duplicated." },
-          ] as const).map(({ label, desc }) => (
-            <div key={label} className="rounded-xl border border-white/7 bg-[#161b27] p-4">
-              <p className="text-xs font-semibold text-slate-400 mb-1">{label}</p>
-              <p className="text-[10px] text-slate-600 leading-relaxed mb-3">{desc}</p>
-              <span className="text-lg font-bold text-amber-500/20">—</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ═══════════════ INTELLIGENCE PLACEHOLDERS ═══════════════ */}
-      <section>
-        <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Intelligence</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {[
-            { label: "Buy Timing Intelligence",   icon: "⏱",  desc: "Optimal buy window based on historical price trajectory for this event type and venue." },
-            { label: "Artist Trend",              icon: "🎤",  desc: "Demand trajectory across this artist's recent tour legs and comparable markets." },
-            { label: "Tour Trend",                icon: "🗺",  desc: "Cross-city pricing comparison: how does this date rank vs. other tour stops?" },
-            { label: "City Trend",                icon: "🏙",  desc: "LA market-wide event demand signals and competitive inventory context." },
-            { label: "Venue Trend",               icon: "🏟",  desc: "Historical sell-through and price behavior for this specific venue and capacity." },
-            { label: "Similar Events",            icon: "🔍",  desc: "Comparable events by artist tier, venue size, and demand profile for calibration." },
-            { label: "Ticket Class Forecast",     icon: "🎟",  desc: "Per-section price trajectory — which sections are appreciating vs. softening?" },
-            { label: "Sales Intelligence",        icon: "📊",  desc: "Sell-through rate, conversion velocity, and time-to-sell by section." },
-            { label: "Inventory Intelligence",    icon: "📦",  desc: "Net inventory flow, relist detection, and seller concentration." },
-            { label: "Duplicate Intelligence",    icon: "🔁",  desc: "Cross-marketplace duplicate listing detection and deduplication." },
-            { label: "Sell-Through Intelligence", icon: "✅",  desc: "Confirmed purchase signals and section-level sell-through rates." },
-          ].map(({ label, icon, desc }) => (
-            <div key={label} className="rounded-xl border border-white/5 bg-[#161b27] px-4 py-3 flex items-start gap-3">
-              <span className="text-lg opacity-40 flex-shrink-0 mt-0.5">{icon}</span>
+            {/* Seller Activity */}
+            {seller && (
               <div>
-                <p className="text-xs font-semibold text-slate-400 mb-0.5">{label}</p>
-                <p className="text-[10px] text-slate-600 mb-1.5 leading-relaxed">{desc}</p>
-                <span className="inline-block text-[9px] font-bold uppercase tracking-widest text-amber-500/60 border border-amber-500/20 rounded px-1.5 py-0.5 bg-amber-500/5">
-                  Pending Intelligence Phase
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ═══════════════ PRICE HISTORY CHART ═══════════════ */}
-      <section>
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Price History</h2>
-          <div className="flex rounded-lg border border-white/7 overflow-hidden text-xs">
-            {WINDOWS.map((w) => (
-              <button key={w.id} onClick={() => setHistWindow(w.id)} disabled={loadingHistory}
-                className={cn("px-2.5 py-1 transition-colors",
-                  histWindow === w.id ? "bg-white/10 text-slate-200" : "text-slate-500 hover:text-slate-300 hover:bg-white/5")}>
-                {w.label}
-              </button>
-            ))}
-            {loadingHistory && <span className="px-2 flex items-center"><RefreshCw size={9} className="animate-spin text-slate-500" /></span>}
-          </div>
-        </div>
-        <div className="rounded-xl border border-white/7 bg-[#161b27]">
-          {history?.source && (
-            <div className={cn("px-4 py-2.5 border-b border-white/5 flex items-center justify-between",
-              history.source === "combined" ? "bg-emerald-500/5" : history.source === "live" ? "bg-amber-500/5" : "")}>
-              <span className={cn("text-xs font-medium",
-                history.source === "combined" ? "text-emerald-400" :
-                history.source === "live"     ? "text-amber-400"   : "text-blue-400")}>
-                {history.source === "combined"
-                  ? `${Math.round(history.data_depth_days ?? 0)} days of history`
-                  : history.source === "live" ? "Live data · limited trend signal" : `${Math.round(history.data_depth_days ?? 0)}d archive`}
-              </span>
-              <span className="text-[10px] text-slate-600">{history.point_count ?? 0} points</span>
-            </div>
-          )}
-          <div className="p-4">
-            {history?.series?.length
-              ? <PriceHistoryChart series={history.series} window={histWindow} height={220} />
-              : <div className="h-[220px] flex items-center justify-center text-xs text-slate-600">Not enough data yet</div>
-            }
-          </div>
-          {hero && (
-            <div className="px-4 pb-3 grid grid-cols-5 gap-2 border-t border-white/5">
-              {[
-                { label: "Floor",  val: hero.price?.low_ask    },
-                { label: "p25",    val: hero.price?.p25_ask    },
-                { label: "Median", val: hero.price?.median_ask },
-                { label: "p75",    val: hero.price?.p75_ask    },
-                { label: "High",   val: hero.price?.high_ask   },
-              ].map(({ label, val }) => (
-                <div key={label} className="text-center pt-2">
-                  <div className="text-[9px] text-slate-600 uppercase tracking-wide mb-0.5">{label}</div>
-                  <div className="text-xs font-semibold text-slate-300 tabular-nums">{fmt$$(val)}</div>
+                <h3 className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-2">Seller Activity</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { label: "Added 24h",       sub: "gross, incl. relists",  val: fmtDelta(seller.new_listings_24h),     cls: "text-emerald-400" },
+                    { label: "Disappeared 24h", sub: "sold/expired/delisted", val: fmtDelta(seller.removed_listings_24h), cls: "text-red-400" },
+                    { label: "Repriced 24h",    sub: "sellers changed ask",   val: fmtNum(seller.repriced_24h),            cls: "text-amber-400" },
+                    { label: "Price Drops 24h", sub: "ask lowered",           val: fmtNum(seller.price_drops_24h),         cls: "text-red-400" },
+                  ].map(({ label, sub, val, cls }) => (
+                    <div key={label} className="rounded-xl border border-white/5 bg-[#161b27] px-3 py-3">
+                      <p className="text-[9px] text-slate-600 uppercase tracking-wider">{label}</p>
+                      <p className="text-[8px] text-slate-700 italic mb-1">{sub}</p>
+                      <p className={cn("text-base font-bold tabular-nums", cls)}>{val ?? "—"}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
+                {seller.largest_price_drops?.length > 0 && (
+                  <div className="mt-2 rounded-xl border border-white/6 bg-[#161b27] overflow-hidden">
+                    <div className="px-4 py-2 border-b border-white/5 text-[10px] text-slate-600 uppercase tracking-wider font-medium">Largest Price Drops</div>
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-white/5">
+                          {["Section","Was","Now","Drop"].map(h => (
+                            <th key={h} className="text-left px-4 py-2 text-[9px] text-slate-600 uppercase tracking-wider font-medium">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {seller.largest_price_drops.slice(0, 5).map((d, i) => (
+                          <tr key={i} className="border-b border-white/4 last:border-0 hover:bg-white/2">
+                            <td className="px-4 py-2 text-slate-300 max-w-[120px] truncate">{d.section}</td>
+                            <td className="px-4 py-2 text-slate-500 tabular-nums">{fmt$$(d.old_price)}</td>
+                            <td className="px-4 py-2 text-slate-200 font-semibold tabular-nums">{fmt$$(d.new_price)}</td>
+                            <td className="px-4 py-2 text-red-400 font-medium tabular-nums">{fmt$$(d.delta)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Pending Intelligence */}
+            <div>
+              <h3 className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-2">Pending Intelligence</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {[
+                  { label: "Buy Timing",    desc: "Optimal buy window from historical trajectory." },
+                  { label: "Artist Trend",  desc: "Demand across recent tour legs and comparable markets." },
+                  { label: "Tour Trend",    desc: "How this date ranks vs other tour stops." },
+                  { label: "City Trend",    desc: "LA market-wide demand signals." },
+                  { label: "Venue Trend",   desc: "Historical sell-through for this venue." },
+                  { label: "Net Inventory", desc: "Deduplicated cross-marketplace listing count." },
+                ].map(({ label, desc }) => (
+                  <div key={label} className="rounded-lg border border-white/5 bg-[#161b27] px-3 py-2.5">
+                    <p className="text-[10px] font-semibold text-slate-500 mb-0.5">{label}</p>
+                    <p className="text-[9px] text-slate-700 leading-snug">{desc}</p>
+                    <span className="inline-block text-[9px] font-bold uppercase tracking-widest text-amber-500/50 mt-1">Pending</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          )}
-        </div>
+
+          </div>
+        )}
       </section>
 
-      {/* ═══════════════ LOWEST LISTINGS ═══════════════ */}
-      {listings && listings.length > 0 && (
-        <section>
-          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Lowest Available Tickets</h2>
-          <div className="rounded-xl border border-white/7 bg-[#161b27] overflow-x-auto">
-            <table className="w-full text-xs min-w-[480px]">
-              <thead>
-                <tr className="border-b border-white/5">
-                  {["#", "Price", "Section", "Row", "Qty", "Marketplace", "Move", ""].map((h) => (
-                    <th key={h} className="text-left px-3 py-2 text-[9px] text-slate-500 uppercase tracking-wider font-medium first:pl-4">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {listings.map((l, i) => {
-                  const slug   = l.marketplace_slug;
-                  const mpInfo = MP_META[slug] ?? null;
-                  return (
-                    <tr key={l.id} className="border-b border-white/4 last:border-0 hover:bg-white/2 transition-colors">
-                      <td className="pl-4 pr-2 py-2.5 text-slate-600 tabular-nums">{i + 1}</td>
-                      <td className="px-3 py-2.5 font-bold text-slate-100 tabular-nums">{fmt$$(l.price)}</td>
-                      <td className="px-3 py-2.5 text-slate-300 max-w-[140px] truncate">{l.section_name ?? l.section ?? "—"}</td>
-                      <td className="px-3 py-2.5 text-slate-400">{l.row ?? "—"}</td>
-                      <td className="px-3 py-2.5 text-slate-500 tabular-nums">{l.quantity}</td>
-                      <td className="px-3 py-2.5">
-                        {mpInfo
-                          ? <span className="inline-flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full" style={{ background: mpInfo.color }} />
-                              <span className="text-slate-400">{mpInfo.short}</span>
-                            </span>
-                          : <span className="text-slate-500 capitalize">{slug}</span>}
-                      </td>
-                      {/* Hidden / Parking workflow placeholder */}
-                      <td className="px-3 py-2.5">
-                        <ListingMoveMenu listingId={l.id} />
-                      </td>
-                      <td className="px-3 py-2.5 text-right">
-                        {l.listing_url && (
-                          <a href={l.listing_url} target="_blank" rel="noopener noreferrer"
-                            className="text-[10px] text-blue-500 hover:text-blue-400 transition-colors">buy ↗</a>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
-
-      {/* ═══════════════ SELLER ACTIVITY ═══════════════ */}
-      {seller && (
-        <section>
-          <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Seller Activity</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {[
-              { label: "Added 24h",       sublabel: "gross, incl. relists",  value: fmtDelta(seller.new_listings_24h),     cls: "text-emerald-400" },
-              { label: "Disappeared 24h", sublabel: "sold/expired/delisted", value: fmtDelta(seller.removed_listings_24h), cls: "text-red-400"     },
-              { label: "Repriced 24h",    sublabel: "sellers changed ask",   value: fmtNum(seller.repriced_24h),            cls: "text-amber-400"   },
-              { label: "Price drops 24h", sublabel: "ask lowered",           value: fmtNum(seller.price_drops_24h),         cls: "text-red-400"     },
-            ].map(({ label, sublabel, value, cls }) => (
-              <div key={label} className="rounded-xl border border-white/6 bg-[#161b27] px-3 py-3">
-                <p className="text-[9px] text-slate-500 uppercase tracking-wider leading-tight">{label}</p>
-                <p className="text-[8px] text-slate-700 mb-1.5 italic">{sublabel}</p>
-                <p className={cn("text-lg font-bold tabular-nums", cls)}>{value ?? "—"}</p>
-              </div>
-            ))}
-          </div>
-          {seller.largest_price_drops?.length > 0 && (
-            <div className="mt-2 rounded-xl border border-white/7 bg-[#161b27] overflow-hidden">
-              <div className="px-4 py-2 border-b border-white/5 text-[10px] text-slate-500 uppercase tracking-wider font-medium">Largest Price Drops</div>
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-white/5">
-                    {["Section", "Was", "Now", "Drop"].map(h => (
-                      <th key={h} className="text-left px-4 py-2 text-[9px] text-slate-600 uppercase tracking-wider font-medium">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {seller.largest_price_drops.slice(0, 5).map((d, i) => (
-                    <tr key={i} className="border-b border-white/4 last:border-0 hover:bg-white/2">
-                      <td className="px-4 py-2 text-slate-300 max-w-[120px] truncate">{d.section}</td>
-                      <td className="px-4 py-2 text-slate-500 tabular-nums">{fmt$$(d.old_price)}</td>
-                      <td className="px-4 py-2 text-slate-200 font-semibold tabular-nums">{fmt$$(d.new_price)}</td>
-                      <td className="px-4 py-2 text-red-400 font-medium tabular-nums">{fmt$$(d.delta)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* ═══════════════ SECTION BREAKDOWN ═══════════════ */}
-      {sections?.sections && sections.sections.length > 0 && (
-        <SectionBreakdown sections={sections.sections} />
-      )}
-
-      {/* ═══════════════ VENUE SUMMARY ═══════════════ */}
-      {eventMeta?.venue_slug && (
-        <section>
-          <VenueSummaryCard venueSlug={eventMeta.venue_slug} />
-          <VenueIntelligence venueSlug={eventMeta.venue_slug} eventId={id} />
-        </section>
-      )}
     </div>
   );
 }

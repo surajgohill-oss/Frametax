@@ -11,6 +11,7 @@ import type {
   VenueIntelligenceResponse,
   VenueClassificationsResponse,
   BaselineResponse,
+  AlertResponse,
   Listing,
   EventSnapshotResponse,
 } from "./types";
@@ -28,6 +29,7 @@ export const api = {
     list: () => get<EventsListResponse>("/api/intelligence/events"),
     all: () => get<RawEvent[]>("/api/events/"),
     meta: (id: number) => get<EventMeta>(`/api/events/${id}`),
+    alerts: (id: number) => get<AlertResponse>(`/api/events/${id}/alerts`),
     hero: (id: number) => get<HeroResponse>(`/api/intelligence/events/${id}/hero`),
     market: (id: number) => get<MarketResponse>(`/api/intelligence/events/${id}/market`),
     history: (id: number, window: HistoryWindow = "7d") =>
