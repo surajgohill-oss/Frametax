@@ -527,3 +527,106 @@ async def probe_marketplace(marketplace: str, event_id: str, url: str = ""):
                 results[name] = {"url": probe_url[:80], "error": str(exc)[:100]}
 
     return results
+
+
+@router.get("/scrape-stubhub-html")
+async def scrape_stubhub_html(event_id: str, url: str = ""):
+    """Parse StubHub event page HTML for embedded listing/price data."""
+    import httpx, re, json as _json
+    target_url = url or f"https://www.stubhub.com/event/{event_id}/"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Referer": "https://www.google.com/",
+        "Cache-Control": "no-cache",
+    }
+    async with httpx.AsyncClient(follow_redirects=True, timeout=20.0) as client:
+        resp = await client.get(target_url, headers=headers)
+    html = resp.text
+    result = {"status": resp.status_code, "size": len(html), "url": str(resp.url)}
+    # Look for all <script> tags with JSON data
+    script_tags = re.findall(r'<script[^>]*>(.*?)</script>', html, re.DOTALL)
+    json_scripts = []
+    for i, s in enumerate(script_tags):
+        s = s.strip()
+        if not s or not (s.startswith('{') or s.startswith('[') or '__' in s or 'window.' in s):
+            continue
+        size = len(s)
+        # Try to parse JSON
+        json_ok = False
+        keys_preview = []
+        try:
+            parsed = _json.loads(s)
+            json_ok = True
+            keys_preview = list(parsed.keys())[:10] if isinstance(parsed, dict) else [f"list[{len(parsed)}]"]
+        except Exception:
+            # Try window.xxx = {...}
+            m = re.match(r'window\.(\w+)\s*=\s*(\{.*)', s, re.DOTALL)
+            if m:
+                try:
+                    parsed = _json.loads(m.group(2).rstrip(';'))
+                    json_ok = True
+                    keys_preview = list(parsed.keys())[:10]
+                except Exception:
+                    pass
+        json_scripts.append({"index": i, "size": size, "json": json_ok, "keys": keys_preview, "preview": s[:150]})
+    # Look for listing-related patterns
+    patterns = {
+        "listing_count": re.findall(r'"listingCount"\s*:\s*(\d+)', html),
+        "numFound": re.findall(r'"numFound"\s*:\s*(\d+)', html),
+        "totalListings": re.findall(r'"totalListings"\s*:\s*(\d+)', html),
+        "currentPrice": re.findall(r'"currentPrice"\s*:\s*([\d.]+)', html)[:5],
+        "allInPrice": re.findall(r'"allInPrice"\s*:\s*([\d.]+)', html)[:5],
+        "listing_id": re.findall(r'"listing_id"\s*:\s*(\d+)', html)[:3],
+        "seatNumber": re.findall(r'"seatNumber"\s*:\s*"([^"]+)"', html)[:3],
+    }
+    result["patterns"] = {k: v for k, v in patterns.items() if v}
+    result["scripts"] = [s for s in json_scripts if s["size"] > 500][:10]
+    result["html_head"] = html[:300]
+    return result
+
+
+@router.get("/scrape-tickpick-html")
+async def scrape_tickpick_html(event_id: str, url: str = ""):
+    """Parse TickPick event page HTML for embedded listing/price data."""
+    import httpx, re, json as _json
+    target_url = url or f"https://www.tickpick.com/buy-tickets/{event_id}/"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://www.google.com/",
+    }
+    async with httpx.AsyncClient(follow_redirects=True, timeout=20.0) as client:
+        resp = await client.get(target_url, headers=headers)
+    html = resp.text
+    result = {"status": resp.status_code, "size": len(html), "url": str(resp.url)}
+    patterns = {
+        "listing_count": re.findall(r'"listingCount"\s*:\s*(\d+)', html),
+        "listing_p": re.findall(r'"p"\s*:\s*(\d+)', html)[:10],  # TickPick price field
+        "listing_s": re.findall(r'"s"\s*:\s*"([^"]+)"', html)[:5],  # TickPick section field
+        "listing_id_tp": re.findall(r'"id"\s*:\s*(\d{7,})', html)[:5],
+        "numListings": re.findall(r'numListings["\s:]+(\d+)', html),
+        "totalTickets": re.findall(r'totalTickets["\s:]+(\d+)', html),
+        "json_ld_price": re.findall(r'"lowPrice"\s*:\s*"?(\d+)', html)[:3],
+    }
+    result["patterns"] = {k: v for k, v in patterns.items() if v}
+    # Look for JSON blobs in script tags
+    next_data = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', html, re.DOTALL)
+    if next_data:
+        try:
+            nd = _json.loads(next_data.group(1))
+            result["next_data_keys"] = list((nd.get("props", {}).get("pageProps", {}) or {}).keys())[:15]
+        except Exception as e:
+            result["next_data_error"] = str(e)
+    # Large script tags
+    scripts = re.findall(r'<script[^>]*>(.*?)</script>', html, re.DOTALL)
+    large = []
+    for s in scripts:
+        if len(s) > 1000 and ('"listing"' in s or '"p"' in s or '"price"' in s):
+            large.append({"size": len(s), "preview": s[:200]})
+    result["large_data_scripts"] = large[:5]
+    result["html_head"] = html[:300]
+    return result
