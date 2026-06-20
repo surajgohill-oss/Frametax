@@ -630,3 +630,138 @@ async def scrape_tickpick_html(event_id: str, url: str = ""):
     result["large_data_scripts"] = large[:5]
     result["html_head"] = html[:300]
     return result
+
+
+@router.get("/extract-stubhub-grid")
+async def extract_stubhub_grid(event_id: str, url: str = ""):
+    """Extract StubHub listing grid data embedded in event page HTML."""
+    import httpx, re, json as _json
+    target_url = url or f"https://www.stubhub.com/event/{event_id}/"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Referer": "https://www.google.com/",
+    }
+    async with httpx.AsyncClient(follow_redirects=True, timeout=20.0) as client:
+        resp = await client.get(target_url, headers=headers)
+    html = resp.text
+
+    # Find the viagogo-event script with grid.items
+    scripts = re.findall(r'<script[^>]*>(.*?)</script>', html, re.DOTALL)
+    grid_data = None
+    for s in scripts:
+        s = s.strip()
+        if '"appName":"viagogo-event"' in s and '"grid"' in s:
+            try:
+                grid_data = _json.loads(s)
+                break
+            except Exception:
+                pass
+
+    if not grid_data:
+        return {"status": resp.status_code, "size": len(html), "error": "grid script not found",
+                "totalListings": re.findall(r'"totalListings"\s*:\s*(\d+)', html)}
+
+    items = (grid_data.get("grid") or {}).get("items", [])
+    # Extract listing fields
+    sample = []
+    for item in items[:5]:
+        sample.append({
+            "id": item.get("id"),
+            "section": item.get("section"),
+            "row": item.get("row"),
+            "qty": item.get("quantity") or item.get("qty"),
+            "currentPrice": item.get("currentPrice") or item.get("current_price"),
+            "allInPrice": item.get("allInPrice") or item.get("all_in_price"),
+            "listingUrl": str(item.get("listingUrl", ""))[:60],
+            "keys": list(item.keys())[:15],
+        })
+    return {
+        "status": resp.status_code,
+        "html_size": len(html),
+        "total_listings_html": re.findall(r'"totalListings"\s*:\s*(\d+)', html),
+        "grid_items_count": len(items),
+        "grid_top_keys": list(grid_data.keys())[:15],
+        "ticket_classes": list((grid_data.get("ticketClasses") or {}).keys())[:10],
+        "sample_items": sample,
+        "first_item_keys": list(items[0].keys()) if items else [],
+    }
+
+
+@router.get("/extract-tickpick-listings")
+async def extract_tickpick_listings(event_id: str, url: str = ""):
+    """Extract TickPick listing data from event page HTML."""
+    import httpx, re, json as _json
+    target_url = url or f"https://www.tickpick.com/buy-tickets/{event_id}/"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://www.google.com/",
+    }
+    async with httpx.AsyncClient(follow_redirects=True, timeout=20.0) as client:
+        resp = await client.get(target_url, headers=headers)
+    html = resp.text
+
+    # TickPick embeds listing data in window.__INITIAL_STATE__ or similar
+    # Look for large JSON blobs with listing data
+    scripts = re.findall(r'<script[^>]*>(.*?)</script>', html, re.DOTALL)
+    listing_data = None
+    listing_source = None
+
+    for s in scripts:
+        s = s.strip()
+        # TickPick typically has: window.__NEXT_DATA__ or window.__INITIAL_STATE__ or inline JSON
+        for pattern in [
+            r'window\.__INITIAL_STATE__\s*=\s*(\{.*)',
+            r'window\.__REDUX_STATE__\s*=\s*(\{.*)',
+        ]:
+            m = re.match(pattern, s, re.DOTALL)
+            if m:
+                try:
+                    listing_data = _json.loads(m.group(1).rstrip(';'))
+                    listing_source = pattern
+                    break
+                except Exception:
+                    pass
+        if listing_data: break
+
+    # Also try NEXT_DATA
+    next_data_match = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', html, re.DOTALL)
+    next_data = None
+    if next_data_match:
+        try:
+            next_data = _json.loads(next_data_match.group(1))
+        except Exception:
+            pass
+
+    # Look for JSON-LD structured data with offers
+    json_ld_blocks = re.findall(r'<script type="application/ld\+json"[^>]*>(.*?)</script>', html, re.DOTALL)
+    offers = []
+    for block in json_ld_blocks:
+        try:
+            d = _json.loads(block)
+            if "offers" in d:
+                o = d["offers"]
+                offers.append({"lowPrice": o.get("lowPrice"), "highPrice": o.get("highPrice"), "availability": o.get("availability")})
+        except Exception:
+            pass
+
+    return {
+        "status": resp.status_code,
+        "html_size": len(html),
+        "url": str(resp.url),
+        "has_initial_state": listing_source is not None,
+        "has_next_data": next_data is not None,
+        "next_data_keys": list((next_data or {}).get("props", {}).get("pageProps", {}).keys())[:20] if next_data else [],
+        "json_ld_offers": offers,
+        "listing_data_top_keys": list(listing_data.keys())[:15] if listing_data else None,
+        "patterns": {
+            "listing_p": re.findall(r'"p"\s*:\s*(\d{3,5})', html)[:10],
+            "listing_section": re.findall(r'"s"\s*:\s*"([^"]{2,20})"', html)[:5],
+            "listing_ids": re.findall(r'"id"\s*:\s*(\d{7,})', html)[:5],
+            "numListings": re.findall(r'"numListings"\s*:\s*(\d+)', html),
+        }
+    }
