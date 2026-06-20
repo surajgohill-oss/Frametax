@@ -12,6 +12,7 @@ Price units: cents (integer) — divide by 100.
 """
 from __future__ import annotations
 
+import json as _json
 import re
 from decimal import Decimal, InvalidOperation
 from datetime import datetime, timedelta
@@ -203,6 +204,7 @@ class TickPickCollector(BaseCollector):
         if not event_id:
             return []
 
+        # Strategy 1: JSON API (blocked by IP restrictions from Railway — try first, fast fail)
         try:
             resp = await self._client().get(
                 f"{_TP_API_BASE}/listings/event/{event_id}",
@@ -210,22 +212,111 @@ class TickPickCollector(BaseCollector):
             )
             resp.raise_for_status()
             data = resp.json()
+            listings = self._parse(event_id, data)
+            logger.info("TP collector: API event=%s listings=%d", event_id, len(listings))
+            if listings:
+                return listings
         except httpx.HTTPStatusError as exc:
             status = exc.response.status_code
-            if status == 404:
-                logger.info("TP collector: event %s not found", event_id)
-            elif status in (401, 403):
-                logger.warning("TP collector: auth failure for event %s", event_id)
+            if status == 403:
+                logger.info("TP collector: API 403 (IP block), trying HTML scrape for event %s", event_id)
+            elif status == 404:
+                logger.info("TP collector: event %s not found via API", event_id)
+                return []
             else:
-                logger.warning("TP collector: HTTP %s for event %s", status, event_id)
-            return []
+                logger.warning("TP collector: API HTTP %s for event %s", status, event_id)
         except Exception as exc:
-            logger.warning("TP collector: fetch failed for event %s — %s", event_id, exc)
-            return []
+            logger.warning("TP collector: API fetch failed for event %s — %s", event_id, exc)
 
-        listings = self._parse(event_id, data)
-        logger.info("TP collector: event=%s listings=%d", event_id, len(listings))
-        return listings
+        # Strategy 2: HTML page scrape — event page returns 200 from Railway IPs
+        ext_url = getattr(tracked_event, "external_url", None) or f"https://www.tickpick.com/buy-tickets/{event_id}/"
+        html_listings = await self._fetch_via_html(event_id, ext_url)
+        if html_listings is not None:
+            logger.info("TP collector: HTML event=%s listings=%d", event_id, len(html_listings))
+            return html_listings
+
+        return []
+
+    async def _fetch_via_html(self, event_id: str, url: str) -> Optional[list]:
+        """
+        Scrape TickPick event page HTML for embedded listing JSON.
+        The page returns HTTP 200 from Railway IPs even though api.tickpick.com returns 403.
+        TickPick embeds listing data in a <script> tag as JSON (window.__INITIAL_STATE__
+        or an inline JSON blob with a 'listing' key).
+        """
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Referer": "https://www.google.com/",
+        }
+        try:
+            async with httpx.AsyncClient(follow_redirects=True, timeout=25.0, headers=headers) as client:
+                resp = await client.get(url)
+            if resp.status_code != 200:
+                logger.warning("TP HTML: HTTP %s for %s", resp.status_code, url)
+                return None
+        except Exception as exc:
+            logger.warning("TP HTML fetch failed: %s", exc)
+            return None
+
+        html = resp.text
+        logger.info("TP HTML: fetched %d bytes from %s", len(html), url)
+
+        # Try multiple extraction patterns
+        # Pattern 1: window.__INITIAL_STATE__ = {...}
+        for pattern in (
+            r'window\.__INITIAL_STATE__\s*=\s*(\{.*?\});?\s*</script>',
+            r'window\.__REDUX_STATE__\s*=\s*(\{.*?\});?\s*</script>',
+        ):
+            m = re.search(pattern, html, re.DOTALL)
+            if m:
+                try:
+                    data = _json.loads(m.group(1))
+                    # Drill for listing data
+                    for path in [["listings", "items"], ["event", "listings"], ["listing"]]:
+                        node = data
+                        try:
+                            for key in path: node = node[key]
+                            if isinstance(node, list) and node:
+                                logger.info("TP HTML: found %d items via window state path=%s", len(node), path)
+                                return self._parse(event_id, {"listing": node})
+                        except (KeyError, TypeError):
+                            pass
+                except Exception as exc:
+                    logger.debug("TP HTML window state parse error: %s", exc)
+
+        # Pattern 2: NEXT_DATA script
+        nd_match = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', html, re.DOTALL)
+        if nd_match:
+            try:
+                nd = _json.loads(nd_match.group(1))
+                page_props = nd.get("props", {}).get("pageProps", {}) or {}
+                for key in ("listings", "initialListings", "eventListings"):
+                    items = page_props.get(key)
+                    if isinstance(items, list) and items:
+                        logger.info("TP HTML NEXT_DATA: found %d items key=%s", len(items), key)
+                        return self._parse(event_id, {"listing": items})
+            except Exception as exc:
+                logger.debug("TP HTML NEXT_DATA parse error: %s", exc)
+
+        # Pattern 3: Inline JSON blob containing "listing" key with price/section data
+        # TickPick React app embeds hydration data as JSON inside <script> tags
+        script_re = re.finditer(r'<script[^>]*>(\{[^<]{500,})</script>', html, re.DOTALL)
+        for m in script_re:
+            try:
+                blob = _json.loads(m.group(1))
+                raw = blob.get("listing") or blob.get("listings")
+                if isinstance(raw, list) and raw and isinstance(raw[0], dict):
+                    # Verify it looks like listing data (has price field)
+                    if any(k in raw[0] for k in ("p", "price", "pricePerTicket", "currentPrice")):
+                        logger.info("TP HTML inline blob: found %d listings", len(raw))
+                        return self._parse(event_id, {"listing": raw})
+            except Exception:
+                pass
+
+        logger.info("TP HTML: no listing data found in %d byte page", len(html))
+        return []
 
     def _parse(self, event_id: str, data: dict) -> list[RawListing]:
         raw_listings = (

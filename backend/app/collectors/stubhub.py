@@ -17,6 +17,15 @@ STUBHUB_SOLR_URL = (
     "&fl=listing_id,section,row,qty,current_price,all_in_price,fees,listing_url&sort=current_price+asc&wt=json"
 )
 
+_SH_HTML_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Referer": "https://www.google.com/",
+    "Cache-Control": "no-cache",
+}
+
 
 class StubHubCollector(BaseCollector):
     marketplace_slug = "stubhub"
@@ -56,16 +65,111 @@ class StubHubCollector(BaseCollector):
     async def _fetch_listings(self, tracked_event) -> list[RawListing]:
         event_id = tracked_event.external_event_id
 
+        # Strategy 1: HTML grid extraction (primary — works from Railway IP)
+        html_url = tracked_event.external_url or f"https://www.stubhub.com/event/{event_id}/"
+        listings = await self._fetch_via_html_grid(event_id, html_url)
+        if listings:
+            self.logger.info("StubHub HTML grid: event=%s listings=%d", event_id, len(listings))
+            return listings
+
+        # Strategy 2: Solr JSON API (blocked by DataDome from Railway, kept as fallback)
         skip_json = await self.should_skip_pattern(STUBHUB_SOLR_URL, "http_failure")
-        listings = None
         if not skip_json:
             async with self.telemetry("solr_api", url=STUBHUB_SOLR_URL, event_id=event_id):
                 listings = await self._fetch_via_json_api(event_id)
+            if listings is not None:
+                return listings
 
-        if listings is None:
-            listings = await self._fetch_via_playwright(event_id, tracked_event.external_url)
+        # Strategy 3: Playwright (CDP or headless — last resort)
+        return await self._fetch_via_playwright(event_id, tracked_event.external_url)
 
-        return listings or []
+    async def _fetch_via_html_grid(self, event_id: str, url: str) -> Optional[list[RawListing]]:
+        """
+        Primary fetch strategy: parse the 'viagogo-event' JSON blob embedded in StubHub's
+        event page HTML. The page returns HTTP 200 from Railway IPs even though the Solr
+        JSON API and Playwright XHR interception are blocked by DataDome.
+        """
+        client = await self._get_http_client(html_mode=True)
+        try:
+            resp = await client.get(url)
+            if resp.status_code != 200:
+                self.logger.warning("StubHub HTML: HTTP %s for %s", resp.status_code, url)
+                return None
+        except Exception as exc:
+            self.logger.warning("StubHub HTML fetch failed: %s", exc)
+            return None
+
+        html = resp.text
+        # Find the <script> tag containing the viagogo-event JSON blob
+        # It always contains both "appName":"viagogo-event" and "grid"
+        script_match = re.search(
+            r'<script[^>]*>(\{"appName":"viagogo-event".*?)</script>',
+            html, re.DOTALL
+        )
+        if not script_match:
+            self.logger.warning("StubHub HTML: viagogo-event script not found (size=%d)", len(html))
+            await self.record_failure("stubhub_html_grid", "selector_failure")
+            return None
+
+        try:
+            data = json.loads(script_match.group(1))
+        except Exception as exc:
+            self.logger.warning("StubHub HTML: JSON parse error: %s", exc)
+            await self.record_failure("stubhub_html_grid", "parse_error")
+            return None
+
+        items = (data.get("grid") or {}).get("items", [])
+        if not items:
+            # Grid present but empty — truly no listings (sold out or pre-sale)
+            total = re.findall(r'"totalListings"\s*:\s*(\d+)', html)
+            self.logger.info("StubHub HTML grid: 0 items, totalListings=%s", total)
+            return []
+
+        return self._parse_grid_items(items, event_id)
+
+    def _parse_grid_items(self, items: list, event_id: str) -> list[RawListing]:
+        results = []
+        for item in items:
+            try:
+                raw_id = item.get("id") or item.get("listingId", "")
+                section = str(item.get("section") or item.get("sectionName") or "Unknown")
+                row = item.get("row") or item.get("rowName")
+                qty = int(item.get("quantity") or item.get("qty") or 1)
+
+                # Price fields: currentPrice (face), allInPrice (all-in)
+                price_raw = (
+                    item.get("currentPrice")
+                    or item.get("current_price")
+                    or item.get("price")
+                    or 0
+                )
+                all_in_raw = item.get("allInPrice") or item.get("all_in_price")
+
+                price = Decimal(str(price_raw)) if price_raw else None
+                all_in = Decimal(str(all_in_raw)) if all_in_raw else None
+
+                if not price or price <= 0:
+                    continue
+
+                listing_url = (
+                    item.get("listingUrl")
+                    or item.get("listing_url")
+                    or f"https://www.stubhub.com/event/{event_id}/"
+                )
+
+                results.append(RawListing(
+                    external_listing_id=f"sh-{raw_id}",
+                    section=section,
+                    row=str(row) if row else None,
+                    quantity=qty,
+                    price=price,
+                    all_in_price=all_in,
+                    listing_url=str(listing_url),
+                    market_segment="secondary_resale",
+                ))
+            except Exception as exc:
+                self.logger.debug("StubHub HTML parse item error: %s | item=%s", exc, str(item)[:80])
+        return results
 
     async def _fetch_via_json_api(self, event_id: str) -> Optional[list[RawListing]]:
         client = await self._get_http_client()
@@ -141,7 +245,13 @@ class StubHubCollector(BaseCollector):
             listings.extend(self._parse_solr_response(data))
         return listings
 
-    async def _get_http_client(self) -> httpx.AsyncClient:
+    async def _get_http_client(self, html_mode: bool = False) -> httpx.AsyncClient:
+        if html_mode:
+            # Separate client for HTML fetches — uses browser-like Accept headers
+            return httpx.AsyncClient(
+                headers=_SH_HTML_HEADERS,
+                follow_redirects=True, timeout=30.0,
+            )
         if self._http_client is None or self._http_client.is_closed:
             cookies = {}
             if self._cookies_file.exists():
