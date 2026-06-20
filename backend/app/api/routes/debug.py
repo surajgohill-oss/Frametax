@@ -765,3 +765,68 @@ async def extract_tickpick_listings(event_id: str, url: str = ""):
             "numListings": re.findall(r'"numListings"\s*:\s*(\d+)', html),
         }
     }
+
+
+@router.get("/extract-stubhub-grid-v2")
+async def extract_stubhub_grid_v2(event_id: str, url: str = ""):
+    """Debug: try multiple regex patterns to find the viagogo-event script."""
+    import httpx, re, json as _json
+    target_url = url or f"https://www.stubhub.com/event/{event_id}/"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://www.google.com/",
+    }
+    async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
+        resp = await client.get(target_url, headers=headers)
+    html = resp.text
+
+    result = {"status": resp.status_code, "size": len(html)}
+
+    # Try: split on </script> and find the chunk containing the grid
+    chunks = html.split("</script>")
+    grid_chunk = None
+    for chunk in chunks:
+        if '"appName":"viagogo-event"' in chunk and '"grid"' in chunk and '"items"' in chunk:
+            # Find the JSON start
+            start = chunk.rfind('{"appName":"viagogo-event"')
+            if start >= 0:
+                grid_chunk = chunk[start:]
+                break
+
+    if not grid_chunk:
+        result["error"] = "grid chunk not found by split"
+        # Debug: show all script tag starts
+        result["script_starts"] = []
+        for i, chunk in enumerate(chunks[:15]):
+            if 'appName' in chunk or 'grid' in chunk:
+                start = max(chunk.rfind('<script'), 0)
+                result["script_starts"].append({"idx": i, "tail": chunk[start:start+100]})
+        return result
+
+    result["chunk_size"] = len(grid_chunk)
+    result["chunk_preview"] = grid_chunk[:200]
+
+    # Parse the JSON chunk
+    try:
+        data = _json.loads(grid_chunk)
+        items = (data.get("grid") or {}).get("items", [])
+        result["items_count"] = len(items)
+        result["data_keys"] = list(data.keys())[:15]
+        if items:
+            item0 = items[0]
+            result["item0_keys"] = list(item0.keys())
+            result["item0_sample"] = {
+                "id": item0.get("id"),
+                "section": item0.get("section"),
+                "row": item0.get("row"),
+                "qty": item0.get("quantity") or item0.get("qty"),
+                "currentPrice": item0.get("currentPrice") or item0.get("current_price") or item0.get("price"),
+                "allInPrice": item0.get("allInPrice") or item0.get("all_in_price"),
+            }
+    except Exception as exc:
+        result["parse_error"] = str(exc)[:100]
+        result["chunk_end"] = grid_chunk[-50:]
+
+    return result
