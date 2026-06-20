@@ -85,52 +85,100 @@ class StubHubCollector(BaseCollector):
 
     async def _fetch_via_html_grid(self, event_id: str, url: str) -> Optional[list[RawListing]]:
         """
-        Primary fetch strategy: parse the 'viagogo-event' JSON blob embedded in StubHub's
-        event page HTML. The page returns HTTP 200 from Railway IPs even though the Solr
-        JSON API and Playwright XHR interception are blocked by DataDome.
+        Primary fetch strategy: parse the paginated 'viagogo-event' JSON blob embedded
+        in StubHub's event page HTML.
 
-        The grid is paginated (10 items initial load). This captures the first page
-        which is enough to prove chain health; full inventory requires the XHR API.
+        StubHub serves HTTP 200 from Railway IPs (DataDome blocks API/XHR but not SSR HTML).
+        The page embeds a server-rendered grid (10 items, pageSize=10, isPaginatedEventDetail=True).
+        Additional pages are accessible via ?page=N URL parameter (confirmed runtime 2026-06-20).
+
+        totalFilteredListings ≈ 225 (23 pages) for typical events.
+        totalListings ≈ 2782 (full unfiltered inventory, requires more pages).
+        Rate limit: DataDome allows ~3-5 sequential HTML requests before serving 202 interstitial.
+        Strategy: fetch pages sequentially with jitter until itemsRemaining=0 or max_pages reached.
         """
-        client = await self._get_http_client(html_mode=True)
-        try:
-            resp = await client.get(url)
+        all_items: list = []
+        seen_ids: set = set()
+        base_url = url.split("?")[0].rstrip("/")
+
+        for page in range(1, 26):  # max 25 pages = up to 250 listings
+            page_url = base_url + "/" if page == 1 else f"{base_url}/?page={page}"
+            client = await self._get_http_client(html_mode=True)
+            try:
+                resp = await client.get(page_url)
+            except Exception as exc:
+                self.logger.warning("StubHub HTML: fetch error page=%d: %s", page, exc)
+                break
+
+            if resp.status_code == 202:
+                # DataDome interstitial — rate limited; stop pagination here
+                self.logger.info("StubHub HTML: 202 interstitial at page=%d, stopping (collected=%d)", page, len(all_items))
+                break
+
             if resp.status_code != 200:
-                self.logger.warning("StubHub HTML: HTTP %s for %s", resp.status_code, url)
-                return None
-        except Exception as exc:
-            self.logger.warning("StubHub HTML fetch failed: %s", exc)
-            return None
+                self.logger.warning("StubHub HTML: HTTP %s at page=%d", resp.status_code, page)
+                if page == 1:
+                    return None
+                break
 
-        html = resp.text
-        # Split on </script> to find the chunk containing the viagogo-event grid blob.
-        # Regex fails on the 240KB script (lazy .* matches too broadly); split is reliable.
-        grid_data = None
-        for chunk in html.split("</script>"):
-            if '"appName":"viagogo-event"' in chunk and '"grid"' in chunk and '"items"' in chunk:
-                start = chunk.rfind('{"appName":"viagogo-event"')
-                if start >= 0:
-                    try:
-                        grid_data = json.loads(chunk[start:])
-                        break
-                    except Exception as exc:
-                        self.logger.warning("StubHub HTML: JSON parse error on grid chunk: %s", exc)
-                        await self.record_failure("stubhub_html_grid", "parse_error")
-                        return None
+            html = resp.text
+            grid_data = None
+            for chunk in html.split("</script>"):
+                if '"appName":"viagogo-event"' in chunk and '"grid"' in chunk and '"items"' in chunk:
+                    start = chunk.rfind('{"appName":"viagogo-event"')
+                    if start >= 0:
+                        try:
+                            grid_data = json.loads(chunk[start:])
+                            break
+                        except Exception as exc:
+                            self.logger.warning("StubHub HTML: JSON parse error page=%d: %s", page, exc)
+                            break
 
-        if grid_data is None:
-            self.logger.warning("StubHub HTML: viagogo-event grid script not found (size=%d)", len(html))
-            await self.record_failure("stubhub_html_grid", "selector_failure")
-            return None
+            if not grid_data:
+                if page == 1:
+                    self.logger.warning("StubHub HTML: no grid found on page 1 (size=%d)", len(html))
+                    await self.record_failure("stubhub_html_grid", "selector_failure")
+                    return None
+                # No grid on page N usually means we've gone past the last page
+                self.logger.info("StubHub HTML: no grid on page=%d — end of pages", page)
+                break
 
-        items = (grid_data.get("grid") or {}).get("items", [])
-        total_listings = grid_data.get("totalListings", 0)
-        self.logger.info("StubHub HTML grid: items=%d totalListings=%s url=%s", len(items), total_listings, url)
+            grid = grid_data.get("grid") or {}
+            page_items = grid.get("items") or []
+            items_remaining = grid.get("itemsRemaining", 0)
+            total_filtered = grid.get("totalFilteredListings") or grid.get("totalCount") or 0
+            total_all = grid_data.get("totalListings", 0)
 
-        if not items:
-            return []
+            if page == 1:
+                self.logger.info(
+                    "StubHub HTML grid page=1: items=%d totalFiltered=%s totalAll=%s url=%s",
+                    len(page_items), total_filtered, total_all, url,
+                )
 
-        return self._parse_grid_items(items, event_id)
+            # Deduplicate by listing ID across pages
+            new_items = 0
+            for item in page_items:
+                lid = item.get("listingId") or item.get("id")
+                if lid and lid not in seen_ids:
+                    seen_ids.add(lid)
+                    all_items.append(item)
+                    new_items += 1
+
+            self.logger.debug("StubHub HTML: page=%d items=%d new=%d remaining=%s", page, len(page_items), new_items, items_remaining)
+
+            # Stop conditions
+            if not page_items or (items_remaining is not None and int(items_remaining) == 0):
+                self.logger.info("StubHub HTML: pagination complete at page=%d total_collected=%d", page, len(all_items))
+                break
+
+            # Small jitter between pages to avoid triggering rate limit
+            await asyncio.sleep(0.5)
+
+        if not all_items:
+            return None if len(all_items) == 0 else []
+
+        self.logger.info("StubHub HTML grid: total_collected=%d across pages", len(all_items))
+        return self._parse_grid_items(all_items, event_id)
 
     def _parse_grid_items(self, items: list, event_id: str) -> list[RawListing]:
         """
