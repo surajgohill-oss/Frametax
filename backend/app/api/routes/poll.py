@@ -16,6 +16,33 @@ router = APIRouter(prefix="/poll", tags=["poll"])
 settings = get_settings()
 
 
+@router.post("/tracked/{te_id}/trigger")
+async def trigger_single_te(te_id: int, db: AsyncSession = Depends(get_db)):
+    """Trigger a single TrackedEvent poll synchronously. Returns poll_run id and result."""
+    from app.scheduler import run_poll_for_tracked_event
+    te = (await db.execute(select(TrackedEvent).where(TrackedEvent.id == te_id))).scalar_one_or_none()
+    if not te:
+        raise HTTPException(404, f"TrackedEvent {te_id} not found")
+    await run_poll_for_tracked_event(te_id)
+    # Return latest poll_run for this te
+    pr = (await db.execute(
+        select(PollRun).where(PollRun.tracked_event_id == te_id)
+        .order_by(PollRun.started_at.desc()).limit(1)
+    )).scalar_one_or_none()
+    if not pr:
+        return {"te_id": te_id, "status": "ran", "poll_run": None}
+    return {
+        "te_id": te_id,
+        "poll_run_id": pr.id,
+        "status": pr.status,
+        "listings_found": pr.listings_found,
+        "new_listings": pr.new_listings,
+        "error_message": pr.error_message,
+        "started_at": pr.started_at.isoformat() if pr.started_at else None,
+        "completed_at": pr.completed_at.isoformat() if pr.completed_at else None,
+    }
+
+
 @router.post("/events/{event_id}/trigger")
 async def trigger_poll(
     event_id: int,
