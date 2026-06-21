@@ -506,10 +506,313 @@ class TestPhase5BenchmarkReadiness:
         assert mod.revision == "0014"
         assert mod.down_revision == "0013"
 
-    def test_migration_chain_0015_0016_0017(self):
+    def test_migration_chain_0015_to_0019(self):
         m15 = _load_migration("0015_seed_extended_jurisdictions.py")
         m16 = _load_migration("0016_source_batch2_admin_details.py")
         m17 = _load_migration("0017_program_spend_treatments.py")
+        m18 = _load_migration("0018_spend_treatment_la_bc_qc.py")
+        m19 = _load_migration("0019_admin_and_treatment_es_be_de_au_nz.py")
         assert m15.down_revision == "0014"
         assert m16.down_revision == "0015"
         assert m17.down_revision == "0016"
+        assert m18.down_revision == "0017"
+        assert m19.down_revision == "0018"
+
+
+# ---------------------------------------------------------------------------
+# Migration 0018 — SpendTreatment for LA, BC, QC
+# ---------------------------------------------------------------------------
+
+class TestSpendTreatmentLaBcQc:
+    def test_migration_programs_present(self):
+        mod = _load_migration("0018_spend_treatment_la_bc_qc.py")
+        slugs = {r[0] for r in mod._TREATMENTS}
+        assert slugs == {"la_film_production", "bc_pstc", "qc_film_production"}
+
+    def test_each_program_21_categories(self):
+        mod = _load_migration("0018_spend_treatment_la_bc_qc.py")
+        by_slug: dict[str, set[str]] = {}
+        for slug, labor_type, *_ in mod._TREATMENTS:
+            by_slug.setdefault(slug, set()).add(labor_type)
+        all_types = frozenset([
+            "atl_writer", "atl_director", "atl_producer",
+            "atl_cast_principal", "atl_cast_supporting",
+            "btl_crew_resident", "btl_crew_non_resident", "btl_crew_foreign",
+            "travel", "accommodation_lodging", "per_diem",
+            "insurance", "completion_bond", "contingency",
+            "marine_vessel", "vfx", "post_production",
+            "animation", "music", "legal_accounting", "customs_imports",
+        ])
+        for slug in ("la_film_production", "bc_pstc", "qc_film_production"):
+            missing = all_types - by_slug.get(slug, set())
+            assert not missing, f"{slug} missing: {missing}"
+
+    def test_total_rows_3x21(self):
+        mod = _load_migration("0018_spend_treatment_la_bc_qc.py")
+        assert len(mod._TREATMENTS) == 3 * 21
+
+    def test_la_atl_qualifies(self):
+        mod = _load_migration("0018_spend_treatment_la_bc_qc.py")
+        atl_types = {
+            "atl_writer", "atl_director", "atl_producer",
+            "atl_cast_principal", "atl_cast_supporting",
+        }
+        for slug, labor_type, qualifies, *_ in mod._TREATMENTS:
+            if slug == "la_film_production" and labor_type in atl_types:
+                assert qualifies is True, f"LA {labor_type} must QUALIFY (ATL explicitly eligible)"
+
+    def test_bc_qc_atl_writer_director_producer_unknown(self):
+        mod = _load_migration("0018_spend_treatment_la_bc_qc.py")
+        unknown_atl = {"atl_writer", "atl_director", "atl_producer"}
+        for slug, labor_type, qualifies, *_ in mod._TREATMENTS:
+            if slug in ("bc_pstc", "qc_film_production") and labor_type in unknown_atl:
+                assert qualifies is None, (
+                    f"{slug} {labor_type} must be UNKNOWN (primary source not confirmed)"
+                )
+
+    def test_bc_qc_cast_qualifies(self):
+        mod = _load_migration("0018_spend_treatment_la_bc_qc.py")
+        cast_types = {"atl_cast_principal", "atl_cast_supporting"}
+        for slug, labor_type, qualifies, *_ in mod._TREATMENTS:
+            if slug in ("bc_pstc", "qc_film_production") and labor_type in cast_types:
+                assert qualifies is True, f"{slug} {labor_type} must QUALIFY"
+
+    def test_contingency_does_not_qualify_all(self):
+        mod = _load_migration("0018_spend_treatment_la_bc_qc.py")
+        for slug, labor_type, qualifies, *_ in mod._TREATMENTS:
+            if labor_type == "contingency":
+                assert qualifies is False, f"{slug}: contingency must be DOES_NOT_QUALIFY"
+
+    def test_customs_imports_unknown_all(self):
+        mod = _load_migration("0018_spend_treatment_la_bc_qc.py")
+        for slug, labor_type, qualifies, *_ in mod._TREATMENTS:
+            if labor_type == "customs_imports":
+                assert qualifies is None, f"{slug}: customs_imports must be UNKNOWN"
+
+    def test_no_duplicate_pairs(self):
+        mod = _load_migration("0018_spend_treatment_la_bc_qc.py")
+        pairs = [(r[0], r[1]) for r in mod._TREATMENTS]
+        assert len(pairs) == len(set(pairs))
+
+    def test_uuid5_unique_across_0017_and_0018(self):
+        ns17 = uuid.UUID("a1000000-0017-0000-0001-000000000000")
+        ns18 = uuid.UUID("a1000000-0018-0000-0001-000000000000")
+        id_17 = str(uuid.uuid5(ns17, "treatment:uk_avec:atl_writer"))
+        id_18 = str(uuid.uuid5(ns18, "treatment:la_film_production:atl_writer"))
+        assert id_17 != id_18, "IDs from different migrations must not collide"
+
+    def test_all_notes_non_empty(self):
+        mod = _load_migration("0018_spend_treatment_la_bc_qc.py")
+        for slug, labor_type, qualifies, notes, tier in mod._TREATMENTS:
+            assert notes and len(notes) > 10, f"{slug}/{labor_type}: notes too short"
+
+
+# ---------------------------------------------------------------------------
+# Migration 0019 — AdminDetails + SpendTreatment for ES, BE, DE, AU, NZ
+# ---------------------------------------------------------------------------
+
+EXPECTED_0019_PROGRAMS = frozenset([
+    "es_tax_credit_foreign", "be_tax_shelter", "de_dfff",
+    "au_location_offset", "nz_spg_international",
+])
+
+
+class TestAdminAndTreatmentEsBeDeAuNz:
+    def test_admin_details_slugs(self):
+        mod = _load_migration("0019_admin_and_treatment_es_be_de_au_nz.py")
+        slugs = {r[0] for r in mod._ADMIN_DETAILS}
+        assert slugs == EXPECTED_0019_PROGRAMS
+
+    def test_admin_details_count(self):
+        mod = _load_migration("0019_admin_and_treatment_es_be_de_au_nz.py")
+        assert len(mod._ADMIN_DETAILS) == 5
+
+    def test_treatment_programs(self):
+        mod = _load_migration("0019_admin_and_treatment_es_be_de_au_nz.py")
+        slugs = {r[0] for r in mod._TREATMENTS}
+        assert slugs == EXPECTED_0019_PROGRAMS
+
+    def test_total_treatment_rows_5x21(self):
+        mod = _load_migration("0019_admin_and_treatment_es_be_de_au_nz.py")
+        assert len(mod._TREATMENTS) == 5 * 21
+
+    def test_es_atl_qualifies(self):
+        mod = _load_migration("0019_admin_and_treatment_es_be_de_au_nz.py")
+        atl_types = {
+            "atl_writer", "atl_director", "atl_producer",
+            "atl_cast_principal", "atl_cast_supporting",
+        }
+        for slug, labor_type, qualifies, *_ in mod._TREATMENTS:
+            if slug == "es_tax_credit_foreign" and labor_type in atl_types:
+                assert qualifies is True, f"ES {labor_type} must QUALIFY (ICAA source)"
+
+    def test_be_atl_qualifies(self):
+        mod = _load_migration("0019_admin_and_treatment_es_be_de_au_nz.py")
+        atl_types = {
+            "atl_writer", "atl_director", "atl_producer",
+            "atl_cast_principal", "atl_cast_supporting",
+        }
+        for slug, labor_type, qualifies, *_ in mod._TREATMENTS:
+            if slug == "be_tax_shelter" and labor_type in atl_types:
+                assert qualifies is True, f"BE {labor_type} must QUALIFY"
+
+    def test_de_atl_qualifies(self):
+        mod = _load_migration("0019_admin_and_treatment_es_be_de_au_nz.py")
+        atl_types = {"atl_writer", "atl_director", "atl_producer"}
+        for slug, labor_type, qualifies, *_ in mod._TREATMENTS:
+            if slug == "de_dfff" and labor_type in atl_types:
+                assert qualifies is True, f"DE {labor_type} must QUALIFY"
+
+    def test_au_all_non_contingency_qualifies(self):
+        mod = _load_migration("0019_admin_and_treatment_es_be_de_au_nz.py")
+        excluded = {"contingency", "customs_imports"}
+        for slug, labor_type, qualifies, *_ in mod._TREATMENTS:
+            if slug == "au_location_offset" and labor_type not in excluded:
+                assert qualifies is True, f"AU {labor_type} must QUALIFY as QAPE"
+
+    def test_nz_all_non_contingency_qualifies(self):
+        mod = _load_migration("0019_admin_and_treatment_es_be_de_au_nz.py")
+        excluded = {"contingency", "customs_imports"}
+        for slug, labor_type, qualifies, *_ in mod._TREATMENTS:
+            if slug == "nz_spg_international" and labor_type not in excluded:
+                assert qualifies is True, f"NZ {labor_type} must QUALIFY as QNZPE"
+
+    def test_contingency_universally_does_not_qualify(self):
+        mod = _load_migration("0019_admin_and_treatment_es_be_de_au_nz.py")
+        for slug, labor_type, qualifies, *_ in mod._TREATMENTS:
+            if labor_type == "contingency":
+                assert qualifies is False, f"{slug}: contingency must be DOES_NOT_QUALIFY"
+
+    def test_customs_imports_universally_unknown(self):
+        mod = _load_migration("0019_admin_and_treatment_es_be_de_au_nz.py")
+        for slug, labor_type, qualifies, *_ in mod._TREATMENTS:
+            if labor_type == "customs_imports":
+                assert qualifies is None, f"{slug}: customs_imports must be UNKNOWN"
+
+    def test_no_duplicate_treatment_pairs(self):
+        mod = _load_migration("0019_admin_and_treatment_es_be_de_au_nz.py")
+        pairs = [(r[0], r[1]) for r in mod._TREATMENTS]
+        assert len(pairs) == len(set(pairs))
+
+    def test_all_admin_confidence_tiers_valid(self):
+        mod = _load_migration("0019_admin_and_treatment_es_be_de_au_nz.py")
+        valid = {"DISCOVERY", "PARSED", "VERIFIED"}
+        for row in mod._ADMIN_DETAILS:
+            slug, tier = row[0], row[-2]
+            assert tier in valid, f"{slug}: invalid tier {tier!r}"
+
+    def test_no_admin_detail_is_verified(self):
+        mod = _load_migration("0019_admin_and_treatment_es_be_de_au_nz.py")
+        for row in mod._ADMIN_DETAILS:
+            slug, tier = row[0], row[-2]
+            assert tier != "VERIFIED", f"{slug}: must not be VERIFIED without full source verification"
+
+    def test_de_dfff_assignability_unknown(self):
+        mod = _load_migration("0019_admin_and_treatment_es_be_de_au_nz.py")
+        by_slug = {r[0]: r for r in mod._ADMIN_DETAILS}
+        de_row = by_slug["de_dfff"]
+        is_assignable = de_row[6]
+        assert is_assignable is None, "DE DFFF assignability must be UNKNOWN (unconfirmed)"
+
+    def test_be_assignable(self):
+        mod = _load_migration("0019_admin_and_treatment_es_be_de_au_nz.py")
+        by_slug = {r[0]: r for r in mod._ADMIN_DETAILS}
+        be_row = by_slug["be_tax_shelter"]
+        assert be_row[6] is True, "BE Tax Shelter must be assignable (inherent to Tax Shelter structure)"
+
+    def test_nz_faster_than_au(self):
+        mod = _load_migration("0019_admin_and_treatment_es_be_de_au_nz.py")
+        by_slug = {r[0]: r for r in mod._ADMIN_DETAILS}
+        nz_weeks = by_slug["nz_spg_international"][8]
+        au_weeks = by_slug["au_location_offset"][8]
+        assert nz_weeks < au_weeks, "NZ should process faster than AU"
+
+    def test_es_slowest_in_0019(self):
+        mod = _load_migration("0019_admin_and_treatment_es_be_de_au_nz.py")
+        by_slug = {r[0]: r for r in mod._ADMIN_DETAILS}
+        es_weeks = by_slug["es_tax_credit_foreign"][8]
+        for slug in ("be_tax_shelter", "de_dfff", "au_location_offset", "nz_spg_international"):
+            assert es_weeks >= by_slug[slug][8], f"ES should be >= {slug} in processing weeks"
+
+    def test_uuid5_unique_across_migrations(self):
+        ns16 = uuid.UUID("a1000000-0016-0000-0001-000000000000")
+        ns19 = uuid.UUID("a1000000-0019-0000-0001-000000000000")
+        id_16 = str(uuid.uuid5(ns16, "admin:uk_avec"))
+        id_19 = str(uuid.uuid5(ns19, "admin:es_tax_credit_foreign"))
+        assert id_16 != id_19
+
+
+# ---------------------------------------------------------------------------
+# Cross-migration invariants
+# ---------------------------------------------------------------------------
+
+class TestCrossMigrationInvariants:
+    def test_no_program_has_verified_treatment_without_verified_admin(self):
+        """If a treatment row is VERIFIED, the program should have a VERIFIED admin row.
+        Currently none should be VERIFIED — sanity check."""
+        for mig in ("0017_program_spend_treatments.py",
+                    "0018_spend_treatment_la_bc_qc.py",
+                    "0019_admin_and_treatment_es_be_de_au_nz.py"):
+            mod = _load_migration(mig)
+            for slug, labor_type, qualifies, notes, tier in mod._TREATMENTS:
+                assert tier != "VERIFIED", (
+                    f"{mig} {slug}/{labor_type}: no treatment should be VERIFIED tier yet"
+                )
+
+    def test_no_global_inventory_program_prematurely_verified(self):
+        """No program that was DISCOVERY should now be VERIFIED."""
+        originally_discovery = {
+            "FR", "IT", "ES", "BE", "DE", "AU", "NZ", "MT", "GR", "MU",
+        }
+        for p in ALL_PROGRAMS:
+            if p.jurisdiction_code in originally_discovery:
+                assert p.confidence_tier != "VERIFIED", (
+                    f"{p.jurisdiction_code}: must not be VERIFIED (no full source verification)"
+                )
+
+    def test_customs_imports_remains_unknown_in_all_migrations(self):
+        """customs_imports must be UNKNOWN across all seeded treatment migrations."""
+        for mig in ("0017_program_spend_treatments.py",
+                    "0018_spend_treatment_la_bc_qc.py",
+                    "0019_admin_and_treatment_es_be_de_au_nz.py"):
+            mod = _load_migration(mig)
+            for slug, labor_type, qualifies, *_ in mod._TREATMENTS:
+                if labor_type == "customs_imports":
+                    assert qualifies is None, (
+                        f"{mig}: {slug} customs_imports must be UNKNOWN — "
+                        f"no source has confirmed this treatment"
+                    )
+
+    def test_contingency_does_not_qualify_in_all_migrations(self):
+        for mig in ("0017_program_spend_treatments.py",
+                    "0018_spend_treatment_la_bc_qc.py",
+                    "0019_admin_and_treatment_es_be_de_au_nz.py"):
+            mod = _load_migration(mig)
+            for slug, labor_type, qualifies, *_ in mod._TREATMENTS:
+                if labor_type == "contingency":
+                    assert qualifies is False, f"{mig}: {slug} contingency must be False"
+
+    def test_ny_atl_remains_unknown(self):
+        """NY ATL must remain UNKNOWN — not resolved until ESD source confirmed."""
+        m17 = _load_migration("0017_program_spend_treatments.py")
+        atl_types = {
+            "atl_writer", "atl_director", "atl_producer",
+            "atl_cast_principal", "atl_cast_supporting",
+        }
+        for slug, labor_type, qualifies, *_ in m17._TREATMENTS:
+            if slug == "ny_state_film" and labor_type in atl_types:
+                assert qualifies is None, (
+                    f"NY State Film {labor_type} must remain UNKNOWN — "
+                    f"ESD source confirmation required before updating"
+                )
+
+    def test_on_opstc_atl_writer_director_producer_remains_unknown(self):
+        """ON OPSTC ATL writer/director/producer must remain UNKNOWN."""
+        m17 = _load_migration("0017_program_spend_treatments.py")
+        unknown_atl = {"atl_writer", "atl_director", "atl_producer"}
+        for slug, labor_type, qualifies, *_ in m17._TREATMENTS:
+            if slug == "on_opstc" and labor_type in unknown_atl:
+                assert qualifies is None, (
+                    f"ON OPSTC {labor_type} must remain UNKNOWN — "
+                    f"Ontario Creates source confirmation required"
+                )
