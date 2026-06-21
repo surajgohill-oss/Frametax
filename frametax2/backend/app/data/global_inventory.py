@@ -943,3 +943,11 @@ from app.data.global_inventory_extended import (  # noqa: E402
 
 ALL_PROGRAMS = ALL_PROGRAMS + EXTENDED_PROGRAMS
 ALL_BENCHMARKS = ALL_BENCHMARKS + EXTENDED_BENCHMARKS
+
+# ---------------------------------------------------------------------------
+# Wave-2 inventory — ~35 new incentive programs + 12 grant/fund programs
+# ---------------------------------------------------------------------------
+from app.data.global_inventory_wave2 import WAVE2_PROGRAMS  # noqa: E402
+from app.data.global_inventory_grants import GRANTS_PROGRAMS  # noqa: E402
+
+ALL_PROGRAMS = ALL_PROGRAMS + WAVE2_PROGRAMS + GRANTS_PROGRAMS

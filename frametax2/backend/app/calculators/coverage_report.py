@@ -16,7 +16,7 @@ from app.data.global_inventory import (
     GlobalProgramEntry,
 )
 
-REPORT_VERSION = "0.5.0"
+REPORT_VERSION = "0.6.0"
 
 # ---------------------------------------------------------------------------
 # Intelligence population registry — tracks which slugs have been seeded
@@ -37,6 +37,21 @@ SLUGS_WITH_ADMIN_DETAILS: frozenset[str] = frozenset([
     "ca_federal_cptc", "on_ofttc", "or_opif", "nm_film_production",
     "nohfc_production_fund", "fr_trip", "it_tax_credit_foreign",
     "cy_film_rebate", "hr_cash_rebate", "hu_hipa_rebate",
+    # 0027 — all 47 wave-2 programs (DISCOVERY tier)
+    "us_hi_film_tax_credit", "us_ut_film_incentive", "us_mn_film_credit",
+    "us_ms_film_credit", "us_az_film_credit", "us_pr_film_incentive",
+    "ca_sk_production_grant", "ca_nl_production_fund",
+    "se_film_incentive", "no_film_incentive", "fi_film_incentive", "dk_film_incentive",
+    "pl_film_incentive", "bg_film_incentive", "ee_film_incentive", "lt_film_incentive",
+    "lv_film_incentive", "sk_film_incentive", "lu_film_incentive", "tr_film_incentive",
+    "th_film_incentive", "my_film_incentive", "ph_film_incentive", "kr_film_incentive",
+    "in_national_film", "lk_film_incentive",
+    "mx_eficine_incentive", "cl_corfo_incentive", "jm_film_incentive", "tt_film_incentive",
+    "il_film_incentive", "qa_film_incentive", "tn_film_incentive",
+    "ke_film_incentive", "ng_film_incentive",
+    "eu_eurimages", "eu_media_fund", "nordic_ftvf",
+    "ca_cmf", "ca_telefilm_dev", "gb_bfi_production", "fr_cnc_production",
+    "au_screen_production", "nl_hbf", "qa_dfi_fund", "us_sundance_doc", "za_dac_fund",
     # 0023 — all 43 extended programs (DISCOVERY tier)
     "us_or_opif", "us_wa_mpcp", "us_il_film_credit", "us_nc_film_grant",
     "us_sc_film_credit", "us_ma_film_credit", "us_tx_miip", "us_ct_film_credit",
@@ -68,6 +83,21 @@ SLUGS_WITH_SPEND_TREATMENT: frozenset[str] = frozenset([
     "ca_federal_cptc", "on_ofttc", "fr_trip", "it_tax_credit_foreign",
     "mu_edb_incentive", "nm_film_production", "or_opif",
     "nohfc_production_fund", "cy_film_rebate", "hr_cash_rebate", "hu_hipa_rebate",
+    # 0028 — all 47 wave-2 programs (DISCOVERY tier)
+    "us_hi_film_tax_credit", "us_ut_film_incentive", "us_mn_film_credit",
+    "us_ms_film_credit", "us_az_film_credit", "us_pr_film_incentive",
+    "ca_sk_production_grant", "ca_nl_production_fund",
+    "se_film_incentive", "no_film_incentive", "fi_film_incentive", "dk_film_incentive",
+    "pl_film_incentive", "bg_film_incentive", "ee_film_incentive", "lt_film_incentive",
+    "lv_film_incentive", "sk_film_incentive", "lu_film_incentive", "tr_film_incentive",
+    "th_film_incentive", "my_film_incentive", "ph_film_incentive", "kr_film_incentive",
+    "in_national_film", "lk_film_incentive",
+    "mx_eficine_incentive", "cl_corfo_incentive", "jm_film_incentive", "tt_film_incentive",
+    "il_film_incentive", "qa_film_incentive", "tn_film_incentive",
+    "ke_film_incentive", "ng_film_incentive",
+    "eu_eurimages", "eu_media_fund", "nordic_ftvf",
+    "ca_cmf", "ca_telefilm_dev", "gb_bfi_production", "fr_cnc_production",
+    "au_screen_production", "nl_hbf", "qa_dfi_fund", "us_sundance_doc", "za_dac_fund",
     # 0024 — all 43 extended programs (DISCOVERY tier)
     "us_or_opif", "us_wa_mpcp", "us_il_film_credit", "us_nc_film_grant",
     "us_sc_film_credit", "us_ma_film_credit", "us_tx_miip", "us_ct_film_credit",
@@ -446,6 +476,10 @@ class IntelligenceGapReport:
     stacking_coverage_pct: float = 0.0
     # Programs with at least one UNKNOWN spend treatment resolved to source-backed value
     resolved_treatment_programs: int = 0
+    # Grant / fund programs (program_type not tax_credit or cash_rebate)
+    grant_fund_programs: int = 0
+    # Total unique countries covered (by distinct jurisdiction_code prefix)
+    countries_covered: int = 0
 
 
 def build_intelligence_gap_report(
@@ -506,6 +540,28 @@ def build_intelligence_gap_report(
         "au_location_offset": "AU", "nz_spg_international": "NZ",
         "cy_film_rebate": "CY", "hr_cash_rebate": "HR", "hu_hipa_rebate": "HU",
         "nohfc_production_fund": "CA-ON", "or_opif": "US-OR", "nm_film_production": "US-NM",
+        # Wave-2 programs (migration 0026)
+        "us_hi_film_tax_credit": "US-HI", "us_ut_film_incentive": "US-UT",
+        "us_mn_film_credit": "US-MN", "us_ms_film_credit": "US-MS",
+        "us_az_film_credit": "US-AZ", "us_pr_film_incentive": "US-PR",
+        "ca_sk_production_grant": "CA-SK", "ca_nl_production_fund": "CA-NL",
+        "se_film_incentive": "SE", "no_film_incentive": "NO", "fi_film_incentive": "FI",
+        "dk_film_incentive": "DK", "pl_film_incentive": "PL", "bg_film_incentive": "BG",
+        "ee_film_incentive": "EE", "lt_film_incentive": "LT", "lv_film_incentive": "LV",
+        "sk_film_incentive": "SK", "lu_film_incentive": "LU", "tr_film_incentive": "TR",
+        "th_film_incentive": "TH", "my_film_incentive": "MY", "ph_film_incentive": "PH",
+        "kr_film_incentive": "KR", "in_national_film": "IN", "lk_film_incentive": "LK",
+        "mx_eficine_incentive": "MX", "cl_corfo_incentive": "CL",
+        "jm_film_incentive": "JM", "tt_film_incentive": "TT",
+        "il_film_incentive": "IL", "qa_film_incentive": "QA", "tn_film_incentive": "TN",
+        "ke_film_incentive": "KE", "ng_film_incentive": "NG",
+        # Wave-2 grants/funds (migration 0026)
+        "eu_eurimages": "EU", "eu_media_fund": "EU", "nordic_ftvf": "NORDIC",
+        "ca_cmf": "CA", "ca_telefilm_dev": "CA",
+        "gb_bfi_production": "GB", "fr_cnc_production": "FR",
+        "au_screen_production": "AU", "nl_hbf": "NL",
+        "qa_dfi_fund": "QA", "us_sundance_doc": "US",
+        "za_dac_fund": "ZA",
         # Extended programs (migration 0015)
         "us_or_opif": "US-OR", "us_wa_mpcp": "US-WA", "us_il_film_credit": "US-IL",
         "us_nc_film_grant": "US-NC", "us_sc_film_credit": "US-SC",
@@ -582,6 +638,13 @@ def build_intelligence_gap_report(
     # Count programs with at least one resolved UNKNOWN treatment
     resolved_count = len(slugs_with_resolved)
 
+    # Count grant/fund programs and countries covered
+    grant_types = {"direct_grant", "co_production_fund", "development_fund"}
+    grant_fund_count = sum(
+        1 for p in programs if p.program_type in grant_types
+    )
+    countries_covered = len({p.jurisdiction_code for p in programs})
+
     # Count by slug (not jurisdiction — ON has multiple slugs)
     return IntelligenceGapReport(
         programs_missing_admin_details=sorted(missing_admin),
@@ -599,6 +662,8 @@ def build_intelligence_gap_report(
         treatment_coverage_pct=_pct(seeded_treatment),
         stacking_coverage_pct=_pct(seeded_stacking),
         resolved_treatment_programs=resolved_count,
+        grant_fund_programs=grant_fund_count,
+        countries_covered=countries_covered,
     )
 
 

@@ -52,14 +52,14 @@ TARGET_CODES = TARGET_CODES_ORIGINAL | TARGET_CODES_EXTENDED
 
 class TestInventoryStructure:
     def test_all_programs_count(self):
-        assert len(ALL_PROGRAMS) == 60
+        assert len(ALL_PROGRAMS) == 107
 
     def test_all_benchmarks_count(self):
         assert len(ALL_BENCHMARKS) == 60
 
     def test_programs_cover_all_target_jurisdictions(self):
         codes = {p.jurisdiction_code for p in ALL_PROGRAMS}
-        assert codes == TARGET_CODES
+        assert codes >= TARGET_CODES
 
     def test_benchmarks_cover_all_target_jurisdictions(self):
         codes = {b.jurisdiction_code for b in ALL_BENCHMARKS}
@@ -302,13 +302,13 @@ class TestCoverageReport:
         return build_coverage_report()
 
     def test_report_version_present(self, report):
-        assert report.report_version == "0.5.0"
+        assert report.report_version == "0.6.0"
 
     def test_total_jurisdictions(self, report):
-        assert report.total_jurisdictions == 60
+        assert report.total_jurisdictions == 97
 
     def test_total_programs(self, report):
-        assert report.total_programs == 60
+        assert report.total_programs == 107
 
     def test_total_benchmarks(self, report):
         assert report.total_benchmarks == 60
@@ -329,7 +329,7 @@ class TestCoverageReport:
         assert report.parsed_benchmarks == 0
 
     def test_by_jurisdiction_length(self, report):
-        assert len(report.by_jurisdiction) == 60
+        assert len(report.by_jurisdiction) == 97
 
     def test_by_jurisdiction_types(self, report):
         for jc in report.by_jurisdiction:
@@ -355,9 +355,12 @@ class TestCoverageReport:
         for jc in report.by_jurisdiction:
             assert jc.program_count >= 1
 
-    def test_every_jurisdiction_has_at_least_one_benchmark(self, report):
-        for jc in report.by_jurisdiction:
-            assert jc.benchmark_count >= 1
+    def test_original_jurisdictions_have_benchmarks(self, report):
+        # Only the original 60 jurisdictions are guaranteed to have benchmarks;
+        # wave-2 DISCOVERY programs may have zero benchmarks.
+        jc_map = {jc.jurisdiction_code: jc for jc in report.by_jurisdiction}
+        for code in TARGET_CODES:
+            assert jc_map[code].benchmark_count >= 1, f"{code} missing benchmark"
 
 
 # ---------------------------------------------------------------------------
