@@ -371,12 +371,15 @@ async def collect_te_sync(
 @router.post("/patch-tracked-event")
 async def patch_tracked_event(
     te_id: int = Query(..., description="TrackedEvent.id to patch"),
-    external_event_id: str = Query(..., description="VS production ID to set"),
+    external_event_id: str = Query(..., description="Marketplace event ID to set"),
+    external_url: Optional[str] = Query(None, description="Marketplace event URL to set (optional)"),
+    reactivate: bool = Query(False, description="Also reactivate TE, reset zero count, clear next_poll_at"),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Directly set external_event_id on an existing TrackedEvent.
+    Directly set external_event_id (and optionally external_url) on an existing TrackedEvent.
     Used for manual resolution when the auto-resolver can't find the event.
+    Pass reactivate=true to also re-enable polling after exhaustion.
     """
     from app.models import TrackedEvent
 
@@ -385,9 +388,109 @@ async def patch_tracked_event(
         return {"error": f"TrackedEvent {te_id} not found"}
 
     old_id = te.external_event_id
+    old_url = te.external_url
+    old_active = te.is_active
     te.external_event_id = external_event_id
+    if external_url is not None:
+        te.external_url = external_url
+    if reactivate:
+        te.is_active = True
+        te.consecutive_zero_inventory_count = 0
+        te.lifecycle_phase = "active"
+        te.next_poll_at = None  # poll immediately
     await db.commit()
-    return {"te_id": te_id, "old_external_event_id": old_id, "new_external_event_id": external_event_id, "ok": True}
+    return {
+        "te_id": te_id,
+        "old_external_event_id": old_id,
+        "new_external_event_id": external_event_id,
+        "old_external_url": old_url,
+        "new_external_url": te.external_url,
+        "old_is_active": old_active,
+        "new_is_active": te.is_active,
+        "ok": True,
+    }
+
+
+@router.post("/reactivate-event")
+async def reactivate_event(
+    event_id: int = Query(..., description="Event.id to reactivate all tracked events for"),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Reactivate all tracked events for an event.
+    Resets consecutive_zero_inventory_count, sets is_active=True,
+    sets next_poll_at=NULL (poll on next scheduler tick), lifecycle_phase='active'.
+
+    Use when the exhaustion engine has prematurely deactivated an event
+    (e.g. due to event_date timezone mismatch or collector outage).
+    """
+    from app.models import TrackedEvent
+    from datetime import datetime, timezone
+
+    result = await db.execute(
+        select(TrackedEvent).where(TrackedEvent.event_id == event_id)
+    )
+    tes = result.scalars().all()
+    if not tes:
+        return {"error": f"No TrackedEvents found for event_id={event_id}"}
+
+    reactivated = []
+    for te in tes:
+        was_active = te.is_active
+        te.is_active = True
+        te.consecutive_zero_inventory_count = 0
+        te.lifecycle_phase = "active"
+        te.next_poll_at = None
+        reactivated.append({
+            "te_id": te.id,
+            "marketplace": te.marketplace_id,
+            "was_active": was_active,
+            "external_event_id": te.external_event_id,
+        })
+
+    await db.commit()
+    return {
+        "event_id": event_id,
+        "reactivated_count": len(reactivated),
+        "tracked_events": reactivated,
+        "ok": True,
+    }
+
+
+@router.post("/fix-event-date")
+async def fix_event_date(
+    event_id: int = Query(..., description="Event.id to fix"),
+    new_date: str = Query(..., description="New event_date as ISO8601 UTC string, e.g. 2026-06-22T03:00:00+00:00"),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Correct an event's stored event_date timestamp.
+
+    Used to fix the systematic timezone off-by-one issue where events were stored
+    as calendar_date + T03:00:00Z (= 8pm PDT the previous day) instead of the
+    actual showtime (8pm PDT = T03:00:00Z on the NEXT day).
+    """
+    from app.models import Event
+    from datetime import datetime, timezone
+
+    event = (await db.execute(select(Event).where(Event.id == event_id))).scalar_one_or_none()
+    if not event:
+        return {"error": f"Event {event_id} not found"}
+
+    try:
+        new_dt = datetime.fromisoformat(new_date.replace("Z", "+00:00"))
+    except ValueError as e:
+        return {"error": f"Invalid date format: {e}"}
+
+    old_date = event.event_date
+    event.event_date = new_dt
+    await db.commit()
+    return {
+        "event_id": event_id,
+        "old_event_date": old_date.isoformat() if old_date else None,
+        "new_event_date": new_dt.isoformat(),
+        "ok": True,
+    }
 
 
 @router.post("/import-history-agg")
