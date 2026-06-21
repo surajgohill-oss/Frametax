@@ -325,20 +325,31 @@ ALL_PROGRAMS: list[GlobalProgramEntry] = [
         annual_cap_usd=None,
         requires_cultural_test=True,
         requires_local_entity=True,
-        confidence_tier="DISCOVERY",
-        source_title="CNC — Tax Rebate for International Productions (TRIP)",
-        source_url="https://www.cnc.fr",
+        confidence_tier="PARSED",
+        source_title="CNC — TRIP: Tax Rebate for International Productions",
+        source_url="https://www.cnc.fr/professionnels/aides-et-financements/aides-aux-entreprises-de-production-et-de-distribution/credit-dimpot-et-agrement/credit-dimpot-pour-les-productions-etrangeres_191498",
         effective_from="2009-01-01",
         notes=(
-            "30% base on French qualifying spend; 40% on VFX spend. Capped at €30M per film. "
-            "Must use French service company. Cultural committee pre-approval required."
+            "30% base rebate on qualifying French expenditure for international productions. "
+            "40% on eligible VFX spend performed in France (TRIP VFX uplift). "
+            "Capped at €30M per production. "
+            "Min spend €250,000 in France. Cultural committee pre-approval required. "
+            "French service production company (co-producer or mandataire) required. "
+            "Administered by CNC (Centre National du Cinéma et de l'Image Animée). "
+            "Eligible: wages and salaries of technical and artistic staff hired in France, "
+            "accommodation, transport, rental of technical equipment in France, "
+            "stage rental in France, post-production in France. "
+            "ATL treatment: writers, directors, producers, cast — UNKNOWN (cultural committee applies). "
+            "PARSED: rate, authority, and source confirmed from CNC official programme page."
         ),
         unknown_fields=[
-            "cultural_committee_criteria",
-            "vfx_uplift_exact_threshold",
-            "foreign_atl_qualifying_scope",
-            "accommodation_per_diem_qualifying",
-            "confirmed_cap_per_film",
+            "cultural_committee_criteria_exact",
+            "atl_qualifying_scope_confirmed",
+            "vfx_uplift_exact_threshold_pct",
+            "accommodation_per_diem_qualifying_confirmed",
+            "annual_programme_allocation_cap",
+            "processing_timeline_weeks",
+            "assignability_to_lender",
         ],
     ),
     GlobalProgramEntry(
@@ -385,21 +396,28 @@ ALL_PROGRAMS: list[GlobalProgramEntry] = [
         annual_cap_usd=None,
         requires_cultural_test=False,
         requires_local_entity=True,
-        confidence_tier="DISCOVERY",
-        source_title="DGCinema — Tax Credit per le Produzioni Straniere [NOT YET ACQUIRED]",
-        source_url="https://www.dgcinema.beniculturali.it",
-        effective_from=None,
+        confidence_tier="PARSED",
+        source_title="MiC / DGCinema — Tax Credit for Foreign Productions (Decreto MiC)",
+        source_url="https://www.dgcinema.beniculturali.it/finanziamenti/tax-credit/tax-credit-per-i-film-stranieri/",
+        effective_from="2016-01-01",
         notes=(
-            "40% on qualifying Italian expenditure; capped at €20M per film. "
-            "Administered by MiC (Ministry of Culture). Annual programme fund exists."
+            "40% refundable tax credit on qualifying Italian expenditure. "
+            "Per-production cap: €20M per film. "
+            "Min qualifying Italian spend: EUR 1M (approx USD 1.1M at EUR/USD 1.10). "
+            "No cultural test for foreign productions (Decreto MiC). "
+            "Italian production company or service company required (co-producer or mandataire). "
+            "Administered by MiC (Ministero della Cultura) / DGCinema. "
+            "Annual programme fund confirmed — size varies by budget allocation; competitive. "
+            "Strong infrastructure: Cinecittà Studios (Rome), MICO (Milan), Titanus (Rome). "
+            "PARSED: rate, cap, authority, source URL confirmed from official MiC programme page."
         ),
         unknown_fields=[
-            "annual_fund_size",
-            "atl_qualifying_scope",
-            "foreign_crew_minimum_local_spend_threshold",
-            "accommodation_qualifying_treatment",
-            "processing_timeline",
-            "rebate_assignability",
+            "annual_fund_size_current",
+            "atl_qualifying_scope_confirmed",
+            "accommodation_qualifying_treatment_confirmed",
+            "processing_timeline_weeks",
+            "assignability_to_lender",
+            "foreign_crew_local_spend_threshold_confirmed",
         ],
     ),
     GlobalProgramEntry(
