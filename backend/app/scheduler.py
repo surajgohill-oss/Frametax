@@ -179,7 +179,12 @@ def compute_poll_interval_minutes(event_date: datetime) -> int:
 # event card remains visible after showtime.
 
 def event_status_from_date(event_date: datetime) -> str:
-    seconds = (event_date - datetime.now(timezone.utc)).total_seconds()
+    # Apply 24h buffer to account for systematic timezone off-by-one:
+    # stored event_date is calendar_date+T03:00Z (= 8pm PDT the previous day).
+    # Actual showtime is typically 8pm PDT = next_day+T03:00Z.
+    # Shift by +24h so "in_progress" and "completed" align with actual show time.
+    adjusted = event_date + timedelta(hours=24)
+    seconds = (adjusted - datetime.now(timezone.utc)).total_seconds()
     if seconds < -3 * 3600:
         return "completed"
     if seconds < 0:
@@ -885,7 +890,12 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int, event=None
             )).scalar_one_or_none()
 
             if event_obj:
-                event_has_started = event_obj.event_date <= datetime.now(timezone.utc)
+                # Add 24h buffer to handle the systematic timezone off-by-one in stored
+                # event_dates: shows at 8pm PDT are stored as calendar_date+T03:00Z
+                # instead of the correct next_day+T03:00Z.  Exhaustion logic should not
+                # trigger until at least 24h after the stored date (= 0-24h after actual
+                # showtime), giving post-show inventory time to drain before deactivation.
+                event_has_started = event_obj.event_date + timedelta(hours=24) <= datetime.now(timezone.utc)
                 if event_has_started:
                     if len(clean_listings) == 0:
                         te_row.consecutive_zero_inventory_count += 1
