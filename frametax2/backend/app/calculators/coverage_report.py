@@ -16,7 +16,7 @@ from app.data.global_inventory import (
     GlobalProgramEntry,
 )
 
-REPORT_VERSION = "0.3.0"
+REPORT_VERSION = "0.4.0"
 
 # ---------------------------------------------------------------------------
 # Intelligence population registry — tracks which slugs have been seeded
@@ -24,7 +24,7 @@ REPORT_VERSION = "0.3.0"
 # Used by build_intelligence_gap_report() to compute what's still missing.
 # ---------------------------------------------------------------------------
 
-# Programs that have had ProgramAdminDetails seeded (migrations 0016, 0019, 0020)
+# Programs that have had ProgramAdminDetails seeded (migrations 0016, 0019, 0020, 0023)
 SLUGS_WITH_ADMIN_DETAILS: frozenset[str] = frozenset([
     # 0016
     "georgia_eiia", "ny_state_film", "ca_film_30", "la_film_production",
@@ -37,9 +37,24 @@ SLUGS_WITH_ADMIN_DETAILS: frozenset[str] = frozenset([
     "ca_federal_cptc", "on_ofttc", "or_opif", "nm_film_production",
     "nohfc_production_fund", "fr_trip", "it_tax_credit_foreign",
     "cy_film_rebate", "hr_cash_rebate", "hu_hipa_rebate",
+    # 0023 — all 43 extended programs (DISCOVERY tier)
+    "us_or_opif", "us_wa_mpcp", "us_il_film_credit", "us_nc_film_grant",
+    "us_sc_film_credit", "us_ma_film_credit", "us_tx_miip", "us_ct_film_credit",
+    "us_pa_film_credit", "us_md_film_credit", "us_va_film_credit",
+    "us_co_film_incentive", "us_tn_film_incentive", "us_ok_ofer",
+    "us_al_film_incentive", "us_ky_keiia",
+    "ca_ab_fttc", "ca_mb_fvptc", "ca_ns_pif", "ca_nb_film_credit",
+    "nl_nfpi", "at_fisa_plus", "cz_film_incentive", "ro_cnc_rebate",
+    "pt_film_incentive", "rs_film_rebate", "is_film_reimbursement",
+    "gb_sct_screen_fund", "gb_wls_screen_fund",
+    "sg_sfc_production", "au_nsw_screen", "au_vic_vicscreen", "au_qld_screen_qld",
+    "co_film_colombia", "do_film_incentive", "uy_xxi_incentive",
+    "ar_incaa_incentive", "br_ancine_incentive",
+    "ae_dpip", "sa_sfc_rebate", "jo_rfc_rebate",
+    "ma_ccm_rebate", "za_nfvf_rebate",
 ])
 
-# Programs that have had ProgramSpendTreatment seeded (migrations 0017-0021)
+# Programs that have had ProgramSpendTreatment seeded (migrations 0017-0021, 0024)
 SLUGS_WITH_SPEND_TREATMENT: frozenset[str] = frozenset([
     # 0017
     "uk_avec", "ie_section_481", "georgia_eiia", "ca_film_30",
@@ -53,6 +68,21 @@ SLUGS_WITH_SPEND_TREATMENT: frozenset[str] = frozenset([
     "ca_federal_cptc", "on_ofttc", "fr_trip", "it_tax_credit_foreign",
     "mu_edb_incentive", "nm_film_production", "or_opif",
     "nohfc_production_fund", "cy_film_rebate", "hr_cash_rebate", "hu_hipa_rebate",
+    # 0024 — all 43 extended programs (DISCOVERY tier)
+    "us_or_opif", "us_wa_mpcp", "us_il_film_credit", "us_nc_film_grant",
+    "us_sc_film_credit", "us_ma_film_credit", "us_tx_miip", "us_ct_film_credit",
+    "us_pa_film_credit", "us_md_film_credit", "us_va_film_credit",
+    "us_co_film_incentive", "us_tn_film_incentive", "us_ok_ofer",
+    "us_al_film_incentive", "us_ky_keiia",
+    "ca_ab_fttc", "ca_mb_fvptc", "ca_ns_pif", "ca_nb_film_credit",
+    "nl_nfpi", "at_fisa_plus", "cz_film_incentive", "ro_cnc_rebate",
+    "pt_film_incentive", "rs_film_rebate", "is_film_reimbursement",
+    "gb_sct_screen_fund", "gb_wls_screen_fund",
+    "sg_sfc_production", "au_nsw_screen", "au_vic_vicscreen", "au_qld_screen_qld",
+    "co_film_colombia", "do_film_incentive", "uy_xxi_incentive",
+    "ar_incaa_incentive", "br_ancine_incentive",
+    "ae_dpip", "sa_sfc_rebate", "jo_rfc_rebate",
+    "ma_ccm_rebate", "za_nfvf_rebate",
 ])
 
 # Programs that have LegalStackingRules seeded (migrations 0007, 0022)
@@ -398,6 +428,10 @@ class IntelligenceGapReport:
     admin_details_seeded: int
     spend_treatment_seeded: int
     stacking_rules_seeded: int
+    # Coverage percentages (0–100, rounded to 1 decimal)
+    admin_coverage_pct: float = 0.0
+    treatment_coverage_pct: float = 0.0
+    stacking_coverage_pct: float = 0.0
 
 
 def build_intelligence_gap_report(
@@ -444,6 +478,7 @@ def build_intelligence_gap_report(
     # Practical approach: the seeded slugs map to specific jurisdiction_codes.
     # We maintain a reverse map here for the gap report.
     _SLUG_TO_JUR: dict[str, str] = {
+        # Tier-1 programs
         "uk_avec": "GB", "ie_section_481": "IE", "georgia_eiia": "US-GA",
         "ny_state_film": "US-NY", "ca_film_30": "US-CA", "la_film_production": "US-LA",
         "on_opstc": "CA-ON", "on_ofttc": "CA-ON", "bc_pstc": "CA-BC",
@@ -454,6 +489,28 @@ def build_intelligence_gap_report(
         "au_location_offset": "AU", "nz_spg_international": "NZ",
         "cy_film_rebate": "CY", "hr_cash_rebate": "HR", "hu_hipa_rebate": "HU",
         "nohfc_production_fund": "CA-ON", "or_opif": "US-OR", "nm_film_production": "US-NM",
+        # Extended programs (migration 0015)
+        "us_or_opif": "US-OR", "us_wa_mpcp": "US-WA", "us_il_film_credit": "US-IL",
+        "us_nc_film_grant": "US-NC", "us_sc_film_credit": "US-SC",
+        "us_ma_film_credit": "US-MA", "us_tx_miip": "US-TX",
+        "us_ct_film_credit": "US-CT", "us_pa_film_credit": "US-PA",
+        "us_md_film_credit": "US-MD", "us_va_film_credit": "US-VA",
+        "us_co_film_incentive": "US-CO", "us_tn_film_incentive": "US-TN",
+        "us_ok_ofer": "US-OK", "us_al_film_incentive": "US-AL",
+        "us_ky_keiia": "US-KY",
+        "ca_ab_fttc": "CA-AB", "ca_mb_fvptc": "CA-MB",
+        "ca_ns_pif": "CA-NS", "ca_nb_film_credit": "CA-NB",
+        "nl_nfpi": "NL", "at_fisa_plus": "AT", "cz_film_incentive": "CZ",
+        "ro_cnc_rebate": "RO", "pt_film_incentive": "PT", "rs_film_rebate": "RS",
+        "is_film_reimbursement": "IS", "gb_sct_screen_fund": "GB-SCT",
+        "gb_wls_screen_fund": "GB-WLS", "sg_sfc_production": "SG",
+        "au_nsw_screen": "AU-NSW", "au_vic_vicscreen": "AU-VIC",
+        "au_qld_screen_qld": "AU-QLD",
+        "co_film_colombia": "CO", "do_film_incentive": "DO",
+        "uy_xxi_incentive": "UY", "ar_incaa_incentive": "AR",
+        "br_ancine_incentive": "BR",
+        "ae_dpip": "AE", "sa_sfc_rebate": "SA", "jo_rfc_rebate": "JO",
+        "ma_ccm_rebate": "MA", "za_nfvf_rebate": "ZA",
     }
     # Reverse: jurisdiction_code → slugs (one jur may have multiple slugs)
     _JUR_TO_SLUGS: dict[str, list[str]] = {}
@@ -496,6 +553,15 @@ def build_intelligence_gap_report(
         if (code in seeded_admin_jurs and code in seeded_treatment_jurs):
             fully_seeded.append(code)
 
+    total = len(programs)
+
+    def _pct(seeded_count: int) -> float:
+        return round(100.0 * seeded_count / total, 1) if total else 0.0
+
+    seeded_admin = total - len(missing_admin)
+    seeded_treatment = total - len(missing_treatment)
+    seeded_stacking = total - len(missing_stacking)
+
     # Count by slug (not jurisdiction — ON has multiple slugs)
     return IntelligenceGapReport(
         programs_missing_admin_details=sorted(missing_admin),
@@ -505,10 +571,13 @@ def build_intelligence_gap_report(
         discovery_programs=sorted(discovery),
         parsed_programs=sorted(parsed_list),
         fully_seeded_programs=sorted(fully_seeded),
-        total_programs=len(programs),
+        total_programs=total,
         admin_details_seeded=len(slugs_with_admin),
         spend_treatment_seeded=len(slugs_with_treatment),
         stacking_rules_seeded=len(slugs_with_stacking),
+        admin_coverage_pct=_pct(seeded_admin),
+        treatment_coverage_pct=_pct(seeded_treatment),
+        stacking_coverage_pct=_pct(seeded_stacking),
     )
 
 

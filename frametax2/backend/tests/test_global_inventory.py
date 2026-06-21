@@ -302,7 +302,7 @@ class TestCoverageReport:
         return build_coverage_report()
 
     def test_report_version_present(self, report):
-        assert report.report_version == "0.3.0"
+        assert report.report_version == "0.4.0"
 
     def test_total_jurisdictions(self, report):
         assert report.total_jurisdictions == 60
