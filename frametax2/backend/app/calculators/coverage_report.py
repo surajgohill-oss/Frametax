@@ -16,7 +16,29 @@ from app.data.global_inventory import (
     GlobalProgramEntry,
 )
 
-REPORT_VERSION = "0.1.0"
+REPORT_VERSION = "0.2.0"
+
+# Fields required for a program to be promotable from DISCOVERY to PARSED
+_PROMOTABLE_REQUIRED_FIELDS = frozenset([
+    "base_rate",
+    "is_refundable",
+    "requires_local_entity",
+    "source_url",
+])
+
+# Fields required for a program to be promotable from PARSED to VERIFIED
+_VERIFIED_REQUIRED_FIELDS = frozenset([
+    "base_rate",
+    "max_rate",
+    "is_refundable",
+    "is_transferable",
+    "requires_local_entity",
+    "min_spend_usd",
+    "requires_cultural_test",
+    "effective_from",
+    "source_url",
+    "source_title",
+])
 
 
 @dataclass
@@ -187,6 +209,121 @@ def build_coverage_report(
         parsed_benchmarks=total_parsed_bm,
         discovery_benchmarks=total_discovery_bm,
         by_jurisdiction=by_jur,
+    )
+
+
+def get_promotable_programs(
+    programs: list[GlobalProgramEntry] | None = None,
+) -> list[GlobalProgramEntry]:
+    """
+    Return DISCOVERY programs that have enough data to be promoted to PARSED.
+    A program is promotable if all _PROMOTABLE_REQUIRED_FIELDS are non-None/non-empty
+    and it is not already PARSED or VERIFIED.
+    """
+    if programs is None:
+        programs = ALL_PROGRAMS
+    promotable = []
+    for p in programs:
+        if p.confidence_tier != "DISCOVERY":
+            continue
+        missing = _missing_promotable_fields(p)
+        if not missing:
+            promotable.append(p)
+    return promotable
+
+
+def _missing_promotable_fields(p: GlobalProgramEntry) -> list[str]:
+    missing = []
+    if p.base_rate is None:
+        missing.append("base_rate")
+    if p.is_refundable is None:
+        missing.append("is_refundable")
+    if p.source_url is None:
+        missing.append("source_url")
+    return missing
+
+
+def _missing_verified_fields(p: GlobalProgramEntry) -> list[str]:
+    missing = []
+    if p.base_rate is None:
+        missing.append("base_rate")
+    if p.max_rate is None:
+        missing.append("max_rate")
+    if p.is_refundable is None:
+        missing.append("is_refundable")
+    if p.is_transferable is None:
+        missing.append("is_transferable")
+    if p.source_url is None:
+        missing.append("source_url")
+    if p.effective_from is None:
+        missing.append("effective_from")
+    return missing
+
+
+@dataclass
+class GapAnalysis:
+    """High-value gaps blocking database completeness."""
+    programs_missing_source_url: list[str]       # jurisdiction_codes
+    programs_missing_base_rate: list[str]
+    programs_missing_refundability: list[str]
+    programs_promotable_to_parsed: list[str]
+    jurisdictions_missing_benchmark: list[str]
+    total_discovery_programs: int
+    total_parsed_programs: int
+    total_verified_programs: int
+
+
+def build_gap_analysis(
+    programs: list[GlobalProgramEntry] | None = None,
+    benchmarks: list[CostBenchmarkEntry] | None = None,
+) -> GapAnalysis:
+    """
+    Identify the highest-priority gaps in the inventory.
+    Returns a structured analysis of what's missing and what's promotable.
+    """
+    if programs is None:
+        programs = ALL_PROGRAMS
+    if benchmarks is None:
+        benchmarks = ALL_BENCHMARKS
+
+    bm_codes = {bm.jurisdiction_code for bm in benchmarks}
+
+    missing_url = []
+    missing_rate = []
+    missing_refundability = []
+    promotable = []
+    discovery = parsed = verified = 0
+
+    for p in programs:
+        if p.confidence_tier == "DISCOVERY":
+            discovery += 1
+        elif p.confidence_tier == "PARSED":
+            parsed += 1
+        elif p.confidence_tier == "VERIFIED":
+            verified += 1
+
+        if p.source_url is None:
+            missing_url.append(p.jurisdiction_code)
+        if p.base_rate is None:
+            missing_rate.append(p.jurisdiction_code)
+        if p.is_refundable is None:
+            missing_refundability.append(p.jurisdiction_code)
+        if p.confidence_tier == "DISCOVERY" and not _missing_promotable_fields(p):
+            promotable.append(p.jurisdiction_code)
+
+    # Jurisdictions with programs but no benchmark
+    prog_codes = {p.jurisdiction_code for p in programs}
+    missing_bm = sorted(prog_codes - bm_codes)
+
+    return GapAnalysis(
+        programs_missing_source_url=missing_url,
+        programs_missing_base_rate=missing_rate,
+        programs_missing_refundability=missing_refundability,
+        programs_promotable_to_parsed=promotable,
+        jurisdictions_missing_benchmark=missing_bm,
+        total_discovery_programs=discovery,
+        total_parsed_programs=parsed,
+        total_verified_programs=verified,
     )
 
 

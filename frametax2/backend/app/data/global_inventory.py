@@ -914,3 +914,14 @@ ALL_BENCHMARKS: list[CostBenchmarkEntry] = [
         ),
     ),
 ]
+
+# ---------------------------------------------------------------------------
+# Extended inventory — additional ~43 jurisdictions (DISCOVERY tier)
+# ---------------------------------------------------------------------------
+from app.data.global_inventory_extended import (  # noqa: E402
+    EXTENDED_BENCHMARKS,
+    EXTENDED_PROGRAMS,
+)
+
+ALL_PROGRAMS = ALL_PROGRAMS + EXTENDED_PROGRAMS
+ALL_BENCHMARKS = ALL_BENCHMARKS + EXTENDED_BENCHMARKS

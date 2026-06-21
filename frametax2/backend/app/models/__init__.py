@@ -28,3 +28,11 @@ from app.models.screenplay import (  # noqa: F401
 from app.models.production import ProductionStructure, StructureCalculationResult  # noqa: F401
 from app.models.fx import FXRate  # noqa: F401
 from app.models.ingestion import IngestionJob  # noqa: F401
+from app.models.contribution import ProductionContribution  # noqa: F401
+from app.models.program_intelligence import (  # noqa: F401
+    ProgramAdminDetails,
+    ProgramSpendTreatment,
+    HistoricalProductionBenchmark,
+    BenchmarkSpendItem,
+    BenchmarkIngestionLog,
+)

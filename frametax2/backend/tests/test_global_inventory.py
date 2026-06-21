@@ -20,10 +20,30 @@ from app.calculators.coverage_report import (
     format_coverage_table,
 )
 
-TARGET_CODES = {
+TARGET_CODES_ORIGINAL = {
     "US", "CA", "GB", "IE", "MT", "GR", "CY", "MU",
     "FR", "ES", "IT", "HR", "HU", "BE", "DE", "AU", "NZ",
 }
+
+TARGET_CODES_EXTENDED = {
+    # US states
+    "US-OR", "US-WA", "US-IL", "US-NC", "US-SC", "US-MA", "US-TX", "US-CT",
+    "US-PA", "US-MD", "US-VA", "US-CO", "US-TN", "US-OK", "US-AL", "US-KY",
+    # CA provinces
+    "CA-AB", "CA-MB", "CA-NS", "CA-NB",
+    # Europe
+    "NL", "AT", "CZ", "RO", "PT", "RS", "IS", "GB-SCT", "GB-WLS",
+    # Asia-Pacific
+    "SG", "AU-NSW", "AU-VIC", "AU-QLD",
+    # Latin America
+    "CO", "DO", "UY", "AR", "BR",
+    # Middle East
+    "AE", "SA", "JO",
+    # Africa
+    "MA", "ZA",
+}
+
+TARGET_CODES = TARGET_CODES_ORIGINAL | TARGET_CODES_EXTENDED
 
 
 # ---------------------------------------------------------------------------
@@ -32,10 +52,10 @@ TARGET_CODES = {
 
 class TestInventoryStructure:
     def test_all_programs_count(self):
-        assert len(ALL_PROGRAMS) == 17
+        assert len(ALL_PROGRAMS) == 60
 
     def test_all_benchmarks_count(self):
-        assert len(ALL_BENCHMARKS) == 17
+        assert len(ALL_BENCHMARKS) == 60
 
     def test_programs_cover_all_target_jurisdictions(self):
         codes = {p.jurisdiction_code for p in ALL_PROGRAMS}
@@ -282,16 +302,16 @@ class TestCoverageReport:
         return build_coverage_report()
 
     def test_report_version_present(self, report):
-        assert report.report_version == "0.1.0"
+        assert report.report_version == "0.2.0"
 
     def test_total_jurisdictions(self, report):
-        assert report.total_jurisdictions == 17
+        assert report.total_jurisdictions == 60
 
     def test_total_programs(self, report):
-        assert report.total_programs == 17
+        assert report.total_programs == 60
 
     def test_total_benchmarks(self, report):
-        assert report.total_benchmarks == 17
+        assert report.total_benchmarks == 60
 
     def test_no_verified_programs(self, report):
         # No programs have been verified from primary sources yet
@@ -304,12 +324,12 @@ class TestCoverageReport:
         assert report.discovery_programs >= 8
 
     def test_all_benchmarks_discovery(self, report):
-        assert report.discovery_benchmarks == 17
+        assert report.discovery_benchmarks == 60
         assert report.verified_benchmarks == 0
         assert report.parsed_benchmarks == 0
 
     def test_by_jurisdiction_length(self, report):
-        assert len(report.by_jurisdiction) == 17
+        assert len(report.by_jurisdiction) == 60
 
     def test_by_jurisdiction_types(self, report):
         for jc in report.by_jurisdiction:
