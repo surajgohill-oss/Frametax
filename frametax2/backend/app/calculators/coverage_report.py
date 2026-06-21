@@ -16,7 +16,7 @@ from app.data.global_inventory import (
     GlobalProgramEntry,
 )
 
-REPORT_VERSION = "0.6.0"
+REPORT_VERSION = "0.7.0"
 
 # ---------------------------------------------------------------------------
 # Intelligence population registry — tracks which slugs have been seeded
@@ -52,6 +52,22 @@ SLUGS_WITH_ADMIN_DETAILS: frozenset[str] = frozenset([
     "eu_eurimages", "eu_media_fund", "nordic_ftvf",
     "ca_cmf", "ca_telefilm_dev", "gb_bfi_production", "fr_cnc_production",
     "au_screen_production", "nl_hbf", "qa_dfi_fund", "us_sundance_doc", "za_dac_fund",
+    # 0030 — all 43 wave-3 programs (DISCOVERY tier)
+    "us_ga_film_credit", "us_la_film_incentive", "us_nm_film_credit",
+    "us_ny_film_credit", "us_nv_film_incentive", "us_ri_film_credit",
+    "bs_film_incentive", "bb_film_incentive", "pa_film_incentive", "cr_film_incentive",
+    "pe_film_incentive", "ec_film_incentive",
+    "eg_film_incentive", "gh_film_incentive", "rw_film_incentive",
+    "tz_film_incentive", "sn_film_incentive",
+    "kw_film_incentive", "bh_film_incentive",
+    "ge_film_incentive", "kz_film_incentive", "am_film_incentive",
+    "vn_film_incentive", "id_film_incentive", "kh_film_incentive",
+    "jp_film_incentive", "tw_film_incentive", "hk_film_incentive",
+    "al_film_incentive", "me_film_incentive", "mk_film_incentive", "ba_film_incentive",
+    "fj_film_incentive",
+    "ibermedia_programme", "de_fff_bayern", "de_nrw_filmstiftung", "hk_film_dev_fund",
+    "in_nfdc_coproduction", "sg_imda_film_fund", "tw_taicca_fund",
+    "film_i_vast", "acpfilms_fund", "us_itvs_fund",
     # 0023 — all 43 extended programs (DISCOVERY tier)
     "us_or_opif", "us_wa_mpcp", "us_il_film_credit", "us_nc_film_grant",
     "us_sc_film_credit", "us_ma_film_credit", "us_tx_miip", "us_ct_film_credit",
@@ -98,6 +114,22 @@ SLUGS_WITH_SPEND_TREATMENT: frozenset[str] = frozenset([
     "eu_eurimages", "eu_media_fund", "nordic_ftvf",
     "ca_cmf", "ca_telefilm_dev", "gb_bfi_production", "fr_cnc_production",
     "au_screen_production", "nl_hbf", "qa_dfi_fund", "us_sundance_doc", "za_dac_fund",
+    # 0031 — all 43 wave-3 programs (DISCOVERY tier)
+    "us_ga_film_credit", "us_la_film_incentive", "us_nm_film_credit",
+    "us_ny_film_credit", "us_nv_film_incentive", "us_ri_film_credit",
+    "bs_film_incentive", "bb_film_incentive", "pa_film_incentive", "cr_film_incentive",
+    "pe_film_incentive", "ec_film_incentive",
+    "eg_film_incentive", "gh_film_incentive", "rw_film_incentive",
+    "tz_film_incentive", "sn_film_incentive",
+    "kw_film_incentive", "bh_film_incentive",
+    "ge_film_incentive", "kz_film_incentive", "am_film_incentive",
+    "vn_film_incentive", "id_film_incentive", "kh_film_incentive",
+    "jp_film_incentive", "tw_film_incentive", "hk_film_incentive",
+    "al_film_incentive", "me_film_incentive", "mk_film_incentive", "ba_film_incentive",
+    "fj_film_incentive",
+    "ibermedia_programme", "de_fff_bayern", "de_nrw_filmstiftung", "hk_film_dev_fund",
+    "in_nfdc_coproduction", "sg_imda_film_fund", "tw_taicca_fund",
+    "film_i_vast", "acpfilms_fund", "us_itvs_fund",
     # 0024 — all 43 extended programs (DISCOVERY tier)
     "us_or_opif", "us_wa_mpcp", "us_il_film_credit", "us_nc_film_grant",
     "us_sc_film_credit", "us_ma_film_credit", "us_tx_miip", "us_ct_film_credit",
@@ -478,8 +510,14 @@ class IntelligenceGapReport:
     resolved_treatment_programs: int = 0
     # Grant / fund programs (program_type not tax_credit or cash_rebate)
     grant_fund_programs: int = 0
-    # Total unique countries covered (by distinct jurisdiction_code prefix)
+    # Total unique countries covered (by distinct jurisdiction_code)
     countries_covered: int = 0
+    # Non-grant incentive programs (tax_credit, cash_rebate, production_support, etc.)
+    total_incentive_programs: int = 0
+    # Number of distinct world regions covered
+    regions_covered: int = 0
+    # Estimated discovery completeness (countries with programs / 195 sovereign nations)
+    discovery_completion_pct: float = 0.0
 
 
 def build_intelligence_gap_report(
@@ -584,6 +622,30 @@ def build_intelligence_gap_report(
         "br_ancine_incentive": "BR",
         "ae_dpip": "AE", "sa_sfc_rebate": "SA", "jo_rfc_rebate": "JO",
         "ma_ccm_rebate": "MA", "za_nfvf_rebate": "ZA",
+        # Wave-3 programs (migration 0029)
+        "us_ga_film_credit": "US-GA", "us_la_film_incentive": "US-LA",
+        "us_nm_film_credit": "US-NM", "us_ny_film_credit": "US-NY",
+        "us_nv_film_incentive": "US-NV", "us_ri_film_credit": "US-RI",
+        "bs_film_incentive": "BS", "bb_film_incentive": "BB",
+        "pa_film_incentive": "PA", "cr_film_incentive": "CR",
+        "pe_film_incentive": "PE", "ec_film_incentive": "EC",
+        "eg_film_incentive": "EG", "gh_film_incentive": "GH",
+        "rw_film_incentive": "RW", "tz_film_incentive": "TZ",
+        "sn_film_incentive": "SN", "kw_film_incentive": "KW",
+        "bh_film_incentive": "BH", "ge_film_incentive": "GE",
+        "kz_film_incentive": "KZ", "am_film_incentive": "AM",
+        "vn_film_incentive": "VN", "id_film_incentive": "ID",
+        "kh_film_incentive": "KH", "jp_film_incentive": "JP",
+        "tw_film_incentive": "TW", "hk_film_incentive": "HK",
+        "al_film_incentive": "AL", "me_film_incentive": "ME",
+        "mk_film_incentive": "MK", "ba_film_incentive": "BA",
+        "fj_film_incentive": "FJ",
+        # Wave-3 grants/funds (migration 0029)
+        "ibermedia_programme": "IBERO", "de_fff_bayern": "DE-BY",
+        "de_nrw_filmstiftung": "DE-NW", "hk_film_dev_fund": "HK",
+        "in_nfdc_coproduction": "IN", "sg_imda_film_fund": "SG",
+        "tw_taicca_fund": "TW", "film_i_vast": "SE-VG",
+        "acpfilms_fund": "ACP", "us_itvs_fund": "US",
     }
     # Reverse: jurisdiction_code → slugs (one jur may have multiple slugs)
     _JUR_TO_SLUGS: dict[str, list[str]] = {}
@@ -640,10 +702,75 @@ def build_intelligence_gap_report(
 
     # Count grant/fund programs and countries covered
     grant_types = {"direct_grant", "co_production_fund", "development_fund"}
-    grant_fund_count = sum(
-        1 for p in programs if p.program_type in grant_types
-    )
-    countries_covered = len({p.jurisdiction_code for p in programs})
+    grant_fund_count = sum(1 for p in programs if p.program_type in grant_types)
+    incentive_count = total - grant_fund_count
+    unique_codes = {p.jurisdiction_code for p in programs}
+    countries_covered = len(unique_codes)
+
+    # Estimate discovery completeness: unique top-level country codes / 195 sovereign nations
+    top_level_codes = {c for c in unique_codes if "-" not in c and len(c) <= 4
+                       and c not in {"EU", "NORDIC", "IBERO", "ACP"}}
+    discovery_pct = round(len(top_level_codes) / 195 * 100, 1)
+
+    # Count distinct world regions
+    _REGION_MAP: dict[str, str] = {
+        # North America
+        "US": "North America", "CA": "North America", "MX": "North America",
+        # Caribbean & Central America
+        "JM": "Caribbean & C.America", "TT": "Caribbean & C.America",
+        "DO": "Caribbean & C.America", "BS": "Caribbean & C.America",
+        "BB": "Caribbean & C.America", "PA": "Caribbean & C.America",
+        "CR": "Caribbean & C.America",
+        # South America
+        "BR": "South America", "AR": "South America", "CL": "South America",
+        "CO": "South America", "UY": "South America", "PE": "South America",
+        "EC": "South America",
+        # Western Europe
+        "GB": "Western Europe", "IE": "Western Europe", "FR": "Western Europe",
+        "DE": "Western Europe", "NL": "Western Europe", "BE": "Western Europe",
+        "AT": "Western Europe", "LU": "Western Europe", "PT": "Western Europe",
+        "ES": "Western Europe", "IT": "Western Europe", "CH": "Western Europe",
+        # Northern Europe
+        "SE": "Northern Europe", "NO": "Northern Europe", "FI": "Northern Europe",
+        "DK": "Northern Europe", "IS": "Northern Europe",
+        # Eastern Europe / Balkans
+        "PL": "Eastern Europe", "CZ": "Eastern Europe", "SK": "Eastern Europe",
+        "HU": "Eastern Europe", "RO": "Eastern Europe", "HR": "Eastern Europe",
+        "BG": "Eastern Europe", "RS": "Eastern Europe", "BA": "Eastern Europe",
+        "ME": "Eastern Europe", "MK": "Eastern Europe", "AL": "Eastern Europe",
+        "EE": "Eastern Europe", "LT": "Eastern Europe", "LV": "Eastern Europe",
+        "MT": "Western Europe", "CY": "Western Europe", "GR": "Western Europe",
+        # Middle East & Gulf
+        "AE": "Middle East & Gulf", "SA": "Middle East & Gulf",
+        "QA": "Middle East & Gulf", "JO": "Middle East & Gulf",
+        "IL": "Middle East & Gulf", "KW": "Middle East & Gulf",
+        "BH": "Middle East & Gulf", "TR": "Middle East & Gulf",
+        # Africa
+        "MA": "Africa", "TN": "Africa", "EG": "Africa", "SN": "Africa",
+        "GH": "Africa", "NG": "Africa", "KE": "Africa", "RW": "Africa",
+        "TZ": "Africa", "ZA": "Africa",
+        # Central Asia & Caucasus
+        "GE": "Central Asia", "KZ": "Central Asia", "AM": "Central Asia",
+        # South Asia
+        "IN": "South & SE Asia", "LK": "South & SE Asia",
+        # Southeast Asia
+        "TH": "South & SE Asia", "MY": "South & SE Asia", "PH": "South & SE Asia",
+        "SG": "South & SE Asia", "VN": "South & SE Asia", "ID": "South & SE Asia",
+        "KH": "South & SE Asia",
+        # East Asia
+        "KR": "East Asia", "JP": "East Asia", "TW": "East Asia", "HK": "East Asia",
+        # Oceania & Pacific
+        "AU": "Oceania & Pacific", "NZ": "Oceania & Pacific", "FJ": "Oceania & Pacific",
+        # Supranational
+        "MU": "Indian Ocean",
+    }
+    regions_hit: set[str] = set()
+    for code in unique_codes:
+        # For sub-nationals (e.g. US-GA), use the parent country code
+        parent = code.split("-")[0]
+        region = _REGION_MAP.get(code) or _REGION_MAP.get(parent)
+        if region:
+            regions_hit.add(region)
 
     # Count by slug (not jurisdiction — ON has multiple slugs)
     return IntelligenceGapReport(
@@ -664,6 +791,9 @@ def build_intelligence_gap_report(
         resolved_treatment_programs=resolved_count,
         grant_fund_programs=grant_fund_count,
         countries_covered=countries_covered,
+        total_incentive_programs=incentive_count,
+        regions_covered=len(regions_hit),
+        discovery_completion_pct=discovery_pct,
     )
 
 
