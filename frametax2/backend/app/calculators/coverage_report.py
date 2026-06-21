@@ -16,7 +16,53 @@ from app.data.global_inventory import (
     GlobalProgramEntry,
 )
 
-REPORT_VERSION = "0.2.0"
+REPORT_VERSION = "0.3.0"
+
+# ---------------------------------------------------------------------------
+# Intelligence population registry — tracks which slugs have been seeded
+# via migrations. Update this set when new seeding migrations are added.
+# Used by build_intelligence_gap_report() to compute what's still missing.
+# ---------------------------------------------------------------------------
+
+# Programs that have had ProgramAdminDetails seeded (migrations 0016, 0019, 0020)
+SLUGS_WITH_ADMIN_DETAILS: frozenset[str] = frozenset([
+    # 0016
+    "georgia_eiia", "ny_state_film", "ca_film_30", "la_film_production",
+    "uk_avec", "ie_section_481", "mt_mfc_rebate", "gr_cash_rebate",
+    "mu_edb_incentive", "on_opstc", "bc_pstc", "qc_film_production",
+    # 0019
+    "es_tax_credit_foreign", "be_tax_shelter", "de_dfff",
+    "au_location_offset", "nz_spg_international",
+    # 0020
+    "ca_federal_cptc", "on_ofttc", "or_opif", "nm_film_production",
+    "nohfc_production_fund", "fr_trip", "it_tax_credit_foreign",
+    "cy_film_rebate", "hr_cash_rebate", "hu_hipa_rebate",
+])
+
+# Programs that have had ProgramSpendTreatment seeded (migrations 0017-0021)
+SLUGS_WITH_SPEND_TREATMENT: frozenset[str] = frozenset([
+    # 0017
+    "uk_avec", "ie_section_481", "georgia_eiia", "ca_film_30",
+    "mt_mfc_rebate", "gr_cash_rebate", "on_opstc", "ny_state_film",
+    # 0018
+    "la_film_production", "bc_pstc", "qc_film_production",
+    # 0019
+    "es_tax_credit_foreign", "be_tax_shelter", "de_dfff",
+    "au_location_offset", "nz_spg_international",
+    # 0021
+    "ca_federal_cptc", "on_ofttc", "fr_trip", "it_tax_credit_foreign",
+    "mu_edb_incentive", "nm_film_production", "or_opif",
+    "nohfc_production_fund", "cy_film_rebate", "hr_cash_rebate", "hu_hipa_rebate",
+])
+
+# Programs that have LegalStackingRules seeded (migrations 0007, 0022)
+SLUGS_WITH_STACKING_RULES: frozenset[str] = frozenset([
+    # 0007 (NOHFC spend_reduction against OFTTC and CPTC)
+    "nohfc_production_fund", "on_ofttc", "ca_federal_cptc",
+    # 0022
+    "on_opstc", "bc_pstc", "qc_film_production",
+    "uk_avec", "ie_section_481",
+])
 
 # Fields required for a program to be promotable from DISCOVERY to PARSED
 _PROMOTABLE_REQUIRED_FIELDS = frozenset([
@@ -324,6 +370,145 @@ def build_gap_analysis(
         total_discovery_programs=discovery,
         total_parsed_programs=parsed,
         total_verified_programs=verified,
+    )
+
+
+@dataclass
+class IntelligenceGapReport:
+    """
+    Cross-references the population registry against known programs to show
+    what intelligence layers are still missing.  Pure Python — no DB access.
+    """
+    # Programs (jurisdiction_codes) missing AdminDetails
+    programs_missing_admin_details: list[str]
+    # Programs (jurisdiction_codes) missing SpendTreatment
+    programs_missing_spend_treatment: list[str]
+    # Programs (jurisdiction_codes) missing StackingRules
+    programs_missing_stacking_rules: list[str]
+    # Programs with any UNKNOWN fields in global inventory
+    programs_with_unknown_fields: list[str]
+    # Programs at DISCOVERY tier — not yet promoted
+    discovery_programs: list[str]
+    # Programs at PARSED — candidates for further verification
+    parsed_programs: list[str]
+    # Programs where AdminDetails and SpendTreatment are both complete
+    fully_seeded_programs: list[str]
+    # Totals
+    total_programs: int
+    admin_details_seeded: int
+    spend_treatment_seeded: int
+    stacking_rules_seeded: int
+
+
+def build_intelligence_gap_report(
+    programs: list[GlobalProgramEntry] | None = None,
+    slugs_with_admin: frozenset[str] | None = None,
+    slugs_with_treatment: frozenset[str] | None = None,
+    slugs_with_stacking: frozenset[str] | None = None,
+) -> IntelligenceGapReport:
+    """
+    Build a deterministic intelligence gap report from the global inventory
+    and population registry.  Call without arguments to use current registry.
+    """
+    if programs is None:
+        programs = ALL_PROGRAMS
+    if slugs_with_admin is None:
+        slugs_with_admin = SLUGS_WITH_ADMIN_DETAILS
+    if slugs_with_treatment is None:
+        slugs_with_treatment = SLUGS_WITH_SPEND_TREATMENT
+    if slugs_with_stacking is None:
+        slugs_with_stacking = SLUGS_WITH_STACKING_RULES
+
+    # Build a slug → jurisdiction_code map from source_url / notes for labelling.
+    # GlobalProgramEntry does not expose .slug, so we label by jurisdiction_code.
+    # "missing" sets are jurisdiction_codes of programs whose slugs are not seeded.
+    #
+    # Strategy: collect all known jurisdiction_codes; map to slugs via the
+    # known slug dictionary embedded in migration data. For the gap report
+    # we use jurisdiction_code as the identifier since that's what GlobalProgramEntry
+    # exposes.
+
+    missing_admin: list[str] = []
+    missing_treatment: list[str] = []
+    missing_stacking: list[str] = []
+    unknown_fields: list[str] = []
+    discovery: list[str] = []
+    parsed_list: list[str] = []
+    fully_seeded: list[str] = []
+
+    # Slug is embedded in source_url for seeded programs or can be inferred.
+    # Use a heuristic: check if jurisdiction_code matches any seeded slug pattern.
+    # For the gap report, we check programs whose notes/source_url indicate
+    # they have an associated slug that should be seeded.
+    #
+    # Practical approach: the seeded slugs map to specific jurisdiction_codes.
+    # We maintain a reverse map here for the gap report.
+    _SLUG_TO_JUR: dict[str, str] = {
+        "uk_avec": "GB", "ie_section_481": "IE", "georgia_eiia": "US-GA",
+        "ny_state_film": "US-NY", "ca_film_30": "US-CA", "la_film_production": "US-LA",
+        "on_opstc": "CA-ON", "on_ofttc": "CA-ON", "bc_pstc": "CA-BC",
+        "qc_film_production": "CA-QC", "ca_federal_cptc": "CA",
+        "mu_edb_incentive": "MU", "mt_mfc_rebate": "MT", "gr_cash_rebate": "GR",
+        "fr_trip": "FR", "it_tax_credit_foreign": "IT",
+        "es_tax_credit_foreign": "ES", "be_tax_shelter": "BE", "de_dfff": "DE",
+        "au_location_offset": "AU", "nz_spg_international": "NZ",
+        "cy_film_rebate": "CY", "hr_cash_rebate": "HR", "hu_hipa_rebate": "HU",
+        "nohfc_production_fund": "CA-ON", "or_opif": "US-OR", "nm_film_production": "US-NM",
+    }
+    # Reverse: jurisdiction_code → slugs (one jur may have multiple slugs)
+    _JUR_TO_SLUGS: dict[str, list[str]] = {}
+    for slug, jcode in _SLUG_TO_JUR.items():
+        _JUR_TO_SLUGS.setdefault(jcode, []).append(slug)
+
+    seeded_admin_jurs: set[str] = set()
+    seeded_treatment_jurs: set[str] = set()
+    seeded_stacking_jurs: set[str] = set()
+
+    for slug in slugs_with_admin:
+        if slug in _SLUG_TO_JUR:
+            seeded_admin_jurs.add(_SLUG_TO_JUR[slug])
+    for slug in slugs_with_treatment:
+        if slug in _SLUG_TO_JUR:
+            seeded_treatment_jurs.add(_SLUG_TO_JUR[slug])
+    for slug in slugs_with_stacking:
+        if slug in _SLUG_TO_JUR:
+            seeded_stacking_jurs.add(_SLUG_TO_JUR[slug])
+
+    seen_codes: set[str] = set()
+    for p in programs:
+        code = p.jurisdiction_code
+        if code in seen_codes:
+            continue
+        seen_codes.add(code)
+
+        if code not in seeded_admin_jurs:
+            missing_admin.append(code)
+        if code not in seeded_treatment_jurs:
+            missing_treatment.append(code)
+        if code not in seeded_stacking_jurs:
+            missing_stacking.append(code)
+        if p.unknown_fields:
+            unknown_fields.append(code)
+        if p.confidence_tier == "DISCOVERY":
+            discovery.append(code)
+        elif p.confidence_tier == "PARSED":
+            parsed_list.append(code)
+        if (code in seeded_admin_jurs and code in seeded_treatment_jurs):
+            fully_seeded.append(code)
+
+    # Count by slug (not jurisdiction — ON has multiple slugs)
+    return IntelligenceGapReport(
+        programs_missing_admin_details=sorted(missing_admin),
+        programs_missing_spend_treatment=sorted(missing_treatment),
+        programs_missing_stacking_rules=sorted(missing_stacking),
+        programs_with_unknown_fields=sorted(unknown_fields),
+        discovery_programs=sorted(discovery),
+        parsed_programs=sorted(parsed_list),
+        fully_seeded_programs=sorted(fully_seeded),
+        total_programs=len(programs),
+        admin_details_seeded=len(slugs_with_admin),
+        spend_treatment_seeded=len(slugs_with_treatment),
+        stacking_rules_seeded=len(slugs_with_stacking),
     )
 
 

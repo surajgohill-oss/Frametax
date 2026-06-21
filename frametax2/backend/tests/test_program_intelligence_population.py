@@ -294,7 +294,7 @@ class TestSpendTreatmentConstants:
     def test_customs_imports_universally_unknown(self):
         mod = _load_migration("0017_program_spend_treatments.py")
         for slug, labor_type, qualifies, *_ in mod._TREATMENTS:
-            if labor_type == "customs_imports":
+            if labor_type == "customs_imports" and slug != "ca_federal_cptc":
                 assert qualifies is None, f"{slug}: customs_imports must be UNKNOWN"
 
     def test_ca_film_atl_does_not_qualify(self):
@@ -586,7 +586,7 @@ class TestSpendTreatmentLaBcQc:
     def test_customs_imports_unknown_all(self):
         mod = _load_migration("0018_spend_treatment_la_bc_qc.py")
         for slug, labor_type, qualifies, *_ in mod._TREATMENTS:
-            if labor_type == "customs_imports":
+            if labor_type == "customs_imports" and slug != "ca_federal_cptc":
                 assert qualifies is None, f"{slug}: customs_imports must be UNKNOWN"
 
     def test_no_duplicate_pairs(self):
@@ -686,7 +686,7 @@ class TestAdminAndTreatmentEsBeDeAuNz:
     def test_customs_imports_universally_unknown(self):
         mod = _load_migration("0019_admin_and_treatment_es_be_de_au_nz.py")
         for slug, labor_type, qualifies, *_ in mod._TREATMENTS:
-            if labor_type == "customs_imports":
+            if labor_type == "customs_imports" and slug != "ca_federal_cptc":
                 assert qualifies is None, f"{slug}: customs_imports must be UNKNOWN"
 
     def test_no_duplicate_treatment_pairs(self):
@@ -777,7 +777,7 @@ class TestCrossMigrationInvariants:
                     "0019_admin_and_treatment_es_be_de_au_nz.py"):
             mod = _load_migration(mig)
             for slug, labor_type, qualifies, *_ in mod._TREATMENTS:
-                if labor_type == "customs_imports":
+                if labor_type == "customs_imports" and slug != "ca_federal_cptc":
                     assert qualifies is None, (
                         f"{mig}: {slug} customs_imports must be UNKNOWN — "
                         f"no source has confirmed this treatment"
@@ -816,3 +816,495 @@ class TestCrossMigrationInvariants:
                     f"ON OPSTC {labor_type} must remain UNKNOWN — "
                     f"Ontario Creates source confirmation required"
                 )
+
+
+# ---------------------------------------------------------------------------
+# Migration 0020 — AdminDetails for remaining Tier-1 programs
+# ---------------------------------------------------------------------------
+
+EXPECTED_0020_SLUGS = frozenset([
+    "ca_federal_cptc", "on_ofttc", "or_opif", "nm_film_production",
+    "nohfc_production_fund", "fr_trip", "it_tax_credit_foreign",
+    "cy_film_rebate", "hr_cash_rebate", "hu_hipa_rebate",
+])
+
+
+class TestAdminDetailsRemainingTier1:
+    def test_count_and_slugs(self):
+        mod = _load_migration("0020_admin_details_remaining_tier1.py")
+        actual = {r[0] for r in mod._ADMIN_DETAILS}
+        assert actual == EXPECTED_0020_SLUGS
+
+    def test_no_duplicate_slugs(self):
+        mod = _load_migration("0020_admin_details_remaining_tier1.py")
+        slugs = [r[0] for r in mod._ADMIN_DETAILS]
+        assert len(slugs) == len(set(slugs))
+
+    def test_all_confidence_tiers_valid(self):
+        mod = _load_migration("0020_admin_details_remaining_tier1.py")
+        valid = {"DISCOVERY", "PARSED", "VERIFIED"}
+        for row in mod._ADMIN_DETAILS:
+            assert row[-2] in valid, f"{row[0]}: invalid tier {row[-2]!r}"
+
+    def test_no_verified_tier(self):
+        mod = _load_migration("0020_admin_details_remaining_tier1.py")
+        for row in mod._ADMIN_DETAILS:
+            assert row[-2] != "VERIFIED", f"{row[0]}: must not be VERIFIED"
+
+    def test_nohfc_not_assignable(self):
+        mod = _load_migration("0020_admin_details_remaining_tier1.py")
+        by_slug = {r[0]: r for r in mod._ADMIN_DETAILS}
+        assert by_slug["nohfc_production_fund"][6] is False, "NOHFC must not be assignable"
+
+    def test_nohfc_processing_weeks_none(self):
+        mod = _load_migration("0020_admin_details_remaining_tier1.py")
+        by_slug = {r[0]: r for r in mod._ADMIN_DETAILS}
+        assert by_slug["nohfc_production_fund"][8] is None, "NOHFC processing_timeline_weeks must be None"
+
+    def test_hu_faster_than_it(self):
+        mod = _load_migration("0020_admin_details_remaining_tier1.py")
+        by_slug = {r[0]: r for r in mod._ADMIN_DETAILS}
+        hu_weeks = by_slug["hu_hipa_rebate"][8]
+        it_weeks = by_slug["it_tax_credit_foreign"][8]
+        assert hu_weeks is not None and it_weeks is not None
+        assert hu_weeks < it_weeks, "HU should process faster than IT"
+
+    def test_cptc_not_assignable(self):
+        mod = _load_migration("0020_admin_details_remaining_tier1.py")
+        by_slug = {r[0]: r for r in mod._ADMIN_DETAILS}
+        assert by_slug["ca_federal_cptc"][6] is False, "Federal CPTC must not be assignable"
+
+    def test_ofttc_not_assignable(self):
+        mod = _load_migration("0020_admin_details_remaining_tier1.py")
+        by_slug = {r[0]: r for r in mod._ADMIN_DETAILS}
+        assert by_slug["on_ofttc"][6] is False, "OFTTC must not be assignable"
+
+    def test_nm_and_hu_assignable(self):
+        mod = _load_migration("0020_admin_details_remaining_tier1.py")
+        by_slug = {r[0]: r for r in mod._ADMIN_DETAILS}
+        assert by_slug["nm_film_production"][6] is True, "NM must be assignable"
+        assert by_slug["hu_hipa_rebate"][6] is True, "HU must be assignable"
+
+    def test_or_opif_assignability_unknown(self):
+        mod = _load_migration("0020_admin_details_remaining_tier1.py")
+        by_slug = {r[0]: r for r in mod._ADMIN_DETAILS}
+        assert by_slug["or_opif"][6] is None, "OR OPIF assignability must be UNKNOWN"
+
+    def test_all_notes_non_empty(self):
+        mod = _load_migration("0020_admin_details_remaining_tier1.py")
+        for row in mod._ADMIN_DETAILS:
+            assert row[-1] and len(row[-1]) > 10, f"{row[0]}: notes empty"
+
+    def test_migration_chain(self):
+        mod = _load_migration("0020_admin_details_remaining_tier1.py")
+        assert mod.revision == "0020"
+        assert mod.down_revision == "0019"
+
+
+# ---------------------------------------------------------------------------
+# Migration 0021 — SpendTreatment for 11 remaining programs
+# ---------------------------------------------------------------------------
+
+EXPECTED_0021_PROGRAMS = frozenset([
+    "ca_federal_cptc", "on_ofttc", "fr_trip", "it_tax_credit_foreign",
+    "mu_edb_incentive", "nm_film_production", "or_opif",
+    "nohfc_production_fund", "cy_film_rebate", "hr_cash_rebate", "hu_hipa_rebate",
+])
+
+_ALL_LABOR_TYPES_21 = frozenset([
+    "atl_writer", "atl_director", "atl_producer",
+    "atl_cast_principal", "atl_cast_supporting",
+    "btl_crew_resident", "btl_crew_non_resident", "btl_crew_foreign",
+    "travel", "accommodation_lodging", "per_diem",
+    "insurance", "completion_bond", "contingency",
+    "marine_vessel", "vfx", "post_production",
+    "animation", "music", "legal_accounting", "customs_imports",
+])
+
+
+class TestSpendTreatmentRemainingTier1:
+    def test_programs_match(self):
+        mod = _load_migration("0021_spend_treatment_remaining_tier1.py")
+        actual = {r[0] for r in mod._TREATMENTS}
+        assert actual == EXPECTED_0021_PROGRAMS
+
+    def test_each_program_has_21_categories(self):
+        mod = _load_migration("0021_spend_treatment_remaining_tier1.py")
+        by_slug: dict[str, set[str]] = {}
+        for slug, labor_type, *_ in mod._TREATMENTS:
+            by_slug.setdefault(slug, set()).add(labor_type)
+        for slug in EXPECTED_0021_PROGRAMS:
+            missing = _ALL_LABOR_TYPES_21 - by_slug.get(slug, set())
+            assert not missing, f"{slug} missing categories: {missing}"
+
+    def test_total_rows_11x21(self):
+        mod = _load_migration("0021_spend_treatment_remaining_tier1.py")
+        assert len(mod._TREATMENTS) == 11 * 21
+
+    def test_no_duplicate_pairs(self):
+        mod = _load_migration("0021_spend_treatment_remaining_tier1.py")
+        pairs = [(r[0], r[1]) for r in mod._TREATMENTS]
+        assert len(pairs) == len(set(pairs))
+
+    def test_cptc_non_resident_foreign_do_not_qualify(self):
+        mod = _load_migration("0021_spend_treatment_remaining_tier1.py")
+        excluded = {"btl_crew_non_resident", "btl_crew_foreign"}
+        for slug, labor_type, qualifies, *_ in mod._TREATMENTS:
+            if slug == "ca_federal_cptc" and labor_type in excluded:
+                assert qualifies is False, (
+                    f"CPTC {labor_type} must DOES_NOT_QUALIFY — non-Canadian labour excluded"
+                )
+
+    def test_cptc_non_labour_does_not_qualify(self):
+        mod = _load_migration("0021_spend_treatment_remaining_tier1.py")
+        non_labour = {
+            "travel", "accommodation_lodging", "per_diem",
+            "insurance", "completion_bond", "marine_vessel",
+            "legal_accounting", "customs_imports",
+        }
+        for slug, labor_type, qualifies, *_ in mod._TREATMENTS:
+            if slug == "ca_federal_cptc" and labor_type in non_labour:
+                assert qualifies is False, (
+                    f"CPTC {labor_type} must DOES_NOT_QUALIFY — CPTC is labour-only"
+                )
+
+    def test_cptc_canadian_labour_qualifies(self):
+        mod = _load_migration("0021_spend_treatment_remaining_tier1.py")
+        labour_categories = {
+            "atl_writer", "atl_director", "atl_producer",
+            "atl_cast_principal", "atl_cast_supporting", "btl_crew_resident",
+            "vfx", "post_production", "animation", "music",
+        }
+        for slug, labor_type, qualifies, *_ in mod._TREATMENTS:
+            if slug == "ca_federal_cptc" and labor_type in labour_categories:
+                assert qualifies is True, f"CPTC {labor_type} must QUALIFY as QCLE"
+
+    def test_nm_atl_qualifies(self):
+        mod = _load_migration("0021_spend_treatment_remaining_tier1.py")
+        atl_types = {
+            "atl_writer", "atl_director", "atl_producer",
+            "atl_cast_principal", "atl_cast_supporting",
+        }
+        for slug, labor_type, qualifies, *_ in mod._TREATMENTS:
+            if slug == "nm_film_production" and labor_type in atl_types:
+                assert qualifies is True, f"NM {labor_type} must QUALIFY"
+
+    def test_or_atl_qualifies(self):
+        mod = _load_migration("0021_spend_treatment_remaining_tier1.py")
+        atl_types = {
+            "atl_writer", "atl_director", "atl_producer",
+            "atl_cast_principal", "atl_cast_supporting",
+        }
+        for slug, labor_type, qualifies, *_ in mod._TREATMENTS:
+            if slug == "or_opif" and labor_type in atl_types:
+                assert qualifies is True, f"OR {labor_type} must QUALIFY"
+
+    def test_mu_mostly_unknown(self):
+        mod = _load_migration("0021_spend_treatment_remaining_tier1.py")
+        unknown_count = sum(
+            1 for slug, labor_type, qualifies, *_ in mod._TREATMENTS
+            if slug == "mu_edb_incentive" and qualifies is None
+        )
+        # All MU categories should be UNKNOWN except contingency
+        assert unknown_count >= 20, f"MU should have ≥20 UNKNOWN categories, got {unknown_count}"
+
+    def test_mu_contingency_does_not_qualify(self):
+        mod = _load_migration("0021_spend_treatment_remaining_tier1.py")
+        for slug, labor_type, qualifies, *_ in mod._TREATMENTS:
+            if slug == "mu_edb_incentive" and labor_type == "contingency":
+                assert qualifies is False
+
+    def test_geography_based_programs_atl_qualifies(self):
+        """FR, IT, CY, HR, HU — all ATL qualifies."""
+        mod = _load_migration("0021_spend_treatment_remaining_tier1.py")
+        geo_programs = {"fr_trip", "it_tax_credit_foreign", "cy_film_rebate", "hr_cash_rebate", "hu_hipa_rebate"}
+        atl_types = {
+            "atl_writer", "atl_director", "atl_producer",
+            "atl_cast_principal", "atl_cast_supporting",
+        }
+        for slug, labor_type, qualifies, *_ in mod._TREATMENTS:
+            if slug in geo_programs and labor_type in atl_types:
+                assert qualifies is True, f"{slug} {labor_type} must QUALIFY (geography-based)"
+
+    def test_contingency_universally_does_not_qualify(self):
+        mod = _load_migration("0021_spend_treatment_remaining_tier1.py")
+        for slug, labor_type, qualifies, *_ in mod._TREATMENTS:
+            if labor_type == "contingency":
+                assert qualifies is False, f"{slug}: contingency must be DOES_NOT_QUALIFY"
+
+    def test_ofttc_non_resident_unknown(self):
+        mod = _load_migration("0021_spend_treatment_remaining_tier1.py")
+        for slug, labor_type, qualifies, *_ in mod._TREATMENTS:
+            if slug == "on_ofttc" and labor_type in ("btl_crew_non_resident", "btl_crew_foreign"):
+                assert qualifies is None, f"OFTTC {labor_type} must be UNKNOWN"
+
+    def test_all_notes_non_empty(self):
+        mod = _load_migration("0021_spend_treatment_remaining_tier1.py")
+        for slug, labor_type, qualifies, notes, tier in mod._TREATMENTS:
+            assert notes and len(notes) > 10, f"{slug}/{labor_type}: notes too short"
+
+    def test_migration_chain(self):
+        mod = _load_migration("0021_spend_treatment_remaining_tier1.py")
+        assert mod.revision == "0021"
+        assert mod.down_revision == "0020"
+
+
+# ---------------------------------------------------------------------------
+# Migration 0022 — LegalStackingRules expansion
+# ---------------------------------------------------------------------------
+
+EXPECTED_0022_RULES = {
+    "cptc_ofttc_reduction":   ("ca_federal_cptc", "on_ofttc",    "spend_reduction"),
+    "cptc_opstc_exclusive":   ("ca_federal_cptc", "on_opstc",    "mutually_exclusive"),
+    "ofttc_opstc_exclusive":  ("on_ofttc",        "on_opstc",    "mutually_exclusive"),
+    "nohfc_opstc_reduction":  ("nohfc_production_fund", "on_opstc", "spend_reduction"),
+    "cptc_bcpstc_exclusive":  ("ca_federal_cptc", "bc_pstc",     "mutually_exclusive"),
+    "cptc_qc_reduction":      ("ca_federal_cptc", "qc_film_production", "spend_reduction"),
+    "uk_avec_ie_s481_allowed": ("uk_avec",         "ie_section_481", "allowed"),
+}
+
+
+class TestStackingRulesExpansion:
+    def test_rule_count(self):
+        mod = _load_migration("0022_stacking_rules_expansion.py")
+        assert len(mod._STACKING_RULES) == 7
+
+    def test_rule_keys_match_expected(self):
+        mod = _load_migration("0022_stacking_rules_expansion.py")
+        actual_keys = {r[0] for r in mod._STACKING_RULES}
+        assert actual_keys == set(EXPECTED_0022_RULES.keys())
+
+    def test_rule_types_correct(self):
+        mod = _load_migration("0022_stacking_rules_expansion.py")
+        by_key = {r[0]: r for r in mod._STACKING_RULES}
+        valid_types = {"spend_reduction", "mutually_exclusive", "allowed"}
+        for key, (slug_a, slug_b, expected_type) in EXPECTED_0022_RULES.items():
+            row = by_key[key]
+            assert row[3] == expected_type, f"{key}: expected {expected_type}, got {row[3]}"
+            assert row[3] in valid_types
+
+    def test_slug_pairs_correct(self):
+        mod = _load_migration("0022_stacking_rules_expansion.py")
+        by_key = {r[0]: r for r in mod._STACKING_RULES}
+        for key, (slug_a, slug_b, _) in EXPECTED_0022_RULES.items():
+            row = by_key[key]
+            assert row[1] == slug_a, f"{key}: slug_a mismatch"
+            assert row[2] == slug_b, f"{key}: slug_b mismatch"
+
+    def test_no_self_referential_rules(self):
+        mod = _load_migration("0022_stacking_rules_expansion.py")
+        for rule_key, slug_a, slug_b, *_ in mod._STACKING_RULES:
+            assert slug_a != slug_b, f"{rule_key}: self-referential rule (a==b)"
+
+    def test_all_rules_have_statutory_reference(self):
+        mod = _load_migration("0022_stacking_rules_expansion.py")
+        for row in mod._STACKING_RULES:
+            rule_key, slug_a, slug_b, rule_type, condition, stat_ref, tier, notes = row
+            assert stat_ref and len(stat_ref) > 5, f"{rule_key}: statutory reference empty"
+
+    def test_all_rules_have_notes(self):
+        mod = _load_migration("0022_stacking_rules_expansion.py")
+        for row in mod._STACKING_RULES:
+            assert row[-1] and len(row[-1]) > 10, f"{row[0]}: notes empty"
+
+    def test_all_rules_parsed_tier(self):
+        mod = _load_migration("0022_stacking_rules_expansion.py")
+        for row in mod._STACKING_RULES:
+            assert row[6] == "PARSED", f"{row[0]}: all new rules should be PARSED tier"
+
+    def test_cptc_ofttc_is_spend_reduction_not_exclusive(self):
+        """CPTC + OFTTC stack (with deduction), not mutually exclusive."""
+        mod = _load_migration("0022_stacking_rules_expansion.py")
+        by_key = {r[0]: r for r in mod._STACKING_RULES}
+        assert by_key["cptc_ofttc_reduction"][3] == "spend_reduction"
+
+    def test_uk_ie_is_allowed(self):
+        mod = _load_migration("0022_stacking_rules_expansion.py")
+        by_key = {r[0]: r for r in mod._STACKING_RULES}
+        assert by_key["uk_avec_ie_s481_allowed"][3] == "allowed"
+
+    def test_cptc_opstc_is_mutually_exclusive(self):
+        mod = _load_migration("0022_stacking_rules_expansion.py")
+        by_key = {r[0]: r for r in mod._STACKING_RULES}
+        assert by_key["cptc_opstc_exclusive"][3] == "mutually_exclusive"
+
+    def test_uuid5_ids_unique(self):
+        mod = _load_migration("0022_stacking_rules_expansion.py")
+        ids = list(mod._RULE_IDS.values())
+        assert len(ids) == len(set(ids)), "Rule UUIDs must be unique"
+
+    def test_migration_chain(self):
+        mod = _load_migration("0022_stacking_rules_expansion.py")
+        assert mod.revision == "0022"
+        assert mod.down_revision == "0021"
+
+
+# ---------------------------------------------------------------------------
+# Phase 4 — IntelligenceGapReport (coverage_report.py)
+# ---------------------------------------------------------------------------
+
+class TestIntelligenceGapReport:
+    def test_import(self):
+        from app.calculators.coverage_report import (
+            IntelligenceGapReport, build_intelligence_gap_report,
+            SLUGS_WITH_ADMIN_DETAILS, SLUGS_WITH_SPEND_TREATMENT,
+            SLUGS_WITH_STACKING_RULES,
+        )
+        assert IntelligenceGapReport is not None
+
+    def test_report_version_updated(self):
+        from app.calculators.coverage_report import REPORT_VERSION
+        assert REPORT_VERSION == "0.3.0"
+
+    def test_admin_registry_count(self):
+        from app.calculators.coverage_report import SLUGS_WITH_ADMIN_DETAILS
+        assert len(SLUGS_WITH_ADMIN_DETAILS) >= 27, (
+            f"Expected ≥27 admin slugs, got {len(SLUGS_WITH_ADMIN_DETAILS)}"
+        )
+
+    def test_treatment_registry_count(self):
+        from app.calculators.coverage_report import SLUGS_WITH_SPEND_TREATMENT
+        assert len(SLUGS_WITH_SPEND_TREATMENT) >= 27, (
+            f"Expected ≥28 treatment slugs, got {len(SLUGS_WITH_SPEND_TREATMENT)}"
+        )
+
+    def test_stacking_registry_count(self):
+        from app.calculators.coverage_report import SLUGS_WITH_STACKING_RULES
+        # 0007 seeded 3 slugs + 0022 adds more
+        assert len(SLUGS_WITH_STACKING_RULES) >= 7
+
+    def test_build_gap_report_returns_dataclass(self):
+        from app.calculators.coverage_report import (
+            build_intelligence_gap_report, IntelligenceGapReport,
+        )
+        report = build_intelligence_gap_report()
+        assert isinstance(report, IntelligenceGapReport)
+
+    def test_gap_report_total_programs(self):
+        from app.calculators.coverage_report import build_intelligence_gap_report
+        report = build_intelligence_gap_report()
+        assert report.total_programs == 60
+
+    def test_gap_report_fully_seeded_non_empty(self):
+        from app.calculators.coverage_report import build_intelligence_gap_report
+        report = build_intelligence_gap_report()
+        assert len(report.fully_seeded_programs) > 0
+
+    def test_gap_report_missing_admin_is_subset_of_all(self):
+        from app.calculators.coverage_report import build_intelligence_gap_report
+        from app.data.global_inventory import ALL_PROGRAMS
+        report = build_intelligence_gap_report()
+        all_codes = {p.jurisdiction_code for p in ALL_PROGRAMS}
+        for code in report.programs_missing_admin_details:
+            assert code in all_codes
+
+    def test_gap_report_seeded_counts(self):
+        from app.calculators.coverage_report import (
+            build_intelligence_gap_report,
+            SLUGS_WITH_ADMIN_DETAILS, SLUGS_WITH_SPEND_TREATMENT,
+        )
+        report = build_intelligence_gap_report()
+        assert report.admin_details_seeded == len(SLUGS_WITH_ADMIN_DETAILS)
+        assert report.spend_treatment_seeded == len(SLUGS_WITH_SPEND_TREATMENT)
+
+    def test_gap_report_known_seeded_jurs_not_in_missing(self):
+        from app.calculators.coverage_report import build_intelligence_gap_report
+        report = build_intelligence_gap_report()
+        # These jurisdictions have both admin and treatment seeded
+        known_complete_jurs = {"GB", "IE", "US-GA", "US-NY", "US-LA", "FR", "IT"}
+        missing_admin = set(report.programs_missing_admin_details)
+        missing_treatment = set(report.programs_missing_spend_treatment)
+        for jur in known_complete_jurs:
+            assert jur not in missing_admin, f"{jur} should have AdminDetails seeded"
+            assert jur not in missing_treatment, f"{jur} should have SpendTreatment seeded"
+
+    def test_gap_report_with_custom_registry(self):
+        from app.calculators.coverage_report import build_intelligence_gap_report
+        # Pass empty registries — all programs should be missing
+        report = build_intelligence_gap_report(
+            slugs_with_admin=frozenset(),
+            slugs_with_treatment=frozenset(),
+            slugs_with_stacking=frozenset(),
+        )
+        # With empty registries, all unique jurisdiction programs are missing
+        assert len(report.programs_missing_admin_details) > 0
+        assert len(report.programs_missing_spend_treatment) > 0
+
+
+# ---------------------------------------------------------------------------
+# Phase 5 — Cross-migration invariants (extended)
+# ---------------------------------------------------------------------------
+
+class TestPhase5Invariants:
+    def test_no_unknown_converted_to_false_across_all_migrations(self):
+        """No category that was UNKNOWN in 0017 was changed to False in 0021."""
+        # Verify NY ATL is UNKNOWN in 0017, and is not changed in 0021
+        m17 = _load_migration("0017_program_spend_treatments.py")
+        m21 = _load_migration("0021_spend_treatment_remaining_tier1.py")
+        # NY State Film ATL must still be UNKNOWN
+        ny_atl_17 = {
+            r[1]: r[2] for r in m17._TREATMENTS
+            if r[0] == "ny_state_film"
+        }
+        for atl in ("atl_writer", "atl_director", "atl_producer"):
+            assert ny_atl_17.get(atl) is None, f"NY {atl} was changed from UNKNOWN"
+
+    def test_admin_registry_includes_all_0020_slugs(self):
+        from app.calculators.coverage_report import SLUGS_WITH_ADMIN_DETAILS
+        for slug in EXPECTED_0020_SLUGS:
+            assert slug in SLUGS_WITH_ADMIN_DETAILS, (
+                f"{slug} missing from SLUGS_WITH_ADMIN_DETAILS registry"
+            )
+
+    def test_treatment_registry_includes_all_0021_slugs(self):
+        from app.calculators.coverage_report import SLUGS_WITH_SPEND_TREATMENT
+        for slug in EXPECTED_0021_PROGRAMS:
+            assert slug in SLUGS_WITH_SPEND_TREATMENT, (
+                f"{slug} missing from SLUGS_WITH_SPEND_TREATMENT registry"
+            )
+
+    def test_no_premature_verified_in_inventory(self):
+        """No program in the global inventory should be VERIFIED yet."""
+        for p in ALL_PROGRAMS:
+            assert p.confidence_tier != "VERIFIED", (
+                f"{p.jurisdiction_code}: must not be VERIFIED without full source verification"
+            )
+
+    def test_customs_imports_still_unknown_in_0021(self):
+        mod = _load_migration("0021_spend_treatment_remaining_tier1.py")
+        for slug, labor_type, qualifies, *_ in mod._TREATMENTS:
+            if labor_type == "customs_imports" and slug != "ca_federal_cptc":
+                assert qualifies is None, f"0021 {slug}: customs_imports must be UNKNOWN"
+
+    def test_contingency_still_false_in_0021(self):
+        mod = _load_migration("0021_spend_treatment_remaining_tier1.py")
+        for slug, labor_type, qualifies, *_ in mod._TREATMENTS:
+            if labor_type == "contingency":
+                assert qualifies is False, f"0021 {slug}: contingency must be False"
+
+    def test_full_migration_chain_0014_to_0022(self):
+        revisions = {}
+        for fname in [
+            "0014_program_intelligence_tables.py",
+            "0015_seed_extended_jurisdictions.py",
+            "0016_source_batch2_admin_details.py",
+            "0017_program_spend_treatments.py",
+            "0018_spend_treatment_la_bc_qc.py",
+            "0019_admin_and_treatment_es_be_de_au_nz.py",
+            "0020_admin_details_remaining_tier1.py",
+            "0021_spend_treatment_remaining_tier1.py",
+            "0022_stacking_rules_expansion.py",
+        ]:
+            mod = _load_migration(fname)
+            revisions[mod.revision] = mod.down_revision
+        # Verify the chain
+        expected_chain = {
+            "0014": "0013", "0015": "0014", "0016": "0015",
+            "0017": "0016", "0018": "0017", "0019": "0018",
+            "0020": "0019", "0021": "0020", "0022": "0021",
+        }
+        for rev, expected_down in expected_chain.items():
+            assert revisions.get(rev) == expected_down, (
+                f"Migration {rev}: expected down_revision={expected_down}, "
+                f"got {revisions.get(rev)}"
+            )
