@@ -552,4 +552,4 @@ class TestCoverageReportExpanded:
 
     def test_report_version_updated(self):
         report = build_coverage_report()
-        assert report.report_version == "0.4.0"
+        assert report.report_version == "0.5.0"

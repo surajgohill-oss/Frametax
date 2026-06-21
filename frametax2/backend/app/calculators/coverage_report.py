@@ -16,7 +16,7 @@ from app.data.global_inventory import (
     GlobalProgramEntry,
 )
 
-REPORT_VERSION = "0.4.0"
+REPORT_VERSION = "0.5.0"
 
 # ---------------------------------------------------------------------------
 # Intelligence population registry — tracks which slugs have been seeded
@@ -92,6 +92,18 @@ SLUGS_WITH_STACKING_RULES: frozenset[str] = frozenset([
     # 0022
     "on_opstc", "bc_pstc", "qc_film_production",
     "uk_avec", "ie_section_481",
+])
+
+# Programs that have had at least one UNKNOWN spend treatment resolved to a
+# source-backed value (migrations 0025+). Updated when new resolution batches land.
+SLUGS_WITH_RESOLVED_TREATMENTS: frozenset[str] = frozenset([
+    # 0025 — source-backed UNKNOWN resolution batch 1
+    "ny_state_film",       # ATL all 5 → QUALIFIES
+    "mu_edb_incentive",    # ATL 5 + BTL 3 + travel/accommodation/per_diem/marine_vessel → QUALIFIES
+    "on_opstc",            # ATL writer/director/producer → QUALIFIES
+    "on_ofttc",            # btl_crew_non_resident/foreign → DOES_NOT_QUALIFY
+    "qc_film_production",  # ATL writer/director/producer → QUALIFIES
+    "bc_pstc",             # atl_writer → QUALIFIES
 ])
 
 # Fields required for a program to be promotable from DISCOVERY to PARSED
@@ -432,6 +444,8 @@ class IntelligenceGapReport:
     admin_coverage_pct: float = 0.0
     treatment_coverage_pct: float = 0.0
     stacking_coverage_pct: float = 0.0
+    # Programs with at least one UNKNOWN spend treatment resolved to source-backed value
+    resolved_treatment_programs: int = 0
 
 
 def build_intelligence_gap_report(
@@ -439,6 +453,7 @@ def build_intelligence_gap_report(
     slugs_with_admin: frozenset[str] | None = None,
     slugs_with_treatment: frozenset[str] | None = None,
     slugs_with_stacking: frozenset[str] | None = None,
+    slugs_with_resolved: frozenset[str] | None = None,
 ) -> IntelligenceGapReport:
     """
     Build a deterministic intelligence gap report from the global inventory
@@ -452,6 +467,8 @@ def build_intelligence_gap_report(
         slugs_with_treatment = SLUGS_WITH_SPEND_TREATMENT
     if slugs_with_stacking is None:
         slugs_with_stacking = SLUGS_WITH_STACKING_RULES
+    if slugs_with_resolved is None:
+        slugs_with_resolved = SLUGS_WITH_RESOLVED_TREATMENTS
 
     # Build a slug → jurisdiction_code map from source_url / notes for labelling.
     # GlobalProgramEntry does not expose .slug, so we label by jurisdiction_code.
@@ -562,6 +579,9 @@ def build_intelligence_gap_report(
     seeded_treatment = total - len(missing_treatment)
     seeded_stacking = total - len(missing_stacking)
 
+    # Count programs with at least one resolved UNKNOWN treatment
+    resolved_count = len(slugs_with_resolved)
+
     # Count by slug (not jurisdiction — ON has multiple slugs)
     return IntelligenceGapReport(
         programs_missing_admin_details=sorted(missing_admin),
@@ -578,6 +598,7 @@ def build_intelligence_gap_report(
         admin_coverage_pct=_pct(seeded_admin),
         treatment_coverage_pct=_pct(seeded_treatment),
         stacking_coverage_pct=_pct(seeded_stacking),
+        resolved_treatment_programs=resolved_count,
     )
 
 

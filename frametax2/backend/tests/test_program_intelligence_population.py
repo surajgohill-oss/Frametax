@@ -1154,7 +1154,7 @@ class TestIntelligenceGapReport:
 
     def test_report_version_updated(self):
         from app.calculators.coverage_report import REPORT_VERSION
-        assert REPORT_VERSION == "0.4.0"
+        assert REPORT_VERSION == "0.5.0"
 
     def test_admin_registry_count(self):
         from app.calculators.coverage_report import SLUGS_WITH_ADMIN_DETAILS
@@ -1575,3 +1575,192 @@ class TestStructuralCompleteness:
     def test_unknown_note_mentions_discovery(self):
         mod = _load_migration("0024_spend_treatment_extended_programs.py")
         assert "DISCOVERY" in mod._UNKNOWN_NOTE
+
+
+# ---------------------------------------------------------------------------
+# Migration 0025 — SpendTreatment resolution batch 1 (source-backed UNKNOWNs)
+# ---------------------------------------------------------------------------
+
+_EXPECTED_0025_UPDATES: dict[tuple[str, str], tuple[bool, str]] = {
+    # NY State Film — ATL all 5 → QUALIFIES/PARSED
+    ("ny_state_film", "atl_writer"):           (True,  "PARSED"),
+    ("ny_state_film", "atl_director"):         (True,  "PARSED"),
+    ("ny_state_film", "atl_producer"):         (True,  "PARSED"),
+    ("ny_state_film", "atl_cast_principal"):   (True,  "PARSED"),
+    ("ny_state_film", "atl_cast_supporting"):  (True,  "PARSED"),
+    # Mauritius EDB — QPE: manpower (ATL+BTL), transport, accommodation, catering
+    ("mu_edb_incentive", "atl_writer"):           (True, "PARSED"),
+    ("mu_edb_incentive", "atl_director"):         (True, "PARSED"),
+    ("mu_edb_incentive", "atl_producer"):         (True, "PARSED"),
+    ("mu_edb_incentive", "atl_cast_principal"):   (True, "PARSED"),
+    ("mu_edb_incentive", "atl_cast_supporting"):  (True, "PARSED"),
+    ("mu_edb_incentive", "btl_crew_resident"):    (True, "PARSED"),
+    ("mu_edb_incentive", "btl_crew_non_resident"): (True, "PARSED"),
+    ("mu_edb_incentive", "btl_crew_foreign"):     (True, "PARSED"),
+    ("mu_edb_incentive", "travel"):               (True, "PARSED"),
+    ("mu_edb_incentive", "accommodation_lodging"): (True, "PARSED"),
+    ("mu_edb_incentive", "per_diem"):             (True, "PARSED"),
+    ("mu_edb_incentive", "marine_vessel"):        (True, "PARSED"),
+    # Ontario OPSTC — ATL writer/director/producer → QUALIFIES
+    ("on_opstc", "atl_writer"):    (True, "PARSED"),
+    ("on_opstc", "atl_director"):  (True, "PARSED"),
+    ("on_opstc", "atl_producer"):  (True, "PARSED"),
+    # Ontario OFTTC — non-resident/foreign BTL → DOES_NOT_QUALIFY
+    ("on_ofttc", "btl_crew_non_resident"): (False, "PARSED"),
+    ("on_ofttc", "btl_crew_foreign"):      (False, "PARSED"),
+    # Quebec SODEC — ATL writer/director/producer → QUALIFIES
+    ("qc_film_production", "atl_writer"):   (True, "PARSED"),
+    ("qc_film_production", "atl_director"): (True, "PARSED"),
+    ("qc_film_production", "atl_producer"): (True, "PARSED"),
+    # BC PSTC — atl_writer → QUALIFIES
+    ("bc_pstc", "atl_writer"): (True, "PARSED"),
+}
+
+_EXPECTED_0025_PROGRAMS = frozenset([
+    "ny_state_film", "mu_edb_incentive", "on_opstc",
+    "on_ofttc", "qc_film_production", "bc_pstc",
+])
+
+
+class TestMigration0025SpendTreatmentResolution:
+    def test_migration_chain(self):
+        mod = _load_migration("0025_spend_treatment_resolution_batch1.py")
+        assert mod.revision == "0025"
+        assert mod.down_revision == "0024"
+
+    def test_total_update_count(self):
+        mod = _load_migration("0025_spend_treatment_resolution_batch1.py")
+        assert len(mod._UPDATES) == 26
+
+    def test_no_duplicate_program_labor_pairs(self):
+        mod = _load_migration("0025_spend_treatment_resolution_batch1.py")
+        pairs = [(r[0], r[1]) for r in mod._UPDATES]
+        assert len(pairs) == len(set(pairs)), "Duplicate (slug, labor_type) in _UPDATES"
+
+    def test_programs_covered(self):
+        mod = _load_migration("0025_spend_treatment_resolution_batch1.py")
+        actual = frozenset(r[0] for r in mod._UPDATES)
+        assert actual == _EXPECTED_0025_PROGRAMS
+
+    def test_all_qualifies_values_correct(self):
+        mod = _load_migration("0025_spend_treatment_resolution_batch1.py")
+        by_pair = {(r[0], r[1]): (r[2], r[4]) for r in mod._UPDATES}
+        for (slug, labor_type), (expected_qualifies, expected_tier) in _EXPECTED_0025_UPDATES.items():
+            assert (slug, labor_type) in by_pair, f"Missing ({slug}, {labor_type}) in _UPDATES"
+            actual_qualifies, actual_tier = by_pair[(slug, labor_type)]
+            assert actual_qualifies == expected_qualifies, (
+                f"({slug}, {labor_type}): expected qualifies={expected_qualifies}, "
+                f"got {actual_qualifies}"
+            )
+            assert actual_tier == expected_tier, (
+                f"({slug}, {labor_type}): expected tier={expected_tier}, got {actual_tier}"
+            )
+
+    def test_all_confidence_tiers_parsed(self):
+        mod = _load_migration("0025_spend_treatment_resolution_batch1.py")
+        for slug, labor_type, qualifies, notes, tier in mod._UPDATES:
+            assert tier == "PARSED", (
+                f"({slug}, {labor_type}): tier must be PARSED, got {tier!r}"
+            )
+
+    def test_no_contingency_or_customs_in_updates(self):
+        mod = _load_migration("0025_spend_treatment_resolution_batch1.py")
+        blocked = {"contingency", "customs_imports"}
+        for slug, labor_type, *_ in mod._UPDATES:
+            assert labor_type not in blocked, (
+                f"{slug}: {labor_type} must not appear in 0025 (not source-confirmed)"
+            )
+
+    def test_ny_atl_all_five_qualify(self):
+        mod = _load_migration("0025_spend_treatment_resolution_batch1.py")
+        atl_types = {
+            "atl_writer", "atl_director", "atl_producer",
+            "atl_cast_principal", "atl_cast_supporting",
+        }
+        ny_atl = {r[1]: r[2] for r in mod._UPDATES if r[0] == "ny_state_film"}
+        for lt in atl_types:
+            assert ny_atl.get(lt) is True, f"NY {lt} must QUALIFY in 0025"
+
+    def test_mu_twelve_categories_qualify(self):
+        mod = _load_migration("0025_spend_treatment_resolution_batch1.py")
+        mu_pairs = [(r[1], r[2]) for r in mod._UPDATES if r[0] == "mu_edb_incentive"]
+        assert len(mu_pairs) == 12, f"MU must have exactly 12 updates, got {len(mu_pairs)}"
+        for lt, qualifies in mu_pairs:
+            assert qualifies is True, f"MU {lt} must QUALIFY"
+
+    def test_on_opstc_atl_three_qualify(self):
+        mod = _load_migration("0025_spend_treatment_resolution_batch1.py")
+        opstc = {r[1]: r[2] for r in mod._UPDATES if r[0] == "on_opstc"}
+        for lt in ("atl_writer", "atl_director", "atl_producer"):
+            assert opstc.get(lt) is True, f"ON OPSTC {lt} must QUALIFY"
+
+    def test_on_ofttc_non_resident_does_not_qualify(self):
+        mod = _load_migration("0025_spend_treatment_resolution_batch1.py")
+        ofttc = {r[1]: r[2] for r in mod._UPDATES if r[0] == "on_ofttc"}
+        assert ofttc.get("btl_crew_non_resident") is False
+        assert ofttc.get("btl_crew_foreign") is False
+        assert len(ofttc) == 2, "OFTTC must have exactly 2 updates in 0025"
+
+    def test_qc_atl_three_qualify(self):
+        mod = _load_migration("0025_spend_treatment_resolution_batch1.py")
+        qc = {r[1]: r[2] for r in mod._UPDATES if r[0] == "qc_film_production"}
+        for lt in ("atl_writer", "atl_director", "atl_producer"):
+            assert qc.get(lt) is True, f"QC {lt} must QUALIFY"
+
+    def test_bc_pstc_atl_writer_qualifies(self):
+        mod = _load_migration("0025_spend_treatment_resolution_batch1.py")
+        bc = {r[1]: r[2] for r in mod._UPDATES if r[0] == "bc_pstc"}
+        assert bc.get("atl_writer") is True
+        assert len(bc) == 1, "BC PSTC must have exactly 1 update (only atl_writer confirmed)"
+
+    def test_all_notes_non_empty(self):
+        mod = _load_migration("0025_spend_treatment_resolution_batch1.py")
+        for slug, labor_type, qualifies, notes, tier in mod._UPDATES:
+            assert notes and len(notes) > 20, f"({slug}, {labor_type}): notes too short"
+
+    def test_downgrade_function_exists(self):
+        mod = _load_migration("0025_spend_treatment_resolution_batch1.py")
+        assert callable(mod.downgrade), "downgrade() must be callable"
+
+    def test_resolved_registry_includes_0025_programs(self):
+        from app.calculators.coverage_report import SLUGS_WITH_RESOLVED_TREATMENTS
+        for slug in _EXPECTED_0025_PROGRAMS:
+            assert slug in SLUGS_WITH_RESOLVED_TREATMENTS, (
+                f"{slug} missing from SLUGS_WITH_RESOLVED_TREATMENTS"
+            )
+
+    def test_gap_report_resolved_count(self):
+        from app.calculators.coverage_report import build_intelligence_gap_report
+        report = build_intelligence_gap_report()
+        assert report.resolved_treatment_programs == 6, (
+            f"Expected 6 resolved programs (0025 batch), got {report.resolved_treatment_programs}"
+        )
+
+    def test_full_migration_chain_0015_to_0025(self):
+        revisions = {}
+        for fname in [
+            "0015_seed_extended_jurisdictions.py",
+            "0016_source_batch2_admin_details.py",
+            "0017_program_spend_treatments.py",
+            "0018_spend_treatment_la_bc_qc.py",
+            "0019_admin_and_treatment_es_be_de_au_nz.py",
+            "0020_admin_details_remaining_tier1.py",
+            "0021_spend_treatment_remaining_tier1.py",
+            "0022_stacking_rules_expansion.py",
+            "0023_admin_details_extended_programs.py",
+            "0024_spend_treatment_extended_programs.py",
+            "0025_spend_treatment_resolution_batch1.py",
+        ]:
+            mod = _load_migration(fname)
+            revisions[mod.revision] = mod.down_revision
+        expected_chain = {
+            "0015": "0014", "0016": "0015",
+            "0017": "0016", "0018": "0017", "0019": "0018",
+            "0020": "0019", "0021": "0020", "0022": "0021",
+            "0023": "0022", "0024": "0023", "0025": "0024",
+        }
+        for rev, expected_down in expected_chain.items():
+            assert revisions.get(rev) == expected_down, (
+                f"Migration {rev}: expected down_revision={expected_down}, "
+                f"got {revisions.get(rev)}"
+            )
