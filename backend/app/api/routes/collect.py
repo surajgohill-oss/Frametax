@@ -142,11 +142,14 @@ async def ingest_collector_results(
             market_segment=item.market_segment,
         ))
 
-    fetched_at = (
+    # All listing/snapshot timestamp columns are TIMESTAMP WITHOUT TIME ZONE.
+    # Parse the ISO string (may be tz-aware) and strip tzinfo before inserting.
+    _raw_at = (
         datetime.fromisoformat(payload.collected_at.replace("Z", "+00:00"))
         if payload.collected_at
         else datetime.now(timezone.utc)
     )
+    fetched_at = _raw_at.replace(tzinfo=None)   # naive UTC — required by TIMESTAMP columns
 
     result = CollectorResult(
         marketplace_slug=payload.marketplace_slug,
