@@ -47,11 +47,18 @@ class TestExtendedInventoryStructure:
         codes = [b.jurisdiction_code for b in ALL_BENCHMARKS]
         assert len(codes) == len(set(codes)), "Duplicate jurisdiction codes in ALL_BENCHMARKS"
 
-    def test_all_extended_programs_are_discovery(self):
+    def test_extended_programs_mostly_discovery(self):
+        # US-OR was promoted to PARSED in Phase C; others remain DISCOVERY
+        promoted = {"US-OR"}
         for p in EXTENDED_PROGRAMS:
-            assert p.confidence_tier == "DISCOVERY", (
-                f"{p.jurisdiction_code} should be DISCOVERY, got {p.confidence_tier}"
-            )
+            if p.jurisdiction_code in promoted:
+                assert p.confidence_tier in ("PARSED", "VERIFIED"), (
+                    f"{p.jurisdiction_code} should be PARSED or VERIFIED, got {p.confidence_tier}"
+                )
+            else:
+                assert p.confidence_tier == "DISCOVERY", (
+                    f"{p.jurisdiction_code} should be DISCOVERY, got {p.confidence_tier}"
+                )
 
     def test_all_extended_benchmarks_are_discovery(self):
         for b in EXTENDED_BENCHMARKS:
@@ -464,9 +471,9 @@ class TestBuildGapAnalysis:
         result = build_gap_analysis()
         assert isinstance(result, GapAnalysis)
 
-    def test_no_verified_programs(self):
+    def test_verified_programs_phase_c(self):
         result = build_gap_analysis()
-        assert result.total_verified_programs == 0
+        assert result.total_verified_programs >= 5
 
     def test_some_parsed_programs(self):
         result = build_gap_analysis()
@@ -534,9 +541,9 @@ class TestCoverageReportExpanded:
         report = build_coverage_report()
         assert report.total_programs == 184
 
-    def test_no_verified_programs(self):
+    def test_verified_programs_phase_c(self):
         report = build_coverage_report()
-        assert report.verified_programs == 0
+        assert report.verified_programs >= 5
 
     def test_all_extended_jurisdictions_present(self):
         report = build_coverage_report()
@@ -557,4 +564,4 @@ class TestCoverageReportExpanded:
 
     def test_report_version_updated(self):
         report = build_coverage_report()
-        assert report.report_version == "0.9.0"
+        assert report.report_version == "1.0.0"

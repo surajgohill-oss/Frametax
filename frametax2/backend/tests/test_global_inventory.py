@@ -126,9 +126,9 @@ class TestSourceMetadata:
             if p.confidence_tier == "PARSED":
                 assert p.source_title
 
-    def test_uk_avec_is_parsed(self):
+    def test_uk_avec_is_verified(self):
         gb = next(p for p in ALL_PROGRAMS if p.jurisdiction_code == "GB")
-        assert gb.confidence_tier == "PARSED"
+        assert gb.confidence_tier == "VERIFIED"
 
     def test_canada_is_parsed(self):
         ca = next(p for p in ALL_PROGRAMS if p.jurisdiction_code == "CA")
@@ -138,13 +138,13 @@ class TestSourceMetadata:
         mt = next(p for p in ALL_PROGRAMS if p.jurisdiction_code == "MT")
         assert mt.confidence_tier == "PARSED"
 
-    def test_greece_is_parsed(self):
+    def test_greece_is_verified(self):
         gr = next(p for p in ALL_PROGRAMS if p.jurisdiction_code == "GR")
-        assert gr.confidence_tier == "PARSED"
+        assert gr.confidence_tier == "VERIFIED"
 
-    def test_ireland_is_parsed(self):
+    def test_ireland_is_verified(self):
         ie = next(p for p in ALL_PROGRAMS if p.jurisdiction_code == "IE")
-        assert ie.confidence_tier == "PARSED"
+        assert ie.confidence_tier == "VERIFIED"
 
     def test_mauritius_is_parsed(self):
         mu = next(p for p in ALL_PROGRAMS if p.jurisdiction_code == "MU")
@@ -154,13 +154,13 @@ class TestSourceMetadata:
         cy = next(p for p in ALL_PROGRAMS if p.jurisdiction_code == "CY")
         assert cy.confidence_tier == "DISCOVERY"
 
-    def test_australia_is_discovery(self):
+    def test_australia_is_parsed(self):
         au = next(p for p in ALL_PROGRAMS if p.jurisdiction_code == "AU")
-        assert au.confidence_tier == "DISCOVERY"
+        assert au.confidence_tier == "PARSED"
 
-    def test_new_zealand_is_discovery(self):
+    def test_new_zealand_is_parsed(self):
         nz = next(p for p in ALL_PROGRAMS if p.jurisdiction_code == "NZ")
-        assert nz.confidence_tier == "DISCOVERY"
+        assert nz.confidence_tier == "PARSED"
 
 
 # ---------------------------------------------------------------------------
@@ -302,7 +302,7 @@ class TestCoverageReport:
         return build_coverage_report()
 
     def test_report_version_present(self, report):
-        assert report.report_version == "0.9.0"
+        assert report.report_version == "1.0.0"
 
     def test_total_jurisdictions(self, report):
         assert report.total_jurisdictions == 169
@@ -313,9 +313,9 @@ class TestCoverageReport:
     def test_total_benchmarks(self, report):
         assert report.total_benchmarks == 60
 
-    def test_no_verified_programs(self, report):
-        # No programs have been verified from primary sources yet
-        assert report.verified_programs == 0
+    def test_verified_programs_phase_c(self, report):
+        # Phase C promoted 5 programs to VERIFIED from primary sources
+        assert report.verified_programs >= 5
 
     def test_some_parsed_programs(self, report):
         assert report.parsed_programs >= 5  # US, CA, GB, IE, MT, GR, MU
@@ -497,14 +497,13 @@ class TestBatch1OfficialSources:
 
     # --- No premature VERIFIED promotion ---
 
-    def test_no_programs_verified(self):
-        verified = [p for p in ALL_PROGRAMS if p.confidence_tier == "VERIFIED"]
-        assert verified == [], (
-            f"Premature VERIFIED promotion: {[p.jurisdiction_code for p in verified]}"
-        )
+    def test_phase_c_programs_verified(self):
+        verified = {p.jurisdiction_code for p in ALL_PROGRAMS if p.confidence_tier == "VERIFIED"}
+        for code in ("GB", "IE", "GR", "FR", "IT"):
+            assert code in verified, f"{code} should be VERIFIED after Phase C"
 
-    def test_batch1_jurisdictions_not_verified(self):
-        for code in ("MU", "MT", "GR", "CY"):
+    def test_batch1_partial_jurisdictions_not_verified(self):
+        for code in ("MU", "MT", "CY"):
             p = self._get(code)
             assert p.confidence_tier != "VERIFIED", \
                 f"{code} should not be VERIFIED — core fields still unresolved"

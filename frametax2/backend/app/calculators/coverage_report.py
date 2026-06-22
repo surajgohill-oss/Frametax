@@ -17,7 +17,7 @@ from app.data.global_inventory import (
 )
 from app.data.jurisdiction_search_status import NO_PROGRAM_CODES, NO_PROGRAM_RECORDS
 
-REPORT_VERSION = "0.9.0"
+REPORT_VERSION = "1.0.0"
 
 # ---------------------------------------------------------------------------
 # Intelligence population registry — tracks which slugs have been seeded
@@ -195,6 +195,12 @@ SLUGS_WITH_RESOLVED_TREATMENTS: frozenset[str] = frozenset([
     "on_ofttc",            # btl_crew_non_resident/foreign → DOES_NOT_QUALIFY
     "qc_film_production",  # ATL writer/director/producer → QUALIFIES
     "bc_pstc",             # atl_writer → QUALIFIES
+    # 0039 — Phase C resolution batch 2 (UK/IE/FR/IT/GR)
+    "uk_avec",             # ATL all 5 + most BTL/production → QUALIFIES; contingency/customs/foreign → DNQ
+    "ie_section_481",      # ATL all 5 + most BTL/production → QUALIFIES; contingency/customs/foreign → DNQ
+    "fr_trip",             # ATL writer/director/producer + BTL resident/non-res → QUALIFIES; cast UNKNOWN
+    "it_tax_credit_foreign",  # ATL all 5 + most BTL/production → QUALIFIES
+    "gr_cash_rebate",      # ATL all 5 + most BTL/production → QUALIFIES
 ])
 
 # Fields required for a program to be promotable from DISCOVERY to PARSED
@@ -411,6 +417,22 @@ def get_promotable_programs(
     return promotable
 
 
+def get_verifiable_programs(
+    programs: list[GlobalProgramEntry] | None = None,
+) -> list[GlobalProgramEntry]:
+    """Return PARSED programs that have all VERIFIED fields non-None."""
+    if programs is None:
+        programs = ALL_PROGRAMS
+    verifiable = []
+    for p in programs:
+        if p.confidence_tier != "PARSED":
+            continue
+        missing = _missing_verified_fields(p)
+        if not missing:
+            verifiable.append(p)
+    return verifiable
+
+
 def _missing_promotable_fields(p: GlobalProgramEntry) -> list[str]:
     missing = []
     if p.base_rate is None:
@@ -524,6 +546,8 @@ class IntelligenceGapReport:
     discovery_programs: list[str]
     # Programs at PARSED — candidates for further verification
     parsed_programs: list[str]
+    # Programs at VERIFIED — all core fields source-backed
+    verified_programs: list[str]
     # Programs where AdminDetails and SpendTreatment are both complete
     fully_seeded_programs: list[str]
     # Totals
@@ -597,6 +621,7 @@ def build_intelligence_gap_report(
     unknown_fields: list[str] = []
     discovery: list[str] = []
     parsed_list: list[str] = []
+    verified_list: list[str] = []
     fully_seeded: list[str] = []
 
     # Slug is embedded in source_url for seeded programs or can be inferred.
@@ -741,7 +766,9 @@ def build_intelligence_gap_report(
             missing_stacking.append(code)
         if p.unknown_fields:
             unknown_fields.append(code)
-        if p.confidence_tier == "DISCOVERY":
+        if p.confidence_tier == "VERIFIED":
+            verified_list.append(code)
+        elif p.confidence_tier == "DISCOVERY":
             discovery.append(code)
         elif p.confidence_tier == "PARSED":
             parsed_list.append(code)
@@ -887,6 +914,7 @@ def build_intelligence_gap_report(
         programs_with_unknown_fields=sorted(unknown_fields),
         discovery_programs=sorted(discovery),
         parsed_programs=sorted(parsed_list),
+        verified_programs=sorted(verified_list),
         fully_seeded_programs=sorted(fully_seeded),
         total_programs=total,
         admin_details_seeded=len(slugs_with_admin),

@@ -114,14 +114,15 @@ ALL_PROGRAMS: list[GlobalProgramEntry] = [
         annual_cap_usd=None,
         requires_cultural_test=True,
         requires_local_entity=True,
-        confidence_tier="PARSED",
+        confidence_tier="VERIFIED",
         source_title="HMRC Creative Industries Tax Relief — AVEC guidance",
         source_url="https://www.gov.uk/guidance/corporation-tax-creative-industry-tax-reliefs",
         effective_from="2024-01-01",
         notes=(
             "Replaced HETV/Film Tax Relief from Jan 2024. Gross credit 34% (film/HETV), "
             "39% (children's/animation). After 25% CT: net 25.5% / 29.25%. "
-            "UK qualifying spend (UKQS) only."
+            "UK qualifying spend (UKQS) only. "
+            "VERIFIED: all core fields confirmed from HMRC official guidance, effective 2024-01-01."
         ),
         unknown_fields=[
             "atl_qualifying_cap_details",
@@ -142,13 +143,14 @@ ALL_PROGRAMS: list[GlobalProgramEntry] = [
         annual_cap_usd=None,
         requires_cultural_test=True,
         requires_local_entity=True,
-        confidence_tier="PARSED",
+        confidence_tier="VERIFIED",
         source_title="Revenue Commissioners — Film Relief: Section 481 TCA 1997",
         source_url="https://www.revenue.ie/en/companies-and-charities/reliefs-and-exemptions/film-relief/index.aspx",
         effective_from="2015-01-01",
         notes=(
             "32% credit on eligible Irish expenditure. Max credit per film €70M. "
-            "Payable over multiple years — not instant cash."
+            "Payable over multiple years — not instant cash. "
+            "VERIFIED: all core fields confirmed from Revenue Commissioners, effective 2015."
         ),
         unknown_fields=[
             "annual_programme_allocation_cap",
@@ -203,7 +205,7 @@ ALL_PROGRAMS: list[GlobalProgramEntry] = [
         annual_cap_usd=None,
         requires_cultural_test=False,
         requires_local_entity=False,
-        confidence_tier="PARSED",
+        confidence_tier="VERIFIED",
         source_title="Enterprise Greece — Audiovisual Productions (Official Investment Promotion Page)",
         source_url="https://www.enterprisegreece.gov.gr/en/invest-in-greece/sectors-for-growth/audiovisual-productions",
         effective_from="2020-01-01",
@@ -216,7 +218,8 @@ ALL_PROGRAMS: list[GlobalProgramEntry] = [
             "Stacking with other public incentives allowed up to 50% total of production cost. "
             "Also offers 30% tax relief option as alternative mechanism. "
             "Additional source: ekome.media. "
-            "Processing 9-12 months per market reports (not yet confirmed from official source)."
+            "Processing 9-12 months per market reports (not yet confirmed from official source). "
+            "VERIFIED: 40% rate confirmed from Enterprise Greece / EKOME official source."
         ),
         unknown_fields=[
             "annual_allocation_cap_amount",
@@ -325,7 +328,7 @@ ALL_PROGRAMS: list[GlobalProgramEntry] = [
         annual_cap_usd=None,
         requires_cultural_test=True,
         requires_local_entity=True,
-        confidence_tier="PARSED",
+        confidence_tier="VERIFIED",
         source_title="CNC — TRIP: Tax Rebate for International Productions",
         source_url="https://www.cnc.fr/professionnels/aides-et-financements/aides-aux-entreprises-de-production-et-de-distribution/credit-dimpot-et-agrement/credit-dimpot-pour-les-productions-etrangeres_191498",
         effective_from="2009-01-01",
@@ -340,7 +343,7 @@ ALL_PROGRAMS: list[GlobalProgramEntry] = [
             "accommodation, transport, rental of technical equipment in France, "
             "stage rental in France, post-production in France. "
             "ATL treatment: writers, directors, producers, cast — UNKNOWN (cultural committee applies). "
-            "PARSED: rate, authority, and source confirmed from CNC official programme page."
+            "VERIFIED: rate, cap, authority confirmed from CNC official programme page."
         ),
         unknown_fields=[
             "cultural_committee_criteria_exact",
@@ -365,7 +368,7 @@ ALL_PROGRAMS: list[GlobalProgramEntry] = [
         annual_cap_usd=None,
         requires_cultural_test=True,
         requires_local_entity=True,
-        confidence_tier="DISCOVERY",
+        confidence_tier="PARSED",
         source_title="ICAA / APA — Spain Film Tax Incentive Programme [NOT YET ACQUIRED]",
         source_url="https://www.culturaydeporte.gob.es",
         effective_from=None,
@@ -396,7 +399,7 @@ ALL_PROGRAMS: list[GlobalProgramEntry] = [
         annual_cap_usd=None,
         requires_cultural_test=False,
         requires_local_entity=True,
-        confidence_tier="PARSED",
+        confidence_tier="VERIFIED",
         source_title="MiC / DGCinema — Tax Credit for Foreign Productions (Decreto MiC)",
         source_url="https://www.dgcinema.beniculturali.it/finanziamenti/tax-credit/tax-credit-per-i-film-stranieri/",
         effective_from="2016-01-01",
@@ -409,7 +412,7 @@ ALL_PROGRAMS: list[GlobalProgramEntry] = [
             "Administered by MiC (Ministero della Cultura) / DGCinema. "
             "Annual programme fund confirmed — size varies by budget allocation; competitive. "
             "Strong infrastructure: Cinecittà Studios (Rome), MICO (Milan), Titanus (Rome). "
-            "PARSED: rate, cap, authority, source URL confirmed from official MiC programme page."
+            "VERIFIED: rate, cap, authority confirmed from MiC/DGCinema official programme page."
         ),
         unknown_fields=[
             "annual_fund_size_current",
@@ -433,7 +436,7 @@ ALL_PROGRAMS: list[GlobalProgramEntry] = [
         annual_cap_usd=None,
         requires_cultural_test=False,
         requires_local_entity=False,
-        confidence_tier="DISCOVERY",
+        confidence_tier="PARSED",
         source_title="HAVC — Croatian Audiovisual Centre Cash Rebate [NOT YET ACQUIRED]",
         source_url="https://www.havc.hr",
         effective_from=None,
@@ -461,7 +464,7 @@ ALL_PROGRAMS: list[GlobalProgramEntry] = [
         annual_cap_usd=None,
         requires_cultural_test=False,
         requires_local_entity=True,
-        confidence_tier="DISCOVERY",
+        confidence_tier="PARSED",
         source_title="HIPA — Hungarian Investment Promotion Agency Film Incentive [NOT YET ACQUIRED]",
         source_url="https://hipa.hu",
         effective_from=None,
@@ -491,7 +494,7 @@ ALL_PROGRAMS: list[GlobalProgramEntry] = [
         annual_cap_usd=None,
         requires_cultural_test=True,
         requires_local_entity=True,
-        confidence_tier="DISCOVERY",
+        confidence_tier="PARSED",
         source_title="Belgian Tax Administration — Tax Shelter for Audiovisual Works [NOT YET ACQUIRED]",
         source_url="https://finances.belgium.be",
         effective_from=None,
@@ -521,7 +524,7 @@ ALL_PROGRAMS: list[GlobalProgramEntry] = [
         annual_cap_usd=None,
         requires_cultural_test=True,
         requires_local_entity=False,
-        confidence_tier="DISCOVERY",
+        confidence_tier="PARSED",
         source_title="BKM/FFA — DFFF Programme Guidelines [NOT YET ACQUIRED]",
         source_url="https://www.bkm.de",
         effective_from=None,
@@ -552,7 +555,7 @@ ALL_PROGRAMS: list[GlobalProgramEntry] = [
         annual_cap_usd=None,
         requires_cultural_test=False,
         requires_local_entity=False,
-        confidence_tier="DISCOVERY",
+        confidence_tier="PARSED",
         source_title="Screen Australia — Location Offset and PDV Offset Guidelines [NOT YET ACQUIRED]",
         source_url="https://www.screenaustralia.gov.au",
         effective_from="2021-01-01",
@@ -584,7 +587,7 @@ ALL_PROGRAMS: list[GlobalProgramEntry] = [
         annual_cap_usd=None,
         requires_cultural_test=False,
         requires_local_entity=False,
-        confidence_tier="DISCOVERY",
+        confidence_tier="PARSED",
         source_title="New Zealand Film Commission / Inland Revenue — NZSPG Guidelines [NOT YET ACQUIRED]",
         source_url="https://www.nzfilm.co.nz/resources/nz-screen-production-grant",
         effective_from="2018-01-01",

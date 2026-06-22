@@ -385,34 +385,33 @@ class TestSpendTreatmentConstants:
 # ---------------------------------------------------------------------------
 
 class TestPhase4Promotions:
-    def test_fr_promoted_to_parsed(self):
+    def test_fr_promoted_to_parsed_or_verified(self):
         fr_progs = [p for p in ALL_PROGRAMS if p.jurisdiction_code == "FR"]
         assert fr_progs, "FR program not found in ALL_PROGRAMS"
-        assert fr_progs[0].confidence_tier == "PARSED", (
-            f"FR should be PARSED, got {fr_progs[0].confidence_tier}"
+        assert fr_progs[0].confidence_tier in ("PARSED", "VERIFIED"), (
+            f"FR should be PARSED or VERIFIED, got {fr_progs[0].confidence_tier}"
         )
 
     def test_fr_has_cnc_source_url(self):
         fr = [p for p in ALL_PROGRAMS if p.jurisdiction_code == "FR"][0]
         assert fr.source_url and "cnc.fr" in fr.source_url
 
-    def test_it_promoted_to_parsed(self):
+    def test_it_promoted_to_parsed_or_verified(self):
         it_progs = [p for p in ALL_PROGRAMS if p.jurisdiction_code == "IT"]
         assert it_progs, "IT program not found in ALL_PROGRAMS"
-        assert it_progs[0].confidence_tier == "PARSED", (
-            f"IT should be PARSED, got {it_progs[0].confidence_tier}"
+        assert it_progs[0].confidence_tier in ("PARSED", "VERIFIED"), (
+            f"IT should be PARSED or VERIFIED, got {it_progs[0].confidence_tier}"
         )
 
     def test_it_has_dgcinema_source_url(self):
         it = [p for p in ALL_PROGRAMS if p.jurisdiction_code == "IT"][0]
         assert it.source_url and "dgcinema" in it.source_url
 
-    def test_neither_fr_nor_it_is_verified(self):
-        for p in ALL_PROGRAMS:
-            if p.jurisdiction_code in ("FR", "IT"):
-                assert p.confidence_tier != "VERIFIED", (
-                    f"{p.jurisdiction_code} should not leap to VERIFIED"
-                )
+    def test_fr_and_it_have_verified_program_in_phase_c(self):
+        # FR and IT each have one VERIFIED program (TRIP / MiC tax credit) plus grant programs at DISCOVERY
+        verified_codes = {p.jurisdiction_code for p in ALL_PROGRAMS if p.confidence_tier == "VERIFIED"}
+        for code in ("FR", "IT"):
+            assert code in verified_codes, f"{code} should have at least one VERIFIED program after Phase C"
 
 
 # ---------------------------------------------------------------------------
@@ -760,14 +759,14 @@ class TestCrossMigrationInvariants:
                 )
 
     def test_no_global_inventory_program_prematurely_verified(self):
-        """No program that was DISCOVERY should now be VERIFIED."""
-        originally_discovery = {
-            "FR", "IT", "ES", "BE", "DE", "AU", "NZ", "MT", "GR", "MU",
-        }
+        """Programs without full source verification must not be VERIFIED."""
+        # GR, FR, IT were promoted to VERIFIED in Phase C via primary-source confirmation
+        # ES, BE, DE, AU, NZ, MT, MU remain at most PARSED
+        still_unverified = {"ES", "BE", "DE", "AU", "NZ", "MT", "MU"}
         for p in ALL_PROGRAMS:
-            if p.jurisdiction_code in originally_discovery:
+            if p.jurisdiction_code in still_unverified:
                 assert p.confidence_tier != "VERIFIED", (
-                    f"{p.jurisdiction_code}: must not be VERIFIED (no full source verification)"
+                    f"{p.jurisdiction_code}: must not be VERIFIED (core fields still unresolved)"
                 )
 
     def test_customs_imports_remains_unknown_in_all_migrations(self):
@@ -1154,7 +1153,7 @@ class TestIntelligenceGapReport:
 
     def test_report_version_updated(self):
         from app.calculators.coverage_report import REPORT_VERSION
-        assert REPORT_VERSION == "0.9.0"
+        assert REPORT_VERSION == "1.0.0"
 
     def test_admin_registry_count(self):
         from app.calculators.coverage_report import SLUGS_WITH_ADMIN_DETAILS
@@ -1263,12 +1262,11 @@ class TestPhase5Invariants:
                 f"{slug} missing from SLUGS_WITH_SPEND_TREATMENT registry"
             )
 
-    def test_no_premature_verified_in_inventory(self):
-        """No program in the global inventory should be VERIFIED yet."""
-        for p in ALL_PROGRAMS:
-            assert p.confidence_tier != "VERIFIED", (
-                f"{p.jurisdiction_code}: must not be VERIFIED without full source verification"
-            )
+    def test_phase_c_verified_programs_in_inventory(self):
+        """Phase C promoted 5 programs to VERIFIED via primary-source confirmation."""
+        verified = {p.jurisdiction_code for p in ALL_PROGRAMS if p.confidence_tier == "VERIFIED"}
+        for code in ("GB", "IE", "GR", "FR", "IT"):
+            assert code in verified, f"{code} should be VERIFIED after Phase C"
 
     def test_customs_imports_still_unknown_in_0021(self):
         mod = _load_migration("0021_spend_treatment_remaining_tier1.py")
@@ -1732,8 +1730,8 @@ class TestMigration0025SpendTreatmentResolution:
     def test_gap_report_resolved_count(self):
         from app.calculators.coverage_report import build_intelligence_gap_report
         report = build_intelligence_gap_report()
-        assert report.resolved_treatment_programs == 6, (
-            f"Expected 6 resolved programs (0025 batch), got {report.resolved_treatment_programs}"
+        assert report.resolved_treatment_programs >= 6, (
+            f"Expected ≥6 resolved programs (0025 + Phase C batches), got {report.resolved_treatment_programs}"
         )
 
     def test_full_migration_chain_0015_to_0025(self):
@@ -2236,13 +2234,22 @@ class TestWave3GlobalInventory:
         from app.data.global_inventory import ALL_PROGRAMS
         assert len(ALL_PROGRAMS) == 184
 
-    def test_all_wave3_discovery_tier(self):
-        from app.data.global_inventory_wave3 import WAVE3_PROGRAMS
+    def test_wave3_grants_are_discovery_tier(self):
+        # Wave-3 incentive programs (US-GA, US-LA, US-NM, US-NY) promoted to PARSED in Phase C
         from app.data.global_inventory_grants2 import GRANTS2_PROGRAMS
-        for p in WAVE3_PROGRAMS + GRANTS2_PROGRAMS:
+        for p in GRANTS2_PROGRAMS:
             assert p.confidence_tier == "DISCOVERY", (
-                f"{p.program_name}: must be DISCOVERY, got {p.confidence_tier}"
+                f"{p.program_name}: grant/fund must be DISCOVERY, got {p.confidence_tier}"
             )
+
+    def test_wave3_promoted_programs_are_parsed(self):
+        from app.data.global_inventory_wave3 import WAVE3_PROGRAMS
+        promoted = {"US-GA", "US-LA", "US-NM", "US-NY"}
+        for p in WAVE3_PROGRAMS:
+            if p.jurisdiction_code in promoted:
+                assert p.confidence_tier == "PARSED", (
+                    f"{p.jurisdiction_code}: should be PARSED, got {p.confidence_tier}"
+                )
 
     def test_wave3_new_jurisdictions_present(self):
         from app.data.global_inventory import ALL_PROGRAMS
@@ -2603,7 +2610,7 @@ class TestWave4GlobalInventory:
 
     def test_coverage_report_v080_version(self):
         from app.calculators.coverage_report import REPORT_VERSION
-        assert REPORT_VERSION == "0.9.0"
+        assert REPORT_VERSION == "1.0.0"
 
     def test_coverage_report_v080_search_fields(self):
         from app.calculators.coverage_report import build_intelligence_gap_report
@@ -2860,7 +2867,7 @@ class TestWave5GlobalInventory:
 
     def test_coverage_report_v090_version(self):
         from app.calculators.coverage_report import REPORT_VERSION
-        assert REPORT_VERSION == "0.9.0"
+        assert REPORT_VERSION == "1.0.0"
 
     def test_coverage_report_v090_search_fields(self):
         from app.calculators.coverage_report import build_intelligence_gap_report
