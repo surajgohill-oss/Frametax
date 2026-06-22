@@ -190,7 +190,7 @@ async def run_once(target_event_id: Optional[int] = None) -> dict:
 
     t_start = time.monotonic()
 
-    async with httpx.AsyncClient(timeout=30.0) as http:
+    async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as http:
         # Fetch active events from Railway
         try:
             resp = await http.get(EVENTS_URL)

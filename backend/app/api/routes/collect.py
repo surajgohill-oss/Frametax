@@ -165,6 +165,11 @@ async def ingest_collector_results(
     poll_run_id = poll_run.id
     await db.commit()
 
+    # Refresh after commit — SQLAlchemy expires all attributes on commit(),
+    # and _process_result opens its own session so it cannot lazy-load through ours.
+    await db.refresh(te)
+    await db.refresh(event)
+
     # Attach event so _process_result can do exhaustion checks
     te.event = event
 
