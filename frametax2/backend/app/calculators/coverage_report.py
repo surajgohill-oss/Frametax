@@ -17,7 +17,7 @@ from app.data.global_inventory import (
 )
 from app.data.jurisdiction_search_status import NO_PROGRAM_CODES, NO_PROGRAM_RECORDS
 
-REPORT_VERSION = "1.1.0"
+REPORT_VERSION = "1.2.0"
 
 # ---------------------------------------------------------------------------
 # Intelligence population registry — tracks which slugs have been seeded
@@ -207,6 +207,33 @@ SLUGS_WITH_RESOLVED_TREATMENTS: frozenset[str] = frozenset([
     "us_nm_film_credit",   # All ATL/BTL + production categories → QUALIFIES; contingency DNQ
     "us_ny_film_credit",   # All ATL/BTL + production categories → QUALIFIES; contingency DNQ
     "us_or_opif",          # All ATL/BTL + production categories → QUALIFIES; contingency DNQ
+])
+
+# Grant/fund programs with fund_economics records seeded (migration 0043).
+SLUGS_WITH_FUND_ECONOMICS: frozenset[str] = frozenset([
+    "eu_eurimages",
+    "eu_media_fund",
+    "nordic_ftvf",
+    "ca_cmf",
+    "ca_telefilm_dev",
+    "gb_bfi_production",
+    "fr_cnc_production",
+    "au_screen_production",
+    "nl_hbf",
+    "qa_dfi_fund",
+    "us_sundance_doc",
+    "za_dac_fund",
+    "nohfc_production_fund",
+    "ibermedia_programme",
+    "de_fff_bayern",
+    "de_nrw_filmstiftung",
+    "hk_film_dev_fund",
+    "in_nfdc_coproduction",
+    "sg_imda_film_fund",
+    "tw_taicca_fund",
+    "film_i_vast",
+    "acpfilms_fund",
+    "us_itvs_fund",
 ])
 
 # Fields required for a program to be promotable from DISCOVERY to PARSED
@@ -588,6 +615,15 @@ class IntelligenceGapReport:
     global_search_coverage_pct: float = 0.0
     # Top regions still with many unsearched countries
     top_unsearched_regions: list[str] = field(default_factory=list)
+    # Phase D — Fund economics intelligence
+    # Grant/fund programs with fund_economics records seeded
+    fund_economics_programs: int = 0
+    # Grant/fund programs missing fund_economics records
+    funds_missing_economics: list[str] = field(default_factory=list)
+    # Sub-national/regional programs count
+    regional_programs: int = 0
+    # Percentage of grant/fund programs with fund_economics seeded (0–100)
+    fund_economics_pct: float = 0.0
 
 
 def build_intelligence_gap_report(
@@ -596,6 +632,7 @@ def build_intelligence_gap_report(
     slugs_with_treatment: frozenset[str] | None = None,
     slugs_with_stacking: frozenset[str] | None = None,
     slugs_with_resolved: frozenset[str] | None = None,
+    slugs_with_fund_economics: frozenset[str] | None = None,
 ) -> IntelligenceGapReport:
     """
     Build a deterministic intelligence gap report from the global inventory
@@ -611,6 +648,8 @@ def build_intelligence_gap_report(
         slugs_with_stacking = SLUGS_WITH_STACKING_RULES
     if slugs_with_resolved is None:
         slugs_with_resolved = SLUGS_WITH_RESOLVED_TREATMENTS
+    if slugs_with_fund_economics is None:
+        slugs_with_fund_economics = SLUGS_WITH_FUND_ECONOMICS
 
     # Build a slug → jurisdiction_code map from source_url / notes for labelling.
     # GlobalProgramEntry does not expose .slug, so we label by jurisdiction_code.
@@ -794,9 +833,27 @@ def build_intelligence_gap_report(
     resolved_count = len(slugs_with_resolved)
 
     # Count grant/fund programs and countries covered
-    grant_types = {"direct_grant", "co_production_fund", "development_fund"}
-    grant_fund_count = sum(1 for p in programs if p.program_type in grant_types)
+    grant_types = {"direct_grant", "co_production_fund", "development_fund", "discretionary_fund"}
+    grant_fund_programs_list = [p for p in programs if p.program_type in grant_types]
+    grant_fund_count = len(grant_fund_programs_list)
     incentive_count = total - grant_fund_count
+
+    # Phase D — fund economics coverage
+    # Compute which grant slugs are missing fund_economics using slug inference
+    # slugs_with_fund_economics uses canonical slugs from migrations
+    fund_econ_seeded = len(slugs_with_fund_economics)
+    funds_missing_econ = [
+        p.jurisdiction_code
+        for p in grant_fund_programs_list
+        if not any(
+            slug.replace("_", "").replace("-", "") in p.program_name.lower().replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
+            for slug in slugs_with_fund_economics
+        )
+    ][:20]  # cap list length for report readability
+    fund_econ_pct = round(fund_econ_seeded / max(grant_fund_count, 1) * 100, 1)
+
+    # Count regional (sub-national) programs
+    regional_count = sum(1 for p in programs if "-" in p.jurisdiction_code)
     unique_codes = {p.jurisdiction_code for p in programs}
     countries_covered = len(unique_codes)
 
@@ -940,6 +997,10 @@ def build_intelligence_gap_report(
         countries_not_yet_searched=not_yet_searched,
         global_search_coverage_pct=global_search_pct,
         top_unsearched_regions=top_unsearched,
+        fund_economics_programs=fund_econ_seeded,
+        funds_missing_economics=funds_missing_econ,
+        regional_programs=regional_count,
+        fund_economics_pct=fund_econ_pct,
     )
 
 

@@ -32,7 +32,7 @@ class TestExtendedInventoryStructure:
         assert len(EXTENDED_BENCHMARKS) == 43
 
     def test_all_programs_total(self):
-        assert len(ALL_PROGRAMS) == 184
+        assert len(ALL_PROGRAMS) == 189
 
     def test_all_benchmarks_total(self):
         assert len(ALL_BENCHMARKS) == 60
@@ -535,11 +535,11 @@ class TestBuildGapAnalysis:
 class TestCoverageReportExpanded:
     def test_total_jurisdictions_60(self):
         report = build_coverage_report()
-        assert report.total_jurisdictions == 169
+        assert report.total_jurisdictions == 174
 
     def test_total_programs_60(self):
         report = build_coverage_report()
-        assert report.total_programs == 184
+        assert report.total_programs == 189
 
     def test_verified_programs_phase_c(self):
         report = build_coverage_report()
@@ -564,4 +564,4 @@ class TestCoverageReportExpanded:
 
     def test_report_version_updated(self):
         report = build_coverage_report()
-        assert report.report_version == "1.1.0"
+        assert report.report_version == "1.2.0"

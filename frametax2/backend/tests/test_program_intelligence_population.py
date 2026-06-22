@@ -1153,7 +1153,7 @@ class TestIntelligenceGapReport:
 
     def test_report_version_updated(self):
         from app.calculators.coverage_report import REPORT_VERSION
-        assert REPORT_VERSION == "1.1.0"
+        assert REPORT_VERSION == "1.2.0"
 
     def test_admin_registry_count(self):
         from app.calculators.coverage_report import SLUGS_WITH_ADMIN_DETAILS
@@ -1182,7 +1182,7 @@ class TestIntelligenceGapReport:
     def test_gap_report_total_programs(self):
         from app.calculators.coverage_report import build_intelligence_gap_report
         report = build_intelligence_gap_report()
-        assert report.total_programs == 184
+        assert report.total_programs == 189
 
     def test_gap_report_fully_seeded_non_empty(self):
         from app.calculators.coverage_report import build_intelligence_gap_report
@@ -1820,8 +1820,8 @@ class TestWave2GlobalInventory:
 
     def test_total_programs_expanded(self):
         from app.data.global_inventory import ALL_PROGRAMS
-        assert len(ALL_PROGRAMS) == 184, (
-            f"Expected 184 programs (60 original + 47 wave-2 + 43 wave-3 + 21 wave-4 + 13 wave-5), got {len(ALL_PROGRAMS)}"
+        assert len(ALL_PROGRAMS) == 189, (
+            f"Expected 189 programs (60 original + 47 wave-2 + 43 wave-3 + 21 wave-4 + 13 wave-5 + 5 regional), got {len(ALL_PROGRAMS)}"
         )
 
     def test_wave2_new_jurisdictions_present(self):
@@ -1911,7 +1911,7 @@ class TestWave2GlobalInventory:
     def test_new_program_count_in_gap_report(self):
         from app.calculators.coverage_report import build_intelligence_gap_report
         report = build_intelligence_gap_report()
-        assert report.total_programs == 184
+        assert report.total_programs == 189
 
     def test_grant_fund_count_in_gap_report(self):
         from app.calculators.coverage_report import build_intelligence_gap_report
@@ -2232,7 +2232,7 @@ class TestWave3GlobalInventory:
 
     def test_total_programs_150(self):
         from app.data.global_inventory import ALL_PROGRAMS
-        assert len(ALL_PROGRAMS) == 184
+        assert len(ALL_PROGRAMS) == 189
 
     def test_wave3_grants_are_discovery_tier(self):
         # Wave-3 incentive programs (US-GA, US-LA, US-NM, US-NY) promoted to PARSED in Phase C
@@ -2566,7 +2566,7 @@ class TestWave4GlobalInventory:
 
     def test_total_programs_171(self):
         from app.data.global_inventory import ALL_PROGRAMS
-        assert len(ALL_PROGRAMS) == 184
+        assert len(ALL_PROGRAMS) == 189
 
     def test_all_wave4_discovery_tier(self):
         from app.data.global_inventory_wave4 import WAVE4_PROGRAMS
@@ -2611,7 +2611,7 @@ class TestWave4GlobalInventory:
 
     def test_coverage_report_v080_version(self):
         from app.calculators.coverage_report import REPORT_VERSION
-        assert REPORT_VERSION == "1.1.0"
+        assert REPORT_VERSION == "1.2.0"
 
     def test_coverage_report_v080_search_fields(self):
         from app.calculators.coverage_report import build_intelligence_gap_report
@@ -2824,7 +2824,7 @@ class TestWave5GlobalInventory:
 
     def test_total_programs_184(self):
         from app.data.global_inventory import ALL_PROGRAMS
-        assert len(ALL_PROGRAMS) == 184
+        assert len(ALL_PROGRAMS) == 189
 
     def test_all_wave5_discovery_tier(self):
         from app.data.global_inventory_wave5 import WAVE5_PROGRAMS
@@ -2868,7 +2868,7 @@ class TestWave5GlobalInventory:
 
     def test_coverage_report_v090_version(self):
         from app.calculators.coverage_report import REPORT_VERSION
-        assert REPORT_VERSION == "1.1.0"
+        assert REPORT_VERSION == "1.2.0"
 
     def test_coverage_report_v090_search_fields(self):
         from app.calculators.coverage_report import build_intelligence_gap_report
@@ -3109,7 +3109,7 @@ class TestPhaseCCompletion:
 
     def test_report_version_110(self):
         from app.calculators.coverage_report import REPORT_VERSION
-        assert REPORT_VERSION == "1.1.0"
+        assert REPORT_VERSION == "1.2.0"
 
     def test_non_tier1_programs_not_prematurely_verified(self):
         """MT, MU, AU, NZ, BE, DE, ES, HR, HU still need source confirmation."""
@@ -3119,3 +3119,148 @@ class TestPhaseCCompletion:
                 assert p.confidence_tier != "VERIFIED", (
                     f"{p.jurisdiction_code}: must not be VERIFIED — pending source confirmation"
                 )
+
+
+# ---------------------------------------------------------------------------
+# Phase D — Fund, Grant, Regional, Monetization Intelligence Tests
+# ---------------------------------------------------------------------------
+
+class TestPhaseDFundEconomics:
+    """
+    Tests for Phase D completion:
+    - fund_economics table model available
+    - SLUGS_WITH_FUND_ECONOMICS registry populated
+    - Regional programs added
+    - Migration chain 0042–0044 valid
+    - Gap report v1.2.0 fields present
+    """
+
+    def test_fund_economics_model_importable(self):
+        from app.models.program_intelligence import FundEconomics  # noqa: F401
+        assert FundEconomics.__tablename__ == "fund_economics"
+
+    def test_fund_economics_model_fields(self):
+        from app.models.program_intelligence import FundEconomics
+        for field in (
+            "is_repayable", "is_recoupable", "has_equity_participation",
+            "has_matching_requirement", "has_territorial_spend_requirement",
+            "eligible_formats", "typical_max_award_usd", "is_competitive",
+            "stackable_with_incentives", "stackability_notes", "confidence_tier",
+        ):
+            assert hasattr(FundEconomics, field), f"FundEconomics missing field: {field}"
+
+    def test_fund_economics_exported_from_models(self):
+        from app.models import FundEconomics  # noqa: F401
+
+    def test_slugs_with_fund_economics_registry(self):
+        from app.calculators.coverage_report import SLUGS_WITH_FUND_ECONOMICS
+        assert len(SLUGS_WITH_FUND_ECONOMICS) == 23
+        for slug in (
+            "eu_eurimages", "eu_media_fund", "nordic_ftvf",
+            "ca_cmf", "ca_telefilm_dev", "gb_bfi_production",
+            "fr_cnc_production", "au_screen_production", "nl_hbf",
+            "qa_dfi_fund", "us_sundance_doc", "za_dac_fund",
+            "nohfc_production_fund", "ibermedia_programme",
+            "de_fff_bayern", "de_nrw_filmstiftung", "hk_film_dev_fund",
+            "in_nfdc_coproduction", "sg_imda_film_fund", "tw_taicca_fund",
+            "film_i_vast", "acpfilms_fund", "us_itvs_fund",
+        ):
+            assert slug in SLUGS_WITH_FUND_ECONOMICS, f"{slug} missing from SLUGS_WITH_FUND_ECONOMICS"
+
+    def test_regional_programs_file_importable(self):
+        from app.data.global_inventory_regional import REGIONAL_PROGRAMS  # noqa: F401
+        assert len(REGIONAL_PROGRAMS) == 5
+
+    def test_regional_programs_in_all_programs(self):
+        from app.data.global_inventory import ALL_PROGRAMS
+        regional_codes = {"GB-NIR", "DE-MDM", "IT-APU", "IT-PIE", "ES-EUS"}
+        found = {p.jurisdiction_code for p in ALL_PROGRAMS if p.jurisdiction_code in regional_codes}
+        assert found == regional_codes, f"Missing regional codes: {regional_codes - found}"
+
+    def test_all_programs_count_189(self):
+        from app.data.global_inventory import ALL_PROGRAMS
+        assert len(ALL_PROGRAMS) == 189, f"Expected 189 programs, got {len(ALL_PROGRAMS)}"
+
+    def test_migration_0042_chain(self):
+        mod = _load_migration("0042_phase_d_schema.py")
+        assert mod.revision == "0042"
+        assert mod.down_revision == "0041"
+        assert callable(mod.upgrade)
+        assert callable(mod.downgrade)
+
+    def test_migration_0043_chain(self):
+        mod = _load_migration("0043_seed_fund_economics.py")
+        assert mod.revision == "0043"
+        assert mod.down_revision == "0042"
+        assert callable(mod.upgrade)
+        assert callable(mod.downgrade)
+
+    def test_migration_0043_has_23_slugs(self):
+        mod = _load_migration("0043_seed_fund_economics.py")
+        assert len(mod._FUND_DATA) == 23
+
+    def test_migration_0043_eurimages_repayable(self):
+        mod = _load_migration("0043_seed_fund_economics.py")
+        eu = mod._FUND_DATA["eu_eurimages"]
+        assert eu["is_repayable"] is True
+        assert eu["is_competitive"] is True
+        assert eu["stackable_with_incentives"] is True
+
+    def test_migration_0043_ca_cmf_not_stackable(self):
+        mod = _load_migration("0043_seed_fund_economics.py")
+        cmf = mod._FUND_DATA["ca_cmf"]
+        assert cmf["stackable_with_incentives"] is False
+
+    def test_migration_0043_au_screen_not_stackable(self):
+        mod = _load_migration("0043_seed_fund_economics.py")
+        au = mod._FUND_DATA["au_screen_production"]
+        assert au["stackable_with_incentives"] is False
+
+    def test_migration_0044_chain(self):
+        mod = _load_migration("0044_phase_d_stacking_rules.py")
+        assert mod.revision == "0044"
+        assert mod.down_revision == "0043"
+        assert callable(mod.upgrade)
+        assert callable(mod.downgrade)
+
+    def test_migration_0044_has_6_rules(self):
+        mod = _load_migration("0044_phase_d_stacking_rules.py")
+        assert len(mod._RULES) == 6
+
+    def test_migration_0044_au_screen_spend_reduction(self):
+        mod = _load_migration("0044_phase_d_stacking_rules.py")
+        au_rule = next(
+            (r for r in mod._RULES if r.get("slug_a") == "au_screen_production"),
+            None,
+        )
+        assert au_rule is not None
+        assert au_rule["rule_type"] == "spend_reduction"
+
+    def test_migration_0044_ca_cmf_spend_reduction(self):
+        mod = _load_migration("0044_phase_d_stacking_rules.py")
+        cmf_rule = next(
+            (r for r in mod._RULES if r.get("slug_a") == "ca_cmf"),
+            None,
+        )
+        assert cmf_rule is not None
+        assert cmf_rule["rule_type"] == "spend_reduction"
+
+    def test_gap_report_version_120(self):
+        from app.calculators.coverage_report import REPORT_VERSION
+        assert REPORT_VERSION == "1.2.0"
+
+    def test_gap_report_fund_economics_pct(self):
+        from app.calculators.coverage_report import build_intelligence_gap_report
+        report = build_intelligence_gap_report()
+        assert report.fund_economics_programs == 23
+        assert report.fund_economics_pct > 0
+
+    def test_gap_report_regional_programs(self):
+        from app.calculators.coverage_report import build_intelligence_gap_report
+        report = build_intelligence_gap_report()
+        assert report.regional_programs >= 5
+
+    def test_admin_details_model_phase_d_fields(self):
+        from app.models.program_intelligence import ProgramAdminDetails
+        assert hasattr(ProgramAdminDetails, "is_competitive_allocation")
+        assert hasattr(ProgramAdminDetails, "per_project_cap_usd")

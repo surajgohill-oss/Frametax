@@ -89,6 +89,102 @@ class ProgramAdminDetails(Base):
         String(20), nullable=False, default=ConfidenceTier.DISCOVERY
     )
     notes: Mapped[str | None] = mapped_column(Text)
+    # Phase D — monetization intelligence additions
+    is_competitive_allocation: Mapped[bool | None] = mapped_column(
+        Boolean,
+        comment=(
+            "True = programme allocates funds competitively (committee decision). "
+            "False = formula-based entitlement (every qualifying project receives credit)."
+        ),
+    )
+    per_project_cap_usd: Mapped[float | None] = mapped_column(
+        Numeric(15, 2),
+        comment="Per-project claim cap in USD, distinct from annual programme cap.",
+    )
+
+    program: Mapped["IncentiveProgram"] = relationship(  # noqa: F821
+        "IncentiveProgram", foreign_keys=[program_id]
+    )
+
+
+class FundEconomics(Base):
+    """
+    Grant / co-production fund economics intelligence.
+    One row per grant/fund IncentiveProgram (one-to-one via program_id UNIQUE).
+    Captures repayability, recoupment, equity, matching, and stackability — the
+    fields the future optimizer needs to treat soft money correctly.
+    """
+    __tablename__ = "fund_economics"
+
+    program_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("incentive_programs.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+    is_repayable: Mapped[bool | None] = mapped_column(
+        Boolean,
+        comment="True = fund advance must be repaid from exploitation receipts.",
+    )
+    repayment_terms: Mapped[str | None] = mapped_column(
+        Text,
+        comment="Repayment mechanism, recoupment position, and trigger conditions.",
+    )
+    is_recoupable: Mapped[bool | None] = mapped_column(
+        Boolean,
+        comment="True = fund recoups its investment from gross receipts before producers share.",
+    )
+    recoupment_terms: Mapped[str | None] = mapped_column(Text)
+    has_equity_participation: Mapped[bool | None] = mapped_column(
+        Boolean,
+        comment="True = fund takes equity / backend participation in IP.",
+    )
+    equity_participation_notes: Mapped[str | None] = mapped_column(Text)
+    has_matching_requirement: Mapped[bool | None] = mapped_column(
+        Boolean,
+        comment="True = production must demonstrate matching co-financing commitment.",
+    )
+    matching_notes: Mapped[str | None] = mapped_column(
+        Text,
+        comment="Matching ratio, required sources, and trigger conditions.",
+    )
+    has_territorial_spend_requirement: Mapped[bool | None] = mapped_column(
+        Boolean,
+        comment="True = minimum spend must occur within the fund's territory.",
+    )
+    territorial_spend_notes: Mapped[str | None] = mapped_column(Text)
+    eligible_formats: Mapped[str | None] = mapped_column(
+        Text,
+        comment="Comma-separated list: feature, documentary, animation, series, short, game.",
+    )
+    typical_max_award_usd: Mapped[float | None] = mapped_column(
+        Numeric(15, 2),
+        comment="Typical maximum award in USD at current rates.",
+    )
+    award_range_notes: Mapped[str | None] = mapped_column(
+        Text,
+        comment="Narrative on award range, project size thresholds, and outlier cases.",
+    )
+    is_competitive: Mapped[bool | None] = mapped_column(
+        Boolean,
+        comment="True = competitive/discretionary allocation (committee decision).",
+    )
+    stackable_with_incentives: Mapped[bool | None] = mapped_column(
+        Boolean,
+        comment=(
+            "True = can stack with national tax credits/rebates without reducing qualifying basis. "
+            "False = constitutes government assistance that reduces credit base."
+        ),
+    )
+    stackability_notes: Mapped[str | None] = mapped_column(
+        Text,
+        comment="Known stacking interactions with specific national incentive programmes.",
+    )
+    confidence_tier: Mapped[ConfidenceTier] = mapped_column(
+        String(20), nullable=False, default=ConfidenceTier.DISCOVERY
+    )
+    notes: Mapped[str | None] = mapped_column(Text)
 
     program: Mapped["IncentiveProgram"] = relationship(  # noqa: F821
         "IncentiveProgram", foreign_keys=[program_id]

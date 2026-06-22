@@ -35,4 +35,5 @@ from app.models.program_intelligence import (  # noqa: F401
     HistoricalProductionBenchmark,
     BenchmarkSpendItem,
     BenchmarkIngestionLog,
+    FundEconomics,
 )

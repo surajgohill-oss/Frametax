@@ -977,3 +977,10 @@ ALL_PROGRAMS = ALL_PROGRAMS + WAVE4_PROGRAMS
 from app.data.global_inventory_wave5 import WAVE5_PROGRAMS  # noqa: E402
 
 ALL_PROGRAMS = ALL_PROGRAMS + WAVE5_PROGRAMS
+
+# ---------------------------------------------------------------------------
+# Phase D — Regional/subnational programs (5 new sub-national programs)
+# ---------------------------------------------------------------------------
+from app.data.global_inventory_regional import REGIONAL_PROGRAMS  # noqa: E402
+
+ALL_PROGRAMS = ALL_PROGRAMS + REGIONAL_PROGRAMS
