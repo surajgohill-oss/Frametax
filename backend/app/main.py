@@ -20,7 +20,7 @@ from app.database import AsyncSessionLocal
 
 logger.info("TRACE-1: config + database imported OK")
 
-from app.api.routes import events, venues, analytics, listings, poll, debug as debug_routes, hydrate as hydrate_routes, health as health_routes, intelligence as intelligence_routes, data_health as data_health_routes, gap_monitor as gap_monitor_routes, market_intelligence as market_intelligence_routes, collection_health as collection_health_routes, follows as follows_routes, artist_intelligence as artist_intelligence_routes, reliability as reliability_routes
+from app.api.routes import events, venues, analytics, listings, poll, debug as debug_routes, hydrate as hydrate_routes, health as health_routes, intelligence as intelligence_routes, data_health as data_health_routes, gap_monitor as gap_monitor_routes, market_intelligence as market_intelligence_routes, collection_health as collection_health_routes, follows as follows_routes, artist_intelligence as artist_intelligence_routes, reliability as reliability_routes, collect as collect_routes
 
 logger.info("TRACE-2: all route modules imported OK")
 
@@ -229,6 +229,7 @@ app.include_router(collection_health_routes.router, prefix="/api")
 app.include_router(follows_routes.router, prefix="/api")
 app.include_router(artist_intelligence_routes.router, prefix="/api")
 app.include_router(reliability_routes.router, prefix="/api")
+app.include_router(collect_routes.router, prefix="/api")
 
 logger.info("TRACE-3c: app.main module fully loaded — routers registered")
 

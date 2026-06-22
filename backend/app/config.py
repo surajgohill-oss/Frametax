@@ -51,6 +51,11 @@ class Settings(BaseSettings):
     spotify_client_id: str = ""
     spotify_client_secret: str = ""
 
+    # Shared secret for the local Mac collector pushing results to Railway.
+    # Set LOCAL_COLLECTOR_SECRET in Railway env vars and in ~/.env locally.
+    # Empty = endpoint disabled (returns 403).
+    local_collector_secret: str = ""
+
     env_mode: str = "prod"  # prod | mock
 
     # ── Event integrity controls ──────────────────────────────────────────────

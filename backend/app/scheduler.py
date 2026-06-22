@@ -207,7 +207,10 @@ _ADMISSION_DAYS = 21
 
 
 def compute_lifecycle_phase(event_date: datetime, consecutive_zero: int = 0) -> str:
-    seconds = (event_date - datetime.now(timezone.utc)).total_seconds()
+    # Apply the same 24h buffer used in event_status_from_date / _process_result
+    # to keep lifecycle_phase in sync with the exhaustion guard.
+    adjusted = event_date + timedelta(hours=24)
+    seconds = (adjusted - datetime.now(timezone.utc)).total_seconds()
     if seconds >= 0:
         # Pre-start — zero inventory never advances lifecycle here
         if seconds >= _ADMISSION_DAYS * 24 * 3600:
