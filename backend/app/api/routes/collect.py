@@ -157,17 +157,21 @@ async def ingest_collector_results(
     )
 
     # Create poll_run record
-    poll_run = PollRun(
-        tracked_event_id=te.id,
-        started_at=fetched_at,
-        completed_at=datetime.now(timezone.utc),
-        status="success",
-        listings_found=len(raw_listings),
-    )
-    db.add(poll_run)
-    await db.flush()
-    poll_run_id = poll_run.id
-    await db.commit()
+    try:
+        poll_run = PollRun(
+            tracked_event_id=te.id,
+            started_at=fetched_at,
+            completed_at=datetime.now(timezone.utc),
+            status="success",
+            listings_found=len(raw_listings),
+        )
+        db.add(poll_run)
+        await db.flush()
+        poll_run_id = poll_run.id
+        await db.commit()
+    except Exception as exc:
+        logger.error("INGEST: poll_run insert failed: %s", exc, exc_info=True)
+        raise HTTPException(500, f"PollRun insert failed: {type(exc).__name__}: {exc}")
 
     # Refresh after commit — SQLAlchemy expires all attributes on commit(),
     # and _process_result opens its own session so it cannot lazy-load through ours.
@@ -178,7 +182,14 @@ async def ingest_collector_results(
     te.event = event
 
     # Run through the normal pipeline (dedup, snapshot, exhaustion)
-    await _process_result(result, te, poll_run_id, event)
+    try:
+        await _process_result(result, te, poll_run_id, event)
+    except Exception as exc:
+        logger.error(
+            "INGEST: _process_result failed te_id=%d mp=%s: %s",
+            payload.te_id, payload.marketplace_slug, exc, exc_info=True,
+        )
+        raise HTTPException(500, f"_process_result error: {type(exc).__name__}: {exc}")
 
     logger.info(
         "INGEST: te_id=%d mp=%s event=%d listings=%d skipped_parking=%d "
