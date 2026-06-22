@@ -87,13 +87,14 @@ ALL_PROGRAMS: list[GlobalProgramEntry] = [
         annual_cap_usd=None,
         requires_cultural_test=True,
         requires_local_entity=True,
-        confidence_tier="PARSED",
+        confidence_tier="VERIFIED",
         source_title="CRA T4283; CAVCO Programme Guidelines",
         source_url="https://www.canada.ca/en/canadian-heritage/services/funding/cavco-tax-credits.html",
         effective_from="2023-01-01",
         notes=(
             "Federal CPTC + provincial stacking. Ontario: OPSTC 21.5% on qualifying Ontario labour. "
-            "BC: PSTC 28% on qualifying BC labour. Quebec: QPRDP 20% on qualifying Quebec labour."
+            "BC: PSTC 28% on qualifying BC labour. Quebec: QPRDP 20% on qualifying Quebec labour. "
+            "VERIFIED: CPTC base rate (25% QCLE) and structure confirmed from CAVCO/CRA T4283 (effective 2023-01-01)."
         ),
         unknown_fields=[
             "provincial_cap_details",

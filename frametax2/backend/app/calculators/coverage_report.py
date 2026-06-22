@@ -17,7 +17,7 @@ from app.data.global_inventory import (
 )
 from app.data.jurisdiction_search_status import NO_PROGRAM_CODES, NO_PROGRAM_RECORDS
 
-REPORT_VERSION = "1.0.0"
+REPORT_VERSION = "1.1.0"
 
 # ---------------------------------------------------------------------------
 # Intelligence population registry — tracks which slugs have been seeded
@@ -201,6 +201,12 @@ SLUGS_WITH_RESOLVED_TREATMENTS: frozenset[str] = frozenset([
     "fr_trip",             # ATL writer/director/producer + BTL resident/non-res → QUALIFIES; cast UNKNOWN
     "it_tax_credit_foreign",  # ATL all 5 + most BTL/production → QUALIFIES
     "gr_cash_rebate",      # ATL all 5 + most BTL/production → QUALIFIES
+    # 0041 — Phase C resolution batch 3 (US state incentive programs)
+    "us_ga_film_credit",   # All ATL/BTL + production categories → QUALIFIES; contingency DNQ
+    "us_la_film_incentive", # All ATL/BTL + production categories → QUALIFIES; contingency DNQ
+    "us_nm_film_credit",   # All ATL/BTL + production categories → QUALIFIES; contingency DNQ
+    "us_ny_film_credit",   # All ATL/BTL + production categories → QUALIFIES; contingency DNQ
+    "us_or_opif",          # All ATL/BTL + production categories → QUALIFIES; contingency DNQ
 ])
 
 # Fields required for a program to be promotable from DISCOVERY to PARSED

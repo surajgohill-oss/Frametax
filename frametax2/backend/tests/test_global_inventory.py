@@ -130,9 +130,11 @@ class TestSourceMetadata:
         gb = next(p for p in ALL_PROGRAMS if p.jurisdiction_code == "GB")
         assert gb.confidence_tier == "VERIFIED"
 
-    def test_canada_is_parsed(self):
-        ca = next(p for p in ALL_PROGRAMS if p.jurisdiction_code == "CA")
-        assert ca.confidence_tier == "PARSED"
+    def test_canada_is_verified(self):
+        # CA (CPTC) promoted to VERIFIED in Phase C: CAVCO/CRA T4283 source-backed
+        ca = next(p for p in ALL_PROGRAMS if p.jurisdiction_code == "CA"
+                  and p.program_type == "tax_credit")
+        assert ca.confidence_tier == "VERIFIED"
 
     def test_malta_is_parsed(self):
         mt = next(p for p in ALL_PROGRAMS if p.jurisdiction_code == "MT")
@@ -302,7 +304,7 @@ class TestCoverageReport:
         return build_coverage_report()
 
     def test_report_version_present(self, report):
-        assert report.report_version == "1.0.0"
+        assert report.report_version == "1.1.0"
 
     def test_total_jurisdictions(self, report):
         assert report.total_jurisdictions == 169

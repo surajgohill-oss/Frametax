@@ -1153,7 +1153,7 @@ class TestIntelligenceGapReport:
 
     def test_report_version_updated(self):
         from app.calculators.coverage_report import REPORT_VERSION
-        assert REPORT_VERSION == "1.0.0"
+        assert REPORT_VERSION == "1.1.0"
 
     def test_admin_registry_count(self):
         from app.calculators.coverage_report import SLUGS_WITH_ADMIN_DETAILS
@@ -2242,13 +2242,14 @@ class TestWave3GlobalInventory:
                 f"{p.program_name}: grant/fund must be DISCOVERY, got {p.confidence_tier}"
             )
 
-    def test_wave3_promoted_programs_are_parsed(self):
+    def test_wave3_tier1_us_states_verified(self):
+        # Phase C promoted US-GA/LA/NM/NY from PARSED → VERIFIED
         from app.data.global_inventory_wave3 import WAVE3_PROGRAMS
         promoted = {"US-GA", "US-LA", "US-NM", "US-NY"}
         for p in WAVE3_PROGRAMS:
             if p.jurisdiction_code in promoted:
-                assert p.confidence_tier == "PARSED", (
-                    f"{p.jurisdiction_code}: should be PARSED, got {p.confidence_tier}"
+                assert p.confidence_tier == "VERIFIED", (
+                    f"{p.jurisdiction_code}: should be VERIFIED after Phase C, got {p.confidence_tier}"
                 )
 
     def test_wave3_new_jurisdictions_present(self):
@@ -2610,7 +2611,7 @@ class TestWave4GlobalInventory:
 
     def test_coverage_report_v080_version(self):
         from app.calculators.coverage_report import REPORT_VERSION
-        assert REPORT_VERSION == "1.0.0"
+        assert REPORT_VERSION == "1.1.0"
 
     def test_coverage_report_v080_search_fields(self):
         from app.calculators.coverage_report import build_intelligence_gap_report
@@ -2867,7 +2868,7 @@ class TestWave5GlobalInventory:
 
     def test_coverage_report_v090_version(self):
         from app.calculators.coverage_report import REPORT_VERSION
-        assert REPORT_VERSION == "1.0.0"
+        assert REPORT_VERSION == "1.1.0"
 
     def test_coverage_report_v090_search_fields(self):
         from app.calculators.coverage_report import build_intelligence_gap_report
@@ -3027,3 +3028,94 @@ class TestMigration0037SpendTreatmentWave5:
         mod = _load_migration("0037_spend_treatment_wave5.py")
         assert callable(mod.upgrade)
         assert callable(mod.downgrade)
+
+
+# ---------------------------------------------------------------------------
+# Phase C completion — 6 VERIFIED promotions + US state spend treatments
+# ---------------------------------------------------------------------------
+
+class TestPhaseCCompletion:
+    """Tests for Phase C: CA + US-GA/LA/NM/NY/OR promoted to VERIFIED."""
+
+    def test_canada_cptc_verified(self):
+        ca = next(p for p in ALL_PROGRAMS
+                  if p.jurisdiction_code == "CA" and p.program_type == "tax_credit")
+        assert ca.confidence_tier == "VERIFIED", (
+            f"CA CPTC should be VERIFIED, got {ca.confidence_tier}"
+        )
+
+    def test_us_ga_verified(self):
+        ga = next(p for p in ALL_PROGRAMS if p.jurisdiction_code == "US-GA")
+        assert ga.confidence_tier == "VERIFIED"
+
+    def test_us_la_verified(self):
+        la = next(p for p in ALL_PROGRAMS if p.jurisdiction_code == "US-LA")
+        assert la.confidence_tier == "VERIFIED"
+
+    def test_us_nm_verified(self):
+        nm = next(p for p in ALL_PROGRAMS if p.jurisdiction_code == "US-NM")
+        assert nm.confidence_tier == "VERIFIED"
+
+    def test_us_ny_verified(self):
+        ny = next(p for p in ALL_PROGRAMS if p.jurisdiction_code == "US-NY")
+        assert ny.confidence_tier == "VERIFIED"
+
+    def test_us_or_verified(self):
+        or_ = next(p for p in ALL_PROGRAMS if p.jurisdiction_code == "US-OR")
+        assert or_.confidence_tier == "VERIFIED"
+
+    def test_total_verified_count_phase_c(self):
+        verified = [p for p in ALL_PROGRAMS if p.confidence_tier == "VERIFIED"]
+        assert len(verified) >= 11, (
+            f"Expected ≥11 VERIFIED programs after Phase C, got {len(verified)}"
+        )
+
+    def test_migration_0040_chain(self):
+        mod = _load_migration("0040_confidence_tier_promotions_phase_c2.py")
+        assert mod.revision == "0040"
+        assert mod.down_revision == "0039"
+        assert len(mod._TO_VERIFIED) == 6
+        assert "ca_federal_cptc" in mod._TO_VERIFIED
+        assert "us_ga_film_credit" in mod._TO_VERIFIED
+
+    def test_migration_0041_chain(self):
+        mod = _load_migration("0041_spend_treatment_us_states_phase_c.py")
+        assert mod.revision == "0041"
+        assert mod.down_revision == "0040"
+        assert callable(mod.upgrade)
+        assert callable(mod.downgrade)
+
+    def test_migration_0041_covers_5_programs(self):
+        mod = _load_migration("0041_spend_treatment_us_states_phase_c.py")
+        assert len(mod._PROGRAMS) == 5
+        for slug in ("us_ga_film_credit", "us_la_film_incentive",
+                     "us_nm_film_credit", "us_ny_film_credit", "us_or_opif"):
+            assert slug in mod._PROGRAMS, f"{slug} missing from 0041"
+
+    def test_resolved_treatment_registry_updated(self):
+        from app.calculators.coverage_report import SLUGS_WITH_RESOLVED_TREATMENTS
+        for slug in ("us_ga_film_credit", "us_la_film_incentive",
+                     "us_nm_film_credit", "us_ny_film_credit", "us_or_opif"):
+            assert slug in SLUGS_WITH_RESOLVED_TREATMENTS, (
+                f"{slug} missing from SLUGS_WITH_RESOLVED_TREATMENTS"
+            )
+
+    def test_gap_report_resolved_count_phase_c(self):
+        from app.calculators.coverage_report import build_intelligence_gap_report
+        report = build_intelligence_gap_report()
+        assert report.resolved_treatment_programs >= 11, (
+            f"Expected ≥11 resolved programs after Phase C, got {report.resolved_treatment_programs}"
+        )
+
+    def test_report_version_110(self):
+        from app.calculators.coverage_report import REPORT_VERSION
+        assert REPORT_VERSION == "1.1.0"
+
+    def test_non_tier1_programs_not_prematurely_verified(self):
+        """MT, MU, AU, NZ, BE, DE, ES, HR, HU still need source confirmation."""
+        still_unverified = {"MT", "MU", "BE", "DE", "ES", "HR", "HU"}
+        for p in ALL_PROGRAMS:
+            if p.jurisdiction_code in still_unverified:
+                assert p.confidence_tier != "VERIFIED", (
+                    f"{p.jurisdiction_code}: must not be VERIFIED — pending source confirmation"
+                )

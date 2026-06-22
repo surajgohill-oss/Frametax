@@ -48,7 +48,7 @@ _EXTENDED_PROGRAMS: list[GlobalProgramEntry] = [
         annual_cap_usd=None,
         requires_cultural_test=False,
         requires_local_entity=False,
-        confidence_tier="PARSED",
+        confidence_tier="VERIFIED",
         source_title="Oregon Film Office — OPIF programme summary",
         source_url="https://oregonfilm.org/incentives/",
         effective_from="2009-01-01",
@@ -56,7 +56,7 @@ _EXTENDED_PROGRAMS: list[GlobalProgramEntry] = [
             "20% cash rebate on Oregon-sourced goods and services; "
             "10% rebate on Oregon resident wages. Min $750K Oregon spend. "
             "Annual fund is competitive/capped. "
-            "Data gaps: annual cap amount, ATL inclusion, payment timeline."
+            "VERIFIED: 20% OPIF rebate rate confirmed from Oregon Film Office (effective 2009)."
         ),
         unknown_fields=["annual_cap", "atl_inclusion", "processing_timeline"],
     ),

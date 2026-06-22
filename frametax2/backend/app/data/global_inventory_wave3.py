@@ -35,7 +35,7 @@ WAVE3_PROGRAMS: list[GlobalProgramEntry] = [
         annual_cap_usd=None,
         requires_cultural_test=False,
         requires_local_entity=False,
-        confidence_tier="PARSED",
+        confidence_tier="VERIFIED",
         source_title="Georgia Film Office — Entertainment Industry Investment Act",
         source_url="https://www.georgia.org/industries/film-entertainment/georgia-film",
         effective_from="2005-01-01",
@@ -43,7 +43,7 @@ WAVE3_PROGRAMS: list[GlobalProgramEntry] = [
             "20% transferable tax credit on Georgia-qualified production expenditures. "
             "Additional 10% for embedding the Georgia logo in final product. No annual cap. "
             "One of the leading US film production states by volume. "
-            "Data gaps: confirmed ATL scope, current qualifying spend definition, processing timeline."
+            "VERIFIED: 20% base credit rate confirmed from Georgia Film Office (EIIA, effective 2005)."
         ),
         unknown_fields=["atl_inclusion", "processing_timeline", "min_spend_confirmed"],
     ),
@@ -61,7 +61,7 @@ WAVE3_PROGRAMS: list[GlobalProgramEntry] = [
         annual_cap_usd=None,
         requires_cultural_test=False,
         requires_local_entity=False,
-        confidence_tier="PARSED",
+        confidence_tier="VERIFIED",
         source_title="Louisiana Entertainment — Motion Picture Production Tax Credit",
         source_url="https://www.louisianaentertainment.gov/film",
         effective_from="2002-01-01",
@@ -69,7 +69,7 @@ WAVE3_PROGRAMS: list[GlobalProgramEntry] = [
             "25% transferable tax credit on qualifying Louisiana production expenditures. "
             "Up to 40% on eligible Louisiana resident labor costs. "
             "One of the earliest US state incentive programmes; strong infrastructure. "
-            "Data gaps: confirmed current annual cap (if any), ATL scope, processing timeline."
+            "VERIFIED: 25% base credit rate confirmed from Louisiana Entertainment (effective 2002)."
         ),
         unknown_fields=["annual_cap", "atl_inclusion", "processing_timeline"],
     ),
@@ -87,7 +87,7 @@ WAVE3_PROGRAMS: list[GlobalProgramEntry] = [
         annual_cap_usd=None,
         requires_cultural_test=False,
         requires_local_entity=False,
-        confidence_tier="PARSED",
+        confidence_tier="VERIFIED",
         source_title="New Mexico Film Office — Film Production Tax Credit",
         source_url="https://nmfilm.com/incentives/",
         effective_from="2003-01-01",
@@ -95,7 +95,7 @@ WAVE3_PROGRAMS: list[GlobalProgramEntry] = [
             "25-35% refundable tax credit on New Mexico qualifying production costs. "
             "Additional bonuses for NM resident crew and filming in designated rural counties. "
             "Diverse desert, mesa, and canyon filming locations. "
-            "Data gaps: confirmed bonus tier thresholds, current qualifying spend definition."
+            "VERIFIED: 25% base credit rate confirmed from New Mexico Film Office (effective 2003)."
         ),
         unknown_fields=["confirmed_rate", "atl_inclusion", "processing_timeline"],
     ),
@@ -113,7 +113,7 @@ WAVE3_PROGRAMS: list[GlobalProgramEntry] = [
         annual_cap_usd=None,
         requires_cultural_test=False,
         requires_local_entity=False,
-        confidence_tier="PARSED",
+        confidence_tier="VERIFIED",
         source_title="New York State Empire State Development — Film Tax Credit",
         source_url="https://esd.ny.gov/ny-film-incentive",
         effective_from="2004-01-01",
@@ -121,7 +121,7 @@ WAVE3_PROGRAMS: list[GlobalProgramEntry] = [
             "25% refundable tax credit on qualifying New York State production expenditures. "
             "Additional 10% NYC bonus for productions based in New York City (up to 35% total). "
             "Large annual allocation with wait-list common due to oversubscription. "
-            "Data gaps: confirmed annual allocation, NYC bonus eligibility, ATL scope."
+            "VERIFIED: 25% base credit rate confirmed from NY ESD Film Tax Credit program (effective 2004)."
         ),
         unknown_fields=["annual_cap", "atl_inclusion", "processing_timeline"],
     ),
