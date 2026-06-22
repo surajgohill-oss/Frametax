@@ -80,9 +80,13 @@ async def ingest_collector_results(
     Accept normalized listings from the local Mac collector and write them to
     the DB through the standard _process_result pipeline.
     """
-    from app.collectors.base import CollectorResult, RawListing
-    from app.collectors.normalize import is_parking_listing
-    from app.scheduler import _process_result
+    try:
+        from app.collectors.base import CollectorResult, RawListing
+        from app.collectors.normalize import is_parking_listing
+        from app.scheduler import _process_result
+    except ImportError as exc:
+        logger.error("INGEST: import error — %s", exc, exc_info=True)
+        raise HTTPException(500, f"Server import error: {exc}")
 
     # Load TrackedEvent + parent Event
     te = (await db.execute(
