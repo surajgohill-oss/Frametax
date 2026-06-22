@@ -37,10 +37,13 @@ _BACKEND = _REPO_ROOT / "backend"
 if str(_BACKEND) not in sys.path:
     sys.path.insert(0, str(_BACKEND))
 
-# Load .env from repo root if present
+# Load .env.local then .env from repo root (local overrides repo)
+from dotenv import load_dotenv
+_env_local = _REPO_ROOT / ".env.local"
+if _env_local.exists():
+    load_dotenv(_env_local, override=True)
 _env_file = _REPO_ROOT / ".env"
 if _env_file.exists():
-    from dotenv import load_dotenv
     load_dotenv(_env_file)
 
 logging.basicConfig(
