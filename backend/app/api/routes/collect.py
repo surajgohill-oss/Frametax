@@ -158,10 +158,12 @@ async def ingest_collector_results(
 
     # Create poll_run record
     try:
+        # poll_runs uses TIMESTAMP WITHOUT TIME ZONE — must pass naive UTC datetimes
+        started_naive = fetched_at.replace(tzinfo=None) if fetched_at.tzinfo else fetched_at
         poll_run = PollRun(
             tracked_event_id=te.id,
-            started_at=fetched_at,
-            completed_at=datetime.now(timezone.utc),
+            started_at=started_naive,
+            completed_at=datetime.utcnow(),
             status="success",
             listings_found=len(raw_listings),
         )
