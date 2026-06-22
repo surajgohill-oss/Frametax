@@ -15,8 +15,9 @@ from app.data.global_inventory import (
     CostBenchmarkEntry,
     GlobalProgramEntry,
 )
+from app.data.jurisdiction_search_status import NO_PROGRAM_CODES, NO_PROGRAM_RECORDS
 
-REPORT_VERSION = "0.7.0"
+REPORT_VERSION = "0.8.0"
 
 # ---------------------------------------------------------------------------
 # Intelligence population registry — tracks which slugs have been seeded
@@ -68,6 +69,14 @@ SLUGS_WITH_ADMIN_DETAILS: frozenset[str] = frozenset([
     "ibermedia_programme", "de_fff_bayern", "de_nrw_filmstiftung", "hk_film_dev_fund",
     "in_nfdc_coproduction", "sg_imda_film_fund", "tw_taicca_fund",
     "film_i_vast", "acpfilms_fund", "us_itvs_fund",
+    # 0033 — all 21 wave-4 programs (DISCOVERY tier)
+    "az_film_incentive", "uz_film_incentive", "om_film_commission",
+    "lb_film_incentive", "ve_cnac_fund", "gy_film_commission",
+    "gt_film_commission", "na_film_commission", "bw_film_commission",
+    "et_film_commission", "ci_film_incentive", "cm_film_incentive",
+    "ao_film_incentive", "ug_film_commission", "mz_film_incentive",
+    "zm_film_commission", "zw_film_commission", "cn_film_incentive",
+    "mn_film_commission", "mo_film_fund", "bd_film_incentive",
     # 0023 — all 43 extended programs (DISCOVERY tier)
     "us_or_opif", "us_wa_mpcp", "us_il_film_credit", "us_nc_film_grant",
     "us_sc_film_credit", "us_ma_film_credit", "us_tx_miip", "us_ct_film_credit",
@@ -130,6 +139,14 @@ SLUGS_WITH_SPEND_TREATMENT: frozenset[str] = frozenset([
     "ibermedia_programme", "de_fff_bayern", "de_nrw_filmstiftung", "hk_film_dev_fund",
     "in_nfdc_coproduction", "sg_imda_film_fund", "tw_taicca_fund",
     "film_i_vast", "acpfilms_fund", "us_itvs_fund",
+    # 0034 — all 21 wave-4 programs (DISCOVERY tier)
+    "az_film_incentive", "uz_film_incentive", "om_film_commission",
+    "lb_film_incentive", "ve_cnac_fund", "gy_film_commission",
+    "gt_film_commission", "na_film_commission", "bw_film_commission",
+    "et_film_commission", "ci_film_incentive", "cm_film_incentive",
+    "ao_film_incentive", "ug_film_commission", "mz_film_incentive",
+    "zm_film_commission", "zw_film_commission", "cn_film_incentive",
+    "mn_film_commission", "mo_film_fund", "bd_film_incentive",
     # 0024 — all 43 extended programs (DISCOVERY tier)
     "us_or_opif", "us_wa_mpcp", "us_il_film_credit", "us_nc_film_grant",
     "us_sc_film_credit", "us_ma_film_credit", "us_tx_miip", "us_ct_film_credit",
@@ -518,6 +535,17 @@ class IntelligenceGapReport:
     regions_covered: int = 0
     # Estimated discovery completeness (countries with programs / 195 sovereign nations)
     discovery_completion_pct: float = 0.0
+    # v0.8.0 — search coverage fields
+    # Countries where at least one program was found (top-level codes only)
+    countries_with_program: int = 0
+    # Countries explicitly searched with no known program found
+    countries_searched_no_program: int = 0
+    # Countries not yet researched (195 - countries_with_program - countries_searched_no_program)
+    countries_not_yet_searched: int = 0
+    # Percentage of 195 sovereign nations that have been searched (either outcome)
+    global_search_coverage_pct: float = 0.0
+    # Top regions still with many unsearched countries
+    top_unsearched_regions: list[str] = field(default_factory=list)
 
 
 def build_intelligence_gap_report(
@@ -646,6 +674,18 @@ def build_intelligence_gap_report(
         "in_nfdc_coproduction": "IN", "sg_imda_film_fund": "SG",
         "tw_taicca_fund": "TW", "film_i_vast": "SE-VG",
         "acpfilms_fund": "ACP", "us_itvs_fund": "US",
+        # Wave-4 programs (migration 0032)
+        "az_film_incentive": "AZ", "uz_film_incentive": "UZ",
+        "om_film_commission": "OM", "lb_film_incentive": "LB",
+        "ve_cnac_fund": "VE", "gy_film_commission": "GY",
+        "gt_film_commission": "GT", "na_film_commission": "NA",
+        "bw_film_commission": "BW", "et_film_commission": "ET",
+        "ci_film_incentive": "CI", "cm_film_incentive": "CM",
+        "ao_film_incentive": "AO", "ug_film_commission": "UG",
+        "mz_film_incentive": "MZ", "zm_film_commission": "ZM",
+        "zw_film_commission": "ZW", "cn_film_incentive": "CN",
+        "mn_film_commission": "MN", "mo_film_fund": "MO",
+        "bd_film_incentive": "BD",
     }
     # Reverse: jurisdiction_code → slugs (one jur may have multiple slugs)
     _JUR_TO_SLUGS: dict[str, list[str]] = {}
@@ -749,16 +789,28 @@ def build_intelligence_gap_report(
         "MA": "Africa", "TN": "Africa", "EG": "Africa", "SN": "Africa",
         "GH": "Africa", "NG": "Africa", "KE": "Africa", "RW": "Africa",
         "TZ": "Africa", "ZA": "Africa",
+        # Africa wave-4
+        "NA": "Africa", "BW": "Africa", "ET": "Africa", "CI": "Africa",
+        "CM": "Africa", "AO": "Africa", "UG": "Africa",
+        "MZ": "Africa", "ZM": "Africa", "ZW": "Africa",
         # Central Asia & Caucasus
         "GE": "Central Asia", "KZ": "Central Asia", "AM": "Central Asia",
+        "AZ": "Central Asia", "UZ": "Central Asia",
+        # Middle East additions
+        "OM": "Middle East & Gulf", "LB": "Middle East & Gulf",
         # South Asia
-        "IN": "South & SE Asia", "LK": "South & SE Asia",
+        "IN": "South & SE Asia", "LK": "South & SE Asia", "BD": "South & SE Asia",
         # Southeast Asia
         "TH": "South & SE Asia", "MY": "South & SE Asia", "PH": "South & SE Asia",
         "SG": "South & SE Asia", "VN": "South & SE Asia", "ID": "South & SE Asia",
         "KH": "South & SE Asia",
         # East Asia
         "KR": "East Asia", "JP": "East Asia", "TW": "East Asia", "HK": "East Asia",
+        "CN": "East Asia", "MN": "East Asia", "MO": "East Asia",
+        # South America additions
+        "VE": "South America", "GY": "South America",
+        # Central America
+        "GT": "Caribbean & C.America",
         # Oceania & Pacific
         "AU": "Oceania & Pacific", "NZ": "Oceania & Pacific", "FJ": "Oceania & Pacific",
         # Supranational
@@ -772,7 +824,33 @@ def build_intelligence_gap_report(
         if region:
             regions_hit.add(region)
 
-    # Count by slug (not jurisdiction — ON has multiple slugs)
+    # v0.8.0 — search coverage statistics
+    countries_with_prog = len(top_level_codes)
+    no_program_count = len(NO_PROGRAM_CODES)
+    searched_total = countries_with_prog + no_program_count
+    not_yet_searched = max(0, 195 - searched_total)
+    global_search_pct = round(searched_total / 195 * 100, 1)
+
+    # Identify top unsearched regions: regions with most remaining UN countries
+    _ALL_UN_REGIONS: dict[str, list[str]] = {
+        "Sub-Saharan Africa": [
+            "DZ", "LY", "SD", "SO", "ER", "DJ", "SS", "CF", "CG", "GQ", "GA",
+            "SL", "LR", "GN", "GW", "BF", "NE", "TD", "MR", "CV", "ST", "KM",
+            "MG", "MW", "LS", "SZ",
+        ],
+        "Middle East": ["SA", "JO", "IR", "SY", "PS"],
+        "South Asia": ["AF", "MV"],
+        "Pacific Islands": [],  # PG, WS, VU, TO, SB now searched
+        "Central America": [],  # GT has program; HN, SV, NI searched
+    }
+    _searched_codes = top_level_codes | NO_PROGRAM_CODES
+    top_unsearched: list[str] = []
+    for region_name, candidates in _ALL_UN_REGIONS.items():
+        remaining = [c for c in candidates if c not in _searched_codes]
+        if remaining:
+            top_unsearched.append(f"{region_name} ({len(remaining)} unsearched)")
+    top_unsearched.sort(key=lambda x: -int(x.split("(")[1].split()[0]))
+
     return IntelligenceGapReport(
         programs_missing_admin_details=sorted(missing_admin),
         programs_missing_spend_treatment=sorted(missing_treatment),
@@ -794,6 +872,11 @@ def build_intelligence_gap_report(
         total_incentive_programs=incentive_count,
         regions_covered=len(regions_hit),
         discovery_completion_pct=discovery_pct,
+        countries_with_program=countries_with_prog,
+        countries_searched_no_program=no_program_count,
+        countries_not_yet_searched=not_yet_searched,
+        global_search_coverage_pct=global_search_pct,
+        top_unsearched_regions=top_unsearched,
     )
 
 

@@ -1154,7 +1154,7 @@ class TestIntelligenceGapReport:
 
     def test_report_version_updated(self):
         from app.calculators.coverage_report import REPORT_VERSION
-        assert REPORT_VERSION == "0.7.0"
+        assert REPORT_VERSION == "0.8.0"
 
     def test_admin_registry_count(self):
         from app.calculators.coverage_report import SLUGS_WITH_ADMIN_DETAILS
@@ -1183,7 +1183,7 @@ class TestIntelligenceGapReport:
     def test_gap_report_total_programs(self):
         from app.calculators.coverage_report import build_intelligence_gap_report
         report = build_intelligence_gap_report()
-        assert report.total_programs == 150
+        assert report.total_programs == 171
 
     def test_gap_report_fully_seeded_non_empty(self):
         from app.calculators.coverage_report import build_intelligence_gap_report
@@ -1822,8 +1822,8 @@ class TestWave2GlobalInventory:
 
     def test_total_programs_expanded(self):
         from app.data.global_inventory import ALL_PROGRAMS
-        assert len(ALL_PROGRAMS) == 150, (
-            f"Expected 150 programs (60 original + 47 wave-2 + 43 wave-3), got {len(ALL_PROGRAMS)}"
+        assert len(ALL_PROGRAMS) == 171, (
+            f"Expected 171 programs (60 original + 47 wave-2 + 43 wave-3 + 21 wave-4), got {len(ALL_PROGRAMS)}"
         )
 
     def test_wave2_new_jurisdictions_present(self):
@@ -1913,7 +1913,7 @@ class TestWave2GlobalInventory:
     def test_new_program_count_in_gap_report(self):
         from app.calculators.coverage_report import build_intelligence_gap_report
         report = build_intelligence_gap_report()
-        assert report.total_programs == 150
+        assert report.total_programs == 171
 
     def test_grant_fund_count_in_gap_report(self):
         from app.calculators.coverage_report import build_intelligence_gap_report
@@ -2234,7 +2234,7 @@ class TestWave3GlobalInventory:
 
     def test_total_programs_150(self):
         from app.data.global_inventory import ALL_PROGRAMS
-        assert len(ALL_PROGRAMS) == 150
+        assert len(ALL_PROGRAMS) == 171
 
     def test_all_wave3_discovery_tier(self):
         from app.data.global_inventory_wave3 import WAVE3_PROGRAMS
@@ -2524,5 +2524,274 @@ class TestMigration0031SpendTreatmentWave3:
 
     def test_upgrade_downgrade_callable(self):
         mod = _load_migration("0031_spend_treatment_wave3.py")
+        assert callable(mod.upgrade)
+        assert callable(mod.downgrade)
+
+
+# ---------------------------------------------------------------------------
+# Wave-4 — Python inventory and search coverage
+# ---------------------------------------------------------------------------
+
+_EXPECTED_0032_SLUGS: frozenset[str] = frozenset([
+    "az_film_incentive", "uz_film_incentive", "om_film_commission",
+    "lb_film_incentive", "ve_cnac_fund", "gy_film_commission",
+    "gt_film_commission", "na_film_commission", "bw_film_commission",
+    "et_film_commission", "ci_film_incentive", "cm_film_incentive",
+    "ao_film_incentive", "ug_film_commission", "mz_film_incentive",
+    "zm_film_commission", "zw_film_commission", "cn_film_incentive",
+    "mn_film_commission", "mo_film_fund", "bd_film_incentive",
+])
+
+_EXPECTED_NO_PROGRAM_CODES: frozenset[str] = frozenset([
+    "AG", "AI", "AW", "BM", "BZ", "KY", "DM", "GD", "KN", "LC", "VC", "SR", "TC",
+    "HN", "SV", "NI", "BO", "PY",
+    "CD", "GM", "ML", "YE", "IQ",
+    "KG", "TJ", "TM", "PK", "NP", "MM", "LA", "BN",
+    "PG", "WS", "VU", "TO", "SB",
+])
+
+
+class TestWave4GlobalInventory:
+    def test_wave4_programs_importable(self):
+        from app.data.global_inventory_wave4 import WAVE4_PROGRAMS
+        assert len(WAVE4_PROGRAMS) == 21
+
+    def test_total_programs_171(self):
+        from app.data.global_inventory import ALL_PROGRAMS
+        assert len(ALL_PROGRAMS) == 171
+
+    def test_all_wave4_discovery_tier(self):
+        from app.data.global_inventory_wave4 import WAVE4_PROGRAMS
+        for p in WAVE4_PROGRAMS:
+            assert p.confidence_tier == "DISCOVERY", (
+                f"{p.program_name}: must be DISCOVERY, got {p.confidence_tier}"
+            )
+
+    def test_wave4_new_jurisdictions_present(self):
+        from app.data.global_inventory import ALL_PROGRAMS
+        all_codes = {p.jurisdiction_code for p in ALL_PROGRAMS}
+        for code in ("AZ", "UZ", "OM", "LB", "VE", "GY", "GT",
+                     "NA", "BW", "ET", "CI", "CM", "AO", "UG",
+                     "MZ", "ZM", "ZW", "CN", "MN", "MO", "BD"):
+            assert code in all_codes, f"Missing wave-4 jurisdiction {code}"
+
+    def test_wave4_all_have_source_urls(self):
+        from app.data.global_inventory_wave4 import WAVE4_PROGRAMS
+        for p in WAVE4_PROGRAMS:
+            assert p.source_url and p.source_url.startswith("https://"), (
+                f"{p.program_name}: missing or non-HTTPS source_url"
+            )
+
+    def test_wave4_all_have_names(self):
+        from app.data.global_inventory_wave4 import WAVE4_PROGRAMS
+        for p in WAVE4_PROGRAMS:
+            assert p.program_name and len(p.program_name) > 5
+
+    def test_wave4_slugs_present_in_admin_registry(self):
+        from app.calculators.coverage_report import SLUGS_WITH_ADMIN_DETAILS
+        for slug in _EXPECTED_0032_SLUGS:
+            assert slug in SLUGS_WITH_ADMIN_DETAILS, (
+                f"{slug} missing from SLUGS_WITH_ADMIN_DETAILS"
+            )
+
+    def test_wave4_slugs_present_in_treatment_registry(self):
+        from app.calculators.coverage_report import SLUGS_WITH_SPEND_TREATMENT
+        for slug in _EXPECTED_0032_SLUGS:
+            assert slug in SLUGS_WITH_SPEND_TREATMENT, (
+                f"{slug} missing from SLUGS_WITH_SPEND_TREATMENT"
+            )
+
+    def test_coverage_report_v080_version(self):
+        from app.calculators.coverage_report import REPORT_VERSION
+        assert REPORT_VERSION == "0.8.0"
+
+    def test_coverage_report_v080_search_fields(self):
+        from app.calculators.coverage_report import build_intelligence_gap_report
+        report = build_intelligence_gap_report()
+        assert report.countries_with_program >= 100, (
+            f"Expected ≥100 countries with program, got {report.countries_with_program}"
+        )
+        assert report.countries_searched_no_program == 36, (
+            f"Expected 36 no-program records, got {report.countries_searched_no_program}"
+        )
+        assert report.global_search_coverage_pct >= 70.0, (
+            f"Expected ≥70% search coverage, got {report.global_search_coverage_pct}"
+        )
+        assert report.countries_not_yet_searched >= 0
+
+    def test_no_program_countries_not_in_all_programs(self):
+        from app.data.global_inventory import ALL_PROGRAMS
+        from app.data.jurisdiction_search_status import NO_PROGRAM_CODES
+        program_codes = {p.jurisdiction_code for p in ALL_PROGRAMS}
+        for code in NO_PROGRAM_CODES:
+            assert code not in program_codes, (
+                f"{code} appears in both ALL_PROGRAMS and NO_PROGRAM_CODES — "
+                "a searched-no-program country cannot also have a program record"
+            )
+
+    def test_search_status_records_have_source_urls(self):
+        from app.data.jurisdiction_search_status import NO_PROGRAM_RECORDS
+        for rec in NO_PROGRAM_RECORDS:
+            assert rec.source_url and rec.source_url.startswith("https://"), (
+                f"{rec.jurisdiction_code}: source_url must be HTTPS"
+            )
+
+    def test_search_status_records_have_notes(self):
+        from app.data.jurisdiction_search_status import NO_PROGRAM_RECORDS
+        for rec in NO_PROGRAM_RECORDS:
+            assert rec.search_notes and len(rec.search_notes) > 20, (
+                f"{rec.jurisdiction_code}: search_notes too short"
+            )
+
+    def test_no_program_code_count(self):
+        from app.data.jurisdiction_search_status import NO_PROGRAM_CODES
+        assert len(NO_PROGRAM_CODES) == 36
+
+    def test_expected_no_program_codes_present(self):
+        from app.data.jurisdiction_search_status import NO_PROGRAM_CODES
+        assert NO_PROGRAM_CODES >= _EXPECTED_NO_PROGRAM_CODES, (
+            f"Missing codes: {_EXPECTED_NO_PROGRAM_CODES - NO_PROGRAM_CODES}"
+        )
+
+    def test_top_unsearched_regions_non_empty(self):
+        from app.calculators.coverage_report import build_intelligence_gap_report
+        report = build_intelligence_gap_report()
+        assert len(report.top_unsearched_regions) > 0
+        assert any("Africa" in r for r in report.top_unsearched_regions)
+
+    def test_discovery_completion_increased(self):
+        from app.calculators.coverage_report import build_intelligence_gap_report
+        report = build_intelligence_gap_report()
+        assert report.discovery_completion_pct >= 50.0, (
+            f"Expected ≥50% discovery completion after wave-4, got {report.discovery_completion_pct}"
+        )
+
+
+class TestMigration0032Wave4Inventory:
+    def test_migration_chain(self):
+        mod = _load_migration("0032_wave4_global_inventory.py")
+        assert mod.revision == "0032"
+        assert mod.down_revision == "0031"
+
+    def test_program_count(self):
+        mod = _load_migration("0032_wave4_global_inventory.py")
+        assert len(mod._PROGRAMS) == 21
+
+    def test_country_count(self):
+        mod = _load_migration("0032_wave4_global_inventory.py")
+        assert len(mod._COUNTRIES) == 21
+
+    def test_slug_set_complete(self):
+        mod = _load_migration("0032_wave4_global_inventory.py")
+        actual = frozenset(row[1] for row in mod._PROGRAMS)
+        assert actual == _EXPECTED_0032_SLUGS, (
+            f"Extra: {actual - _EXPECTED_0032_SLUGS}, "
+            f"Missing: {_EXPECTED_0032_SLUGS - actual}"
+        )
+
+    def test_no_duplicate_slugs(self):
+        mod = _load_migration("0032_wave4_global_inventory.py")
+        slugs = [row[1] for row in mod._PROGRAMS]
+        assert len(slugs) == len(set(slugs))
+
+    def test_uuid5_ids_unique(self):
+        mod = _load_migration("0032_wave4_global_inventory.py")
+        ids = [mod._uid(f"prog:{row[1]}") for row in mod._PROGRAMS]
+        assert len(ids) == len(set(ids))
+
+    def test_upgrade_downgrade_callable(self):
+        mod = _load_migration("0032_wave4_global_inventory.py")
+        assert callable(mod.upgrade)
+        assert callable(mod.downgrade)
+
+
+class TestMigration0033AdminDetailsWave4:
+    def test_migration_chain(self):
+        mod = _load_migration("0033_admin_details_wave4.py")
+        assert mod.revision == "0033"
+        assert mod.down_revision == "0032"
+
+    def test_program_count(self):
+        mod = _load_migration("0033_admin_details_wave4.py")
+        assert len(mod._ADMIN_DETAILS) == 21
+
+    def test_slug_set_matches_0032(self):
+        mod = _load_migration("0033_admin_details_wave4.py")
+        actual = frozenset(slug for slug, _ in mod._ADMIN_DETAILS)
+        assert actual == _EXPECTED_0032_SLUGS
+
+    def test_no_duplicate_slugs(self):
+        mod = _load_migration("0033_admin_details_wave4.py")
+        slugs = [slug for slug, _ in mod._ADMIN_DETAILS]
+        assert len(slugs) == len(set(slugs))
+
+    def test_all_entries_have_label(self):
+        mod = _load_migration("0033_admin_details_wave4.py")
+        for slug, label in mod._ADMIN_DETAILS:
+            assert label and len(label) > 5, f"{slug}: label must be non-empty"
+
+    def test_uuid5_ids_unique(self):
+        mod = _load_migration("0033_admin_details_wave4.py")
+        ids = [mod._uid(f"admin:{slug}") for slug, _ in mod._ADMIN_DETAILS]
+        assert len(ids) == len(set(ids))
+
+
+class TestMigration0034SpendTreatmentWave4:
+    def test_migration_chain(self):
+        mod = _load_migration("0034_spend_treatment_wave4.py")
+        assert mod.revision == "0034"
+        assert mod.down_revision == "0033"
+
+    def test_slug_count(self):
+        mod = _load_migration("0034_spend_treatment_wave4.py")
+        assert len(mod._SLUGS) == 21
+
+    def test_slug_set_matches_0032(self):
+        mod = _load_migration("0034_spend_treatment_wave4.py")
+        actual = frozenset(mod._SLUGS)
+        assert actual == _EXPECTED_0032_SLUGS
+
+    def test_labor_type_count(self):
+        mod = _load_migration("0034_spend_treatment_wave4.py")
+        assert len(mod._LABOR_TYPES) == 21
+
+    def test_total_treatment_rows(self):
+        mod = _load_migration("0034_spend_treatment_wave4.py")
+        assert len(mod._SLUGS) * len(mod._LABOR_TYPES) == 21 * 21
+
+    def test_all_slugs_unique(self):
+        mod = _load_migration("0034_spend_treatment_wave4.py")
+        assert len(mod._SLUGS) == len(set(mod._SLUGS))
+
+    def test_uuid5_ids_unique(self):
+        mod = _load_migration("0034_spend_treatment_wave4.py")
+        ids = [
+            mod._uid(f"treatment:{slug}:{lt}")
+            for slug in mod._SLUGS
+            for lt in mod._LABOR_TYPES
+        ]
+        assert len(ids) == len(set(ids))
+
+    def test_full_migration_chain_0031_to_0034(self):
+        revisions = {}
+        for fname in [
+            "0031_spend_treatment_wave3.py",
+            "0032_wave4_global_inventory.py",
+            "0033_admin_details_wave4.py",
+            "0034_spend_treatment_wave4.py",
+        ]:
+            mod = _load_migration(fname)
+            revisions[mod.revision] = mod.down_revision
+        expected = {
+            "0031": "0030", "0032": "0031", "0033": "0032", "0034": "0033",
+        }
+        for rev, expected_down in expected.items():
+            assert revisions.get(rev) == expected_down, (
+                f"Migration {rev}: expected down_revision={expected_down}, "
+                f"got {revisions.get(rev)}"
+            )
+
+    def test_upgrade_downgrade_callable(self):
+        mod = _load_migration("0034_spend_treatment_wave4.py")
         assert callable(mod.upgrade)
         assert callable(mod.downgrade)

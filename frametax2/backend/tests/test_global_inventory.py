@@ -52,7 +52,7 @@ TARGET_CODES = TARGET_CODES_ORIGINAL | TARGET_CODES_EXTENDED
 
 class TestInventoryStructure:
     def test_all_programs_count(self):
-        assert len(ALL_PROGRAMS) == 150
+        assert len(ALL_PROGRAMS) == 171
 
     def test_all_benchmarks_count(self):
         assert len(ALL_BENCHMARKS) == 60
@@ -302,13 +302,13 @@ class TestCoverageReport:
         return build_coverage_report()
 
     def test_report_version_present(self, report):
-        assert report.report_version == "0.7.0"
+        assert report.report_version == "0.8.0"
 
     def test_total_jurisdictions(self, report):
-        assert report.total_jurisdictions == 135
+        assert report.total_jurisdictions == 156
 
     def test_total_programs(self, report):
-        assert report.total_programs == 150
+        assert report.total_programs == 171
 
     def test_total_benchmarks(self, report):
         assert report.total_benchmarks == 60
@@ -329,7 +329,7 @@ class TestCoverageReport:
         assert report.parsed_benchmarks == 0
 
     def test_by_jurisdiction_length(self, report):
-        assert len(report.by_jurisdiction) == 135
+        assert len(report.by_jurisdiction) == 156
 
     def test_by_jurisdiction_types(self, report):
         for jc in report.by_jurisdiction:

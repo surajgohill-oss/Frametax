@@ -959,3 +959,10 @@ from app.data.global_inventory_wave3 import WAVE3_PROGRAMS  # noqa: E402
 from app.data.global_inventory_grants2 import GRANTS2_PROGRAMS  # noqa: E402
 
 ALL_PROGRAMS = ALL_PROGRAMS + WAVE3_PROGRAMS + GRANTS2_PROGRAMS
+
+# ---------------------------------------------------------------------------
+# Wave-4 inventory — 21 new programs (region completion pass)
+# ---------------------------------------------------------------------------
+from app.data.global_inventory_wave4 import WAVE4_PROGRAMS  # noqa: E402
+
+ALL_PROGRAMS = ALL_PROGRAMS + WAVE4_PROGRAMS
