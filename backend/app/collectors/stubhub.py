@@ -308,9 +308,14 @@ class StubHubCollector(BaseCollector):
 
     async def _get_http_client(self, html_mode: bool = False) -> httpx.AsyncClient:
         if html_mode:
-            # Separate client for HTML fetches — uses browser-like Accept headers
+            # HTML fetches use browser-like headers + saved cookies (DataDome requires cookies)
+            cookies = {}
+            if self._cookies_file.exists():
+                try: cookies = {c["name"]: c["value"] for c in json.loads(self._cookies_file.read_text())}
+                except Exception: pass
             return httpx.AsyncClient(
                 headers=_SH_HTML_HEADERS,
+                cookies=cookies,
                 follow_redirects=True, timeout=30.0,
             )
         if self._http_client is None or self._http_client.is_closed:

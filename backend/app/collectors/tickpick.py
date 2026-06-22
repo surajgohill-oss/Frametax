@@ -16,6 +16,7 @@ import json as _json
 import re
 from decimal import Decimal, InvalidOperation
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Optional
 import logging
 
@@ -204,38 +205,106 @@ class TickPickCollector(BaseCollector):
         if not event_id:
             return []
 
-        # Strategy 1: JSON API (blocked by IP restrictions from Railway — try first, fast fail)
-        try:
-            resp = await self._client().get(
-                f"{_TP_API_BASE}/listings/event/{event_id}",
-                params={"needidd": "true"},
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            listings = self._parse(event_id, data)
-            logger.info("TP collector: API event=%s listings=%d", event_id, len(listings))
-            if listings:
-                return listings
-        except httpx.HTTPStatusError as exc:
-            status = exc.response.status_code
-            if status == 403:
-                logger.info("TP collector: API 403 (IP block), trying HTML scrape for event %s", event_id)
-            elif status == 404:
-                logger.info("TP collector: event %s not found via API", event_id)
-                return []
-            else:
-                logger.warning("TP collector: API HTTP %s for event %s", status, event_id)
-        except Exception as exc:
-            logger.warning("TP collector: API fetch failed for event %s — %s", event_id, exc)
+        # Strategy 1: JSON API — try new event-v2 endpoint first, then legacy
+        for api_url in [
+            f"{_TP_API_BASE}/listings/internal/event-v2/{event_id}?trackView=true",
+            f"{_TP_API_BASE}/listings/event/{event_id}?needidd=true",
+        ]:
+            try:
+                resp = await self._client().get(api_url)
+                resp.raise_for_status()
+                data = resp.json()
+                listings = self._parse(event_id, data)
+                logger.info("TP collector: API %s event=%s listings=%d", api_url.split("/")[-1].split("?")[0], event_id, len(listings))
+                if listings:
+                    return listings
+            except httpx.HTTPStatusError as exc:
+                status = exc.response.status_code
+                if status == 403:
+                    logger.info("TP collector: API 403 for %s event %s", api_url, event_id)
+                elif status == 404:
+                    logger.info("TP collector: event %s not found via %s", event_id, api_url)
+                else:
+                    logger.warning("TP collector: API HTTP %s for event %s url=%s", status, event_id, api_url)
+            except Exception as exc:
+                logger.warning("TP collector: API fetch failed for event %s — %s", event_id, exc)
 
         # Strategy 2: HTML page scrape — event page returns 200 from Railway IPs
         ext_url = getattr(tracked_event, "external_url", None) or f"https://www.tickpick.com/buy-tickets/{event_id}/"
         html_listings = await self._fetch_via_html(event_id, ext_url)
         if html_listings is not None:
             logger.info("TP collector: HTML event=%s listings=%d", event_id, len(html_listings))
-            return html_listings
+            if html_listings:
+                return html_listings
+
+        # Strategy 3: Playwright — intercept api.tickpick.com response in real browser
+        # Always use the event-specific URL, not the performer page URL.
+        event_url = f"https://www.tickpick.com/buy-tickets/{event_id}/"
+        playwright_listings = await self._fetch_via_playwright(event_id, event_url)
+        if playwright_listings is not None:
+            logger.info("TP collector: Playwright event=%s listings=%d", event_id, len(playwright_listings))
+            return playwright_listings
 
         return []
+
+    async def _fetch_via_playwright(self, event_id: str, url: str) -> Optional[list]:
+        """
+        Load the TickPick event page in Playwright and intercept the API response.
+        TickPick's SPA makes an authenticated XHR to api.tickpick.com/1.0/listings/event/{id}
+        using browser session cookies — this bypasses the 403 that httpx gets.
+        Uses the persistent browser session from browser_data_dir/tickpick/.
+        """
+        try:
+            from playwright.async_api import async_playwright
+        except ImportError:
+            logger.warning("TP Playwright: playwright not installed — skipping")
+            return None
+
+        from app.config import get_settings
+        import asyncio
+
+        session_dir = getattr(get_settings(), "browser_data_dir", "/tmp")
+        session_path = str(Path(session_dir) / "tickpick") if session_dir else "/tmp/tickpick"
+        Path(session_path).mkdir(parents=True, exist_ok=True)
+
+        captured: list[dict] = []
+
+        try:
+            async with async_playwright() as p:
+                ctx = await p.chromium.launch_persistent_context(
+                    session_path,
+                    headless=True,
+                    args=["--no-sandbox", "--disable-blink-features=AutomationControlled"],
+                    user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                )
+                page = await ctx.new_page()
+
+                async def on_response(response):
+                    if "api.tickpick.com" in response.url and "listings" in response.url:
+                        if response.status == 200:
+                            try:
+                                data = await response.json()
+                                captured.append(data)
+                                logger.info("TP Playwright: captured %s (%d bytes)", response.url, len(str(data)))
+                            except Exception as exc:
+                                logger.debug("TP Playwright: JSON parse error — %s", exc)
+
+                page.on("response", on_response)
+                await page.goto(url, wait_until="domcontentloaded", timeout=30000)
+                await asyncio.sleep(8)  # wait for SPA to fire XHR
+                await ctx.close()
+        except Exception as exc:
+            logger.warning("TP Playwright: error for event=%s — %s", event_id, exc)
+            return None
+
+        if not captured:
+            logger.info("TP Playwright: no API response captured for event=%s", event_id)
+            return None
+
+        all_listings = []
+        for data in captured:
+            all_listings.extend(self._parse(event_id, data))
+        return all_listings
 
     async def _fetch_via_html(self, event_id: str, url: str) -> Optional[list]:
         """
