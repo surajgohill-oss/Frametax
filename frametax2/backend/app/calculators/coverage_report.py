@@ -17,7 +17,7 @@ from app.data.global_inventory import (
 )
 from app.data.jurisdiction_search_status import NO_PROGRAM_CODES, NO_PROGRAM_RECORDS
 
-REPORT_VERSION = "1.2.0"
+REPORT_VERSION = "1.3.0"
 
 # ---------------------------------------------------------------------------
 # Intelligence population registry — tracks which slugs have been seeded
@@ -624,6 +624,19 @@ class IntelligenceGapReport:
     regional_programs: int = 0
     # Percentage of grant/fund programs with fund_economics seeded (0–100)
     fund_economics_pct: float = 0.0
+    # Phase E — Optimization readiness
+    # Programs with enough data to participate in optimizer (base_rate or cap known)
+    optimization_ready_programs: int = 0
+    # Programs missing rate AND cap — cannot contribute to optimization
+    optimization_blockers: list[str] = field(default_factory=list)
+    # Estimated unique valid structures for most constrained jurisdiction set
+    optimization_ready_pct: float = 0.0
+    # Stacking rules involving grant programs (from migration seeding)
+    grant_interaction_rules: int = 0
+    # Stacking rules involving regional programs
+    regional_interaction_rules: int = 0
+    # Programs with monetization intelligence (is_refundable + is_transferable known)
+    monetization_coverage: int = 0
 
 
 def build_intelligence_gap_report(
@@ -854,6 +867,47 @@ def build_intelligence_gap_report(
 
     # Count regional (sub-national) programs
     regional_count = sum(1 for p in programs if "-" in p.jurisdiction_code)
+
+    # Phase E — Optimization readiness
+    _opt_ready: list[GlobalProgramEntry] = []
+    _opt_blockers: list[str] = []
+    _grant_types_opt = {"direct_grant", "co_production_fund", "development_fund", "discretionary_fund"}
+    for p in programs:
+        if p.confidence_tier == "DISCOVERY":
+            _opt_blockers.append(p.jurisdiction_code)
+            continue
+        if p.program_type not in _grant_types_opt:
+            # Primary: need base_rate
+            if p.base_rate is not None:
+                _opt_ready.append(p)
+            else:
+                _opt_blockers.append(p.jurisdiction_code)
+        else:
+            # Grant: need annual_cap_usd
+            if p.annual_cap_usd is not None:
+                _opt_ready.append(p)
+            # else: not estimable but not a hard blocker for primary optimization
+    opt_ready_count = len(_opt_ready)
+    opt_ready_pct = round(opt_ready_count / max(total, 1) * 100, 1)
+    # Cap blocker list
+    _opt_blockers_display = sorted(set(_opt_blockers))[:30]
+
+    # Count stacking rules involving grants vs regional programs
+    # Use SLUGS_WITH_STACKING_RULES as proxy (seeded rules = grant or regional interactions)
+    grant_interaction_rule_count = len([
+        s for s in slugs_with_fund_economics
+        if s in slugs_with_stacking
+    ])
+    regional_interaction_rule_count = len([
+        s for s in (slugs_with_stacking - slugs_with_fund_economics)
+        if any("-" in s2 for s2 in [s])
+    ])
+
+    # Monetization coverage: programs with is_refundable and is_transferable known
+    monetization_cov = sum(
+        1 for p in programs
+        if p.is_refundable is not None and p.is_transferable is not None
+    )
     unique_codes = {p.jurisdiction_code for p in programs}
     countries_covered = len(unique_codes)
 
@@ -1001,6 +1055,12 @@ def build_intelligence_gap_report(
         funds_missing_economics=funds_missing_econ,
         regional_programs=regional_count,
         fund_economics_pct=fund_econ_pct,
+        optimization_ready_programs=opt_ready_count,
+        optimization_blockers=_opt_blockers_display,
+        optimization_ready_pct=opt_ready_pct,
+        grant_interaction_rules=grant_interaction_rule_count,
+        regional_interaction_rules=regional_interaction_rule_count,
+        monetization_coverage=monetization_cov,
     )
 
 

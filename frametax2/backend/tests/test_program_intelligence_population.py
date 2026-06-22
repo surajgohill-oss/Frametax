@@ -1153,7 +1153,7 @@ class TestIntelligenceGapReport:
 
     def test_report_version_updated(self):
         from app.calculators.coverage_report import REPORT_VERSION
-        assert REPORT_VERSION == "1.2.0"
+        assert REPORT_VERSION == "1.3.0"
 
     def test_admin_registry_count(self):
         from app.calculators.coverage_report import SLUGS_WITH_ADMIN_DETAILS
@@ -2611,7 +2611,7 @@ class TestWave4GlobalInventory:
 
     def test_coverage_report_v080_version(self):
         from app.calculators.coverage_report import REPORT_VERSION
-        assert REPORT_VERSION == "1.2.0"
+        assert REPORT_VERSION == "1.3.0"
 
     def test_coverage_report_v080_search_fields(self):
         from app.calculators.coverage_report import build_intelligence_gap_report
@@ -2868,7 +2868,7 @@ class TestWave5GlobalInventory:
 
     def test_coverage_report_v090_version(self):
         from app.calculators.coverage_report import REPORT_VERSION
-        assert REPORT_VERSION == "1.2.0"
+        assert REPORT_VERSION == "1.3.0"
 
     def test_coverage_report_v090_search_fields(self):
         from app.calculators.coverage_report import build_intelligence_gap_report
@@ -3109,7 +3109,7 @@ class TestPhaseCCompletion:
 
     def test_report_version_110(self):
         from app.calculators.coverage_report import REPORT_VERSION
-        assert REPORT_VERSION == "1.2.0"
+        assert REPORT_VERSION == "1.3.0"
 
     def test_non_tier1_programs_not_prematurely_verified(self):
         """MT, MU, AU, NZ, BE, DE, ES, HR, HU still need source confirmation."""
@@ -3247,7 +3247,7 @@ class TestPhaseDFundEconomics:
 
     def test_gap_report_version_120(self):
         from app.calculators.coverage_report import REPORT_VERSION
-        assert REPORT_VERSION == "1.2.0"
+        assert REPORT_VERSION == "1.3.0"
 
     def test_gap_report_fund_economics_pct(self):
         from app.calculators.coverage_report import build_intelligence_gap_report
