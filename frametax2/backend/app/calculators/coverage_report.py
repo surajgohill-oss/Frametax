@@ -17,7 +17,7 @@ from app.data.global_inventory import (
 )
 from app.data.jurisdiction_search_status import NO_PROGRAM_CODES, NO_PROGRAM_RECORDS
 
-REPORT_VERSION = "0.8.0"
+REPORT_VERSION = "0.9.0"
 
 # ---------------------------------------------------------------------------
 # Intelligence population registry — tracks which slugs have been seeded
@@ -77,6 +77,12 @@ SLUGS_WITH_ADMIN_DETAILS: frozenset[str] = frozenset([
     "ao_film_incentive", "ug_film_commission", "mz_film_incentive",
     "zm_film_commission", "zw_film_commission", "cn_film_incentive",
     "mn_film_commission", "mo_film_fund", "bd_film_incentive",
+    # 0036 — all 13 wave-5 programs (DISCOVERY tier)
+    "ch_film_support", "si_film_incentive", "ua_film_incentive",
+    "ru_film_incentive", "by_film_incentive", "md_film_incentive",
+    "cu_film_incentive", "ir_film_incentive", "dz_film_incentive",
+    "ga_film_incentive", "sc_film_incentive", "mv_film_incentive",
+    "bt_film_incentive",
     # 0023 — all 43 extended programs (DISCOVERY tier)
     "us_or_opif", "us_wa_mpcp", "us_il_film_credit", "us_nc_film_grant",
     "us_sc_film_credit", "us_ma_film_credit", "us_tx_miip", "us_ct_film_credit",
@@ -147,6 +153,12 @@ SLUGS_WITH_SPEND_TREATMENT: frozenset[str] = frozenset([
     "ao_film_incentive", "ug_film_commission", "mz_film_incentive",
     "zm_film_commission", "zw_film_commission", "cn_film_incentive",
     "mn_film_commission", "mo_film_fund", "bd_film_incentive",
+    # 0037 — all 13 wave-5 programs (DISCOVERY tier)
+    "ch_film_support", "si_film_incentive", "ua_film_incentive",
+    "ru_film_incentive", "by_film_incentive", "md_film_incentive",
+    "cu_film_incentive", "ir_film_incentive", "dz_film_incentive",
+    "ga_film_incentive", "sc_film_incentive", "mv_film_incentive",
+    "bt_film_incentive",
     # 0024 — all 43 extended programs (DISCOVERY tier)
     "us_or_opif", "us_wa_mpcp", "us_il_film_credit", "us_nc_film_grant",
     "us_sc_film_credit", "us_ma_film_credit", "us_tx_miip", "us_ct_film_credit",
@@ -686,6 +698,14 @@ def build_intelligence_gap_report(
         "zw_film_commission": "ZW", "cn_film_incentive": "CN",
         "mn_film_commission": "MN", "mo_film_fund": "MO",
         "bd_film_incentive": "BD",
+        # Wave-5 programs (migration 0035)
+        "ch_film_support": "CH", "si_film_incentive": "SI",
+        "ua_film_incentive": "UA", "ru_film_incentive": "RU",
+        "by_film_incentive": "BY", "md_film_incentive": "MD",
+        "cu_film_incentive": "CU", "ir_film_incentive": "IR",
+        "dz_film_incentive": "DZ", "ga_film_incentive": "GA",
+        "sc_film_incentive": "SC", "mv_film_incentive": "MV",
+        "bt_film_incentive": "BT",
     }
     # Reverse: jurisdiction_code → slugs (one jur may have multiple slugs)
     _JUR_TO_SLUGS: dict[str, list[str]] = {}
@@ -780,6 +800,9 @@ def build_intelligence_gap_report(
         "ME": "Eastern Europe", "MK": "Eastern Europe", "AL": "Eastern Europe",
         "EE": "Eastern Europe", "LT": "Eastern Europe", "LV": "Eastern Europe",
         "MT": "Western Europe", "CY": "Western Europe", "GR": "Western Europe",
+        # Wave-5 Eastern Europe
+        "SI": "Eastern Europe", "UA": "Eastern Europe", "RU": "Eastern Europe",
+        "BY": "Eastern Europe", "MD": "Eastern Europe",
         # Middle East & Gulf
         "AE": "Middle East & Gulf", "SA": "Middle East & Gulf",
         "QA": "Middle East & Gulf", "JO": "Middle East & Gulf",
@@ -793,13 +816,19 @@ def build_intelligence_gap_report(
         "NA": "Africa", "BW": "Africa", "ET": "Africa", "CI": "Africa",
         "CM": "Africa", "AO": "Africa", "UG": "Africa",
         "MZ": "Africa", "ZM": "Africa", "ZW": "Africa",
+        # Africa wave-5
+        "DZ": "Africa", "GA": "Africa", "SC": "Indian Ocean",
         # Central Asia & Caucasus
         "GE": "Central Asia", "KZ": "Central Asia", "AM": "Central Asia",
         "AZ": "Central Asia", "UZ": "Central Asia",
         # Middle East additions
         "OM": "Middle East & Gulf", "LB": "Middle East & Gulf",
+        "IR": "Middle East & Gulf",
+        # Caribbean wave-5
+        "CU": "Caribbean & C.America",
         # South Asia
         "IN": "South & SE Asia", "LK": "South & SE Asia", "BD": "South & SE Asia",
+        "MV": "South & SE Asia", "BT": "South & SE Asia",
         # Southeast Asia
         "TH": "South & SE Asia", "MY": "South & SE Asia", "PH": "South & SE Asia",
         "SG": "South & SE Asia", "VN": "South & SE Asia", "ID": "South & SE Asia",
@@ -829,7 +858,7 @@ def build_intelligence_gap_report(
     no_program_count = len(NO_PROGRAM_CODES)
     searched_total = countries_with_prog + no_program_count
     not_yet_searched = max(0, 195 - searched_total)
-    global_search_pct = round(searched_total / 195 * 100, 1)
+    global_search_pct = min(round(searched_total / 195 * 100, 1), 100.0)
 
     # Identify top unsearched regions: regions with most remaining UN countries
     _ALL_UN_REGIONS: dict[str, list[str]] = {

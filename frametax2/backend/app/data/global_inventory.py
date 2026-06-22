@@ -966,3 +966,10 @@ ALL_PROGRAMS = ALL_PROGRAMS + WAVE3_PROGRAMS + GRANTS2_PROGRAMS
 from app.data.global_inventory_wave4 import WAVE4_PROGRAMS  # noqa: E402
 
 ALL_PROGRAMS = ALL_PROGRAMS + WAVE4_PROGRAMS
+
+# ---------------------------------------------------------------------------
+# Wave-5 inventory — 13 programs (final global discovery pass)
+# ---------------------------------------------------------------------------
+from app.data.global_inventory_wave5 import WAVE5_PROGRAMS  # noqa: E402
+
+ALL_PROGRAMS = ALL_PROGRAMS + WAVE5_PROGRAMS
