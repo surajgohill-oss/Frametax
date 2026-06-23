@@ -30,18 +30,40 @@ const FALLBACK_GRADIENTS: GradientPair[] = [
 ];
 
 /**
- * Static artist image map — Songkick CDN (verified 200 OK).
- * Each entry: [match pattern, image URL]
- * Used as a fallback when no backend image_url is available.
+ * Static artist image map — Wikipedia CDN thumbnails (no hotlink restriction, stable URLs).
+ * Each entry: [match pattern, Wikipedia page title for thumbnail fetch]
+ * The useArtistImage hook fetches these via the Wikipedia REST API.
  */
-const STATIC_ART: [RegExp, string][] = [
-  [/ariana grande/i,  "https://images.sk-static.com/images/media/profile_images/artists/5466476/huge_avatar"],
-  [/bts\b/i,          "https://images.sk-static.com/images/media/profile_images/artists/8521933/huge_avatar"],
-  [/kid cudi/i,       "https://images.sk-static.com/images/media/profile_images/artists/3017714/huge_avatar"],
-  [/ed sheeran/i,     "https://images.sk-static.com/images/media/profile_images/artists/137952/huge_avatar"],
-  [/foo fighters/i,   "https://images.sk-static.com/images/media/profile_images/artists/485568/huge_avatar"],
-  [/morgan jay/i,     "https://images.sk-static.com/images/media/profile_images/artists/8789617/huge_avatar"],
-];
+// sk-static.com URLs removed — domain returns HTTP 200 with blank/transparent image content.
+// All resolution now goes through Wikipedia REST API in useArtistImage hook.
+const STATIC_ART: [RegExp, string][] = [];
+
+// ── Spotify static URL map ────────────────────────────────────────────────────
+// Public artist/playlist URLs — no OAuth required, used for deep-linking only.
+// Populated manually for known artists. Add entries as coverage grows.
+const SPOTIFY_ARTIST_URLS: Record<string, { artistUrl: string; playlistUrl?: string }> = {
+  "ariana grande": {
+    artistUrl: "https://open.spotify.com/artist/66CXWjxzNUsdJxJ2JdwvnR",
+    playlistUrl: "https://open.spotify.com/playlist/37i9dQZF1DX6bnzK9KPvrz",
+  },
+  "kid cudi": {
+    artistUrl: "https://open.spotify.com/artist/0fA0VVWsXO9YnASrzqfmYu",
+    playlistUrl: "https://open.spotify.com/playlist/37i9dQZF1DZ06evO04TCIU",
+  },
+  "bts": {
+    artistUrl: "https://open.spotify.com/artist/3Nrfpe0tUJi4K4DXYWgMUX",
+    playlistUrl: "https://open.spotify.com/playlist/37i9dQZF1DX9tPFwDMOaN1",
+  },
+  "ed sheeran": {
+    artistUrl: "https://open.spotify.com/artist/6eUKZXaKkcviH0Ku9w2n3V",
+    playlistUrl: "https://open.spotify.com/playlist/37i9dQZF1DX4SBhb3fqCJd",
+  },
+  "foo fighters": {
+    artistUrl: "https://open.spotify.com/artist/7jy3rLJdDQY21OgRLCZ9sD",
+    playlistUrl: "https://open.spotify.com/playlist/37i9dQZF1DXdwmD5Q7GKFQ",
+  },
+  // morgan jay: Spotify artist ID unconfirmed — show "Spotify pending" fallback
+};
 
 function djb2(str: string): number {
   let hash = 5381;
@@ -66,7 +88,7 @@ export function getEventGradient(artist: string | null | undefined, title = ""):
 }
 
 /**
- * Return a static artist image URL for an event, or null if none is mapped.
+ * Return a static artist image URL, or null if none is mapped.
  * Matches against artist field first, then event title.
  */
 export function getStaticArtUrl(artist: string | null | undefined, title = ""): string | null {
@@ -85,7 +107,7 @@ export function getStaticArtUrl(artist: string | null | undefined, title = ""): 
  * Full artwork URL fallback chain:
  *   1. event.image_url (backend field, if ever populated)
  *   2. event.poster_url (backend field, if ever populated)
- *   3. static curated image (Songkick CDN)
+ *   3. static curated image
  *   4. null → caller falls back to gradient
  */
 export function getEventArtworkUrl(
@@ -107,6 +129,37 @@ export function gradientBg(colors: GradientPair, intensity: "low" | "medium" | "
     `radial-gradient(ellipse at 85% 30%, ${c2}${a2} 0%, transparent 55%)`,
     "#0d1117",
   ].join(", ");
+}
+
+// ── Spotify ───────────────────────────────────────────────────────────────────
+
+export interface SpotifyArtistData {
+  /** https://open.spotify.com/artist/{id} — null when artist not in static map */
+  spotifyArtistUrl: string | null;
+  /** CDN image from Spotify artist profile — null until OAuth is wired */
+  spotifyArtistImageUrl: string | null;
+  /** Optional editorial playlist URL — null when not mapped */
+  spotifyPlaylistUrl: string | null;
+}
+
+/**
+ * Returns Spotify deep-link URLs for a known artist.
+ * Links are public and require no auth. Profile images remain null until Spotify OAuth is built.
+ * Coverage: Ariana Grande, Kid Cudi, BTS, Ed Sheeran, Foo Fighters, Morgan Jay.
+ */
+export function getSpotifyData(artist: string | null | undefined): SpotifyArtistData {
+  const key = (artist ?? "")
+    .toLowerCase()
+    .replace(/:\s*.+$/, "")
+    .replace(/\s+world\s+tour.*$/, "")
+    .trim();
+  const data = SPOTIFY_ARTIST_URLS[key];
+  if (!data) return { spotifyArtistUrl: null, spotifyArtistImageUrl: null, spotifyPlaylistUrl: null };
+  return {
+    spotifyArtistUrl: data.artistUrl,
+    spotifyArtistImageUrl: null,
+    spotifyPlaylistUrl: data.playlistUrl ?? null,
+  };
 }
 
 /** Extract grouping artist key from event title */

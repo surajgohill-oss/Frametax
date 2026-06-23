@@ -4,3 +4,10 @@ scripts/nadp/node_modules/
 **/*.pyc
 backend/browser_sessions/
 .git/
+.venv/
+backend/.venv/
+browser_sessions/
+*.db
+*.log
+.DS_Store
+archives/

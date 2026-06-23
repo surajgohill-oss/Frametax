@@ -668,7 +668,7 @@ export default function EventDetailPage() {
   const action     = signalToAction(hero?.signal);
   const aColors    = actionColors(action);
   const daysOut    = hero?.days_until_event ?? null;
-  const isCompleted = dateStr ? new Date(dateStr) < new Date() : false;
+  const isCompleted = dateStr ? new Date(dateStr).getTime() + 24 * 3600 * 1000 < Date.now() : false;
 
   let dateLabel = "";
   if (dateStr) {

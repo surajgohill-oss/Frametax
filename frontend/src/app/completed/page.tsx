@@ -35,7 +35,7 @@ export default function CompletedPage() {
   useEffect(() => {
     api.events.all().then((all) => {
       const now = new Date();
-      const past = all.filter((e) => new Date(e.event_date) < now);
+      const past = all.filter((e) => new Date(e.event_date).getTime() + 24 * 3600 * 1000 < now.getTime());
       // Sort newest first
       past.sort((a, b) => new Date(b.event_date).getTime() - new Date(a.event_date).getTime());
       setEvents(past);

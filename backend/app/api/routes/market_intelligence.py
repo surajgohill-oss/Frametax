@@ -100,8 +100,11 @@ async def compute_all_events(
     Runs sequentially. Use for initial population or scheduled refresh.
     """
     now = datetime.now(timezone.utc)
+    # +24h grace: event_dates are stored as midnight UTC which = 5 PM PDT the prior
+    # calendar day. Adding 24h ensures same-day events remain visible through their
+    # actual show time. Mirrors the +24h offset in scheduler.event_status_from_date.
     events_q = await db.execute(
-        select(Event).where(Event.event_date >= now).order_by(Event.event_date)
+        select(Event).where(Event.event_date >= now - timedelta(hours=24)).order_by(Event.event_date)
     )
     events = events_q.scalars().all()
 
@@ -151,8 +154,9 @@ async def all_events_intelligence(
       history_hours
     """
     now = datetime.now(timezone.utc)
+    # +24h grace: see compute_all comment above.
     events_q = await db.execute(
-        select(Event).where(Event.event_date >= now).order_by(Event.event_date)
+        select(Event).where(Event.event_date >= now - timedelta(hours=24)).order_by(Event.event_date)
     )
     events = events_q.scalars().all()
 
