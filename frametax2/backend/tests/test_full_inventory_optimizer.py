@@ -1,7 +1,7 @@
 """
 test_full_inventory_optimizer.py — Phase 5: Synthetic full-inventory optimizer tests.
 
-Validates that the pure-Python optimizer can safely process all 232 programs
+Validates that the pure-Python optimizer can safely process all 240 programs
 without crashes, that DISCOVERY penalties are applied, that base_rate=None
 programs produce $0 value, and that DB-sync programs (NOHFC, OFTTC, QC) are
 reachable from the optimizer.
@@ -422,7 +422,7 @@ class TestStackingRulesSync:
 
 
 # ---------------------------------------------------------------------------
-# Phase 5.6 — All 232 programs have valid program_type
+# Phase 5.6 — All 240 programs have valid program_type
 # ---------------------------------------------------------------------------
 
 class TestProgramIntegrity:
@@ -457,8 +457,8 @@ class TestProgramIntegrity:
         assert not bad, f"Programs missing jurisdiction_code: {bad}"
 
     def test_all_programs_count(self):
-        """ALL_PROGRAMS must contain exactly 232 entries (229 + 3 DB-sync)."""
-        assert len(ALL_PROGRAMS) == 232, f"Expected 232, got {len(ALL_PROGRAMS)}"
+        """ALL_PROGRAMS must contain exactly 240 entries (229 + 3 DB-sync + 8 Phase C)."""
+        assert len(ALL_PROGRAMS) == 240, f"Expected 240, got {len(ALL_PROGRAMS)}"
 
 
 # ---------------------------------------------------------------------------

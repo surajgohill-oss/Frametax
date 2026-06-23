@@ -1001,3 +1001,10 @@ ALL_PROGRAMS = ALL_PROGRAMS + WAVE6_PROGRAMS + GRANTS3_PROGRAMS
 from app.data.global_inventory_db_sync import DB_SYNC_PROGRAMS  # noqa: E402
 
 ALL_PROGRAMS = ALL_PROGRAMS + DB_SYNC_PROGRAMS
+
+# ---------------------------------------------------------------------------
+# Phase C inventory — French/Belgian/German regional funds (8 programs)
+# ---------------------------------------------------------------------------
+from app.data.global_inventory_phase_c import PHASE_C_PROGRAMS  # noqa: E402
+
+ALL_PROGRAMS = ALL_PROGRAMS + PHASE_C_PROGRAMS

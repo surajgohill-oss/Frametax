@@ -90,6 +90,20 @@ _NAME_SLUG_RULES: list[tuple[str, str, str]] = [
     ("CA-ON",  "ofttc",                          "on_ofttc"),
     ("CA-QC",  "film and television production", "qc_film_production"),
     ("CA-QC",  "sodec",                          "qc_film_production"),
+    # Phase C — French/Belgian/German regional funds
+    ("FR-IDF", "île-de-france",                  "fr_idf_regional"),
+    ("FR-IDF", "ile-de-france",                  "fr_idf_regional"),
+    ("FR-IDF", "cinema regional",                "fr_idf_regional"),
+    ("FR-NAQ", "nouvelle-aquitaine",             "fr_naq_regional"),
+    ("FR-ARA", "auvergne",                       "fr_ara_regional"),
+    ("FR-ARA", "rhône-alpes",                    "fr_ara_regional"),
+    ("FR-OCC", "occitanie",                      "fr_occ_regional"),
+    ("BE-WAL", "wallimage",                      "be_wal_wallimage"),
+    ("BE-VLG", "vaf",                            "be_vlg_vaf"),
+    ("BE-VLG", "vlaams audiovisueel",            "be_vlg_vaf"),
+    ("BE-BRU", "screen.brussels",                "be_bru_screen"),
+    ("BE-BRU", "brussels production",            "be_bru_screen"),
+    ("DE-NI",  "nordmedia",                      "de_ni_nordmedia"),
 ]
 
 
@@ -303,6 +317,129 @@ _SLUG_PAIR_RULES: dict[frozenset, dict] = {
         "condition_text": (
             "Screenwest WA financial assistance reduces qualifying Australian production expenditure "
             "for Screen Australia grant eligibility and matching calculations."
+        ),
+    },
+    # ---------------------------------------------------------------------------
+    # Phase D.5 — expanded stacking interaction graph
+    # ---------------------------------------------------------------------------
+    # UK devolved regions + AVEC: all allowed (each qualifies on its own territory's spend)
+    frozenset({"gb_scot_creative_scotland", "uk_avec"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Creative Scotland equity is not government assistance reducing UK qualifying expenditure "
+            "for AVEC — it is co-financing. Both can be claimed on qualifying UK spend."
+        ),
+    },
+    frozenset({"gb_wls_creative_wales", "uk_avec"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Creative Wales equity is co-financing, not government assistance. "
+            "Does not reduce AVEC qualifying UK expenditure."
+        ),
+    },
+    frozenset({"gb_nir_northern_ireland", "uk_avec"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Northern Ireland Screen funding is co-financing, not government assistance. "
+            "Does not reduce AVEC qualifying UK expenditure."
+        ),
+    },
+    frozenset({"gb_yrk_screen_yorkshire", "uk_avec"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Screen Yorkshire equity is co-financing, not government assistance. "
+            "Does not reduce AVEC qualifying UK expenditure."
+        ),
+    },
+    # German regional funds + DFFF: all allowed
+    frozenset({"de_fff_bayern", "de_dfff"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "FFF Bayern regional fund and DFFF national fund operate on separate "
+            "application tracks and may both be claimed for the same production "
+            "when production qualifies under each fund's criteria independently."
+        ),
+    },
+    frozenset({"de_nrw_filmstiftung", "de_dfff"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Filmstiftung NRW and DFFF operate on separate tracks. "
+            "Both may be claimed for the same production when qualifying criteria are met independently."
+        ),
+    },
+    frozenset({"de_ni_nordmedia", "de_dfff"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "nordmedia (Lower Saxony / Bremen) and DFFF operate on separate application tracks. "
+            "Both may be claimed for the same production."
+        ),
+    },
+    # Belgian tax shelter + Belgian regional funds: all allowed
+    frozenset({"be_tax_shelter", "be_wal_wallimage"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Belgian tax shelter and Wallimage operate on independent tracks. "
+            "Tax shelter is a financing instrument; Wallimage is a regional production fund. "
+            "Both may be used on the same production with Wallonia qualifying spend."
+        ),
+    },
+    frozenset({"be_tax_shelter", "be_vlg_vaf"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Belgian tax shelter and VAF Flanders operate on independent tracks. "
+            "Tax shelter is a financing instrument; VAF is a regional production fund. "
+            "Both may be used on the same production with Flanders qualifying spend."
+        ),
+    },
+    frozenset({"be_tax_shelter", "be_bru_screen"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Belgian tax shelter and Screen.Brussels operate on independent tracks. "
+            "Both may be used on the same production with Brussels qualifying spend."
+        ),
+    },
+    # Eurimages + DFFF: allowed
+    frozenset({"eu_eurimages", "de_dfff"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Eurimages support allocated to German co-producers does not reduce "
+            "German qualifying expenditure for DFFF. Each fund applies to its own "
+            "national qualifying spend independently."
+        ),
+    },
+    # Eurimages + Belgian tax shelter: allowed
+    frozenset({"eu_eurimages", "be_tax_shelter"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Eurimages support allocated to Belgian co-producers does not reduce "
+            "Belgian tax shelter qualifying eligible expenditure. "
+            "Both are available for the same official European co-production."
+        ),
+    },
+    # French national + French regional: all allowed
+    frozenset({"fr_cnc_production", "fr_idf_regional"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Île-de-France regional aid and CNC national support operate on independent tracks. "
+            "Both may be claimed for the same production with qualifying Paris-region spend."
+        ),
+    },
+    frozenset({"fr_cnc_production", "fr_naq_regional"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Nouvelle-Aquitaine regional aid and CNC national support operate on independent tracks."
+        ),
+    },
+    frozenset({"fr_cnc_production", "fr_ara_regional"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Auvergne-Rhône-Alpes regional aid and CNC national support operate on independent tracks."
+        ),
+    },
+    frozenset({"fr_cnc_production", "fr_occ_regional"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Occitanie regional aid and CNC national support operate on independent tracks."
         ),
     },
 }
