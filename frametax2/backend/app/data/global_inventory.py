@@ -1015,3 +1015,11 @@ ALL_PROGRAMS = ALL_PROGRAMS + PHASE_C_PROGRAMS
 from app.data.global_inventory_broadcaster_funds import BROADCASTER_FUND_PROGRAMS  # noqa: E402
 
 ALL_PROGRAMS = ALL_PROGRAMS + BROADCASTER_FUND_PROGRAMS
+
+# ---------------------------------------------------------------------------
+# Phase A-D final sweep — VFX/post, export, workforce, streamers, tourism,
+# airline, cultural ministry, special regional programs
+# ---------------------------------------------------------------------------
+from app.data.global_inventory_special_categories import SPECIAL_CATEGORY_PROGRAMS  # noqa: E402
+
+ALL_PROGRAMS = ALL_PROGRAMS + SPECIAL_CATEGORY_PROGRAMS
