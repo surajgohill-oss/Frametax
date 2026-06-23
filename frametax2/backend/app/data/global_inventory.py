@@ -1008,3 +1008,10 @@ ALL_PROGRAMS = ALL_PROGRAMS + DB_SYNC_PROGRAMS
 from app.data.global_inventory_phase_c import PHASE_C_PROGRAMS  # noqa: E402
 
 ALL_PROGRAMS = ALL_PROGRAMS + PHASE_C_PROGRAMS
+
+# ---------------------------------------------------------------------------
+# Phase A closeout — broadcaster funds and additional development/co-production
+# ---------------------------------------------------------------------------
+from app.data.global_inventory_broadcaster_funds import BROADCASTER_FUND_PROGRAMS  # noqa: E402
+
+ALL_PROGRAMS = ALL_PROGRAMS + BROADCASTER_FUND_PROGRAMS

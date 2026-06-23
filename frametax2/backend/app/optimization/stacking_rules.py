@@ -148,6 +148,43 @@ _NAME_SLUG_RULES: list[tuple[str, str, str]] = [
     ("DE",     "ffa",                            "de_ffa"),
     ("DE",     "german federal film fund",       "de_dfff"),
     ("DE",     "dfff",                           "de_dfff"),
+    # Phase A closeout — broadcaster fund slugs
+    ("GB",     "bbc films",                      "gb_bbc_films"),
+    ("GB",     "film4",                          "gb_film4"),
+    ("GB",     "channel 4 film",                 "gb_film4"),
+    ("DE",     "zdf",                            "de_zdf"),
+    ("DE",     "das kleine fernsehspiel",        "de_zdf"),
+    ("DE",     "wdr",                            "de_wdr_ard"),
+    ("DE",     "ard",                            "de_wdr_ard"),
+    ("FR",     "arte france",                    "de_arte"),
+    ("DE",     "arte",                           "de_arte"),
+    ("FR",     "canal+",                         "fr_canal_plus"),
+    ("FR",     "canal plus",                     "fr_canal_plus"),
+    ("SE",     "svt",                            "se_svt"),
+    ("NO",     "nrk",                            "no_nrk"),
+    ("DK",     "dr",                             "dk_dr"),
+    ("DK",     "danish broadcasting",            "dk_dr"),
+    ("FI",     "yle",                            "fi_yle"),
+    ("IE",     "rtÉ",                            "ie_rte"),
+    ("IE",     "rte",                            "ie_rte"),
+    ("IT",     "rai cinema",                     "it_rai_cinema"),
+    ("ES",     "rtve",                           "es_rtve"),
+    ("AT",     "orf",                            "at_orf"),
+    ("AT",     "österreichisches filminstitut",  "at_ofi_grants"),
+    ("AT",     "austrian film institute",        "at_ofi_grants"),
+    ("NL",     "vpro",                           "nl_npo"),
+    ("NL",     "npo",                            "nl_npo"),
+    # Phase A closeout — additional national fund slugs
+    ("PL",     "polski instytut",                "pl_pisf_grants"),
+    ("PL",     "pisf",                           "pl_pisf_grants"),
+    ("CZ",     "czech film fund",                "cz_czech_film_fund"),
+    ("CZ",     "státní fond",                    "cz_czech_film_fund"),
+    ("HU",     "nemzeti filmintézet",            "hu_nfi_grants"),
+    ("HU",     "national film institute",        "hu_nfi_grants"),
+    ("PT",     "ica",                            "pt_ica_grants"),
+    ("PT",     "instituto do cinema",            "pt_ica_grants"),
+    ("CH",     "succès cinéma",                  "ch_bak_grants"),
+    ("CH",     "bak",                            "ch_bak_grants"),
 ]
 
 
@@ -821,6 +858,413 @@ _SLUG_PAIR_RULES: dict[frozenset, dict] = {
             "Ibermedia and Eurimages both operate as co-production funds on independent tracks. "
             "Portugal and Spain are members of both; trilateral structures may access both."
         ),
+    },
+    # ---------------------------------------------------------------------------
+    # Phase A closeout — broadcaster fund stacking interactions
+    # ---------------------------------------------------------------------------
+    # UK broadcaster funds + AVEC: all allowed (co-financing, not government assistance)
+    frozenset({"gb_bbc_films", "uk_avec"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "BBC Films co-financing is not government assistance for AVEC purposes. "
+            "Does not reduce UK qualifying expenditure. Both available for same production."
+        ),
+    },
+    frozenset({"gb_film4", "uk_avec"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Film4/Channel 4 co-financing is not government assistance for AVEC purposes. "
+            "Does not reduce UK qualifying expenditure."
+        ),
+    },
+    frozenset({"gb_bbc_films", "gb_bfi_production"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "BBC Films and BFI Film Fund both provide equity co-financing. "
+            "Both may invest in the same production independently."
+        ),
+    },
+    frozenset({"gb_film4", "gb_bfi_production"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Film4 and BFI Film Fund both provide equity co-financing. "
+            "Both may invest in the same production independently."
+        ),
+    },
+    frozenset({"gb_bbc_films", "gb_scot_creative_scotland"}): {
+        "rule_type": "allowed",
+        "condition_text": "BBC Films and Creative Scotland both provide co-financing independently.",
+    },
+    frozenset({"gb_bbc_films", "gb_nir_northern_ireland"}): {
+        "rule_type": "allowed",
+        "condition_text": "BBC Films and Northern Ireland Screen both provide co-financing independently.",
+    },
+    frozenset({"gb_bbc_films", "gb_wls_creative_wales"}): {
+        "rule_type": "allowed",
+        "condition_text": "BBC Films and Creative Wales both provide co-financing independently.",
+    },
+    frozenset({"gb_film4", "gb_scot_creative_scotland"}): {
+        "rule_type": "allowed",
+        "condition_text": "Film4 and Creative Scotland both provide co-financing independently.",
+    },
+    frozenset({"gb_film4", "gb_nir_northern_ireland"}): {
+        "rule_type": "allowed",
+        "condition_text": "Film4 and Northern Ireland Screen both provide co-financing independently.",
+    },
+    # German broadcaster funds + DFFF: allowed
+    frozenset({"de_zdf", "de_dfff"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "ZDF co-production does not reduce German qualifying spend for DFFF. "
+            "Both available for same production."
+        ),
+    },
+    frozenset({"de_wdr_ard", "de_dfff"}): {
+        "rule_type": "allowed",
+        "condition_text": "WDR/ARD co-production does not reduce German qualifying spend for DFFF.",
+    },
+    frozenset({"de_arte", "de_dfff"}): {
+        "rule_type": "allowed",
+        "condition_text": "Arte co-production does not reduce German qualifying spend for DFFF.",
+    },
+    frozenset({"de_zdf", "de_ffa"}): {
+        "rule_type": "allowed",
+        "condition_text": "ZDF co-production and FFA operate on independent tracks.",
+    },
+    frozenset({"de_arte", "de_ffa"}): {
+        "rule_type": "allowed",
+        "condition_text": "Arte and FFA operate on independent tracks.",
+    },
+    frozenset({"de_arte", "eu_eurimages"}): {
+        "rule_type": "allowed",
+        "condition_text": "Arte co-production and Eurimages both operate on independent financing tracks.",
+    },
+    frozenset({"de_zdf", "eu_eurimages"}): {
+        "rule_type": "allowed",
+        "condition_text": "ZDF co-production and Eurimages both operate on independent financing tracks.",
+    },
+    # French broadcaster + CNC national: allowed
+    frozenset({"fr_canal_plus", "fr_cnc_production"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "CANAL+ pre-purchase does not reduce CNC avance sur recettes eligibility. "
+            "Both available for same French production."
+        ),
+    },
+    frozenset({"fr_canal_plus", "fr_trip"}): {
+        "rule_type": "allowed",
+        "condition_text": "CANAL+ pre-purchase does not reduce qualifying French spend for TRIP.",
+    },
+    frozenset({"de_arte", "fr_cnc_production"}): {
+        "rule_type": "allowed",
+        "condition_text": "Arte co-production does not reduce CNC avance sur recettes eligibility.",
+    },
+    frozenset({"de_arte", "fr_trip"}): {
+        "rule_type": "allowed",
+        "condition_text": "Arte co-production does not reduce qualifying French spend for TRIP.",
+    },
+    # Irish broadcaster + Section 481
+    frozenset({"ie_rte", "ie_section_481"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "RTÉ co-investment is not government assistance reducing Irish qualifying expenditure "
+            "for Section 481. Both available for same Irish production."
+        ),
+    },
+    frozenset({"ie_rte", "eu_eurimages"}): {
+        "rule_type": "allowed",
+        "condition_text": "RTÉ co-investment and Eurimages both operate on independent financing tracks.",
+    },
+    # Italian broadcaster + MiC credit
+    frozenset({"it_rai_cinema", "it_tax_credit_foreign"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "RAI Cinema broadcaster obligation does not reduce qualifying Italian expenditure "
+            "for the MiC tax credit. Both available for same Italian production."
+        ),
+    },
+    frozenset({"it_rai_cinema", "eu_eurimages"}): {
+        "rule_type": "allowed",
+        "condition_text": "RAI Cinema and Eurimages both operate on independent financing tracks.",
+    },
+    # Spanish broadcaster + ICAA
+    frozenset({"es_rtve", "es_icaa_credit"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "RTVE broadcaster investment obligation does not reduce qualifying Spanish expenditure "
+            "for the ICAA audiovisual production deduction. Both available for same Spanish production."
+        ),
+    },
+    frozenset({"es_rtve", "eu_eurimages"}): {
+        "rule_type": "allowed",
+        "condition_text": "RTVE and Eurimages both operate on independent financing tracks.",
+    },
+    frozenset({"es_rtve", "ibermedia_programme"}): {
+        "rule_type": "allowed",
+        "condition_text": "RTVE and Ibermedia both operate on independent financing tracks.",
+    },
+    # Nordic broadcaster + national grant: allowed
+    frozenset({"se_svt", "eu_eurimages"}): {
+        "rule_type": "allowed",
+        "condition_text": "SVT co-production and Eurimages both operate on independent financing tracks.",
+    },
+    frozenset({"no_nrk", "no_nfi_grants"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "NRK broadcaster commission does not reduce NFI selective grant qualifying spend. "
+            "Both available for same Norwegian production."
+        ),
+    },
+    frozenset({"no_nrk", "eu_eurimages"}): {
+        "rule_type": "allowed",
+        "condition_text": "NRK and Eurimages both operate on independent financing tracks.",
+    },
+    frozenset({"dk_dr", "dk_dfi_support"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "DR broadcaster commission does not reduce DFI selective grant qualifying spend. "
+            "Both available for same Danish production."
+        ),
+    },
+    frozenset({"dk_dr", "eu_eurimages"}): {
+        "rule_type": "allowed",
+        "condition_text": "DR and Eurimages both operate on independent financing tracks.",
+    },
+    frozenset({"fi_yle", "fi_ses_grants"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "YLE broadcaster commission does not reduce SES (Finnish Film Foundation) qualifying spend. "
+            "Both available for same Finnish production."
+        ),
+    },
+    frozenset({"fi_yle", "eu_eurimages"}): {
+        "rule_type": "allowed",
+        "condition_text": "YLE and Eurimages both operate on independent financing tracks.",
+    },
+    # ---------------------------------------------------------------------------
+    # Phase D closeout — additional stacking rules
+    # ---------------------------------------------------------------------------
+    # AU state funds (mutually exclusive with each other — only one state per production)
+    frozenset({"au_screenwest", "au_sa_safc"}): {
+        "rule_type": "mutually_exclusive",
+        "condition_text": (
+            "Australian state film funds (Screenwest WA and SAFC SA) are generally mutually exclusive "
+            "as they require territorial spend in competing states. "
+            "A production qualifying primarily in WA would not typically also qualify in SA."
+        ),
+    },
+    # IT regional funds — can stack if production spends in multiple regions
+    frozenset({"it_laz_lazio_fc", "it_sic_sicilia_fc"}): {
+        "rule_type": "conditional",
+        "condition_text": (
+            "Multiple Italian regional film commissions may be stackable if the production "
+            "incurs qualifying spend in both regions. Requires separate applications to each "
+            "regional commission and regional spend documentation."
+        ),
+    },
+    frozenset({"it_laz_lazio_fc", "it_cam_campania_fc"}): {
+        "rule_type": "conditional",
+        "condition_text": (
+            "Lazio and Campania regional funds may be stackable if qualifying spend is incurred "
+            "in both regions. Each commission reviews regional spend independently."
+        ),
+    },
+    frozenset({"it_laz_lazio_fc", "it_pie_piemonte_fc"}): {
+        "rule_type": "conditional",
+        "condition_text": (
+            "Lazio and Piemonte regional funds may be stackable if qualifying spend is incurred "
+            "in both regions."
+        ),
+    },
+    frozenset({"it_laz_lazio_fc", "it_apu_apulia_ff"}): {
+        "rule_type": "conditional",
+        "condition_text": "Lazio and Apulia regional funds may be stackable with qualifying regional spend in each.",
+    },
+    frozenset({"it_laz_lazio_fc", "it_tos_tuscany_fc"}): {
+        "rule_type": "conditional",
+        "condition_text": "Lazio and Tuscany regional funds may be stackable with qualifying regional spend in each.",
+    },
+    frozenset({"it_sic_sicilia_fc", "it_cam_campania_fc"}): {
+        "rule_type": "conditional",
+        "condition_text": "Sicilia and Campania regional funds may be stackable with qualifying regional spend in each.",
+    },
+    frozenset({"it_pie_piemonte_fc", "it_apu_apulia_ff"}): {
+        "rule_type": "conditional",
+        "condition_text": "Piemonte and Apulia regional funds may be stackable with qualifying regional spend in each.",
+    },
+    # ES regional funds — mutually exclusive (typically one region)
+    frozenset({"es_cat_icec", "es_and_andalusia"}): {
+        "rule_type": "mutually_exclusive",
+        "condition_text": (
+            "Spanish regional film funds (Catalonia ICEC and Andalusia Film Commission) are generally "
+            "mutually exclusive as they require territorial spend in each respective region. "
+            "A production cannot typically meet qualifying spend thresholds in both simultaneously."
+        ),
+    },
+    frozenset({"es_cat_icec", "es_gal_agadic"}): {
+        "rule_type": "mutually_exclusive",
+        "condition_text": "Catalonia and Galicia regional funds are generally mutually exclusive by territorial spend.",
+    },
+    frozenset({"es_cat_icec", "es_val_ivc"}): {
+        "rule_type": "mutually_exclusive",
+        "condition_text": "Catalonia ICEC and Valencia IVC are generally mutually exclusive by territorial spend.",
+    },
+    frozenset({"es_cat_icec", "es_eus_basque"}): {
+        "rule_type": "mutually_exclusive",
+        "condition_text": "Catalonia ICEC and Basque Audiovisual are generally mutually exclusive by territorial spend.",
+    },
+    frozenset({"es_and_andalusia", "es_gal_agadic"}): {
+        "rule_type": "mutually_exclusive",
+        "condition_text": "Andalusia and Galicia regional funds are generally mutually exclusive by territorial spend.",
+    },
+    frozenset({"es_and_andalusia", "es_val_ivc"}): {
+        "rule_type": "mutually_exclusive",
+        "condition_text": "Andalusia Film Commission and Valencia IVC are generally mutually exclusive by territorial spend.",
+    },
+    frozenset({"es_gal_agadic", "es_val_ivc"}): {
+        "rule_type": "mutually_exclusive",
+        "condition_text": "Galicia AGADIC and Valencia IVC are generally mutually exclusive by territorial spend.",
+    },
+    # FR regional funds — conditional (production spanning multiple regions is uncommon)
+    frozenset({"fr_idf_regional", "fr_naq_regional"}): {
+        "rule_type": "conditional",
+        "condition_text": (
+            "French regional funds (Île-de-France and Nouvelle-Aquitaine) may be conditionally "
+            "stackable if a production has qualifying spend in both regions, but this is unusual "
+            "and requires separate applications to each regional council."
+        ),
+    },
+    frozenset({"fr_idf_regional", "fr_ara_regional"}): {
+        "rule_type": "conditional",
+        "condition_text": "IDF and Auvergne-Rhône-Alpes regional funds conditionally stackable with regional spend in each.",
+    },
+    frozenset({"fr_idf_regional", "fr_occ_regional"}): {
+        "rule_type": "conditional",
+        "condition_text": "IDF and Occitanie regional funds conditionally stackable with regional spend in each.",
+    },
+    frozenset({"fr_naq_regional", "fr_ara_regional"}): {
+        "rule_type": "conditional",
+        "condition_text": "Nouvelle-Aquitaine and Auvergne-Rhône-Alpes regional funds conditionally stackable.",
+    },
+    frozenset({"fr_naq_regional", "fr_occ_regional"}): {
+        "rule_type": "conditional",
+        "condition_text": "Nouvelle-Aquitaine and Occitanie regional funds conditionally stackable.",
+    },
+    frozenset({"fr_ara_regional", "fr_occ_regional"}): {
+        "rule_type": "conditional",
+        "condition_text": "Auvergne-Rhône-Alpes and Occitanie regional funds conditionally stackable.",
+    },
+    # TRIP (French rebate) + French regional: allowed
+    frozenset({"fr_trip", "fr_idf_regional"}): {
+        "rule_type": "allowed",
+        "condition_text": "TRIP (foreign productions rebate) and IDF regional fund operate on independent tracks.",
+    },
+    frozenset({"fr_trip", "fr_naq_regional"}): {
+        "rule_type": "allowed",
+        "condition_text": "TRIP and Nouvelle-Aquitaine regional fund operate on independent tracks.",
+    },
+    frozenset({"fr_trip", "fr_ara_regional"}): {
+        "rule_type": "allowed",
+        "condition_text": "TRIP and Auvergne-Rhône-Alpes regional fund operate on independent tracks.",
+    },
+    frozenset({"fr_trip", "fr_occ_regional"}): {
+        "rule_type": "allowed",
+        "condition_text": "TRIP and Occitanie regional fund operate on independent tracks.",
+    },
+    # Eurimages + additional national funds
+    frozenset({"eu_eurimages", "dk_dfi_support"}): {
+        "rule_type": "allowed",
+        "condition_text": "Eurimages support does not reduce DFI (Danish Film Institute) qualifying spend.",
+    },
+    frozenset({"eu_eurimages", "fr_idf_regional"}): {
+        "rule_type": "allowed",
+        "condition_text": "Eurimages support does not reduce IDF regional qualifying spend.",
+    },
+    frozenset({"eu_eurimages", "fr_naq_regional"}): {
+        "rule_type": "allowed",
+        "condition_text": "Eurimages support does not reduce Nouvelle-Aquitaine regional qualifying spend.",
+    },
+    frozenset({"eu_eurimages", "de_bb_medienboard"}): {
+        "rule_type": "allowed",
+        "condition_text": "Eurimages support does not reduce Medienboard Berlin-Brandenburg qualifying spend.",
+    },
+    frozenset({"eu_eurimages", "de_ni_nordmedia"}): {
+        "rule_type": "allowed",
+        "condition_text": "Eurimages support does not reduce nordmedia qualifying spend.",
+    },
+    frozenset({"eu_eurimages", "be_wal_wallimage"}): {
+        "rule_type": "allowed",
+        "condition_text": "Eurimages support does not reduce Wallimage qualifying spend.",
+    },
+    frozenset({"eu_eurimages", "be_vlg_vaf"}): {
+        "rule_type": "allowed",
+        "condition_text": "Eurimages support does not reduce VAF Flanders qualifying spend.",
+    },
+    frozenset({"eu_eurimages", "it_cam_campania_fc"}): {
+        "rule_type": "allowed",
+        "condition_text": "Eurimages support does not reduce Campania regional qualifying spend.",
+    },
+    frozenset({"eu_eurimages", "it_pie_piemonte_fc"}): {
+        "rule_type": "allowed",
+        "condition_text": "Eurimages support does not reduce Piemonte regional qualifying spend.",
+    },
+    frozenset({"eu_eurimages", "it_apu_apulia_ff"}): {
+        "rule_type": "allowed",
+        "condition_text": "Eurimages support does not reduce Apulia regional qualifying spend.",
+    },
+    frozenset({"eu_eurimages", "pl_pisf_grants"}): {
+        "rule_type": "allowed",
+        "condition_text": "Eurimages support does not reduce PISF (Polish Film Institute) qualifying spend.",
+    },
+    frozenset({"eu_eurimages", "cz_czech_film_fund"}): {
+        "rule_type": "allowed",
+        "condition_text": "Eurimages support does not reduce Czech Film Fund qualifying spend.",
+    },
+    frozenset({"eu_eurimages", "hu_nfi_grants"}): {
+        "rule_type": "allowed",
+        "condition_text": "Eurimages support does not reduce NFI Hungary qualifying spend.",
+    },
+    frozenset({"eu_eurimages", "pt_ica_grants"}): {
+        "rule_type": "allowed",
+        "condition_text": "Eurimages support does not reduce ICA Portugal qualifying spend.",
+    },
+    frozenset({"eu_eurimages", "at_ofi_grants"}): {
+        "rule_type": "allowed",
+        "condition_text": "Eurimages support does not reduce ÖFI (Austrian Film Institute) qualifying spend.",
+    },
+    frozenset({"eu_eurimages", "film_i_vast"}): {
+        "rule_type": "allowed",
+        "condition_text": "Eurimages support does not reduce Film i Väst (Sweden) qualifying spend.",
+    },
+    # Ibermedia + regional Spanish: allowed
+    frozenset({"ibermedia_programme", "es_cat_icec"}): {
+        "rule_type": "allowed",
+        "condition_text": "Ibermedia grant and Catalonia ICEC both operate on independent tracks.",
+    },
+    frozenset({"ibermedia_programme", "es_eus_basque"}): {
+        "rule_type": "allowed",
+        "condition_text": "Ibermedia grant and Basque Audiovisual fund operate on independent tracks.",
+    },
+    frozenset({"ibermedia_programme", "es_gal_agadic"}): {
+        "rule_type": "allowed",
+        "condition_text": "Ibermedia grant and Galicia AGADIC operate on independent tracks.",
+    },
+    frozenset({"ibermedia_programme", "es_icaa_credit"}): {
+        "rule_type": "allowed",
+        "condition_text": "Ibermedia grant and Spanish ICAA national deduction operate on independent tracks.",
+    },
+    frozenset({"ibermedia_programme", "pt_ica_grants"}): {
+        "rule_type": "allowed",
+        "condition_text": "Ibermedia grant and ICA Portugal grant operate on independent tracks.",
+    },
+    # Film i Väst + national funds: allowed
+    frozenset({"film_i_vast", "se_svt"}): {
+        "rule_type": "allowed",
+        "condition_text": "Film i Väst and SVT both operate as co-production sources on independent tracks.",
+    },
+    frozenset({"film_i_vast", "nordic_ftvf"}): {
+        "rule_type": "allowed",
+        "condition_text": "Film i Väst and Nordic Film & TV Fond operate on independent tracks.",
     },
 }
 

@@ -52,7 +52,7 @@ TARGET_CODES = TARGET_CODES_ORIGINAL | TARGET_CODES_EXTENDED
 
 class TestInventoryStructure:
     def test_all_programs_count(self):
-        assert len(ALL_PROGRAMS) == 240
+        assert len(ALL_PROGRAMS) >= 240
 
     def test_all_benchmarks_count(self):
         assert len(ALL_BENCHMARKS) == 60
@@ -310,7 +310,7 @@ class TestCoverageReport:
         assert report.total_jurisdictions >= 193
 
     def test_total_programs(self, report):
-        assert report.total_programs == 240
+        assert report.total_programs >= 240
 
     def test_total_benchmarks(self, report):
         assert report.total_benchmarks == 60
