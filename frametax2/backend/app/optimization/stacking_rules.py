@@ -104,6 +104,50 @@ _NAME_SLUG_RULES: list[tuple[str, str, str]] = [
     ("BE-BRU", "screen.brussels",                "be_bru_screen"),
     ("BE-BRU", "brussels production",            "be_bru_screen"),
     ("DE-NI",  "nordmedia",                      "de_ni_nordmedia"),
+    # Phase E3 — German regional funds (wave-6 programs)
+    ("DE-BB",  "medienboard",                    "de_bb_medienboard"),
+    ("DE-BB",  "berlin-brandenburg",             "de_bb_medienboard"),
+    ("DE-HH",  "film- und medienstiftung hamburg", "de_hh_film_hamburg"),
+    ("DE-HH",  "film hamburg",                   "de_hh_film_hamburg"),
+    ("DE-BW",  "mfg medien",                     "de_bw_mfg"),
+    ("DE-BW",  "mfg",                            "de_bw_mfg"),
+    ("DE-MDM", "mitteldeutsche",                 "de_mdm_mitteldeutsche"),
+    ("DE-MDM", "mdm",                            "de_mdm_mitteldeutsche"),
+    # Phase E3 — Italian regional funds (wave-6 programs)
+    ("IT-LAZ", "lazio cinema",                   "it_laz_lazio_fc"),
+    ("IT-LAZ", "lazio international",            "it_laz_lazio_fc"),
+    ("IT-SIC", "sicilia film",                   "it_sic_sicilia_fc"),
+    ("IT-CAM", "campania",                       "it_cam_campania_fc"),
+    ("IT-TOS", "toscana",                        "it_tos_tuscany_fc"),
+    ("IT-TOS", "tuscany",                        "it_tos_tuscany_fc"),
+    ("IT-PIE", "piemonte",                       "it_pie_piemonte_fc"),
+    ("IT-APU", "apulia",                         "it_apu_apulia_ff"),
+    # Phase E3 — Spanish regional funds (wave-6 programs)
+    ("ES-CAT", "icec",                           "es_cat_icec"),
+    ("ES-CAT", "català de les empreses",         "es_cat_icec"),
+    ("ES-AND", "andalucia film commission",      "es_and_andalusia"),
+    ("ES-AND", "andalucía",                      "es_and_andalusia"),
+    ("ES-GAL", "agadic",                         "es_gal_agadic"),
+    ("ES-GAL", "galega",                         "es_gal_agadic"),
+    ("ES-VAL", "institut valencià",              "es_val_ivc"),
+    ("ES-VAL", "ivc",                            "es_val_ivc"),
+    ("ES-EUS", "basque country",                 "es_eus_basque"),
+    ("ES-EUS", "eusko",                          "es_eus_basque"),
+    # Phase E3 — Australian states
+    ("AU-SA",  "south australian film",          "au_sa_safc"),
+    ("AU-SA",  "safc",                           "au_sa_safc"),
+    # Phase E3 — Canada provincial slugs (aliases for existing)
+    ("CA-ON",  "ontario production services",    "on_opstc"),
+    # Phase E3 — Italian national credit
+    ("IT",     "mic tax credit",                 "it_mic_national"),
+    ("IT",     "tax credit nazionale",           "it_mic_national"),
+    # Phase E3 — Danish Film Institute
+    ("DK",     "danish film institute",          "dk_dfi_support"),
+    # Phase E3 — FFA Germany national
+    ("DE",     "filmförderungsanstalt",          "de_ffa"),
+    ("DE",     "ffa",                            "de_ffa"),
+    ("DE",     "german federal film fund",       "de_dfff"),
+    ("DE",     "dfff",                           "de_dfff"),
 ]
 
 
@@ -440,6 +484,342 @@ _SLUG_PAIR_RULES: dict[frozenset, dict] = {
         "rule_type": "allowed",
         "condition_text": (
             "Occitanie regional aid and CNC national support operate on independent tracks."
+        ),
+    },
+    # ---------------------------------------------------------------------------
+    # Phase E3 — Germany: remaining regional funds + DFFF
+    # ---------------------------------------------------------------------------
+    frozenset({"de_bb_medienboard", "de_dfff"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Medienboard Berlin-Brandenburg and DFFF operate on separate application tracks. "
+            "Both may be claimed for the same production when qualifying criteria are met independently."
+        ),
+    },
+    frozenset({"de_hh_film_hamburg", "de_dfff"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Film Hamburg and DFFF operate on separate application tracks. "
+            "Both may be claimed for the same production."
+        ),
+    },
+    frozenset({"de_bw_mfg", "de_dfff"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "MFG Baden-Württemberg and DFFF operate on separate application tracks. "
+            "Both may be claimed for the same production."
+        ),
+    },
+    frozenset({"de_mdm_mitteldeutsche", "de_dfff"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "MDM Mitteldeutsche Medienförderung and DFFF operate on separate application tracks. "
+            "Both may be claimed for the same production."
+        ),
+    },
+    # Germany national FFA + all regional: allowed
+    frozenset({"de_ffa", "de_fff_bayern"}): {
+        "rule_type": "allowed",
+        "condition_text": "FFA and FFF Bayern operate on independent tracks.",
+    },
+    frozenset({"de_ffa", "de_nrw_filmstiftung"}): {
+        "rule_type": "allowed",
+        "condition_text": "FFA and Filmstiftung NRW operate on independent tracks.",
+    },
+    frozenset({"de_ffa", "de_bb_medienboard"}): {
+        "rule_type": "allowed",
+        "condition_text": "FFA and Medienboard Berlin-Brandenburg operate on independent tracks.",
+    },
+    frozenset({"de_ffa", "de_ni_nordmedia"}): {
+        "rule_type": "allowed",
+        "condition_text": "FFA and nordmedia operate on independent tracks.",
+    },
+    frozenset({"de_ffa", "de_hh_film_hamburg"}): {
+        "rule_type": "allowed",
+        "condition_text": "FFA and Film Hamburg operate on independent tracks.",
+    },
+    frozenset({"de_ffa", "de_bw_mfg"}): {
+        "rule_type": "allowed",
+        "condition_text": "FFA and MFG Baden-Württemberg operate on independent tracks.",
+    },
+    frozenset({"de_ffa", "de_mdm_mitteldeutsche"}): {
+        "rule_type": "allowed",
+        "condition_text": "FFA and MDM Mitteldeutsche Medienförderung operate on independent tracks.",
+    },
+    # ---------------------------------------------------------------------------
+    # Phase E3 — Italy: regional funds + MiC national credit
+    # ---------------------------------------------------------------------------
+    frozenset({"it_laz_lazio_fc", "it_tax_credit_foreign"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Lazio Cinema International regional fund and Italian MiC tax credit operate on "
+            "independent tracks. Both claimable on qualifying Italian spend."
+        ),
+    },
+    frozenset({"it_sic_sicilia_fc", "it_tax_credit_foreign"}): {
+        "rule_type": "allowed",
+        "condition_text": "Sicilia Film Commission and MiC national credit operate on independent tracks.",
+    },
+    frozenset({"it_cam_campania_fc", "it_tax_credit_foreign"}): {
+        "rule_type": "allowed",
+        "condition_text": "Campania Film Commission and MiC national credit operate on independent tracks.",
+    },
+    frozenset({"it_tos_tuscany_fc", "it_tax_credit_foreign"}): {
+        "rule_type": "allowed",
+        "condition_text": "Tuscany Film Commission and MiC national credit operate on independent tracks.",
+    },
+    frozenset({"it_pie_piemonte_fc", "it_tax_credit_foreign"}): {
+        "rule_type": "allowed",
+        "condition_text": "Piemonte Film Commission and MiC national credit operate on independent tracks.",
+    },
+    frozenset({"it_apu_apulia_ff", "it_tax_credit_foreign"}): {
+        "rule_type": "allowed",
+        "condition_text": "Apulia Film Fund and MiC national credit operate on independent tracks.",
+    },
+    # Italian regional: Eurimages + all Italian regional (allowed)
+    frozenset({"eu_eurimages", "it_laz_lazio_fc"}): {
+        "rule_type": "allowed",
+        "condition_text": "Eurimages support does not reduce Lazio regional qualifying spend.",
+    },
+    frozenset({"eu_eurimages", "it_sic_sicilia_fc"}): {
+        "rule_type": "allowed",
+        "condition_text": "Eurimages support does not reduce Sicilia regional qualifying spend.",
+    },
+    frozenset({"eu_eurimages", "it_tos_tuscany_fc"}): {
+        "rule_type": "allowed",
+        "condition_text": "Eurimages support does not reduce Tuscany regional qualifying spend.",
+    },
+    # ---------------------------------------------------------------------------
+    # Phase E3 — Spain: regional funds + ICAA national (all allowed)
+    # ---------------------------------------------------------------------------
+    frozenset({"es_cat_icec", "es_icaa_credit"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Catalonia ICEC regional support and Spanish ICAA national deduction "
+            "operate on independent tracks."
+        ),
+    },
+    frozenset({"es_and_andalusia", "es_icaa_credit"}): {
+        "rule_type": "allowed",
+        "condition_text": "Andalusia Film Commission support and ICAA operate on independent tracks.",
+    },
+    frozenset({"es_gal_agadic", "es_icaa_credit"}): {
+        "rule_type": "allowed",
+        "condition_text": "Galicia AGADIC support and ICAA operate on independent tracks.",
+    },
+    frozenset({"es_val_ivc", "es_icaa_credit"}): {
+        "rule_type": "allowed",
+        "condition_text": "Valencia IVC support and ICAA operate on independent tracks.",
+    },
+    frozenset({"es_eus_basque", "es_icaa_credit"}): {
+        "rule_type": "allowed",
+        "condition_text": "Basque Country film support and ICAA operate on independent tracks.",
+    },
+    # ---------------------------------------------------------------------------
+    # Phase E3 — Australia: Producer Offset + state funds
+    # ---------------------------------------------------------------------------
+    frozenset({"au_sa_safc", "au_producer_offset"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "SAFC (South Australian Film Corporation) financial assistance is government "
+            "financial assistance reducing qualifying Australian production expenditure (QAPE) "
+            "for Producer Offset (ITAA97 §376-170)."
+        ),
+    },
+    frozenset({"au_sa_safc", "au_location_offset"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "SAFC financial assistance reduces qualifying QAPE for Location Offset."
+        ),
+    },
+    frozenset({"au_sa_safc", "au_screen_production"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "SAFC financial assistance reduces qualifying QAPE for Screen Australia matching calculations."
+        ),
+    },
+    # Producer Offset + Screen Australia (already have spend_reduction) - confirm both directions
+    frozenset({"au_miff_premiere", "au_producer_offset"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "MIFF Premiere Fund grant is not government financial assistance; "
+            "does not reduce QAPE for Producer Offset."
+        ),
+    },
+    # ---------------------------------------------------------------------------
+    # Phase E3 — Canada: additional provincial + federal combinations
+    # ---------------------------------------------------------------------------
+    # BC PSTC (foreign service) — CMF spend_reduction already exists;
+    # add BC Film Investment Program (BCPTC) rules if it arises from treaty
+    frozenset({"ca_bell_fund", "ca_federal_cptc"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "Bell Fund grants are government assistance under ITA §125.4; "
+            "reduces CPTC qualified labour expenditure (T4283)."
+        ),
+    },
+    frozenset({"ca_nsi_fund", "ca_federal_cptc"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "NSI fund grants are government assistance under ITA §125.4; "
+            "reduces CPTC qualified labour expenditure (T4283)."
+        ),
+    },
+    # CMF + Ontario OFTTC (spend_reduction both ways)
+    frozenset({"ca_cmf", "on_ofttc"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "CMF contributions are government assistance under Ontario CTA; "
+            "reduce qualifying Ontario labour expenditure for OFTTC computation."
+        ),
+    },
+    # CMF + QC SODEC (spend_reduction)
+    frozenset({"ca_cmf", "qc_film_production"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "CMF contributions are government assistance under Quebec CTA; "
+            "reduce qualifying Quebec labour expenditure for SODEC credit computation."
+        ),
+    },
+    # Telefilm + provincial credits (spend_reduction)
+    frozenset({"ca_telefilm_dev", "on_ofttc"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "Telefilm equity constitutes government assistance; "
+            "reduces qualifying Ontario labour expenditure for OFTTC."
+        ),
+    },
+    frozenset({"ca_telefilm_dev", "qc_film_production"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "Telefilm equity constitutes government assistance; "
+            "reduces qualifying Quebec labour expenditure for SODEC credit."
+        ),
+    },
+    frozenset({"ca_telefilm_dev", "ca_qc_qprdp"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "Telefilm equity constitutes government assistance; "
+            "reduces qualifying Quebec labour expenditure for QPRDP."
+        ),
+    },
+    frozenset({"ca_telefilm_dev", "ca_bc_pstc"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "Telefilm equity constitutes government assistance; "
+            "reduces qualifying BC labour expenditure for PSTC."
+        ),
+    },
+    # NOHFC + QC SODEC: no overlap (different provinces) — not applicable
+    # Bell Fund + OFTTC (spend_reduction)
+    frozenset({"ca_bell_fund", "on_ofttc"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "Bell Fund grants are government assistance under Ontario CTA; "
+            "reduce qualifying Ontario labour expenditure for OFTTC."
+        ),
+    },
+    # ---------------------------------------------------------------------------
+    # Phase E3 — Eurimages: additional national fund interactions
+    # ---------------------------------------------------------------------------
+    frozenset({"eu_eurimages", "fr_tax_credit_cinema"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Eurimages support allocated to French co-producers does not reduce "
+            "French qualifying expenditure for the tax crédit cinéma."
+        ),
+    },
+    frozenset({"eu_eurimages", "fr_cnc_production"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Eurimages support does not reduce CNC avance sur recettes eligibility."
+        ),
+    },
+    frozenset({"eu_eurimages", "gr_cash_rebate"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Eurimages support allocated to Greek co-producers does not reduce "
+            "Greek qualifying expenditure for the Hellenic cash rebate."
+        ),
+    },
+    frozenset({"eu_eurimages", "no_nfi_grants"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Eurimages support does not reduce Norwegian Film Institute qualifying spend."
+        ),
+    },
+    frozenset({"eu_eurimages", "fi_ses_grants"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Eurimages support does not reduce Finnish Film Foundation qualifying spend."
+        ),
+    },
+    frozenset({"eu_eurimages", "nl_hbf"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Eurimages support does not reduce Hubert Bals Fund qualifying spend."
+        ),
+    },
+    frozenset({"eu_eurimages", "bg_cash_rebate"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Eurimages support does not reduce Bulgarian cash rebate qualifying spend."
+        ),
+    },
+    # ---------------------------------------------------------------------------
+    # Phase E3 — BFI + devolved/regional UK funds
+    # ---------------------------------------------------------------------------
+    frozenset({"gb_bfi_production", "gb_scot_creative_scotland"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "BFI Film Fund and Creative Scotland both provide equity co-financing "
+            "on independent terms. Both may invest in the same production."
+        ),
+    },
+    frozenset({"gb_bfi_production", "gb_wls_creative_wales"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "BFI Film Fund and Creative Wales both provide equity co-financing. "
+            "Both may invest in the same production."
+        ),
+    },
+    frozenset({"gb_bfi_production", "gb_nir_northern_ireland"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "BFI Film Fund and Northern Ireland Screen both provide equity co-financing. "
+            "Both may invest in the same production."
+        ),
+    },
+    frozenset({"gb_bfi_production", "gb_yrk_screen_yorkshire"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "BFI Film Fund and Screen Yorkshire both provide equity co-financing. "
+            "Both may invest in the same production."
+        ),
+    },
+    # ---------------------------------------------------------------------------
+    # Phase E3 — Ibermedia interactions
+    # ---------------------------------------------------------------------------
+    frozenset({"ibermedia_programme", "fr_tax_credit_cinema"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Ibermedia grants do not reduce French qualifying expenditure for tax crédit cinéma. "
+            "Applicable when Ibermedia project includes French co-producer."
+        ),
+    },
+    frozenset({"ibermedia_programme", "ie_section_481"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Ibermedia grants do not reduce Irish qualifying expenditure for Section 481. "
+            "Portugal and Spain are Ibermedia members; Ireland is not, but applicable "
+            "for IE minority service arrangements."
+        ),
+    },
+    frozenset({"ibermedia_programme", "eu_eurimages"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Ibermedia and Eurimages both operate as co-production funds on independent tracks. "
+            "Portugal and Spain are members of both; trilateral structures may access both."
         ),
     },
 }
