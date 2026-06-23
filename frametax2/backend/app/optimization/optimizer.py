@@ -114,6 +114,34 @@ def run_optimizer(
     # Phase 3 — Filter eligible structures
     eligible, ineligible = filter_structures(candidates)
 
+    # Phase 3 DISCOVERY warnings — flag any jurisdiction with only DISCOVERY programs
+    discovery_jurs = set()
+    for jur in jurisdiction_codes:
+        jur_progs = [
+            p for p in filtered_programs
+            if p.jurisdiction_code == jur or p.jurisdiction_code.startswith(jur + "-")
+        ]
+        if jur_progs and all(p.confidence_tier == "DISCOVERY" for p in jur_progs):
+            discovery_jurs.add(jur)
+    if discovery_jurs:
+        warnings.append(
+            f"DISCOVERY-tier programs only for: {sorted(discovery_jurs)}. "
+            "Values are discounted 25% for uncertainty. Verify rates before financing."
+        )
+
+    # Phase 3 base_rate unknown warnings
+    unknown_rate_jurs = {
+        p.jurisdiction_code
+        for p in filtered_programs
+        if p.base_rate is None and p.program_type in {"tax_credit", "cash_rebate"}
+        and p.jurisdiction_code in jurisdiction_codes
+    }
+    if unknown_rate_jurs:
+        warnings.append(
+            f"Base rate unknown for primary incentive programs in: {sorted(unknown_rate_jurs)}. "
+            "These programs contribute $0 to optimizer output until rates are verified."
+        )
+
     # Phase 4 — Score and rank
     scored = score_all_structures(
         eligible_structures=eligible,

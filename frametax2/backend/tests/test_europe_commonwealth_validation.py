@@ -533,7 +533,7 @@ class TestMultiJurisdictionScenarios:
 class TestCoverageReportV130:
     def test_report_version_130(self):
         from app.calculators.coverage_report import REPORT_VERSION
-        assert REPORT_VERSION == "1.3.0"
+        assert REPORT_VERSION == "1.4.0"
 
     def test_gap_report_optimization_ready_programs(self):
         from app.calculators.coverage_report import build_intelligence_gap_report

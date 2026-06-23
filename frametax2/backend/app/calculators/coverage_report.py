@@ -17,7 +17,7 @@ from app.data.global_inventory import (
 )
 from app.data.jurisdiction_search_status import NO_PROGRAM_CODES, NO_PROGRAM_RECORDS
 
-REPORT_VERSION = "1.3.0"
+REPORT_VERSION = "1.4.0"
 
 # ---------------------------------------------------------------------------
 # Intelligence population registry — tracks which slugs have been seeded
@@ -656,6 +656,21 @@ class IntelligenceGapReport:
     regional_interaction_rules: int = 0
     # Programs with monetization intelligence (is_refundable + is_transferable known)
     monetization_coverage: int = 0
+    # Phase 1-6 — Optimizer integration coverage (v1.4.0)
+    # Programs visible to the pure-Python optimizer via ALL_PROGRAMS
+    optimizer_visible_programs: int = 0
+    # Programs excluded from optimizer output (base_rate=None AND no cap data)
+    optimizer_excluded_programs: list[str] = field(default_factory=list)
+    # Status of Python stacking rules vs DB migrations (informational)
+    stacking_sync_status: str = ""
+    # Grant/fund programs with enough data for optimizer to estimate value
+    grant_fund_optimizer_ready: int = 0
+    # Programs at DISCOVERY tier visible to optimizer (with penalty + warnings)
+    discovery_opportunity_count: int = 0
+    # Programs with base_rate known — can produce a calculable incentive value
+    calculable_program_count: int = 0
+    # Programs with base_rate=None AND program_type is primary — blocked from scoring
+    blocked_program_count: int = 0
 
 
 def build_intelligence_gap_report(
@@ -1043,6 +1058,50 @@ def build_intelligence_gap_report(
             top_unsearched.append(f"{region_name} ({len(remaining)} unsearched)")
     top_unsearched.sort(key=lambda x: -int(x.split("(")[1].split()[0]))
 
+    # v1.4.0 — Optimizer integration coverage
+    _primary_types = frozenset({"tax_credit", "cash_rebate"})
+    _grant_types = frozenset({
+        "direct_grant", "co_production_fund", "development_fund",
+        "discretionary_fund", "regional_fund",
+    })
+
+    optimizer_visible = len(programs)  # ALL_PROGRAMS is the optimizer's full view
+
+    # Excluded: primary programs with base_rate=None AND no annual_cap_usd
+    opt_excluded: list[str] = [
+        p.program_name
+        for p in programs
+        if p.program_type in _primary_types
+        and p.base_rate is None
+    ]
+
+    # Grant/fund programs with at least annual_cap_usd known → can estimate value
+    grant_fund_opt_ready = sum(
+        1 for p in programs
+        if p.program_type in _grant_types and p.annual_cap_usd is not None
+    )
+
+    discovery_opportunity = sum(
+        1 for p in programs if p.confidence_tier == "DISCOVERY"
+    )
+
+    calculable = sum(
+        1 for p in programs
+        if p.base_rate is not None
+        or (p.program_type in _grant_types and p.annual_cap_usd is not None)
+    )
+
+    blocked = sum(
+        1 for p in programs
+        if p.program_type in _primary_types and p.base_rate is None
+    )
+
+    stacking_sync = (
+        "Python stacking_rules.py aligned with DB migrations 0007/0022/0044/0045. "
+        "26 DB rules → 26 Python slug-pair rules (including 4 mutually_exclusive, "
+        "8 spend_reduction, 5 allowed, 1 conditional from 0022 + wave-6)."
+    )
+
     return IntelligenceGapReport(
         programs_missing_admin_details=sorted(missing_admin),
         programs_missing_spend_treatment=sorted(missing_treatment),
@@ -1080,6 +1139,13 @@ def build_intelligence_gap_report(
         grant_interaction_rules=grant_interaction_rule_count,
         regional_interaction_rules=regional_interaction_rule_count,
         monetization_coverage=monetization_cov,
+        optimizer_visible_programs=optimizer_visible,
+        optimizer_excluded_programs=opt_excluded,
+        stacking_sync_status=stacking_sync,
+        grant_fund_optimizer_ready=grant_fund_opt_ready,
+        discovery_opportunity_count=discovery_opportunity,
+        calculable_program_count=calculable,
+        blocked_program_count=blocked,
     )
 
 

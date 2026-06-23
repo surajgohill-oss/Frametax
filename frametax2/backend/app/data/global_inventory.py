@@ -992,3 +992,12 @@ from app.data.global_inventory_wave6 import WAVE6_PROGRAMS  # noqa: E402
 from app.data.global_inventory_grants3 import GRANTS3_PROGRAMS  # noqa: E402
 
 ALL_PROGRAMS = ALL_PROGRAMS + WAVE6_PROGRAMS + GRANTS3_PROGRAMS
+
+# ---------------------------------------------------------------------------
+# DB-sync inventory — programs seeded to DB (migrations 0002/0007) but absent
+# from the pure-Python path. Syncing them ensures the optimizer can evaluate all
+# existing programs without DB access.
+# ---------------------------------------------------------------------------
+from app.data.global_inventory_db_sync import DB_SYNC_PROGRAMS  # noqa: E402
+
+ALL_PROGRAMS = ALL_PROGRAMS + DB_SYNC_PROGRAMS

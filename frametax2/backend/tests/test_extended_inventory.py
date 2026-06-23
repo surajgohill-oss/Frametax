@@ -32,7 +32,7 @@ class TestExtendedInventoryStructure:
         assert len(EXTENDED_BENCHMARKS) == 43
 
     def test_all_programs_total(self):
-        assert len(ALL_PROGRAMS) == 229
+        assert len(ALL_PROGRAMS) == 232
 
     def test_all_benchmarks_total(self):
         assert len(ALL_BENCHMARKS) == 60
@@ -539,7 +539,7 @@ class TestCoverageReportExpanded:
 
     def test_total_programs_60(self):
         report = build_coverage_report()
-        assert report.total_programs == 229
+        assert report.total_programs == 232
 
     def test_verified_programs_phase_c(self):
         report = build_coverage_report()
@@ -564,4 +564,4 @@ class TestCoverageReportExpanded:
 
     def test_report_version_updated(self):
         report = build_coverage_report()
-        assert report.report_version == "1.3.0"
+        assert report.report_version == "1.4.0"

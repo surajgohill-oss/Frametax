@@ -85,6 +85,11 @@ _NAME_SLUG_RULES: list[tuple[str, str, str]] = [
     ("FI",     "finnish film foundation",        "fi_ses_grants"),
     ("GB",     "creative england",               "gb_creative_england"),
     ("ZA",     "industrial development corporation", "za_idc_film"),
+    # DB-sync programs (from migrations 0002/0007 synced to Python path)
+    ("CA-ON",  "film and television tax credit", "on_ofttc"),
+    ("CA-ON",  "ofttc",                          "on_ofttc"),
+    ("CA-QC",  "film and television production", "qc_film_production"),
+    ("CA-QC",  "sodec",                          "qc_film_production"),
 ]
 
 
@@ -176,26 +181,69 @@ _SLUG_PAIR_RULES: dict[frozenset, dict] = {
             "reduces CPTC qualified labour expenditure (T4283)."
         ),
     },
-    # Wave-6 — Canadian provincial credits stack additively with CPTC
+    # Migration 0022 — Ontario/BC/QC domestic-vs-foreign-service track rules
+    # CPTC (domestic content ITA §125.4) and PSTC (foreign service ITA §125.5) are
+    # mutually exclusive production tracks — a production cannot be both.
     frozenset({"ca_bc_pstc", "ca_federal_cptc"}): {
-        "rule_type": "allowed",
+        "rule_type": "mutually_exclusive",
         "condition_text": (
-            "BC PSTC and CPTC are both tax credits applied independently to qualifying labour. "
-            "They are additive; PSTC does not reduce CPTC qualified labour (ITA §125.4 applies only to grants/assistance)."
+            "CPTC applies only to Canadian domestic content productions (ITA §125.4). "
+            "BC PSTC applies only to accredited foreign service productions (ITA §125.5). "
+            "A production cannot simultaneously qualify for both — production type is mutually exclusive."
         ),
     },
-    frozenset({"ca_on_opstc", "ca_federal_cptc"}): {
-        "rule_type": "allowed",
+    frozenset({"on_opstc", "ca_federal_cptc"}): {
+        "rule_type": "mutually_exclusive",
         "condition_text": (
-            "Ontario OPSTC and CPTC are additive tax credits on qualifying labour. "
-            "No spend-reduction interaction; OPSTC is a tax credit, not government assistance under ITA §125.4."
+            "CPTC applies only to Canadian domestic content productions (ITA §125.4). "
+            "Ontario OPSTC applies only to accredited foreign service productions (ITA §125.5). "
+            "A production cannot simultaneously qualify for both — production type is mutually exclusive."
         ),
     },
+    frozenset({"on_ofttc", "on_opstc"}): {
+        "rule_type": "mutually_exclusive",
+        "condition_text": (
+            "OFTTC applies to Ontario domestic Canadian content productions. "
+            "OPSTC applies to foreign service productions using Ontario. "
+            "A production cannot be both a domestic content production (OFTTC) and a foreign "
+            "service production (OPSTC) simultaneously."
+        ),
+    },
+    # OFTTC is government assistance reducing CPTC qualified labour (ITA §125.4)
+    frozenset({"on_ofttc", "ca_federal_cptc"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "OFTTC tax credit is government assistance under ITA §125.4(1)(b) and must be "
+            "deducted from Qualified Canadian Labour Expenditure (QCLE) before computing CPTC. "
+            "Net QCLE = gross QCLE minus OFTTC amount received or receivable."
+        ),
+    },
+    # QC SODEC domestic credit reduces CPTC basis
+    frozenset({"qc_film_production", "ca_federal_cptc"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "Quebec SODEC film production credit is government assistance under ITA §125.4(1)(b). "
+            "QC credit amount must be deducted from QCLE before computing CPTC."
+        ),
+    },
+    # UK AVEC + IE Section 481 — allowed for multi-territory co-productions
+    frozenset({"uk_avec", "ie_section_481"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "UK AVEC and IE Section 481 can both be claimed for the same production when "
+            "qualifying expenditure is incurred in both the UK and Ireland. "
+            "Each credit applies only to its own territory's qualifying spend — no double-counting."
+        ),
+    },
+    # QPRDP (foreign service track) can stack with CPTC — but production type means
+    # they're typically different tracks. Conditionally allowed for co-productions.
     frozenset({"ca_qc_qprdp", "ca_federal_cptc"}): {
-        "rule_type": "allowed",
+        "rule_type": "conditional",
         "condition_text": (
-            "Quebec QPRDP and federal CPTC are additive. "
-            "QPRDP is a provincial tax credit, not a grant; does not reduce CPTC qualified labour basis."
+            "Quebec QPRDP (foreign service) and CPTC (domestic content) are typically "
+            "different production tracks. Stacking may be possible for official treaty "
+            "co-productions where both domestic and foreign elements qualify. "
+            "Legal review required before claiming both."
         ),
     },
     # Government assistance (CMF) reduces provincial tax credit qualifying basis too
@@ -206,14 +254,14 @@ _SLUG_PAIR_RULES: dict[frozenset, dict] = {
             "reduce qualifying BC labour expenditure for PSTC computation."
         ),
     },
-    frozenset({"ca_cmf", "ca_on_opstc"}): {
+    frozenset({"ca_cmf", "on_opstc"}): {
         "rule_type": "spend_reduction",
         "condition_text": (
             "CMF contributions are government assistance under Ontario CTA; "
             "reduce qualifying Ontario labour expenditure for OPSTC computation."
         ),
     },
-    frozenset({"nohfc_production_fund", "ca_on_opstc"}): {
+    frozenset({"nohfc_production_fund", "on_opstc"}): {
         "rule_type": "spend_reduction",
         "condition_text": (
             "NOHFC is government assistance under Ontario CTA; "
