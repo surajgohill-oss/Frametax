@@ -984,3 +984,11 @@ ALL_PROGRAMS = ALL_PROGRAMS + WAVE5_PROGRAMS
 from app.data.global_inventory_regional import REGIONAL_PROGRAMS  # noqa: E402
 
 ALL_PROGRAMS = ALL_PROGRAMS + REGIONAL_PROGRAMS
+
+# ---------------------------------------------------------------------------
+# Wave-6 inventory — sub-national completion + major gap fills (~19 programs)
+# ---------------------------------------------------------------------------
+from app.data.global_inventory_wave6 import WAVE6_PROGRAMS  # noqa: E402
+from app.data.global_inventory_grants3 import GRANTS3_PROGRAMS  # noqa: E402
+
+ALL_PROGRAMS = ALL_PROGRAMS + WAVE6_PROGRAMS + GRANTS3_PROGRAMS

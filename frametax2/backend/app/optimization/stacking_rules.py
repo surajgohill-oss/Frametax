@@ -58,6 +58,33 @@ _NAME_SLUG_RULES: list[tuple[str, str, str]] = [
     ("SE-VG",  "film i väst",                 "film_i_vast"),
     ("SE-VG",  "film i vast",                 "film_i_vast"),
     ("IBERO",  "ibermedia",                   "ibermedia_programme"),
+    # Wave-6 — Canadian provinces
+    ("CA-BC",  "production services tax credit", "ca_bc_pstc"),
+    ("CA-BC",  "bc production services",         "ca_bc_pstc"),
+    ("CA-ON",  "opstc",                          "ca_on_opstc"),
+    ("CA-QC",  "québec production tax",          "ca_qc_qprdp"),
+    ("CA-QC",  "quebec production tax",          "ca_qc_qprdp"),
+    ("CA-QC",  "qprdp",                          "ca_qc_qprdp"),
+    # Wave-6 — Australian states
+    ("AU-WA",  "screenwest",                     "au_screenwest"),
+    # Wave-6 — US California
+    ("US-CA",  "california film",                "us_ca_ftc"),
+    # Existing programs: add slug rules for cleaner pair matching
+    ("IT",     "italian tax credit for foreign", "it_tax_credit_foreign"),
+    ("HR",     "croatia film cash rebate",       "hr_cash_rebate"),
+    ("BG",     "bulgarian film industry",        "bg_cash_rebate"),
+    ("MT",     "malta film commission",          "mt_mfc_rebate"),  # already in list; harmless duplicate
+    # Grants Wave-3 — new grant programs
+    ("CA",     "bell fund",                      "ca_bell_fund"),
+    ("CA",     "national screen institute",      "ca_nsi_fund"),
+    ("CA",     "nsi",                            "ca_nsi_fund"),
+    ("DE",     "berlinale world cinema fund",    "de_berlinale_wcf"),
+    ("AU",     "miff premiere fund",             "au_miff_premiere"),
+    ("SE",     "göteborg film festival",         "se_goteborg_fund"),
+    ("NO",     "norwegian film institute",       "no_nfi_grants"),
+    ("FI",     "finnish film foundation",        "fi_ses_grants"),
+    ("GB",     "creative england",               "gb_creative_england"),
+    ("ZA",     "industrial development corporation", "za_idc_film"),
 ]
 
 
@@ -147,6 +174,87 @@ _SLUG_PAIR_RULES: dict[frozenset, dict] = {
         "condition_text": (
             "Telefilm equity constitutes government assistance under ITA §125.4; "
             "reduces CPTC qualified labour expenditure (T4283)."
+        ),
+    },
+    # Wave-6 — Canadian provincial credits stack additively with CPTC
+    frozenset({"ca_bc_pstc", "ca_federal_cptc"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "BC PSTC and CPTC are both tax credits applied independently to qualifying labour. "
+            "They are additive; PSTC does not reduce CPTC qualified labour (ITA §125.4 applies only to grants/assistance)."
+        ),
+    },
+    frozenset({"ca_on_opstc", "ca_federal_cptc"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Ontario OPSTC and CPTC are additive tax credits on qualifying labour. "
+            "No spend-reduction interaction; OPSTC is a tax credit, not government assistance under ITA §125.4."
+        ),
+    },
+    frozenset({"ca_qc_qprdp", "ca_federal_cptc"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Quebec QPRDP and federal CPTC are additive. "
+            "QPRDP is a provincial tax credit, not a grant; does not reduce CPTC qualified labour basis."
+        ),
+    },
+    # Government assistance (CMF) reduces provincial tax credit qualifying basis too
+    frozenset({"ca_cmf", "ca_bc_pstc"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "CMF contributions are government assistance under provincial income tax acts; "
+            "reduce qualifying BC labour expenditure for PSTC computation."
+        ),
+    },
+    frozenset({"ca_cmf", "ca_on_opstc"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "CMF contributions are government assistance under Ontario CTA; "
+            "reduce qualifying Ontario labour expenditure for OPSTC computation."
+        ),
+    },
+    frozenset({"nohfc_production_fund", "ca_on_opstc"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "NOHFC is government assistance under Ontario CTA; "
+            "reduces qualifying Ontario labour expenditure for OPSTC (OMDC guidelines)."
+        ),
+    },
+    # Eurimages stacks with additional national incentives
+    frozenset({"eu_eurimages", "it_tax_credit_foreign"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Eurimages support allocated to Italian co-producers does not reduce "
+            "Italian qualifying expenditure for the MiC tax credit for foreign productions."
+        ),
+    },
+    frozenset({"eu_eurimages", "mt_mfc_rebate"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Eurimages support allocated to Maltese co-producers does not reduce "
+            "qualifying expenditure for Malta Film Commission rebate."
+        ),
+    },
+    frozenset({"eu_eurimages", "hr_cash_rebate"}): {
+        "rule_type": "allowed",
+        "condition_text": (
+            "Eurimages support allocated to Croatian co-producers does not reduce "
+            "qualifying expenditure for HAVC Croatia cash rebate."
+        ),
+    },
+    # Screenwest (WA) is government assistance → reduces Australian offset QAPE
+    frozenset({"au_screenwest", "au_location_offset"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "Screenwest WA financial assistance is government financial assistance; "
+            "reduces qualifying Australian production expenditure (QAPE) for the Location Offset."
+        ),
+    },
+    frozenset({"au_screenwest", "au_screen_production"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": (
+            "Screenwest WA financial assistance reduces qualifying Australian production expenditure "
+            "for Screen Australia grant eligibility and matching calculations."
         ),
     },
 }

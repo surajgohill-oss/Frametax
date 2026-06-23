@@ -1182,7 +1182,7 @@ class TestIntelligenceGapReport:
     def test_gap_report_total_programs(self):
         from app.calculators.coverage_report import build_intelligence_gap_report
         report = build_intelligence_gap_report()
-        assert report.total_programs == 189
+        assert report.total_programs == 229
 
     def test_gap_report_fully_seeded_non_empty(self):
         from app.calculators.coverage_report import build_intelligence_gap_report
@@ -1820,7 +1820,7 @@ class TestWave2GlobalInventory:
 
     def test_total_programs_expanded(self):
         from app.data.global_inventory import ALL_PROGRAMS
-        assert len(ALL_PROGRAMS) == 189, (
+        assert len(ALL_PROGRAMS) == 229, (
             f"Expected 189 programs (60 original + 47 wave-2 + 43 wave-3 + 21 wave-4 + 13 wave-5 + 5 regional), got {len(ALL_PROGRAMS)}"
         )
 
@@ -1911,7 +1911,7 @@ class TestWave2GlobalInventory:
     def test_new_program_count_in_gap_report(self):
         from app.calculators.coverage_report import build_intelligence_gap_report
         report = build_intelligence_gap_report()
-        assert report.total_programs == 189
+        assert report.total_programs == 229
 
     def test_grant_fund_count_in_gap_report(self):
         from app.calculators.coverage_report import build_intelligence_gap_report
@@ -2232,7 +2232,7 @@ class TestWave3GlobalInventory:
 
     def test_total_programs_150(self):
         from app.data.global_inventory import ALL_PROGRAMS
-        assert len(ALL_PROGRAMS) == 189
+        assert len(ALL_PROGRAMS) == 229
 
     def test_wave3_grants_are_discovery_tier(self):
         # Wave-3 incentive programs (US-GA, US-LA, US-NM, US-NY) promoted to PARSED in Phase C
@@ -2566,7 +2566,7 @@ class TestWave4GlobalInventory:
 
     def test_total_programs_171(self):
         from app.data.global_inventory import ALL_PROGRAMS
-        assert len(ALL_PROGRAMS) == 189
+        assert len(ALL_PROGRAMS) == 229
 
     def test_all_wave4_discovery_tier(self):
         from app.data.global_inventory_wave4 import WAVE4_PROGRAMS
@@ -2653,7 +2653,7 @@ class TestWave4GlobalInventory:
 
     def test_no_program_code_count(self):
         from app.data.jurisdiction_search_status import NO_PROGRAM_CODES
-        assert len(NO_PROGRAM_CODES) == 76
+        assert len(NO_PROGRAM_CODES) == 75
 
     def test_expected_no_program_codes_present(self):
         from app.data.jurisdiction_search_status import NO_PROGRAM_CODES
@@ -2824,7 +2824,7 @@ class TestWave5GlobalInventory:
 
     def test_total_programs_184(self):
         from app.data.global_inventory import ALL_PROGRAMS
-        assert len(ALL_PROGRAMS) == 189
+        assert len(ALL_PROGRAMS) == 229
 
     def test_all_wave5_discovery_tier(self):
         from app.data.global_inventory_wave5 import WAVE5_PROGRAMS
@@ -2879,7 +2879,7 @@ class TestWave5GlobalInventory:
         assert report.global_search_coverage_pct >= 99.0, (
             f"Expected ≥99% search coverage, got {report.global_search_coverage_pct}"
         )
-        assert report.countries_searched_no_program == 76, (
+        assert report.countries_searched_no_program == 75, (
             f"Expected 76 no-program records, got {report.countries_searched_no_program}"
         )
         assert report.discovery_completion_pct >= 60.0, (
@@ -2897,7 +2897,7 @@ class TestWave5GlobalInventory:
 
     def test_no_program_codes_total_76(self):
         from app.data.jurisdiction_search_status import NO_PROGRAM_CODES
-        assert len(NO_PROGRAM_CODES) == 76
+        assert len(NO_PROGRAM_CODES) == 75
 
 
 class TestMigration0035Wave5Inventory:
@@ -3154,7 +3154,7 @@ class TestPhaseDFundEconomics:
 
     def test_slugs_with_fund_economics_registry(self):
         from app.calculators.coverage_report import SLUGS_WITH_FUND_ECONOMICS
-        assert len(SLUGS_WITH_FUND_ECONOMICS) == 23
+        assert len(SLUGS_WITH_FUND_ECONOMICS) == 41
         for slug in (
             "eu_eurimages", "eu_media_fund", "nordic_ftvf",
             "ca_cmf", "ca_telefilm_dev", "gb_bfi_production",
@@ -3179,7 +3179,7 @@ class TestPhaseDFundEconomics:
 
     def test_all_programs_count_189(self):
         from app.data.global_inventory import ALL_PROGRAMS
-        assert len(ALL_PROGRAMS) == 189, f"Expected 189 programs, got {len(ALL_PROGRAMS)}"
+        assert len(ALL_PROGRAMS) == 229, f"Expected 189 programs, got {len(ALL_PROGRAMS)}"
 
     def test_migration_0042_chain(self):
         mod = _load_migration("0042_phase_d_schema.py")
@@ -3252,7 +3252,7 @@ class TestPhaseDFundEconomics:
     def test_gap_report_fund_economics_pct(self):
         from app.calculators.coverage_report import build_intelligence_gap_report
         report = build_intelligence_gap_report()
-        assert report.fund_economics_programs == 23
+        assert report.fund_economics_programs == 41  # 23 (Phase D) + 18 (Wave-6 grants3)
         assert report.fund_economics_pct > 0
 
     def test_gap_report_regional_programs(self):

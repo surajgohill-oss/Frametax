@@ -403,9 +403,9 @@ NO_PROGRAM_RECORDS: list[JurisdictionSearchStatus] = [
     JurisdictionSearchStatus(
         jurisdiction_code="BF",
         country_name="Burkina Faso",
-        search_status="NO_KNOWN_PROGRAM_FOUND",
-        source_url="https://www.culture.gov.bf",
-        search_notes="Hosts FESPACO (Pan-African Film Festival) in Ouagadougou. CNC Burkina Faso exists but military rule since 2022 has suspended international cultural programmes. No formal foreign production incentive confirmed.",
+        search_status="PROGRAMME_FOUND",
+        source_url="https://www.fespaco.bf",
+        search_notes="Hosts FESPACO (Pan-African Film Festival) in Ouagadougou — Africa's largest film festival, biennial. FESPACO administers development grants and co-production awards for African filmmakers (ACP programme). Not a production incentive/rebate for foreign productions; development fund only. CNC Burkina Faso exists but military rule since 2022 has impacted cultural programmes.",
         searched_at="2026-06-22",
     ),
     JurisdictionSearchStatus(

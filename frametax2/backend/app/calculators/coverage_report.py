@@ -234,6 +234,25 @@ SLUGS_WITH_FUND_ECONOMICS: frozenset[str] = frozenset([
     "film_i_vast",
     "acpfilms_fund",
     "us_itvs_fund",
+    # Wave-6 grants (migration 0046)
+    "ca_bell_fund",
+    "ca_nsi_fund",
+    "de_berlinale_wcf",
+    "eu_torino_lab",
+    "nl_idfa_fund",
+    "us_tribeca_fund",
+    "il_jerusalem_fund",
+    "au_miff_premiere",
+    "se_goteborg_fund",
+    "bf_fespaco",
+    "pt_ica_coproduction",
+    "ch_foc_fund",
+    "mx_imcine_grants",
+    "no_nfi_grants",
+    "fi_ses_grants",
+    "gb_creative_england",
+    "za_idc_film",
+    "ma_ccm_avance",
 ])
 
 # Fields required for a program to be promotable from DISCOVERY to PARSED

@@ -32,7 +32,7 @@ class TestExtendedInventoryStructure:
         assert len(EXTENDED_BENCHMARKS) == 43
 
     def test_all_programs_total(self):
-        assert len(ALL_PROGRAMS) == 189
+        assert len(ALL_PROGRAMS) == 229
 
     def test_all_benchmarks_total(self):
         assert len(ALL_BENCHMARKS) == 60
@@ -226,9 +226,9 @@ class TestExtendedMiddleEastAfrica:
         assert p.base_rate == 0.30
         assert p.is_refundable is True
 
-    def test_saudi_unknown_base_rate(self):
+    def test_saudi_base_rate_updated(self):
         p = self._get("SA")
-        assert p.base_rate is None, "Saudi rate is still evolving — must be None"
+        assert p.base_rate == 0.40, "Saudi Vision 2030 rebate confirmed at 40% — base_rate updated"
 
     def test_jordan_rate_range(self):
         p = self._get("JO")
@@ -535,11 +535,11 @@ class TestBuildGapAnalysis:
 class TestCoverageReportExpanded:
     def test_total_jurisdictions_60(self):
         report = build_coverage_report()
-        assert report.total_jurisdictions == 174
+        assert report.total_jurisdictions == 193
 
     def test_total_programs_60(self):
         report = build_coverage_report()
-        assert report.total_programs == 189
+        assert report.total_programs == 229
 
     def test_verified_programs_phase_c(self):
         report = build_coverage_report()

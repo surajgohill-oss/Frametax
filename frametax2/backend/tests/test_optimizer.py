@@ -635,4 +635,4 @@ class TestStackingRulesRegistry:
 
     def test_fund_economics_registry_has_23(self):
         from app.calculators.coverage_report import SLUGS_WITH_FUND_ECONOMICS
-        assert len(SLUGS_WITH_FUND_ECONOMICS) == 23
+        assert len(SLUGS_WITH_FUND_ECONOMICS) == 41
