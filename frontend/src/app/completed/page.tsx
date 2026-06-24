@@ -6,12 +6,13 @@ import { api } from "@/lib/api";
 import type { RawEvent } from "@/lib/types";
 import { CheckCircle2, Calendar, ChevronRight, BarChart3 } from "lucide-react";
 import { getEventGradient, gradientBg } from "@/lib/entityimages";
+import { parseEventDate } from "@/lib/utils";
 
 const fmt$ = (v: number | null | undefined) =>
   v == null ? "—" : `$${v.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 
 const fmtDate = (iso: string) => {
-  const d = new Date(iso);
+  const d = parseEventDate(iso);
   return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
 };
 

@@ -1,6 +1,34 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { parseISO } from "date-fns";
 import type { Signal } from "./types";
+
+/**
+ * Parse an event_date string for DISPLAY purposes only.
+ *
+ * Events without a known show time are stored as midnight UTC (T00:00:00+00:00).
+ * parseISO() converts those to local time, shifting the calendar date back by 5-8h
+ * for US Pacific/Mountain/Central/Eastern browsers — showing June 22 instead of June 23.
+ *
+ * Fix: when the timestamp is midnight UTC, treat it as a date-only value using local
+ * midnight so no timezone shift occurs. Only events with a real known time (e.g. 03:00 UTC
+ * for an 8pm PDT show) use full parseISO conversion.
+ *
+ * DO NOT use this for isCompleted / grace-period calculations — those use the raw
+ * UTC timestamp correctly via new Date(dateStr).getTime().
+ */
+export function parseEventDate(dateStr: string): Date {
+  if (
+    dateStr.endsWith("T00:00:00+00:00") ||
+    dateStr.endsWith("T00:00:00Z") ||
+    dateStr.endsWith("T00:00:00.000Z")
+  ) {
+    // Date-only: parse just the YYYY-MM-DD part as local midnight
+    const datePart = dateStr.slice(0, 10);
+    return new Date(datePart + "T00:00:00");
+  }
+  return parseISO(dateStr);
+}
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

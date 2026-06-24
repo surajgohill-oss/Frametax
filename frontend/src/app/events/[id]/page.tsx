@@ -16,9 +16,12 @@ import type {
   SectionsResponse, SectionRow, SellerResponse, EventMeta, Listing,
   BaselineResponse, EventSnapshotResponse,
 } from "@/lib/types";
+import { useNflAudio } from "@/hooks/useNflAudio";
+import { isNflEvent } from "@/lib/audioConfig";
+import NflAudioControl from "@/components/NflAudioControl";
 import {
   fmt$$, fmtNum, fmtPct, fmtDelta, cn,
-  signalToAction, actionColors, signalDescription,
+  signalToAction, actionColors, signalDescription, parseEventDate,
 } from "@/lib/utils";
 import { getEventGradient, getSpotifyData } from "@/lib/entityimages";
 import { useArtistImage } from "@/hooks/useArtistImage";
@@ -206,7 +209,7 @@ function SectionBreakdown({ sections }: { sections: SectionRow[] }) {
           <table className="w-full text-xs min-w-[400px]">
             <thead>
               <tr className="border-b border-white/5">
-                {["Section", "Listings", "Floor", "Median"].map((h) => (
+                {["Section", "Listings", "Low", "Median"].map((h) => (
                   <th key={h} className="text-left px-4 py-2 text-[9px] text-slate-500 uppercase tracking-wider font-medium">{h}</th>
                 ))}
               </tr>
@@ -594,9 +597,10 @@ export default function EventDetailPage() {
   const id       = Number(params.id);
   const [histWindow, setHistWindow] = useState<HistoryWindow>("7d");
   const [showFollowPanel, setShowFollowPanel] = useState(false);
-  const [activeTab, setActiveTab] = useState<"Overview" | "Sections" | "Venue Intel">("Overview");
+  const [activeHistTab, setActiveHistTab] = useState<"Price" | "Inventory" | "Sections" | "Marketplaces">("Price");
   const [diagOpen, setDiagOpen] = useState(false);
   const followRef = useRef<HTMLDivElement>(null);
+  const nflAudio = useNflAudio();
 
   const [eventMeta, setEventMeta] = useState<EventMeta | null>(null);
   const [hero, setHero]           = useState<HeroResponse | null>(null);
@@ -672,7 +676,7 @@ export default function EventDetailPage() {
 
   let dateLabel = "";
   if (dateStr) {
-    try { dateLabel = format(parseISO(dateStr), "EEEE, MMMM d, yyyy"); } catch {}
+    try { dateLabel = format(parseEventDate(dateStr), "EEEE, MMMM d, yyyy"); } catch {}
   }
 
   const { headline, bullets } = buildSignalReason(action, hero);
@@ -680,6 +684,28 @@ export default function EventDetailPage() {
   // Use canonical baseline for inventory delta (accurate) instead of hero listing_snapshots (fallback bug)
   const invDelta24  = baseline?.deltas_24h?.raw_listings?.absolute ?? hero?.changes?.h24?.inventory_delta ?? null;
   const marketplaces = (market?.marketplaces ?? []).sort((a, b) => (a.low_ask ?? 9999) - (b.low_ask ?? 9999));
+
+  // Tracking since — from event created_at
+  const trackingSince = (() => {
+    const ca = eventMeta?.created_at;
+    if (!ca) return null;
+    try {
+      const d = parseISO(ca);
+      const days = Math.round((Date.now() - d.getTime()) / 86400000);
+      return { formatted: format(d, "MMM d, yyyy"), days };
+    } catch { return null; }
+  })();
+  const marketsCount = Object.keys(eventMeta?.marketplace_freshness ?? {}).filter(
+    k => (eventMeta?.marketplace_freshness?.[k] as { freshness_status?: string } | undefined)?.freshness_status !== "dead"
+  ).length;
+  const feedsCount = eventMeta?.tracked_events?.filter(t => t.is_active).length ?? 0;
+
+  // True if this event has no marketplace data at all (no prices, no freshness entries, no listings)
+  // Indicates the event was never tracked — e.g. completed before URLs were configured.
+  const hasNoMarketplaceData = eventMeta != null
+    && Object.keys(eventMeta.all_marketplace_prices ?? {}).length === 0
+    && Object.keys(eventMeta.marketplace_freshness ?? {}).length === 0
+    && (market?.marketplaces?.length ?? 0) === 0;
 
   const sincePct = (() => {
     if (!history?.series?.length || history.series.length < 2) return null;
@@ -701,30 +727,51 @@ export default function EventDetailPage() {
 
   const MP_SLUGS: Array<keyof typeof MP_META> = ["stubhub", "tickpick", "gametime", "vividseats"];
 
+  // ── NFL audio: auto-trigger on NFL event page load ──────────────────────────
+  // (effect runs after eventMeta loads; requires user-gesture priming from homepage)
+  const nflAudioTriggered = useRef(false);
+  useEffect(() => {
+    if (!eventMeta || nflAudioTriggered.current) return;
+    if (isNflEvent(eventMeta.title ?? "", eventMeta.artist)) {
+      nflAudioTriggered.current = true;
+      nflAudio.triggerFromUserAction();
+    }
+  }, [eventMeta]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Derived: seller mood from capitulation + signal ────────────────────────
+  const sellerMood = (() => {
+    const cap = hero?.market?.capitulation_score ?? null;
+    if (cap == null) return "—";
+    if (cap > 0.65) return "Cutting prices";
+    if (cap > 0.35) return "Mixed";
+    return "Holding firm";
+  })();
+
   // ─── Skeleton ────────────────────────────────────────────────────────────────
   if (loadingAll && !hero && !eventMeta) {
     return (
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-4">
-          <Link href="/" className="inline-flex items-center gap-1.5 text-xs text-slate-500">
-            <ArrowLeft size={12} /> Active Markets
-          </Link>
-        </div>
-        <div className="h-[420px] rounded-2xl bg-[#161b27] border border-white/5 animate-pulse mb-4" />
+      <div className="max-w-7xl mx-auto space-y-4 pb-8">
+        <Link href="/" className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+          <ArrowLeft size={12} /> Active Markets
+        </Link>
+        <div className="h-36 rounded-xl bg-[#161b27] border border-white/5 animate-pulse" />
+        <div className="h-52 rounded-xl bg-[#161b27] border border-white/5 animate-pulse" />
         <div className="h-40 rounded-xl bg-[#161b27] border border-white/5 animate-pulse" />
       </div>
     );
   }
 
+  const isNfl = isNflEvent(title, artist);
+
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-4 pb-8">
 
       {/* UI BUILD MARKER */}
       <div className="fixed top-2 right-2 z-50 text-[9px] font-mono bg-amber-400 text-black px-2 py-0.5 rounded opacity-80 pointer-events-none select-none">
         UI BUILD {new Date().toISOString().slice(0,16).replace("T"," ")}
       </div>
 
-      {/* Back nav + actions */}
+      {/* Back nav + actions row */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <Link href="/" className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors">
           <ArrowLeft size={12} /> Active Markets
@@ -765,11 +812,7 @@ export default function EventDetailPage() {
               className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border border-[#1db954]/30 bg-[#1db954]/8 text-[#1db954] hover:bg-[#1db954]/15 transition-all">
               <Music size={11} /> Spotify
             </a>
-          ) : (
-            <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border border-dashed border-[#1db954]/20 text-[#1db954]/30">
-              <Music size={11} /> Spotify pending
-            </span>
-          ))}
+          ) : null)}
           <AddMarketplaceUrl />
         </div>
       </div>
@@ -787,128 +830,208 @@ export default function EventDetailPage() {
           <button onClick={() => toggleHide(id)} className="text-slate-500 hover:text-slate-300 transition-colors">Unhide</button>
         </div>
       )}
-
-      {/* ════════════════════════════════════════
-          SECTION 1 — EVENT HERO
-          ════════════════════════════════════════ */}
-      <div className="rounded-2xl overflow-hidden border border-white/10"
-        style={{ backdropFilter: "blur(12px)", background: "rgba(14,17,23,0.88)", minHeight: "460px" }}>
-        <div className="relative z-10 flex flex-col sm:flex-row" style={{ minHeight: "460px" }}>
-
-          {/* LEFT — Artwork (40%) */}
-          <div className="relative w-full sm:w-[40%] flex-shrink-0 min-h-[220px] sm:min-h-[460px] overflow-hidden"
-            style={{ background: `linear-gradient(145deg, ${gradient[0]} 0%, ${gradient[1]} 60%, ${gradient[0]}88 100%)` }}>
-            {artworkUrl ? (
-              <>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={artworkUrl} alt={artist ?? title}
-                  className="absolute inset-0 w-full h-full object-cover object-top"
-                  onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                <div className="absolute inset-0"
-                  style={{ background: `linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, transparent 40%, rgba(14,17,23,0.6) 100%), linear-gradient(to right, transparent 70%, rgba(14,17,23,0.7) 100%)` }} />
-              </>
-            ) : (
-              <>
-                <div className="absolute inset-0 opacity-40"
-                  style={{ background: `radial-gradient(ellipse at 40% 35%, rgba(255,255,255,0.25) 0%, transparent 65%)` }} />
-                <div className="absolute inset-0 flex flex-col items-center justify-center select-none">
-                  <div className="text-8xl font-black leading-none mb-2 opacity-90"
-                    style={{ color: "rgba(255,255,255,0.9)", textShadow: "0 2px 20px rgba(0,0,0,0.4)" }}>
-                    {(artist ?? title).slice(0, 1).toUpperCase()}
-                  </div>
-                  <div className="text-[10px] font-bold uppercase tracking-[0.25em] opacity-60"
-                    style={{ color: "rgba(255,255,255,0.9)" }}>
-                    {artist ?? "Event"}
-                  </div>
-                </div>
-              </>
-            )}
-            {isCompleted && (
-              <div className="absolute top-3 left-3">
-                <span className="text-[9px] font-bold uppercase tracking-widest bg-white/15 border border-white/20 text-white/70 rounded-full px-2 py-0.5">Completed</span>
-              </div>
-            )}
-            {!isSports && spotify.spotifyArtistUrl && (
-              <div className="absolute bottom-3 left-3">
-                <a href={spotify.spotifyArtistUrl} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-1 rounded-full bg-[#1db954]/90 text-black hover:bg-[#1db954] transition-colors">
-                  <Music size={8} /> Open in Spotify
-                </a>
-              </div>
-            )}
-          </div>
-
-          {/* RIGHT — Identity only (60%) */}
-          <div className="flex-1 flex flex-col justify-center p-8 sm:p-10 lg:p-14"
-            style={{ background: `linear-gradient(to right, ${gradient[0]}14 0%, transparent 70%)` }}>
-            {artist && (
-              <p className="text-[12px] text-white/45 uppercase tracking-[0.22em] font-bold mb-4">{artist}</p>
-            )}
-            <h1 className="text-[52px] sm:text-[62px] lg:text-[68px] font-black text-white leading-[1.02] mb-5">{title}</h1>
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[16px] text-white/50 mb-5">
-              {venue    && <span className="flex items-center gap-1.5"><MapPin size={13} className="opacity-60" />{venue}</span>}
-              {dateLabel && <span className="flex items-center gap-1.5"><Calendar size={13} className="opacity-60" />{dateLabel}</span>}
-            </div>
-            {daysOut != null && (
-              <span className="inline-block text-[16px] font-bold px-4 py-2 rounded-full"
-                style={{ color: aColors.text, background: aColors.bg + "60", border: `1px solid ${aColors.border}` }}>
-                {isCompleted ? "Event passed" : daysOut < 1 ? "Happening today" : daysOut < 2 ? "Tomorrow" : `${Math.round(daysOut)} days away`}
-              </span>
-            )}
-          </div>
+      {hasNoMarketplaceData && (
+        <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-slate-500/20 bg-white/[0.02] text-xs text-slate-500">
+          <span className="flex-shrink-0 text-slate-600">◎</span>
+          {isCompleted
+            ? "No market data was collected for this event — it completed before marketplace tracking was configured."
+            : "No marketplace URLs configured. Add a StubHub, TickPick, Gametime, or Vivid Seats URL to begin tracking."}
         </div>
-      </div>
-
-      {/* ════════════════════════════════════════
-          ALERT BANNER (RED alerts only)
-          ════════════════════════════════════════ */}
+      )}
       {alerts && alerts.alerts.filter(a => a.severity === "RED").length > 0 && (
-        <div className="rounded-xl border border-red-500/40 bg-red-500/8 px-5 py-4">
-          <div className="flex items-start gap-3">
-            <span className="text-red-400 text-base font-black mt-0.5 flex-shrink-0">⚠</span>
-            <div>
-              <p className="text-red-400 text-xs font-bold uppercase tracking-widest mb-1.5">Data Alerts</p>
-              <ul className="space-y-1">
-                {alerts.alerts.filter(a => a.severity === "RED").map((a, i) => (
-                  <li key={i} className="text-red-300/80 text-xs leading-snug">
-                    {a.marketplace ? <span className="font-semibold text-red-300 capitalize">{a.marketplace}: </span> : null}
-                    {a.message.split("\n")[0].slice(0, 140)}
-                  </li>
-                ))}
-              </ul>
-            </div>
+        <div className="rounded-xl border border-red-500/40 bg-red-500/8 px-4 py-3">
+          <div className="flex items-start gap-2.5">
+            <span className="text-red-400 font-black mt-0.5 flex-shrink-0">⚠</span>
+            <ul className="space-y-0.5">
+              {alerts.alerts.filter(a => a.severity === "RED").map((a, i) => (
+                <li key={i} className="text-red-300/80 text-xs leading-snug">
+                  {a.marketplace ? <span className="font-semibold text-red-300 capitalize">{a.marketplace}: </span> : null}
+                  {a.message.split("\n")[0].slice(0, 140)}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       )}
 
       {/* ════════════════════════════════════════
-          SECTION 2 — BUY WINDOW FORECAST
+          SECTION 1 — EVENT HEADER (compact, ~130px)
+          Three columns: artwork | event info | tracking stats
           ════════════════════════════════════════ */}
-      <section className="rounded-2xl p-6 sm:p-8"
-        style={{ background: aColors.bg + "22", borderLeft: `4px solid ${aColors.text}` }}>
-        {/* Signal badge */}
-        <span className="text-[36px] sm:text-[40px] font-black tracking-[0.15em] leading-none block mb-4"
-          style={{ color: aColors.text }}>
-          {action}
-        </span>
-        {/* Headline */}
-        <p className="text-[28px] sm:text-[32px] font-bold text-white leading-[1.15] mb-5">{headline}</p>
-        {/* Bullets */}
-        {bullets.length > 0 && (
-          <ul className="space-y-2.5 mb-6">
-            {bullets.map((b, i) => (
-              <li key={i} className="flex items-start gap-2.5 text-[15px] text-slate-300 leading-relaxed">
-                <span className="mt-2.5 w-1.5 h-1.5 rounded-full bg-slate-500 flex-shrink-0" />
-                {b}
-              </li>
-            ))}
-          </ul>
-        )}
-        {/* Freshness row */}
-        <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-white/8 text-xs">
+      <section className="rounded-xl border border-white/8 bg-[#0f1420] p-4">
+        <div className="flex items-center gap-4">
+
+          {/* LEFT — Artwork 96×96 */}
+          <div className="flex-shrink-0 w-24 h-24 rounded-xl overflow-hidden"
+            style={{ background: `linear-gradient(145deg, ${gradient[0]}, ${gradient[1]})` }}>
+            {artworkUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={artworkUrl} alt={artist ?? title}
+                className="w-full h-full object-cover object-top"
+                onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-3xl font-black text-white/70 select-none">
+                {(artist ?? title).slice(0, 1).toUpperCase()}
+              </div>
+            )}
+          </div>
+
+          {/* CENTER — Event identity */}
+          <div className="flex-1 min-w-0">
+            {/* Only show artist label when it differs from the event title (prevents "Kid Cudi / Kid Cudi") */}
+            {artist && artist !== title && (
+              <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-0.5 truncate">{artist}</p>
+            )}
+            <h1 className="text-lg sm:text-xl font-bold text-white leading-tight line-clamp-1">{title}</h1>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-xs text-slate-400">
+              {venue     && <span className="flex items-center gap-1"><MapPin size={10} className="opacity-60 flex-shrink-0" /><span className="truncate">{venue}</span></span>}
+              {dateLabel && <span className="flex items-center gap-1"><Calendar size={10} className="opacity-60 flex-shrink-0" />{dateLabel}</span>}
+            </div>
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              {daysOut != null && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                  style={{ color: aColors.text, background: aColors.bg + "50", border: `1px solid ${aColors.border}` }}>
+                  {isCompleted ? "Event passed" : daysOut < 1 ? "Happening today" : daysOut < 2 ? "Tomorrow" : `${Math.round(daysOut)}d away`}
+                </span>
+              )}
+              {isCompleted && (
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 bg-white/5 border border-white/10 rounded-full px-2 py-0.5">Completed</span>
+              )}
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border"
+                style={{ color: aColors.text, borderColor: aColors.border + "80", background: aColors.bg + "30" }}>
+                {action}
+              </span>
+            </div>
+          </div>
+
+          {/* RIGHT — Tracking stats (wireframe: Tracking Since / Last Update / Markets / Feeds) */}
+          <div className="hidden sm:flex flex-col gap-2.5 text-right flex-shrink-0 min-w-[110px]">
+            {trackingSince && (
+              <div>
+                <p className="text-[9px] text-slate-600 uppercase tracking-wider">Tracking Since</p>
+                <p className="text-xs font-semibold text-slate-200">{trackingSince.formatted}</p>
+                <p className="text-[9px] text-slate-600">({trackingSince.days} days)</p>
+              </div>
+            )}
+            {freshLabel && (
+              <div>
+                <p className="text-[9px] text-slate-600 uppercase tracking-wider">Last Update</p>
+                <p className="text-xs font-semibold text-slate-200">{freshLabel}</p>
+              </div>
+            )}
+            <div className="flex items-start gap-4 justify-end">
+              <div>
+                <p className="text-[9px] text-slate-600 uppercase tracking-wider">Markets</p>
+                <p className="text-sm font-bold text-slate-200">{marketsCount || "—"}</p>
+              </div>
+              <div>
+                <p className="text-[9px] text-slate-600 uppercase tracking-wider">Feeds</p>
+                <p className="text-sm font-bold text-slate-200">{feedsCount || "—"}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════
+          SECTION 2 — MARKET INTELLIGENCE HERO (~200px)
+          Three columns: Current Market | Market Absorption | Seller Behavior
+          ════════════════════════════════════════ */}
+      <section className="rounded-xl border border-white/8 bg-[#0f1420] overflow-hidden">
+        <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-white/8"
+          style={{ gridTemplateColumns: "1fr 1.2fr 1fr" }}>
+
+          {/* Col 1: Current Market */}
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Current Market</p>
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border border-white/10 text-slate-500 bg-white/3">24H ▾</span>
+            </div>
+            <div className="space-y-0">
+              {[
+                { label: "Low",    val: fmt$$(hero?.price?.low_ask),                            cls: "text-emerald-300" },
+                { label: "Median", val: fmt$$(hero?.price?.median_ask),                          cls: "text-white" },
+                { label: "High",   val: fmt$$(hero?.price?.high_ask ?? hero?.price?.p75_ask),   cls: "text-slate-300" },
+              ].map(({ label, val, cls }) => (
+                <div key={label} className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0">
+                  <span className="text-xs text-slate-400">{label}</span>
+                  <span className={cn("text-sm font-bold tabular-nums", cls)}>{val ?? "—"}</span>
+                </div>
+              ))}
+              <div className="flex items-center justify-between py-1.5">
+                <span className="text-xs text-slate-400">Inventory</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm font-bold text-slate-200 tabular-nums">
+                    {fmtNum(baseline?.current?.raw_listings ?? hero?.inventory?.total_listings) ?? "—"}
+                  </span>
+                  {invDelta24 != null && (
+                    <span className={cn("text-[11px] font-semibold tabular-nums",
+                      invDelta24 > 0 ? "text-emerald-400" : "text-red-400")}>
+                      ({invDelta24 > 0 ? "+" : ""}{invDelta24})
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Col 2: Market Absorption — primary emphasis */}
+          <div className="p-4 bg-white/[0.02]">
+            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-3">Absorption</p>
+            {/* Est. Avg Sale Price — primary metric */}
+            <div className="mb-3 pb-3 border-b border-white/8">
+              <p className="text-[10px] text-slate-500 mb-0.5">Estimated Avg Sale Price</p>
+              <p className="text-xl font-black text-amber-300 tabular-nums">—</p>
+              <p className="text-[10px] text-amber-600/60 italic">Tracking</p>
+            </div>
+            <div className="space-y-0">
+              {[
+                { label: "Tickets Sold",   val: null as string | null },
+                { label: "24H Sold",       val: null as string | null },
+                { label: "7D Sold",        val: null as string | null },
+                { label: "Since Tracking", val: null as string | null },
+              ].map(({ label, val }) => (
+                <div key={label} className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0">
+                  <span className="text-xs text-slate-400">{label}</span>
+                  <span className="text-[11px] text-slate-600">{val ?? "—"}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Col 3: Seller Behavior */}
+          <div className="p-4">
+            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-3">Seller Behavior</p>
+            <div className="space-y-0">
+              <div className="flex items-center justify-between py-1.5 border-b border-white/5">
+                <span className="text-xs text-slate-400">Relist Price Change</span>
+                <span className="text-[11px] text-slate-600">—</span>
+              </div>
+              <div className="flex items-center justify-between py-1.5 border-b border-white/5">
+                <span className="text-xs text-slate-400">Price Drops</span>
+                <span className={cn("text-sm font-bold tabular-nums", seller?.price_drops_24h ? "text-red-400" : "text-slate-500")}>
+                  {seller?.price_drops_24h != null ? fmtNum(seller.price_drops_24h) : "—"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-1.5 border-b border-white/5">
+                <span className="text-xs text-slate-400">Repriced Listings</span>
+                <span className={cn("text-sm font-bold tabular-nums", seller?.repriced_24h ? "text-amber-400" : "text-slate-500")}>
+                  {seller?.repriced_24h != null ? fmtNum(seller.repriced_24h) : "—"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-1.5">
+                <span className="text-xs text-slate-400">Seller Mood</span>
+                <span className="text-sm font-bold text-slate-300">{sellerMood ?? "—"}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Freshness bar */}
+        <div className="border-t border-white/6 px-4 py-2 flex items-center gap-3 flex-wrap bg-white/[0.01]">
           {freshLabel && (
-            <span className="text-white/35 flex items-center gap-1.5">
-              <Clock size={10} /> Updated {freshLabel}
+            <span className="text-[10px] text-slate-600 flex items-center gap-1">
+              <Clock size={9} /> Updated {freshLabel}
             </span>
           )}
           {MP_SLUGS.map(slug => {
@@ -930,126 +1053,214 @@ export default function EventDetailPage() {
       </section>
 
       {/* ════════════════════════════════════════
-          SECTION 3 — MARKET SNAPSHOT
+          SECTION 3 — ARTIST CONTEXT / SPOTIFY
+          Directly below the hero.
+          ════════════════════════════════════════ */}
+      {!isSports && spotify.spotifyArtistUrl && (
+        <SpotifyEmbed artistUrl={spotify.spotifyArtistUrl} playlistUrl={spotify.spotifyPlaylistUrl} />
+      )}
+
+      {/* ════════════════════════════════════════
+          SECTION 4 — MARKETPLACE ACTIVITY (moved above venue intel per wireframe)
           ════════════════════════════════════════ */}
       <section>
-        <p className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-4">Market Snapshot</p>
-        <div className="flex flex-wrap gap-x-10 gap-y-5">
-          <div>
-            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-1">Median</p>
-            <p className="text-[44px] font-black text-white tabular-nums leading-none">{fmt$$(hero?.price?.median_ask) ?? "—"}</p>
-          </div>
-          <div>
-            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-1">Floor</p>
-            <p className="text-[40px] font-bold text-emerald-300 tabular-nums leading-none">{fmt$$(hero?.price?.low_ask) ?? "—"}</p>
-          </div>
-          <div>
-            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-1">Inventory</p>
-            <p className="text-[40px] font-bold text-slate-300 tabular-nums leading-none">{fmtNum(baseline?.current?.raw_listings ?? hero?.inventory?.total_listings) ?? "—"}</p>
-            {invDelta24 != null && (
-              <div className="flex items-center gap-0.5 mt-1">
-                <span className={cn("text-sm font-medium tabular-nums flex items-center gap-0.5",
-                  invDelta24 > 0 ? "text-emerald-400" : "text-red-400")}>
-                  {invDelta24 > 0 ? <ArrowUpRight size={11}/> : <ArrowDownRight size={11}/>}
-                  {invDelta24 > 0 ? "+" : ""}{invDelta24}
-                </span>
-                <span className="text-xs text-slate-600 ml-0.5">24h</span>
+        <p className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-3">Marketplace Activity</p>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {MP_SLUGS.map(slug => {
+            const info    = MP_META[slug]!;
+            const mpData  = marketplaces.find(m => m.name.toLowerCase().replace(/\s+/g, "") === slug);
+            const bsData  = baseline?.per_marketplace?.find(m => m.marketplace_slug === slug);
+            const fresh   = eventMeta?.marketplace_freshness?.[slug] as { freshness_status?: string; age_minutes?: number } | undefined;
+            const tracked = eventMeta?.tracked_events?.find(t => t.marketplace_slug === slug);
+            const st      = fresh?.freshness_status ?? "unknown";
+            const freshDot = st === "fresh" ? "bg-emerald-400" : st === "late" ? "bg-amber-400" : st === "dead" ? "bg-red-500" : "bg-slate-700";
+            const inv24   = bsData?.listings_change_24h?.absolute ?? null;
+            const isBest  = mpData != null && marketplaces.length > 0 && mpData.low_ask === marketplaces[0].low_ask;
+            const mpAction = signalToAction(hero?.signal);
+            const mpColors = actionColors(mpAction);
+
+            return (
+              <div key={slug} className="rounded-xl border border-white/8 bg-[#0f1420] p-3 flex flex-col gap-2.5">
+                {/* Card header: name + freshness dot */}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold" style={{ color: info.color }}>{info.label}</span>
+                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${freshDot}`} />
+                </div>
+
+                {/* Low / Median */}
+                <div className="grid grid-cols-2 gap-1.5">
+                  <div>
+                    <p className="text-[9px] text-slate-500 mb-0.5">Low</p>
+                    <p className={cn("text-sm font-black tabular-nums", isBest ? "text-emerald-300" : "text-white")}>
+                      {fmt$$(mpData?.low_ask) ?? "—"}
+                      {isBest && <span className="text-[8px] text-emerald-500 font-bold ml-0.5">B</span>}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] text-slate-500 mb-0.5">Median</p>
+                    <p className="text-sm font-bold text-slate-200 tabular-nums">{fmt$$(mpData?.median_ask) ?? "—"}</p>
+                  </div>
+                </div>
+
+                {/* Inventory / Sold */}
+                <div className="grid grid-cols-2 gap-1.5 pt-2 border-t border-white/5">
+                  <div>
+                    <p className="text-[9px] text-slate-500 mb-0.5">Inventory</p>
+                    <p className="text-xs font-bold text-slate-300 tabular-nums">
+                      {mpData?.listings != null ? fmtNum(mpData.listings) : "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] text-slate-500 mb-0.5">Sold (24H)</p>
+                    <p className={cn("text-xs font-bold tabular-nums", inv24 != null && inv24 < 0 ? "text-emerald-400" : "text-slate-500")}>
+                      {inv24 != null && inv24 < 0 ? Math.abs(inv24) : "—"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Est Sale / Relist */}
+                <div className="grid grid-cols-2 gap-1.5">
+                  <div>
+                    <p className="text-[9px] text-slate-500 mb-0.5">Est. Sale</p>
+                    <p className="text-xs text-slate-600">—</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] text-slate-500 mb-0.5">Relist</p>
+                    <p className="text-xs text-slate-600">—</p>
+                  </div>
+                </div>
+
+                {/* BUY chip + View link */}
+                <div className="flex items-center gap-1.5 mt-auto pt-1.5 border-t border-white/5">
+                  <span className="text-[9px] font-black px-1.5 py-0.5 rounded border flex-shrink-0"
+                    style={{ color: mpColors.text, borderColor: mpColors.border + "60", background: mpColors.bg + "25" }}>
+                    {mpAction}
+                  </span>
+                  {tracked?.external_url && (
+                    <a href={tracked.external_url} target="_blank" rel="noopener noreferrer"
+                      className="ml-auto text-[9px] font-semibold text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-0.5">
+                      View <ArrowUpRight size={8} />
+                    </a>
+                  )}
+                </div>
               </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════
+          SECTION 5 — VENUE INTELLIGENCE (moved below marketplace per wireframe)
+          Two-column: map left, top sections right.
+          ════════════════════════════════════════ */}
+      {eventMeta?.venue_slug && (
+        <section>
+          <p className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-3">Venue Intelligence</p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+            {/* LEFT — Interactive venue map + section details */}
+            <div>
+              <VenueIntelligence venueSlug={eventMeta.venue_slug} eventId={id} />
+            </div>
+
+            {/* RIGHT — Top 5 Moving Sections by activity */}
+            <div className="rounded-xl border border-white/8 bg-[#0f1420] overflow-hidden">
+              <div className="px-4 py-3 border-b border-white/6 flex items-center justify-between">
+                <p className="text-xs font-semibold text-slate-300">Top Sections by Activity</p>
+                <p className="text-[10px] text-slate-600">sorted by activity score</p>
+              </div>
+              {sections?.sections && sections.sections.length > 0 ? (
+                <div>
+                  {[...sections.sections]
+                    .sort((a, b) => (b.activity_score ?? 0) - (a.activity_score ?? 0))
+                    .slice(0, 5)
+                    .map((s, i) => {
+                      const inv24 = null; // per-section 24h not in SectionRow
+                      return (
+                        <div key={i} className="flex items-center gap-3 px-4 py-3 border-b border-white/5 last:border-0 hover:bg-white/2 transition-colors">
+                          <span className="text-[10px] font-bold text-slate-600 w-4 tabular-nums">{i + 1}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold text-slate-200 truncate">{s.display_name}</p>
+                            <p className="text-[10px] text-slate-600">
+                              {s.listings != null ? `${fmtNum(s.listings)} listings` : ""}
+                              {s.listings != null && s.low_ask != null ? " · " : ""}
+                              {s.low_ask != null ? `from ${fmt$$(s.low_ask)}` : ""}
+                            </p>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <p className="text-xs font-bold text-slate-200 tabular-nums">{fmt$$(s.median_ask) ?? "—"}</p>
+                            <p className="text-[10px] text-slate-600">median</p>
+                          </div>
+                          {s.activity_score != null && (
+                            <div className="w-1 h-8 rounded-full flex-shrink-0"
+                              style={{ background: `rgba(59,130,246,${Math.min(s.activity_score, 1)})` }} />
+                          )}
+                          <span className="text-[10px] text-slate-600 w-12 text-right tabular-nums flex-shrink-0">
+                            {inv24 ?? "—"}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  <div className="px-4 py-2 border-t border-white/5">
+                    <p className="text-[10px] text-slate-700">Activity = listing velocity + price movement. Relist data pending.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="py-8 text-center text-xs text-slate-600">Section data not yet available</div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ════════════════════════════════════════
+          SECTION 6 — MARKET SUMMARY
+          Max 5 concise bullets.
+          ════════════════════════════════════════ */}
+      <section>
+        <p className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-3">Market Summary</p>
+        <div className="rounded-xl border border-white/8 bg-[#0f1420] p-4">
+          <ul className="space-y-2">
+            {bullets.slice(0, 5).map((b, i) => (
+              <li key={i} className="flex items-start gap-2 text-sm text-slate-300 leading-relaxed">
+                <span className="mt-2 w-1.5 h-1.5 rounded-full bg-slate-500 flex-shrink-0" />
+                {b}
+              </li>
+            ))}
+            {bullets.length === 0 && (
+              <li className="text-sm text-slate-600">Insufficient data for market summary. Check back as data accumulates.</li>
             )}
-          </div>
-          <div>
-            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-1">24h Δ</p>
-            <div className="mt-2">
-              {pct24h != null ? <DeltaChip pct={pct24h} size="md" /> : <span className="text-[28px] text-slate-600">—</span>}
-            </div>
-          </div>
-          <div>
-            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-1">7d Δ</p>
-            <div className="mt-2">
-              {hero?.changes?.d7?.price_delta_pct != null
-                ? <DeltaChip pct={hero.changes.d7.price_delta_pct} size="md" />
-                : <span className="text-[28px] text-slate-600">—</span>}
-            </div>
-          </div>
+          </ul>
+          {hero?.history_context?.hours_available != null && (
+            <p className="mt-3 pt-3 border-t border-white/6 text-[10px] text-slate-600 flex items-center gap-1.5">
+              <Clock size={9} />
+              {hero.history_context.hours_available > 24
+                ? `${Math.round(hero.history_context.hours_available / 24)}d of price history`
+                : "Live data only — limited trend signal"}
+              {sincePct != null && (
+                <span className="ml-2 flex items-center gap-1">
+                  <DeltaChip pct={sincePct} />
+                  <span className="text-slate-600">since tracking</span>
+                </span>
+              )}
+            </p>
+          )}
         </div>
       </section>
 
       {/* ════════════════════════════════════════
-          SECTION 4 — MARKETPLACE COMPARISON
+          SECTION 7 — HISTORICAL ANALYSIS
+          Tabbed: Price | Inventory | Sections | Marketplaces
           ════════════════════════════════════════ */}
       <section>
-        <p className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-3">Marketplace Comparison</p>
-        <div className="rounded-xl border border-white/8 bg-[#161b27] overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-white/6">
-                {["Marketplace","Floor","Listings","Freshness","Updated"].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-[10px] text-slate-500 uppercase tracking-widest font-medium first:pl-5">{h}</th>
-                ))}
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {MP_SLUGS.map(slug => {
-                const info    = MP_META[slug]!;
-                const mpData  = marketplaces.find(m => m.name.toLowerCase().replace(/\s+/g, "") === slug);
-                const fresh   = eventMeta?.marketplace_freshness?.[slug] as { freshness_status?: string; age_minutes?: number } | undefined;
-                const tracked = eventMeta?.tracked_events?.find(t => t.marketplace_slug === slug);
-                const isBest  = mpData != null && marketplaces.length > 0 && mpData.low_ask === marketplaces[0].low_ask;
-                const st      = fresh?.freshness_status ?? "unknown";
-                const freshCls = st === "fresh" ? "text-emerald-400" : st === "late" ? "text-amber-400" : st === "dead" ? "text-red-500" : "text-slate-600";
-                const ageLabel = fresh?.age_minutes != null
-                  ? fresh.age_minutes < 60 ? `${fresh.age_minutes}m ago` : `${Math.round(fresh.age_minutes / 60)}h ago`
-                  : "—";
-                return (
-                  <tr key={slug} className="border-b border-white/5 last:border-0 hover:bg-white/2 transition-colors">
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-2.5">
-                        <span className="w-2 h-5 rounded-sm flex-shrink-0" style={{ background: info.color }} />
-                        <span className="text-sm font-bold" style={{ color: info.color }}>{info.short}</span>
-                        <span className="text-sm text-slate-400 hidden sm:inline">{info.label}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      {mpData?.low_ask != null
-                        ? <span className={cn("text-base font-bold tabular-nums", isBest ? "text-emerald-300" : "text-white")}>{fmt$$(mpData.low_ask)}</span>
-                        : <span className="text-slate-600">—</span>}
-                    </td>
-                    <td className="px-4 py-3.5 text-sm text-slate-400 tabular-nums">
-                      {mpData?.listings != null ? fmtNum(mpData.listings) : <span className="text-slate-600">—</span>}
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <span className={`text-xs font-semibold capitalize ${freshCls}`}>{st === "unknown" ? "—" : st}</span>
-                    </td>
-                    <td className="px-4 py-3.5 text-xs text-slate-500">{ageLabel}</td>
-                    <td className="px-4 py-3.5 text-right">
-                      {tracked?.external_url
-                        ? <a href={tracked.external_url} target="_blank" rel="noopener noreferrer"
-                            className="text-xs font-bold px-3 py-1.5 rounded-lg border transition-all"
-                            style={{ color: info.color, borderColor: info.color + "50", background: info.color + "12" }}>
-                            Buy ↗
-                          </a>
-                        : <span className="text-[11px] text-slate-700">No link</span>}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
+        <p className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-3">Historical Analysis</p>
 
-      {/* ════════════════════════════════════════
-          SECTION 5 — INTELLIGENCE TABS
-          ════════════════════════════════════════ */}
-      <section>
         {/* Tab bar */}
-        <div className="flex border-b border-white/8 mb-5">
-          {(["Overview", "Sections", "Venue Intel"] as const).map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)}
+        <div className="flex border-b border-white/8 mb-4 gap-0 overflow-x-auto">
+          {(["Price", "Inventory", "Sections", "Marketplaces"] as const).map(tab => (
+            <button key={tab} onClick={() => setActiveHistTab(tab)}
               className={cn(
-                "px-4 py-2.5 text-sm font-semibold transition-colors border-b-2 -mb-[1px]",
-                activeTab === tab
+                "px-4 py-2.5 text-sm font-semibold transition-colors border-b-2 -mb-[1px] whitespace-nowrap",
+                activeHistTab === tab
                   ? "border-blue-500 text-blue-300"
                   : "border-transparent text-slate-500 hover:text-slate-300"
               )}>
@@ -1058,166 +1269,115 @@ export default function EventDetailPage() {
           ))}
         </div>
 
-        {/* ── TAB A: Overview ── */}
-        {activeTab === "Overview" && (
-          <div className="space-y-5">
-            {/* Price Trend Chart */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Price Trend</h3>
-                <div className="flex rounded-lg border border-white/7 overflow-hidden text-xs">
-                  {WINDOWS.map(w => (
-                    <button key={w.id} onClick={() => setHistWindow(w.id)} disabled={loadingHistory}
-                      className={cn("px-2.5 py-1 transition-colors",
-                        histWindow === w.id ? "bg-white/10 text-slate-200" : "text-slate-500 hover:text-slate-300 hover:bg-white/5")}>
-                      {w.label}
-                    </button>
-                  ))}
-                  {loadingHistory && <span className="px-2 flex items-center"><RefreshCw size={9} className="animate-spin text-slate-500" /></span>}
-                </div>
-              </div>
-              <div className="rounded-xl border border-white/7 bg-[#161b27]">
-                {history?.source && (
-                  <div className={cn("px-4 py-2.5 border-b border-white/5 flex items-center justify-between",
-                    history.source === "combined" ? "bg-emerald-500/5" : history.source === "live" ? "bg-amber-500/5" : "")}>
-                    <span className={cn("text-xs font-medium",
-                      history.source === "combined" ? "text-emerald-400" : history.source === "live" ? "text-amber-400" : "text-blue-400")}>
-                      {history.source === "combined"
-                        ? `${Math.round(history.data_depth_days ?? 0)} days of history`
-                        : history.source === "live" ? "Live data · limited trend signal" : `${Math.round(history.data_depth_days ?? 0)}d archive`}
-                    </span>
-                    <span className="text-[10px] text-slate-600">{history.point_count ?? 0} points</span>
-                  </div>
-                )}
-                <div className="p-4">
-                  {history?.series?.length
-                    ? <PriceHistoryChart series={history.series} window={histWindow} height={220} />
-                    : <div className="h-[220px] flex items-center justify-center text-xs text-slate-600">Not enough data yet</div>}
-                </div>
-                {hero && (
-                  <div className="px-4 pb-3 grid grid-cols-4 gap-2 border-t border-white/5">
-                    {[
-                      { label: "Floor",  val: hero.price?.low_ask    },
-                      { label: "p25",    val: hero.price?.p25_ask    },
-                      { label: "Median", val: hero.price?.median_ask },
-                      { label: "p75",    val: hero.price?.p75_ask    },
-                    ].map(({ label, val }) => (
-                      <div key={label} className="text-center pt-2">
-                        <div className="text-[9px] text-slate-600 uppercase tracking-wide mb-0.5">{label}</div>
-                        <div className="text-xs font-semibold text-slate-300 tabular-nums">{fmt$$(val)}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Inventory Trend */}
-            <div>
-              <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Inventory Trend</h3>
-              <div className="rounded-xl border border-white/7 bg-[#161b27] p-4">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-3">
-                  {[
-                    { label: "Total Now",   val: fmtNum(hero?.inventory?.total_listings) },
-                    { label: "24h Net",     val: invDelta24 != null ? (invDelta24 > 0 ? `+${invDelta24}` : `${invDelta24}`) : null },
-                    { label: "Added 24h",   val: seller?.new_listings_24h != null ? `+${fmtNum(seller.new_listings_24h)}` : null },
-                    { label: "Removed 24h", val: seller?.removed_listings_24h != null ? fmtNum(seller.removed_listings_24h) : null },
-                  ].map(({ label, val }) => (
-                    <div key={label}>
-                      <p className="text-[10px] text-slate-600 uppercase tracking-wider mb-0.5">{label}</p>
-                      <p className="text-sm font-bold text-slate-300 tabular-nums">{val ?? "—"}</p>
-                    </div>
-                  ))}
-                </div>
-                {seller && (
-                  <div className="grid grid-cols-2 gap-3 pt-3 border-t border-white/5">
-                    <div>
-                      <p className="text-[10px] text-slate-600 uppercase tracking-wider mb-0.5">Repriced 24h</p>
-                      <p className="text-sm font-bold text-amber-400 tabular-nums">{fmtNum(seller.repriced_24h) ?? "—"}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-slate-600 uppercase tracking-wider mb-0.5">Price Drops 24h</p>
-                      <p className="text-sm font-bold text-red-400 tabular-nums">{fmtNum(seller.price_drops_24h) ?? "—"}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Opportunity Notes */}
-            <div>
-              <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Opportunity Notes</h3>
-              <div className="rounded-xl border border-white/7 bg-[#161b27] p-4 space-y-2.5">
-                {bullets.map((b, i) => (
-                  <p key={i} className="flex items-start gap-2.5 text-sm text-slate-300 leading-relaxed">
-                    <span className="mt-2 w-1.5 h-1.5 rounded-full bg-slate-500 flex-shrink-0" />
-                    {b}
-                  </p>
+        {/* ── Price tab ── */}
+        {activeHistTab === "Price" && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex rounded-lg border border-white/7 overflow-hidden text-xs">
+                {WINDOWS.map(w => (
+                  <button key={w.id} onClick={() => setHistWindow(w.id)} disabled={loadingHistory}
+                    className={cn("px-2.5 py-1 transition-colors",
+                      histWindow === w.id ? "bg-white/10 text-slate-200" : "text-slate-500 hover:text-slate-300 hover:bg-white/5")}>
+                    {w.label}
+                  </button>
                 ))}
-                {hero?.history_context?.hours_available != null && (
-                  <p className="text-xs text-slate-600 pt-2 border-t border-white/5 flex items-center gap-1.5">
-                    <Clock size={9} />
-                    {hero.history_context.hours_available > 24
-                      ? `${Math.round(hero.history_context.hours_available / 24)}d of price history`
-                      : "Live data only"}
-                    {sincePct != null && (
-                      <span className="ml-2 flex items-center gap-1">
-                        <DeltaChip pct={sincePct} />
-                        <span className="text-slate-600">since tracking</span>
-                      </span>
-                    )}
-                  </p>
-                )}
+                {loadingHistory && <span className="px-2 flex items-center"><RefreshCw size={9} className="animate-spin text-slate-500" /></span>}
               </div>
+              {history?.source && (
+                <span className={cn("text-xs font-medium",
+                  history.source === "combined" ? "text-emerald-400" : history.source === "live" ? "text-amber-400" : "text-blue-400")}>
+                  {history.source === "combined"
+                    ? `${Math.round(history.data_depth_days ?? 0)}d of history`
+                    : history.source === "live" ? "Live · limited signal" : `${Math.round(history.data_depth_days ?? 0)}d archive`}
+                </span>
+              )}
             </div>
+            <div className="rounded-xl border border-white/7 bg-[#161b27]">
+              <div className="p-4">
+                {history?.series?.length
+                  ? <PriceHistoryChart series={history.series} window={histWindow} height={220} />
+                  : <div className="h-[220px] flex items-center justify-center text-xs text-slate-600">Not enough data yet</div>}
+              </div>
+              {hero && (
+                <div className="px-4 pb-3 grid grid-cols-4 gap-2 border-t border-white/5">
+                  {[
+                    { label: "Low",    val: hero.price?.low_ask    },
+                    { label: "p25",    val: hero.price?.p25_ask    },
+                    { label: "Median", val: hero.price?.median_ask },
+                    { label: "p75",    val: hero.price?.p75_ask    },
+                  ].map(({ label, val }) => (
+                    <div key={label} className="text-center pt-2">
+                      <div className="text-[9px] text-slate-600 uppercase tracking-wide mb-0.5">{label}</div>
+                      <div className="text-xs font-semibold text-slate-300 tabular-nums">{fmt$$(val)}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
-            {/* Marketplace Commentary */}
-            {baseline?.per_marketplace && baseline.per_marketplace.length > 0 && (
-              <div>
-                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Marketplace Commentary</h3>
-                <div className="rounded-xl border border-white/7 bg-[#161b27] overflow-hidden">
-                  <div className="grid border-b border-white/5 px-4 py-2 text-xs text-slate-500 uppercase tracking-wider"
-                    style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr" }}>
-                    {["Marketplace","Floor","Inv","24h","7d","Signal"].map(h => <div key={h}>{h}</div>)}
+        {/* ── Inventory tab ── */}
+        {activeHistTab === "Inventory" && (
+          <div className="rounded-xl border border-white/7 bg-[#161b27] p-4 space-y-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {[
+                { label: "Total Now",   val: fmtNum(hero?.inventory?.total_listings) },
+                { label: "24h Net",     val: invDelta24 != null ? (invDelta24 > 0 ? `+${invDelta24}` : `${invDelta24}`) : null },
+                { label: "Added 24h",   val: seller?.new_listings_24h != null ? `+${fmtNum(seller.new_listings_24h)}` : null },
+                { label: "Removed 24h", val: seller?.removed_listings_24h != null ? fmtNum(seller.removed_listings_24h) : null },
+              ].map(({ label, val }) => (
+                <div key={label}>
+                  <p className="text-[10px] text-slate-600 uppercase tracking-wider mb-0.5">{label}</p>
+                  <p className="text-sm font-bold text-slate-300 tabular-nums">{val ?? "—"}</p>
+                </div>
+              ))}
+            </div>
+            {seller && (
+              <div className="grid grid-cols-2 gap-3 pt-3 border-t border-white/5">
+                {[
+                  { label: "Repriced 24h",    val: fmtNum(seller.repriced_24h),    cls: "text-amber-400" },
+                  { label: "Price Drops 24h", val: fmtNum(seller.price_drops_24h), cls: "text-red-400" },
+                ].map(({ label, val, cls }) => (
+                  <div key={label}>
+                    <p className="text-[10px] text-slate-600 uppercase tracking-wider mb-0.5">{label}</p>
+                    <p className={cn("text-sm font-bold tabular-nums", cls)}>{val ?? "—"}</p>
                   </div>
-                  {baseline.per_marketplace.map((mp) => {
-                    const inv24 = mp.listings_change_24h?.absolute ?? null;
-                    const inv7d = mp.listings_change_7d?.absolute ?? null;
-                    const slug  = mp.marketplace_slug;
-                    const mpInfo = MP_META[slug] ?? { label: slug, short: slug.slice(0,2).toUpperCase(), color: "#64748b" };
-                    const direction = inv24 != null ? (inv24 < -5 ? "↓ Tight" : inv24 > 5 ? "↑ Grow" : "Stable") : "—";
-                    const dirCls = inv24 != null ? (inv24 < -5 ? "text-emerald-400" : inv24 > 5 ? "text-red-400" : "text-slate-500") : "text-slate-600";
-                    return (
-                      <div key={slug} className="grid items-center px-4 py-2.5 border-b border-white/4 last:border-0 hover:bg-white/2"
-                        style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr" }}>
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full" style={{ background: mpInfo.color }} />
-                          <span className="text-xs font-bold uppercase" style={{ color: mpInfo.color }}>{mpInfo.short}</span>
-                        </div>
-                        <div className="text-xs font-bold text-white tabular-nums">{fmt$$(mp.current_lowest_ask)}</div>
-                        <div className="text-xs text-slate-300 tabular-nums">{fmtNum(mp.current_listings)}</div>
-                        <div className="text-xs">
-                          {inv24 != null
-                            ? <span className={inv24 < 0 ? "text-emerald-400" : "text-red-400"}>{inv24 > 0 ? "+" : ""}{inv24}</span>
-                            : <span className="text-slate-600">—</span>}
-                        </div>
-                        <div className="text-xs">
-                          {inv7d != null
-                            ? <span className={inv7d < 0 ? "text-emerald-400" : "text-red-400"}>{inv7d > 0 ? "+" : ""}{inv7d}</span>
-                            : <span className="text-slate-600">—</span>}
-                        </div>
-                        <div className={`text-xs font-semibold ${dirCls}`}>{direction}</div>
-                      </div>
-                    );
-                  })}
+                ))}
+              </div>
+            )}
+            {/* Largest price drops detail */}
+            {(seller?.largest_price_drops?.length ?? 0) > 0 && seller && (
+              <div className="pt-3 border-t border-white/5">
+                <p className="text-[10px] text-slate-600 uppercase tracking-wider font-semibold mb-2">Largest Price Drops</p>
+                <div className="rounded-lg border border-white/5 overflow-hidden">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-white/5">
+                        {["Section","Was","Now","Drop"].map(h => (
+                          <th key={h} className="text-left px-3 py-2 text-[9px] text-slate-600 uppercase tracking-wider font-medium">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {seller.largest_price_drops.slice(0, 5).map((d, i) => (
+                        <tr key={i} className="border-b border-white/4 last:border-0">
+                          <td className="px-3 py-2 text-slate-300 max-w-[120px] truncate">{d.section}</td>
+                          <td className="px-3 py-2 text-slate-500 tabular-nums">{fmt$$(d.old_price)}</td>
+                          <td className="px-3 py-2 text-slate-200 font-semibold tabular-nums">{fmt$$(d.new_price)}</td>
+                          <td className="px-3 py-2 text-red-400 font-medium tabular-nums">{fmt$$(d.delta)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             )}
           </div>
         )}
 
-        {/* ── TAB B: Sections ── */}
-        {activeTab === "Sections" && (
+        {/* ── Sections tab ── */}
+        {activeHistTab === "Sections" && (
           <div className="space-y-4">
             {sections?.sections && sections.sections.length > 0
               ? <SectionBreakdown sections={sections.sections} />
@@ -1225,7 +1385,7 @@ export default function EventDetailPage() {
             }
             {listings && listings.length > 0 && (
               <div>
-                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Lowest Available Tickets</h3>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Lowest Available Tickets</p>
                 <div className="rounded-xl border border-white/7 bg-[#161b27] overflow-x-auto">
                   <table className="w-full text-xs min-w-[480px]">
                     <thead>
@@ -1272,29 +1432,73 @@ export default function EventDetailPage() {
           </div>
         )}
 
-        {/* ── TAB C: Venue Intel ── */}
-        {activeTab === "Venue Intel" && (
+        {/* ── Marketplaces tab ── */}
+        {activeHistTab === "Marketplaces" && (
           <div>
-            {eventMeta?.venue_slug
-              ? <>
-                  <VenueSummaryCard venueSlug={eventMeta.venue_slug} />
-                  <VenueIntelligence venueSlug={eventMeta.venue_slug} eventId={id} />
-                </>
-              : <div className="rounded-xl border border-white/7 bg-[#161b27] py-8 text-center text-xs text-slate-600">No venue data available</div>
-            }
+            {baseline?.per_marketplace && baseline.per_marketplace.length > 0 ? (
+              <div className="rounded-xl border border-white/7 bg-[#161b27] overflow-hidden">
+                <div className="grid border-b border-white/5 px-4 py-2 text-xs text-slate-500 uppercase tracking-wider"
+                  style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr" }}>
+                  {["Marketplace","Low","Inv","24h Δ","7d Δ","Signal"].map(h => <div key={h}>{h}</div>)}
+                </div>
+                {baseline.per_marketplace.map((mp) => {
+                  const inv24 = mp.listings_change_24h?.absolute ?? null;
+                  const inv7d = mp.listings_change_7d?.absolute ?? null;
+                  const slug  = mp.marketplace_slug;
+                  const mpInfo = MP_META[slug] ?? { label: slug, short: slug.slice(0,2).toUpperCase(), color: "#64748b" };
+                  const direction = inv24 != null ? (inv24 < -5 ? "↓ Tight" : inv24 > 5 ? "↑ Grow" : "Stable") : "—";
+                  const dirCls = inv24 != null ? (inv24 < -5 ? "text-emerald-400" : inv24 > 5 ? "text-red-400" : "text-slate-500") : "text-slate-600";
+                  return (
+                    <div key={slug} className="grid items-center px-4 py-2.5 border-b border-white/4 last:border-0 hover:bg-white/2"
+                      style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr" }}>
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full" style={{ background: mpInfo.color }} />
+                        <span className="text-xs font-bold uppercase" style={{ color: mpInfo.color }}>{mpInfo.short}</span>
+                      </div>
+                      <div className="text-xs font-bold text-white tabular-nums">{fmt$$(mp.current_lowest_ask)}</div>
+                      <div className="text-xs text-slate-300 tabular-nums">{fmtNum(mp.current_listings)}</div>
+                      <div className="text-xs">
+                        {inv24 != null
+                          ? <span className={inv24 < 0 ? "text-emerald-400" : "text-red-400"}>{inv24 > 0 ? "+" : ""}{inv24}</span>
+                          : <span className="text-slate-600">—</span>}
+                      </div>
+                      <div className="text-xs">
+                        {inv7d != null
+                          ? <span className={inv7d < 0 ? "text-emerald-400" : "text-red-400"}>{inv7d > 0 ? "+" : ""}{inv7d}</span>
+                          : <span className="text-slate-600">—</span>}
+                      </div>
+                      <div className={`text-xs font-semibold ${dirCls}`}>{direction}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-white/7 bg-[#161b27] py-8 text-center text-xs text-slate-600">
+                Marketplace comparison data not yet available
+              </div>
+            )}
           </div>
         )}
       </section>
 
       {/* ════════════════════════════════════════
-          SECTION 6 — SPOTIFY
+          NFL AUDIO CONTROL
           ════════════════════════════════════════ */}
-      {!isSports && spotify.spotifyArtistUrl && (
-        <SpotifyEmbed artistUrl={spotify.spotifyArtistUrl} playlistUrl={spotify.spotifyPlaylistUrl} />
+      {isNfl && nflAudio.mounted && (
+        <NflAudioControl
+          playing={nflAudio.playing}
+          muted={nflAudio.muted}
+          blocked={nflAudio.blocked}
+          errorMsg={nflAudio.errorMsg}
+          onPlay={nflAudio.play}
+          onPause={nflAudio.pause}
+          onStop={nflAudio.stop}
+          onToggleMute={() => nflAudio.setMuted(!nflAudio.muted)}
+        />
       )}
 
       {/* ════════════════════════════════════════
-          SECTION 7 — DIAGNOSTICS (collapsed by default)
+          DIAGNOSTICS (collapsed)
           ════════════════════════════════════════ */}
       <section className="border-t border-white/6 pt-4">
         <button onClick={() => setDiagOpen(v => !v)}
@@ -1306,8 +1510,6 @@ export default function EventDetailPage() {
 
         {diagOpen && (
           <div className="mt-4 space-y-5">
-
-            {/* Data Context */}
             {hero?.history_context && (
               <div>
                 <h3 className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-2">Data Context</h3>
@@ -1325,8 +1527,6 @@ export default function EventDetailPage() {
                 </div>
               </div>
             )}
-
-            {/* Marketplace Status */}
             <div>
               <h3 className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-2">Marketplace Status</h3>
               {eventMeta?.marketplace_freshness
@@ -1357,17 +1557,14 @@ export default function EventDetailPage() {
                 : <p className="text-xs text-slate-700">No freshness data</p>
               }
             </div>
-
-            {/* Today's Movement */}
             <div>
               <h3 className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-2">Today&apos;s Movement</h3>
               <div className="rounded-xl border border-white/6 bg-[#161b27] divide-y divide-white/4">
                 {[
-                  { label: "Hourly Floor Δ",    sub: "Floor change per hour",            val: snapshot?.price?.floor_24h_change != null ? `${snapshot.price.floor_24h_change < 0 ? "-" : "+"}${fmt$$(Math.abs(snapshot.price.floor_24h_change / 24))}/hr` : null },
-                  { label: "Hourly Median Δ",   sub: "Median change per hour",           val: snapshot?.price?.median_24h_change != null ? `${snapshot.price.median_24h_change < 0 ? "-" : "+"}${fmt$$(Math.abs(snapshot.price.median_24h_change / 24))}/hr` : null },
-                  { label: "Hourly Inventory Δ",sub: "Net listing change per hour",       val: snapshot?.inventory?.inventory_24h_change != null ? `${(snapshot.inventory.inventory_24h_change / 24).toFixed(1)}/hr` : null },
-                  { label: "Disappeared 24h",   sub: "Sold, pulled, or expired",         val: seller?.removed_listings_24h != null ? fmtNum(seller.removed_listings_24h) : null },
-                  { label: "New Listings 24h",  sub: "Added (incl. relists)",            val: seller?.new_listings_24h != null ? `+${fmtNum(seller.new_listings_24h)}` : null },
+                  { label: "Disappeared 24h",   sub: "Sold, pulled, or expired",  val: seller?.removed_listings_24h != null ? fmtNum(seller.removed_listings_24h) : null },
+                  { label: "New Listings 24h",  sub: "Added (incl. relists)",      val: seller?.new_listings_24h != null ? `+${fmtNum(seller.new_listings_24h)}` : null },
+                  { label: "Hourly Floor Δ",    sub: "Floor change per hour",      val: snapshot?.price?.floor_24h_change != null ? `${snapshot.price.floor_24h_change < 0 ? "-" : "+"}${fmt$$(Math.abs(snapshot.price.floor_24h_change / 24))}/hr` : null },
+                  { label: "Hourly Median Δ",   sub: "Median change per hour",     val: snapshot?.price?.median_24h_change != null ? `${snapshot.price.median_24h_change < 0 ? "-" : "+"}${fmt$$(Math.abs(snapshot.price.median_24h_change / 24))}/hr` : null },
                 ].map(({ label, sub, val }) => (
                   <div key={label} className="flex items-center justify-between px-4 py-2.5">
                     <div>
@@ -1379,113 +1576,6 @@ export default function EventDetailPage() {
                 ))}
               </div>
             </div>
-
-            {/* Market Movement */}
-            <div>
-              <h3 className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-2">Market Movement</h3>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                {[
-                  { label: "Tracking Start", items: [
-                    { k: "Floor",  v: fmt$$(history?.series?.[0]?.low_ask)    },
-                    { k: "Median", v: fmt$$(history?.series?.[0]?.median_ask) },
-                    { k: "Inv",    v: fmtNum(history?.series?.[0]?.listings)  },
-                  ]},
-                  { label: "7d Change", items: [
-                    { k: "Median Δ", v: hero?.changes?.d7?.price_delta_pct != null ? fmtPct(hero.changes.d7.price_delta_pct) : "—" },
-                    { k: "Inv Δ",    v: hero?.changes?.d7?.inventory_delta != null ? `${hero.changes.d7.inventory_delta > 0 ? "+" : ""}${hero.changes.d7.inventory_delta}` : "—" },
-                  ]},
-                  { label: "24h Change", items: [
-                    { k: "Floor Δ",  v: snapshot?.price?.floor_24h_change != null ? fmt$$(snapshot.price.floor_24h_change) : "—" },
-                    { k: "Median Δ", v: pct24h != null ? fmtPct(pct24h) : "—" },
-                    { k: "Inv Δ",    v: invDelta24 != null ? `${invDelta24 > 0 ? "+" : ""}${invDelta24}` : "—" },
-                  ]},
-                  { label: "Now", items: [
-                    { k: "Floor",  v: fmt$$(hero?.price?.low_ask)             },
-                    { k: "Median", v: fmt$$(hero?.price?.median_ask)          },
-                    { k: "Inv",    v: fmtNum(hero?.inventory?.total_listings) },
-                  ]},
-                ].map(({ label, items }) => (
-                  <div key={label} className="rounded-xl border border-white/6 bg-[#161b27]/50 p-3">
-                    <p className="text-[9px] text-slate-600 uppercase tracking-widest font-semibold mb-2">{label}</p>
-                    <div className="space-y-1.5">
-                      {items.map(({ k, v }) => (
-                        <div key={k} className="flex items-center justify-between">
-                          <span className="text-[10px] text-slate-600">{k}</span>
-                          <span className="text-xs font-semibold text-slate-400 tabular-nums">{v ?? "—"}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Seller Activity */}
-            {seller && (
-              <div>
-                <h3 className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-2">Seller Activity</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {[
-                    { label: "Added 24h",       sub: "gross, incl. relists",  val: fmtDelta(seller.new_listings_24h),     cls: "text-emerald-400" },
-                    { label: "Disappeared 24h", sub: "sold/expired/delisted", val: fmtDelta(seller.removed_listings_24h), cls: "text-red-400" },
-                    { label: "Repriced 24h",    sub: "sellers changed ask",   val: fmtNum(seller.repriced_24h),            cls: "text-amber-400" },
-                    { label: "Price Drops 24h", sub: "ask lowered",           val: fmtNum(seller.price_drops_24h),         cls: "text-red-400" },
-                  ].map(({ label, sub, val, cls }) => (
-                    <div key={label} className="rounded-xl border border-white/5 bg-[#161b27] px-3 py-3">
-                      <p className="text-[9px] text-slate-600 uppercase tracking-wider">{label}</p>
-                      <p className="text-[8px] text-slate-700 italic mb-1">{sub}</p>
-                      <p className={cn("text-base font-bold tabular-nums", cls)}>{val ?? "—"}</p>
-                    </div>
-                  ))}
-                </div>
-                {seller.largest_price_drops?.length > 0 && (
-                  <div className="mt-2 rounded-xl border border-white/6 bg-[#161b27] overflow-hidden">
-                    <div className="px-4 py-2 border-b border-white/5 text-[10px] text-slate-600 uppercase tracking-wider font-medium">Largest Price Drops</div>
-                    <table className="w-full text-xs">
-                      <thead>
-                        <tr className="border-b border-white/5">
-                          {["Section","Was","Now","Drop"].map(h => (
-                            <th key={h} className="text-left px-4 py-2 text-[9px] text-slate-600 uppercase tracking-wider font-medium">{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {seller.largest_price_drops.slice(0, 5).map((d, i) => (
-                          <tr key={i} className="border-b border-white/4 last:border-0 hover:bg-white/2">
-                            <td className="px-4 py-2 text-slate-300 max-w-[120px] truncate">{d.section}</td>
-                            <td className="px-4 py-2 text-slate-500 tabular-nums">{fmt$$(d.old_price)}</td>
-                            <td className="px-4 py-2 text-slate-200 font-semibold tabular-nums">{fmt$$(d.new_price)}</td>
-                            <td className="px-4 py-2 text-red-400 font-medium tabular-nums">{fmt$$(d.delta)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Pending Intelligence */}
-            <div>
-              <h3 className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-2">Pending Intelligence</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {[
-                  { label: "Buy Timing",    desc: "Optimal buy window from historical trajectory." },
-                  { label: "Artist Trend",  desc: "Demand across recent tour legs and comparable markets." },
-                  { label: "Tour Trend",    desc: "How this date ranks vs other tour stops." },
-                  { label: "City Trend",    desc: "LA market-wide demand signals." },
-                  { label: "Venue Trend",   desc: "Historical sell-through for this venue." },
-                  { label: "Net Inventory", desc: "Deduplicated cross-marketplace listing count." },
-                ].map(({ label, desc }) => (
-                  <div key={label} className="rounded-lg border border-white/5 bg-[#161b27] px-3 py-2.5">
-                    <p className="text-[10px] font-semibold text-slate-500 mb-0.5">{label}</p>
-                    <p className="text-[9px] text-slate-700 leading-snug">{desc}</p>
-                    <span className="inline-block text-[9px] font-bold uppercase tracking-widest text-amber-500/50 mt-1">Pending</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
           </div>
         )}
       </section>

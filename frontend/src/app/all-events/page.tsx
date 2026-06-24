@@ -6,7 +6,7 @@ import { List, Calendar, ChevronRight, CheckCircle2, Activity, Pin, Archive, Eye
 import { format, parseISO, differenceInDays } from "date-fns";
 import { api } from "@/lib/api";
 import type { RawEvent } from "@/lib/types";
-import { fmt$$ } from "@/lib/utils";
+import { fmt$$, parseEventDate } from "@/lib/utils";
 import { getEventGradient } from "@/lib/entityimages";
 import { useArtistImage } from "@/hooks/useArtistImage";
 import { useHeadlineEvent } from "@/hooks/useHeadlineEvent";
@@ -38,7 +38,7 @@ function EventRow({
   let daysOut: number | null = null;
   let dateLabel = "";
   try {
-    const d = parseISO(ev.event_date);
+    const d = parseEventDate(ev.event_date);
     daysOut = differenceInDays(d, now);
     dateLabel = format(d, "MMM d, yyyy");
   } catch {}
@@ -265,7 +265,7 @@ export default function AllEventsPage() {
                 <th className="text-left px-4 py-2.5 text-[10px] text-slate-500 uppercase tracking-wider font-medium">Event</th>
                 <th className="text-left px-3 py-2.5 text-[10px] text-slate-500 uppercase tracking-wider font-medium hidden sm:table-cell">Date</th>
                 <th className="text-left px-3 py-2.5 text-[10px] text-slate-500 uppercase tracking-wider font-medium hidden md:table-cell">Venue</th>
-                <th className="text-right px-3 py-2.5 text-[10px] text-slate-500 uppercase tracking-wider font-medium">Floor</th>
+                <th className="text-right px-3 py-2.5 text-[10px] text-slate-500 uppercase tracking-wider font-medium">Low</th>
                 <th className="text-right px-3 py-2.5 text-[10px] text-slate-500 uppercase tracking-wider font-medium hidden sm:table-cell">Listings</th>
                 <th className="text-left px-3 py-2.5 text-[10px] text-slate-500 uppercase tracking-wider font-medium hidden lg:table-cell">Marketplaces</th>
                 <th className="px-3 py-2.5 text-[10px] text-slate-500 uppercase tracking-wider font-medium hidden xl:table-cell w-24">Actions</th>
