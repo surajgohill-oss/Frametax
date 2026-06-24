@@ -122,7 +122,7 @@ async def deactivate_parking_listings(
         price_f = float(price) if price is not None else None
         if is_parking_listing(sec, row, price=price_f):
             to_deactivate.append(lid)
-            reason = "general_low_price" if (sec or "").strip().lower() == "general" and price_f is not None and price_f < 20 else "keyword"
+            reason = "general_low_price" if (sec or "").strip().lower() == "general" and price_f is not None and price_f < 50.0 else "keyword"
             breakdown[reason] = breakdown.get(reason, 0) + 1
 
     if not to_deactivate:

@@ -269,7 +269,7 @@ def is_parking_listing(
     # a parking pass, proximity pass, or non-ticket item.
     # Confirmed: BTS SoFi "General" rows 1-25 at $5-15, Crypto.com "General"
     # rows 1-13 at $10.01, North Island Amphitheatre "General" row D at $12.51.
-    if sec.lower() == "general" and price is not None and price < 30.0:
+    if sec.lower() == "general" and price is not None and price < 50.0:
         return True
 
     # ── Tier 1: section keyword wins unconditionally ──────────────────────────
