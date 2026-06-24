@@ -52,6 +52,22 @@ export const api = {
         body: JSON.stringify(body),
         cache: "no-store",
       }).then((r) => r.json()),
+    setArtwork: (eventId: number, urlOrFile: string | File): Promise<{ custom_artwork_url: string | null }> => {
+      const form = new FormData();
+      if (typeof urlOrFile === "string") {
+        form.append("url", urlOrFile);
+      } else {
+        form.append("file", urlOrFile);
+      }
+      return fetch(`${BASE}/api/events/${eventId}/artwork`, {
+        method: "PATCH",
+        body: form,
+        cache: "no-store",
+      }).then((r) => {
+        if (!r.ok) throw new Error(`${r.status} set artwork`);
+        return r.json();
+      });
+    },
   },
   analytics: {
     baseline: (id: number) => get<BaselineResponse>(`/api/analytics/events/${id}/baseline`),

@@ -45,9 +45,16 @@ function DeltaChip({ pct, abs, size = "sm" }: {
   const textSize = size === "md" ? "text-sm" : "text-[11px]";
   const label = val != null ? fmtPct(val) : (n > 0 ? `+${n}` : `${n}`);
   return (
-    <span className={cn("inline-flex items-center gap-0.5 font-medium tabular-nums", textSize,
-      up ? "text-emerald-400" : n < 0 ? "text-red-400" : "text-slate-500")}>
-      <Icon size={size === "md" ? 13 : 10} />
+    <span className={cn(
+      "inline-flex items-center gap-0.5 font-bold tabular-nums px-1.5 py-0.5 rounded",
+      textSize,
+      up
+        ? "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20"
+        : n < 0
+          ? "text-red-400 bg-red-500/10 border border-red-500/20"
+          : "text-slate-500 bg-white/5 border border-white/10"
+    )}>
+      <Icon size={size === "md" ? 12 : 9} />
       {label}
     </span>
   );
@@ -108,10 +115,10 @@ function buildSignalReason(action: string, hero: HeroResponse | null): { headlin
 }
 
 const MP_META: Record<string, { label: string; short: string; color: string }> = {
-  stubhub:    { label: "StubHub",     short: "SH", color: "#1c64f2" },
-  gametime:   { label: "Gametime",    short: "GT", color: "#0ea5e9" },
-  tickpick:   { label: "TickPick",    short: "TP", color: "#7c3aed" },
-  vividseats: { label: "Vivid Seats", short: "VS", color: "#059669" },
+  stubhub:    { label: "StubHub",     short: "SH", color: "#e8704a" },
+  tickpick:   { label: "TickPick",    short: "TP", color: "#2dd4bf" },
+  gametime:   { label: "Gametime",    short: "GT", color: "#4ade80" },
+  vividseats: { label: "Vivid Seats", short: "VS", color: "#a78bfa" },
 };
 
 const WINDOWS: { id: HistoryWindow; label: string }[] = [
@@ -403,78 +410,42 @@ function VenueSummaryCard({ venueSlug }: { venueSlug: string }) {
   const venueName = summary?.name ?? venueSlug.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 
   return (
-    <div className="rounded-xl border border-white/7 bg-[#161b27] p-4 mb-4">
-      <div className="flex items-center gap-2 mb-4">
-        <span className="text-lg opacity-50">🏟</span>
-        <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">{venueName} — Venue Profile</h3>
-        {!summary && (
-          <span className="text-[10px] text-amber-500/60 border border-amber-500/20 rounded px-2 py-0.5 bg-amber-500/5 font-bold uppercase tracking-widest ml-auto">
-            Pending Intelligence
-          </span>
-        )}
+    <div className="rounded-xl border border-white/7 bg-[#0a0d14] p-4 mb-4">
+      <div className="flex items-center gap-2 mb-3">
+        <h3 className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">{venueName} — Venue Intelligence</h3>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+      {/* Section-specific fields — populated when section data arrives */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
         {[
-          { label: "Venue",              value: venueName },
-          { label: "Typical Inventory",  value: summary ? `~${summary.capacity} capacity` : null },
-          { label: "Typical Buy Window", value: summary?.buyWindow ?? null },
-          { label: "Typical Behavior",   value: summary?.behavior  ?? null },
+          { label: "Section",              value: summary?.name ?? null },
+          { label: "Current Inventory",    value: null },
+          { label: "Current Low",          value: null },
+          { label: "Current Median",       value: null },
+          { label: "Price Movement",       value: null },
+          { label: "Inventory Movement",   value: null },
         ].map(({ label, value }) => (
-          <div key={label} className="bg-black/20 rounded-lg px-3 py-3 border border-white/5">
-            <p className="text-xs text-slate-500 uppercase tracking-wider mb-1.5">{label}</p>
-            {value
-              ? <p className="text-sm text-slate-300 font-medium leading-snug">{value}</p>
-              : <p className="text-xs text-amber-500/40 italic">Pending data</p>
-            }
+          <div key={label} className="bg-white/[0.03] rounded-lg px-3 py-2.5 border border-white/5">
+            <p className="text-[9px] text-slate-600 uppercase tracking-wider mb-1">{label}</p>
+            <p className={value ? "text-sm text-slate-200 font-medium" : "text-sm text-slate-600 tabular-nums"}>
+              {value ?? "—"}
+            </p>
           </div>
         ))}
       </div>
-      {/* Next data slots — always shown, filled when intelligence phase activates */}
-      <div className="border-t border-white/5 pt-4">
-        <p className="text-xs text-slate-600 uppercase tracking-wider mb-3">Intelligence Board — Pending</p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div className="border-t border-white/5 pt-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {[
-            { slot: "Best Value",      icon: "⭐", desc: "Sections with price below tier median" },
-            { slot: "Cheapest Now",    icon: "💰", desc: "Current floor section by price" },
-            { slot: "Most Active",     icon: "🔥", desc: "Sections with highest seller repricing" },
-            { slot: "Opportunity",     icon: "📈", desc: "Rising demand with stable or falling price" },
-          ].map(({ slot, icon, desc }) => (
-            <div key={slot} className="rounded-lg border border-white/5 border-dashed bg-white/2 px-3 py-3 flex flex-col gap-1">
-              <div className="flex items-center gap-1.5">
-                <span className="text-sm opacity-40">{icon}</span>
-                <span className="text-xs font-semibold text-slate-500">{slot}</span>
-              </div>
-              <p className="text-[11px] text-slate-700 leading-snug">{desc}</p>
-              <span className="inline-block text-[10px] font-bold uppercase tracking-widest text-amber-500/40 mt-0.5">Pending</span>
+            { label: "Marketplace Share" },
+            { label: "Section Activity" },
+            { label: "Demand / Supply / Trend" },
+          ].map(({ label }) => (
+            <div key={label} className="bg-white/[0.02] rounded-lg px-3 py-2.5 border border-white/5">
+              <p className="text-[9px] text-slate-600 uppercase tracking-wider mb-1">{label}</p>
+              <p className="text-sm text-slate-700">—</p>
             </div>
           ))}
         </div>
       </div>
-      {/* Trend Panel */}
-      <div className="border-t border-white/5 pt-4 mt-4">
-        <p className="text-xs text-slate-600 uppercase tracking-wider mb-3">Venue Trend Panel — Pending</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {([
-            { slot: "Last Events",    icon: "📅", desc: "Recent event sell-through, floor, and price velocity at this venue." },
-            { slot: "Venue Pattern",  icon: "📊", desc: "Seasonal demand patterns, typical ticket release timing, and day-of drop behavior." },
-          ] as const).map(({ slot, icon, desc }) => (
-            <div key={slot} className="rounded-lg border border-white/5 border-dashed bg-white/2 px-3 py-3">
-              <div className="flex items-center gap-1.5 mb-1">
-                <span className="text-sm opacity-40">{icon}</span>
-                <span className="text-xs font-semibold text-slate-500">{slot}</span>
-                <span className="ml-auto text-[9px] font-bold uppercase tracking-widest text-amber-500/40">Pending</span>
-              </div>
-              <p className="text-[11px] text-slate-700 leading-snug">{desc}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-      {summary && (
-        <p className="text-xs text-slate-700 mt-3 flex items-center gap-1">
-          <span className="text-amber-500/40">⚠</span>
-          Typical behavior based on static venue knowledge — dynamic intelligence pending.
-        </p>
-      )}
     </div>
   );
 }
@@ -603,6 +574,8 @@ export default function EventDetailPage() {
   const nflAudio = useNflAudio();
 
   const [eventMeta, setEventMeta] = useState<EventMeta | null>(null);
+  const [customArtworkUrl, setCustomArtworkUrl] = useState<string | null>(null);
+  const [artworkUploading, setArtworkUploading] = useState(false);
   const [hero, setHero]           = useState<HeroResponse | null>(null);
   const [market, setMarket]       = useState<MarketResponse | null>(null);
   const [history, setHistory]     = useState<HistoryResponse | null>(null);
@@ -635,6 +608,13 @@ export default function EventDetailPage() {
     return () => document.removeEventListener("mousedown", handleOutside);
   }, [showFollowPanel]);
 
+  // Sync customArtworkUrl from loaded eventMeta (initial load)
+  useEffect(() => {
+    if (eventMeta?.custom_artwork_url !== undefined) {
+      setCustomArtworkUrl(eventMeta.custom_artwork_url ?? null);
+    }
+  }, [eventMeta?.custom_artwork_url]);
+
   useEffect(() => {
     if (!id) return;
     setLoadingAll(true);
@@ -665,8 +645,9 @@ export default function EventDetailPage() {
   const venue      = eventMeta?.venue_name ?? eventMeta?.venue;
   const dateStr    = eventMeta?.event_date;
   const artist     = eventMeta?.artist;
-  const gradient   = getEventGradient(artist, title);
-  const artworkUrl = useArtistImage(artist, title);
+  const gradient        = getEventGradient(artist, title);
+  const autoArtworkUrl  = useArtistImage(artist, title);
+  const artworkUrl      = customArtworkUrl ?? autoArtworkUrl;
   const spotify    = getSpotifyData(artist);
   const isSports   = /nfl|nba|mlb|nhl|49ers|lakers|dodgers|rams|chargers|clippers|galaxy|kings/i.test(artist ?? "") || /nfl|nba|mlb|nhl/i.test(title ?? "");
   const action     = signalToAction(hero?.signal);
@@ -858,87 +839,143 @@ export default function EventDetailPage() {
           SECTION 1 — EVENT HEADER (compact, ~130px)
           Three columns: artwork | event info | tracking stats
           ════════════════════════════════════════ */}
-      <section className="rounded-xl border border-white/8 bg-[#0f1420] p-4">
-        <div className="flex items-center gap-4">
+      <section className="rounded-xl border border-white/8 bg-[#0a0d14] overflow-hidden">
+        <div className="flex items-stretch min-h-[192px]"
+          style={{ background: `linear-gradient(90deg, ${gradient[0]}18, transparent 60%)` }}>
 
-          {/* LEFT — Artwork 96×96 */}
-          <div className="flex-shrink-0 w-24 h-24 rounded-xl overflow-hidden"
-            style={{ background: `linear-gradient(145deg, ${gradient[0]}, ${gradient[1]})` }}>
+          {/* LEFT — Artwork full height */}
+          <div className="flex-shrink-0 w-28 sm:w-52 relative overflow-hidden"
+            style={{ background: `linear-gradient(145deg, ${gradient[0]}cc, ${gradient[1]}cc)` }}>
             {artworkUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={artworkUrl} alt={artist ?? title}
                 className="w-full h-full object-cover object-top"
                 onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-3xl font-black text-white/70 select-none">
+              <div className="w-full h-full flex items-center justify-center text-4xl font-black text-white/50 select-none">
                 {(artist ?? title).slice(0, 1).toUpperCase()}
               </div>
+            )}
+            {/* Right-edge vignette — blends artwork into identity area */}
+            <div className="absolute inset-y-0 right-0 w-10"
+              style={{ background: `linear-gradient(to right, transparent, #0a0d14)` }} />
+            {/* Bottom vignette */}
+            <div className="absolute inset-x-0 bottom-0 h-12"
+              style={{ background: `linear-gradient(to bottom, transparent, rgba(10,13,20,0.55))` }} />
+
+            {/* Artwork control — visible on hover */}
+            <label
+              className="absolute inset-0 flex items-end justify-center pb-2 opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+              title={artworkUrl ? "Replace artwork" : "Upload artwork"}
+              aria-label={artworkUrl ? "Replace artwork" : "Upload artwork"}
+            >
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="sr-only"
+                disabled={artworkUploading}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file || !id) return;
+                  setArtworkUploading(true);
+                  try {
+                    const res = await api.events.setArtwork(id, file);
+                    setCustomArtworkUrl(res.custom_artwork_url ?? null);
+                  } finally {
+                    setArtworkUploading(false);
+                    e.target.value = "";
+                  }
+                }}
+              />
+              <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-black/70 text-white/80 backdrop-blur-sm leading-none select-none">
+                {artworkUploading ? "…" : artworkUrl ? "Replace Art" : "Upload Art"}
+              </span>
+            </label>
+
+            {/* "Use Auto Art" revert — shown only when custom art is active */}
+            {customArtworkUrl && (
+              <button
+                className="absolute top-1.5 right-1.5 text-[8px] font-bold uppercase tracking-wider px-1.5 py-1 rounded bg-black/60 text-white/60 hover:text-white/90 transition-colors leading-none"
+                title="Remove custom art, revert to auto"
+                onClick={async () => {
+                  if (!id) return;
+                  setArtworkUploading(true);
+                  try {
+                    await api.events.setArtwork(id, "");
+                    setCustomArtworkUrl(null);
+                  } finally {
+                    setArtworkUploading(false);
+                  }
+                }}
+              >
+                ✕
+              </button>
             )}
           </div>
 
           {/* CENTER — Event identity */}
-          <div className="flex-1 min-w-0">
-            {/* Only show artist label when it differs from the event title (prevents "Kid Cudi / Kid Cudi") */}
+          <div className="flex-1 min-w-0 p-5 flex flex-col justify-center gap-1.5">
             {artist && artist !== title && (
-              <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-0.5 truncate">{artist}</p>
+              <p className="text-[10px] text-slate-400 uppercase tracking-[0.15em] font-semibold truncate">{artist}</p>
             )}
-            <h1 className="text-lg sm:text-xl font-bold text-white leading-tight line-clamp-1">{title}</h1>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-xs text-slate-400">
-              {venue     && <span className="flex items-center gap-1"><MapPin size={10} className="opacity-60 flex-shrink-0" /><span className="truncate">{venue}</span></span>}
-              {dateLabel && <span className="flex items-center gap-1"><Calendar size={10} className="opacity-60 flex-shrink-0" />{dateLabel}</span>}
+            <h1 className="text-[28px] sm:text-[30px] font-black text-white leading-tight tracking-tight line-clamp-1">{title}</h1>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
+              {venue     && <span className="flex items-center gap-1 text-slate-400"><MapPin size={10} className="opacity-60 flex-shrink-0" /><span className="truncate">{venue}</span></span>}
+              {dateLabel && <span className="flex items-center gap-1 text-slate-300 font-medium"><Calendar size={10} className="opacity-60 flex-shrink-0" />{dateLabel}</span>}
             </div>
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
               {daysOut != null && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded"
                   style={{ color: aColors.text, background: aColors.bg + "50", border: `1px solid ${aColors.border}` }}>
                   {isCompleted ? "Event passed" : daysOut < 1 ? "Happening today" : daysOut < 2 ? "Tomorrow" : `${Math.round(daysOut)}d away`}
                 </span>
               )}
               {isCompleted && (
-                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 bg-white/5 border border-white/10 rounded-full px-2 py-0.5">Completed</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 bg-white/5 border border-white/10 rounded px-2 py-0.5">Completed</span>
               )}
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border"
-                style={{ color: aColors.text, borderColor: aColors.border + "80", background: aColors.bg + "30" }}>
+              <span className="text-[10px] font-black px-2.5 py-0.5 rounded border"
+                style={{ color: aColors.text, borderColor: aColors.border + "80", background: aColors.bg + "40" }}>
                 {action}
               </span>
             </div>
           </div>
 
-          {/* RIGHT — Market Health: per-marketplace freshness status chips */}
-          <div className="hidden sm:flex flex-col gap-1.5 flex-shrink-0">
-            <p className="text-[9px] text-slate-600 uppercase tracking-wider text-right mb-0.5">Marketplace Freshness</p>
+          {/* RIGHT — Marketplace freshness */}
+          <div className="hidden sm:flex flex-col gap-1.5 flex-shrink-0 p-5 justify-center items-end">
+            <p className="text-[9px] text-slate-600 uppercase tracking-[0.15em] mb-1">Marketplace Freshness</p>
             {eventMeta?.marketplace_freshness
-              ? Object.entries(eventMeta.marketplace_freshness)
-                  .filter(([slug]) => ['stubhub', 'tickpick', 'gametime', 'vividseats'].includes(slug))
-                  .map(([slug, f]) => {
-                  const status = f.freshness_status;
-                  const age = f.age_minutes;
+              ? (['stubhub', 'tickpick', 'gametime', 'vividseats'] as const)
+                  .filter(slug => eventMeta.marketplace_freshness![slug])
+                  .map(slug => {
+                  const f = eventMeta.marketplace_freshness![slug] as { freshness_status?: string; age_minutes?: number };
+                  const status = f?.freshness_status ?? "no_data";
+                  const age = f?.age_minutes;
                   const ageStr = age == null ? null : age < 60 ? `${age}m` : `${Math.round(age / 60)}h`;
-                  const cfg: Record<string, { dot: string; label: string; text: string }> = {
-                    fresh:   { dot: "bg-emerald-400", label: "Fresh",   text: "text-emerald-400" },
-                    late:    { dot: "bg-amber-400",   label: "Late",    text: "text-amber-400"   },
-                    stale:   { dot: "bg-orange-500",  label: "Stale",   text: "text-orange-400"  },
-                    dead:    { dot: "bg-red-500",     label: "Dead",    text: "text-red-400"     },
-                    no_data: { dot: "bg-slate-500",   label: "No data", text: "text-slate-400"   },
+                  const cfg: Record<string, { dot: string; text: string }> = {
+                    fresh:   { dot: "bg-emerald-400", text: "text-emerald-400" },
+                    late:    { dot: "bg-amber-400",   text: "text-amber-400"   },
+                    stale:   { dot: "bg-orange-500",  text: "text-orange-400"  },
+                    dead:    { dot: "bg-red-500",     text: "text-red-400"     },
+                    no_data: { dot: "bg-slate-600",   text: "text-slate-500"   },
                   };
-                  const c = cfg[status] ?? { dot: "bg-slate-600", label: status, text: "text-slate-500" };
+                  const c = cfg[status] ?? { dot: "bg-slate-600", text: "text-slate-500" };
+                  const info = MP_META[slug];
                   return (
-                    <div key={slug} className="flex items-center gap-1.5 justify-end">
-                      <span className="text-[9px] text-slate-500 capitalize">{slug}</span>
-                      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${c.dot}`} />
-                      <span className={`text-[9px] font-semibold ${c.text} tabular-nums w-8 text-left`}>
-                        {ageStr ?? c.label}
+                    <div key={slug} className="flex items-center gap-2">
+                      <span className="text-[10px] text-slate-400 capitalize">{info?.label ?? slug}</span>
+                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${c.dot}`} />
+                      <span className={`text-[10px] font-semibold ${c.text} tabular-nums w-8 text-left`}>
+                        {ageStr ?? "—"}
                       </span>
                     </div>
                   );
                 })
-              : (
-                <p className="text-[10px] text-slate-600 text-right">No feeds configured</p>
-              )
+              : <p className="text-[10px] text-slate-600">No feeds</p>
             }
           </div>
         </div>
       </section>
+
 
       {/* ════════════════════════════════════════
           SECTION 2 — MARKET INTELLIGENCE HERO (~200px)
@@ -946,50 +983,69 @@ export default function EventDetailPage() {
           ════════════════════════════════════════ */}
       <section className="rounded-xl border border-white/8 bg-[#0f1420] overflow-hidden">
         <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-white/8"
-          style={{ gridTemplateColumns: "1fr 1.2fr 1fr" }}>
+          style={{ gridTemplateColumns: "1.4fr 1.2fr 0.9fr" }}>
 
           {/* Col 1: Current Market */}
-          <div className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Current Market</p>
-              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border border-white/10 text-slate-500 bg-white/3">24H ▾</span>
+          <div className="p-5">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[9px] text-slate-500 uppercase tracking-[0.18em] font-semibold">Current Market</p>
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border border-white/10 text-slate-500 bg-white/3">24H</span>
             </div>
-            <div className="space-y-0">
-              {[
-                { label: "Low",    val: fmt$$(hero?.price?.low_ask),                            cls: "text-emerald-300" },
-                { label: "Median", val: fmt$$(hero?.price?.median_ask),                          cls: "text-white" },
-                { label: "High",   val: fmt$$(hero?.price?.high_ask ?? hero?.price?.p75_ask),   cls: "text-slate-300" },
-              ].map(({ label, val, cls }) => (
-                <div key={label} className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0">
-                  <span className="text-xs text-slate-400">{label}</span>
-                  <span className={cn("text-sm font-bold tabular-nums", cls)}>{val ?? "—"}</span>
-                </div>
-              ))}
-              <div className="flex items-center justify-between py-1.5">
-                <span className="text-xs text-slate-400">Inventory</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-bold text-slate-200 tabular-nums">
-                    {fmtNum(baseline?.current?.raw_listings ?? hero?.inventory?.total_listings) ?? "—"}
-                  </span>
-                  {invDelta24 != null && (
-                    <span className={cn("text-[11px] font-semibold tabular-nums",
-                      invDelta24 > 0 ? "text-emerald-400" : "text-red-400")}>
-                      ({invDelta24 > 0 ? "+" : ""}{invDelta24})
+            <div>
+              {(() => {
+                const lowDelta   = baseline?.deltas_24h?.low_ask;
+                const priceDelta = hero?.changes?.h24?.price_delta_pct;
+                const low    = hero?.price?.low_ask;
+                const median = hero?.price?.median_ask;
+                const high   = hero?.price?.high_ask ?? hero?.price?.p75_ask;
+                // Per-row sizing: Low largest, Median strong, High tertiary
+                const rows = [
+                  { label: "Low",    val: fmt$$(low),    delta: lowDelta?.pct ?? priceDelta,
+                    cls: "text-emerald-300 font-black tabular-nums", size: "text-[34px] leading-none" as const,
+                    py: "pt-0 pb-3" },
+                  { label: "Median", val: fmt$$(median), delta: priceDelta,
+                    cls: "text-white font-bold tabular-nums",         size: "text-[24px] leading-none" as const,
+                    py: "py-2.5 border-t border-white/[0.04]" },
+                  { label: "High",   val: fmt$$(high),   delta: null,
+                    cls: "text-slate-300 font-semibold tabular-nums", size: "text-[17px] leading-none" as const,
+                    py: "py-2 border-t border-white/[0.04]" },
+                ];
+                return rows.map(({ label, val, delta, cls, size, py }) => (
+                  <div key={label} className={`flex items-center gap-2 ${py}`}>
+                    <span className="text-[10px] text-slate-500 w-11 flex-shrink-0">{label}</span>
+                    <span className={cn(size, cls, "flex-1")}>{val ?? "—"}</span>
+                    <span className="flex-shrink-0">
+                      {delta != null ? <DeltaChip pct={delta} /> : <span className="text-white/15 text-[10px]">—</span>}
                     </span>
-                  )}
-                </div>
+                  </div>
+                ));
+              })()}
+              <div className="flex items-center gap-2 py-2 border-t border-white/[0.04]">
+                <span className="text-[10px] text-slate-500 w-11 flex-shrink-0">Inv</span>
+                <span className="text-[20px] font-bold text-slate-100 tabular-nums leading-none flex-1">
+                  {fmtNum(baseline?.current?.raw_listings ?? hero?.inventory?.total_listings) ?? "—"}
+                </span>
+                {invDelta24 != null ? (
+                  <span className={cn("text-[11px] font-semibold tabular-nums flex-shrink-0",
+                    invDelta24 > 0 ? "text-emerald-400" : "text-red-400")}>
+                    {invDelta24 > 0 ? "+" : ""}{invDelta24} 24H
+                  </span>
+                ) : <span className="text-white/15 text-[10px]">—</span>}
               </div>
             </div>
           </div>
 
           {/* Col 2: Market Absorption — primary emphasis */}
-          <div className="p-4 bg-white/[0.02]">
-            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-3">Absorption</p>
-            {/* Est. Avg Sale Price — primary metric */}
-            <div className="mb-3 pb-3 border-b border-white/8">
-              <p className="text-[10px] text-slate-500 mb-0.5">Estimated Avg Sale Price</p>
-              <p className="text-xl font-black text-amber-300 tabular-nums">—</p>
-              <p className="text-[10px] text-amber-600/60 italic">Tracking</p>
+          <div className="p-5 bg-white/[0.015]">
+            <p className="text-[9px] text-slate-500 uppercase tracking-[0.18em] font-semibold mb-4">Absorption</p>
+            {/* Est. Avg Sale Price — dominant metric */}
+            <div className="mb-4 pb-3 border-b border-white/8">
+              <p className="text-[9px] text-slate-500 mb-1.5 uppercase tracking-[0.12em]">Est. Avg Sale Price</p>
+              <p className="text-[36px] font-black text-amber-300 tabular-nums leading-none">—</p>
+              <div className="flex items-center gap-1.5 mt-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400/50 animate-pulse flex-shrink-0" />
+                <p className="text-[10px] text-slate-600 italic">Monitoring · collecting as tickets move</p>
+              </div>
             </div>
             <div className="space-y-0">
               {[
@@ -998,37 +1054,43 @@ export default function EventDetailPage() {
                 { label: "7D Sold",        val: null as string | null },
                 { label: "Since Tracking", val: null as string | null },
               ].map(({ label, val }) => (
-                <div key={label} className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0">
-                  <span className="text-xs text-slate-400">{label}</span>
-                  <span className="text-[11px] text-slate-600">{val ?? "—"}</span>
+                <div key={label} className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-0">
+                  <span className="text-[10px] text-slate-400">{label}</span>
+                  <span className="text-[11px] text-slate-700">{val ?? "·"}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Col 3: Seller Behavior */}
-          <div className="p-4">
-            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-3">Seller Behavior</p>
-            <div className="space-y-0">
-              <div className="flex items-center justify-between py-1.5 border-b border-white/5">
-                <span className="text-xs text-slate-400">Relist Price Change</span>
+          <div className="p-5">
+            <p className="text-[9px] text-slate-500 uppercase tracking-[0.18em] font-semibold mb-4">Seller Behavior</p>
+            <div>
+              <div className="flex items-center justify-between py-2.5 border-b border-white/[0.04]">
+                <span className="text-[10px] text-slate-400">Relist Price Change</span>
                 <span className="text-[11px] text-slate-600">—</span>
               </div>
-              <div className="flex items-center justify-between py-1.5 border-b border-white/5">
-                <span className="text-xs text-slate-400">Price Drops</span>
-                <span className={cn("text-sm font-bold tabular-nums", seller?.price_drops_24h ? "text-red-400" : "text-slate-500")}>
-                  {seller?.price_drops_24h != null ? fmtNum(seller.price_drops_24h) : "—"}
+              <div className="flex items-center justify-between py-2.5 border-b border-white/[0.04]">
+                <span className="text-[10px] text-slate-400">Price Drops</span>
+                <span className={cn("text-[13px] font-semibold tabular-nums",
+                  seller?.price_drops_24h ? "text-amber-300" : "text-slate-600")}>
+                  {seller?.price_drops_24h != null ? fmtNum(seller.price_drops_24h) : "·"}
                 </span>
               </div>
-              <div className="flex items-center justify-between py-1.5 border-b border-white/5">
-                <span className="text-xs text-slate-400">Repriced Listings</span>
-                <span className={cn("text-sm font-bold tabular-nums", seller?.repriced_24h ? "text-amber-400" : "text-slate-500")}>
-                  {seller?.repriced_24h != null ? fmtNum(seller.repriced_24h) : "—"}
+              <div className="flex items-center justify-between py-2.5 border-b border-white/[0.04]">
+                <span className="text-[10px] text-slate-400">Repriced Listings</span>
+                <span className={cn("text-[13px] font-semibold tabular-nums",
+                  seller?.repriced_24h ? "text-amber-400" : "text-slate-600")}>
+                  {seller?.repriced_24h != null ? fmtNum(seller.repriced_24h) : "·"}
                 </span>
               </div>
-              <div className="flex items-center justify-between py-1.5">
-                <span className="text-xs text-slate-400">Seller Mood</span>
-                <span className="text-sm font-bold text-slate-300">{sellerMood ?? "—"}</span>
+              {/* Seller Mood — editorial signal */}
+              <div className="flex items-start justify-between py-2.5 border-l-2 border-red-500/30 pl-2.5 -ml-2.5 mt-0.5">
+                <span className="text-[10px] text-slate-500">Seller Mood</span>
+                <span className={cn("text-[13px] font-semibold italic text-right max-w-[60%]",
+                  sellerMood ? "text-red-300" : "text-slate-600")}>
+                  {sellerMood ?? "·"}
+                </span>
               </div>
             </div>
           </div>
@@ -1086,69 +1148,79 @@ export default function EventDetailPage() {
             const mpAction = signalToAction(hero?.signal);
             const mpColors = actionColors(mpAction);
 
+            const estSale  = null; // not yet populated
+            const relist   = null; // not yet populated
+            const showEstRow = estSale != null || relist != null;
+
             return (
-              <div key={slug} className="rounded-xl border border-white/8 bg-[#0f1420] p-3 flex flex-col gap-2.5">
-                {/* Card header: name + freshness dot */}
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold" style={{ color: info.color }}>{info.label}</span>
-                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${freshDot}`} />
-                </div>
+              <div key={slug} className="rounded-xl border border-white/8 bg-[#0f1420] overflow-hidden flex flex-col"
+                style={{ borderTop: `2px solid ${info.color}40` }}>
+                <div className="p-3 flex flex-col gap-2.5 flex-1">
+                  {/* Card header: name + freshness dot */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold" style={{ color: info.color }}>{info.label}</span>
+                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${freshDot}`} />
+                  </div>
 
-                {/* Low / Median */}
-                <div className="grid grid-cols-2 gap-1.5">
-                  <div>
-                    <p className="text-[9px] text-slate-500 mb-0.5">Low</p>
-                    <p className={cn("text-sm font-black tabular-nums", isBest ? "text-emerald-300" : "text-white")}>
-                      {fmt$$(mpData?.low_ask) ?? "—"}
-                      {isBest && <span className="text-[8px] text-emerald-500 font-bold ml-0.5">B</span>}
-                    </p>
+                  {/* Low / Median — larger, primary data */}
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <div>
+                      <p className="text-[9px] text-slate-500 uppercase tracking-wide mb-0.5">Low</p>
+                      <p className={cn("text-[17px] font-black tabular-nums leading-none",
+                        isBest ? "text-emerald-300" : "text-white")}>
+                        {fmt$$(mpData?.low_ask) ?? "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] text-slate-500 uppercase tracking-wide mb-0.5">Median</p>
+                      <p className="text-[15px] font-bold text-slate-200 tabular-nums leading-none">{fmt$$(mpData?.median_ask) ?? "—"}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[9px] text-slate-500 mb-0.5">Median</p>
-                    <p className="text-sm font-bold text-slate-200 tabular-nums">{fmt$$(mpData?.median_ask) ?? "—"}</p>
-                  </div>
-                </div>
 
-                {/* Inventory / Sold */}
-                <div className="grid grid-cols-2 gap-1.5 pt-2 border-t border-white/5">
-                  <div>
-                    <p className="text-[9px] text-slate-500 mb-0.5">Inventory</p>
-                    <p className="text-xs font-bold text-slate-300 tabular-nums">
-                      {mpData?.listings != null ? fmtNum(mpData.listings) : "—"}
-                    </p>
+                  {/* Inventory / Sold */}
+                  <div className="grid grid-cols-2 gap-1.5 pt-2 border-t border-white/[0.04]">
+                    <div>
+                      <p className="text-[9px] text-slate-500 uppercase tracking-wide mb-0.5">Inventory</p>
+                      <p className="text-xs font-bold text-slate-300 tabular-nums">
+                        {mpData?.listings != null ? fmtNum(mpData.listings) : "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] text-slate-500 uppercase tracking-wide mb-0.5">Sold (24H)</p>
+                      <p className={cn("text-xs font-bold tabular-nums",
+                        inv24 != null && inv24 < 0 ? "text-emerald-400" : "text-slate-500")}>
+                        {inv24 != null && inv24 < 0 ? Math.abs(inv24) : "—"}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[9px] text-slate-500 mb-0.5">Sold (24H)</p>
-                    <p className={cn("text-xs font-bold tabular-nums", inv24 != null && inv24 < 0 ? "text-emerald-400" : "text-slate-500")}>
-                      {inv24 != null && inv24 < 0 ? Math.abs(inv24) : "—"}
-                    </p>
-                  </div>
-                </div>
 
-                {/* Est Sale / Relist */}
-                <div className="grid grid-cols-2 gap-1.5">
-                  <div>
-                    <p className="text-[9px] text-slate-500 mb-0.5">Est. Sale</p>
-                    <p className="text-xs text-slate-600">—</p>
-                  </div>
-                  <div>
-                    <p className="text-[9px] text-slate-500 mb-0.5">Relist</p>
-                    <p className="text-xs text-slate-600">—</p>
-                  </div>
-                </div>
-
-                {/* BUY chip + View link */}
-                <div className="flex items-center gap-1.5 mt-auto pt-1.5 border-t border-white/5">
-                  <span className="text-[9px] font-black px-1.5 py-0.5 rounded border flex-shrink-0"
-                    style={{ color: mpColors.text, borderColor: mpColors.border + "60", background: mpColors.bg + "25" }}>
-                    {mpAction}
-                  </span>
-                  {tracked?.external_url && (
-                    <a href={tracked.external_url} target="_blank" rel="noopener noreferrer"
-                      className="ml-auto text-[9px] font-semibold text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-0.5">
-                      View <ArrowUpRight size={8} />
-                    </a>
+                  {/* Est Sale / Relist — only render when data present */}
+                  {showEstRow && (
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <div>
+                        <p className="text-[9px] text-slate-500 uppercase tracking-wide mb-0.5">Est. Sale</p>
+                        <p className="text-xs text-slate-400">{estSale ?? "—"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] text-slate-500 uppercase tracking-wide mb-0.5">Relist</p>
+                        <p className="text-xs text-slate-400">{relist ?? "—"}</p>
+                      </div>
+                    </div>
                   )}
+
+                  {/* BUY chip + View link */}
+                  <div className="flex items-center gap-1.5 mt-auto pt-1.5 border-t border-white/[0.04]">
+                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded border flex-shrink-0"
+                      style={{ color: mpColors.text, borderColor: mpColors.border + "60", background: mpColors.bg + "30" }}>
+                      {mpAction}
+                    </span>
+                    {tracked?.external_url && (
+                      <a href={tracked.external_url} target="_blank" rel="noopener noreferrer"
+                        className="ml-auto text-[9px] font-semibold text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-0.5">
+                        View <ArrowUpRight size={8} />
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -1186,7 +1258,7 @@ export default function EventDetailPage() {
                         <div key={i} className="flex items-center gap-3 px-4 py-3 border-b border-white/5 last:border-0 hover:bg-white/2 transition-colors">
                           <span className="text-[10px] font-bold text-slate-600 w-4 tabular-nums">{i + 1}</span>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold text-slate-200 truncate">{s.display_name}</p>
+                            <p className="text-xs font-bold text-slate-200 truncate">{s.display_name}</p>
                             <p className="text-[10px] text-slate-600">
                               {s.listings != null ? `${fmtNum(s.listings)} listings` : ""}
                               {s.listings != null && s.low_ask != null ? " · " : ""}

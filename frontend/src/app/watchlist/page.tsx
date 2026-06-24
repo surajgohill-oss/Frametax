@@ -30,7 +30,14 @@ function DeltaChip({ pct, abs }: { pct?: number | null; abs?: number | null }) {
   const up = n > 0;
   const Icon = up ? TrendingUp : n < 0 ? TrendingDown : Minus;
   return (
-    <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold tabular-nums ${up ? "text-emerald-400" : n < 0 ? "text-red-400" : "text-white/40"}`}>
+    <span className={cn(
+      "inline-flex items-center gap-0.5 text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded",
+      up
+        ? "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20"
+        : n < 0
+          ? "text-red-400 bg-red-500/10 border border-red-500/20"
+          : "text-slate-500 bg-white/5 border border-white/10"
+    )}>
       <Icon size={9} />{pct != null ? fmtPct(pct) : (n > 0 ? `+${n}` : String(n))}
     </span>
   );
@@ -181,13 +188,14 @@ function HeadlineCard({
   const title      = meta?.title ?? event.title;
   const venue      = meta?.venue_name;
   const dateStr    = meta?.event_date;
-  const artist     = meta?.artist;
-  const gradient   = getEventGradient(artist, title);
-  const artworkUrl = useArtistImage(artist, title);
-  const action     = signalToAction(event.signal);
-  const colors     = actionColors(action);
-  const mpPrices   = meta?.all_marketplace_prices ?? meta?.marketplace_prices ?? {};
-  const invDelta   = event.changes?.h24?.inventory_delta ?? null;
+  const artist          = meta?.artist;
+  const gradient        = getEventGradient(artist, title);
+  const autoArtworkUrl  = useArtistImage(artist, title);
+  const artworkUrl      = meta?.custom_artwork_url ?? autoArtworkUrl;
+  const action          = signalToAction(event.signal);
+  const colors          = actionColors(action);
+  const mpPrices        = meta?.all_marketplace_prices ?? meta?.marketplace_prices ?? {};
+  const invDelta        = event.changes?.h24?.inventory_delta ?? null;
 
   let daysOut: number | null = null;
   let dateLabel = "";
@@ -228,27 +236,33 @@ function HeadlineCard({
     .sort(([, a], [, b]) => (a as number) - (b as number));
 
   return (
-    <div className="rounded-xl border border-white/8 bg-[#0f1420] overflow-hidden">
-      {/* Identity row */}
-      <div className="flex items-center gap-4 px-4 py-3 border-b border-white/6"
-        style={{ background: `linear-gradient(90deg, ${gradient[0]}12, transparent 60%)` }}>
-        {/* Compact artwork */}
-        <div className="flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden"
-          style={{ background: `linear-gradient(145deg, ${gradient[0]}, ${gradient[1]})` }}>
+    <div className="rounded-xl border border-white/8 bg-[#0a0d14] overflow-hidden">
+      {/* Identity row — full-height artwork */}
+      <div className="flex items-stretch border-b border-white/6 min-h-[160px]"
+        style={{ background: `linear-gradient(90deg, ${gradient[0]}15, transparent 65%)` }}>
+
+        {/* Artwork — full height */}
+        <div className="flex-shrink-0 w-28 sm:w-40 relative overflow-hidden"
+          style={{ background: `linear-gradient(145deg, ${gradient[0]}cc, ${gradient[1]}cc)` }}>
           {artworkUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={artworkUrl} alt={artist ?? title}
               className="w-full h-full object-cover object-top"
               onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-xl font-black text-white/60 select-none">
-              {(artist ?? title).slice(0, 1).toUpperCase()}
+            <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+              <span className="text-3xl font-black text-white/50 select-none">
+                {(artist ?? title).slice(0, 1).toUpperCase()}
+              </span>
+              <span className="text-[9px] text-white/25 border border-white/15 px-1.5 py-0.5 rounded">Upload Art</span>
             </div>
           )}
+          <div className="absolute inset-y-0 right-0 w-4"
+            style={{ background: `linear-gradient(to right, transparent, ${gradient[0]}08)` }} />
         </div>
 
         {/* Identity */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 p-4 flex flex-col justify-between">
           {/* Pin / Best Watched label */}
           <div className="flex items-center gap-1.5 mb-0.5">
             {isPinned ? (
@@ -262,7 +276,7 @@ function HeadlineCard({
           <Link href={`/events/${event.event_id}`}>
             <span className="text-base font-bold text-white truncate block hover:text-blue-300 transition-colors">{title}</span>
           </Link>
-          <div className="flex items-center gap-2.5 mt-0.5 flex-wrap">
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
             {venue && <span className="text-xs text-slate-500 truncate">{venue}</span>}
             {dateLabel && <span className="text-xs text-slate-500">{dateLabel}</span>}
             {daysOut != null && (
@@ -271,7 +285,6 @@ function HeadlineCard({
                 {daysOut <= 0 ? "Today" : daysOut === 1 ? "Tomorrow" : `${daysOut}d away`}
               </span>
             )}
-            {/* BUY/WAIT/MONITOR — small chip only */}
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border"
               style={{ color: colors.text, borderColor: colors.border + "80", background: colors.bg + "25" }}>
               {action}
@@ -279,8 +292,8 @@ function HeadlineCard({
           </div>
         </div>
 
-        {/* RIGHT — Market Health chips + action buttons */}
-        <div className="hidden sm:flex items-center gap-3 flex-shrink-0">
+        {/* RIGHT — Freshness + action buttons */}
+        <div className="hidden sm:flex items-start gap-3 flex-shrink-0 p-4">
           <div className="text-right space-y-1">
             <p className="text-[9px] text-slate-600 uppercase tracking-wider mb-1">Marketplace Freshness</p>
             {meta?.marketplace_freshness
@@ -338,76 +351,73 @@ function HeadlineCard({
         <div className="p-4">
           <div className="flex items-center justify-between mb-2">
             <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Current Market</p>
-            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border border-white/10 text-slate-500 bg-white/3">24H ▾</span>
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border border-white/10 text-slate-500 bg-white/3">24H</span>
           </div>
           <div className="space-y-0">
             {[
-              { label: "Low",    val: fmt$$(event.price?.low_ask),    cls: "text-emerald-300" },
-              { label: "Median", val: fmt$$(event.price?.median_ask), cls: "text-white" },
-              { label: "High",   val: fmt$$(event.price?.high_ask),   cls: "text-slate-300" },
-            ].map(({ label, val, cls }) => (
-              <div key={label} className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0">
-                <span className="text-xs text-slate-400">{label}</span>
-                <span className={`text-sm font-bold tabular-nums ${cls}`}>{val ?? "—"}</span>
+              { label: "Low",    val: fmt$$(event.price?.low_ask),    cls: "text-emerald-300 font-bold", showDelta: true },
+              { label: "Median", val: fmt$$(event.price?.median_ask), cls: "text-white font-semibold",   showDelta: false },
+              { label: "High",   val: fmt$$(event.price?.high_ask),   cls: "text-slate-300",             showDelta: false },
+            ].map(({ label, val, cls, showDelta }) => (
+              <div key={label} className="flex items-center gap-2 py-1.5 border-b border-white/5 last:border-0">
+                <span className="text-xs text-slate-400 w-10 flex-shrink-0">{label}</span>
+                <span className={`text-sm tabular-nums flex-1 ${cls}`}>{val ?? "—"}</span>
+                <span className="w-12 text-right">
+                  {showDelta && event.changes?.h24?.price_delta_pct != null
+                    ? <DeltaChip pct={event.changes.h24.price_delta_pct} />
+                    : <span className="text-white/20 text-[10px]">—</span>}
+                </span>
               </div>
             ))}
-            <div className="flex items-center justify-between py-1.5">
-              <span className="text-xs text-slate-400">Inventory</span>
-              <div className="flex items-center gap-1.5">
-                <span className="text-sm font-bold text-slate-200 tabular-nums">
-                  {fmtNum(event.inventory?.total_listings) ?? "—"}
+            <div className="flex items-center gap-2 py-1.5">
+              <span className="text-xs text-slate-400 w-10 flex-shrink-0">Inv</span>
+              <span className="text-sm font-bold text-slate-200 tabular-nums flex-1">
+                {fmtNum(event.inventory?.total_listings) ?? "—"}
+              </span>
+              {invDelta != null ? (
+                <span className={`text-[11px] font-semibold tabular-nums ${invDelta > 0 ? "text-emerald-400" : "text-red-400"}`}>
+                  {invDelta > 0 ? "+" : ""}{invDelta} 24H
                 </span>
-                {invDelta != null && (
-                  <span className={`text-[11px] font-semibold tabular-nums ${invDelta > 0 ? "text-emerald-400" : "text-red-400"}`}>
-                    ({invDelta > 0 ? "+" : ""}{invDelta})
-                  </span>
-                )}
-              </div>
+              ) : <span className="text-white/20 text-[10px]">—</span>}
             </div>
           </div>
-          {/* Marketplace strip under Current Market */}
-          {mpEntries.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-3 pt-2.5 border-t border-white/5">
-              {mpEntries.slice(0, 4).map(([slug, price], i) => (
-                <div key={slug} className="flex items-center gap-1 rounded px-1.5 py-0.5"
-                  style={{ background: (MP_COLOR[slug] ?? "#888") + "15", border: `1px solid ${(MP_COLOR[slug] ?? "#888")}25` }}>
-                  <span className="text-[9px] font-black uppercase" style={{ color: MP_COLOR[slug] ?? "#aaa" }}>{MP_SHORT[slug] ?? slug.slice(0, 2).toUpperCase()}</span>
-                  <span className="text-[11px] font-bold text-white/70 tabular-nums">{fmt$$(price as number)}</span>
-                  {i === 0 && <span className="text-[8px] font-black text-emerald-400">best</span>}
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Col 2: Absorption */}
-        <div className="p-4 bg-white/[0.02]">
-          <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-2">Absorption</p>
-          <div className="mb-2 pb-2 border-b border-white/8">
-            <p className="text-[10px] text-slate-500 mb-0.5">Estimated Avg Sale Price</p>
-            <p className="text-base font-black text-amber-300 tabular-nums">—</p>
-            <p className="text-[10px] text-slate-600 italic">Tracking</p>
+        <div className="p-5 bg-white/[0.02]">
+          <p className="text-[9px] text-slate-500 uppercase tracking-[0.18em] font-semibold mb-4">Absorption</p>
+          <div className="mb-3 pb-3 border-b border-white/[0.04]">
+            <p className="text-[9px] text-slate-600 mb-1 uppercase tracking-[0.12em]">Est. Avg Sale Price</p>
+            <p className="text-[36px] font-black text-amber-300 tabular-nums leading-none">—</p>
+            <div className="flex items-center gap-1.5 mt-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400/50 animate-pulse flex-shrink-0" />
+              <p className="text-[10px] text-slate-600 italic">Monitoring · collecting as tickets move</p>
+            </div>
           </div>
-          <div className="space-y-0">
+          <div>
             {["Tickets Sold", "24H Sold", "7D Sold", "Since Tracking"].map(label => (
-              <div key={label} className="flex items-center justify-between py-1 border-b border-white/5 last:border-0">
-                <span className="text-xs text-slate-400">{label}</span>
-                <span className="text-[11px] text-slate-600">—</span>
+              <div key={label} className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-0">
+                <span className="text-[10px] text-slate-400">{label}</span>
+                <span className="text-[11px] text-slate-700">·</span>
               </div>
             ))}
           </div>
         </div>
 
         {/* Col 3: Seller Behavior */}
-        <div className="p-4">
-          <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-2">Seller Behavior</p>
-          <div className="space-y-0">
-            {["Relist Price Change", "Price Drops", "Repriced Listings", "Seller Mood"].map(label => (
-              <div key={label} className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0">
-                <span className="text-xs text-slate-400">{label}</span>
-                <span className="text-[11px] text-slate-600">—</span>
+        <div className="p-5">
+          <p className="text-[9px] text-slate-500 uppercase tracking-[0.18em] font-semibold mb-4">Seller Behavior</p>
+          <div>
+            {["Relist Price Change", "Price Drops", "Repriced Listings"].map(label => (
+              <div key={label} className="flex items-center justify-between py-2.5 border-b border-white/[0.04]">
+                <span className="text-[10px] text-slate-400">{label}</span>
+                <span className="text-[13px] text-slate-600">·</span>
               </div>
             ))}
+            <div className="flex items-start justify-between py-2.5 border-l-2 border-red-500/30 pl-2.5 -ml-2.5 mt-0.5">
+              <span className="text-[10px] text-slate-500">Seller Mood</span>
+              <span className="text-[13px] font-semibold italic text-slate-600">·</span>
+            </div>
           </div>
         </div>
       </div>
@@ -433,12 +443,13 @@ function WatchlistCard({
   const title      = meta?.title ?? event.title;
   const venue      = meta?.venue_name;
   const dateStr    = meta?.event_date;
-  const artist     = meta?.artist;
-  const gradient   = getEventGradient(artist, title);
-  const artworkUrl = useArtistImage(artist, title);
-  const action     = signalToAction(event.signal);
-  const colors     = actionColors(action);
-  const spotify    = getSpotifyData(artist);
+  const artist          = meta?.artist;
+  const gradient        = getEventGradient(artist, title);
+  const autoArtworkUrl  = useArtistImage(artist, title);
+  const artworkUrl      = meta?.custom_artwork_url ?? autoArtworkUrl;
+  const action          = signalToAction(event.signal);
+  const colors          = actionColors(action);
+  const spotify         = getSpotifyData(artist);
   const mpPrices   = meta?.all_marketplace_prices ?? meta?.marketplace_prices ?? {};
   const mpEntries  = (Object.entries(mpPrices) as [string, number | null][])
     .filter(([, p]) => p != null)
@@ -505,9 +516,9 @@ function WatchlistCard({
         </div>
 
         {/* Identity */}
-        {artist && <p className="text-[10px] text-white/40 uppercase tracking-widest mb-0.5">{artist}</p>}
+        {artist && <p className="text-[10px] text-white/50 uppercase tracking-[0.12em] mb-0.5">{artist}</p>}
         <Link href={`/events/${event.event_id}`}>
-          <h3 className="text-sm font-semibold text-white leading-tight mb-1 hover:text-blue-300 transition-colors line-clamp-2">{title}</h3>
+          <h3 className="text-[13px] font-bold text-white leading-tight mb-1 hover:text-blue-300 transition-colors line-clamp-2">{title}</h3>
         </Link>
         {venue && <p className="text-[10px] text-slate-500 mb-0.5 truncate">{venue}</p>}
         {dateStr && (
@@ -523,26 +534,29 @@ function WatchlistCard({
         {/* Price grid */}
         <div className="grid grid-cols-3 gap-1.5 mb-3">
           {[
-            { label: "Low",    val: fmt$$(event.price?.low_ask),    cls: "text-white font-bold" },
-            { label: "Median", val: fmt$$(event.price?.median_ask), cls: "text-white/75 font-semibold" },
-            { label: "Inv",    val: fmtNum(event.inventory?.total_listings), cls: "text-white/60 font-medium" },
+            { label: "Low",    val: fmt$$(event.price?.low_ask),             cls: "text-emerald-300 font-bold text-[13px]" },
+            { label: "Median", val: fmt$$(event.price?.median_ask),          cls: "text-white/80 font-semibold text-[12px]" },
+            { label: "Inv",    val: fmtNum(event.inventory?.total_listings), cls: "text-white/55 font-medium text-[11px]" },
           ].map(({ label, val, cls }) => (
             <div key={label} className="bg-black/20 rounded px-2 py-1.5 border border-white/5">
               <p className="text-[8px] text-white/30 uppercase tracking-wide mb-0.5">{label}</p>
-              <p className={`text-xs tabular-nums ${cls}`}>{val}</p>
+              <p className={`tabular-nums leading-none ${cls}`}>{val}</p>
             </div>
           ))}
         </div>
 
-        {/* MP chips */}
+        {/* MP chips — quieter, no "best" text, lowest price in emerald */}
         {mpEntries.length > 0 && (
           <div className="flex items-center gap-1 flex-wrap mb-2.5">
             {mpEntries.slice(0, 4).map(([slug, price], i) => (
               <div key={slug} className="flex items-center gap-1 rounded px-1.5 py-0.5 border text-[9px]"
-                style={{ borderColor: (MP_COLOR[slug] ?? "#888") + "30", background: (MP_COLOR[slug] ?? "#888") + "08" }}>
-                <span className="font-bold" style={{ color: MP_COLOR[slug] ?? "#aaa" }}>{MP_SHORT[slug] ?? slug.slice(0, 2).toUpperCase()}</span>
-                <span className="text-white/50 tabular-nums">{fmt$$(price as number)}</span>
-                {i === 0 && <span className="text-emerald-500 text-[8px]">best</span>}
+                style={{ borderColor: (MP_COLOR[slug] ?? "#888") + "25", background: (MP_COLOR[slug] ?? "#888") + "06" }}>
+                <span className="font-semibold" style={{ color: (MP_COLOR[slug] ?? "#aaa") + (i === 0 ? "" : "cc") }}>
+                  {MP_SHORT[slug] ?? slug.slice(0, 2).toUpperCase()}
+                </span>
+                <span className={i === 0 ? "text-emerald-300 font-semibold tabular-nums" : "text-white/40 tabular-nums"}>
+                  {fmt$$(price as number)}
+                </span>
               </div>
             ))}
           </div>

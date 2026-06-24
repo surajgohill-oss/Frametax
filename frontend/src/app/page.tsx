@@ -42,15 +42,21 @@ function DeltaChip({ pct, abs }: { pct?: number | null; abs?: number | null }) {
   const up = n > 0;
   const Icon = up ? TrendingUp : n < 0 ? TrendingDown : Minus;
   return (
-    <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold tabular-nums ${up ? "text-emerald-400" : n < 0 ? "text-red-400" : "text-white/40"}`}>
+    <span className={cn(
+      "inline-flex items-center gap-0.5 text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded",
+      up
+        ? "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20"
+        : n < 0
+          ? "text-red-400 bg-red-500/10 border border-red-500/20"
+          : "text-slate-500 bg-white/5 border border-white/10"
+    )}>
       <Icon size={9} />{pct != null ? fmtPct(pct) : (n > 0 ? `+${n}` : `${n}`)}
     </span>
   );
 }
 
 // ── Featured Event Hero ───────────────────────────────────────────────────────
-// One event. Compact identity row + 3-col intelligence: Current Market | Absorption | Seller Behavior.
-// Target height 180–240px. BUY chip is small secondary only.
+// Full-height artwork + identity strip + 4-col intelligence row.
 function FeaturedEventHero({
   event, meta, isWatched, onToggleWatch, isPinned, onTogglePin,
 }: {
@@ -64,12 +70,14 @@ function FeaturedEventHero({
   const title      = meta?.title ?? event.title;
   const venue      = meta?.venue_name;
   const dateStr    = meta?.event_date;
-  const artist     = meta?.artist;
-  const artworkUrl = useArtistImage(artist, title);
-  const gradient   = getEventGradient(artist, title);
+  const artist          = meta?.artist;
+  const autoArtworkUrl  = useArtistImage(artist, title);
+  const artworkUrl      = meta?.custom_artwork_url ?? autoArtworkUrl;
+  const gradient        = getEventGradient(artist, title);
   const action     = signalToAction(event.signal);
   const aColors    = actionColors(action);
   const invDelta   = event.changes?.h24?.inventory_delta ?? null;
+  const priceDeltaPct = event.changes?.h24?.price_delta_pct ?? null;
 
   let daysOut: number | null = null;
   let dateLabel = "";
@@ -77,7 +85,7 @@ function FeaturedEventHero({
     try {
       const d = parseEventDate(dateStr);
       daysOut = differenceInDays(d, new Date());
-      dateLabel = format(d, "EEE, MMM d");
+      dateLabel = format(d, "EEE, MMM d, yyyy");
     } catch {}
   }
 
@@ -87,179 +95,264 @@ function FeaturedEventHero({
     if (!ca) return null;
     try {
       const d = parseISO(ca);
-      const days = Math.round((Date.now() - d.getTime()) / 86400000);
-      return { formatted: format(d, "MMM d, yyyy"), days };
+      const totalH = Math.round((Date.now() - d.getTime()) / 3600000);
+      const days = Math.floor(totalH / 24);
+      const hrs  = totalH % 24;
+      return {
+        label: days > 0 ? `${days}d ${hrs}h` : `${hrs}h`,
+        formatted: format(d, "MMM d, yyyy"),
+      };
     } catch { return null; }
   })();
 
-  // Freshness label
+  // Freshness label (most recent update)
   const freshLabel = (() => {
     const entries = Object.values(meta?.marketplace_freshness ?? {});
     if (!entries.length) return null;
-    const ages = entries.map((e: unknown) => ((e as { age_minutes?: number }).age_minutes ?? 0)).filter(Boolean);
+    const ages = entries
+      .map((e: unknown) => ((e as { age_minutes?: number }).age_minutes ?? null))
+      .filter((a): a is number => a != null);
     if (!ages.length) return null;
-    const maxAge = Math.max(...ages);
-    return maxAge < 60 ? `${maxAge}m ago` : `${Math.round(maxAge / 60)}h ago`;
+    const minAge = Math.min(...ages);
+    return minAge < 60 ? `${minAge}m ago` : `${Math.round(minAge / 60)}h ago`;
   })();
 
-  const marketsCount = Object.keys(meta?.marketplace_freshness ?? {}).filter(
-    k => (meta?.marketplace_freshness?.[k] as { freshness_status?: string } | undefined)?.freshness_status !== "dead"
+  const MP_SLUGS_HERO = ['stubhub', 'tickpick', 'gametime', 'vividseats'];
+  const freshEntries = Object.entries(meta?.marketplace_freshness ?? {})
+    .filter(([slug]) => MP_SLUGS_HERO.includes(slug));
+  const marketsCount = freshEntries.filter(
+    ([, f]) => (f as { freshness_status?: string })?.freshness_status !== "dead"
   ).length;
-  const feedsCount = meta?.tracked_events?.filter(t => t.is_active).length ?? 0;
+
+  // Feeds fresh % (based on fresh+late statuses)
+  const freshPct = (() => {
+    const total = freshEntries.length;
+    if (!total) return null;
+    const good = freshEntries.filter(([, f]) => {
+      const s = (f as { freshness_status?: string })?.freshness_status;
+      return s === "fresh" || s === "late";
+    }).length;
+    return Math.round((good / total) * 100);
+  })();
+
+  // Market signal confidence (proxy from opportunity_score)
+  const confidence = (() => {
+    const s = event.opportunity_score ?? 0;
+    if (s >= 0.7) return { label: "High",   bars: 5 };
+    if (s >= 0.45) return { label: "Medium", bars: 3 };
+    return               { label: "Low",    bars: 1 };
+  })();
+
+  const fCfg: Record<string, { dot: string; text: string }> = {
+    fresh:   { dot: "bg-emerald-400", text: "text-emerald-400" },
+    late:    { dot: "bg-amber-400",   text: "text-amber-400"  },
+    stale:   { dot: "bg-orange-500",  text: "text-orange-400" },
+    dead:    { dot: "bg-red-500",     text: "text-red-400"    },
+    no_data: { dot: "bg-slate-500",   text: "text-slate-400"  },
+  };
+
+  const MP_LABELS: Record<string, string> = {
+    stubhub: "StubHub", tickpick: "TickPick", gametime: "Gametime", vividseats: "Vivid Seats",
+  };
 
   return (
-    <div className="rounded-xl border border-white/8 bg-[#0f1420] overflow-hidden mb-3">
-      {/* Identity row — left: artwork + center: identity + right: tracking stats */}
-      <div className="flex items-center gap-4 px-4 py-3 border-b border-white/6"
-        style={{ background: `linear-gradient(90deg, ${gradient[0]}12, transparent 60%)` }}>
-        {/* Artwork */}
-        <div className="flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden"
-          style={{ background: `linear-gradient(145deg, ${gradient[0]}, ${gradient[1]})` }}>
+    <div className="rounded-xl border border-white/8 bg-[#0a0d14] overflow-hidden mb-3">
+      {/* ── Identity section: full-height artwork + content ── */}
+      <div className="flex items-stretch border-b border-white/6 min-h-[210px]"
+        style={{ background: `linear-gradient(90deg, ${gradient[0]}18, transparent 65%)` }}>
+
+        {/* Artwork — full height, anchored left, dominant visual */}
+        <div className="flex-shrink-0 w-36 sm:w-52 relative overflow-hidden"
+          style={{ background: `linear-gradient(145deg, ${gradient[0]}cc, ${gradient[1]}cc)` }}>
           {artworkUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={artworkUrl} alt={artist ?? title}
               className="w-full h-full object-cover object-top"
               onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-xl font-black text-white/60 select-none">
-              {(artist ?? title).slice(0, 1).toUpperCase()}
+            <div className="w-full h-full flex flex-col items-center justify-center gap-3">
+              <span className="text-4xl font-black text-white/50 select-none">
+                {(artist ?? title).slice(0, 1).toUpperCase()}
+              </span>
+              <span className="text-[9px] text-white/25 border border-white/15 px-2 py-0.5 rounded">Upload Art</span>
             </div>
           )}
+          {/* Gradient fade to right */}
+          <div className="absolute inset-y-0 right-0 w-6 bg-gradient-to-r from-transparent"
+            style={{ background: `linear-gradient(to right, transparent, ${gradient[0]}08)` }} />
         </div>
-        {/* Identity — only show artist label when it differs from event title */}
-        <div className="flex-1 min-w-0">
-          {artist && artist !== title && <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold truncate mb-0.5">{artist}</p>}
-          <Link href={`/events/${event.event_id}`}>
-            <span className="text-base font-bold text-white truncate block hover:text-blue-300 transition-colors">{title}</span>
-          </Link>
-          <div className="flex items-center gap-2.5 mt-1 flex-wrap">
-            {venue && <span className="text-xs text-slate-500 truncate">{venue}</span>}
-            {dateLabel && <span className="text-xs text-slate-500">{dateLabel}</span>}
-            {daysOut != null && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                style={{ color: aColors.text, background: aColors.bg + "50", border: `1px solid ${aColors.border}` }}>
-                {daysOut <= 0 ? "Today" : daysOut === 1 ? "Tomorrow" : `${daysOut}d away`}
-              </span>
-            )}
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border"
-              style={{ color: aColors.text, borderColor: aColors.border + "80", background: aColors.bg + "25" }}>
-              {action}
-            </span>
+
+        {/* Content: identity + tracking stats */}
+        <div className="flex-1 flex flex-col justify-between p-4 min-w-0 gap-3">
+          <div className="flex items-start gap-4">
+
+            {/* Identity */}
+            <div className="flex-1 min-w-0">
+              {artist && artist !== title &&
+                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-0.5 truncate">{artist}</p>}
+              <Link href={`/events/${event.event_id}`}>
+                <span className="text-2xl font-black text-white truncate block hover:text-blue-300 transition-colors leading-tight">{title}</span>
+              </Link>
+              {(venue || dateLabel) && (
+                <p className="text-sm text-slate-400 mt-0.5 truncate">
+                  {[venue, dateLabel].filter(Boolean).join(" · ")}
+                </p>
+              )}
+              <div className="flex items-center gap-2 mt-2.5 flex-wrap">
+                {daysOut != null && (
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full"
+                    style={{ color: aColors.text, background: aColors.bg + "60", border: `1px solid ${aColors.border}` }}>
+                    {daysOut <= 0 ? "Today" : `${daysOut}d away`}
+                  </span>
+                )}
+                <span className="text-[11px] font-black tracking-widest px-2.5 py-0.5 rounded border"
+                  style={{ color: aColors.text, borderColor: aColors.border, background: aColors.bg }}>
+                  {action}
+                </span>
+                <button onClick={onToggleWatch}
+                  className={cn("inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded border transition-all",
+                    isWatched ? "border-blue-500/40 bg-blue-500/10 text-blue-400" : "border-white/10 bg-white/5 text-slate-500 hover:text-slate-300")}>
+                  <Bookmark size={9} className={isWatched ? "fill-blue-400" : ""} />
+                  {isWatched ? "Watching" : "Monitor"}
+                </button>
+                <button onClick={onTogglePin}
+                  className={cn("inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded border transition-all",
+                    isPinned ? "border-amber-500/40 bg-amber-500/10 text-amber-400" : "border-white/10 bg-white/5 text-slate-500 hover:text-slate-300")}>
+                  <Pin size={9} className={isPinned ? "fill-amber-400" : ""} />
+                  {isPinned ? "Pinned" : "Pin"}
+                </button>
+              </div>
+            </div>
+
+            {/* Marketplace Freshness — right column */}
+            <div className="hidden sm:block flex-shrink-0 min-w-[160px]">
+              <p className="text-[9px] text-slate-600 uppercase tracking-wider font-semibold mb-2 text-right">Marketplace Freshness</p>
+              {freshEntries.length > 0
+                ? freshEntries.map(([slug, f]) => {
+                    const fe = f as { freshness_status: string; age_minutes: number | null };
+                    const age = fe.age_minutes;
+                    const ageStr = age == null ? null : age < 60 ? `${age}m` : `${Math.round(age / 60)}h`;
+                    const c = fCfg[fe.freshness_status] ?? { dot: "bg-slate-600", text: "text-slate-500" };
+                    return (
+                      <div key={slug} className="flex items-center gap-2 justify-end mb-1">
+                        <span className="text-[10px] text-slate-400">{MP_LABELS[slug] ?? slug}</span>
+                        <span className={`text-[10px] font-bold tabular-nums ${c.text} w-8 text-right`}>{ageStr ?? "—"}</span>
+                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${c.dot}`} />
+                      </div>
+                    );
+                  })
+                : <p className="text-[9px] text-slate-600 text-right">No feeds</p>
+              }
+            </div>
           </div>
-        </div>
-        {/* RIGHT — Market Health chips + action buttons */}
-        <div className="hidden sm:flex items-center gap-4 flex-shrink-0">
-          {/* Market Health */}
-          <div className="text-right space-y-1">
-            <p className="text-[9px] text-slate-600 uppercase tracking-wider mb-1">Marketplace Freshness</p>
-            {meta?.marketplace_freshness
-              ? Object.entries(meta.marketplace_freshness)
-                  .filter(([slug]) => ['stubhub', 'tickpick', 'gametime', 'vividseats'].includes(slug))
-                  .map(([slug, f]) => {
-                  const fEntry = f as { freshness_status: string; age_minutes: number | null };
-                  const status = fEntry.freshness_status;
-                  const age = fEntry.age_minutes;
-                  const ageStr = age == null ? null : age < 60 ? `${age}m` : `${Math.round(age / 60)}h`;
-                  const cfg: Record<string, { dot: string; text: string }> = {
-                    fresh:   { dot: "bg-emerald-400", text: "text-emerald-400" },
-                    late:    { dot: "bg-amber-400",   text: "text-amber-400"  },
-                    stale:   { dot: "bg-orange-500",  text: "text-orange-400" },
-                    dead:    { dot: "bg-red-500",     text: "text-red-400"    },
-                    no_data: { dot: "bg-slate-500",   text: "text-slate-400"  },
-                  };
-                  const c = cfg[status] ?? { dot: "bg-slate-600", text: "text-slate-500" };
-                  return (
-                    <div key={slug} className="flex items-center gap-1 justify-end">
-                      <span className="text-[9px] text-slate-500 capitalize">{slug}</span>
-                      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${c.dot}`} />
-                      <span className={`text-[9px] font-semibold ${c.text} w-7 text-left tabular-nums`}>{ageStr ?? status}</span>
-                    </div>
-                  );
-                })
-              : <p className="text-[9px] text-slate-600">No feeds</p>
-            }
-          </div>
-          {/* Action buttons */}
-          <div className="flex flex-col gap-1">
-            <button onClick={onToggleWatch} title={isWatched ? "Unwatch" : "Watch"}
-              className={cn("inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg border transition-all",
-                isWatched ? "border-blue-500/40 bg-blue-500/10 text-blue-400" : "border-white/10 bg-white/5 text-slate-500 hover:text-slate-300")}>
-              <Bookmark size={9} className={isWatched ? "fill-blue-400" : ""} /> {isWatched ? "Watching" : "Watch"}
-            </button>
-            <button onClick={onTogglePin} title={isPinned ? "Unpin" : "Pin as headline"}
-              className={cn("inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg border transition-all",
-                isPinned ? "border-amber-500/40 bg-amber-500/10 text-amber-400" : "border-white/10 bg-white/5 text-slate-500 hover:text-slate-300")}>
-              <Pin size={9} className={isPinned ? "fill-amber-400" : ""} /> Pin
-            </button>
+
+          {/* Tracking stats — bottom strip */}
+          <div className="grid grid-cols-4 gap-3 pt-3 border-t border-white/6">
+            <div>
+              <p className="text-[9px] text-slate-600 uppercase tracking-wider mb-0.5">Tracking Since</p>
+              <p className="text-sm font-bold text-white tabular-nums">{trackingSince?.label ?? "—"}</p>
+              <p className="text-[10px] text-slate-500">{trackingSince?.formatted ?? ""}</p>
+            </div>
+            <div>
+              <p className="text-[9px] text-slate-600 uppercase tracking-wider mb-0.5">Last Update</p>
+              <p className="text-sm font-bold text-white tabular-nums">{freshLabel ?? "—"}</p>
+            </div>
+            <div>
+              <p className="text-[9px] text-slate-600 uppercase tracking-wider mb-0.5">Markets Tracked</p>
+              <p className="text-sm font-bold text-white tabular-nums">{marketsCount} / {freshEntries.length || 4}</p>
+              <p className="text-[10px] text-slate-500">Active</p>
+            </div>
+            <div>
+              <p className="text-[9px] text-slate-600 uppercase tracking-wider mb-0.5">Feeds Fresh</p>
+              <p className="text-sm font-bold text-white tabular-nums">
+                {freshPct != null ? `${freshPct}%` : "—"}
+              </p>
+              <p className="text-[10px] text-slate-500">
+                {freshPct === 100 ? "All Fresh" : freshPct != null ? `${freshEntries.filter(([,f]) => (f as {freshness_status?:string})?.freshness_status === "fresh" || (f as {freshness_status?:string})?.freshness_status === "late").length}/${freshEntries.length}` : ""}
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Intelligence columns */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-white/6"
-        style={{ gridTemplateColumns: "1fr 1.2fr 1fr" }}>
+      {/* ── Intelligence columns — 3 panels ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-white/6">
 
-        {/* Col 1: Current Market */}
+        {/* Panel 1: Current Market */}
         <div className="p-4">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-3">
             <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Current Market</p>
-            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border border-white/10 text-slate-500 bg-white/3">24H ▾</span>
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border border-white/10 text-slate-500 bg-white/3">24H</span>
           </div>
           <div className="space-y-0">
             {[
-              { label: "Low",    val: fmt$$(event.price?.low_ask),    cls: "text-emerald-300" },
-              { label: "Median", val: fmt$$(event.price?.median_ask), cls: "text-white" },
-              { label: "High",   val: fmt$$(event.price?.high_ask),   cls: "text-slate-300" },
-            ].map(({ label, val, cls }) => (
+              { label: "Low",    val: fmt$$(event.price?.low_ask),    cls: "text-emerald-300 text-base font-black", showDelta: true },
+              { label: "Median", val: fmt$$(event.price?.median_ask), cls: "text-white text-base font-bold",        showDelta: false },
+              { label: "High",   val: fmt$$(event.price?.high_ask),   cls: "text-slate-300 text-sm font-bold",     showDelta: false },
+            ].map(({ label, val, cls, showDelta }) => (
               <div key={label} className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0">
-                <span className="text-xs text-slate-400">{label}</span>
-                <span className={`text-sm font-bold tabular-nums ${cls}`}>{val ?? "—"}</span>
+                <span className="text-xs text-slate-400 w-12 flex-shrink-0">{label}</span>
+                <span className={`tabular-nums flex-1 ${cls}`}>{val ?? "—"}</span>
+                <span className="w-14 text-right">
+                  {showDelta && priceDeltaPct != null
+                    ? <DeltaChip pct={priceDeltaPct} />
+                    : <span className="text-white/20 text-[10px]">—</span>}
+                </span>
               </div>
             ))}
             <div className="flex items-center justify-between py-1.5">
-              <span className="text-xs text-slate-400">Inventory</span>
-              <div className="flex items-center gap-1.5">
-                <span className="text-sm font-bold text-slate-200 tabular-nums">
-                  {fmtNum(event.inventory?.total_listings) ?? "—"}
+              <span className="text-xs text-slate-400 w-12 flex-shrink-0">Inv</span>
+              <span className="text-base font-black text-slate-100 tabular-nums flex-1">
+                {fmtNum(event.inventory?.total_listings) ?? "—"}
+              </span>
+              {invDelta != null ? (
+                <span className={`text-[11px] font-semibold tabular-nums ${invDelta > 0 ? "text-emerald-400" : "text-red-400"}`}>
+                  {invDelta > 0 ? "+" : ""}{fmtNum(invDelta)} 24H
                 </span>
-                {invDelta != null && (
-                  <span className={`text-[11px] font-semibold tabular-nums ${invDelta > 0 ? "text-emerald-400" : "text-red-400"}`}>
-                    ({invDelta > 0 ? "+" : ""}{invDelta})
-                  </span>
-                )}
-              </div>
+              ) : <span className="text-white/20 text-[10px]">—</span>}
             </div>
           </div>
         </div>
 
-        {/* Col 2: Absorption */}
-        <div className="p-4 bg-white/[0.02]">
-          <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-2">Absorption</p>
-          <div className="mb-2 pb-2 border-b border-white/8">
-            <p className="text-[10px] text-slate-500 mb-0.5">Estimated Avg Sale Price</p>
-            <p className="text-base font-black text-amber-300 tabular-nums">—</p>
-            <p className="text-[10px] text-slate-600 italic">Tracking</p>
+        {/* Panel 2: Absorption */}
+        <div className="p-5 bg-white/[0.02]">
+          <p className="text-[9px] text-slate-500 uppercase tracking-[0.18em] font-semibold mb-4">
+            Absorption <span className="normal-case tracking-normal font-normal">(Sales Driven)</span>
+          </p>
+          <div className="mb-3 pb-3 border-b border-white/[0.04]">
+            <p className="text-[9px] text-slate-600 mb-1 uppercase tracking-[0.12em]">Est. Avg Sale Price</p>
+            <p className="text-[36px] font-black text-amber-300 tabular-nums leading-none">—</p>
+            <div className="flex items-center gap-1.5 mt-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400/50 animate-pulse flex-shrink-0" />
+              <p className="text-[10px] text-slate-600 italic">Monitoring · collecting as tickets move</p>
+            </div>
           </div>
-          <div className="space-y-0">
+          <div>
             {["Tickets Sold", "24H Sold", "7D Sold", "Since Tracking"].map(label => (
-              <div key={label} className="flex items-center justify-between py-1 border-b border-white/5 last:border-0">
-                <span className="text-xs text-slate-400">{label}</span>
-                <span className="text-[11px] text-slate-600">—</span>
+              <div key={label} className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-0">
+                <span className="text-[10px] text-slate-400">{label}</span>
+                <span className="text-[11px] text-slate-700">·</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Col 3: Seller Behavior */}
-        <div className="p-4">
-          <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-2">Seller Behavior</p>
-          <div className="space-y-0">
-            {["Relist Price Change", "Price Drops", "Repriced Listings", "Seller Mood"].map(label => (
-              <div key={label} className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0">
-                <span className="text-xs text-slate-400">{label}</span>
-                <span className="text-[11px] text-slate-600">—</span>
+        {/* Panel 3: Seller Behavior */}
+        <div className="p-5">
+          <p className="text-[9px] text-slate-500 uppercase tracking-[0.18em] font-semibold mb-4">
+            Seller Behavior <span className="normal-case tracking-normal font-normal">(24H)</span>
+          </p>
+          <div>
+            {["Relist Price Change", "Price Drops", "Repriced Listings"].map(label => (
+              <div key={label} className="flex items-center justify-between py-2.5 border-b border-white/[0.04]">
+                <span className="text-[10px] text-slate-400">{label}</span>
+                <span className="text-[13px] text-slate-600">·</span>
               </div>
             ))}
+            <div className="flex items-start justify-between py-2.5 border-l-2 border-red-500/30 pl-2.5 -ml-2.5 mt-0.5">
+              <span className="text-[10px] text-slate-500">Seller Mood</span>
+              <span className="text-[13px] font-semibold italic text-slate-600">·</span>
+            </div>
           </div>
         </div>
       </div>
@@ -380,9 +473,10 @@ function EventGroup({
     return d != null ? (sum ?? 0) + d : sum;
   }, null);
 
-  const firstMeta = metas[events[0]?.event_id];
-  const gradient = getEventGradient(firstMeta?.artist, firstMeta?.title ?? events[0]?.title ?? groupKey);
-  const artworkUrl = useArtistImage(firstMeta?.artist ?? groupKey, firstMeta?.title);
+  const firstMeta      = metas[events[0]?.event_id];
+  const gradient       = getEventGradient(firstMeta?.artist, firstMeta?.title ?? events[0]?.title ?? groupKey);
+  const autoArtworkUrl = useArtistImage(firstMeta?.artist ?? groupKey, firstMeta?.title);
+  const artworkUrl     = firstMeta?.custom_artwork_url ?? autoArtworkUrl;
   const spotify = getSpotifyData(firstMeta?.artist ?? groupKey);
 
   // Aggregate marketplace floors across all events in group
@@ -493,13 +587,6 @@ function EventGroup({
                     </span>
                   </div>
                 )}
-                {mpEntries.length > 0 && (
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Best</span>
-                    <span className="text-sm font-bold text-blue-400 uppercase">{MP_SHORT[mpEntries[0][0]] ?? mpEntries[0][0]}</span>
-                    <span className="text-sm font-semibold text-slate-200 tabular-nums">{fmt$$(mpEntries[0][1] as number)}</span>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -555,15 +642,15 @@ function EventGroup({
         <span className="text-[10px] text-white/25 uppercase tracking-widest font-bold flex-shrink-0">Intel</span>
         <div className="flex items-center gap-1">
           <span className="text-[10px] text-slate-600 uppercase tracking-wider">Trend</span>
-          <span className="text-xs text-amber-500/60 italic">Pending</span>
+          <span className="text-xs text-white/25">—</span>
         </div>
         <div className="flex items-center gap-1">
           <span className="text-[10px] text-slate-600 uppercase tracking-wider">Buy Window</span>
-          <span className="text-xs text-amber-500/60 italic">Pending</span>
+          <span className="text-xs text-white/25">—</span>
         </div>
         <div className="flex items-center gap-1">
           <span className="text-[10px] text-slate-600 uppercase tracking-wider">Signal</span>
-          <span className="text-xs text-amber-500/60 italic">Pending</span>
+          <span className="text-xs text-white/25">—</span>
         </div>
       </div>
 

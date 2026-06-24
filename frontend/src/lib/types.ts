@@ -68,6 +68,7 @@ export interface EventMeta {
   event_date?: string;
   performers?: string;
   created_at?: string;
+  custom_artwork_url?: string | null;
   // marketplace data from backend
   marketplace_prices?: Record<string, number | null>;
   all_marketplace_prices?: Record<string, number | null>;

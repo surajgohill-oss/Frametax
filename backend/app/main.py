@@ -1,8 +1,12 @@
 import logging
 import time
 from contextlib import asynccontextmanager
+import os
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
 logging.basicConfig(
@@ -230,6 +234,11 @@ app.include_router(follows_routes.router, prefix="/api")
 app.include_router(artist_intelligence_routes.router, prefix="/api")
 app.include_router(reliability_routes.router, prefix="/api")
 app.include_router(collect_routes.router, prefix="/api")
+
+# Static file serving for locally-uploaded artwork (dev only — ephemeral on Railway)
+_uploads_dir = Path(__file__).parent.parent.parent / "static" / "uploads"
+_uploads_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=str(_uploads_dir)), name="uploads")
 
 logger.info("TRACE-3c: app.main module fully loaded — routers registered")
 

@@ -1,7 +1,11 @@
 import logging
+import os
+import uuid
 from datetime import datetime, timedelta
+from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
@@ -236,6 +240,8 @@ async def _enrich_event(db, event: Event, trace: dict | None = None) -> dict:
         # Per-marketplace freshness classification
         "marketplace_freshness": freshness_by_mp,
 
+        "custom_artwork_url": event.custom_artwork_url,
+
         "next_poll_at": min(times).isoformat() if times else None,
         "created_at":   event.created_at.isoformat() if event.created_at else None,
 
@@ -392,6 +398,61 @@ async def delete_event(event_id: int, db: AsyncSession = Depends(get_db)):
     for te in te_rows:
         te.is_active = False
     await db.commit()
+
+
+@router.patch("/{event_id}/artwork")
+async def set_event_artwork(
+    event_id: int,
+    url: str | None = Form(default=None),
+    file: UploadFile | None = File(default=None),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Set or clear custom artwork for an event.
+
+    Accepts EITHER:
+      - url=<string>  (JSON form field) — persists a remote image URL directly.
+      - file=<upload> — stores image locally under /static/uploads/ (dev only;
+                        Railway's ephemeral filesystem means this does NOT persist
+                        across deploys — wire object storage for production).
+      - url=""        — clears custom artwork, restoring auto-detected art.
+    """
+    event = await _get_event(db, event_id)
+    if not event:
+        raise HTTPException(404, "Event not found")
+
+    if url is not None:
+        # url="" means clear; any non-empty string is stored as-is
+        event.custom_artwork_url = url.strip() or None
+
+    elif file is not None:
+        # Local file upload — dev/testing only
+        ALLOWED = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+        if file.content_type not in ALLOWED:
+            raise HTTPException(400, f"Unsupported content type: {file.content_type}")
+
+        upload_dir = Path(__file__).parent.parent.parent.parent / "static" / "uploads"
+        upload_dir.mkdir(parents=True, exist_ok=True)
+
+        ext = {"image/jpeg": ".jpg", "image/png": ".png",
+               "image/webp": ".webp", "image/gif": ".gif"}.get(file.content_type, ".jpg")
+        filename = f"event_{event_id}_{uuid.uuid4().hex[:8]}{ext}"
+        dest = upload_dir / filename
+
+        contents = await file.read()
+        if len(contents) > 10 * 1024 * 1024:  # 10 MB cap
+            raise HTTPException(400, "Image too large (max 10 MB)")
+
+        dest.write_bytes(contents)
+
+        backend_url = os.environ.get("BACKEND_PUBLIC_URL", "http://localhost:8080")
+        event.custom_artwork_url = f"{backend_url}/uploads/{filename}"
+
+    else:
+        raise HTTPException(400, "Provide either url= or file=")
+
+    await db.commit()
+    return {"custom_artwork_url": event.custom_artwork_url}
 
 
 @router.patch("/tracked/{te_id}")
