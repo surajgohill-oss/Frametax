@@ -429,12 +429,14 @@ class TickPickCollector(BaseCollector):
             # ── Fallback-section price-floor ──────────────────────────────────
             # When TickPick provides no section name (raw_section is falsy), the
             # listing falls back to "General".  Real concert tickets always appear
-            # with an explicit section; sectionless listings priced below $10 are
+            # with an explicit section; sectionless listings priced below $15 are
             # invariably parking passes, proximity passes, or other non-ticket
             # items that TickPick fails to label with a parking keyword.
-            # Confirmed: Shoreline Amphitheatre Kid Cudi "GENERAL" row R/S/E/B/F/D/C
-            # at $5-9 — real GA lawn tickets at the same event start at $40+.
-            if not raw_section and price < 10:
+            # Confirmed: Crypto.com Arena "General" rows 3/7/8 at $10.01 and
+            # North Island Amphitheatre "General" row D at $12.51 — both parking.
+            # Shoreline Amphitheatre Kid Cudi "GENERAL" row R/S at $5-9 — parking.
+            # Real floor/GA at all these venues starts at $40+.
+            if not raw_section and price < 15:
                 parking_count += 1
                 logger.debug(
                     "TP: sectionless sub-$10 excluded (suspected parking) "
