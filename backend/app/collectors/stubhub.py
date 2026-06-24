@@ -9,6 +9,7 @@ import httpx
 from playwright.async_api import async_playwright, BrowserContext
 
 from app.collectors.base import BaseCollector, RawListing
+from app.collectors.normalize import is_parking_listing as _is_parking_listing
 from app.config import Settings
 
 STUBHUB_SOLR_URL = (
@@ -65,12 +66,26 @@ class StubHubCollector(BaseCollector):
     async def _fetch_listings(self, tracked_event) -> list[RawListing]:
         event_id = tracked_event.external_event_id
 
-        # Strategy 1: HTML grid extraction (primary — works from Railway IP)
+        # Strategy 1: HTML grid (SSR) + Playwright POST pagination
         html_url = tracked_event.external_url or f"https://www.stubhub.com/event/{event_id}/"
-        listings = await self._fetch_via_html_grid(event_id, html_url)
-        if listings:
-            self.logger.info("StubHub HTML grid: event=%s listings=%d", event_id, len(listings))
-            return listings
+        ssr_items, items_remaining, grid_state = await self._fetch_ssr_grid(event_id, html_url)
+
+        if ssr_items is not None:
+            all_raw_items = list(ssr_items)
+            seen_ids = {item.get("id") or item.get("listingId") for item in all_raw_items}
+
+            # If there are more items, fetch remaining pages via Playwright POST
+            if items_remaining and items_remaining > 0:
+                extra = await self._fetch_remaining_via_playwright_post(html_url, grid_state, seen_ids)
+                if extra:
+                    all_raw_items.extend(extra)
+                    self.logger.info(
+                        "StubHub: SSR=%d + Playwright POST=%d = %d total unique for event=%s",
+                        len(ssr_items), len(extra), len(all_raw_items), event_id,
+                    )
+
+            if all_raw_items:
+                return self._parse_grid_items(all_raw_items, event_id)
 
         # Strategy 2: Solr JSON API (blocked by DataDome from Railway, kept as fallback)
         skip_json = await self.should_skip_pattern(STUBHUB_SOLR_URL, "http_failure")
@@ -80,105 +95,162 @@ class StubHubCollector(BaseCollector):
             if listings is not None:
                 return listings
 
-        # Strategy 3: Playwright (CDP or headless — last resort)
+        # Strategy 3: Playwright CDP (last resort)
         return await self._fetch_via_playwright(event_id, tracked_event.external_url)
 
-    async def _fetch_via_html_grid(self, event_id: str, url: str) -> Optional[list[RawListing]]:
+    async def _fetch_ssr_grid(self, event_id: str, url: str) -> tuple[Optional[list], Optional[int], dict]:
         """
-        Primary fetch strategy: parse the paginated 'viagogo-event' JSON blob embedded
-        in StubHub's event page HTML.
+        Fetch page 1 SSR HTML from StubHub and extract the embedded 'viagogo-event' JSON blob.
+        Returns (items, items_remaining, grid_state) for use by POST pagination.
 
-        StubHub serves HTTP 200 from Railway IPs (DataDome blocks API/XHR but not SSR HTML).
-        The page embeds a server-rendered grid (10 items, pageSize=10, isPaginatedEventDetail=True).
-        Additional pages are accessible via ?page=N URL parameter (confirmed runtime 2026-06-20).
-
-        totalFilteredListings ≈ 225 (23 pages) for typical events.
-        totalListings ≈ 2782 (full unfiltered inventory, requires more pages).
-        Rate limit: DataDome allows ~3-5 sequential HTML requests before serving 202 interstitial.
-        Strategy: fetch pages sequentially with jitter until itemsRemaining=0 or max_pages reached.
+        StubHub SSR embeds 40 items per page in a <script> JSON blob. The grid_state dict
+        captures sort/filter params needed to match the POST pagination results.
         """
-        all_items: list = []
-        seen_ids: set = set()
-        base_url = url.split("?")[0].rstrip("/")
+        client = await self._get_http_client(html_mode=True)
+        base_url = url.split("?")[0].rstrip("/") + "/"
+        try:
+            resp = await client.get(base_url)
+        except Exception as exc:
+            self.logger.warning("StubHub SSR: fetch error: %s", exc)
+            return None, None, {}
 
-        for page in range(1, 26):  # max 25 pages = up to 250 listings
-            page_url = base_url + "/" if page == 1 else f"{base_url}/?page={page}"
-            client = await self._get_http_client(html_mode=True)
-            try:
-                resp = await client.get(page_url)
-            except Exception as exc:
-                self.logger.warning("StubHub HTML: fetch error page=%d: %s", page, exc)
-                break
+        if resp.status_code == 202:
+            self.logger.info("StubHub SSR: 202 DataDome interstitial")
+            return None, None, {}
 
-            if resp.status_code == 202:
-                # DataDome interstitial — rate limited; stop pagination here
-                self.logger.info("StubHub HTML: 202 interstitial at page=%d, stopping (collected=%d)", page, len(all_items))
-                break
+        if resp.status_code != 200:
+            self.logger.warning("StubHub SSR: HTTP %s for %s", resp.status_code, base_url)
+            return None, None, {}
 
-            if resp.status_code != 200:
-                self.logger.warning("StubHub HTML: HTTP %s at page=%d", resp.status_code, page)
-                if page == 1:
-                    return None
-                break
+        html = resp.text
+        grid_data = None
+        for chunk in html.split("</script>"):
+            if '"appName":"viagogo-event"' in chunk and '"grid"' in chunk and '"items"' in chunk:
+                start = chunk.rfind('{"appName":"viagogo-event"')
+                if start >= 0:
+                    try:
+                        grid_data = json.loads(chunk[start:])
+                        break
+                    except Exception as exc:
+                        self.logger.warning("StubHub SSR: JSON parse error: %s", exc)
 
-            html = resp.text
-            grid_data = None
-            for chunk in html.split("</script>"):
-                if '"appName":"viagogo-event"' in chunk and '"grid"' in chunk and '"items"' in chunk:
-                    start = chunk.rfind('{"appName":"viagogo-event"')
-                    if start >= 0:
-                        try:
-                            grid_data = json.loads(chunk[start:])
-                            break
-                        except Exception as exc:
-                            self.logger.warning("StubHub HTML: JSON parse error page=%d: %s", page, exc)
-                            break
+        if not grid_data:
+            self.logger.warning("StubHub SSR: no grid found (size=%d)", len(html))
+            await self.record_failure("stubhub_html_grid", "selector_failure")
+            return None, None, {}
 
-            if not grid_data:
-                if page == 1:
-                    self.logger.warning("StubHub HTML: no grid found on page 1 (size=%d)", len(html))
-                    await self.record_failure("stubhub_html_grid", "selector_failure")
-                    return None
-                # No grid on page N usually means we've gone past the last page
-                self.logger.info("StubHub HTML: no grid on page=%d — end of pages", page)
-                break
+        grid = grid_data.get("grid") or {}
+        items = grid.get("items") or []
+        items_remaining = grid.get("itemsRemaining", 0)
+        total_filtered = grid.get("totalFilteredListings") or 0
 
-            grid = grid_data.get("grid") or {}
-            page_items = grid.get("items") or []
-            items_remaining = grid.get("itemsRemaining", 0)
-            total_filtered = grid.get("totalFilteredListings") or grid.get("totalCount") or 0
-            total_all = grid_data.get("totalListings", 0)
+        grid_state = {
+            "sortBy": grid.get("sortBy", "RECOMMENDED"),
+            "sortDirection": grid.get("sortDirection", 1),
+            "quantity": grid.get("quantity", 2),
+            "pageSize": 6,  # POST API only accepts pageSize=6 (larger values return empty {})
+        }
 
-            if page == 1:
-                self.logger.info(
-                    "StubHub HTML grid page=1: items=%d totalFiltered=%s totalAll=%s url=%s",
-                    len(page_items), total_filtered, total_all, url,
+        self.logger.info(
+            "StubHub SSR: items=%d remaining=%s totalFiltered=%s url=%s",
+            len(items), items_remaining, total_filtered, url,
+        )
+        return items, items_remaining, grid_state
+
+    async def _fetch_remaining_via_playwright_post(
+        self, event_url: str, grid_state: dict, seen_ids: set
+    ) -> list:
+        """
+        Fetch all StubHub listings beyond the SSR 40 using Playwright POST pagination.
+
+        The React app exposes a POST endpoint at the event page URL accepting
+        {Method:'IndexShGridOnly', CurrentPage:N, PageSize:6}. Returns {items:[], itemsRemaining:N}.
+        Requires valid DataDome cookies (from persistent Playwright session); only PageSize=6
+        works — larger values return empty {}. Confirmed 2026-06-22: 12 pages x 6 = 72 items,
+        combined with SSR 40 gives 78 unique listings for test event.
+        """
+        self._session_path.mkdir(parents=True, exist_ok=True)
+        extra_items: list = []
+
+        try:
+            async with async_playwright() as p:
+                context = await p.chromium.launch_persistent_context(
+                    str(self._session_path),
+                    headless=not self.debug_mode,
+                    args=["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu",
+                          "--disable-blink-features=AutomationControlled"],
+                    user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
                 )
+                page = await context.new_page()
+                base_url = event_url.split("?")[0].rstrip("/") + "/"
+                await page.goto(base_url, wait_until="domcontentloaded", timeout=30000)
+                await asyncio.sleep(8)  # wait for React + DataDome cookie refresh
 
-            # Deduplicate by listing ID across pages
-            new_items = 0
-            for item in page_items:
-                lid = item.get("listingId") or item.get("id")
-                if lid and lid not in seen_ids:
-                    seen_ids.add(lid)
-                    all_items.append(item)
-                    new_items += 1
+                cookies = await context.cookies()
+                self._cookies_file.write_text(json.dumps(cookies, indent=2))
 
-            self.logger.debug("StubHub HTML: page=%d items=%d new=%d remaining=%s", page, len(page_items), new_items, items_remaining)
+                sort_by = grid_state.get("sortBy", "RECOMMENDED")
+                sort_dir = grid_state.get("sortDirection", 1)
+                quantity = grid_state.get("quantity", 2)
+                page_size = grid_state.get("pageSize", 6)
 
-            # Stop conditions
-            if not page_items or (items_remaining is not None and int(items_remaining) == 0):
-                self.logger.info("StubHub HTML: pagination complete at page=%d total_collected=%d", page, len(all_items))
-                break
+                for page_num in range(1, 30):
+                    result = await page.evaluate(
+                        """async ([page_num, page_size, sort_by, sort_dir, qty]) => {
+                            const body = {
+                                Method: "IndexShGridOnly",
+                                CurrentPage: page_num,
+                                PageSize: page_size,
+                                Quantity: qty,
+                                ShowAllTickets: true,
+                                SortBy: sort_by,
+                                SortDirection: sort_dir,
+                                PriceRange: "0,100",
+                            };
+                            const resp = await fetch(window.location.pathname, {
+                                method: "post",
+                                headers: {"content-type": "application/json"},
+                                body: JSON.stringify(body),
+                                credentials: "include",
+                            });
+                            const ct = resp.headers.get("content-type") || "";
+                            if (!ct.includes("json")) return {items: [], remaining: null};
+                            const data = await resp.json();
+                            return {items: data.items || [], remaining: data.itemsRemaining};
+                        }""",
+                        [page_num, page_size, sort_by, sort_dir, quantity],
+                    )
+                    items = result.get("items", [])
+                    remaining = result.get("remaining")
 
-            # Small jitter between pages to avoid triggering rate limit
-            await asyncio.sleep(0.5)
+                    new_count = 0
+                    for item in items:
+                        lid = item.get("id") or item.get("listingId")
+                        if lid and lid not in seen_ids:
+                            seen_ids.add(lid)
+                            extra_items.append(item)
+                            new_count += 1
 
-        if not all_items:
-            return None if len(all_items) == 0 else []
+                    self.logger.debug(
+                        "StubHub POST page=%d: items=%d new=%d remaining=%s",
+                        page_num, len(items), new_count, remaining,
+                    )
 
-        self.logger.info("StubHub HTML grid: total_collected=%d across pages", len(all_items))
-        return self._parse_grid_items(all_items, event_id)
+                    if not items or (remaining is not None and int(remaining) == 0):
+                        self.logger.info(
+                            "StubHub POST done at page=%d: +%d extra items",
+                            page_num, len(extra_items),
+                        )
+                        break
+
+                    await asyncio.sleep(0.3)
+
+                await context.close()
+
+        except Exception as exc:
+            self.logger.warning("StubHub Playwright POST failed: %s", exc)
+
+        return extra_items
 
     def _parse_grid_items(self, items: list, event_id: str) -> list[RawListing]:
         """
@@ -194,6 +266,7 @@ class StubHubCollector(BaseCollector):
           vfsUrl — listing URL
         """
         results = []
+        parking_count = 0
         for item in items:
             try:
                 raw_id = item.get("listingId") or item.get("id") or ""
@@ -210,6 +283,11 @@ class StubHubCollector(BaseCollector):
 
                 price = Decimal(str(price_raw))
                 if price <= 0:
+                    continue
+
+                if _is_parking_listing(section, str(row) if row else None):
+                    parking_count += 1
+                    self.logger.debug("SH: parking excluded section=%r row=%r price=%s", section, row, price)
                     continue
 
                 listing_url = (
@@ -230,6 +308,8 @@ class StubHubCollector(BaseCollector):
                 ))
             except Exception as exc:
                 self.logger.debug("StubHub HTML parse item error: %s | item=%s", exc, str(item)[:80])
+        if parking_count:
+            self.logger.info("SH HTML: parking_excluded=%d tickets_retained=%d", parking_count, len(results))
         return results
 
     async def _fetch_via_json_api(self, event_id: str) -> Optional[list[RawListing]]:
@@ -251,12 +331,18 @@ class StubHubCollector(BaseCollector):
 
     def _parse_solr_response(self, data: dict) -> list[RawListing]:
         listings = []
+        parking_count = 0
         for doc in data.get("response", {}).get("docs", []):
             try:
                 raw_id = doc.get("listing_id", "")
+                section = str(doc.get("section", "Unknown"))
+                row = doc.get("row")
+                if _is_parking_listing(section, str(row) if row else None):
+                    parking_count += 1
+                    continue
                 listings.append(RawListing(
                     external_listing_id=f"sh-{raw_id}",
-                    section=str(doc.get("section", "Unknown")), row=doc.get("row"),
+                    section=section, row=row,
                     quantity=int(doc.get("qty", 1)), price=Decimal(str(doc.get("current_price", 0))),
                     fees=Decimal(str(doc["fees"])) if doc.get("fees") else None,
                     all_in_price=Decimal(str(doc["all_in_price"])) if doc.get("all_in_price") else None,
@@ -264,6 +350,8 @@ class StubHubCollector(BaseCollector):
                     market_segment="secondary_resale",
                 ))
             except Exception: pass
+        if parking_count:
+            self.logger.info("SH SOLR: parking_excluded=%d tickets_retained=%d", parking_count, len(listings))
         return listings
 
     async def _fetch_via_playwright(self, event_id: str, fallback_url: Optional[str]) -> list[RawListing]:

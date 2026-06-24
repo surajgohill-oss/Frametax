@@ -415,12 +415,8 @@ class TickPickCollector(BaseCollector):
             if price is None or price <= 0:
                 continue
 
-            section = (
-                item.get("s")
-                or item.get("section")
-                or item.get("sectionName")
-                or "General"
-            )
+            raw_section = item.get("s") or item.get("section") or item.get("sectionName")
+            section = raw_section or "General"
             row = item.get("r") or item.get("row") or None
             qty = int(item.get("q") or item.get("quantity") or 1)
 
@@ -428,6 +424,22 @@ class TickPickCollector(BaseCollector):
             if _is_parking_listing(str(section), str(row) if row else None):
                 parking_count += 1
                 logger.debug("TP: parking excluded section=%r row=%r price=%s", section, row, price)
+                continue
+
+            # ── Fallback-section price-floor ──────────────────────────────────
+            # When TickPick provides no section name (raw_section is falsy), the
+            # listing falls back to "General".  Real concert tickets always appear
+            # with an explicit section; sectionless listings priced below $10 are
+            # invariably parking passes, proximity passes, or other non-ticket
+            # items that TickPick fails to label with a parking keyword.
+            # Confirmed: Shoreline Amphitheatre Kid Cudi "GENERAL" row R/S/E/B/F/D/C
+            # at $5-9 — real GA lawn tickets at the same event start at $40+.
+            if not raw_section and price < 10:
+                parking_count += 1
+                logger.debug(
+                    "TP: sectionless sub-$10 excluded (suspected parking) "
+                    "section=%r row=%r price=%s", section, row, price,
+                )
                 continue
 
             results.append(RawListing(
