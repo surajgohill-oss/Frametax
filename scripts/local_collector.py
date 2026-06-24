@@ -1,26 +1,36 @@
 #!/usr/bin/env python3
 """
-Local Mac collector — runs StubHub and TickPick collectors from this machine
-(residential IP, no DataDome/403 blocks) and pushes results to Railway.
+Local Mac collector — runs StubHub, TickPick, and SeatGeek collectors from this
+machine (residential IP, no DataDome/403 blocks) and pushes results to Railway.
+
+Canonical cadence (mirrors Railway scheduler compute_poll_interval_minutes):
+  > 30d    → daily      (1440 min)
+  14–30d   → twice/day  ( 720 min)
+   7–14d   → 8h         ( 480 min)
+   3–7d    → 4h         ( 240 min)
+   1–3d    → hourly     (  60 min)
+   6–24h   → 30 min
+  90m–6h   → 15 min
+  30–90m   → 5 min
+   0–30m   → 2 min
+  post-start until exhaustion → 2 min
+
+Run via cron at */2 * * * * — each invocation checks per-TE cadence and skips
+TEs whose next_poll_at has not yet elapsed.  State tracked in local JSON file.
 
 Usage:
-    python3 scripts/local_collector.py [--once] [--event-id EVENT_ID]
+    python3 scripts/local_collector.py [--once] [--event-id EVENT_ID] [--force]
+    python3 scripts/local_collector.py --status
 
-Schedule (cron via launchd or crontab):
-    */15 * * * *  /usr/local/bin/python3 /path/to/scripts/local_collector.py
-
-Required env vars (set in ~/.zshenv or a .env file in this directory):
-    RAILWAY_BASE_URL    https://backend-production-509f.up.railway.app
-    LOCAL_COLLECTOR_SECRET   <same value as on Railway>
-
-Optional:
-    LOCAL_COLLECTOR_MARKETPLACES  stubhub,tickpick   (default)
-    LOCAL_COLLECTOR_DRY_RUN      1   — print listings but don't push
+Required env (in .env.local):
+    RAILWAY_BASE_URL
+    LOCAL_COLLECTOR_SECRET
 """
 from __future__ import annotations
 
 import argparse
 import asyncio
+import json
 import logging
 import os
 import sys
@@ -31,20 +41,16 @@ from typing import Optional
 
 import httpx
 
-# ── Bootstrap: add backend to path so we can import collectors directly ──────
+# ── Bootstrap ─────────────────────────────────────────────────────────────────
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 _BACKEND = _REPO_ROOT / "backend"
 if str(_BACKEND) not in sys.path:
     sys.path.insert(0, str(_BACKEND))
 
-# Load .env.local then .env from repo root (local overrides repo)
 from dotenv import load_dotenv
-_env_local = _REPO_ROOT / ".env.local"
-if _env_local.exists():
-    load_dotenv(_env_local, override=True)
-_env_file = _REPO_ROOT / ".env"
-if _env_file.exists():
-    load_dotenv(_env_file)
+for _f in [_REPO_ROOT / ".env.local", _REPO_ROOT / ".env"]:
+    if _f.exists():
+        load_dotenv(_f, override=True)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -53,41 +59,125 @@ logging.basicConfig(
 )
 logger = logging.getLogger("local_collector")
 
-# ── Config ─────────────────────────────────────────────────────────────────────
-
-RAILWAY_BASE = os.environ.get("RAILWAY_BASE_URL", "https://backend-production-509f.up.railway.app")
-SECRET = os.environ.get("LOCAL_COLLECTOR_SECRET", "")
-DRY_RUN = os.environ.get("LOCAL_COLLECTOR_DRY_RUN", "0") == "1"
+# ── Config ────────────────────────────────────────────────────────────────────
+RAILWAY_BASE  = os.environ.get("RAILWAY_BASE_URL", "https://backend-production-509f.up.railway.app")
+SECRET        = os.environ.get("LOCAL_COLLECTOR_SECRET", "")
+DRY_RUN       = os.environ.get("LOCAL_COLLECTOR_DRY_RUN", "0") == "1"
 TARGET_MARKETPLACES = [
-    m.strip()
-    for m in os.environ.get("LOCAL_COLLECTOR_MARKETPLACES", "stubhub,tickpick").split(",")
+    m.strip() for m in
+    os.environ.get("LOCAL_COLLECTOR_MARKETPLACES", "stubhub,tickpick,seatgeek").split(",")
     if m.strip()
 ]
 
-COLLECTOR_VERSION = "local_mac_v1"
-INGEST_URL = f"{RAILWAY_BASE}/api/collect/ingest"
+COLLECTOR_VERSION = "local_mac_v2"
+INGEST_URL    = f"{RAILWAY_BASE}/api/collect/ingest"
 HEARTBEAT_URL = f"{RAILWAY_BASE}/api/collect/heartbeat"
-EVENTS_URL = f"{RAILWAY_BASE}/api/events"
+EVENTS_URL    = f"{RAILWAY_BASE}/api/events"
 
+# Local cadence state file — tracks last_polled_at per (event_id, marketplace)
+_STATE_FILE = _REPO_ROOT / ".local_collector_state.json"
 
-# ── Minimal stub TrackedEvent so collectors can run without a DB session ──────
+# ── Canonical cadence (mirrors Railway scheduler) ─────────────────────────────
+
+def _compute_interval_minutes(event_date_str: Optional[str]) -> int:
+    """Return poll interval in minutes based on time until event."""
+    if not event_date_str:
+        return 60
+    try:
+        ed = datetime.fromisoformat(event_date_str.replace("Z", "+00:00"))
+    except Exception:
+        return 60
+    now = datetime.now(timezone.utc)
+    seconds = (ed - now).total_seconds()
+    if seconds < 0:             return 2     # post-start, live
+    if seconds < 30 * 60:       return 2     # 0–30 min
+    if seconds < 90 * 60:       return 5     # 30–90 min
+    if seconds < 6 * 3600:      return 15    # 90 min – 6 h
+    if seconds < 24 * 3600:     return 30    # 6–24 h
+    if seconds < 3 * 86400:     return 60    # 1–3 days
+    if seconds < 7 * 86400:     return 240   # 3–7 days
+    if seconds < 14 * 86400:    return 480   # 7–14 days
+    if seconds < 30 * 86400:    return 720   # 14–30 days
+    return 1440                              # > 30 days
+
+# ── Local cadence state ───────────────────────────────────────────────────────
+
+def _load_state() -> dict:
+    if _STATE_FILE.exists():
+        try:
+            return json.loads(_STATE_FILE.read_text())
+        except Exception:
+            pass
+    return {}
+
+def _save_state(state: dict):
+    try:
+        _STATE_FILE.write_text(json.dumps(state, indent=2))
+    except Exception as exc:
+        logger.warning("Failed to save state: %s", exc)
+
+def _is_due(state: dict, key: str, interval_minutes: int) -> bool:
+    last = state.get(key)
+    if not last:
+        return True
+    try:
+        last_dt = datetime.fromisoformat(last)
+        if last_dt.tzinfo is None:
+            last_dt = last_dt.replace(tzinfo=timezone.utc)
+        return (datetime.now(timezone.utc) - last_dt).total_seconds() >= interval_minutes * 60
+    except Exception:
+        return True
+
+def _mark_polled(state: dict, key: str):
+    state[key] = datetime.now(timezone.utc).isoformat()
+
+# ── Self-healing: historical baseline tracking ────────────────────────────────
+
+_BASELINE_FILE = _REPO_ROOT / ".local_collector_baselines.json"
+
+def _load_baselines() -> dict:
+    if _BASELINE_FILE.exists():
+        try:
+            return json.loads(_BASELINE_FILE.read_text())
+        except Exception:
+            pass
+    return {}
+
+def _save_baselines(baselines: dict):
+    try:
+        _BASELINE_FILE.write_text(json.dumps(baselines, indent=2))
+    except Exception:
+        pass
+
+def _check_and_update_baseline(baselines: dict, key: str, count: int) -> Optional[str]:
+    """
+    Compare count against historical best.  Returns warning string if regression
+    detected (count < 50% of best and best was meaningful).
+    Updates baseline if count is new high.
+    """
+    best = baselines.get(key, {}).get("best", 0)
+    if count > best:
+        baselines[key] = {"best": count, "at": datetime.now(timezone.utc).isoformat()}
+        _save_baselines(baselines)
+        return None
+    if best >= 10 and count < best * 0.5:
+        return f"REGRESSION: {key} got {count} listings vs historical best {best} (< 50%)"
+    return None
+
+# ── Fake TrackedEvent ─────────────────────────────────────────────────────────
 
 class _FakeTrackedEvent:
-    """Minimal stand-in for TrackedEvent that satisfies collector.collect()."""
-    def __init__(self, te_id: int, event_id: int, external_event_id: Optional[str],
-                 external_url: Optional[str], marketplace_id: int,
-                 poll_interval_minutes: int = 60):
+    def __init__(self, te_id, event_id, external_event_id, external_url, marketplace_id,
+                 poll_interval_minutes=60):
         self.id = te_id
         self.event_id = event_id
         self.external_event_id = external_event_id
         self.external_url = external_url
         self.marketplace_id = marketplace_id
         self.poll_interval_minutes = poll_interval_minutes
-        self.event = None          # may be set after construction
-        # Fields collectors may read
+        self.event = None
         self.is_active = True
         self.consecutive_zero_inventory_count = 0
-
 
 # ── Core poll logic ───────────────────────────────────────────────────────────
 
@@ -96,11 +186,8 @@ async def _run_one_marketplace(
     slug: str,
     te_data: dict,
     event_data: dict,
+    baselines: dict,
 ) -> dict:
-    """
-    Run one marketplace collector for one tracked event.
-    Returns a summary dict with listings_found / error / elapsed_s.
-    """
     from app.config import get_settings
     from app.collectors.registry import COLLECTOR_REGISTRY
 
@@ -110,7 +197,6 @@ async def _run_one_marketplace(
         return {"slug": slug, "te_id": te_data["id"], "error": "no_collector", "listings_found": 0}
 
     collector = collector_cls(settings)
-
     te = _FakeTrackedEvent(
         te_id=te_data["id"],
         event_id=te_data.get("event_id") or event_data["id"],
@@ -130,22 +216,36 @@ async def _run_one_marketplace(
 
     elapsed = time.monotonic() - t0
     n = len(result.listings)
-    logger.info(
-        "%s te=%d event=%d listings=%d elapsed=%.1fs err=%s",
-        slug, te_data["id"], event_data["id"], n, elapsed, result.error,
-    )
+
+    # Self-healing: check against historical baseline
+    bl_key = f"{slug}:{te_data['id']}"
+    regression_warn = _check_and_update_baseline(baselines, bl_key, n)
+    if regression_warn:
+        logger.warning("SELF-HEAL: %s — triggering retry", regression_warn)
+        # One retry with fresh collector
+        try:
+            collector2 = collector_cls(settings)
+            result2 = await collector2.collect(te)
+            await collector2.close()
+            if len(result2.listings) > n:
+                logger.info("SELF-HEAL retry: %s te=%d improved %d → %d", slug, te_data["id"], n, len(result2.listings))
+                result = result2
+                n = len(result.listings)
+        except Exception as exc2:
+            logger.warning("SELF-HEAL retry failed: %s", exc2)
+
+    logger.info("%s te=%d event=%d listings=%d elapsed=%.1fs err=%s",
+                slug, te_data["id"], event_data["id"], n, elapsed, result.error)
 
     if DRY_RUN:
-        logger.info("DRY_RUN: would push %d listings — skipping", n)
+        logger.info("DRY_RUN: would push %d listings", n)
         return {"slug": slug, "te_id": te_data["id"], "listings_found": n, "dry_run": True}
 
     if result.error and n == 0:
         return {"slug": slug, "te_id": te_data["id"], "error": result.error, "listings_found": 0}
 
-    # Push to Railway
-    listings_payload = []
-    for r in result.listings:
-        listings_payload.append({
+    listings_payload = [
+        {
             "external_listing_id": r.external_listing_id,
             "section": r.section,
             "row": r.row,
@@ -155,7 +255,9 @@ async def _run_one_marketplace(
             "all_in_price": str(r.all_in_price) if r.all_in_price else None,
             "listing_url": r.listing_url,
             "market_segment": r.market_segment or "secondary_resale",
-        })
+        }
+        for r in result.listings
+    ]
 
     push_payload = {
         "te_id": te.id,
@@ -175,78 +277,148 @@ async def _run_one_marketplace(
         )
         resp.raise_for_status()
         rj = resp.json()
-        logger.info(
-            "PUSHED: %s te=%d listings_accepted=%d poll_run=%s",
-            slug, te.id, rj.get("listings_accepted", "?"), rj.get("poll_run_id", "?"),
-        )
+        logger.info("PUSHED: %s te=%d listings_accepted=%d poll_run=%s",
+                    slug, te.id, rj.get("listings_accepted", "?"), rj.get("poll_run_id", "?"))
         return {"slug": slug, "te_id": te.id, "listings_found": n, "poll_run_id": rj.get("poll_run_id")}
     except Exception as exc:
         logger.error("PUSH_FAILED: %s te=%d — %s", slug, te.id, exc)
         return {"slug": slug, "te_id": te.id, "error": f"push_failed:{exc}", "listings_found": n}
 
+# ── Status display ────────────────────────────────────────────────────────────
 
-async def run_once(target_event_id: Optional[int] = None) -> dict:
-    """Fetch active events, poll SH+TP, push results. Returns run summary."""
+def _print_status():
+    """Print cadence status for all active events."""
+    import urllib.request
+    state = _load_state()
+    baselines = _load_baselines()
+    try:
+        events = json.loads(urllib.request.urlopen(EVENTS_URL).read())
+    except Exception as exc:
+        print(f"Cannot fetch events: {exc}")
+        return
+
+    now = datetime.now(timezone.utc)
+    print(f"\n{'Event':>6}  {'Phase':>12}  {'Expected':>10}  {'SH last':>12}  {'TP last':>12}  {'Due':>5}")
+    print("-" * 75)
+    for event in sorted(events, key=lambda e: e.get("event_date") or ""):
+        if not event.get("is_active"):
+            continue
+        ed_str = event.get("event_date")
+        interval = _compute_interval_minutes(ed_str)
+        if ed_str:
+            ed = datetime.fromisoformat(ed_str.replace("Z", "+00:00"))
+            diff_h = (ed - now).total_seconds() / 3600
+            if diff_h < 0:
+                phase = "live"
+            elif diff_h < 1:
+                phase = "<1h"
+            elif diff_h < 24:
+                phase = f"{diff_h:.0f}h"
+            elif diff_h < 24 * 7:
+                phase = f"{diff_h/24:.1f}d"
+            else:
+                phase = f"{diff_h/24:.0f}d"
+        else:
+            phase = "?"
+
+        eid = event["id"]
+        sh_key = f"stubhub:{eid}"
+        tp_key = f"tickpick:{eid}"
+        sh_last = state.get(sh_key, "never")[:16] if state.get(sh_key) else "never"
+        tp_last = state.get(tp_key, "never")[:16] if state.get(tp_key) else "never"
+        due_sh = "Y" if _is_due(state, sh_key, interval) else "N"
+        due_tp = "Y" if _is_due(state, tp_key, interval) else "N"
+        due = f"{due_sh}/{due_tp}"
+
+        interval_str = f"{interval}m" if interval < 60 else (f"{interval//60}h" if interval % 60 == 0 else f"{interval}m")
+        print(f"{eid:>6}  {phase:>12}  {interval_str:>10}  {sh_last:>12}  {tp_last:>12}  {due:>5}")
+
+# ── Main run loop ─────────────────────────────────────────────────────────────
+
+async def run_once(target_event_id: Optional[int] = None, force: bool = False) -> dict:
     if not SECRET:
-        logger.error("LOCAL_COLLECTOR_SECRET not set — cannot push to Railway")
+        logger.error("LOCAL_COLLECTOR_SECRET not set")
         sys.exit(1)
 
     t_start = time.monotonic()
+    state = _load_state()
+    baselines = _load_baselines()
 
     async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as http:
-        # Fetch active events from Railway
         try:
             resp = await http.get(EVENTS_URL)
             resp.raise_for_status()
             events = resp.json()
         except Exception as exc:
-            logger.error("Failed to fetch events from Railway: %s", exc)
+            logger.error("Failed to fetch events: %s", exc)
             return {"error": str(exc)}
 
     active_events = [e for e in events if e.get("is_active")]
     if target_event_id:
         active_events = [e for e in active_events if e["id"] == target_event_id]
 
-    logger.info("Active events: %d%s", len(active_events),
-                f" (filtered to id={target_event_id})" if target_event_id else "")
-
-    tasks = []
     results = []
     total_listings = 0
     ok_count = 0
     err_count = 0
+    skipped_count = 0
 
-    async with httpx.AsyncClient(timeout=60.0) as http:
+    cadence_report = []
+
+    async with httpx.AsyncClient(timeout=90.0) as http:
         for event in active_events:
+            ed_str = event.get("event_date")
+            interval = _compute_interval_minutes(ed_str)
+            eid = event["id"]
+
             for te in event.get("tracked_events", []):
                 if not te.get("is_active"):
                     continue
                 slug = te.get("marketplace_slug")
                 if slug not in TARGET_MARKETPLACES:
                     continue
-                # Skip if no external_event_id and no external_url
                 if not te.get("external_event_id") and not te.get("external_url"):
-                    logger.debug("Skipping te=%d %s — no id/url", te["id"], slug)
                     continue
 
-                summary = await _run_one_marketplace(http, slug, te, event)
+                state_key = f"{slug}:{eid}"
+                due = force or _is_due(state, state_key, interval)
+
+                # Cadence report entry (always record, even if skipping)
+                cadence_report.append({
+                    "event_id": eid,
+                    "slug": slug,
+                    "interval_min": interval,
+                    "due": due,
+                    "last": state.get(state_key, "never"),
+                })
+
+                if not due:
+                    skipped_count += 1
+                    logger.debug("SKIP: %s event=%d (interval=%dm, not due)", slug, eid, interval)
+                    continue
+
+                summary = await _run_one_marketplace(http, slug, te, event, baselines)
                 results.append(summary)
                 n = summary.get("listings_found", 0)
                 total_listings += n
+
                 if summary.get("error"):
                     err_count += 1
                 else:
                     ok_count += 1
+                    _mark_polled(state, state_key)
+
+    _save_state(state)
 
     elapsed = time.monotonic() - t_start
-
     heartbeat = {
         "collector_version": COLLECTOR_VERSION,
         "marketplaces_attempted": len(results),
         "marketplaces_ok": ok_count,
-        "events_polled": len(set(r.get("te_id") for r in results)),
+        "events_polled": len({r.get("te_id") for r in results}),
         "total_listings": total_listings,
         "elapsed_s": round(elapsed, 1),
+        "skipped": skipped_count,
         "error": None if err_count == 0 else f"{err_count} errors",
     }
 
@@ -262,25 +434,31 @@ async def run_once(target_event_id: Optional[int] = None) -> dict:
             logger.warning("Heartbeat failed: %s", exc)
 
     logger.info(
-        "RUN COMPLETE: %d marketplaces, %d ok, %d errors, %d total listings, %.1fs",
-        len(results), ok_count, err_count, total_listings, elapsed,
+        "RUN COMPLETE: %d polled, %d ok, %d errors, %d skipped, %d listings, %.1fs",
+        len(results), ok_count, err_count, skipped_count, total_listings, elapsed,
     )
-    return {**heartbeat, "results": results}
+    return {**heartbeat, "results": results, "cadence": cadence_report}
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 def main():
-    parser = argparse.ArgumentParser(description="Local Mac ticket collector")
-    parser.add_argument("--once", action="store_true", help="Run once and exit (default)")
-    parser.add_argument("--event-id", type=int, help="Only poll this event ID")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--once", action="store_true")
+    parser.add_argument("--event-id", type=int)
+    parser.add_argument("--force", action="store_true", help="Ignore cadence — poll everything now")
+    parser.add_argument("--status", action="store_true", help="Print cadence status table")
     args = parser.parse_args()
 
-    if DRY_RUN:
-        logger.info("DRY_RUN mode — listings fetched but not pushed to Railway")
+    if args.status:
+        _print_status()
+        return
 
-    summary = asyncio.run(run_once(args.event_id))
-    if summary.get("error"):
+    if DRY_RUN:
+        logger.info("DRY_RUN mode")
+
+    summary = asyncio.run(run_once(args.event_id, force=args.force))
+    if summary.get("error") and not summary.get("results"):
         sys.exit(1)
 
 

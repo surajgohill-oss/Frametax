@@ -183,6 +183,15 @@ export default function SectionDetailDrawer({ section, mode, onClose }: Props) {
               </div>
             </div>
           )}
+
+          {/* Marketplace share */}
+          <div className="rounded-xl bg-white/4 border border-white/6 p-3">
+            <p className="text-[9px] uppercase tracking-wider text-slate-500 mb-2">Summary</p>
+            <div className="grid grid-cols-2 gap-2">
+              <InfoCell label="Price Range" val={m.low_ask != null && m.high_ask != null ? `$${Math.round(m.low_ask)}–$${Math.round(m.high_ask)}` : "—"} />
+              <InfoCell label="24h Δ Inv"   val={m.inventory_delta_24h != null ? (m.inventory_delta_24h > 0 ? `+${m.inventory_delta_24h}` : String(m.inventory_delta_24h)) : "—"} accent={m.inventory_delta_24h != null ? (m.inventory_delta_24h < 0 ? "text-red-400" : m.inventory_delta_24h > 0 ? "text-emerald-400" : undefined) : undefined} />
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -904,31 +904,35 @@ export default function EventDetailPage() {
             </div>
           </div>
 
-          {/* RIGHT — Tracking stats (wireframe: Tracking Since / Last Update / Markets / Feeds) */}
-          <div className="hidden sm:flex flex-col gap-2.5 text-right flex-shrink-0 min-w-[110px]">
-            {trackingSince && (
-              <div>
-                <p className="text-[9px] text-slate-600 uppercase tracking-wider">Tracking Since</p>
-                <p className="text-xs font-semibold text-slate-200">{trackingSince.formatted}</p>
-                <p className="text-[9px] text-slate-600">({trackingSince.days} days)</p>
-              </div>
-            )}
-            {freshLabel && (
-              <div>
-                <p className="text-[9px] text-slate-600 uppercase tracking-wider">Last Update</p>
-                <p className="text-xs font-semibold text-slate-200">{freshLabel}</p>
-              </div>
-            )}
-            <div className="flex items-start gap-4 justify-end">
-              <div>
-                <p className="text-[9px] text-slate-600 uppercase tracking-wider">Markets</p>
-                <p className="text-sm font-bold text-slate-200">{marketsCount || "—"}</p>
-              </div>
-              <div>
-                <p className="text-[9px] text-slate-600 uppercase tracking-wider">Feeds</p>
-                <p className="text-sm font-bold text-slate-200">{feedsCount || "—"}</p>
-              </div>
-            </div>
+          {/* RIGHT — Market Health: per-marketplace freshness status chips */}
+          <div className="hidden sm:flex flex-col gap-1.5 flex-shrink-0">
+            <p className="text-[9px] text-slate-600 uppercase tracking-wider text-right mb-0.5">Market Health</p>
+            {eventMeta?.marketplace_freshness
+              ? Object.entries(eventMeta.marketplace_freshness).map(([slug, f]) => {
+                  const status = f.freshness_status;
+                  const age = f.age_minutes;
+                  const ageStr = age == null ? null : age < 60 ? `${age}m` : `${Math.round(age / 60)}h`;
+                  const cfg: Record<string, { dot: string; label: string; text: string }> = {
+                    fresh:  { dot: "bg-emerald-400", label: "Fresh",   text: "text-emerald-400" },
+                    late:   { dot: "bg-amber-400",   label: "Late",    text: "text-amber-400"   },
+                    stale:  { dot: "bg-orange-500",  label: "Stale",   text: "text-orange-400"  },
+                    dead:   { dot: "bg-red-500",     label: "Dead",    text: "text-red-400"     },
+                  };
+                  const c = cfg[status] ?? { dot: "bg-slate-600", label: status, text: "text-slate-500" };
+                  return (
+                    <div key={slug} className="flex items-center gap-1.5 justify-end">
+                      <span className="text-[9px] text-slate-500 capitalize">{slug}</span>
+                      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${c.dot}`} />
+                      <span className={`text-[9px] font-semibold ${c.text} tabular-nums w-8 text-left`}>
+                        {ageStr ?? c.label}
+                      </span>
+                    </div>
+                  );
+                })
+              : (
+                <p className="text-[10px] text-slate-600 text-right">No feeds configured</p>
+              )
+            }
           </div>
         </div>
       </section>

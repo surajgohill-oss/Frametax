@@ -5,7 +5,8 @@ import { EyeOff, Calendar, Clock } from "lucide-react";
 import { format, parseISO, differenceInDays } from "date-fns";
 import type { EventSummary } from "@/lib/types";
 import { fmt$$, fmtNum, fmtPct, signalToAction, actionColors, signalPhrase } from "@/lib/utils";
-import { getEventGradient, gradientBg, getEventArtworkUrl } from "@/lib/entityimages";
+import { getEventGradient, gradientBg } from "@/lib/entityimages";
+import { useArtistImage } from "@/hooks/useArtistImage";
 
 interface Props {
   event: EventSummary;
@@ -28,7 +29,7 @@ export default function EventCard({ event, meta, dataDepthDays, onHide, isSelect
   const action = signalToAction(event.signal);
   const colors = actionColors(action);
   const gradient = getEventGradient(artist, title);
-  const artworkUrl = getEventArtworkUrl(artist, title);
+  const artworkUrl = useArtistImage(artist, title);
   const phrase = signalPhrase(event.signal);
 
   let daysOut: number | null = null;
@@ -70,6 +71,7 @@ export default function EventCard({ event, meta, dataDepthDays, onHide, isSelect
               alt=""
               className="absolute inset-0 w-full h-full object-cover object-top opacity-60"
               loading="lazy"
+              onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
             />
           )}
           {/* dark vignette so text is readable over photo */}

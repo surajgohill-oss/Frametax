@@ -147,32 +147,34 @@ function FeaturedEventHero({
             </span>
           </div>
         </div>
-        {/* RIGHT — wireframe: Tracking Since / Last Update / Markets / Feeds + action buttons */}
+        {/* RIGHT — Market Health chips + action buttons */}
         <div className="hidden sm:flex items-center gap-4 flex-shrink-0">
-          {/* Tracking stats */}
-          <div className="text-right space-y-1.5">
-            {trackingSince && (
-              <div>
-                <p className="text-[9px] text-slate-600 uppercase tracking-wider">Tracking Since</p>
-                <p className="text-[10px] font-semibold text-slate-300">{trackingSince.formatted} ({trackingSince.days}d)</p>
-              </div>
-            )}
-            {freshLabel && (
-              <div>
-                <p className="text-[9px] text-slate-600 uppercase tracking-wider">Last Update</p>
-                <p className="text-[10px] font-semibold text-slate-300">{freshLabel}</p>
-              </div>
-            )}
-            <div className="flex gap-3 justify-end">
-              <div>
-                <p className="text-[9px] text-slate-600 uppercase tracking-wider">Markets</p>
-                <p className="text-xs font-bold text-slate-200">{marketsCount || "—"}</p>
-              </div>
-              <div>
-                <p className="text-[9px] text-slate-600 uppercase tracking-wider">Feeds</p>
-                <p className="text-xs font-bold text-slate-200">{feedsCount || "—"}</p>
-              </div>
-            </div>
+          {/* Market Health */}
+          <div className="text-right space-y-1">
+            <p className="text-[9px] text-slate-600 uppercase tracking-wider mb-1">Market Health</p>
+            {meta?.marketplace_freshness
+              ? Object.entries(meta.marketplace_freshness).map(([slug, f]) => {
+                  const fEntry = f as { freshness_status: string; age_minutes: number | null };
+                  const status = fEntry.freshness_status;
+                  const age = fEntry.age_minutes;
+                  const ageStr = age == null ? null : age < 60 ? `${age}m` : `${Math.round(age / 60)}h`;
+                  const cfg: Record<string, { dot: string; text: string }> = {
+                    fresh: { dot: "bg-emerald-400", text: "text-emerald-400" },
+                    late:  { dot: "bg-amber-400",   text: "text-amber-400"  },
+                    stale: { dot: "bg-orange-500",  text: "text-orange-400" },
+                    dead:  { dot: "bg-red-500",     text: "text-red-400"    },
+                  };
+                  const c = cfg[status] ?? { dot: "bg-slate-600", text: "text-slate-500" };
+                  return (
+                    <div key={slug} className="flex items-center gap-1 justify-end">
+                      <span className="text-[9px] text-slate-500 capitalize">{slug}</span>
+                      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${c.dot}`} />
+                      <span className={`text-[9px] font-semibold ${c.text} w-7 text-left tabular-nums`}>{ageStr ?? status}</span>
+                    </div>
+                  );
+                })
+              : <p className="text-[9px] text-slate-600">No feeds</p>
+            }
           </div>
           {/* Action buttons */}
           <div className="flex flex-col gap-1">
