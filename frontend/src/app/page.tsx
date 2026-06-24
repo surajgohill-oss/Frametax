@@ -113,7 +113,7 @@ function FeaturedEventHero({
       <div className="flex items-center gap-4 px-4 py-3 border-b border-white/6"
         style={{ background: `linear-gradient(90deg, ${gradient[0]}12, transparent 60%)` }}>
         {/* Artwork */}
-        <div className="flex-shrink-0 w-14 h-14 rounded-xl overflow-hidden"
+        <div className="flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden"
           style={{ background: `linear-gradient(145deg, ${gradient[0]}, ${gradient[1]})` }}>
           {artworkUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -151,18 +151,21 @@ function FeaturedEventHero({
         <div className="hidden sm:flex items-center gap-4 flex-shrink-0">
           {/* Market Health */}
           <div className="text-right space-y-1">
-            <p className="text-[9px] text-slate-600 uppercase tracking-wider mb-1">Market Health</p>
+            <p className="text-[9px] text-slate-600 uppercase tracking-wider mb-1">Marketplace Freshness</p>
             {meta?.marketplace_freshness
-              ? Object.entries(meta.marketplace_freshness).map(([slug, f]) => {
+              ? Object.entries(meta.marketplace_freshness)
+                  .filter(([slug]) => ['stubhub', 'tickpick', 'gametime', 'vividseats'].includes(slug))
+                  .map(([slug, f]) => {
                   const fEntry = f as { freshness_status: string; age_minutes: number | null };
                   const status = fEntry.freshness_status;
                   const age = fEntry.age_minutes;
                   const ageStr = age == null ? null : age < 60 ? `${age}m` : `${Math.round(age / 60)}h`;
                   const cfg: Record<string, { dot: string; text: string }> = {
-                    fresh: { dot: "bg-emerald-400", text: "text-emerald-400" },
-                    late:  { dot: "bg-amber-400",   text: "text-amber-400"  },
-                    stale: { dot: "bg-orange-500",  text: "text-orange-400" },
-                    dead:  { dot: "bg-red-500",     text: "text-red-400"    },
+                    fresh:   { dot: "bg-emerald-400", text: "text-emerald-400" },
+                    late:    { dot: "bg-amber-400",   text: "text-amber-400"  },
+                    stale:   { dot: "bg-orange-500",  text: "text-orange-400" },
+                    dead:    { dot: "bg-red-500",     text: "text-red-400"    },
+                    no_data: { dot: "bg-slate-500",   text: "text-slate-400"  },
                   };
                   const c = cfg[status] ?? { dot: "bg-slate-600", text: "text-slate-500" };
                   return (

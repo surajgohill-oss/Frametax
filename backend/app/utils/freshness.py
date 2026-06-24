@@ -44,10 +44,11 @@ from typing import Optional
 
 # ── Status constants ──────────────────────────────────────────────────────────
 
-FRESH = "fresh"
-LATE  = "late"
-STALE = "stale"
-DEAD  = "dead"
+FRESH   = "fresh"
+LATE    = "late"
+STALE   = "stale"
+DEAD    = "dead"
+NO_DATA = "no_data"   # polls ran but produced 0 useful listings
 
 
 # ── Thresholds ────────────────────────────────────────────────────────────────
@@ -95,15 +96,30 @@ def compute_freshness(
     poll_interval_minutes: int,
     last_success_at: Optional[datetime],
     consecutive_failures: int,
+    last_data_at: Optional[datetime] = None,
+    polls_ran_no_data: bool = False,
     now: Optional[datetime] = None,
 ) -> dict:
     """
     Compute freshness for a single (marketplace, event) pair.
 
+    Parameters
+    ----------
+    last_success_at:
+        Timestamp of the most recent successful poll_run (any result).
+    last_data_at:
+        Timestamp of the most recent successful poll_run where listings_found > 0.
+        When supplied, used as the effective age instead of last_success_at.
+    polls_ran_no_data:
+        True when last_success_at is set (polls ran) but last_data_at is None
+        (all polls produced 0 useful listings after parking filter).
+        Triggers the no_data status instead of showing fresh/late.
+
     Returns a dict:
-      freshness_status           "fresh" | "late" | "stale" | "dead"
+      freshness_status           "fresh" | "late" | "stale" | "dead" | "no_data"
       last_success_at            ISO-8601 string | None
-      age_minutes                int | None   (None when never collected)
+      last_data_at               ISO-8601 string | None
+      age_minutes                int | None
       consecutive_failures       int
       stale_reason               str | None
       expected_interval_minutes  int
@@ -116,20 +132,38 @@ def compute_freshness(
         return _make(
             status=DEAD,
             last_success_at=None,
+            last_data_at=None,
             age_minutes=None,
             consecutive_failures=consecutive_failures,
             stale_reason="never_collected",
             expected=expected,
         )
 
-    # ── Age ───────────────────────────────────────────────────────────────────
-    age_minutes = max(0, int((_to_naive(now_naive) - _to_naive(last_success_at)).total_seconds() / 60))
+    # Use last_data_at (data-producing polls) as effective timestamp when available;
+    # fall back to last_success_at (any successful poll) for age calculation.
+    effective_at = _to_naive(last_data_at if last_data_at is not None else last_success_at)
+    age_minutes  = max(0, int((now_naive - effective_at).total_seconds() / 60))
+    # Age for DEAD/cadence checks uses effective_at (last useful data, not mere pings)
+    success_age  = max(0, int((now_naive - _to_naive(last_success_at)).total_seconds() / 60))
+
+    # ── Polls ran but produced zero useful listings ───────────────────────────
+    if polls_ran_no_data:
+        return _make(
+            status=NO_DATA,
+            last_success_at=last_success_at,
+            last_data_at=last_data_at,
+            age_minutes=success_age,
+            consecutive_failures=consecutive_failures,
+            stale_reason="no_listings_produced",
+            expected=expected,
+        )
 
     # ── DEAD: very old or too many consecutive failures ───────────────────────
     if age_minutes >= _DEAD_AGE_MINUTES or consecutive_failures >= _DEAD_FAILURE_COUNT:
         return _make(
             status=DEAD,
             last_success_at=last_success_at,
+            last_data_at=last_data_at,
             age_minutes=age_minutes,
             consecutive_failures=consecutive_failures,
             stale_reason="collector_dead",
@@ -143,6 +177,7 @@ def compute_freshness(
             return _make(
                 status=STALE,
                 last_success_at=last_success_at,
+                last_data_at=last_data_at,
                 age_minutes=age_minutes,
                 consecutive_failures=consecutive_failures,
                 stale_reason="near_event_24h_rule",
@@ -160,6 +195,7 @@ def compute_freshness(
     return _make(
         status=status,
         last_success_at=last_success_at,
+        last_data_at=last_data_at,
         age_minutes=age_minutes,
         consecutive_failures=consecutive_failures,
         stale_reason=reason,
@@ -189,6 +225,7 @@ def _make(
     *,
     status: str,
     last_success_at: Optional[datetime],
+    last_data_at: Optional[datetime],
     age_minutes: Optional[int],
     consecutive_failures: int,
     stale_reason: Optional[str],
@@ -197,6 +234,7 @@ def _make(
     return {
         "freshness_status":          status,
         "last_success_at":           last_success_at.isoformat() if last_success_at else None,
+        "last_data_at":              last_data_at.isoformat() if last_data_at else None,
         "age_minutes":               age_minutes,
         "consecutive_failures":      consecutive_failures,
         "stale_reason":              stale_reason,

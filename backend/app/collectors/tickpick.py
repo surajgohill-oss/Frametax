@@ -420,28 +420,12 @@ class TickPickCollector(BaseCollector):
             row = item.get("r") or item.get("row") or None
             qty = int(item.get("q") or item.get("quantity") or 1)
 
-            # ── Parking filter ────────────────────────────────────────────────
-            if _is_parking_listing(str(section), str(row) if row else None):
+            # ── Parking filter (price-aware) ──────────────────────────────────
+            # normalize.is_parking_listing now accepts an optional price param
+            # and catches "General" section < $20 in addition to keyword rules.
+            if _is_parking_listing(str(section), str(row) if row else None, price=price):
                 parking_count += 1
                 logger.debug("TP: parking excluded section=%r row=%r price=%s", section, row, price)
-                continue
-
-            # ── Fallback-section price-floor ──────────────────────────────────
-            # When TickPick provides no section name (raw_section is falsy), the
-            # listing falls back to "General".  Real concert tickets always appear
-            # with an explicit section; sectionless listings priced below $15 are
-            # invariably parking passes, proximity passes, or other non-ticket
-            # items that TickPick fails to label with a parking keyword.
-            # Confirmed: Crypto.com Arena "General" rows 3/7/8 at $10.01 and
-            # North Island Amphitheatre "General" row D at $12.51 — both parking.
-            # Shoreline Amphitheatre Kid Cudi "GENERAL" row R/S at $5-9 — parking.
-            # Real floor/GA at all these venues starts at $40+.
-            if not raw_section and price < 15:
-                parking_count += 1
-                logger.debug(
-                    "TP: sectionless sub-$10 excluded (suspected parking) "
-                    "section=%r row=%r price=%s", section, row, price,
-                )
                 continue
 
             results.append(RawListing(

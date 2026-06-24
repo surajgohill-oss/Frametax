@@ -214,6 +214,7 @@ _ROW_GA_EXACT_RE  = re.compile(r"^\s*GA\s*$",  re.IGNORECASE)
 def is_parking_listing(
     section: str | None,
     row: str | None,
+    price: float | None = None,
     **_kwargs,
 ) -> bool:
     """Return True if this listing is a parking pass rather than a concert seat.
@@ -259,6 +260,17 @@ def is_parking_listing(
     """
     sec = (section or "").strip()
     rw  = (row or "").strip()
+
+    # ── Tier 0: "General" section + low price = parking pass ─────────────────
+    # TickPick lists parking/proximity passes under section "General" (either
+    # explicit from the API or as the sectionless fallback). Real GA floor or
+    # lawn seats at every tracked venue (SoFi, Crypto.com, Shoreline, etc.)
+    # start at $40+. Anything under $20 in a "General" section is invariably
+    # a parking pass, proximity pass, or non-ticket item.
+    # Confirmed: BTS SoFi "General" rows 1-25 at $5-15, Crypto.com "General"
+    # rows 1-13 at $10.01, North Island Amphitheatre "General" row D at $12.51.
+    if sec.lower() == "general" and price is not None and price < 20.0:
+        return True
 
     # ── Tier 1: section keyword wins unconditionally ──────────────────────────
     for pattern in _SECTION_PATTERNS:

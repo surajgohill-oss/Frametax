@@ -94,44 +94,56 @@ async def vivid_search_probe(date: str, q: Optional[str] = None, pages: int = 2)
 
 @router.post("/deactivate-parking")
 async def deactivate_parking_listings(
-    event_id: int = Query(..., description="Event ID to scope the cleanup"),
+    event_id: Optional[int] = Query(None, description="Scope to one event; omit for all events"),
     dry_run: bool = Query(True, description="Set false to actually deactivate"),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Deactivate (is_active=False) listings whose section matches known parking-only
-    patterns that slipped past the ingest filter (e.g. WILLIAM KELSO ELEMENTARY SCHOOL).
-    Does NOT delete rows — marks is_active=False and sets a note in extra JSON.
+    Deactivate (is_active=False) listings that are parking passes.
+    Uses the price-aware is_parking_listing() filter, catching:
+      - all keyword-based patterns (PARKING, LOT, VALET, street addresses, etc.)
+      - section='General' with price < $20 (TickPick parking passes)
+
+    Scopes to one event when event_id is supplied; runs across ALL active events
+    when omitted. Does NOT delete rows — marks is_active=False.
 
     Always dry_run=True by default. Pass ?dry_run=false to commit.
     """
     from app.collectors.normalize import is_parking_listing
 
-    rows = await db.execute(
-        select(Listing.id, Listing.section, Listing.row)
-        .where(Listing.event_id == event_id, Listing.is_active == True)
-    )
+    q = select(Listing.id, Listing.section, Listing.row, Listing.price).where(Listing.is_active == True)
+    if event_id is not None:
+        q = q.where(Listing.event_id == event_id)
+
+    rows = await db.execute(q)
     to_deactivate: List[int] = []
-    for lid, sec, row in rows.all():
-        if is_parking_listing(sec, row):
+    breakdown: dict[str, int] = {}
+    for lid, sec, row, price in rows.all():
+        price_f = float(price) if price is not None else None
+        if is_parking_listing(sec, row, price=price_f):
             to_deactivate.append(lid)
+            reason = "general_low_price" if (sec or "").strip().lower() == "general" and price_f is not None and price_f < 20 else "keyword"
+            breakdown[reason] = breakdown.get(reason, 0) + 1
 
     if not to_deactivate:
-        return {"event_id": event_id, "dry_run": dry_run, "deactivated": 0, "ids": []}
+        return {"event_id": event_id, "dry_run": dry_run, "deactivated": 0, "breakdown": breakdown}
 
     if not dry_run:
-        await db.execute(
-            update(Listing)
-            .where(Listing.id.in_(to_deactivate))
-            .values(is_active=False)
-        )
+        # Batch in chunks of 500 to avoid query-param limits
+        for i in range(0, len(to_deactivate), 500):
+            chunk = to_deactivate[i:i + 500]
+            await db.execute(
+                update(Listing)
+                .where(Listing.id.in_(chunk))
+                .values(is_active=False)
+            )
         await db.commit()
 
     return {
         "event_id": event_id,
         "dry_run": dry_run,
         "deactivated": len(to_deactivate),
-        "ids": to_deactivate,
+        "breakdown": breakdown,
     }
 
 

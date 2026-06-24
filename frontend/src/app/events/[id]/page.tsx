@@ -906,17 +906,20 @@ export default function EventDetailPage() {
 
           {/* RIGHT — Market Health: per-marketplace freshness status chips */}
           <div className="hidden sm:flex flex-col gap-1.5 flex-shrink-0">
-            <p className="text-[9px] text-slate-600 uppercase tracking-wider text-right mb-0.5">Market Health</p>
+            <p className="text-[9px] text-slate-600 uppercase tracking-wider text-right mb-0.5">Marketplace Freshness</p>
             {eventMeta?.marketplace_freshness
-              ? Object.entries(eventMeta.marketplace_freshness).map(([slug, f]) => {
+              ? Object.entries(eventMeta.marketplace_freshness)
+                  .filter(([slug]) => ['stubhub', 'tickpick', 'gametime', 'vividseats'].includes(slug))
+                  .map(([slug, f]) => {
                   const status = f.freshness_status;
                   const age = f.age_minutes;
                   const ageStr = age == null ? null : age < 60 ? `${age}m` : `${Math.round(age / 60)}h`;
                   const cfg: Record<string, { dot: string; label: string; text: string }> = {
-                    fresh:  { dot: "bg-emerald-400", label: "Fresh",   text: "text-emerald-400" },
-                    late:   { dot: "bg-amber-400",   label: "Late",    text: "text-amber-400"   },
-                    stale:  { dot: "bg-orange-500",  label: "Stale",   text: "text-orange-400"  },
-                    dead:   { dot: "bg-red-500",     label: "Dead",    text: "text-red-400"     },
+                    fresh:   { dot: "bg-emerald-400", label: "Fresh",   text: "text-emerald-400" },
+                    late:    { dot: "bg-amber-400",   label: "Late",    text: "text-amber-400"   },
+                    stale:   { dot: "bg-orange-500",  label: "Stale",   text: "text-orange-400"  },
+                    dead:    { dot: "bg-red-500",     label: "Dead",    text: "text-red-400"     },
+                    no_data: { dot: "bg-slate-500",   label: "No data", text: "text-slate-400"   },
                   };
                   const c = cfg[status] ?? { dot: "bg-slate-600", label: status, text: "text-slate-500" };
                   return (

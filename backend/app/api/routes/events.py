@@ -85,9 +85,11 @@ async def _enrich_event(db, event: Event, trace: dict | None = None) -> dict:
             count_by_mp_id[mp_id] = cnt
 
     # ── Step 3: Freshness data ───────────────────────────────────────────────
-    #   a) Last successful poll_run.completed_at per tracked_event
-    #   b) Recent poll runs (30 days) for consecutive failure count
+    #   a) Last successful poll_run (any result) per tracked_event
+    #   b) Last data-producing poll (listings_found > 0) per tracked_event
+    #   c) Recent poll runs (30 days) for consecutive failure count
     last_success_map: dict[int, datetime] = {}
+    last_data_map:    dict[int, datetime] = {}   # only polls with listings_found > 0
     runs_by_te:       dict[int, list]     = {}
 
     if te_ids:
@@ -101,6 +103,20 @@ async def _enrich_event(db, event: Event, trace: dict | None = None) -> dict:
             .group_by(PollRun.tracked_event_id)
         )
         last_success_map = {row[0]: row[1] for row in lsr.all()}
+
+        # Data-producing polls only (listings_found > 0 means real ticket data
+        # was collected after the parking filter, not just a successful empty run)
+        ldr = await db.execute(
+            select(PollRun.tracked_event_id, func.max(PollRun.completed_at))
+            .where(
+                PollRun.tracked_event_id.in_(te_ids),
+                PollRun.status == "success",
+                PollRun.completed_at.isnot(None),
+                PollRun.listings_found > 0,
+            )
+            .group_by(PollRun.tracked_event_id)
+        )
+        last_data_map = {row[0]: row[1] for row in ldr.all()}
 
         cutoff = datetime.utcnow() - timedelta(days=30)
         rrr = await db.execute(
@@ -137,11 +153,18 @@ async def _enrich_event(db, event: Event, trace: dict | None = None) -> dict:
             else:
                 break
 
+        te_last_success = last_success_map.get(te.id)
+        te_last_data    = last_data_map.get(te.id)
+        # polls_ran_no_data: polls succeeded but none produced useful listings
+        polls_ran_no_data = (te_last_success is not None) and (te_last_data is None)
+
         freshness = compute_freshness(
             marketplace_slug=mp.slug,
             event_date=event.event_date,
             poll_interval_minutes=te.poll_interval_minutes or 1440,
-            last_success_at=last_success_map.get(te.id),
+            last_success_at=te_last_success,
+            last_data_at=te_last_data,
+            polls_ran_no_data=polls_ran_no_data,
             consecutive_failures=consecutive_failures,
         )
         freshness_by_mp[mp.slug] = freshness

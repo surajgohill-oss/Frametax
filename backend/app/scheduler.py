@@ -767,11 +767,11 @@ async def _process_result(result, te: TrackedEvent, poll_run_id: int, event=None
 
         clean_listings = []
         for raw in result.listings:
-            if is_parking_listing(raw.section, raw.row):
+            if is_parking_listing(raw.section, raw.row, price=raw.price):
                 parking_dropped += 1
                 logger.debug(
-                    "PARKING_FILTER: dropped section=%r row=%r event_id=%d %s",
-                    raw.section, raw.row, result.event_id, result.marketplace_slug,
+                    "PARKING_FILTER: dropped section=%r row=%r price=%s event_id=%d %s",
+                    raw.section, raw.row, raw.price, result.event_id, result.marketplace_slug,
                 )
             else:
                 clean_listings.append(raw)
