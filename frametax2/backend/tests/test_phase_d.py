@@ -353,7 +353,11 @@ def test_d4_edges_have_required_fields():
         assert isinstance(e, GraphEdge)
         assert e.source_type is not None
         assert e.source_slug is not None
-        assert e.edge_type in ("unlocks", "requires", "improves", "reduces", "incompatible_with")
+        assert e.edge_type in (
+            "unlocks", "requires", "improves", "reduces", "incompatible_with",
+            "enables", "complements", "alternative_to", "blocks",
+            "majority_only", "minority_only",
+        )
         assert e.target_type is not None
         assert e.target_slug is not None
 
