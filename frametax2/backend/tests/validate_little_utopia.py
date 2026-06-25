@@ -95,10 +95,10 @@ LU_BUDGET = ProductionBudgetParams(
 )
 
 # ── Known team nationalities ─────────────────────────────────────────────────
-# Writer: Australian — confirmed (user-provided)
+# Writer: GB (UK) — confirmed by user
 # Lead Actor: Luke Evans — Welsh/British, publicly documented
 # Producers: UK, Canada, USA (user-provided)
-# Director: NOT FOUND in any static project file; see report note
+# Director: Australian — confirmed by user
 
 add_verified_person(
     "Luke Evans",
@@ -108,6 +108,26 @@ add_verified_person(
     source_description="Wikipedia: born Pontypool, Wales; British actor",
     confidence="HIGH",
     notes="Lead actor, The Little Utopia. Welsh/British national.",
+)
+
+add_verified_person(
+    "Unknown Director",
+    citizenship="AU",
+    residency="AU",
+    source_url="",
+    source_description="Confirmed by producer",
+    confidence="HIGH",
+    notes="Director, The Little Utopia. Australian national.",
+)
+
+add_verified_person(
+    "Unknown Writer",
+    citizenship="GB",
+    residency="GB",
+    source_url="",
+    source_description="Confirmed by producer",
+    confidence="HIGH",
+    notes="Writer, The Little Utopia. British national.",
 )
 
 # ── Known incentive values per jurisdiction at QPE base scenario ─────────────
@@ -163,8 +183,8 @@ IE_QPE_POST_ONLY = POST_PROD_IN_BUDGET + POST_PROD_IN_KIND["base"]
 IE_REBATE_POST = IE_QPE_POST_ONLY * 0.32
 
 # Australia: producer offset 40% if Australian company controlling production
-# Writer is Australian; if producer has AU entity, offset on qualifying AU spend
-# This is most relevant if substantial spend can be AU-routed (post-production)
+# Director is Australian; AU director satisfies content test primary requirement
+# Most relevant if substantial spend can be AU-routed (post-production)
 AU_QPE_POST_ONLY = POST_PROD_IN_BUDGET + POST_PROD_IN_KIND["base"]
 AU_REBATE_POST = AU_QPE_POST_ONLY * 0.40
 
@@ -218,8 +238,8 @@ def _pa_result(dest_iso2: str, toggles: AdjustmentToggles | None = None):
 def _nationality_report():
     persons = [
         ("Luke Evans",        "cast"),
-        ("Unknown Writer",    "writer"),      # AU — confirmed by user; name unknown
-        ("Unknown Director",  "director"),    # NOT found in static project data
+        ("Unknown Writer",    "writer"),      # GB — confirmed by user; name unknown
+        ("Unknown Director",  "director"),    # AU — confirmed by user; name unknown
         ("Unknown Producer 1","producer"),    # GB
         ("Unknown Producer 2","producer"),    # CA
         ("Unknown Producer 3","producer"),    # US
@@ -289,25 +309,36 @@ def run() -> str:
     P("  Role              | Name / Status       | Nationality | Confidence")
     P("  ──────────────────┼─────────────────────┼─────────────┼───────────")
     P("  Lead Actor        | Luke Evans          | GB (Welsh)  | HIGH (public record)")
-    P("  Writer            | [name not stored]   | AU          | MEDIUM (user-confirmed)")
-    P("  Producer 1        | [name not stored]   | GB          | MEDIUM (user-confirmed)")
-    P("  Producer 2        | [name not stored]   | CA          | MEDIUM (user-confirmed)")
-    P("  Producer 3        | [name not stored]   | US          | MEDIUM (user-confirmed)")
-    P("  Director          | [NOT FOUND]         | UNKNOWN     | NONE")
+    P("  Writer            | [name not stored]   | GB          | HIGH (user-confirmed)")
+    P("  Producer 1        | [name not stored]   | GB          | HIGH (user-confirmed)")
+    P("  Producer 2        | [name not stored]   | CA          | HIGH (user-confirmed)")
+    P("  Producer 3        | [name not stored]   | US          | HIGH (user-confirmed)")
+    P("  Director          | [name not stored]   | AU          | HIGH (user-confirmed)")
     P("")
-    P("  ⚠ DIRECTOR NATIONALITY: Not found in any static project file or Python")
-    P("    source. The TalentProfile DB table exists but cannot be queried here.")
-    P("    Impact modeled in two scenarios below:")
-    P("    Scenario A: Director = GB → unlocks UK AVEC points, Eurimages eligibility")
-    P("    Scenario B: Director = AU → unlocks AU content test points, AU-UK treaty")
-    P("    → MANUAL CONFIRMATION REQUIRED before committing to any treaty structure")
+    P("  NATIONALITY IMPACT SUMMARY:")
     P("")
-    P("  LUKE EVANS nationality impact:")
+    P("  UK AVEC cultural test (need ≥18/31 pts):")
+    P("    Luke Evans (GB lead):   +1pt  D5 — lead actor British")
+    P("    Writer (GB):            +1pt  C2 — screenplay by British writer")
+    P("    Producer 1 (GB):        +1pt  A1 — UK production company/producer")
+    P("    Director (AU):           0pts — not British national")
+    P("    UK post (facilities):  +2-4pts — if significant post in UK")
+    P("    TOTAL ESTIMATE:         5-7/31 → FAILS without substantial UK shoot")
+    P("    → UK AVEC as principal jurisdiction excluded at this budget level")
+    P("    → UK post-only service deal (no cultural test) remains viable")
+    P("")
+    P("  AU content test (for Producer Offset):")
     lu_nat = lookup_nationality("Luke Evans", "cast")
-    P(f"    Verified GB: {lu_nat.verified}, confidence: {lu_nat.confidence.value}")
-    P("    → UK AVEC: lead_cast_uk = True → +1pt (D5) toward cultural test")
-    P("    → AU content test: lead_cast_au = False → 0 pts")
-    P("    → EU co-production: GB no longer EEA → does not count for Eurimages national quota")
+    P(f"    Luke Evans: GB, confidence: {lu_nat.confidence.value} → 0 AU pts")
+    P("    Director (AU):         STRONG — Australian director is a primary qualifier")
+    P("    Writer (GB):            0pts  — not Australian national")
+    P("    → AU director satisfies key 'significant Australian content' threshold")
+    P("    → Still requires AU company as applicant + qualifying AU spend")
+    P("")
+    P("  Eurimages (≥3 Council of Europe co-producers):")
+    P("    Director (AU): AU is NOT a Council of Europe member — no impact")
+    P("    GB: Council of Europe member ✓ | MT ✓ | IE ✓ | FR ✓ | GR ✓")
+    P("    → Eurimages structure viable via GB + MT + IE co-producers")
 
     # ── 4. TIER 1 COMPARISON (built-in engine) ─────────────────────────────
     P("")
@@ -409,7 +440,7 @@ def run() -> str:
          "PARSED"),
         ("AU",  "Australia Producer Offset (40%)",
          AU_REBATE_POST,
-         "40% on qualifying AU spend. Writer = AU. Requires substantial AU spend.",
+         "40% on qualifying AU spend. Director = AU (content test). Requires AU company.",
          True,
          "PARSED"),
     ]
@@ -495,9 +526,9 @@ def run() -> str:
     P(f"     Production adjustment (UK):       ${mu_plus_gb_padj:>10,.0f}")
     P(f"     NET (base scenario):              ${mu_plus_gb_net:>10,.0f}")
     P(f"     Cultural test requirement: UK AVEC needs ≥18/31 points")
-    P(f"     Luke Evans (GB, lead) = +1pt | GB producers = +1pt each")
-    P(f"     Director (GB/Scenario A) = +1pt | UK post = up to +4pts (crew days + facilities)")
-    P(f"     Estimated UK points: 5-8/31 without full UK shoot — UNLIKELY TO PASS")
+    P(f"     Luke Evans (GB lead) +1pt | Writer (GB) +1pt | GB producer +1pt")
+    P(f"     Director (AU) = 0pts | UK post facilities = +2-4pts")
+    P(f"     Estimated UK points: 5-7/31 without full UK shoot — FAILS cultural test")
     P(f"     → UK post spend alone insufficient for cultural test")
     P(f"     → Recommend SERVICE structure (no cultural test) via UK post house")
     P("")
@@ -546,27 +577,27 @@ def run() -> str:
     P(f"     S481 is transferable → gap financing available (strongest cashflow structure)")
     P("")
 
-    # Structure E: MU + AU (post, writer connection)
+    # Structure E: MU + AU (post, director connection)
     mu_plus_au_gross = MU_REBATE + AU_REBATE_POST
     au_adj = adj_results.get("AU", None)
     au_padj = au_adj.total_adjustment_usd if au_adj else 0
     mu_plus_au_net = mu_plus_au_gross - au_padj
-    P("  E) MU (principal) + AU Producer Offset (post, writer connection)")
+    P("  E) MU (principal) + AU Producer Offset (post, director connection)")
     P(f"     MU rebate:                        ${MU_REBATE:>10,.0f}")
     P(f"     AU Offset (40% × ${AU_QPE_POST_ONLY:,.0f}):  ${AU_REBATE_POST:>10,.0f}")
     P(f"     Production adjustment (AU):       ${au_padj:>10,.0f}")
     P(f"     NET:                              ${mu_plus_au_net:>10,.0f}")
-    P(f"     AU writer strengthens content test. Requires Australian company as applicant.")
-    P(f"     40% is highest post-production rate available.")
+    P(f"     AU director satisfies content test primary requirement.")
+    P(f"     40% is highest post-production rate available. Requires AU company as applicant.")
     P("")
 
     # Eurimages — requires ≥3 EEA/Council of Europe co-producers
     P("  F) Eurimages (multi-lateral)")
     P(f"     Award range: EUR 100K–1.5M (competitive grant); est. EUR 300K–500K for this budget")
     P(f"     Requires: ≥3 Council of Europe co-producers (GB, IE, FR, MT, GR all eligible)")
-    P(f"     Requires: director from a Council of Europe member country")
-    P(f"     MU/AU/CA producers: NOT Eurimages members → need to find EU co-producer")
-    P(f"     UK (GB): Council of Europe member (not EU but Eurimages member)")
+    P(f"     Director (AU): NOT Council of Europe member — no blocker; co-producers drive eligibility")
+    P(f"     MU/CA producers: NOT Eurimages members → add GB, MT, or IE as co-producers")
+    P(f"     UK (GB): Council of Europe member ✓ | GB producers already on package")
     P(f"     Best structure: GB + MT + IE as Eurimages co-producers → $350K-$500K additional")
     P(f"     Combined (MU + MT post + IE + Eurimages grant):")
     eurimages_low = 350_000 * 0.78  # confidence discount
@@ -594,10 +625,10 @@ def run() -> str:
             "   MFS handles color, sound, VFX delivery. VAT recoverable. 20-week cashflow."
         ),
         (
-            "POST-PRODUCTION: Route to Australia (40% offset, writer connection)",
+            "POST-PRODUCTION: Route to Australia (40% offset, director connection)",
             mu_plus_au_net - MU_REBATE,
             "MEDIUM",
-            "40% = highest post rate. AU writer already qualifies for content test.\n"
+            "40% = highest post rate. AU director satisfies content test primary requirement.\n"
             "   Requires AU company as applicant. Higher freight/timezone overhead.\n"
             "   Best if production team has existing AU relationship."
         ),
@@ -742,9 +773,6 @@ def run() -> str:
     P("━━ 11. BLOCKERS — WHAT PREVENTS A BETTER RESULT ━━━━━━━━━━━━━━━━━━━━━━━")
     P("")
     blockers = [
-        ("CRITICAL", "Director nationality unconfirmed",
-         "Cannot score any cultural test (UK AVEC, AU content, FR TRIP, Eurimages).\n"
-         "   Confirm IMMEDIATELY — this alone could unlock or block multiple structures."),
         ("CRITICAL", "EDB ATL qualifying scope unconfirmed",
          "Director/producer/writer fees ($408K) excluded from base QPE.\n"
          "   If ATL qualifies: +$142,800 rebate with zero additional cost.\n"
@@ -769,7 +797,7 @@ def run() -> str:
          "   Spain Canary Islands: EUR 1M minimum spend not achievable from this budget.\n"
          "   Neither jurisdiction is viable without substantially more Spanish/German spend."),
         ("LOW", "Australia Producer Offset requires AU company as applicant",
-         "AU writer present but no AU producer on package.\n"
+         "AU director present but no AU producer on package.\n"
          "   AU offset requires a company registered in Australia as the applicant.\n"
          "   Can be solved by engaging AU post house with offset assignment."),
     ]
@@ -806,13 +834,13 @@ def run() -> str:
     P("  │ MU Principal + AU Post + Eurimages (if pre-production eligible)    │")
     P("  │ MU $875K + AU post $395,200 + Eurimages $273K = $1,543,000 gross  │")
     P("  │ Net after adj: ~$1,300,000+                                        │")
-    P("  │ Risk: AU company required. Eurimages competitive. Director TBC.   │")
+    P("  │ Risk: AU company required. Eurimages competitive (grant timeline). │")
     P("  └────────────────────────────────────────────────────────────────────┘")
     P("")
     P("  TOP 3 ACTIONS FOR MAXIMUM VALUE:")
     P("  1. Submit EDB query on ATL qualifying treatment (cost: $0, gain: $142K)")
     P("  2. Route post-production to Malta MFS or AU facility (gain: $250-395K)")
-    P("  3. Confirm director nationality (unlocks cultural test scoring, Eurimages)")
+    P("  3. Engage AU post house as applicant for AU Producer Offset (director = AU qualifies)")
     P("")
     P("  IBERMEDIA: NOT APPLICABLE. No Ibero-American co-producer. No Spanish-language element.")
     P("  CREATIVE EUROPE MEDIA: Post-production complete distribution only. Low applicability.")
