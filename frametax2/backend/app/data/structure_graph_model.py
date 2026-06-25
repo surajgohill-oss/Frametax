@@ -5,10 +5,14 @@ from dataclasses import dataclass
 
 @dataclass
 class GraphEdge:
-    source_type: str   # "program" | "treaty" | "fund" | "region"
+    source_type: str   # "program" | "treaty" | "fund" | "region" | "broadcaster"
     source_slug: str
-    edge_type: str     # "unlocks" | "requires" | "improves" | "reduces" | "incompatible_with"
-    target_type: str   # "program" | "treaty" | "fund" | "test" | "region"
+    edge_type: str     # "unlocks" | "requires" | "improves" | "reduces" | "incompatible_with" |
+    #                    "enables" | "complements" | "alternative_to" | "blocks" |
+    #                    "majority_only" | "minority_only" | "depends_on" |
+    #                    "service_only" | "regional_only" | "national_only" |
+    #                    "broadcaster_only" | "fund_only"
+    target_type: str   # "program" | "treaty" | "fund" | "test" | "region" | "broadcaster"
     target_slug: str
     condition: str | None = None
     magnitude: float | None = None
@@ -795,14 +799,410 @@ _EDGES: list[GraphEdge] = [
               notes="PDV Offset for Australian VFX/post stacks cleanly with Producer Offset"),
     GraphEdge("program", "nz_screen_production_grant", "complements", "program", "au_producer_offset",
               notes="NZ Grant and AU Producer Offset combine for trans-Tasman official co-productions"),
+
+    # =========================================================================
+    # KNOWLEDGE COMPLETION — Migration 0061
+    # =========================================================================
+
+    # -------------------------------------------------------------------------
+    # depends_on — sequencing: program A cannot realistically proceed without B
+    # -------------------------------------------------------------------------
+    GraphEdge("program", "ca_cmf", "depends_on", "broadcaster", "cbc_original",
+              condition="CMF Convergent stream requires a licensed Canadian broadcaster trigger",
+              notes="CMF will not fund without a broadcaster license agreement as co-applicant"),
+    GraphEdge("program", "ca_bell_fund", "depends_on", "broadcaster", "cbc_original",
+              condition="Bell Fund requires broadcaster co-applicant",
+              notes="Bell Fund requires broadcaster as co-applicant; cannot apply independently"),
+    GraphEdge("program", "nordic_ftvf", "depends_on", "broadcaster", "se_svt",
+              condition="At least one Nordic public broadcaster required",
+              notes="Nordic Film & TV Fund requires at least one Nordic broadcaster attachment from a member country"),
+    GraphEdge("program", "eu_eurimages", "depends_on", "treaty", "eurimages-multilateral",
+              notes="Eurimages requires a formal co-production agreement between at least two Eurimages member states"),
+    GraphEdge("program", "ibermedia_programme", "depends_on", "treaty", "ibermedia-multilateral",
+              notes="Ibermedia requires a co-production agreement from at least two Ibermedia member countries"),
+    GraphEdge("program", "de_bb_medienboard", "depends_on", "program", "de_dfff",
+              condition="Projects above EUR 3M typically",
+              notes="Medienboard Berlin-Brandenburg frequently requires DFFF federal anchor on larger projects"),
+    GraphEdge("program", "fr_trip", "depends_on", "program", "fr_cnc_cultural_test",
+              notes="TRIP requires CNC cultural qualification certification before the rebate application is accepted"),
+    GraphEdge("program", "au_producer_offset", "depends_on", "program", "au_content_test",
+              notes="Producer Offset requires meeting QAPE threshold and passing the Australian content test"),
+    GraphEdge("program", "eu_media_fund", "depends_on", "treaty", "eurimages-multilateral",
+              notes="MEDIA/Creative Europe development fund requires company established in Creative Europe country"),
+    GraphEdge("program", "ie_section_481", "depends_on", "program", "ie_section_481_test",
+              notes="Section 481 requires passing the Irish qualifying production checklist before SIRI certification"),
+
+    # -------------------------------------------------------------------------
+    # service_only — program is only available in service-production mode
+    # -------------------------------------------------------------------------
+    GraphEdge("program", "uk_hvc", "service_only", "program", "uk_hvc",
+              notes="UK High-end TV Certificate (HVC) is the service-production route: no BFI cultural test, no UK majority required; incompatible with co-production AVEC"),
+    GraphEdge("program", "ca_cmpa_foreign", "service_only", "program", "ca_cmpa_foreign",
+              notes="CMPA Foreign Location Shooting Certificate is for service productions only; incompatible with co-production treaty access to CPTC"),
+    GraphEdge("program", "au_location_offset", "service_only", "program", "au_location_offset",
+              notes="Australian Location Offset (16.5%) is for foreign-majority location shoots; cannot be combined with domestic Producer Offset on same qualifying spend"),
+    GraphEdge("program", "kr_kofic_location", "service_only", "program", "kr_kofic_location",
+              notes="KOFIC Location Incentive is for foreign productions shooting in Korea; not available for Korean domestic co-productions"),
+
+    # -------------------------------------------------------------------------
+    # broadcaster_only — program requires broadcaster as co-applicant or trigger
+    # -------------------------------------------------------------------------
+    GraphEdge("program", "ca_cmf", "broadcaster_only", "program", "ca_cmf",
+              notes="CMF Convergent stream requires a licensed Canadian broadcaster trigger; broadcaster must hold the license"),
+    GraphEdge("program", "ca_bell_fund", "broadcaster_only", "program", "ca_bell_fund",
+              notes="Bell Fund requires an eligible broadcaster as co-applicant; producers cannot apply without broadcaster"),
+    GraphEdge("program", "nordic_ftvf", "broadcaster_only", "program", "nordic_ftvf",
+              notes="Nordic Film & TV Fund requires attachment of at least one Nordic public broadcaster (SVT, NRK, DR, YLE, or RÚV)"),
+    GraphEdge("program", "rte_drama_fund", "broadcaster_only", "program", "rte_drama_fund",
+              notes="RTÉ Drama Fund is available only when RTÉ is a commissioning broadcaster on the project"),
+
+    # -------------------------------------------------------------------------
+    # regional_only — program requires qualifying regional spend
+    # -------------------------------------------------------------------------
+    # Norwegian regional funds
+    GraphEdge("program", "no_vgn_viken", "regional_only", "program", "no_vgn_viken",
+              notes="Viken Filmsenter funds only projects with significant qualifying spend in the Viken region"),
+    GraphEdge("program", "no_rog_vestnorsk", "regional_only", "program", "no_rog_vestnorsk",
+              notes="Vestnorsk Filmsenter funds only projects with significant qualifying spend in Western Norway"),
+    GraphEdge("program", "no_tro_nordnorsk", "regional_only", "program", "no_tro_nordnorsk",
+              notes="Nordnorsk Filmsenter funds only projects with significant qualifying spend in Northern Norway"),
+    GraphEdge("program", "no_inl_midtnorsk", "regional_only", "program", "no_inl_midtnorsk",
+              notes="Midtnorsk Filmsenter funds only projects with significant qualifying spend in Trøndelag/Innlandet"),
+    GraphEdge("program", "no_mro_film3", "regional_only", "program", "no_mro_film3",
+              notes="Film3 funds projects with significant qualifying spend in Møre og Romsdal"),
+    # Swedish regional funds
+    GraphEdge("program", "film_i_vast", "regional_only", "program", "film_i_vast",
+              notes="Film i Väst requires significant production activity in Västra Götaland region"),
+    GraphEdge("program", "se_sk_film_skane", "regional_only", "program", "se_sk_film_skane",
+              notes="Film i Skåne requires production activity in the Skåne region"),
+    GraphEdge("program", "se_ab_filmstockholm", "regional_only", "program", "se_ab_filmstockholm",
+              notes="Film Stockholm requires production activity in Stockholm-Mälardalen region"),
+    GraphEdge("program", "se_goteborg_fund", "regional_only", "program", "se_goteborg_fund",
+              notes="Göteborg Film Fund requires production activity in or cultural connection to Gothenburg region"),
+    # UK regional funds
+    GraphEdge("program", "gb_lon_film_london", "regional_only", "program", "gb_lon_film_london",
+              notes="Film London requires London-based qualifying spend"),
+    GraphEdge("program", "gb_sct_screen_production", "regional_only", "program", "gb_sct_screen_production",
+              notes="Screen Scotland requires Scottish production spend"),
+    GraphEdge("program", "gb_wls_film_fund", "regional_only", "program", "gb_wls_film_fund",
+              notes="Wales Screen / Creative Wales requires Welsh production spend"),
+    GraphEdge("program", "gb_nir_northern_ireland", "regional_only", "program", "gb_nir_northern_ireland",
+              notes="Northern Ireland Screen requires NI-based qualifying production spend"),
+    GraphEdge("program", "gb_yrk_screen_yorkshire", "regional_only", "program", "gb_yrk_screen_yorkshire",
+              notes="Screen Yorkshire requires Yorkshire-based qualifying production spend"),
+    GraphEdge("program", "gb_film_hub_midlands", "regional_only", "program", "gb_film_hub_midlands",
+              notes="Film Hub Midlands requires qualifying spend in the English Midlands"),
+    # German regional funds
+    GraphEdge("program", "de_bb_medienboard", "regional_only", "program", "de_bb_medienboard",
+              notes="Medienboard Berlin-Brandenburg requires qualifying production spend in Berlin or Brandenburg"),
+    GraphEdge("program", "de_nrw_filmstiftung", "regional_only", "program", "de_nrw_filmstiftung",
+              notes="Filmstiftung NRW requires qualifying production spend in North Rhine-Westphalia"),
+    GraphEdge("program", "de_fff_bayern", "regional_only", "program", "de_fff_bayern",
+              notes="FilmFernsehFonds Bayern requires qualifying production spend in Bavaria"),
+    GraphEdge("program", "de_ni_nordmedia", "regional_only", "program", "de_ni_nordmedia",
+              notes="nordmedia requires qualifying production spend in Lower Saxony or Bremen"),
+    GraphEdge("program", "de_hh_film_hamburg", "regional_only", "program", "de_hh_film_hamburg",
+              notes="Film Hamburg requires qualifying production spend in Hamburg"),
+    GraphEdge("program", "de_bw_mfg", "regional_only", "program", "de_bw_mfg",
+              notes="MFG Baden-Württemberg requires qualifying production spend in Baden-Württemberg"),
+    GraphEdge("program", "de_mdm_mitteldeutsche", "regional_only", "program", "de_mdm_mitteldeutsche",
+              notes="MDM requires qualifying production spend in Saxony, Saxony-Anhalt or Thuringia"),
+    # French regional funds
+    GraphEdge("program", "fr_idf_regional", "regional_only", "program", "fr_idf_regional",
+              notes="Île-de-France regional fund requires qualifying production activity in the Île-de-France region"),
+    GraphEdge("program", "fr_naq_regional", "regional_only", "program", "fr_naq_regional",
+              notes="Nouvelle-Aquitaine regional fund requires qualifying production activity in Nouvelle-Aquitaine"),
+    GraphEdge("program", "fr_ara_regional", "regional_only", "program", "fr_ara_regional",
+              notes="Auvergne-Rhône-Alpes regional fund requires qualifying production activity in ARA"),
+    GraphEdge("program", "fr_occ_regional", "regional_only", "program", "fr_occ_regional",
+              notes="Occitanie regional fund requires qualifying production activity in Occitanie"),
+    # Italian regional film commissions
+    GraphEdge("program", "it_laz_lazio_fc", "regional_only", "program", "it_laz_lazio_fc",
+              notes="Lazio Film Commission requires qualifying production activity in the Lazio region"),
+    GraphEdge("program", "it_sic_sicilia_fc", "regional_only", "program", "it_sic_sicilia_fc",
+              notes="Sicilia Film Commission requires qualifying production activity in Sicily"),
+    GraphEdge("program", "it_cam_campania_fc", "regional_only", "program", "it_cam_campania_fc",
+              notes="Campania Film Commission requires qualifying production activity in Campania"),
+    GraphEdge("program", "it_pie_piemonte_fc", "regional_only", "program", "it_pie_piemonte_fc",
+              notes="Film Commission Torino Piemonte requires qualifying production activity in Piedmont"),
+    GraphEdge("program", "it_apu_apulia_ff", "regional_only", "program", "it_apu_apulia_ff",
+              notes="Apulia Film Fund requires qualifying production activity in Apulia"),
+    GraphEdge("program", "it_tos_tuscany_fc", "regional_only", "program", "it_tos_tuscany_fc",
+              notes="Toscana Film Commission requires qualifying production activity in Tuscany"),
+    # Spanish regional funds
+    GraphEdge("program", "es_cat_icec", "regional_only", "program", "es_cat_icec",
+              notes="ICEC requires qualifying production activity in Catalonia"),
+    GraphEdge("program", "es_and_andalusia", "regional_only", "program", "es_and_andalusia",
+              notes="Andalucía Film Commission requires qualifying production activity in Andalucía"),
+    GraphEdge("program", "es_gal_agadic", "regional_only", "program", "es_gal_agadic",
+              notes="AGADIC requires qualifying production activity in Galicia"),
+    GraphEdge("program", "es_val_ivc", "regional_only", "program", "es_val_ivc",
+              notes="Institut Valencià de Cultura requires qualifying production activity in the Valencian Community"),
+    GraphEdge("program", "es_eus_basque", "regional_only", "program", "es_eus_basque",
+              notes="Basque Audiovisual fund requires qualifying production activity in the Basque Country"),
+    # Australian state funds
+    GraphEdge("program", "au_vic_film_victoria", "regional_only", "program", "au_vic_film_victoria",
+              notes="VicScreen requires significant Victorian qualifying production spend"),
+    GraphEdge("program", "au_qld_screen", "regional_only", "program", "au_qld_screen",
+              notes="Screen Queensland requires Queensland-based qualifying production spend"),
+    GraphEdge("program", "au_nsw_screen", "regional_only", "program", "au_nsw_screen",
+              notes="Screen NSW requires NSW-based qualifying production spend"),
+    GraphEdge("program", "au_sa_safc", "regional_only", "program", "au_sa_safc",
+              notes="SAFC requires South Australian qualifying production spend"),
+    GraphEdge("program", "au_tas_screen", "regional_only", "program", "au_tas_screen",
+              notes="Screen Tasmania requires Tasmanian qualifying production spend"),
+    GraphEdge("program", "au_nt_territory", "regional_only", "program", "au_nt_territory",
+              notes="NT Film Office requires Northern Territory qualifying production spend"),
+    GraphEdge("program", "au_screenwest", "regional_only", "program", "au_screenwest",
+              notes="ScreenWest requires Western Australian qualifying production spend"),
+    GraphEdge("program", "au_miff_premiere", "regional_only", "program", "au_miff_premiere",
+              notes="MIFF Premiere Fund requires qualifying production with Australian content connection"),
+    # Danish regional funds
+    GraphEdge("program", "dk_cph_film_fund", "regional_only", "program", "dk_cph_film_fund",
+              notes="Copenhagen Film Fund requires qualifying production activity in the Copenhagen/Zealand region"),
+    GraphEdge("program", "dk_fyn_film", "regional_only", "program", "dk_fyn_film",
+              notes="Fyn Film requires qualifying production activity on the island of Funen"),
+    # Canadian provincial funds
+    GraphEdge("program", "ca_bc_pstc", "regional_only", "program", "ca_bc_pstc",
+              notes="BC PSTC requires qualifying production spend in British Columbia"),
+    GraphEdge("program", "on_ofttc", "regional_only", "program", "on_ofttc",
+              notes="Ontario OFTTC requires qualifying production spend in Ontario"),
+    GraphEdge("program", "on_opstc", "regional_only", "program", "on_opstc",
+              notes="Ontario OPSTC requires qualifying production spend in Ontario"),
+    GraphEdge("program", "qc_film_production", "regional_only", "program", "qc_film_production",
+              notes="Quebec SODEC fund requires qualifying production spend in Quebec"),
+    GraphEdge("program", "nohfc_production_fund", "regional_only", "program", "nohfc_production_fund",
+              notes="NOHFC requires qualifying production spend in Northern Ontario"),
+    GraphEdge("program", "ca_pe_film_pei", "regional_only", "program", "ca_pe_film_pei",
+              notes="PEI Film requires qualifying production spend in Prince Edward Island"),
+    GraphEdge("program", "ca_mb_film_mb", "regional_only", "program", "ca_mb_film_mb",
+              notes="Manitoba Film requires qualifying production spend in Manitoba"),
+    GraphEdge("program", "ca_nb_film_nb", "regional_only", "program", "ca_nb_film_nb",
+              notes="New Brunswick Film requires qualifying production spend in New Brunswick"),
+    GraphEdge("program", "ca_nl_film_nl", "regional_only", "program", "ca_nl_film_nl",
+              notes="Newfoundland Film requires qualifying production spend in Newfoundland & Labrador"),
+    GraphEdge("program", "ca_ns_film_incentive", "regional_only", "program", "ca_ns_film_incentive",
+              notes="Nova Scotia Film Incentive requires qualifying production spend in Nova Scotia"),
+
+    # -------------------------------------------------------------------------
+    # national_only — program requires domestic/treaty co-production status;
+    #                 not available to pure service productions
+    # -------------------------------------------------------------------------
+    GraphEdge("program", "ca_federal_cptc", "national_only", "program", "ca_federal_cptc",
+              notes="Federal CPTC is for Canadian domestic productions or treaty co-productions only; pure service productions must use the CMPA Foreign certificate instead"),
+    GraphEdge("program", "au_producer_offset", "national_only", "program", "au_producer_offset",
+              notes="Producer Offset (40%) is for Australian domestic or treaty co-productions; foreign service shoots must use Location Offset instead"),
+    GraphEdge("program", "ie_section_481", "national_only", "program", "ie_section_481",
+              notes="Section 481 requires Irish-based production company and qualifying spend; not available for foreign service productions without Irish majority participation"),
+    GraphEdge("program", "uk_avec", "national_only", "program", "uk_avec",
+              notes="AVEC requires passing the BFI cultural test or co-production treaty qualification; not available for pure service productions (those use HVC instead)"),
+    GraphEdge("program", "fr_trip", "national_only", "program", "fr_trip",
+              notes="TRIP requires CNC cultural qualification; not available for pure service productions without French cultural connection"),
+    GraphEdge("program", "de_dfff", "national_only", "program", "de_dfff",
+              notes="DFFF requires German cultural connection (Fachgutachten) and German producer; not available for pure service productions"),
+    GraphEdge("program", "eu_eurimages", "national_only", "program", "eu_eurimages",
+              notes="Eurimages is for official co-productions between member states; not available for service productions"),
+    GraphEdge("program", "no_nfi_grants", "national_only", "program", "no_nfi_grants",
+              notes="NFI grants require Norwegian producer and qualifying Norwegian cultural content; not service-production eligible"),
+    GraphEdge("program", "kr_kofic_production", "national_only", "program", "kr_kofic_production",
+              notes="KOFIC production fund requires Korean producer and Korean cultural content; not service-production eligible"),
+
+    # -------------------------------------------------------------------------
+    # fund_only — program requires formal fund application / membership
+    # -------------------------------------------------------------------------
+    GraphEdge("program", "eu_media_fund", "fund_only", "program", "eu_media_fund",
+              notes="EU MEDIA / Creative Europe fund requires formal programme application; only accessible through Creative Europe National Desks"),
+    GraphEdge("program", "eu_creative_europe", "fund_only", "program", "eu_creative_europe",
+              notes="Creative Europe requires application through the Creative Europe Desks; cannot be accessed directly"),
+    GraphEdge("program", "nl_hbf", "fund_only", "program", "nl_hbf",
+              notes="Hubert Bals Fund is only accessible via formal IFFR submission process; no other route exists"),
+    GraphEdge("program", "eu_eurimages", "fund_only", "program", "eu_eurimages",
+              notes="Eurimages requires a formal co-production application with all producers from member states; not accessible without Eurimages secretariat approval"),
+    GraphEdge("program", "ibermedia_programme", "fund_only", "program", "ibermedia_programme",
+              notes="Ibermedia requires formal application through the Ibermedia Programme office; all co-producers must be from Ibermedia member countries"),
+
+    # -------------------------------------------------------------------------
+    # Additional treaty → program unlocks (missing from migration 0059)
+    # -------------------------------------------------------------------------
+    GraphEdge("treaty", "uk-it-bilateral", "unlocks", "program", "uk_avec",
+              condition="UK majority in UK-Italy co-production", notes="UK-Italy bilateral treaty (2007)"),
+    GraphEdge("treaty", "uk-it-bilateral", "unlocks", "program", "it_tax_credit_foreign",
+              condition="IT majority in UK-Italy co-production", notes="UK-Italy bilateral treaty (2007)"),
+    GraphEdge("treaty", "au-fr-bilateral", "unlocks", "program", "au_producer_offset",
+              condition="AU majority in AU-France co-production", notes="Australia-France bilateral treaty (2010)"),
+    GraphEdge("treaty", "au-fr-bilateral", "unlocks", "program", "fr_trip",
+              condition="FR majority in AU-France co-production", notes="Australia-France bilateral treaty (2010)"),
+    GraphEdge("treaty", "au-nz-bilateral", "unlocks", "program", "au_producer_offset",
+              condition="AU majority in AU-NZ co-production", notes="Australia-New Zealand bilateral treaty (2010)"),
+    GraphEdge("treaty", "au-nz-bilateral", "unlocks", "program", "nz_screen_production_rebate",
+              condition="NZ majority in AU-NZ co-production", notes="Australia-New Zealand bilateral treaty (2010)"),
+    GraphEdge("treaty", "de-at-bilateral", "unlocks", "program", "de_dfff",
+              condition="DE majority in Germany-Austria co-production", notes="Germany-Austria bilateral treaty (1993)"),
+    GraphEdge("treaty", "de-at-bilateral", "unlocks", "program", "at_ofi_grants",
+              condition="AT majority in Germany-Austria co-production", notes="Germany-Austria bilateral treaty (1993)"),
+    GraphEdge("treaty", "de-pl-bilateral", "unlocks", "program", "de_dfff",
+              condition="DE majority in Germany-Poland co-production", notes="Germany-Poland bilateral treaty (1994)"),
+    GraphEdge("treaty", "de-pl-bilateral", "unlocks", "program", "pl_pisf_grants",
+              condition="PL majority in Germany-Poland co-production", notes="Germany-Poland bilateral treaty (1994)"),
+    GraphEdge("treaty", "de-hu-bilateral", "unlocks", "program", "de_dfff",
+              condition="DE majority in Germany-Hungary co-production", notes="Germany-Hungary bilateral treaty (1994)"),
+    GraphEdge("treaty", "de-hu-bilateral", "unlocks", "program", "hu_nfi_grants",
+              condition="HU majority in Germany-Hungary co-production", notes="Germany-Hungary bilateral treaty (1994)"),
+    GraphEdge("treaty", "de-cz-bilateral", "unlocks", "program", "de_dfff",
+              condition="DE majority in Germany-Czech co-production", notes="Germany-Czech Republic bilateral treaty (1994)"),
+    GraphEdge("treaty", "de-cz-bilateral", "unlocks", "program", "cz_czech_film_fund",
+              condition="CZ majority in Germany-Czech co-production", notes="Germany-Czech Republic bilateral treaty (1994)"),
+    GraphEdge("treaty", "kr-fr-bilateral", "unlocks", "program", "kr_kofic_production",
+              condition="KR majority in Korea-France co-production", notes="Korea-France bilateral treaty (2006)"),
+    GraphEdge("treaty", "kr-fr-bilateral", "unlocks", "program", "fr_trip",
+              condition="FR majority in Korea-France co-production", notes="Korea-France bilateral treaty (2006)"),
+    GraphEdge("treaty", "kr-de-bilateral", "unlocks", "program", "kr_kofic_production",
+              condition="KR majority in Korea-Germany co-production", notes="Korea-Germany bilateral treaty (2004)"),
+    GraphEdge("treaty", "kr-de-bilateral", "unlocks", "program", "de_dfff",
+              condition="DE majority in Korea-Germany co-production", notes="Korea-Germany bilateral treaty (2004)"),
+    GraphEdge("treaty", "au-kr-bilateral", "unlocks", "program", "au_producer_offset",
+              condition="AU majority in AU-Korea co-production", notes="Australia-Korea bilateral treaty (2006)"),
+    GraphEdge("treaty", "au-kr-bilateral", "unlocks", "program", "kr_kofic_production",
+              condition="KR majority in AU-Korea co-production", notes="Australia-Korea bilateral treaty (2006)"),
+    GraphEdge("treaty", "ca-es-bilateral", "unlocks", "program", "ca_federal_cptc",
+              condition="CA majority in Canada-Spain co-production", notes="Canada-Spain bilateral treaty (1985)"),
+    GraphEdge("treaty", "ca-es-bilateral", "unlocks", "program", "es_icaa_credit",
+              condition="ES majority in Canada-Spain co-production", notes="Canada-Spain bilateral treaty (1985)"),
+    GraphEdge("treaty", "ca-za-bilateral", "unlocks", "program", "ca_federal_cptc",
+              condition="CA majority in Canada-South Africa co-production", notes="Canada-South Africa bilateral treaty (1997)"),
+    GraphEdge("treaty", "ca-za-bilateral", "unlocks", "program", "za_nfvf_fund",
+              condition="ZA majority in Canada-South Africa co-production", notes="Canada-South Africa bilateral treaty (1997)"),
+    GraphEdge("treaty", "ca-ch-bilateral", "unlocks", "program", "ca_federal_cptc",
+              condition="CA majority in Canada-Switzerland co-production", notes="Canada-Switzerland bilateral treaty (1988)"),
+    GraphEdge("treaty", "ca-mx-bilateral", "unlocks", "program", "ca_federal_cptc",
+              condition="CA majority in Canada-Mexico co-production", notes="Canada-Mexico bilateral treaty (1999)"),
+    GraphEdge("treaty", "ca-mx-bilateral", "unlocks", "program", "mx_fidecine",
+              condition="MX majority in Canada-Mexico co-production", notes="Canada-Mexico bilateral treaty (1999)"),
+    GraphEdge("treaty", "ca-cn-bilateral", "unlocks", "program", "ca_federal_cptc",
+              condition="CA majority in Canada-China co-production", notes="Canada-China bilateral treaty (1987)"),
+    GraphEdge("treaty", "au-ie-bilateral", "unlocks", "program", "au_producer_offset",
+              condition="AU majority in Australia-Ireland co-production", notes="Australia-Ireland bilateral treaty (2008)"),
+    GraphEdge("treaty", "au-ie-bilateral", "unlocks", "program", "ie_section_481",
+              condition="IE majority in Australia-Ireland co-production", notes="Australia-Ireland bilateral treaty (2008)"),
+    GraphEdge("treaty", "au-de-bilateral", "unlocks", "program", "au_producer_offset",
+              condition="AU majority in Australia-Germany co-production", notes="Australia-Germany bilateral treaty (2001)"),
+    GraphEdge("treaty", "au-de-bilateral", "unlocks", "program", "de_dfff",
+              condition="DE majority in Australia-Germany co-production", notes="Australia-Germany bilateral treaty (2001)"),
+    GraphEdge("treaty", "ca-be-bilateral", "unlocks", "program", "ca_federal_cptc",
+              condition="CA majority in Canada-Belgium co-production", notes="Canada-Belgium bilateral treaty (1984)"),
+    GraphEdge("treaty", "ca-be-bilateral", "unlocks", "program", "be_tax_shelter",
+              condition="BE majority in Canada-Belgium co-production", notes="Canada-Belgium bilateral treaty (1984)"),
+    GraphEdge("treaty", "ca-ie-bilateral", "unlocks", "program", "ca_federal_cptc",
+              condition="CA majority in Canada-Ireland co-production", notes="Canada-Ireland bilateral treaty (1989)"),
+    GraphEdge("treaty", "ca-ie-bilateral", "unlocks", "program", "ie_section_481",
+              condition="IE majority in Canada-Ireland co-production", notes="Canada-Ireland bilateral treaty (1989)"),
+    GraphEdge("treaty", "ca-nz-bilateral", "unlocks", "program", "ca_federal_cptc",
+              condition="CA majority in Canada-New Zealand co-production", notes="Canada-New Zealand bilateral treaty (1994)"),
+    GraphEdge("treaty", "ca-nz-bilateral", "unlocks", "program", "nz_screen_production_rebate",
+              condition="NZ majority in Canada-New Zealand co-production", notes="Canada-New Zealand bilateral treaty (1994)"),
+
+    # -------------------------------------------------------------------------
+    # Co-production structures — three/four-country combinations
+    # -------------------------------------------------------------------------
+    # Eurimages trilateral: UK-FR-DE (the most common trilateral stack)
+    GraphEdge("treaty", "eurimages-multilateral", "unlocks", "program", "uk_avec",
+              condition="UK is majority co-producer in Eurimages UK+FR+DE trilateral",
+              notes="UK-France-Germany trilateral under Eurimages: UK AVEC + FR TRIP + DE DFFF all accessible"),
+    GraphEdge("treaty", "eurimages-multilateral", "unlocks", "program", "fr_trip",
+              condition="FR is majority co-producer in Eurimages trilateral",
+              notes="France-Germany-UK trilateral: TRIP accessible to French majority co-producer"),
+    GraphEdge("treaty", "eurimages-multilateral", "unlocks", "program", "de_dfff",
+              condition="DE is majority co-producer in Eurimages trilateral",
+              notes="Germany-France-UK trilateral: DFFF accessible to German majority co-producer"),
+    GraphEdge("treaty", "eurimages-multilateral", "unlocks", "program", "it_tax_credit_foreign",
+              condition="IT is a co-producer in an Eurimages co-production",
+              notes="Italian Tax Credit for Foreign Co-productions is accessible via Eurimages co-production"),
+    GraphEdge("treaty", "eurimages-multilateral", "unlocks", "program", "pl_pisf_grants",
+              condition="PL is a co-producer in an Eurimages co-production",
+              notes="PISF grants are accessible to Polish co-producers in Eurimages co-productions"),
+    GraphEdge("treaty", "eurimages-multilateral", "unlocks", "program", "no_nfi_grants",
+              condition="NO is a co-producer in an Eurimages co-production",
+              notes="NFI grants are accessible to Norwegian co-producers in Eurimages co-productions"),
+    GraphEdge("treaty", "eurimages-multilateral", "unlocks", "program", "cz_czech_film_fund",
+              condition="CZ is a co-producer in an Eurimages co-production",
+              notes="Czech Film Fund is accessible to Czech co-producers in Eurimages co-productions"),
+    GraphEdge("treaty", "eurimages-multilateral", "unlocks", "program", "hu_nfi_grants",
+              condition="HU is a co-producer in an Eurimages co-production",
+              notes="NFI Hungary grants accessible to Hungarian co-producers in Eurimages co-productions"),
+    GraphEdge("treaty", "eurimages-multilateral", "unlocks", "program", "pt_ica_grants",
+              condition="PT is a co-producer in an Eurimages co-production",
+              notes="ICA Portugal grants accessible to Portuguese co-producers in Eurimages co-productions"),
+    GraphEdge("treaty", "eurimages-multilateral", "unlocks", "program", "at_ofi_grants",
+              condition="AT is a co-producer in an Eurimages co-production",
+              notes="ÖFI grants accessible to Austrian co-producers in Eurimages co-productions"),
+    # Ibermedia: PT+ES+LATAM trilateral
+    GraphEdge("treaty", "ibermedia-multilateral", "unlocks", "program", "pt_ica_grants",
+              condition="PT is a co-producer in an Ibermedia trilateral",
+              notes="ICA Portugal grants accessible to Portuguese co-producers in Ibermedia productions"),
+    GraphEdge("treaty", "ibermedia-multilateral", "unlocks", "program", "es_icaa_credit",
+              condition="ES is the majority co-producer in an Ibermedia production",
+              notes="ICAA credit accessible to Spanish majority co-producers in Ibermedia productions"),
+    GraphEdge("treaty", "ibermedia-multilateral", "unlocks", "program", "mx_fidecine",
+              condition="MX is a co-producer in an Ibermedia production",
+              notes="FIDECINE accessible to Mexican co-producers in Ibermedia productions"),
+    GraphEdge("treaty", "ibermedia-multilateral", "unlocks", "program", "ar_incaa_grants",
+              condition="AR is a co-producer in an Ibermedia production",
+              notes="INCAA grants accessible to Argentine co-producers in Ibermedia productions"),
+    GraphEdge("treaty", "ibermedia-multilateral", "unlocks", "program", "br_ancine_fund",
+              condition="BR is a co-producer in an Ibermedia production",
+              notes="ANCINE/FSA fund accessible to Brazilian co-producers in Ibermedia productions"),
+    # European Convention bilateral (non-EU pairs)
+    GraphEdge("treaty", "european-convention-coproduction", "unlocks", "program", "uk_avec",
+              condition="UK is majority co-producer under European Convention",
+              notes="European Convention unlocks AVEC for UK when UK is majority co-producer with European Convention signatory"),
+    GraphEdge("treaty", "european-convention-coproduction", "unlocks", "program", "no_nfi_grants",
+              condition="NO is a co-producer under European Convention",
+              notes="European Convention provides alternative co-production route for Norway with non-EU Eurimages members"),
+    GraphEdge("treaty", "european-convention-coproduction", "unlocks", "program", "ch_suissimage",
+              condition="CH is a co-producer under European Convention",
+              notes="European Convention provides co-production access for Switzerland (non-EU Eurimages member)"),
+
+    # -------------------------------------------------------------------------
+    # Additional complements — missing cross-program combinations
+    # -------------------------------------------------------------------------
+    GraphEdge("program", "gb_bfi_production", "complements", "program", "eu_eurimages",
+              notes="BFI Film Fund and Eurimages combine for UK-majority European co-productions"),
+    GraphEdge("program", "ie_screen_ireland_dev", "complements", "program", "eu_eurimages",
+              notes="Screen Ireland development support and Eurimages production support combine for Irish-majority European co-productions"),
+    GraphEdge("program", "dk_dfi_support", "complements", "program", "eu_eurimages",
+              notes="DFI support and Eurimages combine for Danish-majority European co-productions"),
+    GraphEdge("program", "fi_ses_grants", "complements", "program", "eu_eurimages",
+              notes="SES Finland grants and Eurimages combine for Finnish-majority European co-productions"),
+    GraphEdge("program", "no_nfi_grants", "complements", "program", "eu_eurimages",
+              notes="NFI Norway grants and Eurimages combine for Norwegian-majority European co-productions"),
+    GraphEdge("program", "at_ofi_grants", "complements", "program", "eu_eurimages",
+              notes="ÖFI Austria grants and Eurimages combine for Austrian co-productions"),
+    GraphEdge("program", "ro_film_rebate", "complements", "program", "eu_eurimages",
+              notes="Romanian rebate and Eurimages combine for Romanian co-productions in European projects"),
+    GraphEdge("program", "gr_cash_rebate", "complements", "program", "eu_eurimages",
+              notes="Greek rebate and Eurimages combine for Greek-involved European co-productions"),
+    GraphEdge("program", "bg_cash_rebate", "complements", "program", "eu_eurimages",
+              notes="Bulgarian rebate and Eurimages combine for Bulgarian-involved European co-productions"),
+    GraphEdge("program", "eu_eurimages", "complements", "program", "ibermedia_programme",
+              notes="Eurimages and Ibermedia can combine for co-productions eligible for both (e.g. Spain-France-LATAM)"),
+    GraphEdge("program", "nl_hbf", "complements", "program", "eu_eurimages",
+              notes="Hubert Bals Fund development support and Eurimages production support combine for Global South co-productions"),
 ]
 
 
 # ---------------------------------------------------------------------------
-# Public registry
+# Public registry — deduplicated by (source_slug, edge_type, target_slug)
 # ---------------------------------------------------------------------------
 
-STRUCTURE_GRAPH_EDGES: list[GraphEdge] = _EDGES
+_seen_edge_keys: set[tuple[str, str, str]] = set()
+_deduped_edges: list[GraphEdge] = []
+for _e in _EDGES:
+    _k = (_e.source_slug, _e.edge_type, _e.target_slug)
+    if _k not in _seen_edge_keys:
+        _seen_edge_keys.add(_k)
+        _deduped_edges.append(_e)
+
+STRUCTURE_GRAPH_EDGES: list[GraphEdge] = _deduped_edges
 
 
 # ---------------------------------------------------------------------------

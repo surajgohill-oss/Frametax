@@ -357,6 +357,9 @@ def test_d4_edges_have_required_fields():
             "unlocks", "requires", "improves", "reduces", "incompatible_with",
             "enables", "complements", "alternative_to", "blocks",
             "majority_only", "minority_only",
+            # Added in migration 0061 (knowledge completion)
+            "depends_on", "service_only", "regional_only", "national_only",
+            "broadcaster_only", "fund_only",
         )
         assert e.target_type is not None
         assert e.target_slug is not None

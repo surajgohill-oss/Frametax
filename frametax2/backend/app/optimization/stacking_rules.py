@@ -1463,6 +1463,324 @@ _SLUG_PAIR_RULES: dict[frozenset, dict] = {
         "rule_type": "allowed",
         "condition_text": "Film i Väst and Nordic Film & TV Fond operate on independent tracks.",
     },
+
+    # ===========================================================================
+    # KNOWLEDGE COMPLETION — Migration 0061
+    # ===========================================================================
+
+    # ---------------------------------------------------------------------------
+    # Regional ↔ Broadcaster (new category)
+    # ---------------------------------------------------------------------------
+    # UK regional ↔ BBC Films
+    frozenset({"gb_lon_film_london", "gb_bbc_films"}): {
+        "rule_type": "allowed",
+        "condition_text": "Film London and BBC Films can co-finance; both are government assistance but draw from independent spending pools.",
+    },
+    frozenset({"gb_sct_screen_production", "gb_bbc_films"}): {
+        "rule_type": "allowed",
+        "condition_text": "Screen Scotland and BBC Films can co-finance on independent tracks.",
+    },
+    frozenset({"gb_wls_film_fund", "gb_bbc_films"}): {
+        "rule_type": "allowed",
+        "condition_text": "Wales Screen and BBC Films can co-finance on independent tracks.",
+    },
+    frozenset({"gb_nir_northern_ireland", "gb_bbc_films"}): {
+        "rule_type": "allowed",
+        "condition_text": "Northern Ireland Screen and BBC Films can co-finance on independent tracks.",
+    },
+    # UK regional ↔ Film4
+    frozenset({"gb_lon_film_london", "gb_film4"}): {
+        "rule_type": "allowed",
+        "condition_text": "Film London and Film4 can co-finance on independent tracks.",
+    },
+    frozenset({"gb_sct_screen_production", "gb_film4"}): {
+        "rule_type": "allowed",
+        "condition_text": "Screen Scotland and Film4 can co-finance on independent tracks.",
+    },
+    frozenset({"gb_wls_film_fund", "gb_film4"}): {
+        "rule_type": "allowed",
+        "condition_text": "Wales Screen and Film4 can co-finance on independent tracks.",
+    },
+    frozenset({"gb_nir_northern_ireland", "gb_film4"}): {
+        "rule_type": "allowed",
+        "condition_text": "Northern Ireland Screen and Film4 can co-finance on independent tracks.",
+    },
+    # Norwegian regional ↔ NRK
+    frozenset({"no_vgn_viken", "no_nrk"}): {
+        "rule_type": "allowed",
+        "condition_text": "Viken Filmsenter and NRK operate on independent co-financing tracks.",
+    },
+    frozenset({"no_rog_vestnorsk", "no_nrk"}): {
+        "rule_type": "allowed",
+        "condition_text": "Vestnorsk Filmsenter and NRK operate on independent co-financing tracks.",
+    },
+    frozenset({"no_tro_nordnorsk", "no_nrk"}): {
+        "rule_type": "allowed",
+        "condition_text": "Nordnorsk Filmsenter and NRK operate on independent co-financing tracks.",
+    },
+    frozenset({"no_inl_midtnorsk", "no_nrk"}): {
+        "rule_type": "allowed",
+        "condition_text": "Midtnorsk Filmsenter and NRK operate on independent co-financing tracks.",
+    },
+    frozenset({"no_mro_film3", "no_nrk"}): {
+        "rule_type": "allowed",
+        "condition_text": "Film3 and NRK operate on independent co-financing tracks.",
+    },
+    # Swedish regional ↔ SVT
+    frozenset({"se_sk_film_skane", "se_svt"}): {
+        "rule_type": "allowed",
+        "condition_text": "Film i Skåne and SVT operate on independent co-financing tracks.",
+    },
+    frozenset({"se_ab_filmstockholm", "se_svt"}): {
+        "rule_type": "allowed",
+        "condition_text": "Film Stockholm and SVT operate on independent co-financing tracks.",
+    },
+    # Danish regional ↔ DR
+    frozenset({"dk_cph_film_fund", "dk_dr"}): {
+        "rule_type": "allowed",
+        "condition_text": "Copenhagen Film Fund and DR can co-finance on independent tracks.",
+    },
+    frozenset({"dk_fyn_film", "dk_dr"}): {
+        "rule_type": "allowed",
+        "condition_text": "Fyn Film and DR can co-finance on independent tracks.",
+    },
+    # Irish regional dev ↔ RTÉ
+    frozenset({"ie_screen_ireland_dev", "ie_rte"}): {
+        "rule_type": "allowed",
+        "condition_text": "Screen Ireland development and RTÉ broadcaster investment operate on independent tracks.",
+    },
+
+    # ---------------------------------------------------------------------------
+    # Grant ↔ Treaty (Eurimages/Ibermedia) — missing pairs
+    # ---------------------------------------------------------------------------
+    frozenset({"gb_bfi_production", "eu_eurimages"}): {
+        "rule_type": "allowed",
+        "condition_text": "BFI Film Fund and Eurimages operate on independent tracks; combined UK-led European co-productions can access both.",
+    },
+    frozenset({"ie_screen_ireland_dev", "eu_eurimages"}): {
+        "rule_type": "allowed",
+        "condition_text": "Screen Ireland development support and Eurimages production support operate on independent tracks.",
+    },
+    frozenset({"fr_cnc_production", "ibermedia_programme"}): {
+        "rule_type": "allowed",
+        "condition_text": "CNC production support and Ibermedia operate on independent tracks for eligible Franco-Ibero-American co-productions.",
+    },
+    frozenset({"no_nfi_grants", "eu_eurimages"}): {
+        "rule_type": "allowed",
+        "condition_text": "NFI Norway grants and Eurimages operate on independent tracks; Norwegian co-producers in Eurimages projects access both.",
+    },
+    frozenset({"dk_dfi_support", "eu_eurimages"}): {
+        "rule_type": "allowed",
+        "condition_text": "DFI Denmark grants and Eurimages operate on independent tracks.",
+    },
+    frozenset({"fi_ses_grants", "eu_eurimages"}): {
+        "rule_type": "allowed",
+        "condition_text": "SES Finland grants and Eurimages operate on independent tracks.",
+    },
+    frozenset({"at_ofi_grants", "eu_eurimages"}): {
+        "rule_type": "allowed",
+        "condition_text": "ÖFI Austria grants and Eurimages operate on independent tracks.",
+    },
+
+    # ---------------------------------------------------------------------------
+    # Treaty ↔ Treaty (multilateral co-programme interactions)
+    # ---------------------------------------------------------------------------
+    frozenset({"eu_eurimages", "eu_creative_europe"}): {
+        "rule_type": "allowed",
+        "condition_text": "Eurimages co-production support and Creative Europe MEDIA development fund operate on independent tracks; combined EU public support ceiling of 50% of total budget applies at programme level.",
+    },
+    frozenset({"ibermedia_programme", "eu_media_fund"}): {
+        "rule_type": "allowed",
+        "condition_text": "Ibermedia and EU MEDIA/Creative Europe operate on independent tracks for eligible co-productions involving Ibero-American and European parties.",
+    },
+    frozenset({"ibermedia_programme", "nordic_ftvf"}): {
+        "rule_type": "allowed",
+        "condition_text": "Ibermedia and Nordic Film & TV Fund operate on independent tracks; Spain-Portugal combinations with Nordic partners can access both.",
+    },
+
+    # ---------------------------------------------------------------------------
+    # Service-production interactions
+    # ---------------------------------------------------------------------------
+    frozenset({"uk_hvc", "gb_lon_film_london"}): {
+        "rule_type": "conditional",
+        "condition_text": "UK HVC (service production) and Film London regional fund can be combined; Film London does not require cultural test, only London-based spend.",
+    },
+    frozenset({"uk_hvc", "gb_sct_screen_production"}): {
+        "rule_type": "conditional",
+        "condition_text": "UK HVC (service production) and Screen Scotland can be combined for foreign service shoots with significant Scottish spend.",
+    },
+    frozenset({"uk_hvc", "gb_nir_northern_ireland"}): {
+        "rule_type": "conditional",
+        "condition_text": "UK HVC (service production) and Northern Ireland Screen can be combined for foreign service shoots with significant NI spend.",
+    },
+    frozenset({"uk_hvc", "gb_wls_film_fund"}): {
+        "rule_type": "conditional",
+        "condition_text": "UK HVC (service production) and Wales Screen can be combined for foreign service shoots with significant Welsh spend.",
+    },
+    frozenset({"uk_hvc", "gb_bfi_production"}): {
+        "rule_type": "mutually_exclusive",
+        "condition_text": "UK HVC (service production) and BFI Film Fund are mutually exclusive: BFI requires cultural test which precludes HVC service route.",
+    },
+    frozenset({"uk_hvc", "uk_avec"}): {
+        "rule_type": "mutually_exclusive",
+        "condition_text": "UK HVC and AVEC are mutually exclusive: HVC is the service-production route, AVEC requires BFI cultural test or co-production treaty.",
+    },
+    frozenset({"ca_cmpa_foreign", "on_ofttc"}): {
+        "rule_type": "allowed",
+        "condition_text": "CMPA Foreign certificate (service production) and Ontario OFTTC can be combined: OFTTC does not require Canadian content certification.",
+    },
+    frozenset({"ca_cmpa_foreign", "ca_bc_pstc"}): {
+        "rule_type": "allowed",
+        "condition_text": "CMPA Foreign certificate (service production) and BC PSTC can be combined: PSTC does not require Canadian content certification for foreign shoots.",
+    },
+    frozenset({"au_location_offset", "au_vic_film_victoria"}): {
+        "rule_type": "conditional",
+        "condition_text": "AU Location Offset and VicScreen can be combined for foreign productions with significant Victorian spend; VicScreen support is government assistance reducing Location Offset QAPE basis.",
+    },
+    frozenset({"au_location_offset", "au_qld_screen"}): {
+        "rule_type": "conditional",
+        "condition_text": "AU Location Offset and Screen Queensland can be combined for foreign productions with significant Queensland spend; Screen QLD support reduces Location Offset QAPE basis.",
+    },
+    frozenset({"au_location_offset", "au_nsw_screen"}): {
+        "rule_type": "conditional",
+        "condition_text": "AU Location Offset and Screen NSW can be combined for foreign productions with significant NSW spend; Screen NSW support reduces Location Offset QAPE basis.",
+    },
+
+    # ---------------------------------------------------------------------------
+    # Rebate ↔ Grant (combinations where explicit documentation exists)
+    # ---------------------------------------------------------------------------
+    frozenset({"jo_rfc_rebate", "jo_rfc_tourism"}): {
+        "rule_type": "conditional",
+        "condition_text": "Jordan Royal Film Commission rebate and tourism incentive can be combined; tourism incentive is conditional on rebate certification and does not reduce rebate basis.",
+    },
+    frozenset({"ma_ccm_rebate", "ma_ccm_tourism"}): {
+        "rule_type": "conditional",
+        "condition_text": "Morocco CCM rebate and tourism support can be combined; tourism support is conditional on CCM rebate application and does not reduce rebate basis.",
+    },
+    frozenset({"nz_screen_production_rebate", "nz_tourism_film"}): {
+        "rule_type": "allowed",
+        "condition_text": "NZ SPGR rebate and Tourism NZ film support operate on independent tracks.",
+    },
+    frozenset({"nz_screen_production_rebate", "nz_air_production"}): {
+        "rule_type": "allowed",
+        "condition_text": "NZ SPGR rebate and Air NZ production support operate on independent tracks.",
+    },
+    frozenset({"ie_section_481", "ie_tourism_ireland"}): {
+        "rule_type": "conditional",
+        "condition_text": "Irish Section 481 and Tourism Ireland location support can be combined; Tourism Ireland is not government assistance for Section 481 purposes.",
+    },
+
+    # ---------------------------------------------------------------------------
+    # Loan (recoupable advance) ↔ rebate/credit
+    # ---------------------------------------------------------------------------
+    # In France, CNC avances sur recettes (advance against receipts) is technically
+    # a recoupable loan; its interaction with TRIP is already captured as govt_assistance.
+    # Screen Australia development investment is equity-like; already captured.
+    # The remaining cases are soft-loan programs:
+    frozenset({"is_film_rebate", "is_post_rebate"}): {
+        "rule_type": "conditional",
+        "condition_text": "Iceland Film Rebate and Iceland Post-Production Rebate can be combined if expenditure categories are distinct; post-production rebate is government assistance reducing Film Rebate qualifying basis for overlapping costs.",
+    },
+    frozenset({"bg_cash_rebate", "eu_eurimages"}): {
+        "rule_type": "allowed",
+        "condition_text": "Bulgarian cash rebate and Eurimages operate on independent tracks; Eurimages does not reduce Bulgarian qualifying spend basis.",
+    },
+    frozenset({"ro_film_rebate", "eu_eurimages"}): {
+        "rule_type": "allowed",
+        "condition_text": "Romanian film rebate and Eurimages operate on independent tracks; Eurimages does not reduce Romanian qualifying spend basis.",
+    },
+    frozenset({"si_sfc_rebate", "eu_eurimages"}): {
+        "rule_type": "allowed",
+        "condition_text": "Slovenian film rebate and Eurimages operate on independent tracks.",
+    },
+    frozenset({"hr_cash_rebate", "eu_eurimages"}): {
+        "rule_type": "allowed",
+        "condition_text": "Croatian cash rebate and Eurimages operate on independent tracks.",
+    },
+    frozenset({"gr_cash_rebate", "eu_eurimages"}): {
+        "rule_type": "allowed",
+        "condition_text": "Greek cash rebate and Eurimages operate on independent tracks.",
+    },
+
+    # ---------------------------------------------------------------------------
+    # Cash rebate ↔ broadcaster
+    # ---------------------------------------------------------------------------
+    frozenset({"mt_mfc_rebate", "eu_eurimages"}): {
+        "rule_type": "allowed",
+        "condition_text": "Malta rebate and Eurimages operate on independent tracks for Malta-involved European co-productions.",
+    },
+    frozenset({"hr_cash_rebate", "hr_havc_fund"}): {
+        "rule_type": "allowed",
+        "condition_text": "Croatian cash rebate and HAVC fund operate on independent tracks; HAVC grant does not reduce rebate qualifying basis for foreign spend.",
+    },
+    frozenset({"il_rebate", "il_film_fund"}): {
+        "rule_type": "allowed",
+        "condition_text": "Israeli rebate and Israeli Film Fund operate on independent tracks; Film Fund grant does not reduce rebate qualifying basis.",
+    },
+    frozenset({"th_film_rebate", "th_film_fund"}): {
+        "rule_type": "allowed",
+        "condition_text": "Thailand film rebate and Thailand Creative Economy fund operate on independent tracks.",
+    },
+
+    # ---------------------------------------------------------------------------
+    # Additional regional ↔ national (completing coverage)
+    # ---------------------------------------------------------------------------
+    frozenset({"no_mro_film3", "no_nfi_grants"}): {
+        "rule_type": "allowed",
+        "condition_text": "Film3 (Møre og Romsdal) and NFI Norway national grants operate on independent tracks.",
+    },
+    frozenset({"no_mro_film3", "no_film_incentive"}): {
+        "rule_type": "allowed",
+        "condition_text": "Film3 (Møre og Romsdal) and Norwegian cash rebate operate on independent tracks.",
+    },
+    frozenset({"gb_film_hub_midlands", "uk_avec"}): {
+        "rule_type": "conditional",
+        "condition_text": "Film Hub Midlands and AVEC can be combined; Film Hub Midlands BFI-funded support is government assistance reducing AVEC qualifying UK expenditure basis.",
+    },
+    frozenset({"gb_yrk_screen_yorkshire", "gb_bbc_films"}): {
+        "rule_type": "allowed",
+        "condition_text": "Screen Yorkshire and BBC Films can co-finance on independent tracks.",
+    },
+    frozenset({"gb_yrk_screen_yorkshire", "gb_film4"}): {
+        "rule_type": "allowed",
+        "condition_text": "Screen Yorkshire and Film4 can co-finance on independent tracks.",
+    },
+    frozenset({"de_ffa", "eu_eurimages"}): {
+        "rule_type": "allowed",
+        "condition_text": "FFA (German Federal Film Board) reference film levy and Eurimages operate on independent tracks.",
+    },
+    frozenset({"pl_pisf_grants", "eu_eurimages"}): {
+        "rule_type": "allowed",
+        "condition_text": "PISF Poland grants and Eurimages operate on independent tracks; Eurimages support improves PISF application competitiveness.",
+    },
+    frozenset({"cz_czech_film_fund", "eu_eurimages"}): {
+        "rule_type": "allowed",
+        "condition_text": "Czech Film Fund and Eurimages operate on independent tracks.",
+    },
+    frozenset({"hu_nfi_grants", "eu_eurimages"}): {
+        "rule_type": "allowed",
+        "condition_text": "NFI Hungary grants and Eurimages operate on independent tracks.",
+    },
+
+    # ---------------------------------------------------------------------------
+    # Equity ↔ rebate (public equity / fund equity interactions)
+    # ---------------------------------------------------------------------------
+    frozenset({"au_screen_production", "au_screenwest"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": "Screen Australia equity investment is government assistance — reduces qualifying spend basis for ScreenWest WA incentive.",
+    },
+    frozenset({"au_screen_production", "au_nsw_screen"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": "Screen Australia equity investment is government assistance — reduces qualifying spend basis for Screen NSW incentive.",
+    },
+    frozenset({"au_screen_production", "au_vic_film_victoria"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": "Screen Australia equity investment is government assistance — reduces qualifying spend basis for VicScreen incentive.",
+    },
+    frozenset({"au_screen_production", "au_qld_screen"}): {
+        "rule_type": "spend_reduction",
+        "condition_text": "Screen Australia equity investment is government assistance — reduces qualifying spend basis for Screen Queensland incentive.",
+    },
 }
 
 
