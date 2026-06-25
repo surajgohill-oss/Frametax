@@ -323,6 +323,10 @@ async def compute_lifecycle(
     cross_mp_relist_count = 0
     relist_matches        = []
 
+    # Implied sale price accumulators (last-seen price of disappeared listings)
+    implied_sale_prices: list[float] = []      # assumed_sold original prices
+    sold_after_relist_prices: list[float] = [] # sold_after_relist relist prices
+
     for row in lifecycle_rows:
         if row.new_listing_id is not None:
             relisted_count += 1
@@ -335,6 +339,11 @@ async def compute_lifecycle(
             relist_is_sold = (row.relist_still_active is False)
             if relist_is_sold:
                 sold_after_relist += 1
+                # Use relist_price (price when sold after relist) if available
+                if row.relist_price and _f(row.relist_price) and _f(row.relist_price) > 0:
+                    sold_after_relist_prices.append(_f(row.relist_price))
+                elif row.original_price and _f(row.original_price) and _f(row.original_price) > 0:
+                    sold_after_relist_prices.append(_f(row.original_price))
             relist_matches.append({
                 "original_listing_id":  row.id,
                 "new_listing_id":       row.new_listing_id,
@@ -358,6 +367,23 @@ async def compute_lifecycle(
             })
         else:
             assumed_sales += 1
+            # Last-seen price of listings assumed sold (no relist detected)
+            p = _f(row.original_price)
+            if p and p > 0:
+                implied_sale_prices.append(p)
+
+    # ── Implied sale price computation ──────────────────────────────────────
+    # Average last-seen price for DISAPPEARED_ASSUMED_SOLD listings
+    avg_assumed_sale_price = (
+        _round(sum(implied_sale_prices) / len(implied_sale_prices), 2)
+        if implied_sale_prices else None
+    )
+    # Blended avg across assumed_sold + sold_after_relist
+    all_implied_prices = implied_sale_prices + sold_after_relist_prices
+    avg_implied_sale_price = (
+        _round(sum(all_implied_prices) / len(all_implied_prices), 2)
+        if all_implied_prices else None
+    )
 
     direct_assumed_sales = assumed_sales  # inactive with no relist match at all
     still_at_start  = int(postshow_row.still_active_at_event_start or 0) if postshow_row else 0
@@ -427,6 +453,10 @@ async def compute_lifecycle(
             "probable_pull":                    0,
             "probable_expiration":              0,
             "unknown":                          0,
+            # Implied sale price (avg last-seen price of disappeared listings)
+            "avg_assumed_sale_price":   avg_assumed_sale_price,   # assumed-sold only
+            "avg_implied_sale_price":   avg_implied_sale_price,   # assumed-sold + sold-after-relist
+            "implied_sale_count":       len(all_implied_prices),  # denominator
             # Rates
             "absorption_rate":          absorption_rate,
             "relist_rate":              relist_rate,
