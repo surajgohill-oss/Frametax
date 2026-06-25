@@ -34,25 +34,25 @@ import VenueIntelligence from "@/components/venue/VenueIntelligence";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-function DeltaChip({ pct, abs, size = "sm" }: {
-  pct?: number | null; abs?: number | null; size?: "sm" | "md";
+function DeltaChip({ pct, abs, size = "sm", invert = false }: {
+  pct?: number | null; abs?: number | null; size?: "sm" | "md"; invert?: boolean;
 }) {
   const val = pct ?? null;
   if (val == null && abs == null) return <span className="text-slate-600 text-[11px]">—</span>;
   const n = val ?? abs ?? 0;
-  const up = n > 0;
-  const Icon = up ? TrendingUp : n < 0 ? TrendingDown : Minus;
+  const Icon = n > 0 ? TrendingUp : n < 0 ? TrendingDown : Minus;
   const textSize = size === "md" ? "text-sm" : "text-[11px]";
   const label = val != null ? fmtPct(val) : (n > 0 ? `+${n}` : `${n}`);
+  // invert=true for price rows: lower price = green (good), higher price = red (bad)
+  const isGood = invert ? n < 0 : n > 0;
+  const isBad  = invert ? n > 0 : n < 0;
   return (
     <span className={cn(
       "inline-flex items-center gap-0.5 font-bold tabular-nums px-1.5 py-0.5 rounded",
       textSize,
-      up
-        ? "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20"
-        : n < 0
-          ? "text-red-400 bg-red-500/10 border border-red-500/20"
-          : "text-slate-500 bg-white/5 border border-white/10"
+      isGood ? "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20"
+      : isBad ? "text-red-400 bg-red-500/10 border border-red-500/20"
+      : "text-slate-500 bg-white/5 border border-white/10"
     )}>
       <Icon size={size === "md" ? 12 : 9} />
       {label}
@@ -114,12 +114,37 @@ function buildSignalReason(action: string, hero: HeroResponse | null): { headlin
   return { headline: signalDescription(hero?.signal), bullets: [] };
 }
 
-const MP_META: Record<string, { label: string; short: string; color: string }> = {
-  stubhub:    { label: "StubHub",     short: "SH", color: "#e8704a" },
-  tickpick:   { label: "TickPick",    short: "TP", color: "#2dd4bf" },
-  gametime:   { label: "Gametime",    short: "GT", color: "#4ade80" },
-  vividseats: { label: "Vivid Seats", short: "VS", color: "#a78bfa" },
+/** Safely normalise any marketplace name/slug value to a lowercase, no-space string for matching. */
+function normMp(v: unknown): string {
+  if (v == null) return "";
+  if (typeof v === "string") return v.toLowerCase().replace(/\s+/g, "");
+  if (typeof v === "object") {
+    const o = v as Record<string, unknown>;
+    const s = o.name ?? o.marketplace ?? o.slug ?? "";
+    return typeof s === "string" ? s.toLowerCase().replace(/\s+/g, "") : "";
+  }
+  return "";
+}
+
+const MP_META: Record<string, { label: string; short: string; color: string; logoBg: string }> = {
+  stubhub:    { label: "StubHub",     short: "SH", color: "#e8704a", logoBg: "#e8704a" },
+  tickpick:   { label: "TickPick",    short: "TP", color: "#2dd4bf", logoBg: "#0d9488" },
+  gametime:   { label: "Gametime",    short: "GT", color: "#4ade80", logoBg: "#16a34a" },
+  vividseats: { label: "Vivid Seats", short: "VS", color: "#a78bfa", logoBg: "#7c3aed" },
 };
+
+/** Compact branded logo badge for a marketplace */
+function MpLogo({ slug, info, size = 22 }: { slug: string; info: { label: string; short: string; color: string; logoBg: string }; size?: number }) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="rounded flex items-center justify-center font-black text-white flex-shrink-0"
+        style={{ width: size, height: size, background: info.logoBg, fontSize: Math.round(size * 0.42) }}>
+        {info.short}
+      </div>
+      <span className="text-[13px] font-bold tracking-tight" style={{ color: info.color }}>{info.label}</span>
+    </div>
+  );
+}
 
 const WINDOWS: { id: HistoryWindow; label: string }[] = [
   { id: "24h", label: "24h" },
@@ -179,27 +204,27 @@ function SectionBreakdown({ sections }: { sections: SectionRow[] }) {
         <div className="flex flex-col items-end gap-1.5">
           {/* Sort buttons */}
           <div className="flex items-center gap-1 flex-wrap justify-end">
-            <span className="text-[9px] text-slate-600 mr-0.5">Sort:</span>
+            <span className="text-[11px] text-slate-500 mr-0.5">Sort:</span>
             {SECTION_SORTS.map(({ key, label }) => (
               <button key={key} onClick={() => setSort(key)}
-                className={cn("text-[10px] px-2 py-0.5 rounded border transition-colors",
-                  sort === key ? "border-white/20 bg-white/8 text-slate-200" : "border-white/7 text-slate-500 hover:text-slate-300 hover:bg-white/5")}>
+                className={cn("text-[11px] px-2 py-0.5 rounded border transition-colors",
+                  sort === key ? "border-white/20 bg-white/8 text-slate-200" : "border-white/[0.07] text-slate-500 hover:text-slate-300 hover:bg-white/5")}>
                 {label}
               </button>
             ))}
           </div>
           {/* Filter pills */}
           <div className="flex items-center gap-1 flex-wrap justify-end">
-            <span className="text-[9px] text-slate-600 mr-0.5">Filter:</span>
+            <span className="text-[11px] text-slate-500 mr-0.5">Filter:</span>
             <button onClick={() => setFilter("all")}
-              className={cn("text-[10px] px-2 py-0.5 rounded border transition-colors",
-                filter === "all" ? "border-white/20 bg-white/8 text-slate-200" : "border-white/7 text-slate-500 hover:text-slate-300 hover:bg-white/5")}>
+              className={cn("text-[11px] px-2 py-0.5 rounded border transition-colors",
+                filter === "all" ? "border-white/20 bg-white/8 text-slate-200" : "border-white/[0.07] text-slate-500 hover:text-slate-300 hover:bg-white/5")}>
               All
             </button>
             {SECTION_FILTERS.map(({ key, label }) => (
               <button key={key} onClick={() => setFilter(key)}
-                className={cn("text-[10px] px-2 py-0.5 rounded border transition-colors",
-                  filter === key ? "border-blue-500/40 bg-blue-500/10 text-blue-400" : "border-white/7 text-slate-500 hover:text-slate-300 hover:bg-white/5")}>
+                className={cn("text-[11px] px-2 py-0.5 rounded border transition-colors",
+                  filter === key ? "border-blue-500/40 bg-blue-500/10 text-blue-400" : "border-white/[0.07] text-slate-500 hover:text-slate-300 hover:bg-white/5")}>
                 {label}
               </button>
             ))}
@@ -208,16 +233,16 @@ function SectionBreakdown({ sections }: { sections: SectionRow[] }) {
       </div>
 
       {visible.length === 0 ? (
-        <div className="rounded-xl border border-white/7 bg-[#161b27] py-6 text-center text-xs text-slate-600">
+        <div className="rounded-xl border border-white/[0.07] bg-[#161b27] py-6 text-center text-xs text-slate-600">
           No sections match this filter
         </div>
       ) : (
-        <div className="rounded-xl border border-white/7 bg-[#161b27] overflow-x-auto">
+        <div className="rounded-xl border border-white/[0.07] bg-[#161b27] overflow-x-auto">
           <table className="w-full text-xs min-w-[400px]">
             <thead>
               <tr className="border-b border-white/5">
                 {["Section", "Listings", "Low", "Median"].map((h) => (
-                  <th key={h} className="text-left px-4 py-2 text-[9px] text-slate-500 uppercase tracking-wider font-medium">{h}</th>
+                  <th key={h} className="text-left px-4 py-2 text-[11px] text-slate-500 uppercase tracking-[0.12em] font-medium">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -237,7 +262,7 @@ function SectionBreakdown({ sections }: { sections: SectionRow[] }) {
 
       {sorted.length > 10 && (
         <button onClick={() => setShowAll(v => !v)}
-          className="mt-1.5 w-full flex items-center justify-center gap-1 text-[10px] text-slate-600 hover:text-slate-400 py-1 transition-colors">
+          className="mt-1.5 w-full flex items-center justify-center gap-1 text-[11px] text-slate-500 hover:text-slate-400 py-1 transition-colors">
           {showAll
             ? <><ChevronUp size={10} /> Show less</>
             : <><ChevronDown size={10} /> Show all {sorted.length} sections</>}
@@ -280,17 +305,17 @@ function FollowPanel({
   return (
     <div className="absolute right-0 top-full mt-1.5 w-64 z-50 rounded-xl border border-white/12 bg-[#1a2030] shadow-2xl">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/8">
+      <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/[0.07]">
         <div>
           <p className="text-xs font-semibold text-slate-200">Follow {artist}</p>
-          <p className="text-[9px] text-amber-400/70 mt-0.5">Local only — no backend notifications</p>
+          <p className="text-[11px] text-amber-400/70 mt-0.5">Local only — no backend notifications</p>
         </div>
         <button onClick={onClose} className="p-0.5 text-slate-500 hover:text-slate-300"><X size={12} /></button>
       </div>
 
       <div className="p-3 space-y-3">
         {/* Type toggle */}
-        <div className="flex rounded-lg border border-white/8 overflow-hidden text-[10px]">
+        <div className="flex rounded-lg border border-white/[0.07] overflow-hidden text-[11px]">
           {(["artist", "team"] as const).map(t => (
             <button key={t} onClick={() => { setType(t); setScope(t === "artist" ? "next5" : "home"); }}
               className={cn("flex-1 py-1.5 capitalize transition-colors",
@@ -302,7 +327,7 @@ function FollowPanel({
 
         {/* Scope options */}
         <div className="space-y-1">
-          <p className="text-[9px] text-slate-600 uppercase tracking-wider mb-1.5">
+          <p className="text-[11px] text-slate-500 uppercase tracking-[0.12em] mb-1.5">
             {type === "artist" ? "Alert scope" : "Games to follow"}
           </p>
           {(type === "artist" ? ARTIST_SCOPES : TEAM_SCOPES).map(({ key: sk, label }) => (
@@ -367,7 +392,7 @@ function ListingMoveMenu({ listingId }: { listingId: number }) {
     <div className="relative">
       <button onClick={() => setOpen(v => !v)}
         title="Move listing"
-        className="text-xs text-slate-500 hover:text-slate-200 transition-colors px-2 py-1 rounded-md border border-white/8 hover:border-white/20 font-medium">
+        className="text-xs text-slate-500 hover:text-slate-200 transition-colors px-2 py-1 rounded-md border border-white/[0.07] hover:border-white/20 font-medium">
         Move
       </button>
       {open && (
@@ -383,7 +408,7 @@ function ListingMoveMenu({ listingId }: { listingId: number }) {
             className="w-full text-left px-3 py-2 text-xs text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-colors flex items-center gap-2">
             <span className="text-xs">🅿</span> Parking
           </button>
-          <p className="text-[10px] text-slate-700 px-3 py-1.5 border-t border-white/5">Record preserved</p>
+          <p className="text-[11px] text-slate-600 px-3 py-1.5 border-t border-white/5">Record preserved</p>
         </div>
       )}
     </div>
@@ -410,9 +435,9 @@ function VenueSummaryCard({ venueSlug }: { venueSlug: string }) {
   const venueName = summary?.name ?? venueSlug.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 
   return (
-    <div className="rounded-xl border border-white/7 bg-[#0a0d14] p-4 mb-4">
+    <div className="rounded-xl border border-white/[0.07] bg-[#0a0d14] p-4 mb-4">
       <div className="flex items-center gap-2 mb-3">
-        <h3 className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">{venueName} — Venue Intelligence</h3>
+        <h3 className="text-[12px] font-bold text-slate-500 uppercase tracking-[0.18em]">{venueName} — Intelligence</h3>
       </div>
       {/* Section-specific fields — populated when section data arrives */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
@@ -424,24 +449,24 @@ function VenueSummaryCard({ venueSlug }: { venueSlug: string }) {
           { label: "Price Movement",       value: null },
           { label: "Inventory Movement",   value: null },
         ].map(({ label, value }) => (
-          <div key={label} className="bg-white/[0.03] rounded-lg px-3 py-2.5 border border-white/5">
-            <p className="text-[9px] text-slate-600 uppercase tracking-wider mb-1">{label}</p>
-            <p className={value ? "text-sm text-slate-200 font-medium" : "text-sm text-slate-600 tabular-nums"}>
+          <div key={label} className="bg-white/[0.025] rounded-lg px-3 py-2.5 border border-white/[0.05]">
+            <p className="text-[11px] text-slate-500 uppercase tracking-[0.12em] mb-1">{label}</p>
+            <p className={value ? "text-[13px] text-slate-200 font-medium" : "text-[13px] text-slate-600 tabular-nums"}>
               {value ?? "—"}
             </p>
           </div>
         ))}
       </div>
-      <div className="border-t border-white/5 pt-3">
+      <div className="border-t border-white/[0.05] pt-3">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {[
             { label: "Marketplace Share" },
             { label: "Section Activity" },
             { label: "Demand / Supply / Trend" },
           ].map(({ label }) => (
-            <div key={label} className="bg-white/[0.02] rounded-lg px-3 py-2.5 border border-white/5">
-              <p className="text-[9px] text-slate-600 uppercase tracking-wider mb-1">{label}</p>
-              <p className="text-sm text-slate-700">—</p>
+            <div key={label} className="bg-white/[0.02] rounded-lg px-3 py-2.5 border border-white/[0.05]">
+              <p className="text-[11px] text-slate-500 uppercase tracking-[0.12em] mb-1">{label}</p>
+              <p className="text-[13px] text-slate-700">—</p>
             </div>
           ))}
         </div>
@@ -466,9 +491,9 @@ function SpotifyEmbed({ artistUrl, playlistUrl }: { artistUrl: string | null; pl
   return (
     <section>
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Spotify</h2>
+        <h2 className="text-[12px] font-bold text-slate-500 uppercase tracking-[0.18em]">Spotify</h2>
         {playlistId && (
-          <div className="flex rounded-lg border border-white/7 overflow-hidden text-xs">
+          <div className="flex rounded-lg border border-white/[0.07] overflow-hidden text-xs">
             {(["artist", "playlist"] as const).map((t) => (
               <button key={t} onClick={() => setTab(t)}
                 className={`px-2.5 py-1 capitalize transition-colors ${tab === t ? "bg-white/10 text-slate-200" : "text-slate-500 hover:text-slate-300 hover:bg-white/5"}`}>
@@ -478,7 +503,7 @@ function SpotifyEmbed({ artistUrl, playlistUrl }: { artistUrl: string | null; pl
           </div>
         )}
       </div>
-      <div className="rounded-xl overflow-hidden border border-white/7">
+      <div className="rounded-xl overflow-hidden border border-white/[0.07]">
         <iframe
           src={embedSrc}
           width="100%"
@@ -528,7 +553,7 @@ function AddMarketplaceUrl() {
       {open && (
         <div className="absolute right-0 top-8 z-50 w-80 rounded-xl border border-white/12 bg-[#1a1f2e] shadow-2xl p-4">
           <p className="text-xs font-semibold text-slate-300 mb-1">Add Marketplace URL</p>
-          <p className="text-[10px] text-slate-600 mb-3">
+          <p className="text-[11px] text-slate-500 mb-3">
             Paste a StubHub, TickPick, Gametime, Vivid Seats, or Ticketmaster listing URL to register it for ingestion.
           </p>
           <form onSubmit={submit} className="flex gap-2">
@@ -545,13 +570,13 @@ function AddMarketplaceUrl() {
             </button>
           </form>
           {result && (
-            <div className={`mt-2 text-[10px] flex items-center gap-1.5 ${result.accepted ? "text-emerald-400" : "text-red-400"}`}>
+            <div className={`mt-2 text-[11px] flex items-center gap-1.5 ${result.accepted ? "text-emerald-400" : "text-red-400"}`}>
               {result.accepted ? <CheckCircle2 size={10} /> : <AlertCircle size={10} />}
               {result.accepted ? `${result.mp} URL registered — pending backend ingestion` : result.mp}
             </div>
           )}
           <div className="mt-2 pt-2 border-t border-white/6">
-            <a href="/url-intake" className="text-[10px] text-slate-600 hover:text-slate-400 transition-colors">
+            <a href="/url-intake" className="text-[11px] text-slate-500 hover:text-slate-400 transition-colors">
               Open full URL Intake tool →
             </a>
           </div>
@@ -583,8 +608,12 @@ export default function EventDetailPage() {
   const [seller, setSeller]       = useState<SellerResponse | null>(null);
   const [listings, setListings]   = useState<Listing[] | null>(null);
   const [baseline, setBaseline]   = useState<BaselineResponse | null>(null);
+  const [historyAll, setHistoryAll] = useState<HistoryResponse | null>(null);
   const [snapshot, setSnapshot]   = useState<EventSnapshotResponse | null>(null);
+  const [lifecycle, setLifecycle] = useState<{ summary: Record<string, unknown> } | null>(null);
   const [alerts, setAlerts]       = useState<import("@/lib/types").AlertResponse | null>(null);
+  const [marketWindow, setMarketWindow]   = useState<"tracking" | "7d" | "24h" | "12h" | "6h">("tracking");
+  const [sellerWindow, setSellerWindow]   = useState<"tracking" | "7d" | "24h" | "12h" | "6h">("tracking");
   const [loadingAll, setLoadingAll]         = useState(true);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
@@ -627,8 +656,10 @@ export default function EventDetailPage() {
       api.events.seller(id).then(setSeller),
       api.events.listings(id, 10).then(setListings),
       api.analytics.baseline(id).then(setBaseline).catch(() => {}),
+      api.events.history(id, "all").then(setHistoryAll).catch(() => {}),
       api.events.snapshot(id).then(setSnapshot).catch(() => {}),
       api.events.alerts(id).then(setAlerts).catch(() => {}),
+      api.events.lifecycle(id).then(setLifecycle).catch(() => {}),
     ]).finally(() => setLoadingAll(false));
   }, [id]);
 
@@ -664,6 +695,10 @@ export default function EventDetailPage() {
   const pct24h      = hero?.changes?.h24?.price_delta_pct ?? null;
   // Use canonical baseline for inventory delta (accurate) instead of hero listing_snapshots (fallback bug)
   const invDelta24  = baseline?.deltas_24h?.raw_listings?.absolute ?? hero?.changes?.h24?.inventory_delta ?? null;
+  // Inventory % change for hero display
+  const invCurrent24 = hero?.inventory?.total_listings ?? null;
+  const invPrev24    = (invCurrent24 != null && invDelta24 != null) ? invCurrent24 - invDelta24 : null;
+  const invPct24h    = (invPrev24 != null && invPrev24 !== 0 && invDelta24 != null) ? (invDelta24 / invPrev24) * 100 : null;
   const marketplaces = (market?.marketplaces ?? []).sort((a, b) => (a.low_ask ?? 9999) - (b.low_ask ?? 9999));
 
   // Tracking since — from event created_at
@@ -696,6 +731,26 @@ export default function EventDetailPage() {
     return ((last - first) / first) * 100;
   })();
 
+  // ── First-tracked snapshot (for TRACKING baseline per canonical rule) ─────────
+  const firstTrackedInv  = historyAll?.series?.[0]?.listings ?? null;
+  const firstTrackedMed  = historyAll?.series?.[0]?.median_ask ?? null;
+  const curInvNow        = baseline?.current?.raw_listings ?? hero?.inventory?.total_listings ?? null;
+  const invSinceTracking = (firstTrackedInv != null && curInvNow != null)
+    ? curInvNow - firstTrackedInv : null;
+  const invSinceTrackingPct = (firstTrackedInv != null && firstTrackedInv > 0 && invSinceTracking != null)
+    ? (invSinceTracking / firstTrackedInv) * 100 : null;
+  const medSinceTracking = (firstTrackedMed != null && hero?.price?.median_ask != null)
+    ? hero.price.median_ask - firstTrackedMed : null;
+  const medSinceTrackingPct = (firstTrackedMed != null && firstTrackedMed > 0 && medSinceTracking != null)
+    ? (medSinceTracking / firstTrackedMed) * 100 : null;
+  // Removed/added since tracking horizon (24h window is authoritative from market endpoint)
+  const removed24h = market?.inventory_movement?.removed_24h ?? null;
+  const added24h   = market?.inventory_movement?.new_24h ?? null;
+  // Implied sale price from lifecycle (avg last-seen price of disappeared listings)
+  const avgImpliedSalePrice = (lifecycle?.summary?.avg_implied_sale_price as number | null) ?? null;
+  const impliedSaleCount    = (lifecycle?.summary?.implied_sale_count as number | null) ?? null;
+  const assumedSales        = (lifecycle?.summary?.assumed_sales as number | null) ?? null;
+
   // Freshness label for Section 2
   const freshLabel = (() => {
     const entries = Object.values(eventMeta?.marketplace_freshness ?? {});
@@ -721,11 +776,18 @@ export default function EventDetailPage() {
 
   // ── Derived: seller mood from capitulation + signal ────────────────────────
   const sellerMood = (() => {
-    const cap = hero?.market?.capitulation_score ?? null;
+    const cap      = hero?.market?.capitulation_score ?? null;
+    const aggr     = hero?.market?.seller_aggression  ?? null;
+    const repriced = seller?.repriced_24h ?? 0;
+    const drops    = seller?.price_drops_24h ?? 0;
+    const dropRatio = repriced > 0 ? drops / repriced : 0;
     if (cap == null) return "—";
-    if (cap > 0.65) return "Cutting prices";
-    if (cap > 0.35) return "Mixed";
-    return "Holding firm";
+    if (cap > 0.70) return "Seller capitulation increasing";
+    if (cap > 0.55 || (aggr != null && aggr > 0.65)) return "Repricing accelerating";
+    if (cap > 0.40 || dropRatio > 0.55) return "Aggressive repricing";
+    if (cap > 0.25 && dropRatio < 0.3) return "Price cuts slowing";
+    if (cap <= 0.20) return "Holding firm";
+    return "Stable seller behavior";
   })();
 
   // ─── Skeleton ────────────────────────────────────────────────────────────────
@@ -746,6 +808,12 @@ export default function EventDetailPage() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-4 pb-8">
+
+      {/* Art-derived ambient glow — subtle radial from artwork color, bleeds into page bg */}
+      <div aria-hidden="true" className="fixed inset-0 pointer-events-none" style={{
+        zIndex: -1,
+        background: `radial-gradient(ellipse 75% 55% at 18% 0%, ${gradient[0]}1c 0%, transparent 60%), radial-gradient(ellipse 45% 45% at 82% 80%, ${gradient[1]}0e 0%, transparent 55%)`,
+      }} />
 
       {/* UI BUILD MARKER */}
       <div className="fixed top-2 right-2 z-50 text-[9px] font-mono bg-amber-400 text-black px-2 py-0.5 rounded opacity-80 pointer-events-none select-none">
@@ -836,44 +904,40 @@ export default function EventDetailPage() {
       )}
 
       {/* ════════════════════════════════════════
-          SECTION 1 — EVENT HEADER (compact, ~130px)
-          Three columns: artwork | event info | tracking stats
+          SECTION 1 — EVENT HERO
+          Cinematic: artwork bleeds full height, large typography, live market on right
           ════════════════════════════════════════ */}
-      <section className="rounded-xl border border-white/8 bg-[#0a0d14] overflow-hidden">
-        <div className="flex items-stretch min-h-[192px]"
-          style={{ background: `linear-gradient(90deg, ${gradient[0]}18, transparent 60%)` }}>
+      <section className="rounded-xl overflow-hidden relative"
+        style={{ boxShadow: `0 0 140px ${gradient[0]}20, 0 0 0 1px rgba(255,255,255,0.06)` }}>
 
-          {/* LEFT — Artwork full height */}
-          <div className="flex-shrink-0 w-28 sm:w-52 relative overflow-hidden"
-            style={{ background: `linear-gradient(145deg, ${gradient[0]}cc, ${gradient[1]}cc)` }}>
-            {artworkUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={artworkUrl} alt={artist ?? title}
-                className="w-full h-full object-cover object-top"
-                onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-4xl font-black text-white/50 select-none">
-                {(artist ?? title).slice(0, 1).toUpperCase()}
-              </div>
-            )}
-            {/* Right-edge vignette — blends artwork into identity area */}
-            <div className="absolute inset-y-0 right-0 w-10"
-              style={{ background: `linear-gradient(to right, transparent, #0a0d14)` }} />
-            {/* Bottom vignette */}
-            <div className="absolute inset-x-0 bottom-0 h-12"
-              style={{ background: `linear-gradient(to bottom, transparent, rgba(10,13,20,0.55))` }} />
+        {/* Full-bleed artwork background */}
+        <div className="absolute inset-0"
+          style={{
+            backgroundImage: artworkUrl
+              ? `url(${artworkUrl})`
+              : `linear-gradient(145deg, ${gradient[0]}ee, ${gradient[1]}cc)`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center top',
+            backgroundRepeat: 'no-repeat',
+          }} />
 
-            {/* Artwork control — visible on hover */}
-            <label
-              className="absolute inset-0 flex items-end justify-center pb-2 opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
-              title={artworkUrl ? "Replace artwork" : "Upload artwork"}
-              aria-label={artworkUrl ? "Replace artwork" : "Upload artwork"}
-            >
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                className="sr-only"
-                disabled={artworkUploading}
+        {/* Cinematic overlay layers */}
+        <div className="absolute inset-0" style={{ background: 'rgba(5,6,11,0.52)' }} />
+        <div className="absolute inset-0"
+          style={{ background: 'linear-gradient(to top, rgba(5,6,11,1) 0%, rgba(5,6,11,0.88) 30%, rgba(5,6,11,0.35) 60%, rgba(5,6,11,0.08) 100%)' }} />
+        <div className="absolute inset-0 pointer-events-none"
+          style={{ background: `linear-gradient(95deg, ${gradient[0]}20 0%, transparent 50%)` }} />
+        <div className="absolute inset-0 pointer-events-none"
+          style={{ background: 'linear-gradient(to left, rgba(5,6,11,0.65) 0%, transparent 45%)' }} />
+
+        {/* Content */}
+        <div className="relative flex flex-col justify-end" style={{ minHeight: 380 }}>
+
+          {/* Artwork upload control */}
+          <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
+            <label className="opacity-0 hover:opacity-100 transition-opacity cursor-pointer" title={artworkUrl ? "Replace artwork" : "Upload artwork"}>
+              <input type="file" accept="image/jpeg,image/png,image/webp,image/gif"
+                className="sr-only" disabled={artworkUploading}
                 onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (!file || !id) return;
@@ -881,98 +945,173 @@ export default function EventDetailPage() {
                   try {
                     const res = await api.events.setArtwork(id, file);
                     setCustomArtworkUrl(res.custom_artwork_url ?? null);
-                  } finally {
-                    setArtworkUploading(false);
-                    e.target.value = "";
-                  }
+                  } finally { setArtworkUploading(false); e.target.value = ""; }
                 }}
               />
-              <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-black/70 text-white/80 backdrop-blur-sm leading-none select-none">
+              <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-lg bg-black/70 text-white/70 backdrop-blur-sm leading-none select-none">
                 {artworkUploading ? "…" : artworkUrl ? "Replace Art" : "Upload Art"}
               </span>
             </label>
-
-            {/* "Use Auto Art" revert — shown only when custom art is active */}
             {customArtworkUrl && (
               <button
-                className="absolute top-1.5 right-1.5 text-[8px] font-bold uppercase tracking-wider px-1.5 py-1 rounded bg-black/60 text-white/60 hover:text-white/90 transition-colors leading-none"
-                title="Remove custom art, revert to auto"
+                className="w-6 h-6 flex items-center justify-center rounded-full bg-black/60 text-white/50 hover:text-white/90 transition-colors text-[11px] font-bold opacity-0 hover:opacity-100"
+                title="Revert to auto artwork"
                 onClick={async () => {
                   if (!id) return;
                   setArtworkUploading(true);
-                  try {
-                    await api.events.setArtwork(id, "");
-                    setCustomArtworkUrl(null);
-                  } finally {
-                    setArtworkUploading(false);
-                  }
+                  try { await api.events.setArtwork(id, ""); setCustomArtworkUrl(null); }
+                  finally { setArtworkUploading(false); }
                 }}
-              >
-                ✕
-              </button>
+              >✕</button>
             )}
           </div>
 
-          {/* CENTER — Event identity */}
-          <div className="flex-1 min-w-0 p-5 flex flex-col justify-center gap-1.5">
-            {artist && artist !== title && (
-              <p className="text-[10px] text-slate-400 uppercase tracking-[0.15em] font-semibold truncate">{artist}</p>
-            )}
-            <h1 className="text-[28px] sm:text-[30px] font-black text-white leading-tight tracking-tight line-clamp-1">{title}</h1>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
-              {venue     && <span className="flex items-center gap-1 text-slate-400"><MapPin size={10} className="opacity-60 flex-shrink-0" /><span className="truncate">{venue}</span></span>}
-              {dateLabel && <span className="flex items-center gap-1 text-slate-300 font-medium"><Calendar size={10} className="opacity-60 flex-shrink-0" />{dateLabel}</span>}
-            </div>
-            <div className="flex items-center gap-2 mt-1 flex-wrap">
-              {daysOut != null && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded"
-                  style={{ color: aColors.text, background: aColors.bg + "50", border: `1px solid ${aColors.border}` }}>
-                  {isCompleted ? "Event passed" : daysOut < 1 ? "Happening today" : daysOut < 2 ? "Tomorrow" : `${Math.round(daysOut)}d away`}
+          {/* Main content: identity + market */}
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-6 items-end px-8 pb-7 pt-16">
+
+            {/* LEFT: Identity */}
+            <div className="flex flex-col gap-3">
+              {artist && artist !== title && (
+                <p className="text-[12px] font-bold text-white/40 uppercase tracking-[0.28em]">{artist}</p>
+              )}
+              <h1 className="text-[52px] sm:text-[68px] font-black text-white leading-none tracking-tight line-clamp-2"
+                style={{ textShadow: '0 2px 40px rgba(0,0,0,0.9)' }}>
+                {title}
+              </h1>
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+                {venue && (
+                  <span className="flex items-center gap-1.5 text-[14px] text-white/55">
+                    <MapPin size={12} className="opacity-60 flex-shrink-0" />{venue}
+                  </span>
+                )}
+                {dateLabel && (
+                  <span className="flex items-center gap-1.5 text-[14px] text-white/80 font-medium">
+                    <Calendar size={12} className="opacity-60 flex-shrink-0" />{dateLabel}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                {daysOut != null && (
+                  <span className="text-[12px] font-bold px-3 py-1 rounded-lg backdrop-blur-sm"
+                    style={{ color: aColors.text, background: aColors.bg + "55", border: `1px solid ${aColors.border}55` }}>
+                    {isCompleted ? "Event passed" : daysOut < 1 ? "Today" : daysOut < 2 ? "Tomorrow" : `${Math.round(daysOut)}d away`}
+                  </span>
+                )}
+                {isCompleted && (
+                  <span className="text-[12px] font-bold uppercase tracking-widest text-white/35 bg-white/[0.07] border border-white/10 rounded-lg px-3 py-1">Completed</span>
+                )}
+                <span className="text-[12px] font-black px-3 py-1 rounded-lg border backdrop-blur-sm"
+                  style={{ color: aColors.text, borderColor: aColors.border + "60", background: aColors.bg + "45" }}>
+                  {action}
                 </span>
-              )}
-              {isCompleted && (
-                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 bg-white/5 border border-white/10 rounded px-2 py-0.5">Completed</span>
-              )}
-              <span className="text-[10px] font-black px-2.5 py-0.5 rounded border"
-                style={{ color: aColors.text, borderColor: aColors.border + "80", background: aColors.bg + "40" }}>
-                {action}
-              </span>
+              </div>
+            </div>
+
+            {/* RIGHT: Live Market — Median primary per hierarchy spec */}
+            <div className="hidden sm:flex flex-col items-end gap-0.5">
+              <p className="text-[11px] text-white/30 uppercase tracking-[0.22em] font-semibold mb-1">Median</p>
+              <p className="text-[66px] font-black text-white/90 tabular-nums leading-none"
+                style={{ textShadow: `0 0 60px ${gradient[0]}50` }}>
+                {hero?.price?.median_ask != null ? fmt$$(hero.price.median_ask) : "—"}
+              </p>
+              <div className="flex items-center gap-2 mt-1">
+                {pct24h != null && <DeltaChip pct={pct24h} invert />}
+                <span className="text-[11px] text-white/30">24H</span>
+              </div>
+              <div className="flex items-center gap-5 mt-4 pt-4 border-t border-white/[0.1] w-full justify-end">
+                <div className="text-right">
+                  <p className="text-[11px] text-white/28 uppercase tracking-wide mb-1">Inventory</p>
+                  <p className="text-[24px] font-bold text-blue-300/80 tabular-nums leading-none">
+                    {hero?.inventory?.total_listings != null ? fmtNum(hero.inventory.total_listings) : "—"}
+                  </p>
+                  {invDelta24 != null && (
+                    <p className={`text-[11px] tabular-nums mt-0.5 ${invDelta24 > 0 ? "text-red-400" : invDelta24 < 0 ? "text-emerald-400" : "text-slate-500"}`}>
+                      {invDelta24 > 0 ? "+" : ""}{fmtNum(invDelta24)}
+                      {invPct24h != null ? ` (${invPct24h > 0 ? "+" : ""}${invPct24h.toFixed(1)}%)` : ""}
+                    </p>
+                  )}
+                </div>
+                <div className="text-right">
+                  <p className="text-[11px] text-white/28 uppercase tracking-wide mb-1">Duplicate %</p>
+                  <p className="text-[24px] font-bold text-violet-300/70 tabular-nums leading-none">—</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[11px] text-white/28 uppercase tracking-wide mb-1">Low</p>
+                  <p className="text-[24px] font-bold text-emerald-300 tabular-nums leading-none">
+                    {hero?.price?.low_ask != null ? fmt$$(hero.price.low_ask) : "—"}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[11px] text-white/28 uppercase tracking-wide mb-1">High</p>
+                  <p className="text-[24px] font-bold text-white/40 tabular-nums leading-none">
+                    {(hero?.price?.high_ask ?? hero?.price?.p75_ask) != null ? fmt$$(hero?.price?.high_ask ?? hero?.price?.p75_ask!) : "—"}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* RIGHT — Marketplace freshness */}
-          <div className="hidden sm:flex flex-col gap-1.5 flex-shrink-0 p-5 justify-center items-end">
-            <p className="text-[9px] text-slate-600 uppercase tracking-[0.15em] mb-1">Marketplace Freshness</p>
-            {eventMeta?.marketplace_freshness
-              ? (['stubhub', 'tickpick', 'gametime', 'vividseats'] as const)
-                  .filter(slug => eventMeta.marketplace_freshness![slug])
-                  .map(slug => {
-                  const f = eventMeta.marketplace_freshness![slug] as { freshness_status?: string; age_minutes?: number };
-                  const status = f?.freshness_status ?? "no_data";
-                  const age = f?.age_minutes;
-                  const ageStr = age == null ? null : age < 60 ? `${age}m` : `${Math.round(age / 60)}h`;
-                  const cfg: Record<string, { dot: string; text: string }> = {
-                    fresh:   { dot: "bg-emerald-400", text: "text-emerald-400" },
-                    late:    { dot: "bg-amber-400",   text: "text-amber-400"   },
-                    stale:   { dot: "bg-orange-500",  text: "text-orange-400"  },
-                    dead:    { dot: "bg-red-500",     text: "text-red-400"     },
-                    no_data: { dot: "bg-slate-600",   text: "text-slate-500"   },
-                  };
-                  const c = cfg[status] ?? { dot: "bg-slate-600", text: "text-slate-500" };
-                  const info = MP_META[slug];
-                  return (
-                    <div key={slug} className="flex items-center gap-2">
-                      <span className="text-[10px] text-slate-400 capitalize">{info?.label ?? slug}</span>
-                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${c.dot}`} />
-                      <span className={`text-[10px] font-semibold ${c.text} tabular-nums w-8 text-left`}>
-                        {ageStr ?? "—"}
-                      </span>
-                    </div>
-                  );
-                })
-              : <p className="text-[10px] text-slate-600">No feeds</p>
-            }
+          {/* Status bar */}
+          {(() => {
+            const evFreshEntries = (['stubhub', 'tickpick', 'gametime', 'vividseats'] as const)
+              .filter(slug => eventMeta?.marketplace_freshness?.[slug]);
+            const evFreshCount = evFreshEntries.filter(slug => {
+              const s = (eventMeta?.marketplace_freshness?.[slug] as { freshness_status?: string })?.freshness_status;
+              return s === "fresh" || s === "late";
+            }).length;
+            return (
+          <div className="border-t border-white/[0.07] px-8 py-3 flex items-center gap-4 flex-wrap bg-black/30 backdrop-blur-sm">
+            {trackingSince && (
+              <span className="text-[11px] text-white/28 flex items-center gap-1.5">
+                <Clock size={10} />
+                <span className="text-white/20 uppercase tracking-[0.1em] text-[10px]">Tracking Since</span>
+                <span className="text-white/40">{trackingSince.formatted}</span>
+              </span>
+            )}
+            {freshLabel && (
+              <span className="text-[11px] text-white/28 flex items-center gap-1.5">
+                <span className="text-white/20 uppercase tracking-[0.1em] text-[10px]">Last Update</span>
+                <span className="text-white/40">{freshLabel}</span>
+              </span>
+            )}
+            {evFreshEntries.length > 0 && (
+              <span className="text-[11px] text-white/28 flex items-center gap-1.5">
+                <span className="text-white/20 uppercase tracking-[0.1em] text-[10px]">Feeds Fresh</span>
+                <span className="text-white/40">{evFreshCount}/{evFreshEntries.length}</span>
+              </span>
+            )}
+            <div className="flex items-center gap-5 ml-auto flex-wrap">
+              {eventMeta?.marketplace_freshness
+                ? (['stubhub', 'tickpick', 'gametime', 'vividseats'] as const)
+                    .filter(slug => eventMeta.marketplace_freshness![slug])
+                    .map(slug => {
+                      const f = eventMeta.marketplace_freshness![slug] as { freshness_status?: string; age_minutes?: number };
+                      const status = f?.freshness_status ?? "no_data";
+                      const age = f?.age_minutes;
+                      const ageStr = age == null ? null : age < 60 ? `${age}m` : `${Math.round(age / 60)}h`;
+                      const dotCls = status === "fresh" ? "bg-emerald-400" : status === "late" ? "bg-amber-400" : status === "dead" ? "bg-red-500" : "bg-white/20";
+                      const textCls = status === "fresh" ? "text-emerald-400" : status === "late" ? "text-amber-400" : status === "dead" ? "text-red-400" : "text-white/25";
+                      const info = MP_META[slug];
+                      return (
+                        <div key={slug} className="flex items-center gap-1.5">
+                          {info && (
+                            <div className="rounded flex items-center justify-center font-black text-white flex-shrink-0"
+                              style={{ width: 16, height: 16, background: info.logoBg, fontSize: 7 }}>
+                              {info.short}
+                            </div>
+                          )}
+                          <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotCls}`} />
+                          <span className="text-[11px] font-medium" style={{ color: info?.color ?? "rgba(255,255,255,0.38)" }}>{info?.label ?? slug}</span>
+                          <span className={`text-[11px] tabular-nums ${textCls}`}>{ageStr ?? "—"}</span>
+                        </div>
+                      );
+                    })
+                : <p className="text-[11px] text-white/25">No feeds</p>
+              }
+            </div>
           </div>
+            );
+          })()}
         </div>
       </section>
 
@@ -981,143 +1120,280 @@ export default function EventDetailPage() {
           SECTION 2 — MARKET INTELLIGENCE HERO (~200px)
           Three columns: Current Market | Market Absorption | Seller Behavior
           ════════════════════════════════════════ */}
-      <section className="rounded-xl border border-white/8 bg-[#0f1420] overflow-hidden">
+      <section className="rounded-xl border border-white/[0.07] bg-[#0d1018] overflow-hidden">
         <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-white/8"
           style={{ gridTemplateColumns: "1.4fr 1.2fr 0.9fr" }}>
 
-          {/* Col 1: Current Market */}
-          <div className="p-5">
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-[9px] text-slate-500 uppercase tracking-[0.18em] font-semibold">Current Market</p>
-              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border border-white/10 text-slate-500 bg-white/3">24H</span>
-            </div>
-            <div>
-              {(() => {
-                const lowDelta   = baseline?.deltas_24h?.low_ask;
-                const priceDelta = hero?.changes?.h24?.price_delta_pct;
-                const low    = hero?.price?.low_ask;
-                const median = hero?.price?.median_ask;
-                const high   = hero?.price?.high_ask ?? hero?.price?.p75_ask;
-                // Per-row sizing: Low largest, Median strong, High tertiary
-                const rows = [
-                  { label: "Low",    val: fmt$$(low),    delta: lowDelta?.pct ?? priceDelta,
-                    cls: "text-emerald-300 font-black tabular-nums", size: "text-[34px] leading-none" as const,
-                    py: "pt-0 pb-3" },
-                  { label: "Median", val: fmt$$(median), delta: priceDelta,
-                    cls: "text-white font-bold tabular-nums",         size: "text-[24px] leading-none" as const,
-                    py: "py-2.5 border-t border-white/[0.04]" },
-                  { label: "High",   val: fmt$$(high),   delta: null,
-                    cls: "text-slate-300 font-semibold tabular-nums", size: "text-[17px] leading-none" as const,
-                    py: "py-2 border-t border-white/[0.04]" },
-                ];
-                return rows.map(({ label, val, delta, cls, size, py }) => (
-                  <div key={label} className={`flex items-center gap-2 ${py}`}>
-                    <span className="text-[10px] text-slate-500 w-11 flex-shrink-0">{label}</span>
-                    <span className={cn(size, cls, "flex-1")}>{val ?? "—"}</span>
-                    <span className="flex-shrink-0">
-                      {delta != null ? <DeltaChip pct={delta} /> : <span className="text-white/15 text-[10px]">—</span>}
-                    </span>
-                  </div>
-                ));
-              })()}
-              <div className="flex items-center gap-2 py-2 border-t border-white/[0.04]">
-                <span className="text-[10px] text-slate-500 w-11 flex-shrink-0">Inv</span>
-                <span className="text-[20px] font-bold text-slate-100 tabular-nums leading-none flex-1">
-                  {fmtNum(baseline?.current?.raw_listings ?? hero?.inventory?.total_listings) ?? "—"}
-                </span>
-                {invDelta24 != null ? (
-                  <span className={cn("text-[11px] font-semibold tabular-nums flex-shrink-0",
-                    invDelta24 > 0 ? "text-emerald-400" : "text-red-400")}>
-                    {invDelta24 > 0 ? "+" : ""}{invDelta24} 24H
-                  </span>
-                ) : <span className="text-white/15 text-[10px]">—</span>}
+          {/* Col 1: Current Market — Median primary, with timeframe toggle */}
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[11px] text-slate-400 uppercase tracking-[0.18em] font-semibold">Current Market</p>
+              {/* Timeframe toggle */}
+              <div className="flex items-center gap-0.5">
+                {(["tracking", "24h", "12h", "6h", "7d"] as const).map(w => (
+                  <button key={w} onClick={() => setMarketWindow(w)}
+                    className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded transition-colors uppercase",
+                      marketWindow === w
+                        ? "bg-white/10 text-slate-200 border border-white/15"
+                        : "text-slate-600 hover:text-slate-400")}>
+                    {w === "tracking" ? "Tracking" : w}
+                  </button>
+                ))}
               </div>
             </div>
-          </div>
 
-          {/* Col 2: Market Absorption — primary emphasis */}
-          <div className="p-5 bg-white/[0.015]">
-            <p className="text-[9px] text-slate-500 uppercase tracking-[0.18em] font-semibold mb-4">Absorption</p>
-            {/* Est. Avg Sale Price — dominant metric */}
-            <div className="mb-4 pb-3 border-b border-white/8">
-              <p className="text-[9px] text-slate-500 mb-1.5 uppercase tracking-[0.12em]">Est. Avg Sale Price</p>
-              <p className="text-[36px] font-black text-amber-300 tabular-nums leading-none">—</p>
-              <div className="flex items-center gap-1.5 mt-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400/50 animate-pulse flex-shrink-0" />
-                <p className="text-[10px] text-slate-600 italic">Monitoring · collecting as tickets move</p>
-              </div>
-            </div>
-            <div className="space-y-0">
-              {[
-                { label: "Tickets Sold",   val: null as string | null },
-                { label: "24H Sold",       val: null as string | null },
-                { label: "7D Sold",        val: null as string | null },
-                { label: "Since Tracking", val: null as string | null },
-              ].map(({ label, val }) => (
-                <div key={label} className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-0">
-                  <span className="text-[10px] text-slate-400">{label}</span>
-                  <span className="text-[11px] text-slate-700">{val ?? "·"}</span>
+            {/* Movement rows: MEDIAN / LOW / HIGH / INVENTORY / DUPLICATES */}
+            {(marketWindow === "12h" || marketWindow === "6h") ? (
+              <p className="text-[12px] text-slate-600 italic py-2">Insufficient history for {marketWindow.toUpperCase()} window</p>
+            ) : (
+              <div className="space-y-0">
+                {/* MEDIAN row — first per spec */}
+                {(() => {
+                  const cur = hero?.price?.median_ask ?? null;
+                  // fallback chain: d30 → d14 → h24 so TRACKING mode always shows something
+                  const pct = marketWindow === "24h" ? (hero?.changes?.h24?.price_delta_pct ?? null)
+                    : marketWindow === "7d" ? (hero?.changes?.d7?.price_delta_pct ?? null)
+                    : marketWindow === "tracking"
+                      ? (medSinceTrackingPct ?? hero?.changes?.d30?.price_delta_pct ?? hero?.changes?.d14?.price_delta_pct ?? hero?.changes?.h24?.price_delta_pct ?? null)
+                    : null;
+                  const orig = marketWindow === "tracking" && firstTrackedMed != null
+                    ? firstTrackedMed
+                    : (cur != null && pct != null) ? Math.round(cur / (1 + pct / 100)) : null;
+                  const abs  = (cur != null && orig != null) ? cur - orig : null;
+                  return (
+                    <div className="flex items-center justify-between py-1.5 border-b border-white/[0.04]">
+                      <span className="text-[12px] text-slate-400 font-semibold w-16 flex-shrink-0">Median</span>
+                      <div className="flex items-center gap-1.5 tabular-nums">
+                        {orig != null ? <span className="text-[11px] text-slate-600">{fmt$$(orig)} →</span> : null}
+                        <span className="text-[13px] font-bold text-white">{cur != null ? fmt$$(cur) : "—"}</span>
+                        {abs != null && abs !== 0 && <span className={cn("text-[11px]", abs < 0 ? "text-slate-500" : "text-slate-500")}>{abs > 0 ? `+${fmt$$(abs)}` : fmt$$(abs)}</span>}
+                        {pct != null ? <DeltaChip pct={pct} invert /> : <span className="text-[11px] text-slate-700">—</span>}
+                      </div>
+                    </div>
+                  );
+                })()}
+                {/* LOW row */}
+                {(() => {
+                  const cur = hero?.price?.low_ask ?? null;
+                  const pct = marketWindow === "24h" ? (baseline?.deltas_24h?.low_ask?.pct ?? null)
+                    : marketWindow === "7d" ? (baseline?.deltas_7d?.low_ask?.pct ?? null)
+                    : marketWindow === "tracking" ? (baseline?.deltas_24h?.low_ask?.pct ?? null)
+                    : null;
+                  const absRaw = marketWindow === "24h" ? (baseline?.deltas_24h?.low_ask?.absolute ?? null)
+                    : marketWindow === "7d" ? (baseline?.deltas_7d?.low_ask?.absolute ?? null)
+                    : marketWindow === "tracking" ? (baseline?.deltas_24h?.low_ask?.absolute ?? null)
+                    : null;
+                  const orig = (cur != null && pct != null) ? Math.round(cur / (1 + pct / 100)) : null;
+                  return (
+                    <div className="flex items-center justify-between py-1.5 border-b border-white/[0.04]">
+                      <span className="text-[12px] text-slate-500 w-16 flex-shrink-0">Low</span>
+                      <div className="flex items-center gap-1.5 tabular-nums">
+                        {orig != null ? <span className="text-[11px] text-slate-600">{fmt$$(orig)} →</span> : null}
+                        <span className="text-[13px] font-semibold text-emerald-300">{cur != null ? fmt$$(cur) : "—"}</span>
+                        {absRaw != null && absRaw !== 0 && <span className="text-[11px] text-slate-500">{absRaw > 0 ? `+${fmt$$(absRaw)}` : fmt$$(absRaw)}</span>}
+                        {pct != null ? <DeltaChip pct={pct} invert /> : <span className="text-[11px] text-slate-700">—</span>}
+                      </div>
+                    </div>
+                  );
+                })()}
+                {/* HIGH row — no baseline delta available */}
+                {(() => {
+                  const cur = hero?.price?.high_ask ?? hero?.price?.p75_ask ?? null;
+                  return (
+                    <div className="flex items-center justify-between py-1.5 border-b border-white/[0.04]">
+                      <span className="text-[12px] text-slate-500 w-16 flex-shrink-0">High</span>
+                      <div className="flex items-center gap-1.5 tabular-nums">
+                        <span className="text-[13px] font-semibold text-slate-400">{cur != null ? fmt$$(cur) : "—"}</span>
+                        <span className="text-[11px] text-slate-700">—</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+                {/* INVENTORY row — TRACKING = from first-snapshot baseline (canonical rule) */}
+                {(() => {
+                  const cur = curInvNow;
+                  const abs = marketWindow === "24h"
+                    ? (baseline?.deltas_24h?.raw_listings?.absolute ?? hero?.changes?.h24?.inventory_delta ?? null)
+                    : marketWindow === "7d"
+                    ? (baseline?.deltas_7d?.raw_listings?.absolute ?? hero?.changes?.d7?.inventory_delta ?? null)
+                    : marketWindow === "tracking"
+                    ? invSinceTracking
+                    : null;
+                  const absPct = marketWindow === "tracking"
+                    ? invSinceTrackingPct
+                    : (abs != null && cur != null && (cur - abs) > 0
+                      ? (abs / (cur - abs)) * 100 : null);
+                  const fromVal = marketWindow === "tracking" && firstTrackedInv != null ? firstTrackedInv : null;
+                  return (
+                    <div className="flex items-center justify-between py-1.5 border-b border-white/[0.04]">
+                      <span className="text-[12px] text-slate-500 w-16 flex-shrink-0">Inventory</span>
+                      <div className="flex items-center gap-2 tabular-nums">
+                        {fromVal != null && <span className="text-[11px] text-slate-600">{fmtNum(fromVal)} →</span>}
+                        <span className="text-[13px] font-semibold text-blue-300/80">{cur != null ? fmtNum(cur) : "—"}</span>
+                        {abs != null ? (
+                          <span className={cn("text-[11px] font-medium", abs > 0 ? "text-red-400" : abs < 0 ? "text-emerald-400" : "text-slate-500")}>
+                            {abs > 0 ? "+" : ""}{fmtNum(abs)}
+                            {absPct != null ? ` (${absPct > 0 ? "+" : ""}${absPct.toFixed(1)}%)` : ""}
+                          </span>
+                        ) : <span className="text-[11px] text-slate-700">—</span>}
+                      </div>
+                    </div>
+                  );
+                })()}
+                {/* DUPLICATES row — format: current%  ±pp change */}
+                <div className="flex items-center justify-between py-1.5">
+                  <span className="text-[12px] text-slate-500 w-16 flex-shrink-0">Dup %</span>
+                  <span className="text-[11px] text-slate-700">—</span>
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
           </div>
 
-          {/* Col 3: Seller Behavior */}
-          <div className="p-5">
-            <p className="text-[9px] text-slate-500 uppercase tracking-[0.18em] font-semibold mb-4">Seller Behavior</p>
-            <div>
-              <div className="flex items-center justify-between py-2.5 border-b border-white/[0.04]">
-                <span className="text-[10px] text-slate-400">Relist Price Change</span>
-                <span className="text-[11px] text-slate-600">—</span>
+          {/* Col 2: Absorption */}
+          <div className="p-4 bg-white/[0.012]">
+            <p className="text-[11px] text-slate-400 uppercase tracking-[0.18em] font-semibold mb-3">
+              Absorption
+            </p>
+
+            {/* Est. Avg Sale Price — from implied sales (listing disappearance) */}
+            <div className="mb-3 pb-3 border-b border-white/[0.06]">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-[11px] text-slate-500 uppercase tracking-[0.14em]">Est. Avg Sale Price</p>
+                {avgImpliedSalePrice != null ? (
+                  <span className="text-[15px] font-bold tabular-nums text-emerald-300">{fmt$$(avgImpliedSalePrice)}</span>
+                ) : (
+                  <span className="text-[10px] font-bold uppercase tracking-[0.1em] px-2 py-0.5 rounded bg-white/[0.04] text-slate-600 border border-white/[0.06]">Loading</span>
+                )}
               </div>
-              <div className="flex items-center justify-between py-2.5 border-b border-white/[0.04]">
-                <span className="text-[10px] text-slate-400">Price Drops</span>
-                <span className={cn("text-[13px] font-semibold tabular-nums",
-                  seller?.price_drops_24h ? "text-amber-300" : "text-slate-600")}>
-                  {seller?.price_drops_24h != null ? fmtNum(seller.price_drops_24h) : "·"}
-                </span>
+              {avgImpliedSalePrice != null && impliedSaleCount != null && (
+                <p className="text-[10px] text-slate-600">
+                  avg last-seen price · {fmtNum(impliedSaleCount)} implied sales
+                </p>
+              )}
+            </div>
+
+            {/* Inventory Since Tracking — first-snapshot baseline */}
+            {(() => {
+              const hasData = firstTrackedInv != null && curInvNow != null;
+              const maxObs = historyAll?.series?.reduce((m, p) => Math.max(m, p.listings ?? 0), 0) ?? 0;
+              const pctBar = hasData && maxObs > 0
+                ? Math.min(100, (curInvNow! / maxObs) * 100) : null;
+              return (
+                <div className="mb-2.5 pb-2.5 border-b border-white/[0.04]">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-[11px] text-slate-500 uppercase tracking-[0.12em]">Inv Since Tracking</p>
+                    {invSinceTracking != null && (
+                      <span className={cn("text-[12px] font-bold tabular-nums",
+                        invSinceTracking > 0 ? "text-red-400" : invSinceTracking < 0 ? "text-emerald-400" : "text-slate-500")}>
+                        {invSinceTracking > 0 ? "+" : ""}{fmtNum(invSinceTracking)}
+                        {invSinceTrackingPct != null ? ` (${invSinceTrackingPct > 0 ? "+" : ""}${invSinceTrackingPct.toFixed(1)}%)` : ""}
+                      </span>
+                    )}
+                  </div>
+                  {hasData && pctBar != null ? (
+                    <>
+                      <div className="h-1 w-full rounded-full bg-white/[0.06] overflow-hidden mb-1">
+                        <div className="h-full rounded-full bg-blue-400/50 transition-all" style={{ width: `${pctBar.toFixed(1)}%` }} />
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-[10px] text-slate-600">{fmtNum(firstTrackedInv!)} start</span>
+                        {maxObs > 0 && <span className="text-[10px] text-slate-700">{fmtNum(maxObs)} peak</span>}
+                        <span className="text-[10px] text-blue-400/70">{fmtNum(curInvNow!)} now</span>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-[11px] text-slate-600 italic">Insufficient history</p>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Movement rows — real data from market endpoint */}
+            {[
+              { label: "Removed 24H",   val: removed24h != null ? fmtNum(removed24h) : null,  cls: removed24h != null && removed24h > 0 ? "text-red-400" : "text-slate-700" },
+              { label: "Added 24H",     val: added24h   != null ? fmtNum(added24h)   : null,  cls: added24h   != null && added24h > 0   ? "text-emerald-400" : "text-slate-700" },
+              { label: "Market Stress", val: market?.market_stress?.composite_score != null
+                  ? `${(market.market_stress.composite_score * 100).toFixed(0)}%` : null,
+                cls: (() => {
+                  const s = market?.market_stress?.composite_score ?? null;
+                  return s == null ? "text-slate-700" : s > 0.6 ? "text-red-400" : s > 0.35 ? "text-amber-400" : "text-emerald-400";
+                })() },
+            ].map(({ label, val, cls }) => (
+              <div key={label} className="flex items-center justify-between py-1.5 border-b border-white/[0.04] last:border-0">
+                <span className="text-[12px] text-slate-500">{label}</span>
+                <span className={cn("tabular-nums font-semibold text-[13px]", cls)}>{val ?? "—"}</span>
               </div>
-              <div className="flex items-center justify-between py-2.5 border-b border-white/[0.04]">
-                <span className="text-[10px] text-slate-400">Repriced Listings</span>
-                <span className={cn("text-[13px] font-semibold tabular-nums",
-                  seller?.repriced_24h ? "text-amber-400" : "text-slate-600")}>
-                  {seller?.repriced_24h != null ? fmtNum(seller.repriced_24h) : "·"}
-                </span>
-              </div>
-              {/* Seller Mood — editorial signal */}
-              <div className="flex items-start justify-between py-2.5 border-l-2 border-red-500/30 pl-2.5 -ml-2.5 mt-0.5">
-                <span className="text-[10px] text-slate-500">Seller Mood</span>
-                <span className={cn("text-[13px] font-semibold italic text-right max-w-[60%]",
-                  sellerMood ? "text-red-300" : "text-slate-600")}>
-                  {sellerMood ?? "·"}
-                </span>
+            ))}
+          </div>
+
+          {/* Col 3: Seller Behavior — Relist Price Change primary */}
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[11px] text-slate-400 uppercase tracking-[0.18em] font-semibold">Seller Behavior</p>
+              <div className="flex items-center gap-0.5">
+                {(["tracking", "24h", "12h", "6h", "7d"] as const).map(w => (
+                  <button key={w} onClick={() => setSellerWindow(w)}
+                    className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded transition-colors uppercase",
+                      sellerWindow === w
+                        ? "bg-white/10 text-slate-200 border border-white/15"
+                        : "text-slate-600 hover:text-slate-400")}>
+                    {w === "tracking" ? "Tracking" : w}
+                  </button>
+                ))}
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Freshness bar */}
-        <div className="border-t border-white/6 px-4 py-2 flex items-center gap-3 flex-wrap bg-white/[0.01]">
-          {freshLabel && (
-            <span className="text-[10px] text-slate-600 flex items-center gap-1">
-              <Clock size={9} /> Updated {freshLabel}
-            </span>
-          )}
-          {MP_SLUGS.map(slug => {
-            const f    = eventMeta?.marketplace_freshness?.[slug] as { freshness_status?: string; age_minutes?: number } | undefined;
-            const info = MP_META[slug];
-            if (!info) return null;
-            const st  = f?.freshness_status ?? "unknown";
-            const cls = st === "fresh" ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/8"
-                      : st === "late"  ? "text-amber-400 border-amber-500/30 bg-amber-500/8"
-                      : st === "dead"  ? "text-red-500 border-red-500/30 bg-red-500/8"
-                      : "text-slate-600 border-white/8 bg-white/3";
-            return (
-              <span key={slug} className={`text-[10px] font-bold px-2 py-0.5 rounded border ${cls}`}>
-                {info.short} {st === "fresh" ? "✓" : st === "late" ? "~" : st === "dead" ? "✗" : "—"}
-              </span>
-            );
-          })}
+            {/* Relist Price Change — dominant primary KPI, tighter */}
+            <div className="mb-3 pb-3 border-b border-white/[0.06]">
+              <p className="text-[11px] text-slate-500 uppercase tracking-[0.14em] mb-1">Relist Price Chg</p>
+              {seller?.median_reprice_delta != null ? (
+                <div className="flex items-end gap-1.5">
+                  <p className={cn("text-[26px] font-black tabular-nums leading-none",
+                    seller.median_reprice_delta < 0 ? "text-red-300"
+                    : seller.median_reprice_delta > 0 ? "text-emerald-300"
+                    : "text-slate-400")}>
+                    {seller.median_reprice_delta > 0 ? "+" : ""}{fmt$$(seller.median_reprice_delta)}
+                  </p>
+                  <span className="text-[11px] text-slate-500 pb-0.5">median</span>
+                </div>
+              ) : (
+                <p className="text-[26px] font-black text-slate-700 tabular-nums leading-none">—</p>
+              )}
+            </div>
+
+            {/* Repriced / Price Drops / Churn */}
+            {[
+              { label: "Repriced 24H",  val: seller?.repriced_24h != null ? fmtNum(seller.repriced_24h) : null,
+                cls: seller?.repriced_24h ? "text-amber-400" : "text-slate-600" },
+              { label: "Price Drops",   val: seller?.price_drops_24h != null ? fmtNum(seller.price_drops_24h) : null,
+                cls: seller?.price_drops_24h ? "text-red-400" : "text-slate-600" },
+              { label: "Churn Rate",    val: seller?.churn_rate != null ? `${seller.churn_rate.toFixed(1)}×` : null,
+                cls: (() => {
+                  const c = seller?.churn_rate ?? null;
+                  return c == null ? "text-slate-600" : c > 3 ? "text-red-400" : c > 1.5 ? "text-amber-400" : "text-emerald-400/70";
+                })() },
+            ].map(({ label, val, cls }) => (
+              <div key={label} className="flex items-center justify-between py-1.5 border-b border-white/[0.04]">
+                <span className="text-[12px] text-slate-400">{label}</span>
+                <span className={cn("text-[13px] font-bold tabular-nums", cls)}>{val ?? "—"}</span>
+              </div>
+            ))}
+
+            {/* Seller Mood — behavioral momentum */}
+            <div className="pt-2 mt-0.5">
+              <p className="text-[11px] text-slate-500 uppercase tracking-[0.14em] mb-1">Seller Mood</p>
+              <p className={cn("text-[13px] font-bold italic leading-snug",
+                sellerMood === "Seller capitulation increasing" ? "text-red-300"
+                : sellerMood === "Repricing accelerating" ? "text-red-300/80"
+                : sellerMood === "Aggressive repricing" ? "text-amber-300"
+                : sellerMood === "Price cuts slowing" ? "text-amber-300/70"
+                : sellerMood === "Holding firm" ? "text-emerald-300"
+                : sellerMood === "Stable seller behavior" ? "text-emerald-300/70"
+                : "text-slate-600")}>
+                {sellerMood}
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -1133,91 +1409,117 @@ export default function EventDetailPage() {
           SECTION 4 — MARKETPLACE ACTIVITY (moved above venue intel per wireframe)
           ════════════════════════════════════════ */}
       <section>
-        <p className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-3">Marketplace Activity</p>
+        <div className="flex items-center gap-3 mb-4">
+          <h2 className="text-[12px] font-bold text-slate-500 uppercase tracking-[0.18em] flex-shrink-0">Marketplace Activity</h2>
+          <div className="flex-1 h-px bg-white/[0.06]" />
+        </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {MP_SLUGS.map(slug => {
             const info    = MP_META[slug]!;
-            const mpData  = marketplaces.find(m => m.name.toLowerCase().replace(/\s+/g, "") === slug);
+            const mpData  = marketplaces.find(m => normMp(m.name) === slug);
             const bsData  = baseline?.per_marketplace?.find(m => m.marketplace_slug === slug);
             const fresh   = eventMeta?.marketplace_freshness?.[slug] as { freshness_status?: string; age_minutes?: number } | undefined;
             const tracked = eventMeta?.tracked_events?.find(t => t.marketplace_slug === slug);
             const st      = fresh?.freshness_status ?? "unknown";
             const freshDot = st === "fresh" ? "bg-emerald-400" : st === "late" ? "bg-amber-400" : st === "dead" ? "bg-red-500" : "bg-slate-700";
             const inv24   = bsData?.listings_change_24h?.absolute ?? null;
+            const mpSeller = seller?.by_marketplace?.find(b => normMp(b.name) === slug || normMp(b.name) === normMp(info.label)) ?? null;
             const isBest  = mpData != null && marketplaces.length > 0 && mpData.low_ask === marketplaces[0].low_ask;
             const mpAction = signalToAction(hero?.signal);
             const mpColors = actionColors(mpAction);
 
-            const estSale  = null; // not yet populated
-            const relist   = null; // not yet populated
-            const showEstRow = estSale != null || relist != null;
-
             return (
-              <div key={slug} className="rounded-xl border border-white/8 bg-[#0f1420] overflow-hidden flex flex-col"
-                style={{ borderTop: `2px solid ${info.color}40` }}>
-                <div className="p-3 flex flex-col gap-2.5 flex-1">
-                  {/* Card header: name + freshness dot */}
+              <div key={slug} className="rounded-xl border border-white/[0.07] bg-[#0d1018] overflow-hidden flex flex-col"
+                style={{ borderTop: `2px solid ${info.color}55` }}>
+                <div className="p-4 flex flex-col gap-3 flex-1">
+
+                  {/* Header: branded logo + freshness dot */}
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold" style={{ color: info.color }}>{info.label}</span>
-                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${freshDot}`} />
-                  </div>
-
-                  {/* Low / Median — larger, primary data */}
-                  <div className="grid grid-cols-2 gap-1.5">
-                    <div>
-                      <p className="text-[9px] text-slate-500 uppercase tracking-wide mb-0.5">Low</p>
-                      <p className={cn("text-[17px] font-black tabular-nums leading-none",
-                        isBest ? "text-emerald-300" : "text-white")}>
-                        {fmt$$(mpData?.low_ask) ?? "—"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[9px] text-slate-500 uppercase tracking-wide mb-0.5">Median</p>
-                      <p className="text-[15px] font-bold text-slate-200 tabular-nums leading-none">{fmt$$(mpData?.median_ask) ?? "—"}</p>
+                    <MpLogo slug={slug} info={info} size={22} />
+                    <div className="flex items-center gap-1.5">
+                      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${freshDot}`} />
+                      {fresh?.age_minutes != null && (
+                        <span className="text-[11px] text-slate-500 tabular-nums">
+                          {fresh.age_minutes < 60 ? `${fresh.age_minutes}m` : `${Math.round(fresh.age_minutes/60)}h`}
+                        </span>
+                      )}
                     </div>
                   </div>
 
-                  {/* Inventory / Sold */}
-                  <div className="grid grid-cols-2 gap-1.5 pt-2 border-t border-white/[0.04]">
-                    <div>
-                      <p className="text-[9px] text-slate-500 uppercase tracking-wide mb-0.5">Inventory</p>
-                      <p className="text-xs font-bold text-slate-300 tabular-nums">
-                        {mpData?.listings != null ? fmtNum(mpData.listings) : "—"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[9px] text-slate-500 uppercase tracking-wide mb-0.5">Sold (24H)</p>
-                      <p className={cn("text-xs font-bold tabular-nums",
-                        inv24 != null && inv24 < 0 ? "text-emerald-400" : "text-slate-500")}>
-                        {inv24 != null && inv24 < 0 ? Math.abs(inv24) : "—"}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Est Sale / Relist — only render when data present */}
-                  {showEstRow && (
-                    <div className="grid grid-cols-2 gap-1.5">
-                      <div>
-                        <p className="text-[9px] text-slate-500 uppercase tracking-wide mb-0.5">Est. Sale</p>
-                        <p className="text-xs text-slate-400">{estSale ?? "—"}</p>
+                  {/* 8-row data layout: Median first per spec */}
+                  <div className="space-y-0">
+                    {[
+                      {
+                        label: "Median",
+                        value: fmt$$(mpData?.median_ask) ?? "—",
+                        cls: "text-white font-bold text-[13px]",
+                        extra: null,
+                      },
+                      {
+                        label: "Inventory",
+                        value: mpData?.listings != null ? fmtNum(mpData.listings) : "—",
+                        cls: "text-blue-300/80 font-semibold",
+                        extra: inv24 != null && inv24 !== 0
+                          ? <span className={cn("text-[10px] font-bold ml-1", inv24 < 0 ? "text-emerald-400" : "text-red-400")}>{inv24 > 0 ? "+" : ""}{inv24}</span>
+                          : null,
+                      },
+                      {
+                        label: "Dup %",
+                        value: "—",
+                        cls: "text-violet-300/60",
+                        extra: null,
+                      },
+                      {
+                        label: "Low",
+                        value: fmt$$(mpData?.low_ask) ?? "—",
+                        cls: isBest ? "text-emerald-300 font-bold" : "text-emerald-300/80 font-semibold",
+                        extra: isBest ? <span className="text-[10px] text-emerald-500 font-medium ml-1">best</span> : null,
+                      },
+                      {
+                        label: "High",
+                        value: fmt$$(mpData?.high_ask) ?? "—",
+                        cls: "text-slate-400",
+                        extra: null,
+                      },
+                      {
+                        label: "Avg Sale",
+                        value: "—",
+                        cls: "text-slate-700",
+                        extra: null,
+                      },
+                      {
+                        label: "Repriced",
+                        value: mpSeller?.repriced != null ? fmtNum(mpSeller.repriced) : "—",
+                        cls: mpSeller?.repriced ? "text-amber-400 font-semibold" : "text-slate-700",
+                        extra: null,
+                      },
+                      {
+                        label: "Relist Chg",
+                        value: "—",
+                        cls: "text-slate-700",
+                        extra: null,
+                      },
+                    ].map(({ label, value, cls, extra }, i) => (
+                      <div key={label} className={cn("flex items-center justify-between py-1.5",
+                        i < 7 ? "border-b border-white/[0.04]" : "")}>
+                        <span className="text-[11px] text-slate-500">{label}</span>
+                        <span className={cn("text-[12px] tabular-nums flex items-center", cls)}>
+                          {value}{extra}
+                        </span>
                       </div>
-                      <div>
-                        <p className="text-[9px] text-slate-500 uppercase tracking-wide mb-0.5">Relist</p>
-                        <p className="text-xs text-slate-400">{relist ?? "—"}</p>
-                      </div>
-                    </div>
-                  )}
+                    ))}
+                  </div>
 
-                  {/* BUY chip + View link */}
-                  <div className="flex items-center gap-1.5 mt-auto pt-1.5 border-t border-white/[0.04]">
-                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded border flex-shrink-0"
+                  {/* Footer: action + view link */}
+                  <div className="flex items-center gap-2 mt-auto pt-2.5 border-t border-white/[0.04]">
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded border flex-shrink-0"
                       style={{ color: mpColors.text, borderColor: mpColors.border + "60", background: mpColors.bg + "30" }}>
                       {mpAction}
                     </span>
                     {tracked?.external_url && (
                       <a href={tracked.external_url} target="_blank" rel="noopener noreferrer"
-                        className="ml-auto text-[9px] font-semibold text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-0.5">
-                        View <ArrowUpRight size={8} />
+                        className="ml-auto text-[11px] font-semibold text-slate-500 hover:text-slate-200 transition-colors flex items-center gap-0.5">
+                        View <ArrowUpRight size={10} />
                       </a>
                     )}
                   </div>
@@ -1234,7 +1536,10 @@ export default function EventDetailPage() {
           ════════════════════════════════════════ */}
       {eventMeta?.venue_slug && (
         <section>
-          <p className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-3">Venue Intelligence</p>
+          <div className="flex items-center gap-3 mb-4">
+            <h2 className="text-[12px] font-bold text-slate-500 uppercase tracking-[0.18em] flex-shrink-0">Venue Intelligence</h2>
+            <div className="flex-1 h-px bg-white/[0.06]" />
+          </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
             {/* LEFT — Interactive venue map + section details */}
             <div>
@@ -1242,10 +1547,10 @@ export default function EventDetailPage() {
             </div>
 
             {/* RIGHT — Top 5 Moving Sections by activity */}
-            <div className="rounded-xl border border-white/8 bg-[#0f1420] overflow-hidden">
+            <div className="rounded-xl border border-white/[0.07] bg-[#0f1420] overflow-hidden">
               <div className="px-4 py-3 border-b border-white/6 flex items-center justify-between">
                 <p className="text-xs font-semibold text-slate-300">Top Sections by Activity</p>
-                <p className="text-[10px] text-slate-600">sorted by activity score</p>
+                <p className="text-[11px] text-slate-500">sorted by activity score</p>
               </div>
               {sections?.sections && sections.sections.length > 0 ? (
                 <div>
@@ -1256,10 +1561,10 @@ export default function EventDetailPage() {
                       const inv24 = null; // per-section 24h not in SectionRow
                       return (
                         <div key={i} className="flex items-center gap-3 px-4 py-3 border-b border-white/5 last:border-0 hover:bg-white/2 transition-colors">
-                          <span className="text-[10px] font-bold text-slate-600 w-4 tabular-nums">{i + 1}</span>
+                          <span className="text-[11px] font-bold text-slate-500 w-4 tabular-nums">{i + 1}</span>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-bold text-slate-200 truncate">{s.display_name}</p>
-                            <p className="text-[10px] text-slate-600">
+                            <p className="text-[11px] text-slate-500">
                               {s.listings != null ? `${fmtNum(s.listings)} listings` : ""}
                               {s.listings != null && s.low_ask != null ? " · " : ""}
                               {s.low_ask != null ? `from ${fmt$$(s.low_ask)}` : ""}
@@ -1267,20 +1572,20 @@ export default function EventDetailPage() {
                           </div>
                           <div className="text-right flex-shrink-0">
                             <p className="text-xs font-bold text-slate-200 tabular-nums">{fmt$$(s.median_ask) ?? "—"}</p>
-                            <p className="text-[10px] text-slate-600">median</p>
+                            <p className="text-[11px] text-slate-500">median</p>
                           </div>
                           {s.activity_score != null && (
                             <div className="w-1 h-8 rounded-full flex-shrink-0"
                               style={{ background: `rgba(59,130,246,${Math.min(s.activity_score, 1)})` }} />
                           )}
-                          <span className="text-[10px] text-slate-600 w-12 text-right tabular-nums flex-shrink-0">
+                          <span className="text-[11px] text-slate-500 w-12 text-right tabular-nums flex-shrink-0">
                             {inv24 ?? "—"}
                           </span>
                         </div>
                       );
                     })}
                   <div className="px-4 py-2 border-t border-white/5">
-                    <p className="text-[10px] text-slate-700">Activity = listing velocity + price movement. Relist data pending.</p>
+                    <p className="text-[11px] text-slate-600">Activity = listing velocity + price movement. Relist data pending.</p>
                   </div>
                 </div>
               ) : (
@@ -1296,33 +1601,50 @@ export default function EventDetailPage() {
           Max 5 concise bullets.
           ════════════════════════════════════════ */}
       <section>
-        <p className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-3">Market Summary</p>
-        <div className="rounded-xl border border-white/8 bg-[#0f1420] p-4">
-          <ul className="space-y-2">
-            {bullets.slice(0, 5).map((b, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm text-slate-300 leading-relaxed">
-                <span className="mt-2 w-1.5 h-1.5 rounded-full bg-slate-500 flex-shrink-0" />
-                {b}
-              </li>
-            ))}
-            {bullets.length === 0 && (
-              <li className="text-sm text-slate-600">Insufficient data for market summary. Check back as data accumulates.</li>
-            )}
-          </ul>
+        <div className="flex items-center gap-3 mb-4">
+          <h2 className="text-[12px] font-bold text-slate-500 uppercase tracking-[0.18em] flex-shrink-0">Market Summary</h2>
+          <div className="flex-1 h-px bg-white/[0.06]" />
           {hero?.history_context?.hours_available != null && (
-            <p className="mt-3 pt-3 border-t border-white/6 text-[10px] text-slate-600 flex items-center gap-1.5">
+            <span className="text-[11px] text-slate-500 flex items-center gap-1 flex-shrink-0">
               <Clock size={9} />
               {hero.history_context.hours_available > 24
-                ? `${Math.round(hero.history_context.hours_available / 24)}d of price history`
-                : "Live data only — limited trend signal"}
-              {sincePct != null && (
-                <span className="ml-2 flex items-center gap-1">
-                  <DeltaChip pct={sincePct} />
-                  <span className="text-slate-600">since tracking</span>
-                </span>
-              )}
-            </p>
+                ? `${Math.round(hero.history_context.hours_available / 24)}d history`
+                : "Live data"}
+            </span>
           )}
+        </div>
+        <div className="rounded-xl border border-white/[0.07] bg-[#0b0d16] overflow-hidden">
+          {/* Header bar — signal + since-tracking delta */}
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06]"
+            style={{ background: aColors.bg + "18" }}>
+            <div className="flex items-center gap-2.5">
+              <span className="text-[12px] font-black uppercase tracking-[0.1em]" style={{ color: aColors.text }}>{action}</span>
+              <span className="text-[11px] text-slate-500">{signalDescription(hero?.signal ?? "hold")}</span>
+            </div>
+            {sincePct != null && (
+              <div className="flex items-center gap-1.5">
+                <DeltaChip pct={sincePct} />
+                <span className="text-[11px] text-slate-600">since tracking</span>
+              </div>
+            )}
+          </div>
+          {/* Intelligence bullets */}
+          <div className="px-5 py-4">
+            {bullets.length > 0 ? (
+              <ul className="space-y-3">
+                {bullets.slice(0, 5).map((b, i) => (
+                  <li key={i} className="flex items-start gap-3 leading-relaxed">
+                    <span className="mt-[7px] w-1 h-1 rounded-full bg-slate-600 flex-shrink-0" />
+                    <span className="text-[13px] text-slate-300">{b}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-[13px] text-slate-600 italic">
+                Insufficient data for market analysis. Signal accuracy improves as price history accumulates.
+              </p>
+            )}
+          </div>
         </div>
       </section>
 
@@ -1331,14 +1653,17 @@ export default function EventDetailPage() {
           Tabbed: Price | Inventory | Sections | Marketplaces
           ════════════════════════════════════════ */}
       <section>
-        <p className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-3">Historical Analysis</p>
+        <div className="flex items-center gap-3 mb-4">
+          <h2 className="text-[12px] font-bold text-slate-500 uppercase tracking-[0.18em] flex-shrink-0">Historical Analysis</h2>
+          <div className="flex-1 h-px bg-white/[0.06]" />
+        </div>
 
-        {/* Tab bar */}
-        <div className="flex border-b border-white/8 mb-4 gap-0 overflow-x-auto">
+        {/* Tab bar — TradingView style */}
+        <div className="flex border-b border-white/[0.07] mb-4 gap-0 overflow-x-auto">
           {(["Price", "Inventory", "Sections", "Marketplaces"] as const).map(tab => (
             <button key={tab} onClick={() => setActiveHistTab(tab)}
               className={cn(
-                "px-4 py-2.5 text-sm font-semibold transition-colors border-b-2 -mb-[1px] whitespace-nowrap",
+                "px-5 py-2.5 text-[13px] font-semibold transition-colors border-b-2 -mb-[1px] whitespace-nowrap",
                 activeHistTab === tab
                   ? "border-blue-500 text-blue-300"
                   : "border-transparent text-slate-500 hover:text-slate-300"
@@ -1352,7 +1677,7 @@ export default function EventDetailPage() {
         {activeHistTab === "Price" && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="flex rounded-lg border border-white/7 overflow-hidden text-xs">
+              <div className="flex rounded-lg border border-white/[0.07] overflow-hidden text-xs">
                 {WINDOWS.map(w => (
                   <button key={w.id} onClick={() => setHistWindow(w.id)} disabled={loadingHistory}
                     className={cn("px-2.5 py-1 transition-colors",
@@ -1371,34 +1696,36 @@ export default function EventDetailPage() {
                 </span>
               )}
             </div>
-            <div className="rounded-xl border border-white/7 bg-[#161b27]">
-              <div className="p-4">
-                {history?.series?.length
-                  ? <PriceHistoryChart series={history.series} window={histWindow} height={220} />
-                  : <div className="h-[220px] flex items-center justify-center text-xs text-slate-600">Not enough data yet</div>}
-              </div>
+            <div className="rounded-xl border border-white/[0.07] bg-[#0d1018] overflow-hidden">
+              {/* Chart toolbar */}
               {hero && (
-                <div className="px-4 pb-3 grid grid-cols-4 gap-2 border-t border-white/5">
+                <div className="flex items-center gap-6 px-5 py-3 border-b border-white/[0.05] bg-white/[0.01]">
                   {[
-                    { label: "Low",    val: hero.price?.low_ask    },
-                    { label: "p25",    val: hero.price?.p25_ask    },
-                    { label: "Median", val: hero.price?.median_ask },
-                    { label: "p75",    val: hero.price?.p75_ask    },
-                  ].map(({ label, val }) => (
-                    <div key={label} className="text-center pt-2">
-                      <div className="text-[9px] text-slate-600 uppercase tracking-wide mb-0.5">{label}</div>
-                      <div className="text-xs font-semibold text-slate-300 tabular-nums">{fmt$$(val)}</div>
+                    { label: "Low",    val: hero.price?.low_ask,    cls: "text-emerald-400" },
+                    { label: "Median", val: hero.price?.median_ask, cls: "text-white/70" },
+                    { label: "p75",    val: hero.price?.p75_ask,    cls: "text-white/45" },
+                    { label: "High",   val: hero.price?.high_ask,   cls: "text-white/35" },
+                  ].map(({ label, val, cls }) => (
+                    <div key={label} className="flex items-baseline gap-1.5">
+                      <span className="text-[11px] text-slate-500 uppercase tracking-[0.12em]">{label}</span>
+                      <span className={cn("text-[14px] font-bold tabular-nums", cls)}>{fmt$$(val)}</span>
                     </div>
                   ))}
                 </div>
               )}
+              {/* Chart */}
+              <div className="p-4">
+                {history?.series?.length
+                  ? <PriceHistoryChart series={history.series} window={histWindow} height={240} />
+                  : <div className="h-[240px] flex items-center justify-center text-[13px] text-slate-600">Not enough data yet</div>}
+              </div>
             </div>
           </div>
         )}
 
         {/* ── Inventory tab ── */}
         {activeHistTab === "Inventory" && (
-          <div className="rounded-xl border border-white/7 bg-[#161b27] p-4 space-y-4">
+          <div className="rounded-xl border border-white/[0.07] bg-[#161b27] p-4 space-y-4">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {[
                 { label: "Total Now",   val: fmtNum(hero?.inventory?.total_listings) },
@@ -1407,7 +1734,7 @@ export default function EventDetailPage() {
                 { label: "Removed 24h", val: seller?.removed_listings_24h != null ? fmtNum(seller.removed_listings_24h) : null },
               ].map(({ label, val }) => (
                 <div key={label}>
-                  <p className="text-[10px] text-slate-600 uppercase tracking-wider mb-0.5">{label}</p>
+                  <p className="text-[11px] text-slate-500 uppercase tracking-[0.12em] mb-0.5">{label}</p>
                   <p className="text-sm font-bold text-slate-300 tabular-nums">{val ?? "—"}</p>
                 </div>
               ))}
@@ -1419,7 +1746,7 @@ export default function EventDetailPage() {
                   { label: "Price Drops 24h", val: fmtNum(seller.price_drops_24h), cls: "text-red-400" },
                 ].map(({ label, val, cls }) => (
                   <div key={label}>
-                    <p className="text-[10px] text-slate-600 uppercase tracking-wider mb-0.5">{label}</p>
+                    <p className="text-[11px] text-slate-500 uppercase tracking-[0.12em] mb-0.5">{label}</p>
                     <p className={cn("text-sm font-bold tabular-nums", cls)}>{val ?? "—"}</p>
                   </div>
                 ))}
@@ -1428,13 +1755,13 @@ export default function EventDetailPage() {
             {/* Largest price drops detail */}
             {(seller?.largest_price_drops?.length ?? 0) > 0 && seller && (
               <div className="pt-3 border-t border-white/5">
-                <p className="text-[10px] text-slate-600 uppercase tracking-wider font-semibold mb-2">Largest Price Drops</p>
+                <p className="text-[11px] text-slate-500 uppercase tracking-[0.12em] font-semibold mb-2">Largest Price Drops</p>
                 <div className="rounded-lg border border-white/5 overflow-hidden">
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="border-b border-white/5">
                         {["Section","Was","Now","Drop"].map(h => (
-                          <th key={h} className="text-left px-3 py-2 text-[9px] text-slate-600 uppercase tracking-wider font-medium">{h}</th>
+                          <th key={h} className="text-left px-3 py-2 text-[11px] text-slate-500 uppercase tracking-[0.12em] font-medium">{h}</th>
                         ))}
                       </tr>
                     </thead>
@@ -1460,17 +1787,17 @@ export default function EventDetailPage() {
           <div className="space-y-4">
             {sections?.sections && sections.sections.length > 0
               ? <SectionBreakdown sections={sections.sections} />
-              : <div className="rounded-xl border border-white/7 bg-[#161b27] py-8 text-center text-xs text-slate-600">No section data available</div>
+              : <div className="rounded-xl border border-white/[0.07] bg-[#161b27] py-8 text-center text-xs text-slate-600">No section data available</div>
             }
             {listings && listings.length > 0 && (
               <div>
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Lowest Available Tickets</p>
-                <div className="rounded-xl border border-white/7 bg-[#161b27] overflow-x-auto">
+                <div className="rounded-xl border border-white/[0.07] bg-[#161b27] overflow-x-auto">
                   <table className="w-full text-xs min-w-[480px]">
                     <thead>
                       <tr className="border-b border-white/5">
                         {["#","Price","Section","Row","Qty","Marketplace","Move",""].map(h => (
-                          <th key={h} className="text-left px-3 py-2 text-[9px] text-slate-500 uppercase tracking-wider font-medium first:pl-4">{h}</th>
+                          <th key={h} className="text-left px-3 py-2 text-[11px] text-slate-500 uppercase tracking-[0.12em] font-medium first:pl-4">{h}</th>
                         ))}
                       </tr>
                     </thead>
@@ -1497,7 +1824,7 @@ export default function EventDetailPage() {
                             <td className="px-3 py-2.5 text-right">
                               {l.listing_url && (
                                 <a href={l.listing_url} target="_blank" rel="noopener noreferrer"
-                                  className="text-[10px] text-blue-500 hover:text-blue-400 transition-colors">buy ↗</a>
+                                  className="text-[11px] text-blue-500 hover:text-blue-400 transition-colors">buy ↗</a>
                               )}
                             </td>
                           </tr>
@@ -1515,7 +1842,7 @@ export default function EventDetailPage() {
         {activeHistTab === "Marketplaces" && (
           <div>
             {baseline?.per_marketplace && baseline.per_marketplace.length > 0 ? (
-              <div className="rounded-xl border border-white/7 bg-[#161b27] overflow-hidden">
+              <div className="rounded-xl border border-white/[0.07] bg-[#161b27] overflow-hidden">
                 <div className="grid border-b border-white/5 px-4 py-2 text-xs text-slate-500 uppercase tracking-wider"
                   style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr" }}>
                   {["Marketplace","Low","Inv","24h Δ","7d Δ","Signal"].map(h => <div key={h}>{h}</div>)}
@@ -1552,7 +1879,7 @@ export default function EventDetailPage() {
                 })}
               </div>
             ) : (
-              <div className="rounded-xl border border-white/7 bg-[#161b27] py-8 text-center text-xs text-slate-600">
+              <div className="rounded-xl border border-white/[0.07] bg-[#161b27] py-8 text-center text-xs text-slate-600">
                 Marketplace comparison data not yet available
               </div>
             )}
@@ -1591,7 +1918,7 @@ export default function EventDetailPage() {
           <div className="mt-4 space-y-5">
             {hero?.history_context && (
               <div>
-                <h3 className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-2">Data Context</h3>
+                <h3 className="text-[12px] text-slate-500 uppercase tracking-[0.18em] font-bold mb-2">Data Context</h3>
                 <div className="rounded-xl border border-white/6 bg-[#161b27] p-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {[
                     { label: "History Available", val: hero.history_context.hours_available != null ? `${Math.round(hero.history_context.hours_available)}h` : "—" },
@@ -1599,15 +1926,15 @@ export default function EventDetailPage() {
                     { label: "Since Tracking",    val: sincePct != null ? fmtPct(sincePct) : "—" },
                   ].map(({ label, val }) => (
                     <div key={label}>
-                      <p className="text-[9px] text-slate-600 uppercase tracking-wider mb-0.5">{label}</p>
-                      <p className="text-sm font-semibold text-slate-400">{val}</p>
+                      <p className="text-[11px] text-slate-500 uppercase tracking-[0.12em] mb-0.5">{label}</p>
+                      <p className="text-[13px] font-semibold text-slate-400">{val}</p>
                     </div>
                   ))}
                 </div>
               </div>
             )}
             <div>
-              <h3 className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-2">Marketplace Status</h3>
+              <h3 className="text-[12px] text-slate-500 uppercase tracking-[0.18em] font-bold mb-2">Marketplace Status</h3>
               {eventMeta?.marketplace_freshness
                 ? <div className="rounded-xl border border-white/6 bg-[#161b27] overflow-hidden">
                     {Object.entries(eventMeta.marketplace_freshness).map(([slug, f]: [string, unknown]) => {
@@ -1637,7 +1964,7 @@ export default function EventDetailPage() {
               }
             </div>
             <div>
-              <h3 className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold mb-2">Today&apos;s Movement</h3>
+              <h3 className="text-[12px] text-slate-500 uppercase tracking-[0.18em] font-bold mb-2">Today&apos;s Movement</h3>
               <div className="rounded-xl border border-white/6 bg-[#161b27] divide-y divide-white/4">
                 {[
                   { label: "Disappeared 24h",   sub: "Sold, pulled, or expired",  val: seller?.removed_listings_24h != null ? fmtNum(seller.removed_listings_24h) : null },
@@ -1648,7 +1975,7 @@ export default function EventDetailPage() {
                   <div key={label} className="flex items-center justify-between px-4 py-2.5">
                     <div>
                       <p className="text-xs text-slate-400 font-medium">{label}</p>
-                      <p className="text-[10px] text-slate-600">{sub}</p>
+                      <p className="text-[11px] text-slate-500">{sub}</p>
                     </div>
                     <span className="text-sm font-bold text-slate-300 tabular-nums">{val ?? "—"}</span>
                   </div>
