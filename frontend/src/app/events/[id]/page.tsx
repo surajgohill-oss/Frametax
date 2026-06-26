@@ -611,6 +611,7 @@ export default function EventDetailPage() {
   const [historyAll, setHistoryAll] = useState<HistoryResponse | null>(null);
   const [snapshot, setSnapshot]   = useState<EventSnapshotResponse | null>(null);
   const [lifecycle, setLifecycle] = useState<{ summary: Record<string, unknown> } | null>(null);
+  const [mpBaselines, setMpBaselines] = useState<import("@/lib/types").MarketplaceBaselinesResponse | null>(null);
   const [alerts, setAlerts]       = useState<import("@/lib/types").AlertResponse | null>(null);
   const [marketWindow, setMarketWindow]   = useState<"tracking" | "7d" | "24h" | "12h" | "6h">("tracking");
   const [sellerWindow, setSellerWindow]   = useState<"tracking" | "7d" | "24h" | "12h" | "6h">("tracking");
@@ -660,6 +661,7 @@ export default function EventDetailPage() {
       api.events.snapshot(id).then(setSnapshot).catch(() => {}),
       api.events.alerts(id).then(setAlerts).catch(() => {}),
       api.events.lifecycle(id).then(setLifecycle).catch(() => {}),
+      api.analytics.marketplaceBaselines(id).then(setMpBaselines).catch(() => {}),
     ]).finally(() => setLoadingAll(false));
   }, [id]);
 
@@ -731,12 +733,13 @@ export default function EventDetailPage() {
     return ((last - first) / first) * 100;
   })();
 
-  // ── First-tracked snapshot (for TRACKING baseline per canonical rule) ─────────
-  const firstTrackedInv  = historyAll?.series?.[0]?.listings ?? null;
+  // ── First-tracked snapshot (per-marketplace rollup — project rule: each MP has its own baseline) ─
   const firstTrackedMed  = historyAll?.series?.[0]?.median_ask ?? null;
   const curInvNow        = baseline?.current?.raw_listings ?? hero?.inventory?.total_listings ?? null;
-  const invSinceTracking = (firstTrackedInv != null && curInvNow != null)
-    ? curInvNow - firstTrackedInv : null;
+  // Per-marketplace rolled-up inv delta (correct per project rules):
+  //   each marketplace's delta = cur - its own first snapshot; then sum across marketplaces
+  const invSinceTracking    = mpBaselines?.inv_since_tracking ?? null;
+  const firstTrackedInv     = mpBaselines?.event_baseline_total_listings ?? null;
   const invSinceTrackingPct = (firstTrackedInv != null && firstTrackedInv > 0 && invSinceTracking != null)
     ? (invSinceTracking / firstTrackedInv) * 100 : null;
   const medSinceTracking = (firstTrackedMed != null && hero?.price?.median_ask != null)
@@ -748,8 +751,12 @@ export default function EventDetailPage() {
   const added24h   = market?.inventory_movement?.new_24h ?? null;
   // Implied sale price from lifecycle (avg last-seen price of disappeared listings)
   const avgImpliedSalePrice = (lifecycle?.summary?.avg_implied_sale_price as number | null) ?? null;
+  // gross lifecycle sale events = assumed_sold + sold_after_relist (includes broker repricing churn)
   const impliedSaleCount    = (lifecycle?.summary?.implied_sale_count as number | null) ?? null;
+  // assumed_sold = no relist found (most conservative sale estimate)
   const assumedSales        = (lifecycle?.summary?.assumed_sales as number | null) ?? null;
+  // net absorbed = first_tracked - current (actual inventory change, churn-neutral)
+  const netAbsorbedListings = mpBaselines?.inv_since_tracking ?? null;
 
   // Freshness label for Section 2
   const freshLabel = (() => {
@@ -1267,7 +1274,7 @@ export default function EventDetailPage() {
               </div>
               {avgImpliedSalePrice != null && impliedSaleCount != null && (
                 <p className="text-[10px] text-slate-600">
-                  avg last-seen price · {fmtNum(impliedSaleCount)} implied sales
+                  avg last-seen price · {fmtNum(impliedSaleCount)} lifecycle events{netAbsorbedListings != null ? ` · ${Math.abs(netAbsorbedListings)} net absorbed` : ""}
                 </p>
               )}
             </div>
