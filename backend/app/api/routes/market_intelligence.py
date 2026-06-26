@@ -1601,33 +1601,9 @@ async def event_intelligence_snapshot(
         "classification": classification,
         "classification_confidence": classification_confidence,
         "per_marketplace_trends": mp_7d_trends,
-        # Task E — Lifecycle expansion (computed on demand)
-        "lifecycle": None,  # populated below
+        # Lifecycle is expensive (10s+). Fetch via /lifecycle endpoint separately.
+        "lifecycle": None,
     }
-
-    # Task E: enrich snapshot with lifecycle intelligence.
-    # Use a fresh session to avoid inheriting any aborted transaction state from
-    # the many snapshot queries that ran above.
-    try:
-        from app.database import AsyncSessionLocal as _SessionLocal
-        async with _SessionLocal() as fresh_db:
-            lifecycle = await compute_lifecycle(event_id, fresh_db)
-        lc_summary = lifecycle.get("summary", {})
-        resp["lifecycle"] = {
-            "assumed_sales":            lc_summary.get("assumed_sales"),
-            "relisted_count":           lc_summary.get("relisted_count"),
-            "repriced_count":           lc_summary.get("repriced_count"),
-            "relist_rate":              lc_summary.get("relist_rate"),
-            "repricing_rate":           lc_summary.get("repricing_rate"),
-            "seller_aggression_score":  lc_summary.get("seller_aggression_score"),
-            "seller_capitulation_score": lc_summary.get("seller_capitulation_score"),
-            "churn_rate":               lc_summary.get("churn_rate"),
-            "relist_delay_p50_hours":   lc_summary.get("relist_delay_p50_hours"),
-        }
-    except Exception as _lc_err:
-        import logging as _lg
-        _lg.getLogger(__name__).warning("lifecycle enrichment failed for event %s: %s", event_id, _lc_err)
-        resp["lifecycle"] = None
 
     return resp
 

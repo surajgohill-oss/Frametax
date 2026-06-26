@@ -29,11 +29,16 @@ Entry points:
 """
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
+
+# Simple in-memory cache: {(event_id, hours_window): (result_dict, cached_at)}
+_LIFECYCLE_CACHE: dict[tuple, tuple] = {}
+_LIFECYCLE_CACHE_TTL_SECONDS = 300  # 5 minutes
 
 
 def _f(v) -> Optional[float]:
@@ -101,11 +106,20 @@ async def compute_lifecycle(
     event_id: int,
     db: AsyncSession,
     hours_window: int = 168,
+    force_refresh: bool = False,
 ) -> dict:
     """
     Full lifecycle analysis for one event.
     Returns summary + by_marketplace + by_section + top_repriced + relist_matches.
+    Cached for 5 minutes per (event_id, hours_window) to avoid redundant 10s queries.
     """
+    cache_key = (event_id, hours_window)
+    if not force_refresh and cache_key in _LIFECYCLE_CACHE:
+        cached_result, cached_at = _LIFECYCLE_CACHE[cache_key]
+        age = (datetime.now(timezone.utc) - cached_at).total_seconds()
+        if age < _LIFECYCLE_CACHE_TTL_SECONDS:
+            return cached_result
+
     now_utc   = datetime.now(timezone.utc)
     now_naive = now_utc.replace(tzinfo=None)
     since_24h = now_naive - timedelta(hours=24)
@@ -428,7 +442,7 @@ async def compute_lifecycle(
     relist_delay_p50  = _round(sorted(delays)[len(delays) // 2]) if delays else None
     relist_delay_p90  = _round(sorted(delays)[int(len(delays) * 0.9)]) if len(delays) >= 3 else None
 
-    return {
+    result = {
         "event_id":     event_id,
         "computed_at":  now_utc.isoformat(),
         "hours_window": hours_window,
@@ -523,3 +537,6 @@ async def compute_lifecycle(
             "LOW":    sum(1 for m in relist_matches if m["confidence"] == "LOW"),
         },
     }
+
+    _LIFECYCLE_CACHE[cache_key] = (result, datetime.now(timezone.utc))
+    return result
