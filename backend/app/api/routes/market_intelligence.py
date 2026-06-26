@@ -1415,11 +1415,54 @@ async def event_intelligence_snapshot(
         })).fetchone()
         return float(row[0]) if row and row[0] else None
 
+    async def _high_at_window(hours_back: int) -> Optional[float]:
+        """p90 ask at a historical window (same shape as _floor_at_window)."""
+        center = now_sql - timedelta(hours=hours_back)
+        row = (await db.execute(text("""
+            SELECT PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY price)
+            FROM listing_snapshots
+            WHERE event_id = :eid
+              AND snapshot_at >= :w_start
+              AND snapshot_at < :w_end
+              AND price > 0
+        """), {
+            "eid": event_id,
+            "w_start": center - timedelta(hours=1),
+            "w_end":   center + timedelta(hours=1),
+        })).fetchone()
+        return float(row[0]) if row and row[0] else None
+
+    async def _high_at_start() -> Optional[float]:
+        """p90 at tracking start (first 2h of snapshots)."""
+        if not intel.get("history_hours"):
+            return None
+        agg_row = (await db.execute(text("""
+            SELECT high_ask FROM event_price_history_agg
+            WHERE railway_event_id = :eid
+            ORDER BY bucket_ts ASC LIMIT 1
+        """), {"eid": event_id})).fetchone()
+        if agg_row and agg_row[0]:
+            return float(agg_row[0])
+        # Live fallback: earliest 2h window
+        start_row = (await db.execute(text("""
+            SELECT PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY price)
+            FROM listing_snapshots
+            WHERE event_id = :eid
+              AND snapshot_at < (SELECT MIN(snapshot_at) + INTERVAL '2 hours' FROM listing_snapshots WHERE event_id = :eid)
+              AND price > 0
+        """), {"eid": event_id})).fetchone()
+        return float(start_row[0]) if start_row and start_row[0] else None
+
     floor_now = intel.get("price", {}).get("low_ask")
+    high_now  = intel.get("price", {}).get("high_ask")
 
     # Try 24h window; fall back to agg table if no live snapshots
     floor_24h_ago = await _floor_at_window(24)
     floor_7d_ago  = await _floor_at_window(168) if (intel.get("history_hours") or 0) >= 168 else None
+
+    high_24h_ago  = await _high_at_window(24)
+    high_7d_ago   = await _high_at_window(168) if (intel.get("history_hours") or 0) >= 168 else None
+    high_start    = await _high_at_start()
 
     # Agg fallback for 24h if live snapshots don't go back that far
     if floor_24h_ago is None:
@@ -1432,8 +1475,23 @@ async def event_intelligence_snapshot(
         if agg_row and agg_row[0]:
             floor_24h_ago = float(agg_row[0])
 
+    if high_24h_ago is None:
+        agg_h = (await db.execute(text("""
+            SELECT high_ask FROM event_price_history_agg
+            WHERE railway_event_id = :eid
+              AND bucket_ts >= :since
+            ORDER BY bucket_ts ASC LIMIT 1
+        """), {"eid": event_id, "since": now_sql - timedelta(hours=26)})).fetchone()
+        if agg_h and agg_h[0]:
+            high_24h_ago = float(agg_h[0])
+
     floor_24h_change = round(floor_now - floor_24h_ago, 2) if (floor_now and floor_24h_ago) else None
     floor_7d_change  = round(floor_now - floor_7d_ago, 2)  if (floor_now and floor_7d_ago)  else None
+
+    high_24h_change = round(high_now - high_24h_ago, 2) if (high_now and high_24h_ago) else None
+    high_7d_change  = round(high_now - high_7d_ago,  2) if (high_now and high_7d_ago)  else None
+    high_start_change = round(high_now - high_start, 2)  if (high_now and high_start)  else None
+    high_start_change_pct = round((high_now - high_start) / high_start * 100, 1) if (high_now and high_start and high_start != 0) else None
 
     # ── Median deltas (from stored intelligence) ──────────────────────────────
     changes  = intel.get("changes", {})
@@ -1581,6 +1639,25 @@ async def event_intelligence_snapshot(
                 "window_hours": round(min(7 * 24, hist_hours), 0),
             }
 
+    # ── Duplicate % from canonical inventory ─────────────────────────────────
+    dup_row = (await db.execute(text("""
+        SELECT total_raw_listings, total_canonical_blocks,
+               global_duplicate_ratio, mirrored_ratio, mirrored_block_count
+        FROM canonical_inventory_snapshots
+        WHERE event_id = :eid
+        ORDER BY snapshot_at DESC LIMIT 1
+    """), {"eid": event_id})).fetchone()
+
+    dup_pct = None
+    dup_mirror_pct = None
+    dup_raw = None
+    dup_canonical = None
+    if dup_row and dup_row[0]:
+        dup_raw = int(dup_row[0])
+        dup_canonical = int(dup_row[1])
+        dup_pct = round(float(dup_row[2]) * 100, 1) if dup_row[2] else None
+        dup_mirror_pct = round(float(dup_row[3]) * 100, 1) if dup_row[3] else None
+
     resp = {
         "event_id": event_id,
         "computed_at": intel.get("computed_at"),
@@ -1594,6 +1671,12 @@ async def event_intelligence_snapshot(
             "median_24h_change_pct": changes.get("h24", {}).get("price_delta_pct"),
             "median_7d_change":   median_7d_change,
             "median_7d_change_pct": changes.get("d7", {}).get("price_delta_pct"),
+            "high_now":           high_now,
+            "high_24h_change":    high_24h_change,
+            "high_7d_change":     high_7d_change,
+            "high_start":         high_start,
+            "high_start_change":  high_start_change,
+            "high_start_change_pct": high_start_change_pct,
         },
         "inventory": {
             "inventory_now":         inventory_now,
@@ -1615,6 +1698,14 @@ async def event_intelligence_snapshot(
         "classification": classification,
         "classification_confidence": classification_confidence,
         "per_marketplace_trends": mp_7d_trends,
+        # Duplicate inventory from canonical dedup engine
+        "duplicates": {
+            "dup_pct": dup_pct,                    # % of raw listings that are intra-marketplace duplicates
+            "dup_mirror_pct": dup_mirror_pct,      # % of canonical blocks mirrored across ≥2 marketplaces
+            "raw_listings": dup_raw,
+            "canonical_blocks": dup_canonical,
+            "note": "dup_pct=intra-MP dedup (includes TickPick GA churn); dup_mirror_pct=cross-MP mirrors only",
+        },
         # Lifecycle is expensive (10s+). Fetch via /lifecycle endpoint separately.
         "lifecycle": None,
     }
