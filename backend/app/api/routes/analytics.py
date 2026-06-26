@@ -852,3 +852,85 @@ async def inventory_movement(event_id: int, db: AsyncSession = Depends(get_db)):
         "likely_relisted": 0,
         "note": "simplified 1-window delta; use /analytics/events/{id}/attribution for full analysis",
     }
+
+
+# ── velocity-windows ──────────────────────────────────────────────────────────
+@router.get("/events/{event_id}/velocity-windows")
+async def velocity_windows(event_id: int, db: AsyncSession = Depends(get_db)):
+    """
+    Time-windowed absorption rates for Event 46 intelligence.
+
+    Returns implied-sale counts and avg prices for each velocity window:
+      since_tracking, 7d, 48h, 24h, 6h, 1h
+
+    Uses listings.last_seen_at (when the listing was last seen active) as the
+    implied-sale timestamp. Listings with no relist match and last_seen_at in
+    the window are counted as implied sales for that window.
+    """
+    event_row = (await db.execute(
+        text("SELECT event_date FROM events WHERE id = :eid"),
+        {"eid": event_id},
+    )).fetchone()
+    if not event_row:
+        return {"error": "event not found"}
+
+    event_date = event_row[0]
+    if hasattr(event_date, "replace"):
+        event_dt = event_date.replace(tzinfo=None) if hasattr(event_date, "tzinfo") else event_date
+    else:
+        event_dt = datetime.fromisoformat(str(event_date))
+
+    now = datetime.utcnow()
+
+    windows = [
+        ("since_tracking", None, now),
+        ("7d",             now - timedelta(days=7), now),
+        ("48h",            event_dt - timedelta(hours=48), event_dt),
+        ("24h",            event_dt - timedelta(hours=24), event_dt),
+        ("6h",             event_dt - timedelta(hours=6),  event_dt),
+        ("1h",             event_dt - timedelta(hours=1),  event_dt),
+    ]
+
+    results = {}
+    for label, w_start, w_end in windows:
+        params: dict = {"eid": event_id, "w_end": w_end}
+        time_filter = "AND l.last_seen_at <= :w_end"
+        if w_start is not None:
+            params["w_start"] = w_start
+            time_filter += " AND l.last_seen_at >= :w_start"
+
+        row = (await db.execute(text(f"""
+            SELECT
+                COUNT(*)                                   AS implied_count,
+                COALESCE(SUM(l.quantity), 0)               AS implied_tickets,
+                AVG(l.price) FILTER (WHERE l.price > 0)   AS avg_last_price
+            FROM listings l
+            WHERE l.event_id = :eid
+              AND l.is_active = false
+              AND l.last_seen_at IS NOT NULL
+              {time_filter}
+        """), params)).fetchone()
+
+        appeared_row = (await db.execute(text(f"""
+            SELECT COUNT(*) FROM listings l
+            WHERE l.event_id = :eid
+              AND l.first_seen_at IS NOT NULL
+              {time_filter.replace('l.last_seen_at', 'l.first_seen_at')}
+        """), params)).fetchone()
+
+        results[label] = {
+            "window_start": w_start.isoformat() if w_start else None,
+            "window_end":   w_end.isoformat(),
+            "implied_sale_listings":  int(row[0] or 0),
+            "implied_sale_tickets":   int(row[1] or 0),
+            "avg_implied_sale_price": round(float(row[2]), 2) if row[2] else None,
+            "appeared_listings":      int(appeared_row[0] or 0),
+        }
+
+    return {
+        "event_id":      event_id,
+        "event_date":    event_dt.isoformat(),
+        "computed_at":   now.isoformat(),
+        "note":          "implied_sale = inactive listing last_seen_at in window; includes churn",
+        "windows":       results,
+    }
