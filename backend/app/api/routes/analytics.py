@@ -453,79 +453,100 @@ async def event_baseline(event_id: int, db: AsyncSession = Depends(get_db)):
 
 # ── marketplace-baselines ─────────────────────────────────────────────────────
 # Returns per-marketplace first-tracked snapshot and current snapshot.
-# Used for correct inv-since-tracking delta (rule: each marketplace has its own baseline).
+# Uses RAW listing_snapshots (not canonical block attribution) so units are consistent:
+#   first_raw_listings = distinct raw listings at marketplace's first poll
+#   current_raw_listings = currently active raw listings per marketplace
+#   first_tickets = sum(quantity) at first poll
+#   current_tickets = sum(quantity) currently active
 @router.get("/events/{event_id}/marketplace-baselines")
 async def marketplace_baselines(event_id: int, db: AsyncSession = Depends(get_db)):
     """
-    For each marketplace, returns:
-    - first snapshot where that marketplace appeared (first_tracked_at, first_listings)
-    - current listings count (from latest canonical snapshot)
-    - delta since first tracking
-
-    This is the correct baseline for inv-since-tracking per project rules:
-    each marketplace has its own first-tracked date, not the event-level oldest snapshot.
+    Per-marketplace first-tracked and current raw listing/ticket counts.
+    Uses listing_snapshots (raw) + listings (active) for unit-consistent deltas.
+    Per project rules: each marketplace has its own first-tracked baseline.
     """
-    # Get ALL canonical snapshots (ordered oldest-first) — we need first appearance per MP
-    all_snaps_sql = text("""
-        SELECT snapshot_at, by_marketplace, total_raw_listings, low_ask
-        FROM canonical_inventory_snapshots
-        WHERE event_id = :event_id
-        ORDER BY snapshot_at ASC
+    first_sql = text("""
+        WITH mp_first_poll AS (
+            SELECT marketplace_id, MIN(snapshot_at) AS first_poll_at
+            FROM listing_snapshots
+            WHERE event_id = :event_id
+            GROUP BY marketplace_id
+        ),
+        first_snap_window AS (
+            SELECT ls.marketplace_id,
+                   COUNT(DISTINCT ls.listing_id) AS first_raw_listings,
+                   COALESCE(SUM(ls.quantity), 0)::int AS first_tickets,
+                   fp.first_poll_at
+            FROM listing_snapshots ls
+            JOIN mp_first_poll fp ON fp.marketplace_id = ls.marketplace_id
+            WHERE ls.event_id = :event_id
+              AND ls.snapshot_at BETWEEN fp.first_poll_at
+                                     AND fp.first_poll_at + INTERVAL '30 minutes'
+            GROUP BY ls.marketplace_id, fp.first_poll_at
+        ),
+        current_active AS (
+            SELECT l.marketplace_id,
+                   COUNT(*) AS current_raw_listings,
+                   COALESCE(SUM(l.quantity), 0)::int AS current_tickets
+            FROM listings l
+            WHERE l.event_id = :event_id AND l.is_active = true
+            GROUP BY l.marketplace_id
+        )
+        SELECT
+            m.slug,
+            fsw.first_poll_at,
+            fsw.first_raw_listings,
+            fsw.first_tickets,
+            COALESCE(ca.current_raw_listings, 0) AS current_raw_listings,
+            COALESCE(ca.current_tickets, 0) AS current_tickets
+        FROM first_snap_window fsw
+        JOIN marketplaces m ON m.id = fsw.marketplace_id
+        LEFT JOIN current_active ca ON ca.marketplace_id = fsw.marketplace_id
+        ORDER BY m.slug
     """)
-    rows = (await db.execute(all_snaps_sql, {"event_id": event_id})).fetchall()
+    rows = (await db.execute(first_sql, {"event_id": event_id})).fetchall()
 
     if not rows:
-        return {"event_id": event_id, "per_marketplace": [], "event_first_tracked_at": None,
-                "inv_since_tracking": None}
+        return {"event_id": event_id, "per_marketplace": [],
+                "event_first_tracked_at": None, "inv_since_tracking": None}
 
-    # Walk oldest-first to find first appearance of each marketplace
-    mp_first: dict[str, dict] = {}
-    for row in rows:
-        snap_at, by_mp, total_raw, low_ask = row[0], row[1] or {}, row[2], row[3]
-        for slug, count in by_mp.items():
-            if slug not in mp_first and count and count > 0:
-                mp_first[slug] = {
-                    "first_tracked_at": snap_at.isoformat(),
-                    "first_listings": count,
-                }
-
-    # Current = latest snapshot
-    latest = rows[-1]
-    latest_at, latest_by_mp, latest_total, latest_low = latest[0], latest[1] or {}, latest[2], latest[3]
-
-    # Build per-marketplace result
     per_marketplace = []
-    for slug in sorted(set(mp_first.keys()) | set(latest_by_mp.keys())):
-        first = mp_first.get(slug)
-        cur_count = latest_by_mp.get(slug) or 0
-        first_count = first["first_listings"] if first else None
-        delta = (cur_count - first_count) if first_count is not None else None
-        pct = round(delta / first_count * 100, 1) if (first_count and delta is not None) else None
+    for row in rows:
+        slug, first_at, first_l, first_t, cur_l, cur_t = (
+            row[0], row[1], row[2], row[3], row[4], row[5]
+        )
+        delta_l = int(cur_l) - int(first_l)
+        delta_t = int(cur_t) - int(first_t)
+        pct_l = round(delta_l / first_l * 100, 1) if first_l else None
         per_marketplace.append({
             "marketplace_slug": slug,
-            "first_tracked_at": first["first_tracked_at"] if first else None,
-            "first_listings": first_count,
-            "current_listings": cur_count,
-            "delta": delta,
-            "delta_pct": pct,
+            "first_tracked_at": first_at.isoformat() if first_at else None,
+            "first_raw_listings": int(first_l),
+            "first_tickets": int(first_t),
+            "current_raw_listings": int(cur_l),
+            "current_tickets": int(cur_t),
+            "delta_listings": delta_l,
+            "delta_tickets": delta_t,
+            "delta_listings_pct": pct_l,
         })
 
-    # Rolled-up event baseline: sum first_listings per marketplace (each marketplace's own baseline)
-    total_first = sum(m["first_listings"] for m in per_marketplace if m["first_listings"] is not None)
-    total_current = sum(m["current_listings"] for m in per_marketplace)
-    rolled_delta = total_current - total_first
-
-    # Event-level first-tracked = earliest marketplace first-tracked date
+    total_first_l  = sum(m["first_raw_listings"] for m in per_marketplace)
+    total_first_t  = sum(m["first_tickets"] for m in per_marketplace)
+    total_cur_l    = sum(m["current_raw_listings"] for m in per_marketplace)
+    total_cur_t    = sum(m["current_tickets"] for m in per_marketplace)
     all_first_dates = [m["first_tracked_at"] for m in per_marketplace if m["first_tracked_at"]]
-    event_first_tracked = min(all_first_dates) if all_first_dates else None
 
     return {
         "event_id": event_id,
+        "unit": "raw_listings",
         "per_marketplace": per_marketplace,
-        "event_first_tracked_at": event_first_tracked,
-        "event_baseline_total_listings": total_first,
-        "current_total_listings": total_current,
-        "inv_since_tracking": rolled_delta,
+        "event_first_tracked_at": min(all_first_dates) if all_first_dates else None,
+        "event_baseline_total_listings": total_first_l,
+        "event_baseline_total_tickets":  total_first_t,
+        "current_total_listings": total_cur_l,
+        "current_total_tickets":  total_cur_t,
+        "inv_since_tracking":         total_cur_l - total_first_l,
+        "tickets_since_tracking":     total_cur_t - total_first_t,
     }
 
 
