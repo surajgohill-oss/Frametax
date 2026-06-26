@@ -30,7 +30,7 @@ from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db
+from app.database import get_db, AsyncSessionLocal
 from app.models import Event
 from app.services.intelligence_engine import compute_event, get_latest_intelligence
 from app.services.listing_lifecycle import compute_lifecycle
@@ -206,9 +206,21 @@ async def all_events_intelligence(
         for row in ft_rows:
             first_tracked_medians[row[0]] = float(row[1]) if row[1] else None
 
+    # Fetch all event intelligence in parallel — sequential was O(n * compute_time).
+    # Each coroutine gets its own session; AsyncSession isn't safe for concurrent sharing.
+    async def _fetch_one(event_id: int):
+        async with AsyncSessionLocal() as fresh_db:
+            return await _get_or_compute(event_id, fresh_db)
+
+    intel_results = await asyncio.gather(
+        *[_fetch_one(e.id) for e in events],
+        return_exceptions=True,
+    )
+
     summary = []
-    for event in events:
-        intel = await _get_or_compute(event.id, db)
+    for event, intel in zip(events, intel_results):
+        if isinstance(intel, Exception):
+            intel = {}
         current_median = (intel.get("price") or {}).get("median_ask")
         first_median = first_tracked_medians.get(event.id)
         first_tracked_change: dict | None = None
