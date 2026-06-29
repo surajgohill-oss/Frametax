@@ -98,6 +98,18 @@ _WINDOW_PRICE_SQL = text("""
       AND price > 0
 """)
 
+# Point-in-time inventory count: how many listings were active AT a given moment.
+# Uses listings.first_seen_at and last_seen_at — far more reliable than snapshot window
+# counts which miss listings that weren't polled in a specific 2h window.
+_POINT_IN_TIME_INV_SQL = text("""
+    SELECT COUNT(*) AS listing_count
+    FROM listings
+    WHERE event_id = :event_id
+      AND price > 0
+      AND first_seen_at <= :at_time
+      AND (is_active = TRUE OR last_seen_at >= :at_time)
+""")
+
 _MP_BREAKDOWN_SQL = text("""
     SELECT
         m.slug                                               AS mp_name,
@@ -171,10 +183,10 @@ _REPRICED_LISTINGS_SQL = text("""
           AND ls.snapshot_at >= :since_24h
     )
     SELECT
-        COUNT(*) FILTER (WHERE prev_price IS NOT NULL AND price <> prev_price) AS repriced_count,
-        COUNT(*) FILTER (WHERE prev_price IS NOT NULL AND price < prev_price)  AS price_drops,
-        COUNT(*) FILTER (WHERE prev_price IS NOT NULL AND price > prev_price)  AS price_gains,
-        COUNT(*) FILTER (WHERE prev_price IS NOT NULL AND price <> prev_price
+        COUNT(DISTINCT listing_id) FILTER (WHERE prev_price IS NOT NULL AND price <> prev_price) AS repriced_count,
+        COUNT(DISTINCT listing_id) FILTER (WHERE prev_price IS NOT NULL AND price < prev_price)  AS price_drops,
+        COUNT(DISTINCT listing_id) FILTER (WHERE prev_price IS NOT NULL AND price > prev_price)  AS price_gains,
+        COUNT(DISTINCT listing_id) FILTER (WHERE prev_price IS NOT NULL AND price <> prev_price
                          AND price - prev_price < 0)                          AS drops_detail,
         AVG(CASE WHEN prev_price IS NOT NULL AND price <> prev_price
                  THEN price - prev_price ELSE NULL END)                       AS median_delta,
@@ -462,10 +474,25 @@ async def compute_event(event_id: int, db: AsyncSession) -> dict:
     pd14d, _         = _delta(current_median, w14d[0] if w14d else None)
     pd30d, _         = _delta(current_median, w30d[0] if w30d else None)
 
-    inv24h = (current_listings - w24h[2]) if w24h and w24h[2] else None
-    inv7d  = (current_listings - w7d[2])  if w7d  and w7d[2]  else None
-    inv14d = (current_listings - w14d[2]) if w14d and w14d[2] else None
-    inv30d = (current_listings - w30d[2]) if w30d and w30d[2] else None
+    # Inventory deltas: use point-in-time count from listings table (accurate).
+    # Snapshot-window counts are unreliable — they miss listings not polled in the exact window,
+    # producing wildly inflated or deflated deltas (e.g., +2051 when real change is -640).
+    async def _inv_at(hours_back: int) -> Optional[int]:
+        t_ago = now_sql - timedelta(hours=hours_back)
+        row = (await db.execute(_POINT_IN_TIME_INV_SQL, {
+            "event_id": event_id, "at_time": t_ago,
+        })).fetchone()
+        return int(row[0]) if row and row[0] else None
+
+    inv_24h_ago  = await _inv_at(24)  if (history_hours or 0) >= 2   else None
+    inv_7d_ago   = await _inv_at(168) if (history_hours or 0) >= 168  else None
+    inv_14d_ago  = await _inv_at(336) if (history_hours or 0) >= 336  else None
+    inv_30d_ago  = await _inv_at(720) if (history_hours or 0) >= 720  else None
+
+    inv24h = (current_listings - inv_24h_ago)  if inv_24h_ago  is not None else None
+    inv7d  = (current_listings - inv_7d_ago)   if inv_7d_ago   is not None else None
+    inv14d = (current_listings - inv_14d_ago)  if inv_14d_ago  is not None else None
+    inv30d = (current_listings - inv_30d_ago)  if inv_30d_ago  is not None else None
 
     # ── Marketplace breakdown ──────────────────────────────────────────────────
     mp_rows = (await db.execute(_MP_BREAKDOWN_SQL, {"event_id": event_id})).fetchall()
