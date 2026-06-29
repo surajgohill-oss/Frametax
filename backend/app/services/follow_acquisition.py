@@ -136,12 +136,13 @@ async def _gt_performer_id_from_event(
         r.raise_for_status()
         ev = r.json()
         performers = ev.get("performers", [])
-        # Primary performer first; fall back to first entry
-        for p in performers:
-            if p.get("primary"):
-                return p.get("id")
-        if performers:
-            return performers[0].get("id")
+        # Named performer preferred — nameless entries are venue-specific ephemeral
+        # entities (e.g. "Olivia Rodrigo at Great Park Live") with primary=True that
+        # only surface 1 event. The real artist performer is the named non-primary one.
+        named = [p for p in performers if p.get("name")]
+        if named:
+            return named[0].get("id")
+        # All unnamed → cannot trust any ID; fall through to keyword search
     except Exception as exc:
         logger.debug("GT performer_id lookup failed for event %s: %s", gt_event_id, exc)
     return None
