@@ -170,9 +170,10 @@ async def _gt_find_performer_id(
             )
             return perf_id
 
-    # Strategy 2: keyword search (works for top-100 artists by sales rank)
+    # Strategy 2: keyword search — use per_page=500 to cover sports teams and
+    # less-prominent artists that fall outside the default top-25 ranking
     try:
-        r = await client.get(f"{_GT_API}/performers", params={"q": artist, "per_page": 25})
+        r = await client.get(f"{_GT_API}/performers", params={"q": artist, "per_page": 500})
         r.raise_for_status()
         performers = r.json().get("performers", [])
         artist_lower = artist.lower()
