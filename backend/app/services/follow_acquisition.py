@@ -517,6 +517,12 @@ async def run_follow_acquisition(session_factory=None) -> dict:
                 "follow_acquisition: '%s' %d GT events, %d already tracked, %d new candidates",
                 artist, len(gt_events), len(gt_events) - len(new_events), len(new_events),
             )
+            summary[key]["_debug"] = {
+                "gt_total": len(gt_events),
+                "known_gt_ids_count": len(known_gt_ids),
+                "new_candidates": len(new_events),
+                "new_event_dates": [e["datetime_local"][:10] for e in new_events[:5]],
+            }
 
             # Pre-load marketplaces once — avoids silent break inside the loop
             async with session_factory() as db:
