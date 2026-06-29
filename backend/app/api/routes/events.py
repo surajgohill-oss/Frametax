@@ -215,6 +215,7 @@ async def _enrich_event(db, event: Event, trace: dict | None = None) -> dict:
         "venue_name":   event.venue.name  if event.venue else None,
         "venue_slug":   event.venue.slug  if event.venue else None,
         "event_date":   event.event_date.isoformat(),
+        "status":       event.status,
         "is_active":    any(te.is_active for te in tracked),
         "stubhub_url":  stubhub_te.external_url  if stubhub_te  else None,
         "seatgeek_url": seatgeek_te.external_url if seatgeek_te else None,
@@ -398,6 +399,33 @@ async def delete_event(event_id: int, db: AsyncSession = Depends(get_db)):
     for te in te_rows:
         te.is_active = False
     await db.commit()
+
+
+@router.post("/auto-complete-past", status_code=200)
+async def auto_complete_past_events(db: AsyncSession = Depends(get_db)):
+    """
+    Mark all events whose event_date has passed as status='completed' and
+    deactivate their tracked events.  Safe to call repeatedly — idempotent.
+    """
+    now = datetime.utcnow()
+    result = await db.execute(
+        select(Event).where(
+            Event.event_date < now,
+            Event.status == "upcoming",
+        )
+    )
+    past_events = result.scalars().all()
+    completed_ids = []
+    for event in past_events:
+        event.status = "completed"
+        te_rows = (await db.execute(
+            select(TrackedEvent).where(TrackedEvent.event_id == event.id)
+        )).scalars().all()
+        for te in te_rows:
+            te.is_active = False
+        completed_ids.append(event.id)
+    await db.commit()
+    return {"completed": completed_ids, "count": len(completed_ids)}
 
 
 @router.patch("/{event_id}/artwork")

@@ -41,10 +41,11 @@ from app.services.marketplace_health import get_coverage_audit
 
 router = APIRouter(prefix="/intelligence", tags=["market-intelligence"])
 
-_CACHE_TTL_MINUTES = 30  # auto-recompute if older than this
+_CACHE_TTL_MINUTES = 30          # live events: recompute if older than this
+_CACHE_TTL_PAST_MINUTES = 1440  # past events: recompute once per day (data is frozen)
 
 
-async def _get_or_compute(event_id: int, db: AsyncSession, force: bool = False) -> dict:
+async def _get_or_compute(event_id: int, db: AsyncSession, force: bool = False, event_date: datetime | None = None) -> dict:
     """Fetch latest cached intelligence; recompute if stale or missing."""
     cached = await get_latest_intelligence(event_id, db)
 
@@ -53,7 +54,11 @@ async def _get_or_compute(event_id: int, db: AsyncSession, force: bool = False) 
         if computed_at.tzinfo is None:
             computed_at = computed_at.replace(tzinfo=timezone.utc)
         age_minutes = (datetime.now(timezone.utc) - computed_at).total_seconds() / 60
-        if age_minutes < _CACHE_TTL_MINUTES:
+        # Use longer TTL for past events — their data is frozen after show time
+        now = datetime.now(timezone.utc)
+        is_past = event_date is not None and event_date < now
+        ttl = _CACHE_TTL_PAST_MINUTES if is_past else _CACHE_TTL_MINUTES
+        if age_minutes < ttl:
             cached["_cache_age_minutes"] = round(age_minutes, 1)
             cached["_from_cache"] = True
             return cached
@@ -71,6 +76,13 @@ async def _require_event(event_id: int, db: AsyncSession) -> Event:
     if not event:
         raise HTTPException(status_code=404, detail=f"Event {event_id} not found")
     return event
+
+
+async def _require_and_compute(event_id: int, db: AsyncSession, force: bool = False) -> tuple[Event, dict]:
+    """Load event and compute/fetch cached intelligence in one step, passing event_date for correct TTL."""
+    event = await _require_event(event_id, db)
+    intel = await _get_or_compute(event_id, db, force=force, event_date=event.event_date)
+    return event, intel
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -210,12 +222,12 @@ async def all_events_intelligence(
 
     # Fetch all event intelligence in parallel — sequential was O(n * compute_time).
     # Each coroutine gets its own session; AsyncSession isn't safe for concurrent sharing.
-    async def _fetch_one(event_id: int):
+    async def _fetch_one(event: Event):
         async with AsyncSessionLocal() as fresh_db:
-            return await _get_or_compute(event_id, fresh_db)
+            return await _get_or_compute(event.id, fresh_db, event_date=event.event_date)
 
     intel_results = await asyncio.gather(
-        *[_fetch_one(e.id) for e in events],
+        *[_fetch_one(e) for e in events],
         return_exceptions=True,
     )
 
@@ -296,8 +308,7 @@ async def hero_data(
       price_vs_median   — current low_ask vs all-time median (ratio)
       history_context   — {hours_available, data_note}
     """
-    await _require_event(event_id, db)
-    intel = await _get_or_compute(event_id, db, force=refresh)
+    _, intel = await _require_and_compute(event_id, db, force=refresh)
 
     price = intel.get("price", {})
     market = intel.get("market", {})
@@ -387,8 +398,7 @@ async def market_intelligence_panel(
       inventory_movement      — new/removed in last 24h
       market_stress           — tightness + capitulation composite
     """
-    await _require_event(event_id, db)
-    intel = await _get_or_compute(event_id, db, force=refresh)
+    _, intel = await _require_and_compute(event_id, db, force=refresh)
 
     price = intel.get("price", {})
     market = intel.get("market", {})
@@ -522,8 +532,7 @@ async def section_intelligence(
         .best_value[]         — sections with lowest median vs event median
         .highest_activity[]   — sections with most listings
     """
-    await _require_event(event_id, db)
-    intel = await _get_or_compute(event_id, db, force=refresh)
+    _, intel = await _require_and_compute(event_id, db, force=refresh)
 
     sections = intel.get("section_metrics", [])
     event_median = intel.get("price", {}).get("median_ask") or 1
@@ -920,8 +929,7 @@ async def seller_behavior(
       largest_price_gains[]    — top 5 individual listing price increases
       aggressive_sellers[]     — sections with most price drops
     """
-    await _require_event(event_id, db)
-    intel = await _get_or_compute(event_id, db, force=refresh)
+    _, intel = await _require_and_compute(event_id, db, force=refresh)
 
     sb = intel.get("seller_behavior", {})
     market = intel.get("market", {})
@@ -1090,8 +1098,8 @@ async def full_intelligence_dump(
     Returns everything computed by the intelligence engine.
     Intended for development, debugging, and UI prototyping.
     """
-    await _require_event(event_id, db)
-    return await _get_or_compute(event_id, db, force=refresh)
+    _, intel = await _require_and_compute(event_id, db, force=refresh)
+    return intel
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1390,8 +1398,7 @@ async def event_intelligence_snapshot(
       marketplace:  leading_price_drop, leading_inventory_loss, lowest_floor, lowest_floor_mp
       classification: DEMAND | OVERSUPPLY | CAPITULATION | REPRICING | STABLE
     """
-    await _require_event(event_id, db)
-    intel = await _get_or_compute(event_id, db, force=refresh)
+    _, intel = await _require_and_compute(event_id, db, force=refresh)
 
     now_sql = datetime.now(timezone.utc).replace(tzinfo=None)
 

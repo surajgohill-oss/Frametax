@@ -105,6 +105,32 @@ export interface BaselineResponse {
   per_marketplace: MarketplaceBaseline[];
 }
 
+// ── /api/analytics/events/{id}/marketplace-baselines ────────────────────────
+export interface MarketplaceFirstTracked {
+  marketplace_slug: string;
+  first_tracked_at: string | null;
+  first_raw_listings: number;
+  first_tickets: number;
+  current_raw_listings: number;
+  current_tickets: number;
+  delta_listings: number;
+  delta_tickets: number;
+  delta_listings_pct: number | null;
+}
+
+export interface MarketplaceBaselinesResponse {
+  event_id: number;
+  unit: string;
+  per_marketplace: MarketplaceFirstTracked[];
+  event_first_tracked_at: string | null;
+  event_baseline_total_listings: number;
+  event_baseline_total_tickets: number;
+  current_total_listings: number;
+  current_total_tickets: number;
+  inv_since_tracking: number | null;
+  tickets_since_tracking: number | null;
+}
+
 // ── /api/events/{id}/alerts ──────────────────────────────────────────────────
 export interface AlertRecord {
   type: string;
@@ -401,6 +427,19 @@ export interface EventSnapshotResponse {
     median_24h_change_pct: number | null;
     median_7d_change: number | null;
     median_7d_change_pct: number | null;
+    high_now: number | null;
+    high_24h_change: number | null;
+    high_7d_change: number | null;
+    high_start: number | null;
+    high_start_change: number | null;
+    high_start_change_pct: number | null;
+  };
+  duplicates?: {
+    dup_pct: number | null;
+    dup_mirror_pct: number | null;
+    raw_listings: number | null;
+    canonical_blocks: number | null;
+    note: string;
   };
   inventory: {
     inventory_now: number | null;

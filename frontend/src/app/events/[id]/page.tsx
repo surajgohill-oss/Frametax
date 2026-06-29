@@ -1203,15 +1203,27 @@ export default function EventDetailPage() {
                     </div>
                   );
                 })()}
-                {/* HIGH row — no baseline delta available */}
+                {/* HIGH row — with tracking-start delta from snapshot */}
                 {(() => {
-                  const cur = hero?.price?.high_ask ?? hero?.price?.p75_ask ?? null;
+                  const cur = snapshot?.price?.high_now ?? hero?.price?.high_ask ?? hero?.price?.p75_ask ?? null;
+                  const delta = marketWindow === "24h"
+                    ? snapshot?.price?.high_24h_change
+                    : marketWindow === "7d"
+                    ? snapshot?.price?.high_7d_change
+                    : marketWindow === "tracking"
+                    ? snapshot?.price?.high_start_change
+                    : null;
+                  const pct = marketWindow === "tracking" ? snapshot?.price?.high_start_change_pct : null;
                   return (
                     <div className="flex items-center justify-between py-1.5 border-b border-white/[0.04]">
                       <span className="text-[12px] text-slate-500 w-16 flex-shrink-0">High</span>
                       <div className="flex items-center gap-1.5 tabular-nums">
                         <span className="text-[13px] font-semibold text-slate-400">{cur != null ? fmt$$(cur) : "—"}</span>
-                        <span className="text-[11px] text-slate-700">—</span>
+                        {delta != null ? (
+                          <span className={`text-[11px] font-semibold ${delta < 0 ? "text-emerald-400" : "text-red-400"}`}>
+                            {delta > 0 ? "+" : ""}{fmt$$(delta)}{pct != null ? ` (${pct > 0 ? "+" : ""}${pct.toFixed(1)}%)` : ""}
+                          </span>
+                        ) : <span className="text-[11px] text-slate-700">—</span>}
                       </div>
                     </div>
                   );
@@ -1250,7 +1262,16 @@ export default function EventDetailPage() {
                 {/* DUPLICATES row — format: current%  ±pp change */}
                 <div className="flex items-center justify-between py-1.5">
                   <span className="text-[12px] text-slate-500 w-16 flex-shrink-0">Dup %</span>
-                  <span className="text-[11px] text-slate-700">—</span>
+                  {snapshot?.duplicates?.dup_pct != null ? (
+                    <span className="text-[11px] text-slate-400 tabular-nums">
+                      {snapshot.duplicates.dup_pct.toFixed(1)}%
+                      {snapshot.duplicates.dup_mirror_pct != null && (
+                        <span className="text-slate-600 ml-1">({snapshot.duplicates.dup_mirror_pct.toFixed(1)}% mirror)</span>
+                      )}
+                    </span>
+                  ) : (
+                    <span className="text-[11px] text-slate-700">—</span>
+                  )}
                 </div>
               </div>
             )}
@@ -1472,7 +1493,7 @@ export default function EventDetailPage() {
                       },
                       {
                         label: "Dup %",
-                        value: "—",
+                        value: snapshot?.duplicates?.dup_pct != null ? `${snapshot.duplicates.dup_pct.toFixed(1)}%` : "—",
                         cls: "text-violet-300/60",
                         extra: null,
                       },
