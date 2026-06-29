@@ -517,6 +517,16 @@ async def run_follow_acquisition(session_factory=None) -> dict:
                 artist, len(gt_events), len(gt_events) - len(new_events), len(new_events),
             )
 
+            # Pre-load marketplaces once — avoids silent break inside the loop
+            async with session_factory() as db:
+                all_mp_preload = (await db.execute(
+                    select(Marketplace).where(Marketplace.is_active == True)
+                )).scalars().all()
+            gt_mp_global = next((m for m in all_mp_preload if m.slug == "gametime"), None)
+            if not gt_mp_global:
+                summary[key]["errors"].append("Gametime marketplace not found in DB")
+                continue
+
             enrolled = 0
             for gt_ev in new_events:
                 if enrolled >= needed:
@@ -549,20 +559,12 @@ async def run_follow_acquisition(session_factory=None) -> dict:
 
                 try:
                     async with session_factory() as db:
-                        # Reload marketplaces inside session
-                        all_mp = (await db.execute(
-                            select(Marketplace).where(Marketplace.is_active == True)
-                        )).scalars().all()
-                        gt_mp_inner = next((m for m in all_mp if m.slug == "gametime"), None)
-                        if not gt_mp_inner:
-                            break
-
                         venue = await _upsert_venue(db, venue_slug, venue_name, city, state)
                         event, is_new = await _get_or_create_event(
                             db, clean_title, artist, venue, event_date, gt_id
                         )
                         added_slugs = await _ensure_tracked_events(
-                            db, event, gt_id, gt_mp_inner, all_mp
+                            db, event, gt_id, gt_mp_global, all_mp_preload
                         )
                         await db.commit()
 

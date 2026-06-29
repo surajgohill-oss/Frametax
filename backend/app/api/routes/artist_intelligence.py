@@ -47,12 +47,15 @@ async def get_artist_profile_endpoint(
 
     Matching is case-insensitive ILIKE on the events.artist column.
     """
+    import re
+    normalized_name = re.sub(r"[-_]+", " ", artist_name).strip()
+
     rows = (await db.execute(text("""
         SELECT id, title, artist, event_date, status
         FROM events
         WHERE artist ILIKE :pattern
         ORDER BY event_date ASC
-    """), {"pattern": f"%{artist_name}%"})).fetchall()
+    """), {"pattern": f"%{normalized_name}%"})).fetchall()
 
     if not rows:
         raise HTTPException(

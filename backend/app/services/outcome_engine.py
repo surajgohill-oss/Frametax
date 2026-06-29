@@ -767,7 +767,7 @@ async def build_artist_profile(artist: str, db: AsyncSession) -> dict:
         SELECT eo.*, e.event_date
         FROM event_outcomes eo
         JOIN events e ON e.id = eo.event_id
-        WHERE e.artist ILIKE :artist AND e.status = 'completed'
+        WHERE LOWER(e.artist) ILIKE :artist AND e.status = 'completed'
         ORDER BY e.event_date
     """), {"artist": artist})).fetchall()
 

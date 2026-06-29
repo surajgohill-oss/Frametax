@@ -1973,24 +1973,35 @@ async def compute_all_outcomes(db: AsyncSession = Depends(get_db)):
     return {"status": "complete", **counts}
 
 
+def _normalize_artist_slug(name: str) -> str:
+    """Convert slug/any-case input to normalized display-name form for ILIKE matching.
+    e.g. 'ed-sheeran' → 'ed sheeran', 'ED SHEERAN' → 'ed sheeran'
+    """
+    import re
+    return re.sub(r"[-_]+", " ", name).strip().lower()
+
+
 @router.get("/artist/{artist}")
 async def get_artist_profile(artist: str, refresh: bool = False, db: AsyncSession = Depends(get_db)):
     """
     Get aggregated market profile for an artist across all completed events.
     Returns cached profile if < 24h old unless refresh=true.
+    Accepts slug ('ed-sheeran'), spaces ('ed sheeran'), or display name ('Ed Sheeran').
     """
     from app.services.outcome_engine import build_artist_profile
+
+    normalized = _normalize_artist_slug(artist)
 
     if not refresh:
         cached = (await db.execute(text("""
             SELECT * FROM artist_market_profiles
-            WHERE artist ILIKE :artist
+            WHERE LOWER(REPLACE(artist, '-', ' ')) ILIKE :artist
               AND computed_at > NOW() - INTERVAL '24 hours'
-        """), {"artist": artist})).fetchone()
+        """), {"artist": normalized})).fetchone()
         if cached:
             return {**dict(cached._mapping), "_from_cache": True}
 
-    return {**(await build_artist_profile(artist, db)), "_from_cache": False}
+    return {**(await build_artist_profile(normalized, db)), "_from_cache": False}
 
 
 @router.get("/outcomes/{event_id}/sections")
