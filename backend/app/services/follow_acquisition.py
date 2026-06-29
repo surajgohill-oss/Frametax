@@ -567,12 +567,17 @@ async def run_follow_acquisition(session_factory=None) -> dict:
                         added_slugs = await _ensure_tracked_events(
                             db, event, gt_id, gt_mp_global, all_mp_preload
                         )
+                        _event_id = event.id  # read inside session to avoid detached-instance error
                         await db.commit()
 
+                    logger.info(
+                        "follow_acquisition: GT %s → event_id=%s is_new=%s added_slugs=%s",
+                        gt_id, _event_id, is_new, added_slugs,
+                    )
                     if is_new or added_slugs:
                         enrolled += 1
                         event_summary = {
-                            "event_id":    event.id,
+                            "event_id":    _event_id,
                             "title":       clean_title,
                             "date":        str(event_date.date()),
                             "venue":       venue_name,
@@ -589,7 +594,7 @@ async def run_follow_acquisition(session_factory=None) -> dict:
                         try:
                             from app.services.event_population import populate_event_marketplaces
                             pop_result = await populate_event_marketplaces(
-                                event_id=event.id,
+                                event_id=_event_id,
                                 session_factory=session_factory,
                                 settings=get_settings(),
                                 source="follow",
