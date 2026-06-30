@@ -11,9 +11,11 @@ import type {
   VenueIntelligenceResponse,
   VenueClassificationsResponse,
   BaselineResponse,
+  MarketplaceBaselinesResponse,
   AlertResponse,
   Listing,
   EventSnapshotResponse,
+  VelocityWindowsResponse,
 } from "./types";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://backend-production-509f.up.railway.app";
@@ -72,6 +74,8 @@ export const api = {
   },
   analytics: {
     baseline: (id: number) => get<BaselineResponse>(`/api/analytics/events/${id}/baseline`),
+    marketplaceBaselines: (id: number) => get<MarketplaceBaselinesResponse>(`/api/analytics/events/${id}/marketplace-baselines`),
+    velocityWindows: (id: number) => get<VelocityWindowsResponse>(`/api/analytics/events/${id}/velocity-windows`),
   },
   venues: {
     intelligence: (slug: string, eventId: number) =>

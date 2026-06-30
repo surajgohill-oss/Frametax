@@ -378,9 +378,9 @@ export interface SellerResponse {
   reprice_rate: number | null;
   churn_rate: number | null;
   listing_survival: number | null;
-  by_marketplace: { name: string; repriced: number; drops: number; gains: number }[];
-  largest_price_drops: { section: string; old_price: number; new_price: number; delta: number }[];
-  largest_price_gains: { section: string; old_price: number; new_price: number; delta: number }[];
+  by_marketplace: { marketplace: string; new_24h: number; removed_24h: number; net_24h: number; poll_count_24h: number }[];
+  largest_price_drops: { listing_id?: number; marketplace?: string; section?: string; row?: string; current_price?: number; first_price_24h?: number; old_price?: number; new_price?: number; delta: number; delta_pct?: number }[];
+  largest_price_gains: { listing_id?: number; marketplace?: string; section?: string; row?: string; current_price?: number; first_price_24h?: number; old_price?: number; new_price?: number; delta: number; delta_pct?: number }[];
   aggressive_sections: { section: string; score: number }[];
 }
 
@@ -399,6 +399,31 @@ export interface Listing {
   marketplace_slug: string;
   is_active: boolean;
   listing_url: string | null;
+}
+
+// ── /api/analytics/events/{id}/velocity-windows ───────────────────────────────
+export interface VelocityWindow {
+  window_start: string | null;
+  window_end: string | null;
+  implied_sale_listings: number;
+  implied_sale_tickets: number;
+  avg_implied_sale_price: number | null;
+  appeared_listings: number;
+}
+
+export interface VelocityWindowsResponse {
+  event_id: number;
+  event_date: string | null;
+  computed_at: string;
+  note: string;
+  windows: {
+    since_tracking?: VelocityWindow;
+    "7d"?: VelocityWindow;
+    "24h"?: VelocityWindow;
+    "48h"?: VelocityWindow;
+    "6h"?: VelocityWindow;
+    "1h"?: VelocityWindow;
+  };
 }
 
 // ── /api/intelligence/events/{id}/snapshot ────────────────────────────────────

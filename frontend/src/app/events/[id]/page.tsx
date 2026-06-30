@@ -14,7 +14,7 @@ import { api } from "@/lib/api";
 import type {
   HeroResponse, MarketResponse, HistoryResponse, HistoryWindow,
   SectionsResponse, SectionRow, SellerResponse, EventMeta, Listing,
-  BaselineResponse, EventSnapshotResponse,
+  BaselineResponse, EventSnapshotResponse, VelocityWindowsResponse,
 } from "@/lib/types";
 import { useNflAudio } from "@/hooks/useNflAudio";
 import { isNflEvent } from "@/lib/audioConfig";
@@ -612,6 +612,7 @@ export default function EventDetailPage() {
   const [snapshot, setSnapshot]   = useState<EventSnapshotResponse | null>(null);
   const [lifecycle, setLifecycle] = useState<{ summary: Record<string, unknown> } | null>(null);
   const [mpBaselines, setMpBaselines] = useState<import("@/lib/types").MarketplaceBaselinesResponse | null>(null);
+  const [velocityWindows, setVelocityWindows] = useState<VelocityWindowsResponse | null>(null);
   const [alerts, setAlerts]       = useState<import("@/lib/types").AlertResponse | null>(null);
   const [marketWindow, setMarketWindow]   = useState<"tracking" | "7d" | "24h" | "12h" | "6h">("tracking");
   const [sellerWindow, setSellerWindow]   = useState<"tracking" | "7d" | "24h" | "12h" | "6h">("tracking");
@@ -662,6 +663,7 @@ export default function EventDetailPage() {
       api.events.alerts(id).then(setAlerts).catch(() => {}),
       api.events.lifecycle(id).then(setLifecycle).catch(() => {}),
       api.analytics.marketplaceBaselines(id).then(setMpBaselines).catch(() => {}),
+      api.analytics.velocityWindows(id).then(setVelocityWindows).catch(() => {}),
     ]).finally(() => setLoadingAll(false));
   }, [id]);
 
@@ -1040,7 +1042,9 @@ export default function EventDetailPage() {
                 </div>
                 <div className="text-right">
                   <p className="text-[11px] text-white/28 uppercase tracking-wide mb-1">Duplicate %</p>
-                  <p className="text-[24px] font-bold text-violet-300/70 tabular-nums leading-none">—</p>
+                  <p className="text-[24px] font-bold text-violet-300/70 tabular-nums leading-none">
+                    {snapshot?.duplicates?.dup_pct != null ? `${snapshot.duplicates.dup_pct.toFixed(1)}%` : "—"}
+                  </p>
                 </div>
                 <div className="text-right">
                   <p className="text-[11px] text-white/28 uppercase tracking-wide mb-1">Low</p>
@@ -1182,14 +1186,13 @@ export default function EventDetailPage() {
                 {/* LOW row */}
                 {(() => {
                   const cur = hero?.price?.low_ask ?? null;
-                  const pct = marketWindow === "24h" ? (baseline?.deltas_24h?.low_ask?.pct ?? null)
-                    : marketWindow === "7d" ? (baseline?.deltas_7d?.low_ask?.pct ?? null)
-                    : marketWindow === "tracking" ? (baseline?.deltas_24h?.low_ask?.pct ?? null)
-                    : null;
-                  const absRaw = marketWindow === "24h" ? (baseline?.deltas_24h?.low_ask?.absolute ?? null)
+                  // tracking: no floor-tracking-start delta available — show current only
+                  const absRaw = marketWindow === "24h"
+                    ? (snapshot?.price?.floor_24h_change ?? baseline?.deltas_24h?.low_ask?.absolute ?? null)
                     : marketWindow === "7d" ? (baseline?.deltas_7d?.low_ask?.absolute ?? null)
-                    : marketWindow === "tracking" ? (baseline?.deltas_24h?.low_ask?.absolute ?? null)
                     : null;
+                  const pct = absRaw != null && cur != null && (cur - absRaw) !== 0
+                    ? (absRaw / (cur - absRaw)) * 100 : null;
                   const orig = (cur != null && pct != null) ? Math.round(cur / (1 + pct / 100)) : null;
                   return (
                     <div className="flex items-center justify-between py-1.5 border-b border-white/[0.04]">
@@ -1290,7 +1293,7 @@ export default function EventDetailPage() {
                 {avgImpliedSalePrice != null ? (
                   <span className="text-[15px] font-bold tabular-nums text-emerald-300">{fmt$$(avgImpliedSalePrice)}</span>
                 ) : (
-                  <span className="text-[10px] font-bold uppercase tracking-[0.1em] px-2 py-0.5 rounded bg-white/[0.04] text-slate-600 border border-white/[0.06]">Loading</span>
+                  <span className="text-[12px] text-slate-700">—</span>
                 )}
               </div>
               {avgImpliedSalePrice != null && impliedSaleCount != null && (
@@ -1336,8 +1339,14 @@ export default function EventDetailPage() {
               );
             })()}
 
-            {/* Movement rows — real data from market endpoint */}
+            {/* Movement rows — real data from market + velocity-windows endpoints */}
             {[
+              { label: "Sold 24H",      val: velocityWindows?.windows?.["24h"]?.implied_sale_listings != null ? fmtNum(velocityWindows.windows["24h"].implied_sale_listings) : null,
+                cls: (() => { const v = velocityWindows?.windows?.["24h"]?.implied_sale_listings ?? null; return v != null && v > 0 ? "text-emerald-400" : "text-slate-700"; })() },
+              { label: "Sold 7D",       val: velocityWindows?.windows?.["7d"]?.implied_sale_listings != null ? fmtNum(velocityWindows.windows["7d"].implied_sale_listings) : null,
+                cls: (() => { const v = velocityWindows?.windows?.["7d"]?.implied_sale_listings ?? null; return v != null && v > 0 ? "text-emerald-400" : "text-slate-700"; })() },
+              { label: "Tickets Sold",  val: velocityWindows?.windows?.since_tracking?.implied_sale_tickets != null ? fmtNum(velocityWindows.windows.since_tracking.implied_sale_tickets) : null,
+                cls: (() => { const v = velocityWindows?.windows?.since_tracking?.implied_sale_tickets ?? null; return v != null && v > 0 ? "text-emerald-400" : "text-slate-700"; })() },
               { label: "Removed 24H",   val: removed24h != null ? fmtNum(removed24h) : null,  cls: removed24h != null && removed24h > 0 ? "text-red-400" : "text-slate-700" },
               { label: "Added 24H",     val: added24h   != null ? fmtNum(added24h)   : null,  cls: added24h   != null && added24h > 0   ? "text-emerald-400" : "text-slate-700" },
               { label: "Market Stress", val: market?.market_stress?.composite_score != null
@@ -1451,7 +1460,7 @@ export default function EventDetailPage() {
             const st      = fresh?.freshness_status ?? "unknown";
             const freshDot = st === "fresh" ? "bg-emerald-400" : st === "late" ? "bg-amber-400" : st === "dead" ? "bg-red-500" : "bg-slate-700";
             const inv24   = bsData?.listings_change_24h?.absolute ?? null;
-            const mpSeller = seller?.by_marketplace?.find(b => normMp(b.name) === slug || normMp(b.name) === normMp(info.label)) ?? null;
+            const mpSeller = seller?.by_marketplace?.find(b => normMp(b.marketplace) === slug || normMp(b.marketplace) === normMp(info.label)) ?? null;
             const isBest  = mpData != null && marketplaces.length > 0 && mpData.low_ask === marketplaces[0].low_ask;
             const mpAction = signalToAction(hero?.signal);
             const mpColors = actionColors(mpAction);
@@ -1516,9 +1525,9 @@ export default function EventDetailPage() {
                         extra: null,
                       },
                       {
-                        label: "Repriced",
-                        value: mpSeller?.repriced != null ? fmtNum(mpSeller.repriced) : "—",
-                        cls: mpSeller?.repriced ? "text-amber-400 font-semibold" : "text-slate-700",
+                        label: "Removed 24H",
+                        value: mpSeller?.removed_24h != null ? fmtNum(mpSeller.removed_24h) : "—",
+                        cls: mpSeller?.removed_24h ? "text-red-400/80 font-semibold" : "text-slate-700",
                         extra: null,
                       },
                       {
