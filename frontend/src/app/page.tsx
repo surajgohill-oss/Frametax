@@ -7,11 +7,11 @@ import {
   Eye, RefreshCw, TrendingUp, TrendingDown, Minus, AlertCircle,
   ChevronDown, ChevronRight, Bookmark,
   ArrowUpRight, ArrowDownRight, Pin, Music,
-  Pause, Play, Volume2, VolumeX,
+  Pause, Play, Volume2, VolumeX, Clock,
 } from "lucide-react";
 import { differenceInDays, parseISO, format } from "date-fns";
 import { api } from "@/lib/api";
-import type { EventSummary, EventMeta } from "@/lib/types";
+import type { EventSummary, EventMeta, SellerResponse, VelocityWindowsResponse, EventSnapshotResponse } from "@/lib/types";
 import { fmt$$, fmtNum, fmtPct, signalToAction, actionColors, signalDescription, cn, parseEventDate } from "@/lib/utils";
 import { getEventGradient, gradientBg, extractGroupKey, getSpotifyData } from "@/lib/entityimages";
 import { useArtistImage } from "@/hooks/useArtistImage";
@@ -35,20 +35,27 @@ const MP_SHORT: Record<string, string> = {
   vividseats: "VS",
 };
 
+const MP_META: Record<string, { label: string; short: string; color: string; logoBg: string }> = {
+  stubhub:    { label: "StubHub",     short: "SH", color: "#e8704a", logoBg: "#e8704a" },
+  tickpick:   { label: "TickPick",    short: "TP", color: "#2dd4bf", logoBg: "#0d9488" },
+  gametime:   { label: "Gametime",    short: "GT", color: "#4ade80", logoBg: "#16a34a" },
+  vividseats: { label: "Vivid Seats", short: "VS", color: "#a78bfa", logoBg: "#7c3aed" },
+};
+
 // ── Small delta chip ─────────────────────────────────────────────────────────
-function DeltaChip({ pct, abs }: { pct?: number | null; abs?: number | null }) {
+function DeltaChip({ pct, abs, invert = false }: { pct?: number | null; abs?: number | null; invert?: boolean }) {
   const n = pct ?? abs ?? null;
-  if (n == null) return <span className="text-white/25 text-[10px]">—</span>;
-  const up = n > 0;
-  const Icon = up ? TrendingUp : n < 0 ? TrendingDown : Minus;
+  if (n == null) return <span className="text-white/25 text-[11px]">—</span>;
+  const Icon = n > 0 ? TrendingUp : n < 0 ? TrendingDown : Minus;
+  // invert=true for price rows: lower = green (good), higher = red (bad)
+  const isGood = invert ? n < 0 : n > 0;
+  const isBad  = invert ? n > 0 : n < 0;
   return (
     <span className={cn(
-      "inline-flex items-center gap-0.5 text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded",
-      up
-        ? "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20"
-        : n < 0
-          ? "text-red-400 bg-red-500/10 border border-red-500/20"
-          : "text-slate-500 bg-white/5 border border-white/10"
+      "inline-flex items-center gap-0.5 text-[11px] font-bold tabular-nums px-1.5 py-0.5 rounded",
+      isGood ? "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20"
+      : isBad ? "text-red-400 bg-red-500/10 border border-red-500/20"
+      : "text-slate-500 bg-white/5 border border-white/10"
     )}>
       <Icon size={9} />{pct != null ? fmtPct(pct) : (n > 0 ? `+${n}` : `${n}`)}
     </span>
@@ -74,10 +81,28 @@ function FeaturedEventHero({
   const autoArtworkUrl  = useArtistImage(artist, title);
   const artworkUrl      = meta?.custom_artwork_url ?? autoArtworkUrl;
   const gradient        = getEventGradient(artist, title);
+  const [marketWindow, setMarketWindow] = useState<"tracking" | "24h" | "12h" | "6h" | "7d">("tracking");
   const action     = signalToAction(event.signal);
   const aColors    = actionColors(action);
   const invDelta   = event.changes?.h24?.inventory_delta ?? null;
   const priceDeltaPct = event.changes?.h24?.price_delta_pct ?? null;
+  const invCurrent = event.inventory?.total_listings ?? null;
+  const invPrev    = (invCurrent != null && invDelta != null) ? invCurrent - invDelta : null;
+  const invPct     = (invPrev != null && invPrev !== 0 && invDelta != null) ? (invDelta / invPrev) * 100 : null;
+
+  // Intelligence data for panels — fetched per featured event
+  const [snap, setSnap]   = useState<EventSnapshotResponse | null>(null);
+  const [seller, setSeller] = useState<SellerResponse | null>(null);
+  const [vel, setVel]     = useState<VelocityWindowsResponse | null>(null);
+  const [lcSummary, setLcSummary] = useState<Record<string, unknown> | null>(null);
+  useEffect(() => {
+    const eid = event.event_id;
+    setSnap(null); setSeller(null); setVel(null); setLcSummary(null);
+    api.events.snapshot(eid).then(setSnap).catch(() => {});
+    api.events.seller(eid).then(setSeller).catch(() => {});
+    api.analytics.velocityWindows(eid).then(setVel).catch(() => {});
+    api.events.lifecycle(eid).then(d => setLcSummary(d.summary)).catch(() => {});
+  }, [event.event_id]);
 
   let daysOut: number | null = null;
   let dateLabel = "";
@@ -156,49 +181,51 @@ function FeaturedEventHero({
   };
 
   return (
-    <div className="rounded-xl border border-white/8 bg-[#0a0d14] overflow-hidden mb-3">
-      {/* ── Identity section: full-height artwork + content ── */}
-      <div className="flex items-stretch border-b border-white/6 min-h-[210px]"
-        style={{ background: `linear-gradient(90deg, ${gradient[0]}18, transparent 65%)` }}>
+    <div className="rounded-xl border border-white/10 bg-[#080a10] overflow-hidden mb-3" style={{ boxShadow: `0 0 80px ${gradient[0]}12, 0 0 0 1px rgba(255,255,255,0.03)` }}>
+      {/* ── Hero: art-bloom + artwork + identity + live market ── */}
+      <div className="relative border-b border-white/6" style={{ minHeight: 240 }}>
+        {/* Art-colored atmosphere bloom */}
+        <div className="absolute inset-0 pointer-events-none" aria-hidden="true"
+          style={{ background: `linear-gradient(115deg, ${gradient[0]}28 0%, ${gradient[0]}08 42%, transparent 72%)` }} />
 
-        {/* Artwork — full height, anchored left, dominant visual */}
-        <div className="flex-shrink-0 w-36 sm:w-52 relative overflow-hidden"
-          style={{ background: `linear-gradient(145deg, ${gradient[0]}cc, ${gradient[1]}cc)` }}>
+        {/* Artwork panel — absolute, full height left */}
+        <div className="absolute inset-y-0 left-0 w-[140px] sm:w-[220px] overflow-hidden"
+          style={{ background: `linear-gradient(145deg, ${gradient[0]}cc, ${gradient[1]}aa)` }}>
           {artworkUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={artworkUrl} alt={artist ?? title}
               className="w-full h-full object-cover object-top"
               onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
           ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center gap-3">
-              <span className="text-4xl font-black text-white/50 select-none">
+            <div className="w-full h-full flex items-center justify-center">
+              <span className="text-5xl font-black text-white/40 select-none">
                 {(artist ?? title).slice(0, 1).toUpperCase()}
               </span>
-              <span className="text-[9px] text-white/25 border border-white/15 px-2 py-0.5 rounded">Upload Art</span>
             </div>
           )}
-          {/* Gradient fade to right */}
-          <div className="absolute inset-y-0 right-0 w-6 bg-gradient-to-r from-transparent"
-            style={{ background: `linear-gradient(to right, transparent, ${gradient[0]}08)` }} />
+          {/* Right edge fade */}
+          <div className="absolute inset-y-0 right-0 w-16 sm:w-24"
+            style={{ background: `linear-gradient(to right, transparent, #080a10)` }} />
         </div>
 
-        {/* Content: identity + tracking stats */}
-        <div className="flex-1 flex flex-col justify-between p-4 min-w-0 gap-3">
-          <div className="flex items-start gap-4">
+        {/* Content area offset by artwork */}
+        <div className="relative flex flex-col justify-between pl-[140px] sm:pl-[220px]" style={{ minHeight: 240 }}>
+          {/* Identity + live market */}
+          <div className="flex items-end justify-between gap-4 p-5 pb-4 flex-1">
 
             {/* Identity */}
             <div className="flex-1 min-w-0">
               {artist && artist !== title &&
-                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-0.5 truncate">{artist}</p>}
+                <p className="text-[11px] text-slate-500 uppercase tracking-[0.2em] font-semibold mb-1 truncate">{artist}</p>}
               <Link href={`/events/${event.event_id}`}>
-                <span className="text-2xl font-black text-white truncate block hover:text-blue-300 transition-colors leading-tight">{title}</span>
+                <span className="text-[28px] sm:text-[34px] font-black text-white block hover:text-blue-300 transition-colors leading-none truncate">{title}</span>
               </Link>
               {(venue || dateLabel) && (
-                <p className="text-sm text-slate-400 mt-0.5 truncate">
+                <p className="text-[13px] text-slate-400 mt-1.5 truncate">
                   {[venue, dateLabel].filter(Boolean).join(" · ")}
                 </p>
               )}
-              <div className="flex items-center gap-2 mt-2.5 flex-wrap">
+              <div className="flex items-center gap-2 mt-3 flex-wrap">
                 {daysOut != null && (
                   <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full"
                     style={{ color: aColors.text, background: aColors.bg + "60", border: `1px solid ${aColors.border}` }}>
@@ -210,13 +237,13 @@ function FeaturedEventHero({
                   {action}
                 </span>
                 <button onClick={onToggleWatch}
-                  className={cn("inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded border transition-all",
+                  className={cn("inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded border transition-all",
                     isWatched ? "border-blue-500/40 bg-blue-500/10 text-blue-400" : "border-white/10 bg-white/5 text-slate-500 hover:text-slate-300")}>
                   <Bookmark size={9} className={isWatched ? "fill-blue-400" : ""} />
                   {isWatched ? "Watching" : "Monitor"}
                 </button>
                 <button onClick={onTogglePin}
-                  className={cn("inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded border transition-all",
+                  className={cn("inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded border transition-all",
                     isPinned ? "border-amber-500/40 bg-amber-500/10 text-amber-400" : "border-white/10 bg-white/5 text-slate-500 hover:text-slate-300")}>
                   <Pin size={9} className={isPinned ? "fill-amber-400" : ""} />
                   {isPinned ? "Pinned" : "Pin"}
@@ -224,52 +251,97 @@ function FeaturedEventHero({
               </div>
             </div>
 
-            {/* Marketplace Freshness — right column */}
-            <div className="hidden sm:block flex-shrink-0 min-w-[160px]">
-              <p className="text-[9px] text-slate-600 uppercase tracking-wider font-semibold mb-2 text-right">Marketplace Freshness</p>
-              {freshEntries.length > 0
-                ? freshEntries.map(([slug, f]) => {
-                    const fe = f as { freshness_status: string; age_minutes: number | null };
-                    const age = fe.age_minutes;
-                    const ageStr = age == null ? null : age < 60 ? `${age}m` : `${Math.round(age / 60)}h`;
-                    const c = fCfg[fe.freshness_status] ?? { dot: "bg-slate-600", text: "text-slate-500" };
-                    return (
-                      <div key={slug} className="flex items-center gap-2 justify-end mb-1">
-                        <span className="text-[10px] text-slate-400">{MP_LABELS[slug] ?? slug}</span>
-                        <span className={`text-[10px] font-bold tabular-nums ${c.text} w-8 text-right`}>{ageStr ?? "—"}</span>
-                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${c.dot}`} />
-                      </div>
-                    );
-                  })
-                : <p className="text-[9px] text-slate-600 text-right">No feeds</p>
-              }
+            {/* Live Market Snapshot — Median dominant per spec */}
+            <div className="hidden sm:flex flex-col items-end gap-0 flex-shrink-0 pr-2">
+              <p className="text-[11px] text-slate-500 uppercase tracking-[0.14em] mb-1.5">Median</p>
+              <p className="text-[44px] font-black text-white/90 tabular-nums leading-none">
+                {fmt$$(event.price?.median_ask) ?? "—"}
+              </p>
+              <div className="flex items-center gap-2 mt-1">
+                {priceDeltaPct != null && <DeltaChip pct={priceDeltaPct} invert />}
+                <span className="text-[11px] text-slate-500 font-semibold">24H</span>
+              </div>
+              <div className="flex items-center gap-5 mt-3 pt-2 border-t border-white/[0.08]">
+                <div className="text-right">
+                  <p className="text-[11px] text-slate-500 uppercase tracking-[0.12em] mb-1">Inventory</p>
+                  <p className="text-[18px] font-bold text-blue-300/80 tabular-nums leading-none">
+                    {fmtNum(event.inventory?.total_listings) ?? "—"}
+                  </p>
+                  {invDelta != null && (
+                    <p className={`text-[10px] tabular-nums mt-0.5 ${invDelta > 0 ? "text-red-400" : invDelta < 0 ? "text-emerald-400" : "text-slate-500"}`}>
+                      {invDelta > 0 ? "+" : ""}{fmtNum(invDelta)}
+                      {invPct != null ? ` (${invPct > 0 ? "+" : ""}${invPct.toFixed(1)}%)` : ""}
+                    </p>
+                  )}
+                </div>
+                <div className="text-right">
+                  <p className="text-[11px] text-slate-500 uppercase tracking-[0.12em] mb-1">Duplicate %</p>
+                  <p className="text-[18px] font-bold text-violet-300/70 tabular-nums leading-none">
+                    {snap?.duplicates?.dup_pct != null ? `${snap.duplicates.dup_pct.toFixed(1)}%` : "—"}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[11px] text-slate-500 uppercase tracking-[0.12em] mb-1">Low</p>
+                  <p className="text-[18px] font-bold text-emerald-300 tabular-nums leading-none">
+                    {fmt$$(event.price?.low_ask) ?? "—"}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[11px] text-slate-500 uppercase tracking-[0.12em] mb-1">High</p>
+                  <p className="text-[18px] font-semibold text-white/40 tabular-nums leading-none">
+                    {fmt$$(event.price?.high_ask) ?? "—"}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Tracking stats — bottom strip */}
-          <div className="grid grid-cols-4 gap-3 pt-3 border-t border-white/6">
-            <div>
-              <p className="text-[9px] text-slate-600 uppercase tracking-wider mb-0.5">Tracking Since</p>
-              <p className="text-sm font-bold text-white tabular-nums">{trackingSince?.label ?? "—"}</p>
-              <p className="text-[10px] text-slate-500">{trackingSince?.formatted ?? ""}</p>
-            </div>
-            <div>
-              <p className="text-[9px] text-slate-600 uppercase tracking-wider mb-0.5">Last Update</p>
-              <p className="text-sm font-bold text-white tabular-nums">{freshLabel ?? "—"}</p>
-            </div>
-            <div>
-              <p className="text-[9px] text-slate-600 uppercase tracking-wider mb-0.5">Markets Tracked</p>
-              <p className="text-sm font-bold text-white tabular-nums">{marketsCount} / {freshEntries.length || 4}</p>
-              <p className="text-[10px] text-slate-500">Active</p>
-            </div>
-            <div>
-              <p className="text-[9px] text-slate-600 uppercase tracking-wider mb-0.5">Feeds Fresh</p>
-              <p className="text-sm font-bold text-white tabular-nums">
-                {freshPct != null ? `${freshPct}%` : "—"}
-              </p>
-              <p className="text-[10px] text-slate-500">
-                {freshPct === 100 ? "All Fresh" : freshPct != null ? `${freshEntries.filter(([,f]) => (f as {freshness_status?:string})?.freshness_status === "fresh" || (f as {freshness_status?:string})?.freshness_status === "late").length}/${freshEntries.length}` : ""}
-              </p>
+          {/* Status bar: tracking meta + per-marketplace freshness dots */}
+          <div className="border-t border-white/[0.05] bg-white/[0.012] px-5 py-2.5 flex items-center gap-4 flex-wrap">
+            {trackingSince && (
+              <span className="text-[11px] text-white/28 flex items-center gap-1.5">
+                <Clock size={10} />
+                <span className="text-white/20 uppercase tracking-[0.1em] text-[10px]">Tracking Since</span>
+                <span className="text-white/40">{trackingSince.formatted}</span>
+              </span>
+            )}
+            {freshLabel && (
+              <span className="text-[11px] text-white/28 flex items-center gap-1.5">
+                <span className="text-white/20 uppercase tracking-[0.1em] text-[10px]">Last Update</span>
+                <span className="text-white/40">{freshLabel}</span>
+              </span>
+            )}
+            {freshEntries.length > 0 && (
+              <span className="text-[11px] text-white/28 flex items-center gap-1.5">
+                <span className="text-white/20 uppercase tracking-[0.1em] text-[10px]">Feeds Fresh</span>
+                <span className="text-white/40">{freshEntries.filter(([,f]) => { const s = (f as {freshness_status?:string})?.freshness_status; return s === "fresh" || s === "late"; }).length}/{freshEntries.length}</span>
+              </span>
+            )}
+            <div className="flex items-center gap-4 ml-auto flex-wrap">
+              {freshEntries.length > 0
+                ? freshEntries.map(([slug, f]) => {
+                    const fr = f as { freshness_status?: string; age_minutes?: number };
+                    const status = fr?.freshness_status ?? "no_data";
+                    const age = fr?.age_minutes;
+                    const ageStr = age == null ? null : age < 60 ? `${age}m` : `${Math.round(age / 60)}h`;
+                    const cfg = fCfg[status] ?? fCfg.no_data;
+                    const info = (MP_META as Record<string, { label: string; short: string; color: string; logoBg: string } | undefined>)[slug];
+                    return (
+                      <div key={slug} className="flex items-center gap-1.5">
+                        {info && (
+                          <div className="rounded flex items-center justify-center font-black text-white flex-shrink-0"
+                            style={{ width: 16, height: 16, background: info.logoBg, fontSize: 7 }}>
+                            {info.short}
+                          </div>
+                        )}
+                        <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${cfg.dot}`} />
+                        <span className="text-[11px] font-medium" style={{ color: info?.color ?? "rgba(255,255,255,0.38)" }}>{info?.label ?? slug}</span>
+                        <span className={`text-[11px] tabular-nums ${cfg.text}`}>{ageStr ?? "—"}</span>
+                      </div>
+                    );
+                  })
+                : <span className="text-[11px] text-white/25">No feeds</span>
+              }
             </div>
           </div>
         </div>
@@ -279,139 +351,250 @@ function FeaturedEventHero({
       <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-white/6">
 
         {/* Panel 1: Current Market */}
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Current Market</p>
-            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border border-white/10 text-slate-500 bg-white/3">24H</span>
+        <div className="p-5">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-[11px] text-slate-400 uppercase tracking-[0.18em] font-semibold">Current Market</p>
+            <div className="flex items-center gap-0.5">
+              {(["tracking", "24h", "12h", "6h", "7d"] as const).map(w => (
+                <button key={w} onClick={() => setMarketWindow(w)}
+                  className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded transition-colors uppercase",
+                    marketWindow === w
+                      ? "bg-white/10 text-slate-200 border border-white/15"
+                      : "text-slate-600 hover:text-slate-400")}>
+                  {w === "tracking" ? "Tracking" : w}
+                </button>
+              ))}
+            </div>
           </div>
+          {/* Rows: Median / Low / High / Inventory / Dup % */}
           <div className="space-y-0">
-            {[
-              { label: "Low",    val: fmt$$(event.price?.low_ask),    cls: "text-emerald-300 text-base font-black", showDelta: true },
-              { label: "Median", val: fmt$$(event.price?.median_ask), cls: "text-white text-base font-bold",        showDelta: false },
-              { label: "High",   val: fmt$$(event.price?.high_ask),   cls: "text-slate-300 text-sm font-bold",     showDelta: false },
-            ].map(({ label, val, cls, showDelta }) => (
-              <div key={label} className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0">
-                <span className="text-xs text-slate-400 w-12 flex-shrink-0">{label}</span>
-                <span className={`tabular-nums flex-1 ${cls}`}>{val ?? "—"}</span>
-                <span className="w-14 text-right">
-                  {showDelta && priceDeltaPct != null
-                    ? <DeltaChip pct={priceDeltaPct} />
-                    : <span className="text-white/20 text-[10px]">—</span>}
-                </span>
+            {/* Median */}
+            {(() => {
+              const cur = event.price?.median_ask ?? null;
+              const pct = event.changes?.h24?.price_delta_pct ?? null;
+              const orig = (cur != null && pct != null) ? Math.round(cur / (1 + pct / 100)) : null;
+              const abs  = (cur != null && orig != null) ? cur - orig : null;
+              return (
+                <div className="flex items-center justify-between py-2 border-b border-white/[0.04]">
+                  <span className="text-[12px] text-slate-400 font-semibold w-16 flex-shrink-0">Median</span>
+                  <div className="flex items-center gap-1.5 tabular-nums">
+                    {orig != null ? <span className="text-[11px] text-slate-600">{fmt$$(orig)} →</span> : null}
+                    <span className="text-[13px] font-bold text-white">{cur != null ? fmt$$(cur) : "—"}</span>
+                    {abs != null && abs !== 0 && <span className="text-[11px] text-slate-500">{abs > 0 ? `+${fmt$$(abs)}` : fmt$$(abs)}</span>}
+                    {pct != null ? <DeltaChip pct={pct} invert /> : <span className="text-[11px] text-slate-700">—</span>}
+                  </div>
+                </div>
+              );
+            })()}
+            {/* Low — no baseline on EventSummary; show current + — */}
+            <div className="flex items-center justify-between py-2 border-b border-white/[0.04]">
+              <span className="text-[12px] text-slate-500 w-16 flex-shrink-0">Low</span>
+              <div className="flex items-center gap-1.5 tabular-nums">
+                <span className="text-[13px] font-semibold text-emerald-300">{event.price?.low_ask != null ? fmt$$(event.price.low_ask) : "—"}</span>
+                <span className="text-[11px] text-slate-700">—</span>
               </div>
-            ))}
-            <div className="flex items-center justify-between py-1.5">
-              <span className="text-xs text-slate-400 w-12 flex-shrink-0">Inv</span>
-              <span className="text-base font-black text-slate-100 tabular-nums flex-1">
-                {fmtNum(event.inventory?.total_listings) ?? "—"}
+            </div>
+            {/* High — no baseline; show current + — */}
+            <div className="flex items-center justify-between py-2 border-b border-white/[0.04]">
+              <span className="text-[12px] text-slate-500 w-16 flex-shrink-0">High</span>
+              <div className="flex items-center gap-1.5 tabular-nums">
+                <span className="text-[13px] font-semibold text-slate-400">{event.price?.high_ask != null ? fmt$$(event.price.high_ask) : "—"}</span>
+                <span className="text-[11px] text-slate-700">—</span>
+              </div>
+            </div>
+            {/* Inventory */}
+            {(() => {
+              const cur = invCurrent;
+              const abs = invDelta;
+              const absPct = abs != null && cur != null && (cur - abs) > 0 ? (abs / (cur - abs)) * 100 : null;
+              return (
+                <div className="flex items-center justify-between py-2 border-b border-white/[0.04]">
+                  <span className="text-[12px] text-slate-500 w-16 flex-shrink-0">Inventory</span>
+                  <div className="flex items-center gap-2 tabular-nums">
+                    <span className="text-[13px] font-semibold text-blue-300/80">{cur != null ? fmtNum(cur) : "—"}</span>
+                    {abs != null ? (
+                      <span className={cn("text-[11px] font-medium", abs > 0 ? "text-red-400" : abs < 0 ? "text-emerald-400" : "text-slate-500")}>
+                        {abs > 0 ? "+" : ""}{abs}
+                        {absPct != null ? ` (${absPct > 0 ? "+" : ""}${absPct.toFixed(1)}%)` : ""}
+                      </span>
+                    ) : <span className="text-[11px] text-slate-700">—</span>}
+                  </div>
+                </div>
+              );
+            })()}
+            {/* Dup % */}
+            <div className="flex items-center justify-between py-2">
+              <span className="text-[12px] text-slate-500 w-16 flex-shrink-0">Dup %</span>
+              <span className="text-[11px] text-slate-400 tabular-nums">
+                {snap?.duplicates?.dup_pct != null ? `${snap.duplicates.dup_pct.toFixed(1)}%` : "—"}
               </span>
-              {invDelta != null ? (
-                <span className={`text-[11px] font-semibold tabular-nums ${invDelta > 0 ? "text-emerald-400" : "text-red-400"}`}>
-                  {invDelta > 0 ? "+" : ""}{fmtNum(invDelta)} 24H
-                </span>
-              ) : <span className="text-white/20 text-[10px]">—</span>}
             </div>
           </div>
         </div>
 
         {/* Panel 2: Absorption */}
-        <div className="p-5 bg-white/[0.02]">
-          <p className="text-[9px] text-slate-500 uppercase tracking-[0.18em] font-semibold mb-4">
-            Absorption <span className="normal-case tracking-normal font-normal">(Sales Driven)</span>
-          </p>
-          <div className="mb-3 pb-3 border-b border-white/[0.04]">
-            <p className="text-[9px] text-slate-600 mb-1 uppercase tracking-[0.12em]">Est. Avg Sale Price</p>
-            <p className="text-[36px] font-black text-amber-300 tabular-nums leading-none">—</p>
-            <div className="flex items-center gap-1.5 mt-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400/50 animate-pulse flex-shrink-0" />
-              <p className="text-[10px] text-slate-600 italic">Monitoring · collecting as tickets move</p>
-            </div>
-          </div>
-          <div>
-            {["Tickets Sold", "24H Sold", "7D Sold", "Since Tracking"].map(label => (
-              <div key={label} className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-0">
-                <span className="text-[10px] text-slate-400">{label}</span>
-                <span className="text-[11px] text-slate-700">·</span>
+        {(() => {
+          const avgSale = (lcSummary?.avg_implied_sale_price as number | null) ?? null;
+          const sold24  = vel?.windows?.["24h"]?.implied_sale_listings ?? null;
+          const sold7d  = vel?.windows?.["7d"]?.implied_sale_listings ?? null;
+          const tixSold = vel?.windows?.since_tracking?.implied_sale_tickets ?? null;
+          const invSince = (lcSummary?.assumed_sales as number | null) ?? null;
+          const rows = [
+            { label: "Tickets Sold", val: tixSold },
+            { label: "24H Sold",     val: sold24  },
+            { label: "7D Sold",      val: sold7d  },
+            { label: "Since Tracking", val: invSince },
+          ];
+          return (
+            <div className="p-5 bg-white/[0.02]">
+              <p className="text-[11px] text-slate-400 uppercase tracking-[0.18em] font-semibold mb-4">
+                Absorption <span className="normal-case tracking-normal font-normal text-slate-500">(Sales Driven)</span>
+              </p>
+              <div className="mb-4 pb-3 border-b border-white/[0.06]">
+                <p className="text-[11px] text-slate-500 mb-2 uppercase tracking-[0.12em]">Est. Avg Sale Price</p>
+                {avgSale != null ? (
+                  <p className="text-[36px] font-black text-amber-300 tabular-nums leading-none">{fmt$$(avgSale)}</p>
+                ) : (
+                  <>
+                    <p className="text-[18px] font-semibold text-slate-600 italic leading-none">
+                      {lcSummary != null ? "No disappearances yet" : "Collecting data…"}
+                    </p>
+                  </>
+                )}
               </div>
-            ))}
-          </div>
-        </div>
+              <div>
+                {rows.map(({ label, val }) => (
+                  <div key={label} className="flex items-center justify-between py-2.5 border-b border-white/[0.05] last:border-0">
+                    <span className="text-[11px] text-slate-400">{label}</span>
+                    {val != null && val > 0
+                      ? <span className="text-[12px] font-semibold text-emerald-400 tabular-nums">{fmtNum(val)}</span>
+                      : val === 0
+                      ? <span className="text-[11px] italic text-slate-600">No disappearances</span>
+                      : <span className="text-[11px] italic text-slate-700">—</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Panel 3: Seller Behavior */}
-        <div className="p-5">
-          <p className="text-[9px] text-slate-500 uppercase tracking-[0.18em] font-semibold mb-4">
-            Seller Behavior <span className="normal-case tracking-normal font-normal">(24H)</span>
-          </p>
-          <div>
-            {["Relist Price Change", "Price Drops", "Repriced Listings"].map(label => (
-              <div key={label} className="flex items-center justify-between py-2.5 border-b border-white/[0.04]">
-                <span className="text-[10px] text-slate-400">{label}</span>
-                <span className="text-[13px] text-slate-600">·</span>
+        {(() => {
+          const repriceDelta = seller?.median_reprice_delta ?? null;
+          const repriced24   = seller?.repriced_24h ?? null;
+          const drops24      = seller?.price_drops_24h ?? null;
+          const churn        = seller?.churn_rate ?? null;
+          // Seller mood from capitulation + aggression
+          const cap  = seller?.capitulation_score ?? null;
+          const aggr = seller?.seller_aggression ?? null;
+          const drops    = seller?.price_drops_24h ?? 0;
+          const repriced = seller?.repriced_24h ?? 0;
+          const dropRatio = repriced > 0 ? drops / repriced : 0;
+          const mood = cap == null ? null
+            : cap > 0.70 ? "Seller capitulation increasing"
+            : cap > 0.55 || (aggr != null && aggr > 0.65) ? "Repricing accelerating"
+            : cap > 0.40 || dropRatio > 0.55 ? "Aggressive repricing"
+            : cap > 0.25 && dropRatio < 0.3 ? "Price cuts slowing"
+            : cap <= 0.20 ? "Holding firm"
+            : "Stable seller behavior";
+          const moodCls = mood === "Seller capitulation increasing" || mood === "Repricing accelerating" ? "text-red-300"
+            : mood === "Aggressive repricing" ? "text-amber-300"
+            : mood === "Price cuts slowing" ? "text-amber-300/70"
+            : mood === "Holding firm" || mood === "Stable seller behavior" ? "text-emerald-300"
+            : "text-slate-500";
+          return (
+            <div className="p-5">
+              <p className="text-[11px] text-slate-400 uppercase tracking-[0.18em] font-semibold mb-4">
+                Seller Behavior <span className="normal-case tracking-normal font-normal text-slate-500">(24H)</span>
+              </p>
+              <div>
+                <div className="flex items-center justify-between py-2.5 border-b border-white/[0.05]">
+                  <span className="text-[11px] text-slate-400">Relist Price Chg</span>
+                  {repriceDelta != null
+                    ? <span className={cn("text-[13px] font-bold tabular-nums", repriceDelta < 0 ? "text-red-300" : "text-emerald-300")}>
+                        {repriceDelta > 0 ? "+" : ""}{fmt$$(repriceDelta)}
+                      </span>
+                    : <span className="text-[11px] italic text-slate-600">{seller ? "No relist activity" : "—"}</span>}
+                </div>
+                <div className="flex items-center justify-between py-2.5 border-b border-white/[0.05]">
+                  <span className="text-[11px] text-slate-400">Price Drops</span>
+                  {drops24 != null
+                    ? drops24 > 0
+                      ? <span className="text-[12px] font-semibold text-red-400 tabular-nums">{fmtNum(drops24)}</span>
+                      : <span className="text-[11px] italic text-slate-600">No price drops</span>
+                    : <span className="text-[11px] italic text-slate-700">—</span>}
+                </div>
+                <div className="flex items-center justify-between py-2.5 border-b border-white/[0.05]">
+                  <span className="text-[11px] text-slate-400">Repriced Listings</span>
+                  {repriced24 != null
+                    ? repriced24 > 0
+                      ? <span className="text-[12px] font-semibold text-amber-400 tabular-nums">{fmtNum(repriced24)}</span>
+                      : <span className="text-[11px] italic text-slate-600">No repricing detected</span>
+                    : <span className="text-[11px] italic text-slate-700">—</span>}
+                </div>
+                <div className="flex items-start justify-between py-2.5 border-l-2 border-slate-600/40 pl-2.5 -ml-2.5 mt-0.5">
+                  <span className="text-[11px] text-slate-400">Seller Mood</span>
+                  <span className={cn("text-[12px] font-medium italic text-right max-w-[55%]", moodCls)}>
+                    {mood ?? (seller ? "No seller movement yet" : "Not enough history")}
+                  </span>
+                </div>
               </div>
-            ))}
-            <div className="flex items-start justify-between py-2.5 border-l-2 border-red-500/30 pl-2.5 -ml-2.5 mt-0.5">
-              <span className="text-[10px] text-slate-500">Seller Mood</span>
-              <span className="text-[13px] font-semibold italic text-slate-600">·</span>
             </div>
-          </div>
-        </div>
+          );
+        })()}
       </div>
     </div>
   );
 }
 
-// ── Portfolio Snapshot ────────────────────────────────────────────────────────
-// Compact aggregate strip — below the featured event hero, NOT the hero itself.
-function PortfolioSnapshot({ events }: { events: EventSummary[] }) {
-  const floors    = events.map(e => e.price?.low_ask).filter((v): v is number => v != null);
-  const highs     = events.map(e => e.price?.high_ask).filter((v): v is number => v != null);
-  const invTotals = events.map(e => e.inventory?.total_listings).filter((v): v is number => v != null);
-  const invDeltas = events.map(e => e.changes?.h24?.inventory_delta).filter((v): v is number => v != null);
-  const aggLow    = floors.length > 0 ? Math.min(...floors) : null;
-  const aggHigh   = highs.length > 0 ? Math.max(...highs) : null;
-  const totalInv  = invTotals.reduce((s, v) => s + v, 0);
-  const totalDelta = invDeltas.length > 0 ? invDeltas.reduce((s, v) => s + v, 0) : null;
-  const signalDist: Record<string, number> = {};
-  events.forEach(e => {
-    const a = signalToAction(e.signal);
-    signalDist[a] = (signalDist[a] ?? 0) + 1;
-  });
-  const signalEntries = Object.entries(signalDist).sort((a, b) => b[1] - a[1]);
+// ── Marketplace Health Strip ──────────────────────────────────────────────────
+// Answers: "Can I trust today's market data?" — aggregate market confidence signal
+function MarketplaceHealthStrip({ events }: { events: EventSummary[] }) {
+  if (events.length === 0) return null;
+
+  const withPrice  = events.filter(e => e.price?.low_ask != null).length;
+  const withInv    = events.filter(e => e.inventory?.total_listings > 0).length;
+  const freshCov   = events.filter(e => (e.inventory?.fresh_total_listings ?? 0) > 0).length;
+  const coverage   = Math.round((withPrice / events.length) * 100);
+
+  const floors     = events.map(e => e.price?.low_ask).filter((v): v is number => v != null);
+  const highs      = events.map(e => e.price?.high_ask).filter((v): v is number => v != null);
+  const totalInv   = events.reduce((s, e) => s + (e.inventory?.total_listings ?? 0), 0);
+  const invDeltas  = events.map(e => e.changes?.h24?.inventory_delta).filter((v): v is number => v != null);
+  const netDelta   = invDeltas.length > 0 ? invDeltas.reduce((s, v) => s + v, 0) : null;
+
+  const health     = coverage >= 80 ? "live" : coverage >= 50 ? "partial" : "sparse";
+  const healthCls  = health === "live" ? "text-emerald-400" : health === "partial" ? "text-amber-400" : "text-slate-500";
+  const dotCls     = health === "live" ? "bg-emerald-400" : health === "partial" ? "bg-amber-400" : "bg-slate-500";
+
+  const statItems = [
+    { label: "Events", val: String(events.length), sub: null },
+    { label: "Live Coverage", val: `${coverage}%`, sub: health === "live" ? "fresh" : health === "partial" ? "partial" : "sparse" },
+    { label: "Total Inventory", val: fmtNum(totalInv), sub: netDelta != null ? (netDelta >= 0 ? `+${netDelta} 24h` : `${netDelta} 24h`) : null },
+    { label: "Price Range", val: floors.length > 0 ? `${fmt$$(Math.min(...floors))}–${fmt$$(Math.max(...highs || [Math.min(...floors)]))}` : "—", sub: null },
+    { label: "Fresh Data", val: `${freshCov}/${events.length}`, sub: "events" },
+  ];
 
   return (
-    <div className="rounded-xl border border-white/6 bg-[#08090e] px-4 py-2.5 flex items-center gap-5 flex-wrap mb-4">
-      <span className="text-[10px] text-white/20 uppercase tracking-widest font-bold flex-shrink-0">Portfolio Snapshot</span>
-      <div className="flex items-center gap-1.5">
-        <span className="text-[10px] text-slate-600">Events</span>
-        <span className="text-xs font-bold text-slate-400">{events.length}</span>
-      </div>
-      {totalInv > 0 && (
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] text-slate-600">Inventory</span>
-          <span className="text-xs font-bold text-slate-400 tabular-nums">{fmtNum(totalInv)}</span>
-          {totalDelta != null && (
-            <span className={`text-[10px] font-semibold tabular-nums ${totalDelta > 0 ? "text-emerald-500" : "text-red-500"}`}>
-              ({totalDelta > 0 ? "+" : ""}{totalDelta})
-            </span>
-          )}
+    <div className="rounded-xl border border-white/[0.06] bg-[#07080d] px-6 py-3.5 mb-4">
+      <div className="flex items-center gap-8 flex-wrap">
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <div className={`w-1.5 h-1.5 rounded-full ${dotCls} ${health === "live" ? "animate-pulse" : ""}`} />
+          <span className={`text-[12px] font-bold uppercase tracking-[0.18em] ${healthCls}`}>
+            {health === "live" ? "Live" : health === "partial" ? "Partial" : "Sparse"}
+          </span>
+          <span className="text-[11px] text-white/20 hidden sm:block">market data</span>
         </div>
-      )}
-      {aggLow != null && (
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] text-slate-600">Range</span>
-          <span className="text-xs font-bold text-slate-400 tabular-nums">{fmt$$(aggLow)}–{fmt$$(aggHigh)}</span>
-        </div>
-      )}
-      <div className="flex items-center gap-1.5 flex-wrap ml-auto">
-        {signalEntries.map(([act, cnt]) => {
-          const c = actionColors(act as Parameters<typeof actionColors>[0]);
-          return (
-            <span key={act} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-              style={{ color: c.text, background: c.bg + "40", border: `1px solid ${c.border}` }}>
-              {act} ×{cnt}
-            </span>
-          );
-        })}
+        <div className="w-px h-5 bg-white/[0.06] hidden sm:block" />
+        {statItems.slice(1).map(({ label, val, sub }) => (
+          <div key={label} className="flex flex-col gap-0.5">
+            <span className="text-[11px] text-white/22 uppercase tracking-[0.14em]">{label}</span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-[14px] font-bold text-white/65 tabular-nums">{val}</span>
+              {sub && <span className="text-[11px] text-white/25">{sub}</span>}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -568,19 +751,19 @@ function EventGroup({
               <div className="flex items-center gap-5 flex-wrap">
                 {lowestPrice != null && (
                   <div className="flex items-baseline gap-1.5">
-                    <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Low</span>
+                    <span className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Low</span>
                     <span className="text-base font-bold text-emerald-300 tabular-nums">{fmt$$(lowestPrice)}</span>
                   </div>
                 )}
                 {medianRange && (
                   <div className="flex items-baseline gap-1.5">
-                    <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Median</span>
+                    <span className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Median</span>
                     <span className="text-base text-slate-300 tabular-nums font-semibold">{medianRange}</span>
                   </div>
                 )}
                 {totalInvDelta != null && (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Inv Δ</span>
+                    <span className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Inv Δ</span>
                     <span className={`text-sm font-bold flex items-center gap-0.5 tabular-nums ${totalInvDelta > 0 ? "text-emerald-400" : "text-red-400"}`}>
                       {totalInvDelta > 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
                       {totalInvDelta > 0 ? "+" : ""}{totalInvDelta}
@@ -601,7 +784,7 @@ function EventGroup({
                     return (
                       <div key={slug} className="flex flex-col items-center rounded-lg px-2.5 py-2 border min-w-[52px]"
                         style={{ background: b.bg, borderColor: b.border }}>
-                        <span className="text-[10px] font-black uppercase tracking-wide" style={{ color: b.textColor }}>{b.short}</span>
+                        <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: b.textColor }}>{b.short}</span>
                         <span className="text-sm text-white/80 tabular-nums font-bold mt-0.5">
                           {price != null ? fmt$$(price) : "—"}
                         </span>
@@ -639,17 +822,17 @@ function EventGroup({
 
       {/* Intelligence row — readable text strip */}
       <div className="flex items-center gap-5 px-5 py-2.5 rounded-b-xl border border-t-0 border-white/5 bg-[#08090e] -mt-px flex-wrap">
-        <span className="text-[10px] text-white/25 uppercase tracking-widest font-bold flex-shrink-0">Intel</span>
+        <span className="text-[11px] text-white/25 uppercase tracking-[0.22em] font-bold flex-shrink-0">Intel</span>
         <div className="flex items-center gap-1">
-          <span className="text-[10px] text-slate-600 uppercase tracking-wider">Trend</span>
+          <span className="text-[11px] text-slate-500 uppercase tracking-wider">Trend</span>
           <span className="text-xs text-white/25">—</span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="text-[10px] text-slate-600 uppercase tracking-wider">Buy Window</span>
+          <span className="text-[11px] text-slate-500 uppercase tracking-wider">Buy Window</span>
           <span className="text-xs text-white/25">—</span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="text-[10px] text-slate-600 uppercase tracking-wider">Signal</span>
+          <span className="text-[11px] text-slate-500 uppercase tracking-wider">Signal</span>
           <span className="text-xs text-white/25">—</span>
         </div>
       </div>
@@ -658,15 +841,15 @@ function EventGroup({
       {isNflEvent(groupKey, firstMeta?.artist) && nflAudioState && (
         <div className="flex items-center gap-2.5 px-4 py-2.5 mt-1 rounded-xl border border-amber-500/20 bg-amber-500/5">
           <span className={`w-2 h-2 rounded-full flex-shrink-0 ${nflAudioState.playing ? "bg-amber-400 animate-pulse" : nflAudioState.errorMsg ? "bg-red-400" : "bg-amber-400/40"}`} />
-          <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">NFL Theme</span>
+          <span className="text-[11px] font-bold text-white/50 uppercase tracking-widest">NFL Theme</span>
           {nflAudioState.errorMsg ? (
-            <span className="text-[10px] text-red-400/80">{nflAudioState.errorMsg}</span>
+            <span className="text-[11px] text-red-400/80">{nflAudioState.errorMsg}</span>
           ) : nflAudioState.playing ? (
-            <span className="text-[10px] text-amber-400 font-medium">Playing</span>
+            <span className="text-[11px] text-amber-400 font-medium">Playing</span>
           ) : nflAudioState.blocked ? (
-            <button onClick={nflAudioState.onPlay} className="text-[10px] text-amber-400 border border-amber-500/30 rounded px-2 py-0.5 bg-amber-500/8 hover:bg-amber-500/15 transition-colors">Tap to play</button>
+            <button onClick={nflAudioState.onPlay} className="text-[11px] text-amber-400 border border-amber-500/30 rounded px-2 py-0.5 bg-amber-500/8 hover:bg-amber-500/15 transition-colors">Tap to play</button>
           ) : (
-            <span className="text-[10px] text-white/25">Click row to play</span>
+            <span className="text-[11px] text-white/25">Click row to play</span>
           )}
           <div className="ml-auto flex items-center gap-1">
             <button onClick={nflAudioState.playing ? nflAudioState.onPause : nflAudioState.onPlay}
@@ -729,24 +912,25 @@ export default function DashboardPage() {
         setSelectedId(best.event_id);
       }
 
-      const metaResults = await Promise.allSettled(evts.map((e) => api.events.meta(e.event_id)));
-      const metaMap: MetaMap = {};
-      evts.forEach((e, i) => {
-        const r = metaResults[i];
-        if (r.status === "fulfilled") {
-          metaMap[e.event_id] = r.value;
-        }
-      });
-      setMetas(metaMap);
-
       const depthMap: Record<number, number | null> = {};
       evts.forEach((e) => {
         depthMap[e.event_id] = e.history_hours != null ? e.history_hours / 24 : null;
       });
       setDepths(depthMap);
+
+      // Render immediately — meta calls load in background without blocking
+      setLoading(false);
+
+      Promise.allSettled(evts.map((e) => api.events.meta(e.event_id))).then((results) => {
+        const metaMap: MetaMap = {};
+        evts.forEach((e, i) => {
+          const r = results[i];
+          if (r.status === "fulfilled") metaMap[e.event_id] = r.value;
+        });
+        setMetas(metaMap);
+      });
     } catch (e) {
       setError(String(e));
-    } finally {
       setLoading(false);
     }
   }
@@ -809,13 +993,13 @@ export default function DashboardPage() {
       {/* page header */}
       <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
         <div>
-          <h1 className="text-lg font-semibold text-slate-100">Active Markets</h1>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <h1 className="text-2xl font-bold tracking-tight text-white">Active Markets</h1>
+          <p className="text-xs text-slate-500 mt-1">
             {loading ? "Loading…" : `${events.length} events · ${groups.length} artists`}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-white/7 text-xs text-slate-500 bg-white/[0.01]">
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-white/[0.07] text-xs text-slate-500 bg-white/[0.01]">
             <span className="text-slate-600 select-none">Sort</span>
             <select
               value={sort}
@@ -834,7 +1018,7 @@ export default function DashboardPage() {
           {hiddenCount > 0 && (
             <button
               onClick={() => setShowHidden(v => !v)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-white/7 text-xs text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-white/[0.07] text-xs text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-colors"
             >
               <Eye size={12} />
               {showHidden ? "Hide hidden" : `${hiddenCount} hidden`}
@@ -843,7 +1027,7 @@ export default function DashboardPage() {
           <button
             onClick={load}
             disabled={loading}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-white/7 text-xs text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-colors disabled:opacity-40"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-white/[0.07] text-xs text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-colors disabled:opacity-40"
           >
             <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
             Refresh
@@ -889,8 +1073,8 @@ export default function DashboardPage() {
               onTogglePin={() => togglePin(selectedEvent.event_id)}
             />
           )}
-          {/* Portfolio Snapshot — compact aggregate strip below hero */}
-          <PortfolioSnapshot events={visible} />
+          {/* Marketplace Health Strip — per-MP data quality signal */}
+          <MarketplaceHealthStrip events={visible} />
 
           {/* Market groups */}
           {groups.map(([groupKey, groupEvents]) => (

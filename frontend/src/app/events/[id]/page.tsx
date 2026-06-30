@@ -1292,8 +1292,10 @@ export default function EventDetailPage() {
                 <p className="text-[11px] text-slate-500 uppercase tracking-[0.14em]">Est. Avg Sale Price</p>
                 {avgImpliedSalePrice != null ? (
                   <span className="text-[15px] font-bold tabular-nums text-emerald-300">{fmt$$(avgImpliedSalePrice)}</span>
+                ) : lifecycle != null ? (
+                  <span className="text-[11px] italic text-slate-600">No disappearances yet</span>
                 ) : (
-                  <span className="text-[12px] text-slate-700">—</span>
+                  <span className="text-[11px] italic text-slate-700">No lifecycle yet</span>
                 )}
               </div>
               {avgImpliedSalePrice != null && impliedSaleCount != null && (
@@ -1340,27 +1342,45 @@ export default function EventDetailPage() {
             })()}
 
             {/* Movement rows — real data from market + velocity-windows endpoints */}
-            {[
-              { label: "Sold 24H",      val: velocityWindows?.windows?.["24h"]?.implied_sale_listings != null ? fmtNum(velocityWindows.windows["24h"].implied_sale_listings) : null,
-                cls: (() => { const v = velocityWindows?.windows?.["24h"]?.implied_sale_listings ?? null; return v != null && v > 0 ? "text-emerald-400" : "text-slate-700"; })() },
-              { label: "Sold 7D",       val: velocityWindows?.windows?.["7d"]?.implied_sale_listings != null ? fmtNum(velocityWindows.windows["7d"].implied_sale_listings) : null,
-                cls: (() => { const v = velocityWindows?.windows?.["7d"]?.implied_sale_listings ?? null; return v != null && v > 0 ? "text-emerald-400" : "text-slate-700"; })() },
-              { label: "Tickets Sold",  val: velocityWindows?.windows?.since_tracking?.implied_sale_tickets != null ? fmtNum(velocityWindows.windows.since_tracking.implied_sale_tickets) : null,
-                cls: (() => { const v = velocityWindows?.windows?.since_tracking?.implied_sale_tickets ?? null; return v != null && v > 0 ? "text-emerald-400" : "text-slate-700"; })() },
-              { label: "Removed 24H",   val: removed24h != null ? fmtNum(removed24h) : null,  cls: removed24h != null && removed24h > 0 ? "text-red-400" : "text-slate-700" },
-              { label: "Added 24H",     val: added24h   != null ? fmtNum(added24h)   : null,  cls: added24h   != null && added24h > 0   ? "text-emerald-400" : "text-slate-700" },
-              { label: "Market Stress", val: market?.market_stress?.composite_score != null
-                  ? `${(market.market_stress.composite_score * 100).toFixed(0)}%` : null,
-                cls: (() => {
-                  const s = market?.market_stress?.composite_score ?? null;
-                  return s == null ? "text-slate-700" : s > 0.6 ? "text-red-400" : s > 0.35 ? "text-amber-400" : "text-emerald-400";
-                })() },
-            ].map(({ label, val, cls }) => (
-              <div key={label} className="flex items-center justify-between py-1.5 border-b border-white/[0.04] last:border-0">
+            {([
+              { label: "Sold 24H", num: velocityWindows?.windows?.["24h"]?.implied_sale_listings ?? null,
+                emptyLabel: velocityWindows != null ? "No disappearances" : "No lifecycle yet" },
+              { label: "Sold 7D",  num: velocityWindows?.windows?.["7d"]?.implied_sale_listings ?? null,
+                emptyLabel: velocityWindows != null ? "No disappearances" : "No lifecycle yet" },
+              { label: "Tickets Sold", num: velocityWindows?.windows?.since_tracking?.implied_sale_tickets ?? null,
+                emptyLabel: velocityWindows != null ? "No disappearances" : "No lifecycle yet" },
+              { label: "Removed 24H", num: removed24h, emptyLabel: "No data" },
+              { label: "Added 24H",   num: added24h,   emptyLabel: "No data" },
+            ] as { label: string; num: number | null; emptyLabel: string }[]).map(({ label, num, emptyLabel }) => (
+              <div key={label} className="flex items-center justify-between py-1.5 border-b border-white/[0.04]">
                 <span className="text-[12px] text-slate-500">{label}</span>
-                <span className={cn("tabular-nums font-semibold text-[13px]", cls)}>{val ?? "—"}</span>
+                {num != null && num > 0 ? (
+                  <span className={cn("tabular-nums font-semibold text-[13px]",
+                    label.startsWith("Sold") || label === "Tickets Sold" ? "text-emerald-400"
+                    : label === "Added 24H" ? "text-emerald-400"
+                    : "text-red-400")}>
+                    {fmtNum(num)}
+                  </span>
+                ) : num === 0 ? (
+                  <span className="text-[11px] italic text-slate-600">{emptyLabel}</span>
+                ) : (
+                  <span className="text-[11px] italic text-slate-700">No data</span>
+                )}
               </div>
             ))}
+            <div className="flex items-center justify-between py-1.5">
+              <span className="text-[12px] text-slate-500">Market Stress</span>
+              {market?.market_stress?.composite_score != null ? (
+                <span className={cn("tabular-nums font-semibold text-[13px]", (() => {
+                  const s = market.market_stress.composite_score;
+                  return s > 0.6 ? "text-red-400" : s > 0.35 ? "text-amber-400" : "text-emerald-400";
+                })())}>
+                  {`${(market.market_stress.composite_score * 100).toFixed(0)}%`}
+                </span>
+              ) : (
+                <span className="text-[11px] italic text-slate-600">Not enough history</span>
+              )}
+            </div>
           </div>
 
           {/* Col 3: Seller Behavior — Relist Price Change primary */}
@@ -1394,27 +1414,38 @@ export default function EventDetailPage() {
                   <span className="text-[11px] text-slate-500 pb-0.5">median</span>
                 </div>
               ) : (
-                <p className="text-[26px] font-black text-slate-700 tabular-nums leading-none">—</p>
+                <p className="text-[16px] font-semibold text-slate-600 italic leading-snug">
+                  {seller != null ? "No relist activity" : "Not enough history"}
+                </p>
               )}
             </div>
 
             {/* Repriced / Price Drops / Churn */}
-            {[
-              { label: "Repriced 24H",  val: seller?.repriced_24h != null ? fmtNum(seller.repriced_24h) : null,
-                cls: seller?.repriced_24h ? "text-amber-400" : "text-slate-600" },
-              { label: "Price Drops",   val: seller?.price_drops_24h != null ? fmtNum(seller.price_drops_24h) : null,
-                cls: seller?.price_drops_24h ? "text-red-400" : "text-slate-600" },
-              { label: "Churn Rate",    val: seller?.churn_rate != null ? `${seller.churn_rate.toFixed(1)}×` : null,
-                cls: (() => {
-                  const c = seller?.churn_rate ?? null;
-                  return c == null ? "text-slate-600" : c > 3 ? "text-red-400" : c > 1.5 ? "text-amber-400" : "text-emerald-400/70";
-                })() },
-            ].map(({ label, val, cls }) => (
-              <div key={label} className="flex items-center justify-between py-1.5 border-b border-white/[0.04]">
-                <span className="text-[12px] text-slate-400">{label}</span>
-                <span className={cn("text-[13px] font-bold tabular-nums", cls)}>{val ?? "—"}</span>
-              </div>
-            ))}
+            <div className="flex items-center justify-between py-1.5 border-b border-white/[0.04]">
+              <span className="text-[12px] text-slate-400">Repriced 24H</span>
+              {seller?.repriced_24h != null ? (
+                seller.repriced_24h > 0
+                  ? <span className="text-[13px] font-bold text-amber-400 tabular-nums">{fmtNum(seller.repriced_24h)}</span>
+                  : <span className="text-[11px] italic text-slate-600">No repricing detected</span>
+              ) : <span className="text-[11px] italic text-slate-700">Not enough history</span>}
+            </div>
+            <div className="flex items-center justify-between py-1.5 border-b border-white/[0.04]">
+              <span className="text-[12px] text-slate-400">Price Drops</span>
+              {seller?.price_drops_24h != null ? (
+                seller.price_drops_24h > 0
+                  ? <span className="text-[13px] font-bold text-red-400 tabular-nums">{fmtNum(seller.price_drops_24h)}</span>
+                  : <span className="text-[11px] italic text-slate-600">No price drops</span>
+              ) : <span className="text-[11px] italic text-slate-700">Not enough history</span>}
+            </div>
+            <div className="flex items-center justify-between py-1.5 border-b border-white/[0.04]">
+              <span className="text-[12px] text-slate-400">Churn Rate</span>
+              {seller?.churn_rate != null ? (
+                <span className={cn("text-[13px] font-bold tabular-nums",
+                  seller.churn_rate > 3 ? "text-red-400" : seller.churn_rate > 1.5 ? "text-amber-400" : "text-emerald-400/70")}>
+                  {seller.churn_rate.toFixed(1)}×
+                </span>
+              ) : <span className="text-[11px] italic text-slate-700">Not enough history</span>}
+            </div>
 
             {/* Seller Mood — behavioral momentum */}
             <div className="pt-2 mt-0.5">
@@ -1427,7 +1458,9 @@ export default function EventDetailPage() {
                 : sellerMood === "Holding firm" ? "text-emerald-300"
                 : sellerMood === "Stable seller behavior" ? "text-emerald-300/70"
                 : "text-slate-600")}>
-                {sellerMood}
+                {sellerMood === "—"
+                  ? (seller != null ? "No seller movement yet" : "Not enough history")
+                  : sellerMood}
               </p>
             </div>
           </div>
