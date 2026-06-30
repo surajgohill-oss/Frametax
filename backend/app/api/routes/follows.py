@@ -195,6 +195,8 @@ async def list_follow_events(db: AsyncSession = Depends(get_db)):
 
     # Identify follow-acquired events by matching events.artist against active user_follows.
     # No 'source' column on events table — we use artist name match as the signal.
+    # NOTE: listing_snapshots is queried separately to avoid a massive cross-join that
+    # caused 30s response times when the snapshots table has many rows per event.
     rows = (await db.execute(text("""
         SELECT
             e.id          AS event_id,
@@ -208,10 +210,6 @@ async def list_follow_events(db: AsyncSession = Depends(get_db)):
             SUM(CASE WHEN m.slug='stubhub'    AND l.id IS NOT NULL THEN 1 ELSE 0 END) AS sh_listings,
             SUM(CASE WHEN m.slug='tickpick'   AND l.id IS NOT NULL THEN 1 ELSE 0 END) AS tp_listings,
             SUM(CASE WHEN m.slug='vividseats' AND l.id IS NOT NULL THEN 1 ELSE 0 END) AS vs_listings,
-            -- History depth from listing_snapshots
-            MIN(ls.snapshot_at)   AS snap_oldest,
-            MAX(ls.snapshot_at)   AS snap_newest,
-            COUNT(DISTINCT ls.id) AS snap_count,
             -- Floor price (lowest active listing)
             MIN(l.price)          AS floor_price
         FROM events e
@@ -223,19 +221,30 @@ async def list_follow_events(db: AsyncSession = Depends(get_db)):
         LEFT JOIN tracked_events te ON te.event_id = e.id AND te.is_active = true
         LEFT JOIN marketplaces m ON m.id = te.marketplace_id
         LEFT JOIN listings l ON l.event_id = e.id AND l.marketplace_id = te.marketplace_id AND l.is_active = true
-        LEFT JOIN listing_snapshots ls ON ls.event_id = e.id
         GROUP BY e.id, e.title, e.artist, e.event_date, e.status, uf.display_name
         ORDER BY e.event_date ASC
     """))).fetchall()
+
+    # Fetch snapshot summary separately for matched event IDs
+    event_ids = [r[0] for r in rows]
+    snap_rows = []
+    if event_ids:
+        snap_rows = (await db.execute(text("""
+            SELECT event_id, MIN(snapshot_at), MAX(snapshot_at), COUNT(*)
+            FROM listing_snapshots
+            WHERE event_id = ANY(:ids)
+            GROUP BY event_id
+        """), {"ids": event_ids})).fetchall()
+    snap_by_event = {r[0]: (r[1], r[2], r[3]) for r in snap_rows}
 
     events_out = []
     for row in rows:
         (event_id, title, artist, event_date, status, follow_display_name,
          gt_listings, sh_listings, tp_listings, vs_listings,
-         snap_oldest, snap_newest, snap_count,
          floor_price) = row
 
         # ── History depth ─────────────────────────────────────────────────────
+        snap_oldest, snap_newest, snap_count = snap_by_event.get(event_id, (None, None, 0))
         if snap_oldest and snap_newest:
             snap_oldest_tz = snap_oldest.replace(tzinfo=timezone.utc) if snap_oldest.tzinfo is None else snap_oldest
             snap_newest_tz = snap_newest.replace(tzinfo=timezone.utc) if snap_newest.tzinfo is None else snap_newest
