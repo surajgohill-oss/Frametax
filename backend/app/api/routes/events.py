@@ -7,7 +7,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select, func, update as sa_update
 from sqlalchemy.orm import selectinload
 import hashlib
 import re
@@ -424,6 +424,22 @@ async def auto_complete_past_events(db: AsyncSession = Depends(get_db)):
         for te in te_rows:
             te.is_active = False
         completed_ids.append(event.id)
+
+    # Also bulk-deactivate all active listings for already-completed events.
+    # These listings have is_active=TRUE only because no poll ran after the event
+    # date passed. Without this, the intelligence engine computes metrics on stale
+    # active listings, producing impossible positive inventory deltas.
+    await db.execute(
+        sa_update(Listing)
+        .where(
+            Listing.event_id.in_(
+                select(Event.id).where(Event.status == "completed")
+            ),
+            Listing.is_active == True,
+        )
+        .values(is_active=False)
+    )
+
     await db.commit()
     return {"completed": completed_ids, "count": len(completed_ids)}
 

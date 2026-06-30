@@ -393,13 +393,15 @@ async def compute_event(event_id: int, db: AsyncSession) -> dict:
 
     # ── Event meta ─────────────────────────────────────────────────────────────
     event_row = (await db.execute(
-        text("SELECT id, title, event_date FROM events WHERE id = :eid"),
+        text("SELECT id, title, event_date, status FROM events WHERE id = :eid"),
         {"eid": event_id}
     )).fetchone()
     if not event_row:
         raise ValueError(f"event {event_id} not found")
 
     event_date: datetime = event_row[2]
+    event_status: str = event_row[3] or "upcoming"
+    is_completed: bool = event_status == "completed"
     days_until = (event_date - now).total_seconds() / 86400
 
     # ── Current price tiers ────────────────────────────────────────────────────
@@ -477,6 +479,9 @@ async def compute_event(event_id: int, db: AsyncSession) -> dict:
     # Inventory deltas: use point-in-time count from listings table (accurate).
     # Snapshot-window counts are unreliable — they miss listings not polled in the exact window,
     # producing wildly inflated or deflated deltas (e.g., +2051 when real change is -640).
+    # For completed events: current_listings = 0 (all deactivated by auto-complete-past),
+    # so deltas correctly show negative absorption. Skip computation if is_active listings
+    # are stale (shouldn't happen after auto-complete runs, but guard defensively).
     async def _inv_at(hours_back: int) -> Optional[int]:
         t_ago = now_sql - timedelta(hours=hours_back)
         row = (await db.execute(_POINT_IN_TIME_INV_SQL, {
@@ -484,10 +489,22 @@ async def compute_event(event_id: int, db: AsyncSession) -> dict:
         })).fetchone()
         return int(row[0]) if row and row[0] else None
 
-    inv_24h_ago  = await _inv_at(24)  if (history_hours or 0) >= 2   else None
-    inv_7d_ago   = await _inv_at(168) if (history_hours or 0) >= 168  else None
-    inv_14d_ago  = await _inv_at(336) if (history_hours or 0) >= 336  else None
-    inv_30d_ago  = await _inv_at(720) if (history_hours or 0) >= 720  else None
+    if not is_completed:
+        inv_24h_ago  = await _inv_at(24)  if (history_hours or 0) >= 2   else None
+        inv_7d_ago   = await _inv_at(168) if (history_hours or 0) >= 168  else None
+        inv_14d_ago  = await _inv_at(336) if (history_hours or 0) >= 336  else None
+        inv_30d_ago  = await _inv_at(720) if (history_hours or 0) >= 720  else None
+    else:
+        # Completed event: compute final inventory absorbed vs peak
+        inv_24h_ago  = await _inv_at(24)  if (history_hours or 0) >= 2   else None
+        inv_7d_ago   = await _inv_at(168) if (history_hours or 0) >= 168  else None
+        inv_14d_ago  = await _inv_at(336) if (history_hours or 0) >= 336  else None
+        inv_30d_ago  = await _inv_at(720) if (history_hours or 0) >= 720  else None
+        # current_listings should be 0 for completed events after auto-complete-past runs;
+        # if it's still > 0 (listings not yet deactivated), force delta to None to avoid
+        # reporting impossible positive inventory changes post-event.
+        if current_listings > 0:
+            inv_24h_ago = inv_7d_ago = inv_14d_ago = inv_30d_ago = None
 
     inv24h = (current_listings - inv_24h_ago)  if inv_24h_ago  is not None else None
     inv7d  = (current_listings - inv_7d_ago)   if inv_7d_ago   is not None else None

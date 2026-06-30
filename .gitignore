@@ -1,0 +1,43 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Node
+node_modules/
+.next/
+out/
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+*.env
+
+# Local collector state
+.local_collector_baselines.json
+.local_collector_state.json
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE / editor
+.claude/
+.vscode/
+.idea/
+*.swp
+
+# Archives / data (large binary/csv blobs)
+archives/
+
+# Logs
+*.log
