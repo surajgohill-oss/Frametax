@@ -43,6 +43,19 @@ def _extract_external_id_from_url(mp_slug: str, url: str) -> str | None:
             m = re.search(pattern, url)
             if m:
                 return m.group(1)
+    if mp_slug == "tickpick":
+        # https://www.tickpick.com/buy-artist-tickets/8867541/
+        m = re.search(r"/(\d{5,})(?:[/?#]|$)", url)
+        return m.group(1) if m else None
+    if mp_slug == "vividseats":
+        # https://www.vividseats.com/billie-eilish-tickets-8-15-25-8867541.html
+        # or https://www.vividseats.com/productions/12345
+        m = re.search(r"/productions/(\d+)", url)
+        if m:
+            return m.group(1)
+        m = re.search(r"-(\d{5,})\.html", url)
+        return m.group(1) if m else None
+    # Gametime uses slug-based URLs: no numeric ID extractable from URL
     return None
 
 
