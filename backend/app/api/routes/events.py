@@ -478,7 +478,7 @@ async def list_events(db: AsyncSession = Depends(get_db)):
             "venue_slug": venue.slug if venue else None,
             "event_date": e.event_date.isoformat() if e.event_date else None,
             "status": e.status,
-            "is_active": e.is_active,
+            "is_active": any(te.is_active for te, mp in tracked_rows),
             "stubhub_url": e.stubhub_url if hasattr(e, "stubhub_url") else None,
             "seatgeek_url": e.seatgeek_url if hasattr(e, "seatgeek_url") else None,
             "lowest_price": lowest,
