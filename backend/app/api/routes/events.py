@@ -507,17 +507,9 @@ async def list_events(db: AsyncSession = Depends(get_db)):
 
 @router.post("/", status_code=201)
 async def create_event(data: dict, db: AsyncSession = Depends(get_db)):
-    if settings.discovery_freeze:
-        logger.warning(
-            "EVENT_FREEZE_ACTIVE: POST /api/events/ rejected — reason=frozen"
-        )
-        raise HTTPException(
-            status_code=503,
-            detail=(
-                "EVENT_FREEZE_ACTIVE: Event creation is frozen while duplicate "
-                "reconciliation is in progress. No new events may be added."
-            ),
-        )
+    # DISCOVERY_FREEZE only blocks automated discovery/hydrate bulk-creation.
+    # Manual POST /api/events/ is always allowed — it has its own guards:
+    # canonical_id deduplication, venue validation, and max_tracked_events limit.
 
     count_result = await db.execute(select(func.count()).select_from(Event))
     if count_result.scalar_one() >= settings.max_tracked_events:

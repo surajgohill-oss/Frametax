@@ -47,7 +47,7 @@ const VENUE_OPTIONS = [
 ];
 
 // Needs manual form (not auto-created from URL)
-// StubHub is included: DISCOVERY_FREEZE blocks POST /api/events/ but bypass route is available
+// Manual marketplaces require title/venue/date form fields — no URL-based auto-create
 const MANUAL_MARKETPLACES: MarketplaceSlug[] = ["stubhub", "gametime", "tickpick", "vividseats"];
 
 export default function AddEventModal({ onClose }: Props) {
@@ -87,7 +87,6 @@ export default function AddEventModal({ onClose }: Props) {
         result = await api.events.create({ seatgeek_url: url });
       } else if (isManual) {
         // Manual creation via bypass endpoint (StubHub, Gametime, TickPick, VividSeats)
-        // StubHub is routed here because DISCOVERY_FREEZE blocks POST /api/events/
         const BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://backend-production-509f.up.railway.app";
         result = await fetch(
           `${BASE}/api/debug/create-event-bypass-freeze`,
