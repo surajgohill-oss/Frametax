@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Bookmark, BookmarkX, Calendar, TrendingUp, TrendingDown, Minus,
-  AlertCircle, Pin, PinOff, Archive, EyeOff, Music, ArrowUpRight,
+  AlertCircle, Pin, PinOff, Archive, EyeOff, Music, ArrowUpRight, Clock,
 } from "lucide-react";
 import { format, parseISO, differenceInDays } from "date-fns";
 import { api } from "@/lib/api";
-import type { EventSummary, EventMeta } from "@/lib/types";
+import type { EventSummary, EventMeta, EventSnapshotResponse, SellerResponse, VelocityWindowsResponse } from "@/lib/types";
 import { fmt$$, fmtPct, fmtNum, signalToAction, actionColors, cn, parseEventDate } from "@/lib/utils";
 import { getEventGradient, gradientBg, getSpotifyData } from "@/lib/entityimages";
 import { useArtistImage } from "@/hooks/useArtistImage";
@@ -20,23 +20,35 @@ import { useHiddenEvents } from "@/hooks/useHiddenEvents";
 const MP_SHORT: Record<string, string> = {
   stubhub: "SH", gametime: "GT", tickpick: "TP", vividseats: "VS",
 };
-const MP_COLOR: Record<string, string> = {
-  stubhub: "#1c64f2", gametime: "#0ea5e9", tickpick: "#7c3aed", vividseats: "#059669",
+
+const MP_META: Record<string, { label: string; short: string; color: string; logoBg: string }> = {
+  stubhub:    { label: "StubHub",     short: "SH", color: "#e8704a", logoBg: "#e8704a" },
+  tickpick:   { label: "TickPick",    short: "TP", color: "#2dd4bf", logoBg: "#0d9488" },
+  gametime:   { label: "Gametime",    short: "GT", color: "#4ade80", logoBg: "#16a34a" },
+  vividseats: { label: "Vivid Seats", short: "VS", color: "#a78bfa", logoBg: "#7c3aed" },
 };
 
-function DeltaChip({ pct, abs }: { pct?: number | null; abs?: number | null }) {
+const FRESHNESS_CFG: Record<string, { dot: string; text: string }> = {
+  fresh:   { dot: "bg-emerald-400", text: "text-emerald-400" },
+  late:    { dot: "bg-amber-400",   text: "text-amber-400"  },
+  stale:   { dot: "bg-orange-500",  text: "text-orange-400" },
+  dead:    { dot: "bg-red-500",     text: "text-red-400"    },
+  no_data: { dot: "bg-slate-500",   text: "text-slate-500"  },
+};
+
+function DeltaChip({ pct, abs, invert = false }: { pct?: number | null; abs?: number | null; invert?: boolean }) {
   const n = pct ?? abs ?? null;
-  if (n == null) return <span className="text-white/25 text-[10px]">—</span>;
-  const up = n > 0;
-  const Icon = up ? TrendingUp : n < 0 ? TrendingDown : Minus;
+  if (n == null) return <span className="text-white/25 text-[11px]">—</span>;
+  const Icon = n > 0 ? TrendingUp : n < 0 ? TrendingDown : Minus;
+  // invert=true for price rows: lower = green (good), higher = red (bad)
+  const isGood = invert ? n < 0 : n > 0;
+  const isBad  = invert ? n > 0 : n < 0;
   return (
     <span className={cn(
-      "inline-flex items-center gap-0.5 text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded",
-      up
-        ? "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20"
-        : n < 0
-          ? "text-red-400 bg-red-500/10 border border-red-500/20"
-          : "text-slate-500 bg-white/5 border border-white/10"
+      "inline-flex items-center gap-0.5 text-[11px] font-bold tabular-nums px-1.5 py-0.5 rounded",
+      isGood ? "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20"
+      : isBad ? "text-red-400 bg-red-500/10 border border-red-500/20"
+      : "text-slate-500 bg-white/5 border border-white/10"
     )}>
       <Icon size={9} />{pct != null ? fmtPct(pct) : (n > 0 ? `+${n}` : String(n))}
     </span>
@@ -61,13 +73,6 @@ export default function WatchlistPage() {
         const data = await api.events.list();
         const watchedEvents = (data.events ?? []).filter((e) => watched.has(e.event_id));
         setEvents(watchedEvents);
-        const metaResults = await Promise.allSettled(watchedEvents.map((e) => api.events.meta(e.event_id)));
-        const metaMap: Record<number, EventMeta> = {};
-        watchedEvents.forEach((e, i) => {
-          const r = metaResults[i];
-          if (r.status === "fulfilled") metaMap[e.event_id] = r.value;
-        });
-        setMetas(metaMap);
       } catch {}
       setLoading(false);
     }
@@ -85,6 +90,14 @@ export default function WatchlistPage() {
   );
   const otherEvents = events.filter((e) => e.event_id !== heroEvent?.event_id);
 
+  // Fetch meta only for the hero event (avoid N+1 calls for all watched events)
+  useEffect(() => {
+    if (!heroEvent) return;
+    api.events.meta(heroEvent.event_id)
+      .then((m) => setMetas((prev) => ({ ...prev, [heroEvent.event_id]: m })))
+      .catch(() => {});
+  }, [heroEvent?.event_id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -92,7 +105,7 @@ export default function WatchlistPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Bookmark size={16} className="text-slate-400" />
-            <h1 className="text-lg font-semibold text-white">Watchlist</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-white">Watchlist</h1>
             {mounted && watched.size > 0 && (
               <span className="text-xs text-slate-500 bg-white/5 rounded-full px-2 py-0.5">
                 {watched.size} {watched.size === 1 ? "event" : "events"}
@@ -145,7 +158,7 @@ export default function WatchlistPage() {
           {otherEvents.length > 0 && (
             <>
               {heroEvent && (
-                <p className="text-[10px] text-slate-600 uppercase tracking-widest">Other watched events</p>
+                <p className="text-[11px] text-slate-500 uppercase tracking-[0.18em]">Other watched events</p>
               )}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {otherEvents.map((event) => (
@@ -185,17 +198,35 @@ function HeadlineCard({
   onToggleArchive: () => void;
   isPinned?: boolean;
 }) {
-  const title      = meta?.title ?? event.title;
-  const venue      = meta?.venue_name;
-  const dateStr    = meta?.event_date;
-  const artist          = meta?.artist;
+  const title      = event.title;
+  const venue      = event.venue_name ?? meta?.venue_name;
+  const dateStr    = event.event_date ?? meta?.event_date;
+  const artist          = event.artist ?? meta?.artist;
   const gradient        = getEventGradient(artist, title);
   const autoArtworkUrl  = useArtistImage(artist, title);
-  const artworkUrl      = meta?.custom_artwork_url ?? autoArtworkUrl;
+  const artworkUrl      = event.custom_artwork_url ?? meta?.custom_artwork_url ?? autoArtworkUrl;
+  const [marketWindow, setMarketWindow] = useState<"tracking" | "24h" | "12h" | "6h" | "7d">("tracking");
+  const [snap, setSnap]     = useState<EventSnapshotResponse | null>(null);
+  const [seller, setSeller] = useState<SellerResponse | null>(null);
+  const [vel, setVel]       = useState<VelocityWindowsResponse | null>(null);
+  const [lcSummary, setLcSummary] = useState<Record<string, unknown> | null>(null);
+
+  useEffect(() => {
+    const eid = event.event_id;
+    setSnap(null); setSeller(null); setVel(null); setLcSummary(null);
+    api.events.snapshot(eid).then(setSnap).catch(() => {});
+    api.events.seller(eid).then(setSeller).catch(() => {});
+    api.analytics.velocityWindows(eid).then(setVel).catch(() => {});
+    api.events.lifecycle(eid).then(d => setLcSummary(d.summary)).catch(() => {});
+  }, [event.event_id]);
+
   const action          = signalToAction(event.signal);
   const colors          = actionColors(action);
-  const mpPrices        = meta?.all_marketplace_prices ?? meta?.marketplace_prices ?? {};
+  const mpPrices        = event.marketplace_prices ?? meta?.all_marketplace_prices ?? meta?.marketplace_prices ?? {};
   const invDelta        = event.changes?.h24?.inventory_delta ?? null;
+  const invCurrent      = event.inventory?.total_listings ?? null;
+  const invPrev         = (invCurrent != null && invDelta != null) ? invCurrent - invDelta : null;
+  const invPct          = (invPrev != null && invPrev !== 0 && invDelta != null) ? (invDelta / invPrev) * 100 : null;
 
   let daysOut: number | null = null;
   let dateLabel = "";
@@ -236,189 +267,377 @@ function HeadlineCard({
     .sort(([, a], [, b]) => (a as number) - (b as number));
 
   return (
-    <div className="rounded-xl border border-white/8 bg-[#0a0d14] overflow-hidden">
-      {/* Identity row — full-height artwork */}
-      <div className="flex items-stretch border-b border-white/6 min-h-[160px]"
-        style={{ background: `linear-gradient(90deg, ${gradient[0]}15, transparent 65%)` }}>
+    <div className="rounded-xl border border-white/10 bg-[#080a10] overflow-hidden" style={{ boxShadow: `0 0 80px ${gradient[0]}10, 0 0 0 1px rgba(255,255,255,0.03)` }}>
+      {/* Hero — art + identity + live market */}
+      <div className="relative border-b border-white/6" style={{ minHeight: 200 }}>
+        {/* Atmosphere bloom */}
+        <div className="absolute inset-0 pointer-events-none" aria-hidden="true"
+          style={{ background: `linear-gradient(115deg, ${gradient[0]}25 0%, ${gradient[0]}08 42%, transparent 72%)` }} />
 
-        {/* Artwork — full height */}
-        <div className="flex-shrink-0 w-28 sm:w-40 relative overflow-hidden"
-          style={{ background: `linear-gradient(145deg, ${gradient[0]}cc, ${gradient[1]}cc)` }}>
+        {/* Artwork — absolute, full height left */}
+        <div className="absolute inset-y-0 left-0 w-[120px] sm:w-[190px] overflow-hidden"
+          style={{ background: `linear-gradient(145deg, ${gradient[0]}cc, ${gradient[1]}aa)` }}>
           {artworkUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={artworkUrl} alt={artist ?? title}
               className="w-full h-full object-cover object-top"
               onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
           ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center gap-2">
-              <span className="text-3xl font-black text-white/50 select-none">
+            <div className="w-full h-full flex items-center justify-center">
+              <span className="text-4xl font-black text-white/40 select-none">
                 {(artist ?? title).slice(0, 1).toUpperCase()}
               </span>
-              <span className="text-[9px] text-white/25 border border-white/15 px-1.5 py-0.5 rounded">Upload Art</span>
             </div>
           )}
-          <div className="absolute inset-y-0 right-0 w-4"
-            style={{ background: `linear-gradient(to right, transparent, ${gradient[0]}08)` }} />
+          <div className="absolute inset-y-0 right-0 w-12 sm:w-20"
+            style={{ background: `linear-gradient(to right, transparent, #080a10)` }} />
         </div>
 
-        {/* Identity */}
-        <div className="flex-1 min-w-0 p-4 flex flex-col justify-between">
-          {/* Pin / Best Watched label */}
-          <div className="flex items-center gap-1.5 mb-0.5">
-            {isPinned ? (
-              <><Pin size={8} className="text-amber-400" />
-              <span className="text-[8px] font-bold text-amber-400 uppercase tracking-widest">Headline</span></>
-            ) : (
-              <span className="text-[8px] font-bold text-blue-400 uppercase tracking-widest">Best Watched</span>
-            )}
-          </div>
-          {artist && artist !== title && <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold truncate">{artist}</p>}
-          <Link href={`/events/${event.event_id}`}>
-            <span className="text-base font-bold text-white truncate block hover:text-blue-300 transition-colors">{title}</span>
-          </Link>
-          <div className="flex items-center gap-2 mt-2 flex-wrap">
-            {venue && <span className="text-xs text-slate-500 truncate">{venue}</span>}
-            {dateLabel && <span className="text-xs text-slate-500">{dateLabel}</span>}
-            {daysOut != null && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                style={{ color: colors.text, background: colors.bg + "50", border: `1px solid ${colors.border}` }}>
-                {daysOut <= 0 ? "Today" : daysOut === 1 ? "Tomorrow" : `${daysOut}d away`}
+        {/* Content offset by artwork */}
+        <div className="relative flex items-end justify-between pl-[120px] sm:pl-[190px] p-5 gap-4" style={{ minHeight: 200 }}>
+
+          {/* Identity */}
+          <div className="flex-1 min-w-0">
+            {isPinned && <Pin size={9} className="text-amber-400/60 mb-1" />}
+            {artist && artist !== title && <p className="text-[11px] text-slate-500 uppercase tracking-[0.2em] font-semibold truncate mb-1">{artist}</p>}
+            <Link href={`/events/${event.event_id}`}>
+              <span className="text-[24px] sm:text-[30px] font-black text-white block hover:text-blue-300 transition-colors leading-none truncate">{title}</span>
+            </Link>
+            <div className="flex items-center gap-1.5 mt-2 text-[13px] text-slate-400">
+              {venue && <span className="truncate">{venue}</span>}
+              {venue && dateLabel && <span className="text-slate-600">·</span>}
+              {dateLabel && <span>{dateLabel}</span>}
+            </div>
+            <div className="flex items-center gap-2 mt-3 flex-wrap">
+              {daysOut != null && (
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full"
+                  style={{ color: colors.text, background: colors.bg + "50", border: `1px solid ${colors.border}` }}>
+                  {daysOut <= 0 ? "Today" : daysOut === 1 ? "Tomorrow" : `${daysOut}d away`}
+                </span>
+              )}
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded border"
+                style={{ color: colors.text, borderColor: colors.border + "80", background: colors.bg + "25" }}>
+                {action}
               </span>
-            )}
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border"
-              style={{ color: colors.text, borderColor: colors.border + "80", background: colors.bg + "25" }}>
-              {action}
-            </span>
+            </div>
           </div>
-        </div>
 
-        {/* RIGHT — Freshness + action buttons */}
-        <div className="hidden sm:flex items-start gap-3 flex-shrink-0 p-4">
-          <div className="text-right space-y-1">
-            <p className="text-[9px] text-slate-600 uppercase tracking-wider mb-1">Marketplace Freshness</p>
-            {meta?.marketplace_freshness
-              ? Object.entries(meta.marketplace_freshness)
-                  .filter(([slug]) => ['stubhub', 'tickpick', 'gametime', 'vividseats'].includes(slug))
-                  .map(([slug, f]) => {
-                  const fEntry = f as { freshness_status: string; age_minutes: number | null };
-                  const status = fEntry.freshness_status;
-                  const age = fEntry.age_minutes;
-                  const ageStr = age == null ? null : age < 60 ? `${age}m` : `${Math.round(age / 60)}h`;
-                  const cfg: Record<string, { dot: string; text: string }> = {
-                    fresh:   { dot: "bg-emerald-400", text: "text-emerald-400" },
-                    late:    { dot: "bg-amber-400",   text: "text-amber-400"  },
-                    stale:   { dot: "bg-orange-500",  text: "text-orange-400" },
-                    dead:    { dot: "bg-red-500",     text: "text-red-400"    },
-                    no_data: { dot: "bg-slate-500",   text: "text-slate-400"  },
-                  };
-                  const c = cfg[status] ?? { dot: "bg-slate-600", text: "text-slate-500" };
-                  return (
-                    <div key={slug} className="flex items-center gap-1 justify-end">
-                      <span className="text-[9px] text-slate-500 capitalize">{slug}</span>
-                      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${c.dot}`} />
-                      <span className={`text-[9px] font-semibold ${c.text} w-7 text-left tabular-nums`}>{ageStr ?? status}</span>
-                    </div>
-                  );
-                })
-              : <p className="text-[9px] text-slate-600">No feeds</p>
-            }
-          </div>
-          <div className="flex flex-col gap-1">
-            {isPinned && (
-              <button onClick={onClearPin} title="Unpin"
-                className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-400 transition-colors">
-                <PinOff size={9} /> Unpin
+          {/* RIGHT: Live market — mirrors event page hero hierarchy */}
+          <div className="hidden sm:flex items-end gap-5 flex-shrink-0">
+            {/* Live Market Snapshot */}
+            <div className="flex flex-col items-end">
+              <p className="text-[11px] text-white/30 uppercase tracking-[0.22em] font-semibold mb-1">Median</p>
+              <p className="text-[44px] font-black text-white/90 tabular-nums leading-none">
+                {fmt$$(event.price?.median_ask) ?? "—"}
+              </p>
+              {event.changes?.h24?.price_delta_pct != null && (
+                <div className="mt-1"><DeltaChip pct={event.changes.h24.price_delta_pct} invert /></div>
+              )}
+              <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/[0.1] w-full justify-end">
+                <div className="text-right">
+                  <p className="text-[11px] text-white/28 uppercase tracking-wide mb-0.5">Inventory</p>
+                  <p className="text-[18px] font-bold text-blue-300/80 tabular-nums leading-none">
+                    {fmtNum(event.inventory?.total_listings) ?? "—"}
+                  </p>
+                  {invDelta != null && (
+                    <p className={`text-[10px] tabular-nums mt-0.5 ${invDelta > 0 ? "text-red-400" : invDelta < 0 ? "text-emerald-400" : "text-slate-500"}`}>
+                      {invDelta > 0 ? "+" : ""}{fmtNum(invDelta)}
+                      {invPct != null ? ` (${invPct > 0 ? "+" : ""}${invPct.toFixed(1)}%)` : ""}
+                    </p>
+                  )}
+                </div>
+                <div className="text-right">
+                  <p className="text-[11px] text-white/28 uppercase tracking-wide mb-0.5">Duplicate %</p>
+                  <p className="text-[18px] font-bold text-violet-300/70 tabular-nums leading-none">
+                    {snap?.duplicates?.dup_pct != null ? `${snap.duplicates.dup_pct.toFixed(1)}%` : "—"}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[11px] text-white/28 uppercase tracking-wide mb-0.5">Low</p>
+                  <p className="text-[18px] font-bold text-emerald-300 tabular-nums leading-none">
+                    {fmt$$(event.price?.low_ask) ?? "—"}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[11px] text-white/28 uppercase tracking-wide mb-0.5">High</p>
+                  <p className="text-[18px] font-bold text-white/40 tabular-nums leading-none">
+                    {fmt$$((event.price as Record<string, number | null> | undefined)?.high_ask ?? (event.price as Record<string, number | null> | undefined)?.p75_ask) ?? "—"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex flex-col gap-1.5 pb-1">
+              {isPinned && (
+                <button onClick={onClearPin} title="Unpin"
+                  className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-400 transition-colors">
+                  <PinOff size={9} /> Unpin
+                </button>
+              )}
+              <button onClick={onToggleArchive} title={isArchived ? "Restore" : "Archive"}
+                className={cn("inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg border transition-all",
+                  isArchived ? "border-amber-500/40 bg-amber-500/10 text-amber-400" : "border-white/10 bg-white/5 text-slate-500 hover:text-slate-300")}>
+                <Archive size={9} /> {isArchived ? "Restore" : "Archive"}
               </button>
-            )}
-            <button onClick={onToggleArchive} title={isArchived ? "Restore" : "Archive"}
-              className={cn("inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg border transition-all",
-                isArchived ? "border-amber-500/40 bg-amber-500/10 text-amber-400" : "border-white/10 bg-white/5 text-slate-500 hover:text-slate-300")}>
-              <Archive size={9} /> {isArchived ? "Restore" : "Archive"}
-            </button>
-            <button onClick={onRemove} title="Remove from watchlist"
-              className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg border border-blue-500/40 bg-blue-500/10 text-blue-400 transition-colors">
-              <Bookmark size={9} className="fill-blue-400" /> Watching
-            </button>
+              <button onClick={onRemove} title="Remove from watchlist"
+                className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg border border-blue-500/40 bg-blue-500/10 text-blue-400 transition-colors">
+                <Bookmark size={9} className="fill-blue-400" /> Watching
+              </button>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Status bar: tracking meta + per-marketplace freshness dots */}
+      {(() => {
+        const wlFreshEntries = (['stubhub', 'tickpick', 'gametime', 'vividseats'] as const)
+          .filter(slug => meta?.marketplace_freshness?.[slug]);
+        const wlFreshCount = wlFreshEntries.filter(slug => {
+          const s = (meta?.marketplace_freshness?.[slug] as { freshness_status?: string })?.freshness_status;
+          return s === "fresh" || s === "late";
+        }).length;
+        return (
+      <div className="border-t border-white/[0.07] bg-black/20 px-5 py-2.5 flex items-center gap-4 flex-wrap">
+        {trackingSince && (
+          <span className="text-[11px] text-white/28 flex items-center gap-1.5">
+            <Clock size={10} />
+            <span className="text-white/20 uppercase tracking-[0.1em] text-[10px]">Tracking Since</span>
+            <span className="text-white/40">{trackingSince.formatted}</span>
+          </span>
+        )}
+        {freshLabel && (
+          <span className="text-[11px] text-white/28 flex items-center gap-1.5">
+            <span className="text-white/20 uppercase tracking-[0.1em] text-[10px]">Last Update</span>
+            <span className="text-white/40">{freshLabel}</span>
+          </span>
+        )}
+        {wlFreshEntries.length > 0 && (
+          <span className="text-[11px] text-white/28 flex items-center gap-1.5">
+            <span className="text-white/20 uppercase tracking-[0.1em] text-[10px]">Feeds Fresh</span>
+            <span className="text-white/40">{wlFreshCount}/{wlFreshEntries.length}</span>
+          </span>
+        )}
+        <div className="flex items-center gap-4 ml-auto flex-wrap">
+          {wlFreshEntries
+            .map(slug => {
+              const f = meta!.marketplace_freshness![slug] as { freshness_status?: string; age_minutes?: number };
+              const status = f?.freshness_status ?? "no_data";
+              const age = f?.age_minutes;
+              const ageStr = age == null ? null : age < 60 ? `${age}m` : `${Math.round(age / 60)}h`;
+              const cfg = FRESHNESS_CFG[status] ?? FRESHNESS_CFG.no_data;
+              const info = MP_META[slug];
+              return (
+                <div key={slug} className="flex items-center gap-1.5">
+                  {info && (
+                    <div className="rounded flex items-center justify-center font-black text-white flex-shrink-0"
+                      style={{ width: 16, height: 16, background: info.logoBg, fontSize: 7 }}>
+                      {info.short}
+                    </div>
+                  )}
+                  <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${cfg.dot}`} />
+                  <span className="text-[11px] font-medium" style={{ color: info?.color ?? "rgba(255,255,255,0.38)" }}>{info?.label ?? slug}</span>
+                  <span className={`text-[11px] tabular-nums ${cfg.text}`}>{ageStr ?? "—"}</span>
+                </div>
+              );
+            })}
+        </div>
+      </div>
+        );
+      })()}
 
       {/* Intelligence columns — 3-col */}
       <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-white/6"
         style={{ gridTemplateColumns: "1fr 1.2fr 1fr" }}>
 
         {/* Col 1: Current Market */}
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Current Market</p>
-            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border border-white/10 text-slate-500 bg-white/3">24H</span>
+        <div className="p-5">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-[11px] text-slate-400 uppercase tracking-[0.18em] font-semibold">Current Market</p>
+            <div className="flex items-center gap-0.5">
+              {(["tracking", "24h", "12h", "6h", "7d"] as const).map(w => (
+                <button key={w} onClick={() => setMarketWindow(w)}
+                  className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded transition-colors uppercase",
+                    marketWindow === w
+                      ? "bg-white/10 text-slate-200 border border-white/15"
+                      : "text-slate-600 hover:text-slate-400")}>
+                  {w === "tracking" ? "Tracking" : w}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="space-y-0">
-            {[
-              { label: "Low",    val: fmt$$(event.price?.low_ask),    cls: "text-emerald-300 font-bold", showDelta: true },
-              { label: "Median", val: fmt$$(event.price?.median_ask), cls: "text-white font-semibold",   showDelta: false },
-              { label: "High",   val: fmt$$(event.price?.high_ask),   cls: "text-slate-300",             showDelta: false },
-            ].map(({ label, val, cls, showDelta }) => (
-              <div key={label} className="flex items-center gap-2 py-1.5 border-b border-white/5 last:border-0">
-                <span className="text-xs text-slate-400 w-10 flex-shrink-0">{label}</span>
-                <span className={`text-sm tabular-nums flex-1 ${cls}`}>{val ?? "—"}</span>
-                <span className="w-12 text-right">
-                  {showDelta && event.changes?.h24?.price_delta_pct != null
-                    ? <DeltaChip pct={event.changes.h24.price_delta_pct} />
-                    : <span className="text-white/20 text-[10px]">—</span>}
-                </span>
+            {/* Median */}
+            {(() => {
+              const cur = event.price?.median_ask ?? null;
+              const pct = event.changes?.h24?.price_delta_pct ?? null;
+              const orig = (cur != null && pct != null) ? Math.round(cur / (1 + pct / 100)) : null;
+              return (
+                <div className="flex items-center justify-between py-2 border-b border-white/[0.04]">
+                  <span className="text-[12px] text-slate-400 font-semibold w-16 flex-shrink-0">Median</span>
+                  <div className="flex items-center gap-1.5 tabular-nums">
+                    {orig != null ? <span className="text-[11px] text-slate-600">{fmt$$(orig)} →</span> : null}
+                    <span className="text-[13px] font-bold text-white">{cur != null ? fmt$$(cur) : "—"}</span>
+                    {pct != null ? <DeltaChip pct={pct} invert /> : <span className="text-[11px] text-slate-700">—</span>}
+                  </div>
+                </div>
+              );
+            })()}
+            {/* Low */}
+            <div className="flex items-center justify-between py-2 border-b border-white/[0.04]">
+              <span className="text-[12px] text-slate-500 w-16 flex-shrink-0">Low</span>
+              <div className="flex items-center gap-1.5 tabular-nums">
+                <span className="text-[13px] font-semibold text-emerald-300">{event.price?.low_ask != null ? fmt$$(event.price.low_ask) : "—"}</span>
+                <span className="text-[11px] text-slate-700">—</span>
               </div>
-            ))}
-            <div className="flex items-center gap-2 py-1.5">
-              <span className="text-xs text-slate-400 w-10 flex-shrink-0">Inv</span>
-              <span className="text-sm font-bold text-slate-200 tabular-nums flex-1">
-                {fmtNum(event.inventory?.total_listings) ?? "—"}
+            </div>
+            {/* High */}
+            <div className="flex items-center justify-between py-2 border-b border-white/[0.04]">
+              <span className="text-[12px] text-slate-500 w-16 flex-shrink-0">High</span>
+              <div className="flex items-center gap-1.5 tabular-nums">
+                <span className="text-[13px] font-semibold text-slate-400">{event.price?.high_ask != null ? fmt$$(event.price.high_ask) : "—"}</span>
+                <span className="text-[11px] text-slate-700">—</span>
+              </div>
+            </div>
+            {/* Note: Low/High baselines not in EventSummary type — deltas shown as — */}
+            {/* Inventory */}
+            {(() => {
+              const cur = invCurrent;
+              const abs = invDelta;
+              const absPct = abs != null && cur != null && (cur - abs) > 0 ? (abs / (cur - abs)) * 100 : null;
+              return (
+                <div className="flex items-center justify-between py-2 border-b border-white/[0.04]">
+                  <span className="text-[12px] text-slate-500 w-16 flex-shrink-0">Inventory</span>
+                  <div className="flex items-center gap-2 tabular-nums">
+                    <span className="text-[13px] font-semibold text-blue-300/80">{cur != null ? fmtNum(cur) : "—"}</span>
+                    {abs != null ? (
+                      <span className={cn("text-[11px] font-medium", abs > 0 ? "text-red-400" : abs < 0 ? "text-emerald-400" : "text-slate-500")}>
+                        {abs > 0 ? "+" : ""}{abs}
+                        {absPct != null ? ` (${absPct > 0 ? "+" : ""}${absPct.toFixed(1)}%)` : ""}
+                      </span>
+                    ) : <span className="text-[11px] text-slate-700">—</span>}
+                  </div>
+                </div>
+              );
+            })()}
+            {/* Dup % */}
+            <div className="flex items-center justify-between py-2">
+              <span className="text-[12px] text-slate-500 w-16 flex-shrink-0">Dup %</span>
+              <span className="text-[12px] font-semibold text-violet-300/70 tabular-nums">
+                {snap?.duplicates?.dup_pct != null ? `${snap.duplicates.dup_pct.toFixed(1)}%` : "—"}
               </span>
-              {invDelta != null ? (
-                <span className={`text-[11px] font-semibold tabular-nums ${invDelta > 0 ? "text-emerald-400" : "text-red-400"}`}>
-                  {invDelta > 0 ? "+" : ""}{invDelta} 24H
-                </span>
-              ) : <span className="text-white/20 text-[10px]">—</span>}
             </div>
           </div>
         </div>
 
         {/* Col 2: Absorption */}
         <div className="p-5 bg-white/[0.02]">
-          <p className="text-[9px] text-slate-500 uppercase tracking-[0.18em] font-semibold mb-4">Absorption</p>
-          <div className="mb-3 pb-3 border-b border-white/[0.04]">
-            <p className="text-[9px] text-slate-600 mb-1 uppercase tracking-[0.12em]">Est. Avg Sale Price</p>
-            <p className="text-[36px] font-black text-amber-300 tabular-nums leading-none">—</p>
-            <div className="flex items-center gap-1.5 mt-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400/50 animate-pulse flex-shrink-0" />
-              <p className="text-[10px] text-slate-600 italic">Monitoring · collecting as tickets move</p>
-            </div>
-          </div>
-          <div>
-            {["Tickets Sold", "24H Sold", "7D Sold", "Since Tracking"].map(label => (
-              <div key={label} className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-0">
-                <span className="text-[10px] text-slate-400">{label}</span>
-                <span className="text-[11px] text-slate-700">·</span>
-              </div>
-            ))}
-          </div>
+          <p className="text-[11px] text-slate-400 uppercase tracking-[0.18em] font-semibold mb-4">Absorption</p>
+          {(() => {
+            const avgImpliedSalePrice = (() => {
+              const v = (lcSummary as Record<string, unknown> | null)?.avg_implied_sale_price;
+              return typeof v === "number" ? v : null;
+            })();
+            const absRows: { label: string; num: number | null; emptyLabel: string }[] = [
+              { label: "Tickets Sold",   num: vel?.windows?.since_tracking?.implied_sale_tickets ?? null,  emptyLabel: vel != null ? "No disappearances" : "No lifecycle yet" },
+              { label: "24H Sold",       num: vel?.windows?.["24h"]?.implied_sale_listings ?? null,        emptyLabel: vel != null ? "No disappearances" : "No lifecycle yet" },
+              { label: "7D Sold",        num: vel?.windows?.["7d"]?.implied_sale_listings ?? null,         emptyLabel: vel != null ? "No disappearances" : "No lifecycle yet" },
+              { label: "Since Tracking", num: vel?.windows?.since_tracking?.implied_sale_listings ?? null, emptyLabel: vel != null ? "No disappearances" : "No lifecycle yet" },
+            ];
+            return (
+              <>
+                <div className="mb-3 pb-3 border-b border-white/[0.04]">
+                  <p className="text-[11px] text-slate-500 mb-1 uppercase tracking-[0.12em]">Est. Avg Sale Price</p>
+                  {avgImpliedSalePrice != null ? (
+                    <span className="text-[36px] font-black text-amber-300 tabular-nums leading-none">${Math.round(avgImpliedSalePrice)}</span>
+                  ) : lcSummary != null ? (
+                    <span className="text-[11px] italic text-slate-600">No disappearances yet</span>
+                  ) : (
+                    <span className="text-[11px] italic text-slate-700">No lifecycle yet</span>
+                  )}
+                </div>
+                <div>
+                  {absRows.map(({ label, num, emptyLabel }) => (
+                    <div key={label} className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-0">
+                      <span className="text-[11px] text-slate-400">{label}</span>
+                      {num != null && num > 0 ? (
+                        <span className={`text-[12px] font-semibold tabular-nums ${label === "Tickets Sold" ? "text-amber-300" : "text-slate-300"}`}>
+                          {label === "Tickets Sold" ? fmtNum(num) : num}
+                        </span>
+                      ) : num === 0 ? (
+                        <span className="text-[11px] italic text-slate-600">{emptyLabel}</span>
+                      ) : (
+                        <span className="text-[11px] text-slate-700">No data</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
+            );
+          })()}
         </div>
 
         {/* Col 3: Seller Behavior */}
         <div className="p-5">
-          <p className="text-[9px] text-slate-500 uppercase tracking-[0.18em] font-semibold mb-4">Seller Behavior</p>
-          <div>
-            {["Relist Price Change", "Price Drops", "Repriced Listings"].map(label => (
-              <div key={label} className="flex items-center justify-between py-2.5 border-b border-white/[0.04]">
-                <span className="text-[10px] text-slate-400">{label}</span>
-                <span className="text-[13px] text-slate-600">·</span>
+          <p className="text-[11px] text-slate-400 uppercase tracking-[0.18em] font-semibold mb-4">Seller Behavior</p>
+          {(() => {
+            const relistDelta = seller?.median_reprice_delta ?? null;
+            const drops       = seller?.price_drops_24h ?? null;
+            const repriced    = seller?.repriced_24h ?? null;
+            const mood = (() => {
+              if (!seller) return null;
+              const cap  = seller.capitulation_score ?? 0;
+              const agg  = seller.seller_aggression ?? 0;
+              const dr   = drops != null && repriced != null && repriced > 0 ? drops / repriced : null;
+              if (cap > 0.6)  return "Seller capitulation increasing";
+              if (agg > 0.6)  return "Sellers holding firm";
+              if (dr != null && dr > 0.7) return "Heavy price dropping";
+              if (agg > 0.4)  return "Mild seller confidence";
+              return "Mixed seller signals";
+            })();
+            return (
+              <div>
+                <div className="flex items-center justify-between py-2.5 border-b border-white/[0.04]">
+                  <span className="text-[11px] text-slate-400">Relist Price Chg</span>
+                  {relistDelta != null ? (
+                    <span className={`text-[12px] font-semibold tabular-nums ${relistDelta < 0 ? "text-emerald-400" : relistDelta > 0 ? "text-red-400" : "text-slate-400"}`}>
+                      {relistDelta > 0 ? "+" : ""}${relistDelta.toFixed(0)}
+                    </span>
+                  ) : (
+                    <span className="text-[11px] italic text-slate-600">{seller != null ? "No relist activity" : "Not enough history"}</span>
+                  )}
+                </div>
+                <div className="flex items-center justify-between py-2.5 border-b border-white/[0.04]">
+                  <span className="text-[11px] text-slate-400">Price Drops</span>
+                  {drops != null ? (
+                    drops > 0
+                      ? <span className="text-[12px] font-semibold text-red-400 tabular-nums">{drops}</span>
+                      : <span className="text-[11px] italic text-slate-600">No price drops</span>
+                  ) : (
+                    <span className="text-[11px] italic text-slate-600">Not enough history</span>
+                  )}
+                </div>
+                <div className="flex items-center justify-between py-2.5 border-b border-white/[0.04]">
+                  <span className="text-[11px] text-slate-400">Repriced Listings</span>
+                  {repriced != null ? (
+                    repriced > 0
+                      ? <span className="text-[12px] font-semibold text-slate-300 tabular-nums">{repriced}</span>
+                      : <span className="text-[11px] italic text-slate-600">No repricing detected</span>
+                  ) : (
+                    <span className="text-[11px] italic text-slate-600">Not enough history</span>
+                  )}
+                </div>
+                <div className="flex items-start justify-between py-2.5">
+                  <span className="text-[11px] text-slate-500">Seller Mood</span>
+                  {mood ? (
+                    <span className="text-[11px] font-medium italic text-slate-300 text-right max-w-[140px]">{mood}</span>
+                  ) : (
+                    <span className="text-[11px] italic text-slate-600">{seller != null ? "No seller movement yet" : "Not enough history"}</span>
+                  )}
+                </div>
               </div>
-            ))}
-            <div className="flex items-start justify-between py-2.5 border-l-2 border-red-500/30 pl-2.5 -ml-2.5 mt-0.5">
-              <span className="text-[10px] text-slate-500">Seller Mood</span>
-              <span className="text-[13px] font-semibold italic text-slate-600">·</span>
-            </div>
-          </div>
+            );
+          })()}
         </div>
       </div>
     </div>
@@ -440,17 +659,17 @@ function WatchlistCard({
   onToggleArchive: () => void;
   onToggleHide: () => void;
 }) {
-  const title      = meta?.title ?? event.title;
-  const venue      = meta?.venue_name;
-  const dateStr    = meta?.event_date;
-  const artist          = meta?.artist;
+  const title      = event.title;
+  const venue      = event.venue_name ?? meta?.venue_name;
+  const dateStr    = event.event_date ?? meta?.event_date;
+  const artist          = event.artist ?? meta?.artist;
   const gradient        = getEventGradient(artist, title);
   const autoArtworkUrl  = useArtistImage(artist, title);
-  const artworkUrl      = meta?.custom_artwork_url ?? autoArtworkUrl;
+  const artworkUrl      = event.custom_artwork_url ?? meta?.custom_artwork_url ?? autoArtworkUrl;
   const action          = signalToAction(event.signal);
   const colors          = actionColors(action);
   const spotify         = getSpotifyData(artist);
-  const mpPrices   = meta?.all_marketplace_prices ?? meta?.marketplace_prices ?? {};
+  const mpPrices   = event.marketplace_prices ?? meta?.all_marketplace_prices ?? meta?.marketplace_prices ?? {};
   const mpEntries  = (Object.entries(mpPrices) as [string, number | null][])
     .filter(([, p]) => p != null)
     .sort(([, a], [, b]) => (a as number) - (b as number));
@@ -487,12 +706,12 @@ function WatchlistCard({
         {/* Top row: signal + actions */}
         <div className="flex items-start justify-between gap-2 mb-3">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[10px] font-black tracking-widest px-2 py-0.5 rounded border"
+            <span className="text-[11px] font-bold tracking-widest px-2 py-0.5 rounded border"
               style={{ color: colors.text, background: colors.bg, borderColor: colors.border }}>
               {action}
             </span>
             {isArchived && (
-              <span className="text-[9px] text-amber-500/60 border border-amber-500/15 rounded px-1.5 py-0.5">Archived</span>
+              <span className="text-[11px] text-amber-500/60 border border-amber-500/15 rounded px-1.5 py-0.5">Archived</span>
             )}
           </div>
           <div className="flex items-center gap-0.5 flex-shrink-0">
@@ -516,13 +735,13 @@ function WatchlistCard({
         </div>
 
         {/* Identity */}
-        {artist && <p className="text-[10px] text-white/50 uppercase tracking-[0.12em] mb-0.5">{artist}</p>}
+        {artist && <p className="text-[11px] text-white/50 uppercase tracking-[0.12em] mb-0.5">{artist}</p>}
         <Link href={`/events/${event.event_id}`}>
           <h3 className="text-[13px] font-bold text-white leading-tight mb-1 hover:text-blue-300 transition-colors line-clamp-2">{title}</h3>
         </Link>
-        {venue && <p className="text-[10px] text-slate-500 mb-0.5 truncate">{venue}</p>}
+        {venue && <p className="text-[11px] text-slate-500 mb-0.5 truncate">{venue}</p>}
         {dateStr && (
-          <div className="flex items-center gap-1.5 text-[10px] text-slate-500 mb-3">
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mb-3">
             <Calendar size={9} />
             <span>{dateLabel}</span>
             {daysOut != null && daysOut >= 0 && (
@@ -539,7 +758,7 @@ function WatchlistCard({
             { label: "Inv",    val: fmtNum(event.inventory?.total_listings), cls: "text-white/55 font-medium text-[11px]" },
           ].map(({ label, val, cls }) => (
             <div key={label} className="bg-black/20 rounded px-2 py-1.5 border border-white/5">
-              <p className="text-[8px] text-white/30 uppercase tracking-wide mb-0.5">{label}</p>
+              <p className="text-[11px] text-white/30 uppercase tracking-[0.12em] mb-0.5">{label}</p>
               <p className={`tabular-nums leading-none ${cls}`}>{val}</p>
             </div>
           ))}
@@ -549,9 +768,9 @@ function WatchlistCard({
         {mpEntries.length > 0 && (
           <div className="flex items-center gap-1 flex-wrap mb-2.5">
             {mpEntries.slice(0, 4).map(([slug, price], i) => (
-              <div key={slug} className="flex items-center gap-1 rounded px-1.5 py-0.5 border text-[9px]"
-                style={{ borderColor: (MP_COLOR[slug] ?? "#888") + "25", background: (MP_COLOR[slug] ?? "#888") + "06" }}>
-                <span className="font-semibold" style={{ color: (MP_COLOR[slug] ?? "#aaa") + (i === 0 ? "" : "cc") }}>
+              <div key={slug} className="flex items-center gap-1 rounded px-1.5 py-0.5 border text-[11px]"
+                style={{ borderColor: ((MP_META[slug]?.color ?? "#888888") ?? "#888") + "25", background: ((MP_META[slug]?.color ?? "#888888") ?? "#888") + "06" }}>
+                <span className="font-semibold" style={{ color: ((MP_META[slug]?.color ?? "#888888") ?? "#aaa") + (i === 0 ? "" : "cc") }}>
                   {MP_SHORT[slug] ?? slug.slice(0, 2).toUpperCase()}
                 </span>
                 <span className={i === 0 ? "text-emerald-300 font-semibold tabular-nums" : "text-white/40 tabular-nums"}>
@@ -567,14 +786,14 @@ function WatchlistCard({
           <div className="flex items-center gap-2">
             {h24Pct != null && <DeltaChip pct={h24Pct} />}
             {invDelta != null && (
-              <span className="text-[10px] text-slate-600">
+              <span className="text-[11px] text-slate-500">
                 {invDelta > 0 ? "+" : ""}{invDelta} inv
               </span>
             )}
           </div>
           {spotify.spotifyArtistUrl && (
             <a href={spotify.spotifyArtistUrl} target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded border border-[#1db954]/25 bg-[#1db954]/8 text-[#1db954]">
+              className="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded border border-[#1db954]/25 bg-[#1db954]/8 text-[#1db954]">
               <Music size={8} /> Spotify
             </a>
           )}

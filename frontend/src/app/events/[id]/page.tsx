@@ -1535,7 +1535,12 @@ export default function EventDetailPage() {
                       },
                       {
                         label: "Dup %",
-                        value: snapshot?.duplicates?.dup_pct != null ? `${snapshot.duplicates.dup_pct.toFixed(1)}%` : "—",
+                        value: (() => {
+                          const perMp = snapshot?.duplicates?.per_marketplace?.[slug];
+                          const global = snapshot?.duplicates?.dup_pct;
+                          const val = perMp ?? global;
+                          return val != null ? `${val.toFixed(1)}%` : "—";
+                        })(),
                         cls: "text-violet-300/60",
                         extra: null,
                       },

@@ -1675,7 +1675,8 @@ async def event_intelligence_snapshot(
     # ── Duplicate % from canonical inventory ─────────────────────────────────
     dup_row = (await db.execute(text("""
         SELECT total_raw_listings, total_canonical_blocks,
-               global_duplicate_ratio, mirrored_ratio, mirrored_block_count
+               global_duplicate_ratio, mirrored_ratio, mirrored_block_count,
+               by_marketplace
         FROM canonical_inventory_snapshots
         WHERE event_id = :eid
         ORDER BY snapshot_at DESC LIMIT 1
@@ -1685,11 +1686,31 @@ async def event_intelligence_snapshot(
     dup_mirror_pct = None
     dup_raw = None
     dup_canonical = None
+    per_mp_dup: dict = {}
     if dup_row and dup_row[0]:
         dup_raw = int(dup_row[0])
         dup_canonical = int(dup_row[1])
         dup_pct = round(float(dup_row[2]) * 100, 1) if dup_row[2] else None
         dup_mirror_pct = round(float(dup_row[3]) * 100, 1) if dup_row[3] else None
+
+        # Per-marketplace dup %: (raw_per_mp - canonical_per_mp) / raw_per_mp
+        # canonical_per_mp comes from by_marketplace snapshot field (canonical block count per mp)
+        # raw_per_mp comes from live active listings (cheapest possible query)
+        by_mp_snap: dict = dup_row[5] or {}
+        if by_mp_snap:
+            raw_mp_rows = (await db.execute(text("""
+                SELECT m.slug, COUNT(*) AS cnt
+                FROM listings l
+                JOIN marketplaces m ON m.id = l.marketplace_id
+                WHERE l.event_id = :eid AND l.is_active = true
+                GROUP BY m.slug
+            """), {"eid": event_id})).fetchall()
+            raw_per_mp = {slug: int(cnt) for slug, cnt in raw_mp_rows}
+            for mp_slug, canonical_cnt in by_mp_snap.items():
+                raw_cnt = raw_per_mp.get(mp_slug, 0)
+                if raw_cnt > 0 and isinstance(canonical_cnt, int):
+                    mp_dup = round(max((raw_cnt - canonical_cnt) / raw_cnt * 100, 0.0), 1)
+                    per_mp_dup[mp_slug] = mp_dup
 
     resp = {
         "event_id": event_id,
@@ -1733,11 +1754,14 @@ async def event_intelligence_snapshot(
         "per_marketplace_trends": mp_7d_trends,
         # Duplicate inventory from canonical dedup engine
         "duplicates": {
-            "dup_pct": dup_pct,                    # % of raw listings that are intra-marketplace duplicates
+            "dup_pct": dup_pct,                    # global: (raw - canonical) / raw × 100
             "dup_mirror_pct": dup_mirror_pct,      # % of canonical blocks mirrored across ≥2 marketplaces
             "raw_listings": dup_raw,
             "canonical_blocks": dup_canonical,
-            "note": "dup_pct=intra-MP dedup (includes TickPick GA churn); dup_mirror_pct=cross-MP mirrors only",
+            # Per-marketplace: (raw_per_mp - canonical_per_mp) / raw_per_mp × 100
+            # Measures intra-marketplace dedup rate; each marketplace's own collapse ratio.
+            "per_marketplace": per_mp_dup,
+            "note": "dup_pct=global dedup; per_marketplace=intra-MP dedup per market",
         },
         # Lifecycle is expensive (10s+). Fetch via /lifecycle endpoint separately.
         "lifecycle": None,
