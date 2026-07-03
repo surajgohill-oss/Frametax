@@ -74,12 +74,12 @@ function FeaturedEventHero({
   isPinned: boolean;
   onTogglePin: () => void;
 }) {
-  const title      = meta?.title ?? event.title;
-  const venue      = meta?.venue_name;
-  const dateStr    = meta?.event_date;
-  const artist          = meta?.artist;
+  const title      = event.title;
+  const venue      = event.venue_name ?? meta?.venue_name;
+  const dateStr    = event.event_date ?? meta?.event_date;
+  const artist          = event.artist ?? meta?.artist;
   const autoArtworkUrl  = useArtistImage(artist, title);
-  const artworkUrl      = meta?.custom_artwork_url ?? autoArtworkUrl;
+  const artworkUrl      = event.custom_artwork_url ?? meta?.custom_artwork_url ?? autoArtworkUrl;
   const gradient        = getEventGradient(artist, title);
   const [marketWindow, setMarketWindow] = useState<"tracking" | "24h" | "12h" | "6h" | "7d">("tracking");
   const action     = signalToAction(event.signal);
@@ -604,7 +604,6 @@ function MarketplaceHealthStrip({ events }: { events: EventSummary[] }) {
 function EventGroup({
   groupKey,
   events,
-  metas,
   depths,
   onHide,
   onSelect,
@@ -616,7 +615,6 @@ function EventGroup({
 }: {
   groupKey: string;
   events: EventSummary[];
-  metas: MetaMap;
   depths: Record<number, number | null>;
   onHide: (id: number) => void;
   onSelect: (id: number) => void;
@@ -656,16 +654,17 @@ function EventGroup({
     return d != null ? (sum ?? 0) + d : sum;
   }, null);
 
-  const firstMeta      = metas[events[0]?.event_id];
-  const gradient       = getEventGradient(firstMeta?.artist, firstMeta?.title ?? events[0]?.title ?? groupKey);
-  const autoArtworkUrl = useArtistImage(firstMeta?.artist ?? groupKey, firstMeta?.title);
-  const artworkUrl     = firstMeta?.custom_artwork_url ?? autoArtworkUrl;
-  const spotify = getSpotifyData(firstMeta?.artist ?? groupKey);
+  const firstEvent     = events[0];
+  const artist         = firstEvent?.artist ?? groupKey;
+  const gradient       = getEventGradient(artist, firstEvent?.title ?? groupKey);
+  const autoArtworkUrl = useArtistImage(artist, firstEvent?.title);
+  const artworkUrl     = firstEvent?.custom_artwork_url ?? autoArtworkUrl;
+  const spotify = getSpotifyData(artist);
 
-  // Aggregate marketplace floors across all events in group
+  // Aggregate marketplace floors across all events in group (now from intelligence response)
   const mpAgg: Record<string, number | null> = {};
   for (const e of events) {
-    const prices = metas[e.event_id]?.all_marketplace_prices ?? metas[e.event_id]?.marketplace_prices ?? {};
+    const prices = e.marketplace_prices ?? {};
     for (const [slug, price] of Object.entries(prices)) {
       if (price == null) continue;
       if (mpAgg[slug] == null || price < (mpAgg[slug] as number)) mpAgg[slug] = price;
@@ -689,7 +688,7 @@ function EventGroup({
               return;
             }
             setCollapsed(v => !v);
-            if (isNflEvent(groupKey, firstMeta?.artist)) onNflClick?.();
+            if (isNflEvent(groupKey, artist)) onNflClick?.();
           }}
           className="w-full text-left rounded-xl border border-white/10 overflow-hidden transition-all hover:border-white/18 focus:outline-none relative"
           style={{ background: gradientBg(gradient, "low"), backdropFilter: "blur(8px)" }}
@@ -838,7 +837,7 @@ function EventGroup({
       </div>
 
       {/* NFL audio chip — inline, always visible for NFL groups */}
-      {isNflEvent(groupKey, firstMeta?.artist) && nflAudioState && (
+      {isNflEvent(groupKey, artist) && nflAudioState && (
         <div className="flex items-center gap-2.5 px-4 py-2.5 mt-1 rounded-xl border border-amber-500/20 bg-amber-500/5">
           <span className={`w-2 h-2 rounded-full flex-shrink-0 ${nflAudioState.playing ? "bg-amber-400 animate-pulse" : nflAudioState.errorMsg ? "bg-red-400" : "bg-amber-400/40"}`} />
           <span className="text-[11px] font-bold text-white/50 uppercase tracking-widest">NFL Theme</span>
@@ -871,7 +870,6 @@ function EventGroup({
             <EventCard
               key={event.event_id}
               event={event}
-              meta={metas[event.event_id]}
               dataDepthDays={depths[event.event_id]}
               onHide={onHide}
               isSelected={event.event_id === selectedId}
@@ -918,17 +916,8 @@ export default function DashboardPage() {
       });
       setDepths(depthMap);
 
-      // Render immediately — meta calls load in background without blocking
+      // Render immediately — meta is now in the intelligence events response
       setLoading(false);
-
-      Promise.allSettled(evts.map((e) => api.events.meta(e.event_id))).then((results) => {
-        const metaMap: MetaMap = {};
-        evts.forEach((e, i) => {
-          const r = results[i];
-          if (r.status === "fulfilled") metaMap[e.event_id] = r.value;
-        });
-        setMetas(metaMap);
-      });
     } catch (e) {
       setError(String(e));
       setLoading(false);
@@ -936,6 +925,12 @@ export default function DashboardPage() {
   }
 
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch full meta for just the selected event (for marketplace_freshness / created_at in hero)
+  useEffect(() => {
+    if (selectedId == null) return;
+    api.events.meta(selectedId).then((m) => setMetas((prev) => ({ ...prev, [selectedId]: m }))).catch(() => {});
+  }, [selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const visible = useMemo(() => {
     const base = mounted && !showHidden
@@ -949,21 +944,16 @@ export default function DashboardPage() {
       if (sort === "inventory") return (a.inventory?.total_listings ?? 99999) - (b.inventory?.total_listings ?? 99999);
       if (sort === "seller_drop") return (b.changes?.h24?.inventory_delta ?? 0) - (a.changes?.h24?.inventory_delta ?? 0);
       if (sort === "closest") {
-        const da2 = metas[a.event_id]?.event_date ?? "";
-        const db2 = metas[b.event_id]?.event_date ?? "";
-        return da2.localeCompare(db2);
+        return (a.event_date ?? "").localeCompare(b.event_date ?? "");
       }
-      const da = metas[a.event_id]?.event_date ?? "";
-      const db = metas[b.event_id]?.event_date ?? "";
-      return da.localeCompare(db);
+      return (a.event_date ?? "").localeCompare(b.event_date ?? "");
     });
-  }, [events, metas, sort, hiddenEvents, showHidden, mounted]);
+  }, [events, sort, hiddenEvents, showHidden, mounted]);
 
   const groups = useMemo(() => {
     const map: Record<string, EventSummary[]> = {};
     for (const e of visible) {
-      const meta = metas[e.event_id];
-      const key = extractGroupKey(meta?.artist, meta?.title ?? e.title);
+      const key = extractGroupKey(e.artist, e.title);
       if (!map[key]) map[key] = [];
       map[key].push(e);
     }
@@ -972,7 +962,7 @@ export default function DashboardPage() {
       const bScore = Math.max(...be.map(e => e.opportunity_score ?? 0));
       return bScore - aScore;
     });
-  }, [visible, metas]);
+  }, [visible]);
 
   // Prefer pinned event as headline; fall back to selected or best-score
   const headlineId = pinnedId ?? selectedId;
@@ -1082,7 +1072,6 @@ export default function DashboardPage() {
               key={groupKey}
               groupKey={groupKey}
               events={groupEvents}
-              metas={metas}
               depths={depths}
               onHide={(id) => { if (showHidden) unhide(id); else hide(id); }}
               onSelect={(id) => setSelectedId(id)}

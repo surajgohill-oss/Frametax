@@ -11,6 +11,11 @@ export type Signal =
 export interface EventSummary {
   event_id: number;
   title: string;
+  artist?: string | null;
+  venue_name?: string | null;
+  venue_slug?: string | null;
+  custom_artwork_url?: string | null;
+  event_date?: string | null;
   signal: Signal;
   opportunity_score: number;
   price: {
@@ -34,6 +39,7 @@ export interface EventSummary {
     fresh_total_listings?: number;
     total_tickets: number;
   };
+  marketplace_prices?: Record<string, number>;
   history_hours?: number | null;
 }
 

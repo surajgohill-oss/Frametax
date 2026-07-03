@@ -29,8 +29,9 @@ from typing import Any, Optional
 import asyncio
 
 from fastapi import APIRouter, Depends, Query, HTTPException
-from sqlalchemy import select, text
+from sqlalchemy import select, text, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.database import get_db, AsyncSessionLocal
 from app.models import Event
@@ -170,7 +171,10 @@ async def all_events_intelligence(
     now = datetime.now(timezone.utc)
     # +24h grace: see compute_all comment above.
     events_q = await db.execute(
-        select(Event).where(Event.event_date >= now - timedelta(hours=24)).order_by(Event.event_date)
+        select(Event)
+        .where(Event.event_date >= now - timedelta(hours=24))
+        .order_by(Event.event_date)
+        .options(selectinload(Event.venue))
     )
     events = events_q.scalars().all()
 
@@ -220,6 +224,23 @@ async def all_events_intelligence(
         for row in ft_rows:
             first_tracked_medians[row[0]] = float(row[1]) if row[1] else None
 
+    # ── Per-marketplace floor prices: one batch query ─────────────────────────
+    # Returns min(price) per (event_id, marketplace_slug) for active listings.
+    # Used by the homepage to show per-MP prices without per-event meta calls.
+    mp_floors_by_event: dict[int, dict[str, float]] = {}
+    if event_ids:
+        ids_literal_mp = ", ".join(str(i) for i in event_ids)
+        mp_rows = (await db.execute(text(f"""
+            SELECT l.event_id, m.slug, MIN(l.price)
+            FROM listings l
+            JOIN marketplaces m ON m.id = l.marketplace_id
+            WHERE l.event_id IN ({ids_literal_mp})
+              AND l.is_active = true
+            GROUP BY l.event_id, m.slug
+        """))).fetchall()
+        for eid, slug, floor in mp_rows:
+            mp_floors_by_event.setdefault(eid, {})[slug] = round(float(floor), 2)
+
     # Fetch all event intelligence in parallel — sequential was O(n * compute_time).
     # Each coroutine gets its own session; AsyncSession isn't safe for concurrent sharing.
     async def _fetch_one(event: Event):
@@ -247,6 +268,10 @@ async def all_events_intelligence(
         summary.append({
             "event_id": event.id,
             "title": event.title,
+            "artist": event.artist,
+            "venue_name": event.venue.name if event.venue else None,
+            "venue_slug": event.venue.slug if event.venue else None,
+            "custom_artwork_url": event.custom_artwork_url,
             "event_date": event.event_date.isoformat(),
             "days_until_event": intel.get("days_until_event"),
             "signal": intel.get("signal", "unknown"),
@@ -262,6 +287,7 @@ async def all_events_intelligence(
                 "marketplace_leader": intel.get("market", {}).get("marketplace_leader"),
                 "seller_aggression": intel.get("market", {}).get("seller_aggression"),
             },
+            "marketplace_prices": mp_floors_by_event.get(event.id, {}),
             "history_hours": max(
                 intel.get("history_hours") or 0,
                 archive_oldest_by_event.get(event.id) or 0,

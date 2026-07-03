@@ -18,11 +18,11 @@ interface Props {
 }
 
 export default function EventCard({ event, meta, dataDepthDays, onHide, isSelected, onSelect }: Props) {
-  const title = meta?.title ?? event.title;
-  const venue = meta?.venue_name;
-  const venueSlug = meta?.venue_slug;
-  const dateStr = meta?.event_date;
-  const artist = meta?.artist;
+  const title = event.title;
+  const venue = event.venue_name ?? meta?.venue_name;
+  const venueSlug = event.venue_slug ?? meta?.venue_slug;
+  const dateStr = event.event_date ?? meta?.event_date;
+  const artist = event.artist ?? meta?.artist;
   const INTEL_VENUES = new Set(["sofi-stadium", "crypto-arena", "kia-forum", "hollywood-bowl", "greek-theatre"]);
   const hasVenueIntel = INTEL_VENUES.has(venueSlug ?? "");
 
