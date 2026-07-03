@@ -297,19 +297,211 @@ async def _enrich_event(db, event: Event, trace: dict | None = None) -> dict:
 
 @router.get("/")
 async def list_events(db: AsyncSession = Depends(get_db)):
+    # ── Load all non-archived events ─────────────────────────────────────────
     result = await db.execute(
-        select(Event).options(
-            selectinload(Event.venue),
-            selectinload(Event.tracked_events).selectinload(TrackedEvent.marketplace),
-        ).where(Event.status != "archived").order_by(Event.event_date)
+        select(Event).options(selectinload(Event.venue))
+        .where(Event.status != "archived")
+        .order_by(Event.event_date)
     )
+    events = result.scalars().all()
+    if not events:
+        return []
+
+    event_ids = [e.id for e in events]
+
+    # ── Batch 1: Tracked events + marketplace rows for ALL events ─────────────
+    te_result = await db.execute(
+        select(TrackedEvent, Marketplace)
+        .join(Marketplace, TrackedEvent.marketplace_id == Marketplace.id)
+        .where(TrackedEvent.event_id.in_(event_ids))
+    )
+    all_te_rows = te_result.all()
+    # te_rows_by_event: event_id → [(te, mp)]
+    te_rows_by_event: dict[int, list] = {}
+    all_te_ids: list[int] = []
+    all_mp_ids: list[int] = []
+    for te, mp in all_te_rows:
+        te_rows_by_event.setdefault(te.event_id, []).append((te, mp))
+        all_te_ids.append(te.id)
+        all_mp_ids.append(mp.id)
+
+    # ── Batch 2: Min price + count per (event_id, marketplace_id) ─────────────
+    asks_result = await db.execute(
+        select(Listing.event_id, Listing.marketplace_id, func.min(Listing.price), func.count())
+        .where(
+            Listing.event_id.in_(event_ids),
+            Listing.is_active == True,
+        )
+        .group_by(Listing.event_id, Listing.marketplace_id)
+    )
+    # (event_id, mp_id) → (min_price, count)
+    asks_by_event_mp: dict[tuple, tuple] = {}
+    for eid, mp_id, min_price, cnt in asks_result.all():
+        asks_by_event_mp[(eid, mp_id)] = (float(min_price), cnt)
+
+    # ── Batch 3: Last successful poll per te_id ────────────────────────────────
+    if all_te_ids:
+        lsr = await db.execute(
+            select(PollRun.tracked_event_id, func.max(PollRun.completed_at))
+            .where(
+                PollRun.tracked_event_id.in_(all_te_ids),
+                PollRun.status == "success",
+                PollRun.completed_at.isnot(None),
+            )
+            .group_by(PollRun.tracked_event_id)
+        )
+        last_success_map = {row[0]: row[1] for row in lsr.all()}
+
+        ldr = await db.execute(
+            select(PollRun.tracked_event_id, func.max(PollRun.completed_at))
+            .where(
+                PollRun.tracked_event_id.in_(all_te_ids),
+                PollRun.status == "success",
+                PollRun.completed_at.isnot(None),
+                PollRun.listings_found > 0,
+            )
+            .group_by(PollRun.tracked_event_id)
+        )
+        last_data_map = {row[0]: row[1] for row in ldr.all()}
+
+        cutoff = datetime.utcnow() - timedelta(days=30)
+        rrr = await db.execute(
+            select(PollRun.tracked_event_id, PollRun.status, PollRun.started_at)
+            .where(
+                PollRun.tracked_event_id.in_(all_te_ids),
+                PollRun.started_at >= cutoff,
+            )
+            .order_by(PollRun.tracked_event_id, PollRun.started_at.desc())
+        )
+        # consecutive failures per te_id (head of desc-sorted runs)
+        consec_by_te: dict[int, int] = {}
+        cur_te = None
+        cur_fail = 0
+        for te_id, status, _ in rrr.all():
+            if te_id != cur_te:
+                if cur_te is not None:
+                    consec_by_te[cur_te] = cur_fail
+                cur_te, cur_fail = te_id, 0
+            if status == "error":
+                cur_fail += 1
+            else:
+                # streak broken — stop counting for this te
+                pass
+        if cur_te is not None:
+            consec_by_te[cur_te] = cur_fail
+    else:
+        last_success_map = {}
+        last_data_map = {}
+        consec_by_te = {}
+
+    # ── Build output from pre-fetched data (no per-event queries) ────────────
     output = []
-    for e in result.scalars().all():
-        trace = trace_event(str(e.id))
-        add_stage(trace, "db_read", {"canonical_id": e.canonical_id})
-        enriched = await _enrich_event(db, e, trace=trace)
-        add_stage(trace, "response_appended", {"list_position": len(output)})
-        output.append(enriched)
+    for e in events:
+        tracked_rows = te_rows_by_event.get(e.id, [])
+        mp_ids_for_e = [mp.id for _, mp in tracked_rows]
+
+        asks_by_mp_id  = {mp_id: asks_by_event_mp[(e.id, mp_id)][0]
+                          for mp_id in mp_ids_for_e if (e.id, mp_id) in asks_by_event_mp}
+        count_by_mp_id = {mp_id: asks_by_event_mp[(e.id, mp_id)][1]
+                          for mp_id in mp_ids_for_e if (e.id, mp_id) in asks_by_event_mp}
+
+        mp_asks: dict[str, float] = {}
+        fresh_mp_asks: dict[str, float] = {}
+        freshness_by_mp: dict[str, dict] = {}
+        total_listings_count = sum(count_by_mp_id.values())
+        fresh_total = 0
+        all_time_asks: dict[str, float] = {}
+
+        for te, mp in tracked_rows:
+            ask   = asks_by_mp_id.get(mp.id)
+            count = count_by_mp_id.get(mp.id, 0)
+            if ask is not None:
+                mp_asks[mp.slug] = ask
+                all_time_asks[mp.slug] = ask
+
+            te_last_success = last_success_map.get(te.id)
+            te_last_data    = last_data_map.get(te.id)
+            polls_ran_no_data = (te_last_success is not None) and (te_last_data is None)
+            consecutive_failures = consec_by_te.get(te.id, 0)
+
+            freshness = compute_freshness(
+                marketplace_slug=mp.slug,
+                event_date=e.event_date,
+                poll_interval_minutes=te.poll_interval_minutes or 1440,
+                last_success_at=te_last_success,
+                last_data_at=te_last_data,
+                polls_ran_no_data=polls_ran_no_data,
+                consecutive_failures=consecutive_failures,
+            )
+            freshness_by_mp[mp.slug] = freshness
+
+            if freshness.get("status") in ("fresh", "late") and ask is not None:
+                fresh_mp_asks[mp.slug] = ask
+                fresh_total += count
+
+        lowest = min(mp_asks.values()) if mp_asks else None
+        fresh_lowest = min(fresh_mp_asks.values()) if fresh_mp_asks else None
+
+        venue = e.venue
+        te_list = []
+        for te, mp in tracked_rows:
+            age = None
+            lp = last_success_map.get(te.id)
+            if lp:
+                age = round((datetime.utcnow() - lp.replace(tzinfo=None)).total_seconds() / 60)
+            te_list.append({
+                "id": te.id,
+                "marketplace": mp.slug,
+                "marketplace_slug": mp.slug,
+                "external_event_id": te.external_event_id,
+                "external_url": te.external_url,
+                "is_active": te.is_active,
+                "poll_interval_minutes": te.poll_interval_minutes,
+                "last_polled_at": te.last_polled_at.isoformat() if te.last_polled_at else None,
+                "next_poll_at": te.next_poll_at.isoformat() if te.next_poll_at else None,
+                "freshness_status": freshness_by_mp.get(mp.slug, {}).get("status"),
+                "last_success_at": last_success_map.get(te.id).isoformat() if last_success_map.get(te.id) else None,
+                "last_data_at": last_data_map.get(te.id).isoformat() if last_data_map.get(te.id) else None,
+                "age_minutes": age,
+                "consecutive_failures": consec_by_te.get(te.id, 0),
+                "stale_reason": freshness_by_mp.get(mp.slug, {}).get("stale_reason"),
+                "expected_interval_minutes": freshness_by_mp.get(mp.slug, {}).get("expected_interval_minutes"),
+            })
+
+        output.append({
+            "id": e.id,
+            "canonical_id": e.canonical_id,
+            "title": e.title,
+            "artist": e.artist,
+            "venue_id": venue.id if venue else None,
+            "venue_name": venue.name if venue else None,
+            "venue_slug": venue.slug if venue else None,
+            "event_date": e.event_date.isoformat() if e.event_date else None,
+            "status": e.status,
+            "is_active": e.is_active,
+            "stubhub_url": e.stubhub_url if hasattr(e, "stubhub_url") else None,
+            "seatgeek_url": e.seatgeek_url if hasattr(e, "seatgeek_url") else None,
+            "lowest_price": lowest,
+            "historical_lowest_price": fresh_lowest,
+            "total_listings": total_listings_count,
+            "fresh_total_listings": fresh_total,
+            "marketplace_prices": mp_asks,
+            "all_marketplace_prices": all_time_asks,
+            "marketplace_freshness": freshness_by_mp,
+            "custom_artwork_url": e.custom_artwork_url if hasattr(e, "custom_artwork_url") else None,
+            "next_poll_at": None,
+            "created_at": e.created_at.isoformat() if hasattr(e, "created_at") and e.created_at else None,
+            "tracked_events": te_list,
+            "lineage": {
+                "source_table": "events",
+                "event_id": e.id,
+                "canonical_id": e.canonical_id,
+                "tracked_event_count": len(tracked_rows),
+                "marketplaces": [mp.slug for _, mp in tracked_rows],
+                "query_path": [],
+            },
+        })
+
     return output
 
 
