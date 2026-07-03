@@ -55,7 +55,10 @@ def _extract_external_id_from_url(mp_slug: str, url: str) -> str | None:
             return m.group(1)
         m = re.search(r"-(\d{5,})\.html", url)
         return m.group(1) if m else None
-    # Gametime uses slug-based URLs: no numeric ID extractable from URL
+    if mp_slug == "gametime":
+        # https://gametime.co/events/69faa7a82a2c396d995b4255  (24-char hex ObjectId)
+        m = re.search(r"/events/([a-f0-9]{20,})", url)
+        return m.group(1) if m else None
     return None
 
 
