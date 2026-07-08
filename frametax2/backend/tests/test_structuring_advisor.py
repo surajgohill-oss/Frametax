@@ -55,7 +55,7 @@ class TestAdvisoryResultStructure:
         assert result.jurisdiction_code == "MU"
 
     def test_program_rate(self, result):
-        assert result.program_rate == 0.35
+        assert result.program_rate == 0.40
 
     def test_production_title(self, result):
         assert "Little Utopia" in result.production_title
@@ -350,12 +350,51 @@ class TestR11PreProductionMeeting:
 
 class TestLittleUtopiaParams:
     def test_default_mu_rate(self):
+        """Canonical MU rate for this project is 40% (EDB official programme page:
+        'up to 40% for high end Feature film and TV series'). The 35% figure that
+        appears in the production's own budget line ('EDB Rebate at 35%') is stale
+        budget-evidenced text, not the modeled program rate."""
         p = LittleUtopiaParams()
-        assert p.mu_rebate_rate == 0.35
+        assert p.mu_rebate_rate == 0.40
+
+    def test_default_qpe_base_is_conservative_calculator_verified(self):
+        """qpe_base_usd must be the calculate_qpe() conservative-scenario output
+        against little_utopia_sanitized.py ($1,551,163) — not a plug figure, and
+        not double-counting frogsquad/HOD accommodation/local per-diems, which
+        are modeled separately as incremental R-01/R-02/R-03 upside."""
+        p = LittleUtopiaParams()
+        assert p.qpe_base_usd == 1_551_163.0
+
+    def test_qpe_base_excludes_contested_accounts_no_double_count(self):
+        """The contested accounts must not already be inside qpe_base_usd —
+        otherwise R-01/R-02/R-03's incremental additions would double-count them."""
+        p = LittleUtopiaParams()
+        conservative_confirmed = (
+            p.gross_budget_usd
+            - p.atl_total_usd
+            - p.frogsquad_usd - p.hod_accom_usd - p.local_perdiem_usd
+            - p.post_in_budget_usd
+        )
+        # qpe_base_usd must be materially below the naive "everything else" figure
+        # (other non-marine/ATL/post exclusions — insurance, legal, contingency,
+        # travel, stunts, imported HODs — still apply); it must never exceed it.
+        assert p.qpe_base_usd < conservative_confirmed
 
     def test_default_inkind_base(self):
         p = LittleUtopiaParams()
         assert p.inkind_base_usd == 625_000
+
+    def test_inkind_is_additive_not_subtracted_from_gross(self):
+        """The $625,000 in-kind FMV is off-budget (zero cash paid) and must never
+        be treated as a deduction from gross_budget_usd — only as a conditional
+        additive uplift to QPE if EDB accepts FMV/in-kind treatment."""
+        p = LittleUtopiaParams()
+        # gross_budget_usd is the real fixture's cash total and must be
+        # independent of whether in-kind is confirmed or not.
+        assert p.gross_budget_usd == 4_364_393.0
+        assert p.inkind_base_usd not in (
+            p.gross_budget_usd - p.qpe_base_usd,
+        )
 
     def test_team_nationalities(self):
         p = LittleUtopiaParams()
@@ -367,12 +406,12 @@ class TestLittleUtopiaParams:
         assert "US" in p.producer_nationalities
 
     def test_custom_params_flow_through(self):
-        p = LittleUtopiaParams(mu_rebate_rate=0.40)
+        p = LittleUtopiaParams(mu_rebate_rate=0.45)
         result = build_structuring_advisory(p)
-        assert result.program_rate == 0.40
-        # R-06 marine rebate should scale with new rate
+        assert result.program_rate == 0.45
+        # R-06 marine rebate should scale with the overridden rate
         r6 = next(r for r in result.recommendations if r.recommendation_id == "R-06")
-        expected = r6.qualification_impact_usd * 0.40
+        expected = r6.qualification_impact_usd * 0.45
         assert abs(r6.rebate_impact_usd - expected) < 0.01
 
 

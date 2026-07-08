@@ -145,10 +145,16 @@ class LittleUtopiaParams:
     """
     gross_budget_usd: float = 4_364_393.0
     atl_total_usd: float = 538_444.0
-    qpe_conservative_usd: float = 1_550_000.0
-    qpe_base_usd: float = 2_500_000.0
-    qpe_optimistic_usd: float = 3_060_000.0
-    mu_rebate_rate: float = 0.35
+    # QPE figures are calculator-verified (calculate_qpe() against the real
+    # little_utopia_sanitized.py fixture, 40 non-memo accounts) — not plugs.
+    # qpe_base_usd = the CONSERVATIVE scenario ($1,551,163): frogsquad/HOD
+    # accommodation/local per-diems are NOT yet counted here, consistent with
+    # frogsquad_usd/hod_accom_usd/local_perdiem_usd below being modeled as
+    # incremental upside pending SPV routing / EDB confirmation.
+    qpe_conservative_usd: float = 1_551_163.0
+    qpe_base_usd: float = 1_551_163.0
+    qpe_optimistic_usd: float = 2_596_357.0
+    mu_rebate_rate: float = 0.40  # EDB official programme page: "up to 40%" (edbmauritius.org)
     mu_delay_weeks: int = 39
     bridge_rate: float = 0.08
 

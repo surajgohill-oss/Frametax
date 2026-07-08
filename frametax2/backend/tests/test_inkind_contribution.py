@@ -349,7 +349,7 @@ class TestCompareMuVsMaltaPost:
     def test_scenario_a_mu_wins(self):
         result = self._analyse()
         scenario = self._get_scenario(result, "A")
-        cmp = compare_mu_vs_malta_post(scenario, self.INKIND_FMV, self.MU_BASE_QPE)
+        cmp = compare_mu_vs_malta_post(scenario, self.INKIND_FMV, self.MU_BASE_QPE, mu_rate=self.MU_RATE)
         assert cmp.winner == "MU_100_PCT"
         assert cmp.margin > 0
 
@@ -357,14 +357,14 @@ class TestCompareMuVsMaltaPost:
         """With $0 cash paid, B is same as A — free service still value to MU."""
         result = self._analyse()
         scenario = self._get_scenario(result, "B")
-        cmp = compare_mu_vs_malta_post(scenario, self.INKIND_FMV, self.MU_BASE_QPE)
+        cmp = compare_mu_vs_malta_post(scenario, self.INKIND_FMV, self.MU_BASE_QPE, mu_rate=self.MU_RATE)
         assert cmp.winner == "MU_100_PCT"
 
     def test_scenario_c_fmv_check_computations(self):
         """Scenario C: FMV qualifies — MU QPE includes $625K, service value = $0."""
         result = self._analyse()
         scenario = self._get_scenario(result, "C")
-        cmp = compare_mu_vs_malta_post(scenario, self.INKIND_FMV, self.MU_BASE_QPE)
+        cmp = compare_mu_vs_malta_post(scenario, self.INKIND_FMV, self.MU_BASE_QPE, mu_rate=self.MU_RATE)
         # MU QPE should be base + FMV
         assert cmp.mu_qpe_with_inkind == self.MU_BASE_QPE + self.INKIND_FMV
         # Service value $0 when counted in QPE
@@ -376,7 +376,7 @@ class TestCompareMuVsMaltaPost:
         """Scenario D: QPE reduced by FMV — MU rebate falls but in-kind still has service value."""
         result = self._analyse()
         scenario = self._get_scenario(result, "D")
-        cmp = compare_mu_vs_malta_post(scenario, self.INKIND_FMV, self.MU_BASE_QPE)
+        cmp = compare_mu_vs_malta_post(scenario, self.INKIND_FMV, self.MU_BASE_QPE, mu_rate=self.MU_RATE)
         # MU QPE should be base - FMV = 1,875,000
         assert cmp.mu_qpe_with_inkind == self.MU_BASE_QPE - self.INKIND_FMV
         # Still get the free service
@@ -386,7 +386,7 @@ class TestCompareMuVsMaltaPost:
         """Scenario E (unknown): modeled conservatively as excluded — MU still wins."""
         result = self._analyse()
         scenario = self._get_scenario(result, "E")
-        cmp = compare_mu_vs_malta_post(scenario, self.INKIND_FMV, self.MU_BASE_QPE)
+        cmp = compare_mu_vs_malta_post(scenario, self.INKIND_FMV, self.MU_BASE_QPE, mu_rate=self.MU_RATE)
         assert cmp.winner == "MU_100_PCT"
 
     def test_malta_figures_consistent(self):
@@ -404,7 +404,7 @@ class TestCompareMuVsMaltaPost:
         """Margin equals abs(mu_net - malta_net)."""
         result = self._analyse()
         scenario = self._get_scenario(result, "A")
-        cmp = compare_mu_vs_malta_post(scenario, self.INKIND_FMV, self.MU_BASE_QPE)
+        cmp = compare_mu_vs_malta_post(scenario, self.INKIND_FMV, self.MU_BASE_QPE, mu_rate=self.MU_RATE)
         assert abs(cmp.margin - abs(cmp.mu_net_value - cmp.malta_net_value)) < 0.01
 
     def test_malta_post_qpe_is_total_scope(self):
@@ -433,7 +433,7 @@ class TestCompareMuVsMaltaPost:
         """
         result = self._analyse()
         scenario = self._get_scenario(result, "C")
-        cmp = compare_mu_vs_malta_post(scenario, self.INKIND_FMV, self.MU_BASE_QPE)
+        cmp = compare_mu_vs_malta_post(scenario, self.INKIND_FMV, self.MU_BASE_QPE, mu_rate=self.MU_RATE)
         # Under scenario C MU rebate goes UP (more QPE), Malta still loses in-kind
         assert cmp.winner == "MU_100_PCT"
 

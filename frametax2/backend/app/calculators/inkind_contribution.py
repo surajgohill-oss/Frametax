@@ -716,7 +716,7 @@ def compare_mu_vs_malta_post(
     scenario: QPEScenario,
     inkind_fmv: float,
     mu_base_qpe: float,
-    mu_rate: float = 0.35,
+    mu_rate: float = 0.40,  # EDB official programme page: "up to 40%" (edbmauritius.org)
     mu_delay_weeks: int = 39,
     mu_bridge_rate: float = 0.08,
     post_in_budget: float = 363_000,

@@ -395,3 +395,72 @@ class TestBudgetParserRebateExclusion:
         descriptions = [item.description.lower() for item in result.line_items]
         assert not any("rebate" in d for d in descriptions)
         assert not any("net total" in d for d in descriptions)
+
+
+# ---------------------------------------------------------------------------
+# Canonical Mauritius calculation regression — The Little Utopia
+#
+# Locks in the corrected end-to-end calculation so it cannot silently drift
+# back to the stale $2.5M/35% plug-figure model. See structuring_advisor.py
+# LittleUtopiaParams and inkind_contribution.py compare_mu_vs_malta_post for
+# the consumers of these canonical figures.
+# ---------------------------------------------------------------------------
+
+class TestCanonicalMauritiusCalculation:
+    MU_RATE = 0.40  # EDB official programme page: "up to 40%" — canonical for this project
+    INKIND_FMV = 625_000.0  # off-budget, zero cash paid — additive only, never subtracted
+
+    @pytest.fixture(autouse=True)
+    def result(self):
+        import copy
+        self._result = calculate_qpe(copy.deepcopy(ACCOUNTS), [self.MU_RATE], "MU")
+
+    def test_gross_cash_budget_is_4_364_393(self):
+        """Gross cash budget must reconcile to the fixture total regardless of
+        rate or in-kind treatment."""
+        assert self._result.gross_budget_usd + self._result.excluded_memo_usd == pytest.approx(4_364_393.0, abs=1.0)
+
+    def test_mauritius_rate_is_40_percent_not_35(self):
+        """Canonical MU rate for this project is 40%, not the stale
+        budget-evidenced 35% line ('EDB Rebate at 35%')."""
+        base = get_scenario(self._result, "base")
+        assert self.MU_RATE == 0.40
+        assert base.rebate_amounts[0.40] == pytest.approx(base.qpe_usd * 0.40, abs=0.01)
+
+    def test_base_qpe_account_reconciles_with_no_plug(self):
+        """QPE + all excluded non-memo accounts + memo lines must equal gross
+        budget exactly — no residual/'Other Non-Qualifying' balancing figure."""
+        base = get_scenario(self._result, "base")
+        non_memo = get_non_memo_accounts()
+        excluded_total = sum(a.amount_usd for a in non_memo if not a.base_qualifies)
+        assert base.qpe_usd + excluded_total == pytest.approx(self._result.gross_budget_usd, abs=1.0)
+        assert base.qpe_usd == pytest.approx(1_979_913.0, abs=1.0)
+
+    def test_accommodation_and_perdiem_not_excluded_without_rule_source(self):
+        """No EDB rule source proves 37-00/38-00 (accommodation & per diems, sum
+        $273,913) must be excluded — they must remain included in base QPE."""
+        accom_perdiem = [a for a in ACCOUNTS if a.account_code in ("37-00", "38-00")]
+        assert sum(a.amount_usd for a in accom_perdiem) == pytest.approx(273_913.0, abs=1.0)
+        assert all(a.base_qualifies for a in accom_perdiem)
+
+    def test_incentive_equals_qpe_times_40_percent(self):
+        base = get_scenario(self._result, "base")
+        assert base.rebate_amounts[0.40] == pytest.approx(791_965.20, abs=1.0)
+
+    def test_inkind_fmv_is_additive_not_subtracted_from_gross(self):
+        """The $625,000 in-kind FMV is off-budget (zero cash paid) and must
+        never reduce gross_budget_usd or QPE — only add to QPE conditionally."""
+        base = get_scenario(self._result, "base")
+        qpe_with_inkind = base.qpe_usd + self.INKIND_FMV
+        rebate_with_inkind = qpe_with_inkind * self.MU_RATE
+        assert rebate_with_inkind > base.rebate_amounts[0.40]
+        assert rebate_with_inkind - base.rebate_amounts[0.40] == pytest.approx(250_000.0, abs=1.0)
+        # Gross budget must be untouched by the in-kind assumption
+        assert self._result.gross_budget_usd + self._result.excluded_memo_usd == pytest.approx(4_364_393.0, abs=1.0)
+
+    def test_net_benefit_after_finance_cost(self):
+        """Net benefit after the modeled 8%/39-week bridge finance cost."""
+        base = get_scenario(self._result, "base")
+        rebate = base.rebate_amounts[0.40]
+        fc = [f for f in self._result.finance_cost_estimates if abs(f.rebate_usd - rebate) < 1][0]
+        assert fc.net_after_finance_cost_usd == pytest.approx(744_447.29, abs=1.0)
