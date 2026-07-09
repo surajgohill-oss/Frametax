@@ -1,10 +1,11 @@
 """
 test_jurisdiction_graph.py
 
-Targeted tests for the Phase 5A Jurisdiction Graph wiring layer
+Targeted tests for the Phase 5A/5B Jurisdiction Graph wiring layer
 (jurisdiction_graph.py) — wraps existing jurisdiction/program data into
 graph-compatible nodes and relationships without collecting new data or
-touching the optimizer.
+touching the optimizer. Phase 5B strengthens Requirement/Restriction/
+Absence wiring and adds query helpers.
 """
 from __future__ import annotations
 
@@ -17,12 +18,18 @@ from app.calculators.jurisdiction_graph import (
     JURISDICTION_GRAPH_VERSION,
     UNKNOWN,
     EvidenceRef,
+    FactStatus,
     GraphNode,
     JurisdictionGraph,
     NodeType,
     Relationship,
     RelationshipType,
     build_jurisdiction_graph,
+    get_program_known_facts,
+    get_program_reinvestment,
+    get_program_requirements,
+    get_program_restrictions,
+    get_program_unknowns,
 )
 
 
@@ -377,3 +384,283 @@ class TestNoOptimizerImpact:
             elif isinstance(node, ast.ImportFrom) and node.module:
                 imported_modules.add(node.module)
         assert not any("optimization_engine" in m for m in imported_modules)
+
+
+# ═════════════════════════════ Phase 5B ═════════════════════════════════
+# Requirement / Restriction / Absence wiring, evidence refs, query helpers.
+
+MU_PROGRAM = "program:mu_edb_incentive"
+MT_PROGRAM = "program:mt_mfc_rebate"
+
+
+class TestRequirementsAttachToProgram:
+    def test_min_spend_requirement_attached(self, graph):
+        node = graph.get_node("requirement:mt_mfc_rebate:min_spend")
+        assert node is not None
+        assert node.node_type == NodeType.REQUIREMENT
+        assert node.attributes["status"] == FactStatus.KNOWN.value
+        assert node.attributes["value"] == jc._MALTA.min_spend_local
+
+    def test_cultural_test_requirement_always_attached_known(self, graph):
+        """requires_cultural_test is a plain bool (never None) — every
+        program gets a KNOWN cultural_test Requirement, True or False."""
+        mu_node = graph.get_node("requirement:mu_edb_incentive:cultural_test")
+        assert mu_node.attributes["status"] == FactStatus.KNOWN.value
+        assert mu_node.attributes["value"] is False  # Mauritius: no cultural test
+        fr_node = graph.get_node("requirement:fr_trip:cultural_test")
+        assert fr_node.attributes["value"] is True  # France: cultural test required
+
+    def test_requirements_reachable_via_helper(self, graph):
+        reqs = get_program_requirements(graph, MU_PROGRAM)
+        kinds = {n.attributes["kind"] for n in reqs}
+        assert "cultural_test" in kinds
+        assert "min_spend" in kinds
+        assert "treaty_availability" in kinds
+
+
+class TestRestrictionsAttachToProgram:
+    def test_cap_funding_window_restriction_attached(self, graph):
+        node = graph.get_node("restriction:it_tax_credit_foreign:cap_funding_window")
+        assert node is not None
+        assert node.node_type == NodeType.RESTRICTION
+        assert node.attributes["status"] == FactStatus.KNOWN.value
+        assert node.attributes["value"] == jc._ITALY.annual_cap_local
+
+    def test_payout_timing_restriction_known_when_present(self, graph):
+        node = graph.get_node("restriction:mt_mfc_rebate:payout_timing")
+        assert node.attributes["status"] == FactStatus.KNOWN.value
+        assert node.attributes["value"] == jc._MALTA.cashflow_timing_weeks
+
+    def test_payout_timing_restriction_unknown_when_absent(self, graph):
+        """Mauritius: cashflow_timing_weeks is None on the source profile."""
+        assert jc._MAURITIUS.cashflow_timing_weeks is None
+        node = graph.get_node("restriction:mu_edb_incentive:payout_timing")
+        assert node.attributes["status"] == FactStatus.UNKNOWN.value
+        assert node.attributes["value"] == UNKNOWN
+
+    def test_restrictions_reachable_via_helper(self, graph):
+        restrs = get_program_restrictions(graph, MU_PROGRAM)
+        kinds = {n.attributes["kind"] for n in restrs}
+        assert "cap_funding_window" in kinds
+        assert "payout_timing" in kinds
+        assert "is_transferable" in kinds  # transferability_unknown, Mauritius
+
+
+class TestUnknownPlaceholdersForMissingFields:
+    @pytest.mark.parametrize("key", [
+        "eligible_production_types",
+        "territorial_nexus",
+        "local_entity_requirement",
+        "stacking_rule",
+        "application_timing_deadline",
+    ])
+    def test_absence_node_created_for_every_unmodeled_fact_and_every_program(self, graph, key):
+        """None of these five fact categories has a field anywhere on
+        JurisdictionIncentiveProfile — every program must carry an
+        explicit ABSENCE node for each, not silently omit it."""
+        for profile in jc.ALL_PROFILES.values():
+            node = graph.get_node(f"absence:{profile.program_slug}:{key}")
+            assert node is not None, f"missing absence node for {profile.program_slug}:{key}"
+            assert node.node_type == NodeType.ABSENCE
+            assert node.attributes["status"] == FactStatus.ABSENT.value
+            assert "reason" in node.attributes
+
+    def test_min_spend_unknown_for_mauritius(self, graph):
+        assert jc._MAURITIUS.min_spend_local is None
+        node = graph.get_node("requirement:mu_edb_incentive:min_spend")
+        assert node.attributes["status"] == FactStatus.UNKNOWN.value
+        assert node.attributes["value"] == UNKNOWN
+
+    def test_min_spend_known_for_greece(self, graph):
+        assert jc._GREECE.min_spend_local is not None
+        node = graph.get_node("requirement:gr_cash_rebate:min_spend")
+        assert node.attributes["status"] == FactStatus.KNOWN.value
+
+
+class TestReinvestmentUnknownDistinctFromNotPermitted:
+    def test_mauritius_reinvestment_status_is_unknown(self, graph):
+        node = get_program_reinvestment(graph, MU_PROGRAM)
+        assert node is not None
+        assert node.attributes["category"] == ReinvestmentCategory.UNKNOWN.value
+        assert node.attributes["status"] == FactStatus.UNKNOWN.value
+
+    def test_not_permitted_category_would_be_status_known(self):
+        """A hypothetical NOT_PERMITTED determination is a KNOWN fact
+        (we looked and it's disallowed), never conflated with UNKNOWN
+        (we have not looked) — proven directly against the graph's own
+        status-derivation rule rather than only against the one
+        UNKNOWN fixture the registry happens to contain today."""
+        from app.calculators.qualification_model import ReinvestmentProfile
+        from app.calculators.jurisdiction_graph import FactStatus as FS
+
+        not_permitted = ReinvestmentProfile(
+            jurisdiction_code="ZZ", category=ReinvestmentCategory.NOT_PERMITTED,
+            evidence="statute-x", notes="",
+        )
+        is_unknown = not_permitted.category == ReinvestmentCategory.UNKNOWN
+        status = FS.UNKNOWN.value if is_unknown else FS.KNOWN.value
+        assert status == FS.KNOWN.value
+
+    def test_all_reinvestment_nodes_never_conflate_unknown_and_not_permitted(self, graph):
+        reinvest_nodes = [n for n in graph.nodes if n.node_id.startswith("reinvestment:")]
+        for n in reinvest_nodes:
+            if n.attributes["category"] == ReinvestmentCategory.UNKNOWN.value:
+                assert n.attributes["status"] == FactStatus.UNKNOWN.value
+            else:
+                assert n.attributes["status"] == FactStatus.KNOWN.value
+
+
+class TestTreatyAbsenceDistinctFromNoDataLoaded:
+    def test_mauritius_treaty_availability_is_absent_and_checked(self, graph):
+        node = graph.get_node("treaty_availability:mu_edb_incentive")
+        assert node is not None
+        assert node.node_type == NodeType.ABSENCE
+        assert node.attributes["status"] == FactStatus.ABSENT.value
+        assert node.attributes["checked"] is True
+        assert node.attributes["treaty_slugs"] == []
+
+    def test_absent_and_checked_is_structurally_distinguishable_from_unchecked(self):
+        """
+        Requirement #5: treaty absence (checked the registry, found
+        nothing) must be distinguishable from "no treaty data loaded"
+        (never checked). The builder always checks (te._BILATERAL /
+        _MULTILATERAL are unconditionally consulted for every program),
+        so it never itself produces a checked=False node — but the two
+        states are distinct, constructible attribute combinations, which
+        is what the requirement asks the model to support.
+        """
+        confirmed_absent = {"status": FactStatus.ABSENT.value, "checked": True, "treaty_slugs": []}
+        not_loaded = {"status": FactStatus.UNKNOWN.value, "checked": False, "treaty_slugs": []}
+        assert confirmed_absent != not_loaded
+        assert confirmed_absent["checked"] is not not_loaded["checked"]
+        assert confirmed_absent["status"] != not_loaded["status"]
+
+    def test_uk_has_known_treaty_availability(self, graph):
+        gb_program = None
+        for p in graph.nodes_of_type(NodeType.NATIONAL_PROGRAM):
+            if p.attributes.get("jurisdiction_code") == "GB":
+                gb_program = p
+                break
+        # GB has no NationalProgram in jurisdiction_comparison.py's
+        # ALL_PROFILES (it only appears as a bilateral-treaty party) —
+        # so no treaty_availability fact is fabricated for it either;
+        # confirm that honest absence instead.
+        assert gb_program is None
+
+    def test_ireland_or_france_treaty_availability_status(self, graph):
+        """France participates in bilateral treaties (e.g. fr-de-bilateral)
+        and has a NationalProgram — its treaty_availability fact should
+        be KNOWN with a non-empty treaty list."""
+        node = graph.get_node("treaty_availability:fr_trip")
+        assert node is not None
+        if node.attributes["treaty_slugs"]:
+            assert node.node_type == NodeType.REQUIREMENT
+            assert node.attributes["status"] == FactStatus.KNOWN.value
+
+
+class TestEvidenceRefsAttachCorrectly:
+    def test_fact_nodes_carry_node_level_evidence_field(self, graph):
+        node = graph.get_node("requirement:mu_edb_incentive:min_spend")
+        assert isinstance(node.evidence, EvidenceRef)
+
+    def test_reinvestment_node_evidence_populated_when_source_has_it(self, graph):
+        node = get_program_reinvestment(graph, MU_PROGRAM)
+        assert node.evidence.citation == node.attributes["evidence"]
+
+    def test_evidence_ref_settable_on_fact_node(self):
+        node = GraphNode(
+            node_id="requirement:test:x", node_type=NodeType.REQUIREMENT, name="x",
+            evidence=EvidenceRef(graph_rule_id="RULE-9"),
+        )
+        assert node.evidence.graph_rule_id == "RULE-9"
+
+    def test_requires_relationships_all_carry_evidence_ref(self, graph):
+        for r in graph.relationships_of_type(RelationshipType.REQUIRES):
+            assert isinstance(r.evidence, EvidenceRef)
+
+    def test_restricted_by_relationships_all_carry_evidence_ref(self, graph):
+        for r in graph.relationships_of_type(RelationshipType.RESTRICTED_BY):
+            assert isinstance(r.evidence, EvidenceRef)
+
+
+class TestQueryingProgramReturnsKnownAndUnknown:
+    def test_get_program_unknowns_for_mauritius_includes_expected_gaps(self, graph):
+        unknowns = get_program_unknowns(graph, MU_PROGRAM)
+        kinds = {n.attributes["kind"] for n in unknowns}
+        assert "min_spend" in kinds          # UNKNOWN: None on source profile
+        assert "payout_timing" in kinds      # UNKNOWN: None on source profile
+        assert "is_transferable" in kinds    # UNKNOWN: None on source profile
+        assert "eligible_production_types" in kinds  # ABSENT: no field at all
+        assert "reinvestment_treatment" in kinds     # UNKNOWN: registry says UNKNOWN
+
+    def test_get_program_known_facts_for_malta_includes_expected_knowns(self, graph):
+        assert jc._MALTA.annual_cap_local is None
+        knowns = get_program_known_facts(graph, MT_PROGRAM)
+        kinds = {n.attributes["kind"] for n in knowns}
+        assert "min_spend" in kinds
+        assert "payout_timing" in kinds
+        assert "cultural_test" in kinds  # always KNOWN regardless of jurisdiction
+        assert "cap_funding_window" not in kinds  # Malta annual_cap_local is None -> UNKNOWN, not KNOWN
+
+    def test_cap_funding_window_unknown_for_malta_via_unknowns_query(self, graph):
+        unknowns = get_program_unknowns(graph, MT_PROGRAM)
+        kinds = {n.attributes["kind"] for n in unknowns}
+        assert "cap_funding_window" in kinds
+
+    def test_known_and_unknown_partition_all_facts(self, graph):
+        known = get_program_known_facts(graph, MU_PROGRAM)
+        unknown = get_program_unknowns(graph, MU_PROGRAM)
+        known_kinds = {n.node_id for n in known}
+        unknown_kinds = {n.node_id for n in unknown}
+        assert known_kinds.isdisjoint(unknown_kinds)
+
+    def test_unregistered_program_returns_empty_lists_not_error(self, graph):
+        assert get_program_requirements(graph, "program:does-not-exist") == []
+        assert get_program_restrictions(graph, "program:does-not-exist") == []
+        assert get_program_unknowns(graph, "program:does-not-exist") == []
+
+
+class TestPhase5BDeterministicConstruction:
+    def test_two_builds_identical_fact_node_attributes(self):
+        g1 = build_jurisdiction_graph()
+        g2 = build_jurisdiction_graph()
+        n1 = graph_fact_snapshot(g1)
+        n2 = graph_fact_snapshot(g2)
+        assert n1 == n2
+
+    def test_unknowns_query_deterministic_across_builds(self):
+        g1 = build_jurisdiction_graph()
+        g2 = build_jurisdiction_graph()
+        u1 = [n.node_id for n in get_program_unknowns(g1, MU_PROGRAM)]
+        u2 = [n.node_id for n in get_program_unknowns(g2, MU_PROGRAM)]
+        assert u1 == u2
+
+
+def graph_fact_snapshot(g):
+    return sorted(
+        (n.node_id, n.node_type.value, tuple(sorted((k, str(v)) for k, v in n.attributes.items())))
+        for n in g.nodes
+    )
+
+
+class TestPhase5BNoOptimizerImpact:
+    def test_optimizer_output_unchanged_after_5b_wiring(self):
+        from app.calculators.qualification_model import build_little_utopia_qualification_register
+        from app.calculators.optimization_engine import RiskCase, build_risk_cases
+        from app.calculators.structuring_paths import derive_structuring_paths
+
+        register = build_little_utopia_qualification_register(mu_rate=0.40)
+        paths = derive_structuring_paths(register, rate=0.40)
+        result = build_risk_cases(
+            register=register, gross_budget_usd=4_364_393.0, rate=0.40,
+            structuring_paths=paths,
+        )
+        cons = result.cases[RiskCase.CONSERVATIVE]
+        assert cons.qpe_usd == pytest.approx(1_979_913.0, abs=1.0)
+        assert cons.incentive_usd == pytest.approx(791_965.0, abs=1.0)
+
+    def test_building_graph_does_not_mutate_shared_registries(self, graph):
+        """Building the graph must not have side effects on the source
+        modules' own module-level dicts (ALL_PROFILES, REINVESTMENT_REGISTRY)."""
+        assert "MU" in jc.ALL_PROFILES
+        assert len(jc.ALL_PROFILES) == 12

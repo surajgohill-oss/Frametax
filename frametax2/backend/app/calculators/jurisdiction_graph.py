@@ -1,7 +1,7 @@
 """
 jurisdiction_graph.py
 
-Phase 5A of the CineGlobe Production Intelligence Graph: the first narrow
+Phase 5A/5B of the CineGlobe Production Intelligence Graph: the
 Jurisdiction Graph wiring layer.
 
 This module does not collect new data and does not compute anything. It
@@ -18,8 +18,8 @@ and program facts already modeled elsewhere in this codebase —
 
 — and arranges them as graph nodes (Country, NationalProgram,
 RegionalProgram, MunicipalProgram, Treaty, Fund, Agency, Requirement,
-Restriction) connected by typed, evidence-capable Relationship edges
-(CONTAINS, ADMINISTERED_BY, FUNDED_BY, PARTY_TO, STACKS_WITH,
+Restriction, Absence) connected by typed, evidence-capable Relationship
+edges (CONTAINS, ADMINISTERED_BY, FUNDED_BY, PARTY_TO, STACKS_WITH,
 RESTRICTED_BY, REQUIRES, HAS_REINVESTMENT_PROFILE, COMPARABLE_TO,
 HAS_AVAILABLE_LEVER).
 
@@ -29,8 +29,22 @@ generically over the existing data structures. There is deliberately no
 present in ALL_PROFILES is wired identically. Where a fact is not present
 in the source data (e.g. no RegionalProgram/MunicipalProgram is modeled
 anywhere yet, or no treaty involves Mauritius), the graph carries an
-explicit UNKNOWN placeholder node/relationship rather than silently
-omitting it or inventing a value.
+explicit UNKNOWN or ABSENCE placeholder node/relationship rather than
+silently omitting it or inventing a value.
+
+Phase 5B strengthens the Requirement/Restriction wiring so every program
+explicitly represents 11 minimum fact categories (minimum spend, eligible
+production types, territorial nexus, local entity requirement, cultural
+test / local contribution, cap / funding window, stacking rule,
+reinvestment treatment, treaty availability, application timing /
+deadline, payout timing). Two of `JurisdictionIncentiveProfile`'s own
+Optional fields distinguish "field exists, value unknown" (FactStatus.
+UNKNOWN, e.g. Mauritius's min_spend_local=None) from "no field for this
+fact category exists anywhere in the source data at all" (FactStatus.
+ABSENT, e.g. eligible_production_types, territorial_nexus, local_entity_
+requirement, stacking_rule, application_timing_deadline — none of which
+JurisdictionIncentiveProfile models for any jurisdiction). Both are
+queryable via get_program_unknowns() rather than silently dropped.
 
 No optimizer behavior change: optimization_engine.py is not imported and
 not modified. This module is purely additive.
@@ -63,6 +77,22 @@ JURISDICTION_GRAPH_VERSION = "1.0.0"
 UNKNOWN = "UNKNOWN"
 
 
+class FactStatus(str, enum.Enum):
+    """
+    Attached to every Requirement/Restriction/Absence node's attributes
+    so a fact's state is queryable without string-matching a node id.
+
+    KNOWN   — the source field exists and carries a real value.
+    UNKNOWN — the source field exists but its value is None (an honest
+              gap in an otherwise-modeled dimension).
+    ABSENT  — no field for this fact category exists anywhere in the
+              source data model (a dimension not modeled at all yet).
+    """
+    KNOWN = "KNOWN"
+    UNKNOWN = "UNKNOWN"
+    ABSENT = "ABSENT"
+
+
 # ── Node types ────────────────────────────────────────────────────────────
 
 class NodeType(str, enum.Enum):
@@ -75,6 +105,7 @@ class NodeType(str, enum.Enum):
     AGENCY = "agency"
     REQUIREMENT = "requirement"
     RESTRICTION = "restriction"
+    ABSENCE = "absence"
 
 
 class RelationshipType(str, enum.Enum):
@@ -109,6 +140,11 @@ class GraphNode:
     node_type: NodeType
     name: str
     attributes: dict = field(default_factory=dict)
+    # Node-level evidence hook (in addition to relationship-level
+    # EvidenceRef): a Requirement/Restriction/Absence fact can be cited
+    # independently of any one edge pointing at it. Unpopulated by
+    # default — Phase 5B is wiring/modeling, not evidence-binding.
+    evidence: EvidenceRef = field(default_factory=EvidenceRef)
 
 
 @dataclass
@@ -200,6 +236,10 @@ def _restriction_id(program_slug: str, key: str) -> str:
     return f"restriction:{program_slug}:{key}"
 
 
+def _absence_id(program_slug: str, key: str) -> str:
+    return f"absence:{program_slug}:{key}"
+
+
 def _reinvestment_id(country_code: str) -> str:
     return f"reinvestment:{country_code}"
 
@@ -210,6 +250,60 @@ def _lever_id_node(lever_id: str) -> str:
 
 def _fund_id(fund_slug: str) -> str:
     return f"fund:{fund_slug}"
+
+
+# Fact categories requirement #1's minimum list asks for that have no
+# corresponding field on JurisdictionIncentiveProfile at all — every
+# instance of these is FactStatus.ABSENT for every jurisdiction, since
+# the source data model simply doesn't carry the dimension yet.
+_ABSENT_FACT_SPECS: list[tuple[str, RelationshipType, str]] = [
+    ("eligible_production_types", RelationshipType.REQUIRES, "eligible production types"),
+    ("territorial_nexus", RelationshipType.REQUIRES, "territorial nexus"),
+    ("local_entity_requirement", RelationshipType.REQUIRES, "local entity requirement"),
+    ("stacking_rule", RelationshipType.RESTRICTED_BY, "stacking rule"),
+    ("application_timing_deadline", RelationshipType.REQUIRES, "application timing / deadline"),
+]
+
+
+def _add_fact(
+    graph: JurisdictionGraph,
+    program_id: str,
+    jurisdiction_name: str,
+    program_slug: str,
+    key: str,
+    relationship_type: RelationshipType,
+    node_type: NodeType,
+    name_suffix: str,
+    status: FactStatus,
+    value,
+    reason: Optional[str] = None,
+) -> None:
+    """
+    Shared constructor for one Requirement/Restriction/Absence fact node
+    plus its edge back to the owning program. One code path for every
+    fact category and every jurisdiction — no per-jurisdiction or
+    per-fact-category special casing beyond the (key, relationship_type,
+    node_type) triple each caller supplies.
+    """
+    node_id = {
+        NodeType.REQUIREMENT: _requirement_id,
+        NodeType.RESTRICTION: _restriction_id,
+        NodeType.ABSENCE: _absence_id,
+    }[node_type](program_slug, key)
+    attributes = {"kind": key, "value": value, "status": status.value}
+    if reason is not None:
+        attributes["reason"] = reason
+    graph.add_node(GraphNode(
+        node_id=node_id,
+        node_type=node_type,
+        name=f"{jurisdiction_name} {name_suffix}",
+        attributes=attributes,
+    ))
+    graph.add_relationship(Relationship(
+        source_id=program_id,
+        relationship_type=relationship_type,
+        target_id=node_id,
+    ))
 
 
 # ── Wiring: Countries + Programs (from jurisdiction_comparison.py) ─────────
@@ -275,69 +369,76 @@ def _add_country_and_program(graph: JurisdictionGraph, profile: "jc.Jurisdiction
         evidence=EvidenceRef(),  # capable of carrying a citation; not populated this phase
     ))
 
-    # Requirement / Restriction nodes, generically derived from the
-    # profile's own boolean/optional fields — not hand-written per
-    # jurisdiction. A True/False value becomes a Requirement or
-    # Restriction fact node; None is represented as an explicit UNKNOWN
-    # attribute on the same node rather than omitted, per requirement #5.
-    if profile.requires_cultural_test:
-        req_id = _requirement_id(profile.program_slug, "cultural_test")
-        graph.add_node(GraphNode(
-            node_id=req_id,
-            node_type=NodeType.REQUIREMENT,
-            name=f"{profile.jurisdiction_name} cultural test",
-            attributes={"kind": "cultural_test", "value": True},
-        ))
-        graph.add_relationship(Relationship(
-            source_id=program_id,
-            relationship_type=RelationshipType.REQUIRES,
-            target_id=req_id,
-        ))
+    # Requirement / Restriction / Absence nodes, generically derived from
+    # the profile's own fields — not hand-written per jurisdiction. A
+    # value present on the profile becomes a KNOWN fact node; an
+    # Optional[...] field that is None becomes an UNKNOWN fact node
+    # (field exists, value doesn't); a fact category with no
+    # corresponding field anywhere on JurisdictionIncentiveProfile
+    # becomes an ABSENT fact node (dimension not modeled at all). See
+    # requirement #3/#5 and FactStatus's docstring.
+    _add_fact(
+        graph, program_id, profile.jurisdiction_name, profile.program_slug,
+        key="cultural_test", relationship_type=RelationshipType.REQUIRES,
+        node_type=NodeType.REQUIREMENT, name_suffix="cultural test",
+        status=FactStatus.KNOWN, value=profile.requires_cultural_test,
+    )
+    _add_fact(
+        graph, program_id, profile.jurisdiction_name, profile.program_slug,
+        key="min_spend", relationship_type=RelationshipType.REQUIRES,
+        node_type=NodeType.REQUIREMENT, name_suffix="minimum spend",
+        status=FactStatus.KNOWN if profile.min_spend_local is not None else FactStatus.UNKNOWN,
+        value=profile.min_spend_local if profile.min_spend_local is not None else UNKNOWN,
+    )
+    _add_fact(
+        graph, program_id, profile.jurisdiction_name, profile.program_slug,
+        key="cap_funding_window", relationship_type=RelationshipType.RESTRICTED_BY,
+        node_type=NodeType.RESTRICTION, name_suffix="annual program cap / funding window",
+        status=FactStatus.KNOWN if profile.annual_cap_local is not None else FactStatus.UNKNOWN,
+        value=profile.annual_cap_local if profile.annual_cap_local is not None else UNKNOWN,
+    )
+    _add_fact(
+        graph, program_id, profile.jurisdiction_name, profile.program_slug,
+        key="payout_timing", relationship_type=RelationshipType.RESTRICTED_BY,
+        node_type=NodeType.RESTRICTION, name_suffix="payout timing (cashflow weeks)",
+        status=FactStatus.KNOWN if profile.cashflow_timing_weeks is not None else FactStatus.UNKNOWN,
+        value=profile.cashflow_timing_weeks if profile.cashflow_timing_weeks is not None else UNKNOWN,
+    )
 
-    if profile.min_spend_local is not None:
-        req_id = _requirement_id(profile.program_slug, "min_spend")
-        graph.add_node(GraphNode(
-            node_id=req_id,
-            node_type=NodeType.REQUIREMENT,
-            name=f"{profile.jurisdiction_name} minimum spend",
-            attributes={"kind": "min_spend_local", "value": profile.min_spend_local},
-        ))
-        graph.add_relationship(Relationship(
-            source_id=program_id,
-            relationship_type=RelationshipType.REQUIRES,
-            target_id=req_id,
-        ))
-
-    if profile.annual_cap_local is not None:
-        restr_id = _restriction_id(profile.program_slug, "annual_cap")
-        graph.add_node(GraphNode(
-            node_id=restr_id,
-            node_type=NodeType.RESTRICTION,
-            name=f"{profile.jurisdiction_name} annual program cap",
-            attributes={"kind": "annual_cap_local", "value": profile.annual_cap_local},
-        ))
-        graph.add_relationship(Relationship(
-            source_id=program_id,
-            relationship_type=RelationshipType.RESTRICTED_BY,
-            target_id=restr_id,
-        ))
-
-    # is_transferable/is_refundable are explicitly Optional[bool] in the
-    # source profile — when None, represent as an UNKNOWN restriction
-    # placeholder rather than silently dropping the dimension.
+    # is_transferable is explicitly Optional[bool] in the source profile
+    # — when None, represent as an UNKNOWN restriction placeholder rather
+    # than silently dropping the dimension. (Preserved from Phase 5A
+    # exactly: only materialized when the value is unknown, using the
+    # original node id, so existing callers/tests keyed on this id are
+    # unaffected.)
     if profile.is_transferable is None:
         restr_id = _restriction_id(profile.program_slug, "transferability_unknown")
         graph.add_node(GraphNode(
             node_id=restr_id,
             node_type=NodeType.RESTRICTION,
             name=f"{profile.jurisdiction_name} rebate transferability",
-            attributes={"kind": "is_transferable", "value": UNKNOWN},
+            attributes={"kind": "is_transferable", "value": UNKNOWN, "status": FactStatus.UNKNOWN.value},
         ))
         graph.add_relationship(Relationship(
             source_id=program_id,
             relationship_type=RelationshipType.RESTRICTED_BY,
             target_id=restr_id,
         ))
+
+    # Fact categories with no corresponding field anywhere on
+    # JurisdictionIncentiveProfile — every one of these is genuinely
+    # ABSENT from the source data model for every jurisdiction, so this
+    # loop applies identically to all of them, not just Mauritius. This
+    # is the explicit-Absence half of requirement #1 ("no invented
+    # facts"): rather than fabricate a value or omit the dimension, the
+    # graph states plainly that the source data has no field for it yet.
+    for key, relationship_type, name_suffix in _ABSENT_FACT_SPECS:
+        _add_fact(
+            graph, program_id, profile.jurisdiction_name, profile.program_slug,
+            key=key, relationship_type=relationship_type, node_type=NodeType.ABSENCE,
+            name_suffix=name_suffix, status=FactStatus.ABSENT,
+            value=UNKNOWN, reason="Not modeled anywhere on JurisdictionIncentiveProfile.",
+        )
 
 
 # ── Wiring: Treaties (from treaty_engine.py) ────────────────────────────────
@@ -414,6 +515,63 @@ def _add_treaties(graph: JurisdictionGraph) -> None:
             ))
 
 
+def _treaty_availability_id(program_slug: str) -> str:
+    return f"treaty_availability:{program_slug}"
+
+
+def _add_treaty_availability_facts(graph: JurisdictionGraph) -> None:
+    """
+    One treaty-availability fact node per NationalProgram, attached via
+    REQUIRES. This must run after _add_treaties() so every country's
+    PARTY_TO edges already exist.
+
+    Requirement #5: "treaty absence remains distinct from no treaty data
+    loaded." A program whose country has zero PARTY_TO edges gets a node
+    with status=ABSENT and attributes["checked"]=True — treaty_engine's
+    registries were consulted and genuinely contain nothing for this
+    jurisdiction, which is not the same claim as "we never loaded treaty
+    data for this jurisdiction" (attributes["checked"]=False), a state
+    this builder never actually produces since te._BILATERAL/_MULTILATERAL
+    are always imported and consulted for every program — but the
+    checked/status fields make the two states distinguishable wherever a
+    caller constructs or inspects a node, which is what requirement #5
+    asks for.
+    """
+    for program_node in sorted(graph.nodes_of_type(NodeType.NATIONAL_PROGRAM), key=lambda n: n.node_id):
+        code = program_node.attributes.get("jurisdiction_code")
+        program_slug = program_node.attributes.get("program_slug")
+        if not code or not program_slug:
+            continue
+        country_id = _country_id(code)
+        treaty_slugs = sorted(
+            r.target_id.split("treaty:", 1)[1]
+            for r in graph.relationships_of_type(RelationshipType.PARTY_TO)
+            if r.source_id == country_id
+        )
+        fact_id = _treaty_availability_id(program_slug)
+        if treaty_slugs:
+            node_type, status, value = NodeType.REQUIREMENT, FactStatus.KNOWN, treaty_slugs
+        else:
+            node_type, status, value = NodeType.ABSENCE, FactStatus.ABSENT, []
+        graph.add_node(GraphNode(
+            node_id=fact_id,
+            node_type=node_type,
+            name=f"{code} treaty availability",
+            attributes={
+                "kind": "treaty_availability",
+                "value": value,
+                "status": status.value,
+                "checked": True,
+                "treaty_slugs": treaty_slugs,
+            },
+        ))
+        graph.add_relationship(Relationship(
+            source_id=program_node.node_id,
+            relationship_type=RelationshipType.REQUIRES,
+            target_id=fact_id,
+        ))
+
+
 # ── Wiring: Reinvestment profiles (from qualification_model.py) ────────────
 
 def _add_reinvestment_profiles(graph: JurisdictionGraph) -> None:
@@ -433,16 +591,28 @@ def _add_reinvestment_profiles(graph: JurisdictionGraph) -> None:
             continue
         profile = get_reinvestment_profile(code)
         reinvest_id = _reinvestment_id(code)
+        is_unknown = profile.category == ReinvestmentCategory.UNKNOWN
         graph.add_node(GraphNode(
             node_id=reinvest_id,
             node_type=NodeType.RESTRICTION,
             name=f"{country_node.name} reinvestment profile",
             attributes={
+                "kind": "reinvestment_treatment",
                 "category": profile.category.value,
+                "value": profile.category.value,
                 "evidence": profile.evidence,
                 "notes": profile.notes,
-                "is_explicit_unknown": profile.category == ReinvestmentCategory.UNKNOWN,
+                "is_explicit_unknown": is_unknown,
+                # UNKNOWN ("we have not looked") is a distinct status from
+                # NOT_PERMITTED ("we looked and it's disallowed") for
+                # every one of the seven ReinvestmentCategory values —
+                # only ReinvestmentCategory.UNKNOWN maps to
+                # FactStatus.UNKNOWN; every other category (including
+                # NOT_PERMITTED) is a KNOWN determination, per
+                # requirement #4.
+                "status": FactStatus.UNKNOWN.value if is_unknown else FactStatus.KNOWN.value,
             },
+            evidence=EvidenceRef(citation=profile.evidence),
         ))
         graph.add_relationship(Relationship(
             source_id=country_node.node_id,
@@ -535,7 +705,75 @@ def build_jurisdiction_graph(mu_rate: float = 0.40) -> JurisdictionGraph:
     for code in sorted(jc.ALL_PROFILES.keys()):
         _add_country_and_program(graph, jc.ALL_PROFILES[code])
     _add_treaties(graph)
+    _add_treaty_availability_facts(graph)
     _add_reinvestment_profiles(graph)
     _add_comparable_links(graph)
     _add_available_levers(graph, mu_rate=mu_rate)
     return graph
+
+
+# ── Query helpers (Phase 5B) ────────────────────────────────────────────
+
+def get_program_requirements(graph: JurisdictionGraph, program_id: str) -> list[GraphNode]:
+    """
+    Every node reached from program_id via REQUIRES — Requirement facts
+    (known or unknown) and Absence facts wired with REQUIRES semantics
+    (e.g. eligible_production_types, territorial_nexus,
+    local_entity_requirement, application_timing_deadline,
+    treaty_availability, cultural_test, min_spend).
+    """
+    return [
+        graph.get_node(r.target_id)
+        for r in graph.relationships_of_type(RelationshipType.REQUIRES)
+        if r.source_id == program_id
+    ]
+
+
+def get_program_restrictions(graph: JurisdictionGraph, program_id: str) -> list[GraphNode]:
+    """
+    Every node reached from program_id via RESTRICTED_BY — Restriction
+    facts (known or unknown) and Absence facts wired with
+    RESTRICTED_BY semantics (e.g. cap_funding_window, payout_timing,
+    transferability, stacking_rule).
+    """
+    return [
+        graph.get_node(r.target_id)
+        for r in graph.relationships_of_type(RelationshipType.RESTRICTED_BY)
+        if r.source_id == program_id
+    ]
+
+
+def get_program_reinvestment(graph: JurisdictionGraph, program_id: str) -> Optional[GraphNode]:
+    """The country-level reinvestment fact node for a program's jurisdiction."""
+    program_node = graph.get_node(program_id)
+    if program_node is None:
+        return None
+    code = program_node.attributes.get("jurisdiction_code")
+    if not code:
+        return None
+    return graph.get_node(_reinvestment_id(code))
+
+
+def get_program_unknowns(graph: JurisdictionGraph, program_id: str) -> list[GraphNode]:
+    """
+    Every fact attached to this program (requirements, restrictions, and
+    its country's reinvestment treatment) whose FactStatus is UNKNOWN or
+    ABSENT — the queryable "what remains unknown for this program" view
+    requirement #3 asks for.
+    """
+    facts = get_program_requirements(graph, program_id) + get_program_restrictions(graph, program_id)
+    reinvestment = get_program_reinvestment(graph, program_id)
+    if reinvestment is not None:
+        facts.append(reinvestment)
+    return [f for f in facts if f is not None and f.attributes.get("status") in (
+        FactStatus.UNKNOWN.value, FactStatus.ABSENT.value,
+    )]
+
+
+def get_program_known_facts(graph: JurisdictionGraph, program_id: str) -> list[GraphNode]:
+    """The complement of get_program_unknowns(): every KNOWN fact attached to this program."""
+    facts = get_program_requirements(graph, program_id) + get_program_restrictions(graph, program_id)
+    reinvestment = get_program_reinvestment(graph, program_id)
+    if reinvestment is not None:
+        facts.append(reinvestment)
+    return [f for f in facts if f is not None and f.attributes.get("status") == FactStatus.KNOWN.value]
