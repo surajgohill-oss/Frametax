@@ -32,6 +32,8 @@ import enum
 from dataclasses import dataclass, field
 from typing import Optional
 
+from app.calculators.evidence_graph import AbsenceOfAuthority, AuthorityTier, EvidenceGraph
+
 
 QUALIFICATION_MODEL_VERSION = "1.0.0"
 
@@ -353,6 +355,16 @@ class GreyAreaItem:
     off_budget=True marks items (like in-kind FMV) that are not register
     accounts — resolving them adds to QPE additively rather than
     reclassifying an existing account.
+
+    graph_absence_id / graph_rule_id are Evidence Graph references
+    (P3 migration): an OPEN item should link to an AbsenceOfAuthority
+    node (graph_absence_id) proving the absence was actually searched,
+    not assumed. A RESOLVED item additionally carries graph_rule_id once
+    resolve_grey_area() has validated a fully-chained Rule against it.
+    The free-text authority_to_ask/resolving_evidence/ruling_citation
+    fields are preserved unchanged for backward compatibility and as a
+    human-readable summary — the graph fields are the provenance layer
+    on top, not a replacement.
     """
     item_id: str
     account_codes: tuple[str, ...]
@@ -364,6 +376,8 @@ class GreyAreaItem:
     ruling_citation: Optional[str] = None
     off_budget: bool = False
     linked_question_ids: tuple[str, ...] = field(default_factory=tuple)
+    graph_absence_id: Optional[str] = None
+    graph_rule_id: Optional[str] = None
 
 
 def build_little_utopia_grey_areas() -> list[GreyAreaItem]:
@@ -371,6 +385,10 @@ def build_little_utopia_grey_areas() -> list[GreyAreaItem]:
     The two Little Utopia grey areas requiring escalation: ATL scope
     (on-budget, register accounts 10-00/11-00/12-00) and in-kind post FMV
     (off-budget, not a register account).
+
+    Each links (via graph_absence_id) to the matching AbsenceOfAuthority
+    node in build_little_utopia_evidence_graph() — call that function to
+    get the actual graph these IDs resolve against.
     """
     return [
         GreyAreaItem(
@@ -381,6 +399,7 @@ def build_little_utopia_grey_areas() -> list[GreyAreaItem]:
             authority_to_ask="Economic Development Board Mauritius (EDB) / Mauritius Film Development Corp.",
             resolving_evidence="EDB written clarification on whether writer/director/producer fees are within QPE scope.",
             linked_question_ids=("Q-ATL-SCOPE",),
+            graph_absence_id="ABS-ATL-SCOPE",
         ),
         GreyAreaItem(
             item_id="GA-INKIND-FMV",
@@ -391,14 +410,70 @@ def build_little_utopia_grey_areas() -> list[GreyAreaItem]:
             resolving_evidence="Written EDB ruling that in-kind post-production FMV qualifies as QPE (Q1).",
             off_budget=True,
             linked_question_ids=("Q1",),
+            graph_absence_id="ABS-INKIND-FMV",
         ),
     ]
+
+
+def build_little_utopia_evidence_graph() -> EvidenceGraph:
+    """
+    An EvidenceGraph pre-seeded with the AbsenceOfAuthority nodes that
+    build_little_utopia_grey_areas()'s graph_absence_id fields reference.
+    Kept separate from the GreyAreaItem builder so qualification_model.py
+    can construct grey areas without requiring a graph (backward
+    compatibility) while still offering a real, resolvable graph for
+    callers that want full provenance.
+    """
+    graph = EvidenceGraph()
+    graph.add_absence_of_authority(AbsenceOfAuthority(
+        absence_id="ABS-ATL-SCOPE",
+        jurisdiction_code="MU",
+        question="Does ATL (writer/director/producer) spend qualify as QPE?",
+        searched_tiers=(
+            AuthorityTier.PRIMARY_LEGISLATION, AuthorityTier.REGULATIONS,
+            AuthorityTier.OFFICIAL_GUIDANCE, AuthorityTier.OFFICIAL_FAQ,
+        ),
+        notes="No guidance located across four tiers searched.",
+    ))
+    graph.add_absence_of_authority(AbsenceOfAuthority(
+        absence_id="ABS-INKIND-FMV",
+        jurisdiction_code="MU",
+        question="Does in-kind post-production FMV qualify as additive QPE?",
+        searched_tiers=(
+            AuthorityTier.PRIMARY_LEGISLATION, AuthorityTier.REGULATIONS,
+            AuthorityTier.OFFICIAL_GUIDANCE,
+        ),
+        notes="No published EDB rule on in-kind treatment.",
+    ))
+    return graph
+
+
+def grey_area_terminus(item: GreyAreaItem, graph: EvidenceGraph) -> str:
+    """
+    Terminal-node discipline check (mirrors EvidenceGraph's own rule,
+    applied to a GreyAreaItem): returns "rule" if the item resolves to a
+    fully-chained Rule, "absence_of_authority" if it resolves to a real
+    AbsenceOfAuthority node in `graph`, or "unlinked" if neither
+    reference is valid — the state P3 exists to make impossible to reach
+    silently.
+    """
+    if item.graph_rule_id and graph.rule_is_fully_chained(item.graph_rule_id):
+        return "rule"
+    if item.graph_absence_id:
+        try:
+            graph.get_absence_of_authority(item.graph_absence_id)
+            return "absence_of_authority"
+        except ValueError:
+            return "unlinked"
+    return "unlinked"
 
 
 def resolve_grey_area(
     item: GreyAreaItem,
     outcome: GreyAreaStatus,
     ruling_citation: Optional[str] = None,
+    graph: Optional[EvidenceGraph] = None,
+    resolving_rule_id: Optional[str] = None,
 ) -> GreyAreaItem:
     """
     Pure state transition. Any RESOLVED_* outcome is a counsel/authority
@@ -406,14 +481,40 @@ def resolve_grey_area(
     alone is never sufficient — this is what prevents a grey area from
     being waved into Base/Conservative without documentation.
 
+    P3: when `graph` is supplied, resolution requires evidence-backed
+    authority, not just a citation string — `resolving_rule_id` must
+    name a Rule in `graph` that is fully chained (Evidence -> Citation ->
+    AuthoritySource -> DocumentVersion, all resolving). A rule that
+    isn't fully chained cannot resolve a grey area, exactly as it
+    cannot be linked to a Recommendation in the Evidence Graph itself.
+
+    Without `graph` (the pre-P3 signature), behavior is unchanged: a
+    ruling_citation string alone is sufficient. This keeps every
+    existing caller working exactly as before.
+
     Raises ValueError if a resolution is attempted without evidence.
     """
-    if outcome in RESOLVED_STATUSES and not ruling_citation:
-        raise ValueError(
-            f"Grey area '{item.item_id}' cannot resolve to {outcome.value} "
-            "without a ruling_citation — resolution requires bound evidence, "
-            "not approval alone."
-        )
+    if outcome in RESOLVED_STATUSES:
+        if not ruling_citation:
+            raise ValueError(
+                f"Grey area '{item.item_id}' cannot resolve to {outcome.value} "
+                "without a ruling_citation — resolution requires bound evidence, "
+                "not approval alone."
+            )
+        if graph is not None:
+            if not resolving_rule_id:
+                raise ValueError(
+                    f"Grey area '{item.item_id}' cannot resolve to {outcome.value} "
+                    "with a graph supplied but no resolving_rule_id — evidence-backed "
+                    "authority requires a specific Rule in the Evidence Graph."
+                )
+            if not graph.rule_is_fully_chained(resolving_rule_id):
+                raise ValueError(
+                    f"Rule '{resolving_rule_id}' is not fully chained to an authority "
+                    f"source in the Evidence Graph — cannot resolve grey area "
+                    f"'{item.item_id}' against it."
+                )
+    new_graph_rule_id = resolving_rule_id if (graph is not None and outcome in RESOLVED_STATUSES) else item.graph_rule_id
     return GreyAreaItem(
         item_id=item.item_id,
         account_codes=item.account_codes,
@@ -425,7 +526,57 @@ def resolve_grey_area(
         ruling_citation=ruling_citation,
         off_budget=item.off_budget,
         linked_question_ids=item.linked_question_ids,
+        graph_absence_id=item.graph_absence_id,
+        graph_rule_id=new_graph_rule_id,
     )
+
+
+def apply_grey_area_resolution(
+    register: list[AccountQualification],
+    item: GreyAreaItem,
+) -> list[AccountQualification]:
+    """
+    Given a RESOLVED GreyAreaItem, return a NEW register (the input is
+    never mutated) with the affected accounts reclassified and their
+    authority_basis upgraded to EXPLICIT_STATUTE — the ruling is now the
+    citable authority, replacing the prior ABSENCE_OF_AUTHORITY basis.
+
+    Off-budget items (in-kind FMV) never reclassify any register account
+    — resolving them has no effect here by design; their value is
+    applied additively by the optimizer (inkind_fmv_usd), never by
+    rewriting a QUALIFIES/EXCLUDED account. This is what keeps in-kind
+    "off-budget additive only" even after resolution.
+
+    Raises ValueError if the item is not actually resolved.
+    """
+    if item.status not in RESOLVED_STATUSES:
+        raise ValueError(
+            f"Grey area '{item.item_id}' is not resolved (status={item.status.value}) — "
+            "cannot apply it to the qualification register."
+        )
+    if item.off_budget or not item.account_codes:
+        return list(register)
+
+    if item.status == GreyAreaStatus.RESOLVED_INCLUDE:
+        new_state, new_reason = QualificationState.QUALIFIES, "included"
+    elif item.status == GreyAreaStatus.RESOLVED_EXCLUDE:
+        new_state, new_reason = QualificationState.EXCLUDED, "excluded"
+    else:
+        new_state, new_reason = None, None  # RESOLVED_CONDITIONAL: leave account states untouched here
+
+    updated: list[AccountQualification] = []
+    for a in register:
+        if a.account_code in item.account_codes and new_state is not None:
+            updated.append(AccountQualification(
+                account_code=a.account_code, description=a.description, amount_usd=a.amount_usd,
+                state=new_state, confidence=QualificationConfidence.HIGH,
+                authority_basis=AuthorityBasis.EXPLICIT_STATUTE,
+                reason=f"Resolved {new_reason} via {item.ruling_citation}: {item.resolving_evidence}",
+                financial_impact_usd=a.amount_usd,
+            ))
+        else:
+            updated.append(a)
+    return updated
 
 
 # ── Reinvestment treatment table (data only — no arithmetic) ───────────────

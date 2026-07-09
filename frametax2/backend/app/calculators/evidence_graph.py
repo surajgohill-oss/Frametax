@@ -362,6 +362,11 @@ class EvidenceGraph:
         self._absences[absence.absence_id] = absence
         return absence
 
+    def get_absence_of_authority(self, absence_id: str) -> AbsenceOfAuthority:
+        if absence_id not in self._absences:
+            raise ValueError(f"AbsenceOfAuthority '{absence_id}' does not exist.")
+        return self._absences[absence_id]
+
     # ── rule relationships ───────────────────────────────────────────────
 
     def mark_conflict(self, rule_id_a: str, rule_id_b: str) -> None:
