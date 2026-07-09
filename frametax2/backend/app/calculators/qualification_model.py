@@ -326,6 +326,170 @@ LITTLE_UTOPIA_INKIND_NOTE = (
 )
 
 
+# ── Grey area lifecycle ──────────────────────────────────────────────────────
+
+class GreyAreaStatus(str, enum.Enum):
+    OPEN = "open"
+    RULING_REQUESTED = "ruling_requested"
+    RESOLVED_INCLUDE = "resolved_include"
+    RESOLVED_EXCLUDE = "resolved_exclude"
+    RESOLVED_CONDITIONAL = "resolved_conditional"
+
+
+RESOLVED_STATUSES = frozenset({
+    GreyAreaStatus.RESOLVED_INCLUDE,
+    GreyAreaStatus.RESOLVED_EXCLUDE,
+    GreyAreaStatus.RESOLVED_CONDITIONAL,
+})
+
+
+@dataclass
+class GreyAreaItem:
+    """
+    The intelligence object mandated by the core principle: every
+    GREY_AREA_REQUIRES_AUTHORITY account (or off-budget item, e.g. in-kind
+    FMV) is escalated here, never left as a silent exclusion.
+
+    off_budget=True marks items (like in-kind FMV) that are not register
+    accounts — resolving them adds to QPE additively rather than
+    reclassifying an existing account.
+    """
+    item_id: str
+    account_codes: tuple[str, ...]
+    amount_usd: float
+    jurisdiction_code: str
+    authority_to_ask: str
+    resolving_evidence: str
+    status: GreyAreaStatus = GreyAreaStatus.OPEN
+    ruling_citation: Optional[str] = None
+    off_budget: bool = False
+    linked_question_ids: tuple[str, ...] = field(default_factory=tuple)
+
+
+def build_little_utopia_grey_areas() -> list[GreyAreaItem]:
+    """
+    The two Little Utopia grey areas requiring escalation: ATL scope
+    (on-budget, register accounts 10-00/11-00/12-00) and in-kind post FMV
+    (off-budget, not a register account).
+    """
+    return [
+        GreyAreaItem(
+            item_id="GA-ATL-SCOPE",
+            account_codes=("10-00", "11-00", "12-00"),
+            amount_usd=408_444.0,
+            jurisdiction_code="MU",
+            authority_to_ask="Economic Development Board Mauritius (EDB) / Mauritius Film Development Corp.",
+            resolving_evidence="EDB written clarification on whether writer/director/producer fees are within QPE scope.",
+            linked_question_ids=("Q-ATL-SCOPE",),
+        ),
+        GreyAreaItem(
+            item_id="GA-INKIND-FMV",
+            account_codes=(),
+            amount_usd=LITTLE_UTOPIA_INKIND_FMV_USD,
+            jurisdiction_code="MU",
+            authority_to_ask="Economic Development Board Mauritius (EDB) / Mauritius Film Development Corp.",
+            resolving_evidence="Written EDB ruling that in-kind post-production FMV qualifies as QPE (Q1).",
+            off_budget=True,
+            linked_question_ids=("Q1",),
+        ),
+    ]
+
+
+def resolve_grey_area(
+    item: GreyAreaItem,
+    outcome: GreyAreaStatus,
+    ruling_citation: Optional[str] = None,
+) -> GreyAreaItem:
+    """
+    Pure state transition. Any RESOLVED_* outcome is a counsel/authority
+    hard gate: it requires a ruling citation as bound evidence. Approval
+    alone is never sufficient — this is what prevents a grey area from
+    being waved into Base/Conservative without documentation.
+
+    Raises ValueError if a resolution is attempted without evidence.
+    """
+    if outcome in RESOLVED_STATUSES and not ruling_citation:
+        raise ValueError(
+            f"Grey area '{item.item_id}' cannot resolve to {outcome.value} "
+            "without a ruling_citation — resolution requires bound evidence, "
+            "not approval alone."
+        )
+    return GreyAreaItem(
+        item_id=item.item_id,
+        account_codes=item.account_codes,
+        amount_usd=item.amount_usd,
+        jurisdiction_code=item.jurisdiction_code,
+        authority_to_ask=item.authority_to_ask,
+        resolving_evidence=item.resolving_evidence,
+        status=outcome,
+        ruling_citation=ruling_citation,
+        off_budget=item.off_budget,
+        linked_question_ids=item.linked_question_ids,
+    )
+
+
+# ── Reinvestment treatment table (data only — no arithmetic) ───────────────
+
+@dataclass
+class ReinvestmentTreatment:
+    npc_effect: str
+    requires_evidence: bool
+    evidence_request: Optional[str]
+
+
+REINVESTMENT_TREATMENT: dict[ReinvestmentCategory, ReinvestmentTreatment] = {
+    ReinvestmentCategory.UNKNOWN: ReinvestmentTreatment(
+        npc_effect="No effect on Conservative or Base. Not asserted in Optimistic arithmetic "
+                   "— appears only as a bounded intelligence gap pending evidence.",
+        requires_evidence=True,
+        evidence_request="Review EDB Film Rebate Scheme guidance for any reinvestment, "
+                          "vendor-credit, equity-substitution, or SPV-participation provision.",
+    ),
+    ReinvestmentCategory.NOT_PERMITTED: ReinvestmentTreatment(
+        npc_effect="No effect — closed, authority cited.",
+        requires_evidence=False,
+        evidence_request=None,
+    ),
+    ReinvestmentCategory.PERMITTED: ReinvestmentTreatment(
+        npc_effect="Financing benefit: rebate redeployment reduces bridge/capital cost, "
+                   "improving NPC in Base once approved.",
+        requires_evidence=True,
+        evidence_request="Program text confirming unconditional reinvestment permission.",
+    ),
+    ReinvestmentCategory.VENDOR_REINVESTMENT: ReinvestmentTreatment(
+        npc_effect="Timing improvement (skip remittance delay) plus/minus effective-rate delta; "
+                   "enters Base on approval and a bound vendor agreement.",
+        requires_evidence=True,
+        evidence_request="Vendor agreement documenting rebate-as-credit terms.",
+    ),
+    ReinvestmentCategory.EQUITY_SUBSTITUTION: ReinvestmentTreatment(
+        npc_effect="Financing-structure effect (cost-of-capital line), not a QPE change. Counsel-gated.",
+        requires_evidence=True,
+        evidence_request="Counsel review of equity-substitution mechanics under program rules.",
+    ),
+    ReinvestmentCategory.SPV_PARTICIPATION: ReinvestmentTreatment(
+        npc_effect="Primarily an enabler for StructuringPath prerequisites; independent value only "
+                   "if program text grants one.",
+        requires_evidence=True,
+        evidence_request="Program text confirming SPV participation carries independent value.",
+    ),
+    ReinvestmentCategory.GOVERNMENT_APPROVAL_REQUIRED: ReinvestmentTreatment(
+        npc_effect="Treated as a grey area whose resolving evidence is the approval itself; "
+                   "weight capped until granted.",
+        requires_evidence=True,
+        evidence_request="Government approval application and decision.",
+    ),
+}
+
+
+def get_reinvestment_evidence_request(jurisdiction_code: str) -> Optional[str]:
+    """Returns the evidence request for this jurisdiction's reinvestment
+    category, or None if the category is closed/no evidence is needed."""
+    profile = get_reinvestment_profile(jurisdiction_code)
+    treatment = REINVESTMENT_TREATMENT[profile.category]
+    return treatment.evidence_request if treatment.requires_evidence else None
+
+
 # ── Aggregation helpers ──────────────────────────────────────────────────────
 
 def summarize_register(register: list[AccountQualification]) -> dict:
