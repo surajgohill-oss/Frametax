@@ -2,30 +2,36 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import { Eye, RefreshCw, TrendingUp, TrendingDown, Minus, AlertCircle, ChevronDown, ChevronRight, BarChart2 } from "lucide-react";
+import { Eye, RefreshCw, TrendingUp, TrendingDown, Minus, AlertCircle, ChevronDown, ChevronRight, BarChart2, Pin, PinOff } from "lucide-react";
 import { format, parseISO, differenceInDays } from "date-fns";
 import { api } from "@/lib/api";
 import type { EventSummary } from "@/lib/types";
 import { fmt$$, fmtNum, signalToAction, actionColors, signalDescription } from "@/lib/utils";
 import { getEventGradient, gradientBg, extractGroupKey } from "@/lib/entityimages";
 import { useHiddenEvents } from "@/hooks/useHiddenEvents";
-import EventCard from "@/components/EventCard";
+import EventCard, { type EventCardMeta } from "@/components/EventCard";
+import { MarketplaceFreshnessChip } from "@/components/MarketplaceLogo";
 
 type SortKey = "date" | "opportunity" | "signal";
 const SIGNAL_ORDER = ["deepening", "capitulating", "mixed", "stable", "loosening"];
 
+const PIN_KEY = "pinned_event_id";
 
-type MetaMap = Record<number, { title?: string; venue_name?: string; venue_slug?: string; event_date?: string; artist?: string }>;
+type MetaMap = Record<number, EventCardMeta>;
 
 // ── Headline featured event ───────────────────────────────────────────────────
 function HeadlineEvent({
   event,
   meta,
   depth,
+  isPinned,
+  onUnpin,
 }: {
   event: EventSummary;
   meta: MetaMap[number] | undefined;
   depth: number | null | undefined;
+  isPinned: boolean;
+  onUnpin: () => void;
 }) {
   const title = meta?.title ?? event.title;
   const venue = meta?.venue_name;
@@ -52,9 +58,21 @@ function HeadlineEvent({
   const priceHigh = event.price?.high_ask;
 
   return (
-    <Link href={`/events/${event.event_id}`}>
+    <div className="relative mb-8">
+      {/* Pinned indicator + unpin — outside the Link so unpin never navigates */}
+      {isPinned && (
+        <button
+          onClick={onUnpin}
+          className="absolute top-3 right-3 z-20 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-black/60 border border-white/15 text-[11px] font-medium text-slate-200 hover:bg-black/80 hover:text-white transition-colors"
+          title="Unpin — return to highest-opportunity headline"
+        >
+          <PinOff size={11} />
+          Unpin
+        </button>
+      )}
+      <Link href={`/events/${event.event_id}`}>
       <div
-        className="relative w-full rounded-2xl overflow-hidden border border-white/8 mb-8"
+        className="relative w-full rounded-2xl overflow-hidden border border-white/8"
         style={{ minHeight: 220, background: gradientBg(gradient, "high") }}
       >
         {/* dark overlay for readability */}
@@ -70,6 +88,11 @@ function HeadlineEvent({
 
           {/* LEFT — event info */}
           <div className="flex-1 flex flex-col justify-center">
+            {isPinned && (
+              <span className="inline-flex items-center gap-1 text-[10px] text-amber-400 font-semibold uppercase tracking-widest mb-1">
+                <Pin size={9} /> Pinned
+              </span>
+            )}
             {artist && (
               <p className="text-[11px] text-white/50 uppercase tracking-widest font-medium mb-1">{artist}</p>
             )}
@@ -146,8 +169,29 @@ function HeadlineEvent({
             </div>
           </div>
         </div>
+
+        {/* Marketplace feed freshness strip */}
+        {meta?.marketplace_freshness && Object.keys(meta.marketplace_freshness).length > 0 && (
+          <div className="relative z-10 px-6 pb-4 flex items-center gap-2 flex-wrap">
+            <span className="text-[9px] text-white/35 uppercase tracking-wider font-semibold mr-1">Feeds</span>
+            {(["stubhub", "tickpick", "gametime", "vividseats"] as const).map((slug) => {
+              const f = meta.marketplace_freshness?.[slug];
+              if (!f) return null;
+              return (
+                <MarketplaceFreshnessChip
+                  key={slug}
+                  marketplace={slug}
+                  status={f.freshness_status}
+                  ageMinutes={f.age_minutes}
+                  size="md"
+                />
+              );
+            })}
+          </div>
+        )}
       </div>
     </Link>
+    </div>
   );
 }
 
@@ -158,16 +202,16 @@ function EventGroup({
   metas,
   depths,
   onHide,
-  onSelect,
-  selectedId,
+  onTogglePin,
+  pinnedId,
 }: {
   groupKey: string;
   events: EventSummary[];
   metas: MetaMap;
   depths: Record<number, number | null>;
   onHide: (id: number) => void;
-  onSelect: (id: number) => void;
-  selectedId: number | null;
+  onTogglePin: (id: number) => void;
+  pinnedId: number | null;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const topAction = signalToAction(events[0]?.signal);
@@ -203,8 +247,8 @@ function EventGroup({
               meta={metas[event.event_id]}
               dataDepthDays={depths[event.event_id]}
               onHide={onHide}
-              isSelected={event.event_id === selectedId}
-              onSelect={onSelect}
+              isPinned={event.event_id === pinnedId}
+              onTogglePin={onTogglePin}
             />
           ))}
         </div>
@@ -222,8 +266,32 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showHidden, setShowHidden] = useState(false);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  // pinnedId: user's explicit headline choice, persisted across refreshes.
+  // null = no pin → headline defaults to highest opportunity_score.
+  const [pinnedId, setPinnedId] = useState<number | null>(null);
   const { hiddenEvents, hide, unhide, mounted } = useHiddenEvents();
+
+  // hydrate pin from localStorage after mount (SSR-safe)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(PIN_KEY);
+      if (raw != null) setPinnedId(Number(raw));
+    } catch {}
+  }, []);
+
+  function pin(id: number) {
+    setPinnedId(id);
+    try { localStorage.setItem(PIN_KEY, String(id)); } catch {}
+  }
+
+  function unpin() {
+    setPinnedId(null);
+    try { localStorage.removeItem(PIN_KEY); } catch {}
+  }
+
+  function togglePin(id: number) {
+    if (pinnedId === id) unpin(); else pin(id);
+  }
 
   async function load() {
     setLoading(true);
@@ -233,13 +301,7 @@ export default function DashboardPage() {
       const evts = data.events ?? [];
       setEvents(evts);
 
-      // default selection = highest opportunity_score
-      if (selectedId === null && evts.length > 0) {
-        const best = [...evts].sort((a, b) => (b.opportunity_score ?? 0) - (a.opportunity_score ?? 0))[0];
-        setSelectedId(best.event_id);
-      }
-
-      // Fetch metadata (title, venue, date, artist)
+      // Fetch metadata (title, venue, date, artist, marketplace feed health)
       const metaResults = await Promise.allSettled(evts.map((e) => api.events.meta(e.event_id)));
       const metaMap: MetaMap = {};
       evts.forEach((e, i) => {
@@ -251,6 +313,8 @@ export default function DashboardPage() {
             venue_slug: r.value.venue_slug,
             event_date: r.value.event_date,
             artist: r.value.artist,
+            marketplace_freshness: r.value.marketplace_freshness,
+            tracked_events: r.value.tracked_events,
           };
         }
       });
@@ -302,10 +366,14 @@ export default function DashboardPage() {
     });
   }, [visible, metas]);
 
-  const selectedEvent = useMemo(
-    () => events.find((e) => e.event_id === selectedId) ?? events[0] ?? null,
-    [events, selectedId],
-  );
+  // Headline = pinned event if set (and still present), else highest opportunity
+  const headlineEvent = useMemo(() => {
+    if (pinnedId != null) {
+      const pinned = events.find((e) => e.event_id === pinnedId);
+      if (pinned) return pinned;
+    }
+    return [...events].sort((a, b) => (b.opportunity_score ?? 0) - (a.opportunity_score ?? 0))[0] ?? null;
+  }, [events, pinnedId]);
 
   const hiddenCount = mounted ? hiddenEvents.size : 0;
 
@@ -385,11 +453,13 @@ export default function DashboardPage() {
       {visible.length > 0 && (
         <>
           {/* Featured headline */}
-          {selectedEvent && (
+          {headlineEvent && (
             <HeadlineEvent
-              event={selectedEvent}
-              meta={metas[selectedEvent.event_id]}
-              depth={depths[selectedEvent.event_id]}
+              event={headlineEvent}
+              meta={metas[headlineEvent.event_id]}
+              depth={depths[headlineEvent.event_id]}
+              isPinned={pinnedId === headlineEvent.event_id}
+              onUnpin={unpin}
             />
           )}
 
@@ -402,8 +472,8 @@ export default function DashboardPage() {
               metas={metas}
               depths={depths}
               onHide={(id) => { if (showHidden) unhide(id); else hide(id); }}
-              onSelect={(id) => setSelectedId(id)}
-              selectedId={selectedId}
+              onTogglePin={togglePin}
+              pinnedId={pinnedId}
             />
           ))}
         </>

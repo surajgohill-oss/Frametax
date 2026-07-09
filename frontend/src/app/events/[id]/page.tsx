@@ -42,7 +42,7 @@ import ActionSignal from "@/components/ui/ActionSignal";
 import PriceHistoryChart from "@/components/charts/PriceHistoryChart";
 import { useExclusions } from "@/hooks/useExclusions";
 import VenueIntelligence from "@/components/venue/VenueIntelligence";
-import { MarketplaceLogo } from "@/components/MarketplaceLogo";
+import { MarketplaceLogo, MarketplaceFreshnessChip } from "@/components/MarketplaceLogo";
 
 // ── Shared micro-components ───────────────────────────────────────────────────
 function ScoreMeter({
@@ -407,7 +407,8 @@ export default function EventDetailPage() {
                 </p>
                 {hero?.changes?.h24?.inventory_delta != null && (
                   <p className={cn("text-[11px] mt-0.5 tabular-nums font-medium",
-                    (hero.changes.h24.inventory_delta ?? 0) > 0 ? "text-emerald-400" : "text-red-400"
+                    hero.changes.h24.inventory_delta === 0 ? "text-white/45" :
+                    hero.changes.h24.inventory_delta > 0 ? "text-emerald-400" : "text-red-400"
                   )}>
                     {fmtDelta(hero.changes.h24.inventory_delta)} in 24h
                   </p>
@@ -418,7 +419,7 @@ export default function EventDetailPage() {
 
           {/* below-hero: Deal Score · Seller Pressure · Inventory Trend */}
           {hero && (
-            <div className="px-6 pb-5 grid grid-cols-3 gap-3">
+            <div className="px-6 pb-4 grid grid-cols-3 gap-3">
               <ScoreMeter
                 label={CONSUMER_LABELS.opportunity_score}
                 value={hero.opportunity_score}
@@ -433,6 +434,26 @@ export default function EventDetailPage() {
                 delta={hero.changes?.h24?.inventory_delta}
                 total={hero.inventory?.total_listings}
               />
+            </div>
+          )}
+
+          {/* hero freshness strip — per-marketplace feed health at a glance */}
+          {eventMeta?.marketplace_freshness && Object.keys(eventMeta.marketplace_freshness).length > 0 && (
+            <div className="px-6 pb-4 flex items-center gap-2 flex-wrap">
+              <span className="text-[9px] text-white/35 uppercase tracking-wider font-semibold mr-1">Feeds</span>
+              {(["stubhub", "tickpick", "gametime", "vividseats"] as const).map((slug) => {
+                const f = eventMeta.marketplace_freshness?.[slug];
+                if (!f) return null;
+                return (
+                  <MarketplaceFreshnessChip
+                    key={slug}
+                    marketplace={slug}
+                    status={f.freshness_status}
+                    ageMinutes={f.age_minutes}
+                    size="md"
+                  />
+                );
+              })}
             </div>
           )}
         </div>
@@ -482,7 +503,8 @@ export default function EventDetailPage() {
               label="Inventory (24h)"
               value={
                 <span className={cn("text-sm font-semibold",
-                  (changes.h24?.inventory_delta ?? 0) > 0 ? "text-emerald-400" : "text-red-400"
+                  changes.h24?.inventory_delta == null || changes.h24.inventory_delta === 0 ? "text-slate-400" :
+                  changes.h24.inventory_delta > 0 ? "text-emerald-400" : "text-red-400"
                 )}>
                   {fmtDelta(changes.h24?.inventory_delta)}
                 </span>
@@ -530,8 +552,8 @@ export default function EventDetailPage() {
                       <td className="px-4 py-2.5"><DeltaChip pct={c?.price_delta_pct} /></td>
                       <td className="px-4 py-2.5">
                         <span className={cn("text-[11px] tabular-nums font-medium",
-                          c?.inventory_delta == null ? "text-slate-600" :
-                          (c.inventory_delta ?? 0) > 0 ? "text-emerald-400" : "text-red-400"
+                          c?.inventory_delta == null || c.inventory_delta === 0 ? "text-slate-600" :
+                          c.inventory_delta > 0 ? "text-emerald-400" : "text-red-400"
                         )}>
                           {fmtDelta(c?.inventory_delta)}
                         </span>
@@ -636,11 +658,14 @@ export default function EventDetailPage() {
               <div className="rounded-xl border border-white/7 bg-[#161b27] px-4 py-3">
                 <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Inventory (24h)</p>
                 <div className="flex items-center gap-1.5">
-                  {(market.inventory_movement.net_change_24h ?? 0) > 0
+                  {market.inventory_movement.net_change_24h > 0
                     ? <TrendingUp size={14} className="text-emerald-400" />
-                    : <TrendingDown size={14} className="text-red-400" />}
+                    : market.inventory_movement.net_change_24h < 0
+                    ? <TrendingDown size={14} className="text-red-400" />
+                    : <Minus size={14} className="text-slate-500" />}
                   <span className={cn("text-sm font-semibold tabular-nums",
-                    (market.inventory_movement.net_change_24h ?? 0) > 0 ? "text-emerald-400" : "text-red-400"
+                    market.inventory_movement.net_change_24h > 0 ? "text-emerald-400" :
+                    market.inventory_movement.net_change_24h < 0 ? "text-red-400" : "text-slate-400"
                   )}>
                     {fmtDelta(market.inventory_movement.net_change_24h)}
                   </span>
@@ -663,14 +688,29 @@ export default function EventDetailPage() {
                 (b) => b.marketplace_slug === mpSlug || b.marketplace_slug.replace(/\s+/g, "") === mpSlug
               );
               const listDelta = bLine?.listings_change_24h?.absolute;
+              const fresh = eventMeta?.marketplace_freshness?.[mpSlug];
+              const tracked = eventMeta?.tracked_events?.find((t) => t.marketplace_slug === mpSlug);
+              const unhealthy = fresh && (fresh.freshness_status === "stale" || fresh.freshness_status === "dead");
               return (
-                <div key={i} className="rounded-xl border border-white/7 bg-[#161b27] p-3">
+                <div key={i} className={cn("rounded-xl border p-3",
+                  unhealthy ? "border-red-500/25 bg-red-500/4" : "border-white/7 bg-[#161b27]"
+                )}>
                   <div className="flex items-center justify-between mb-2.5">
-                    <span className="text-sm font-semibold text-slate-200">{mp.name}</span>
                     <div className="flex items-center gap-2">
-                      {listDelta != null && (
+                      <MarketplaceLogo marketplace={mpSlug} size="md" variant="full" />
+                      {fresh && (
+                        <MarketplaceFreshnessChip
+                          marketplace={mpSlug}
+                          status={fresh.freshness_status}
+                          ageMinutes={fresh.age_minutes}
+                          size="md"
+                        />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {listDelta != null && listDelta !== 0 && (
                         <span className={cn("text-[10px] tabular-nums font-medium",
-                          listDelta > 0 ? "text-emerald-500" : listDelta < 0 ? "text-red-500" : "text-slate-600"
+                          listDelta > 0 ? "text-emerald-500" : "text-red-500"
                         )}>
                           {listDelta > 0 ? "+" : ""}{listDelta} 24h
                         </span>
@@ -704,12 +744,19 @@ export default function EventDetailPage() {
                       <p className="text-xs text-slate-400 tabular-nums">{fmtNum(mp.listings)}</p>
                     </div>
                   </div>
-                  {mp.liquidity_score != null && (
-                    <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-between text-[10px]">
-                      <span className="text-slate-600">Coverage Score</span>
-                      <span className="text-slate-500 tabular-nums">{mp.liquidity_score.toFixed(2)}</span>
-                    </div>
-                  )}
+                  <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-between text-[10px]">
+                    <span className="text-slate-600">
+                      {mp.liquidity_score != null ? <>Coverage Score <span className="text-slate-500 tabular-nums ml-1">{mp.liquidity_score.toFixed(2)}</span></> : null}
+                    </span>
+                    {tracked?.external_url ? (
+                      <a href={tracked.external_url} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors font-medium">
+                        View {fmtNum(mp.listings)} listings <ExternalLink size={10} />
+                      </a>
+                    ) : (
+                      <span className="text-slate-600 italic">Listing URL unavailable</span>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -778,12 +825,15 @@ export default function EventDetailPage() {
         <div>
           <h3 className="text-xs text-slate-500 uppercase tracking-wider mb-2">Inventory Movement (24 Hours)</h3>
           <div className="grid grid-cols-3 gap-2">
-            <StatCard label="New Listings"  value={<span className="text-emerald-400">{fmtDelta(move?.new_24h)}</span>} />
-            <StatCard label="Removed"       value={<span className="text-red-400">{fmtDelta(move?.removed_24h)}</span>} />
+            <StatCard label="New Listings"  value={<span className={!move?.new_24h ? "text-slate-400" : "text-emerald-400"}>{fmtDelta(move?.new_24h)}</span>} />
+            <StatCard label="Removed"       value={<span className={!move?.removed_24h ? "text-slate-400" : "text-red-400"}>{fmtDelta(move?.removed_24h)}</span>} />
             <StatCard
               label="Net Change"
               value={
-                <span className={cn((move?.net_change_24h ?? 0) > 0 ? "text-emerald-400" : "text-red-400")}>
+                <span className={cn(
+                  move?.net_change_24h == null || move.net_change_24h === 0 ? "text-slate-400" :
+                  move.net_change_24h > 0 ? "text-emerald-400" : "text-red-400"
+                )}>
                   {fmtDelta(move?.net_change_24h)}
                 </span>
               }
@@ -1136,33 +1186,42 @@ export default function EventDetailPage() {
     const capScore = seller.capitulation_score ?? 0;
     const aggScore = seller.seller_aggression ?? 0;
     const churnVal = seller.churn_rate ?? 0;
+    const repriced = seller.repriced_24h ?? 0;
 
     let sellerSummary = "";
-    if (capScore > 0.7) sellerSummary = "Sellers are actively cutting prices. This is a buyer's market right now.";
-    else if (aggScore > 0.6) sellerSummary = "Sellers are holding firm on pricing. Limited discounting activity.";
+    if (repriced === 0) sellerSummary = "No repricing detected in the last 24 hours. Sellers are sitting on their current asks.";
+    else if (capScore > 0.7) sellerSummary = "Sellers are actively cutting prices. This is a buyer's market right now.";
+    else if (aggScore > 0.6) sellerSummary = "Sellers are cutting prices faster than they are raising them — discounting pressure is building.";
     else if (churnVal > 5) sellerSummary = "High listing turnover — inventory is moving quickly.";
     else sellerSummary = "Seller behavior is typical for this stage of the market.";
+
+    // Zero movement is neutral information, not good/bad news
+    const zeroNeutral = (v: number | null | undefined, cls: string) =>
+      v == null || v === 0 ? "text-slate-400" : cls;
 
     return (
       <div className="space-y-5">
         <div className="rounded-xl border border-white/7 bg-[#161b27] px-4 py-3">
+          <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1">Seller Mood</p>
           <p className="text-xs text-slate-400 leading-relaxed">{sellerSummary}</p>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          <StatCard label="New Listings (24h)"  value={<span className="text-emerald-400">{fmtDelta(seller.new_listings_24h)}</span>} />
-          <StatCard label="Removed (24h)"       value={<span className="text-red-400">{fmtDelta(seller.removed_listings_24h)}</span>} />
+          <StatCard label="New Listings (24h)"  value={<span className={zeroNeutral(seller.new_listings_24h, "text-emerald-400")}>{fmtDelta(seller.new_listings_24h)}</span>} />
+          <StatCard label="Removed (24h)"       value={<span className={zeroNeutral(seller.removed_listings_24h, "text-red-400")}>{fmtDelta(seller.removed_listings_24h)}</span>} />
           <StatCard label="Repriced (24h)"      value={fmtNum(seller.repriced_24h)} />
-          <StatCard label="Price Drops"         value={<span className="text-emerald-400">{fmtNum(seller.price_drops_24h)}</span>} />
-          <StatCard label="Price Increases"     value={<span className="text-red-400">{fmtNum(seller.price_gains_24h)}</span>} />
+          <StatCard label="Price Drops"         value={<span className={zeroNeutral(seller.price_drops_24h, "text-emerald-400")}>{fmtNum(seller.price_drops_24h)}</span>} />
+          <StatCard label="Price Increases"     value={<span className={zeroNeutral(seller.price_gains_24h, "text-red-400")}>{fmtNum(seller.price_gains_24h)}</span>} />
           <StatCard
-            label="Median Price Change"
+            label="Relist Price Change"
+            sub="median 24h reprice"
             value={
               seller.median_reprice_delta != null ? (
-                <span className={seller.median_reprice_delta > 0 ? "text-emerald-400" : "text-red-400"}>
+                // Negative = sellers cutting = buyer-positive (matches Price Drops green)
+                <span className={seller.median_reprice_delta < 0 ? "text-emerald-400" : seller.median_reprice_delta > 0 ? "text-red-400" : "text-slate-400"}>
                   {fmtDelta(Math.round(seller.median_reprice_delta))}
                 </span>
-              ) : "—"
+              ) : <span className="text-slate-500 text-xs font-normal">No repricing in window</span>
             }
           />
         </div>
@@ -1192,14 +1251,14 @@ export default function EventDetailPage() {
           </div>
         </div>
 
-        {seller.largest_price_drops?.length > 0 && (
-          <div>
-            <h3 className="text-xs text-slate-500 uppercase tracking-wider mb-2">Largest Price Drops</h3>
+        <div>
+          <h3 className="text-xs text-slate-500 uppercase tracking-wider mb-2">Largest Price Drops</h3>
+          {seller.largest_price_drops?.length > 0 ? (
             <div className="rounded-xl border border-white/7 bg-[#161b27] overflow-hidden">
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-white/5">
-                    {["Section", "Was", "Now", "Drop"].map((h) => (
+                    {["Section", "Marketplace", "Was", "Now", "Drop"].map((h) => (
                       <th key={h} className="text-left px-3 py-2.5 text-[10px] text-slate-500 uppercase tracking-wider font-medium">{h}</th>
                     ))}
                   </tr>
@@ -1207,26 +1266,36 @@ export default function EventDetailPage() {
                 <tbody>
                   {seller.largest_price_drops.slice(0, 10).map((row, i) => (
                     <tr key={i} className="border-b border-white/4 last:border-0 hover:bg-white/2">
-                      <td className="px-3 py-2 text-slate-300 max-w-[160px] truncate">{row.section}</td>
-                      <td className="px-3 py-2 text-slate-500 tabular-nums">{fmt$$(row.old_price)}</td>
-                      <td className="px-3 py-2 text-slate-300 tabular-nums font-medium">{fmt$$(row.new_price)}</td>
-                      <td className="px-3 py-2 text-red-400 tabular-nums font-semibold">-{fmt$$(Math.abs(row.delta))}</td>
+                      <td className="px-3 py-2 text-slate-300 max-w-[160px] truncate">
+                        {row.section ?? "—"}{row.row ? <span className="text-slate-600"> · Row {row.row}</span> : null}
+                      </td>
+                      <td className="px-3 py-2"><MarketplaceLogo marketplace={row.marketplace} size="sm" variant="full" /></td>
+                      <td className="px-3 py-2 text-slate-500 tabular-nums">{fmt$$(row.first_price_24h)}</td>
+                      <td className="px-3 py-2 text-slate-300 tabular-nums font-medium">{fmt$$(row.current_price)}</td>
+                      <td className="px-3 py-2 text-emerald-400 tabular-nums font-semibold">
+                        -{fmt$$(Math.abs(row.delta ?? 0))}
+                        {row.delta_pct != null && <span className="text-emerald-600 font-normal ml-1">({row.delta_pct.toFixed(1)}%)</span>}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="rounded-xl border border-white/7 bg-[#161b27] px-4 py-3">
+              <p className="text-xs text-slate-500">No price drops detected in the last 24 hours.</p>
+            </div>
+          )}
+        </div>
 
-        {seller.largest_price_gains?.length > 0 && (
-          <div>
-            <h3 className="text-xs text-slate-500 uppercase tracking-wider mb-2">Largest Price Increases</h3>
+        <div>
+          <h3 className="text-xs text-slate-500 uppercase tracking-wider mb-2">Largest Price Increases</h3>
+          {seller.largest_price_gains?.length > 0 ? (
             <div className="rounded-xl border border-white/7 bg-[#161b27] overflow-hidden">
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-white/5">
-                    {["Section", "Was", "Now", "Increase"].map((h) => (
+                    {["Section", "Marketplace", "Was", "Now", "Increase"].map((h) => (
                       <th key={h} className="text-left px-3 py-2.5 text-[10px] text-slate-500 uppercase tracking-wider font-medium">{h}</th>
                     ))}
                   </tr>
@@ -1234,17 +1303,27 @@ export default function EventDetailPage() {
                 <tbody>
                   {seller.largest_price_gains.slice(0, 10).map((row, i) => (
                     <tr key={i} className="border-b border-white/4 last:border-0 hover:bg-white/2">
-                      <td className="px-3 py-2 text-slate-300 max-w-[160px] truncate">{row.section}</td>
-                      <td className="px-3 py-2 text-slate-500 tabular-nums">{fmt$$(row.old_price)}</td>
-                      <td className="px-3 py-2 text-slate-300 tabular-nums font-medium">{fmt$$(row.new_price)}</td>
-                      <td className="px-3 py-2 text-emerald-400 tabular-nums font-semibold">+{fmt$$(row.delta)}</td>
+                      <td className="px-3 py-2 text-slate-300 max-w-[160px] truncate">
+                        {row.section ?? "—"}{row.row ? <span className="text-slate-600"> · Row {row.row}</span> : null}
+                      </td>
+                      <td className="px-3 py-2"><MarketplaceLogo marketplace={row.marketplace} size="sm" variant="full" /></td>
+                      <td className="px-3 py-2 text-slate-500 tabular-nums">{fmt$$(row.first_price_24h)}</td>
+                      <td className="px-3 py-2 text-slate-300 tabular-nums font-medium">{fmt$$(row.current_price)}</td>
+                      <td className="px-3 py-2 text-red-400 tabular-nums font-semibold">
+                        +{fmt$$(row.delta)}
+                        {row.delta_pct != null && <span className="text-red-600 font-normal ml-1">(+{row.delta_pct.toFixed(1)}%)</span>}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="rounded-xl border border-white/7 bg-[#161b27] px-4 py-3">
+              <p className="text-xs text-slate-500">No price increases detected in the last 24 hours.</p>
+            </div>
+          )}
+        </div>
 
         {seller.aggressive_sections?.length > 0 && (
           <div>
@@ -1252,8 +1331,10 @@ export default function EventDetailPage() {
             <div className="flex flex-wrap gap-2">
               {seller.aggressive_sections.slice(0, 12).map((s, i) => (
                 <span key={i} className="px-2.5 py-1 rounded-lg bg-red-500/8 border border-red-500/15 text-red-400 text-[11px] font-medium">
-                  {s.section}
-                  {s.score != null && <span className="text-red-600 ml-1">{Number(s.score).toFixed(1)}</span>}
+                  {s.section ?? s.section_id}
+                  <span className="text-red-600 ml-1.5">
+                    {fmtNum((s.price_drops_24h ?? 0) + (s.price_gains_24h ?? 0))} moves
+                  </span>
                 </span>
               ))}
             </div>
@@ -1264,12 +1345,15 @@ export default function EventDetailPage() {
   }
 
   function renderVenue() {
+    // Scroll-contained: venue intelligence must not bleed down the event page.
     return (
-      <VenueIntelligence
-        eventId={id}
-        venueSlug={eventMeta?.venue_slug}
-        venueName={venue}
-      />
+      <div className="max-h-[620px] overflow-y-auto overflow-x-hidden rounded-xl border border-white/6 p-3">
+        <VenueIntelligence
+          eventId={id}
+          venueSlug={eventMeta?.venue_slug}
+          venueName={venue}
+        />
+      </div>
     );
   }
 

@@ -38,17 +38,22 @@ export interface EventsListResponse {
 }
 
 // ── /api/events/{id} ──────────────────────────────────────────────────────────
+// Backend emits four freshness levels (see app/utils/freshness.py) — "dead"
+// was previously missing from these unions.
+export type FreshnessStatus = "fresh" | "late" | "stale" | "dead";
+
 export interface MarketplaceFreshness {
-  freshness_status: "fresh" | "late" | "stale";
+  freshness_status: FreshnessStatus;
   last_success_at: string | null;
   age_minutes: number | null;
   consecutive_failures: number;
+  stale_reason?: string | null;
 }
 
 export interface TrackedEventEntry {
   marketplace_slug: string;
   external_url: string | null;
-  freshness_status: "fresh" | "late" | "stale";
+  freshness_status: FreshnessStatus;
   last_success_at: string | null;
   is_active: boolean;
 }
@@ -315,6 +320,28 @@ export interface RawEvent {
 }
 
 // ── /api/intelligence/events/{id}/seller ──────────────────────────────────────
+// Row shapes mirror intelligence_engine.py output exactly — the panel was
+// previously blank because it bound old_price/new_price which the backend
+// never sends (it sends first_price_24h/current_price).
+export interface SellerPriceMove {
+  listing_id: number;
+  marketplace: string;
+  section: string | null;
+  row: string | null;
+  current_price: number | null;
+  first_price_24h: number | null;
+  delta: number | null;
+  delta_pct: number | null;
+}
+
+export interface SellerAggressiveSection {
+  section_id: string | null;
+  section: string | null;
+  price_drops_24h: number | null;
+  price_gains_24h: number | null;
+  aggression_ratio: number | null;
+}
+
 export interface SellerResponse {
   new_listings_24h: number | null;
   removed_listings_24h: number | null;
@@ -328,8 +355,9 @@ export interface SellerResponse {
   reprice_rate: number | null;
   churn_rate: number | null;
   listing_survival: number | null;
-  by_marketplace: { name: string; repriced: number; drops: number; gains: number }[];
-  largest_price_drops: { section: string; old_price: number; new_price: number; delta: number }[];
-  largest_price_gains: { section: string; old_price: number; new_price: number; delta: number }[];
-  aggressive_sections: { section: string; score: number }[];
+  by_marketplace: { marketplace: string; new_24h: number | null; removed_24h: number | null; net_24h: number | null; poll_count_24h: number | null }[];
+  largest_price_drops: SellerPriceMove[];
+  largest_price_gains: SellerPriceMove[];
+  aggressive_sections: SellerAggressiveSection[];
+  history_context?: { hours_available: number | null; data_note: string | null };
 }

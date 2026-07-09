@@ -13,23 +13,23 @@ export default function NavBar() {
   return (
     <>
       <header className="sticky top-0 z-50 border-b border-white/5 bg-[#0f1117]/95 backdrop-blur-sm">
-        <div className="mx-auto max-w-7xl px-4 h-12 flex items-center gap-4">
+        <div className="mx-auto max-w-7xl px-4 h-12 flex items-center gap-2 sm:gap-4 overflow-hidden">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 shrink-0">
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-sm font-semibold tracking-wide text-slate-200">Concert Tracker</span>
+            <span className="text-sm font-semibold tracking-wide text-slate-200 whitespace-nowrap">Concert Tracker</span>
           </Link>
-          <span className="text-xs text-slate-500 hidden sm:block">LA Market Intelligence</span>
+          <span className="text-xs text-slate-500 hidden md:block whitespace-nowrap">LA Market Intelligence</span>
 
           {/* Nav links */}
-          <nav className="flex items-center gap-1 ml-2">
+          <nav className="flex items-center gap-1 sm:ml-2 min-w-0">
             <NavLink href="/" active={pathname === "/"}>
               <BarChart2 size={13} />
               <span>Active</span>
             </NavLink>
             <NavLink href="/completed" active={pathname === "/completed"}>
               <CheckCircle2 size={13} />
-              <span>Completed</span>
+              <span className="hidden sm:inline">Completed</span>
             </NavLink>
           </nav>
 

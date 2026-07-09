@@ -1,22 +1,33 @@
 "use client";
 
 import Link from "next/link";
-import { EyeOff, Calendar, Clock } from "lucide-react";
+import { EyeOff, Calendar, Clock, Pin } from "lucide-react";
 import { format, parseISO, differenceInDays } from "date-fns";
-import type { EventSummary } from "@/lib/types";
+import type { EventSummary, MarketplaceFreshness, TrackedEventEntry } from "@/lib/types";
 import { fmt$$, fmtNum, fmtPct, signalToAction, actionColors, signalPhrase } from "@/lib/utils";
 import { getEventGradient, gradientBg } from "@/lib/entityimages";
+import { MarketplaceFreshnessChip } from "@/components/MarketplaceLogo";
+
+export interface EventCardMeta {
+  title?: string;
+  venue_name?: string;
+  venue_slug?: string;
+  event_date?: string;
+  artist?: string;
+  marketplace_freshness?: Record<string, MarketplaceFreshness>;
+  tracked_events?: TrackedEventEntry[];
+}
 
 interface Props {
   event: EventSummary;
-  meta?: { title?: string; venue_name?: string; venue_slug?: string; event_date?: string; artist?: string };
+  meta?: EventCardMeta;
   dataDepthDays?: number | null;
   onHide: (id: number) => void;
-  isSelected?: boolean;
-  onSelect?: (id: number) => void;
+  isPinned?: boolean;
+  onTogglePin?: (id: number) => void;
 }
 
-export default function EventCard({ event, meta, dataDepthDays, onHide, isSelected, onSelect }: Props) {
+export default function EventCard({ event, meta, dataDepthDays, onHide, isPinned, onTogglePin }: Props) {
   const title = meta?.title ?? event.title;
   const venue = meta?.venue_name;
   const venueSlug = meta?.venue_slug;
@@ -30,6 +41,9 @@ export default function EventCard({ event, meta, dataDepthDays, onHide, isSelect
   const gradient = getEventGradient(artist, title);
   const phrase = signalPhrase(event.signal);
 
+  const freshness = meta?.marketplace_freshness;
+  const feedSlugs = (["stubhub", "tickpick", "gametime", "vividseats"] as const).filter((s) => freshness?.[s]);
+
   let daysOut: number | null = null;
   let dateLabel = "";
   if (dateStr) {
@@ -40,22 +54,17 @@ export default function EventCard({ event, meta, dataDepthDays, onHide, isSelect
     } catch {}
   }
 
-  // Update selected headline — do NOT preventDefault so the Link navigation fires
-  function handleClick() {
-    if (onSelect) onSelect(event.event_id);
-  }
-
   return (
     <div
       className={`group relative rounded-xl border transition-all duration-150 overflow-hidden ${
-        isSelected
-          ? "border-white/20 shadow-lg"
+        isPinned
+          ? "border-amber-500/40 shadow-lg"
           : "border-white/7 hover:border-white/14"
       }`}
-      style={isSelected ? { boxShadow: `0 0 0 1px ${colors.border}, 0 4px 24px ${colors.glow}` } : undefined}
+      style={isPinned ? { boxShadow: `0 0 0 1px ${colors.border}, 0 4px 24px ${colors.glow}` } : undefined}
     >
       {/* Full-card link — wraps both art strip and body */}
-      <Link href={`/events/${event.event_id}`} onClick={handleClick} className="block cursor-pointer">
+      <Link href={`/events/${event.event_id}`} className="block cursor-pointer">
         {/* art strip */}
         <div
           className="h-20 w-full relative"
@@ -133,6 +142,24 @@ export default function EventCard({ event, meta, dataDepthDays, onHide, isSelect
             )}
           </div>
 
+          {/* Marketplace feed health — stale feeds must be visible on cards */}
+          {feedSlugs.length > 0 && (
+            <div className="mt-2 flex items-center gap-1 flex-wrap">
+              {feedSlugs.map((slug) => {
+                const f = freshness![slug];
+                return (
+                  <MarketplaceFreshnessChip
+                    key={slug}
+                    marketplace={slug}
+                    status={f.freshness_status}
+                    ageMinutes={f.age_minutes}
+                    size="sm"
+                  />
+                );
+              })}
+            </div>
+          )}
+
           {/* Venue intelligence chip */}
           {hasVenueIntel && (
             <div className="mt-2 flex items-center gap-1">
@@ -143,13 +170,29 @@ export default function EventCard({ event, meta, dataDepthDays, onHide, isSelect
         </div>
       </Link>
 
-      {/* Hide button — outside Link so its click does not trigger navigation */}
-      <button
-        onClick={(e) => { e.stopPropagation(); e.preventDefault(); onHide(event.event_id); }}
-        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded bg-black/40 text-slate-400 hover:text-white"
-      >
-        <EyeOff size={11} />
-      </button>
+      {/* Pin + Hide buttons — outside Link so their clicks never navigate */}
+      <div className="absolute top-2 right-2 flex items-center gap-1">
+        {onTogglePin && (
+          <button
+            onClick={(e) => { e.stopPropagation(); e.preventDefault(); onTogglePin(event.event_id); }}
+            title={isPinned ? "Unpin from headline" : "Pin as headline"}
+            className={`p-1 rounded transition-opacity ${
+              isPinned
+                ? "opacity-100 bg-amber-500/25 text-amber-400"
+                : "opacity-0 group-hover:opacity-100 bg-black/40 text-slate-400 hover:text-amber-400"
+            }`}
+          >
+            <Pin size={11} />
+          </button>
+        )}
+        <button
+          onClick={(e) => { e.stopPropagation(); e.preventDefault(); onHide(event.event_id); }}
+          title="Hide event"
+          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded bg-black/40 text-slate-400 hover:text-white"
+        >
+          <EyeOff size={11} />
+        </button>
+      </div>
     </div>
   );
 }
