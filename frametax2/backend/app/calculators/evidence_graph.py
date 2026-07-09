@@ -299,6 +299,11 @@ class EvidenceGraph:
             key=lambda v: v.version_id,
         )
 
+    def get_document_version(self, version_id: str) -> DocumentVersion:
+        if version_id not in self._versions:
+            raise ValueError(f"DocumentVersion '{version_id}' does not exist.")
+        return self._versions[version_id]
+
     # ── authority source / citation ─────────────────────────────────────
 
     def add_authority_source(self, source: AuthoritySource) -> AuthoritySource:
@@ -311,6 +316,11 @@ class EvidenceGraph:
             raise ValueError(f"AuthoritySource '{source.source_id}' already exists.")
         self._sources[source.source_id] = source
         return source
+
+    def get_authority_source(self, source_id: str) -> AuthoritySource:
+        if source_id not in self._sources:
+            raise ValueError(f"AuthoritySource '{source_id}' does not exist.")
+        return self._sources[source_id]
 
     def add_citation(self, citation: Citation) -> Citation:
         if citation.authority_source_id not in self._sources:
@@ -329,6 +339,11 @@ class EvidenceGraph:
             raise ValueError(f"Rule '{rule.rule_id}' already exists.")
         self._rules[rule.rule_id] = rule
         return rule
+
+    def get_rule(self, rule_id: str) -> Rule:
+        if rule_id not in self._rules:
+            raise ValueError(f"Rule '{rule_id}' does not exist.")
+        return self._rules[rule_id]
 
     def add_evidence(self, evidence: Evidence) -> Evidence:
         if evidence.rule_id not in self._rules:
