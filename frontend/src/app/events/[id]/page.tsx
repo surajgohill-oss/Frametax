@@ -18,6 +18,7 @@ import {
   RotateCcw,
   Info,
   ParkingCircle,
+  ExternalLink,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { api } from "@/lib/api";
@@ -41,6 +42,7 @@ import ActionSignal from "@/components/ui/ActionSignal";
 import PriceHistoryChart from "@/components/charts/PriceHistoryChart";
 import { useExclusions } from "@/hooks/useExclusions";
 import VenueIntelligence from "@/components/venue/VenueIntelligence";
+import { MarketplaceLogo } from "@/components/MarketplaceLogo";
 
 // ── Shared micro-components ───────────────────────────────────────────────────
 function ScoreMeter({
@@ -57,19 +59,19 @@ function ScoreMeter({
   const pct = Math.max(0, Math.min(100, (value ?? 0) * 100));
   return (
     <div>
-      <div className="flex justify-between text-[11px] mb-1.5">
-        <span className="text-slate-400">{label}</span>
-        <span className="text-slate-300 tabular-nums font-medium">
+      <div className="flex justify-between text-xs mb-2">
+        <span className="text-slate-400 font-medium">{label}</span>
+        <span className="text-slate-200 tabular-nums font-semibold">
           {value != null ? (value > 1 ? value.toFixed(1) : (value * 100).toFixed(0) + "%") : "—"}
         </span>
       </div>
-      <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+      <div className="h-2 bg-white/5 rounded-full overflow-hidden">
         <div
           className="h-full rounded-full transition-all"
           style={{ width: `${Math.min(pct, 100)}%`, background: color }}
         />
       </div>
-      {note && <p className="text-[10px] text-slate-600 mt-1">{note}</p>}
+      {note && <p className="text-[10px] text-slate-600 mt-1.5">{note}</p>}
     </div>
   );
 }
@@ -91,10 +93,10 @@ function InventoryTrendMeter({
 
   return (
     <div>
-      <div className="flex justify-between text-[11px] mb-1.5">
-        <span className="text-slate-400">Inventory Trend</span>
+      <div className="flex justify-between text-xs mb-2">
+        <span className="text-slate-400 font-medium">Inventory Trend</span>
         <span
-          className="font-medium tabular-nums"
+          className="font-semibold tabular-nums"
           style={{ color: noData ? undefined : color }}
         >
           {noData
@@ -102,14 +104,14 @@ function InventoryTrendMeter({
             : `${delta! > 0 ? "+" : ""}${delta!.toLocaleString("en-US")} 24h`}
         </span>
       </div>
-      <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+      <div className="h-2 bg-white/5 rounded-full overflow-hidden">
         <div
           className="h-full rounded-full transition-all"
           style={{ width: `${pct}%`, background: color }}
         />
       </div>
       {!noData && (
-        <p className="text-[10px] text-slate-600 mt-1">
+        <p className="text-[10px] text-slate-600 mt-1.5">
           {isShrinking ? "Inventory tightening" : "Inventory growing"}
         </p>
       )}
@@ -135,10 +137,10 @@ function StatCard({ label, value, sub, accent }: {
   label: string; value: React.ReactNode; sub?: string; accent?: string;
 }) {
   return (
-    <div className="rounded-xl bg-white/4 px-3 py-3">
-      <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">{label}</div>
-      <div className={cn("text-sm font-semibold", accent ?? "text-slate-100")}>{value}</div>
-      {sub && <div className="text-[10px] text-slate-500 mt-0.5">{sub}</div>}
+    <div className="rounded-xl bg-white/4 border border-white/5 px-3.5 py-3.5">
+      <div className="text-[9px] text-slate-500 uppercase tracking-wider font-semibold mb-1.5">{label}</div>
+      <div className={cn("text-base font-bold", accent ?? "text-slate-100")}>{value}</div>
+      {sub && <div className="text-[10px] text-slate-500 mt-1">{sub}</div>}
     </div>
   );
 }
@@ -284,15 +286,15 @@ export default function EventDetailPage() {
             <div className="flex flex-col justify-center gap-4 flex-shrink-0">
               <div>
                 <p className="text-[10px] text-white/35 uppercase tracking-wider mb-2">Final Snapshot</p>
-                <div className="space-y-1">
+                <div className="space-y-2">
                   {[
                     { label: "Low",    val: hero?.price?.low_ask,    bold: true  },
                     { label: "Median", val: hero?.price?.median_ask, bold: false },
                     { label: "High",   val: hero?.price?.high_ask,   bold: false },
                   ].map(({ label, val, bold }) => (
-                    <div key={label} className="flex items-baseline justify-between gap-6">
-                      <span className="text-[10px] text-white/35 w-10">{label}</span>
-                      <span className={cn("tabular-nums", bold ? "text-lg font-bold text-white" : "text-sm text-white/65")}>
+                    <div key={label} className="flex items-end justify-between gap-6">
+                      <span className="text-[10px] text-white/35 w-14">{label}</span>
+                      <span className={cn("tabular-nums leading-none", bold ? "text-lg font-bold text-white" : "text-sm text-white/65")}>
                         {fmt$$(val)}
                       </span>
                     </div>
@@ -375,22 +377,22 @@ export default function EventDetailPage() {
               {/* price band */}
               <div>
                 <p className="text-[10px] text-white/35 uppercase tracking-wider mb-2">Price Range</p>
-                <div className="space-y-1">
+                <div className="space-y-2">
                   {[
                     { label: "Low",    val: hero?.price?.low_ask,    bold: true  },
                     { label: "Median", val: hero?.price?.median_ask, bold: false },
                     { label: "High",   val: hero?.price?.high_ask,   bold: false },
                   ].map(({ label, val, bold }) => (
-                    <div key={label} className="flex items-baseline justify-between gap-6">
-                      <span className="text-[10px] text-white/35 w-10">{label}</span>
-                      <span className={cn("tabular-nums", bold ? "text-lg font-bold text-white" : "text-sm text-white/65")}>
+                    <div key={label} className="flex items-end justify-between gap-6">
+                      <span className="text-[10px] text-white/35 w-14">{label}</span>
+                      <span className={cn("tabular-nums leading-none", bold ? "text-lg font-bold text-white" : "text-sm text-white/65")}>
                         {fmt$$(val)}
                       </span>
                     </div>
                   ))}
                 </div>
                 {hero?.changes?.h24?.price_delta_pct != null && (
-                  <div className="mt-1.5">
+                  <div className="mt-3">
                     <DeltaChip pct={hero.changes.h24.price_delta_pct} size="md" />
                     <span className="text-[10px] text-white/35 ml-1">24h</span>
                   </div>
@@ -718,38 +720,40 @@ export default function EventDetailPage() {
         {eventMeta?.marketplace_freshness && Object.keys(eventMeta.marketplace_freshness).length > 0 && (
           <div>
             <h3 className="text-xs text-slate-500 uppercase tracking-wider mb-2">Marketplace Coverage</h3>
-            <div className="rounded-xl border border-white/7 bg-[#161b27] p-3 space-y-2">
+            <div className="rounded-xl border border-white/7 bg-[#161b27] p-4 space-y-2.5">
               {(["stubhub", "gametime", "tickpick", "vividseats"] as const).map((slug) => {
                 const f = eventMeta.marketplace_freshness?.[slug];
                 const tracked = eventMeta.tracked_events?.find((t) => t.marketplace_slug === slug);
-                const displayName = slug === "stubhub" ? "StubHub" : slug === "gametime" ? "Gametime" : slug === "tickpick" ? "TickPick" : "Vivid Seats";
                 if (!f) return null;
-                const freshColor = f.freshness_status === "fresh" ? "text-emerald-400" : f.freshness_status === "late" ? "text-amber-400" : "text-red-400";
-                const freshDot = f.freshness_status === "fresh" ? "bg-emerald-400" : f.freshness_status === "late" ? "bg-amber-400" : "bg-red-400";
+                const freshColor = f.freshness_status === "fresh" ? "text-emerald-400" : f.freshness_status === "late" ? "text-amber-400" : "text-red-500";
+                const freshDot = f.freshness_status === "fresh" ? "bg-emerald-400" : f.freshness_status === "late" ? "bg-amber-400" : "bg-red-500";
+                const freshBg = f.freshness_status === "fresh" ? "bg-emerald-500/10" : f.freshness_status === "late" ? "bg-amber-500/10" : "bg-red-500/10";
                 const ageLabel = f.age_minutes != null ? (f.age_minutes < 60 ? `${f.age_minutes}m ago` : `${Math.round(f.age_minutes / 60)}h ago`) : null;
                 return (
-                  <div key={slug} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${freshDot}`} />
-                      <span className="text-xs text-slate-300">{displayName}</span>
+                  <div key={slug} className={`flex items-center justify-between rounded-lg px-3 py-2.5 border ${freshBg} border-white/5`}>
+                    <div className="flex items-center gap-2.5">
+                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${freshDot}`} />
+                      <MarketplaceLogo marketplace={slug as "stubhub" | "gametime" | "tickpick" | "vividseats"} size="sm" variant="text" />
                     </div>
-                    <div className="flex items-center gap-3">
-                      {ageLabel && <span className="text-[10px] text-slate-600">{ageLabel}</span>}
-                      <span className={`text-[10px] font-medium capitalize ${freshColor}`}>{f.freshness_status}</span>
-                      {tracked?.external_url && (
+                    <div className="flex items-center gap-2.5">
+                      {ageLabel && <span className="text-[10px] text-slate-500">{ageLabel}</span>}
+                      <span className={`text-[10px] font-semibold capitalize ${freshColor}`}>{f.freshness_status}</span>
+                      {tracked?.external_url ? (
                         <a href={tracked.external_url} target="_blank" rel="noopener noreferrer"
-                          className="text-[10px] text-blue-500 hover:text-blue-400 transition-colors">
-                          View ↗
+                          className="inline-flex items-center gap-1 text-[10px] text-blue-400 hover:text-blue-300 transition-colors font-medium">
+                          View <ExternalLink size={10} />
                         </a>
+                      ) : (
+                        <span className="text-[10px] text-slate-600 italic">No URL</span>
                       )}
                     </div>
                   </div>
                 );
               })}
               {/* Add URL placeholder */}
-              <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-between">
-                <span className="text-[10px] text-slate-600">Add marketplace URL</span>
-                <span className="text-[10px] text-slate-700 italic">Coming soon</span>
+              <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between text-[10px]">
+                <span className="text-slate-600">Add marketplace URL</span>
+                <span className="text-slate-700 italic">Coming soon</span>
               </div>
             </div>
           </div>

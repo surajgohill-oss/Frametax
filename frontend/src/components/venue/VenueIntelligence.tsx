@@ -191,7 +191,7 @@ export default function VenueIntelligence({ eventId, venueSlug, venueName }: Pro
   const venueDisplayName = isSoFi ? "SoFi Stadium" : (venueName ?? slug);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full overflow-hidden">
       {/* Header row */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
@@ -219,13 +219,13 @@ export default function VenueIntelligence({ eventId, venueSlug, venueName }: Pro
       </div>
 
       {/* Mode selector */}
-      <div className="flex gap-1">
+      <div className="flex gap-1 overflow-x-auto pb-1">
         {MODES.map(({ id, label, icon: Icon, color }) => (
           <button
             key={id}
             onClick={() => setMode(id)}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all border",
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all border flex-shrink-0",
               mode === id
                 ? "border-white/15 bg-white/8 text-slate-100"
                 : "border-white/6 bg-white/2 text-slate-500 hover:text-slate-300 hover:bg-white/5",
@@ -238,9 +238,9 @@ export default function VenueIntelligence({ eventId, venueSlug, venueName }: Pro
       </div>
 
       {/* Map + right panel */}
-      <div className="flex gap-4 items-start">
+      <div className="flex gap-4 items-start overflow-hidden">
         {/* Map */}
-        <div className="flex-shrink-0 w-full md:w-[55%]">
+        <div className="flex-shrink-0 w-full md:w-[55%] min-w-0 overflow-hidden">
           {isSoFi && sectionsWithMetrics === 0 ? (
             <div className="rounded-xl border border-white/8 bg-[#0c1421] flex flex-col items-center justify-center py-16 text-center">
               <Map size={24} className="text-slate-700 mb-3" />
@@ -325,7 +325,7 @@ export default function VenueIntelligence({ eventId, venueSlug, venueName }: Pro
 
       {/* Mobile: section detail below map */}
       {selectedSection && (
-        <div className="md:hidden rounded-xl border border-white/8 bg-[#111827] p-4">
+        <div className="md:hidden rounded-xl border border-white/8 bg-[#111827] p-4 overflow-hidden">
           <button
             onClick={() => setSelectedId(null)}
             className="flex items-center gap-1 text-[10px] text-slate-500 hover:text-slate-300 mb-3"
@@ -343,7 +343,7 @@ export default function VenueIntelligence({ eventId, venueSlug, venueName }: Pro
 
       {/* Mobile: opportunity board */}
       {!selectedSection && classifications && (
-        <div className="md:hidden rounded-xl border border-white/8 bg-[#111827] p-3">
+        <div className="md:hidden rounded-xl border border-white/8 bg-[#111827] p-3 overflow-hidden">
           <SectionOpportunityBoard
             data={classifications}
             onSelectSection={(id) => setSelectedId(id)}
@@ -353,7 +353,7 @@ export default function VenueIntelligence({ eventId, venueSlug, venueName }: Pro
       )}
 
       {/* Coverage note */}
-      <p className="text-[10px] text-slate-700 text-center">
+      <p className="text-[10px] text-slate-700 text-center px-2">
         {intelligence.sections_total} sections · {isSoFi ? "Tap" : "Click"} a section for detail
       </p>
     </div>
