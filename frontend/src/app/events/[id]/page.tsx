@@ -20,7 +20,7 @@ import { useNflAudio } from "@/hooks/useNflAudio";
 import { isNflEvent } from "@/lib/audioConfig";
 import NflAudioControl from "@/components/NflAudioControl";
 import {
-  fmt$$, fmtNum, fmtPct, fmtDelta, cn,
+  fmt$$, fmt$$signed, fmtNum, fmtPct, fmtDelta, cn,
   signalToAction, actionColors, signalDescription, parseEventDate,
 } from "@/lib/utils";
 import { getEventGradient, getSpotifyData } from "@/lib/entityimages";
@@ -31,6 +31,7 @@ import { useArchivedEvents } from "@/hooks/useArchivedEvents";
 import { useFollowArtist, type ArtistFollowScope, type TeamFollowScope } from "@/hooks/useFollowArtist";
 import PriceHistoryChart from "@/components/charts/PriceHistoryChart";
 import VenueIntelligence from "@/components/venue/VenueIntelligence";
+import MarketplaceLogo from "@/components/MarketplaceLogo";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -137,10 +138,7 @@ const MP_META: Record<string, { label: string; short: string; color: string; log
 function MpLogo({ slug, info, size = 22 }: { slug: string; info: { label: string; short: string; color: string; logoBg: string }; size?: number }) {
   return (
     <div className="flex items-center gap-2">
-      <div className="rounded flex items-center justify-center font-black text-white flex-shrink-0"
-        style={{ width: size, height: size, background: info.logoBg, fontSize: Math.round(size * 0.42) }}>
-        {info.short}
-      </div>
+      <MarketplaceLogo slug={slug} size={size} />
       <span className="text-[13px] font-bold tracking-tight" style={{ color: info.color }}>{info.label}</span>
     </div>
   );
@@ -737,6 +735,7 @@ export default function EventDetailPage() {
 
   // ── First-tracked snapshot (per-marketplace rollup — project rule: each MP has its own baseline) ─
   const firstTrackedMed  = historyAll?.series?.[0]?.median_ask ?? null;
+  const firstTrackedLow  = historyAll?.series?.[0]?.low_ask ?? null;
   const curInvNow        = baseline?.current?.raw_listings ?? hero?.inventory?.total_listings ?? null;
   // Per-marketplace rolled-up inv delta (correct per project rules):
   //   each marketplace's delta = cur - its own first snapshot; then sum across marketplaces
@@ -790,13 +789,29 @@ export default function EventDetailPage() {
     const repriced = seller?.repriced_24h ?? 0;
     const drops    = seller?.price_drops_24h ?? 0;
     const dropRatio = repriced > 0 ? drops / repriced : 0;
-    if (cap == null) return "—";
-    if (cap > 0.70) return "Seller capitulation increasing";
-    if (cap > 0.55 || (aggr != null && aggr > 0.65)) return "Repricing accelerating";
-    if (cap > 0.40 || dropRatio > 0.55) return "Aggressive repricing";
-    if (cap > 0.25 && dropRatio < 0.3) return "Price cuts slowing";
-    if (cap <= 0.20) return "Holding firm";
-    return "Stable seller behavior";
+    if (cap != null) {
+      if (cap > 0.70) return "Seller capitulation increasing";
+      if (cap > 0.55 || (aggr != null && aggr > 0.65)) return "Repricing accelerating";
+      if (cap > 0.40 || dropRatio > 0.55) return "Aggressive repricing";
+      if (cap > 0.25 && dropRatio < 0.3) return "Price cuts slowing";
+      if (cap <= 0.20) return "Holding firm";
+      return "Stable seller behavior";
+    }
+    // Repricing signal unavailable — fall back to real listing-flow churn.
+    const newL = seller?.new_listings_24h ?? 0;
+    const remL = seller?.removed_listings_24h ?? 0;
+    const flowTotal = newL + remL;
+    if (flowTotal > 0) {
+      const net = newL - remL;
+      const thr = Math.max(3, flowTotal * 0.15);
+      if (net <= -thr) return "Sellers exiting faster than arriving";
+      if (net >= thr) return "Fresh inventory building";
+      return "Balanced listing churn";
+    }
+    const pollThin = (seller?.by_marketplace?.length ?? 0) > 0 &&
+      seller!.by_marketplace.every(m => (m.poll_count_24h ?? 0) <= 1);
+    if (pollThin) return "Insufficient poll history (needs 2+/day)";
+    return "—";
   })();
 
   // ─── Skeleton ────────────────────────────────────────────────────────────────
@@ -824,10 +839,7 @@ export default function EventDetailPage() {
         background: `radial-gradient(ellipse 75% 55% at 18% 0%, ${gradient[0]}1c 0%, transparent 60%), radial-gradient(ellipse 45% 45% at 82% 80%, ${gradient[1]}0e 0%, transparent 55%)`,
       }} />
 
-      {/* UI BUILD MARKER */}
-      <div className="fixed top-2 right-2 z-50 text-[9px] font-mono bg-amber-400 text-black px-2 py-0.5 rounded opacity-80 pointer-events-none select-none">
-        UI BUILD {new Date().toISOString().slice(0,16).replace("T"," ")}
-      </div>
+
 
       {/* Back nav + actions row */}
       <div className="flex items-center justify-between flex-wrap gap-2">
@@ -1042,9 +1054,13 @@ export default function EventDetailPage() {
                 </div>
                 <div className="text-right">
                   <p className="text-[11px] text-white/28 uppercase tracking-wide mb-1">Duplicate %</p>
-                  <p className="text-[24px] font-bold text-violet-300/70 tabular-nums leading-none">
-                    {snapshot?.duplicates?.dup_pct != null ? `${snapshot.duplicates.dup_pct.toFixed(1)}%` : "—"}
-                  </p>
+                  {snapshot?.duplicates?.dup_pct_reliable === false ? (
+                    <p className="text-[13px] font-medium italic text-slate-500 leading-tight">Not reliable</p>
+                  ) : (
+                    <p className="text-[24px] font-bold text-violet-300/70 tabular-nums leading-none">
+                      {snapshot?.duplicates?.dup_pct != null ? `${snapshot.duplicates.dup_pct.toFixed(1)}%` : "—"}
+                    </p>
+                  )}
                 </div>
                 <div className="text-right">
                   <p className="text-[11px] text-white/28 uppercase tracking-wide mb-1">Low</p>
@@ -1105,12 +1121,7 @@ export default function EventDetailPage() {
                       const info = MP_META[slug];
                       return (
                         <div key={slug} className="flex items-center gap-1.5">
-                          {info && (
-                            <div className="rounded flex items-center justify-center font-black text-white flex-shrink-0"
-                              style={{ width: 16, height: 16, background: info.logoBg, fontSize: 7 }}>
-                              {info.short}
-                            </div>
-                          )}
+                          <MarketplaceLogo slug={slug} size={16} />
                           <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotCls}`} />
                           <span className="text-[11px] font-medium" style={{ color: info?.color ?? "rgba(255,255,255,0.38)" }}>{info?.label ?? slug}</span>
                           <span className={`text-[11px] tabular-nums ${textCls}`}>{ageStr ?? "—"}</span>
@@ -1177,31 +1188,47 @@ export default function EventDetailPage() {
                       <div className="flex items-center gap-1.5 tabular-nums">
                         {orig != null ? <span className="text-[11px] text-slate-600">{fmt$$(orig)} →</span> : null}
                         <span className="text-[13px] font-bold text-white">{cur != null ? fmt$$(cur) : "—"}</span>
-                        {abs != null && abs !== 0 && <span className={cn("text-[11px]", abs < 0 ? "text-slate-500" : "text-slate-500")}>{abs > 0 ? `+${fmt$$(abs)}` : fmt$$(abs)}</span>}
+                        {abs != null && abs !== 0 && <span className={cn("text-[11px] font-medium", abs < 0 ? "text-emerald-400" : "text-red-400")}>{fmt$$signed(abs)}</span>}
                         {pct != null ? <DeltaChip pct={pct} invert /> : <span className="text-[11px] text-slate-700">—</span>}
                       </div>
                     </div>
                   );
                 })()}
-                {/* LOW row */}
+                {/* LOW row — tracking window uses start-of-tracking floor from first history snapshot */}
                 {(() => {
                   const cur = hero?.price?.low_ask ?? null;
-                  // tracking: no floor-tracking-start delta available — show current only
-                  const absRaw = marketWindow === "24h"
-                    ? (snapshot?.price?.floor_24h_change ?? baseline?.deltas_24h?.low_ask?.absolute ?? null)
-                    : marketWindow === "7d" ? (baseline?.deltas_7d?.low_ask?.absolute ?? null)
-                    : null;
-                  const pct = absRaw != null && cur != null && (cur - absRaw) !== 0
-                    ? (absRaw / (cur - absRaw)) * 100 : null;
-                  const orig = (cur != null && pct != null) ? Math.round(cur / (1 + pct / 100)) : null;
+                  let orig: number | null = null;
+                  let abs: number | null = null;
+                  let pct: number | null = null;
+                  let baselineUnavailable = false;
+                  if (marketWindow === "tracking") {
+                    if (firstTrackedLow != null && cur != null) {
+                      orig = firstTrackedLow;
+                      abs = cur - orig;
+                      pct = orig > 0 ? (abs / orig) * 100 : null;
+                    } else {
+                      baselineUnavailable = true;
+                    }
+                  } else {
+                    const absRaw = marketWindow === "24h"
+                      ? (snapshot?.price?.floor_24h_change ?? baseline?.deltas_24h?.low_ask?.absolute ?? null)
+                      : marketWindow === "7d" ? (baseline?.deltas_7d?.low_ask?.absolute ?? null)
+                      : null;
+                    abs = absRaw;
+                    pct = absRaw != null && cur != null && (cur - absRaw) !== 0
+                      ? (absRaw / (cur - absRaw)) * 100 : null;
+                    orig = (cur != null && abs != null) ? cur - abs : null;
+                  }
                   return (
                     <div className="flex items-center justify-between py-1.5 border-b border-white/[0.04]">
                       <span className="text-[12px] text-slate-500 w-16 flex-shrink-0">Low</span>
                       <div className="flex items-center gap-1.5 tabular-nums">
                         {orig != null ? <span className="text-[11px] text-slate-600">{fmt$$(orig)} →</span> : null}
                         <span className="text-[13px] font-semibold text-emerald-300">{cur != null ? fmt$$(cur) : "—"}</span>
-                        {absRaw != null && absRaw !== 0 && <span className="text-[11px] text-slate-500">{absRaw > 0 ? `+${fmt$$(absRaw)}` : fmt$$(absRaw)}</span>}
-                        {pct != null ? <DeltaChip pct={pct} invert /> : <span className="text-[11px] text-slate-700">—</span>}
+                        {abs != null && abs !== 0 && <span className={cn("text-[11px] font-medium", abs < 0 ? "text-emerald-400" : "text-red-400")}>{fmt$$signed(abs)}</span>}
+                        {baselineUnavailable
+                          ? <span className="text-[11px] italic text-slate-600">Tracking baseline unavailable</span>
+                          : pct != null ? <DeltaChip pct={pct} invert /> : <span className="text-[11px] text-slate-700">—</span>}
                       </div>
                     </div>
                   );
@@ -1223,8 +1250,8 @@ export default function EventDetailPage() {
                       <div className="flex items-center gap-1.5 tabular-nums">
                         <span className="text-[13px] font-semibold text-slate-400">{cur != null ? fmt$$(cur) : "—"}</span>
                         {delta != null ? (
-                          <span className={`text-[11px] font-semibold ${delta < 0 ? "text-emerald-400" : "text-red-400"}`}>
-                            {delta > 0 ? "+" : ""}{fmt$$(delta)}{pct != null ? ` (${pct > 0 ? "+" : ""}${pct.toFixed(1)}%)` : ""}
+                          <span className={`text-[11px] font-semibold ${delta < 0 ? "text-emerald-400" : delta > 0 ? "text-red-400" : "text-slate-500"}`}>
+                            {fmt$$signed(delta)}{pct != null ? ` (${fmtPct(pct)})` : ""}
                           </span>
                         ) : <span className="text-[11px] text-slate-700">—</span>}
                       </div>
@@ -1265,7 +1292,9 @@ export default function EventDetailPage() {
                 {/* DUPLICATES row — format: current%  ±pp change */}
                 <div className="flex items-center justify-between py-1.5">
                   <span className="text-[12px] text-slate-500 w-16 flex-shrink-0">Dup %</span>
-                  {snapshot?.duplicates?.dup_pct != null ? (
+                  {snapshot?.duplicates?.dup_pct_reliable === false ? (
+                    <span className="text-[11px] italic text-slate-500">Not reliable</span>
+                  ) : snapshot?.duplicates?.dup_pct != null ? (
                     <span className="text-[11px] text-slate-400 tabular-nums">
                       {snapshot.duplicates.dup_pct.toFixed(1)}%
                       {snapshot.duplicates.dup_mirror_pct != null && (
@@ -1447,16 +1476,28 @@ export default function EventDetailPage() {
               ) : <span className="text-[11px] italic text-slate-700">Not enough history</span>}
             </div>
 
+            <div className="flex items-center justify-between py-1.5 border-b border-white/[0.04]">
+              <span className="text-[12px] text-slate-400">Listing Flow <span className="text-slate-600">24h</span></span>
+              {((seller?.new_listings_24h ?? 0) + (seller?.removed_listings_24h ?? 0)) > 0 ? (
+                <span className="text-[13px] font-bold tabular-nums">
+                  <span className="text-emerald-300">+{fmtNum(seller?.new_listings_24h ?? 0)}</span>
+                  <span className="text-slate-600 mx-1">/</span>
+                  <span className="text-red-300">−{fmtNum(seller?.removed_listings_24h ?? 0)}</span>
+                </span>
+              ) : <span className="text-[11px] italic text-slate-600">{seller != null ? "No listing changes" : "Not enough history"}</span>}
+            </div>
+
             {/* Seller Mood — behavioral momentum */}
             <div className="pt-2 mt-0.5">
               <p className="text-[11px] text-slate-500 uppercase tracking-[0.14em] mb-1">Seller Mood</p>
               <p className={cn("text-[13px] font-bold italic leading-snug",
                 sellerMood === "Seller capitulation increasing" ? "text-red-300"
                 : sellerMood === "Repricing accelerating" ? "text-red-300/80"
-                : sellerMood === "Aggressive repricing" ? "text-amber-300"
+                : sellerMood === "Aggressive repricing" || sellerMood === "Sellers exiting faster than arriving" ? "text-amber-300"
                 : sellerMood === "Price cuts slowing" ? "text-amber-300/70"
+                : sellerMood === "Fresh inventory building" ? "text-sky-300"
                 : sellerMood === "Holding firm" ? "text-emerald-300"
-                : sellerMood === "Stable seller behavior" ? "text-emerald-300/70"
+                : sellerMood === "Stable seller behavior" || sellerMood === "Balanced listing churn" ? "text-emerald-300/70"
                 : "text-slate-600")}>
                 {sellerMood === "—"
                   ? (seller != null ? "No seller movement yet" : "Not enough history")
@@ -1536,12 +1577,15 @@ export default function EventDetailPage() {
                       {
                         label: "Dup %",
                         value: (() => {
+                          // Never show fake precision when the marketplace's section
+                          // identity is too weak for canonical dedup (e.g. TickPick
+                          // all-"General" → collapse reads as 85% dup).
+                          if (snapshot?.duplicates?.per_marketplace_low_confidence?.includes(slug)) return "Low confidence";
                           const perMp = snapshot?.duplicates?.per_marketplace?.[slug];
-                          const global = snapshot?.duplicates?.dup_pct;
-                          const val = perMp ?? global;
-                          return val != null ? `${val.toFixed(1)}%` : "—";
+                          return perMp != null ? `${perMp.toFixed(1)}%` : "—";
                         })(),
-                        cls: "text-violet-300/60",
+                        cls: snapshot?.duplicates?.per_marketplace_low_confidence?.includes(slug)
+                          ? "text-slate-500 italic text-[11px]" : "text-violet-300/60",
                         extra: null,
                       },
                       {
@@ -1610,11 +1654,13 @@ export default function EventDetailPage() {
           Two-column: map left, top sections right.
           ════════════════════════════════════════ */}
       {eventMeta?.venue_slug && (
-        <section>
-          <div className="flex items-center gap-3 mb-4">
-            <h2 className="text-[12px] font-bold text-slate-500 uppercase tracking-[0.18em] flex-shrink-0">Venue Intelligence</h2>
+        <details className="group">
+          <summary className="flex items-center gap-3 mb-4 cursor-pointer list-none select-none">
+            <h2 className="text-[12px] font-bold text-slate-500 uppercase tracking-[0.18em] flex-shrink-0 group-hover:text-slate-300 transition-colors">Venue Intelligence</h2>
+            <ChevronDown size={13} className="text-slate-500 transition-transform group-open:rotate-180" />
+            <span className="text-[11px] text-slate-600 group-open:hidden">seat map · top sections</span>
             <div className="flex-1 h-px bg-white/[0.06]" />
-          </div>
+          </summary>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
             {/* LEFT — Interactive venue map + section details */}
             <div>
@@ -1668,7 +1714,7 @@ export default function EventDetailPage() {
               )}
             </div>
           </div>
-        </section>
+        </details>
       )}
 
       {/* ════════════════════════════════════════
@@ -1933,8 +1979,8 @@ export default function EventDetailPage() {
                     <div key={slug} className="grid items-center px-4 py-2.5 border-b border-white/4 last:border-0 hover:bg-white/2"
                       style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr" }}>
                       <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full" style={{ background: mpInfo.color }} />
-                        <span className="text-xs font-bold uppercase" style={{ color: mpInfo.color }}>{mpInfo.short}</span>
+                        <MarketplaceLogo slug={slug} size={16} />
+                        <span className="text-xs font-bold" style={{ color: mpInfo.color }}>{mpInfo.label}</span>
                       </div>
                       <div className="text-xs font-bold text-white tabular-nums">{fmt$$(mp.current_lowest_ask)}</div>
                       <div className="text-xs text-slate-300 tabular-nums">{fmtNum(mp.current_listings)}</div>

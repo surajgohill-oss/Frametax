@@ -9,7 +9,7 @@ import {
 import { format, parseISO, differenceInDays } from "date-fns";
 import { api } from "@/lib/api";
 import type { EventSummary, EventMeta, EventSnapshotResponse, SellerResponse, VelocityWindowsResponse } from "@/lib/types";
-import { fmt$$, fmtPct, fmtNum, signalToAction, actionColors, cn, parseEventDate } from "@/lib/utils";
+import { fmt$$, fmt$$signed, fmtPct, fmtNum, signalToAction, actionColors, cn, parseEventDate } from "@/lib/utils";
 import { getEventGradient, gradientBg, getSpotifyData } from "@/lib/entityimages";
 import { useArtistImage } from "@/hooks/useArtistImage";
 import { useWatchlist } from "@/hooks/useWatchlist";
@@ -472,12 +472,14 @@ function HeadlineCard({
               const cur = event.price?.median_ask ?? null;
               const pct = event.changes?.h24?.price_delta_pct ?? null;
               const orig = (cur != null && pct != null) ? Math.round(cur / (1 + pct / 100)) : null;
+              const abs  = (cur != null && orig != null) ? cur - orig : null;
               return (
                 <div className="flex items-center justify-between py-2 border-b border-white/[0.04]">
                   <span className="text-[12px] text-slate-400 font-semibold w-16 flex-shrink-0">Median</span>
                   <div className="flex items-center gap-1.5 tabular-nums">
                     {orig != null ? <span className="text-[11px] text-slate-600">{fmt$$(orig)} →</span> : null}
                     <span className="text-[13px] font-bold text-white">{cur != null ? fmt$$(cur) : "—"}</span>
+                    {abs != null && abs !== 0 && <span className={cn("text-[11px] font-medium", abs < 0 ? "text-emerald-400" : "text-red-400")}>{fmt$$signed(abs)}</span>}
                     {pct != null ? <DeltaChip pct={pct} invert /> : <span className="text-[11px] text-slate-700">—</span>}
                   </div>
                 </div>
@@ -523,9 +525,13 @@ function HeadlineCard({
             {/* Dup % */}
             <div className="flex items-center justify-between py-2">
               <span className="text-[12px] text-slate-500 w-16 flex-shrink-0">Dup %</span>
-              <span className="text-[12px] font-semibold text-violet-300/70 tabular-nums">
-                {snap?.duplicates?.dup_pct != null ? `${snap.duplicates.dup_pct.toFixed(1)}%` : "—"}
-              </span>
+              {snap?.duplicates?.dup_pct_reliable === false ? (
+                <span className="text-[11px] italic text-slate-500">Not reliable</span>
+              ) : (
+                <span className="text-[12px] font-semibold text-violet-300/70 tabular-nums">
+                  {snap?.duplicates?.dup_pct != null ? `${snap.duplicates.dup_pct.toFixed(1)}%` : "—"}
+                </span>
+              )}
             </div>
           </div>
         </div>

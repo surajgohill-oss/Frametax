@@ -39,6 +39,13 @@ export function fmt$$(n: number | null | undefined, decimals = 0): string {
   return "$" + n.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
 
+/** Signed money delta: +$94 / -$35 / $0 (sign before the $, never "$-35"). */
+export function fmt$$signed(n: number | null | undefined, decimals = 0): string {
+  if (n == null) return "—";
+  const sign = n > 0 ? "+" : n < 0 ? "-" : "";
+  return sign + "$" + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+
 export function fmtPct(n: number | null | undefined, decimals = 1): string {
   if (n == null) return "—";
   const sign = n > 0 ? "+" : "";

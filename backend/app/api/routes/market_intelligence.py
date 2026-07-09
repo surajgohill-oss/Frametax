@@ -1687,6 +1687,8 @@ async def event_intelligence_snapshot(
     dup_raw = None
     dup_canonical = None
     per_mp_dup: dict = {}
+    per_mp_dup_low_confidence: list = []
+    dup_pct_reliable = True
     if dup_row and dup_row[0]:
         dup_raw = int(dup_row[0])
         dup_canonical = int(dup_row[1])
@@ -1698,19 +1700,39 @@ async def event_intelligence_snapshot(
         # raw_per_mp comes from live active listings (cheapest possible query)
         by_mp_snap: dict = dup_row[5] or {}
         if by_mp_snap:
+            # distinct_sections guards against canonical-collapse false positives:
+            # when a marketplace sends no real section data (e.g. TickPick all
+            # "General"), canonical grouping collapses distinct listings into a
+            # handful of blocks and (raw-canonical)/raw reads ~85% "dup" even
+            # though every listing has a unique external id + price. In that
+            # case the per-MP dup % is meaningless — mark it low-confidence.
             raw_mp_rows = (await db.execute(text("""
-                SELECT m.slug, COUNT(*) AS cnt
+                SELECT m.slug, COUNT(*) AS cnt,
+                       COUNT(DISTINCT LOWER(COALESCE(NULLIF(TRIM(l.section), ''), '?'))) AS sec_cnt
                 FROM listings l
                 JOIN marketplaces m ON m.id = l.marketplace_id
                 WHERE l.event_id = :eid AND l.is_active = true
                 GROUP BY m.slug
             """), {"eid": event_id})).fetchall()
-            raw_per_mp = {slug: int(cnt) for slug, cnt in raw_mp_rows}
+            raw_per_mp = {slug: int(cnt) for slug, cnt, _ in raw_mp_rows}
+            sec_per_mp = {slug: int(sec_cnt) for slug, _, sec_cnt in raw_mp_rows}
             for mp_slug, canonical_cnt in by_mp_snap.items():
                 raw_cnt = raw_per_mp.get(mp_slug, 0)
                 if raw_cnt > 0 and isinstance(canonical_cnt, int):
                     mp_dup = round(max((raw_cnt - canonical_cnt) / raw_cnt * 100, 0.0), 1)
-                    per_mp_dup[mp_slug] = mp_dup
+                    # ≥4 distinct sections (or a tiny feed) = real identity data.
+                    reliable = sec_per_mp.get(mp_slug, 0) >= 4 or raw_cnt < 20
+                    if reliable:
+                        per_mp_dup[mp_slug] = mp_dup
+                    else:
+                        per_mp_dup_low_confidence.append(mp_slug)
+
+            # Global dup_pct is also contaminated when low-identity MPs hold a
+            # large share of raw listings (their collapse inflates raw-canonical).
+            low_conf_raw = sum(raw_per_mp.get(s, 0) for s in per_mp_dup_low_confidence)
+            total_raw_live = sum(raw_per_mp.values())
+            if total_raw_live > 0 and low_conf_raw / total_raw_live > 0.3:
+                dup_pct_reliable = False
 
     resp = {
         "event_id": event_id,
@@ -1755,12 +1777,16 @@ async def event_intelligence_snapshot(
         # Duplicate inventory from canonical dedup engine
         "duplicates": {
             "dup_pct": dup_pct,                    # global: (raw - canonical) / raw × 100
+            "dup_pct_reliable": dup_pct_reliable,  # False when low-identity MPs dominate raw count
             "dup_mirror_pct": dup_mirror_pct,      # % of canonical blocks mirrored across ≥2 marketplaces
             "raw_listings": dup_raw,
             "canonical_blocks": dup_canonical,
             # Per-marketplace: (raw_per_mp - canonical_per_mp) / raw_per_mp × 100
             # Measures intra-marketplace dedup rate; each marketplace's own collapse ratio.
             "per_marketplace": per_mp_dup,
+            # MPs whose section identity is too weak (e.g. all "General") for a
+            # meaningful intra-MP dedup ratio — UI should show "Low confidence".
+            "per_marketplace_low_confidence": per_mp_dup_low_confidence,
             "note": "dup_pct=global dedup; per_marketplace=intra-MP dedup per market",
         },
         # Lifecycle is expensive (10s+). Fetch via /lifecycle endpoint separately.

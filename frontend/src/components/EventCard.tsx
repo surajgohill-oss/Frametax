@@ -49,18 +49,20 @@ export default function EventCard({ event, meta, dataDepthDays, onHide, isSelect
 
   return (
     <div
-      className={`group relative rounded-xl border transition-all duration-150 overflow-hidden ${
+      className={`group relative rounded-xl border transition-all duration-200 overflow-hidden ${
         isSelected
-          ? "border-white/20 shadow-lg"
-          : "border-white/7 hover:border-white/14"
+          ? "border-white/20"
+          : "border-white/8 hover:border-white/16 hover:shadow-xl"
       }`}
-      style={isSelected ? { boxShadow: `0 0 0 1px ${colors.border}, 0 4px 24px ${colors.glow}` } : undefined}
+      style={isSelected
+        ? { boxShadow: `0 0 0 1px ${colors.border}, 0 8px 32px ${colors.glow}` }
+        : { boxShadow: "0 2px 12px rgba(0,0,0,0.4)" }}
     >
       {/* Full-card link — wraps both art strip and body */}
       <Link href={`/events/${event.event_id}`} onClick={handleClick} className="block cursor-pointer">
         {/* art strip */}
         <div
-          className="h-28 w-full relative overflow-hidden"
+          className="h-32 w-full relative overflow-hidden"
           style={{ background: gradientBg(gradient, artworkUrl ? "low" : "high") }}
         >
           {/* real artwork image — covers gradient when available */}
@@ -69,95 +71,99 @@ export default function EventCard({ event, meta, dataDepthDays, onHide, isSelect
             <img
               src={artworkUrl}
               alt=""
-              className="absolute inset-0 w-full h-full object-cover object-top opacity-60"
+              className="absolute inset-0 w-full h-full object-cover object-top opacity-65"
               loading="lazy"
               onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
             />
           )}
-          {/* dark vignette so text is readable over photo */}
-          {artworkUrl && (
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/30" />
-          )}
+          {/* vignette — heavier at bottom for text legibility */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
 
           {/* signal badge */}
           <span
-            className="absolute top-2 left-3 text-[10px] font-black tracking-widest px-2 py-0.5 rounded-md border"
-            style={{ color: colors.text, background: colors.bg, borderColor: colors.border }}
+            className="absolute top-2.5 left-3 text-[10px] font-black tracking-widest px-2 py-0.5 rounded border backdrop-blur-sm"
+            style={{ color: colors.text, background: colors.bg + "cc", borderColor: colors.border + "80" }}
           >
             {action}
           </span>
 
-          {/* artist name watermark — bottom-left of art strip */}
+          {/* artist name — bottom-left of art strip */}
           {artist && (
-            <span className="absolute bottom-2 left-3 text-[10px] font-semibold text-white/60 uppercase tracking-widest truncate max-w-[60%]">
+            <span className="absolute bottom-2.5 left-3 text-[11px] font-semibold text-white/75 uppercase tracking-widest truncate max-w-[65%] drop-shadow">
               {artist}
             </span>
           )}
 
           {/* depth chip */}
           {dataDepthDays != null && (
-            <span className={`absolute top-2 right-2 text-[9px] px-1.5 py-0.5 rounded font-medium ${
-              dataDepthDays >= 7 ? "bg-emerald-500/20 text-emerald-500" : "bg-amber-500/20 text-amber-500"
+            <span className={`absolute top-2.5 right-2.5 text-[9px] px-1.5 py-0.5 rounded font-semibold backdrop-blur-sm ${
+              dataDepthDays >= 7 ? "bg-emerald-500/25 text-emerald-400 border border-emerald-500/30" : "bg-amber-500/25 text-amber-400 border border-amber-500/30"
             }`}>
-              {dataDepthDays >= 1 ? `${Math.round(dataDepthDays)}d history` : "live only"}
+              {dataDepthDays >= 1 ? `${Math.round(dataDepthDays)}d` : "live"}
             </span>
           )}
         </div>
 
         {/* card body */}
-        <div className="p-3 bg-[#161b27]">
-          <h3 className="text-xs font-semibold text-slate-100 leading-tight truncate mb-0.5">{title}</h3>
-          {venue && <p className="text-[10px] text-slate-500 truncate mb-2">{venue}</p>}
+        <div className="p-4 bg-[#161b27]">
+          <h3 className="text-[13px] font-bold text-white leading-tight truncate mb-0.5">{title}</h3>
+          {venue && <p className="text-[11px] text-slate-500 truncate mb-2">{venue}</p>}
 
           {/* date + days */}
           {dateStr && (
-            <div className="flex items-center gap-1.5 mb-2 text-[10px] text-slate-500">
-              <Calendar size={9} />
+            <div className="flex items-center gap-1.5 mb-3 text-[11px] text-slate-500">
+              <Calendar size={9} className="flex-shrink-0" />
               <span>{dateLabel}</span>
               {daysOut != null && daysOut >= 0 && (
                 <>
                   <span className="text-slate-700">·</span>
-                  <Clock size={9} />
-                  <span>{daysOut === 0 ? "Today" : `${daysOut}d`}</span>
+                  <span className={daysOut <= 3 ? "text-amber-400/80 font-semibold" : "text-slate-600"}>
+                    {daysOut === 0 ? "Today" : `${daysOut}d`}
+                  </span>
                 </>
               )}
             </div>
           )}
 
-          {/* price band — two labeled cells */}
-          <div className="grid grid-cols-2 gap-2 mb-1.5">
-            <div>
-              <p className="text-[9px] text-slate-600 uppercase tracking-wide mb-0.5">Lowest Price</p>
-              <p className="text-xs font-semibold text-slate-200 tabular-nums">{fmt$$(event.price?.low_ask)}</p>
+          {/* price grid — 3 cells */}
+          <div className="grid grid-cols-3 gap-1.5 mb-3">
+            <div className="bg-black/20 rounded-lg px-2.5 py-2 border border-white/5">
+              <p className="text-[9px] text-slate-600 uppercase tracking-wide font-medium mb-0.5">Low</p>
+              <p className="text-[14px] font-bold text-emerald-300 tabular-nums leading-none">{fmt$$(event.price?.low_ask) ?? "—"}</p>
             </div>
-            <div>
-              <p className="text-[9px] text-slate-600 uppercase tracking-wide mb-0.5">Median Price</p>
-              <p className="text-xs font-semibold text-slate-300 tabular-nums">{fmt$$(event.price?.median_ask)}</p>
+            <div className="bg-black/20 rounded-lg px-2.5 py-2 border border-white/5">
+              <p className="text-[9px] text-slate-600 uppercase tracking-wide font-medium mb-0.5">Median</p>
+              <p className="text-[13px] font-semibold text-white/75 tabular-nums leading-none">{fmt$$(event.price?.median_ask) ?? "—"}</p>
+            </div>
+            <div className="bg-black/20 rounded-lg px-2.5 py-2 border border-white/5">
+              <p className="text-[9px] text-slate-600 uppercase tracking-wide font-medium mb-0.5">Inv</p>
+              <p className="text-[13px] font-semibold text-blue-300/70 tabular-nums leading-none">{fmtNum(event.inventory?.total_listings) ?? "—"}</p>
             </div>
           </div>
 
           {/* change indicators */}
-          <div className="flex items-center justify-between text-[10px] mt-1">
-            <span className={
-              phrase.dir === "up" ? "text-emerald-600 font-medium" :
-              phrase.dir === "down" ? "text-red-600 font-medium" :
+          <div className="flex items-center justify-between">
+            <span className={`text-[11px] font-medium ${
+              phrase.dir === "up" ? "text-emerald-500" :
+              phrase.dir === "down" ? "text-red-500" :
               "text-slate-600"
-            }>{phrase.text}</span>
+            }`}>{phrase.text}</span>
             {event.history_hours != null ? (
-              <div className="flex flex-col items-end gap-0.5">
-                {event.changes?.first_tracked?.price_delta_pct != null ? (
-                  <span className={`tabular-nums font-semibold text-[11px] ${
-                    event.changes.first_tracked.price_delta_pct > 0 ? "text-emerald-400" :
-                    event.changes.first_tracked.price_delta_pct < 0 ? "text-red-400" :
-                    "text-slate-400"
+              <div className="flex items-center gap-2">
+                {/* Buyer perspective (matches DeltaChip invert): price DOWN = green, UP = red */}
+                {event.changes?.first_tracked?.price_delta_pct != null && (
+                  <span className={`tabular-nums font-bold text-[11px] ${
+                    event.changes.first_tracked.price_delta_pct < 0 ? "text-emerald-400" :
+                    event.changes.first_tracked.price_delta_pct > 0 ? "text-red-400" :
+                    "text-slate-500"
                   }`}>
                     {fmtPct(event.changes.first_tracked.price_delta_pct)}
                     <span className="text-[9px] text-slate-600 font-normal ml-0.5">tracked</span>
                   </span>
-                ) : null}
-                <span className={`tabular-nums text-[9px] ${
-                  (event.changes?.h24?.price_delta_pct ?? 0) > 0 ? "text-emerald-600" :
-                  (event.changes?.h24?.price_delta_pct ?? 0) < 0 ? "text-red-600" :
+                )}
+                <span className={`tabular-nums text-[10px] font-medium ${
+                  (event.changes?.h24?.price_delta_pct ?? 0) < 0 ? "text-emerald-500" :
+                  (event.changes?.h24?.price_delta_pct ?? 0) > 0 ? "text-red-500" :
                   "text-slate-600"
                 }`}>
                   {event.changes?.h24?.price_delta_pct != null
@@ -166,15 +172,15 @@ export default function EventCard({ event, meta, dataDepthDays, onHide, isSelect
                 </span>
               </div>
             ) : (
-              <span className="text-slate-600 tabular-nums text-[9px]">Collecting</span>
+              <span className="text-slate-600 text-[10px]">Collecting</span>
             )}
           </div>
 
           {/* Venue intelligence chip */}
           {hasVenueIntel && (
-            <div className="mt-2 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
-              <span className="text-[9px] text-emerald-600 font-medium">Venue Intel available</span>
+            <div className="mt-2.5 flex items-center gap-1.5 pt-2.5 border-t border-white/5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/80 flex-shrink-0" />
+              <span className="text-[10px] text-emerald-500/80 font-medium">Venue Intel</span>
             </div>
           )}
         </div>

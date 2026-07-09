@@ -467,10 +467,12 @@ export interface EventSnapshotResponse {
   };
   duplicates?: {
     dup_pct: number | null;
+    dup_pct_reliable?: boolean;
     dup_mirror_pct: number | null;
     raw_listings: number | null;
     canonical_blocks: number | null;
     per_marketplace?: Record<string, number>;
+    per_marketplace_low_confidence?: string[];
     note: string;
   };
   inventory: {

@@ -12,7 +12,7 @@ import {
 import { differenceInDays, parseISO, format } from "date-fns";
 import { api } from "@/lib/api";
 import type { EventSummary, EventMeta, SellerResponse, VelocityWindowsResponse, EventSnapshotResponse } from "@/lib/types";
-import { fmt$$, fmtNum, fmtPct, signalToAction, actionColors, signalDescription, cn, parseEventDate } from "@/lib/utils";
+import { fmt$$, fmt$$signed, fmtNum, fmtPct, signalToAction, actionColors, signalDescription, cn, parseEventDate } from "@/lib/utils";
 import { getEventGradient, gradientBg, extractGroupKey, getSpotifyData } from "@/lib/entityimages";
 import { useArtistImage } from "@/hooks/useArtistImage";
 import { useHiddenEvents } from "@/hooks/useHiddenEvents";
@@ -21,6 +21,7 @@ import { useHeadlineEvent } from "@/hooks/useHeadlineEvent";
 import { useNflAudio } from "@/hooks/useNflAudio";
 import { isNflEvent } from "@/lib/audioConfig";
 import { getBrand } from "@/components/MarketplaceBadge";
+import MarketplaceLogo from "@/components/MarketplaceLogo";
 import EventCard from "@/components/EventCard";
 
 type SortKey = "date" | "opportunity" | "signal" | "price" | "inventory" | "seller_drop" | "closest";
@@ -276,9 +277,13 @@ function FeaturedEventHero({
                 </div>
                 <div className="text-right">
                   <p className="text-[11px] text-slate-500 uppercase tracking-[0.12em] mb-1">Duplicate %</p>
-                  <p className="text-[18px] font-bold text-violet-300/70 tabular-nums leading-none">
-                    {snap?.duplicates?.dup_pct != null ? `${snap.duplicates.dup_pct.toFixed(1)}%` : "—"}
-                  </p>
+                  {snap?.duplicates?.dup_pct_reliable === false ? (
+                    <p className="text-[12px] font-medium italic text-slate-500 leading-tight">Not reliable</p>
+                  ) : (
+                    <p className="text-[18px] font-bold text-violet-300/70 tabular-nums leading-none">
+                      {snap?.duplicates?.dup_pct != null ? `${snap.duplicates.dup_pct.toFixed(1)}%` : "—"}
+                    </p>
+                  )}
                 </div>
                 <div className="text-right">
                   <p className="text-[11px] text-slate-500 uppercase tracking-[0.12em] mb-1">Low</p>
@@ -328,12 +333,7 @@ function FeaturedEventHero({
                     const info = (MP_META as Record<string, { label: string; short: string; color: string; logoBg: string } | undefined>)[slug];
                     return (
                       <div key={slug} className="flex items-center gap-1.5">
-                        {info && (
-                          <div className="rounded flex items-center justify-center font-black text-white flex-shrink-0"
-                            style={{ width: 16, height: 16, background: info.logoBg, fontSize: 7 }}>
-                            {info.short}
-                          </div>
-                        )}
+                        <MarketplaceLogo slug={slug} size={16} />
                         <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${cfg.dot}`} />
                         <span className="text-[11px] font-medium" style={{ color: info?.color ?? "rgba(255,255,255,0.38)" }}>{info?.label ?? slug}</span>
                         <span className={`text-[11px] tabular-nums ${cfg.text}`}>{ageStr ?? "—"}</span>
@@ -380,7 +380,7 @@ function FeaturedEventHero({
                   <div className="flex items-center gap-1.5 tabular-nums">
                     {orig != null ? <span className="text-[11px] text-slate-600">{fmt$$(orig)} →</span> : null}
                     <span className="text-[13px] font-bold text-white">{cur != null ? fmt$$(cur) : "—"}</span>
-                    {abs != null && abs !== 0 && <span className="text-[11px] text-slate-500">{abs > 0 ? `+${fmt$$(abs)}` : fmt$$(abs)}</span>}
+                    {abs != null && abs !== 0 && <span className={cn("text-[11px] font-medium", abs < 0 ? "text-emerald-400" : "text-red-400")}>{fmt$$signed(abs)}</span>}
                     {pct != null ? <DeltaChip pct={pct} invert /> : <span className="text-[11px] text-slate-700">—</span>}
                   </div>
                 </div>
@@ -425,9 +425,13 @@ function FeaturedEventHero({
             {/* Dup % */}
             <div className="flex items-center justify-between py-2">
               <span className="text-[12px] text-slate-500 w-16 flex-shrink-0">Dup %</span>
-              <span className="text-[11px] text-slate-400 tabular-nums">
-                {snap?.duplicates?.dup_pct != null ? `${snap.duplicates.dup_pct.toFixed(1)}%` : "—"}
-              </span>
+              {snap?.duplicates?.dup_pct_reliable === false ? (
+                <span className="text-[11px] italic text-slate-500">Not reliable</span>
+              ) : (
+                <span className="text-[11px] text-slate-400 tabular-nums">
+                  {snap?.duplicates?.dup_pct != null ? `${snap.duplicates.dup_pct.toFixed(1)}%` : "—"}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -484,23 +488,42 @@ function FeaturedEventHero({
           const repriced24   = seller?.repriced_24h ?? null;
           const drops24      = seller?.price_drops_24h ?? null;
           const churn        = seller?.churn_rate ?? null;
+          // Listing flow (populated even when poll density is too thin for repricing)
+          const newL = seller?.new_listings_24h ?? null;
+          const remL = seller?.removed_listings_24h ?? null;
+          const flowTotal = (newL ?? 0) + (remL ?? 0);
+          const netFlow = (newL ?? 0) - (remL ?? 0);
+          // Repricing requires ≥2 price observations of the same listing in 24h.
+          // Far-out / stale feeds poll ~once/day → poll_count_24h ≤ 1 → repricing
+          // is structurally undetectable. Detect that case for an honest reason.
+          const pollThin = (seller?.by_marketplace?.length ?? 0) > 0 &&
+            seller!.by_marketplace.every(m => (m.poll_count_24h ?? 0) <= 1);
           // Seller mood from capitulation + aggression
           const cap  = seller?.capitulation_score ?? null;
           const aggr = seller?.seller_aggression ?? null;
           const drops    = seller?.price_drops_24h ?? 0;
           const repriced = seller?.repriced_24h ?? 0;
           const dropRatio = repriced > 0 ? drops / repriced : 0;
-          const mood = cap == null ? null
-            : cap > 0.70 ? "Seller capitulation increasing"
-            : cap > 0.55 || (aggr != null && aggr > 0.65) ? "Repricing accelerating"
-            : cap > 0.40 || dropRatio > 0.55 ? "Aggressive repricing"
-            : cap > 0.25 && dropRatio < 0.3 ? "Price cuts slowing"
-            : cap <= 0.20 ? "Holding firm"
-            : "Stable seller behavior";
+          // Prefer repricing-derived mood; fall back to listing-flow when repricing
+          // is unavailable but real churn exists (never fabricate a signal).
+          const mood = cap != null
+            ? (cap > 0.70 ? "Seller capitulation increasing"
+              : cap > 0.55 || (aggr != null && aggr > 0.65) ? "Repricing accelerating"
+              : cap > 0.40 || dropRatio > 0.55 ? "Aggressive repricing"
+              : cap > 0.25 && dropRatio < 0.3 ? "Price cuts slowing"
+              : cap <= 0.20 ? "Holding firm"
+              : "Stable seller behavior")
+            : flowTotal > 0
+              ? (netFlow <= -Math.max(3, flowTotal * 0.15) ? "Sellers exiting faster than arriving"
+                : netFlow >= Math.max(3, flowTotal * 0.15) ? "Fresh inventory building"
+                : "Balanced listing churn")
+            : pollThin ? "Insufficient poll history (needs 2+/day)"
+            : null;
           const moodCls = mood === "Seller capitulation increasing" || mood === "Repricing accelerating" ? "text-red-300"
-            : mood === "Aggressive repricing" ? "text-amber-300"
+            : mood === "Aggressive repricing" || mood === "Sellers exiting faster than arriving" ? "text-amber-300"
             : mood === "Price cuts slowing" ? "text-amber-300/70"
-            : mood === "Holding firm" || mood === "Stable seller behavior" ? "text-emerald-300"
+            : mood === "Fresh inventory building" ? "text-sky-300"
+            : mood === "Holding firm" || mood === "Stable seller behavior" || mood === "Balanced listing churn" ? "text-emerald-300"
             : "text-slate-500";
           return (
             <div className="p-5">
@@ -531,6 +554,16 @@ function FeaturedEventHero({
                       ? <span className="text-[12px] font-semibold text-amber-400 tabular-nums">{fmtNum(repriced24)}</span>
                       : <span className="text-[11px] italic text-slate-600">No repricing detected</span>
                     : <span className="text-[11px] italic text-slate-700">—</span>}
+                </div>
+                <div className="flex items-center justify-between py-2.5 border-b border-white/[0.05]">
+                  <span className="text-[11px] text-slate-400">Listing Flow <span className="text-slate-600">24h</span></span>
+                  {flowTotal > 0
+                    ? <span className="text-[12px] font-semibold tabular-nums">
+                        <span className="text-emerald-300">+{fmtNum(newL ?? 0)}</span>
+                        <span className="text-slate-600 mx-1">/</span>
+                        <span className="text-red-300">−{fmtNum(remL ?? 0)}</span>
+                      </span>
+                    : <span className="text-[11px] italic text-slate-600">{seller ? "No listing changes" : "—"}</span>}
                 </div>
                 <div className="flex items-start justify-between py-2.5 border-l-2 border-slate-600/40 pl-2.5 -ml-2.5 mt-0.5">
                   <span className="text-[11px] text-slate-400">Seller Mood</span>
@@ -567,12 +600,19 @@ function MarketplaceHealthStrip({ events }: { events: EventSummary[] }) {
   const healthCls  = health === "live" ? "text-emerald-400" : health === "partial" ? "text-amber-400" : "text-slate-500";
   const dotCls     = health === "live" ? "bg-emerald-400" : health === "partial" ? "bg-amber-400" : "bg-slate-500";
 
-  const statItems = [
+  // Fresh-data ratio drives an explicit health color so a low/zero fresh count
+  // (e.g. "0/79") reads as alarming rather than neutral white.
+  const freshRatio = events.length > 0 ? freshCov / events.length : 0;
+  const freshCls   = freshRatio >= 0.5 ? "text-emerald-400"
+    : freshRatio >= 0.2 ? "text-amber-400"
+    : "text-red-400";
+
+  const statItems: { label: string; val: string; sub: string | null; cls?: string }[] = [
     { label: "Events", val: String(events.length), sub: null },
     { label: "Live Coverage", val: `${coverage}%`, sub: health === "live" ? "fresh" : health === "partial" ? "partial" : "sparse" },
     { label: "Total Inventory", val: fmtNum(totalInv), sub: netDelta != null ? (netDelta >= 0 ? `+${netDelta} 24h` : `${netDelta} 24h`) : null },
     { label: "Price Range", val: floors.length > 0 ? `${fmt$$(Math.min(...floors))}–${fmt$$(Math.max(...highs || [Math.min(...floors)]))}` : "—", sub: null },
-    { label: "Fresh Data", val: `${freshCov}/${events.length}`, sub: "events" },
+    { label: "Fresh Data", val: `${freshCov}/${events.length}`, sub: freshRatio < 0.2 ? "stale" : "events", cls: freshCls },
   ];
 
   return (
@@ -586,11 +626,11 @@ function MarketplaceHealthStrip({ events }: { events: EventSummary[] }) {
           <span className="text-[11px] text-white/20 hidden sm:block">market data</span>
         </div>
         <div className="w-px h-5 bg-white/[0.06] hidden sm:block" />
-        {statItems.slice(1).map(({ label, val, sub }) => (
+        {statItems.slice(1).map(({ label, val, sub, cls }) => (
           <div key={label} className="flex flex-col gap-0.5">
             <span className="text-[11px] text-white/22 uppercase tracking-[0.14em]">{label}</span>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-[14px] font-bold text-white/65 tabular-nums">{val}</span>
+              <span className={cn("text-[14px] font-bold tabular-nums", cls ?? "text-white/65")}>{val}</span>
               {sub && <span className="text-[11px] text-white/25">{sub}</span>}
             </div>
           </div>
@@ -806,8 +846,15 @@ function EventGroup({
         <button
           onClick={(e) => {
             e.stopPropagation();
-            // Toggle watch on all events in group
-            events.forEach((ev) => onToggleWatch(ev.event_id));
+            // State-aware bulk toggle: if ANY event in the group is watched,
+            // remove all watched ones; otherwise add all. Blindly toggling every
+            // event flips a mixed-state group into another mixed state, leaving
+            // groupWatched (.some) permanently true — the "can't unpin" bug.
+            const anyWatched = events.some((ev) => watchedIds.has(ev.event_id));
+            events.forEach((ev) => {
+              const isW = watchedIds.has(ev.event_id);
+              if (anyWatched ? isW : !isW) onToggleWatch(ev.event_id);
+            });
           }}
           className="absolute right-9 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-white/10 transition-colors z-10"
           title={groupWatched ? "Remove from watchlist" : "Add to watchlist"}
@@ -836,32 +883,8 @@ function EventGroup({
         </div>
       </div>
 
-      {/* NFL audio chip — inline, always visible for NFL groups */}
-      {isNflEvent(groupKey, artist) && nflAudioState && (
-        <div className="flex items-center gap-2.5 px-4 py-2.5 mt-1 rounded-xl border border-amber-500/20 bg-amber-500/5">
-          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${nflAudioState.playing ? "bg-amber-400 animate-pulse" : nflAudioState.errorMsg ? "bg-red-400" : "bg-amber-400/40"}`} />
-          <span className="text-[11px] font-bold text-white/50 uppercase tracking-widest">NFL Theme</span>
-          {nflAudioState.errorMsg ? (
-            <span className="text-[11px] text-red-400/80">{nflAudioState.errorMsg}</span>
-          ) : nflAudioState.playing ? (
-            <span className="text-[11px] text-amber-400 font-medium">Playing</span>
-          ) : nflAudioState.blocked ? (
-            <button onClick={nflAudioState.onPlay} className="text-[11px] text-amber-400 border border-amber-500/30 rounded px-2 py-0.5 bg-amber-500/8 hover:bg-amber-500/15 transition-colors">Tap to play</button>
-          ) : (
-            <span className="text-[11px] text-white/25">Click row to play</span>
-          )}
-          <div className="ml-auto flex items-center gap-1">
-            <button onClick={nflAudioState.playing ? nflAudioState.onPause : nflAudioState.onPlay}
-              className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/40 hover:text-white">
-              {nflAudioState.playing ? <Pause size={11} /> : <Play size={11} />}
-            </button>
-            <button onClick={nflAudioState.onToggleMute}
-              className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/40 hover:text-white">
-              {nflAudioState.muted ? <VolumeX size={11} /> : <Volume2 size={11} />}
-            </button>
-          </div>
-        </div>
-      )}
+      {/* NFL audio chip — hidden per UI polish pass */}
+      {false && isNflEvent(groupKey, artist) && nflAudioState && null}
 
       {/* Expanded event cards */}
       {!collapsed && (
@@ -975,11 +998,6 @@ export default function DashboardPage() {
 
   return (
     <div>
-      {/* UI CLOSEOUT BUILD MARKER — remove after screenshot verification */}
-      <div className="fixed top-2 right-2 z-50 text-[9px] font-mono bg-amber-400 text-black px-2 py-0.5 rounded opacity-80 pointer-events-none select-none">
-        UI BUILD {new Date().toISOString().slice(0,16).replace("T"," ")}
-      </div>
-
       {/* page header */}
       <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
         <div>
