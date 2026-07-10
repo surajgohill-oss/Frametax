@@ -44,7 +44,7 @@ function DeltaChip({ pct, abs, size = "sm", invert = false }: {
   if (val == null && abs == null) return <span className="text-slate-600 text-[11px]">—</span>;
   const n = val ?? abs ?? 0;
   const Icon = n > 0 ? TrendingUp : n < 0 ? TrendingDown : Minus;
-  const textSize = size === "md" ? "text-sm" : "text-[11px]";
+  const textSize = size === "md" ? "text-sm" : "text-[13px]";
   const label = val != null ? fmtPct(val) : (n > 0 ? `+${n}` : `${n}`);
   // invert=true for price rows: lower price = green (good), higher price = red (bad)
   const isGood = invert ? n < 0 : n > 0;
@@ -1111,7 +1111,7 @@ export default function EventDetailPage() {
                 <div className="text-right">
                   <p className="text-[11px] text-white/28 uppercase tracking-wide mb-1">Duplicate %</p>
                   {snapshot?.duplicates?.dup_pct_reliable === false ? (
-                    <p className="text-[13px] font-medium italic text-slate-500 leading-tight">Not reliable</p>
+                    <p className="text-[13px] font-medium italic text-amber-500/70 leading-tight">Not reliable</p>
                   ) : (
                     <p className="text-[24px] font-bold text-violet-300/70 tabular-nums leading-none">
                       {snapshot?.duplicates?.dup_pct != null ? `${snapshot.duplicates.dup_pct.toFixed(1)}%` : "—"}
@@ -1199,8 +1199,10 @@ export default function EventDetailPage() {
           Three columns: Current Market | Market Absorption | Seller Behavior
           ════════════════════════════════════════ */}
       <section className="rounded-xl border border-white/[0.07] bg-[#0d1018] overflow-hidden">
+        {/* Minimal rebalance: Current Market had ~95px spare width while Seller
+            Behavior wrapped its mood/explanation copy at 0.9fr (~320px) */}
         <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-white/8"
-          style={{ gridTemplateColumns: "1.4fr 1.2fr 0.9fr" }}>
+          style={{ gridTemplateColumns: "1.3fr 1.15fr 1.05fr" }}>
 
           {/* Col 1: Current Market — Median primary, with timeframe toggle */}
           <div className="p-4">
@@ -1342,7 +1344,7 @@ export default function EventDetailPage() {
                   current={snapshot?.duplicates?.dup_pct_reliable === false ? "—" : snapshot?.duplicates?.dup_pct != null ? `${snapshot.duplicates.dup_pct.toFixed(1)}%` : "—"}
                   currentCls="text-violet-300/70"
                   tail={snapshot?.duplicates?.dup_pct_reliable === false
-                    ? <span className="text-[13px] italic text-slate-500">Not reliable</span>
+                    ? <span className="text-[13px] italic text-amber-500/70">Not reliable</span>
                     : snapshot?.duplicates?.dup_mirror_pct != null
                     ? <span className="text-[13px] text-slate-600">({snapshot.duplicates.dup_mirror_pct.toFixed(1)}% mirror)</span>
                     : null}
@@ -1423,7 +1425,7 @@ export default function EventDetailPage() {
               { label: "Added 24H",        num: added24h,   emptyLabel: "No data" },
             ] as { label: string; num: number | null; emptyLabel: string }[]).map(({ label, num, emptyLabel }) => (
               <div key={label} className="flex items-baseline gap-2.5 py-2 border-b border-white/[0.04]">
-                <span className="text-[12px] text-slate-500 w-28 flex-shrink-0">{label}</span>
+                <span className="text-[13px] font-medium text-slate-400 w-28 flex-shrink-0">{label}</span>
                 {num != null && num > 0 ? (
                   <span className={cn("tabular-nums font-semibold text-[18px] leading-none",
                     label.includes("Sold") || label === "Added 24H" ? "text-emerald-400" : "text-red-400")}>
@@ -1437,7 +1439,7 @@ export default function EventDetailPage() {
               </div>
             ))}
             <div className="flex items-baseline gap-2.5 py-2">
-              <span className="text-[12px] text-slate-500 w-28 flex-shrink-0">Market Stress</span>
+              <span className="text-[13px] font-medium text-slate-400 w-28 flex-shrink-0">Market Stress</span>
               {market?.market_stress?.composite_score != null ? (
                 <span className={cn("tabular-nums font-semibold text-[18px] leading-none", (() => {
                   const s = market.market_stress.composite_score;
@@ -1491,25 +1493,25 @@ export default function EventDetailPage() {
 
             {/* Repriced / Price Drops / Churn */}
             <div className="flex items-center justify-between py-1.5 border-b border-white/[0.04]">
-              <span className="text-[12px] text-slate-400">Repriced 24H</span>
+              <span className="text-[13px] font-medium text-slate-400">Repriced 24H</span>
               {seller?.repriced_24h != null ? (
                 seller.repriced_24h > 0
-                  ? <span className="text-[13px] font-bold text-amber-400 tabular-nums">{fmtNum(seller.repriced_24h)}</span>
+                  ? <span className="text-[18px] font-semibold text-amber-400 tabular-nums leading-none">{fmtNum(seller.repriced_24h)}</span>
                   : <span className="text-[11px] italic text-slate-600">No repricing detected</span>
               ) : <span className="text-[11px] italic text-slate-700">Not enough history</span>}
             </div>
             <div className="flex items-center justify-between py-1.5 border-b border-white/[0.04]">
-              <span className="text-[12px] text-slate-400">Price Drops</span>
+              <span className="text-[13px] font-medium text-slate-400">Price Drops</span>
               {seller?.price_drops_24h != null ? (
                 seller.price_drops_24h > 0
-                  ? <span className="text-[13px] font-bold text-red-400 tabular-nums">{fmtNum(seller.price_drops_24h)}</span>
+                  ? <span className="text-[18px] font-semibold text-red-400 tabular-nums leading-none">{fmtNum(seller.price_drops_24h)}</span>
                   : <span className="text-[11px] italic text-slate-600">No price drops</span>
               ) : <span className="text-[11px] italic text-slate-700">Not enough history</span>}
             </div>
             <div className="flex items-center justify-between py-1.5 border-b border-white/[0.04]">
-              <span className="text-[12px] text-slate-400">Churn Rate</span>
+              <span className="text-[13px] font-medium text-slate-400">Churn Rate</span>
               {seller?.churn_rate != null ? (
-                <span className={cn("text-[13px] font-bold tabular-nums",
+                <span className={cn("text-[18px] font-semibold tabular-nums leading-none",
                   seller.churn_rate > 3 ? "text-red-400" : seller.churn_rate > 1.5 ? "text-amber-400" : "text-emerald-400/70")}>
                   {seller.churn_rate.toFixed(1)}×
                 </span>
@@ -1517,9 +1519,9 @@ export default function EventDetailPage() {
             </div>
 
             <div className="flex items-center justify-between py-1.5 border-b border-white/[0.04]">
-              <span className="text-[12px] text-slate-400">Listing Flow <span className="text-slate-600">24h</span></span>
+              <span className="text-[13px] font-medium text-slate-400">Listing Flow <span className="text-slate-600">24h</span></span>
               {((seller?.new_listings_24h ?? 0) + (seller?.removed_listings_24h ?? 0)) > 0 ? (
-                <span className="text-[13px] font-bold tabular-nums">
+                <span className="text-[18px] font-semibold tabular-nums leading-none">
                   <span className="text-emerald-300">+{fmtNum(seller?.new_listings_24h ?? 0)}</span>
                   <span className="text-slate-600 mx-1">/</span>
                   <span className="text-red-300">−{fmtNum(seller?.removed_listings_24h ?? 0)}</span>

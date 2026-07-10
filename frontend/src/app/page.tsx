@@ -55,7 +55,7 @@ function DeltaChip({ pct, abs, invert = false }: { pct?: number | null; abs?: nu
   const isBad  = invert ? n > 0 : n < 0;
   return (
     <span className={cn(
-      "inline-flex items-center gap-0.5 text-[13px] font-bold tabular-nums px-1.5 py-0.5 rounded",
+      "inline-flex items-center gap-0.5 text-[13px] font-semibold tabular-nums px-1.5 py-0.5 rounded",
       isGood ? "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20"
       : isBad ? "text-red-400 bg-red-500/10 border border-red-500/20"
       : "text-slate-500 bg-white/5 border border-white/10"
@@ -282,7 +282,7 @@ function FeaturedEventHero({
                 <div className="text-right">
                   <p className="text-[11px] text-slate-500 uppercase tracking-[0.12em] mb-1">Duplicate %</p>
                   {snap?.duplicates?.dup_pct_reliable === false ? (
-                    <p className="text-[13px] font-medium italic text-slate-500 leading-none h-[18px] flex items-end justify-end">Not reliable</p>
+                    <p className="text-[13px] font-medium italic text-amber-500/70 leading-none h-[18px] flex items-end justify-end">Not reliable</p>
                   ) : (
                     <p className="text-[18px] font-bold text-violet-300/70 tabular-nums leading-none h-[18px]">
                       {snap?.duplicates?.dup_pct != null ? `${snap.duplicates.dup_pct.toFixed(1)}%` : "—"}
@@ -416,7 +416,7 @@ function FeaturedEventHero({
             <MarketRow label="Dup %" last
               current={snap?.duplicates?.dup_pct_reliable === false ? "—" : snap?.duplicates?.dup_pct != null ? `${snap.duplicates.dup_pct.toFixed(1)}%` : "—"}
               currentCls="text-violet-300/70"
-              tail={snap?.duplicates?.dup_pct_reliable === false ? <span className="text-[13px] italic text-slate-500">Not reliable</span> : null}
+              tail={snap?.duplicates?.dup_pct_reliable === false ? <span className="text-[13px] italic text-amber-500/70">Not reliable</span> : null}
             />
             {/* Market direction — existing 24h median + inventory deltas only */}
             {(() => {
@@ -451,7 +451,7 @@ function FeaturedEventHero({
           return (
             <div className="p-5 bg-white/[0.02]">
               <p className="text-[11px] text-slate-400 uppercase tracking-[0.18em] font-semibold mb-4">
-                Absorption <span className="normal-case tracking-normal font-normal text-slate-500">(Sales Driven)</span>
+                Absorption <span className="normal-case tracking-normal font-normal text-slate-500">(implied from disappeared listings)</span>
               </p>
               <div className="mb-4 pb-3 border-b border-white/[0.06]">
                 <p className="text-[11px] text-slate-500 mb-2 uppercase tracking-[0.12em]">Est. Avg Sale Price</p>
@@ -468,7 +468,7 @@ function FeaturedEventHero({
               <div>
                 {rows.map(({ label, val }) => (
                   <div key={label} className="flex items-baseline gap-2.5 py-2.5 border-b border-white/[0.05] last:border-0">
-                    <span className="text-[12px] text-slate-400 w-28 flex-shrink-0">{label}</span>
+                    <span className="text-[13px] font-medium text-slate-400 w-28 flex-shrink-0">{label}</span>
                     {val != null && val > 0
                       ? <span className="text-[22px] font-semibold text-emerald-400 tabular-nums leading-none">{fmtNum(val)}</span>
                       : val === 0
@@ -552,7 +552,7 @@ function FeaturedEventHero({
                   </p>
                 )}
                 <div className="flex items-baseline gap-2.5 py-2.5 border-b border-white/[0.05]">
-                  <span className="text-[12px] text-slate-400 w-32 flex-shrink-0">Relist Price Chg</span>
+                  <span className="text-[13px] font-medium text-slate-400 w-32 flex-shrink-0">Relist Price Chg</span>
                   {repriceDelta != null
                     ? <span className={cn("text-[18px] font-bold tabular-nums leading-none", repriceDelta < 0 ? "text-emerald-300" : repriceDelta > 0 ? "text-red-300" : "text-slate-400")}>
                         {fmt$$signed(repriceDelta)}
@@ -560,19 +560,19 @@ function FeaturedEventHero({
                     : <span className="text-[13px] text-slate-600">—</span>}
                 </div>
                 <div className="flex items-baseline gap-2.5 py-2.5 border-b border-white/[0.05]">
-                  <span className="text-[12px] text-slate-400 w-32 flex-shrink-0">Price Drops</span>
+                  <span className="text-[13px] font-medium text-slate-400 w-32 flex-shrink-0">Price Drops</span>
                   {drops24 != null && drops24 > 0
                     ? <span className="text-[18px] font-semibold text-red-400 tabular-nums leading-none">{fmtNum(drops24)}</span>
                     : <span className="text-[13px] text-slate-600">—</span>}
                 </div>
                 <div className="flex items-baseline gap-2.5 py-2.5 border-b border-white/[0.05]">
-                  <span className="text-[12px] text-slate-400 w-32 flex-shrink-0">Repriced Listings</span>
+                  <span className="text-[13px] font-medium text-slate-400 w-32 flex-shrink-0">Repriced Listings</span>
                   {repriced24 != null && repriced24 > 0
                     ? <span className="text-[18px] font-semibold text-amber-400 tabular-nums leading-none">{fmtNum(repriced24)}</span>
                     : <span className="text-[13px] text-slate-600">—</span>}
                 </div>
                 <div className="flex items-baseline gap-2.5 py-2.5 border-b border-white/[0.05]">
-                  <span className="text-[12px] text-slate-400 w-32 flex-shrink-0">Listing Flow <span className="text-slate-600">24h</span></span>
+                  <span className="text-[13px] font-medium text-slate-400 w-32 flex-shrink-0">Listing Flow <span className="text-slate-600">24h</span></span>
                   {flowTotal > 0
                     ? <span className="text-[18px] font-semibold tabular-nums leading-none">
                         <span className="text-emerald-300">+{fmtNum(newL ?? 0)}</span>
@@ -582,7 +582,7 @@ function FeaturedEventHero({
                     : <span className="text-[13px] text-slate-600">—</span>}
                 </div>
                 <div className="flex items-start justify-between py-2.5 border-l-2 border-slate-600/40 pl-2.5 -ml-2.5 mt-0.5">
-                  <span className="text-[12px] text-slate-400">Seller Mood</span>
+                  <span className="text-[13px] font-medium text-slate-400">Seller Mood</span>
                   <span className={cn("text-[13px] font-medium italic text-right max-w-[55%]", moodCls)}>
                     {mood ?? (seller ? "No seller movement yet" : "Not enough history")}
                   </span>

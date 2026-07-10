@@ -47,7 +47,7 @@ function DeltaChip({ pct, abs, invert = false }: { pct?: number | null; abs?: nu
   const isBad  = invert ? n > 0 : n < 0;
   return (
     <span className={cn(
-      "inline-flex items-center gap-0.5 text-[11px] font-bold tabular-nums px-1.5 py-0.5 rounded",
+      "inline-flex items-center gap-0.5 text-[13px] font-semibold tabular-nums px-1.5 py-0.5 rounded",
       isGood ? "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20"
       : isBad ? "text-red-400 bg-red-500/10 border border-red-500/20"
       : "text-slate-500 bg-white/5 border border-white/10"
@@ -513,7 +513,7 @@ function HeadlineCard({
             <MarketRow label="Dup %" last
               current={snap?.duplicates?.dup_pct_reliable === false ? "—" : snap?.duplicates?.dup_pct != null ? `${snap.duplicates.dup_pct.toFixed(1)}%` : "—"}
               currentCls="text-violet-300/70"
-              tail={snap?.duplicates?.dup_pct_reliable === false ? <span className="text-[13px] italic text-slate-500">Not reliable</span> : null}
+              tail={snap?.duplicates?.dup_pct_reliable === false ? <span className="text-[13px] italic text-amber-500/70">Not reliable</span> : null}
             />
           </div>
         </div>

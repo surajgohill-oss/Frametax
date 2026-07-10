@@ -39,11 +39,11 @@ export default function MarketRow({
         !last && "border-b border-white/[0.04]",
       )}
     >
-      <span className="text-[12px] text-slate-400">{label}</span>
+      <span className="text-[12px] font-semibold uppercase tracking-wide text-slate-500">{label}</span>
       <span className="text-[15px] text-slate-400 text-right pr-1">{baseline ?? ""}</span>
       <span className="text-[15px] text-slate-500">{baseline != null ? "→" : ""}</span>
       <span className={cn("text-[22px] font-bold leading-none", currentCls ?? "text-white")}>{current}</span>
-      <span className={cn("text-[15px] font-medium", deltaCls ?? "text-slate-500")}>{delta ?? ""}</span>
+      <span className={cn("text-[15px] font-semibold", deltaCls ?? "text-slate-500")}>{delta ?? ""}</span>
       {/* overflow-hidden keeps the chip inside this panel at narrow widths */}
       <span className="min-w-0 overflow-hidden">{tail ?? null}</span>
     </div>
