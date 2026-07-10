@@ -6,6 +6,7 @@ import { format, parseISO, differenceInDays } from "date-fns";
 import type { EventSummary } from "@/lib/types";
 import { fmt$$, fmtNum, fmtPct, signalToAction, actionColors, signalPhrase } from "@/lib/utils";
 import { getEventGradient, gradientBg } from "@/lib/entityimages";
+import { venueCity } from "@/lib/venueGeo";
 import { useArtistImage } from "@/hooks/useArtistImage";
 
 interface Props {
@@ -15,9 +16,11 @@ interface Props {
   onHide: (id: number) => void;
   isSelected?: boolean;
   onSelect?: (id: number) => void;
+  /** Derived matchup context for sports events, e.g. "Seattle Seahawks" (away game) */
+  opponent?: string | null;
 }
 
-export default function EventCard({ event, meta, dataDepthDays, onHide, isSelected, onSelect }: Props) {
+export default function EventCard({ event, meta, dataDepthDays, onHide, isSelected, onSelect, opponent }: Props) {
   const title = event.title;
   const venue = event.venue_name ?? meta?.venue_name;
   const venueSlug = event.venue_slug ?? meta?.venue_slug;
@@ -106,8 +109,16 @@ export default function EventCard({ event, meta, dataDepthDays, onHide, isSelect
 
         {/* card body */}
         <div className="p-4 bg-[#161b27]">
-          <h3 className="text-[13px] font-bold text-white leading-tight truncate mb-0.5">{title}</h3>
-          {venue && <p className="text-[11px] text-slate-500 truncate mb-2">{venue}</p>}
+          <h3 className="text-[13px] font-bold text-white leading-tight truncate mb-0.5">
+            {title}
+            {opponent && <span className="text-white/60 font-semibold"> at {opponent}</span>}
+          </h3>
+          {venue && (
+            <p className="text-[11px] text-slate-500 truncate mb-2">
+              {venue}
+              {venueCity(venueSlug) && <span className="text-slate-600"> · {venueCity(venueSlug)}</span>}
+            </p>
+          )}
 
           {/* date + days */}
           {dateStr && (
@@ -144,8 +155,9 @@ export default function EventCard({ event, meta, dataDepthDays, onHide, isSelect
           {/* change indicators */}
           <div className="flex items-center justify-between">
             <span className={`text-[11px] font-medium ${
-              phrase.dir === "up" ? "text-emerald-500" :
-              phrase.dir === "down" ? "text-red-500" :
+              // Buyer perspective: rising prices are bad (red), falling good (green)
+              phrase.dir === "up" ? "text-red-500" :
+              phrase.dir === "down" ? "text-emerald-500" :
               "text-slate-600"
             }`}>{phrase.text}</span>
             {event.history_hours != null ? (

@@ -357,6 +357,7 @@ export interface VenueClassificationsResponse {
 export interface RawEvent {
   id: number;
   title: string;
+  stubhub_url?: string | null;
   artist?: string;
   venue_name?: string;
   venue_slug?: string;
@@ -368,6 +369,7 @@ export interface RawEvent {
   fresh_total_listings?: number;
   marketplace_prices?: Record<string, number | null>;
   all_marketplace_prices?: Record<string, number | null>;
+  tracked_events?: TrackedEventEntry[];
 }
 
 // ── /api/intelligence/events/{id}/seller ──────────────────────────────────────

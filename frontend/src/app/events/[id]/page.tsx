@@ -32,6 +32,8 @@ import { useFollowArtist, type ArtistFollowScope, type TeamFollowScope } from "@
 import PriceHistoryChart from "@/components/charts/PriceHistoryChart";
 import VenueIntelligence from "@/components/venue/VenueIntelligence";
 import MarketplaceLogo from "@/components/MarketplaceLogo";
+import MarketRow from "@/components/MarketRow";
+import { deriveOpponent, venueCity } from "@/lib/venueGeo";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -83,6 +85,29 @@ function buildSignalReason(action: string, hero: HeroResponse | null): { headlin
   const cap      = hero?.market?.capitulation_score ?? null;
   const tight    = hero?.market?.tightness ?? null;
 
+  // Who holds leverage — derived from existing price/inventory/capitulation signals only
+  const leverage = (() => {
+    const falling = (pct7d != null && pct7d < -3) || (pct24h != null && pct24h < -2);
+    const rising  = (pct7d != null && pct7d > 3) || (pct24h != null && pct24h > 2);
+    const invUp   = invDelta != null && invDelta > 0;
+    const invDown = invDelta != null && invDelta < 0;
+    if (falling && (invUp || (cap != null && cap > 0.5))) return "Buyers currently hold leverage — sellers are cutting into growing supply.";
+    if (rising && (invDown || (tight != null && tight > 0.6))) return "Sellers currently hold leverage — prices rising as supply tightens.";
+    // Price direction outranks inventory direction when they disagree
+    if (falling) return "Leverage tilting toward buyers — prices drifting down.";
+    if (rising) return "Leverage tilting toward sellers — prices drifting up.";
+    if (invUp) return "Leverage tilting toward buyers — supply building.";
+    if (invDown) return "Leverage tilting toward sellers — supply shrinking.";
+    return null; // balanced/unknown — don't fabricate a conclusion
+  })();
+
+  // Buy-window direction — existing trend signals only
+  const windowDir = (() => {
+    if (action === "WAIT" && pct7d != null && pct7d < -3) return "Buy window improving — prices still falling.";
+    if (action === "BUY" && ((tight != null && tight > 0.6) || (invDelta != null && invDelta < -20))) return "Buy window may be closing — inventory tightening.";
+    return null;
+  })();
+
   if (action === "BUY") {
     const bullets: string[] = [];
     if (pct24h != null && pct24h < -2) bullets.push(`Prices dropped ${fmtPct(Math.abs(pct24h))} in the last 24 hours.`);
@@ -90,6 +115,8 @@ function buildSignalReason(action: string, hero: HeroResponse | null): { headlin
     if (tight  != null && tight  > 0.6) bullets.push("Inventory is tightening — fewer listings available.");
     if (invDelta != null && invDelta < -20) bullets.push(`Net inventory dropped by ${Math.abs(invDelta)} listings in 24h.`);
     if (bullets.length === 0) bullets.push("Price and inventory indicate a favorable buying window.");
+    if (windowDir) bullets.push(windowDir);
+    if (leverage) bullets.push(leverage);
     return { headline: "Now is a good time to buy.", bullets };
   }
 
@@ -101,6 +128,8 @@ function buildSignalReason(action: string, hero: HeroResponse | null): { headlin
     if (cap != null && cap > 0.5)       bullets.push("Many sellers are repricing downward — competition is high.");
     if (pct24h == null && pct7d == null) bullets.push("Not enough price history yet to confirm a trend.");
     if (bullets.length === 0) bullets.push("Current signals do not suggest urgency. Prices may fall closer to the event.");
+    if (windowDir) bullets.push(windowDir);
+    if (leverage) bullets.push(leverage);
     return { headline: "Prices are falling. Better deals may be ahead.", bullets };
   }
 
@@ -108,6 +137,7 @@ function buildSignalReason(action: string, hero: HeroResponse | null): { headlin
     const bullets: string[] = [];
     if (tight != null && tight > 0.4) bullets.push("Inventory is tightening but prices haven't moved yet.");
     else bullets.push("Market is stable — no strong buy or wait signal.");
+    if (leverage) bullets.push(leverage);
     bullets.push("Check back daily as the event approaches.");
     return { headline: "No strong signal yet. Keep watching.", bullets };
   }
@@ -676,6 +706,9 @@ export default function EventDetailPage() {
   // ── Derived ─────────────────────────────────────────────────────────────────
   const title      = eventMeta?.title ?? `Event #${id}`;
   const venue      = eventMeta?.venue_name ?? eventMeta?.venue;
+  // Opponent/matchup from StubHub URL slug already in meta (away games only)
+  const opponent = deriveOpponent(title, eventMeta?.tracked_events?.find(t => t.marketplace_slug === "stubhub")?.external_url ?? null);
+  const cityLabel = venueCity(eventMeta?.venue_slug);
   const dateStr    = eventMeta?.event_date;
   const artist     = eventMeta?.artist;
   const gradient        = getEventGradient(artist, title);
@@ -923,6 +956,26 @@ export default function EventDetailPage() {
           </div>
         </div>
       )}
+      {/* YELLOW alerts (stale polls, missing snapshots, low coverage) must never
+          silently disappear — collapsed summary keeps them visible without noise */}
+      {alerts && alerts.alerts.filter(a => a.severity === "YELLOW").length > 0 && (
+        <details className="rounded-xl border border-amber-500/25 bg-amber-500/[0.05] px-4 py-2.5 group/warn">
+          <summary className="flex items-center gap-2 cursor-pointer list-none select-none text-[12px] text-amber-300/90 font-medium">
+            <span className="text-amber-400">⚠</span>
+            {alerts.alerts.filter(a => a.severity === "YELLOW").length} data-quality warning{alerts.alerts.filter(a => a.severity === "YELLOW").length === 1 ? "" : "s"}
+            <span className="text-[10px] text-amber-500/60 uppercase tracking-wider">stale polls · missing snapshots</span>
+            <span className="ml-auto text-amber-500/50 text-[10px] transition-transform group-open/warn:rotate-180">▾</span>
+          </summary>
+          <ul className="space-y-0.5 mt-2 pl-5">
+            {alerts.alerts.filter(a => a.severity === "YELLOW").map((a, i) => (
+              <li key={i} className="text-amber-200/60 text-[11px] leading-snug">
+                {a.marketplace ? <span className="font-semibold text-amber-200/80 capitalize">{a.marketplace}: </span> : null}
+                {a.message.split("\n")[0].slice(0, 140)}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
 
       {/* ════════════════════════════════════════
           SECTION 1 — EVENT HERO
@@ -992,17 +1045,20 @@ export default function EventDetailPage() {
 
             {/* LEFT: Identity */}
             <div className="flex flex-col gap-3">
-              {artist && artist !== title && (
+              {artist && artist !== title ? (
                 <p className="text-[12px] font-bold text-white/40 uppercase tracking-[0.28em]">{artist}</p>
-              )}
+              ) : opponent ? (
+                <p className="text-[12px] font-bold text-white/40 uppercase tracking-[0.28em]">at {opponent}</p>
+              ) : null}
               <h1 className="text-[52px] sm:text-[68px] font-black text-white leading-none tracking-tight line-clamp-2"
                 style={{ textShadow: '0 2px 40px rgba(0,0,0,0.9)' }}>
                 {title}
               </h1>
               <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
                 {venue && (
-                  <span className="flex items-center gap-1.5 text-[14px] text-white/55">
+                  <span className="flex items-center gap-1.5 text-[14px] text-white/80 font-medium">
                     <MapPin size={12} className="opacity-60 flex-shrink-0" />{venue}
+                    {cityLabel && <span className="text-[13px] text-white/45 font-normal">· {cityLabel}</span>}
                   </span>
                 )}
                 {dateLabel && (
@@ -1183,15 +1239,13 @@ export default function EventDetailPage() {
                     : (cur != null && pct != null) ? Math.round(cur / (1 + pct / 100)) : null;
                   const abs  = (cur != null && orig != null) ? cur - orig : null;
                   return (
-                    <div className="flex items-center justify-between py-1.5 border-b border-white/[0.04]">
-                      <span className="text-[12px] text-slate-400 font-semibold w-16 flex-shrink-0">Median</span>
-                      <div className="flex items-center gap-1.5 tabular-nums">
-                        {orig != null ? <span className="text-[11px] text-slate-600">{fmt$$(orig)} →</span> : null}
-                        <span className="text-[13px] font-bold text-white">{cur != null ? fmt$$(cur) : "—"}</span>
-                        {abs != null && abs !== 0 && <span className={cn("text-[11px] font-medium", abs < 0 ? "text-emerald-400" : "text-red-400")}>{fmt$$signed(abs)}</span>}
-                        {pct != null ? <DeltaChip pct={pct} invert /> : <span className="text-[11px] text-slate-700">—</span>}
-                      </div>
-                    </div>
+                    <MarketRow label="Median"
+                      baseline={orig != null ? fmt$$(orig) : null}
+                      current={cur != null ? fmt$$(cur) : "—"}
+                      delta={abs != null && abs !== 0 ? fmt$$signed(abs) : null}
+                      deltaCls={abs != null && abs < 0 ? "text-emerald-400" : "text-red-400"}
+                      tail={pct != null ? <DeltaChip pct={pct} invert /> : <span className="text-[13px] text-slate-700">—</span>}
+                    />
                   );
                 })()}
                 {/* LOW row — tracking window uses start-of-tracking floor from first history snapshot */}
@@ -1220,17 +1274,16 @@ export default function EventDetailPage() {
                     orig = (cur != null && abs != null) ? cur - abs : null;
                   }
                   return (
-                    <div className="flex items-center justify-between py-1.5 border-b border-white/[0.04]">
-                      <span className="text-[12px] text-slate-500 w-16 flex-shrink-0">Low</span>
-                      <div className="flex items-center gap-1.5 tabular-nums">
-                        {orig != null ? <span className="text-[11px] text-slate-600">{fmt$$(orig)} →</span> : null}
-                        <span className="text-[13px] font-semibold text-emerald-300">{cur != null ? fmt$$(cur) : "—"}</span>
-                        {abs != null && abs !== 0 && <span className={cn("text-[11px] font-medium", abs < 0 ? "text-emerald-400" : "text-red-400")}>{fmt$$signed(abs)}</span>}
-                        {baselineUnavailable
-                          ? <span className="text-[11px] italic text-slate-600">Tracking baseline unavailable</span>
-                          : pct != null ? <DeltaChip pct={pct} invert /> : <span className="text-[11px] text-slate-700">—</span>}
-                      </div>
-                    </div>
+                    <MarketRow label="Low"
+                      baseline={orig != null ? fmt$$(orig) : null}
+                      current={cur != null ? fmt$$(cur) : "—"}
+                      currentCls="text-emerald-300"
+                      delta={abs != null && abs !== 0 ? fmt$$signed(abs) : null}
+                      deltaCls={abs != null && abs < 0 ? "text-emerald-400" : "text-red-400"}
+                      tail={baselineUnavailable
+                        ? <span className="text-[13px] italic text-slate-600">Tracking baseline unavailable</span>
+                        : pct != null ? <DeltaChip pct={pct} invert /> : <span className="text-[13px] text-slate-700">—</span>}
+                    />
                   );
                 })()}
                 {/* HIGH row — with tracking-start delta from snapshot */}
@@ -1244,18 +1297,18 @@ export default function EventDetailPage() {
                     ? snapshot?.price?.high_start_change
                     : null;
                   const pct = marketWindow === "tracking" ? snapshot?.price?.high_start_change_pct : null;
+                  const orig = marketWindow === "tracking"
+                    ? (snapshot?.price?.high_start ?? (cur != null && delta != null ? cur - delta : null))
+                    : (cur != null && delta != null ? cur - delta : null);
                   return (
-                    <div className="flex items-center justify-between py-1.5 border-b border-white/[0.04]">
-                      <span className="text-[12px] text-slate-500 w-16 flex-shrink-0">High</span>
-                      <div className="flex items-center gap-1.5 tabular-nums">
-                        <span className="text-[13px] font-semibold text-slate-400">{cur != null ? fmt$$(cur) : "—"}</span>
-                        {delta != null ? (
-                          <span className={`text-[11px] font-semibold ${delta < 0 ? "text-emerald-400" : delta > 0 ? "text-red-400" : "text-slate-500"}`}>
-                            {fmt$$signed(delta)}{pct != null ? ` (${fmtPct(pct)})` : ""}
-                          </span>
-                        ) : <span className="text-[11px] text-slate-700">—</span>}
-                      </div>
-                    </div>
+                    <MarketRow label="High"
+                      baseline={orig != null ? fmt$$(orig) : null}
+                      current={cur != null ? fmt$$(cur) : "—"}
+                      currentCls="text-slate-300"
+                      delta={delta != null ? fmt$$signed(delta) : null}
+                      deltaCls={delta != null && delta < 0 ? "text-emerald-400" : delta != null && delta > 0 ? "text-red-400" : "text-slate-500"}
+                      tail={pct != null ? <DeltaChip pct={pct} invert /> : <span className="text-[13px] text-slate-700">—</span>}
+                    />
                   );
                 })()}
                 {/* INVENTORY row — TRACKING = from first-snapshot baseline (canonical rule) */}
@@ -1274,37 +1327,26 @@ export default function EventDetailPage() {
                       ? (abs / (cur - abs)) * 100 : null);
                   const fromVal = marketWindow === "tracking" && firstTrackedInv != null ? firstTrackedInv : null;
                   return (
-                    <div className="flex items-center justify-between py-1.5 border-b border-white/[0.04]">
-                      <span className="text-[12px] text-slate-500 w-16 flex-shrink-0">Inventory</span>
-                      <div className="flex items-center gap-2 tabular-nums">
-                        {fromVal != null && <span className="text-[11px] text-slate-600">{fmtNum(fromVal)} →</span>}
-                        <span className="text-[13px] font-semibold text-blue-300/80">{cur != null ? fmtNum(cur) : "—"}</span>
-                        {abs != null ? (
-                          <span className={cn("text-[11px] font-medium", abs > 0 ? "text-red-400" : abs < 0 ? "text-emerald-400" : "text-slate-500")}>
-                            {abs > 0 ? "+" : ""}{fmtNum(abs)}
-                            {absPct != null ? ` (${absPct > 0 ? "+" : ""}${absPct.toFixed(1)}%)` : ""}
-                          </span>
-                        ) : <span className="text-[11px] text-slate-700">—</span>}
-                      </div>
-                    </div>
+                    <MarketRow label="Inventory"
+                      baseline={fromVal != null ? fmtNum(fromVal) : null}
+                      current={cur != null ? fmtNum(cur) : "—"}
+                      currentCls="text-blue-300/80"
+                      delta={abs != null ? `${abs > 0 ? "+" : ""}${fmtNum(abs)}` : null}
+                      deltaCls={abs != null && abs > 0 ? "text-red-400" : abs != null && abs < 0 ? "text-emerald-400" : "text-slate-500"}
+                      tail={absPct != null ? <DeltaChip pct={absPct} invert /> : <span className="text-[13px] text-slate-700">—</span>}
+                    />
                   );
                 })()}
                 {/* DUPLICATES row — format: current%  ±pp change */}
-                <div className="flex items-center justify-between py-1.5">
-                  <span className="text-[12px] text-slate-500 w-16 flex-shrink-0">Dup %</span>
-                  {snapshot?.duplicates?.dup_pct_reliable === false ? (
-                    <span className="text-[11px] italic text-slate-500">Not reliable</span>
-                  ) : snapshot?.duplicates?.dup_pct != null ? (
-                    <span className="text-[11px] text-slate-400 tabular-nums">
-                      {snapshot.duplicates.dup_pct.toFixed(1)}%
-                      {snapshot.duplicates.dup_mirror_pct != null && (
-                        <span className="text-slate-600 ml-1">({snapshot.duplicates.dup_mirror_pct.toFixed(1)}% mirror)</span>
-                      )}
-                    </span>
-                  ) : (
-                    <span className="text-[11px] text-slate-700">—</span>
-                  )}
-                </div>
+                <MarketRow label="Dup %" last
+                  current={snapshot?.duplicates?.dup_pct_reliable === false ? "—" : snapshot?.duplicates?.dup_pct != null ? `${snapshot.duplicates.dup_pct.toFixed(1)}%` : "—"}
+                  currentCls="text-violet-300/70"
+                  tail={snapshot?.duplicates?.dup_pct_reliable === false
+                    ? <span className="text-[13px] italic text-slate-500">Not reliable</span>
+                    : snapshot?.duplicates?.dup_mirror_pct != null
+                    ? <span className="text-[13px] text-slate-600">({snapshot.duplicates.dup_mirror_pct.toFixed(1)}% mirror)</span>
+                    : null}
+                />
               </div>
             )}
           </div>
@@ -1317,16 +1359,14 @@ export default function EventDetailPage() {
 
             {/* Est. Avg Sale Price — from implied sales (listing disappearance) */}
             <div className="mb-3 pb-3 border-b border-white/[0.06]">
-              <div className="flex items-center justify-between mb-1">
-                <p className="text-[11px] text-slate-500 uppercase tracking-[0.14em]">Est. Avg Sale Price</p>
-                {avgImpliedSalePrice != null ? (
-                  <span className="text-[15px] font-bold tabular-nums text-emerald-300">{fmt$$(avgImpliedSalePrice)}</span>
-                ) : lifecycle != null ? (
-                  <span className="text-[11px] italic text-slate-600">No disappearances yet</span>
-                ) : (
-                  <span className="text-[11px] italic text-slate-700">No lifecycle yet</span>
-                )}
-              </div>
+              <p className="text-[11px] text-slate-500 uppercase tracking-[0.14em] mb-1">Est. Avg Sale Price</p>
+              {avgImpliedSalePrice != null ? (
+                <p className="text-[24px] font-black tabular-nums text-emerald-300 leading-none mb-1">{fmt$$(avgImpliedSalePrice)}</p>
+              ) : lifecycle != null ? (
+                <p className="text-[13px] italic text-slate-600 mb-1">No disappearances yet</p>
+              ) : (
+                <p className="text-[13px] italic text-slate-700 mb-1">No lifecycle yet</p>
+              )}
               {avgImpliedSalePrice != null && impliedSaleCount != null && (
                 <p className="text-[10px] text-slate-600">
                   avg last-seen price · {fmtNum(impliedSaleCount)} lifecycle events{netAbsorbedListings != null ? ` · ${Math.abs(netAbsorbedListings)} net absorbed` : ""}
@@ -1378,36 +1418,35 @@ export default function EventDetailPage() {
                 emptyLabel: velocityWindows != null ? "No disappearances" : "No lifecycle yet" },
               { label: "Tickets Sold", num: velocityWindows?.windows?.since_tracking?.implied_sale_tickets ?? null,
                 emptyLabel: velocityWindows != null ? "No disappearances" : "No lifecycle yet" },
-              { label: "Removed 24H", num: removed24h, emptyLabel: "No data" },
-              { label: "Added 24H",   num: added24h,   emptyLabel: "No data" },
+              // Project rule: disappeared inventory = implied sold ("Removed" is diagnostics-only)
+              { label: "Implied Sold 24H", num: removed24h, emptyLabel: "No data" },
+              { label: "Added 24H",        num: added24h,   emptyLabel: "No data" },
             ] as { label: string; num: number | null; emptyLabel: string }[]).map(({ label, num, emptyLabel }) => (
-              <div key={label} className="flex items-center justify-between py-1.5 border-b border-white/[0.04]">
-                <span className="text-[12px] text-slate-500">{label}</span>
+              <div key={label} className="flex items-baseline gap-2.5 py-2 border-b border-white/[0.04]">
+                <span className="text-[12px] text-slate-500 w-28 flex-shrink-0">{label}</span>
                 {num != null && num > 0 ? (
-                  <span className={cn("tabular-nums font-semibold text-[13px]",
-                    label.startsWith("Sold") || label === "Tickets Sold" ? "text-emerald-400"
-                    : label === "Added 24H" ? "text-emerald-400"
-                    : "text-red-400")}>
+                  <span className={cn("tabular-nums font-semibold text-[18px] leading-none",
+                    label.includes("Sold") || label === "Added 24H" ? "text-emerald-400" : "text-red-400")}>
                     {fmtNum(num)}
                   </span>
                 ) : num === 0 ? (
-                  <span className="text-[11px] italic text-slate-600">{emptyLabel}</span>
+                  <span className="text-[13px] italic text-slate-600">{emptyLabel}</span>
                 ) : (
-                  <span className="text-[11px] italic text-slate-700">No data</span>
+                  <span className="text-[13px] italic text-slate-700">No data</span>
                 )}
               </div>
             ))}
-            <div className="flex items-center justify-between py-1.5">
-              <span className="text-[12px] text-slate-500">Market Stress</span>
+            <div className="flex items-baseline gap-2.5 py-2">
+              <span className="text-[12px] text-slate-500 w-28 flex-shrink-0">Market Stress</span>
               {market?.market_stress?.composite_score != null ? (
-                <span className={cn("tabular-nums font-semibold text-[13px]", (() => {
+                <span className={cn("tabular-nums font-semibold text-[18px] leading-none", (() => {
                   const s = market.market_stress.composite_score;
                   return s > 0.6 ? "text-red-400" : s > 0.35 ? "text-amber-400" : "text-emerald-400";
                 })())}>
                   {`${(market.market_stress.composite_score * 100).toFixed(0)}%`}
                 </span>
               ) : (
-                <span className="text-[11px] italic text-slate-600">Not enough history</span>
+                <span className="text-[13px] italic text-slate-600">Not enough history</span>
               )}
             </div>
           </div>
@@ -1434,11 +1473,12 @@ export default function EventDetailPage() {
               <p className="text-[11px] text-slate-500 uppercase tracking-[0.14em] mb-1">Relist Price Chg</p>
               {seller?.median_reprice_delta != null ? (
                 <div className="flex items-end gap-1.5">
+                  {/* Buyer perspective: relist prices falling = green, rising = red */}
                   <p className={cn("text-[26px] font-black tabular-nums leading-none",
-                    seller.median_reprice_delta < 0 ? "text-red-300"
-                    : seller.median_reprice_delta > 0 ? "text-emerald-300"
+                    seller.median_reprice_delta < 0 ? "text-emerald-300"
+                    : seller.median_reprice_delta > 0 ? "text-red-300"
                     : "text-slate-400")}>
-                    {seller.median_reprice_delta > 0 ? "+" : ""}{fmt$$(seller.median_reprice_delta)}
+                    {fmt$$signed(seller.median_reprice_delta)}
                   </p>
                   <span className="text-[11px] text-slate-500 pb-0.5">median</span>
                 </div>
@@ -1607,9 +1647,10 @@ export default function EventDetailPage() {
                         extra: null,
                       },
                       {
-                        label: "Removed 24H",
+                        // Disappeared listings = implied sold (project rule)
+                        label: "Sold 24H",
                         value: mpSeller?.removed_24h != null ? fmtNum(mpSeller.removed_24h) : "—",
-                        cls: mpSeller?.removed_24h ? "text-red-400/80 font-semibold" : "text-slate-700",
+                        cls: mpSeller?.removed_24h ? "text-emerald-400/80 font-semibold" : "text-slate-700",
                         extra: null,
                       },
                       {
@@ -1654,7 +1695,7 @@ export default function EventDetailPage() {
           Two-column: map left, top sections right.
           ════════════════════════════════════════ */}
       {eventMeta?.venue_slug && (
-        <details className="group">
+        <details className="group" open>
           <summary className="flex items-center gap-3 mb-4 cursor-pointer list-none select-none">
             <h2 className="text-[12px] font-bold text-slate-500 uppercase tracking-[0.18em] flex-shrink-0 group-hover:text-slate-300 transition-colors">Venue Intelligence</h2>
             <ChevronDown size={13} className="text-slate-500 transition-transform group-open:rotate-180" />
@@ -1892,7 +1933,8 @@ export default function EventDetailPage() {
                           <td className="px-3 py-2 text-slate-300 max-w-[120px] truncate">{d.section}</td>
                           <td className="px-3 py-2 text-slate-500 tabular-nums">{fmt$$(d.old_price)}</td>
                           <td className="px-3 py-2 text-slate-200 font-semibold tabular-nums">{fmt$$(d.new_price)}</td>
-                          <td className="px-3 py-2 text-red-400 font-medium tabular-nums">{fmt$$(d.delta)}</td>
+                          {/* Price drop = buyer-positive = green; signed format */}
+                          <td className="px-3 py-2 text-emerald-400 font-medium tabular-nums">{fmt$$signed(d.delta)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1928,12 +1970,20 @@ export default function EventDetailPage() {
                         const mpInfo = MP_META[slug] ?? null;
                         return (
                           <tr key={l.id} className="border-b border-white/4 last:border-0 hover:bg-white/2 transition-colors">
-                            <td className="pl-4 pr-2 py-2.5 text-slate-600 tabular-nums">{i + 1}</td>
-                            <td className="px-3 py-2.5 font-bold text-slate-100 tabular-nums">{fmt$$(l.price)}</td>
-                            <td className="px-3 py-2.5 text-slate-300 max-w-[140px] truncate">{l.section_name ?? l.section ?? "—"}</td>
-                            <td className="px-3 py-2.5 text-slate-400">{l.row ?? "—"}</td>
-                            <td className="px-3 py-2.5 text-slate-500 tabular-nums">{l.quantity}</td>
-                            <td className="px-3 py-2.5">
+                            <td className="pl-4 pr-2 py-3 text-slate-600 tabular-nums">{i + 1}</td>
+                            <td className="px-3 py-3 font-bold text-slate-100 tabular-nums">{fmt$$(l.price)}</td>
+                            <td className="px-3 py-3 max-w-[140px] truncate">
+                              {(() => {
+                                const sec = l.section_name ?? l.section;
+                                // "General" from TickPick = no real section identity — flag it
+                                if (!sec) return <span className="text-slate-600">—</span>;
+                                if (/^general$/i.test(sec.trim())) return <span className="italic text-slate-500">General <span className="text-[10px] text-amber-500/70">(unverified)</span></span>;
+                                return <span className="text-slate-300">{sec}</span>;
+                              })()}
+                            </td>
+                            <td className="px-3 py-3 text-slate-400">{l.row ?? "—"}</td>
+                            <td className="px-3 py-3 text-slate-500 tabular-nums">{l.quantity}</td>
+                            <td className="px-3 py-3">
                               {mpInfo
                                 ? <span className="inline-flex items-center gap-1">
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ background: mpInfo.color }} />
@@ -1941,8 +1991,8 @@ export default function EventDetailPage() {
                                   </span>
                                 : <span className="text-slate-500 capitalize">{slug}</span>}
                             </td>
-                            <td className="px-3 py-2.5"><ListingMoveMenu listingId={l.id} /></td>
-                            <td className="px-3 py-2.5 text-right">
+                            <td className="px-3 py-3"><ListingMoveMenu listingId={l.id} /></td>
+                            <td className="px-3 py-3 text-right">
                               {l.listing_url && (
                                 <a href={l.listing_url} target="_blank" rel="noopener noreferrer"
                                   className="text-[11px] text-blue-500 hover:text-blue-400 transition-colors">buy ↗</a>

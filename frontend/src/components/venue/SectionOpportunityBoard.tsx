@@ -97,14 +97,17 @@ export default function SectionOpportunityBoard({ data, onSelectSection, selecte
         const entries = cls[bucket.key] ?? [];
         const Icon = bucket.icon;
         return (
-          <div key={bucket.key}>
-            <div className="flex items-center gap-1.5 mb-2">
+          // Individually collapsible buckets — Best Value expanded by default,
+          // all others (Highest Demand, Most Active, …) start collapsed.
+          <details key={bucket.key} className="group/bucket" open={bucket.key === "best_value"}>
+            <summary className="flex items-center gap-1.5 mb-2 cursor-pointer list-none select-none">
               <Icon size={11} className={bucket.accent} />
               <h4 className={cn("text-[10px] font-semibold uppercase tracking-wider", bucket.accent)}>
                 {bucket.label}
               </h4>
               <span className="text-[9px] text-slate-700 ml-auto">{entries.length}</span>
-            </div>
+              <span className="text-[9px] text-slate-600 transition-transform group-open/bucket:rotate-180">▾</span>
+            </summary>
             <div className="space-y-1">
               {entries.slice(0, 5).map((entry) => {
                 const isSelected = selectedId === entry.section_id;
@@ -166,7 +169,7 @@ export default function SectionOpportunityBoard({ data, onSelectSection, selecte
                 );
               })}
             </div>
-          </div>
+          </details>
         );
       })}
     </div>

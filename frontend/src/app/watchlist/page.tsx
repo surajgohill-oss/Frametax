@@ -15,6 +15,8 @@ import { useArtistImage } from "@/hooks/useArtistImage";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { useHeadlineEvent } from "@/hooks/useHeadlineEvent";
 import { useArchivedEvents } from "@/hooks/useArchivedEvents";
+import MarketRow from "@/components/MarketRow";
+import { venueCity } from "@/lib/venueGeo";
 import { useHiddenEvents } from "@/hooks/useHiddenEvents";
 
 const MP_SHORT: Record<string, string> = {
@@ -304,7 +306,7 @@ function HeadlineCard({
               <span className="text-[24px] sm:text-[30px] font-black text-white block hover:text-blue-300 transition-colors leading-none truncate">{title}</span>
             </Link>
             <div className="flex items-center gap-1.5 mt-2 text-[13px] text-slate-400">
-              {venue && <span className="truncate">{venue}</span>}
+              {venue && <span className="truncate">{venue}{venueCity(event.venue_slug) && <span className="text-slate-600"> · {venueCity(event.venue_slug)}</span>}</span>}
               {venue && dateLabel && <span className="text-slate-600">·</span>}
               {dateLabel && <span>{dateLabel}</span>}
             </div>
@@ -474,65 +476,45 @@ function HeadlineCard({
               const orig = (cur != null && pct != null) ? Math.round(cur / (1 + pct / 100)) : null;
               const abs  = (cur != null && orig != null) ? cur - orig : null;
               return (
-                <div className="flex items-center justify-between py-2 border-b border-white/[0.04]">
-                  <span className="text-[12px] text-slate-400 font-semibold w-16 flex-shrink-0">Median</span>
-                  <div className="flex items-center gap-1.5 tabular-nums">
-                    {orig != null ? <span className="text-[11px] text-slate-600">{fmt$$(orig)} →</span> : null}
-                    <span className="text-[13px] font-bold text-white">{cur != null ? fmt$$(cur) : "—"}</span>
-                    {abs != null && abs !== 0 && <span className={cn("text-[11px] font-medium", abs < 0 ? "text-emerald-400" : "text-red-400")}>{fmt$$signed(abs)}</span>}
-                    {pct != null ? <DeltaChip pct={pct} invert /> : <span className="text-[11px] text-slate-700">—</span>}
-                  </div>
-                </div>
+                <MarketRow label="Median"
+                  baseline={orig != null ? fmt$$(orig) : null}
+                  current={cur != null ? fmt$$(cur) : "—"}
+                  delta={abs != null && abs !== 0 ? fmt$$signed(abs) : null}
+                  deltaCls={abs != null && abs < 0 ? "text-emerald-400" : "text-red-400"}
+                  tail={pct != null ? <DeltaChip pct={pct} invert /> : <span className="text-[13px] text-slate-700">—</span>}
+                />
               );
             })()}
-            {/* Low */}
-            <div className="flex items-center justify-between py-2 border-b border-white/[0.04]">
-              <span className="text-[12px] text-slate-500 w-16 flex-shrink-0">Low</span>
-              <div className="flex items-center gap-1.5 tabular-nums">
-                <span className="text-[13px] font-semibold text-emerald-300">{event.price?.low_ask != null ? fmt$$(event.price.low_ask) : "—"}</span>
-                <span className="text-[11px] text-slate-700">—</span>
-              </div>
-            </div>
-            {/* High */}
-            <div className="flex items-center justify-between py-2 border-b border-white/[0.04]">
-              <span className="text-[12px] text-slate-500 w-16 flex-shrink-0">High</span>
-              <div className="flex items-center gap-1.5 tabular-nums">
-                <span className="text-[13px] font-semibold text-slate-400">{event.price?.high_ask != null ? fmt$$(event.price.high_ask) : "—"}</span>
-                <span className="text-[11px] text-slate-700">—</span>
-              </div>
-            </div>
             {/* Note: Low/High baselines not in EventSummary type — deltas shown as — */}
-            {/* Inventory */}
+            <MarketRow label="Low"
+              current={event.price?.low_ask != null ? fmt$$(event.price.low_ask) : "—"}
+              currentCls="text-emerald-300"
+              tail={<span className="text-[13px] text-slate-700">—</span>}
+            />
+            <MarketRow label="High"
+              current={event.price?.high_ask != null ? fmt$$(event.price.high_ask) : "—"}
+              currentCls="text-slate-300"
+              tail={<span className="text-[13px] text-slate-700">—</span>}
+            />
             {(() => {
               const cur = invCurrent;
               const abs = invDelta;
               const absPct = abs != null && cur != null && (cur - abs) > 0 ? (abs / (cur - abs)) * 100 : null;
               return (
-                <div className="flex items-center justify-between py-2 border-b border-white/[0.04]">
-                  <span className="text-[12px] text-slate-500 w-16 flex-shrink-0">Inventory</span>
-                  <div className="flex items-center gap-2 tabular-nums">
-                    <span className="text-[13px] font-semibold text-blue-300/80">{cur != null ? fmtNum(cur) : "—"}</span>
-                    {abs != null ? (
-                      <span className={cn("text-[11px] font-medium", abs > 0 ? "text-red-400" : abs < 0 ? "text-emerald-400" : "text-slate-500")}>
-                        {abs > 0 ? "+" : ""}{abs}
-                        {absPct != null ? ` (${absPct > 0 ? "+" : ""}${absPct.toFixed(1)}%)` : ""}
-                      </span>
-                    ) : <span className="text-[11px] text-slate-700">—</span>}
-                  </div>
-                </div>
+                <MarketRow label="Inventory"
+                  current={cur != null ? fmtNum(cur) : "—"}
+                  currentCls="text-blue-300/80"
+                  delta={abs != null ? `${abs > 0 ? "+" : ""}${fmtNum(abs)}` : null}
+                  deltaCls={abs != null && abs > 0 ? "text-red-400" : abs != null && abs < 0 ? "text-emerald-400" : "text-slate-500"}
+                  tail={absPct != null ? <DeltaChip pct={absPct} invert /> : <span className="text-[13px] text-slate-700">—</span>}
+                />
               );
             })()}
-            {/* Dup % */}
-            <div className="flex items-center justify-between py-2">
-              <span className="text-[12px] text-slate-500 w-16 flex-shrink-0">Dup %</span>
-              {snap?.duplicates?.dup_pct_reliable === false ? (
-                <span className="text-[11px] italic text-slate-500">Not reliable</span>
-              ) : (
-                <span className="text-[12px] font-semibold text-violet-300/70 tabular-nums">
-                  {snap?.duplicates?.dup_pct != null ? `${snap.duplicates.dup_pct.toFixed(1)}%` : "—"}
-                </span>
-              )}
-            </div>
+            <MarketRow label="Dup %" last
+              current={snap?.duplicates?.dup_pct_reliable === false ? "—" : snap?.duplicates?.dup_pct != null ? `${snap.duplicates.dup_pct.toFixed(1)}%` : "—"}
+              currentCls="text-violet-300/70"
+              tail={snap?.duplicates?.dup_pct_reliable === false ? <span className="text-[13px] italic text-slate-500">Not reliable</span> : null}
+            />
           </div>
         </div>
 
@@ -607,7 +589,7 @@ function HeadlineCard({
                   <span className="text-[11px] text-slate-400">Relist Price Chg</span>
                   {relistDelta != null ? (
                     <span className={`text-[12px] font-semibold tabular-nums ${relistDelta < 0 ? "text-emerald-400" : relistDelta > 0 ? "text-red-400" : "text-slate-400"}`}>
-                      {relistDelta > 0 ? "+" : ""}${relistDelta.toFixed(0)}
+                      {fmt$$signed(relistDelta)}
                     </span>
                   ) : (
                     <span className="text-[11px] italic text-slate-600">{seller != null ? "No relist activity" : "Not enough history"}</span>
@@ -745,7 +727,7 @@ function WatchlistCard({
         <Link href={`/events/${event.event_id}`}>
           <h3 className="text-[13px] font-bold text-white leading-tight mb-1 hover:text-blue-300 transition-colors line-clamp-2">{title}</h3>
         </Link>
-        {venue && <p className="text-[11px] text-slate-500 mb-0.5 truncate">{venue}</p>}
+        {venue && <p className="text-[11px] text-slate-500 mb-0.5 truncate">{venue}{venueCity(event.venue_slug) && <span className="text-slate-600"> · {venueCity(event.venue_slug)}</span>}</p>}
         {dateStr && (
           <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mb-3">
             <Calendar size={9} />
