@@ -793,3 +793,13 @@ def generate_production_recommendations(
         passes_run=RECOMMENDATION_PASSES,
         recommendations=rank_recommendations(dedupe_recommendations(recs)),
     )
+
+
+# ── Public re-exports (Phase 7 closeout) ──────────────────────────────────────
+# Purely additive aliases — zero behavior change to anything above. Exposed so
+# creative_qualification_engine.py can reuse this module's exact creative-
+# attribute classification instead of maintaining a second copy ("one source
+# of truth" — see production_package_intelligence.py's Part D docstring).
+CREATIVE_INPUT_KEY_PREFIXES = _CREATIVE_INPUT_KEY_PREFIXES
+CREATIVE_INPUT_KEYS_EXACT = _CREATIVE_INPUT_KEYS_EXACT
+is_creative_input_key = _is_creative_input_key

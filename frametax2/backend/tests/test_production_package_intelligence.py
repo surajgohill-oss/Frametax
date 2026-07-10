@@ -435,21 +435,272 @@ class TestDeterminismAndNonMutation:
         assert locations == before_locations
         assert crew_movements == before_movements
 
-    def test_never_touches_optimizer_or_qualification_engines(self):
+    def test_never_touches_pricing_or_composition_engines(self):
         """Import-boundary check mirroring the discipline
         test_legal_authority_acquisition.py enforces for LAAE: this
-        module has no import statement pulling in optimization_engine.py,
-        opportunity_discovery.py, production_structure_composer.py, or
-        production_recommendation_engine.py — it produces inputs FOR
-        them, never calls into them. (The module docstring references
-        them by name in prose, which is fine — only actual import
-        statements are checked here.)"""
+        module has no import of optimization_engine.py,
+        opportunity_discovery.py, or production_structure_composer.py —
+        it produces inputs FOR them, never calls into them or duplicates
+        their pricing/composition math."""
         import app.calculators.production_package_intelligence as ppi
         import inspect
         import_lines = [
             line for line in inspect.getsource(ppi).splitlines()
             if line.strip().startswith(("import ", "from "))
         ]
-        forbidden = ("optimization_engine", "opportunity_discovery", "production_structure_composer", "production_recommendation_engine")
+        forbidden = ("optimization_engine", "opportunity_discovery", "production_structure_composer")
         for line in import_lines:
             assert not any(name in line for name in forbidden), f"unexpected import: {line}"
+
+    def test_recommendation_engine_import_is_read_only_registry_reuse(self):
+        """Phase 7 Part A (derive_likely_cultural_test_categories) reuses
+        production_recommendation_engine.CULTURAL_TEST_REGISTRY as the
+        single source of truth for valid test slugs — this is the ONE
+        sanctioned import from that module, a read-only constant, never
+        any Recommendation-constructing or gate-bearing function. This
+        test pins that the import stays exactly that."""
+        import app.calculators.production_package_intelligence as ppi
+        import inspect
+        import_lines = [
+            line.strip() for line in inspect.getsource(ppi).splitlines()
+            if line.strip().startswith(("import ", "from ")) and "production_recommendation_engine" in line
+        ]
+        assert import_lines == ["from app.calculators.production_recommendation_engine import CULTURAL_TEST_REGISTRY"]
+
+
+# ── Phase 7 closeout, Part A: advanced script intelligence ──────────────────
+
+from app.calculators.production_package_intelligence import (
+    PERIOD_CLASSIFICATIONS,
+    derive_likely_cultural_test_categories,
+)
+
+
+class TestAdvancedScriptIntelligence:
+    def test_new_attribute_keys_present(self):
+        for key in ("period_classification", "cities", "regions", "stunt_intensity", "underwater", "aviation", "military", "sports", "music_heavy"):
+            assert key in SCRIPT_ATTRIBUTE_KEYS
+
+    def test_period_classification_is_fixed_vocabulary(self):
+        assert PERIOD_CLASSIFICATIONS == ("historical", "contemporary", "future")
+
+    def test_confidence_always_exposed_and_defaults_medium_for_known(self, screenplay_parse_result):
+        si = build_script_intelligence(screenplay_parse_result, {"language": "English"})
+        assert si.attributes["language"].confidence == QualificationConfidence.MEDIUM
+        assert si.attributes["documentary"].confidence == QualificationConfidence.NOT_APPLICABLE
+
+    def test_caller_can_assert_explicit_confidence(self, screenplay_parse_result):
+        si = build_script_intelligence(
+            screenplay_parse_result, {"vfx_intensity": "high"}, attribute_confidence={"vfx_intensity": QualificationConfidence.LOW},
+        )
+        assert si.attributes["vfx_intensity"].confidence == QualificationConfidence.LOW
+
+    def test_derive_likely_cultural_test_categories_single_country(self):
+        assert derive_likely_cultural_test_categories(("FR",)) == ("fr_cnc_cultural_test",)
+        assert derive_likely_cultural_test_categories(("US",)) == ()
+
+    def test_derive_likely_cultural_test_categories_multilateral(self):
+        result = derive_likely_cultural_test_categories(("FR", "IE"))
+        assert "eu_eurimages_test" in result
+        assert "eu_european_convention_test" in result
+        assert "fr_cnc_cultural_test" in result
+        assert "ie_section_481_test" in result
+
+    def test_derive_likely_cultural_test_categories_empty_input(self):
+        assert derive_likely_cultural_test_categories(()) == ()
+
+    def test_derive_likely_cultural_test_categories_never_fabricates_untested_country(self):
+        assert derive_likely_cultural_test_categories(("ZZ",)) == ()
+
+    def test_all_suggested_slugs_are_real_registry_entries(self):
+        from app.calculators.production_recommendation_engine import CULTURAL_TEST_REGISTRY
+        for slug in derive_likely_cultural_test_categories(("FR", "IE", "CA", "AU")):
+            assert slug in CULTURAL_TEST_REGISTRY
+
+
+# ── Phase 7 closeout, Part B: advanced budget intelligence (OpportunityHints) ─
+
+from app.calculators.production_package_intelligence import (
+    JURISDICTION_FIXED_SPEND_CATEGORIES,
+    MOVABLE_SPEND_CATEGORIES,
+    OpportunityHint,
+)
+
+CONCENTRATED_BUDGET_CSV = """description,amount,department
+Director fee,150000,ATL
+Director fee,150000,ATL
+VFX shots,300000,POST
+VFX cleanup,200000,POST
+Camera rental,80000,GRIP
+Hotel and lodging,700000,TRAVEL
+"""
+
+
+class TestAdvancedBudgetIntelligence:
+    def test_opportunity_hints_are_pure_data_never_priced_recommendations(self, budget_parse_result):
+        bi = build_budget_intelligence(budget_parse_result)
+        assert all(isinstance(h, OpportunityHint) for h in bi.opportunity_hints)
+
+    def test_movable_and_fixed_categories_are_disjoint(self):
+        assert not (MOVABLE_SPEND_CATEGORIES & JURISDICTION_FIXED_SPEND_CATEGORIES)
+
+    def test_movable_spend_hint_present_when_movable_categories_exist(self, budget_parse_result):
+        bi = build_budget_intelligence(budget_parse_result)
+        movable_hint = next(h for h in bi.opportunity_hints if h.hint_id == "HINT-MOVABLE-SPEND")
+        assert movable_hint.amount_usd > 0
+        assert set(movable_hint.affected_spend_categories) <= MOVABLE_SPEND_CATEGORIES
+
+    def test_qualifying_spend_candidate_excludes_other_bucket(self, budget_parse_result):
+        bi = build_budget_intelligence(budget_parse_result)
+        hint = next(h for h in bi.opportunity_hints if h.hint_id == "HINT-QUALIFYING-SPEND-CANDIDATE")
+        assert hint.amount_usd == round(bi.atl_total_usd + bi.btl_total_usd + bi.post_total_usd, 2)
+
+    def test_department_concentration_hint_fires_above_threshold(self):
+        result = parse_budget_csv(CONCENTRATED_BUDGET_CSV, filename="c.csv")
+        bi = build_budget_intelligence(result)
+        assert any(h.hint_id == "HINT-DEPT-CONCENTRATION-TRAVEL" for h in bi.opportunity_hints)
+
+    def test_duplicate_line_item_hint_detects_repeated_descriptions(self):
+        result = parse_budget_csv(CONCENTRATED_BUDGET_CSV, filename="c.csv")
+        bi = build_budget_intelligence(result)
+        dup_hint = next(h for h in bi.opportunity_hints if h.hint_id == "HINT-DUPLICATE-LINE-ITEMS")
+        assert "director fee" in dup_hint.description.lower()
+
+    def test_high_cost_categories_sorted_descending(self):
+        result = parse_budget_csv(CONCENTRATED_BUDGET_CSV, filename="c.csv")
+        bi = build_budget_intelligence(result)
+        hint = next(h for h in bi.opportunity_hints if h.hint_id == "HINT-HIGH-COST-CATEGORIES")
+        amounts = [bi.totals_by_spend_category_usd[c] for c in hint.affected_spend_categories]
+        assert amounts == sorted(amounts, reverse=True)
+
+    def test_travel_concentration_hint_fires_above_threshold(self):
+        result = parse_budget_csv(CONCENTRATED_BUDGET_CSV, filename="c.csv")
+        bi = build_budget_intelligence(result)
+        assert any(h.hint_id == "HINT-TRAVEL-CONCENTRATION" for h in bi.opportunity_hints)
+
+    def test_no_hints_when_no_budget(self):
+        bi = build_budget_intelligence(None)
+        assert bi.opportunity_hints == ()
+
+    def test_no_pricing_no_recommendation_language_in_hints(self, budget_parse_result):
+        """Opportunity hints must never claim a dollar VALUE UNLOCKED —
+        only a pattern in already-known totals."""
+        bi = build_budget_intelligence(budget_parse_result)
+        for hint in bi.opportunity_hints:
+            assert "unlock" not in hint.description.lower()
+            assert "incentive value" not in hint.description.lower()
+
+    def test_hints_deterministic_ordering(self, budget_parse_result):
+        bi1 = build_budget_intelligence(budget_parse_result)
+        bi2 = build_budget_intelligence(budget_parse_result)
+        assert [h.hint_id for h in bi1.opportunity_hints] == [h.hint_id for h in bi2.opportunity_hints]
+
+
+# ── Phase 7 closeout, Part C: package enrichment model (discovery sources) ───
+
+class TestPackageEnrichmentModel:
+    def test_unknown_person_nationality_carries_discovery_sources(self, people):
+        pkg = build_package_intelligence(people=people)
+        writer = pkg.writers[0]
+        assert writer.nationality.state == FactKnowledgeState.UNKNOWN
+        assert len(writer.nationality.possible_discovery_sources) > 0
+        assert DiscoverySourceKind.IMDB in writer.nationality.possible_discovery_sources
+
+    def test_known_person_nationality_carries_no_discovery_sources(self, people):
+        pkg = build_package_intelligence(people=people)
+        director = pkg.directors[0]
+        assert director.nationality.state == FactKnowledgeState.KNOWN
+        assert director.nationality.possible_discovery_sources == ()
+
+    def test_verification_required_still_carries_discovery_sources(self, people):
+        pkg = build_package_intelligence(people=people)
+        cast = pkg.cast[0]
+        assert cast.residency.state == FactKnowledgeState.VERIFICATION_REQUIRED
+        assert len(cast.residency.possible_discovery_sources) > 0
+
+    def test_unknown_entity_jurisdiction_carries_company_registry_hook(self, vendors):
+        pkg = build_package_intelligence(vendors=vendors)
+        vendor = pkg.vendors[0]
+        assert DiscoverySourceKind.COMPANY_REGISTRY in vendor.registered_jurisdiction.possible_discovery_sources
+
+    def test_unknown_location_jurisdiction_carries_film_commission_hook(self, locations):
+        li = build_location_intelligence(locations)
+        vfx = li.of_role(LocationRole.VFX)[0]
+        assert DiscoverySourceKind.FILM_COMMISSION_DATABASE in vfx.jurisdiction.possible_discovery_sources
+
+    def test_discovery_hooks_never_perform_enrichment(self):
+        """Modeling only — no function in this module actually resolves
+        a fact from a discovery source."""
+        import app.calculators.production_package_intelligence as ppi
+        import inspect
+        source = inspect.getsource(ppi)
+        for forbidden in ("requests.get", "httpx.get", "urlopen(", "aiohttp"):
+            assert forbidden not in source
+
+
+# ── Phase 7 closeout, Part G: engine integration bridges ────────────────────
+
+from app.calculators.production_package_intelligence import (
+    production_package_to_cultural_test_inputs,
+    production_package_to_extra_jurisdiction_sets,
+    production_package_to_known_jurisdiction_codes,
+    production_package_to_relevant_cultural_test_slugs,
+)
+
+
+class TestEngineIntegrationBridges:
+    def test_known_jurisdiction_codes_merge_all_sources(self):
+        pkg = build_production_package(
+            production_id="X",
+            people=[PersonIntake(person_id="P1", name="Dir", role=PersonRole.DIRECTOR, residency="IE")],
+            production_companies=[EntityIntake(entity_id="E1", name="Co", entity_type="production_company", registered_jurisdiction="FR")],
+            locations=[LocationIntake(location_id="L1", role=LocationRole.PRINCIPAL_PHOTOGRAPHY, jurisdiction_code="MU")],
+        )
+        codes = production_package_to_known_jurisdiction_codes(pkg)
+        assert set(codes) == {"IE", "FR", "MU"}
+
+    def test_extra_jurisdiction_sets_shape_matches_composer_parameter(self):
+        pkg = build_production_package(
+            production_id="X",
+            locations=[LocationIntake(location_id="L1", role=LocationRole.VFX, jurisdiction_code="CA")],
+        )
+        sets = production_package_to_extra_jurisdiction_sets(pkg)
+        assert sets == [("CA",)]
+        assert all(isinstance(s, tuple) for s in sets)
+
+    def test_relevant_cultural_test_slugs_reuses_part_a_function(self):
+        pkg = build_production_package(
+            production_id="X",
+            locations=[LocationIntake(location_id="L1", role=LocationRole.PRINCIPAL_PHOTOGRAPHY, jurisdiction_code="FR")],
+        )
+        assert production_package_to_relevant_cultural_test_slugs(pkg) == derive_likely_cultural_test_categories(("FR",))
+
+    def test_cultural_test_inputs_only_populates_answerable_keys(self):
+        pkg = build_production_package(
+            production_id="X",
+            people=[PersonIntake(person_id="P1", name="Dir", role=PersonRole.DIRECTOR, nationality="FR")],
+        )
+        inputs = production_package_to_cultural_test_inputs(pkg)
+        assert inputs["fr_cnc_cultural_test"]["director_french_or_eea"] is True
+        # writer never supplied -> no writer key anywhere
+        assert "writer_french_or_eea" not in inputs.get("fr_cnc_cultural_test", {})
+
+    def test_cultural_test_inputs_empty_when_nothing_known(self):
+        pkg = build_production_package(production_id="EMPTY")
+        assert production_package_to_cultural_test_inputs(pkg) == {}
+
+    def test_bridge_output_is_directly_usable_by_recommendation_engine(self):
+        """Real integration proof, not just shape-matching: feed the
+        bridge output straight into
+        production_recommendation_engine.generate_cultural_recommendations()
+        and confirm it runs without error."""
+        from app.calculators.production_recommendation_engine import generate_cultural_recommendations
+        pkg = build_production_package(
+            production_id="X",
+            people=[PersonIntake(person_id="P1", name="Dir", role=PersonRole.DIRECTOR, nationality="FR")],
+            locations=[LocationIntake(location_id="L1", role=LocationRole.PRINCIPAL_PHOTOGRAPHY, jurisdiction_code="FR")],
+        )
+        slugs = production_package_to_relevant_cultural_test_slugs(pkg)
+        inputs = production_package_to_cultural_test_inputs(pkg)
+        recs = generate_cultural_recommendations(inputs, slugs)
+        assert isinstance(recs, list)  # no exception is the real assertion here

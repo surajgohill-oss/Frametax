@@ -61,10 +61,12 @@ import enum
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
+from app.calculators import treaty_engine as te
 from app.calculators.classify_budget_line_items import (
     ENGINE_VERSION as CLASSIFY_ENGINE_VERSION,
     classify_atl_btl_split,
 )
+from app.calculators.production_recommendation_engine import CULTURAL_TEST_REGISTRY
 from app.calculators.qualification_model import QualificationConfidence
 from app.ingestion.budget_parser import BudgetParseResult
 from app.ingestion.screenplay_parser import ScreenplayParseResult
@@ -81,10 +83,20 @@ class FactKnowledgeState(str, enum.Enum):
 @dataclass(frozen=True)
 class AttributeFact:
     """One fact this engine either has, doesn't have, or has but hasn't
-    confirmed. value is only meaningful when state != UNKNOWN."""
+    confirmed. value is only meaningful when state != UNKNOWN.
+
+    confidence is always exposed (Phase 7 Part A/C requirement) — never
+    fabricated: a caller-supplied value defaults to MEDIUM (stated, not
+    independently verified) unless the caller asserts otherwise, and
+    UNKNOWN is always NOT_APPLICABLE, never a guessed number.
+    possible_discovery_sources names WHICH kind of future enrichment
+    source could resolve this fact — pure description, never a call
+    (Part C: 'future enrichment source' modeled, never performed)."""
     state: FactKnowledgeState
     value: Optional[str] = None
+    confidence: QualificationConfidence = QualificationConfidence.NOT_APPLICABLE
     notes: str = ""
+    possible_discovery_sources: tuple["DiscoverySourceKind", ...] = field(default_factory=tuple)
 
     @property
     def is_actionable(self) -> bool:
@@ -95,15 +107,218 @@ class AttributeFact:
         return self.state == FactKnowledgeState.KNOWN and self.value is not None
 
 
-def _fact(value: Optional[str], verification_required: bool = False, notes: str = "") -> AttributeFact:
+def _fact(
+    value: Optional[str],
+    verification_required: bool = False,
+    notes: str = "",
+    confidence: Optional[QualificationConfidence] = None,
+    possible_discovery_sources: tuple["DiscoverySourceKind", ...] = (),
+) -> AttributeFact:
     if verification_required:
-        return AttributeFact(state=FactKnowledgeState.VERIFICATION_REQUIRED, value=value, notes=notes)
+        return AttributeFact(
+            state=FactKnowledgeState.VERIFICATION_REQUIRED, value=value,
+            confidence=confidence or QualificationConfidence.LOW, notes=notes,
+            possible_discovery_sources=possible_discovery_sources,
+        )
     if value:
-        return AttributeFact(state=FactKnowledgeState.KNOWN, value=value, notes=notes)
-    return AttributeFact(state=FactKnowledgeState.UNKNOWN, value=None, notes=notes)
+        # A KNOWN fact needs no future enrichment source — discovery
+        # hooks are only meaningful for a real gap.
+        return AttributeFact(
+            state=FactKnowledgeState.KNOWN, value=value,
+            confidence=confidence or QualificationConfidence.MEDIUM, notes=notes,
+        )
+    return AttributeFact(
+        state=FactKnowledgeState.UNKNOWN, value=None,
+        confidence=QualificationConfidence.NOT_APPLICABLE, notes=notes,
+        possible_discovery_sources=possible_discovery_sources,
+    )
 
 
 # ── Budget Intelligence ───────────────────────────────────────────────────────
+
+@dataclass(frozen=True)
+class OpportunityHint:
+    """A deterministic, non-priced signal derived purely from the budget's
+    own classified totals — never a recommendation, never a dollar
+    estimate of value unlocked (that is production_recommendation_engine's
+    job, and only once real opportunities/candidates exist). This is
+    strictly 'here is a pattern in the numbers worth a human look'."""
+    hint_id: str
+    category: str
+    description: str
+    amount_usd: Optional[float]
+    affected_spend_categories: tuple[str, ...]
+    confidence: QualificationConfidence
+
+
+# Movable = the WORK could plausibly be routed/relocated without moving
+# the physical shoot (creative fees, VFX, music, sound, post). Fixed =
+# tied to wherever principal photography physically happens. Categories
+# absent from both (travel, payroll fringes, finance costs, contingency,
+# ...) are deliberately left unclassified rather than guessed at either
+# way — same discipline as opportunity_discovery's routing classifier.
+MOVABLE_SPEND_CATEGORIES: frozenset[str] = frozenset({
+    "vfx", "music", "sound", "post_production",
+    "atl_director", "atl_writer", "atl_producer", "atl_cast",
+})
+JURISDICTION_FIXED_SPEND_CATEGORIES: frozenset[str] = frozenset({
+    "btl_stage_facility", "btl_location_fees", "btl_set_construction",
+    "btl_crew_labor", "btl_resident_labor", "btl_nonresident_labor",
+    "vessel_marine", "btl_catering", "btl_transportation",
+})
+
+# Named policy thresholds — same style as MATERIAL_RATE_ADVANTAGE /
+# HIGH_IMPACT_APPROVAL_THRESHOLD_USD elsewhere: fixed, auditable, never
+# per-item invented.
+DEPARTMENT_CONCENTRATION_THRESHOLD_PCT = 0.30
+TRAVEL_CONCENTRATION_THRESHOLD_PCT = 0.15
+PAYROLL_HEAVY_THRESHOLD_PCT = 0.40
+HIGH_COST_CATEGORY_COUNT = 5
+
+
+def _budget_opportunity_hints(
+    by_category: dict[str, float],
+    classified_items: list[dict],
+    totals: dict[str, float],
+) -> tuple[OpportunityHint, ...]:
+    grand_total = totals["atl_total_usd"] + totals["btl_total_usd"] + totals["post_total_usd"] + totals["other_total_usd"]
+    hints: list[OpportunityHint] = []
+
+    if grand_total <= 0:
+        return ()
+
+    # Movable / jurisdiction-sensitive spend summary
+    movable_usd = round(sum(amt for cat, amt in by_category.items() if cat in MOVABLE_SPEND_CATEGORIES), 2)
+    if movable_usd > 0:
+        movable_cats = tuple(sorted(c for c in by_category if c in MOVABLE_SPEND_CATEGORIES))
+        hints.append(OpportunityHint(
+            hint_id="HINT-MOVABLE-SPEND",
+            category="movable_spend",
+            description=f"${movable_usd:,.2f} across {len(movable_cats)} categor(ies) is routable work (VFX/music/sound/post/creative fees) not physically tied to the shoot location.",
+            amount_usd=movable_usd,
+            affected_spend_categories=movable_cats,
+            confidence=QualificationConfidence.MEDIUM,
+        ))
+
+    fixed_usd = round(sum(amt for cat, amt in by_category.items() if cat in JURISDICTION_FIXED_SPEND_CATEGORIES), 2)
+    if fixed_usd > 0:
+        fixed_cats = tuple(sorted(c for c in by_category if c in JURISDICTION_FIXED_SPEND_CATEGORIES))
+        hints.append(OpportunityHint(
+            hint_id="HINT-JURISDICTION-FIXED-SPEND",
+            category="jurisdiction_fixed_spend",
+            description=f"${fixed_usd:,.2f} across {len(fixed_cats)} categor(ies) is tied to the physical shoot location and will not move independently of it.",
+            amount_usd=fixed_usd,
+            affected_spend_categories=fixed_cats,
+            confidence=QualificationConfidence.MEDIUM,
+        ))
+
+    # Qualifying-spend candidate (everything except OTHER: finance/
+    # insurance/completion bond/contingency, which classify_line_item's
+    # own comment already notes is excluded from most incentive programs)
+    qualifying_candidate_usd = round(totals["atl_total_usd"] + totals["btl_total_usd"] + totals["post_total_usd"], 2)
+    hints.append(OpportunityHint(
+        hint_id="HINT-QUALIFYING-SPEND-CANDIDATE",
+        category="qualifying_spend_candidate",
+        description=f"${qualifying_candidate_usd:,.2f} of ${grand_total:,.2f} total is ATL/BTL/POST spend — a candidate qualifying-spend basis before any program-specific rule is applied.",
+        amount_usd=qualifying_candidate_usd,
+        affected_spend_categories=(),
+        confidence=QualificationConfidence.LOW,
+    ))
+
+    # Department concentration
+    by_department: dict[str, float] = {}
+    for item in classified_items:
+        dept = item.get("department") or "UNSPECIFIED"
+        by_department[dept] = by_department.get(dept, 0.0) + float(item.get("amount_usd") or 0.0)
+    for dept in sorted(by_department):
+        pct = by_department[dept] / grand_total
+        if pct >= DEPARTMENT_CONCENTRATION_THRESHOLD_PCT:
+            hints.append(OpportunityHint(
+                hint_id=f"HINT-DEPT-CONCENTRATION-{dept.upper().replace(' ', '_')}",
+                category="department_concentration",
+                description=f"Department '{dept}' represents {pct:.0%} of total budget (${round(by_department[dept], 2):,.2f}) — a concentration worth structuring/routing review.",
+                amount_usd=round(by_department[dept], 2),
+                affected_spend_categories=(),
+                confidence=QualificationConfidence.LOW,
+            ))
+
+    # Duplicate line-item description candidates
+    desc_counts: dict[str, int] = {}
+    for item in classified_items:
+        desc = (item.get("description") or "").strip().lower()
+        if desc:
+            desc_counts[desc] = desc_counts.get(desc, 0) + 1
+    duplicates = tuple(sorted(d for d, c in desc_counts.items() if c > 1))
+    if duplicates:
+        hints.append(OpportunityHint(
+            hint_id="HINT-DUPLICATE-LINE-ITEMS",
+            category="duplicate_vendor_candidate",
+            description=f"{len(duplicates)} line-item description(s) appear more than once — possible duplicate entries or genuinely split vendor billings worth reconciling: {', '.join(duplicates[:5])}{'...' if len(duplicates) > 5 else ''}.",
+            amount_usd=None,
+            affected_spend_categories=(),
+            confidence=QualificationConfidence.LOW,
+        ))
+
+    # High-cost / high-value-optimization categories
+    high_cost = tuple(cat for cat, _ in sorted(by_category.items(), key=lambda kv: (-kv[1], kv[0]))[:HIGH_COST_CATEGORY_COUNT])
+    if high_cost:
+        hints.append(OpportunityHint(
+            hint_id="HINT-HIGH-COST-CATEGORIES",
+            category="high_cost_categories",
+            description=f"Highest-cost spend categories: {', '.join(high_cost)}.",
+            amount_usd=round(sum(by_category[c] for c in high_cost), 2),
+            affected_spend_categories=high_cost,
+            confidence=QualificationConfidence.LOW,
+        ))
+    high_value_optimization = tuple(c for c in high_cost if c in MOVABLE_SPEND_CATEGORIES)
+    if high_value_optimization:
+        hints.append(OpportunityHint(
+            hint_id="HINT-HIGH-VALUE-OPTIMIZATION-CATEGORIES",
+            category="high_value_optimization_categories",
+            description=f"Movable categories among the highest-cost: {', '.join(high_value_optimization)} — worth checking against Opportunity Discovery's structuring/normalization passes.",
+            amount_usd=round(sum(by_category[c] for c in high_value_optimization), 2),
+            affected_spend_categories=high_value_optimization,
+            confidence=QualificationConfidence.LOW,
+        ))
+
+    # Payroll assumption hint
+    payroll_pct = totals["labor_usd"] / grand_total
+    if payroll_pct >= PAYROLL_HEAVY_THRESHOLD_PCT:
+        hints.append(OpportunityHint(
+            hint_id="HINT-PAYROLL-HEAVY",
+            category="payroll_assumption",
+            description=f"Labor spend is {payroll_pct:.0%} of budget (${round(totals['labor_usd'], 2):,.2f}) — payroll routing/EOR structuring is likely a material lever, not a minor one.",
+            amount_usd=round(totals["labor_usd"], 2),
+            affected_spend_categories=(),
+            confidence=QualificationConfidence.LOW,
+        ))
+
+    # Travel concentration
+    travel_usd = round(by_category.get("travel", 0.0) + by_category.get("lodging", 0.0), 2)
+    travel_pct = travel_usd / grand_total
+    if travel_pct >= TRAVEL_CONCENTRATION_THRESHOLD_PCT:
+        hints.append(OpportunityHint(
+            hint_id="HINT-TRAVEL-CONCENTRATION",
+            category="travel_concentration",
+            description=f"Travel + lodging is {travel_pct:.0%} of budget (${travel_usd:,.2f}) — a material candidate for travel normalization.",
+            amount_usd=travel_usd,
+            affected_spend_categories=tuple(c for c in ("travel", "lodging") if c in by_category),
+            confidence=QualificationConfidence.LOW,
+        ))
+
+    # Production (ATL) concentration
+    atl_pct = totals["atl_total_usd"] / grand_total
+    hints.append(OpportunityHint(
+        hint_id="HINT-PRODUCTION-CONCENTRATION",
+        category="production_concentration",
+        description=f"Above-the-line creative fees are {atl_pct:.0%} of budget (${round(totals['atl_total_usd'], 2):,.2f}).",
+        amount_usd=round(totals["atl_total_usd"], 2),
+        affected_spend_categories=(),
+        confidence=QualificationConfidence.LOW,
+    ))
+
+    return tuple(sorted(hints, key=lambda h: h.hint_id))
+
 
 @dataclass
 class BudgetIntelligence:
@@ -123,6 +338,7 @@ class BudgetIntelligence:
     totals_by_spend_category_usd: dict[str, float]
     parse_warnings: tuple[str, ...]
     engine_version: str
+    opportunity_hints: tuple[OpportunityHint, ...] = ()
 
 
 def build_budget_intelligence(parse_result: Optional[BudgetParseResult]) -> BudgetIntelligence:
@@ -130,14 +346,16 @@ def build_budget_intelligence(parse_result: Optional[BudgetParseResult]) -> Budg
     classify_atl_btl_split() — no new classification. known=False (not a
     zeroed-out budget) is how 'no budget was supplied at all' is
     represented; it is never conflated with 'a budget with $0 line
-    items'."""
+    items'. opportunity_hints (Phase 7 Part B) are deterministic signals
+    over the already-classified totals only — no pricing, no new
+    incentive math."""
     if parse_result is None or not parse_result.line_items:
         return BudgetIntelligence(
             known=False, filename=None, currency_code=None, total_budget_usd=None,
             line_item_count=0, atl_total_usd=0.0, btl_total_usd=0.0, post_total_usd=0.0,
             other_total_usd=0.0, fixed_atl_usd=0.0, variable_btl_usd=0.0, labor_usd=0.0,
             non_labor_usd=0.0, totals_by_spend_category_usd={}, parse_warnings=(),
-            engine_version=CLASSIFY_ENGINE_VERSION,
+            engine_version=CLASSIFY_ENGINE_VERSION, opportunity_hints=(),
         )
 
     items = [
@@ -168,6 +386,7 @@ def build_budget_intelligence(parse_result: Optional[BudgetParseResult]) -> Budg
         totals_by_spend_category_usd=dict(sorted(by_category.items())),
         parse_warnings=tuple(parse_result.parse_warnings),
         engine_version=split["engine_version"],
+        opportunity_hints=_budget_opportunity_hints(by_category, split["classified_items"], totals),
     )
 
 
@@ -180,11 +399,18 @@ def build_budget_intelligence(parse_result: Optional[BudgetParseResult]) -> Budg
 # future one may populate these keys, at which point this exact set of
 # names is already the contract it would fill in.
 SCRIPT_ATTRIBUTE_KEYS: tuple[str, ...] = (
-    "language", "setting", "period", "countries", "cultural_themes",
-    "source_material", "historical_events", "marine_usage", "vfx_intensity",
+    "language", "setting", "period", "period_classification", "countries",
+    "cities", "regions", "cultural_themes", "indigenous_themes",
+    "source_material", "historical_events", "marine_usage", "underwater",
+    "aviation", "military", "sports", "vfx_intensity", "stunt_intensity",
     "animation", "documentary", "childrens_content", "indigenous_content",
-    "qualifying_cultural_elements",
+    "music_heavy", "qualifying_cultural_elements",
 )
+
+# period_classification is a controlled vocabulary, not free text — kept
+# as a fixed, named set so callers/tests know exactly what's valid rather
+# than guessing at strings this module might accept.
+PERIOD_CLASSIFICATIONS: tuple[str, ...] = ("historical", "contemporary", "future")
 
 
 @dataclass
@@ -202,13 +428,24 @@ class ScriptIntelligence:
 def build_script_intelligence(
     parse_result: Optional[ScreenplayParseResult],
     known_attributes: Optional[dict[str, Any]] = None,
+    attribute_confidence: Optional[dict[str, QualificationConfidence]] = None,
 ) -> ScriptIntelligence:
     """known_attributes lets a caller (producer intake, or a future LLM
     pass) supply any of SCRIPT_ATTRIBUTE_KEYS explicitly. Every key not
     supplied stays UNKNOWN — this function never infers 'documentary' or
-    'vfx_intensity' from scene headings or word count."""
+    'vfx_intensity' from scene headings or word count. attribute_confidence
+    lets the caller assert a specific confidence per key (e.g. LOW for an
+    inference the producer isn't sure of); anything not specified defaults
+    to MEDIUM for a supplied value, matching _fact()'s general rule."""
     known_attributes = known_attributes or {}
-    attributes = {key: _fact(str(known_attributes[key]) if key in known_attributes else None) for key in SCRIPT_ATTRIBUTE_KEYS}
+    attribute_confidence = attribute_confidence or {}
+    attributes = {
+        key: _fact(
+            str(known_attributes[key]) if key in known_attributes else None,
+            confidence=attribute_confidence.get(key),
+        )
+        for key in SCRIPT_ATTRIBUTE_KEYS
+    }
 
     if parse_result is None:
         return ScriptIntelligence(
@@ -266,12 +503,21 @@ class PersonProfile:
 
 
 def _person_profile(intake: PersonIntake) -> PersonProfile:
+    # _PERSON_DISCOVERY_HOOKS is defined later in this module (Question
+    # Engine section) and resolved at call time, not def time — safe.
+    person_sources = tuple(h.source for h in _PERSON_DISCOVERY_HOOKS)
     return PersonProfile(
         person_id=intake.person_id,
         name=intake.name,
         role=intake.role,
-        nationality=_fact(intake.nationality, intake.nationality_verification_required),
-        residency=_fact(intake.residency, intake.residency_verification_required),
+        nationality=_fact(
+            intake.nationality, intake.nationality_verification_required,
+            possible_discovery_sources=person_sources,
+        ),
+        residency=_fact(
+            intake.residency, intake.residency_verification_required,
+            possible_discovery_sources=person_sources,
+        ),
         imdb_id=intake.imdb_id,
         department=intake.department,
     )
@@ -298,15 +544,18 @@ class EntityProfile:
 
 
 def _entity_profile(intake: EntityIntake) -> EntityProfile:
+    entity_sources = tuple(h.source for h in _ENTITY_DISCOVERY_HOOKS)
     return EntityProfile(
         entity_id=intake.entity_id,
         name=intake.name,
         entity_type=intake.entity_type,
         registered_jurisdiction=_fact(
             intake.registered_jurisdiction, intake.registered_jurisdiction_verification_required,
+            possible_discovery_sources=entity_sources,
         ),
         ownership_nationality=_fact(
             intake.ownership_nationality, intake.ownership_nationality_verification_required,
+            possible_discovery_sources=entity_sources,
         ),
     )
 
@@ -361,6 +610,54 @@ def build_package_intelligence(
     )
 
 
+# Single-jurisdiction country code -> cultural_test_rules.py test_slug.
+# Fixed, explicit lookup — no new test theory, and every value is
+# validated (below) to be a real key of production_recommendation_engine's
+# own CULTURAL_TEST_REGISTRY, so this table can never suggest a test slug
+# that doesn't exist.
+_SINGLE_COUNTRY_CULTURAL_TEST: dict[str, str] = {
+    "FR": "fr_cnc_cultural_test",
+    "IE": "ie_section_481_test",
+    "CA": "ca_content_test",
+    "AU": "au_content_test",
+}
+assert set(_SINGLE_COUNTRY_CULTURAL_TEST.values()) <= set(CULTURAL_TEST_REGISTRY.keys())
+
+# Multilateral treaty membership checks (reused directly from
+# treaty_engine.py, never reimplemented) -> the cultural test their
+# co-production framework requires.
+_MULTILATERAL_CULTURAL_TEST: tuple[tuple[str, Any], ...] = (
+    ("eu_eurimages_test", te.is_eurimages_member),
+    ("ibermedia_test", te.is_ibermedia_member),
+    ("eu_european_convention_test", te.is_european_convention_signatory),
+)
+assert all(slug in CULTURAL_TEST_REGISTRY for slug, _ in _MULTILATERAL_CULTURAL_TEST)
+
+
+def derive_likely_cultural_test_categories(known_jurisdiction_codes: tuple[str, ...]) -> tuple[str, ...]:
+    """
+    Deterministic suggestion of which cultural_test_rules.py tests are
+    plausibly relevant given the jurisdictions this ProductionPackage
+    already knows about (person nationalities, entity domiciles, location
+    jurisdictions — whatever the caller passes in). This is a lookup over
+    already-known facts against already-registered test slugs and
+    treaty_engine's own membership checks — it never invents a new test
+    or a new eligibility theory, and an empty input yields an empty
+    result rather than a guess.
+    """
+    codes = {c.upper() for c in known_jurisdiction_codes}
+    likely: set[str] = set()
+    for code in codes:
+        slug = _SINGLE_COUNTRY_CULTURAL_TEST.get(code)
+        if slug:
+            likely.add(slug)
+    if len(codes) >= 2:
+        for slug, checker in _MULTILATERAL_CULTURAL_TEST:
+            if sum(1 for code in codes if checker(code)) >= 2:
+                likely.add(slug)
+    return tuple(sorted(likely))
+
+
 # ── Location Intelligence ────────────────────────────────────────────────────
 
 class LocationRole(str, enum.Enum):
@@ -407,11 +704,15 @@ class LocationIntelligence:
 
 
 def build_location_intelligence(locations: Optional[list[LocationIntake]] = None) -> LocationIntelligence:
+    location_sources = tuple(h.source for h in _LOCATION_DISCOVERY_HOOKS)
     records = tuple(
         LocationRecord(
             location_id=intake.location_id,
             role=intake.role,
-            jurisdiction=_fact(intake.jurisdiction_code, intake.jurisdiction_verification_required),
+            jurisdiction=_fact(
+                intake.jurisdiction_code, intake.jurisdiction_verification_required,
+                possible_discovery_sources=location_sources,
+            ),
             city=intake.city,
             vendor_entity_id=intake.vendor_entity_id,
             notes=intake.notes,
@@ -882,3 +1183,83 @@ def build_production_package(
         confidence=_overall_confidence(missing),
         graph_refs=location.graph_refs,
     )
+
+
+# ── Engine integration bridges (Phase 7 closeout, Part G) ────────────────────
+#
+# These functions perform no discovery, composition, pricing, or
+# recommendation logic of their own — each one only reshapes already-built
+# ProductionPackage fields into the exact parameter shape an existing,
+# frozen engine already accepts. This is the "one source of truth" half of
+# Part G: opportunity_discovery.py, production_structure_composer.py, and
+# production_recommendation_engine.py are never modified or duplicated —
+# only fed.
+
+def production_package_to_known_jurisdiction_codes(package: ProductionPackage) -> tuple[str, ...]:
+    """Every jurisdiction code this package actually knows about, from
+    any source (locations, entity domicile, person residency) — feeds
+    opportunity_discovery.discover_treaty_opportunities(country_codes) /
+    discover_reinvestment_opportunities(country_codes), both of which
+    accept exactly this shape (list[str] of ISO-ish country codes)."""
+    codes: set[str] = set(package.location.jurisdiction_codes_known)
+    for entity in package.package.all_entities:
+        if entity.registered_jurisdiction.is_actionable:
+            codes.add(entity.registered_jurisdiction.value)
+    for person in package.package.all_people:
+        if person.residency.is_actionable:
+            codes.add(person.residency.value)
+    return tuple(sorted(codes))
+
+
+def production_package_to_extra_jurisdiction_sets(package: ProductionPackage) -> list[tuple[str, ...]]:
+    """One candidate set per known jurisdiction — feeds
+    production_structure_composer.compose_production_structures(...,
+    extra_jurisdiction_sets=...) exactly as that parameter is already
+    documented to accept (a list of explicit jurisdiction-code tuples).
+    This never enumerates combinatorially; the composer's own Pass-1
+    logic already does the baseline-alone / baseline-plus-partner
+    expansion — this bridge only supplies the additional single-code
+    sets a ProductionPackage's own location data actually names."""
+    return [(code,) for code in production_package_to_known_jurisdiction_codes(package)]
+
+
+def production_package_to_relevant_cultural_test_slugs(package: ProductionPackage) -> tuple[str, ...]:
+    """Feeds production_recommendation_engine.generate_cultural_recommendations() /
+    generate_production_recommendations()'s relevant_cultural_test_slugs
+    parameter — reuses derive_likely_cultural_test_categories() (Part A)
+    unchanged rather than a second jurisdiction-to-test mapping."""
+    return derive_likely_cultural_test_categories(production_package_to_known_jurisdiction_codes(package))
+
+
+def production_package_to_cultural_test_inputs(package: ProductionPackage) -> dict[str, dict[str, Any]]:
+    """
+    Best-effort, honest bridge into generate_cultural_recommendations()'s
+    cultural_test_inputs parameter: only the input_keys this module can
+    populate WITHOUT guessing (currently: nationality-flavored boolean
+    keys for a role this package actually has a KNOWN person for, checked
+    against the exact country code the test's own rule text names — never
+    an EEA/EU membership inference this module has no canonical source
+    for). Every key this can't honestly answer is simply absent from the
+    returned dict — generate_cultural_recommendations() already turns an
+    absent key into a REQUIRED_INPUT recommendation rather than assuming
+    a default, so nothing is silently guessed here either.
+    """
+    director = package.package.directors[0] if package.package.directors else None
+    writer = package.package.writers[0] if package.package.writers else None
+    inputs: dict[str, dict[str, Any]] = {}
+
+    if director and director.nationality.is_actionable:
+        inputs.setdefault("fr_cnc_cultural_test", {})["director_french_or_eea"] = director.nationality.value == "FR"
+        inputs.setdefault("ca_content_test", {})["director_canadian"] = director.nationality.value == "CA"
+        inputs.setdefault("au_content_test", {})["director_australian"] = director.nationality.value == "AU"
+    if writer and writer.nationality.is_actionable:
+        inputs.setdefault("fr_cnc_cultural_test", {})["writer_french_or_eea"] = writer.nationality.value == "FR"
+        inputs.setdefault("ca_content_test", {})["writer_canadian"] = writer.nationality.value == "CA"
+
+    if package.package.production_companies:
+        company = package.package.production_companies[0]
+        if company.registered_jurisdiction.is_actionable:
+            inputs.setdefault("fr_cnc_cultural_test", {})["producer_french"] = company.registered_jurisdiction.value == "FR"
+            inputs.setdefault("au_content_test", {})["producer_australian"] = company.registered_jurisdiction.value == "AU"
+
+    return inputs
