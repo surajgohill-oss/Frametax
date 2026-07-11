@@ -8,6 +8,18 @@ function isTypingTarget(el) {
   return tag === "INPUT" || tag === "TEXTAREA" || el.isContentEditable;
 }
 
+// optimizer_value is an impact-priority rating ("high"/"medium"/"low"),
+// not a dollar figure — labeled explicitly so it never reads as a bare,
+// unexplained enum value next to the money column.
+function priorityBadgeClass(value) {
+  switch (value) {
+    case "high": return "amber";
+    case "medium": return "silver";
+    case "low": return "charcoal";
+    default: return "charcoal";
+  }
+}
+
 /**
  * Unifies the two real kinds of open question this backend produces —
  * MissingInput (Question Engine, from /package) and open GreyAreaItem
@@ -68,7 +80,9 @@ export default function QuestionStack({ missingInputs = [], greyAreas = [] }) {
             </div>
           </div>
           <div className="row-value">
-            {isGreyArea(item.data) ? <Money value={item.data.amount_usd} /> : <span className="text-tertiary small">{item.data.optimizer_value}</span>}
+            {isGreyArea(item.data)
+              ? <Money value={item.data.amount_usd} />
+              : <span className={`badge ${priorityBadgeClass(item.data.optimizer_value)}`}>{item.data.optimizer_value} priority</span>}
           </div>
         </div>
       ))}

@@ -47,20 +47,20 @@ export default function Overview() {
       <FXStrip />
 
       <div className="overview-regions">
-        <section className="region">
+        <section className="region region-accent-amber">
           <div className="region-title">Open Questions <span className="count">{pkg.missing_inputs.length}</span></div>
           <QuestionStack missingInputs={pkg.missing_inputs.slice(0, 5)} greyAreas={[]} />
           <button className="link-more" onClick={() => navigate("/production/workspace")}>Open Workspace →</button>
         </section>
 
-        <section className="region">
+        <section className="region region-accent-gold">
           <div className="region-title">Scenarios <span className="count">{structures.candidates.length}</span></div>
           <div className="row-list">
             {structures.ranking.slice(0, 4).map((r) => (
               <div className="row-item" key={r.structure_id} onClick={() => navigate("/production/workspace")}>
                 <span className={`dot ${r.is_priceable ? "gold" : "charcoal"}`} />
                 <div className="row-main">
-                  <div className="row-title">{r.label}</div>
+                  <div className="row-title">{r.label.replace(/ -> /g, " → ")}</div>
                 </div>
                 <div className="row-value"><Money value={r.risk_adjusted_npc_usd} /></div>
               </div>
@@ -68,10 +68,10 @@ export default function Overview() {
           </div>
         </section>
 
-        <section className="region">
+        <section className="region region-quiet">
           <div className="region-title">Production Sheet</div>
           <dl className="kv-list">
-            <div><dt>Line items</dt><dd>{pkg.budget.line_item_count}</dd></div>
+            <div><dt>Line items</dt><dd className="mono">{pkg.budget.line_item_count}</dd></div>
             <div><dt>ATL</dt><dd><Money value={pkg.budget.atl_total_usd} /></dd></div>
             <div><dt>BTL</dt><dd><Money value={pkg.budget.btl_total_usd} /></dd></div>
             <div><dt>Post</dt><dd><Money value={pkg.budget.post_total_usd} /></dd></div>
@@ -79,7 +79,7 @@ export default function Overview() {
           <button className="link-more" onClick={() => navigate("/production/binder")}>Open Production Sheet →</button>
         </section>
 
-        <section className="region">
+        <section className={`region ${legal.committed_rule_id ? "region-accent-jade" : "region-accent-amber"}`}>
           <div className="region-title">Latest Record</div>
           {legal.committed_rule_id ? (
             <p className="small text-secondary">
@@ -92,7 +92,7 @@ export default function Overview() {
           <button className="link-more" onClick={() => navigate("/production/record")}>Open Record →</button>
         </section>
 
-        <section className="region overview-region-wide">
+        <section className="region region-accent-blue overview-region-wide">
           <div className="region-title">Intelligence</div>
           <RecommendationsList byCategory={recommendations.by_category} legal={recommendations.legal} compact />
         </section>

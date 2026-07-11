@@ -128,12 +128,17 @@ export default function Globe3D({ points = [], arcs = [], onPointClick, onPointH
     scene.add(globe);
     globeRef.current = globe;
 
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
     controls.rotateSpeed = 0.4;
-    controls.autoRotate = points.length <= 1;
-    controls.autoRotateSpeed = 0.35;
+    // Idle rotation is the one intentional continuous motion this product
+    // allows (Luxury Glass Globe ambience) — still gated behind the
+    // user's reduced-motion preference, and slow/weighted rather than lively.
+    controls.autoRotate = points.length <= 1 && !prefersReducedMotion;
+    controls.autoRotateSpeed = 0.22;
     controls.minDistance = 180;
     controls.maxDistance = 560;
     controls.enablePan = false;

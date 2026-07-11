@@ -91,6 +91,27 @@ button {
 
 .hairline { border-color: var(--hairline); }
 
+/* Visible focus states for keyboard navigation — dark surfaces make the
+   browser default outline hard to see, so this is not decorative. */
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible,
+.row-item:focus-visible,
+.tag:focus-visible {
+  outline: 1.5px solid var(--blue);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Calm, short transitions on interactive surfaces only — no decorative
+   or continuous motion. Respect reduced-motion by disabling entirely. */
+a, button, .row-item, .tag, .rail-item, .lane, .badge, .ghost-action {
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, opacity 160ms ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 0.001ms !important; animation-duration: 0.001ms !important; }
+}
+
 .text-secondary { color: var(--text-secondary); }
 .text-tertiary { color: var(--text-tertiary); }
 

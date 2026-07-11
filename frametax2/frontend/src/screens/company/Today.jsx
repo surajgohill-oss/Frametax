@@ -24,7 +24,7 @@ export default function Today() {
         <h1 className="screen-title">Work queue</h1>
       </header>
 
-      <section className="region">
+      <section className="region region-accent-gold">
         <div className="region-title">Needs a decision <span className="count">{highValueRecs.length}</span></div>
         <div className="row-list">
           {highValueRecs.map((r) => (
@@ -40,7 +40,7 @@ export default function Today() {
         </div>
       </section>
 
-      <section className="region">
+      <section className="region region-accent-red">
         <div className="region-title">Blocked <span className="count">{blockingQuestions.length}</span></div>
         {blockingQuestions.length === 0 ? (
           <p className="empty-state">Nothing is blocked.</p>
@@ -51,7 +51,7 @@ export default function Today() {
                 <span className="dot red" />
                 <div className="row-main">
                   <div className="row-title">{q.question}</div>
-                  <div className="row-sub">Blocks: {q.downstream_engines.join(", ")}</div>
+                  <div className="row-sub">{q.why_it_matters}</div>
                 </div>
               </div>
             ))}
@@ -59,7 +59,7 @@ export default function Today() {
         )}
       </section>
 
-      <section className="region">
+      <section className="region region-accent-amber">
         <div className="region-title">Watching <span className="count">{openGreyAreas.length}</span></div>
         <div className="row-list">
           {openGreyAreas.map((g) => (
@@ -75,13 +75,13 @@ export default function Today() {
         </div>
       </section>
 
-      <section className="region">
+      <section className="region region-accent-blue">
         <div className="region-title">Productions needing action</div>
         <div className="row-list">
           <div className="row-item" onClick={() => navigate("/production/overview")}>
             <span className="dot gold" />
             <div className="row-main">
-              <div className="row-title">{production.production_name}</div>
+              <div className="row-title serif">{production.production_name}</div>
               <div className="row-sub">{production.jurisdiction_code} baseline · {pkg.confidence} confidence</div>
             </div>
             <div className="row-value"><Money value={production.gross_budget_usd} /></div>
