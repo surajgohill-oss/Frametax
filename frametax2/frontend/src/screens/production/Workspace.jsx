@@ -2,8 +2,8 @@ import { useMemo, useState } from "react";
 import { Rows3, Globe2, Columns2, ChevronDown } from "lucide-react";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
-import { Money, Pct, structureLabel } from "../../lib/format";
-import { buildBudgetBlocks } from "../../lib/budgetBlocks";
+import { Money, Pct, structureLabel, accountStateLabel } from "../../lib/format";
+import { buildAccountBlocks } from "../../lib/budgetBlocks";
 import { useAppState } from "../../state/AppState";
 import Globe3D from "../../components/Globe3D";
 import { JURISDICTION_COORDS } from "../../lib/jurisdictions";
@@ -24,7 +24,7 @@ function candidateTier(candidate, rankIndex) {
   return "silver";
 }
 
-function ModelRailBlock({ block, maxAmount }) {
+function ModelRailBlock({ block, maxAmount, onSelectAccount }) {
   const [open, setOpen] = useState(false);
   const pct = Math.min(100, Math.round((block.amount / maxAmount) * 100));
   return (
@@ -36,15 +36,19 @@ function ModelRailBlock({ block, maxAmount }) {
       <div className="budget-block-bar"><div className="budget-block-bar-fill" style={{ width: `${pct}%` }} /></div>
       {open && (
         <div className="budget-block-lines">
-          {block.lines.map((l) => (
-            <div className="budget-line" key={l.key}>
-              <span className="budget-line-name">
-                {l.label}
-                {l.movement !== "unclassified" && <span className={`movement-chip ${l.movement}`}>{l.movement}</span>}
-              </span>
-              <span className="mono"><Money value={l.amount} /></span>
-            </div>
-          ))}
+          {block.lines.map((l) => {
+            const state = accountStateLabel(l.state);
+            return (
+              <div className="budget-line" key={l.key} onClick={(e) => { e.stopPropagation(); onSelectAccount(l); }}>
+                <span className="budget-line-name">
+                  <span className={`dot ${state.tier}`} />
+                  {l.label}
+                  {l.movement !== "unclassified" && <span className={`movement-chip ${l.movement}`}>{l.movement}</span>}
+                </span>
+                <span className="mono"><Money value={l.amount} /></span>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -71,11 +75,24 @@ function JurisdictionLane({ candidate, tier, onSelect }) {
           <div className="lane-metric-row"><span className="label">Net production cost</span><span className="mono"><Money value={baseCase.net_production_cost_usd} /></span></div>
         </>
       ) : (
-        <p className="lane-partial-note">
-          Half of this structure can currently be priced — the rest depends on {candidate.constraints.length} unresolved
-          requirement{candidate.constraints.length === 1 ? "" : "s"}, mostly authority decisions for the added jurisdiction.
-          A full cost comparison isn't available until those are resolved.
-        </p>
+        <>
+          <p className="lane-partial-note">
+            {Math.round(candidate.priceable_pct * 100)}% of this structure can currently be priced — the rest depends on{" "}
+            {candidate.constraints.length} unresolved requirement{candidate.constraints.length === 1 ? "" : "s"}, mostly
+            authority decisions for the added jurisdiction. A full cost comparison isn't available until those are resolved.
+          </p>
+          {candidate.informational_upside_usd != null ? (
+            <div className="lane-metric-row" style={{ marginTop: 8 }}>
+              <span className="label">Estimated routing opportunity</span>
+              <span className="mono"><Money value={candidate.informational_upside_usd} /></span>
+            </div>
+          ) : (
+            <p className="lane-sub text-tertiary small" style={{ marginTop: 8 }}>
+              No quantifiable rate advantage identified for this jurisdiction against the Mauritius baseline in current
+              program data.
+            </p>
+          )}
+        </>
       )}
     </div>
   );
@@ -101,7 +118,7 @@ export default function Workspace() {
       .filter(Boolean);
   }, [data]);
 
-  const budgetBlocks = useMemo(() => (data ? buildBudgetBlocks(data.pkg.budget) : []), [data]);
+  const budgetBlocks = useMemo(() => (data ? buildAccountBlocks(data.pkg.register) : []), [data]);
   const maxBlockAmount = useMemo(() => Math.max(1, ...budgetBlocks.map((b) => b.amount)), [budgetBlocks]);
 
   if (loading) return <div className="screen"><Loading /></div>;
@@ -127,7 +144,12 @@ export default function Workspace() {
             <span className="amount mono"><Money value={production.gross_budget_usd} /></span>
           </div>
           {budgetBlocks.map((block) => (
-            <ModelRailBlock key={block.key} block={block} maxAmount={maxBlockAmount} />
+            <ModelRailBlock
+              key={block.key}
+              block={block}
+              maxAmount={maxBlockAmount}
+              onSelectAccount={(line) => openInspector("account", line)}
+            />
           ))}
         </aside>
 

@@ -82,6 +82,18 @@ export function humanizeToken(token) {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
+// Real AccountQualification.state values -> plain-language label + tier.
+export function accountStateLabel(state) {
+  switch (state) {
+    case "qualifies": return { label: "Qualifies", tier: "jade" };
+    case "structuring_opportunity": return { label: "Structuring opportunity", tier: "blue" };
+    case "grey_area_requires_authority": return { label: "Needs authority decision", tier: "amber" };
+    case "excluded": return { label: "Excluded from QPE", tier: "silver" };
+    case "not_applicable": return { label: "Not applicable", tier: "charcoal" };
+    default: return { label: state, tier: "charcoal" };
+  }
+}
+
 // Grey-area / question status -> a plain-language phrase and its tier.
 export function questionStatusLabel(status) {
   if (!status) return { label: "Unresolved", tier: "amber" };

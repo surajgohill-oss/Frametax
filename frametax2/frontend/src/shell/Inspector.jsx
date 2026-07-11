@@ -1,6 +1,33 @@
 import { X } from "lucide-react";
 import { useAppState } from "../state/AppState";
-import { Money, Pct, tierBadgeClass, recommendationHeadline, questionStatusLabel, humanizeToken, structureLabel } from "../lib/format";
+import { Money, Pct, tierBadgeClass, recommendationHeadline, questionStatusLabel, humanizeToken, structureLabel, accountStateLabel } from "../lib/format";
+
+function AccountInspector({ data }) {
+  const state = accountStateLabel(data.state);
+  return (
+    <>
+      <p className="inspector-eyebrow">Budget account {data.code}</p>
+      <h3>{data.label}</h3>
+      <dl className="kv-list">
+        <div><dt>Amount</dt><dd className="mono"><Money value={data.amount} /></dd></div>
+        <div><dt>Qualification state</dt><dd><span className={`badge ${state.tier}`}>{state.label}</span></dd></div>
+        <div><dt>Confidence</dt><dd style={{ textTransform: "capitalize" }}>{data.confidence}</dd></div>
+        {data.movement !== "unclassified" && (
+          <div><dt>Movement</dt><dd style={{ textTransform: "capitalize" }}>{data.movement}</dd></div>
+        )}
+        {data.incentiveUpsideUsd != null && (
+          <div><dt>Incentive upside (at modeled rate)</dt><dd className="mono"><Money value={data.incentiveUpsideUsd} /></dd></div>
+        )}
+      </dl>
+      {data.reason && <p className="text-secondary small" style={{ marginTop: 4 }}>{data.reason}</p>}
+      {data.resolvingEvidence && (
+        <p className="text-tertiary small" style={{ marginTop: 8 }}>
+          <strong className="text-secondary">Resolving evidence needed:</strong> {data.resolvingEvidence}
+        </p>
+      )}
+    </>
+  );
+}
 
 function RecommendationInspector({ data }) {
   return (
@@ -48,10 +75,22 @@ function CandidateInspector({ data }) {
           </tbody>
         </table>
       ) : (
-        <p className="text-tertiary small">
-          Only {Math.round(data.priceable_pct * 100)}% of this structure can currently be priced. A full cost
-          comparison isn't available until the open requirements below are resolved.
-        </p>
+        <>
+          <p className="text-tertiary small">
+            Only {Math.round(data.priceable_pct * 100)}% of this structure can currently be priced. A full cost
+            comparison isn't available until the open requirements below are resolved.
+          </p>
+          {data.informational_upside_usd != null ? (
+            <dl className="kv-list" style={{ marginTop: 10 }}>
+              <div><dt>Estimated routing opportunity</dt><dd className="mono"><Money value={data.informational_upside_usd} /></dd></div>
+            </dl>
+          ) : (
+            <p className="text-tertiary small" style={{ marginTop: 6 }}>
+              No quantifiable rate advantage identified for this jurisdiction against the Mauritius baseline in
+              current program data.
+            </p>
+          )}
+        </>
       )}
       {data.constraints?.length > 0 && (() => {
         const unique = [...new Set(data.constraints.map((c) => c.description))];
@@ -122,6 +161,7 @@ const RENDERERS = {
   candidate: CandidateInspector,
   question: QuestionInspector,
   jurisdiction: JurisdictionInspector,
+  account: AccountInspector,
 };
 
 export default function Inspector() {

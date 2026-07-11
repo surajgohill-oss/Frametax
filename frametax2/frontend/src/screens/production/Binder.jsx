@@ -1,6 +1,11 @@
-import { FileText, ExternalLink, ScanText, RefreshCw, Paperclip } from "lucide-react";
+import { FileText, ExternalLink, ScanText, RefreshCw, Paperclip, Upload, FileUp, FolderSync } from "lucide-react";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
+
+const UPLOAD_BLOCKED_REASON =
+  "POST /api/v1/documents/upload exists and works (accepts PDF/CSV/XLSX/FDX, persists via SQLAlchemy), " +
+  "but little_utopia_state.py serves a static in-memory production disconnected from the SQL documents table " +
+  "it writes to — an upload would succeed but never appear here. Disabled until that read path exists.";
 
 export default function Binder() {
   const { data, error, loading } = useCineGlobe();
@@ -13,10 +18,17 @@ export default function Binder() {
 
   return (
     <div className="screen">
-      <header className="screen-header">
-        <p className="screen-eyebrow">Production Binder</p>
-        <h1 className="screen-title">Documents &amp; authority</h1>
-        <p className="text-tertiary small">Source: {legal.connector_source_label}</p>
+      <header className="screen-header" style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+        <div>
+          <p className="screen-eyebrow">Production Binder</p>
+          <h1 className="screen-title">Documents &amp; authority</h1>
+          <p className="text-tertiary small">Source: {legal.connector_source_label}</p>
+        </div>
+        <div className="overview-hero-actions">
+          <button className="hero-action" disabled title={UPLOAD_BLOCKED_REASON}><Upload size={13} /> Upload budget</button>
+          <button className="hero-action" disabled title={UPLOAD_BLOCKED_REASON}><FileUp size={13} /> Upload script</button>
+          <button className="hero-action" disabled title={UPLOAD_BLOCKED_REASON}><FolderSync size={13} /> Connect Drive</button>
+        </div>
       </header>
 
       <section className="region region-cool">
@@ -55,6 +67,7 @@ export default function Binder() {
                     )}
                     <span className="ghost-action small"><ScanText size={12} /> Run OCR</span>
                     <span className="ghost-action small"><RefreshCw size={12} /> Rerun extraction</span>
+                    <span className="ghost-action small" title={UPLOAD_BLOCKED_REASON}><Upload size={12} /> Replace version</span>
                   </div>
                 </div>
               );

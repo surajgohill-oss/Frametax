@@ -71,6 +71,21 @@ async def get_package() -> dict[str, Any]:
         "production_id": pkg.production_id,
         "confidence": pkg.confidence.value,
         "is_ready_for_downstream_engines": pkg.is_ready_for_downstream_engines,
+        "register": [
+            {
+                "account_code": a.account_code,
+                "description": a.description,
+                "amount_usd": a.amount_usd,
+                "state": a.state.value,
+                "confidence": a.confidence.value,
+                "reason": a.reason,
+                "financial_impact_usd": a.financial_impact_usd,
+                "structuring_mechanism": a.structuring_mechanism,
+                "resolving_evidence": a.resolving_evidence,
+                "incentive_upside_usd": a.incentive_upside_usd,
+            }
+            for a in s.register
+        ],
         "budget": {
             "known": pkg.budget.known,
             "filename": pkg.budget.filename,
@@ -156,6 +171,7 @@ async def get_structures() -> dict[str, Any]:
             "unknown_pct": c.unknown_pct,
             "is_fully_priced": c.is_fully_priced,
             "cases": case_dict_to_display(c.cases),
+            "informational_upside_usd": c.informational_upside_usd,
             "constraints": [asdict(x) for x in c.constraints],
             "included_opportunity_ids": list(c.included_opportunity_ids),
         }

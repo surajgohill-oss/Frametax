@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Scale, AlertTriangle, Eye, Clapperboard, CheckCircle2, ArrowRight } from "lucide-react";
+import { Scale, AlertTriangle, Eye, Clapperboard, CheckCircle2, ArrowRight, Plus } from "lucide-react";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
 import { Money, recommendationHeadline } from "../../lib/format";
@@ -20,17 +20,26 @@ export default function Today() {
 
   return (
     <div className="screen">
-      <header className="screen-header">
-        <p className="screen-eyebrow">Today</p>
-        <h1 className="screen-title">Work queue</h1>
+      <header className="screen-header" style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+        <div>
+          <p className="screen-eyebrow">Today</p>
+          <h1 className="screen-title">Work queue</h1>
+        </div>
+        <button
+          className="hero-action"
+          disabled
+          title="POST /api/v1/projects exists and works, but no CineGlobe screen reads from the projects table — every screen here is wired to the single cached Little Utopia demo state (little_utopia_state.py), not the database. Calling it would create an orphaned row with no visible effect, so this stays disabled until that wiring exists."
+        >
+          <Plus size={14} strokeWidth={1.8} /> Add production
+        </button>
       </header>
 
-      <section className="region region-warm">
+      <section className="region region-cool">
         <div className="region-title"><span>Needs a decision</span><span className="count">{highValueRecs.length}</span></div>
         <div className="row-list">
           {highValueRecs.map((r) => (
             <div className="row-item" key={r.recommendation_id} onClick={() => navigate("/production/workspace")}>
-              <Scale size={16} color="var(--gold)" strokeWidth={1.8} />
+              <Scale size={16} color="var(--blue)" strokeWidth={1.8} />
               <div className="row-main">
                 <div className="row-title">{recommendationHeadline(r)}</div>
                 <div className="row-sub">The Little Utopia · {r.requires_counsel_approval ? "counsel approval needed" : "producer approval needed"}</div>

@@ -176,6 +176,16 @@ class ProductionStructureCandidate:
     priceable_pct: float
     unknown_pct: float
     attributes: dict = field(default_factory=dict)
+    # Real, non-fabricated upside estimate for the NOT-YET-priceable
+    # portion of this structure (e.g. a co-production jurisdiction's rate
+    # advantage applied to the production's own real movable-spend
+    # figure — see opportunity_discovery.discover_jurisdiction_opportunities).
+    # Never double-counts .cases: only OpportunityType.STRUCTURING
+    # opportunities ever feed .cases (via opportunities_to_structuring_paths),
+    # and this sums a disjoint set (JURISDICTION-type opportunities that
+    # carry their own estimated_upside_usd). None whenever no included
+    # opportunity has a known figure — absence of data, not zero opportunity.
+    informational_upside_usd: Optional[float] = None
 
     @property
     def participating_jurisdictions(self) -> tuple[str, ...]:
@@ -589,6 +599,18 @@ def _build_candidate(
         if included else 0.0
     )
 
+    # Only JURISDICTION-type (relocation/co-production) upside is summed
+    # here — STRUCTURING and GREY_AREA opportunities' estimated_upside_usd
+    # is already reflected inside `cases` for the priced (register-backed)
+    # portion of this structure (via opportunities_to_structuring_paths()
+    # and the grey_areas= input to build_risk_cases()), so including them
+    # again here would double-count the already-priced MU portion.
+    upside_values = [
+        o.estimated_upside_usd for o in included
+        if o.estimated_upside_usd is not None and o.opportunity_type == OpportunityType.JURISDICTION
+    ]
+    informational_upside_usd = round(sum(upside_values), 2) if upside_values else None
+
     return ProductionStructureCandidate(
         candidate_id=f"PSC-{'-'.join(codes)}",
         label=" + ".join(codes),
@@ -609,6 +631,7 @@ def _build_candidate(
         cases=cases,
         priceable_pct=priceable_pct,
         unknown_pct=unknown_pct,
+        informational_upside_usd=informational_upside_usd,
     )
 
 

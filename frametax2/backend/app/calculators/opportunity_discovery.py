@@ -171,6 +171,7 @@ class OpportunityCollection:
 def discover_jurisdiction_opportunities(
     baseline_code: str,
     profiles: Optional[dict[str, "jc.JurisdictionIncentiveProfile"]] = None,
+    movable_spend_usd: Optional[float] = None,
 ) -> list[Opportunity]:
     """
     Compares the baseline jurisdiction against every other modeled
@@ -185,10 +186,17 @@ def discover_jurisdiction_opportunities(
       (jurisdiction_comparison.TIER1_PROFILES), mirroring the
       COMPARABLE_TO edges Phase 5A wired — not a new comparison theory.
 
-    No dollar upside is estimated: the rate delta is known but the
-    production's relocatable spend basis is not an input here, and
-    discovery does not invent one. The delta itself is carried in
-    attributes for the optimizer to combine with real spend data.
+    By default (movable_spend_usd=None) no dollar upside is estimated:
+    the rate delta is known but the production's relocatable spend basis
+    is not an input, and discovery does not invent one. When a caller
+    supplies the production's own real movable-spend figure (the same
+    number production_package_intelligence.py already computes as
+    HINT-MOVABLE-SPEND — routable VFX/music/sound/post/creative-fee
+    spend not physically tied to the shoot location), a relocation
+    candidate's estimated_upside_usd becomes rate_delta * movable_spend
+    — the two real numbers this docstring already said were needed,
+    finally combined. Still None whenever either input is missing, so
+    "no data" is never confused with "zero opportunity".
     """
     profiles = profiles if profiles is not None else jc.ALL_PROFILES
     baseline = profiles.get(baseline_code)
@@ -204,6 +212,11 @@ def discover_jurisdiction_opportunities(
             and candidate.max_rate is not None
             and candidate.max_rate - baseline.max_rate >= MATERIAL_RATE_ADVANTAGE
         ):
+            rate_delta = round(candidate.max_rate - baseline.max_rate, 4)
+            upside = (
+                round(rate_delta * movable_spend_usd, 2)
+                if movable_spend_usd is not None else None
+            )
             opportunities.append(Opportunity(
                 opportunity_id=f"OPP-JUR-RELOCATE-{baseline_code}-{code}",
                 opportunity_type=OpportunityType.JURISDICTION,
@@ -222,9 +235,11 @@ def discover_jurisdiction_opportunities(
                 blocking_requirements=tuple(sorted(candidate.data_gaps)),
                 graph_refs=(f"country:{code}", f"program:{candidate.program_slug}"),
                 source_ref=f"jurisdiction_comparison.ALL_PROFILES[{code}]",
+                estimated_upside_usd=upside,
                 attributes={
-                    "rate_delta": round(candidate.max_rate - baseline.max_rate, 4),
+                    "rate_delta": rate_delta,
                     "candidate_confidence_tier": candidate.confidence_tier,
+                    **({"movable_spend_basis_usd": movable_spend_usd} if upside is not None else {}),
                 },
             ))
 
@@ -762,6 +777,7 @@ def discover_all_opportunities(
     baseline_jurisdiction: str = "MU",
     mu_rate: float = 0.40,
     graph: Optional[JurisdictionGraph] = None,
+    movable_spend_usd: Optional[float] = None,
 ) -> OpportunityCollection:
     """
     Runs all seven passes over the currently modeled world (ALL_PROFILES'
@@ -770,12 +786,19 @@ def discover_all_opportunities(
     the one populated qualification register in the codebase (Little
     Utopia / MU) — for any other baseline they honestly contribute
     nothing rather than fabricate a register.
+
+    movable_spend_usd, when supplied, is forwarded to Pass 1 so a
+    relocation candidate's rate advantage can be combined with the
+    production's own real routable-spend figure into a real
+    estimated_upside_usd (see discover_jurisdiction_opportunities). Left
+    None by default — no behavior change for any caller that doesn't
+    pass it.
     """
     graph = graph if graph is not None else build_jurisdiction_graph(mu_rate=mu_rate)
     codes = sorted(jc.ALL_PROFILES.keys())
 
     all_opportunities: list[Opportunity] = []
-    all_opportunities += discover_jurisdiction_opportunities(baseline_jurisdiction)
+    all_opportunities += discover_jurisdiction_opportunities(baseline_jurisdiction, movable_spend_usd=movable_spend_usd)
     all_opportunities += discover_treaty_opportunities(codes)
     all_opportunities += discover_stacking_opportunities(graph)
     if baseline_jurisdiction == "MU":

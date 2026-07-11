@@ -132,7 +132,21 @@ def get_state() -> LittleUtopiaState:
         budget_parse_result=budget_parse,
     )
 
-    collection = discover_all_opportunities(baseline_jurisdiction=JURISDICTION_CODE, mu_rate=MU_RATE, graph=graph)
+    # HINT-MOVABLE-SPEND is production_package_intelligence.py's own
+    # already-computed figure for routable (VFX/music/sound/post/creative
+    # fee) spend not physically tied to the shoot location — reused
+    # as-is, not recomputed, so opportunity discovery's relocation
+    # candidates can price a real jurisdiction-specific upside instead
+    # of leaving it uncomputed.
+    movable_hint = next(
+        (h for h in package.budget.opportunity_hints if h.category == "movable_spend"), None,
+    )
+    movable_spend_usd = movable_hint.amount_usd if movable_hint else None
+
+    collection = discover_all_opportunities(
+        baseline_jurisdiction=JURISDICTION_CODE, mu_rate=MU_RATE, graph=graph,
+        movable_spend_usd=movable_spend_usd,
+    )
     composition = compose_production_structures(
         collection, graph, register=register, gross_budget_usd=MU_GROSS_BUDGET_USD,
         rate=MU_RATE, grey_areas=grey_areas,
