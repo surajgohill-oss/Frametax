@@ -1,42 +1,39 @@
-import { BrowserRouter, NavLink, Route, Routes } from "react-router-dom";
-import Production from "./screens/Production";
-import PackageIntelligence from "./screens/PackageIntelligence";
-import Recommendations from "./screens/Recommendations";
-import Scenarios from "./screens/Scenarios";
-import Evidence from "./screens/Evidence";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { AppStateProvider } from "./state/AppState";
+import AppShell from "./shell/AppShell";
 
-const NAV = [
-  { to: "/", label: "Production", exact: true },
-  { to: "/package", label: "Package Intelligence" },
-  { to: "/recommendations", label: "Recommendations" },
-  { to: "/scenarios", label: "Scenarios & Structures" },
-  { to: "/evidence", label: "Evidence & Legal" },
-];
+import Today from "./screens/company/Today";
+import CompanyGlobe from "./screens/company/CompanyGlobe";
+import CompanyKnowledge from "./screens/company/CompanyKnowledge";
+import OrgReports from "./screens/company/OrgReports";
+
+import Overview from "./screens/production/Overview";
+import Workspace from "./screens/production/Workspace";
+import Binder from "./screens/production/Binder";
+import Knowledge from "./screens/production/Knowledge";
+import Record from "./screens/production/Record";
+import Settings from "./screens/production/Settings";
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <div className="app-shell">
-        <header>
-          <h1 className="brand">CineGlobe</h1>
-          <nav>
-            {NAV.map((item) => (
-              <NavLink key={item.to} to={item.to} end={item.exact}>
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
-        </header>
-        <main>
+    <AppStateProvider>
+      <BrowserRouter>
+        <AppShell>
           <Routes>
-            <Route path="/" element={<Production />} />
-            <Route path="/package" element={<PackageIntelligence />} />
-            <Route path="/recommendations" element={<Recommendations />} />
-            <Route path="/scenarios" element={<Scenarios />} />
-            <Route path="/evidence" element={<Evidence />} />
+            <Route path="/" element={<Navigate to="/company/today" replace />} />
+            <Route path="/company/today" element={<Today />} />
+            <Route path="/company/globe" element={<CompanyGlobe />} />
+            <Route path="/company/knowledge" element={<CompanyKnowledge />} />
+            <Route path="/company/reports" element={<OrgReports />} />
+            <Route path="/production/overview" element={<Overview />} />
+            <Route path="/production/workspace" element={<Workspace />} />
+            <Route path="/production/binder" element={<Binder />} />
+            <Route path="/production/knowledge" element={<Knowledge />} />
+            <Route path="/production/record" element={<Record />} />
+            <Route path="/production/settings" element={<Settings />} />
           </Routes>
-        </main>
-      </div>
-    </BrowserRouter>
+        </AppShell>
+      </BrowserRouter>
+    </AppStateProvider>
   );
 }

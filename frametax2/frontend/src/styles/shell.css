@@ -1,0 +1,153 @@
+/* Application shell layout */
+
+.app-shell {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Primary rail */
+.primary-rail {
+  width: var(--rail-width);
+  flex-shrink: 0;
+  background: var(--surface-0);
+  border-right: 0.5px solid var(--hairline);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: var(--sp-4);
+  gap: var(--sp-2);
+}
+.rail-item {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  color: var(--text-tertiary);
+}
+.rail-item:hover { color: var(--text-secondary); background: rgba(255,255,255,0.03); }
+.rail-item.active { color: var(--gold); background: var(--gold-dim); }
+.rail-badge {
+  font-family: var(--font-serif);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+/* Secondary nav */
+.secondary-nav {
+  width: var(--nav-width);
+  flex-shrink: 0;
+  background: var(--surface-0);
+  border-right: 0.5px solid var(--hairline);
+  padding: var(--sp-6) var(--sp-4);
+  overflow-y: auto;
+}
+.secondary-nav-heading { display: flex; flex-direction: column; margin-bottom: var(--sp-6); }
+.secondary-nav-eyebrow { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px; }
+.secondary-nav-title { font-size: 18px; color: var(--text-primary); }
+.secondary-nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+.secondary-nav a {
+  display: block;
+  padding: 7px var(--sp-3);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 13px;
+}
+.secondary-nav a:hover { color: var(--text-primary); background: rgba(255,255,255,0.03); }
+.secondary-nav a.active { color: var(--text-primary); background: var(--surface-2); }
+
+/* Main content */
+.workspace-main {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  background: var(--canvas);
+}
+.screen {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: var(--sp-8) var(--sp-8) var(--sp-8);
+}
+.workspace-main.with-inspector .screen { max-width: none; padding-right: var(--sp-6); }
+
+.screen-header { margin-bottom: var(--sp-6); }
+.screen-eyebrow { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.screen-title { font-size: 21px; }
+
+/* Inspector */
+.inspector {
+  width: var(--inspector-width);
+  flex-shrink: 0;
+  background: var(--surface-glass);
+  backdrop-filter: blur(14px);
+  border-left: 0.5px solid var(--hairline-strong);
+  padding: var(--sp-6);
+  overflow-y: auto;
+  position: relative;
+}
+.inspector-close {
+  position: absolute;
+  top: var(--sp-4);
+  right: var(--sp-4);
+  font-size: 18px;
+  color: var(--text-tertiary);
+  line-height: 1;
+}
+.inspector-close:hover { color: var(--text-primary); }
+.inspector-eyebrow { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 4px; }
+.inspector h3 { font-size: 16px; margin-bottom: var(--sp-3); padding-right: 24px; }
+.inspector-table { width: 100%; border-collapse: collapse; margin-top: var(--sp-3); font-size: 12.5px; }
+.inspector-table td { padding: 5px 0; border-bottom: 0.5px solid var(--hairline); }
+.inspector-table td:last-child { text-align: right; }
+.inspector-actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-6); }
+.inspector-actions button {
+  font-size: 12px;
+  padding: 5px 10px;
+  border: 0.5px solid var(--hairline-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+}
+
+/* KV list, used in Inspector and elsewhere */
+.kv-list { margin: var(--sp-3) 0; display: flex; flex-direction: column; gap: 8px; }
+.kv-list > div { display: flex; justify-content: space-between; gap: var(--sp-4); font-size: 12.5px; }
+.kv-list dt { color: var(--text-tertiary); flex-shrink: 0; }
+.kv-list dd { margin: 0; text-align: right; color: var(--text-primary); }
+
+.small { font-size: 12px; }
+
+/* Generic section card used across Overview/Workspace/Knowledge */
+.region {
+  background: var(--surface-1);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-6);
+  margin-bottom: var(--sp-4);
+}
+.region-title { font-size: 13.5px; color: var(--text-primary); margin-bottom: var(--sp-4); display: flex; align-items: center; justify-content: space-between; }
+.region-title .count { color: var(--text-tertiary); font-weight: 400; }
+
+.row-list { display: flex; flex-direction: column; }
+.row-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) 0;
+  border-bottom: 0.5px solid var(--hairline);
+  cursor: pointer;
+}
+.row-item:last-child { border-bottom: none; }
+.row-item:hover { background: rgba(255,255,255,0.015); }
+.row-main { flex: 1; min-width: 0; }
+.row-title { font-size: 13px; color: var(--text-primary); }
+.row-sub { font-size: 11.5px; color: var(--text-tertiary); margin-top: 2px; }
+.row-value { font-size: 13px; flex-shrink: 0; }
+
+.empty-state { padding: var(--sp-6) 0; color: var(--text-tertiary); font-size: 12.5px; text-align: center; }
+
+@media (max-width: 1100px) {
+  .secondary-nav { width: 0; padding: 0; border: none; overflow: hidden; }
+}

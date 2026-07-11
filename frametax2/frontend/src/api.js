@@ -2,7 +2,7 @@
 // No business logic here — every value displayed by the app comes from
 // this backend call, never computed client-side.
 
-const API_BASE = "http://127.0.0.1:8000/api/v1/cineglobe";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8010/api/v1/cineglobe";
 
 async function request(path, options) {
   const res = await fetch(`${API_BASE}${path}`, {
