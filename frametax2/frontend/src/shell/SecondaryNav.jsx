@@ -1,19 +1,20 @@
 import { NavLink, useLocation } from "react-router-dom";
+import { Clapperboard, Globe2, BookOpen, FileBarChart, LayoutDashboard, FolderOpen, History, Settings, Building2 } from "lucide-react";
 
 const COMPANY_NAV = [
-  { to: "/company/today", label: "Today" },
-  { to: "/company/globe", label: "Company Globe" },
-  { to: "/company/knowledge", label: "Company Knowledge" },
-  { to: "/company/reports", label: "Organization Reports" },
+  { to: "/company/today", label: "Today", icon: LayoutDashboard },
+  { to: "/company/globe", label: "Company Globe", icon: Globe2 },
+  { to: "/company/knowledge", label: "Company Knowledge", icon: BookOpen },
+  { to: "/company/reports", label: "Organization Reports", icon: FileBarChart },
 ];
 
 const PRODUCTION_NAV = [
-  { to: "/production/overview", label: "Overview" },
-  { to: "/production/workspace", label: "Workspace" },
-  { to: "/production/binder", label: "Production Binder" },
-  { to: "/production/knowledge", label: "Knowledge" },
-  { to: "/production/record", label: "Record" },
-  { to: "/production/settings", label: "Settings" },
+  { to: "/production/overview", label: "Overview", icon: Clapperboard },
+  { to: "/production/workspace", label: "Workspace", icon: LayoutDashboard },
+  { to: "/production/binder", label: "Production Binder", icon: FolderOpen },
+  { to: "/production/knowledge", label: "Knowledge", icon: BookOpen },
+  { to: "/production/record", label: "Record", icon: History },
+  { to: "/production/settings", label: "Settings", icon: Settings },
 ];
 
 export default function SecondaryNav() {
@@ -24,26 +25,26 @@ export default function SecondaryNav() {
   return (
     <nav className="secondary-nav" aria-label="Section navigation">
       <div className="secondary-nav-heading">
-        {isProduction ? (
-          <>
-            <span className="secondary-nav-eyebrow">Production</span>
-            <span className="serif secondary-nav-title">The Little Utopia</span>
-          </>
-        ) : (
-          <>
-            <span className="secondary-nav-eyebrow">Company</span>
-            <span className="serif secondary-nav-title">CineGlobe</span>
-          </>
-        )}
+        <span className={`secondary-nav-mark ${isProduction ? "" : "company"}`}>
+          {isProduction ? <Clapperboard size={15} strokeWidth={2} /> : <Building2 size={17} strokeWidth={1.6} />}
+        </span>
+        <div className="secondary-nav-text">
+          <span className="secondary-nav-eyebrow">{isProduction ? "Production" : "Company"}</span>
+          <span className="serif secondary-nav-title">{isProduction ? "The Little Utopia" : "CineGlobe"}</span>
+        </div>
       </div>
       <ul>
-        {items.map((item) => (
-          <li key={item.to}>
-            <NavLink to={item.to} className={({ isActive }) => (isActive ? "active" : "")}>
-              {item.label}
-            </NavLink>
-          </li>
-        ))}
+        {items.map((item) => {
+          const Icon = item.icon;
+          return (
+            <li key={item.to}>
+              <NavLink to={item.to} className={({ isActive }) => (isActive ? "active" : "")}>
+                <Icon size={15} strokeWidth={1.7} />
+                {item.label}
+              </NavLink>
+            </li>
+          );
+        })}
       </ul>
     </nav>
   );

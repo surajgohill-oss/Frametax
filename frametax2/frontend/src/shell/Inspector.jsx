@@ -1,11 +1,12 @@
+import { X } from "lucide-react";
 import { useAppState } from "../state/AppState";
-import { Money, Pct, tierBadgeClass } from "../lib/format";
+import { Money, Pct, tierBadgeClass, recommendationHeadline, questionStatusLabel, humanizeToken, structureLabel } from "../lib/format";
 
 function RecommendationInspector({ data }) {
   return (
     <>
       <p className="inspector-eyebrow">{data.category} recommendation</p>
-      <h3>{data.title}</h3>
+      <h3>{recommendationHeadline(data)}</h3>
       <p className="text-secondary">{data.description}</p>
       <dl className="kv-list">
         <div><dt>Estimated value</dt><dd className="mono"><Money value={data.estimated_value_usd} /></dd></div>
@@ -30,52 +31,63 @@ function CandidateInspector({ data }) {
   return (
     <>
       <p className="inspector-eyebrow">Structure candidate</p>
-      <h3>{data.label}</h3>
+      <h3>{structureLabel(data.participating_jurisdictions)}</h3>
       <dl className="kv-list">
-        <div><dt>Jurisdictions</dt><dd>{data.participating_jurisdictions.join(", ")}</dd></div>
-        <div><dt>Priceable</dt><dd><Pct value={data.priceable_pct} /></dd></div>
-        <div><dt>Fully priced</dt><dd>{String(data.is_fully_priced)}</dd></div>
+        <div><dt>Priceable now</dt><dd><Pct value={data.priceable_pct} /></dd></div>
+        <div><dt>Open requirements</dt><dd>{data.constraints?.length || 0}</dd></div>
       </dl>
-      {Object.keys(cases).length > 0 ? (
+      {data.is_fully_priced && Object.keys(cases).length > 0 ? (
         <table className="inspector-table">
           <tbody>
             {["conservative", "base", "optimistic", "risk_adjusted"].filter((k) => cases[k]).map((k) => (
               <tr key={k}>
-                <td>{k.replace("_", " ")}</td>
+                <td style={{ textTransform: "capitalize" }}>{k.replace("_", " ")}</td>
                 <td className="mono"><Money value={cases[k].net_production_cost_usd} /></td>
               </tr>
             ))}
           </tbody>
         </table>
       ) : (
-        <p className="text-tertiary small">Unpriced — no qualification register for this jurisdiction set.</p>
+        <p className="text-tertiary small">
+          Only {Math.round(data.priceable_pct * 100)}% of this structure can currently be priced. A full cost
+          comparison isn't available until the open requirements below are resolved.
+        </p>
       )}
-      {data.constraints?.length > 0 && (
-        <p className="text-tertiary small">{data.constraints.length} open constraint(s) on this structure.</p>
-      )}
+      {data.constraints?.length > 0 && (() => {
+        const unique = [...new Set(data.constraints.map((c) => c.description))];
+        return (
+          <div className="inspector-actions" style={{ flexDirection: "column", alignItems: "stretch" }}>
+            {unique.slice(0, 4).map((desc) => (
+              <p key={desc} className="text-secondary small" style={{ margin: "4px 0" }}>{desc}</p>
+            ))}
+            {unique.length > 4 && <p className="text-tertiary small">+{unique.length - 4} more requirement type(s)</p>}
+          </div>
+        );
+      })()}
     </>
   );
 }
 
 function QuestionInspector({ data }) {
   const isGreyArea = "authority_to_ask" in data;
+  const status = isGreyArea ? questionStatusLabel(data.status) : null;
   return (
     <>
       <p className="inspector-eyebrow">{isGreyArea ? "Grey area" : "Open question"}</p>
-      <h3>{isGreyArea ? data.item_id : data.question}</h3>
+      <h3>{isGreyArea ? data.resolving_evidence : data.question}</h3>
       {isGreyArea ? (
         <dl className="kv-list">
-          <div><dt>Status</dt><dd>{data.status}</dd></div>
+          <div><dt>Status</dt><dd><span className={`badge ${status.tier}`}>{status.label}</span></dd></div>
           <div><dt>Amount at stake</dt><dd className="mono"><Money value={data.amount_usd} /></dd></div>
           <div><dt>Authority to ask</dt><dd>{data.authority_to_ask}</dd></div>
-          <div><dt>Resolving evidence</dt><dd>{data.resolving_evidence}</dd></div>
+          {data.account_codes?.length > 0 && <div><dt>Affected accounts</dt><dd className="mono">{data.account_codes.join(", ")}</dd></div>}
         </dl>
       ) : (
         <dl className="kv-list">
           <div><dt>Why it matters</dt><dd>{data.why_it_matters}</dd></div>
-          <div><dt>Blocking</dt><dd>{data.blocking ? "Yes" : "No"}</dd></div>
-          <div><dt>Downstream engines</dt><dd>{data.downstream_engines?.join(", ")}</dd></div>
-          <div><dt>Optimizer value</dt><dd>{data.optimizer_value}</dd></div>
+          <div><dt>Decision required</dt><dd>{data.blocking ? "Yes" : "No"}</dd></div>
+          <div><dt>Affects</dt><dd>{data.downstream_engines?.map(humanizeToken).join(", ")}</dd></div>
+          <div><dt>Priority</dt><dd>{data.optimizer_value}</dd></div>
         </dl>
       )}
       <div className="inspector-actions">
@@ -119,9 +131,14 @@ export default function Inspector() {
   const Renderer = RENDERERS[inspector.kind];
 
   return (
-    <aside className="inspector">
-      <button className="inspector-close" onClick={closeInspector} aria-label="Close inspector">×</button>
-      {Renderer ? <Renderer data={inspector.data} /> : <p className="text-tertiary">No inspector view for this item.</p>}
-    </aside>
+    <>
+      <div className="inspector-backdrop" onClick={closeInspector} />
+      <aside className="inspector">
+        <button className="inspector-close" onClick={closeInspector} aria-label="Close inspector">
+          <X size={16} />
+        </button>
+        {Renderer ? <Renderer data={inspector.data} /> : <p className="text-tertiary">No inspector view for this item.</p>}
+      </aside>
+    </>
   );
 }

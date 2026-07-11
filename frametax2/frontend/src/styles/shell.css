@@ -1,16 +1,17 @@
-/* Application shell layout */
+/* Application shell — a production company workspace, not an admin console. */
 
 .app-shell {
   display: flex;
   height: 100vh;
   overflow: hidden;
+  background: var(--canvas);
 }
 
-/* Primary rail */
+/* Primary rail — compact level switch (Company / production identity) */
 .primary-rail {
   width: var(--rail-width);
   flex-shrink: 0;
-  background: var(--surface-0);
+  background: var(--surface-1);
   border-right: 0.5px solid var(--hairline);
   display: flex;
   flex-direction: column;
@@ -19,20 +20,29 @@
   gap: var(--sp-2);
 }
 .rail-item {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-md);
   color: var(--text-tertiary);
 }
-.rail-item:hover { color: var(--text-secondary); background: rgba(255,255,255,0.03); }
-.rail-item.active { color: var(--gold); background: var(--gold-dim); }
+.rail-item:hover { color: var(--text-primary); background: var(--surface-2); }
+.rail-item.active { color: var(--blue); background: var(--surface-cool); }
+.rail-item.production-mark.active { color: var(--gold); background: var(--surface-warm); }
 .rail-badge {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-family: var(--font-serif);
-  font-size: 12px;
-  letter-spacing: 0.02em;
+  font-size: 11px;
+  letter-spacing: 0.01em;
+  background: linear-gradient(155deg, #C9A855 0%, #A17A2E 100%);
+  color: #FBFAF7;
 }
 
 /* Secondary nav */
@@ -44,20 +54,39 @@
   padding: var(--sp-6) var(--sp-4);
   overflow-y: auto;
 }
-.secondary-nav-heading { display: flex; flex-direction: column; margin-bottom: var(--sp-6); }
-.secondary-nav-eyebrow { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px; }
-.secondary-nav-title { font-size: 18px; color: var(--text-primary); }
+.secondary-nav-heading { display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-6); }
+.secondary-nav-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(155deg, #E4D3A0 0%, #A17A2E 100%);
+  color: #FBFAF7;
+  font-family: var(--font-serif);
+  font-size: 13px;
+}
+.secondary-nav-mark.company { background: var(--surface-cool); color: var(--blue); font-size: 0; }
+.secondary-nav-text { display: flex; flex-direction: column; min-width: 0; }
+.secondary-nav-eyebrow { font-size: 10.5px; color: var(--text-tertiary); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 1px; }
+.secondary-nav-title { font-size: 16.5px; color: var(--text-primary); line-height: 1.2; }
 .secondary-nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
 .secondary-nav a {
-  display: block;
-  padding: 7px var(--sp-3);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px var(--sp-3);
   border-radius: var(--radius-sm);
   color: var(--text-secondary);
   text-decoration: none;
   font-size: 13px;
 }
-.secondary-nav a:hover { color: var(--text-primary); background: rgba(255,255,255,0.03); }
-.secondary-nav a.active { color: var(--text-primary); background: var(--surface-2); }
+.secondary-nav a svg { flex-shrink: 0; color: var(--text-tertiary); }
+.secondary-nav a:hover { color: var(--text-primary); background: var(--surface-2); }
+.secondary-nav a.active { color: var(--text-primary); background: var(--surface-1); box-shadow: var(--shadow-sm); font-weight: 500; }
+.secondary-nav a.active svg { color: var(--blue); }
 
 /* Main content */
 .workspace-main {
@@ -71,48 +100,63 @@
   margin: 0 auto;
   padding: var(--sp-8) var(--sp-8) var(--sp-8);
 }
-.workspace-main.with-inspector .screen { max-width: none; padding-right: var(--sp-6); }
 
 .screen-header { margin-bottom: var(--sp-6); }
 .screen-eyebrow { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
-.screen-title { font-size: 21px; }
+.screen-title { font-size: 22px; }
 
-/* Inspector */
+/* Inspector — fixed overlay, never pushes layout. Keeps dense screens
+   (Workspace especially) usable at laptop widths. */
+.inspector-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(32,33,31,0.18);
+  z-index: 40;
+}
 .inspector {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
   width: var(--inspector-width);
   flex-shrink: 0;
-  background: var(--surface-glass);
-  backdrop-filter: blur(14px);
-  border-left: 0.5px solid var(--hairline-strong);
+  background: var(--surface-1);
+  border-left: 0.5px solid var(--hairline);
+  box-shadow: var(--shadow-lg);
   padding: var(--sp-6);
   overflow-y: auto;
-  position: relative;
+  z-index: 41;
 }
 .inspector-close {
   position: absolute;
   top: var(--sp-4);
   right: var(--sp-4);
-  font-size: 18px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
   color: var(--text-tertiary);
-  line-height: 1;
 }
-.inspector-close:hover { color: var(--text-primary); }
+.inspector-close:hover { color: var(--text-primary); background: var(--surface-2); }
 .inspector-eyebrow { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 4px; }
-.inspector h3 { font-size: 16px; margin-bottom: var(--sp-3); padding-right: 24px; }
+.inspector h3 { font-size: 17px; margin-bottom: var(--sp-3); padding-right: 24px; }
 .inspector-table { width: 100%; border-collapse: collapse; margin-top: var(--sp-3); font-size: 12.5px; }
-.inspector-table td { padding: 5px 0; border-bottom: 0.5px solid var(--hairline); }
+.inspector-table td { padding: 6px 0; border-bottom: 0.5px solid var(--hairline); }
 .inspector-table td:last-child { text-align: right; }
 .inspector-actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-6); }
 .inspector-actions button {
   font-size: 12px;
-  padding: 5px 10px;
+  padding: 6px 11px;
   border: 0.5px solid var(--hairline-strong);
   border-radius: var(--radius-sm);
   color: var(--text-secondary);
 }
+.inspector-actions button:not(:disabled):hover { background: var(--surface-2); color: var(--text-primary); }
 
 /* KV list, used in Inspector and elsewhere */
-.kv-list { margin: var(--sp-3) 0; display: flex; flex-direction: column; gap: 8px; }
+.kv-list { margin: var(--sp-3) 0; display: flex; flex-direction: column; gap: 9px; }
 .kv-list > div { display: flex; justify-content: space-between; gap: var(--sp-4); font-size: 12.5px; }
 .kv-list dt { color: var(--text-tertiary); flex-shrink: 0; }
 .kv-list dd { margin: 0; text-align: right; color: var(--text-primary); }
@@ -123,39 +167,36 @@
 .region {
   background: var(--surface-1);
   border: 0.5px solid var(--hairline);
-  border-left: 2px solid transparent;
   border-radius: var(--radius-lg);
   padding: var(--sp-6);
   margin-bottom: var(--sp-4);
 }
-.region-title { font-size: 13.5px; color: var(--text-primary); margin-bottom: var(--sp-4); display: flex; align-items: center; justify-content: space-between; }
+.region-title { font-size: 13.5px; color: var(--text-primary); font-weight: 500; margin-bottom: var(--sp-4); display: flex; align-items: center; justify-content: space-between; }
 .region-title .count { color: var(--text-tertiary); font-weight: 400; }
 
-/* Region variants — distinguish adjacent sections without nesting another
-   card inside a card. Accent = semantic status; quiet = factual/numeric
-   content that reads better on a plainer surface than a status region. */
-.region-accent-gold { border-left-color: var(--gold); }
-.region-accent-jade { border-left-color: var(--jade); }
-.region-accent-amber { border-left-color: var(--amber); }
-.region-accent-red { border-left-color: var(--red); }
-.region-accent-blue { border-left-color: var(--blue); }
-.region-quiet { background: var(--surface-0); }
+/* Region variants — distinguish adjacent sections with a tinted surface
+   instead of another dark bordered card. */
+.region-cool { background: var(--surface-cool); border-color: rgba(44,85,128,0.12); }
+.region-warm { background: var(--surface-warm); border-color: rgba(161,122,46,0.18); }
+.region-positive { background: var(--surface-positive); border-color: rgba(46,107,78,0.14); }
+.region-conditional { background: var(--surface-conditional); border-color: rgba(147,100,28,0.16); }
+.region-blocker { background: var(--surface-blocker); border-color: rgba(156,60,49,0.14); }
+.region-flat { background: transparent; border-color: transparent; padding: 0; }
 
 .row-list { display: flex; flex-direction: column; }
 .row-item {
   display: flex;
   align-items: center;
   gap: var(--sp-3);
-  padding: var(--sp-3) 0;
+  padding: var(--sp-3) 2px;
   border-bottom: 0.5px solid var(--hairline);
-  border-left: 2px solid transparent;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: background 160ms ease, border-color 160ms ease;
 }
 .row-item:last-child { border-bottom: none; }
-.row-item:hover { background: rgba(255,255,255,0.02); }
+.row-item:hover { background: rgba(32,33,31,0.03); }
 .row-main { flex: 1; min-width: 0; }
-.row-title { font-size: 13px; color: var(--text-primary); }
+.row-title { font-size: 13px; color: var(--text-primary); font-weight: 500; }
 .row-description {
   font-size: 12px;
   color: var(--text-secondary);
@@ -169,7 +210,15 @@
 .row-sub { font-size: 11.5px; color: var(--text-tertiary); margin-top: 4px; }
 .row-value { font-size: 13px; flex-shrink: 0; padding-left: var(--sp-3); }
 
-.empty-state { padding: var(--sp-6) 0; color: var(--text-tertiary); font-size: 12.5px; text-align: center; }
+.empty-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) 2px;
+  color: var(--text-tertiary);
+  font-size: 12.5px;
+}
+.empty-state { padding: var(--sp-4) 0; color: var(--text-tertiary); font-size: 12.5px; }
 
 @media (max-width: 1100px) {
   .secondary-nav { width: 0; padding: 0; border: none; overflow: hidden; }

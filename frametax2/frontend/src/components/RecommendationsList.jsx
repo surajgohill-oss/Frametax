@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 import { useAppState } from "../state/AppState";
-import { Money } from "../lib/format";
+import { Money, recommendationHeadline } from "../lib/format";
 
 const GROUPS = [
   { key: "financial", label: "Financial" },
@@ -12,6 +14,7 @@ const GROUPS = [
 export default function RecommendationsList({ byCategory, legal, compact = false }) {
   const [group, setGroup] = useState("financial");
   const { openInspector } = useAppState();
+  const navigate = useNavigate();
   const items = group === "legal" ? legal : byCategory[group];
   const shown = compact ? items.slice(0, 5) : items;
 
@@ -32,23 +35,32 @@ export default function RecommendationsList({ byCategory, legal, compact = false
         <p className="empty-state">No {group} recommendations right now.</p>
       ) : (
         <div className="row-list">
-          {shown.map((r) => (
-            <div key={r.recommendation_id} className="row-item recommendation-row" onClick={() => openInspector("recommendation", r)}>
-              <span className={`dot ${r.confidence === "high" ? "jade" : r.confidence === "medium" ? "silver" : "amber"}`} />
-              <div className="row-main">
-                <div className="row-title">{r.title}</div>
-                {r.description && <div className="row-description">{r.description}</div>}
-                <div className="row-sub">
-                  {r.jurisdiction_codes?.length > 0 && <span className="mono">{r.jurisdiction_codes.join(" · ")}</span>}
-                  {r.jurisdiction_codes?.length > 0 && " — "}
-                  {r.requires_counsel_approval ? "Counsel approval required" : "Producer approval"}
-                  {r.creative_impact ? " · creative change" : ""}
+          {shown.map((r) => {
+            const headline = recommendationHeadline(r);
+            const rewrote = headline !== r.title;
+            return (
+              <div key={r.recommendation_id} className="row-item recommendation-row" onClick={() => openInspector("recommendation", r)}>
+                <span className={`dot ${r.confidence === "high" ? "jade" : r.confidence === "medium" ? "silver" : "amber"}`} />
+                <div className="row-main">
+                  <div className="row-title">{headline}</div>
+                  {!rewrote && r.description && <div className="row-description">{r.description}</div>}
+                  <div className="row-sub">
+                    {r.jurisdiction_codes?.length > 0 && <span className="mono">{r.jurisdiction_codes.join(" · ")}</span>}
+                    {r.jurisdiction_codes?.length > 0 && " — "}
+                    {r.requires_counsel_approval ? "Counsel approval required" : "Producer approval"}
+                    {r.creative_impact ? " · creative change" : ""}
+                  </div>
                 </div>
+                <div className="row-value"><Money value={r.estimated_value_usd} /></div>
               </div>
-              <div className="row-value"><Money value={r.estimated_value_usd} /></div>
-            </div>
-          ))}
+            );
+          })}
         </div>
+      )}
+      {compact && items.length > shown.length && (
+        <button className="link-more" onClick={() => navigate("/production/workspace")}>
+          View all {items.length} <ArrowRight size={12} />
+        </button>
       )}
     </div>
   );

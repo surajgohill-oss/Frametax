@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
+import { Rows3, Globe2, Columns2, ChevronDown } from "lucide-react";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
-import { Money, Pct } from "../../lib/format";
+import { Money, Pct, structureLabel } from "../../lib/format";
+import { buildBudgetBlocks } from "../../lib/budgetBlocks";
 import { useAppState } from "../../state/AppState";
 import Globe3D from "../../components/Globe3D";
 import { JURISDICTION_COORDS } from "../../lib/jurisdictions";
@@ -10,10 +12,9 @@ import RecommendationsList from "../../components/RecommendationsList";
 import EconomicsTrace from "../../components/EconomicsTrace";
 
 const MODES = [
-  { key: "lanes", label: "Lanes" },
-  { key: "map", label: "Map" },
-  { key: "recommendations", label: "Recommendations" },
-  { key: "questions", label: "Questions" },
+  { key: "lanes", label: "Lanes", icon: Rows3 },
+  { key: "map", label: "Map", icon: Globe2 },
+  { key: "split", label: "Split", icon: Columns2 },
 ];
 
 function candidateTier(candidate, rankIndex) {
@@ -23,28 +24,58 @@ function candidateTier(candidate, rankIndex) {
   return "silver";
 }
 
+function ModelRailBlock({ block, maxAmount }) {
+  const [open, setOpen] = useState(false);
+  const pct = Math.min(100, Math.round((block.amount / maxAmount) * 100));
+  return (
+    <div className="budget-block">
+      <div className="budget-block-header" onClick={() => setOpen((o) => !o)}>
+        <span className="budget-block-name">{block.label}</span>
+        <span className="budget-block-amount mono"><Money value={block.amount} /></span>
+      </div>
+      <div className="budget-block-bar"><div className="budget-block-bar-fill" style={{ width: `${pct}%` }} /></div>
+      {open && (
+        <div className="budget-block-lines">
+          {block.lines.map((l) => (
+            <div className="budget-line" key={l.key}>
+              <span className="budget-line-name">
+                {l.label}
+                {l.movement !== "unclassified" && <span className={`movement-chip ${l.movement}`}>{l.movement}</span>}
+              </span>
+              <span className="mono"><Money value={l.amount} /></span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function JurisdictionLane({ candidate, tier, onSelect }) {
   const cases = candidate.cases || {};
+  const baseCase = cases.base;
+  const pctLabel = `${Math.round(candidate.priceable_pct * 100)}%`;
   return (
     <div className={`lane lane-${tier}`} onClick={onSelect}>
       <div className="lane-header">
+        <span className="lane-title">{structureLabel(candidate.participating_jurisdictions)}</span>
         <span className={`dot ${tier}`} />
-        <span className="lane-title">{candidate.label}</span>
       </div>
-      <div className="lane-sub text-tertiary small">Priceable <Pct value={candidate.priceable_pct} /></div>
-      {Object.keys(cases).length > 0 ? (
-        <table className="inspector-table">
-          <tbody>
-            {["conservative", "base", "optimistic", "risk_adjusted"].filter((k) => cases[k]).map((k) => (
-              <tr key={k}><td>{k.replace("_", " ")}</td><td className="mono"><Money value={cases[k].net_production_cost_usd} /></td></tr>
-            ))}
-          </tbody>
-        </table>
+      <p className="lane-sub text-tertiary small">{pctLabel} of this structure can currently be priced</p>
+
+      {candidate.is_fully_priced && baseCase ? (
+        <>
+          <div className="lane-metric-row"><span className="label">Qualifying spend</span><span className="mono"><Money value={baseCase.qpe_usd} /></span></div>
+          <div className="lane-metric-row"><span className="label">Incentive value</span><span className="mono"><Money value={baseCase.incentive_usd} /></span></div>
+          <div className="lane-metric-row"><span className="label">Finance cost</span><span className="mono"><Money value={baseCase.finance_cost_usd} /></span></div>
+          <div className="lane-metric-row"><span className="label">Net production cost</span><span className="mono"><Money value={baseCase.net_production_cost_usd} /></span></div>
+        </>
       ) : (
-        <p className="text-tertiary small">Unpriced — no register for this set.</p>
-      )}
-      {candidate.constraints.length > 0 && (
-        <p className="text-tertiary small">{candidate.constraints.length} open constraint(s)</p>
+        <p className="lane-partial-note">
+          Half of this structure can currently be priced — the rest depends on {candidate.constraints.length} unresolved
+          requirement{candidate.constraints.length === 1 ? "" : "s"}, mostly authority decisions for the added jurisdiction.
+          A full cost comparison isn't available until those are resolved.
+        </p>
       )}
     </div>
   );
@@ -53,13 +84,14 @@ function JurisdictionLane({ candidate, tier, onSelect }) {
 export default function Workspace() {
   const { data, error, loading } = useCineGlobe();
   const [mode, setMode] = useState("lanes");
+  const [sideTab, setSideTab] = useState("questions");
   const [activeGreyArea, setActiveGreyArea] = useState(null);
   const { openInspector } = useAppState();
 
   const points = useMemo(() => {
     if (!data) return [];
     return data.structures.candidates
-      .map((c, unusedIdx) => {
+      .map((c) => {
         const code = c.participating_jurisdictions.find((j) => j !== data.production.jurisdiction_code) || data.production.jurisdiction_code;
         const coord = JURISDICTION_COORDS[code];
         if (!coord) return null;
@@ -68,6 +100,9 @@ export default function Workspace() {
       })
       .filter(Boolean);
   }, [data]);
+
+  const budgetBlocks = useMemo(() => (data ? buildBudgetBlocks(data.pkg.budget) : []), [data]);
+  const maxBlockAmount = useMemo(() => Math.max(1, ...budgetBlocks.map((b) => b.amount)), [budgetBlocks]);
 
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
@@ -81,39 +116,31 @@ export default function Workspace() {
         <span className="dot gold" />
         <span>Best current structure: <strong>{best?.label}</strong></span>
         <span className="text-tertiary">·</span>
-        <span className="mono"><Money value={best?.risk_adjusted_npc_usd} /> risk-adjusted NPC</span>
+        <span className="mono"><Money value={best?.risk_adjusted_npc_usd} /> risk-adjusted net production cost</span>
       </div>
 
       <div className="workspace-body">
-        <aside className="production-rail">
-          <div className="region">
-            <div className="region-title">Production</div>
-            <dl className="kv-list">
-              <div><dt>Gross budget</dt><dd><Money value={production.gross_budget_usd} /></dd></div>
-              <div><dt>Rate</dt><dd className="mono">{(production.rate * 100).toFixed(0)}%</dd></div>
-              <div><dt>ATL</dt><dd><Money value={pkg.budget.atl_total_usd} /></dd></div>
-              <div><dt>BTL</dt><dd><Money value={pkg.budget.btl_total_usd} /></dd></div>
-              <div><dt>Post</dt><dd><Money value={pkg.budget.post_total_usd} /></dd></div>
-            </dl>
+        <aside className="model-rail">
+          <p className="model-rail-heading">Model Rail — production budget</p>
+          <div className="rail-total">
+            <span className="text-tertiary small">Gross budget</span>
+            <span className="amount mono"><Money value={production.gross_budget_usd} /></span>
           </div>
-          <div className="region">
-            <div className="region-title">Opportunity hints <span className="count">{pkg.budget.opportunity_hints.length}</span></div>
-            <div className="row-list">
-              {pkg.budget.opportunity_hints.slice(0, 4).map((h) => (
-                <div key={h.hint_id} className="hint-row">
-                  <span className="text-tertiary small">{h.category}</span>
-                  <p className="small" style={{ margin: "2px 0 0" }}>{h.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+          {budgetBlocks.map((block) => (
+            <ModelRailBlock key={block.key} block={block} maxAmount={maxBlockAmount} />
+          ))}
         </aside>
 
         <div className="workspace-canvas">
           <nav className="mode-tabs">
-            {MODES.map((m) => (
-              <button key={m.key} className={mode === m.key ? "active" : ""} onClick={() => setMode(m.key)}>{m.label}</button>
-            ))}
+            {MODES.map((m) => {
+              const Icon = m.icon;
+              return (
+                <button key={m.key} className={mode === m.key ? "active" : ""} onClick={() => setMode(m.key)}>
+                  <Icon size={14} strokeWidth={1.8} />{m.label}
+                </button>
+              );
+            })}
           </nav>
 
           {mode === "lanes" && (
@@ -133,42 +160,70 @@ export default function Workspace() {
           )}
 
           {mode === "map" && (
-            <div className="globe-canvas-wrap">
-              <Globe3D points={points} height={480} onPointClick={(pt) => {
+            <div className="globe-canvas-wrap dark-panel">
+              <Globe3D points={points} height={460} onPointClick={(pt) => {
                 const c = structures.candidates.find((cand) => cand.candidate_id === pt.id);
                 if (c) openInspector("candidate", c);
               }} />
-              <p className="text-tertiary small">
-                Recommendation Mode — gold: best priced structure · jade: priced alternative ·
-                amber: gated on missing register/authority · silver: viable, unpriced. No treaty
-                arcs shown — current candidates carry no treaty compositions.
+              <p className="globe-caption small">
+                Gold = strongest priced structure · jade = another priced option · amber = requires an authority
+                decision before it can be priced · silver = viable but not yet priced. Treaty routes aren't shown —
+                none of today's candidates use a treaty structure.
               </p>
             </div>
           )}
 
-          {mode === "recommendations" && (
-            <div className="region">
-              <RecommendationsList byCategory={recommendations.by_category} legal={recommendations.legal} />
-            </div>
-          )}
-
-          {mode === "questions" && (
-            <div className="region">
-              <QuestionStack
-                missingInputs={pkg.missing_inputs}
-                greyAreas={legal.grey_areas_current}
-              />
-              <div className="trace-trigger-row">
-                {legal.grey_areas_current.map((g) => (
-                  <button key={g.item_id} className={`tag ${activeGreyArea?.item_id === g.item_id ? "active" : ""}`} onClick={() => setActiveGreyArea(g)}>
-                    Trace {g.item_id}
-                  </button>
-                ))}
+          {mode === "split" && (
+            <div className="split-workspace">
+              <div className="split-lane-row">
+                {structures.candidates.map((c) => {
+                  const rankIndex = structures.ranking.findIndex((r) => r.structure_id === c.candidate_id);
+                  const tier = candidateTier(c, rankIndex);
+                  return (
+                    <div key={c.candidate_id} className={`split-lane-mini lane-${tier}`} onClick={() => openInspector("candidate", c)}>
+                      <div className="row-title" style={{ fontSize: 12 }}>{structureLabel(c.participating_jurisdictions)}</div>
+                      <div className="row-sub"><Pct value={c.priceable_pct} /> priceable</div>
+                    </div>
+                  );
+                })}
               </div>
-              {activeGreyArea && <EconomicsTrace greyArea={activeGreyArea} legal={legal} />}
+              <div className="globe-canvas-wrap dark-panel">
+                <Globe3D points={points} height={340} onPointClick={(pt) => {
+                  const c = structures.candidates.find((cand) => cand.candidate_id === pt.id);
+                  if (c) openInspector("candidate", c);
+                }} />
+              </div>
             </div>
           )}
         </div>
+
+        <aside className="workspace-side">
+          <div className="workspace-side-tabs">
+            <button className={sideTab === "questions" ? "active" : ""} onClick={() => setSideTab("questions")}>
+              Questions <span className="text-tertiary">{pkg.missing_inputs.length + legal.grey_areas_current.filter((g) => g.status === "open").length}</span>
+            </button>
+            <button className={sideTab === "recommendations" ? "active" : ""} onClick={() => setSideTab("recommendations")}>
+              Recommendations
+            </button>
+          </div>
+          <div className="workspace-side-body">
+            {sideTab === "questions" ? (
+              <>
+                <QuestionStack missingInputs={pkg.missing_inputs} greyAreas={legal.grey_areas_current} />
+                <div className="trace-trigger-row">
+                  {legal.grey_areas_current.map((g) => (
+                    <button key={g.item_id} className={`tag ${activeGreyArea?.item_id === g.item_id ? "active" : ""}`} onClick={() => setActiveGreyArea(g)}>
+                      Trace {g.jurisdiction_code} · <Money value={g.amount_usd} /> <ChevronDown size={12} />
+                    </button>
+                  ))}
+                </div>
+                {activeGreyArea && <EconomicsTrace greyArea={activeGreyArea} legal={legal} />}
+              </>
+            ) : (
+              <RecommendationsList byCategory={recommendations.by_category} legal={recommendations.legal} />
+            )}
+          </div>
+        </aside>
       </div>
     </div>
   );

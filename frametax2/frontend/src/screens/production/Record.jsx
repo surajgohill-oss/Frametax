@@ -14,8 +14,8 @@ export default function Record() {
     if (g.status !== "open") {
       rows.push({
         date: production.as_of_date,
-        event: `${g.item_id} resolved`,
-        detail: `Authority Score ${legal.authority_scores[g.graph_rule_id]?.composite ?? "—"} — ${legal.authority_scores[g.graph_rule_id]?.confidence ?? ""}`,
+        event: `${g.jurisdiction_code} authority decision received`,
+        detail: `${g.resolving_evidence} — Authority Score ${legal.authority_scores[g.graph_rule_id]?.composite ?? "—"} (${legal.authority_scores[g.graph_rule_id]?.confidence ?? ""})`,
         value: g.amount_usd,
       });
     }

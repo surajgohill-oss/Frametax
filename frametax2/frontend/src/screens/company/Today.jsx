@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom";
+import { Scale, AlertTriangle, Eye, Clapperboard, CheckCircle2, ArrowRight } from "lucide-react";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
-import { Money } from "../../lib/format";
+import { Money, recommendationHeadline } from "../../lib/format";
 
 export default function Today() {
   const { data, error, loading } = useCineGlobe();
@@ -24,31 +25,31 @@ export default function Today() {
         <h1 className="screen-title">Work queue</h1>
       </header>
 
-      <section className="region region-accent-gold">
-        <div className="region-title">Needs a decision <span className="count">{highValueRecs.length}</span></div>
+      <section className="region region-warm">
+        <div className="region-title"><span>Needs a decision</span><span className="count">{highValueRecs.length}</span></div>
         <div className="row-list">
           {highValueRecs.map((r) => (
             <div className="row-item" key={r.recommendation_id} onClick={() => navigate("/production/workspace")}>
-              <span className="dot gold" />
+              <Scale size={16} color="var(--gold)" strokeWidth={1.8} />
               <div className="row-main">
-                <div className="row-title">{r.title}</div>
-                <div className="row-sub">The Little Utopia · {r.requires_counsel_approval ? "counsel approval" : "producer approval"}</div>
+                <div className="row-title">{recommendationHeadline(r)}</div>
+                <div className="row-sub">The Little Utopia · {r.requires_counsel_approval ? "counsel approval needed" : "producer approval needed"}</div>
               </div>
-              <div className="row-value"><Money value={r.estimated_value_usd} /></div>
+              <div className="row-value mono"><Money value={r.estimated_value_usd} /></div>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="region region-accent-red">
-        <div className="region-title">Blocked <span className="count">{blockingQuestions.length}</span></div>
+      <section className="region region-blocker">
+        <div className="region-title"><span>Blocked</span><span className="count">{blockingQuestions.length}</span></div>
         {blockingQuestions.length === 0 ? (
-          <p className="empty-state">Nothing is blocked.</p>
+          <div className="empty-row"><CheckCircle2 size={15} strokeWidth={1.8} />Nothing is blocked right now.</div>
         ) : (
           <div className="row-list">
             {blockingQuestions.map((q) => (
               <div className="row-item" key={q.identifier} onClick={() => navigate("/production/workspace")}>
-                <span className="dot red" />
+                <AlertTriangle size={16} color="var(--red)" strokeWidth={1.8} />
                 <div className="row-main">
                   <div className="row-title">{q.question}</div>
                   <div className="row-sub">{q.why_it_matters}</div>
@@ -59,32 +60,37 @@ export default function Today() {
         )}
       </section>
 
-      <section className="region region-accent-amber">
-        <div className="region-title">Watching <span className="count">{openGreyAreas.length}</span></div>
-        <div className="row-list">
-          {openGreyAreas.map((g) => (
-            <div className="row-item" key={g.item_id} onClick={() => navigate("/production/knowledge")}>
-              <span className="dot amber" />
-              <div className="row-main">
-                <div className="row-title">{g.item_id}</div>
-                <div className="row-sub">{g.authority_to_ask}</div>
+      <section className="region region-conditional">
+        <div className="region-title"><span>Watching</span><span className="count">{openGreyAreas.length}</span></div>
+        {openGreyAreas.length === 0 ? (
+          <div className="empty-row"><CheckCircle2 size={15} strokeWidth={1.8} />Nothing open to watch.</div>
+        ) : (
+          <div className="row-list">
+            {openGreyAreas.map((g) => (
+              <div className="row-item" key={g.item_id} onClick={() => navigate("/production/knowledge")}>
+                <Eye size={16} color="var(--amber)" strokeWidth={1.8} />
+                <div className="row-main">
+                  <div className="row-title">{g.resolving_evidence}</div>
+                  <div className="row-sub">{g.authority_to_ask} · {g.jurisdiction_code} <span className="mono text-tertiary">· {g.item_id}</span></div>
+                </div>
+                <div className="row-value mono"><Money value={g.amount_usd} /></div>
               </div>
-              <div className="row-value"><Money value={g.amount_usd} /></div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
 
-      <section className="region region-accent-blue">
-        <div className="region-title">Productions needing action</div>
+      <section className="region region-cool">
+        <div className="region-title"><span>Productions needing action</span></div>
         <div className="row-list">
           <div className="row-item" onClick={() => navigate("/production/overview")}>
-            <span className="dot gold" />
+            <Clapperboard size={16} color="var(--blue)" strokeWidth={1.8} />
             <div className="row-main">
-              <div className="row-title serif">{production.production_name}</div>
+              <div className="row-title serif" style={{ fontSize: 14 }}>{production.production_name}</div>
               <div className="row-sub">{production.jurisdiction_code} baseline · {pkg.confidence} confidence</div>
             </div>
-            <div className="row-value"><Money value={production.gross_budget_usd} /></div>
+            <div className="row-value mono"><Money value={production.gross_budget_usd} /></div>
+            <ArrowRight size={14} color="var(--text-tertiary)" />
           </div>
         </div>
       </section>

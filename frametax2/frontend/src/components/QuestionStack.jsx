@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useAppState } from "../state/AppState";
-import { Money } from "../lib/format";
+import { Money, humanizeToken } from "../lib/format";
 
 function isTypingTarget(el) {
   if (!el) return false;
@@ -18,6 +18,14 @@ function priorityBadgeClass(value) {
     case "low": return "charcoal";
     default: return "charcoal";
   }
+}
+
+// Real status fields (MissingInput.blocking, GreyAreaItem.status) mapped
+// onto the plain-language workflow states a producer actually cares
+// about — never a raw enum value.
+function questionState(isGreyArea, data) {
+  if (isGreyArea) return { label: "Decision required", cls: "amber" };
+  return data.blocking ? { label: "Decision required", cls: "red" } : { label: "Unresolved", cls: "silver" };
 }
 
 /**
@@ -59,33 +67,40 @@ export default function QuestionStack({ missingInputs = [], greyAreas = [] }) {
 
   return (
     <div className="row-list" ref={listRef}>
-      {items.map((item, i) => (
-        <div
-          key={item.id}
-          className={`row-item question-row ${i === activeIndex ? "active" : ""}`}
-          onClick={() => {
-            setActiveIndex(i);
-            openInspector("question", item.data);
-          }}
-        >
-          <span className={`badge ${isGreyArea(item.data) ? (item.data.status === "open" ? "amber" : "jade") : item.data.blocking ? "red" : "silver"}`}>
-            {isGreyArea(item.data) ? "grey area" : item.data.blocking ? "blocking" : "open"}
-          </span>
-          <div className="row-main">
-            <div className="row-title">{isGreyArea(item.data) ? item.data.authority_to_ask : item.data.question}</div>
-            <div className="row-sub">
-              {isGreyArea(item.data)
-                ? `${item.data.item_id} · ${item.data.jurisdiction_code}`
-                : (item.data.downstream_engines || []).join(", ")}
+      {items.map((item, i) => {
+        const grey = isGreyArea(item.data);
+        const state = questionState(grey, item.data);
+        return (
+          <div
+            key={item.id}
+            className={`row-item question-row ${i === activeIndex ? "active" : ""}`}
+            onClick={() => {
+              setActiveIndex(i);
+              openInspector("question", item.data);
+            }}
+          >
+            <div className="row-main">
+              <div className="row-title">{grey ? item.data.resolving_evidence : item.data.question}</div>
+              <div className="question-status-row">
+                <span className={`badge ${state.cls}`}>{state.label}</span>
+                {grey && item.data.account_codes?.length > 0 && (
+                  <span className="text-tertiary small mono">accounts {item.data.account_codes.join(", ")}</span>
+                )}
+                <span className="text-tertiary small">
+                  {grey
+                    ? `${item.data.authority_to_ask} · ${item.data.jurisdiction_code}`
+                    : `Affects ${(item.data.downstream_engines || []).map(humanizeToken).join(", ")}`}
+                </span>
+              </div>
+            </div>
+            <div className="row-value">
+              {grey
+                ? <Money value={item.data.amount_usd} />
+                : <span className={`badge ${priorityBadgeClass(item.data.optimizer_value)}`}>{item.data.optimizer_value} priority</span>}
             </div>
           </div>
-          <div className="row-value">
-            {isGreyArea(item.data)
-              ? <Money value={item.data.amount_usd} />
-              : <span className={`badge ${priorityBadgeClass(item.data.optimizer_value)}`}>{item.data.optimizer_value} priority</span>}
-          </div>
-        </div>
-      ))}
+        );
+      })}
       <p className="text-tertiary small" style={{ marginTop: 8 }}>J / K to move between questions · click to inspect</p>
     </div>
   );
