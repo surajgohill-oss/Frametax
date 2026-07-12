@@ -647,7 +647,11 @@ def _add_comparable_links(graph: JurisdictionGraph) -> None:
 
 # ── Wiring: Available levers (from levers.py, Little Utopia only) ──────────
 
-def _add_available_levers(graph: JurisdictionGraph, mu_rate: float = 0.40) -> None:
+def _add_available_levers(
+    graph: JurisdictionGraph,
+    mu_rate: float = 0.40,
+    register: Optional[list] = None,
+) -> None:
     """
     HAS_AVAILABLE_LEVER edges from Mauritius's NationalProgram node to the
     Lever objects derived from Little Utopia's structuring-path register —
@@ -656,11 +660,17 @@ def _add_available_levers(graph: JurisdictionGraph, mu_rate: float = 0.40) -> No
     qualification register to derive from), so no fact is invented for
     Malta/Greece/Cyprus/etc — their absence of Lever nodes is the honest
     state, not an oversight.
+
+    register, when supplied by the caller (Engine Integration Phase 1),
+    is the caller's CURRENT derived register — so a facts-changed
+    register produces facts-changed lever nodes instead of the default
+    build. Omitted, behavior is byte-identical to before.
     """
     mu_program_id = _program_id(jc.TIER1_PROFILES["MU"].program_slug)
     if not graph.has_node(mu_program_id):
         return
-    register = build_little_utopia_qualification_register(mu_rate=mu_rate)
+    if register is None:
+        register = build_little_utopia_qualification_register(mu_rate=mu_rate)
     levers: list[Lever] = derive_levers(register, rate=mu_rate, jurisdiction_code="MU")
     for lever in levers:
         lever_node_id = _lever_id_node(lever.lever_id)
@@ -692,7 +702,10 @@ def _add_available_levers(graph: JurisdictionGraph, mu_rate: float = 0.40) -> No
 
 # ── Top-level builder ────────────────────────────────────────────────────
 
-def build_jurisdiction_graph(mu_rate: float = 0.40) -> JurisdictionGraph:
+def build_jurisdiction_graph(
+    mu_rate: float = 0.40,
+    register: Optional[list] = None,
+) -> JurisdictionGraph:
     """
     Deterministic, generic construction: iterates ALL_PROFILES in a fixed
     (sorted-by-key) order, then wires treaties, reinvestment profiles,
@@ -700,6 +713,11 @@ def build_jurisdiction_graph(mu_rate: float = 0.40) -> JurisdictionGraph:
     this twice with the same mu_rate produces graphs with identical node
     and relationship content in identical order — verified by a
     determinism test.
+
+    register (optional, Engine Integration Phase 1): the caller's current
+    derived qualification register, threaded to the lever pass so
+    facts-dependent lever nodes track the caller's facts. Default None
+    preserves prior behavior exactly.
     """
     graph = JurisdictionGraph()
     for code in sorted(jc.ALL_PROFILES.keys()):
@@ -708,7 +726,7 @@ def build_jurisdiction_graph(mu_rate: float = 0.40) -> JurisdictionGraph:
     _add_treaty_availability_facts(graph)
     _add_reinvestment_profiles(graph)
     _add_comparable_links(graph)
-    _add_available_levers(graph, mu_rate=mu_rate)
+    _add_available_levers(graph, mu_rate=mu_rate, register=register)
     return graph
 
 

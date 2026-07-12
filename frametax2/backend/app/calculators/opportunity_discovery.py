@@ -778,14 +778,23 @@ def discover_all_opportunities(
     mu_rate: float = 0.40,
     graph: Optional[JurisdictionGraph] = None,
     movable_spend_usd: Optional[float] = None,
+    register: Optional[list[AccountQualification]] = None,
+    grey_areas: Optional[list[GreyAreaItem]] = None,
 ) -> OpportunityCollection:
     """
     Runs all seven passes over the currently modeled world (ALL_PROFILES'
     jurisdictions), dedupes, and returns a deterministically ordered
-    collection. Pass 4 (structuring) and Pass 7 (grey areas) run against
-    the one populated qualification register in the codebase (Little
-    Utopia / MU) — for any other baseline they honestly contribute
-    nothing rather than fabricate a register.
+    collection.
+
+    register / grey_areas (Engine Integration Phase 1): the caller's
+    CURRENT qualification register and grey-area list — a facts-changed
+    or legally-resolved register produces correspondingly changed
+    structuring/grey-area opportunities for the baseline jurisdiction,
+    whatever that jurisdiction is. When omitted, Pass 4/Pass 7 fall back
+    to the one populated register in the codebase (Little Utopia / MU)
+    for an MU baseline, and honestly contribute nothing for any other
+    baseline rather than fabricate a register — byte-identical to prior
+    behavior.
 
     movable_spend_usd, when supplied, is forwarded to Pass 1 so a
     relocation candidate's rate advantage can be combined with the
@@ -797,14 +806,21 @@ def discover_all_opportunities(
     graph = graph if graph is not None else build_jurisdiction_graph(mu_rate=mu_rate)
     codes = sorted(jc.ALL_PROFILES.keys())
 
+    if register is None and baseline_jurisdiction == "MU":
+        register = build_little_utopia_qualification_register(mu_rate=mu_rate)
+    if grey_areas is None and baseline_jurisdiction == "MU":
+        grey_areas = build_little_utopia_grey_areas()
+
     all_opportunities: list[Opportunity] = []
     all_opportunities += discover_jurisdiction_opportunities(baseline_jurisdiction, movable_spend_usd=movable_spend_usd)
     all_opportunities += discover_treaty_opportunities(codes)
     all_opportunities += discover_stacking_opportunities(graph)
-    if baseline_jurisdiction == "MU":
-        register = build_little_utopia_qualification_register(mu_rate=mu_rate)
-        all_opportunities += discover_structuring_opportunities(register, rate=mu_rate, jurisdiction_code="MU")
-        all_opportunities += discover_grey_area_opportunities(build_little_utopia_grey_areas(), rate=mu_rate)
+    if register is not None:
+        all_opportunities += discover_structuring_opportunities(
+            register, rate=mu_rate, jurisdiction_code=baseline_jurisdiction,
+        )
+    if grey_areas is not None:
+        all_opportunities += discover_grey_area_opportunities(grey_areas, rate=mu_rate)
     all_opportunities += discover_reinvestment_opportunities(codes)
     all_opportunities += discover_normalization_opportunities(baseline_jurisdiction, graph=graph)
 

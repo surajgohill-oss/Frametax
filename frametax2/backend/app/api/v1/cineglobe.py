@@ -41,9 +41,60 @@ from app.calculators.ui_presentation import (
     evidence_chain_to_display,
     group_recommendations_by_category,
 )
-from app.demo.little_utopia_state import get_state
+from app.demo.little_utopia_state import (
+    ANSWERABLE_FACTS,
+    apply_fact_answers,
+    current_fact_answers,
+    get_state,
+)
 
 router = APIRouter(prefix="/cineglobe", tags=["cineglobe"])
+
+
+# ── Production facts (Engine Integration Phase 1, Seam B) ───────────────────
+# Question Engine answers become engine inputs: an answered fact feeds
+# qualification derivation / structure composition and resolves the
+# corresponding missing-input question. No route below computes anything —
+# apply_fact_answers() invalidates the cached state and the engines
+# recompute on the next get_state().
+
+@router.get("/facts")
+async def get_facts() -> dict[str, Any]:
+    return {
+        "answers": current_fact_answers(),
+        "answerable": {
+            key: {
+                "type": spec["type"].__name__,
+                "answers_question": spec["answers_question"],
+                "description": spec["description"],
+            }
+            for key, spec in ANSWERABLE_FACTS.items()
+        },
+    }
+
+
+class FactAnswers(BaseModel):
+    answers: dict[str, Any]
+
+
+@router.post("/facts")
+async def post_facts(body: FactAnswers) -> dict[str, Any]:
+    try:
+        apply_fact_answers(body.answers)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    s = get_state()
+    conservative = next(
+        (c for c in s.composition.candidates if c.is_fully_priced), None,
+    )
+    return {
+        "answers": current_fact_answers(),
+        "open_questions": len(s.package.missing_inputs),
+        "conservative_qpe_usd": (
+            conservative.cases[RiskCase.CONSERVATIVE].qpe_usd if conservative else None
+        ),
+        "candidate_ids": [c.candidate_id for c in s.composition.candidates],
+    }
 
 
 # ── Screen 1: Production ─────────────────────────────────────────────────────

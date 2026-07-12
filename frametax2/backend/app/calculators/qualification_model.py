@@ -143,177 +143,115 @@ def get_reinvestment_profile(jurisdiction_code: str) -> ReinvestmentProfile:
 
 # ── Little Utopia (Mauritius) qualification register ────────────────────────
 
+# ── Little Utopia budget data (chart of accounts) ───────────────────────────
+# Account code, description, amount, chart-of-accounts spend category
+# (None = derive from the description via classify_budget_line_items),
+# memo flag. This is BUDGET DATA — every qualification STATE is computed
+# from it by qualification_derivation.derive_qualification_register()
+# against the mirrored statutory rules and the production's facts.
+# Amounts correspond 1:1 to tests/fixtures/little_utopia_sanitized.py.
+LITTLE_UTOPIA_BUDGET_LINES: tuple[tuple[str, str, float, Optional[str], bool], ...] = (
+    ("10-00", "Story & Screenplay Development", 85_000.0, None, False),
+    ("11-00", "Director Fee", 175_000.0, None, False),
+    ("12-00", "Producer Fees", 148_444.0, "atl_producer", False),
+    ("13-00", "Lead Cast Agreements", 130_000.0, None, False),
+    ("20-00", "Production Manager & Production Staff", 155_000.0, "btl_crew_labor", False),
+    ("21-00", "Director of Photography", 95_000.0, "btl_crew_labor", False),
+    ("22-00", "Camera Department & Equipment Rental", 185_000.0, None, False),
+    ("23-00", "Sound Department", 65_000.0, "btl_crew_labor", False),
+    ("24-00", "Lighting & Electrical", 145_000.0, "btl_crew_labor", False),
+    ("25-00", "Grip Department", 82_000.0, None, False),
+    ("26-00", "Art Department / Production Design", 168_000.0, None, False),
+    ("27-00", "Wardrobe & Costume", 72_000.0, None, False),
+    ("28-00", "Hair & Makeup", 55_000.0, None, False),
+    ("29-00", "Location Fees & Permits (Mauritius)", 95_000.0, None, False),
+    ("30-00", "Transport & Ground Vehicles (Mauritius)", 112_000.0, None, False),
+    ("31-00", "Marine Unit — Vessel Charter", 165_000.0, None, False),
+    ("32-00", "Marine Unit — Safety & Support Boats", 35_000.0, None, False),
+    ("33-00", "Marine Unit — Frogsquad (SA Dive Package)", 99_837.0, None, False),
+    ("34-00", "Marine Equipment Rental (incl. underwater camera housing)", 93_163.0, None, False),
+    ("35-00", "Marine Fuel & Consumables", 22_000.0, "vessel_marine", False),
+    ("36-00", "Catering & Craft Services (Mauritius unit)", 88_000.0, None, False),
+    ("37-00", "HOD & International Crew Accommodation (Mauritius)", 159_783.0, "lodging", False),
+    ("38-00", "Local Crew Accommodation & Per Diems (Mauritius)", 114_130.0, "lodging", False),
+    ("39-00", "International Travel & Airfares", 143_000.0, None, False),
+    ("40-00", "Supporting Artists (Extras) — Mauritius", 42_000.0, "btl_crew_labor", False),
+    ("41-00", "Payroll Services & PAYE / Employer Contributions", 68_000.0, None, False),
+    ("42-00", "Stunts & Physical Special Effects", 48_000.0, "btl_crew_labor", False),
+    ("43-00", "Unit Publicist & Production Stills", 24_000.0, "btl_crew_labor", False),
+    ("44-00", "Non-Recoverable VAT @ 15% (Mauritius — Memo)", 92_439.0, None, True),
+    ("50-00", "Editing — Offline Cut", 78_000.0, None, False),
+    ("51-00", "Color Grading & Mastering", 45_000.0, None, False),
+    ("52-00", "Sound Design & Final Mix", 62_000.0, None, False),
+    ("53-00", "Music Score & Licensing", 55_000.0, None, False),
+    ("54-00", "VFX / Digital Effects", 95_000.0, None, False),
+    ("55-00", "Deliverables & DCP Mastering", 28_000.0, None, False),
+    ("60-00", "Production Insurance (E&O + Liability)", 185_000.0, None, False),
+    ("70-00", "Legal & Accounting", 78_000.0, "legal_accounting", False),
+    ("71-00", "Audit & Incentive Submission Fees", 35_000.0, "legal_accounting", False),
+    ("80-00", "Completion Bond Premium", 145_000.0, None, False),
+    ("81-00", "Contingency Reserve", 596_597.0, None, False),
+    ("82-00", "Finance Costs / Bridge Interest on Rebate Receivable", 0.0, None, False),
+)
+
+# The production's real qualification-relevant facts (from the budget
+# source): post-production is priced outside Mauritius, international
+# airfares are incurred outside Mauritius, and the DP / sound / stunt
+# teams are currently paid through non-Mauritius payroll.
+LITTLE_UTOPIA_ACCOUNTS_OUTSIDE_MU = frozenset({
+    "39-00", "50-00", "51-00", "52-00", "53-00", "54-00", "55-00",
+})
+LITTLE_UTOPIA_OFFSHORE_PAYROLL = frozenset({"21-00", "23-00", "42-00"})
+
+MU_TERRITORIAL_TEXT = (
+    "EDB program text requires QPE to be 'incurred and spent in Mauritius.'"
+)
+
+
 def build_little_utopia_qualification_register(
     mu_rate: float = 0.40,
+    facts: "object | None" = None,
 ) -> list[AccountQualification]:
     """
-    The account-by-account qualification-state register for The Little
-    Utopia under the Mauritius EDB Film Rebate Scheme, replacing the
-    "unknown collapses to excluded" behavior with explicit state.
+    The account-by-account qualification register for The Little Utopia
+    under the Mauritius EDB Film Rebate Scheme.
 
-    Every account here corresponds 1:1 to an account in
-    tests/fixtures/little_utopia_sanitized.py. Amounts are taken directly
-    from that fixture (not recomputed) so this register can be tested for
-    exact reconciliation against calculate_qpe()'s gross budget.
+    As of Engine Integration Phase 1 the states are DERIVED — budget
+    lines (LITTLE_UTOPIA_BUDGET_LINES) x mirrored statutory rules
+    (app.data.program_spend_rules, migrations 0021/0025) x production
+    facts — via qualification_derivation.derive_qualification_register(),
+    rather than assigned per account. The optional `facts` parameter
+    (a qualification_derivation.ProductionFacts) lets callers supply
+    changed production facts (e.g. a localized payroll-routing plan, a
+    post-location decision); omitted, the production's current known
+    facts apply.
+
+    Amounts correspond 1:1 to tests/fixtures/little_utopia_sanitized.py.
     """
-    reg: list[AccountQualification] = []
+    # Late import: qualification_derivation imports this module's
+    # dataclasses/enums, so the dependency must point one way at import
+    # time and the other way only at call time.
+    from app.calculators.qualification_derivation import (
+        BudgetLine,
+        ProductionFacts,
+        derive_qualification_register,
+    )
 
-    def qualifies(code, desc, amt):
-        reg.append(AccountQualification(
-            account_code=code, description=desc, amount_usd=amt,
-            state=QualificationState.QUALIFIES,
-            confidence=QualificationConfidence.HIGH,
-            authority_basis=AuthorityBasis.EXPLICIT_STATUTE,
-            reason="MU-sourced BTL spend within confirmed qualifying scope.",
-            financial_impact_usd=amt,
-        ))
+    if facts is None:
+        facts = ProductionFacts(
+            jurisdiction_code="MU",
+            accounts_outside_jurisdiction=LITTLE_UTOPIA_ACCOUNTS_OUTSIDE_MU,
+            offshore_payroll_accounts=LITTLE_UTOPIA_OFFSHORE_PAYROLL,
+        )
 
-    def grey_area(code, desc, amt, reason, evidence):
-        reg.append(AccountQualification(
-            account_code=code, description=desc, amount_usd=amt,
-            state=QualificationState.GREY_AREA_REQUIRES_AUTHORITY,
-            confidence=QualificationConfidence.LOW,
-            authority_basis=AuthorityBasis.ABSENCE_OF_AUTHORITY,
-            reason=reason,
-            financial_impact_usd=amt,
-            resolving_evidence=evidence,
-            incentive_upside_usd=round(amt * mu_rate, 2),
-        ))
-
-    def structuring(code, desc, amt, mechanism, evidence):
-        reg.append(AccountQualification(
-            account_code=code, description=desc, amount_usd=amt,
-            state=QualificationState.STRUCTURING_OPPORTUNITY,
-            confidence=QualificationConfidence.MEDIUM,
-            authority_basis=AuthorityBasis.STRUCTURING_DEPENDENT,
-            reason="No rule bars qualification — blocked by current payroll/vendor routing, not by authority.",
-            financial_impact_usd=amt,
-            structuring_mechanism=mechanism,
-            resolving_evidence=evidence,
-            incentive_upside_usd=round(amt * mu_rate, 2),
-        ))
-
-    def excluded(code, desc, amt, reason, basis=AuthorityBasis.EXPLICIT_STATUTE, confidence=QualificationConfidence.HIGH):
-        reg.append(AccountQualification(
-            account_code=code, description=desc, amount_usd=amt,
-            state=QualificationState.EXCLUDED,
-            confidence=confidence,
-            authority_basis=basis,
-            reason=reason,
-            financial_impact_usd=amt,
-        ))
-
-    def not_applicable(code, desc, amt, reason):
-        reg.append(AccountQualification(
-            account_code=code, description=desc, amount_usd=amt,
-            state=QualificationState.NOT_APPLICABLE,
-            confidence=QualificationConfidence.NOT_APPLICABLE,
-            authority_basis=AuthorityBasis.NOT_A_QUALIFICATION_QUESTION,
-            reason=reason,
-            financial_impact_usd=amt,
-        ))
-
-    # ── ATL: absence of authority — was silently excluded, now explicit grey area ──
-    grey_area("10-00", "Story & Screenplay Development", 85_000.0,
-        "ATL qualifying scope is an unresolved unknown_field on the MU jurisdiction record — "
-        "no EDB guidance located confirming or denying ATL eligibility.",
-        "EDB written clarification on whether writer/director/producer fees are within QPE scope.")
-    grey_area("11-00", "Director Fee", 175_000.0,
-        "Same absence-of-authority gap as 10-00 — ATL scope is undefined in available EDB guidance.",
-        "EDB written clarification on ATL qualifying scope.")
-    grey_area("12-00", "Producer Fees", 148_444.0,
-        "Same absence-of-authority gap as 10-00/11-00.",
-        "EDB written clarification on ATL qualifying scope.")
-
-    # ── Cast fees: absence of MU authority, but cross-program convention supports exclusion ──
-    excluded("13-00", "Lead Cast Agreements", 130_000.0,
-        "No MU-specific rule located, but above-scale cast fees are excluded from QPE under "
-        "near-universal incentive-program convention; treated as excluded pending contrary evidence.",
-        basis=AuthorityBasis.CROSS_PROGRAM_CONVENTION, confidence=QualificationConfidence.MEDIUM)
-
-    # ── Imported crew: structuring problem, not an authority gap ──
-    structuring("21-00", "Director of Photography", 95_000.0,
-        "Route through MU employer-of-record or existing production SPV, arm's-length invoicing.",
-        "Documented MU employer/SPV routing agreement for the DP, mirroring the 33-00 Frogsquad precedent.")
-    structuring("23-00", "Sound Department", 65_000.0,
-        "Route through MU employer-of-record or existing production SPV.",
-        "Documented MU employer/SPV routing agreement for the sound team.")
-    structuring("42-00", "Stunts & Physical Special Effects", 48_000.0,
-        "Route through MU employer-of-record or existing production SPV.",
-        "Documented MU employer/SPV routing agreement for the stunt team.")
-
-    # ── Deterministic exclusions: explicit territorial nexus ──
-    excluded("39-00", "International Travel & Airfares", 143_000.0,
-        "International airfares are not spend incurred in Mauritius — territorial nexus fails. "
-        "EDB program text requires QPE to be 'incurred and spent in Mauritius.'",
-        basis=AuthorityBasis.TERRITORIAL_NEXUS)
-    for code, desc, amt in [
-        ("50-00", "Editing — Offline Cut", 78_000.0),
-        ("51-00", "Color Grading & Mastering", 45_000.0),
-        ("52-00", "Sound Design & Final Mix", 62_000.0),
-        ("53-00", "Music Score & Licensing", 55_000.0),
-        ("54-00", "VFX / Digital Effects", 95_000.0),
-        ("55-00", "Deliverables & DCP Mastering", 28_000.0),
-    ]:
-        excluded(code, desc, amt,
-            "Post-production work performed outside Mauritius — territorial nexus fails.",
-            basis=AuthorityBasis.TERRITORIAL_NEXUS)
-
-    # ── Deterministic exclusions: cross-program convention (not MU-cited, but near-universal) ──
-    excluded("60-00", "Production Insurance (E&O + Liability)", 185_000.0,
-        "Insurance premiums excluded from QPE under near-universal incentive-program convention; "
-        "no MU-specific citation located.",
-        basis=AuthorityBasis.CROSS_PROGRAM_CONVENTION, confidence=QualificationConfidence.MEDIUM)
-    excluded("70-00", "Legal & Accounting", 78_000.0,
-        "Finance/legal costs excluded under cross-program convention; no MU-specific citation located.",
-        basis=AuthorityBasis.CROSS_PROGRAM_CONVENTION, confidence=QualificationConfidence.MEDIUM)
-    excluded("71-00", "Audit & Incentive Submission Fees", 35_000.0,
-        "Submission/audit fees excluded under cross-program convention; no MU-specific citation located.",
-        basis=AuthorityBasis.CROSS_PROGRAM_CONVENTION, confidence=QualificationConfidence.MEDIUM)
-    excluded("80-00", "Completion Bond Premium", 145_000.0,
-        "Completion bond premiums excluded under cross-program convention; no MU-specific citation located.",
-        basis=AuthorityBasis.CROSS_PROGRAM_CONVENTION, confidence=QualificationConfidence.MEDIUM)
-
-    # ── Structural exclusion: not an authority question at all ──
-    excluded("81-00", "Contingency Reserve", 596_597.0,
-        "QPE requires spend to be incurred. An unspent contingency reserve is not incurred cost "
-        "until drawn down against an actual line item.",
-        basis=AuthorityBasis.STRUCTURAL_DEFINITION)
-
-    # ── Not applicable: no cost booked, modeled separately as a cashflow item ──
-    not_applicable("82-00", "Finance Costs / Bridge Interest on Rebate Receivable", 0.0,
-        "Budget shows $0 — not a qualification question. Real bridge-finance cost is modeled "
-        "separately as a cashflow item, not as QPE-account spend.")
-    not_applicable("44-00", "Non-Recoverable VAT @ 15% (Mauritius — Memo)", 92_439.0,
-        "Memo line — non-recoverable VAT is embedded in gross budget for reporting but is not "
-        "a production spend qualification question.")
-
-    # ── Qualifying accounts: explicit MU-sourced BTL spend ──
-    for code, desc, amt in [
-        ("20-00", "Production Manager & Production Staff", 155_000.0),
-        ("22-00", "Camera Department & Equipment Rental", 185_000.0),
-        ("24-00", "Lighting & Electrical", 145_000.0),
-        ("25-00", "Grip Department", 82_000.0),
-        ("26-00", "Art Department / Production Design", 168_000.0),
-        ("27-00", "Wardrobe & Costume", 72_000.0),
-        ("28-00", "Hair & Makeup", 55_000.0),
-        ("29-00", "Location Fees & Permits (Mauritius)", 95_000.0),
-        ("30-00", "Transport & Ground Vehicles (Mauritius)", 112_000.0),
-        ("31-00", "Marine Unit — Vessel Charter", 165_000.0),
-        ("32-00", "Marine Unit — Safety & Support Boats", 35_000.0),
-        ("33-00", "Marine Unit — Frogsquad (SA Dive Package)", 99_837.0),
-        ("34-00", "Marine Equipment Rental (incl. underwater camera housing)", 93_163.0),
-        ("35-00", "Marine Fuel & Consumables", 22_000.0),
-        ("36-00", "Catering & Craft Services (Mauritius unit)", 88_000.0),
-        ("37-00", "HOD & International Crew Accommodation (Mauritius)", 159_783.0),
-        ("38-00", "Local Crew Accommodation & Per Diems (Mauritius)", 114_130.0),
-        ("40-00", "Supporting Artists (Extras) — Mauritius", 42_000.0),
-        ("41-00", "Payroll Services & PAYE / Employer Contributions", 68_000.0),
-        ("43-00", "Unit Publicist & Production Stills", 24_000.0),
-    ]:
-        qualifies(code, desc, amt)
-
-    return reg
+    lines = [
+        BudgetLine(account_code=c, description=d, amount_usd=a, spend_category=cat, is_memo=memo)
+        for c, d, a, cat, memo in LITTLE_UTOPIA_BUDGET_LINES
+    ]
+    return derive_qualification_register(
+        lines, program_slug="mu_edb_incentive", facts=facts, rate=mu_rate,
+        program_territorial_text=MU_TERRITORIAL_TEXT,
+    )
 
 
 # ── Off-budget in-kind: explicitly never part of the register above ────────

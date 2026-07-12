@@ -9,32 +9,50 @@ qualification_model.build_little_utopia_qualification_register()).
 
 This module introduces NO new production, NO fabricated people, NO
 invented screenplay. Every input here is either:
-  - the real Little Utopia register/grey-areas (already-tested fixture
-    data), or
+  - the real Little Utopia budget/facts/grey-areas (already-tested
+    fixture data),
+  - a production fact the user has explicitly supplied through the
+    facts API (apply_fact_answers), or
   - honestly absent (no screenplay on file, no cast/crew intake on
     file) — Package Intelligence's own "unknown stays unknown"
     discipline handles this correctly; it is not a bug or a stub.
+
+Engine Integration Phase 1 changes the flow from "hardcoded register ->
+optimizer" to the designed chain:
+
+    production facts (defaults + user answers)
+      -> derived qualification register (qualification_derivation)
+      -> Legal Engine acquisition/commit cycle
+      -> post-resolution register (apply_resolutions — the same
+         qualification_model.apply_grey_area_resolution reclassification
+         the Legal Engine has always owned)
+      -> ONE opportunity-discovery + composition + recommendation +
+         scenario-ranking pass over the POST-RESOLUTION register
+      -> API
+
+so /structures, /recommendations, and /scenarios all serve the same
+evidence state /legal reports, instead of a stale pre-resolution
+composition.
 
 The only non-canonical step this module performs is running one Legal
 Engine acquisition cycle through MockConnector (the sole connector
 implementation this phase ships — see legal_authority_acquisition.py's
 own docstring) so the Evidence Graph / Authority Score / Legal Engine
-loop has real content to display. This is the same MockConnector
-already exercised by 26 passing tests in test_legal_engine.py; nothing
-new is built here. Every retrieved excerpt is self-labeled
-"MOCK CONNECTOR — no live retrieval performed" by the connector itself,
-and the API surfaces that label rather than hiding it.
+loop has real content to display. Every retrieved excerpt is
+self-labeled "MOCK CONNECTOR — no live retrieval performed" by the
+connector itself, and the API surfaces that label rather than hiding it.
 
-State is built once per process (module-level cache) since every input
-is static and every engine call is a pure function over that static
-input — recomputing per request would be wasted work, not a source of
-different results.
+State is built once per fact-state (module-level cache, cleared whenever
+a fact answer changes) since every input is static between answers and
+every engine call is a pure function over that input.
 """
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import dataclass, field
 from functools import lru_cache
 
+from app.calculators import jurisdiction_comparison as jc
 from app.calculators.evidence_graph import AuthorityTier
 from app.calculators.global_scenario_ranker import (
     ProductionStructure,
@@ -49,7 +67,10 @@ from app.calculators.opportunity_discovery import OpportunityCollection, discove
 from app.calculators.production_package_intelligence import ProductionPackage, build_production_package
 from app.calculators.production_recommendation_engine import RecommendationSet, generate_production_recommendations
 from app.calculators.production_structure_composer import CompositionResult, compose_production_structures
+from app.calculators.qualification_derivation import ProductionFacts
 from app.calculators.qualification_model import (
+    LITTLE_UTOPIA_ACCOUNTS_OUTSIDE_MU,
+    LITTLE_UTOPIA_OFFSHORE_PAYROLL,
     AccountQualification,
     GreyAreaItem,
     GreyAreaStatus,
@@ -64,6 +85,98 @@ JURISDICTION_CODE = "MU"
 MU_RATE = 0.40
 MU_GROSS_BUDGET_USD = 4_364_393.0
 AS_OF_DATE = "2026-07-10"
+
+
+# ── Production facts (Seam B: Question Engine answers are engine inputs) ────
+#
+# Each answerable fact maps to (a) a ProductionFacts field consumed by
+# qualification derivation or structure composition, and (b) the Question
+# Engine missing-input it answers — so an answered question stops being
+# asked AND changes the engines' inputs. Facts not answered stay at the
+# production's real current defaults; nothing is fabricated.
+
+ANSWERABLE_FACTS: dict[str, dict] = {
+    "payroll_routing_localized": {
+        "type": bool,
+        "answers_question": "MISSING-PAYROLL-STRUCTURE",
+        "description": (
+            "Is cast/crew payroll routed through a local employer-of-record / "
+            "production SPV in the baseline jurisdiction? true = local routing "
+            "plan in place; false = current offshore routing stands."
+        ),
+    },
+    "post_work_in_jurisdiction": {
+        "type": bool,
+        "answers_question": None,
+        "description": (
+            "Will post-production (edit/grade/sound/music/VFX/deliverables) be "
+            "performed in the baseline jurisdiction? Overrides the current "
+            "known post location for the post spend categories."
+        ),
+    },
+    "treaty_partner_code": {
+        "type": str,
+        "answers_question": "MISSING-TREATY-PARTNER",
+        "description": (
+            "Elected co-production treaty partner country (ISO alpha-2). Adds "
+            "that jurisdiction set to structure composition."
+        ),
+    },
+}
+
+_fact_answers: dict[str, object] = {}
+
+
+def apply_fact_answers(answers: dict[str, object]) -> None:
+    """Record user-supplied production facts and invalidate the cached
+    state so every engine recomputes from them. A value of None clears a
+    previously-given answer (the fact returns to 'unknown/default')."""
+    for key, value in answers.items():
+        spec = ANSWERABLE_FACTS.get(key)
+        if spec is None:
+            raise ValueError(
+                f"'{key}' is not an answerable production fact. "
+                f"Answerable: {sorted(ANSWERABLE_FACTS)}."
+            )
+        if value is None:
+            _fact_answers.pop(key, None)
+            continue
+        if not isinstance(value, spec["type"]):
+            raise ValueError(
+                f"Fact '{key}' expects {spec['type'].__name__}, got {type(value).__name__}."
+            )
+        if key == "treaty_partner_code":
+            code = str(value).upper()
+            if code == JURISDICTION_CODE or code not in jc.ALL_PROFILES:
+                raise ValueError(
+                    f"'{code}' is not a modeled partner jurisdiction "
+                    f"(known: {sorted(c for c in jc.ALL_PROFILES if c != JURISDICTION_CODE)})."
+                )
+            value = code
+        _fact_answers[key] = value
+    _build_state.cache_clear()
+
+
+def current_fact_answers() -> dict[str, object]:
+    return dict(_fact_answers)
+
+
+def reset_fact_answers() -> None:
+    _fact_answers.clear()
+    _build_state.cache_clear()
+
+
+def _production_facts() -> ProductionFacts:
+    """The production's real current facts, overlaid with any answers the
+    user has supplied through the facts API."""
+    return ProductionFacts(
+        jurisdiction_code=JURISDICTION_CODE,
+        accounts_outside_jurisdiction=LITTLE_UTOPIA_ACCOUNTS_OUTSIDE_MU,
+        offshore_payroll_accounts=LITTLE_UTOPIA_OFFSHORE_PAYROLL,
+        post_work_in_jurisdiction=_fact_answers.get("post_work_in_jurisdiction"),
+        payroll_routing_localized=_fact_answers.get("payroll_routing_localized"),
+        treaty_partner_code=_fact_answers.get("treaty_partner_code"),
+    )
 
 
 def _register_to_budget_parse_result(register: list[AccountQualification]) -> BudgetParseResult:
@@ -107,6 +220,7 @@ class LittleUtopiaState:
     collection: OpportunityCollection
     composition: CompositionResult
     recommendations: RecommendationSet
+    fact_answers: dict = field(default_factory=dict)
     scenario_structures: list[ProductionStructure] = field(default_factory=list)
     scenario_ranking: StructureRankingResult = None
     legal_engine: LegalEngine = None
@@ -116,11 +230,21 @@ class LittleUtopiaState:
     legal_rerun: RerunResult = None
 
 
-@lru_cache(maxsize=1)
 def get_state() -> LittleUtopiaState:
-    graph = build_jurisdiction_graph(mu_rate=MU_RATE)
-    register = build_little_utopia_qualification_register(mu_rate=MU_RATE)
+    """Current state under the current fact answers. Cached per
+    fact-state; apply_fact_answers()/reset_fact_answers() invalidate."""
+    return _build_state(tuple(sorted(_fact_answers.items())))
+
+
+@lru_cache(maxsize=4)
+def _build_state(_fact_key: tuple) -> LittleUtopiaState:
+    facts = _production_facts()
+    graph_default = build_jurisdiction_graph(mu_rate=MU_RATE)  # facts-independent world model
+
+    # Facts -> derived qualification register (Seam A+B).
+    register = build_little_utopia_qualification_register(mu_rate=MU_RATE, facts=facts)
     grey_areas = build_little_utopia_grey_areas()
+    graph = build_jurisdiction_graph(mu_rate=MU_RATE, register=register)
 
     budget_parse = _register_to_budget_parse_result(register)
     # No screenplay, no people/entity/location intake exist for Little
@@ -131,6 +255,20 @@ def get_state() -> LittleUtopiaState:
         production_id=PRODUCTION_ID,
         budget_parse_result=budget_parse,
     )
+    # Seam B: an answered fact resolves its question — the answer is now
+    # an engine input above, so the question is no longer open.
+    answered_question_ids = {
+        spec["answers_question"]
+        for key, spec in ANSWERABLE_FACTS.items()
+        if key in _fact_answers and spec["answers_question"]
+    }
+    if answered_question_ids:
+        package = dataclasses.replace(
+            package,
+            missing_inputs=tuple(
+                m for m in package.missing_inputs if m.identifier not in answered_question_ids
+            ),
+        )
 
     # HINT-MOVABLE-SPEND is production_package_intelligence.py's own
     # already-computed figure for routable (VFX/music/sound/post/creative
@@ -142,25 +280,6 @@ def get_state() -> LittleUtopiaState:
         (h for h in package.budget.opportunity_hints if h.category == "movable_spend"), None,
     )
     movable_spend_usd = movable_hint.amount_usd if movable_hint else None
-
-    collection = discover_all_opportunities(
-        baseline_jurisdiction=JURISDICTION_CODE, mu_rate=MU_RATE, graph=graph,
-        movable_spend_usd=movable_spend_usd,
-    )
-    composition = compose_production_structures(
-        collection, graph, register=register, gross_budget_usd=MU_GROSS_BUDGET_USD,
-        rate=MU_RATE, grey_areas=grey_areas,
-    )
-    recommendations = generate_production_recommendations(
-        collection, composition_result=composition, register=register, rate=MU_RATE,
-        jurisdiction_code=JURISDICTION_CODE,
-    )
-
-    scenario_structures = compose_candidate_structures(
-        collection, register=register, gross_budget_usd=MU_GROSS_BUDGET_USD,
-        rate=MU_RATE, grey_areas=grey_areas,
-    )
-    scenario_ranking = rank_production_structures(scenario_structures)
 
     # Legal Engine: one real acquisition cycle over the real Little
     # Utopia grey areas, through the sole shipped connector
@@ -174,10 +293,11 @@ def get_state() -> LittleUtopiaState:
     # commits, exactly like any other direct build_risk_cases() caller.
     legal_rerun_before = LegalEngine().rerun(
         register=register, gross_budget_usd=MU_GROSS_BUDGET_USD, rate=MU_RATE,
-        grey_areas=build_little_utopia_grey_areas(), graph=graph, jurisdiction_code=JURISDICTION_CODE,
+        grey_areas=build_little_utopia_grey_areas(), graph=graph_default,
+        jurisdiction_code=JURISDICTION_CODE,
     )
 
-    legal_cycle = legal_engine.run_acquisition_cycle(AS_OF_DATE, grey_areas=grey_areas, graph=graph)
+    legal_cycle = legal_engine.run_acquisition_cycle(AS_OF_DATE, grey_areas=grey_areas, graph=graph_default)
 
     legal_commit = None
     if "STG-TASK-GA-ATL-SCOPE" in legal_cycle.awaiting_verification:
@@ -196,8 +316,44 @@ def get_state() -> LittleUtopiaState:
 
     legal_rerun = legal_engine.rerun(
         register=register, gross_budget_usd=MU_GROSS_BUDGET_USD, rate=MU_RATE,
-        grey_areas=grey_areas, graph=graph, jurisdiction_code=JURISDICTION_CODE, as_of_date=AS_OF_DATE,
+        grey_areas=grey_areas, graph=graph_default, jurisdiction_code=JURISDICTION_CODE,
+        as_of_date=AS_OF_DATE,
     )
+
+    # Seam C: the CANONICAL pipeline pass runs over the POST-RESOLUTION
+    # register — the same qualification_model.apply_grey_area_resolution
+    # reclassification the Legal Engine has always applied, now actually
+    # served by /structures, /recommendations, and /scenarios instead of
+    # being computed and discarded.
+    register_final, greys_final = legal_engine.apply_resolutions(register, grey_areas)
+
+    collection = discover_all_opportunities(
+        baseline_jurisdiction=JURISDICTION_CODE, mu_rate=MU_RATE, graph=graph,
+        movable_spend_usd=movable_spend_usd,
+        register=register_final, grey_areas=greys_final,
+    )
+
+    # Seam B: an elected treaty partner is an engine input to structure
+    # composition (an extra jurisdiction set), not a display string.
+    extra_sets: list[tuple[str, ...]] = []
+    if facts.treaty_partner_code:
+        extra_sets.append((JURISDICTION_CODE, facts.treaty_partner_code))
+
+    composition = compose_production_structures(
+        collection, graph, register=register_final, gross_budget_usd=MU_GROSS_BUDGET_USD,
+        rate=MU_RATE, grey_areas=greys_final,
+        extra_jurisdiction_sets=extra_sets or None,
+    )
+    recommendations = generate_production_recommendations(
+        collection, composition_result=composition, register=register_final, rate=MU_RATE,
+        jurisdiction_code=JURISDICTION_CODE,
+    )
+
+    scenario_structures = compose_candidate_structures(
+        collection, register=register_final, gross_budget_usd=MU_GROSS_BUDGET_USD,
+        rate=MU_RATE, grey_areas=greys_final,
+    )
+    scenario_ranking = rank_production_structures(scenario_structures)
 
     return LittleUtopiaState(
         production_id=PRODUCTION_ID,
@@ -205,13 +361,14 @@ def get_state() -> LittleUtopiaState:
         jurisdiction_code=JURISDICTION_CODE,
         gross_budget_usd=MU_GROSS_BUDGET_USD,
         rate=MU_RATE,
-        register=register,
-        grey_areas_baseline=grey_areas,
+        register=register_final,
+        grey_areas_baseline=greys_final,
         graph=graph,
         package=package,
         collection=collection,
         composition=composition,
         recommendations=recommendations,
+        fact_answers=current_fact_answers(),
         scenario_structures=scenario_structures,
         scenario_ranking=scenario_ranking,
         legal_engine=legal_engine,
