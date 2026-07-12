@@ -164,11 +164,11 @@ class TestEvidenceChainToDisplay:
     def committed_chain(self, grey_areas, graph):
         engine = LegalEngine(connectors={ConnectorClass.TAX_AUTHORITY_GUIDANCE: MockConnector(ConnectorClass.TAX_AUTHORITY_GUIDANCE)})
         engine.run_acquisition_cycle("2026-07-10", grey_areas=grey_areas, graph=graph)
-        engine.record_verification("STG-TASK-GA-ATL-SCOPE", verified_by="c@example.com", outcome="authority_found")
-        engine.record_approval("STG-TASK-GA-ATL-SCOPE", approved_by="p@example.com")
-        ga = next(g for g in grey_areas if g.item_id == "GA-ATL-SCOPE")
+        engine.record_verification("STG-TASK-GA-LEGAL-ACCOUNTING-SPLIT", verified_by="c@example.com", outcome="authority_found")
+        engine.record_approval("STG-TASK-GA-LEGAL-ACCOUNTING-SPLIT", approved_by="p@example.com")
+        ga = next(g for g in grey_areas if g.item_id == "GA-LEGAL-ACCOUNTING-SPLIT")
         commit = engine.commit_and_score(
-            "STG-TASK-GA-ATL-SCOPE", target_jurisdiction_code="MU", as_of_date="2026-07-10",
+            "STG-TASK-GA-LEGAL-ACCOUNTING-SPLIT", target_jurisdiction_code="MU", as_of_date="2026-07-10",
             rule_text="Test rule text.", tier=AuthorityTier.OFFICIAL_GUIDANCE,
             authority_body="Mauritius Revenue Authority",
             resolves_grey_area=ga, grey_area_outcome=GreyAreaStatus.RESOLVED_INCLUDE,

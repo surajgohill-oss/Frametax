@@ -211,7 +211,19 @@ async def get_recommendations() -> dict[str, Any]:
 
 @router.get("/structures")
 async def get_structures() -> dict[str, Any]:
+    """
+    NOTE on risk_adjusted_npc_usd: the scenario ranker's ORDER is still
+    computed on risk-adjusted NPC (global_scenario_ranker.py, untouched —
+    that ranking math is not in scope here). But the PRIMARY figure this
+    endpoint surfaces per candidate is conservative_npc_usd — the NPC
+    implied by the verified/conservative QPE only. Risk-adjusted NPC
+    blends in optimistic upside that has not been established as verified
+    QPE, so it is kept as a secondary field (risk_adjusted_npc_usd, still
+    present, just not primary) until the underlying grey areas/structuring
+    paths are actually resolved.
+    """
     s = get_state()
+    ranked_structures_by_id = {st.structure_id: st for st in s.scenario_ranking.structures}
 
     def _candidate_dict(c) -> dict[str, Any]:
         return {
@@ -227,6 +239,12 @@ async def get_structures() -> dict[str, Any]:
             "included_opportunity_ids": list(c.included_opportunity_ids),
         }
 
+    def _conservative_npc(structure_id: str) -> float | None:
+        st = ranked_structures_by_id.get(structure_id)
+        if st is None or not st.cases:
+            return None
+        return st.cases[RiskCase.CONSERVATIVE].net_production_cost_usd
+
     return {
         "candidates": [_candidate_dict(c) for c in s.composition.candidates],
         "pruned": s.composition.pruned,
@@ -236,7 +254,13 @@ async def get_structures() -> dict[str, Any]:
                 "structure_id": r.structure_id,
                 "label": r.label,
                 "is_priceable": r.is_priceable,
-                "risk_adjusted_npc_usd": r.risk_adjusted_npc_usd,
+                "conservative_npc_usd": _conservative_npc(r.structure_id),
+                "secondary_analysis": {
+                    "risk_adjusted_npc_usd": r.risk_adjusted_npc_usd,
+                    "note": "Blends optimistic upside (unresolved grey areas / structuring "
+                            "paths) into NPC. Informational only until those items are "
+                            "actually resolved — conservative_npc_usd is the primary figure.",
+                },
             }
             for r in s.scenario_ranking.ranks
         ],

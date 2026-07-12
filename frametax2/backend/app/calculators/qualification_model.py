@@ -55,6 +55,7 @@ class AuthorityBasis(str, enum.Enum):
     STRUCTURAL_DEFINITION = "structural_definition"        # e.g. unspent reserve isn't "incurred" spend
     CROSS_PROGRAM_CONVENTION = "cross_program_convention"  # near-universal industry practice, not MU-cited
     STRUCTURING_DEPENDENT = "structuring_dependent"        # blocked by production structure, not by rule
+    FACT_DEPENDENT = "fact_dependent"                       # category treatment is known; a $ breakdown or other production fact is missing
     ABSENCE_OF_AUTHORITY = "absence_of_authority"          # no rule found, either direction
     NOT_A_QUALIFICATION_QUESTION = "not_a_qualification_question"  # placeholder/non-spend line
 
@@ -195,11 +196,17 @@ LITTLE_UTOPIA_BUDGET_LINES: tuple[tuple[str, str, float, Optional[str], bool], .
 )
 
 # The production's real qualification-relevant facts (from the budget
-# source): post-production is priced outside Mauritius, international
-# airfares are incurred outside Mauritius, and the DP / sound / stunt
-# teams are currently paid through non-Mauritius payroll.
+# source): post-production is priced outside Mauritius, and the DP /
+# sound / stunt teams are currently paid through non-Mauritius payroll.
+# 39-00 (International Travel & Airfares) is deliberately NOT in this
+# set: the EDB QPE list names "Travel to Mauritius (flight and marine
+# travel)" as its own category, covering inbound cross-border travel by
+# definition — it is not subject to the same "incurred outside the
+# jurisdiction" exclusion that applies to work performed abroad (e.g.
+# post-production). Absent a more granular breakdown, this account is
+# presumptively transportation to the Mauritius production.
 LITTLE_UTOPIA_ACCOUNTS_OUTSIDE_MU = frozenset({
-    "39-00", "50-00", "51-00", "52-00", "53-00", "54-00", "55-00",
+    "50-00", "51-00", "52-00", "53-00", "54-00", "55-00",
 })
 LITTLE_UTOPIA_OFFSHORE_PAYROLL = frozenset({"21-00", "23-00", "42-00"})
 
@@ -320,9 +327,35 @@ class GreyAreaItem:
 
 def build_little_utopia_grey_areas() -> list[GreyAreaItem]:
     """
-    The two Little Utopia grey areas requiring escalation: ATL scope
-    (on-budget, register accounts 10-00/11-00/12-00) and in-kind post FMV
-    (off-budget, not a register account).
+    The two Little Utopia grey areas requiring escalation.
+
+    GA-ATL-SCOPE previously bundled accounts 10-00/11-00/12-00 (writer,
+    director, producer) as an unresolved "does ATL qualify" question. It
+    no longer belongs here: the EDB primary source (Film Rebate Scheme —
+    Submission Procedures, 31 Jan 2020, QPE list for Motion Pictures)
+    names "Remuneration for cast and crew" / "Labour costs" without any
+    ATL/BTL distinction, so all four ATL accounts (including 13-00 lead
+    cast) now resolve directly to QUALIFIES via
+    app.data.program_spend_rules — a real statutory rule, not an
+    unresolved grey area. Keeping a stale "ATL scope unresolved" item
+    here after the register itself has resolved it would misrepresent
+    the register as the item id implies.
+
+    The item id is retained (GA-ATL-SCOPE -> GA-LEGAL-ACCOUNTING-SPLIT is
+    the honest rename) but the CONTENT now describes the genuinely open
+    question: accounts 70-00 (Legal & Accounting) and 71-00 (Audit &
+    Incentive Submission Fees) combine a confirmed-qualifying component
+    (accounting/audit — QPE's "Professional services (such as insurance
+    and accounting services)") with an uncertain one (legal fees;
+    incentive-submission-filing cost) in a single line with no $
+    breakdown. This is a FACT gap (the split amount), not a pure
+    authority gap — see AuthorityBasis.FACT_DEPENDENT in
+    qualification_derivation.py — but the Evidence Graph has no separate
+    "absence of fact" node type, so it is still modeled here as an
+    AbsenceOfAuthority-linked item: no evidence yet exists either way.
+
+    In-kind post FMV (off-budget, not a register account) is genuinely
+    unaffected and remains open.
 
     Each links (via graph_absence_id) to the matching AbsenceOfAuthority
     node in build_little_utopia_evidence_graph() — call that function to
@@ -330,14 +363,16 @@ def build_little_utopia_grey_areas() -> list[GreyAreaItem]:
     """
     return [
         GreyAreaItem(
-            item_id="GA-ATL-SCOPE",
-            account_codes=("10-00", "11-00", "12-00"),
-            amount_usd=408_444.0,
+            item_id="GA-LEGAL-ACCOUNTING-SPLIT",
+            account_codes=("70-00", "71-00"),
+            amount_usd=113_000.0,
             jurisdiction_code="MU",
             authority_to_ask="Economic Development Board Mauritius (EDB) / Mauritius Film Development Corp.",
-            resolving_evidence="EDB written clarification on whether writer/director/producer fees are within QPE scope.",
-            linked_question_ids=("Q-ATL-SCOPE",),
-            graph_absence_id="ABS-ATL-SCOPE",
+            resolving_evidence="Itemized breakdown separating accounting/audit fees (an enumerated QPE "
+                                "'professional services' category) from legal fees and incentive-application "
+                                "submission costs (not enumerated) within accounts 70-00 and 71-00.",
+            linked_question_ids=("Q-LEGAL-ACCOUNTING-SPLIT",),
+            graph_absence_id="ABS-LEGAL-ACCOUNTING-SPLIT",
         ),
         GreyAreaItem(
             item_id="GA-INKIND-FMV",
@@ -364,14 +399,17 @@ def build_little_utopia_evidence_graph() -> EvidenceGraph:
     """
     graph = EvidenceGraph()
     graph.add_absence_of_authority(AbsenceOfAuthority(
-        absence_id="ABS-ATL-SCOPE",
+        absence_id="ABS-LEGAL-ACCOUNTING-SPLIT",
         jurisdiction_code="MU",
-        question="Does ATL (writer/director/producer) spend qualify as QPE?",
+        question="What portion of accounts 70-00/71-00 is accounting/audit "
+                 "(QPE) versus legal fees/submission costs (not enumerated)?",
         searched_tiers=(
             AuthorityTier.PRIMARY_LEGISLATION, AuthorityTier.REGULATIONS,
             AuthorityTier.OFFICIAL_GUIDANCE, AuthorityTier.OFFICIAL_FAQ,
         ),
-        notes="No guidance located across four tiers searched.",
+        notes="The QPE category itself is confirmed ('Professional services "
+              "(such as insurance and accounting services)'); no itemized $ "
+              "breakdown of these two accounts has been provided.",
     ))
     graph.add_absence_of_authority(AbsenceOfAuthority(
         absence_id="ABS-INKIND-FMV",

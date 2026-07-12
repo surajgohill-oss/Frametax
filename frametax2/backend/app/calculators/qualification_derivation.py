@@ -23,7 +23,14 @@ apply_grey_area_resolution() reclassification continues to operate on
 the derived register exactly as it did on the hardcoded one.
 
 Decision ladder (ordered; first match wins). Every step is generic —
-there is no jurisdiction-specific branch anywhere in this module:
+there is no jurisdiction-specific branch anywhere in this module. There
+is deliberately no "requires extra evidence tier" gate on any single
+category group (e.g. ATL labor): a category's own rule.qualifies value
+is the authority, whatever confidence tier backed it. Categories are
+never excluded merely because they lack a citation, and never excluded
+on generic cross-program convention — an unconfirmed category always
+escalates to GREY_AREA_REQUIRES_AUTHORITY rather than silently
+defaulting to EXCLUDED:
 
   1. memo line                          -> NOT_APPLICABLE
   2. finance-cost category              -> NOT_APPLICABLE (modeled as a
@@ -35,24 +42,16 @@ there is no jurisdiction-specific branch anywhere in this module:
      program requires territorial spend  -> EXCLUDED / TERRITORIAL_NEXUS
   5. statutory rule lookup by category:
        qualifies=False                  -> EXCLUDED / EXPLICIT_STATUTE
-       qualifies=True:
-         ATL primary-authority gate: ATL categories are the single most
-         contested qualification area across incentive programs, so this
-         engine requires VERIFIED (primary) authority before treating
-         ATL spend as qualifying — the same evidence bar the Evidence
-         Graph / Legal Engine already enforce for grey-area resolution.
-         A PARSED (secondary-source) True therefore yields:
-           atl_cast     -> EXCLUDED / CROSS_PROGRAM_CONVENTION (the
-                           near-universal above-scale-cast exclusion
-                           prevails pending contrary primary evidence)
-           other atl_*  -> GREY_AREA_REQUIRES_AUTHORITY
-         Non-ATL True: labor currently routed outside local payroll
-         (fact) -> STRUCTURING_OPPORTUNITY, else QUALIFIES.
-       qualifies=None (unconfirmed)     -> convention exclusion for the
-         categories excluded under near-universal cross-program
-         convention (insurance, completion bond, legal/audit), else
-         GREY_AREA_REQUIRES_AUTHORITY (absence of authority is explicit,
-         never a silent exclusion).
+       qualifies=True: labor currently routed outside local payroll
+         (fact) -> STRUCTURING_OPPORTUNITY, else QUALIFIES /
+         EXPLICIT_STATUTE.
+       qualifies=None (unconfirmed):
+         category in FACT_SPLIT_CATEGORIES (the rule/category treatment
+         is known but a production fact — typically a $ breakdown
+         within a combined account — is missing) -> GREY_AREA_REQUIRES_
+         AUTHORITY / FACT_DEPENDENT.
+         otherwise -> GREY_AREA_REQUIRES_AUTHORITY / ABSENCE_OF_AUTHORITY
+         (absence of authority is explicit, never a silent exclusion).
   6. no rule at all for the category    -> same None-handling as above.
 
 No LLM calls. Deterministic and testable.
@@ -74,7 +73,6 @@ QUALIFICATION_DERIVATION_VERSION = "1.0.0"
 
 # Category groups the ladder needs. Grouping only — no qualification
 # outcome is decided by these sets alone.
-ATL_CATEGORIES = frozenset({"atl_writer", "atl_director", "atl_producer", "atl_cast", "atl_rights"})
 LABOR_CATEGORIES = frozenset({
     "atl_writer", "atl_director", "atl_producer", "atl_cast",
     "btl_crew_labor", "btl_resident_labor", "btl_nonresident_labor",
@@ -82,12 +80,13 @@ LABOR_CATEGORIES = frozenset({
 POST_CATEGORIES = frozenset({"post_production", "vfx", "music", "sound"})
 STRUCTURAL_EXCLUSION_CATEGORIES = frozenset({"contingency"})
 CASHFLOW_CATEGORIES = frozenset({"finance_costs"})
-# Near-universal cross-program convention exclusions, applied only when
-# the program itself has no confirmed rule for the category.
-CONVENTION_EXCLUDED_CATEGORIES = frozenset({"insurance", "completion_bond", "legal_accounting"})
-
-# The evidence bar for contested ATL categories: primary authority.
-ATL_REQUIRED_TIER = "VERIFIED"
+# Categories where the rule/category treatment is itself known but an
+# unconfirmed (None) rule value reflects a missing production FACT (e.g.
+# a $ breakdown within one combined account) rather than a genuine
+# statutory-authority gap. Distinguished via AuthorityBasis.FACT_DEPENDENT
+# so the Question Stack can ask for the missing fact instead of an EDB
+# ruling.
+FACT_SPLIT_CATEGORIES = frozenset({"legal_accounting"})
 
 
 @dataclass(frozen=True)
@@ -211,31 +210,10 @@ def derive_qualification_register(
 
         # 5. Statutory rule.
         qualifies = rule.qualifies if rule is not None else None
-        tier = rule.confidence_tier if rule is not None else None
 
         if qualifies is False:
             _acct(QualificationState.EXCLUDED, QualificationConfidence.HIGH,
                   AuthorityBasis.EXPLICIT_STATUTE, rule.notes)
-            continue
-
-        if qualifies is True and category in ATL_CATEGORIES and tier != ATL_REQUIRED_TIER:
-            # ATL primary-authority gate (see module docstring).
-            if category == "atl_cast":
-                _acct(QualificationState.EXCLUDED, QualificationConfidence.MEDIUM,
-                      AuthorityBasis.CROSS_PROGRAM_CONVENTION,
-                      f"No {jur} primary-source rule confirms above-scale cast fees; "
-                      "they are excluded from QPE under near-universal "
-                      "incentive-program convention, pending contrary primary evidence. "
-                      f"Secondary-source position: {rule.notes}")
-            else:
-                _acct(QualificationState.GREY_AREA_REQUIRES_AUTHORITY,
-                      QualificationConfidence.LOW, AuthorityBasis.ABSENCE_OF_AUTHORITY,
-                      f"ATL qualifying scope is not confirmed by primary authority — "
-                      f"the {rule.confidence_tier}-tier position ({rule.notes}) has "
-                      "not been verified from primary statute text.",
-                      evidence=f"{jur} authority written clarification on whether "
-                               "writer/director/producer fees are within QPE scope.",
-                      upside=round(amt * rate, 2))
             continue
 
         if qualifies is True:
@@ -254,14 +232,20 @@ def derive_qualification_register(
                       AuthorityBasis.EXPLICIT_STATUTE, rule.notes)
             continue
 
-        # 6. qualifies is None / no rule: convention or explicit grey area.
-        if category in CONVENTION_EXCLUDED_CATEGORIES:
-            _acct(QualificationState.EXCLUDED, QualificationConfidence.MEDIUM,
-                  AuthorityBasis.CROSS_PROGRAM_CONVENTION,
-                  f"No {jur}-specific rule located; this category is excluded from "
-                  "QPE under near-universal incentive-program convention, pending "
-                  "contrary evidence."
-                  + (f" Program record: {rule.notes}" if rule is not None else ""))
+        # 6. qualifies is None / no rule: never a silent exclusion. Escalate
+        # as a fact gap where the category treatment is known but a $
+        # breakdown (or similar production fact) is missing, otherwise as a
+        # genuine authority gap.
+        if category in FACT_SPLIT_CATEGORIES:
+            _acct(QualificationState.GREY_AREA_REQUIRES_AUTHORITY,
+                  QualificationConfidence.LOW, AuthorityBasis.FACT_DEPENDENT,
+                  (rule.notes if rule is not None else
+                   f"Category '{category}' combines qualifying and non-qualifying "
+                   "components in this account with no $ breakdown available."),
+                  evidence="Itemized breakdown of this account separating its "
+                           "confirmed-qualifying components from its uncertain "
+                           "components.",
+                  upside=round(amt * rate, 2))
         else:
             _acct(QualificationState.GREY_AREA_REQUIRES_AUTHORITY,
                   QualificationConfidence.LOW, AuthorityBasis.ABSENCE_OF_AUTHORITY,

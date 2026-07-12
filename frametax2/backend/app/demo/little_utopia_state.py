@@ -300,16 +300,18 @@ def _build_state(_fact_key: tuple) -> LittleUtopiaState:
     legal_cycle = legal_engine.run_acquisition_cycle(AS_OF_DATE, grey_areas=grey_areas, graph=graph_default)
 
     legal_commit = None
-    if "STG-TASK-GA-ATL-SCOPE" in legal_cycle.awaiting_verification:
+    if "STG-TASK-GA-LEGAL-ACCOUNTING-SPLIT" in legal_cycle.awaiting_verification:
         legal_engine.record_verification(
-            "STG-TASK-GA-ATL-SCOPE", verified_by="counsel@littleutopia.example",
-            outcome="authority_found", notes="MRA published guidance covers ATL scope.",
+            "STG-TASK-GA-LEGAL-ACCOUNTING-SPLIT", verified_by="counsel@littleutopia.example",
+            outcome="authority_found", notes="Production accounting provided an itemized breakdown "
+                                              "of accounts 70-00/71-00.",
         )
-        legal_engine.record_approval("STG-TASK-GA-ATL-SCOPE", approved_by="producer@littleutopia.example")
-        ga = next(g for g in grey_areas if g.item_id == "GA-ATL-SCOPE")
+        legal_engine.record_approval("STG-TASK-GA-LEGAL-ACCOUNTING-SPLIT", approved_by="producer@littleutopia.example")
+        ga = next(g for g in grey_areas if g.item_id == "GA-LEGAL-ACCOUNTING-SPLIT")
         legal_commit = legal_engine.commit_and_score(
-            "STG-TASK-GA-ATL-SCOPE", target_jurisdiction_code=JURISDICTION_CODE, as_of_date=AS_OF_DATE,
-            rule_text="ATL compensation for services rendered in Mauritius qualifies as QPE.",
+            "STG-TASK-GA-LEGAL-ACCOUNTING-SPLIT", target_jurisdiction_code=JURISDICTION_CODE, as_of_date=AS_OF_DATE,
+            rule_text="The accounting/audit portion of accounts 70-00/71-00 qualifies as QPE "
+                      "under 'Professional services (such as insurance and accounting services)'.",
             tier=AuthorityTier.OFFICIAL_GUIDANCE, authority_body="Mauritius Revenue Authority",
             resolves_grey_area=ga, grey_area_outcome=GreyAreaStatus.RESOLVED_INCLUDE,
         )

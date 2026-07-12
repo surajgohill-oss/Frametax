@@ -273,13 +273,13 @@ class TestConstraintPreservation:
 
     def test_acquisition_task_refs_aggregated(self, result):
         mu = _mu_candidate(result)
-        assert "TASK-GA-ATL-SCOPE" in mu.required_acquisition_task_refs
+        assert "TASK-GA-LEGAL-ACCOUNTING-SPLIT" in mu.required_acquisition_task_refs
         assert "TASK-reinvestment:MU" in mu.required_acquisition_task_refs
 
     def test_grey_areas_and_evidence_refs_exposed(self, result):
         mu = _mu_candidate(result)
-        assert set(mu.grey_area_opportunity_ids) == {"OPP-GREY-GA-ATL-SCOPE", "OPP-GREY-GA-INKIND-FMV"}
-        assert "ABS-ATL-SCOPE" in mu.evidence_graph_refs
+        assert set(mu.grey_area_opportunity_ids) == {"OPP-GREY-GA-LEGAL-ACCOUNTING-SPLIT", "OPP-GREY-GA-INKIND-FMV"}
+        assert "ABS-LEGAL-ACCOUNTING-SPLIT" in mu.evidence_graph_refs
         assert "ABS-INKIND-FMV" in mu.evidence_graph_refs
 
 
@@ -427,8 +427,8 @@ class TestOptimizerCompatibility:
     def test_little_utopia_conservative_unchanged(self, result):
         mu = _mu_candidate(result)
         cons = mu.cases[RiskCase.CONSERVATIVE]
-        assert cons.qpe_usd == pytest.approx(1_979_913.0, abs=1.0)
-        assert cons.incentive_usd == pytest.approx(791_965.0, abs=1.0)
+        assert cons.qpe_usd == pytest.approx(2_846_357.0, abs=1.0)
+        assert cons.incentive_usd == pytest.approx(1_138_542.8, abs=1.0)
 
     def test_composer_does_not_import_private_optimizer_names(self):
         import ast

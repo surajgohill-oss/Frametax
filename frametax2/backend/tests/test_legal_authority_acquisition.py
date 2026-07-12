@@ -87,7 +87,7 @@ class TestDocketFromGreyAreas:
         tasks = tasks_from_grey_areas(grey_areas)
         assert len(tasks) == 2
         ids = {t.source_ref for t in tasks}
-        assert ids == {"GA-ATL-SCOPE", "GA-INKIND-FMV"}
+        assert ids == {"GA-LEGAL-ACCOUNTING-SPLIT", "GA-INKIND-FMV"}
 
     def test_tasks_are_commitment_grade(self, grey_areas):
         tasks = tasks_from_grey_areas(grey_areas)
@@ -96,7 +96,7 @@ class TestDocketFromGreyAreas:
     def test_task_carries_existing_amount_not_invented(self, grey_areas):
         tasks = tasks_from_grey_areas(grey_areas)
         by_ref = {t.source_ref: t for t in tasks}
-        assert by_ref["GA-ATL-SCOPE"].value_at_stake_usd == 408_444.0
+        assert by_ref["GA-LEGAL-ACCOUNTING-SPLIT"].value_at_stake_usd == 113_000.0
 
     def test_resolved_grey_area_excluded_from_docket(self):
         areas = build_little_utopia_grey_areas()
@@ -227,7 +227,7 @@ class TestMockConnector:
 # ── Staging / verification / approval / commit ──────────────────────────────
 
 class TestStagingLifecycle:
-    def _staged(self, grey_areas, item_ref="GA-ATL-SCOPE"):
+    def _staged(self, grey_areas, item_ref="GA-LEGAL-ACCOUNTING-SPLIT"):
         task = next(t for t in tasks_from_grey_areas(grey_areas) if t.source_ref == item_ref)
         return run_connector(task, MockConnector(), as_of_date="2026-01-01")
 
@@ -269,7 +269,7 @@ class TestStagingLifecycle:
         assert absence.jurisdiction_code == "MU"
 
     def test_high_impact_requires_approval_before_commit(self, grey_areas):
-        staged = self._staged(grey_areas, "GA-ATL-SCOPE")  # 408,444 >= 50,000 threshold
+        staged = self._staged(grey_areas, "GA-LEGAL-ACCOUNTING-SPLIT")  # 113,000 >= 50,000 threshold
         assert staged.approval_class == ApprovalClass.REQUIRES_APPROVAL
         verify_staged_authority(staged, verified_by="reviewer@cineglobe", outcome="authority_found")
         graph = EvidenceGraph()
@@ -397,8 +397,8 @@ class TestArchitecturalBoundaries:
         )
         from app.calculators.optimization_engine import RiskCase
         cons = result.cases[RiskCase.CONSERVATIVE]
-        assert cons.qpe_usd == pytest.approx(1_979_913.0, abs=1.0)
-        assert cons.incentive_usd == pytest.approx(791_965.0, abs=1.0)
+        assert cons.qpe_usd == pytest.approx(2_846_357.0, abs=1.0)
+        assert cons.incentive_usd == pytest.approx(1_138_542.8, abs=1.0)
 
     def test_no_jurisdiction_graph_mutation(self, graph):
         node_count_before = len(graph.nodes)
@@ -408,7 +408,7 @@ class TestArchitecturalBoundaries:
         assert len(graph.relationships) == rel_count_before
 
     def test_commit_only_writes_to_evidence_graph_param(self, grey_areas):
-        task = next(t for t in tasks_from_grey_areas(grey_areas) if t.source_ref == "GA-ATL-SCOPE")
+        task = next(t for t in tasks_from_grey_areas(grey_areas) if t.source_ref == "GA-LEGAL-ACCOUNTING-SPLIT")
         staged = run_connector(task, MockConnector(), as_of_date="2026-01-01")
         verify_staged_authority(staged, verified_by="r", outcome="authority_found")
         approve_staged_authority(staged, approved_by="c")

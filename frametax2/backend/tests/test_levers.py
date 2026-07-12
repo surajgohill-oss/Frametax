@@ -257,8 +257,8 @@ class TestNoOptimizerImpact:
             structuring_paths=paths,
         )
         cons = result.cases[RiskCase.CONSERVATIVE]
-        assert cons.qpe_usd == pytest.approx(1_979_913.0, abs=1.0)
-        assert cons.incentive_usd == pytest.approx(791_965.0, abs=1.0)
+        assert cons.qpe_usd == pytest.approx(2_846_357.0, abs=1.0)
+        assert cons.incentive_usd == pytest.approx(1_138_542.8, abs=1.0)
 
     def test_levers_module_does_not_import_optimization_engine(self):
         """levers.py must carry no import dependency on

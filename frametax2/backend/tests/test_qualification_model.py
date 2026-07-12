@@ -1,13 +1,20 @@
 """
 test_qualification_model.py
 
-Targeted tests for the CineAtlas qualification-state model.
+Targeted tests for the CineAtlas qualification-state model, grounded in
+the EDB Film Rebate Scheme's primary source (Film Rebate Scheme —
+Submission Procedures, 31 Jan 2020, "List of Qualifying Production
+Expenditures (QPE) for Motion Pictures" — a closed 33-category list).
 
 Covers:
-- ATL accounts are explicit GREY_AREA_REQUIRES_AUTHORITY, never silently
-  collapsed to EXCLUDED
+- ATL accounts (writer/director/producer/cast) QUALIFY directly via the
+  primary source's unqualified "Remuneration for cast and crew" /
+  "Labour costs" categories — no ATL-specific evidentiary gate
 - Imported-crew accounts are STRUCTURING_OPPORTUNITY with a mechanism
-- Deterministic exclusions remain EXCLUDED with correct authority basis
+- Deterministic exclusions remain EXCLUDED with correct, category-grounded
+  authority basis (never "cross-program convention")
+- Legal & accounting accounts are a FACT gap (missing $ breakdown), not
+  an authority gap
 - Off-budget in-kind is never present in the register / never deducted
 - Register reconciles exactly against the real fixture's gross budget
 - Reinvestment UNKNOWN is distinct from NOT_PERMITTED
@@ -36,7 +43,7 @@ from app.calculators.qualification_model import (
     resolve_grey_area,
     summarize_register,
 )
-from tests.fixtures.little_utopia_sanitized import GROSS_BUDGET_USD, computed_qpe
+from tests.fixtures.little_utopia_sanitized import GROSS_BUDGET_USD
 
 
 @pytest.fixture(scope="module")
@@ -68,29 +75,33 @@ class TestModuleConstants:
         assert len(ReinvestmentCategory) == 7
 
 
-# ── ATL: unknown must not silently become excluded ──────────────────────────
+# ── ATL: qualifies directly, no unfounded evidentiary gate ──────────────────
+# EDB Film Rebate Scheme — Submission Procedures (31 Jan 2020), QPE list
+# for Motion Pictures: "Remuneration for cast and crew" / "Labour costs
+# (including non-nationals)" — no ATL/BTL distinction, no above-scale-cast
+# carve-out anywhere in the 33-category list. A prior version of this
+# engine required extra ("VERIFIED") evidence before treating ATL as
+# qualifying and fell back to CROSS_PROGRAM_CONVENTION exclusion for
+# above-scale cast specifically — neither restriction has any basis in
+# the primary source and has been removed.
 
-class TestATLGreyArea:
-    @pytest.mark.parametrize("code", ["10-00", "11-00", "12-00"])
-    def test_state_is_grey_area_not_excluded(self, register, code):
+class TestATLQualifiesDirectly:
+    @pytest.mark.parametrize("code", ["10-00", "11-00", "12-00", "13-00"])
+    def test_state_is_qualifies(self, register, code):
         a = _get(register, code)
-        assert a.state == QualificationState.GREY_AREA_REQUIRES_AUTHORITY
+        assert a.state == QualificationState.QUALIFIES
         assert a.state != QualificationState.EXCLUDED
+        assert a.state != QualificationState.GREY_AREA_REQUIRES_AUTHORITY
 
-    @pytest.mark.parametrize("code", ["10-00", "11-00", "12-00"])
-    def test_authority_basis_is_absence_not_fabricated(self, register, code):
+    @pytest.mark.parametrize("code", ["10-00", "11-00", "12-00", "13-00"])
+    def test_authority_basis_is_explicit_statute(self, register, code):
         a = _get(register, code)
-        assert a.authority_basis == AuthorityBasis.ABSENCE_OF_AUTHORITY
+        assert a.authority_basis == AuthorityBasis.EXPLICIT_STATUTE
+        assert "remuneration" in a.reason.lower() or "labour" in a.reason.lower()
 
-    @pytest.mark.parametrize("code", ["10-00", "11-00", "12-00"])
-    def test_has_resolving_evidence_and_upside(self, register, code):
-        a = _get(register, code)
-        assert a.resolving_evidence is not None
-        assert a.incentive_upside_usd == pytest.approx(a.amount_usd * 0.40, abs=0.01)
-
-    def test_atl_grey_area_total(self, register):
-        total = sum(_get(register, c).amount_usd for c in ["10-00", "11-00", "12-00"])
-        assert total == pytest.approx(408_444.0, abs=0.01)
+    def test_atl_total(self, register):
+        total = sum(_get(register, c).amount_usd for c in ["10-00", "11-00", "12-00", "13-00"])
+        assert total == pytest.approx(538_444.0, abs=0.01)
 
 
 # ── Imported crew: structuring opportunity, not exclusion ───────────────────
@@ -121,32 +132,73 @@ class TestImportedCrewStructuring:
         assert upside == pytest.approx(83_200.0, abs=0.01)
 
 
-# ── Deterministic exclusions remain excluded ─────────────────────────────────
+# ── Deterministic exclusions remain excluded, on real statutory grounds ─────
+# No account is excluded on CROSS_PROGRAM_CONVENTION or absence of
+# citation — every exclusion below cites either (a) the production's own
+# territorial fact against an explicit QPE category (post-production/VFX
+# are named categories, but incurred outside Mauritius), or (b) the EDB
+# QPE list's closed-list structure (completion bond, contingency are not
+# among the 33 enumerated categories — that omission is itself
+# affirmative primary-source authority, not a guess).
 
 class TestDeterministicExclusions:
     @pytest.mark.parametrize("code,basis", [
-        ("39-00", AuthorityBasis.TERRITORIAL_NEXUS),
         ("50-00", AuthorityBasis.TERRITORIAL_NEXUS),
         ("51-00", AuthorityBasis.TERRITORIAL_NEXUS),
         ("52-00", AuthorityBasis.TERRITORIAL_NEXUS),
         ("53-00", AuthorityBasis.TERRITORIAL_NEXUS),
         ("54-00", AuthorityBasis.TERRITORIAL_NEXUS),
         ("55-00", AuthorityBasis.TERRITORIAL_NEXUS),
-        ("60-00", AuthorityBasis.CROSS_PROGRAM_CONVENTION),
-        ("70-00", AuthorityBasis.CROSS_PROGRAM_CONVENTION),
-        ("71-00", AuthorityBasis.CROSS_PROGRAM_CONVENTION),
-        ("80-00", AuthorityBasis.CROSS_PROGRAM_CONVENTION),
+        ("80-00", AuthorityBasis.EXPLICIT_STATUTE),
         ("81-00", AuthorityBasis.STRUCTURAL_DEFINITION),
-        ("13-00", AuthorityBasis.CROSS_PROGRAM_CONVENTION),
     ])
     def test_excluded_with_correct_basis(self, register, code, basis):
         a = _get(register, code)
         assert a.state == QualificationState.EXCLUDED
         assert a.authority_basis == basis
+        assert a.authority_basis != AuthorityBasis.CROSS_PROGRAM_CONVENTION
 
     def test_post_production_exclusion_total(self, register):
         total = sum(_get(register, c).amount_usd for c in ["50-00", "51-00", "52-00", "53-00", "54-00", "55-00"])
         assert total == pytest.approx(363_000.0, abs=0.01)
+
+    def test_completion_bond_excluded_as_closed_list_omission(self, register):
+        a = _get(register, "80-00")
+        assert "33-category" in a.reason or "closed" in a.reason.lower()
+
+    def test_no_account_excluded_on_cross_program_convention(self, register):
+        """Task 4: cross-program convention is never a valid exclusion basis
+        going forward — every account is either statute-grounded, fact-gap,
+        authority-gap, or a genuine territorial/structural exclusion."""
+        for a in register:
+            assert a.authority_basis != AuthorityBasis.CROSS_PROGRAM_CONVENTION
+
+    def test_international_travel_qualifies(self, register):
+        """39-00: EDB QPE list names 'Travel to Mauritius (flight and marine
+        travel)' as its own category — inbound cross-border travel is not
+        subject to the same territorial exclusion as post-production."""
+        a = _get(register, "39-00")
+        assert a.state == QualificationState.QUALIFIES
+        assert a.authority_basis == AuthorityBasis.EXPLICIT_STATUTE
+
+    def test_insurance_qualifies(self, register):
+        """60-00: EDB QPE list names 'Professional services (such as
+        insurance and accounting services)' — insurance is explicit."""
+        a = _get(register, "60-00")
+        assert a.state == QualificationState.QUALIFIES
+        assert a.authority_basis == AuthorityBasis.EXPLICIT_STATUTE
+        assert "insurance" in a.reason.lower()
+
+    @pytest.mark.parametrize("code", ["70-00", "71-00"])
+    def test_legal_accounting_is_fact_gap_not_authority_gap(self, register, code):
+        """Accounting/audit is confirmed QPE; legal fees and submission
+        costs are not enumerated. The account combines both with no $
+        breakdown — this is a missing FACT (the split), not an unresolved
+        statutory question, so it must never resolve to EXCLUDED."""
+        a = _get(register, code)
+        assert a.state == QualificationState.GREY_AREA_REQUIRES_AUTHORITY
+        assert a.authority_basis == AuthorityBasis.FACT_DEPENDENT
+        assert a.state != QualificationState.EXCLUDED
 
     def test_not_applicable_accounts(self, register):
         fc = _get(register, "82-00")
@@ -185,13 +237,24 @@ class TestRegisterReconciliation:
         total = sum(a.amount_usd for a in register)
         assert total == pytest.approx(GROSS_BUDGET_USD, abs=0.01)
 
-    def test_qualifies_state_matches_calculator_base_scenario_minus_reclassified(self, register):
-        """QUALIFIES-state accounts are the calculator's base-scenario qualifying
-        set minus the three accounts reclassified as STRUCTURING_OPPORTUNITY
-        (21-00, 23-00, 42-00 were base_qualifies=False in the calculator, so
-        they were never part of base QPE — this just confirms no double count)."""
-        qualifies_total = sum(a.amount_usd for a in register if a.state == QualificationState.QUALIFIES)
-        assert qualifies_total == pytest.approx(computed_qpe("base"), abs=0.01)
+    def test_verified_qpe_is_statute_grounded_not_frozen_fixture(self, register):
+        """The conservative/verified QPE is whatever the derivation ladder
+        computes from EDB primary-source rules + production facts — not a
+        number pinned to the old calculator fixture or any prior register
+        version. Every QUALIFIES-state account must carry EXPLICIT_STATUTE
+        authority (a real citation), and the total must reconcile exactly
+        against gross budget across all six classification states."""
+        qualifies = [a for a in register if a.state == QualificationState.QUALIFIES]
+        assert all(a.authority_basis == AuthorityBasis.EXPLICIT_STATUTE for a in qualifies)
+        qualifies_total = sum(a.amount_usd for a in qualifies)
+        assert qualifies_total == pytest.approx(2_846_357.0, abs=0.01)
+
+        by_state = {}
+        for a in register:
+            by_state.setdefault(a.state, 0.0)
+            by_state[a.state] += a.amount_usd
+        reconciled = sum(by_state.values())
+        assert reconciled == pytest.approx(GROSS_BUDGET_USD, abs=0.01)
 
     def test_no_account_appears_twice(self, register):
         codes = [a.account_code for a in register]
@@ -265,8 +328,8 @@ def _make_fully_chained_rule(graph, rule_id="R-ATL-RULING", jurisdiction_code="M
 
 class TestGreyAreaEvidenceGraphMigration:
     def test_atl_grey_area_links_to_absence_of_authority(self, grey_areas, evidence_graph):
-        atl = next(g for g in grey_areas if g.item_id == "GA-ATL-SCOPE")
-        assert atl.graph_absence_id == "ABS-ATL-SCOPE"
+        atl = next(g for g in grey_areas if g.item_id == "GA-LEGAL-ACCOUNTING-SPLIT")
+        assert atl.graph_absence_id == "ABS-LEGAL-ACCOUNTING-SPLIT"
         assert grey_area_terminus(atl, evidence_graph) == "absence_of_authority"
 
     def test_inkind_grey_area_links_to_absence_of_authority(self, grey_areas, evidence_graph):
@@ -277,7 +340,7 @@ class TestGreyAreaEvidenceGraphMigration:
 
     def test_absence_of_authority_actually_exists_in_graph(self, evidence_graph):
         # both referenced absence IDs must resolve to real nodes, not dangling strings
-        assert evidence_graph.get_absence_of_authority("ABS-ATL-SCOPE").jurisdiction_code == "MU"
+        assert evidence_graph.get_absence_of_authority("ABS-LEGAL-ACCOUNTING-SPLIT").jurisdiction_code == "MU"
         assert evidence_graph.get_absence_of_authority("ABS-INKIND-FMV").jurisdiction_code == "MU"
 
     def test_unlinked_item_has_no_dead_end_disguised_as_resolved(self, evidence_graph):
@@ -290,12 +353,12 @@ class TestGreyAreaEvidenceGraphMigration:
 
     def test_resolving_without_graph_evidence_still_requires_citation(self, grey_areas):
         """Legacy path (no graph): unchanged behavior — citation alone required."""
-        atl = next(g for g in grey_areas if g.item_id == "GA-ATL-SCOPE")
+        atl = next(g for g in grey_areas if g.item_id == "GA-LEGAL-ACCOUNTING-SPLIT")
         with pytest.raises(ValueError):
             resolve_grey_area(atl, GreyAreaStatus.RESOLVED_INCLUDE, ruling_citation=None)
 
     def test_resolving_with_graph_but_no_rule_id_fails(self, grey_areas, evidence_graph):
-        atl = next(g for g in grey_areas if g.item_id == "GA-ATL-SCOPE")
+        atl = next(g for g in grey_areas if g.item_id == "GA-LEGAL-ACCOUNTING-SPLIT")
         with pytest.raises(ValueError, match="resolving_rule_id"):
             resolve_grey_area(
                 atl, GreyAreaStatus.RESOLVED_INCLUDE, ruling_citation="EDB-2026-0412",
@@ -305,7 +368,7 @@ class TestGreyAreaEvidenceGraphMigration:
     def test_resolving_with_unchained_rule_fails(self, grey_areas, evidence_graph):
         from app.calculators.evidence_graph import Rule
         evidence_graph.add_rule(Rule(rule_id="R-EMPTY", jurisdiction_code="MU", description="no evidence"))
-        atl = next(g for g in grey_areas if g.item_id == "GA-ATL-SCOPE")
+        atl = next(g for g in grey_areas if g.item_id == "GA-LEGAL-ACCOUNTING-SPLIT")
         with pytest.raises(ValueError, match="not fully chained"):
             resolve_grey_area(
                 atl, GreyAreaStatus.RESOLVED_INCLUDE, ruling_citation="EDB-2026-0412",
@@ -314,7 +377,7 @@ class TestGreyAreaEvidenceGraphMigration:
 
     def test_resolving_with_fully_chained_rule_succeeds(self, grey_areas, evidence_graph):
         rule_id = _make_fully_chained_rule(evidence_graph)
-        atl = next(g for g in grey_areas if g.item_id == "GA-ATL-SCOPE")
+        atl = next(g for g in grey_areas if g.item_id == "GA-LEGAL-ACCOUNTING-SPLIT")
         resolved = resolve_grey_area(
             atl, GreyAreaStatus.RESOLVED_INCLUDE, ruling_citation="EDB-2026-0412",
             graph=evidence_graph, resolving_rule_id=rule_id,
@@ -326,21 +389,21 @@ class TestGreyAreaEvidenceGraphMigration:
 
     def test_resolved_accounts_upgrade_authority_basis(self, register, grey_areas, evidence_graph):
         rule_id = _make_fully_chained_rule(evidence_graph)
-        atl = next(g for g in grey_areas if g.item_id == "GA-ATL-SCOPE")
+        atl = next(g for g in grey_areas if g.item_id == "GA-LEGAL-ACCOUNTING-SPLIT")
         resolved = resolve_grey_area(
             atl, GreyAreaStatus.RESOLVED_INCLUDE, ruling_citation="EDB-2026-0412",
             graph=evidence_graph, resolving_rule_id=rule_id,
         )
         new_register = apply_grey_area_resolution(register, resolved)
-        for code in ("10-00", "11-00", "12-00"):
+        for code in ("70-00", "71-00"):
             acct = next(a for a in new_register if a.account_code == code)
             assert acct.state == QualificationState.QUALIFIES
             assert acct.authority_basis == AuthorityBasis.EXPLICIT_STATUTE
             assert acct.confidence == QualificationConfidence.HIGH
             assert "EDB-2026-0412" in acct.reason
         # original register is untouched (pure function)
-        original_10 = next(a for a in register if a.account_code == "10-00")
-        assert original_10.state == QualificationState.GREY_AREA_REQUIRES_AUTHORITY
+        original_70 = next(a for a in register if a.account_code == "70-00")
+        assert original_70.state == QualificationState.GREY_AREA_REQUIRES_AUTHORITY
 
     def test_inkind_resolution_never_reclassifies_register_accounts(self, register, grey_areas, evidence_graph):
         """In-kind stays off-budget additive only — applying its resolution
@@ -359,7 +422,7 @@ class TestGreyAreaEvidenceGraphMigration:
             assert old.amount_usd == new.amount_usd
 
     def test_apply_resolution_requires_actually_resolved_item(self, register, grey_areas):
-        atl = next(g for g in grey_areas if g.item_id == "GA-ATL-SCOPE")
+        atl = next(g for g in grey_areas if g.item_id == "GA-LEGAL-ACCOUNTING-SPLIT")
         with pytest.raises(ValueError):
             apply_grey_area_resolution(register, atl)  # still OPEN
 
@@ -367,7 +430,7 @@ class TestGreyAreaEvidenceGraphMigration:
         """No calculation output changes: reclassifying accounts moves
         dollars between states, never creates or destroys them."""
         rule_id = _make_fully_chained_rule(evidence_graph)
-        atl = next(g for g in grey_areas if g.item_id == "GA-ATL-SCOPE")
+        atl = next(g for g in grey_areas if g.item_id == "GA-LEGAL-ACCOUNTING-SPLIT")
         resolved = resolve_grey_area(
             atl, GreyAreaStatus.RESOLVED_INCLUDE, ruling_citation="EDB-2026-0412",
             graph=evidence_graph, resolving_rule_id=rule_id,
@@ -376,7 +439,8 @@ class TestGreyAreaEvidenceGraphMigration:
         assert sum(a.amount_usd for a in new_register) == pytest.approx(sum(a.amount_usd for a in register), abs=0.01)
 
     def test_default_register_is_unaffected_by_p3_additions(self, register):
-        """P3 is purely additive: the baseline register construction and
-        its figures are identical to before migration."""
+        """P3 (grey-area/evidence-graph machinery) is purely additive: calling
+        build_little_utopia_grey_areas()/build_little_utopia_evidence_graph()
+        never mutates the register construction itself."""
         qpe = sum(a.amount_usd for a in register if a.state == QualificationState.QUALIFIES)
-        assert qpe == pytest.approx(1_979_913.0, abs=0.01)
+        assert qpe == pytest.approx(2_846_357.0, abs=0.01)

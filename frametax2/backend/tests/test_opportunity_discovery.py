@@ -266,7 +266,7 @@ class TestGreyAreaDiscovery:
         opps = discover_grey_area_opportunities(build_little_utopia_grey_areas(), rate=MU_RATE)
         assert len(opps) == 2
         by_ref = {o.source_ref: o for o in opps}
-        assert by_ref["GA-ATL-SCOPE"].estimated_upside_usd == pytest.approx(408_444.0 * MU_RATE)
+        assert by_ref["GA-LEGAL-ACCOUNTING-SPLIT"].estimated_upside_usd == pytest.approx(113_000.0 * MU_RATE)
 
     def test_resolved_grey_area_not_re_emitted(self):
         areas = build_little_utopia_grey_areas()
@@ -362,8 +362,8 @@ class TestOptimizerCompatibility:
             structuring_paths=paths,
         )
         cons = result.cases[RiskCase.CONSERVATIVE]
-        assert cons.qpe_usd == pytest.approx(1_979_913.0, abs=1.0)
-        assert cons.incentive_usd == pytest.approx(791_965.0, abs=1.0)
+        assert cons.qpe_usd == pytest.approx(2_846_357.0, abs=1.0)
+        assert cons.incentive_usd == pytest.approx(1_138_542.8, abs=1.0)
 
     def test_no_optimizer_output_change_from_discovery_existing(self):
         # Baseline behavior — optimizer consuming its own derive path —
@@ -376,7 +376,7 @@ class TestOptimizerCompatibility:
             structuring_paths=paths,
         )
         cons = result.cases[RiskCase.CONSERVATIVE]
-        assert cons.qpe_usd == pytest.approx(1_979_913.0, abs=1.0)
+        assert cons.qpe_usd == pytest.approx(2_846_357.0, abs=1.0)
 
     def test_discovery_module_imports_no_optimizer(self):
         import ast

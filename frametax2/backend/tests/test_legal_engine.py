@@ -66,7 +66,7 @@ def engine():
     })
 
 
-def _run_through_commit(engine, grey_areas, graph, staged_id="STG-TASK-GA-ATL-SCOPE"):
+def _run_through_commit(engine, grey_areas, graph, staged_id="STG-TASK-GA-LEGAL-ACCOUNTING-SPLIT"):
     """Drive one item through the full gate sequence to COMMITTED."""
     engine.run_acquisition_cycle(AS_OF, grey_areas=grey_areas, graph=graph)
     engine.record_verification(staged_id, verified_by="counsel@example.com", outcome="authority_found")
@@ -115,7 +115,7 @@ class TestDetection:
 class TestExecutionPolicy:
     def test_only_commitment_grade_with_connector_auto_executes(self, engine, grey_areas, graph):
         cycle = engine.run_acquisition_cycle(AS_OF, grey_areas=grey_areas, graph=graph)
-        assert set(cycle.executed_task_ids) == {"TASK-GA-ATL-SCOPE", "TASK-GA-INKIND-FMV"}
+        assert set(cycle.executed_task_ids) == {"TASK-GA-LEGAL-ACCOUNTING-SPLIT", "TASK-GA-INKIND-FMV"}
 
     def test_scenario_grade_never_auto_executes(self, engine, grey_areas, graph):
         cycle = engine.run_acquisition_cycle(AS_OF, grey_areas=grey_areas, graph=graph)
@@ -129,7 +129,7 @@ class TestExecutionPolicy:
         bare_engine = LegalEngine()  # no connectors configured
         cycle = bare_engine.run_acquisition_cycle(AS_OF, grey_areas=grey_areas, graph=graph)
         assert cycle.executed_task_ids == ()
-        assert "no connector configured" in cycle.not_executed["TASK-GA-ATL-SCOPE"]
+        assert "no connector configured" in cycle.not_executed["TASK-GA-LEGAL-ACCOUNTING-SPLIT"]
 
     def test_max_tasks_bound_respected(self, engine, grey_areas, graph):
         cycle = engine.run_acquisition_cycle(AS_OF, grey_areas=grey_areas, graph=graph, max_tasks=1)
@@ -161,7 +161,7 @@ class TestProvenance:
     def test_tampered_content_fails_hash_check(self, engine, grey_areas, graph):
         from dataclasses import replace
         engine.run_acquisition_cycle(AS_OF, grey_areas=grey_areas, graph=graph)
-        staged = engine._staged["STG-TASK-GA-ATL-SCOPE"]
+        staged = engine._staged["STG-TASK-GA-LEGAL-ACCOUNTING-SPLIT"]
         # ConnectorResult is frozen — build a tampered copy properly
         tampered = copy.deepcopy(staged)
         tampered.connector_result = replace(staged.connector_result, excerpt="TAMPERED CONTENT")
@@ -172,10 +172,10 @@ class TestProvenance:
     def test_verification_refused_on_provenance_failure(self, engine, grey_areas, graph):
         from dataclasses import replace
         engine.run_acquisition_cycle(AS_OF, grey_areas=grey_areas, graph=graph)
-        staged = engine._staged["STG-TASK-GA-ATL-SCOPE"]
+        staged = engine._staged["STG-TASK-GA-LEGAL-ACCOUNTING-SPLIT"]
         staged.connector_result = replace(staged.connector_result, excerpt="TAMPERED")
         with pytest.raises(ValueError, match="failed provenance"):
-            engine.record_verification("STG-TASK-GA-ATL-SCOPE", verified_by="x", outcome="authority_found")
+            engine.record_verification("STG-TASK-GA-LEGAL-ACCOUNTING-SPLIT", verified_by="x", outcome="authority_found")
 
 
 # ── Human gates ───────────────────────────────────────────────────────────────
@@ -185,16 +185,16 @@ class TestGates:
         engine.run_acquisition_cycle(AS_OF, grey_areas=grey_areas, graph=graph)
         with pytest.raises(ValueError, match="not verified"):
             engine.commit_and_score(
-                "STG-TASK-GA-ATL-SCOPE", target_jurisdiction_code="MU", as_of_date=AS_OF,
+                "STG-TASK-GA-LEGAL-ACCOUNTING-SPLIT", target_jurisdiction_code="MU", as_of_date=AS_OF,
                 rule_text="x", tier=AuthorityTier.OFFICIAL_GUIDANCE,
             )
 
     def test_high_impact_commit_blocked_without_approval(self, engine, grey_areas, graph):
         engine.run_acquisition_cycle(AS_OF, grey_areas=grey_areas, graph=graph)
-        engine.record_verification("STG-TASK-GA-ATL-SCOPE", verified_by="counsel@example.com", outcome="authority_found")
+        engine.record_verification("STG-TASK-GA-LEGAL-ACCOUNTING-SPLIT", verified_by="counsel@example.com", outcome="authority_found")
         with pytest.raises(ValueError, match="requires approval"):
             engine.commit_and_score(
-                "STG-TASK-GA-ATL-SCOPE", target_jurisdiction_code="MU", as_of_date=AS_OF,
+                "STG-TASK-GA-LEGAL-ACCOUNTING-SPLIT", target_jurisdiction_code="MU", as_of_date=AS_OF,
                 rule_text="x", tier=AuthorityTier.OFFICIAL_GUIDANCE,
             )
 
@@ -213,14 +213,14 @@ class TestGates:
 class TestCommitScoreRerun:
     def test_full_loop_commits_scores_and_resolves(self, engine, grey_areas, graph):
         commit = _run_through_commit(engine, grey_areas, graph)
-        assert commit.committed_id == "RULE-STG-TASK-GA-ATL-SCOPE"
+        assert commit.committed_id == "RULE-STG-TASK-GA-LEGAL-ACCOUNTING-SPLIT"
         assert commit.score is not None
         assert commit.score.composite > 0
         assert commit.resolved_grey_area.status == GreyAreaStatus.RESOLVED_INCLUDE
         assert commit.resolved_grey_area.graph_rule_id == commit.committed_id
 
     def test_original_grey_area_never_mutated(self, engine, grey_areas, graph):
-        ga = next(g for g in grey_areas if g.item_id == "GA-ATL-SCOPE")
+        ga = next(g for g in grey_areas if g.item_id == "GA-LEGAL-ACCOUNTING-SPLIT")
         _run_through_commit(engine, grey_areas, graph)
         assert ga.status == GreyAreaStatus.OPEN  # resolution is a new object
 

@@ -247,7 +247,7 @@ class TestGreyAreaGating:
         # None of them are RESOLVED_INCLUDE, so Conservative must not include their accounts.
         assert all(g.status.value == "open" for g in grey_areas)
         cons = baseline.cases[RiskCase.CONSERVATIVE]
-        assert "10-00" not in cons.included_codes  # ATL-scope grey area account stays out of Conservative
+        assert "70-00" not in cons.included_codes  # legal/accounting-split grey area account stays out of Conservative
 
     def test_grey_area_carries_blocking_requirement(self, structures):
         baseline = next(s for s in structures if s.structure_id == "STRUCT-BASELINE-MU")
@@ -284,8 +284,8 @@ class TestFourCasePricing:
     def test_existing_little_utopia_conservative_result_unchanged(self, structures):
         baseline = next(s for s in structures if s.structure_id == "STRUCT-BASELINE-MU")
         cons = baseline.cases[RiskCase.CONSERVATIVE]
-        assert cons.qpe_usd == pytest.approx(1_979_913.0, abs=1.0)
-        assert cons.incentive_usd == pytest.approx(791_965.0, abs=1.0)
+        assert cons.qpe_usd == pytest.approx(2_846_357.0, abs=1.0)
+        assert cons.incentive_usd == pytest.approx(1_138_542.8, abs=1.0)
 
     def test_non_priceable_structure_has_no_cases(self, structures):
         for s in structures:
@@ -384,7 +384,7 @@ class TestNonMutation:
             structuring_paths=paths, grey_areas=grey_areas,
         )
         cons = result.cases[RiskCase.CONSERVATIVE]
-        assert cons.qpe_usd == pytest.approx(1_979_913.0, abs=1.0)
+        assert cons.qpe_usd == pytest.approx(2_846_357.0, abs=1.0)
 
     def test_module_does_not_modify_optimization_engine_source_import(self):
         import ast
