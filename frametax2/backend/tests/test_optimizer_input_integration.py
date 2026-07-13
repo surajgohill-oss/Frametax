@@ -166,28 +166,48 @@ class TestTravelNormalization:
 
     def test_changing_origin_city_changes_delta_for_a_faretable_route(self):
         # GB is in travel_model's fare table with distinct LA/NYC rates —
-        # confirms the delta itself is origin-sensitive where data exists.
+        # confirms the model itself is origin-sensitive where data exists.
         from app.calculators.production_normalization import TravelInputs, compute_travel_normalization
-        la = compute_travel_normalization("GB", TravelInputs(origin_city="LA"), budgeted_travel_usd=0.0)
-        nyc = compute_travel_normalization("GB", TravelInputs(origin_city="NYC"), budgeted_travel_usd=0.0)
-        assert la.normalized_travel_usd != nyc.normalized_travel_usd
+        la = compute_travel_normalization("GB", TravelInputs(origin_city="LA"), original_budgeted_travel_usd=0.0)
+        nyc = compute_travel_normalization("GB", TravelInputs(origin_city="NYC"), original_budgeted_travel_usd=0.0)
+        assert la.proposed_modeled_travel_usd != nyc.proposed_modeled_travel_usd
 
-    def test_changing_traveler_mix_changes_travel_delta(self):
+    def test_baseline_candidate_has_zero_incremental_travel_delta(self):
+        """PSC-MU's proposed jurisdiction IS the original geography — the
+        incremental delta must be exactly zero regardless of traveler
+        mix (Part 6: this is an INCREMENTAL adjustment, not total travel)."""
+        s = get_state()
+        out = build_normalized_structures(s)
+        mu = next(r for r in out["ranking"] if r["candidate_id"] == "PSC-MU")
+        assert mu["travel_incremental_delta_usd"] == 0.0
+        apply_economics_controls({"business_travelers": 8, "economy_travelers": 15})
+        s2 = get_state()
+        out2 = build_normalized_structures(s2)
+        mu2 = next(r for r in out2["ranking"] if r["candidate_id"] == "PSC-MU")
+        assert mu2["travel_incremental_delta_usd"] == 0.0
+
+    def test_changing_traveler_mix_changes_incremental_delta_for_added_jurisdiction(self):
+        # PSC-MU-MT (not -CY): Malta has a real travel_model.py fare-table
+        # entry; Mauritius and Cyprus both fall to the same generic
+        # fallback fare, which would make their modeled costs identical
+        # regardless of traveler count — an honest data-completeness gap,
+        # not a bug (see Part 4/5 knowledge-base audit).
         s = get_state()
         base = build_normalized_structures(s)
-        base_delta = next(r for r in base["ranking"] if r["candidate_id"] == "PSC-MU")["travel_delta_usd"]
+        base_delta = next(r for r in base["ranking"] if r["candidate_id"] == "PSC-MU-MT")["travel_incremental_delta_usd"]
         apply_economics_controls({"business_travelers": 8, "economy_travelers": 15})
         s2 = get_state()
         changed = build_normalized_structures(s2)
-        changed_delta = next(r for r in changed["ranking"] if r["candidate_id"] == "PSC-MU")["travel_delta_usd"]
+        changed_delta = next(r for r in changed["ranking"] if r["candidate_id"] == "PSC-MU-MT")["travel_incremental_delta_usd"]
         assert changed_delta != base_delta
 
     def test_travel_delta_affects_normalized_npc(self):
         s = get_state()
         out = build_normalized_structures(s)
-        mu = next(r for r in out["ranking"] if r["candidate_id"] == "PSC-MU")
-        assert mu["normalized_npc_usd"] == pytest.approx(
-            mu["base_cash_npc_usd"] + mu["travel_delta_usd"] + mu["fx_delta_usd"] + mu["inkind_adjustment_usd"]
+        cand = next(r for r in out["ranking"] if r["candidate_id"] == "PSC-MU-MT")
+        assert cand["normalized_npc_usd"] == pytest.approx(
+            cand["base_cash_npc_usd"] + cand["travel_incremental_delta_usd"]
+            + cand["fx_delta_usd"] + cand["inkind_adjustment_usd"]
         )
 
     def test_foreign_airline_not_excluded_from_qpe_merely_for_being_foreign(self):

@@ -49,21 +49,44 @@ class TravelInputs:
 
 @dataclass(frozen=True)
 class TravelNormalizationResult:
-    jurisdiction_code: str
+    jurisdiction_code: str            # the PROPOSED jurisdiction being evaluated
+    original_jurisdiction_code: str   # the production's actual/original shoot geography
     origin_city: str
-    budgeted_travel_usd: float
-    normalized_travel_usd: float
-    delta_usd: float          # normalized - budgeted; positive = budget under-provisioned
+    original_budgeted_travel_usd: float  # reference only — the real budget's own travel
+                                          # line for the ORIGINAL geography; NOT used in
+                                          # the incremental calculation below (Part 6:
+                                          # "NOT total travel")
+    original_modeled_travel_usd: float   # model(origin, original_jurisdiction)
+    proposed_modeled_travel_usd: float   # model(origin, proposed_jurisdiction)
+    incremental_delta_usd: float         # proposed_modeled - original_modeled — the
+                                          # INCREMENTAL cost of shooting/routing crew
+                                          # to the proposed jurisdiction INSTEAD OF (or
+                                          # in addition to) the original one
     pricing_mode: str
-    estimate: TravelCostEstimate
+    estimate: TravelCostEstimate         # the PROPOSED jurisdiction's full cost breakdown
     note: str
 
 
 def compute_travel_normalization(
     jurisdiction_code: str,
     inputs: TravelInputs,
-    budgeted_travel_usd: float,
+    original_budgeted_travel_usd: float,
+    original_jurisdiction_code: str = "MU",
 ) -> TravelNormalizationResult:
+    """
+    Incremental travel adjustment (Part 6 algorithm):
+      original production travel cost (reference, real budget figure)
+        -> original shooting geography (original_jurisdiction_code)
+        -> user origin hub (inputs.origin_city)
+        -> model travel for the ORIGINAL geography AND the PROPOSED
+           jurisdiction, same assumptions on both sides (apples-to-apples
+           — the prior design compared a MODEL estimate against the
+           production's TOTAL crew travel budget, which conflated
+           traveler-count assumptions; this compares model-vs-model)
+        -> incremental_delta_usd = proposed - original. NOT total travel.
+    jurisdiction_code == original_jurisdiction_code (the baseline
+    candidate, e.g. Mauritius-only) always yields delta_usd == 0 exactly.
+    """
     if inputs.pricing_mode == TravelPricingMode.LIVE_LOOKUP:
         note = (
             "Live lookup requested but no live-fare connector is wired yet "
@@ -76,30 +99,40 @@ def compute_travel_normalization(
             "fare/hotel/per-diem tables. Not a live quote."
         )
 
-    est = estimate_travel_cost(
-        home_base=inputs.origin_city,
-        destination_jurisdiction=jurisdiction_code,
-        business_class_seats=inputs.business_travelers,
-        economy_seats=inputs.economy_travelers,
-        travel_frequency_per_year=inputs.rotations_per_year,
-        hotel_nights=inputs.hotel_nights,
-        per_diem_days=inputs.per_diem_days,
-        incentive_value_usd=0.0,
-    )
-    normalized = est.total_travel_cost_usd
+    def _model(dest: str) -> TravelCostEstimate:
+        return estimate_travel_cost(
+            home_base=inputs.origin_city,
+            destination_jurisdiction=dest,
+            business_class_seats=inputs.business_travelers,
+            economy_seats=inputs.economy_travelers,
+            travel_frequency_per_year=inputs.rotations_per_year,
+            hotel_nights=inputs.hotel_nights,
+            per_diem_days=inputs.per_diem_days,
+            incentive_value_usd=0.0,
+        )
+
+    proposed_est = _model(jurisdiction_code)
+    if jurisdiction_code == original_jurisdiction_code:
+        original_cost = proposed_est.total_travel_cost_usd  # identical model call — exact zero delta
+    else:
+        original_cost = _model(original_jurisdiction_code).total_travel_cost_usd
+
+    proposed_cost = proposed_est.total_travel_cost_usd
     return TravelNormalizationResult(
         jurisdiction_code=jurisdiction_code,
+        original_jurisdiction_code=original_jurisdiction_code,
         origin_city=inputs.origin_city,
-        budgeted_travel_usd=round(budgeted_travel_usd, 2),
-        normalized_travel_usd=round(normalized, 2),
-        delta_usd=round(normalized - budgeted_travel_usd, 2),
+        original_budgeted_travel_usd=round(original_budgeted_travel_usd, 2),
+        original_modeled_travel_usd=round(original_cost, 2),
+        proposed_modeled_travel_usd=round(proposed_cost, 2),
+        incremental_delta_usd=round(proposed_cost - original_cost, 2),
         pricing_mode=inputs.pricing_mode.value,
-        estimate=est,
+        estimate=proposed_est,
         note=note,
     )
 
 
-# ── FX (Part 6) ───────────────────────────────────────────────────────────
+# ── FX (Part 7) ───────────────────────────────────────────────────────────
 
 class FXRateSource(str, enum.Enum):
     BENCHMARK = "benchmark"
@@ -215,34 +248,45 @@ def normalize_candidates(
     base_npc_by_candidate: dict[str, float],
     participating_jurisdictions_by_candidate: dict[str, tuple[str, ...]],
     travel_inputs: Optional[TravelInputs],
-    budgeted_travel_usd: float,
+    original_budgeted_travel_usd: float,
     fx_inputs: Optional[FXInputs],
+    original_jurisdiction_code: str = "MU",
     inkind_adjustment_by_candidate: Optional[dict[str, float]] = None,
 ) -> list[CandidateNormalization]:
     """Builds one CandidateNormalization per candidate and a full
     normalized ranking (ascending normalized_npc_usd — lower is better,
     same convention as the existing risk-adjusted-NPC ranking). Any input
     left None skips that adjustment (delta 0), never guesses a value.
-    Travel/FX pricing is applied against the candidate's PRIMARY
-    (first-listed) participating jurisdiction — the baseline shoot
-    location — consistent with how travel_model.py itself prices one
-    destination per estimate."""
+
+    Travel (Part 6, incremental adjustment): the PROPOSED jurisdiction for
+    a candidate is the LAST-listed participating jurisdiction — for the
+    baseline candidate (only original_jurisdiction_code) that IS the
+    original, so its incremental delta is exactly zero; for a treaty/
+    co-production candidate it is the ADDED partner jurisdiction, so the
+    delta prices the incremental cost of ALSO routing crew there, modeled
+    against the same origin/traveler assumptions as the original geography
+    — never the candidate's total travel cost.
+
+    FX pricing is applied against the candidate's PROPOSED jurisdiction
+    the same way (its local currency, if any)."""
     inkind_adjustment_by_candidate = inkind_adjustment_by_candidate or {}
     results: list[CandidateNormalization] = []
     for candidate_id, base_npc in base_npc_by_candidate.items():
         jurisdictions = participating_jurisdictions_by_candidate.get(candidate_id, ())
-        primary = jurisdictions[0] if jurisdictions else None
+        proposed = jurisdictions[-1] if jurisdictions else None
 
         travel_result = None
         travel_delta = 0.0
-        if travel_inputs is not None and primary is not None:
-            travel_result = compute_travel_normalization(primary, travel_inputs, budgeted_travel_usd)
-            travel_delta = travel_result.delta_usd
+        if travel_inputs is not None and proposed is not None:
+            travel_result = compute_travel_normalization(
+                proposed, travel_inputs, original_budgeted_travel_usd, original_jurisdiction_code,
+            )
+            travel_delta = travel_result.incremental_delta_usd
 
         fx_result = None
         fx_delta = 0.0
-        if fx_inputs is not None and primary is not None:
-            fx_result = compute_fx_normalization(primary, fx_inputs, base_npc)
+        if fx_inputs is not None and proposed is not None:
+            fx_result = compute_fx_normalization(proposed, fx_inputs, base_npc)
             fx_delta = fx_result.delta_usd
 
         inkind_delta = inkind_adjustment_by_candidate.get(candidate_id, 0.0)

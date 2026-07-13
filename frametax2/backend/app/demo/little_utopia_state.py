@@ -511,31 +511,37 @@ def build_normalized_structures(state: "LittleUtopiaState") -> dict:
         base_npc_by_candidate=base_npc,
         participating_jurisdictions_by_candidate=jurisdictions,
         travel_inputs=build_travel_inputs(),
-        budgeted_travel_usd=budgeted_travel_usd(state.register),
+        original_budgeted_travel_usd=budgeted_travel_usd(state.register),
         fx_inputs=build_fx_inputs(),
+        original_jurisdiction_code=JURISDICTION_CODE,
         inkind_adjustment_by_candidate=inkind_by_candidate,
     )
     return {
-        "version": "1.0.0",
+        "version": "2.0.0",
         "note": (
             "SEPARATE from the primary /structures ranking (which prices "
             "cash-only, zero-financing candidates). This ranking additionally "
-            "layers travel normalization, FX normalization, and the selected "
-            "in-kind-post scenario on top of each candidate's cash NPC."
+            "layers an INCREMENTAL travel adjustment (proposed jurisdiction vs. "
+            "the original Mauritius shoot geography — not total travel cost), "
+            "FX normalization, and the selected in-kind-post scenario on top "
+            "of each candidate's cash NPC."
         ),
         "ranking": [
             {
                 "candidate_id": r.candidate_id,
                 "base_cash_npc_usd": r.base_cash_npc_usd,
-                "travel_delta_usd": r.travel.delta_usd if r.travel else None,
+                "travel_incremental_delta_usd": r.travel.incremental_delta_usd if r.travel else None,
                 "fx_delta_usd": r.fx.delta_usd if r.fx else None,
                 "inkind_adjustment_usd": r.inkind_adjustment_usd,
                 "normalized_npc_usd": r.normalized_npc_usd,
                 "travel_detail": (
                     {
                         "origin_city": r.travel.origin_city,
-                        "budgeted_travel_usd": r.travel.budgeted_travel_usd,
-                        "normalized_travel_usd": r.travel.normalized_travel_usd,
+                        "original_jurisdiction_code": r.travel.original_jurisdiction_code,
+                        "proposed_jurisdiction_code": r.travel.jurisdiction_code,
+                        "original_budgeted_travel_usd": r.travel.original_budgeted_travel_usd,
+                        "original_modeled_travel_usd": r.travel.original_modeled_travel_usd,
+                        "proposed_modeled_travel_usd": r.travel.proposed_modeled_travel_usd,
                         "pricing_mode": r.travel.pricing_mode,
                         "note": r.travel.note,
                     } if r.travel else None
