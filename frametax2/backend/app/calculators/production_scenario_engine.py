@@ -132,6 +132,8 @@ def _run_jurisdiction_shaped_scenario(
     rate: Optional[float],
     grey_areas: Optional[list[GreyAreaItem]],
     include_recommendations: bool,
+    delay_weeks: int = 0,
+    bridge_rate: float = 0.0,
 ) -> ScenarioResult:
     if not scenario.target_jurisdiction:
         return ScenarioResult(
@@ -148,6 +150,7 @@ def _run_jurisdiction_shaped_scenario(
     result = compose_production_structures(
         collection, graph, register=register, gross_budget_usd=gross_budget_usd, rate=rate,
         grey_areas=grey_areas, extra_jurisdiction_sets=[extra_set],
+        delay_weeks=delay_weeks, bridge_rate=bridge_rate,
     )
     baseline = _baseline_candidate(result)
     scenario_candidate = next(
@@ -207,6 +210,8 @@ def run_scenario(
     rate: Optional[float] = None,
     grey_areas: Optional[list[GreyAreaItem]] = None,
     include_recommendations: bool = False,
+    delay_weeks: int = 0,
+    bridge_rate: float = 0.0,
 ) -> ScenarioResult:
     """
     Top-level Part F entry point. Jurisdiction-shaped scenarios
@@ -229,6 +234,7 @@ def run_scenario(
             )
         return _run_jurisdiction_shaped_scenario(
             scenario, collection, graph, register, gross_budget_usd, rate, grey_areas, include_recommendations,
+            delay_weeks=delay_weeks, bridge_rate=bridge_rate,
         )
     if scenario.kind in _STRUCTURING_SUBTYPE_BY_KIND or scenario.kind == ScenarioKind.CREATE_SPV:
         return _run_structuring_shaped_scenario(scenario, collection)

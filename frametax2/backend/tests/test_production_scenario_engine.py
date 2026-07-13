@@ -102,11 +102,33 @@ class TestJurisdictionShapedScenarios:
             [o for o in collection.opportunities if o.opportunity_id in baseline.included_opportunity_ids],
             register=register, rate=MU_RATE, jurisdiction_code="MU",
         )
+        # run_scenario defaults to ZERO financing (the permanent financing-
+        # default-zero policy — never a silent 8%/39wk). The direct call
+        # must use the same to prove "no new math, same pricing".
         direct = build_risk_cases(
             register=register, gross_budget_usd=MU_GROSS_BUDGET, rate=MU_RATE,
-            structuring_paths=paths, grey_areas=grey_areas, delay_weeks=39, bridge_rate=0.08, jurisdiction_code="MU",
+            structuring_paths=paths, grey_areas=grey_areas, delay_weeks=0, bridge_rate=0.0, jurisdiction_code="MU",
         )
         assert result.baseline_risk_adjusted_npc_usd == direct.cases[RiskCase.RISK_ADJUSTED].net_production_cost_usd
+
+    def test_scenario_engine_defaults_to_zero_financing(self, collection, graph, register, grey_areas, target_jurisdiction):
+        """Integration-validation regression: the scenario engine must NOT
+        silently apply the old 8%/39wk financing (the permanent financing-
+        default-zero policy). Its baseline must match a zero-financing
+        optimizer call, and must NOT match an 8%/39wk one."""
+        scenario = ProductionScenario(scenario_id="S1", kind=ScenarioKind.MOVE_MUSIC, description="move music", target_jurisdiction=target_jurisdiction)
+        result = run_scenario(scenario, collection, graph=graph, register=register, gross_budget_usd=MU_GROSS_BUDGET, rate=MU_RATE, grey_areas=grey_areas)
+        baseline = next(c for c in result.composition_result.candidates if c.candidate_id == "PSC-MU")
+        paths = opportunities_to_structuring_paths(
+            [o for o in collection.opportunities if o.opportunity_id in baseline.included_opportunity_ids],
+            register=register, rate=MU_RATE, jurisdiction_code="MU",
+        )
+        zero = build_risk_cases(register=register, gross_budget_usd=MU_GROSS_BUDGET, rate=MU_RATE,
+                                structuring_paths=paths, grey_areas=grey_areas, delay_weeks=0, bridge_rate=0.0)
+        financed = build_risk_cases(register=register, gross_budget_usd=MU_GROSS_BUDGET, rate=MU_RATE,
+                                    structuring_paths=paths, grey_areas=grey_areas, delay_weeks=39, bridge_rate=0.08)
+        assert result.baseline_risk_adjusted_npc_usd == zero.cases[RiskCase.RISK_ADJUSTED].net_production_cost_usd
+        assert result.baseline_risk_adjusted_npc_usd != financed.cases[RiskCase.RISK_ADJUSTED].net_production_cost_usd
 
     def test_create_coproduction_is_jurisdiction_shaped(self, collection, graph, register, grey_areas, target_jurisdiction):
         scenario = ProductionScenario(scenario_id="S1", kind=ScenarioKind.CREATE_COPRODUCTION, description="coprod", target_jurisdiction=target_jurisdiction)
