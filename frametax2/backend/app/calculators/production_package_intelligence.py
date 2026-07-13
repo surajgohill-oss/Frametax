@@ -1198,10 +1198,16 @@ def build_production_package(
 
 def production_package_to_known_jurisdiction_codes(package: ProductionPackage) -> tuple[str, ...]:
     """Every jurisdiction code this package actually knows about, from
-    any source (locations, entity domicile, person residency) — feeds
+    any source (locations, entity domicile, person nationality OR
+    residency — cultural-test criteria and most treaty/co-production
+    eligibility rules are explicitly phrased as "national OR resident",
+    e.g. BFI D1 "Director British national or resident", so a KNOWN
+    nationality alone is enough to make a jurisdiction "known" here even
+    when residency is separately unconfirmed) — feeds
     opportunity_discovery.discover_treaty_opportunities(country_codes) /
-    discover_reinvestment_opportunities(country_codes), both of which
-    accept exactly this shape (list[str] of ISO-ish country codes)."""
+    discover_reinvestment_opportunities(country_codes) /
+    derive_likely_cultural_test_categories(), all of which accept
+    exactly this shape (list[str] of ISO-ish country codes)."""
     codes: set[str] = set(package.location.jurisdiction_codes_known)
     for entity in package.package.all_entities:
         if entity.registered_jurisdiction.is_actionable:
@@ -1209,6 +1215,8 @@ def production_package_to_known_jurisdiction_codes(package: ProductionPackage) -
     for person in package.package.all_people:
         if person.residency.is_actionable:
             codes.add(person.residency.value)
+        if person.nationality.is_actionable:
+            codes.add(person.nationality.value)
     return tuple(sorted(codes))
 
 

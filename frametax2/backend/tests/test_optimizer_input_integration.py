@@ -30,19 +30,26 @@ def _reset():
 # ── Part 2: real people ──────────────────────────────────────────────────────
 
 class TestRealPeople:
-    def test_writer_director_lead_cast_are_real_verified_facts(self):
+    def test_writer_director_producers_are_real_sourced_facts(self):
         s = get_state()
         pkg = s.package.package
+        assert pkg.writers[0].name == "Clara Salaman"
         assert pkg.writers[0].nationality.value == "GB"
+        assert pkg.directors[0].name == "Kim Farrant"
         assert pkg.directors[0].nationality.value == "AU"
-        assert pkg.cast[0].name == "Luke Evans"
-        assert pkg.cast[0].nationality.value == "GB"
+        producer_names = {p.name for p in pkg.producers}
+        assert producer_names == {"Rachel Winter", "Max Botkin"}
+        assert all(p.nationality.value == "US" for p in pkg.producers)
 
-    def test_producer_nationality_unknown_generates_question(self):
+    def test_lead_cast_unknown_generates_question(self):
+        """The production's own budget says 'CAST: tbc' and no
+        independent source confirms any actor's attachment — a prior
+        session's uncorroborated 'Luke Evans' entry was corrected. Lead
+        cast nationality must be an honest open question."""
         s = get_state()
-        assert pkg_nationality_unknown(s)
+        assert cast_nationality_unknown(s)
         ids = {m.identifier for m in s.package.missing_inputs}
-        assert "MISSING-NATIONALITY-producer-1" in ids
+        assert "MISSING-NATIONALITY-cast-1" in ids
 
     def test_writer_nationality_override_propagates_to_package(self):
         base = get_state()
@@ -62,9 +69,9 @@ class TestRealPeople:
         assert s.package.package.cast[0].nationality.value == "AU"
 
 
-def pkg_nationality_unknown(s) -> bool:
+def cast_nationality_unknown(s) -> bool:
     from app.calculators.production_package_intelligence import FactKnowledgeState
-    return s.package.package.producers[0].nationality.state == FactKnowledgeState.UNKNOWN
+    return s.package.package.cast[0].nationality.state == FactKnowledgeState.UNKNOWN
 
 
 # ── Part 3: cultural tests ────────────────────────────────────────────────────
