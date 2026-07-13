@@ -149,11 +149,19 @@ def parse_budget_csv(
 
 
 # ─── Film budget account-number format ────────────────────────────────────────
-# Matches "XX-00" or "XX-01" style account codes at the start of a line.
-_ACCT_CODE_RE = re.compile(r"^\d{2}-\d{2}$")
-_ACCT_CODE_INLINE_RE = re.compile(r"^\d{2}-\d{2}\s+")
-# "Account Total for XX-00"
-_ACCT_TOTAL_LINE_RE = re.compile(r"^Account Total for \d{2}-\d{2}\s*$")
+# Movie Magic / EP-style budgets use one of two account-code conventions:
+#   "XX-00" hyphenated (e.g. "10-00")   — _ACCT_CODE_HYPHEN_RE
+#   bare 4-digit (e.g. "1000", "8300")  — _ACCT_CODE_BARE_RE
+# A single combined pattern drives both the top-sheet and detail-page passes
+# so either convention is recognized without a production-specific branch.
+_ACCT_CODE_HYPHEN_RE = r"\d{2}-\d{2}"
+_ACCT_CODE_BARE_RE = r"\d{4}"
+_ACCT_CODE_ANY_RE = re.compile(rf"^({_ACCT_CODE_HYPHEN_RE}|{_ACCT_CODE_BARE_RE})$")
+_ACCT_CODE_INLINE_RE = re.compile(rf"^({_ACCT_CODE_HYPHEN_RE}|{_ACCT_CODE_BARE_RE})\s+(.+)$")
+# "Account Total for XX-00" or "Account Total for 1000"
+_ACCT_TOTAL_LINE_RE = re.compile(
+    rf"^Account Total for ({_ACCT_CODE_HYPHEN_RE}|{_ACCT_CODE_BARE_RE})\s*$"
+)
 # Section sentinels (ATL / BTL) — used to tag department
 _ATL_SENTINEL_RE = re.compile(
     r"Total Above.The.Line|Above.The.Line", re.IGNORECASE
@@ -171,13 +179,38 @@ _REBATE_EXCLUSION_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Pure group-subtotal / grand-summary sentinel lines on the top sheet — these
+# aggregate other accounts already being summed individually and must never
+# be registered as their own leaf account (would double-count spend).
+_GROUP_SUBTOTAL_RE = re.compile(
+    r"^(ABOVE THE LINE|BELOW THE LINE.*|VISUAL EFFECTS|MUSIC"
+    r"|Total Above.The.Line|Total Below.The.Line|Total Above and Below.The.Line)\s*$",
+    re.IGNORECASE,
+)
+
 
 def _is_film_budget_format(text: str) -> bool:
-    """Return True if text looks like a film budget with account codes."""
-    return bool(
-        re.search(r"Account Total for \d{2}-\d{2}", text)
-        or re.search(r"\d{2}-\d{2}\s{2,}[A-Z]", text)
+    """Return True if text looks like a film budget with account codes
+    (either hyphenated "XX-00" or bare 4-digit "1000" convention)."""
+    has_bare_4digit_topsheet = (
+        "Acct#" in text and "Category Description" in text
+        and bool(re.search(rf"^{_ACCT_CODE_BARE_RE}$", text, re.MULTILINE))
     )
+    return bool(
+        re.search(rf"Account Total for ({_ACCT_CODE_HYPHEN_RE}|{_ACCT_CODE_BARE_RE})", text)
+        or re.search(rf"({_ACCT_CODE_HYPHEN_RE})\s{{2,}}[A-Z]", text)
+        or has_bare_4digit_topsheet
+    )
+
+
+def _acct_code_match(line: str) -> re.Match | None:
+    """Match a bare account-code line in either convention: 'XX-00' or 4-digit."""
+    return _ACCT_CODE_ANY_RE.match(line)
+
+
+def _acct_code_inline_match(line: str) -> re.Match | None:
+    """Match 'CODE  DESCRIPTION' on one line, either convention."""
+    return _ACCT_CODE_INLINE_RE.match(line)
 
 
 def _parse_film_budget(
@@ -186,23 +219,31 @@ def _parse_film_budget(
     currency_code: str,
 ) -> BudgetParseResult:
     """
-    Parse a film budget PDF whose text was extracted page-by-page.
+    Parse a film budget PDF whose text was extracted page-by-page. Recognizes
+    both Movie Magic account-code conventions: hyphenated "XX-00" and bare
+    4-digit ("1000"). Format-specific, not production-specific — no account
+    code, description, or amount is ever hard-coded.
 
     Two passes:
-      1. Top-sheet pass (first page with "Acct#" header): extract XX-00 account totals.
-      2. Detail-page pass (remaining pages): extract "Account Total for XX-00" lines
-         as the authoritative per-account amounts, overriding the top-sheet if present.
+      1. Top-sheet pass (first page(s) with "Acct#" header): extract each
+         account's code, description, page reference (provenance), and total.
+      2. Detail-page pass (remaining pages): extract "Account Total for CODE"
+         lines as the authoritative per-account amounts, overriding the
+         top-sheet if present, and capturing the exact PDF page as provenance.
 
-    ATL / BTL grouping is inferred from section sentinels encountered while scanning.
+    Group-subtotal / grand-summary sentinel lines (e.g. "ABOVE THE LINE",
+    "BELOW THE LINE - PRODUCTION", "Total Below-The-Line") are never
+    registered as leaf accounts — they aggregate accounts already counted
+    individually and including them would double-count spend. Rebate/credit/
+    net-total lines (e.g. "EDB Rebate at 35%", "Net Total") are excluded from
+    every pass — they are budget assumptions about the incentive, not spend.
+
+    ATL / BTL grouping is inferred from the account-code range convention
+    (a documented Movie Magic Budgeting numbering standard, not tied to any
+    one production): 1000s=ATL, 2000-4999=Production, 5000s=Post,
+    6000-7999=Other, 8000s=Insurance/Bond/Contingency (top-level, non-BTL).
     """
-    # Pass 1: top-sheet pages — extract XX-00 account totals.
-    # All pages that contain "Acct#" + "Category Description" are top-sheet pages
-    # (the DMH budget has two such pages: the main listing and a continuation).
-    # Top-sheet layout (pymupdf linearises columns): after the 4-token header row
-    # (Acct#, Category Description, Page, Total), each account appears as either:
-    #   A) one line: "XX-00  DESCRIPTION" → next line(s): optional page ref, then amount
-    #   B) two lines: "XX-00" then "DESCRIPTION" → optional page ref, then amount
-    acct_totals: dict[str, tuple[str, float]] = {}  # unique_key -> (description, amount)
+    acct_totals: dict[str, tuple[str, float, int | None]] = {}  # key -> (desc, amount, page_ref)
     _acct_seen: dict[str, int] = {}  # acct_code -> count (for dedup of shared codes)
     grand_total: float | None = None
     warnings: list[str] = []
@@ -217,11 +258,14 @@ def _parse_film_budget(
         except ValueError:
             start = 0
         i = start
-        def _register(acct: str, desc: str, amt: float) -> None:
+
+        def _register(acct: str, desc: str, amt: float, page_ref: int | None) -> None:
+            if _REBATE_EXCLUSION_RE.search(desc):
+                return  # rebate/credit/net-total — never counted as spend
             n = _acct_seen.get(acct, 0) + 1
             _acct_seen[acct] = n
             key = acct if n == 1 else f"{acct}_{n}"
-            acct_totals[key] = (desc, amt)
+            acct_totals[key] = (desc, amt, page_ref)
 
         while i < len(lines):
             line = lines[i]
@@ -229,8 +273,8 @@ def _parse_film_budget(
             if _REBATE_EXCLUSION_RE.search(line):
                 i += 1
                 continue
-            m_inline = re.match(r"^(\d{2}-\d{2})\s+(.+)$", line)
-            m_bare = re.match(r"^(\d{2}-\d{2})$", line)
+            m_inline = _acct_code_inline_match(line)
+            m_bare = _acct_code_match(line)
 
             if m_inline:
                 acct = m_inline.group(1)
@@ -238,14 +282,15 @@ def _parse_film_budget(
                 if i + 1 < len(lines):
                     next1 = lines[i + 1]
                     if re.match(r"^\d{1,2}$", next1) and i + 2 < len(lines):
+                        page_ref = int(next1)
                         amt = _parse_amount(lines[i + 2])
                         if amt is not None:
-                            _register(acct, desc, amt)
+                            _register(acct, desc, amt, page_ref)
                         i += 3
                     else:
                         amt = _parse_amount(next1)
                         if amt is not None:
-                            _register(acct, desc, amt)
+                            _register(acct, desc, amt, None)
                         i += 2
                 else:
                     i += 1
@@ -255,14 +300,15 @@ def _parse_film_budget(
                     desc = lines[i + 1]
                     maybe_page = lines[i + 2]
                     if re.match(r"^\d{1,2}$", maybe_page) and i + 3 < len(lines):
+                        page_ref = int(maybe_page)
                         amt = _parse_amount(lines[i + 3])
                         if amt is not None:
-                            _register(acct, desc, amt)
+                            _register(acct, desc, amt, page_ref)
                         i += 4
                     else:
                         amt = _parse_amount(maybe_page)
                         if amt is not None:
-                            _register(acct, desc, amt)
+                            _register(acct, desc, amt, None)
                         i += 3
                 else:
                     i += 1
@@ -270,21 +316,29 @@ def _parse_film_budget(
                 if i + 1 < len(lines):
                     grand_total = _parse_amount(lines[i + 1])
                 i += 2
+            elif _GROUP_SUBTOTAL_RE.match(line):
+                # Group-subtotal sentinel (e.g. "ABOVE THE LINE", "BELOW THE
+                # LINE - PRODUCTION") — aggregates accounts already counted
+                # individually; never registered as its own leaf account.
+                i += 1
             else:
                 i += 1
 
-    # Pass 2: detail pages — "Account Total for XX-00\nAMOUNT" overrides top-sheet
-    for page in pages:
+    # Pass 2: detail pages — "Account Total for CODE\nAMOUNT" overrides
+    # top-sheet, and the enumerated pymupdf page index becomes the account's
+    # provenance (the exact PDF page the detail was read from).
+    for page_idx, page in enumerate(pages, start=1):
         lines = [l.strip() for l in page.splitlines() if l.strip()]
         for j, line in enumerate(lines):
             if _ACCT_TOTAL_LINE_RE.match(line):
-                acct = re.search(r"(\d{2}-\d{2})", line).group(1)
+                m = re.search(rf"({_ACCT_CODE_HYPHEN_RE}|{_ACCT_CODE_BARE_RE})", line)
+                acct = m.group(1)
                 if j + 1 < len(lines):
                     amt = _parse_amount(lines[j + 1])
                     if amt is not None and acct in acct_totals:
-                        # Update amount, keep description
+                        # Update amount + page provenance, keep description
                         desc = acct_totals[acct][0]
-                        acct_totals[acct] = (desc, amt)
+                        acct_totals[acct] = (desc, amt, page_idx)
             if _GRAND_TOTAL_RE.match(line) and grand_total is None:
                 if j + 1 < len(lines):
                     grand_total = _parse_amount(lines[j + 1])
@@ -301,25 +355,42 @@ def _parse_film_budget(
             line_count=0,
         )
 
-    # ATL / BTL assignment: infer from account code ranges
-    # 10-19 = ATL; 20-49 = Production (BTL); 50-59 = Post (BTL); 60-69 = Other (BTL)
-    # 80-89 = Insurance/contingency
+    # ATL / BTL assignment: infer from account code ranges (Movie Magic
+    # Budgeting numbering convention — general to the format, not this
+    # production). Hyphenated "XX-00" codes use the original 10/20/50/60/70
+    # tier boundaries; bare 4-digit codes use the 1000/2000/5000/6000/8000
+    # tier boundaries evident in this document's own top-sheet groupings
+    # (ABOVE THE LINE / BELOW THE LINE - PRODUCTION / - POST / - OTHER).
     def _dept_for_acct(acct: str) -> str:
-        prefix = int(acct.split("-")[0])
-        if prefix < 20:
+        if "-" in acct:
+            prefix = int(acct.split("-")[0])
+            if prefix < 20:
+                return "Above The Line"
+            if prefix < 50:
+                return "Production"
+            if prefix < 60:
+                return "Post Production"
+            if prefix < 70:
+                return "Other"
+            return "Below The Line"
+        prefix = int(acct)
+        if prefix < 2000:
             return "Above The Line"
-        if prefix < 50:
+        if prefix < 5000:
             return "Production"
-        if prefix < 60:
+        if prefix < 6000:
             return "Post Production"
-        if prefix < 70:
+        if prefix < 8000:
             return "Other"
         return "Below The Line"
 
+    def _base_acct(key: str) -> str:
+        # key may have a dedup suffix like "85-00_2" or "8300_2" — strip it.
+        return re.match(rf"({_ACCT_CODE_HYPHEN_RE}|{_ACCT_CODE_BARE_RE})", key).group(1)
+
     items: list[ParsedLineItem] = []
-    for row_num, (key, (desc, amt)) in enumerate(sorted(acct_totals.items())):
-        # key may have a dedup suffix like "85-00_2" — strip it for display/dept lookup
-        base_acct = re.match(r"(\d{2}-\d{2})", key).group(1)
+    for row_num, (key, (desc, amt, page_ref)) in enumerate(sorted(acct_totals.items())):
+        base_acct = _base_acct(key)
         items.append(ParsedLineItem(
             description=f"{base_acct} {desc}",
             department=_dept_for_acct(base_acct),
@@ -327,7 +398,7 @@ def _parse_film_budget(
             amount_usd=amt,
             currency_code=currency_code,
             source_row=row_num,
-            source_page=1,
+            source_page=page_ref,
         ))
 
     computed_total = sum(i.amount_usd for i in items if i.amount_usd)
@@ -362,6 +433,7 @@ def parse_budget_from_text(
     text: str,
     filename: str = "budget.pdf",
     currency_code: str = "USD",
+    pages: list[str] | None = None,
 ) -> BudgetParseResult:
     """
     Parse budget line items from free-form extracted PDF text.
@@ -376,9 +448,20 @@ def parse_budget_from_text(
 
     Automatically detects film-budget account-code format (Movie Magic / EP-style)
     and delegates to _parse_film_budget for accurate extraction.
+
+    `pages`: pass the caller's own per-page text list when available (e.g.
+    PDFExtractionResult.pages) so real page boundaries drive top-sheet vs.
+    detail-page detection. Without it, page breaks are guessed by splitting
+    `text` on form-feed (\\x0c) — which pymupdf-based extraction does NOT
+    emit (it joins pages with "\\n\\n"), so that fallback degrades to
+    treating the entire document as one page. For any multi-page film
+    budget, passing `pages` is required for correct account-total scoping —
+    without real page boundaries, every subaccount code on every detail
+    page gets scanned as if it were a top-sheet row.
     """
-    # Detect page-separated text from pymupdf (\x0c page breaks) vs plain text
-    pages = text.split("\x0c")
+    # Prefer the caller's real per-page list; \x0c-splitting is a fallback
+    # only for callers that never had page boundaries to begin with.
+    pages = pages if pages is not None else text.split("\x0c")
 
     # Dispatch to specialized parser for account-code film budgets
     if _is_film_budget_format(text):
