@@ -135,21 +135,40 @@ def compute_travel_normalization(
 # ── FX (Part 7) ───────────────────────────────────────────────────────────
 
 class FXRateSource(str, enum.Enum):
-    BENCHMARK = "benchmark"
+    LIVE = "live"                # most recent sourced snapshot on file
+    HISTORICAL = "historical"    # a specific dated sourced snapshot
     USER_OVERRIDE = "user_override"
 
 
-# Documented, DATED benchmark FX snapshot (local currency units per USD).
-# Not a live feed — the same static-table discipline travel_model.py
-# already uses for fares. A production deployment would instead populate
-# this from apply_fx_rates.py's own fx_rates table (which that module's
-# own docstring says is live-fetch-populated but calculation-time-
-# snapshotted, never fetched live during a calculation).
-FX_BENCHMARK_SNAPSHOT_DATE = "2026-01-01"
-BENCHMARK_FX_RATES: dict[str, float] = {
-    "MUR": 46.50,   # Mauritian Rupee per USD
-    "EUR": 0.92,    # Euro per USD
-    "GBP": 0.79,    # British Pound per USD
+# Sourced FX snapshots — fetched live from public rate providers this
+# phase (2026-07-13), NOT fabricated or guessed. apply_fx_rates.py's own
+# docstring already states the correct architecture: "Rates are loaded
+# from the fx_rates table, not fetched live during calculation. Live
+# fetch populates the table; calculations use snapshots." This table IS
+# that population step, done via a real fetch instead of an invented
+# number. A production deployment would refresh it on a schedule via the
+# same sources, not on every request.
+#
+# Sources:
+#   MUR: https://open.er-api.com/v6/latest/USD (free public API, live
+#        as of fetch time) — current only; this provider has no
+#        historical endpoint, and no other free/connected source covers
+#        MUR, so MUR historical snapshots are honestly absent, never
+#        fabricated.
+#   EUR/GBP: https://api.frankfurter.dev (ECB reference rates) — both
+#        current and historical (ECB has no MUR cross-rate either).
+FX_RATES_VERSION = "2.0.0"
+
+# date string ("YYYY-MM-DD") -> {currency: local units per USD}
+FX_RATE_SNAPSHOTS: dict[str, dict[str, float]] = {
+    "2026-07-13": {"MUR": 47.053589, "EUR": 0.87679, "GBP": 0.74699},   # current (fetch date)
+    "2026-06-12": {"EUR": 0.86453, "GBP": 0.74613},                     # ~1 month prior
+    "2026-01-13": {"EUR": 0.85807, "GBP": 0.74309},                     # ~6 months prior
+    "2025-07-11": {"EUR": 0.85594, "GBP": 0.74099},                     # ~12 months prior
+}
+FX_LIVE_SNAPSHOT_DATE = "2026-07-13"
+FX_HORIZON_DATES: dict[str, str] = {
+    "current": "2026-07-13", "1m": "2026-06-12", "6m": "2026-01-13", "12m": "2025-07-11",
 }
 
 _JURISDICTION_CURRENCY: dict[str, str] = {
@@ -159,21 +178,34 @@ _JURISDICTION_CURRENCY: dict[str, str] = {
 }
 
 
+def fx_rate_snapshot(currency: str) -> dict[str, Optional[float]]:
+    """The engine-side data the UI's current/1M/6M/12M FX display needs
+    (Part 7 — engine provides the data, no UI built here). Returns None
+    for any horizon with no sourced snapshot on file (e.g. MUR beyond
+    'current') rather than a fabricated or interpolated figure."""
+    return {
+        horizon: FX_RATE_SNAPSHOTS.get(date, {}).get(currency)
+        for horizon, date in FX_HORIZON_DATES.items()
+    }
+
+
 @dataclass(frozen=True)
 class FXInputs:
     base_currency: str = "USD"
-    rate_source: FXRateSource = FXRateSource.BENCHMARK
-    user_rate: Optional[float] = None   # local units per USD; required when rate_source=USER_OVERRIDE
-    scenario_fx_delta_pct: float = 0.0  # e.g. -0.05 = local currency depreciates 5% vs the rate used
+    rate_source: FXRateSource = FXRateSource.LIVE
+    historical_date: Optional[str] = None  # "YYYY-MM-DD"; required when rate_source=HISTORICAL
+    user_rate: Optional[float] = None      # local units per USD; required when rate_source=USER_OVERRIDE
+    scenario_fx_delta_pct: float = 0.0     # e.g. -0.05 = local currency depreciates 5% vs the rate used
 
 
 @dataclass(frozen=True)
 class FXNormalizationResult:
     jurisdiction_code: str
     local_currency: Optional[str]
-    benchmark_rate: Optional[float]
+    live_rate: Optional[float]
     rate_used: Optional[float]
     rate_source: str
+    rate_date: Optional[str]
     local_cost_basis_usd: float
     fx_adjusted_local_cost_usd: float
     delta_usd: float
@@ -187,31 +219,50 @@ def compute_fx_normalization(
 ) -> FXNormalizationResult:
     """local_cost_basis_usd: the portion of a candidate's cash NPC assumed
     to be incurred in that jurisdiction's local currency (the caller's
-    convention — see production_normalization_for_candidate). Computes
-    what that basis would cost in USD if the local currency moves by
-    scenario_fx_delta_pct from the rate used. No live rate is ever
-    fetched or fabricated: BENCHMARK_FX_RATES is a fixed, dated snapshot;
-    USER_OVERRIDE requires an explicit user-supplied rate."""
+    convention — see normalize_candidates). Computes what that basis
+    would cost in USD if the local currency moves by scenario_fx_delta_pct
+    from the rate used. No live network call happens during this
+    calculation — LIVE/HISTORICAL both read FX_RATE_SNAPSHOTS, a table
+    populated from real fetches (see module docstring); USER_OVERRIDE
+    requires an explicit user-supplied rate. Budget exchange assumptions
+    never override this — the register/budget is USD-denominated and
+    this module is never fed a rate from the budget document."""
     currency = _JURISDICTION_CURRENCY.get(jurisdiction_code)
-    benchmark = BENCHMARK_FX_RATES.get(currency) if currency else None
+    live_rate = FX_RATE_SNAPSHOTS.get(FX_LIVE_SNAPSHOT_DATE, {}).get(currency) if currency else None
 
     if inputs.rate_source == FXRateSource.USER_OVERRIDE and inputs.user_rate is not None:
-        rate_used = inputs.user_rate
+        rate_used, rate_date = inputs.user_rate, None
         note = (
             f"User-supplied override rate ({inputs.user_rate} {currency or '?'}/USD); "
-            f"documented benchmark snapshot ({FX_BENCHMARK_SNAPSHOT_DATE}) was {benchmark}."
+            f"live sourced snapshot ({FX_LIVE_SNAPSHOT_DATE}) was {live_rate}."
         )
-    elif benchmark is not None:
-        rate_used = benchmark
-        note = f"Documented benchmark snapshot ({FX_BENCHMARK_SNAPSHOT_DATE}) — not a live rate."
+    elif inputs.rate_source == FXRateSource.HISTORICAL and inputs.historical_date is not None:
+        rate_used = FX_RATE_SNAPSHOTS.get(inputs.historical_date, {}).get(currency) if currency else None
+        rate_date = inputs.historical_date
+        if rate_used is None:
+            return FXNormalizationResult(
+                jurisdiction_code=jurisdiction_code, local_currency=currency,
+                live_rate=live_rate, rate_used=None, rate_source=inputs.rate_source.value,
+                rate_date=inputs.historical_date,
+                local_cost_basis_usd=round(local_cost_basis_usd, 2),
+                fx_adjusted_local_cost_usd=round(local_cost_basis_usd, 2), delta_usd=0.0,
+                note=(
+                    f"No sourced FX snapshot on file for '{currency or jurisdiction_code}' on "
+                    f"{inputs.historical_date} — no FX effect applied (never fabricated/interpolated)."
+                ),
+            )
+        note = f"Sourced historical snapshot dated {inputs.historical_date}."
+    elif live_rate is not None:
+        rate_used, rate_date = live_rate, FX_LIVE_SNAPSHOT_DATE
+        note = f"Live sourced snapshot, fetched {FX_LIVE_SNAPSHOT_DATE} (open.er-api.com / ECB via frankfurter.dev)."
     else:
         return FXNormalizationResult(
             jurisdiction_code=jurisdiction_code, local_currency=currency,
-            benchmark_rate=None, rate_used=None, rate_source=inputs.rate_source.value,
+            live_rate=None, rate_used=None, rate_source=inputs.rate_source.value, rate_date=None,
             local_cost_basis_usd=round(local_cost_basis_usd, 2),
             fx_adjusted_local_cost_usd=round(local_cost_basis_usd, 2), delta_usd=0.0,
             note=(
-                f"No benchmark FX rate on file for "
+                f"No sourced FX rate on file for "
                 f"'{currency or jurisdiction_code}' — no FX effect applied "
                 f"(never fabricated)."
             ),
@@ -224,7 +275,7 @@ def compute_fx_normalization(
     adjusted_usd = local_cost_basis_usd * (rate_used / scenario_rate) if scenario_rate else local_cost_basis_usd
     return FXNormalizationResult(
         jurisdiction_code=jurisdiction_code, local_currency=currency,
-        benchmark_rate=benchmark, rate_used=rate_used, rate_source=inputs.rate_source.value,
+        live_rate=live_rate, rate_used=rate_used, rate_source=inputs.rate_source.value, rate_date=rate_date,
         local_cost_basis_usd=round(local_cost_basis_usd, 2),
         fx_adjusted_local_cost_usd=round(adjusted_usd, 2),
         delta_usd=round(adjusted_usd - local_cost_basis_usd, 2),

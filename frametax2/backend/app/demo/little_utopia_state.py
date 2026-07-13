@@ -300,7 +300,7 @@ _POST_LOCATIONS = {"mauritius", "elsewhere"}
 
 
 _TRAVEL_PRICING_MODES = {"benchmark_estimate", "live_lookup"}
-_FX_RATE_SOURCES = {"benchmark", "user_override"}
+_FX_RATE_SOURCES = {"live", "historical", "user_override"}
 _TRAVEL_NUMERIC_KEYS = {
     "business_travelers", "economy_travelers", "rotations_per_year",
     "hotel_nights", "per_diem_days", "budgeted_travel_override_usd",
@@ -324,7 +324,8 @@ def apply_economics_controls(controls: dict[str, object]) -> None:
       travel_pricing_mode: 'benchmark_estimate'|'live_lookup',
       budgeted_travel_override_usd: float (else derived from the real
         budget's own ATL+BTL Travel & Living accounts),
-      fx_rate_source: 'benchmark'|'user_override' (Part 6),
+      fx_rate_source: 'live'|'historical'|'user_override' (Part 7),
+      fx_historical_date: str ('YYYY-MM-DD', required for 'historical'),
       fx_user_rate: float, fx_scenario_delta_pct: float
     A value of None clears that control (returns it to its default)."""
     _numeric = {
@@ -357,9 +358,9 @@ def apply_economics_controls(controls: dict[str, object]) -> None:
             if not isinstance(value, bool):
                 raise ValueError("in_kind_post_available expects a bool.")
             _economics_controls[key] = value
-        elif key == "origin_city":
+        elif key in ("origin_city", "fx_historical_date"):
             if not isinstance(value, str) or not value:
-                raise ValueError("origin_city expects a non-empty string.")
+                raise ValueError(f"{key} expects a non-empty string.")
             _economics_controls[key] = value
         else:
             raise ValueError(f"'{key}' is not a recognized economics control.")
@@ -433,13 +434,17 @@ def build_travel_inputs() -> "TravelInputs":
 
 
 def build_fx_inputs() -> "FXInputs":
-    """User-controlled FX inputs (Part 6). Defaults to the documented
-    benchmark snapshot; a scenario delta or override requires an explicit
-    user value — never a fabricated live rate."""
+    """User-controlled FX inputs (Part 7). Defaults to the most recent
+    sourced (real, fetched) rate snapshot on file; a historical date,
+    scenario delta, or override requires an explicit user value — never
+    a fabricated rate. Budget exchange assumptions never enter here — the
+    register/budget is USD-denominated and this function reads only
+    economics_controls, never the parsed budget document."""
     from app.calculators.production_normalization import FXInputs, FXRateSource
     c = _economics_controls
     return FXInputs(
-        rate_source=FXRateSource(c.get("fx_rate_source", "benchmark")),
+        rate_source=FXRateSource(c.get("fx_rate_source", "live")),
+        historical_date=c.get("fx_historical_date"),
         user_rate=c.get("fx_user_rate"),
         scenario_fx_delta_pct=float(c.get("fx_scenario_delta_pct", 0.0)),
     )
@@ -549,8 +554,10 @@ def build_normalized_structures(state: "LittleUtopiaState") -> dict:
                 "fx_detail": (
                     {
                         "local_currency": r.fx.local_currency,
+                        "live_rate": r.fx.live_rate,
                         "rate_used": r.fx.rate_used,
                         "rate_source": r.fx.rate_source,
+                        "rate_date": r.fx.rate_date,
                         "note": r.fx.note,
                     } if r.fx else None
                 ),

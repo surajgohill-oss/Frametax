@@ -222,18 +222,54 @@ class TestTravelNormalization:
 # ── Part 6: FX normalization ─────────────────────────────────────────────────
 
 class TestFXNormalization:
-    def test_default_benchmark_rate_has_zero_scenario_effect(self):
+    def test_default_live_rate_has_zero_scenario_effect(self):
         s = get_state()
         out = build_normalized_structures(s)
         mu = next(r for r in out["ranking"] if r["candidate_id"] == "PSC-MU")
         assert mu["fx_delta_usd"] == 0.0
-        assert mu["fx_detail"]["rate_source"] == "benchmark"
+        assert mu["fx_detail"]["rate_source"] == "live"
 
-    def test_no_fabricated_live_rate(self):
+    def test_live_rate_is_sourced_not_fabricated(self):
+        """The MUR rate must be the real, fetched value on file in
+        FX_RATE_SNAPSHOTS (open.er-api.com, 2026-07-13) — not an
+        invented round number."""
         s = get_state()
         out = build_normalized_structures(s)
         mu = next(r for r in out["ranking"] if r["candidate_id"] == "PSC-MU")
-        assert "not a live rate" in mu["fx_detail"]["note"].lower()
+        assert mu["fx_detail"]["live_rate"] == pytest.approx(47.053589)
+        assert mu["fx_detail"]["rate_date"] == "2026-07-13"
+        assert "sourced" in mu["fx_detail"]["note"].lower()
+
+    def test_historical_rate_uses_sourced_snapshot(self):
+        apply_economics_controls({"fx_rate_source": "historical", "fx_historical_date": "2025-07-11"})
+        s = get_state()
+        out = build_normalized_structures(s)
+        gr = next(r for r in out["ranking"] if r["candidate_id"] == "PSC-MU-GR")  # EUR, has historical data
+        assert gr["fx_detail"]["rate_source"] == "historical"
+        assert gr["fx_detail"]["rate_used"] == pytest.approx(0.85594)
+        assert gr["fx_detail"]["rate_date"] == "2025-07-11"
+
+    def test_historical_rate_missing_for_currency_is_honest_not_fabricated(self):
+        """MUR has no historical snapshot on file (no connected source
+        covers it) — must report no FX effect, never interpolate/guess."""
+        apply_economics_controls({"fx_rate_source": "historical", "fx_historical_date": "2025-07-11"})
+        s = get_state()
+        out = build_normalized_structures(s)
+        mu = next(r for r in out["ranking"] if r["candidate_id"] == "PSC-MU")
+        assert mu["fx_delta_usd"] == 0.0
+        assert mu["fx_detail"]["rate_used"] is None
+        assert "never fabricated" in mu["fx_detail"]["note"].lower()
+
+    def test_fx_horizons_engine_data_available(self):
+        from app.calculators.production_normalization import fx_rate_snapshot
+        snap = fx_rate_snapshot("EUR")
+        assert snap["current"] == pytest.approx(0.87679)
+        assert snap["1m"] == pytest.approx(0.86453)
+        assert snap["6m"] == pytest.approx(0.85807)
+        assert snap["12m"] == pytest.approx(0.85594)
+        mur_snap = fx_rate_snapshot("MUR")
+        assert mur_snap["current"] == pytest.approx(47.053589)
+        assert mur_snap["1m"] is None  # honestly absent, never fabricated
 
     def test_scenario_fx_delta_changes_npc(self):
         apply_economics_controls({"fx_scenario_delta_pct": -0.10})

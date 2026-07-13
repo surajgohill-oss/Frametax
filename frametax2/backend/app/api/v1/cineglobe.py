@@ -185,8 +185,9 @@ class EconomicsControlsRequest(BaseModel):
     per_diem_days: float | None = None
     travel_pricing_mode: str | None = None         # benchmark_estimate | live_lookup
     budgeted_travel_override_usd: float | None = None
-    # Part 6 — FX normalization
-    fx_rate_source: str | None = None              # benchmark | user_override
+    # Part 7 — FX normalization
+    fx_rate_source: str | None = None              # live | historical | user_override
+    fx_historical_date: str | None = None          # "YYYY-MM-DD", required for historical
     fx_user_rate: float | None = None
     fx_scenario_delta_pct: float | None = None
 
@@ -247,6 +248,11 @@ def _economics_payload() -> dict[str, Any]:
     # candidate's cash NPC — a SEPARATE, explicitly-labeled ranking; never
     # blended into the primary /structures ranking above.
     payload["normalized_structures"] = build_normalized_structures(s)
+    # Part 7: engine-side current/1M/6M/12M FX data (no UI built here —
+    # this is what a future UI would render). None for any horizon this
+    # session's sourced fetches didn't cover (e.g. MUR beyond current).
+    from app.calculators.production_normalization import fx_rate_snapshot
+    payload["fx_horizons"] = {c: fx_rate_snapshot(c) for c in ("MUR", "EUR", "GBP")}
     return payload
 
 
