@@ -67,6 +67,22 @@ class QualificationConfidence(str, enum.Enum):
     NOT_APPLICABLE = "not_applicable"
 
 
+class GreyReason(str, enum.Enum):
+    """Why a line is a grey area — the exact, closed taxonomy of GENUINE
+    legal/factual uncertainty. A grey area MUST carry one of these; a line
+    that would be grey only because of an internal category miss, a missing
+    classifier match, a missing rule row, or any other implementation
+    artifact is INVALID and must not be a grey area (it follows the
+    program's QualificationDoctrine instead)."""
+    CONFLICTING_AUTHORITY = "conflicting_authority"          # A
+    MISSING_PRODUCTION_FACT = "missing_production_fact"       # B
+    MIXED_ACCOUNT = "mixed_account"                           # C: qualifying + non-qualifying, needs allocation
+    REQUIRES_PRODUCER_ELECTION = "requires_producer_election"  # D
+    REQUIRES_LEGAL_INTERPRETATION = "requires_legal_interpretation"  # E
+    REQUIRES_RESTRUCTURING = "requires_restructuring"        # F
+    PROGRAM_REGIME_UNCLASSIFIED = "program_regime_unclassified"  # doctrine not yet assigned (genuine modeling gap)
+
+
 @dataclass
 class AccountQualification:
     """
@@ -87,6 +103,7 @@ class AccountQualification:
     structuring_mechanism: Optional[str] = None
     resolving_evidence: Optional[str] = None
     incentive_upside_usd: Optional[float] = None  # at the modeled program rate, if state is upside-bearing
+    grey_reason: Optional["GreyReason"] = None  # set iff state == GREY_AREA_REQUIRES_AUTHORITY (Part 4 A-F)
 
 
 # ── Reinvestment intelligence model (data structures only) ─────────────────
@@ -486,33 +503,26 @@ def build_little_utopia_evidence_graph() -> EvidenceGraph:
 
 def build_little_utopia_real_grey_areas() -> list[GreyAreaItem]:
     """
-    Grey areas for the REAL parsed Little Utopia budget
+    Grey-area WORK ITEMS for the REAL parsed Little Utopia budget
     (build_little_utopia_real_register) — distinct from
-    build_little_utopia_grey_areas(), which targets the fixture's account
-    codes and no longer applies once the real register is in use.
+    build_little_utopia_grey_areas(), which targets the fixture.
 
-    Real, disclosed grey areas (no QPE category plausibly covers the
-    spend — see app.data.little_utopia_real_budget's classification
-    notes): 7000 ADMINISTRATIVE EXPENSES ($297,593) and 7100 PUBLICITY
-    ($24,348). 6000 MUSIC and 7300 MARKETING are also unclassified but
-    $0.00 in the real budget and omitted here as immaterial. In-kind post
-    FMV (off-budget, not a register account) is unaffected by which
-    budget is in use and remains open.
+    Only GENUINE, MATERIAL grey areas become work items (Part 4). After
+    the qualification-doctrine correction, the only such item on the
+    Little Utopia production is the OFF-BUDGET in-kind post FMV — a
+    genuine producer-election / EDB-ruling question (Part 4 D + E).
+
+    Accounts 7000 (Administrative Expenses) and 7100 (Publicity) are NO
+    LONGER grey: their real detail maps to listed QPE categories
+    ("Production service company fees"/professional services/telecom for
+    7000; crew/equipment/EPK-post for 7100), so under Rule 4 (evaluate
+    the line, not the label) they QUALIFY. The prior GA-REAL-ADMIN-
+    PUBLICITY was an invalid, implementation-artifact grey and has been
+    removed. 6000 MUSIC and 7300 MARKETING remain genuine legal-
+    interpretation greys in the register but are $0.00 — immaterial, so
+    they are not escalated as work items.
     """
     return [
-        GreyAreaItem(
-            item_id="GA-REAL-ADMIN-PUBLICITY",
-            account_codes=("7000", "7100"),
-            amount_usd=321_941.0,
-            jurisdiction_code="MU",
-            authority_to_ask="Economic Development Board Mauritius (EDB) / Mauritius Film Development Corp.",
-            resolving_evidence="EDB confirmation of whether general administrative overhead (7000) and "
-                                "publicity/PR spend (7100) fall within any QPE category (e.g. 'Production "
-                                "service company fees' or 'Professional services') — neither is named "
-                                "explicitly in the primary source's 33-item illustrative list.",
-            linked_question_ids=("Q-REAL-ADMIN-PUBLICITY",),
-            graph_absence_id="ABS-REAL-ADMIN-PUBLICITY",
-        ),
         GreyAreaItem(
             item_id="GA-INKIND-FMV",
             account_codes=(),
@@ -530,19 +540,6 @@ def build_little_utopia_real_grey_areas() -> list[GreyAreaItem]:
 def build_little_utopia_real_evidence_graph() -> EvidenceGraph:
     """Evidence graph for build_little_utopia_real_grey_areas()."""
     graph = EvidenceGraph()
-    graph.add_absence_of_authority(AbsenceOfAuthority(
-        absence_id="ABS-REAL-ADMIN-PUBLICITY",
-        jurisdiction_code="MU",
-        question="Do general administrative overhead (7000) or publicity/PR "
-                 "spend (7100) fall within any QPE category?",
-        searched_tiers=(
-            AuthorityTier.PRIMARY_LEGISLATION, AuthorityTier.REGULATIONS,
-            AuthorityTier.OFFICIAL_GUIDANCE, AuthorityTier.OFFICIAL_FAQ,
-        ),
-        notes="Neither 'administrative expenses' nor 'publicity'/'marketing' "
-              "is named in the primary source's 33-item illustrative QPE "
-              "list for Motion Pictures.",
-    ))
     graph.add_absence_of_authority(AbsenceOfAuthority(
         absence_id="ABS-INKIND-FMV",
         jurisdiction_code="MU",

@@ -22,37 +22,43 @@ consume — nothing downstream changes shape, and the Legal Engine's
 apply_grey_area_resolution() reclassification continues to operate on
 the derived register exactly as it did on the hardcoded one.
 
+The behavior for a line whose category has NO explicit rule is governed
+by the program's QUALIFICATION DOCTRINE (app.data.program_spend_rules.
+QualificationDoctrine), never by the accident that a rule row happens to
+be missing. This is the permanent fix for "unknown category defaults to
+GREY": a missing rule row is an implementation state, not legal
+authority (Rule 4 — the engine evaluates budget lines, never labels).
+
 Decision ladder (ordered; first match wins). Every step is generic —
-there is no jurisdiction-specific branch anywhere in this module. There
-is deliberately no "requires extra evidence tier" gate on any single
-category group (e.g. ATL labor): a category's own rule.qualifies value
-is the authority, whatever confidence tier backed it. Categories are
-never excluded merely because they lack a citation, and never excluded
-on generic cross-program convention — an unconfirmed category always
-escalates to GREY_AREA_REQUIRES_AUTHORITY rather than silently
-defaulting to EXCLUDED:
+there is no jurisdiction-specific branch anywhere in this module:
 
   1. memo line                          -> NOT_APPLICABLE
   2. finance-cost category              -> NOT_APPLICABLE (modeled as a
      cashflow item by the optimizer, never as QPE-account spend)
-  3. work/spend incurred outside the jurisdiction (fact), where the
+  3. work/spend incurred outside the jurisdiction (known fact), where the
      program requires territorial spend  -> EXCLUDED / TERRITORIAL_NEXUS
-  4. statutory rule lookup by category:
-       qualifies=False                  -> EXCLUDED / EXPLICIT_STATUTE
-         (never engine-structural — every exclusion, including
-         "contingency requires incurred spend," is the rule's own
-         cited text; see program_spend_rules.py)
-       qualifies=True: labor currently routed outside local payroll
-         (fact) -> STRUCTURING_OPPORTUNITY, else QUALIFIES /
-         EXPLICIT_STATUTE.
-       qualifies=None (unconfirmed):
-         category in FACT_SPLIT_CATEGORIES (the rule/category treatment
-         is known but a production fact — typically a $ breakdown
-         within a combined account — is missing) -> GREY_AREA_REQUIRES_
-         AUTHORITY / FACT_DEPENDENT.
-         otherwise -> GREY_AREA_REQUIRES_AUTHORITY / ABSENCE_OF_AUTHORITY
-         (absence of authority is explicit, never a silent exclusion).
-  5. no rule at all for the category    -> same None-handling as above.
+  4. explicit rule for the category:
+       qualifies=False -> EXCLUDED / EXPLICIT_STATUTE (the rule's own
+         cited exclusion text; never engine-structural)
+       qualifies=True  -> QUALIFIES (or STRUCTURING_OPPORTUNITY when a
+         labor line is currently routed outside local payroll — a
+         restructuring fact, not an authority bar)
+  5. explicit rule with qualifies=None (the author recorded a genuine
+     gap — the category maps to no clear program category even under a
+     broad reading, or a known mixed-account fact gap)
+       -> GREY_AREA_REQUIRES_AUTHORITY with a GENUINE reason
+          (MIXED_ACCOUNT or REQUIRES_LEGAL_INTERPRETATION)
+  6. NO rule for the category -> follow the program DOCTRINE:
+       OPEN_DEFAULT_INCLUDE  -> QUALIFIES (silence = inclusion)
+       CLOSED_POSITIVE_LIST  -> EXCLUDED (omission = exclusion authority)
+       HYBRID_CONDITIONAL    -> GREY (REQUIRES_LEGAL_INTERPRETATION — a
+         real question of whether a listed catch-all reaches this line)
+       doctrine unclassified -> GREY (PROGRAM_REGIME_UNCLASSIFIED — an
+         explicit modeling gap, never a silent include or exclude)
+
+Every GREY_AREA carries a GreyReason (Part 4 A-F). A line is NEVER grey
+merely because of a missing rule row, a classifier miss, or an internal
+category gap — those follow the doctrine above.
 
 No LLM calls. Deterministic and testable.
 """
@@ -64,12 +70,18 @@ from app.calculators.classify_budget_line_items import classify_line_item
 from app.calculators.qualification_model import (
     AccountQualification,
     AuthorityBasis,
+    GreyReason,
     QualificationConfidence,
     QualificationState,
 )
-from app.data.program_spend_rules import SpendRule, get_program_rules
+from app.data.program_spend_rules import (
+    QualificationDoctrine,
+    SpendRule,
+    get_program_doctrine,
+    get_program_rules,
+)
 
-QUALIFICATION_DERIVATION_VERSION = "1.0.0"
+QUALIFICATION_DERIVATION_VERSION = "2.0.0"
 
 # Category groups the ladder needs. Grouping only — no qualification
 # outcome is decided by these sets alone.
@@ -79,12 +91,11 @@ LABOR_CATEGORIES = frozenset({
 })
 POST_CATEGORIES = frozenset({"post_production", "vfx", "music", "sound"})
 CASHFLOW_CATEGORIES = frozenset({"finance_costs"})
-# Categories where the rule/category treatment is itself known but an
-# unconfirmed (None) rule value reflects a missing production FACT (e.g.
-# a $ breakdown within one combined account) rather than a genuine
-# statutory-authority gap. Distinguished via AuthorityBasis.FACT_DEPENDENT
-# so the Question Stack can ask for the missing fact instead of an EDB
-# ruling.
+# Categories where a rule exists but carries qualifies=None because the
+# category genuinely maps to no clear program category even under a broad
+# reading (a real legal-interpretation question), NOT because a rule row
+# is missing. Distinct from the "no rule at all" path, which is governed
+# by the program's QualificationDoctrine.
 FACT_SPLIT_CATEGORIES = frozenset({"legal_accounting"})
 
 
@@ -149,10 +160,19 @@ def derive_qualification_register(
     rate: float,
     program_territorial_text: str | None = None,
     rules: dict[str, SpendRule] | None = None,
+    doctrine: QualificationDoctrine | None = None,
 ) -> list[AccountQualification]:
     """Derive the full qualification register for one program from
-    budget + rules + facts. See module docstring for the ladder."""
+    budget + rules + facts + the program's qualification DOCTRINE. See
+    module docstring for the ladder.
+
+    `doctrine` governs what happens to a line whose category has no
+    explicit rule (or a rule.qualifies=None): OPEN -> include, CLOSED ->
+    exclude, HYBRID -> genuine legal-interpretation grey. Omitted, it is
+    looked up from the program; an unclassified program surfaces as an
+    explicit modeling gap, never a silent default."""
     rules = rules if rules is not None else get_program_rules(program_slug)
+    doctrine = doctrine if doctrine is not None else get_program_doctrine(program_slug)
     jur = facts.jurisdiction_code
     register: list[AccountQualification] = []
 
@@ -161,13 +181,14 @@ def derive_qualification_register(
         rule = rules.get(category)
         amt = line.amount_usd
 
-        def _acct(state, confidence, basis, reason, mechanism=None, evidence=None, upside=None):
+        def _acct(state, confidence, basis, reason, mechanism=None, evidence=None,
+                  upside=None, grey_reason=None):
             register.append(AccountQualification(
                 account_code=line.account_code, description=line.description,
                 amount_usd=amt, state=state, confidence=confidence,
                 authority_basis=basis, reason=reason, financial_impact_usd=amt,
                 structuring_mechanism=mechanism, resolving_evidence=evidence,
-                incentive_upside_usd=upside,
+                incentive_upside_usd=upside, grey_reason=grey_reason,
             ))
 
         # 1. Memo lines are never a qualification question.
@@ -229,28 +250,76 @@ def derive_qualification_register(
                       AuthorityBasis.EXPLICIT_STATUTE, rule.notes)
             continue
 
-        # 5. qualifies is None / no rule: never a silent exclusion. Escalate
-        # as a fact gap where the category treatment is known but a $
-        # breakdown (or similar production fact) is missing, otherwise as a
-        # genuine authority gap.
-        if category in FACT_SPLIT_CATEGORIES:
-            _acct(QualificationState.GREY_AREA_REQUIRES_AUTHORITY,
-                  QualificationConfidence.LOW, AuthorityBasis.FACT_DEPENDENT,
-                  (rule.notes if rule is not None else
-                   f"Category '{category}' combines qualifying and non-qualifying "
-                   "components in this account with no $ breakdown available."),
-                  evidence="Itemized breakdown of this account separating its "
-                           "confirmed-qualifying components from its uncertain "
-                           "components.",
-                  upside=round(amt * rate, 2))
-        else:
+        # 5. A rule exists but is explicitly qualifies=None — the category
+        # genuinely maps to no clear program category even under a broad
+        # reading (a real legal-interpretation question the rule author
+        # recorded), OR a known mixed-account fact gap. This is a GENUINE
+        # grey, not the doctrine's no-rule path.
+        if rule is not None and rule.qualifies is None:
+            if category in FACT_SPLIT_CATEGORIES:
+                _acct(QualificationState.GREY_AREA_REQUIRES_AUTHORITY,
+                      QualificationConfidence.LOW, AuthorityBasis.FACT_DEPENDENT,
+                      rule.notes,
+                      evidence="Itemized breakdown of this account separating its "
+                               "confirmed-qualifying components from its uncertain "
+                               "components.",
+                      upside=round(amt * rate, 2),
+                      grey_reason=GreyReason.MIXED_ACCOUNT)
+            else:
+                _acct(QualificationState.GREY_AREA_REQUIRES_AUTHORITY,
+                      QualificationConfidence.LOW, AuthorityBasis.ABSENCE_OF_AUTHORITY,
+                      rule.notes,
+                      evidence=f"{jur} authority confirmation of the QPE treatment of "
+                               f"'{category}' spend.",
+                      upside=round(amt * rate, 2),
+                      grey_reason=GreyReason.REQUIRES_LEGAL_INTERPRETATION)
+            continue
+
+        # 6. No rule at all for this category — behavior is governed by the
+        # program's QUALIFICATION DOCTRINE, never by the accident that a
+        # rule row is missing (that would be an implementation artifact,
+        # forbidden by Part 4). The category label itself is never the
+        # authority (Rule 4): an unmapped label means "no explicit rule",
+        # and the doctrine decides.
+        if doctrine == QualificationDoctrine.OPEN_DEFAULT_INCLUDE:
+            _acct(QualificationState.QUALIFIES, QualificationConfidence.MEDIUM,
+                  AuthorityBasis.EXPLICIT_STATUTE,
+                  f"Included by default: {jur} program is OPEN_DEFAULT_INCLUDE — any "
+                  "locally-incurred production spend qualifies unless an explicit "
+                  f"exclusion clause names it, and none names category '{category}'.")
+        elif doctrine == QualificationDoctrine.CLOSED_POSITIVE_LIST:
+            _acct(QualificationState.EXCLUDED, QualificationConfidence.HIGH,
+                  AuthorityBasis.EXPLICIT_STATUTE,
+                  f"Excluded: {jur} program is a CLOSED_POSITIVE_LIST — only the "
+                  "enumerated qualifying categories qualify, and category "
+                  f"'{category}' is not among them (the omission is the exclusion "
+                  "authority).")
+        elif doctrine == QualificationDoctrine.HYBRID_CONDITIONAL:
             _acct(QualificationState.GREY_AREA_REQUIRES_AUTHORITY,
                   QualificationConfidence.LOW, AuthorityBasis.ABSENCE_OF_AUTHORITY,
-                  (rule.notes if rule is not None else
-                   f"No {jur} rule for category '{category}' has been located — "
-                   "absence of authority, escalated rather than silently excluded."),
-                  evidence=f"{jur} authority confirmation of the QPE treatment of "
-                           f"'{category}' spend.",
-                  upside=round(amt * rate, 2))
+                  f"Genuine legal-interpretation question: {jur} program is "
+                  "HYBRID_CONDITIONAL (a positive list with broad/illustrative "
+                  f"categories). Whether category '{category}' falls within any "
+                  "listed category — including the broad catch-alls — is a real "
+                  "interpretive question, not resolvable from the category label "
+                  "alone (Rule 4). Neither silently included nor silently excluded.",
+                  evidence=f"{jur} authority confirmation of whether '{category}' spend "
+                           "falls within a listed qualifying category.",
+                  upside=round(amt * rate, 2),
+                  grey_reason=GreyReason.REQUIRES_LEGAL_INTERPRETATION)
+        else:
+            # doctrine is None — the program's legal regime has not been
+            # classified. A genuine modeling gap, surfaced explicitly, never
+            # a silent include (fabricated qualification) or silent exclude.
+            _acct(QualificationState.GREY_AREA_REQUIRES_AUTHORITY,
+                  QualificationConfidence.LOW, AuthorityBasis.ABSENCE_OF_AUTHORITY,
+                  f"{jur} program '{program_slug}' has no qualification doctrine "
+                  "classified yet — its legal regime (open / closed / hybrid) must "
+                  "be established before any line can be qualified. Modeling gap, "
+                  "surfaced rather than guessed.",
+                  evidence=f"Classify the qualification doctrine for program "
+                           f"'{program_slug}' from primary authority.",
+                  upside=round(amt * rate, 2),
+                  grey_reason=GreyReason.PROGRAM_REGIME_UNCLASSIFIED)
 
     return register

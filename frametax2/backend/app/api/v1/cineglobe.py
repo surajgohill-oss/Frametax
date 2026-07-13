@@ -158,7 +158,11 @@ async def get_package() -> dict[str, Any]:
                 "amount_usd": a.amount_usd,
                 "state": a.state.value,
                 "confidence": a.confidence.value,
+                "authority_basis": a.authority_basis.value,
                 "reason": a.reason,
+                # Part 4 A-F: why a line is grey (null unless state is grey).
+                # The UI's Grey-Area panel renders this as the "why".
+                "grey_reason": a.grey_reason.value if a.grey_reason else None,
                 "financial_impact_usd": a.financial_impact_usd,
                 "structuring_mechanism": a.structuring_mechanism,
                 "resolving_evidence": a.resolving_evidence,

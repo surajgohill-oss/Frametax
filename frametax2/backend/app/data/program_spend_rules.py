@@ -43,7 +43,59 @@ qualifies semantics (same tri-state as ProgramSpendTreatment.qualifies):
 """
 from __future__ import annotations
 
+import enum
 from dataclasses import dataclass
+
+
+# ── Global qualification doctrine ────────────────────────────────────────────
+# Every incentive program is classified into exactly one doctrine. The
+# doctrine — NOT any internal implementation artifact — governs what the
+# derivation ladder does with a budget line whose category has no explicit
+# rule. This is the permanent fix for "unknown category defaults to GREY":
+# an unmatched line follows the program's doctrine, never a missing rule row.
+class QualificationDoctrine(str, enum.Enum):
+    # Any locally-incurred spend qualifies unless an explicit exclusion
+    # clause names it. Silence = inclusion. Unmatched category -> INCLUDED.
+    OPEN_DEFAULT_INCLUDE = "open_default_include"
+    # An exhaustive positive enumeration with no catch-alls / illustrative
+    # language. Only listed categories qualify; omission is itself the
+    # exclusion authority. Unmatched category -> EXCLUDED.
+    CLOSED_POSITIVE_LIST = "closed_positive_list"
+    # A positive list, but with broad / illustrative ("such as") categories,
+    # catch-alls, and conditions (e.g. territorial). A line that maps to a
+    # listed category (incl. catch-alls) qualifies subject to conditions; a
+    # line that maps to NO category even under a broad reading is a GENUINE
+    # legal-interpretation grey area — never an implementation artifact.
+    HYBRID_CONDITIONAL = "hybrid_conditional"
+
+
+# Per-program doctrine. A program absent from this map has not yet been
+# classified — get_program_doctrine() returns None and the ladder surfaces
+# that as an explicit modeling gap (a real "program regime unclassified"
+# grey), never a silent include or a silent all-grey register.
+PROGRAM_DOCTRINE: dict[str, QualificationDoctrine] = {
+    # Mauritius EDB Film Rebate Scheme, Motion Pictures: positive-list
+    # definitional construction ("QPE refer to the expenses incurred
+    # locally ... with respect to the list of qualifying production
+    # categories defined as follows") with broad/illustrative categories
+    # ("Professional services (such as insurance and accounting services)",
+    # "Production service company fees", "Labour costs (including
+    # non-nationals)") and a territorial condition ("incurred locally").
+    # Decisive contrast: Digital Animation carries an explicit exclusions
+    # clause (marketing, admin salaries, office/utilities/telecom) that
+    # Motion Pictures does NOT — and Motion Pictures LISTS office/
+    # utilities/telecom as qualifying. Therefore HYBRID_CONDITIONAL.
+    # Source: EDB Film Rebate Scheme — Submission Procedures (31 Jan 2020),
+    # QPE lists for Motion Pictures vs. Digital Film Animation Projects.
+    "mu_edb_incentive": QualificationDoctrine.HYBRID_CONDITIONAL,
+}
+
+
+def get_program_doctrine(program_slug: str) -> QualificationDoctrine | None:
+    """The program's qualification doctrine, or None if the program's legal
+    regime has not yet been classified (an explicit modeling gap, surfaced
+    by the derivation ladder — never treated as a silent default)."""
+    return PROGRAM_DOCTRINE.get(program_slug)
 
 
 @dataclass(frozen=True)
@@ -103,6 +155,25 @@ _MU_PROFESSIONAL_SERVICES_NOTE = (
     "an exhaustive list, but both are unambiguously covered by their own "
     "names. Source: EDB Film Rebate Scheme — Submission Procedures (31 Jan "
     "2020), QPE list for Motion Pictures."
+)
+_MU_PRODUCTION_SERVICE_FEES_NOTE = (
+    "Explicit QPE category: 'Production service company fees', plus the "
+    "'Professional services (such as insurance and accounting services)' and "
+    "'Telecommunications' and 'Rental of offices, office furniture and "
+    "equipment' categories. Covers the local production-services company's "
+    "fee and the production's locally-incurred administrative overhead "
+    "(accounting/audit — including the EDB-required rebate audit — company "
+    "setup, tax administration, telecom, office). Contrast: the express "
+    "exclusions clause for Digital Animation (office/utilities/telecom, "
+    "administrative salaries) does NOT apply to Motion Pictures, which "
+    "affirmatively LISTS these as qualifying. Source: EDB Film Rebate "
+    "Scheme — Submission Procedures (31 Jan 2020), QPE list for Motion "
+    "Pictures."
+)
+_MU_TELECOM_NOTE = (
+    "Explicit QPE category: 'Telecommunications'. Source: EDB Film Rebate "
+    "Scheme — Submission Procedures (31 Jan 2020), QPE list for Motion "
+    "Pictures."
 )
 _MU_POST_NOTE = (
     "Explicit QPE category: 'Post production services (picture and sound)'. "
@@ -203,6 +274,12 @@ MU_EDB_RULES: tuple[SpendRule, ...] = (
     _mu("btl_set_construction", True, _MU_EQUIPMENT_PREMISES_NOTE, "VERIFIED", "EDB-2020-QPE-List"),
     # Professional services — insurance and accounting explicitly named.
     _mu("insurance", True, _MU_PROFESSIONAL_SERVICES_NOTE, "VERIFIED", "EDB-2020-QPE-List"),
+    # Production service company fees / production administration overhead —
+    # explicit 'Production service company fees' category + professional
+    # services + telecom + office. Covers lumped "administrative expenses"
+    # whose detail is production admin (see little_utopia_real_budget).
+    _mu("production_service_fees", True, _MU_PRODUCTION_SERVICE_FEES_NOTE, "VERIFIED", "EDB-2020-QPE-List"),
+    _mu("telecommunications", True, _MU_TELECOM_NOTE, "VERIFIED", "EDB-2020-QPE-List"),
     # Post-production / VFX — explicit categories, subject to territorial nexus.
     _mu("post_production", True, _MU_POST_NOTE, "VERIFIED", "EDB-2020-QPE-List"),
     _mu("sound", True, _MU_POST_NOTE, "VERIFIED", "EDB-2020-QPE-List"),

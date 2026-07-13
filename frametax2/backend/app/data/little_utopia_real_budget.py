@@ -161,13 +161,29 @@ LITTLE_UTOPIA_REAL_SPEND_CATEGORY: dict[str, str] = {
     "5300": "post_production",         # PICTURE POST PRODUCTION
     "5400": "post_production",         # GRAPHICS / TITLES / STOCK FOOTAGE
     "5500": "post_production",         # DELIVERABLES
-    "6000": "music",                   # MUSIC — no rule; no category names composition/licensing
+    "6000": "music",                   # MUSIC ($0) — genuine E grey: no category names
+                                       #   composition/licensing. qualifies=None rule.
     "6100": "vfx",                     # VFX DEPARTMENT — location not stated (unlike post/sound)
     "6500": "legal_accounting",        # USA ADMIN COSTS (name states USA; category choice moot at $0)
-    # 7000 ADMINISTRATIVE EXPENSES, 7100 PUBLICITY, 7300 MARKETING: no
-    # spend_category assigned — no QPE category plausibly covers general
-    # admin overhead or publicity/marketing spend; left as a genuine,
-    # disclosed grey area rather than assumed either way.
+    # 7000 ADMINISTRATIVE EXPENSES: Rule 4 (evaluate the budget LINE, not
+    # the "Administrative" label). The real detail (see the parser output)
+    # is production administration — Production Service Company fees
+    # ($95k), Setup & Auditor incl. the EDB-required rebate audit,
+    # Mauritius legals, telecom, office equipment — all locally incurred
+    # and all mapping to LISTED QPE categories ("Production service
+    # company fees", "Professional services (such as insurance and
+    # accounting services)", "Telecommunications", office rental).
+    "7000": "production_service_fees",
+    # 7100 PUBLICITY: Rule 4 again. Detail is Stills Photographer (crew)
+    # + Electronic Press Kit team/equipment/edit — production crew,
+    # equipment, and post services, all listed categories, none stated to
+    # be incurred outside Mauritius. The "Publicity" LABEL (which would
+    # suggest non-qualifying marketing) is descriptive only and does not
+    # drive qualification.
+    "7100": "btl_crew_labor",
+    # 7300 MARKETING ($0): genuinely maps to no production category (post-
+    # release promotion, not production spend). No override -> doctrine
+    # (HYBRID) -> genuine legal-interpretation grey; $0 so immaterial.
     "7200": "insurance",               # INSURANCE
     "7800": "legal_accounting",        # FINANCE & LEGAL ($0 — see note below)
     "8100": "insurance",               # Insurance : 1.2%

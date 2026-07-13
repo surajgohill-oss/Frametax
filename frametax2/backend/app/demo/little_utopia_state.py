@@ -420,19 +420,23 @@ def _build_state(_fact_key: tuple) -> LittleUtopiaState:
 
     legal_cycle = legal_engine.run_acquisition_cycle(AS_OF_DATE, grey_areas=legal_grey_areas, graph=graph_default)
 
+    # Demonstrate the acquisition -> verify -> approve -> commit loop over
+    # the sole genuine grey work item (GA-INKIND-FMV — off-budget in-kind
+    # post FMV). Off-budget, so apply_resolutions is a no-op on the primary
+    # register (no contamination); this only populates the /legal research
+    # view. The MockConnector citation stays non-authoritative throughout.
     legal_commit = None
-    if "STG-TASK-GA-REAL-ADMIN-PUBLICITY" in legal_cycle.awaiting_verification:
+    if "STG-TASK-GA-INKIND-FMV" in legal_cycle.awaiting_verification:
         legal_engine.record_verification(
-            "STG-TASK-GA-REAL-ADMIN-PUBLICITY", verified_by="counsel@littleutopia.example",
-            outcome="authority_found", notes="EDB guidance located on administrative/publicity "
-                                              "spend within 'Production service company fees'.",
+            "STG-TASK-GA-INKIND-FMV", verified_by="counsel@littleutopia.example",
+            outcome="authority_found", notes="Research view only — EDB ruling on in-kind "
+                                              "post-production FMV treatment (mock retrieval).",
         )
-        legal_engine.record_approval("STG-TASK-GA-REAL-ADMIN-PUBLICITY", approved_by="producer@littleutopia.example")
-        ga = next(g for g in legal_grey_areas if g.item_id == "GA-REAL-ADMIN-PUBLICITY")
+        legal_engine.record_approval("STG-TASK-GA-INKIND-FMV", approved_by="producer@littleutopia.example")
+        ga = next(g for g in legal_grey_areas if g.item_id == "GA-INKIND-FMV")
         legal_commit = legal_engine.commit_and_score(
-            "STG-TASK-GA-REAL-ADMIN-PUBLICITY", target_jurisdiction_code=JURISDICTION_CODE, as_of_date=AS_OF_DATE,
-            rule_text="General administrative overhead (7000) and publicity/PR spend (7100) "
-                      "qualify as QPE under 'Production service company fees'.",
+            "STG-TASK-GA-INKIND-FMV", target_jurisdiction_code=JURISDICTION_CODE, as_of_date=AS_OF_DATE,
+            rule_text="In-kind post-production FMV qualifies as additive QPE.",
             tier=AuthorityTier.OFFICIAL_GUIDANCE, authority_body="Mauritius Revenue Authority",
             resolves_grey_area=ga, grey_area_outcome=GreyAreaStatus.RESOLVED_INCLUDE,
         )
