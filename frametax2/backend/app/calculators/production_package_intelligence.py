@@ -1283,3 +1283,38 @@ def production_package_to_cultural_test_inputs(package: ProductionPackage) -> di
             inputs.setdefault("au_content_test", {})["producer_australian"] = company.registered_jurisdiction.value == "AU"
 
     return inputs
+
+
+def production_package_to_role_known_codes(package: ProductionPackage) -> dict[str, tuple[str, ...]]:
+    """
+    Bridge into cultural_qualification_model.evaluate_program_eligibility()'s
+    role_known_codes parameter: role name (director/writer/producer/
+    lead_cast/entity — the exact vocabulary NationalityRequirement rows
+    use) -> every citizenship/residency ISO2 code actually KNOWN for
+    anyone in that role bucket (both facts count — most real gates read
+    "national or resident"). An absent/empty tuple for a role means
+    "nobody on file yet", never "not that nationality" — the gate
+    evaluator treats that as INDETERMINATE, not FAILED.
+    """
+    def _codes(people) -> tuple[str, ...]:
+        codes: set[str] = set()
+        for p in people:
+            if p.nationality.is_actionable:
+                codes.add(p.nationality.value)
+            if p.residency.is_actionable:
+                codes.add(p.residency.value)
+        return tuple(sorted(codes))
+
+    out: dict[str, tuple[str, ...]] = {
+        "director": _codes(package.package.directors),
+        "writer": _codes(package.package.writers),
+        "producer": _codes(package.package.producers),
+        "lead_cast": _codes(package.package.cast[:1]),
+        "supporting_cast": _codes(package.package.cast[1:]),
+    }
+    entity_codes: set[str] = set()
+    for e in package.package.production_companies:
+        if e.registered_jurisdiction.is_actionable:
+            entity_codes.add(e.registered_jurisdiction.value)
+    out["entity"] = tuple(sorted(entity_codes))
+    return out

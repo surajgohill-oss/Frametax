@@ -302,3 +302,131 @@ def has_cultural_test(program_slug: str) -> bool:
     if program_slug in _SPEND_ONLY_SLUGS:
         return False
     return any(r.program_slug == program_slug for r in _REQUIREMENTS)
+
+
+# ── Threshold / eligibility gate execution ───────────────────────────────────
+#
+# Every row above with status == "required" is a hard eligibility GATE, not
+# a points contribution: e.g. ca_federal_cptc requires a Canadian-or-treaty
+# director AND writer AND producer AND at least one Canadian lead — missing
+# any one of these makes the production categorically ineligible for that
+# program, regardless of how many points a separate cultural-content test
+# might award elsewhere. This is the layer that must run BEFORE any points
+# system (cultural_test_rules.py's score_qualification_test) — until now
+# this data existed but nothing in the codebase executed it.
+#
+# jurisdiction_code semantics on a NationalityRequirement:
+#   ISO2 code  -> the role must hold that exact citizenship/residency.
+#   "EU"       -> requires EU/EEA membership. No EU/EEA membership list
+#                 exists anywhere in this codebase (only Eurimages/
+#                 Ibermedia/European Convention checks in treaty_engine.py,
+#                 which are NOT EU membership) — never fabricated here;
+#                 always INDETERMINATE, with a note naming exactly what's
+#                 missing.
+#   None       -> "any treaty country" — requires knowing the elected
+#                 treaty partner (a production_facts input, not a person
+#                 fact); INDETERMINATE unless the caller supplies one.
+
+class GateStatus:
+    SATISFIED = "satisfied"
+    FAILED = "failed"
+    INDETERMINATE = "indeterminate"  # not enough verified fact to conclude
+
+
+@dataclass(frozen=True)
+class GateCheck:
+    role: str
+    required_jurisdiction: str | None
+    status: str  # GateStatus
+    known_codes: tuple[str, ...]  # the role's actually-known citizenship/residency codes, if any
+    notes: str
+
+
+@dataclass(frozen=True)
+class EligibilityGateResult:
+    program_slug: str
+    checks: tuple[GateCheck, ...]
+
+    @property
+    def passes(self) -> bool:
+        """True only when every required gate is SATISFIED. A single
+        FAILED or INDETERMINATE gate means the production cannot be
+        certified eligible yet — indeterminate is not the same as
+        passing (never silently assumed satisfied)."""
+        return all(c.status == GateStatus.SATISFIED for c in self.checks)
+
+    @property
+    def has_failure(self) -> bool:
+        """True when at least one gate is definitively FAILED (a known
+        fact contradicts the requirement) — distinct from merely
+        indeterminate/unanswered."""
+        return any(c.status == GateStatus.FAILED for c in self.checks)
+
+    @property
+    def indeterminate_roles(self) -> tuple[str, ...]:
+        return tuple(c.role for c in self.checks if c.status == GateStatus.INDETERMINATE)
+
+
+def evaluate_program_eligibility(
+    program_slug: str,
+    role_known_codes: dict[str, tuple[str, ...]],
+    treaty_partner_code: str | None = None,
+) -> EligibilityGateResult:
+    """
+    Evaluate every REQUIRED gate for program_slug against real, known
+    facts. role_known_codes: role name -> tuple of citizenship/residency
+    ISO2 codes actually on file for that role (empty tuple = no person/
+    entity known for that role at all -> INDETERMINATE, never FAILED,
+    since absence of a fact is not evidence against it).
+
+    Returns an empty checks tuple (passes=True) for a program with no
+    required gates — never fabricates a gate that isn't in the data.
+    """
+    checks: list[GateCheck] = []
+    for req in get_requirements(program_slug):
+        if req.status != "required":
+            continue
+        known = role_known_codes.get(req.role, ())
+        if not known:
+            checks.append(GateCheck(
+                role=req.role, required_jurisdiction=req.jurisdiction_code,
+                status=GateStatus.INDETERMINATE, known_codes=known,
+                notes=f"No {req.role} is on file yet — cannot determine "
+                      f"whether the requirement ('{req.notes}') is met.",
+            ))
+            continue
+        if req.jurisdiction_code is None:
+            if treaty_partner_code and treaty_partner_code.upper() in known:
+                checks.append(GateCheck(
+                    role=req.role, required_jurisdiction=None, status=GateStatus.SATISFIED,
+                    known_codes=known, notes=f"{req.role} holds elected treaty partner {treaty_partner_code}.",
+                ))
+            else:
+                checks.append(GateCheck(
+                    role=req.role, required_jurisdiction=None, status=GateStatus.INDETERMINATE,
+                    known_codes=known,
+                    notes="Requirement is 'any treaty country' but no treaty partner is elected yet — "
+                          "cannot determine which country would satisfy it.",
+                ))
+        elif req.jurisdiction_code == "EU":
+            checks.append(GateCheck(
+                role=req.role, required_jurisdiction="EU", status=GateStatus.INDETERMINATE,
+                known_codes=known,
+                notes="Requirement is EU/EEA membership — no EU/EEA membership list exists in this "
+                      "codebase (only Eurimages/Ibermedia/European Convention signatory checks, which "
+                      "are not EU membership); never fabricated. Confirm via official EU/EEA status.",
+            ))
+        else:
+            if req.jurisdiction_code.upper() in known:
+                checks.append(GateCheck(
+                    role=req.role, required_jurisdiction=req.jurisdiction_code, status=GateStatus.SATISFIED,
+                    known_codes=known, notes=req.notes,
+                ))
+            else:
+                checks.append(GateCheck(
+                    role=req.role, required_jurisdiction=req.jurisdiction_code, status=GateStatus.FAILED,
+                    known_codes=known,
+                    notes=f"{req.role} is known to hold {known}, none of which is "
+                          f"{req.jurisdiction_code} — required: {req.notes}",
+                ))
+    return EligibilityGateResult(program_slug=program_slug, checks=tuple(checks))

@@ -69,6 +69,7 @@ from dataclasses import dataclass, field
 from typing import Any, Optional
 
 from app.calculators import cultural_test_rules as ctr
+from app.data import cultural_qualification_model as cqm
 from app.calculators.evaluate_qualification_tests import QualificationTestResult
 from app.calculators.legal_authority_acquisition import (
     DEFAULT_ACQUISITION_EFFORT,
@@ -648,6 +649,85 @@ def _missing_input_keys(rules: list[dict], production_details: dict[str, Any]) -
     return sorted({r["input_key"] for r in rules if r["input_key"] not in production_details})
 
 
+# Cultural-test slug (cultural_test_rules.py / CULTURAL_TEST_REGISTRY) ->
+# the corresponding real incentive-PROGRAM slug in
+# cultural_qualification_model.py, which is where hard eligibility gates
+# (status == "required") actually live. Only programs where a clear 1:1
+# correspondence exists are mapped — never invented for a program this
+# codebase has no gate data for.
+_GATE_PROGRAM_SLUGS: dict[str, str] = {
+    "uk_bfi_cultural_test": "uk_avec",
+    "fr_cnc_cultural_test": "fr_cnc_production",
+    "ca_content_test": "ca_federal_cptc",
+    "ie_section_481_test": "ie_section_481",
+    "au_content_test": "au_producer_offset",
+}
+
+
+def generate_eligibility_gate_recommendations(
+    role_known_codes: dict[str, tuple[str, ...]],
+    relevant_test_slugs: tuple[str, ...],
+    treaty_partner_code: str | None = None,
+) -> list[Recommendation]:
+    """
+    THRESHOLD QUALIFICATION (runs conceptually BEFORE any points system):
+    for every relevant test slug with a mapped incentive-program gate
+    table, evaluate cultural_qualification_model.evaluate_program_
+    eligibility(). A definitively FAILED required gate (a known fact
+    contradicts a hard requirement — e.g. the director's only known
+    nationality/residency is not Canadian/treaty, but ca_federal_cptc
+    requires exactly that) produces ONE evidence-linked recommendation
+    stating the production is categorically ineligible for that program
+    regardless of any points score. INDETERMINATE gates (nobody on file
+    for that role yet, or an EU/treaty-partner requirement this codebase
+    cannot verify) are never reported as failures — 'unknown' never
+    collapses to 'excluded' here either."""
+    recs: list[Recommendation] = []
+    for slug in sorted(set(relevant_test_slugs)):
+        program_slug = _GATE_PROGRAM_SLUGS.get(slug)
+        if program_slug is None:
+            continue
+        result = cqm.evaluate_program_eligibility(program_slug, role_known_codes, treaty_partner_code)
+        if not result.has_failure:
+            continue
+        failed = [c for c in result.checks if c.status == cqm.GateStatus.FAILED]
+        recs.append(Recommendation(
+            recommendation_id=f"REC-ELIGIBILITY-GATE-{slug}",
+            category=RecommendationCategory.CREATIVE,
+            subtype="eligibility_gate_failed",
+            title=f"Ineligible for {program_slug.replace('_', ' ')}: hard requirement not met",
+            description=(
+                f"'{program_slug}' has {len(failed)} unmet REQUIRED eligibility gate(s) — "
+                f"the production cannot qualify for this program regardless of any cultural-"
+                f"test points score, until these are resolved."
+            ),
+            specific_actions=tuple(
+                f"{c.role}: {c.notes}" for c in failed
+            ),
+            confidence=QualificationConfidence.HIGH,
+            evidence_reference=tuple(c.notes for c in failed),
+            authority_reference=tuple(f"cultural_qualification_model.{program_slug}[{c.role}]" for c in failed),
+            requires_producer_approval=True,
+            requires_counsel_approval=CREATIVE_RECOMMENDATIONS_REQUIRE_COUNSEL,
+            creative_impact=(
+                f"Would require replacing or re-attaching the {'/'.join(c.role for c in failed)} "
+                f"role with a national/resident/entity of the required jurisdiction."
+            ),
+            qualification_rationale=(
+                f"Threshold eligibility gate (checked before any points system): "
+                + "; ".join(c.notes for c in failed)
+            ),
+            trade_off_framing=(
+                "This is a HARD eligibility requirement, not a scoring optimization — no amount "
+                "of additional points elsewhere can offset a failed required gate for this program."
+            ),
+            source_ref=f"cultural_qualification_model.get_requirements({program_slug!r})",
+            attributes={"program_slug": program_slug, "failed_roles": tuple(c.role for c in failed),
+                        "confidence_gap": 0.0, "implementation_effort": 1.0},
+        ))
+    return recs
+
+
 def generate_cultural_recommendations(
     cultural_test_inputs: dict[str, dict[str, Any]],
     relevant_test_slugs: tuple[str, ...],
@@ -769,6 +849,8 @@ def generate_production_recommendations(
     jurisdiction_code: str = "MU",
     cultural_test_inputs: Optional[dict[str, dict[str, Any]]] = None,
     relevant_cultural_test_slugs: tuple[str, ...] = (),
+    role_known_codes: Optional[dict[str, tuple[str, ...]]] = None,
+    treaty_partner_code: Optional[str] = None,
 ) -> RecommendationSet:
     """
     Top-level Phase 7D entry point. register/rate are required to derive
@@ -779,7 +861,11 @@ def generate_production_recommendations(
     candidate-comparison recommendations are skipped. cultural_test_inputs/
     relevant_cultural_test_slugs are optional; when relevant_cultural_test_slugs
     is empty, no cultural or required-input recommendations are generated
-    at all (this module never infers which tests apply).
+    at all (this module never infers which tests apply). role_known_codes
+    (from production_package_intelligence.production_package_to_role_
+    known_codes) drives the THRESHOLD eligibility-gate check, which runs
+    before and independent of the points-based cultural recommendations —
+    omit it and gate recommendations are honestly skipped, never guessed.
     """
     recs: list[Recommendation] = []
     recs += generate_grey_area_recommendations(collection)
@@ -789,6 +875,10 @@ def generate_production_recommendations(
     recs += generate_treaty_stacking_reinvestment_normalization_recommendations(collection)
     if composition_result is not None:
         recs += generate_candidate_recommendations(composition_result)
+    if relevant_cultural_test_slugs and role_known_codes is not None:
+        recs += generate_eligibility_gate_recommendations(
+            role_known_codes, relevant_cultural_test_slugs, treaty_partner_code,
+        )
     if relevant_cultural_test_slugs:
         recs += generate_cultural_recommendations(cultural_test_inputs or {}, relevant_cultural_test_slugs)
 

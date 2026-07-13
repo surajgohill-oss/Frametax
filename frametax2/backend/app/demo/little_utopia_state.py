@@ -76,6 +76,7 @@ from app.calculators.production_package_intelligence import (
     build_production_package,
     production_package_to_cultural_test_inputs,
     production_package_to_relevant_cultural_test_slugs,
+    production_package_to_role_known_codes,
 )
 from app.calculators.production_recommendation_engine import RecommendationSet, generate_production_recommendations
 from app.calculators.production_structure_composer import CompositionResult, compose_production_structures
@@ -839,11 +840,17 @@ def _build_state(_fact_key: tuple, _people_key: tuple = ()) -> LittleUtopiaState
     # per-role, per-test weight each test's own rule table assigns.
     relevant_cultural_test_slugs = production_package_to_relevant_cultural_test_slugs(package)
     cultural_test_inputs = production_package_to_cultural_test_inputs(package)
+    # Part 3 (threshold qualification): hard eligibility gates, evaluated
+    # BEFORE any cultural-test points scoring, from the same real people
+    # facts — never a second source of truth.
+    role_known_codes = production_package_to_role_known_codes(package)
     recommendations = generate_production_recommendations(
         collection, composition_result=composition, register=register, rate=MU_RATE,
         jurisdiction_code=JURISDICTION_CODE,
         relevant_cultural_test_slugs=relevant_cultural_test_slugs,
         cultural_test_inputs=cultural_test_inputs,
+        role_known_codes=role_known_codes,
+        treaty_partner_code=facts.treaty_partner_code,
     )
 
     scenario_structures = compose_candidate_structures(

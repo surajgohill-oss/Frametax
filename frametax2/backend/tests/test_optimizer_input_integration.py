@@ -299,3 +299,46 @@ class TestNoRegressions:
         assert s.composition.candidates[0].cases[
             __import__("app.calculators.optimization_engine", fromlist=["RiskCase"]).RiskCase.CONSERVATIVE
         ].finance_cost_usd == 0.0
+
+
+# ── Threshold qualification (Engine Completion phase, Part 3) ───────────────
+
+class TestThresholdEligibilityGates:
+    def test_no_gate_failure_at_baseline(self):
+        s = get_state()
+        gate_recs = [r for r in s.recommendations.recommendations if r.subtype == "eligibility_gate_failed"]
+        assert gate_recs == []
+
+    def test_director_switched_to_ca_fails_ca_cptc_gate(self):
+        """Real CA federal CPTC gate requires director AND writer AND
+        producer to be Canadian/treaty. Writer (Clara Salaman, GB) and
+        producers (Rachel Winter/Max Botkin, US) are not — this must be
+        a hard, evidence-linked failure, not a partial-points score."""
+        apply_people_facts({"director_nationality": "CA", "director_residency": "CA"})
+        s = get_state()
+        gate_recs = [r for r in s.recommendations.recommendations if r.subtype == "eligibility_gate_failed"]
+        assert any(r.recommendation_id == "REC-ELIGIBILITY-GATE-ca_content_test" for r in gate_recs)
+        rec = next(r for r in gate_recs if r.recommendation_id == "REC-ELIGIBILITY-GATE-ca_content_test")
+        assert rec.confidence.value == "high"
+        assert rec.evidence_reference
+        assert rec.authority_reference
+
+    def test_gate_evaluator_never_collapses_unknown_to_failed(self):
+        from app.data.cultural_qualification_model import GateStatus, evaluate_program_eligibility
+        result = evaluate_program_eligibility("ca_federal_cptc", {})  # nobody known at all
+        assert not result.has_failure
+        assert all(c.status == GateStatus.INDETERMINATE for c in result.checks)
+        assert not result.passes  # indeterminate is not the same as passing
+
+    def test_gate_evaluator_satisfied_when_facts_match(self):
+        from app.data.cultural_qualification_model import evaluate_program_eligibility
+        result = evaluate_program_eligibility("ca_federal_cptc", {
+            "director": ("CA",), "writer": ("CA",), "producer": ("CA",), "lead_cast": ("CA",),
+        })
+        assert result.passes
+
+    def test_uk_avec_has_no_required_gates_pure_points(self):
+        """BFI's cultural test is genuinely pure points, no per-role hard
+        requirement — the gate layer must not invent one."""
+        from app.data.cultural_qualification_model import get_requirements
+        assert all(r.status != "required" for r in get_requirements("uk_avec"))
