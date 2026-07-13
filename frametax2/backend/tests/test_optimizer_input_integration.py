@@ -398,3 +398,39 @@ class TestThresholdEligibilityGates:
         requirement — the gate layer must not invent one."""
         from app.data.cultural_qualification_model import get_requirements
         assert all(r.status != "required" for r in get_requirements("uk_avec"))
+
+
+# ── Global optimizer validation (Engine Completion phase, Part 8/9) ─────────
+
+class TestScenarioExplainability:
+    """An impossible/unpriced pathway must explain WHY — never silence,
+    never merely 'not modeled' (Part 9)."""
+
+    def test_unpriced_jurisdiction_shaped_scenario_explains_why(self):
+        from app.calculators.production_scenario_engine import (
+            ProductionScenario, ScenarioKind, run_scenario,
+        )
+        s = get_state()
+        sc = ProductionScenario(scenario_id="S-vfx", kind=ScenarioKind.MOVE_VFX,
+                                 description="move vfx", target_jurisdiction="MT")
+        r = run_scenario(sc, s.collection, graph=s.graph, register=s.register,
+                          gross_budget_usd=s.gross_budget_usd, rate=s.rate,
+                          grey_areas=s.grey_areas_baseline)
+        assert r.scenario_risk_adjusted_npc_usd is None  # genuinely unpriced
+        assert r.notes != ""  # never silent
+        assert "not fully priced" in r.notes.lower()
+        # names the actual blocking cause(s), not a generic placeholder
+        assert "grey area" in r.notes.lower() or "authority acquisition" in r.notes.lower()
+
+    def test_fully_priced_scenario_has_no_spurious_notes(self):
+        from app.calculators.production_scenario_engine import (
+            ProductionScenario, ScenarioKind, run_scenario,
+        )
+        s = get_state()
+        sc = ProductionScenario(scenario_id="S-vfx2", kind=ScenarioKind.MOVE_VFX,
+                                 description="move vfx", target_jurisdiction="MU")
+        r = run_scenario(sc, s.collection, graph=s.graph, register=s.register,
+                          gross_budget_usd=s.gross_budget_usd, rate=s.rate,
+                          grey_areas=s.grey_areas_baseline)
+        if r.scenario_risk_adjusted_npc_usd is not None:
+            assert r.notes == ""

@@ -167,6 +167,8 @@ def _run_jurisdiction_shaped_scenario(
         if include_recommendations else None
     )
 
+    notes = _jurisdiction_shaped_scenario_notes(scenario_candidate, scenario_npc)
+
     return ScenarioResult(
         scenario=scenario,
         baseline_candidate_id=baseline.candidate_id if baseline else None,
@@ -177,8 +179,43 @@ def _run_jurisdiction_shaped_scenario(
         relevant_structuring_opportunities=(),
         composition_result=result,
         recommendations=recommendations,
-        notes="" if scenario_candidate is not None else "Scenario jurisdiction set did not compose into a candidate.",
+        notes=notes,
     )
+
+
+def _jurisdiction_shaped_scenario_notes(scenario_candidate, scenario_npc: Optional[float]) -> str:
+    """Explain WHY, never merely 'not modeled' or silent (Global Optimizer
+    Validation, Part 9): a composed-but-unpriced candidate must say
+    exactly which outstanding evidence/grey-area/authority-acquisition
+    tasks block full pricing — reusing the composer's own already-
+    computed exclusion_reasons/grey_area_opportunity_ids/
+    required_acquisition_task_refs/priceable_pct fields, never a second
+    explanation engine."""
+    if scenario_candidate is None:
+        return "Scenario jurisdiction set did not compose into a candidate."
+    if scenario_npc is not None:
+        return ""
+    reasons: list[str] = []
+    if scenario_candidate.priceable_pct < 1.0:
+        reasons.append(
+            f"only {scenario_candidate.priceable_pct:.0%} of this candidate's opportunities are "
+            f"priceable ({scenario_candidate.unknown_pct:.0%} unknown)"
+        )
+    if scenario_candidate.exclusion_reasons:
+        reasons.append(
+            "excluded: " + "; ".join(f"{oid}: {reason}" for oid, reason in scenario_candidate.exclusion_reasons.items())
+        )
+    if scenario_candidate.grey_area_opportunity_ids:
+        reasons.append(
+            f"blocked on unresolved grey area(s): {', '.join(scenario_candidate.grey_area_opportunity_ids)}"
+        )
+    if scenario_candidate.required_acquisition_task_refs:
+        reasons.append(
+            f"awaiting authority acquisition: {', '.join(scenario_candidate.required_acquisition_task_refs)}"
+        )
+    if not reasons:
+        return "Candidate composed but is not fully priced for an unspecified reason — investigate the composer's own priceable_pct computation."
+    return "Not fully priced — " + "; ".join(reasons) + "."
 
 
 def _run_structuring_shaped_scenario(
