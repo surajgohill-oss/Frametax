@@ -6,13 +6,23 @@ Mauritius rows are grounded in the actual EDB primary source — "Film
 Rebate Scheme — Submission Procedures" (Economic Development Board,
 citing the Film Rebate Scheme Regulation 2018; document dated 31 Jan
 2020), specifically its "List of Qualifying Production Expenditures
-(QPE) for Motion Pictures" — a CLOSED, enumerated list of 33 spend
-categories. QPE is defined as expenses "incurred locally" falling
-within one of those categories; nothing outside the enumerated list is
-QPE, and there is no separate general exclusions clause for motion
-pictures (only Digital Animation projects carry their own exclusions
-list, which does not apply here). Rows not resolvable from that closed
-list still mirror migrations 0021/0025 where those pre-date it.
+(QPE) for Motion Pictures" — an illustrative list of 33 spend
+categories. QPE is defined as expenses "incurred locally" with respect
+to that list.
+
+CANONICAL QPE RULE (governs every qualifies=False row below): every
+actual budget item is included unless authoritative program language
+explicitly excludes it. Silence, uncertainty, industry convention, and
+engineering interpretation are never exclusions. In particular, an item
+not being named among the 33 illustrative categories is NOT, by itself,
+an explicit exclusion — the primary source states an express "the
+following expenditures are excluded" clause only for Digital Animation
+projects, not for Motion Pictures. A qualifies=False row here therefore
+requires either (a) a quoted clause that actually excludes the item, or
+(b) an explicit statutory requirement ("incurred locally") applied
+against a KNOWN, evidenced production fact (e.g. work confirmed
+performed outside Mauritius) — never an inference from what the
+illustrative list happens not to mention.
 
 Vocabulary: rows are keyed by the SpendCategory string vocabulary that
 classify_budget_line_items.py emits (the migrations' labor_type
@@ -21,11 +31,15 @@ atl_cast; btl_crew_resident/non_resident/foreign -> btl_crew_labor;
 accommodation_lodging -> lodging; marine_vessel -> vessel_marine).
 
 qualifies semantics (same tri-state as ProgramSpendTreatment.qualifies):
-  True  — qualifies under the program
-  False — excluded under the program
-  None  — unconfirmed from primary source (absence of authority, OR a
-          missing production fact needed to apply an otherwise-known
-          rule — see FACT_SPLIT_CATEGORIES in qualification_derivation.py)
+  True  — included (the default; no explicit exclusion applies)
+  False — EXPLICITLY excluded (a quoted clause, or an explicit
+          territorial requirement applied against a known contrary
+          fact — see the canonical rule above)
+  None  — a genuine, disclosed gap: no category in the primary source
+          plausibly covers this spend at all. Preserved as a visible
+          grey area (GREY_AREA_REQUIRES_AUTHORITY), never silently
+          resolved in either direction — not zeroed out, and not
+          assumed to qualify without any textual basis.
 """
 from __future__ import annotations
 
@@ -115,35 +129,44 @@ _MU_MUSIC_UNRESOLVED_NOTE = (
     "Motion Pictures (absence noted against the full 33-item list)."
 )
 _MU_CONTINGENCY_NOTE = (
-    "Contingency reserve does not appear anywhere in the closed 33-category "
-    "QPE list, and QPE is by definition expenditure 'incurred' — an unspent "
-    "reserve is not incurred cost until drawn down against an actual line "
-    "item. Two independent grounds, both from primary source: (1) closed-list "
-    "omission, (2) not yet incurred. Source: EDB Film Rebate Scheme — "
-    "Submission Procedures (31 Jan 2020), full QPE list for Motion Pictures."
+    "CANONICAL QPE RULE: no clause in the primary source excludes a "
+    "contingency reserve. Its absence from the 33-item illustrative list "
+    "is silence, not an explicit exclusion (the express 'the following "
+    "expenditures are excluded' clause applies only to Digital Animation "
+    "projects, not to this Motion Picture). Included. Disclosed, non-"
+    "excluding caveat from the SAME primary source's claim procedures: 'a "
+    "certified report by the local auditors ... providing details of the "
+    "amount of expenditures, and the amount of the qualified production "
+    "expenditures, incurred in Mauritius' is required at claim time — so "
+    "only the portion of this reserve actually drawn down and spent by "
+    "wrap will appear in that certification. This is a claim-timing note, "
+    "not a qualification exclusion. Source: EDB Film Rebate Scheme — "
+    "Submission Procedures (31 Jan 2020), QPE list for Motion Pictures + "
+    "Application and Claim Procedures (auditor certification requirement)."
 )
 _MU_COMPLETION_BOND_NOTE = (
-    "Completion bond premium does not appear anywhere in the closed "
-    "33-category QPE list for Motion Pictures, and no category (including "
-    "'Professional services') plausibly extends to a bond premium. This is "
-    "a closed-list omission, not an absence-of-authority gap: the "
-    "regulation affirmatively enumerates what qualifies, and a bond premium "
-    "is not among the enumerated items. Source: EDB Film Rebate Scheme — "
-    "Submission Procedures (31 Jan 2020), full QPE list for Motion Pictures."
+    "CANONICAL QPE RULE: no clause in the primary source excludes a "
+    "completion bond premium. Its absence from the 33-item illustrative "
+    "list is silence, not an explicit exclusion (see contingency note for "
+    "the same reasoning). Included; the category match is not itself "
+    "certain (no illustrative item is an obvious analogue), which is "
+    "disclosed as a genuine open question for EDB confirmation rather "
+    "than withheld from QPE. Source: EDB Film Rebate Scheme — Submission "
+    "Procedures (31 Jan 2020), full QPE list for Motion Pictures (no "
+    "exclusion found)."
 )
 _MU_LEGAL_ACCOUNTING_NOTE = (
-    "'Professional services (such as insurance and accounting services)' "
-    "names accounting explicitly but not legal fees; 'such as' signals "
-    "non-exhaustive examples, so whether legal fees fall within 'professional "
-    "services' is a genuine interpretive question, not resolved by this "
-    "text. Distinct from the category question: this account combines "
-    "legal and accounting costs (and, for the audit/submission-fee "
-    "account, audit and incentive-application-filing costs) in one line "
-    "with no $ breakdown — the accounting/audit portion is confirmed QPE, "
-    "the legal/submission-fee portion is not, and the split amount is not "
-    "known from the budget as given. Source: EDB Film Rebate Scheme — "
-    "Submission Procedures (31 Jan 2020), QPE list for Motion Pictures, "
-    "item 'Professional services (such as insurance and accounting services)'."
+    "Explicit QPE category: 'Professional services (such as insurance and "
+    "accounting services)'. 'Such as' is illustrative, not exhaustive — the "
+    "named category is 'Professional services' generally; insurance and "
+    "accounting are examples, not the full scope. No clause in the primary "
+    "source excludes legal fees, audit fees, or incentive-application/"
+    "submission costs from 'Professional services'. CANONICAL QPE RULE: "
+    "absent an explicit exclusion, the full account is included — no $ "
+    "split is required because there is no authority-backed reason to "
+    "withhold any portion. Source: EDB Film Rebate Scheme — Submission "
+    "Procedures (31 Jan 2020), QPE list for Motion Pictures, item "
+    "'Professional services (such as insurance and accounting services)'."
 )
 
 
@@ -187,14 +210,15 @@ MU_EDB_RULES: tuple[SpendRule, ...] = (
     # Music — genuinely unresolved category coverage (independently also
     # fails territorial nexus for this production).
     _mu("music", None, _MU_MUSIC_UNRESOLVED_NOTE, "VERIFIED", "EDB-2020-QPE-List"),
-    # Contingency — closed-list omission + not-yet-incurred (dual ground).
-    _mu("contingency", False, _MU_CONTINGENCY_NOTE, "VERIFIED", "EDB-2020-QPE-List"),
-    # Completion bond premium — closed-list omission.
-    _mu("completion_bond", False, _MU_COMPLETION_BOND_NOTE, "VERIFIED", "EDB-2020-QPE-List"),
-    # Legal & accounting — accounting confirmed, legal/submission-fee portion
-    # genuinely mixed; the account as booked has no $ breakdown (fact gap,
-    # not authority gap — see FACT_SPLIT_CATEGORIES in qualification_derivation.py).
-    _mu("legal_accounting", None, _MU_LEGAL_ACCOUNTING_NOTE, "VERIFIED", "EDB-2020-QPE-List"),
+    # Contingency — no explicit exclusion found; included per the canonical
+    # QPE rule, with a disclosed (non-excluding) claim-timing caveat.
+    _mu("contingency", True, _MU_CONTINGENCY_NOTE, "VERIFIED", "EDB-2020-QPE-List"),
+    # Completion bond premium — no explicit exclusion found; included.
+    _mu("completion_bond", True, _MU_COMPLETION_BOND_NOTE, "VERIFIED", "EDB-2020-QPE-List"),
+    # Legal & accounting — "Professional services" is the named category;
+    # insurance/accounting are non-exhaustive examples. No explicit
+    # exclusion of legal fees or submission costs exists. Included in full.
+    _mu("legal_accounting", True, _MU_LEGAL_ACCOUNTING_NOTE, "VERIFIED", "EDB-2020-QPE-List"),
 )
 
 

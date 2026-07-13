@@ -431,8 +431,8 @@ class TestOptimizerCompatibility:
     def test_little_utopia_conservative_unchanged(self, result):
         mu = _mu_candidate(result)
         cons = mu.cases[RiskCase.CONSERVATIVE]
-        assert cons.qpe_usd == pytest.approx(2_846_357.0, abs=1.0)
-        assert cons.incentive_usd == pytest.approx(1_138_542.8, abs=1.0)
+        assert cons.qpe_usd == pytest.approx(3_700_954.0, abs=1.0)
+        assert cons.incentive_usd == pytest.approx(1_480_381.6, abs=1.0)
 
     def test_composer_does_not_import_private_optimizer_names(self):
         import ast

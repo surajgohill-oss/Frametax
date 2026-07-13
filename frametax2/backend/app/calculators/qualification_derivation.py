@@ -35,13 +35,13 @@ defaulting to EXCLUDED:
   1. memo line                          -> NOT_APPLICABLE
   2. finance-cost category              -> NOT_APPLICABLE (modeled as a
      cashflow item by the optimizer, never as QPE-account spend)
-  3. structural category (contingency)  -> EXCLUDED / STRUCTURAL_DEFINITION
-     (only incurred expenditure can qualify — rule-backed where a
-     program rule exists, engine-structural otherwise)
-  4. work/spend incurred outside the jurisdiction (fact), where the
+  3. work/spend incurred outside the jurisdiction (fact), where the
      program requires territorial spend  -> EXCLUDED / TERRITORIAL_NEXUS
-  5. statutory rule lookup by category:
+  4. statutory rule lookup by category:
        qualifies=False                  -> EXCLUDED / EXPLICIT_STATUTE
+         (never engine-structural — every exclusion, including
+         "contingency requires incurred spend," is the rule's own
+         cited text; see program_spend_rules.py)
        qualifies=True: labor currently routed outside local payroll
          (fact) -> STRUCTURING_OPPORTUNITY, else QUALIFIES /
          EXPLICIT_STATUTE.
@@ -52,7 +52,7 @@ defaulting to EXCLUDED:
          AUTHORITY / FACT_DEPENDENT.
          otherwise -> GREY_AREA_REQUIRES_AUTHORITY / ABSENCE_OF_AUTHORITY
          (absence of authority is explicit, never a silent exclusion).
-  6. no rule at all for the category    -> same None-handling as above.
+  5. no rule at all for the category    -> same None-handling as above.
 
 No LLM calls. Deterministic and testable.
 """
@@ -78,7 +78,6 @@ LABOR_CATEGORIES = frozenset({
     "btl_crew_labor", "btl_resident_labor", "btl_nonresident_labor",
 })
 POST_CATEGORIES = frozenset({"post_production", "vfx", "music", "sound"})
-STRUCTURAL_EXCLUSION_CATEGORIES = frozenset({"contingency"})
 CASHFLOW_CATEGORIES = frozenset({"finance_costs"})
 # Categories where the rule/category treatment is itself known but an
 # unconfirmed (None) rule value reflects a missing production FACT (e.g.
@@ -187,16 +186,14 @@ def derive_qualification_register(
                   "separately as a cashflow item, not as QPE-account spend.")
             continue
 
-        # 3. Structural: only incurred expenditure can qualify.
-        if category in STRUCTURAL_EXCLUSION_CATEGORIES:
-            reason = (rule.notes if rule is not None and rule.qualifies is False else
-                      "QPE requires spend to be incurred. An unspent reserve is not "
-                      "incurred cost until drawn down against an actual line item.")
-            _acct(QualificationState.EXCLUDED, QualificationConfidence.HIGH,
-                  AuthorityBasis.STRUCTURAL_DEFINITION, reason)
-            continue
+        # (No structural override for "contingency" or any other category:
+        # canonical QPE rule — an item is included unless authoritative
+        # program language explicitly excludes it. Whether an unspent
+        # reserve is excluded is a statutory-rule question, answered by
+        # step 5's rule.qualifies lookup and the rule's own cited text —
+        # never engine-structural, never assumed here.)
 
-        # 4. Territorial nexus (fact-driven).
+        # 3. Territorial nexus (fact-driven).
         territorial_required = (rule.territorial_only if rule is not None else
                                 program_territorial_text is not None)
         if territorial_required and facts.work_outside(line.account_code, category):
@@ -208,7 +205,7 @@ def derive_qualification_register(
                   f"nexus fails.{suffix}")
             continue
 
-        # 5. Statutory rule.
+        # 4. Statutory rule.
         qualifies = rule.qualifies if rule is not None else None
 
         if qualifies is False:
@@ -232,7 +229,7 @@ def derive_qualification_register(
                       AuthorityBasis.EXPLICIT_STATUTE, rule.notes)
             continue
 
-        # 6. qualifies is None / no rule: never a silent exclusion. Escalate
+        # 5. qualifies is None / no rule: never a silent exclusion. Escalate
         # as a fact gap where the category treatment is known but a $
         # breakdown (or similar production fact) is missing, otherwise as a
         # genuine authority gap.

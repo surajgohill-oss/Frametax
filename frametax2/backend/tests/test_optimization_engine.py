@@ -68,19 +68,19 @@ def baseline_result(register, paths, grey_areas):
 class TestCanonicalFigures:
     def test_conservative_qpe(self, baseline_result):
         c = baseline_result.cases[RiskCase.CONSERVATIVE]
-        assert c.qpe_usd == pytest.approx(2_846_357.0, abs=1.0)
+        assert c.qpe_usd == pytest.approx(3_700_954.0, abs=1.0)
 
     def test_conservative_incentive(self, baseline_result):
         c = baseline_result.cases[RiskCase.CONSERVATIVE]
-        assert c.incentive_usd == pytest.approx(1_138_542.8, abs=1.0)
+        assert c.incentive_usd == pytest.approx(1_480_381.6, abs=1.0)
 
     def test_optimistic_qpe(self, baseline_result):
         o = baseline_result.cases[RiskCase.OPTIMISTIC]
-        assert o.qpe_usd == pytest.approx(3_792_357.0, abs=1.0)
+        assert o.qpe_usd == pytest.approx(4_533_954.0, abs=1.0)
 
     def test_optimistic_incentive(self, baseline_result):
         o = baseline_result.cases[RiskCase.OPTIMISTIC]
-        assert o.incentive_usd == pytest.approx(1_516_942.8, abs=1.0)
+        assert o.incentive_usd == pytest.approx(1_813_581.6, abs=1.0)
 
     def test_inkind_is_additive_and_does_not_change_gross(self, baseline_result):
         o = baseline_result.cases[RiskCase.OPTIMISTIC]
@@ -115,9 +115,9 @@ class TestBaseCaseGating:
         )
         base = result.cases[RiskCase.BASE]
         cons = result.cases[RiskCase.CONSERVATIVE]
-        assert base.qpe_usd == pytest.approx(2_846_357.0 + 95_000.0, abs=0.01)
+        assert base.qpe_usd == pytest.approx(3_700_954.0 + 95_000.0, abs=0.01)
         # approval alone must NOT promote into Conservative (requires EXECUTED + evidence)
-        assert cons.qpe_usd == pytest.approx(2_846_357.0, abs=0.01)
+        assert cons.qpe_usd == pytest.approx(3_700_954.0, abs=0.01)
 
     def test_executed_with_evidence_promotes_to_conservative(self, register, paths, grey_areas):
         ov = AssumptionOverride(
@@ -130,7 +130,7 @@ class TestBaseCaseGating:
             structuring_paths=paths, grey_areas=grey_areas, overrides=[ov],
         )
         cons = result.cases[RiskCase.CONSERVATIVE]
-        assert cons.qpe_usd == pytest.approx(2_846_357.0 + 95_000.0, abs=0.01)
+        assert cons.qpe_usd == pytest.approx(3_700_954.0 + 95_000.0, abs=0.01)
 
     def test_executed_without_evidence_rejected(self, register, paths, grey_areas):
         ov = AssumptionOverride(
@@ -184,6 +184,14 @@ class TestGreyAreaGating:
             )
 
     def test_grey_area_resolved_with_counsel_and_evidence_moves_to_conservative(self, register, paths, grey_areas):
+        """70-00/71-00 (GA-LEGAL-ACCOUNTING-SPLIT's account_codes) already
+        QUALIFY under the canonical QPE rule before any resolution runs
+        (see test_qualification_model.py) — 'Professional services' names a
+        broad category and no clause excludes legal fees, so no $ split was
+        ever needed. A counsel-approved, evidence-backed resolution is
+        still a legitimate override to accept (the lifecycle gate itself
+        doesn't know the account already qualifies), it's just a no-op on
+        QPE: nothing further is added because nothing was being withheld."""
         ov = AssumptionOverride(
             item_id="GA-LEGAL-ACCOUNTING-SPLIT", item_type="grey_area",
             to_status=GreyAreaStatus.RESOLVED_INCLUDE.value, approver_role="counsel",
@@ -194,7 +202,7 @@ class TestGreyAreaGating:
             structuring_paths=paths, grey_areas=grey_areas, overrides=[ov],
         )
         cons = result.cases[RiskCase.CONSERVATIVE]
-        assert cons.qpe_usd == pytest.approx(2_846_357.0 + 113_000.0, abs=0.01)
+        assert cons.qpe_usd == pytest.approx(3_700_954.0, abs=0.01)
 
     def test_resolve_grey_area_function_requires_citation(self, grey_areas):
         atl = next(g for g in grey_areas if g.item_id == "GA-LEGAL-ACCOUNTING-SPLIT")
@@ -304,7 +312,7 @@ class TestReinvestment:
         # reinvestment contributes no dollars to any case — verified indirectly:
         # conservative/base equal the register-only figures with no reinvestment term.
         c = baseline_result.cases[RiskCase.CONSERVATIVE]
-        assert c.qpe_usd == pytest.approx(2_846_357.0, abs=1.0)
+        assert c.qpe_usd == pytest.approx(3_700_954.0, abs=1.0)
 
 
 # ── Reconciliation ────────────────────────────────────────────────────────────
@@ -329,10 +337,10 @@ class TestReconciliation:
         na_total = sum(a.amount_usd for a in register if a.state.value == "not_applicable")
         grey_total = sum(a.amount_usd for a in register if a.state.value == "grey_area_requires_authority")
         structuring_total = sum(a.amount_usd for a in register if a.state.value == "structuring_opportunity")
-        assert qualifies_total == pytest.approx(2_846_357.0, abs=0.01)
-        assert excluded_total == pytest.approx(1_104_597.0, abs=0.01)
+        assert qualifies_total == pytest.approx(3_700_954.0, abs=0.01)
+        assert excluded_total == pytest.approx(363_000.0, abs=0.01)
         assert na_total == pytest.approx(92_439.0, abs=0.01)
-        assert grey_total == pytest.approx(113_000.0, abs=0.01)
+        assert grey_total == pytest.approx(0.0, abs=0.01)
         assert structuring_total == pytest.approx(208_000.0, abs=0.01)
         assert (qualifies_total + excluded_total + na_total + grey_total + structuring_total) \
             == pytest.approx(GROSS_BUDGET_USD, abs=0.01)

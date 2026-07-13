@@ -261,6 +261,66 @@ def build_little_utopia_qualification_register(
     )
 
 
+def build_little_utopia_real_register(
+    mu_rate: float = 0.40,
+    facts: "object | None" = None,
+) -> list[AccountQualification]:
+    """
+    The account-by-account qualification register for The Little Utopia
+    built from the ACTUAL parsed production budget
+    (app.data.little_utopia_real_budget) — not the sanitized fixture
+    build_little_utopia_qualification_register() above still uses. This
+    is the primary-path function: app.demo.little_utopia_state.py (the
+    live API) calls this one. build_little_utopia_qualification_register()
+    remains a distinct, still-valid, still-tested capability against its
+    own fixture — the two are not the same data and are not meant to
+    reconcile against each other's totals.
+
+    Runs the SAME statutory derivation ladder and the SAME MU_EDB_RULES
+    (app.data.program_spend_rules) as the fixture path — only the budget
+    data, its classification, and its territorial facts are specific to
+    the real document.
+
+    gross_budget_usd for downstream callers (rate resolution, NPC) should
+    be little_utopia_real_budget.AUTHORITATIVE_GROSS_BUDGET_USD
+    ($4,364,393.00 — the document's own stated Grand Total), not the sum
+    of this register (which is $4,364,395.00 — see
+    little_utopia_real_budget.RECONCILIATION_NOTE for the accepted $2.00
+    source-document variance between the two).
+    """
+    from app.calculators.qualification_derivation import (
+        BudgetLine,
+        ProductionFacts,
+        derive_qualification_register,
+    )
+    from app.data.little_utopia_real_budget import (
+        LITTLE_UTOPIA_REAL_ACCOUNTS_OUTSIDE_MU,
+        LITTLE_UTOPIA_REAL_BUDGET_LINES,
+        LITTLE_UTOPIA_REAL_OFFSHORE_PAYROLL,
+        LITTLE_UTOPIA_REAL_SPEND_CATEGORY,
+    )
+
+    if facts is None:
+        facts = ProductionFacts(
+            jurisdiction_code="MU",
+            accounts_outside_jurisdiction=LITTLE_UTOPIA_REAL_ACCOUNTS_OUTSIDE_MU,
+            offshore_payroll_accounts=LITTLE_UTOPIA_REAL_OFFSHORE_PAYROLL,
+        )
+
+    lines = [
+        BudgetLine(
+            account_code=code, description=desc, amount_usd=amt,
+            spend_category=LITTLE_UTOPIA_REAL_SPEND_CATEGORY.get(code),
+            is_memo=False,
+        )
+        for code, desc, amt, _page in LITTLE_UTOPIA_REAL_BUDGET_LINES
+    ]
+    return derive_qualification_register(
+        lines, program_slug="mu_edb_incentive", facts=facts, rate=mu_rate,
+        program_territorial_text=MU_TERRITORIAL_TEXT,
+    )
+
+
 # ── Off-budget in-kind: explicitly never part of the register above ────────
 
 LITTLE_UTOPIA_INKIND_FMV_USD = 625_000.0
@@ -410,6 +470,78 @@ def build_little_utopia_evidence_graph() -> EvidenceGraph:
         notes="The QPE category itself is confirmed ('Professional services "
               "(such as insurance and accounting services)'); no itemized $ "
               "breakdown of these two accounts has been provided.",
+    ))
+    graph.add_absence_of_authority(AbsenceOfAuthority(
+        absence_id="ABS-INKIND-FMV",
+        jurisdiction_code="MU",
+        question="Does in-kind post-production FMV qualify as additive QPE?",
+        searched_tiers=(
+            AuthorityTier.PRIMARY_LEGISLATION, AuthorityTier.REGULATIONS,
+            AuthorityTier.OFFICIAL_GUIDANCE,
+        ),
+        notes="No published EDB rule on in-kind treatment.",
+    ))
+    return graph
+
+
+def build_little_utopia_real_grey_areas() -> list[GreyAreaItem]:
+    """
+    Grey areas for the REAL parsed Little Utopia budget
+    (build_little_utopia_real_register) — distinct from
+    build_little_utopia_grey_areas(), which targets the fixture's account
+    codes and no longer applies once the real register is in use.
+
+    Real, disclosed grey areas (no QPE category plausibly covers the
+    spend — see app.data.little_utopia_real_budget's classification
+    notes): 7000 ADMINISTRATIVE EXPENSES ($297,593) and 7100 PUBLICITY
+    ($24,348). 6000 MUSIC and 7300 MARKETING are also unclassified but
+    $0.00 in the real budget and omitted here as immaterial. In-kind post
+    FMV (off-budget, not a register account) is unaffected by which
+    budget is in use and remains open.
+    """
+    return [
+        GreyAreaItem(
+            item_id="GA-REAL-ADMIN-PUBLICITY",
+            account_codes=("7000", "7100"),
+            amount_usd=321_941.0,
+            jurisdiction_code="MU",
+            authority_to_ask="Economic Development Board Mauritius (EDB) / Mauritius Film Development Corp.",
+            resolving_evidence="EDB confirmation of whether general administrative overhead (7000) and "
+                                "publicity/PR spend (7100) fall within any QPE category (e.g. 'Production "
+                                "service company fees' or 'Professional services') — neither is named "
+                                "explicitly in the primary source's 33-item illustrative list.",
+            linked_question_ids=("Q-REAL-ADMIN-PUBLICITY",),
+            graph_absence_id="ABS-REAL-ADMIN-PUBLICITY",
+        ),
+        GreyAreaItem(
+            item_id="GA-INKIND-FMV",
+            account_codes=(),
+            amount_usd=LITTLE_UTOPIA_INKIND_FMV_USD,
+            jurisdiction_code="MU",
+            authority_to_ask="Economic Development Board Mauritius (EDB) / Mauritius Film Development Corp.",
+            resolving_evidence="Written EDB ruling that in-kind post-production FMV qualifies as QPE (Q1).",
+            off_budget=True,
+            linked_question_ids=("Q1",),
+            graph_absence_id="ABS-INKIND-FMV",
+        ),
+    ]
+
+
+def build_little_utopia_real_evidence_graph() -> EvidenceGraph:
+    """Evidence graph for build_little_utopia_real_grey_areas()."""
+    graph = EvidenceGraph()
+    graph.add_absence_of_authority(AbsenceOfAuthority(
+        absence_id="ABS-REAL-ADMIN-PUBLICITY",
+        jurisdiction_code="MU",
+        question="Do general administrative overhead (7000) or publicity/PR "
+                 "spend (7100) fall within any QPE category?",
+        searched_tiers=(
+            AuthorityTier.PRIMARY_LEGISLATION, AuthorityTier.REGULATIONS,
+            AuthorityTier.OFFICIAL_GUIDANCE, AuthorityTier.OFFICIAL_FAQ,
+        ),
+        notes="Neither 'administrative expenses' nor 'publicity'/'marketing' "
+              "is named in the primary source's 33-item illustrative QPE "
+              "list for Motion Pictures.",
     ))
     graph.add_absence_of_authority(AbsenceOfAuthority(
         absence_id="ABS-INKIND-FMV",

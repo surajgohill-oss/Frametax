@@ -149,8 +149,6 @@ class TestDeterministicExclusions:
         ("53-00", AuthorityBasis.TERRITORIAL_NEXUS),
         ("54-00", AuthorityBasis.TERRITORIAL_NEXUS),
         ("55-00", AuthorityBasis.TERRITORIAL_NEXUS),
-        ("80-00", AuthorityBasis.EXPLICIT_STATUTE),
-        ("81-00", AuthorityBasis.STRUCTURAL_DEFINITION),
     ])
     def test_excluded_with_correct_basis(self, register, code, basis):
         a = _get(register, code)
@@ -161,10 +159,6 @@ class TestDeterministicExclusions:
     def test_post_production_exclusion_total(self, register):
         total = sum(_get(register, c).amount_usd for c in ["50-00", "51-00", "52-00", "53-00", "54-00", "55-00"])
         assert total == pytest.approx(363_000.0, abs=0.01)
-
-    def test_completion_bond_excluded_as_closed_list_omission(self, register):
-        a = _get(register, "80-00")
-        assert "33-category" in a.reason or "closed" in a.reason.lower()
 
     def test_no_account_excluded_on_cross_program_convention(self, register):
         """Task 4: cross-program convention is never a valid exclusion basis
@@ -190,15 +184,35 @@ class TestDeterministicExclusions:
         assert "insurance" in a.reason.lower()
 
     @pytest.mark.parametrize("code", ["70-00", "71-00"])
-    def test_legal_accounting_is_fact_gap_not_authority_gap(self, register, code):
-        """Accounting/audit is confirmed QPE; legal fees and submission
-        costs are not enumerated. The account combines both with no $
-        breakdown — this is a missing FACT (the split), not an unresolved
-        statutory question, so it must never resolve to EXCLUDED."""
+    def test_legal_accounting_qualifies_under_canonical_rule(self, register, code):
+        """CANONICAL QPE RULE: 'Professional services (such as insurance and
+        accounting services)' names a broad category; 'such as' is
+        illustrative, not exhaustive. No clause excludes legal fees or
+        submission costs, so — absent an explicit exclusion — the account
+        is included in full. No $ split is required."""
         a = _get(register, code)
-        assert a.state == QualificationState.GREY_AREA_REQUIRES_AUTHORITY
-        assert a.authority_basis == AuthorityBasis.FACT_DEPENDENT
+        assert a.state == QualificationState.QUALIFIES
+        assert a.authority_basis == AuthorityBasis.EXPLICIT_STATUTE
         assert a.state != QualificationState.EXCLUDED
+
+    def test_completion_bond_qualifies_under_canonical_rule(self, register):
+        """80-00: no clause in the primary source excludes a completion
+        bond premium. Absence from the 33-item illustrative list is
+        silence, not an explicit exclusion (that express-exclusions
+        clause exists only for Digital Animation, not Motion Pictures)."""
+        a = _get(register, "80-00")
+        assert a.state == QualificationState.QUALIFIES
+        assert a.authority_basis == AuthorityBasis.EXPLICIT_STATUTE
+
+    def test_contingency_qualifies_with_disclosed_claim_timing_caveat(self, register):
+        """81-00: no clause excludes a contingency reserve either. Included,
+        with a disclosed (non-excluding) claim-timing note: only the
+        drawn-down portion will appear in the auditor's certified
+        incurred-expenditure report at claim time."""
+        a = _get(register, "81-00")
+        assert a.state == QualificationState.QUALIFIES
+        assert a.authority_basis == AuthorityBasis.EXPLICIT_STATUTE
+        assert "certified report" in a.reason.lower() or "claim" in a.reason.lower()
 
     def test_not_applicable_accounts(self, register):
         fc = _get(register, "82-00")
@@ -247,7 +261,7 @@ class TestRegisterReconciliation:
         qualifies = [a for a in register if a.state == QualificationState.QUALIFIES]
         assert all(a.authority_basis == AuthorityBasis.EXPLICIT_STATUTE for a in qualifies)
         qualifies_total = sum(a.amount_usd for a in qualifies)
-        assert qualifies_total == pytest.approx(2_846_357.0, abs=0.01)
+        assert qualifies_total == pytest.approx(3_700_954.0, abs=0.01)
 
         by_state = {}
         for a in register:
@@ -401,9 +415,14 @@ class TestGreyAreaEvidenceGraphMigration:
             assert acct.authority_basis == AuthorityBasis.EXPLICIT_STATUTE
             assert acct.confidence == QualificationConfidence.HIGH
             assert "EDB-2026-0412" in acct.reason
-        # original register is untouched (pure function)
+        # original register is untouched (pure function). 70-00/71-00 now
+        # already QUALIFY under the canonical QPE rule before any
+        # resolution runs (see TestDeterministicExclusions) — applying a
+        # graph-backed resolution to an already-qualifying account is a
+        # legitimate no-op reclassification, still exercised here to
+        # confirm apply_grey_area_resolution's mechanics hold regardless.
         original_70 = next(a for a in register if a.account_code == "70-00")
-        assert original_70.state == QualificationState.GREY_AREA_REQUIRES_AUTHORITY
+        assert original_70.state == QualificationState.QUALIFIES
 
     def test_inkind_resolution_never_reclassifies_register_accounts(self, register, grey_areas, evidence_graph):
         """In-kind stays off-budget additive only — applying its resolution
@@ -443,4 +462,4 @@ class TestGreyAreaEvidenceGraphMigration:
         build_little_utopia_grey_areas()/build_little_utopia_evidence_graph()
         never mutates the register construction itself."""
         qpe = sum(a.amount_usd for a in register if a.state == QualificationState.QUALIFIES)
-        assert qpe == pytest.approx(2_846_357.0, abs=0.01)
+        assert qpe == pytest.approx(3_700_954.0, abs=0.01)

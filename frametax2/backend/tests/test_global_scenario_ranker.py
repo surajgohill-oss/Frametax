@@ -241,13 +241,19 @@ class TestNonPriceableOpportunities:
 
 class TestGreyAreaGating:
     def test_grey_area_opportunities_remain_gated(self, structures, grey_areas):
+        """The remaining grey area (GA-INKIND-FMV, off-budget in-kind post
+        FMV) is OPEN and must not be reflected in Conservative — no
+        on-budget account currently carries a grey-area classification
+        under the canonical QPE rule (see test_qualification_model.py),
+        so gating is verified via the off-budget in-kind addon instead of
+        an account code."""
         baseline = next(s for s in structures if s.structure_id == "STRUCT-BASELINE-MU")
         grey_opp_ids = [oid for oid in baseline.included_opportunity_ids if oid.startswith("OPP-GREY-")]
         assert grey_opp_ids  # present
-        # None of them are RESOLVED_INCLUDE, so Conservative must not include their accounts.
+        # None of them are RESOLVED_INCLUDE, so Conservative must not include their value.
         assert all(g.status.value == "open" for g in grey_areas)
         cons = baseline.cases[RiskCase.CONSERVATIVE]
-        assert "70-00" not in cons.included_codes  # legal/accounting-split grey area account stays out of Conservative
+        assert cons.inkind_addon_usd == 0.0  # unresolved off-budget in-kind stays out of Conservative
 
     def test_grey_area_carries_blocking_requirement(self, structures):
         baseline = next(s for s in structures if s.structure_id == "STRUCT-BASELINE-MU")
@@ -284,8 +290,8 @@ class TestFourCasePricing:
     def test_existing_little_utopia_conservative_result_unchanged(self, structures):
         baseline = next(s for s in structures if s.structure_id == "STRUCT-BASELINE-MU")
         cons = baseline.cases[RiskCase.CONSERVATIVE]
-        assert cons.qpe_usd == pytest.approx(2_846_357.0, abs=1.0)
-        assert cons.incentive_usd == pytest.approx(1_138_542.8, abs=1.0)
+        assert cons.qpe_usd == pytest.approx(3_700_954.0, abs=1.0)
+        assert cons.incentive_usd == pytest.approx(1_480_381.6, abs=1.0)
 
     def test_non_priceable_structure_has_no_cases(self, structures):
         for s in structures:
@@ -384,7 +390,7 @@ class TestNonMutation:
             structuring_paths=paths, grey_areas=grey_areas,
         )
         cons = result.cases[RiskCase.CONSERVATIVE]
-        assert cons.qpe_usd == pytest.approx(2_846_357.0, abs=1.0)
+        assert cons.qpe_usd == pytest.approx(3_700_954.0, abs=1.0)
 
     def test_module_does_not_modify_optimization_engine_source_import(self):
         import ast

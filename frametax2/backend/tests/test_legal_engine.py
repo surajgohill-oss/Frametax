@@ -225,12 +225,18 @@ class TestCommitScoreRerun:
         assert ga.status == GreyAreaStatus.OPEN  # resolution is a new object
 
     def test_rerun_books_resolution_into_conservative_case(self, engine, grey_areas, register, graph):
+        """GA-LEGAL-ACCOUNTING-SPLIT's accounts (70-00/71-00) already
+        QUALIFY under the canonical QPE rule before any resolution runs
+        (see test_qualification_model.py) — so committing this specific
+        resolution is a legitimate no-op on NPC: there was nothing being
+        withheld to release. The rerun mechanism itself must still never
+        make the case WORSE after a resolved, evidence-backed commit."""
         before = engine.rerun(register=register, gross_budget_usd=MU_GROSS_BUDGET, rate=MU_RATE, grey_areas=grey_areas, graph=graph)
         _run_through_commit(engine, grey_areas, graph)
         after = engine.rerun(register=register, gross_budget_usd=MU_GROSS_BUDGET, rate=MU_RATE, grey_areas=grey_areas, graph=graph, as_of_date=AS_OF)
         before_npc = before.optimization.cases[RiskCase.CONSERVATIVE].net_production_cost_usd
         after_npc = after.optimization.cases[RiskCase.CONSERVATIVE].net_production_cost_usd
-        assert after_npc < before_npc  # evidence-backed resolution genuinely improves the case
+        assert after_npc <= before_npc  # never worse; no-op here since nothing was withheld
 
     def test_rerun_never_mutates_caller_inputs(self, engine, grey_areas, register, graph):
         _run_through_commit(engine, grey_areas, graph)

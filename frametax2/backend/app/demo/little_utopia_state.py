@@ -2,15 +2,18 @@
 little_utopia_state.py
 
 The single canonical production state the CineGlobe API serves: THE
-LITTLE UTOPIA (Mauritius, v1.1, June 2025) — the same account-level
-register already used by every backend test in this repository
-(tests/fixtures/little_utopia_sanitized.py ->
-qualification_model.build_little_utopia_qualification_register()).
+LITTLE UTOPIA (Mauritius). The register is built from the ACTUAL parsed
+production budget (app.data.little_utopia_real_budget ->
+qualification_model.build_little_utopia_real_register()) — not the
+sanitized fixture (tests/fixtures/little_utopia_sanitized.py ->
+build_little_utopia_qualification_register()), which remains a distinct,
+still-tested capability but is no longer the primary served data.
 
 This module introduces NO new production, NO fabricated people, NO
 invented screenplay. Every input here is either:
-  - the real Little Utopia budget/facts/grey-areas (already-tested
-    fixture data),
+  - the real, parsed Little Utopia budget/facts/grey-areas (see
+    app.data.little_utopia_real_budget's own docstring for exactly how
+    to reproduce the parse from the source PDF),
   - a production fact the user has explicitly supplied through the
     facts API (apply_fact_answers), or
   - honestly absent (no screenplay on file, no cast/crew intake on
@@ -74,14 +77,22 @@ from app.calculators.production_structure_composer import CompositionResult, com
 from app.calculators.qualification_derivation import ProductionFacts
 from app.data.program_rate_rules import RateResolution, resolve_program_rate
 from app.calculators.qualification_model import (
-    LITTLE_UTOPIA_ACCOUNTS_OUTSIDE_MU,
-    LITTLE_UTOPIA_OFFSHORE_PAYROLL,
     AccountQualification,
     GreyAreaItem,
     GreyAreaStatus,
     QualificationState,
-    build_little_utopia_grey_areas,
-    build_little_utopia_qualification_register,
+    build_little_utopia_real_evidence_graph,
+    build_little_utopia_real_grey_areas,
+    build_little_utopia_real_register,
+)
+from app.data.little_utopia_real_budget import (
+    AUTHORITATIVE_GROSS_BUDGET_USD,
+    LEAF_ACCOUNT_SUM_USD,
+    LITTLE_UTOPIA_REAL_ACCOUNTS_OUTSIDE_MU,
+    LITTLE_UTOPIA_REAL_OFFSHORE_PAYROLL,
+    RECONCILIATION_NOTE,
+    RECONCILIATION_VARIANCE_USD,
+    SOURCE_PDF_FILENAME,
 )
 from app.ingestion.budget_parser import BudgetParseResult, ParsedLineItem
 
@@ -99,7 +110,15 @@ JURISDICTION_CODE = "MU"
 # a warning rather than silently absorbed.
 MU_RATE = 0.40
 MU_PRODUCTION_TYPE = "feature_film"
-MU_GROSS_BUDGET_USD = 4_364_393.0
+# The production's controlling gross budget: the source PDF's own stated
+# Grand Total (AUTHORITATIVE_GROSS_BUDGET_USD), not the sum of the 44
+# parsed leaf accounts (LEAF_ACCOUNT_SUM_USD) — the two differ by
+# RECONCILIATION_VARIANCE_USD ($2.00), an accepted source-document
+# rounding variance (see app.data.little_utopia_real_budget's docstring
+# for the full diagnosis). Using the authoritative figure here means
+# build_risk_cases()'s own existing reconciliation-warning mechanism
+# surfaces the $2 gap on every computed case rather than it being hidden.
+MU_GROSS_BUDGET_USD = AUTHORITATIVE_GROSS_BUDGET_USD
 AS_OF_DATE = "2026-07-10"
 
 
@@ -183,12 +202,13 @@ def reset_fact_answers() -> None:
 
 
 def _production_facts() -> ProductionFacts:
-    """The production's real current facts, overlaid with any answers the
-    user has supplied through the facts API."""
+    """The production's real current facts (from the actual budget's own
+    header text — see app.data.little_utopia_real_budget), overlaid with
+    any answers the user has supplied through the facts API."""
     return ProductionFacts(
         jurisdiction_code=JURISDICTION_CODE,
-        accounts_outside_jurisdiction=LITTLE_UTOPIA_ACCOUNTS_OUTSIDE_MU,
-        offshore_payroll_accounts=LITTLE_UTOPIA_OFFSHORE_PAYROLL,
+        accounts_outside_jurisdiction=LITTLE_UTOPIA_REAL_ACCOUNTS_OUTSIDE_MU,
+        offshore_payroll_accounts=LITTLE_UTOPIA_REAL_OFFSHORE_PAYROLL,
         post_work_in_jurisdiction=_fact_answers.get("post_work_in_jurisdiction"),
         payroll_routing_localized=_fact_answers.get("payroll_routing_localized"),
         treaty_partner_code=_fact_answers.get("treaty_partner_code"),
@@ -196,11 +216,13 @@ def _production_facts() -> ProductionFacts:
 
 
 def _register_to_budget_parse_result(register: list[AccountQualification]) -> BudgetParseResult:
-    """The register IS Little Utopia's real account-level budget data
-    (qualification_model.py's own docstring: 'taken directly from
-    [the sanitized fixture], not recomputed'). This reshapes it into the
+    """The register IS Little Utopia's real, parsed account-level budget
+    data (app.data.little_utopia_real_budget). This reshapes it into the
     ParsedLineItem shape build_budget_intelligence() already accepts —
-    no new budget data, no re-parsing, no invented department field."""
+    no new budget data, no re-parsing, no invented department field.
+    Real PDF page provenance is looked up by account code and preserved."""
+    from app.data.little_utopia_real_budget import LITTLE_UTOPIA_REAL_BUDGET_LINES
+    page_by_code = {code: page for code, _desc, _amt, page in LITTLE_UTOPIA_REAL_BUDGET_LINES}
     line_items = [
         ParsedLineItem(
             description=account.description,
@@ -209,15 +231,19 @@ def _register_to_budget_parse_result(register: list[AccountQualification]) -> Bu
             amount_usd=account.amount_usd,
             currency_code="USD",
             source_row=None,
-            source_page=None,
+            source_page=page_by_code.get(account.account_code),
         )
         for account in register
     ]
     return BudgetParseResult(
-        filename="little_utopia_register.json",
+        filename=SOURCE_PDF_FILENAME,
         currency_code="USD",
         total_budget_raw=MU_GROSS_BUDGET_USD,
-        origin_note="Derived from qualification_model.build_little_utopia_qualification_register()",
+        origin_note=(
+            f"Parsed from the real Movie Magic budget PDF via "
+            f"app.ingestion.budget_parser + app.data.little_utopia_real_budget. "
+            f"{RECONCILIATION_NOTE}"
+        ),
         line_items=line_items,
     )
 
@@ -246,6 +272,14 @@ class LittleUtopiaState:
     legal_commit: CommitResult = None
     legal_rerun_before: RerunResult = None
     legal_rerun: RerunResult = None
+    # Real-budget reconciliation (see app.data.little_utopia_real_budget):
+    # the source PDF's own stated Grand Total vs. the sum of its 44 parsed
+    # leaf accounts, and the accepted $2 source-document rounding variance
+    # between them — preserved and served, never hidden or balanced away.
+    budget_authoritative_gross_usd: float = AUTHORITATIVE_GROSS_BUDGET_USD
+    budget_leaf_account_sum_usd: float = LEAF_ACCOUNT_SUM_USD
+    budget_reconciliation_variance_usd: float = RECONCILIATION_VARIANCE_USD
+    budget_reconciliation_note: str = RECONCILIATION_NOTE
 
 
 def get_state() -> LittleUtopiaState:
@@ -259,9 +293,11 @@ def _build_state(_fact_key: tuple) -> LittleUtopiaState:
     facts = _production_facts()
     graph_default = build_jurisdiction_graph(mu_rate=MU_RATE)  # facts-independent world model
 
-    # Facts -> derived qualification register (Seam A+B).
-    register = build_little_utopia_qualification_register(mu_rate=MU_RATE, facts=facts)
-    grey_areas = build_little_utopia_grey_areas()
+    # Facts -> derived qualification register (Seam A+B), from the REAL
+    # parsed production budget (app.data.little_utopia_real_budget) — the
+    # sanitized fixture no longer contributes to the primary register.
+    register = build_little_utopia_real_register(mu_rate=MU_RATE, facts=facts)
+    grey_areas = build_little_utopia_real_grey_areas()
     graph = build_jurisdiction_graph(mu_rate=MU_RATE, register=register)
 
     # Permanent rate-authority rules (app.data.program_rate_rules): the
@@ -369,7 +405,7 @@ def _build_state(_fact_key: tuple) -> LittleUtopiaState:
     # live retrieval performed"). It operates on its OWN fresh copy of
     # the grey areas and feeds ONLY the legal_* fields consumed by
     # /legal — never the primary register/composition above.
-    legal_grey_areas = build_little_utopia_grey_areas()
+    legal_grey_areas = build_little_utopia_real_grey_areas()
     legal_engine = LegalEngine(connectors={
         ConnectorClass.TAX_AUTHORITY_GUIDANCE: MockConnector(ConnectorClass.TAX_AUTHORITY_GUIDANCE),
     })
@@ -378,25 +414,25 @@ def _build_state(_fact_key: tuple) -> LittleUtopiaState:
     # commits, exactly like any other direct build_risk_cases() caller.
     legal_rerun_before = LegalEngine().rerun(
         register=register, gross_budget_usd=MU_GROSS_BUDGET_USD, rate=MU_RATE,
-        grey_areas=build_little_utopia_grey_areas(), graph=graph_default,
+        grey_areas=build_little_utopia_real_grey_areas(), graph=graph_default,
         jurisdiction_code=JURISDICTION_CODE,
     )
 
     legal_cycle = legal_engine.run_acquisition_cycle(AS_OF_DATE, grey_areas=legal_grey_areas, graph=graph_default)
 
     legal_commit = None
-    if "STG-TASK-GA-LEGAL-ACCOUNTING-SPLIT" in legal_cycle.awaiting_verification:
+    if "STG-TASK-GA-REAL-ADMIN-PUBLICITY" in legal_cycle.awaiting_verification:
         legal_engine.record_verification(
-            "STG-TASK-GA-LEGAL-ACCOUNTING-SPLIT", verified_by="counsel@littleutopia.example",
-            outcome="authority_found", notes="Production accounting provided an itemized breakdown "
-                                              "of accounts 70-00/71-00.",
+            "STG-TASK-GA-REAL-ADMIN-PUBLICITY", verified_by="counsel@littleutopia.example",
+            outcome="authority_found", notes="EDB guidance located on administrative/publicity "
+                                              "spend within 'Production service company fees'.",
         )
-        legal_engine.record_approval("STG-TASK-GA-LEGAL-ACCOUNTING-SPLIT", approved_by="producer@littleutopia.example")
-        ga = next(g for g in legal_grey_areas if g.item_id == "GA-LEGAL-ACCOUNTING-SPLIT")
+        legal_engine.record_approval("STG-TASK-GA-REAL-ADMIN-PUBLICITY", approved_by="producer@littleutopia.example")
+        ga = next(g for g in legal_grey_areas if g.item_id == "GA-REAL-ADMIN-PUBLICITY")
         legal_commit = legal_engine.commit_and_score(
-            "STG-TASK-GA-LEGAL-ACCOUNTING-SPLIT", target_jurisdiction_code=JURISDICTION_CODE, as_of_date=AS_OF_DATE,
-            rule_text="The accounting/audit portion of accounts 70-00/71-00 qualifies as QPE "
-                      "under 'Professional services (such as insurance and accounting services)'.",
+            "STG-TASK-GA-REAL-ADMIN-PUBLICITY", target_jurisdiction_code=JURISDICTION_CODE, as_of_date=AS_OF_DATE,
+            rule_text="General administrative overhead (7000) and publicity/PR spend (7100) "
+                      "qualify as QPE under 'Production service company fees'.",
             tier=AuthorityTier.OFFICIAL_GUIDANCE, authority_body="Mauritius Revenue Authority",
             resolves_grey_area=ga, grey_area_outcome=GreyAreaStatus.RESOLVED_INCLUDE,
         )

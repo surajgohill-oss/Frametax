@@ -127,6 +127,16 @@ async def get_production() -> dict[str, Any]:
             if rr is not None else None
         ),
         "rate_warnings": list(s.rate_warnings),
+        # Real-budget reconciliation: the source PDF's own stated Grand
+        # Total (the controlling gross budget) vs. the sum of its 44
+        # parsed leaf accounts, and the accepted source-document rounding
+        # variance between them — never hidden, never balanced away.
+        "budget_reconciliation": {
+            "authoritative_gross_usd": s.budget_authoritative_gross_usd,
+            "leaf_account_sum_usd": s.budget_leaf_account_sum_usd,
+            "variance_usd": s.budget_reconciliation_variance_usd,
+            "note": s.budget_reconciliation_note,
+        },
         "as_of_date": "2026-07-10",
     }
 
