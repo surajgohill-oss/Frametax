@@ -507,6 +507,24 @@ def resolve_grey_area(
     )
 
 
+# Citation-provenance markers identifying mock/demo research output.
+# MockConnector (legal_authority_acquisition.py) self-labels every
+# artifact it produces with these markers ("Mock retrieval: ..." titles,
+# "mock://" source URLs, "MOCK CONNECTOR" excerpts). A citation carrying
+# any of them is research display, never statutory evidence.
+MOCK_CITATION_MARKERS: tuple[str, ...] = ("mock retrieval", "mock://", "mock connector")
+
+
+def is_authoritative_citation(citation: Optional[str]) -> bool:
+    """False when the citation is absent or self-labels as mock/demo
+    research output. Used as the provenance gate that keeps a mock
+    resolution from ever being classified as EXPLICIT_STATUTE."""
+    if not citation:
+        return False
+    lowered = citation.lower()
+    return not any(marker in lowered for marker in MOCK_CITATION_MARKERS)
+
+
 def apply_grey_area_resolution(
     register: list[AccountQualification],
     item: GreyAreaItem,
@@ -516,6 +534,15 @@ def apply_grey_area_resolution(
     never mutated) with the affected accounts reclassified and their
     authority_basis upgraded to EXPLICIT_STATUTE — the ruling is now the
     citable authority, replacing the prior ABSENCE_OF_AUTHORITY basis.
+
+    PROVENANCE GATE: the EXPLICIT_STATUTE/HIGH upgrade is granted only
+    when the ruling citation is authoritative (is_authoritative_citation).
+    A mock/demo citation (MockConnector output) still moves the account's
+    state within the caller's own research view — that is this function's
+    contract for the Legal Engine's rerun simulation — but the account
+    KEEPS its prior authority_basis, drops to LOW confidence, and its
+    reason is prefixed NON-AUTHORITATIVE, so mock research can never be
+    displayed or consumed as statutory evidence anywhere.
 
     Off-budget items (in-kind FMV) never reclassify any register account
     — resolving them has no effect here by design; their value is
@@ -540,16 +567,32 @@ def apply_grey_area_resolution(
     else:
         new_state, new_reason = None, None  # RESOLVED_CONDITIONAL: leave account states untouched here
 
+    authoritative = is_authoritative_citation(item.ruling_citation)
+
     updated: list[AccountQualification] = []
     for a in register:
         if a.account_code in item.account_codes and new_state is not None:
-            updated.append(AccountQualification(
-                account_code=a.account_code, description=a.description, amount_usd=a.amount_usd,
-                state=new_state, confidence=QualificationConfidence.HIGH,
-                authority_basis=AuthorityBasis.EXPLICIT_STATUTE,
-                reason=f"Resolved {new_reason} via {item.ruling_citation}: {item.resolving_evidence}",
-                financial_impact_usd=a.amount_usd,
-            ))
+            if authoritative:
+                updated.append(AccountQualification(
+                    account_code=a.account_code, description=a.description, amount_usd=a.amount_usd,
+                    state=new_state, confidence=QualificationConfidence.HIGH,
+                    authority_basis=AuthorityBasis.EXPLICIT_STATUTE,
+                    reason=f"Resolved {new_reason} via {item.ruling_citation}: {item.resolving_evidence}",
+                    financial_impact_usd=a.amount_usd,
+                ))
+            else:
+                updated.append(AccountQualification(
+                    account_code=a.account_code, description=a.description, amount_usd=a.amount_usd,
+                    state=new_state, confidence=QualificationConfidence.LOW,
+                    authority_basis=a.authority_basis,
+                    reason=(f"NON-AUTHORITATIVE (research-only) resolution — not statutory "
+                            f"evidence. Simulated {new_reason} via {item.ruling_citation}: "
+                            f"{item.resolving_evidence}"),
+                    financial_impact_usd=a.amount_usd,
+                    structuring_mechanism=a.structuring_mechanism,
+                    resolving_evidence=a.resolving_evidence,
+                    incentive_upside_usd=a.incentive_upside_usd,
+                ))
         else:
             updated.append(a)
     return updated

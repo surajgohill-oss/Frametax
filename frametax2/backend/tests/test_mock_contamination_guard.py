@@ -1,0 +1,118 @@
+"""
+test_mock_contamination_guard.py
+
+Regression guard for the confirmed mock-contamination defect (introduced
+by commit dee6c2b's "Seam C" rewiring, fixed by restoring the original
+primary/research separation):
+
+  1. MockConnector/legal research output must never alter the primary
+     production register, QPE, structures, scenarios or recommendations.
+  2. No mock/demo citation may ever be classified as EXPLICIT_STATUTE.
+  3. The API distinguishes authoritative evidence from mock research.
+"""
+from __future__ import annotations
+
+import pytest
+
+from app.calculators.optimization_engine import RiskCase
+from app.calculators.qualification_model import (
+    AuthorityBasis,
+    GreyAreaStatus,
+    QualificationConfidence,
+    QualificationState,
+    apply_grey_area_resolution,
+    build_little_utopia_grey_areas,
+    build_little_utopia_qualification_register,
+    is_authoritative_citation,
+    resolve_grey_area,
+)
+
+
+@pytest.fixture(scope="module")
+def state():
+    from app.demo.little_utopia_state import get_state, reset_fact_answers
+    reset_fact_answers()
+    return get_state()
+
+
+class TestPrimaryPipelineIsMockFree:
+    def test_served_register_equals_raw_statutory_register(self, state):
+        """The served register must be byte-equivalent in state/basis to a
+        fresh raw derivation — no legal-cycle reclassification applied."""
+        raw = build_little_utopia_qualification_register()
+        assert [(a.account_code, a.state, a.authority_basis) for a in state.register] == \
+               [(a.account_code, a.state, a.authority_basis) for a in raw]
+
+    def test_served_qpe_excludes_mock_resolved_amounts(self, state):
+        served_qpe = sum(a.amount_usd for a in state.register if a.state == QualificationState.QUALIFIES)
+        raw_qpe = sum(
+            a.amount_usd
+            for a in build_little_utopia_qualification_register()
+            if a.state == QualificationState.QUALIFIES
+        )
+        assert served_qpe == raw_qpe  # mock cycle adds nothing
+
+    def test_70_71_remain_grey_areas_on_primary_surfaces(self, state):
+        for code in ("70-00", "71-00"):
+            a = next(x for x in state.register if x.account_code == code)
+            assert a.state == QualificationState.GREY_AREA_REQUIRES_AUTHORITY
+            assert a.authority_basis == AuthorityBasis.FACT_DEPENDENT
+            assert "mock" not in a.reason.lower()
+
+    def test_composition_and_ranking_reconcile_to_raw_register(self, state):
+        raw_qpe = sum(
+            a.amount_usd
+            for a in build_little_utopia_qualification_register()
+            if a.state == QualificationState.QUALIFIES
+        )
+        mu = next(c for c in state.composition.candidates if c.candidate_id == "PSC-MU")
+        assert mu.cases[RiskCase.CONSERVATIVE].qpe_usd == pytest.approx(raw_qpe, abs=0.01)
+        rank1 = state.scenario_ranking.ranks[0]
+        scen = next(s for s in state.scenario_ranking.structures if s.structure_id == rank1.structure_id)
+        assert scen.cases[RiskCase.CONSERVATIVE].qpe_usd == pytest.approx(raw_qpe, abs=0.01)
+
+    def test_mock_cycle_still_runs_confined_to_legal_fields(self, state):
+        """The research view still exists and is still mock-labeled —
+        confinement, not deletion."""
+        assert state.legal_commit is not None
+        assert not is_authoritative_citation(state.legal_commit.resolved_grey_area.ruling_citation)
+        # and the primary grey areas were never touched by that cycle
+        for g in state.grey_areas_baseline:
+            assert g.status == GreyAreaStatus.OPEN
+
+
+class TestProvenanceGuard:
+    def test_mock_citation_is_not_authoritative(self):
+        assert not is_authoritative_citation("Mock retrieval: TASK-X")
+        assert not is_authoritative_citation("mock://mu/TASK-X")
+        assert not is_authoritative_citation("MOCK CONNECTOR — no live retrieval performed")
+        assert not is_authoritative_citation(None)
+        assert not is_authoritative_citation("")
+        assert is_authoritative_citation("EDB Ruling FRS-2026-0412")
+
+    def test_mock_resolution_never_upgrades_to_explicit_statute(self):
+        register = build_little_utopia_qualification_register()
+        ga = next(g for g in build_little_utopia_grey_areas() if g.item_id == "GA-LEGAL-ACCOUNTING-SPLIT")
+        resolved = resolve_grey_area(ga, GreyAreaStatus.RESOLVED_INCLUDE,
+                                     ruling_citation="Mock retrieval: TASK-GA-LEGAL-ACCOUNTING-SPLIT")
+        updated = apply_grey_area_resolution(register, resolved)
+        for code in ("70-00", "71-00"):
+            a = next(x for x in updated if x.account_code == code)
+            assert a.authority_basis != AuthorityBasis.EXPLICIT_STATUTE
+            assert a.authority_basis == AuthorityBasis.FACT_DEPENDENT  # prior basis kept
+            assert a.confidence == QualificationConfidence.LOW
+            assert a.reason.startswith("NON-AUTHORITATIVE")
+
+    def test_authoritative_resolution_still_upgrades(self):
+        """Real citations keep the original upgrade behavior — the guard
+        gates provenance, it does not disable resolution."""
+        register = build_little_utopia_qualification_register()
+        ga = next(g for g in build_little_utopia_grey_areas() if g.item_id == "GA-LEGAL-ACCOUNTING-SPLIT")
+        resolved = resolve_grey_area(ga, GreyAreaStatus.RESOLVED_INCLUDE,
+                                     ruling_citation="EDB Ruling FRS-2026-0412")
+        updated = apply_grey_area_resolution(register, resolved)
+        for code in ("70-00", "71-00"):
+            a = next(x for x in updated if x.account_code == code)
+            assert a.state == QualificationState.QUALIFIES
+            assert a.authority_basis == AuthorityBasis.EXPLICIT_STATUTE
+            assert a.confidence == QualificationConfidence.HIGH

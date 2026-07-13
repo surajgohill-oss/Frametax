@@ -17,22 +17,26 @@ invented screenplay. Every input here is either:
     file) — Package Intelligence's own "unknown stays unknown"
     discipline handles this correctly; it is not a bug or a stub.
 
-Engine Integration Phase 1 changes the flow from "hardcoded register ->
-optimizer" to the designed chain:
+The flow (Engine Integration Phase 1, with the mock-contamination
+regression fix restoring the original primary/research separation):
 
     production facts (defaults + user answers)
       -> derived qualification register (qualification_derivation)
-      -> Legal Engine acquisition/commit cycle
-      -> post-resolution register (apply_resolutions — the same
-         qualification_model.apply_grey_area_resolution reclassification
-         the Legal Engine has always owned)
       -> ONE opportunity-discovery + composition + recommendation +
-         scenario-ranking pass over the POST-RESOLUTION register
-      -> API
+         scenario-ranking pass over the RAW statutory register
+      -> API (primary production surfaces)
 
-so /structures, /recommendations, and /scenarios all serve the same
-evidence state /legal reports, instead of a stale pre-resolution
-composition.
+    SEPARATELY, research-only:
+      -> Legal Engine acquisition/commit cycle over ITS OWN copy of the
+         grey areas (MockConnector — self-labeled mock retrieval)
+      -> legal_* fields consumed by /legal only
+
+MockConnector output is research display, not evidence: it must never
+reclassify an account on the primary register, add to served QPE, or be
+classified as authoritative. A real (non-mock) authoritative resolution
+would enter the primary pipeline only through the statutory knowledge
+base (program_spend_rules) after provenance validation — not through
+this demo cycle.
 
 The only non-canonical step this module performs is running one Legal
 Engine acquisition cycle through MockConnector (the sole connector
@@ -320,10 +324,52 @@ def _build_state(_fact_key: tuple) -> LittleUtopiaState:
     )
     movable_spend_usd = movable_hint.amount_usd if movable_hint else None
 
-    # Legal Engine: one real acquisition cycle over the real Little
-    # Utopia grey areas, through the sole shipped connector
-    # (MockConnector — see module docstring). Mirrors
-    # test_legal_engine.py's own verified sequence exactly.
+    # ── PRIMARY PRODUCTION PIPELINE — authoritative data only ──────────
+    # Everything served as primary production state (register, discovery,
+    # composition, recommendations, scenarios) is computed from the RAW
+    # statutory register and pristine grey areas. The MockConnector legal
+    # cycle below runs over ITS OWN copies and feeds only the legal_*
+    # research fields — mock/demo research must never alter the primary
+    # production calculations. (This restores the separation that existed
+    # before commit dee6c2b, whose "Seam C" rewiring let a MockConnector
+    # resolution silently add $113,000 to served QPE — the confirmed
+    # mock-contamination regression.)
+
+    collection = discover_all_opportunities(
+        baseline_jurisdiction=JURISDICTION_CODE, mu_rate=MU_RATE, graph=graph,
+        movable_spend_usd=movable_spend_usd,
+        register=register, grey_areas=grey_areas,
+    )
+
+    # Seam B: an elected treaty partner is an engine input to structure
+    # composition (an extra jurisdiction set), not a display string.
+    extra_sets: list[tuple[str, ...]] = []
+    if facts.treaty_partner_code:
+        extra_sets.append((JURISDICTION_CODE, facts.treaty_partner_code))
+
+    composition = compose_production_structures(
+        collection, graph, register=register, gross_budget_usd=MU_GROSS_BUDGET_USD,
+        rate=MU_RATE, grey_areas=grey_areas,
+        extra_jurisdiction_sets=extra_sets or None,
+    )
+    recommendations = generate_production_recommendations(
+        collection, composition_result=composition, register=register, rate=MU_RATE,
+        jurisdiction_code=JURISDICTION_CODE,
+    )
+
+    scenario_structures = compose_candidate_structures(
+        collection, register=register, gross_budget_usd=MU_GROSS_BUDGET_USD,
+        rate=MU_RATE, grey_areas=grey_areas,
+    )
+    scenario_ranking = rank_production_structures(scenario_structures)
+
+    # ── LEGAL / RESEARCH VIEW — explicitly labeled, mock-sourced ───────
+    # One acquisition cycle through the sole shipped connector
+    # (MockConnector — every excerpt self-labels "MOCK CONNECTOR — no
+    # live retrieval performed"). It operates on its OWN fresh copy of
+    # the grey areas and feeds ONLY the legal_* fields consumed by
+    # /legal — never the primary register/composition above.
+    legal_grey_areas = build_little_utopia_grey_areas()
     legal_engine = LegalEngine(connectors={
         ConnectorClass.TAX_AUTHORITY_GUIDANCE: MockConnector(ConnectorClass.TAX_AUTHORITY_GUIDANCE),
     })
@@ -336,7 +382,7 @@ def _build_state(_fact_key: tuple) -> LittleUtopiaState:
         jurisdiction_code=JURISDICTION_CODE,
     )
 
-    legal_cycle = legal_engine.run_acquisition_cycle(AS_OF_DATE, grey_areas=grey_areas, graph=graph_default)
+    legal_cycle = legal_engine.run_acquisition_cycle(AS_OF_DATE, grey_areas=legal_grey_areas, graph=graph_default)
 
     legal_commit = None
     if "STG-TASK-GA-LEGAL-ACCOUNTING-SPLIT" in legal_cycle.awaiting_verification:
@@ -346,7 +392,7 @@ def _build_state(_fact_key: tuple) -> LittleUtopiaState:
                                               "of accounts 70-00/71-00.",
         )
         legal_engine.record_approval("STG-TASK-GA-LEGAL-ACCOUNTING-SPLIT", approved_by="producer@littleutopia.example")
-        ga = next(g for g in grey_areas if g.item_id == "GA-LEGAL-ACCOUNTING-SPLIT")
+        ga = next(g for g in legal_grey_areas if g.item_id == "GA-LEGAL-ACCOUNTING-SPLIT")
         legal_commit = legal_engine.commit_and_score(
             "STG-TASK-GA-LEGAL-ACCOUNTING-SPLIT", target_jurisdiction_code=JURISDICTION_CODE, as_of_date=AS_OF_DATE,
             rule_text="The accounting/audit portion of accounts 70-00/71-00 qualifies as QPE "
@@ -357,44 +403,9 @@ def _build_state(_fact_key: tuple) -> LittleUtopiaState:
 
     legal_rerun = legal_engine.rerun(
         register=register, gross_budget_usd=MU_GROSS_BUDGET_USD, rate=MU_RATE,
-        grey_areas=grey_areas, graph=graph_default, jurisdiction_code=JURISDICTION_CODE,
+        grey_areas=legal_grey_areas, graph=graph_default, jurisdiction_code=JURISDICTION_CODE,
         as_of_date=AS_OF_DATE,
     )
-
-    # Seam C: the CANONICAL pipeline pass runs over the POST-RESOLUTION
-    # register — the same qualification_model.apply_grey_area_resolution
-    # reclassification the Legal Engine has always applied, now actually
-    # served by /structures, /recommendations, and /scenarios instead of
-    # being computed and discarded.
-    register_final, greys_final = legal_engine.apply_resolutions(register, grey_areas)
-
-    collection = discover_all_opportunities(
-        baseline_jurisdiction=JURISDICTION_CODE, mu_rate=MU_RATE, graph=graph,
-        movable_spend_usd=movable_spend_usd,
-        register=register_final, grey_areas=greys_final,
-    )
-
-    # Seam B: an elected treaty partner is an engine input to structure
-    # composition (an extra jurisdiction set), not a display string.
-    extra_sets: list[tuple[str, ...]] = []
-    if facts.treaty_partner_code:
-        extra_sets.append((JURISDICTION_CODE, facts.treaty_partner_code))
-
-    composition = compose_production_structures(
-        collection, graph, register=register_final, gross_budget_usd=MU_GROSS_BUDGET_USD,
-        rate=MU_RATE, grey_areas=greys_final,
-        extra_jurisdiction_sets=extra_sets or None,
-    )
-    recommendations = generate_production_recommendations(
-        collection, composition_result=composition, register=register_final, rate=MU_RATE,
-        jurisdiction_code=JURISDICTION_CODE,
-    )
-
-    scenario_structures = compose_candidate_structures(
-        collection, register=register_final, gross_budget_usd=MU_GROSS_BUDGET_USD,
-        rate=MU_RATE, grey_areas=greys_final,
-    )
-    scenario_ranking = rank_production_structures(scenario_structures)
 
     return LittleUtopiaState(
         production_id=PRODUCTION_ID,
@@ -402,8 +413,8 @@ def _build_state(_fact_key: tuple) -> LittleUtopiaState:
         jurisdiction_code=JURISDICTION_CODE,
         gross_budget_usd=MU_GROSS_BUDGET_USD,
         rate=MU_RATE,
-        register=register_final,
-        grey_areas_baseline=greys_final,
+        register=register,
+        grey_areas_baseline=grey_areas,
         graph=graph,
         package=package,
         collection=collection,

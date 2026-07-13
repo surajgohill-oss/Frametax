@@ -35,6 +35,7 @@ from app.calculators.production_constraint_engine import (
 )
 from app.calculators.production_recommendation_engine import RecommendationCategory
 from app.calculators.production_scenario_engine import ProductionScenario, ScenarioKind, run_scenario
+from app.calculators.qualification_model import is_authoritative_citation
 from app.calculators.ui_presentation import (
     attribute_fact_to_display,
     case_dict_to_display,
@@ -362,6 +363,10 @@ async def get_legal() -> dict[str, Any]:
             "authority_to_ask": g.authority_to_ask,
             "resolving_evidence": g.resolving_evidence,
             "status": g.status.value,
+            "ruling_citation": g.ruling_citation,
+            # Provenance flag: False when the resolution's citation is
+            # mock/demo research output (never statutory evidence).
+            "citation_is_authoritative": is_authoritative_citation(g.ruling_citation),
             "off_budget": g.off_budget,
             "graph_rule_id": g.graph_rule_id,
         }
@@ -378,6 +383,12 @@ async def get_legal() -> dict[str, Any]:
         }
 
     return {
+        # RESEARCH VIEW ONLY: everything below reflects the Legal
+        # Engine's mock-connector research cycle. It never feeds the
+        # primary production register/QPE served by /package and
+        # /structures — those are computed from the raw statutory
+        # register exclusively.
+        "is_research_view": True,
         "grey_areas_current": [_grey_area_dict(g) for g in s.legal_rerun.grey_areas_used],
         "questions_detected": len(s.legal_cycle.questions),
         "questions_auto_executed": list(s.legal_cycle.executed_task_ids),
