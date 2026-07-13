@@ -579,6 +579,9 @@ def generate_candidate_recommendations(result: CompositionResult) -> list[Recomm
 # is imported directly from cultural_test_rules.py — no scoring logic is
 # reimplemented here.
 CULTURAL_TEST_REGISTRY: dict[str, dict[str, Any]] = {
+    "uk_bfi_cultural_test": {
+        "rules": ctr.UK_BFI_RULES, "score_fn": ctr.score_uk_bfi_test, "deficit_fn": ctr.get_uk_bfi_deficit,
+    },
     "fr_cnc_cultural_test": {
         "rules": ctr.FR_CNC_RULES, "score_fn": ctr.score_fr_cnc_cultural_test, "deficit_fn": ctr.get_fr_cnc_deficit,
     },
@@ -624,6 +627,7 @@ _CREATIVE_INPUT_KEY_PREFIXES: tuple[str, ...] = (
 _CREATIVE_INPUT_KEYS_EXACT: frozenset[str] = frozenset({
     "producer_french",
     "producer_australian",
+    "producer_british",
     "french_language_or_subject",
     "australian_script_or_rights",
     "australian_music",

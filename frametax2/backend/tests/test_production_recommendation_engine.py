@@ -411,10 +411,11 @@ class TestCulturalRecommendations:
         recs = generate_cultural_recommendations({}, ("not_a_real_test",))
         assert recs == []
 
-    def test_all_seven_tests_registered(self):
+    def test_all_eight_tests_registered(self):
         assert set(CULTURAL_TEST_REGISTRY.keys()) == {
             "fr_cnc_cultural_test", "ie_section_481_test", "eu_eurimages_test",
             "ibermedia_test", "ca_content_test", "au_content_test", "eu_european_convention_test",
+            "uk_bfi_cultural_test",
         }
 
 

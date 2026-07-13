@@ -3,17 +3,20 @@ cultural_test_rules.py
 
 D2 Cultural Test Rules.
 Implements scoring functions for CNC, Section 481, Eurimages, Ibermedia,
-Canadian content, Australian content, and European Convention tests.
-All tests reuse the deterministic engine from evaluate_qualification_tests.py.
+Canadian content, Australian content, UK BFI, and European Convention
+tests. All tests reuse the deterministic engine from
+evaluate_qualification_tests.py.
 """
 from __future__ import annotations
 
 from typing import Any
 
 from app.calculators.evaluate_qualification_tests import (
+    UK_BFI_RULES_HARDCODED,
     CriterionResult,
     QualificationTestResult,
     score_qualification_test,
+    score_uk_bfi_cultural_test,
 )
 
 # ---------------------------------------------------------------------------
@@ -742,6 +745,46 @@ def get_eu_european_convention_deficit(
 
 
 # ---------------------------------------------------------------------------
+# 8. UK BFI Cultural Test
+#
+# Reuses evaluate_qualification_tests.score_uk_bfi_cultural_test / its
+# UK_BFI_RULES_HARDCODED rule table verbatim — this module never
+# reimplements that scoring. Section D (Cultural Practitioners) gives
+# writer/director/producer/composer/lead-actor/second-lead each an equal
+# 1/31 point weight (D1-D6) — the weight is whatever the test's own rule
+# table already assigns per role, never a universal hardcoded preference
+# for one role.
+# ---------------------------------------------------------------------------
+
+UK_BFI_RULES: list[dict] = UK_BFI_RULES_HARDCODED
+
+
+def score_uk_bfi_test(production_details: dict[str, Any]) -> QualificationTestResult:
+    return score_uk_bfi_cultural_test(production_details)
+
+
+def get_uk_bfi_deficit(
+    production_details: dict[str, Any],
+    test_result: QualificationTestResult,
+) -> list[str]:
+    deficits: list[str] = []
+    if test_result.total_score < test_result.minimum_required:
+        gap = test_result.minimum_required - test_result.total_score
+        deficits.append(
+            f"UK BFI cultural test score {test_result.total_score}/{test_result.total_available}; "
+            f"need {gap} more point(s) to reach minimum {test_result.minimum_required}."
+        )
+        unscored = [
+            f"{r.description} (+{r.max_points} pts)"
+            for r in test_result.criterion_results
+            if r.awarded_points == 0
+        ]
+        if unscored:
+            deficits.append("Unscored criteria: " + "; ".join(unscored))
+    return deficits
+
+
+# ---------------------------------------------------------------------------
 # Public exports
 # ---------------------------------------------------------------------------
 
@@ -754,6 +797,7 @@ __all__ = [
     "CA_CONTENT_RULES",
     "AU_CONTENT_RULES",
     "EU_EUROPEAN_CONVENTION_RULES",
+    "UK_BFI_RULES",
     # Scoring functions
     "score_fr_cnc_cultural_test",
     "score_ie_section_481_test",
@@ -762,6 +806,7 @@ __all__ = [
     "score_ca_content_test",
     "score_au_content_test",
     "score_eu_european_convention_test",
+    "score_uk_bfi_test",
     # Deficit helpers
     "get_fr_cnc_deficit",
     "get_ie_section_481_deficit",
@@ -770,4 +815,5 @@ __all__ = [
     "get_ca_content_deficit",
     "get_au_content_deficit",
     "get_eu_european_convention_deficit",
+    "get_uk_bfi_deficit",
 ]

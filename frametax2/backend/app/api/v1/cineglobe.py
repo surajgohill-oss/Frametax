@@ -47,10 +47,13 @@ from app.demo.little_utopia_state import (
     SPV_PRODUCTION_STRUCTURE_DEFAULT,
     apply_economics_controls,
     apply_fact_answers,
+    apply_people_facts,
     build_financing_model,
     build_inkind_model,
+    build_normalized_structures,
     current_economics_controls,
     current_fact_answers,
+    current_people_facts,
     get_awarded_rate,
     get_state,
 )
@@ -148,6 +151,12 @@ async def get_production() -> dict[str, Any]:
         # Permanent production-structure default — explicit and traceable
         # (local SPV; foreign people/vendors not assumed offshore).
         "production_structure_default": SPV_PRODUCTION_STRUCTURE_DEFAULT,
+        # Part 4: physical production requirements derived from the real
+        # budget's own account spend (no screenplay text on file — see
+        # module docstring) and their match against each candidate's
+        # known jurisdiction capabilities.
+        "physical_requirements": s.physical_requirements,
+        "territory_physical_match": s.territory_physical_match,
         "as_of_date": "2026-07-10",
     }
 
@@ -167,6 +176,19 @@ class EconomicsControlsRequest(BaseModel):
     in_kind_post_accepted_as_qpe: str | None = None  # unknown | yes | no
     replacement_post_cost_if_lost_usd: float | None = None
     post_location: str | None = None             # mauritius | elsewhere
+    # Part 5 — travel normalization
+    origin_city: str | None = None                # "LA" | "NYC" | custom
+    business_travelers: float | None = None
+    economy_travelers: float | None = None
+    rotations_per_year: float | None = None
+    hotel_nights: float | None = None
+    per_diem_days: float | None = None
+    travel_pricing_mode: str | None = None         # benchmark_estimate | live_lookup
+    budgeted_travel_override_usd: float | None = None
+    # Part 6 — FX normalization
+    fx_rate_source: str | None = None              # benchmark | user_override
+    fx_user_rate: float | None = None
+    fx_scenario_delta_pct: float | None = None
 
 
 def _economics_payload() -> dict[str, Any]:
@@ -221,6 +243,10 @@ def _economics_payload() -> dict[str, Any]:
     }
     if "user_elected_case" in econ:
         payload["user_elected_case"] = _case(econ["user_elected_case"])
+    # Parts 5-7: travel + FX + in-kind layered onto each composed
+    # candidate's cash NPC — a SEPARATE, explicitly-labeled ranking; never
+    # blended into the primary /structures ranking above.
+    payload["normalized_structures"] = build_normalized_structures(s)
     return payload
 
 
@@ -236,6 +262,49 @@ async def post_economics_controls(body: EconomicsControlsRequest) -> dict[str, A
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     return _economics_payload()
+
+
+# ── People (Part 2) ──────────────────────────────────────────────────────────
+
+class PeopleAnswers(BaseModel):
+    answers: dict[str, Any]
+
+
+@router.get("/people")
+async def get_people() -> dict[str, Any]:
+    s = get_state()
+    pkg = s.package.package
+
+    def _people(role_people) -> list[dict[str, Any]]:
+        return [
+            {
+                "person_id": p.person_id, "name": p.name,
+                "nationality": p.nationality.value, "nationality_state": p.nationality.state.value,
+                "residency": p.residency.value, "residency_state": p.residency.state.value,
+            }
+            for p in role_people
+        ]
+
+    return {
+        "writers": _people(pkg.writers),
+        "directors": _people(pkg.directors),
+        "cast": _people(pkg.cast),
+        "producers": _people(pkg.producers),
+        "overrides": current_people_facts(),
+        "missing_inputs": [
+            m.identifier for m in s.package.missing_inputs
+            if "NATIONALITY" in m.identifier or "RESIDENCY" in m.identifier
+        ],
+    }
+
+
+@router.post("/people")
+async def post_people(body: PeopleAnswers) -> dict[str, Any]:
+    try:
+        apply_people_facts(body.answers)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    return await get_people()
 
 
 # ── Screen 2: Package Intelligence (Budget / Script / Questions) ────────────

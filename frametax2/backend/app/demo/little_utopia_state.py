@@ -71,7 +71,12 @@ from app.calculators.jurisdiction_graph import JurisdictionGraph, build_jurisdic
 from app.calculators.legal_authority_acquisition import ConnectorClass, MockConnector
 from app.calculators.legal_engine import AcquisitionCycleResult, CommitResult, LegalEngine, RerunResult
 from app.calculators.opportunity_discovery import OpportunityCollection, discover_all_opportunities
-from app.calculators.production_package_intelligence import ProductionPackage, build_production_package
+from app.calculators.production_package_intelligence import (
+    ProductionPackage,
+    build_production_package,
+    production_package_to_cultural_test_inputs,
+    production_package_to_relevant_cultural_test_slugs,
+)
 from app.calculators.production_recommendation_engine import RecommendationSet, generate_production_recommendations
 from app.calculators.production_structure_composer import CompositionResult, compose_production_structures
 from app.calculators.qualification_derivation import ProductionFacts
@@ -85,6 +90,7 @@ from app.calculators.qualification_model import (
     build_little_utopia_real_grey_areas,
     build_little_utopia_real_register,
 )
+from app.data.little_utopia_people import build_little_utopia_people
 from app.data.little_utopia_real_budget import (
     AUTHORITATIVE_GROSS_BUDGET_USD,
     LEAF_ACCOUNT_SUM_USD,
@@ -199,7 +205,57 @@ def current_fact_answers() -> dict[str, object]:
 def reset_fact_answers() -> None:
     _fact_answers.clear()
     _economics_controls.clear()
+    _people_overrides.clear()
     _build_state.cache_clear()
+
+
+# ── People facts (Part 2: real, verified nationality data) ──────────────────
+# The real writer/director/lead-cast/producer facts (see
+# app.data.little_utopia_people — reused verbatim from
+# tests/validate_little_utopia_v2.py's verified registration, never
+# fabricated here). A user-supplied override corrects or supplies a role's
+# nationality/residency (e.g. once a real producer is cast, or to model a
+# recast) without touching the verified nationality database.
+_people_overrides: dict[str, "PersonOverride"] = {}
+
+_PEOPLE_ROLE_KEYS: tuple[str, ...] = ("writer", "director", "lead_cast", "producer")
+
+
+def apply_people_facts(answers: dict[str, object]) -> None:
+    """Set nationality/residency overrides. Recognized keys:
+      '{role}_nationality', '{role}_residency' for role in
+      ('writer', 'director', 'lead_cast', 'producer') — ISO2 country
+      codes. A value of None clears that field back to the verified
+      default (or UNKNOWN for producer, which has no verified default)."""
+    from app.data.little_utopia_people import PersonOverride
+    for key, value in answers.items():
+        parts = key.rsplit("_", 1)
+        if len(parts) != 2 or parts[1] not in ("nationality", "residency"):
+            raise ValueError(
+                f"'{key}' is not a recognized people fact. Expected "
+                f"'{{role}}_nationality' or '{{role}}_residency' for role in "
+                f"{_PEOPLE_ROLE_KEYS}."
+            )
+        role, field_name = parts
+        if role not in _PEOPLE_ROLE_KEYS:
+            raise ValueError(f"'{role}' is not a known role ({_PEOPLE_ROLE_KEYS}).")
+        if value is not None and (not isinstance(value, str) or len(value) != 2):
+            raise ValueError(f"'{key}' expects a 2-letter ISO country code, got: {value!r}")
+        current = _people_overrides.get(role, PersonOverride())
+        kwargs = {"nationality": current.nationality, "residency": current.residency}
+        kwargs[field_name] = value.upper() if value else None
+        if kwargs["nationality"] is None and kwargs["residency"] is None:
+            _people_overrides.pop(role, None)
+        else:
+            _people_overrides[role] = PersonOverride(**kwargs)
+    _build_state.cache_clear()
+
+
+def current_people_facts() -> dict[str, dict[str, str | None]]:
+    return {
+        role: {"nationality": o.nationality, "residency": o.residency}
+        for role, o in _people_overrides.items()
+    }
 
 
 # ── Permanent production-structure default (explicit + traceable) ────────────
@@ -242,6 +298,15 @@ _INKIND_ACCEPTANCE = {"unknown", "yes", "no"}
 _POST_LOCATIONS = {"mauritius", "elsewhere"}
 
 
+_TRAVEL_PRICING_MODES = {"benchmark_estimate", "live_lookup"}
+_FX_RATE_SOURCES = {"benchmark", "user_override"}
+_TRAVEL_NUMERIC_KEYS = {
+    "business_travelers", "economy_travelers", "rotations_per_year",
+    "hotel_nights", "per_diem_days", "budgeted_travel_override_usd",
+}
+_FX_NUMERIC_KEYS = {"fx_user_rate", "fx_scenario_delta_pct"}
+
+
 def apply_economics_controls(controls: dict[str, object]) -> None:
     """Set production-economics controls. Recognized keys:
       financing_method: 'none' | 'rate_time' | 'hard_cost'
@@ -253,17 +318,26 @@ def apply_economics_controls(controls: dict[str, object]) -> None:
       in_kind_post_accepted_as_qpe: 'unknown'|'yes'|'no',
       replacement_post_cost_if_lost_usd: float,
       post_location: 'mauritius'|'elsewhere'
+      origin_city: str (Part 5), business_travelers/economy_travelers: int,
+      rotations_per_year/hotel_nights/per_diem_days: int,
+      travel_pricing_mode: 'benchmark_estimate'|'live_lookup',
+      budgeted_travel_override_usd: float (else derived from the real
+        budget's own ATL+BTL Travel & Living accounts),
+      fx_rate_source: 'benchmark'|'user_override' (Part 6),
+      fx_user_rate: float, fx_scenario_delta_pct: float
     A value of None clears that control (returns it to its default)."""
     _numeric = {
         "financing_annual_rate", "financing_amount_pct", "financing_hard_cost_usd",
         "awarded_rate", "in_kind_post_fmv_usd", "replacement_post_cost_if_lost_usd",
         "financing_weeks",
-    }
+    } | _TRAVEL_NUMERIC_KEYS | _FX_NUMERIC_KEYS
     _enums = {
         "financing_method": _FINANCING_METHODS,
         "in_kind_post_accepted_as_qpe": _INKIND_ACCEPTANCE,
         "post_location": _POST_LOCATIONS,
         "financing_source": {"user_input", "document_input"},
+        "travel_pricing_mode": _TRAVEL_PRICING_MODES,
+        "fx_rate_source": _FX_RATE_SOURCES,
     }
     for key, value in controls.items():
         if value is None:
@@ -281,6 +355,10 @@ def apply_economics_controls(controls: dict[str, object]) -> None:
         elif key == "in_kind_post_available":
             if not isinstance(value, bool):
                 raise ValueError("in_kind_post_available expects a bool.")
+            _economics_controls[key] = value
+        elif key == "origin_city":
+            if not isinstance(value, str) or not value:
+                raise ValueError("origin_city expects a non-empty string.")
             _economics_controls[key] = value
         else:
             raise ValueError(f"'{key}' is not a recognized economics control.")
@@ -334,6 +412,145 @@ def build_inkind_model() -> "InKindPostModel":
 def get_awarded_rate() -> float | None:
     v = _economics_controls.get("awarded_rate")
     return float(v) if v is not None else None
+
+
+def build_travel_inputs() -> "TravelInputs":
+    """User-controlled travel inputs (Part 5). Defaults: LA origin, 1
+    business traveler, quarterly rotations, 2-week hotel/per-diem — same
+    defaults travel_model.estimate_travel_cost() itself already documents."""
+    from app.calculators.production_normalization import TravelInputs, TravelPricingMode
+    c = _economics_controls
+    return TravelInputs(
+        origin_city=str(c.get("origin_city", "LA")),
+        business_travelers=int(c.get("business_travelers", 1)),
+        economy_travelers=int(c.get("economy_travelers", 0)),
+        rotations_per_year=int(c.get("rotations_per_year", 4)),
+        hotel_nights=int(c.get("hotel_nights", 14)),
+        per_diem_days=int(c.get("per_diem_days", 14)),
+        pricing_mode=TravelPricingMode(c.get("travel_pricing_mode", "benchmark_estimate")),
+    )
+
+
+def build_fx_inputs() -> "FXInputs":
+    """User-controlled FX inputs (Part 6). Defaults to the documented
+    benchmark snapshot; a scenario delta or override requires an explicit
+    user value — never a fabricated live rate."""
+    from app.calculators.production_normalization import FXInputs, FXRateSource
+    c = _economics_controls
+    return FXInputs(
+        rate_source=FXRateSource(c.get("fx_rate_source", "benchmark")),
+        user_rate=c.get("fx_user_rate"),
+        scenario_fx_delta_pct=float(c.get("fx_scenario_delta_pct", 0.0)),
+    )
+
+
+def budgeted_travel_usd(register: list[AccountQualification]) -> float:
+    """The real, verified budgeted travel figure — accounts 1600 (ATL
+    TRAVEL & LIVING) + 3900 (BTL TRAVEL & LIVING) from the actual parsed
+    Little Utopia budget. Overridable by the user (budgeted_travel_override_usd)."""
+    override = _economics_controls.get("budgeted_travel_override_usd")
+    if override is not None:
+        return float(override)
+    by_code = {a.account_code: a.amount_usd for a in register}
+    return by_code.get("1600", 0.0) + by_code.get("3900", 0.0)
+
+
+def build_normalized_structures(state: "LittleUtopiaState") -> dict:
+    """Parts 5-7 combined: travel normalization + FX normalization + the
+    Mauritius in-kind-post scenario (selected via the existing economics
+    controls) applied ON TOP of each composed candidate's already-priced
+    conservative cash NPC — purely additive, never touching
+    optimization_engine.py's math or production_structure_composer.py's
+    own ranking. Returns a SEPARATE, explicitly-labeled normalized
+    ranking; the primary /structures ranking is untouched."""
+    from app.calculators.mauritius_economics import compute_mauritius_economics
+    from app.calculators.optimization_engine import RiskCase
+    from app.calculators.production_normalization import normalize_candidates
+
+    base_npc: dict[str, float] = {}
+    jurisdictions: dict[str, tuple] = {}
+    for candidate in state.composition.candidates:
+        if candidate.cases is None:
+            continue
+        conservative = candidate.cases.get(RiskCase.CONSERVATIVE)
+        if conservative is None:
+            continue
+        base_npc[candidate.candidate_id] = conservative.net_production_cost_usd
+        jurisdictions[candidate.candidate_id] = candidate.participating_jurisdictions
+
+    # Part 7: in-kind adjustment, MU-participating candidates only. The
+    # selected scenario comes from the SAME economics controls /economics
+    # already reads (Part 5 of the prior phase) — never a second source
+    # of truth. UNKNOWN acceptance (the default) applies zero adjustment:
+    # the legal-acceptance question stays gated, never assumed.
+    inkind = build_inkind_model()
+    verified_cash_qpe = sum(
+        a.amount_usd for a in state.register if a.state == QualificationState.QUALIFIES
+    )
+    rate_floor = state.rate_resolution.floor_rate if state.rate_resolution else 0.30
+    econ = compute_mauritius_economics(
+        gross_cash_budget_usd=state.gross_budget_usd, verified_cash_qpe_usd=verified_cash_qpe,
+        rate_floor=rate_floor, rate_ceiling=state.rate, financing=build_financing_model(), inkind=inkind,
+    )
+    floor_npc = econ["verified_floor_case"].net_production_cost_usd
+    if inkind.post_location.value == "elsewhere":
+        selected_npc = econ["inkind_post_options"]["lost_or_moved_outside_mu"].net_production_cost_usd
+    elif inkind.accepted_as_qpe.value == "yes":
+        selected_npc = econ["inkind_post_options"]["accepted_as_qpe"].net_production_cost_usd
+    elif inkind.accepted_as_qpe.value == "no":
+        selected_npc = econ["inkind_post_options"]["not_accepted_as_qpe"].net_production_cost_usd
+    else:
+        selected_npc = floor_npc  # UNKNOWN — gated, no assumption
+    inkind_delta = round(selected_npc - floor_npc, 2)
+    inkind_by_candidate = {
+        cid: inkind_delta for cid, juris in jurisdictions.items() if JURISDICTION_CODE in juris
+    }
+
+    results = normalize_candidates(
+        base_npc_by_candidate=base_npc,
+        participating_jurisdictions_by_candidate=jurisdictions,
+        travel_inputs=build_travel_inputs(),
+        budgeted_travel_usd=budgeted_travel_usd(state.register),
+        fx_inputs=build_fx_inputs(),
+        inkind_adjustment_by_candidate=inkind_by_candidate,
+    )
+    return {
+        "version": "1.0.0",
+        "note": (
+            "SEPARATE from the primary /structures ranking (which prices "
+            "cash-only, zero-financing candidates). This ranking additionally "
+            "layers travel normalization, FX normalization, and the selected "
+            "in-kind-post scenario on top of each candidate's cash NPC."
+        ),
+        "ranking": [
+            {
+                "candidate_id": r.candidate_id,
+                "base_cash_npc_usd": r.base_cash_npc_usd,
+                "travel_delta_usd": r.travel.delta_usd if r.travel else None,
+                "fx_delta_usd": r.fx.delta_usd if r.fx else None,
+                "inkind_adjustment_usd": r.inkind_adjustment_usd,
+                "normalized_npc_usd": r.normalized_npc_usd,
+                "travel_detail": (
+                    {
+                        "origin_city": r.travel.origin_city,
+                        "budgeted_travel_usd": r.travel.budgeted_travel_usd,
+                        "normalized_travel_usd": r.travel.normalized_travel_usd,
+                        "pricing_mode": r.travel.pricing_mode,
+                        "note": r.travel.note,
+                    } if r.travel else None
+                ),
+                "fx_detail": (
+                    {
+                        "local_currency": r.fx.local_currency,
+                        "rate_used": r.fx.rate_used,
+                        "rate_source": r.fx.rate_source,
+                        "note": r.fx.note,
+                    } if r.fx else None
+                ),
+            }
+            for r in results
+        ],
+    }
 
 
 def _production_facts() -> ProductionFacts:
@@ -415,16 +632,99 @@ class LittleUtopiaState:
     budget_leaf_account_sum_usd: float = LEAF_ACCOUNT_SUM_USD
     budget_reconciliation_variance_usd: float = RECONCILIATION_VARIANCE_USD
     budget_reconciliation_note: str = RECONCILIATION_NOTE
+    # Part 4: physical production requirements derived from the REAL
+    # budget's own account descriptions (no screenplay text exists — see
+    # module docstring — so this is BUDGET-derived, not script-derived,
+    # and disclosed as such) and their match against each composed
+    # candidate's known jurisdiction capabilities (jurisdiction_comparison.
+    # ALL_PROFILES — existing, not fabricated).
+    physical_requirements: dict = field(default_factory=dict)
+    territory_physical_match: dict = field(default_factory=dict)
+
+
+# ── Part 4: physical production requirements -> territory matching ──────────
+# No screenplay text exists for Little Utopia anywhere in this codebase
+# (filesystem, git history, or the ScreenplayDocument table — see the
+# Engine Integration report). Script-derived requirements are therefore
+# honestly UNKNOWN (package.script.known == False). The ONE real,
+# non-fabricated physical-production signal available is the production's
+# OWN real budget: account 3300 "SPECIAL EFFECTS & MARINE" and account
+# 3500 "AERIAL/DRONE UNIT" are non-zero, verified spend categories in the
+# actual parsed Movie Magic budget (app.data.little_utopia_real_budget).
+# Non-zero real spend on a marine/aerial department is itself evidence the
+# production has that physical requirement — disclosed explicitly as
+# BUDGET-derived, never presented as script-confirmed.
+_MARINE_ACCOUNT_CODE = "3300"
+_AERIAL_ACCOUNT_CODE = "3500"
+
+
+def _derive_physical_requirements(register: list[AccountQualification]) -> dict:
+    by_code = {a.account_code: a.amount_usd for a in register}
+    marine_usd = by_code.get(_MARINE_ACCOUNT_CODE, 0.0)
+    aerial_usd = by_code.get(_AERIAL_ACCOUNT_CODE, 0.0)
+    return {
+        "source": "real_budget_account_spend",
+        "source_note": (
+            "No screenplay text is on file for this production — this signal "
+            "is derived from the real parsed budget's own account spend "
+            "(accounts 3300, 3500), not from script content."
+        ),
+        "marine_required": marine_usd > 0,
+        "marine_spend_usd": marine_usd,
+        "marine_account": f"{_MARINE_ACCOUNT_CODE} SPECIAL EFFECTS & MARINE",
+        "aerial_required": aerial_usd > 0,
+        "aerial_spend_usd": aerial_usd,
+        "aerial_account": f"{_AERIAL_ACCOUNT_CODE} AERIAL/DRONE UNIT",
+    }
+
+
+def _match_territory_physical(requirements: dict, composition: CompositionResult) -> dict:
+    """For each composed candidate, check its participating jurisdictions
+    against jurisdiction_comparison.ALL_PROFILES's EXISTING marine/aerial-
+    relevant capability data (marine_suitability, has_water_tanks,
+    has_open_water_filming, vessel_marine_qualifies) — never invented
+    capability data; a jurisdiction absent from ALL_PROFILES is reported
+    as NO_PROFILE, not assumed either way."""
+    if not requirements.get("marine_required"):
+        return {}
+    match: dict[str, dict] = {}
+    for candidate in composition.candidates:
+        codes = candidate.participating_jurisdictions
+        entries = []
+        for code in codes:
+            profile = jc.ALL_PROFILES.get(code)
+            if profile is None:
+                entries.append({"jurisdiction_code": code, "status": "NO_PROFILE"})
+                continue
+            weak = profile.marine_suitability in (jc.MarineSuitability.LIMITED, jc.MarineSuitability.NONE)
+            entries.append({
+                "jurisdiction_code": code,
+                "marine_suitability": profile.marine_suitability,
+                "has_water_tanks": profile.has_water_tanks,
+                "has_open_water_filming": profile.has_open_water_filming,
+                "vessel_marine_qualifies": profile.vessel_marine_qualifies,
+                "status": "WEAK_MARINE_MATCH" if weak else "MATCH",
+            })
+        match[candidate.candidate_id] = {
+            "participating_jurisdictions": list(codes),
+            "jurisdictions": entries,
+            "any_weak_or_missing": any(e["status"] != "MATCH" for e in entries),
+        }
+    return match
 
 
 def get_state() -> LittleUtopiaState:
     """Current state under the current fact answers. Cached per
-    fact-state; apply_fact_answers()/reset_fact_answers() invalidate."""
-    return _build_state(tuple(sorted(_fact_answers.items())))
+    fact-state; apply_fact_answers()/reset_fact_answers()/
+    apply_people_facts() invalidate."""
+    people_key = tuple(sorted(
+        (role, o.nationality, o.residency) for role, o in _people_overrides.items()
+    ))
+    return _build_state(tuple(sorted(_fact_answers.items())), people_key)
 
 
-@lru_cache(maxsize=4)
-def _build_state(_fact_key: tuple) -> LittleUtopiaState:
+@lru_cache(maxsize=8)
+def _build_state(_fact_key: tuple, _people_key: tuple = ()) -> LittleUtopiaState:
     facts = _production_facts()
     graph_default = build_jurisdiction_graph(mu_rate=MU_RATE)  # facts-independent world model
 
@@ -461,13 +761,17 @@ def _build_state(_fact_key: tuple) -> LittleUtopiaState:
         )
 
     budget_parse = _register_to_budget_parse_result(register)
-    # No screenplay, no people/entity/location intake exist for Little
-    # Utopia in this codebase — left unset. build_production_package()
-    # reports these as honestly UNKNOWN via the Question Engine, not
-    # fabricated.
+    # People: the real, verified writer/director/lead-cast facts (Part 2)
+    # — see app.data.little_utopia_people for provenance (reused from
+    # tests/validate_little_utopia_v2.py, never fabricated here). Producer
+    # has no verified source anywhere in this codebase and is left
+    # UNKNOWN so the Question Engine asks for it. No screenplay/entity/
+    # location intake exists — those stay honestly UNKNOWN.
+    people = build_little_utopia_people(_people_overrides)
     package = build_production_package(
         production_id=PRODUCTION_ID,
         budget_parse_result=budget_parse,
+        people=people,
     )
     # Seam B: an answered fact resolves its question — the answer is now
     # an engine input above, so the question is no longer open.
@@ -529,9 +833,17 @@ def _build_state(_fact_key: tuple) -> LittleUtopiaState:
         extra_jurisdiction_sets=extra_sets or None,
         delay_weeks=0, bridge_rate=0.0,
     )
+    # Part 3: cultural-test relevance mapping — driven entirely by the
+    # jurisdictions this package actually knows about from REAL person
+    # nationalities (never a hardcoded test list), and the exact
+    # per-role, per-test weight each test's own rule table assigns.
+    relevant_cultural_test_slugs = production_package_to_relevant_cultural_test_slugs(package)
+    cultural_test_inputs = production_package_to_cultural_test_inputs(package)
     recommendations = generate_production_recommendations(
         collection, composition_result=composition, register=register, rate=MU_RATE,
         jurisdiction_code=JURISDICTION_CODE,
+        relevant_cultural_test_slugs=relevant_cultural_test_slugs,
+        cultural_test_inputs=cultural_test_inputs,
     )
 
     scenario_structures = compose_candidate_structures(
@@ -578,6 +890,9 @@ def _build_state(_fact_key: tuple) -> LittleUtopiaState:
         as_of_date=AS_OF_DATE,
     )
 
+    physical_requirements = _derive_physical_requirements(register)
+    territory_physical_match = _match_territory_physical(physical_requirements, composition)
+
     return LittleUtopiaState(
         production_id=PRODUCTION_ID,
         production_name=PRODUCTION_NAME,
@@ -601,4 +916,6 @@ def _build_state(_fact_key: tuple) -> LittleUtopiaState:
         legal_commit=legal_commit,
         legal_rerun_before=legal_rerun_before,
         legal_rerun=legal_rerun,
+        physical_requirements=physical_requirements,
+        territory_physical_match=territory_physical_match,
     )

@@ -620,6 +620,7 @@ _SINGLE_COUNTRY_CULTURAL_TEST: dict[str, str] = {
     "IE": "ie_section_481_test",
     "CA": "ca_content_test",
     "AU": "au_content_test",
+    "GB": "uk_bfi_cultural_test",
 }
 assert set(_SINGLE_COUNTRY_CULTURAL_TEST.values()) <= set(CULTURAL_TEST_REGISTRY.keys())
 
@@ -1246,15 +1247,26 @@ def production_package_to_cultural_test_inputs(package: ProductionPackage) -> di
     """
     director = package.package.directors[0] if package.package.directors else None
     writer = package.package.writers[0] if package.package.writers else None
+    lead_cast = package.package.cast[0] if package.package.cast else None
+    producer = package.package.producers[0] if package.package.producers else None
     inputs: dict[str, dict[str, Any]] = {}
 
     if director and director.nationality.is_actionable:
         inputs.setdefault("fr_cnc_cultural_test", {})["director_french_or_eea"] = director.nationality.value == "FR"
         inputs.setdefault("ca_content_test", {})["director_canadian"] = director.nationality.value == "CA"
         inputs.setdefault("au_content_test", {})["director_australian"] = director.nationality.value == "AU"
+        inputs.setdefault("uk_bfi_cultural_test", {})["director_british"] = director.nationality.value == "GB"
     if writer and writer.nationality.is_actionable:
         inputs.setdefault("fr_cnc_cultural_test", {})["writer_french_or_eea"] = writer.nationality.value == "FR"
         inputs.setdefault("ca_content_test", {})["writer_canadian"] = writer.nationality.value == "CA"
+        inputs.setdefault("uk_bfi_cultural_test", {})["writer_british"] = writer.nationality.value == "GB"
+    # Lead cast / producer nationality: only actionable when a real person
+    # is on file for that role — never guessed from an absent PersonProfile.
+    if lead_cast and lead_cast.nationality.is_actionable:
+        inputs.setdefault("uk_bfi_cultural_test", {})["lead_actor_british"] = lead_cast.nationality.value == "GB"
+        inputs.setdefault("au_content_test", {})["lead_actor_australian"] = lead_cast.nationality.value == "AU"
+    if producer and producer.nationality.is_actionable:
+        inputs.setdefault("uk_bfi_cultural_test", {})["producer_british"] = producer.nationality.value == "GB"
 
     if package.package.production_companies:
         company = package.package.production_companies[0]
