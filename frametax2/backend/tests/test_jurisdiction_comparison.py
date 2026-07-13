@@ -151,14 +151,31 @@ class TestMauritiusProfile:
     def mu(self):
         return TIER1_PROFILES["MU"]
 
-    def test_parsed_tier(self, mu):
-        assert mu.confidence_tier == "PARSED"
+    def test_verified_tier(self, mu):
+        """Rates were promoted PARSED -> VERIFIED after full review of the
+        primary source (EDB Film Rebate Scheme — Submission Procedures,
+        31 Jan 2020, citing the FRS Regulation 2018)."""
+        assert mu.confidence_tier == "VERIFIED"
 
-    def test_base_rate_35(self, mu):
-        assert mu.base_rate == 0.35, "Budget evidence sets rate at 35% (not yet verified from EDB statute)"
+    def test_base_rate_30_statutory(self, mu):
+        """30% general rebate per the primary source. The budget document's
+        own 'EDB Rebate at 35%' line is budget evidence, never authority
+        (permanent Rules 1/2) — recorded as a reported conflict in
+        app.data.program_rate_rules, not as a rate."""
+        assert mu.base_rate == 0.30
 
-    def test_max_rate_35(self, mu):
-        assert mu.max_rate == 0.35
+    def test_max_rate_40_band_ceiling(self, mu):
+        """'Up to 40%' feature-film band (min QPE USD 1,000,000) per the
+        primary source — max_rate is the band ceiling."""
+        assert mu.max_rate == 0.40
+
+    def test_rates_mirror_statutory_rate_rules(self, mu):
+        """Rule 4: cross-border comparison must use database/statutory
+        rates — the profile must mirror program_rate_rules exactly."""
+        from app.data.program_rate_rules import get_rate_rules
+        rules = get_rate_rules("mu_edb_incentive")
+        assert mu.base_rate == min(r.rate for r in rules)
+        assert mu.max_rate == max(r.rate for r in rules)
 
     def test_no_cashflow_timing(self, mu):
         assert mu.cashflow_timing_weeks is None
@@ -187,8 +204,10 @@ class TestMauritiusProfile:
     def test_high_financing_friction(self, mu):
         assert mu.financing_friction == FinancingFriction.HIGH
 
-    def test_atl_unknown(self, mu):
-        assert mu.atl_qualifies is None, "ATL scope unconfirmed from EDB source"
+    def test_atl_qualifies_per_primary_source(self, mu):
+        """EDB QPE list names 'Remuneration for cast and crew' / 'Labour
+        costs (including non-nationals)' with no ATL carve-out."""
+        assert mu.atl_qualifies is True
 
 
 class TestMaltaProfile:

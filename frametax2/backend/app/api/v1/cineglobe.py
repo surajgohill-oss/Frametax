@@ -102,12 +102,30 @@ async def post_facts(body: FactAnswers) -> dict[str, Any]:
 @router.get("/production")
 async def get_production() -> dict[str, Any]:
     s = get_state()
+    rr = s.rate_resolution
     return {
         "production_id": s.production_id,
         "production_name": s.production_name,
         "jurisdiction_code": s.jurisdiction_code,
         "gross_budget_usd": s.gross_budget_usd,
         "rate": s.rate,
+        # Permanent rate-authority rules: the rate's full statutory
+        # provenance, condition evaluations, guaranteed floor, and any
+        # budget-vs-database conflict (reported, never absorbed).
+        "rate_resolution": (
+            {
+                "modeled_rate": rr.modeled_rate,
+                "floor_rate": rr.floor_rate,
+                "is_band_ceiling": rr.is_band_ceiling,
+                "tier_id": rr.tier_id,
+                "basis": rr.basis,
+                "conditions": [asdict(c) for c in rr.conditions_evaluated],
+                "unverified_claims": [asdict(u) for u in rr.unverified_claims],
+                "conflicts": [asdict(c) for c in rr.conflicts],
+            }
+            if rr is not None else None
+        ),
+        "rate_warnings": list(s.rate_warnings),
         "as_of_date": "2026-07-10",
     }
 

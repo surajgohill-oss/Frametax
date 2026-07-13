@@ -129,9 +129,13 @@ class TestJurisdictionComposition:
 
     def test_multi_jurisdiction_candidates_from_discovered_partners(self, result):
         pair_ids = {c.candidate_id for c in result.candidates if len(c.participating_jurisdictions) == 2}
-        # partners = relocation candidates (BE, ES, GR, IT, MT) + Tier-1 comparables (CY, GR, MT)
+        # partners = relocation candidates (ES only — MU's statutory max is
+        # 0.40, so 0.40-rate jurisdictions are not materially stronger; the
+        # old BE/IT/GR/MT relocation pairs existed only under the
+        # budget-evidenced 0.35 rate, which is never authority per the
+        # permanent rate rules) + Tier-1 comparables (CY, GR, MT).
         assert pair_ids == {
-            "PSC-MU-BE", "PSC-MU-CY", "PSC-MU-ES", "PSC-MU-GR", "PSC-MU-IT", "PSC-MU-MT",
+            "PSC-MU-CY", "PSC-MU-ES", "PSC-MU-GR", "PSC-MU-MT",
         }
 
     def test_extra_jurisdiction_sets_composable(self, collection, graph):
@@ -331,7 +335,7 @@ class TestDominancePruning:
         # Real data: pairs are partially priced (0.5), so none can be
         # dominance-compared, and none may vanish.
         assert not result.pruned
-        assert len(result.candidates) == 7
+        assert len(result.candidates) == 5  # baseline + 4 pairs (ES, CY, GR, MT)
 
     def test_partially_priced_never_dominates_or_is_dominated(self):
         priced = _priced_candidate("PSC-PRICED", {c: 1.0 for c in RiskCase})

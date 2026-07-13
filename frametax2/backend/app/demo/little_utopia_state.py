@@ -68,12 +68,14 @@ from app.calculators.production_package_intelligence import ProductionPackage, b
 from app.calculators.production_recommendation_engine import RecommendationSet, generate_production_recommendations
 from app.calculators.production_structure_composer import CompositionResult, compose_production_structures
 from app.calculators.qualification_derivation import ProductionFacts
+from app.data.program_rate_rules import RateResolution, resolve_program_rate
 from app.calculators.qualification_model import (
     LITTLE_UTOPIA_ACCOUNTS_OUTSIDE_MU,
     LITTLE_UTOPIA_OFFSHORE_PAYROLL,
     AccountQualification,
     GreyAreaItem,
     GreyAreaStatus,
+    QualificationState,
     build_little_utopia_grey_areas,
     build_little_utopia_qualification_register,
 )
@@ -82,7 +84,17 @@ from app.ingestion.budget_parser import BudgetParseResult, ParsedLineItem
 PRODUCTION_ID = "LITTLE-UTOPIA"
 PRODUCTION_NAME = "The Little Utopia"
 JURISDICTION_CODE = "MU"
+# The modeled incentive rate. NOT taken from the production budget (whose
+# own 'EDB Rebate at 35%' line is ignored per the permanent rate-authority
+# rules — see app.data.program_rate_rules): 0.40 is the ceiling of the
+# EDB Film Rebate Scheme's 'up to 40%' feature-film band (min QPE USD 1M,
+# satisfied). _build_state() re-resolves this via resolve_program_rate()
+# against the derived QPE and records the full RateResolution (basis,
+# condition evaluations, floor rate, budget-rate conflict report) on the
+# state; a mismatch between this constant and the resolver is surfaced as
+# a warning rather than silently absorbed.
 MU_RATE = 0.40
+MU_PRODUCTION_TYPE = "feature_film"
 MU_GROSS_BUDGET_USD = 4_364_393.0
 AS_OF_DATE = "2026-07-10"
 
@@ -221,6 +233,8 @@ class LittleUtopiaState:
     composition: CompositionResult
     recommendations: RecommendationSet
     fact_answers: dict = field(default_factory=dict)
+    rate_resolution: RateResolution | None = None
+    rate_warnings: list[str] = field(default_factory=list)
     scenario_structures: list[ProductionStructure] = field(default_factory=list)
     scenario_ranking: StructureRankingResult = None
     legal_engine: LegalEngine = None
@@ -245,6 +259,31 @@ def _build_state(_fact_key: tuple) -> LittleUtopiaState:
     register = build_little_utopia_qualification_register(mu_rate=MU_RATE, facts=facts)
     grey_areas = build_little_utopia_grey_areas()
     graph = build_jurisdiction_graph(mu_rate=MU_RATE, register=register)
+
+    # Permanent rate-authority rules (app.data.program_rate_rules): the
+    # rate is resolved from the statutory rate database against the
+    # DERIVED qualifying spend — never from the budget document's own
+    # rebate line (Rules 1-3). Conflicts are reported, never absorbed
+    # (Rule 5). A divergence between the resolver and the MU_RATE
+    # constant used to build the register is a warning, not silence.
+    _verified_qpe = sum(
+        a.amount_usd for a in register if a.state == QualificationState.QUALIFIES
+    )
+    rate_resolution = resolve_program_rate(
+        "mu_edb_incentive", production_type=MU_PRODUCTION_TYPE, qpe_usd=_verified_qpe,
+    )
+    rate_warnings: list[str] = []
+    if rate_resolution is None:
+        rate_warnings.append(
+            "No statutory rate rule found for mu_edb_incentive — MU_RATE constant "
+            "is running without database backing."
+        )
+    elif abs(rate_resolution.modeled_rate - MU_RATE) > 1e-9:
+        rate_warnings.append(
+            f"Statutory rate database resolves {rate_resolution.modeled_rate:.0%} "
+            f"but the pipeline is built at {MU_RATE:.0%} — reconcile before "
+            "trusting incentive figures."
+        )
 
     budget_parse = _register_to_budget_parse_result(register)
     # No screenplay, no people/entity/location intake exist for Little
@@ -370,6 +409,8 @@ def _build_state(_fact_key: tuple) -> LittleUtopiaState:
         collection=collection,
         composition=composition,
         recommendations=recommendations,
+        rate_resolution=rate_resolution,
+        rate_warnings=rate_warnings,
         fact_answers=current_fact_answers(),
         scenario_structures=scenario_structures,
         scenario_ranking=scenario_ranking,

@@ -219,19 +219,19 @@ _MAURITIUS = JurisdictionIncentiveProfile(
     jurisdiction_code="MU",
     jurisdiction_name="Mauritius",
     program_slug="mu_edb_incentive",
-    program_name="Mauritius EDB Production Incentive (Budget-Evidenced 35%)",
-    confidence_tier="PARSED",
+    program_name="Mauritius EDB Film Rebate Scheme (30% / up to 40%)",
+    confidence_tier="VERIFIED",
     incentive_type="cash_rebate",
-    base_rate=0.35,
-    max_rate=0.35,
+    base_rate=0.30,
+    max_rate=0.40,
     is_refundable=None,
     is_transferable=None,
     annual_cap_local=None,
     min_spend_local=None,
     requires_cultural_test=False,
-    atl_qualifies=None,
+    atl_qualifies=True,
     btl_qualifies=True,
-    vfx_qualifies=None,
+    vfx_qualifies=True,
     music_qualifies=None,
     vessel_marine_qualifies=True,
     resident_labor_uplift_available=False,
@@ -250,33 +250,42 @@ _MAURITIUS = JurisdictionIncentiveProfile(
     authority_name="Economic Development Board Mauritius (EDB) / Mauritius Film Development Corp.",
     authority_url_hint="edbmauritius.org",
     notes=(
-        "PARSED tier: base rate of 35% inferred from production budget evidence "
-        "(budget line 'EDB Rebate at 35%: $(1,275,411)' applied to ~$3.64M QPE). "
-        "This rate has NOT been verified against EDB statute text or primary source documentation. "
-        "Promote to VERIFIED only after reviewing current EDB Film Production Incentive guidelines. "
-        "Vessel and marine costs (charter, safety boats, underwater equipment) included in "
-        "budget QPE per production team's Groups report — treated as qualifying BTL spend. "
-        "VAT: Mauritius 15% VAT is non-recoverable for foreign film productions "
-        "($92,439 confirmed embedded in gross budget; excluded from QPE). "
-        "ATL qualifying scope unknown — director/producer/cast fee treatment not confirmed. "
-        "Frogsquad (SA-based marine team): largest single QPE uncertainty; "
-        "routing through Mauritius SPV vs. offshore SA entity swings qualifying spend by ~$72K-$100K. "
-        "Finance cost on rebate receivable: $0 in budget but estimated $70K-$77K at 8%/9-month delay. "
-        "Indian Ocean warm water, clear visibility — excellent for yacht and diving sequences. "
-        "Limited local film crew base: effectively a full import production. "
-        "SPV required to claim rebate — setup and compliance cost unquantified."
+        "VERIFIED tier (rates): 30% general rebate / up to 40% for feature films "
+        "with minimum QPE of USD 1,000,000, per EDB 'Film Rebate Scheme — "
+        "Submission Procedures' (31 Jan 2020), citing the EDB (Film Rebate "
+        "Scheme) Regulation 2018; corroborated by MCCI. 'Up to 40%' is a band "
+        "ceiling — the awarded rate is subject to Film Rebate Committee "
+        "assessment and CEO approval (see app.data.program_rate_rules). "
+        "RATE CONFLICT (permanent Rules 1/2/5): the production budget's own "
+        "'EDB Rebate at 35%' line is budget-evidenced, not authority — it is "
+        "recorded in program_rate_rules.MU_BUDGET_EVIDENCED_RATES and IGNORED "
+        "for all calculations. "
+        "QPE categories per the same primary source's closed 33-item list: "
+        "cast/crew remuneration (incl. ATL, no carve-out), equipment/location/"
+        "studio hire, accommodation, catering, travel to Mauritius, marine/"
+        "vessel services, insurance and accounting ('professional services'), "
+        "post-production and VFX services (territorial: must be incurred "
+        "locally). VAT: Mauritius 15% VAT non-recoverable for foreign "
+        "productions ($92,439 confirmed embedded in gross budget; memo line, "
+        "not QPE). Finance cost on rebate receivable: $0 in budget; engine "
+        "models it at 8%/39 weeks — engineering assumption, no EDB SLA. "
+        "Indian Ocean warm water, clear visibility — excellent for yacht and "
+        "diving sequences. Limited local film crew base: effectively a full "
+        "import production. Locally incorporated/registered production company "
+        "required (100% foreign ownership permitted) — setup and compliance "
+        "cost unquantified."
     ),
     data_gaps=[
-        "Base rate of 35% not verified from EDB statute text — inferred from budget only",
-        "ATL qualifying scope (director, producer, cast fees) unknown",
-        "Frogsquad routing: SA offshore vs. Mauritius SPV — swings QPE by ~$72K-$100K",
-        "Accommodation and per diem qualifying treatment not confirmed",
+        "Awarded rate within the 'up to 40%' band requires EDB approval — not pre-determinable",
+        "Secondary-source claim of a 90%-of-filming-in-Mauritius condition for the 40% tier: "
+        "not found in any government text reviewed; needs EDB written confirmation",
+        "Producer 5-year track record and MU incorporation of the production entity: "
+        "production facts not yet evidenced",
         "WHT on international cast/crew payments unverified",
-        "Minimum spend threshold unknown",
         "Annual program budget/cap unknown",
         "Cashflow timing unknown — no confirmed processing SLA from EDB",
         "Rebate assignability to gap lender not confirmed",
-        "Finance cost on rebate receivable not modeled in production budget",
+        "Finance cost constants (8% bridge, 39 weeks) are engineering assumptions",
         "SPV setup and compliance cost not estimated",
     ],
 )

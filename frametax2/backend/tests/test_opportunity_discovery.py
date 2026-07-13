@@ -85,8 +85,12 @@ class TestJurisdictionDiscovery:
         opps = discover_jurisdiction_opportunities("MU")
         relocations = [o for o in opps if o.subtype == "relocation_candidate"]
         codes = {o.jurisdiction_codes[1] for o in relocations}
-        # MU max 0.35; +0.05 threshold => ES (0.50), and the 0.40 group
-        assert codes == {"BE", "ES", "GR", "IT", "MT"}
+        # MU statutory max is 0.40 (EDB 'up to 40%' feature-film band), so
+        # only ES (0.50) clears the +0.05 materiality threshold. BE/GR/IT/MT
+        # at 0.40 are NOT stronger — the prior expectation of all five
+        # existed only because the profile carried the budget-evidenced
+        # 0.35, which is never authority (permanent Rules 1/2/4).
+        assert codes == {"ES"}
 
     def test_rate_delta_carried_not_dollar_upside_invented(self):
         opps = discover_jurisdiction_opportunities("MU")

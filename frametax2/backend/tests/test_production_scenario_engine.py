@@ -64,7 +64,11 @@ class TestJurisdictionShapedScenarios:
         result = run_scenario(scenario, collection, graph=graph, register=register, gross_budget_usd=MU_GROSS_BUDGET, rate=MU_RATE, grey_areas=grey_areas)
         assert result.composition_result is not None
         assert result.baseline_candidate_id == "PSC-MU"
-        assert result.scenario_candidate_id == f"PSC-MU-{target_jurisdiction}"
+        # The candidate id's code order depends on whether the pair also
+        # arises from discovery; assert the composed SET, not the order.
+        sc = next(c for c in result.composition_result.candidates
+                  if c.candidate_id == result.scenario_candidate_id)
+        assert set(sc.participating_jurisdictions) == {"MU", target_jurisdiction}
 
     def test_missing_target_jurisdiction_does_not_fabricate(self, collection, graph):
         scenario = ProductionScenario(scenario_id="S1", kind=ScenarioKind.MOVE_VFX, description="move vfx")
