@@ -400,6 +400,11 @@ class GreyAreaItem:
     linked_question_ids: tuple[str, ...] = field(default_factory=tuple)
     graph_absence_id: Optional[str] = None
     graph_rule_id: Optional[str] = None
+    # Precise classification of the uncertainty (Part 4/5 kinds) and the
+    # concrete producer/counsel actions that would resolve it. Additive;
+    # default empty for backward compatibility.
+    grey_kinds: tuple[str, ...] = field(default_factory=tuple)
+    resolution_paths: tuple[str, ...] = field(default_factory=tuple)
 
 
 def build_little_utopia_grey_areas() -> list[GreyAreaItem]:
@@ -533,6 +538,21 @@ def build_little_utopia_real_grey_areas() -> list[GreyAreaItem]:
             off_budget=True,
             linked_question_ids=("Q1",),
             graph_absence_id="ABS-INKIND-FMV",
+            # Part 5: precise classification + concrete resolution paths.
+            grey_kinds=(
+                "producer_election",          # producer chooses whether to pursue in-kind QPE
+                "missing_documentation_fact",  # FMV / invoice / vendor evidence not yet provided
+                "legal_authority_interpretation",  # no published EDB rule on in-kind FMV
+                "approval_dependency",         # EDB acceptance required
+            ),
+            resolution_paths=(
+                "Upload the in-kind contribution / donation agreement.",
+                "Provide third-party fair-market-value (FMV) evidence for the post work.",
+                "Provide the Mauritius vendor / entity details performing the post.",
+                "Provide the invoice / accounting treatment and related-party disclosure.",
+                "Obtain EDB written confirmation / ruling that in-kind FMV qualifies.",
+                "User confirms the post location (Mauritius vs. elsewhere).",
+            ),
         ),
     ]
 

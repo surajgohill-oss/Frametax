@@ -97,12 +97,16 @@ class TestPrimaryPipelineIsMockFree:
         scen = next(s for s in state.scenario_ranking.structures if s.structure_id == rank1.structure_id)
         assert scen.cases[RiskCase.CONSERVATIVE].qpe_usd == pytest.approx(raw_qpe, abs=0.01)
 
-    def test_mock_cycle_still_runs_confined_to_legal_fields(self, state):
-        """The research view still exists and is still mock-labeled —
-        confinement, not deletion."""
-        assert state.legal_commit is not None
-        assert not is_authoritative_citation(state.legal_commit.resolved_grey_area.ruling_citation)
-        # and the primary grey areas were never touched by that cycle
+    def test_mock_cycle_runs_but_never_auto_resolves_genuine_grey(self, state):
+        """The research cycle still runs (questions detected/staged) but,
+        per Part 5 of the production-economics phase, it NEVER auto-verifies,
+        approves, or commits the genuine GA-INKIND-FMV grey via mock. The
+        grey stays OPEN with its resolution paths exposed; mock evidence
+        must never resolve a genuine grey or alter a headline number."""
+        assert state.legal_cycle is not None
+        assert len(state.legal_cycle.questions) > 0  # cycle ran
+        assert state.legal_commit is None             # nothing mock-committed
+        # the primary grey areas were never touched by that cycle
         for g in state.grey_areas_baseline:
             assert g.status == GreyAreaStatus.OPEN
 

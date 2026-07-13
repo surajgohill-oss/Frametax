@@ -198,7 +198,142 @@ def current_fact_answers() -> dict[str, object]:
 
 def reset_fact_answers() -> None:
     _fact_answers.clear()
+    _economics_controls.clear()
     _build_state.cache_clear()
+
+
+# ── Permanent production-structure default (explicit + traceable) ────────────
+# For every candidate jurisdiction the optimizer assumes a legally
+# compliant local production structure designed to MAXIMIZE qualification,
+# unless the user supplies contrary facts. This assumption is exposed
+# (never hidden) on /production.economics — see get_economics().
+SPV_PRODUCTION_STRUCTURE_DEFAULT: dict[str, object] = {
+    "jurisdiction_code": JURISDICTION_CODE,
+    "assumption": "optimized_legal_local_structure",
+    "assumptions": [
+        "A Mauritius production SPV is established.",
+        "Qualifying production costs are contracted, invoiced, and paid "
+        "through that SPV where legally permitted.",
+        "Local payroll / vendor routing is used where required.",
+        "Foreign people and vendors are NOT assumed to be paid offshore or "
+        "incurred offshore merely because they are foreign — the EDB QPE list "
+        "explicitly includes 'Labour costs (including non-nationals)'.",
+        "Unknown structuring details generate producer questions; they never "
+        "create pessimistic exclusions.",
+    ],
+    "exclusion_gates": [
+        "Primary authority explicitly excludes the cost.",
+        "A verified production fact fails a requirement.",
+        "A required legal condition demonstrably fails.",
+    ],
+    "user_overridable_via": sorted(ANSWERABLE_FACTS),
+}
+
+
+# ── Production-economics controls (financing / in-kind / awarded rate) ───────
+# A light, on-demand store separate from the qualification-fact store: these
+# controls feed only the /economics headline results (mauritius_economics),
+# never the register/structures. Financing defaults to ZERO; the $625k
+# in-kind post is a user-controllable fact, never a hardcoded additive.
+_economics_controls: dict[str, object] = {}
+
+_FINANCING_METHODS = {"none", "rate_time", "hard_cost"}
+_INKIND_ACCEPTANCE = {"unknown", "yes", "no"}
+_POST_LOCATIONS = {"mauritius", "elsewhere"}
+
+
+def apply_economics_controls(controls: dict[str, object]) -> None:
+    """Set production-economics controls. Recognized keys:
+      financing_method: 'none' | 'rate_time' | 'hard_cost'
+      financing_annual_rate: float, financing_weeks: int,
+      financing_amount_pct: float, financing_hard_cost_usd: float,
+      financing_source: 'user_input' | 'document_input'
+      awarded_rate: float (within [floor, ceiling])
+      in_kind_post_available: bool, in_kind_post_fmv_usd: float,
+      in_kind_post_accepted_as_qpe: 'unknown'|'yes'|'no',
+      replacement_post_cost_if_lost_usd: float,
+      post_location: 'mauritius'|'elsewhere'
+    A value of None clears that control (returns it to its default)."""
+    _numeric = {
+        "financing_annual_rate", "financing_amount_pct", "financing_hard_cost_usd",
+        "awarded_rate", "in_kind_post_fmv_usd", "replacement_post_cost_if_lost_usd",
+        "financing_weeks",
+    }
+    _enums = {
+        "financing_method": _FINANCING_METHODS,
+        "in_kind_post_accepted_as_qpe": _INKIND_ACCEPTANCE,
+        "post_location": _POST_LOCATIONS,
+        "financing_source": {"user_input", "document_input"},
+    }
+    for key, value in controls.items():
+        if value is None:
+            _economics_controls.pop(key, None)
+            continue
+        if key in _numeric:
+            if not isinstance(value, (int, float)) or isinstance(value, bool):
+                raise ValueError(f"Economics control '{key}' expects a number.")
+            _economics_controls[key] = float(value)
+        elif key in _enums:
+            v = str(value).lower()
+            if v not in _enums[key]:
+                raise ValueError(f"'{value}' invalid for '{key}' (allowed: {sorted(_enums[key])}).")
+            _economics_controls[key] = v
+        elif key == "in_kind_post_available":
+            if not isinstance(value, bool):
+                raise ValueError("in_kind_post_available expects a bool.")
+            _economics_controls[key] = value
+        else:
+            raise ValueError(f"'{key}' is not a recognized economics control.")
+
+
+def current_economics_controls() -> dict[str, object]:
+    return dict(_economics_controls)
+
+
+def build_financing_model() -> "FinancingModel":
+    """The financing model from the current controls. DEFAULT: ZERO — never
+    a silent 8%/39wk assumption (Part 2)."""
+    from app.calculators.mauritius_economics import (
+        FinancingMethod, FinancingModel, FinancingSource,
+    )
+    c = _economics_controls
+    method = c.get("financing_method", "none")
+    if method == "none":
+        return FinancingModel()  # DEFAULT_ZERO / NONE
+    src = FinancingSource(c.get("financing_source", "user_input"))
+    if method == "hard_cost":
+        return FinancingModel(
+            source=src, method=FinancingMethod.HARD_COST,
+            hard_cost_usd=c.get("financing_hard_cost_usd", 0.0),
+        )
+    return FinancingModel(
+        source=src, method=FinancingMethod.RATE_TIME,
+        annual_rate=c.get("financing_annual_rate"),
+        weeks=int(c["financing_weeks"]) if "financing_weeks" in c else None,
+        financed_amount_pct=c.get("financing_amount_pct"),
+    )
+
+
+def build_inkind_model() -> "InKindPostModel":
+    """The in-kind post model from the current controls. Canonical
+    production fact: $625,000 in-kind post, intended in Mauritius (Part 3)."""
+    from app.calculators.mauritius_economics import (
+        InKindAcceptance, InKindPostModel, PostLocation,
+    )
+    c = _economics_controls
+    return InKindPostModel(
+        available=bool(c.get("in_kind_post_available", True)),
+        fmv_usd=float(c.get("in_kind_post_fmv_usd", 625_000.0)),
+        jurisdiction=JURISDICTION_CODE,
+        accepted_as_qpe=InKindAcceptance(c.get("in_kind_post_accepted_as_qpe", "unknown")),
+        replacement_post_cost_if_lost_usd=float(c.get("replacement_post_cost_if_lost_usd", 625_000.0)),
+        post_location=PostLocation(c.get("post_location", "mauritius")),
+    )
+
+
+def get_awarded_rate() -> float | None:
+    v = _economics_controls.get("awarded_rate")
+    return float(v) if v is not None else None
 
 
 def _production_facts() -> ProductionFacts:
@@ -383,10 +518,16 @@ def _build_state(_fact_key: tuple) -> LittleUtopiaState:
     if facts.treaty_partner_code:
         extra_sets.append((JURISDICTION_CODE, facts.treaty_partner_code))
 
+    # Financing defaults to ZERO across the optimizer too (Part 2): pass
+    # delay_weeks=0 / bridge_rate=0 so build_risk_cases never silently
+    # applies the old 8%/39-week assumption. Financing is modeled only in
+    # the /economics headline (mauritius_economics), and only from explicit
+    # user input.
     composition = compose_production_structures(
         collection, graph, register=register, gross_budget_usd=MU_GROSS_BUDGET_USD,
         rate=MU_RATE, grey_areas=grey_areas,
         extra_jurisdiction_sets=extra_sets or None,
+        delay_weeks=0, bridge_rate=0.0,
     )
     recommendations = generate_production_recommendations(
         collection, composition_result=composition, register=register, rate=MU_RATE,
@@ -396,6 +537,7 @@ def _build_state(_fact_key: tuple) -> LittleUtopiaState:
     scenario_structures = compose_candidate_structures(
         collection, register=register, gross_budget_usd=MU_GROSS_BUDGET_USD,
         rate=MU_RATE, grey_areas=grey_areas,
+        delay_weeks=0, bridge_rate=0.0,
     )
     scenario_ranking = rank_production_structures(scenario_structures)
 
@@ -420,26 +562,15 @@ def _build_state(_fact_key: tuple) -> LittleUtopiaState:
 
     legal_cycle = legal_engine.run_acquisition_cycle(AS_OF_DATE, grey_areas=legal_grey_areas, graph=graph_default)
 
-    # Demonstrate the acquisition -> verify -> approve -> commit loop over
-    # the sole genuine grey work item (GA-INKIND-FMV — off-budget in-kind
-    # post FMV). Off-budget, so apply_resolutions is a no-op on the primary
-    # register (no contamination); this only populates the /legal research
-    # view. The MockConnector citation stays non-authoritative throughout.
+    # Part 5: GA-INKIND-FMV is a GENUINE grey (producer election + missing
+    # documentation + EDB ruling dependency). It is DELIBERATELY NOT
+    # auto-resolved here — the acquisition cycle stages it (surfacing the
+    # question and its resolution paths) but the demo never mock-verifies,
+    # mock-approves, or mock-commits it. Mock evidence must never resolve a
+    # genuine grey or alter any headline number. legal_commit stays None;
+    # the in-kind grey stays OPEN with its resolution paths exposed on
+    # /legal for the producer to actually satisfy.
     legal_commit = None
-    if "STG-TASK-GA-INKIND-FMV" in legal_cycle.awaiting_verification:
-        legal_engine.record_verification(
-            "STG-TASK-GA-INKIND-FMV", verified_by="counsel@littleutopia.example",
-            outcome="authority_found", notes="Research view only — EDB ruling on in-kind "
-                                              "post-production FMV treatment (mock retrieval).",
-        )
-        legal_engine.record_approval("STG-TASK-GA-INKIND-FMV", approved_by="producer@littleutopia.example")
-        ga = next(g for g in legal_grey_areas if g.item_id == "GA-INKIND-FMV")
-        legal_commit = legal_engine.commit_and_score(
-            "STG-TASK-GA-INKIND-FMV", target_jurisdiction_code=JURISDICTION_CODE, as_of_date=AS_OF_DATE,
-            rule_text="In-kind post-production FMV qualifies as additive QPE.",
-            tier=AuthorityTier.OFFICIAL_GUIDANCE, authority_body="Mauritius Revenue Authority",
-            resolves_grey_area=ga, grey_area_outcome=GreyAreaStatus.RESOLVED_INCLUDE,
-        )
 
     legal_rerun = legal_engine.rerun(
         register=register, gross_budget_usd=MU_GROSS_BUDGET_USD, rate=MU_RATE,

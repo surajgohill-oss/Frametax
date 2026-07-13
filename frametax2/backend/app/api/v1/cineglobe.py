@@ -44,10 +44,18 @@ from app.calculators.ui_presentation import (
 )
 from app.demo.little_utopia_state import (
     ANSWERABLE_FACTS,
+    SPV_PRODUCTION_STRUCTURE_DEFAULT,
+    apply_economics_controls,
     apply_fact_answers,
+    build_financing_model,
+    build_inkind_model,
+    current_economics_controls,
     current_fact_answers,
+    get_awarded_rate,
     get_state,
 )
+from app.calculators.mauritius_economics import compute_mauritius_economics
+from app.calculators.qualification_model import QualificationState
 
 router = APIRouter(prefix="/cineglobe", tags=["cineglobe"])
 
@@ -137,8 +145,97 @@ async def get_production() -> dict[str, Any]:
             "variance_usd": s.budget_reconciliation_variance_usd,
             "note": s.budget_reconciliation_note,
         },
+        # Permanent production-structure default — explicit and traceable
+        # (local SPV; foreign people/vendors not assumed offshore).
+        "production_structure_default": SPV_PRODUCTION_STRUCTURE_DEFAULT,
         "as_of_date": "2026-07-10",
     }
+
+
+# ── Production economics (headline: floor / ceiling / in-kind options) ──────
+
+class EconomicsControlsRequest(BaseModel):
+    financing_method: str | None = None          # none | rate_time | hard_cost
+    financing_source: str | None = None          # user_input | document_input
+    financing_annual_rate: float | None = None
+    financing_weeks: float | None = None
+    financing_amount_pct: float | None = None
+    financing_hard_cost_usd: float | None = None
+    awarded_rate: float | None = None
+    in_kind_post_available: bool | None = None
+    in_kind_post_fmv_usd: float | None = None
+    in_kind_post_accepted_as_qpe: str | None = None  # unknown | yes | no
+    replacement_post_cost_if_lost_usd: float | None = None
+    post_location: str | None = None             # mauritius | elsewhere
+
+
+def _economics_payload() -> dict[str, Any]:
+    s = get_state()
+    verified_cash_qpe = round(
+        sum(a.amount_usd for a in s.register if a.state == QualificationState.QUALIFIES), 2
+    )
+    rr = s.rate_resolution
+    rate_floor = rr.floor_rate if rr is not None else 0.30
+    rate_ceiling = rr.modeled_rate if rr is not None else 0.40
+    financing = build_financing_model()
+    inkind = build_inkind_model()
+    econ = compute_mauritius_economics(
+        gross_cash_budget_usd=s.gross_budget_usd,
+        verified_cash_qpe_usd=verified_cash_qpe,
+        rate_floor=rate_floor,
+        rate_ceiling=rate_ceiling,
+        financing=financing,
+        inkind=inkind,
+        awarded_rate=get_awarded_rate(),
+    )
+
+    def _case(r) -> dict[str, Any]:
+        return {
+            "label": r.label,
+            "gross_cash_budget_usd": r.gross_cash_budget_usd,
+            "off_budget_inkind_usd": r.off_budget_inkind_usd,
+            "qpe_usd": r.qpe_usd,
+            "incentive_rate": r.incentive_rate,
+            "rate_authority_status": r.rate_authority_status,
+            "incentive_usd": r.incentive_usd,
+            "financing_cost_usd": r.financing_cost_usd,
+            "financing_source": r.financing_source,
+            "financing_formula": r.financing_formula,
+            "net_benefit_usd": r.net_benefit_usd,
+            "net_production_cost_usd": r.net_production_cost_usd,
+            "economic_production_value_usd": r.economic_production_value_usd,
+            "conditions": list(r.conditions),
+            "notes": r.notes,
+        }
+
+    payload: dict[str, Any] = {
+        "production_structure_default": SPV_PRODUCTION_STRUCTURE_DEFAULT,
+        "verified_cash_qpe_usd": verified_cash_qpe,
+        "verified_floor_case": _case(econ["verified_floor_case"]),
+        "potential_ceiling_case": _case(econ["potential_ceiling_case"]),
+        "inkind_post_options": {
+            k: _case(v) for k, v in econ["inkind_post_options"].items()
+        },
+        "financing_source": financing.source.value,
+        "controls": current_economics_controls(),
+    }
+    if "user_elected_case" in econ:
+        payload["user_elected_case"] = _case(econ["user_elected_case"])
+    return payload
+
+
+@router.get("/economics")
+async def get_economics() -> dict[str, Any]:
+    return _economics_payload()
+
+
+@router.post("/economics/controls")
+async def post_economics_controls(body: EconomicsControlsRequest) -> dict[str, Any]:
+    try:
+        apply_economics_controls(body.model_dump(exclude_unset=True))
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    return _economics_payload()
 
 
 # ── Screen 2: Package Intelligence (Budget / Script / Questions) ────────────
@@ -383,6 +480,10 @@ async def get_legal() -> dict[str, Any]:
             "citation_is_authoritative": is_authoritative_citation(g.ruling_citation),
             "off_budget": g.off_budget,
             "graph_rule_id": g.graph_rule_id,
+            # Part 5: precise classification + concrete producer resolution
+            # paths for a genuine grey (never auto-resolved by mock).
+            "grey_kinds": list(g.grey_kinds),
+            "resolution_paths": list(g.resolution_paths),
         }
 
     evidence_trace: list[dict[str, Any]] = []
