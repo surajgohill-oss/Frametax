@@ -1,0 +1,306 @@
+"""Tests for allocation_pricing — multi-register segment pricing over an
+account->jurisdiction allocation, structure expressions, gating,
+travel/FX single application, in-kind containment, ranking, and the
+delegated program-stack enumeration."""
+from __future__ import annotations
+
+import pytest
+
+from app.calculators.allocation_pricing import (
+    enumerate_segment_program_stacks,
+    price_allocated_structure,
+    rank_allocated_structures,
+)
+from app.calculators.production_allocation import (
+    MOVABLE_COMPONENTS,
+    StructureSpec,
+    derive_account_allocation,
+)
+from app.calculators.qualification_derivation import BudgetLine
+from app.calculators.qualification_model import (
+    QualificationState,
+    build_little_utopia_real_register,
+    build_little_utopia_register_for_jurisdiction,
+)
+from app.data.little_utopia_real_budget import (
+    AUTHORITATIVE_GROSS_BUDGET_USD,
+    LITTLE_UTOPIA_REAL_ACCOUNTS_OUTSIDE_MU,
+    LITTLE_UTOPIA_REAL_BUDGET_LINES,
+    LITTLE_UTOPIA_REAL_OFFSHORE_PAYROLL,
+    LITTLE_UTOPIA_REAL_SPEND_CATEGORY,
+)
+
+GROSS = AUTHORITATIVE_GROSS_BUDGET_USD
+
+
+def _lines() -> list[BudgetLine]:
+    return [
+        BudgetLine(
+            account_code=c, description=d, amount_usd=a,
+            spend_category=LITTLE_UTOPIA_REAL_SPEND_CATEGORY.get(c), is_memo=False,
+        )
+        for c, d, a, _p in LITTLE_UTOPIA_REAL_BUDGET_LINES
+    ]
+
+
+def _price(spec: StructureSpec, **kwargs):
+    allocation = derive_account_allocation(
+        lines=_lines(),
+        spend_category_by_code=LITTLE_UTOPIA_REAL_SPEND_CATEGORY,
+        spec=spec,
+        stated_outside_accounts=LITTLE_UTOPIA_REAL_ACCOUNTS_OUTSIDE_MU,
+    )
+    return price_allocated_structure(
+        spec=spec, allocation=allocation,
+        spend_category_by_code=LITTLE_UTOPIA_REAL_SPEND_CATEGORY,
+        offshore_payroll_accounts=LITTLE_UTOPIA_REAL_OFFSHORE_PAYROLL,
+        gross_budget_usd=GROSS,
+        **kwargs,
+    )
+
+
+def _spec(structure_id, structure_type, participants, programs, **overrides):
+    kwargs = dict(
+        structure_id=structure_id, structure_type=structure_type,
+        label=structure_id, primary_jurisdiction=participants[0],
+        participants=participants, incentive_programs=programs,
+    )
+    kwargs.update(overrides)
+    return StructureSpec(**kwargs)
+
+
+BASELINE = _spec("P-BASE-MU", "single_country", ("MU",), {"MU": "mu_edb_incentive"})
+
+
+# ── 1/7/8: baseline partial register matches the served register ────────────
+
+def test_baseline_mu_segment_matches_served_register_qpe():
+    pricing = _price(BASELINE)
+    assert pricing.is_fully_priced
+    mu = next(s for s in pricing.segments if s.jurisdiction_code == "MU")
+    served = build_little_utopia_real_register(mu_rate=0.40)
+    served_qpe = round(sum(a.amount_usd for a in served
+                           if a.state == QualificationState.QUALIFIES), 2)
+    assert mu.qpe_usd == served_qpe  # independent partial register, same truth
+    assert mu.incentive_floor_usd == round(served_qpe * 0.30, 2)
+    # the stated-LA editorial spend is a separate, non-incentive segment
+    us = next(s for s in pricing.segments if s.jurisdiction_code == "US")
+    assert us.claims_incentive is False and us.incentive_floor_usd == 0.0
+    assert us.allocated_usd == 9_068.0
+
+
+def test_full_relocation_matches_alternative_jurisdiction_register():
+    spec = _spec("P-RELOC-GR", "full_relocation", ("GR",), {"GR": "gr_cash_rebate"})
+    pricing = _price(spec)
+    assert pricing.is_fully_priced
+    gr = next(s for s in pricing.segments if s.jurisdiction_code == "GR")
+    alt_register = build_little_utopia_register_for_jurisdiction("GR", "gr_cash_rebate", 0.0)
+    alt_qpe = round(sum(a.amount_usd for a in alt_register
+                        if a.state == QualificationState.QUALIFIES), 2)
+    assert gr.qpe_usd == alt_qpe  # same truth as /economics.alternative_jurisdictions
+    assert pricing.npc_verified_usd == round(GROSS - gr.qpe_usd * 0.40, 2)
+
+
+# ── 3/6: component routing changes segment QPE and total NPC ────────────────
+
+def test_component_route_changes_segment_qpe_and_npc():
+    baseline = _price(BASELINE)
+    routed = _price(_spec(
+        "P-COMP-MT", "component_relocation", ("MU", "MT"),
+        {"MU": "mu_edb_incentive", "MT": "mt_mfc_rebate"},
+        component_routes={c: "MT" for c in MOVABLE_COMPONENTS},
+    ))
+    assert routed.is_fully_priced
+    mu_base = next(s for s in baseline.segments if s.jurisdiction_code == "MU")
+    mu_routed = next(s for s in routed.segments if s.jurisdiction_code == "MU")
+    mt = next(s for s in routed.segments if s.jurisdiction_code == "MT")
+    # VFX (6100, $52,500) left MU; editorial ($9,068) moved from US to MT
+    assert mu_routed.qpe_usd < mu_base.qpe_usd
+    assert mt.qpe_usd > 0
+    assert mt.executable
+    # both segment QPE and total NPC moved (validation point 6)
+    assert routed.npc_verified_usd != baseline.npc_verified_usd
+    # no account is priced twice: segment account sets are disjoint
+    seg_sets = [set(s.account_codes) for s in routed.segments]
+    for i, a in enumerate(seg_sets):
+        for b in seg_sets[i + 1:]:
+            assert not (a & b)
+
+
+def test_component_route_below_minimum_spend_blocks_honestly():
+    # Greece's rebate has a minimum-spend condition the routed component
+    # spend (~$61.6k) cannot meet — the structure must be excluded from
+    # ranking with that exact blocker, never priced at a guessed rate.
+    pricing = _price(_spec(
+        "P-COMP-GR", "component_relocation", ("MU", "GR"),
+        {"MU": "mu_edb_incentive", "GR": "gr_cash_rebate"},
+        component_routes={c: "GR" for c in MOVABLE_COMPONENTS},
+    ))
+    assert not pricing.is_fully_priced
+    assert any("did not resolve" in b for b in pricing.blockers)
+    assert pricing.npc_verified_usd is None
+
+
+# ── 4: genuine split production ──────────────────────────────────────────────
+
+def test_split_production_prices_both_partial_registers():
+    split = _price(_spec(
+        "P-SPLIT-MU-GR", "split_production", ("MU", "GR"),
+        {"MU": "mu_edb_incentive", "GR": "gr_cash_rebate"},
+        account_splits={"3400": {"MU": 0.7, "GR": 0.3}},
+    ))
+    assert split.is_fully_priced
+    mu = next(s for s in split.segments if s.jurisdiction_code == "MU")
+    gr = next(s for s in split.segments if s.jurisdiction_code == "GR")
+    assert gr.allocated_usd == round(496_232.0 * 0.3, 2)
+    assert gr.qpe_usd > 0 and mu.qpe_usd > 0
+    # the split account appears in both segments ONLY via its explicit portions
+    assert "3400" in mu.account_codes and "3400" in gr.account_codes
+    # conservation still exact
+    assert split.allocation.conserves
+    # changing the producer's split changes both segment QPE and NPC
+    split2 = _price(_spec(
+        "P-SPLIT-MU-GR-2", "split_production", ("MU", "GR"),
+        {"MU": "mu_edb_incentive", "GR": "gr_cash_rebate"},
+        account_splits={"3400": {"MU": 0.6, "GR": 0.4}},
+    ))
+    gr2 = next(s for s in split2.segments if s.jurisdiction_code == "GR")
+    assert gr2.qpe_usd != gr.qpe_usd
+    assert split2.npc_verified_usd != split.npc_verified_usd
+
+
+# ── 5: treaty legality is evaluated, never forced ────────────────────────────
+
+def test_treaty_coproduction_without_instrument_is_blocked():
+    pricing = _price(_spec(
+        "P-TREATY-MU-GR", "treaty_coproduction", ("MU", "GR"),
+        {"MU": "mu_edb_incentive", "GR": "gr_cash_rebate"},
+    ))
+    assert not pricing.is_fully_priced
+    assert any("treaty" in b.lower() for b in pricing.blockers)
+
+
+def test_majority_claim_contradicted_by_allocation_is_blocked():
+    pricing = _price(_spec(
+        "P-MM-MU-MT", "majority_minority", ("MU", "MT"),
+        {"MU": "mu_edb_incentive", "MT": "mt_mfc_rebate"},
+        ownership_shares={"MT": 0.8, "MU": 0.2},  # MT majority but ~no MT spend
+    ))
+    assert any("majority participation" in b for b in pricing.blockers)
+
+
+# ── expressions: service / hybrid / multi-party through the same model ──────
+
+def test_service_and_hybrid_and_multiparty_are_expressible_not_bespoke():
+    service = _price(_spec(
+        "P-SERVICE-MU", "service_production", ("MU",), {"MU": "mu_edb_incentive"},
+    ))
+    assert service.is_fully_priced  # single-jurisdiction service shoot prices
+    hybrid = _price(_spec(
+        "P-HYBRID", "hybrid", ("MU", "MT"),
+        {"MU": "mu_edb_incentive", "MT": "mt_mfc_rebate"},
+        component_routes={c: "MT" for c in MOVABLE_COMPONENTS},
+    ))
+    assert any("treaty" in b.lower() for b in hybrid.blockers)  # honest gate
+    multi = _price(_spec(
+        "P-MULTI", "multi_party", ("MU", "MT", "GR"),
+        {"MU": "mu_edb_incentive", "MT": "mt_mfc_rebate", "GR": "gr_cash_rebate"},
+    ))
+    assert not multi.is_fully_priced  # no instrument covers the triple
+
+
+# ── 9/10: travel & FX once; in-kind containment ─────────────────────────────
+
+def test_travel_and_fx_apply_once_at_structure_level():
+    pricing = _price(BASELINE, travel_incremental_delta_usd=1_000.0, fx_delta_usd=500.0)
+    assert pricing.travel_incremental_delta_usd == 1_000.0
+    assert pricing.fx_delta_usd == 500.0
+    assert pricing.npc_with_adjustments_usd == round(pricing.npc_verified_usd + 1_500.0, 2)
+    # segments never carry travel/FX fields — single application by construction
+    for s in pricing.segments:
+        assert not hasattr(s, "travel_incremental_delta_usd")
+        assert not hasattr(s, "fx_delta_usd")
+
+
+def test_inkind_post_never_enters_any_segment():
+    for spec in (
+        BASELINE,
+        _spec("P-RELOC-MT", "full_relocation", ("MT",), {"MT": "mt_mfc_rebate"}),
+    ):
+        pricing = _price(spec)
+        # no segment QPE can include the off-budget $625k (it is not a
+        # budget line, so the strongest check is conservation + the note)
+        assert pricing.allocation.total_allocated_usd == pricing.allocation.total_budget_lines_usd
+        assert "625,000" in pricing.inkind_note
+        assert "non-Mauritius segment" in pricing.inkind_note
+
+
+# ── ranking & gating ─────────────────────────────────────────────────────────
+
+def test_unpriced_structures_excluded_from_ranking_with_blockers():
+    priced = _price(BASELINE)
+    blocked = _price(_spec(
+        "P-TREATY-MU-GR", "treaty_coproduction", ("MU", "GR"),
+        {"MU": "mu_edb_incentive", "GR": "gr_cash_rebate"},
+    ))
+    ranking = rank_allocated_structures([blocked, priced])
+    ranked = [r for r in ranking if r["rank"] is not None]
+    unranked = [r for r in ranking if r["rank"] is None]
+    assert [r["structure_id"] for r in ranked] == ["P-BASE-MU"]
+    assert unranked and unranked[0]["excluded_from_ranking_because"]
+
+
+def test_structure_recommendation_is_deterministic_and_gated():
+    pricing = _price(_spec(
+        "P-COMP-MT", "component_relocation", ("MU", "MT"),
+        {"MU": "mu_edb_incentive", "MT": "mt_mfc_rebate"},
+        component_routes={c: "MT" for c in MOVABLE_COMPONENTS},
+    ))
+    rec = pricing.recommendation
+    assert rec.recommendation_id == "REC-STRUCT-P-COMP-MT"
+    assert rec.approval_chain[0] == "producer"
+    assert rec.reversibility == "reversible_before_execution"
+    assert rec.gated  # unresolved relocation-confirmation requirements
+    assert rec.dependency_group
+    # explainability: structure / budget lines / authority / facts /
+    # assumptions / calculations / approvals all present (validation 12)
+    for key in ("structure", "allocated_budget_lines", "authority",
+                "production_facts", "assumptions", "calculations",
+                "approvals_and_actions"):
+        assert key in rec.explanation
+    assert rec.explanation["calculations"]["npc_verified_usd"] == pricing.npc_verified_usd
+    treaty = _price(_spec(
+        "P-TREATY-MU-MT", "treaty_coproduction", ("MU", "MT"),
+        {"MU": "mu_edb_incentive", "MT": "mt_mfc_rebate"},
+    ))
+    assert treaty.recommendation.reversibility == "hard_to_reverse"
+    assert "counsel" in treaty.recommendation.approval_chain
+
+
+# ── delegated program-stack enumeration ──────────────────────────────────────
+
+def test_stack_enumeration_returns_empty_for_single_program():
+    assert enumerate_segment_program_stacks(
+        jurisdiction={"id": "MU"}, line_items=[],
+        candidate_programs=[{"program": {"slug": "mu_edb_incentive"}}],
+        stacking_rules=[],
+    ) == []
+
+
+def test_stack_enumeration_delegates_to_generate_structure_scenarios(monkeypatch):
+    import app.calculators.generate_structure_scenarios as gss
+    calls = {}
+
+    def _fake(**kwargs):
+        calls.update(kwargs)
+        return ["SENTINEL"]
+
+    monkeypatch.setattr(gss, "generate_structure_scenarios", _fake)
+    out = enumerate_segment_program_stacks(
+        jurisdiction={"id": "IE"}, line_items=[{"x": 1}],
+        candidate_programs=[{"program": {"slug": "a"}}, {"program": {"slug": "b"}}],
+        stacking_rules=[{"r": 1}],
+    )
+    assert out == ["SENTINEL"]
+    assert calls["jurisdiction"] == {"id": "IE"}
+    assert len(calls["candidate_programs"]) == 2

@@ -342,3 +342,126 @@ Every served recommendation still carries statute/authority (`published_support`
 - **Must reconcile against other-account assets** before choosing canonical owners — see `ACCOUNT_TRANSFER_HANDOFF.md` §5–§7. Do NOT delete/merge/deprecate any engine first.
 - No engine behavior, calculation, or API contract changed this session (docs only). Smoke check: served state builds (44 accounts, 6 advisory recs).
 - **Resume step for next account:** open `ACCOUNT_TRANSFER_HANDOFF.md`, run §6 reconciliation for the structure-enumeration overlap first (highest duplication), after inspecting the other account per §5.
+
+---
+
+# SESSION DELTA — Optimizer reconciliation (audit-only, no code/runtime/branch change)
+
+Traced actual logic (not filenames) across composer, structuring_advisor, structure_generator, generate_structure_scenarios, optimization_engine, run_full_analysis, opportunity_discovery, treaty_engine, rank/score/maximize. New, more precise conclusions:
+
+## Budget allocation is genuinely uncomputed — but decomposes into FOUR partial pieces that already exist
+No engine computes an account→jurisdiction partition of the register. Proven:
+1. `optimization/structure_generator._estimate_soft_money` — flat **60/40** primary/secondary spend-pct heuristic × base rate. An *estimator*, parametric, not register-grounded, not optimized (does not choose which accounts move).
+2. `run_full_analysis` (DB path) — takes `jurisdiction_spend_pct` per program as a **caller-supplied input** (default 1.0). Consumes an allocation; never derives one.
+3. `opportunity_discovery` — structuring opportunities already carry `affected_accounts: tuple[str,...]` (real account-code tagging via levers); relocation candidates price `rate_delta * movable_spend_usd` where `movable_spend_usd` is a single **caller-supplied aggregate**, not a computed partition.
+4. `structuring_advisor.routing_decisions` — `component → target_jurisdiction` with `qualification_impact_usd`, but `component` is a recommendation *title* (label), not a budget-account set.
+Composer kernel (`compose` L581-596) prices the **whole** `gross_budget_usd` against the single register-backed segment; `priceable_pct = priced_segments/len(segments)` → 0.5 for a 2-segment co-pro. No per-account split anywhere in the priced path.
+**Therefore:** the missing keystone is bounded — (a) a partition function that maps the 44 real register accounts to jurisdictions using the already-existing `affected_accounts` + `routing_decisions` + `movable_spend`, and (b) the composer accepting N partial registers (each summing without double-count) instead of pricing whole-budget-once. The per-jurisdiction register builder (`build_little_utopia_register_for_jurisdiction`) already exists. This is integration + one bounded new function, not a greenfield allocator.
+
+## anchor / hybrid / service / split / ownership — mentions vs. logic (confirmed)
+- **anchor / hybrid structures:** no `structure_type`, no pricing path. "hybrid" appears only as the qualification *doctrine* `HYBRID_CONDITIONAL` (unrelated); "anchor" only as a UI lane concept.
+- **service production:** exists ONLY as legal *condition text* in `stacking_rules.py` (UK HVC, Canada CMPA foreign-cert combinability) — descriptive knowledge, not a priced structure.
+- **split production:** parametric only (`structure_generator` `structure_type="split"`); register-grounded split blocked by the same allocation gap.
+- **ownership allocation:** *constraints* exist (treaty producer-share thresholds in `treaty_engine`/`cultural_test_rules`; `ownership_nationality` facts; a `qualification_path_engine` suggestion string). Ownership *optimization* (choosing the share) does not exist.
+- **Key insight:** service / split / hybrid are very likely **expressible as allocation + treaty + ownership-share combinations** (service = ~100% foreign-financed allocation at minority ownership; split = departmental allocation; hybrid = treaty + allocation), i.e. they most likely fall OUT of the allocation model rather than needing bespoke per-structure engines. Confirm before building any as standalone.
+
+## Alternative ranking loop (parametric) is real and complete on its own data model
+`optimization/score_structures` (rank by `net_producer_benefit_usd` + confidence penalty + `explain_structure`) and `maximization_engine` (`_pick_best`/`_pick_improved` + action generation) form a full parametric optimize→rank→explain loop over `GeneratedStructure`, mounted via the `optimization.py` router. Weaker data model than the served register-grounded `rank_production_structures`, but a genuine alternative — REFERENCE, do not rebuild; harvest its explanation/action-generation shape if the served ranker ever needs richer output.
+
+## One-line conclusion
+The Production Optimization Engine is **~85–90% completable by connecting/consolidating existing engines.** The only genuinely new engineering is the bounded account→jurisdiction **allocation partition + composer multi-register acceptance** (keystone). Everything else — enumeration, stacking math, scenario combos, recommendation gating, ranking, treaty/co-pro/multi-party — already exists in at least one implementation and needs wiring or merging, not rebuilding. No code, runtime, or branch state changed this session.
+
+---
+
+# SESSION DELTA — Allocation model implemented + capabilities connected (keystone closed)
+
+**The keystone is built.** The account→jurisdiction allocation model and multi-register
+segment pricing are implemented, connected to the canonical served path, runtime-verified,
+and green on the full suite (**2926 passed, 1 skipped** — 2899 prior + 27 new, zero regressions).
+
+## What was added (new modules)
+- **`app/data/program_slug_aliases.py`** — canonical program-slug reconciliation
+  (`mt_mfc_cash_rebate`→`mt_mfc_rebate`, `gr_ekome_rebate`→`gr_cash_rebate`; both pairs
+  demonstrably name the same statutory program). Closes former known blocker #3.
+- **`app/calculators/production_allocation.py`** — the allocation model. `StructureSpec`
+  (one generic spec expresses single-country / full-relocation / component-relocation
+  (=anchor-component) / split / treaty / majority-minority / multi-party / service / hybrid —
+  no bespoke calculators), `derive_account_allocation()` partitions every cash account with
+  precedence: explicit producer split (positive pcts summing to 1.0, USER_ELECTED, never
+  engine-invented) → explicit producer account route → component route (producer or engine
+  provenance) → stated-location fact (budget's own "PICTURE EDIT: LA" → FIXED to a
+  non-incentive `US` segment) → location-bound components FIXED to the shoot jurisdiction →
+  default RECOMMENDED to the primary. Every assignment carries account/amount/component/
+  jurisdiction/kind/rationale/governing-decision/supporting-facts/authority/unresolved-
+  requirements. Conservation and uniqueness are enforced; memo lines disclosed, never dropped.
+  Components derive from the register's own spend-category vocabulary; movable = post/vfx/music
+  (same semantics as the package movable-spend hint).
+- **`app/calculators/allocation_pricing.py`** — multi-register pricing. `price_segment()`
+  derives ONE PARTIAL register per jurisdiction over ONLY its allocated lines through the
+  SAME `derive_qualification_register()` ladder and prices it with the SAME
+  `build_risk_cases()` kernel (no new math). `price_allocated_structure()` combines segments:
+  gross − Σ lawful segment floor incentives + financing/implementation (explicit, default $0)
+  ± travel ± FX (each applied ONCE, structure level). Fully-priced gate: complete conserving
+  allocation + every incentive segment executable (doctrine + rate actually resolve; min-spend
+  failures block honestly) + treaty/ownership requirements pass against the real registry +
+  no unresolved CONDITIONAL assignment. `rank_allocated_structures()` ranks fully-priced only;
+  unpriced structures list their exact blockers. `enumerate_segment_program_stacks()` delegates
+  multi-program combinatorics to the existing `generate_structure_scenarios` (invoked only when
+  a jurisdiction genuinely has ≥2 executable programs — today none does; disclosed, not fabricated).
+
+## Capabilities connected (canonical owner per capability)
+| Capability | Canonical owner now | Disposition of alternatives |
+|---|---|---|
+| Account→jurisdiction allocation | `production_allocation` (NEW) | none existed — the four partial pieces (60/40 heuristic, `jurisdiction_spend_pct` input, `affected_accounts`, `routing_decisions`) are inputs/reference |
+| Multi-register structure pricing | `allocation_pricing` (NEW, same kernel) | composer's whole-budget `cases` path unchanged (baseline candidates); parametric `structure_generator` = REFERENCE (its taxonomy vocabulary adopted in `STRUCTURE_TYPES`) |
+| Program/stack combination enumeration | `generate_structure_scenarios` via `enumerate_segment_program_stacks` delegation | connected; fires only with real ≥2-program knowledge |
+| Stacking relationships | `build_available_funds` (v1.2.0, canonical-slug matched) | slug mismatch reconciled; MT/GR variant edges now surface with the variant slug disclosed; still no fabricated stacked dollars |
+| Routing input | `structuring_advisor.routing_decisions` surfaced as `advisor_routing_decisions_input` on the allocation payload | connected as rationale input |
+| Gated structure recommendations | `allocation_pricing.build_structure_recommendation` | cloud engine (fc2886f) concepts MERGED (deterministic `REC-STRUCT-<id>` identity, gated action, ordered approval chain producer→counsel→authority, reversibility, dependency group); stale cloud fixtures NOT merged — every figure from current statute-corrected pricing |
+
+## Served API (additive; no existing contract changed)
+`GET /structures` now carries **`allocated_structures`**: per-structure summary, full
+account-allocation records, per-segment economics with per-account qualification traces,
+unresolved conditions, approval dependencies, gated recommendation, ranking (fully-priced
+only), `stack_combinations` status, and the advisor routing-decisions input. New answerable
+fact **`component_route_post`** (POST /facts) routes the movable post/VFX/music components to
+an executable jurisdiction (validated; catalog-only targets rejected).
+
+## Runtime results (all 12 validation points PASS against the live API; split via engine tests)
+1. MU baseline: MU segment QPE **$4,355,327** = served register exactly; floor incentive $1,306,598.10; NPC $3,057,794.90; stated-LA editorial ($9,068) is a separate non-incentive US segment.
+2. Full relocation GR/IE/MT price from their own partial registers (QPE matches `/economics.alternative_jurisdictions` exactly); GR ranks #1 at NPC-adj $2,624,002.20.
+3. Component relocation (post/VFX/music→MT) fully priced: MT segment QPE $61,568 @ 25%.
+4. Split production (producer-elected 70/30 split of account 3400 MU/GR) prices BOTH partial registers; changing the pct changes both segment QPE and NPC (pytest, real engine).
+5. Treaty MU+FR: no instrument in the registry → served UNPRICED with that exact blocker. Not forced.
+6. Routing post to MT moves MU QPE 4,355,327→4,302,827 and NPC 3,057,794.90→**3,058,152.90 (slightly worse than baseline — an honest, real optimizer answer)**.
+7. Conservation exact on every structure ($4,364,395 leaf sum; $2 doc variance still disclosed).
+8. Segment account sets disjoint; every executable segment carries its own qualification trace.
+9. Travel/FX exist only at structure level, applied once.
+10. In-kind $625k enters NO segment; remains governed solely by /economics MU treatment.
+11. Stacking: relationship-level only (MT=3 edges via alias, IE rich, MU genuinely 0); one program priced per segment; no stacked dollars.
+12. Recommendations carry structure/lines/authority/facts/assumptions/calculations/approvals.
+Component-route below a program's minimum spend (e.g. →GR, $61.6k < €100k min) blocks with the exact reason — never priced at a guessed rate.
+
+## Files changed
+NEW: `app/data/program_slug_aliases.py`, `app/calculators/production_allocation.py`,
+`app/calculators/allocation_pricing.py`, `tests/test_production_allocation.py`,
+`tests/test_allocation_pricing.py`.
+MODIFIED: `app/demo/little_utopia_state.py` (fact `component_route_post` + validation;
+`build_allocated_structures()`; `_executable_alternatives()`; canonical-slug stacking match,
+available_funds v1.2.0), `app/api/v1/cineglobe.py` (/structures serves allocated_structures),
+`tests/test_optimizer_input_integration.py` (stacking test updated for the reconciliation).
+
+## Remaining backend gaps (honest)
+1. Component-move travel deltas are not modeled (structure-level travel is primary-jurisdiction
+   incremental only; disclosed in notes — no fabricated figure).
+2. `enumerate_segment_program_stacks` has no live multi-program jurisdiction to fire on until a
+   second executable program is populated for some jurisdiction (data work, machinery ready).
+3. Ownership/participation optimization: constraints are enforced (shares must sum to 1.0 and be
+   reflected in real allocated spend); choosing optimal shares remains future work.
+4. Worldwide executable coverage (BE/CY/DE/ES/FR/HR/HU/IT) unchanged — data-only.
+
+## Resume point
+Backend allocation surface is complete and served. Next phase per plan: **UI Phase A/B**
+(field-rename fixes, then the Rev C workspace binding — `allocated_structures` provides the
+lane/segment/trace data the Lane Rack and Inspector need). Do not begin without design sign-off
+on the globe-vs-map ruling (see reconciliation report §2).

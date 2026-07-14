@@ -543,21 +543,25 @@ class TestGrantsAndFunds:
                 if not e["is_base_incentive_already_priced"]:
                     assert "estimated" not in e  # no dollar figure key present at all
 
-    def test_stacking_relationships_surfaced_exact_slug_only_no_dollar_figure(self):
-        """Stacking is now PARTIALLY CONNECTED: real per-jurisdiction edges
-        from structure_graph_model are surfaced by EXACT slug match only,
-        with no fabricated stacked dollar figure. Malta's variant-slug edges
-        remain deliberately unmatched (disclosed, not force-reconciled)."""
+    def test_stacking_relationships_surfaced_canonical_slug_no_dollar_figure(self):
+        """Stacking relationships are CONNECTED AT RELATIONSHIP LEVEL after
+        canonical program-slug reconciliation (app.data.program_slug_aliases):
+        Malta's and Greece's variant-slug edges now surface, each disclosing
+        the variant slug it was recorded under. Still no fabricated stacked
+        dollar figure anywhere."""
         from app.demo.little_utopia_state import build_available_funds
         out = build_available_funds()
-        # honest status, not the old blanket "NOT CONNECTED"
-        assert "PARTIALLY CONNECTED" in out["stacking_status"]
-        assert "mt_mfc_cash_rebate" in out["stacking_status"]  # variant still disclosed
+        assert "CONNECTED AT RELATIONSHIP LEVEL" in out["stacking_status"]
+        assert "mt_mfc_cash_rebate" in out["stacking_status"]  # reconciliation disclosed
         sbj = out["stacking_by_jurisdiction"]
         assert set(sbj.keys()) == {"MU", "MT", "IE", "GR"}
-        # Ireland's ie_section_481 carries the real graph; MU/MT exact-match none
+        # Ireland's ie_section_481 carries the real graph; the former Malta
+        # slug mismatch is reconciled so MT edges now surface via the alias
         assert len(sbj["IE"]) > 0
-        assert len(sbj["MU"]) == 0 and len(sbj["MT"]) == 0
+        assert len(sbj["MT"]) > 0
+        assert any(r.get("recorded_under_variant_slug") == "mt_mfc_cash_rebate"
+                   for r in sbj["MT"])
+        assert len(sbj["MU"]) == 0  # genuinely no MU edges registered
         # every surfaced relationship is a real edge type, never a dollar amount
         for rels in sbj.values():
             for r in rels:

@@ -508,9 +508,17 @@ async def get_structures() -> dict[str, Any]:
             return None
         return st.cases[RiskCase.CONSERVATIVE].net_production_cost_usd
 
+    from app.demo.little_utopia_state import build_allocated_structures
+
     return {
         "candidates": [_candidate_dict(c) for c in s.composition.candidates],
         "pruned": s.composition.pruned,
+        # Account->jurisdiction allocation surface (production_allocation +
+        # allocation_pricing): per-structure account allocations, per-
+        # jurisdiction partial-register segment economics, qualification
+        # traces, unresolved conditions, approval dependencies, and gated
+        # structure recommendations.
+        "allocated_structures": build_allocated_structures(s),
         "ranking": [
             {
                 "rank": r.rank,

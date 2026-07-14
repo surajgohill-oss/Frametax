@@ -156,3 +156,42 @@ Remaining: recommendation **prose** still LU-specialized (amounts/gating are gen
 ## SESSION DELTA — Account-transfer handoff (closeout #5, docs only)
 
 New doc `ACCOUNT_TRANSFER_HANDOFF.md` freezes state and maps **current runtime ownership** of all 24 capabilities, plus the **overlapping engines** that need reconciliation against the other Claude account before any canonical choice: structure enumeration (composer / `structure_generator` / `generate_structure_scenarios`), stacking, recommendations, ranking — across three incompatible data models (register-grounded / parametric / DB-row). **Warning carried forward:** do not rebuild/delete/merge/deprecate any engine until the other account's code + artifacts are inspected. No behavior/calculation/API change this session.
+
+---
+
+## SESSION DELTA — Allocation model + multi-register pricing (keystone closed)
+
+The confirmed architectural ceiling (single-register whole-budget pricing) is resolved:
+
+```
+ALLOCATION  (production_allocation.py — NEW)
+   │  StructureSpec (generic: single/relocation/component/split/treaty/
+   │  majority-minority/multi-party/service/hybrid — no bespoke calculators)
+   │  derive_account_allocation(): every cash account partitioned exactly once
+   │  (explicit producer splits only — never invented percentages)
+   ▼
+MULTI-REGISTER PRICING  (allocation_pricing.py — NEW, same kernels)
+   │  one PARTIAL register per jurisdiction segment via the SAME
+   │  derive_qualification_register() ladder + build_risk_cases() kernel
+   │  gross − Σ lawful segment incentives ± travel(once) ± FX(once) = NPC
+   │  fully-priced gate: complete allocation + executable segments +
+   │  treaty/ownership requirements pass; else unpriced with exact blockers
+   ▼
+API: /structures.allocated_structures  (additive; nothing existing changed)
+```
+
+Connected this session: `generate_structure_scenarios` (delegated per-segment program-stack
+enumeration), stacking relationships after canonical slug reconciliation
+(`program_slug_aliases.py` — Malta/Greece variant edges now surface, no dollar figures),
+`structuring_advisor.routing_decisions` as routing input, and the recovered cloud
+recommendation-engine concepts (deterministic identity, gated actions, approval chain,
+reversibility, dependency groups) on allocated-structure recommendations.
+
+Runtime-proven on Little Utopia: baseline MU (QPE $4,355,327 — matches the served register
+exactly), full relocations (match /economics.alternative_jurisdictions exactly), component
+relocation to MT (priced; honestly slightly worse than baseline), split production
+(producer-elected split prices both partial registers), treaty MU+FR (correctly UNPRICED —
+no instrument registered; never forced), conservation exact everywhere. Suite: 2926 passed.
+
+Legacy dispositions: parametric `app/optimization/*` = REFERENCE (taxonomy adopted);
+DB-backed `run_full_analysis` = engine behind delegated stack enumeration + REFERENCE.

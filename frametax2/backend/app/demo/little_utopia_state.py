@@ -164,6 +164,17 @@ ANSWERABLE_FACTS: dict[str, dict] = {
             "that jurisdiction set to structure composition."
         ),
     },
+    "component_route_post": {
+        "type": str,
+        "answers_question": None,
+        "description": (
+            "Producer election routing the movable post/VFX/music components "
+            "to a jurisdiction (ISO alpha-2; must be an EXECUTABLE "
+            "jurisdiction or the baseline). Drives the account->jurisdiction "
+            "allocation model (production_allocation) and the allocated-"
+            "structure pricing served on /structures.allocated_structures."
+        ),
+    },
 }
 
 _fact_answers: dict[str, object] = {}
@@ -193,6 +204,26 @@ def apply_fact_answers(answers: dict[str, object]) -> None:
                 raise ValueError(
                     f"'{code}' is not a modeled partner jurisdiction "
                     f"(known: {sorted(c for c in jc.ALL_PROFILES if c != JURISDICTION_CODE)})."
+                )
+            value = code
+        if key == "component_route_post":
+            from app.data.program_rate_rules import get_rate_rules
+            from app.data.program_spend_rules import get_program_doctrine
+            code = str(value).upper()
+            profile = jc.ALL_PROFILES.get(code)
+            executable = (
+                code == JURISDICTION_CODE
+                or (profile is not None
+                    and get_program_doctrine(profile.program_slug) is not None
+                    and len(get_rate_rules(profile.program_slug)) > 0)
+            )
+            if not executable:
+                raise ValueError(
+                    f"'{code}' is not an executable routing target — the post/"
+                    "VFX/music components can only be routed to a jurisdiction "
+                    "with classified doctrine + statutory rate rules (or the "
+                    "baseline). Routing to a catalog-only jurisdiction would "
+                    "price at a guessed rate, which is never done."
                 )
             value = code
         _fact_answers[key] = value
@@ -724,26 +755,38 @@ def build_available_funds() -> dict:
     }
 
     def _stacking_relationships(base_slug: str) -> list[dict]:
-        """Real edges from structure_graph_model touching this exact base
-        slug — direction preserved, nothing inferred. Empty list = the
-        graph registers no stacking relationship for this exact slug."""
+        """Real edges from structure_graph_model touching this base slug
+        after CANONICAL slug reconciliation (app.data.program_slug_aliases
+        — e.g. the graph's 'mt_mfc_cash_rebate' names the same Malta Film
+        Commission rebate as the executable 'mt_mfc_rebate'). Direction
+        preserved, nothing inferred; when an edge matched via an alias,
+        the variant slug it was recorded under is disclosed."""
+        from app.data.program_slug_aliases import canonical_slug
+        base = canonical_slug(base_slug)
         rels: list[dict] = []
         for e in STRUCTURE_GRAPH_EDGES:
-            if e.source_slug == base_slug:
+            src, tgt = canonical_slug(e.source_slug), canonical_slug(e.target_slug)
+            if src == base:
                 rels.append({
                     "direction": "base_affects",
                     "edge_type": e.edge_type,
-                    "other_program_slug": e.target_slug,
+                    "other_program_slug": tgt,
                     "magnitude": getattr(e, "magnitude", None),
                     "note": getattr(e, "notes", None),
+                    "recorded_under_variant_slug": (
+                        e.source_slug if e.source_slug != base else None
+                    ),
                 })
-            elif e.target_slug == base_slug:
+            elif tgt == base:
                 rels.append({
                     "direction": "affects_base",
                     "edge_type": e.edge_type,
-                    "other_program_slug": e.source_slug,
+                    "other_program_slug": src,
                     "magnitude": getattr(e, "magnitude", None),
                     "note": getattr(e, "notes", None),
+                    "recorded_under_variant_slug": (
+                        e.target_slug if e.target_slug != base else None
+                    ),
                 })
         return sorted(rels, key=lambda r: (r["edge_type"], r["other_program_slug"]))
 
@@ -780,28 +823,371 @@ def build_available_funds() -> dict:
     _edge_counts = {c: len(v) for c, v in stacking_by_jurisdiction.items()}
 
     return {
-        "version": "1.1.0",
+        "version": "1.2.0",
         "note": (
             "fund_economics_model.py's real classification data for the 4 executable "
-            "jurisdictions. Real stacking RELATIONSHIPS (not dollar amounts) are now "
-            "surfaced per jurisdiction from structure_graph_model.py where the edge slug "
-            "matches the executable program slug exactly."
+            "jurisdictions. Real stacking RELATIONSHIPS (not dollar amounts) are "
+            "surfaced per jurisdiction from structure_graph_model.py after CANONICAL "
+            "program-slug reconciliation (app.data.program_slug_aliases): the graph's "
+            "'mt_mfc_cash_rebate' / 'gr_ekome_rebate' variants name the same programs "
+            "as the executable 'mt_mfc_rebate' / 'gr_cash_rebate'."
         ),
         "by_jurisdiction": by_jurisdiction,
         "stacking_by_jurisdiction": stacking_by_jurisdiction,
         "stacking_status": (
-            "PARTIALLY CONNECTED (relationships only, no stacked dollar figure): "
-            f"exact-slug matches against structure_graph_model.py yield "
+            "CONNECTED AT RELATIONSHIP LEVEL (no stacked dollar figure): "
+            f"canonical-slug matches against structure_graph_model.py yield "
             f"IE={_edge_counts['IE']} edges, GR={_edge_counts['GR']}, "
             f"MU={_edge_counts['MU']}, MT={_edge_counts['MT']}. "
-            "Ireland's ie_section_481 carries the real stacking graph (fund complements, "
-            "development-fund base reductions, treaty unlocks); Greece one complement edge; "
-            "Mauritius none registered. Malta's edges live under the NON-executable variant "
-            "slug 'mt_mfc_cash_rebate' (vs executable 'mt_mfc_rebate') and are deliberately "
-            "NOT force-matched — reconciling that variant is a separate catalog task. "
-            "No stacked NPC is computed: fund_economics_model holds no per-production "
-            "dollar figure, so a stacked total would have to be fabricated (never done)."
+            "The former Malta slug mismatch ('mt_mfc_cash_rebate' vs executable "
+            "'mt_mfc_rebate') is reconciled via program_slug_aliases — Malta's and "
+            "Greece's variant-slug edges now surface, each disclosing the variant "
+            "slug it was recorded under. No stacked NPC is computed: "
+            "fund_economics_model holds no per-production dollar figure, so a "
+            "stacked total would have to be fabricated (never done). Stacking "
+            "affects structure economics only through allocated-structure pricing "
+            "(one program per segment; multi-program combinations enter only via "
+            "enumerate_segment_program_stacks when real multi-program knowledge "
+            "exists — see /structures.allocated_structures.stack_combinations)."
         ),
+    }
+
+
+def _executable_alternatives() -> list[tuple[str, str]]:
+    """(jurisdiction_code, program_slug) for every non-baseline
+    jurisdiction with classified doctrine + statutory rate rules — the
+    same executability test build_alternative_jurisdiction_comparisons
+    applies; catalog-only jurisdictions never appear here."""
+    from app.data.program_rate_rules import get_rate_rules
+    from app.data.program_spend_rules import get_program_doctrine
+    out: list[tuple[str, str]] = []
+    for code in sorted(jc.ALL_PROFILES):
+        if code == JURISDICTION_CODE:
+            continue
+        slug = jc.ALL_PROFILES[code].program_slug
+        if get_program_doctrine(slug) is not None and len(get_rate_rules(slug)) > 0:
+            out.append((code, slug))
+    return out
+
+
+_STATED_LOCATION_AUTHORITY = (
+    "The production budget's own cover page ('PICTURE EDIT: LA', 'SOUND "
+    "EDIT: LA') and account names ('EDITORIAL - USA', 'USA ADMIN COSTS') — "
+    "see app.data.little_utopia_real_budget.LITTLE_UTOPIA_REAL_ACCOUNTS_OUTSIDE_MU."
+)
+
+
+def _budget_lines_for_allocation() -> list:
+    from app.calculators.qualification_derivation import BudgetLine
+    from app.data.little_utopia_real_budget import (
+        LITTLE_UTOPIA_REAL_BUDGET_LINES,
+        LITTLE_UTOPIA_REAL_SPEND_CATEGORY,
+    )
+    return [
+        BudgetLine(
+            account_code=code, description=desc, amount_usd=amt,
+            spend_category=LITTLE_UTOPIA_REAL_SPEND_CATEGORY.get(code),
+            is_memo=False,
+        )
+        for code, desc, amt, _page in LITTLE_UTOPIA_REAL_BUDGET_LINES
+    ]
+
+
+def build_allocated_structures(state: "LittleUtopiaState") -> dict:
+    """The ACCOUNT->JURISDICTION ALLOCATION surface: every structure the
+    production's facts/elections currently express, partitioned account-
+    by-account (production_allocation), priced from one partial register
+    per jurisdiction (allocation_pricing), travel/FX applied once at
+    structure level, ranked over fully-priced structures only.
+
+    Structures served:
+      - the Mauritius single-jurisdiction baseline;
+      - full relocation to every EXECUTABLE alternative (MT/IE/GR today);
+      - a component-relocation structure when the producer has elected
+        one (component_route_post fact — routes post/VFX/music);
+      - a treaty co-production structure when a treaty partner is
+        elected (treaty_partner_code fact) — evaluated against the real
+        treaty registry; if no instrument covers the pair, the structure
+        is served UNPRICED with that exact blocker (never forced).
+
+    Split / multi-party / service / hybrid structures are expressible
+    through the same generic StructureSpec (explicit producer splits,
+    extra participants, ownership shares) — none is fabricated here
+    without a producer election.
+    """
+    from app.calculators.allocation_pricing import (
+        price_allocated_structure,
+        rank_allocated_structures,
+    )
+    from app.calculators.production_allocation import (
+        MOVABLE_COMPONENTS,
+        StructureSpec,
+        derive_account_allocation,
+    )
+    from app.calculators.production_normalization import (
+        compute_fx_normalization,
+        compute_travel_normalization,
+    )
+    from app.data.little_utopia_real_budget import (
+        LITTLE_UTOPIA_REAL_ACCOUNTS_OUTSIDE_MU,
+        LITTLE_UTOPIA_REAL_OFFSHORE_PAYROLL,
+        LITTLE_UTOPIA_REAL_SPEND_CATEGORY,
+    )
+
+    lines = _budget_lines_for_allocation()
+    alts = _executable_alternatives()
+    slug_by_code = {c: s for c, s in alts}
+    fact_answers = state.fact_answers or {}
+
+    # ── structure specs from the production's real facts/elections ──
+    specs: list[StructureSpec] = [StructureSpec(
+        structure_id="ALLOC-BASELINE-MU",
+        structure_type="single_country",
+        label="Mauritius single-jurisdiction baseline",
+        primary_jurisdiction=JURISDICTION_CODE,
+        participants=(JURISDICTION_CODE,),
+        incentive_programs={JURISDICTION_CODE: "mu_edb_incentive"},
+        notes="The production's current plan: shoot Mauritius, post per the "
+              "budget's own stated locations.",
+    )]
+    for code, slug in alts:
+        specs.append(StructureSpec(
+            structure_id=f"ALLOC-RELOC-{code}",
+            structure_type="full_relocation",
+            label=f"Full relocation to {code}",
+            primary_jurisdiction=code,
+            participants=(code,),
+            incentive_programs={code: slug},
+            notes="Whole production relocated; stated-location post facts "
+                  "carry over unchanged (they are jurisdiction-independent "
+                  "producer decisions on the budget's own cover page).",
+        ))
+
+    route_target = fact_answers.get("component_route_post")
+    if route_target:
+        route_target = str(route_target).upper()
+        participants = (
+            (JURISDICTION_CODE,) if route_target == JURISDICTION_CODE
+            else (JURISDICTION_CODE, route_target)
+        )
+        programs = {JURISDICTION_CODE: "mu_edb_incentive"}
+        if route_target != JURISDICTION_CODE:
+            programs[route_target] = slug_by_code[route_target]
+        specs.append(StructureSpec(
+            structure_id=f"ALLOC-COMPONENT-POST-{route_target}",
+            structure_type="component_relocation",
+            label=(f"Mauritius shoot + post/VFX/music routed to {route_target} "
+                   "(anchor-component structure)"),
+            primary_jurisdiction=JURISDICTION_CODE,
+            participants=participants,
+            incentive_programs=programs,
+            component_routes={c: route_target for c in sorted(MOVABLE_COMPONENTS)},
+            notes="Producer election via the component_route_post fact.",
+        ))
+
+    treaty_partner = fact_answers.get("treaty_partner_code")
+    if treaty_partner:
+        treaty_partner = str(treaty_partner).upper()
+        programs = {JURISDICTION_CODE: "mu_edb_incentive"}
+        partner_slug = slug_by_code.get(treaty_partner)
+        if partner_slug:
+            programs[treaty_partner] = partner_slug
+        else:
+            partner_profile = jc.ALL_PROFILES.get(treaty_partner)
+            if partner_profile is not None:
+                # The partner claims its program; executability is
+                # evaluated (and blocked honestly) by segment pricing.
+                programs[treaty_partner] = partner_profile.program_slug
+        specs.append(StructureSpec(
+            structure_id=f"ALLOC-TREATY-MU-{treaty_partner}",
+            structure_type="treaty_coproduction",
+            label=f"Treaty co-production MU + {treaty_partner}",
+            primary_jurisdiction=JURISDICTION_CODE,
+            participants=(JURISDICTION_CODE, treaty_partner),
+            incentive_programs=programs,
+            notes="Elected via the treaty_partner_code fact; treaty status is "
+                  "evaluated against the real treaty registry, never assumed.",
+        ))
+
+    # ── allocation + pricing per spec (travel/FX once, structure level) ──
+    travel_inputs = build_travel_inputs()
+    origin_budgeted_travel = budgeted_travel_usd(state.register)
+    fx_inputs = build_fx_inputs()
+
+    # structuring_advisor.routing_decisions as routing-rationale input —
+    # the connected "what work happens where" seed, surfaced with the
+    # structures it informs.
+    advisor_routing = []
+    if state.structuring_advisory is not None:
+        advisor_routing = list(getattr(state.structuring_advisory, "routing_decisions", []))
+
+    pricings = []
+    for spec in specs:
+        allocation = derive_account_allocation(
+            lines=lines,
+            spend_category_by_code=LITTLE_UTOPIA_REAL_SPEND_CATEGORY,
+            spec=spec,
+            stated_outside_accounts=LITTLE_UTOPIA_REAL_ACCOUNTS_OUTSIDE_MU,
+            stated_location_authority=_STATED_LOCATION_AUTHORITY,
+            routing_rationales={
+                c: (f"Producer election (component_route_post fact): the movable "
+                    f"'{c}' component is routed to {spec.component_routes.get(c)}.")
+                for c in spec.component_routes
+            },
+        )
+        travel = compute_travel_normalization(
+            spec.primary_jurisdiction, travel_inputs,
+            origin_budgeted_travel, JURISDICTION_CODE,
+        )
+        pricing = price_allocated_structure(
+            spec=spec, allocation=allocation,
+            spend_category_by_code=LITTLE_UTOPIA_REAL_SPEND_CATEGORY,
+            offshore_payroll_accounts=LITTLE_UTOPIA_REAL_OFFSHORE_PAYROLL,
+            gross_budget_usd=state.gross_budget_usd,
+            travel_incremental_delta_usd=travel.incremental_delta_usd,
+            fx_delta_usd=None,
+        )
+        if pricing.is_fully_priced:
+            fx = compute_fx_normalization(
+                spec.primary_jurisdiction, fx_inputs, pricing.npc_verified_usd,
+            )
+            pricing = price_allocated_structure(
+                spec=spec, allocation=allocation,
+                spend_category_by_code=LITTLE_UTOPIA_REAL_SPEND_CATEGORY,
+                offshore_payroll_accounts=LITTLE_UTOPIA_REAL_OFFSHORE_PAYROLL,
+                gross_budget_usd=state.gross_budget_usd,
+                travel_incremental_delta_usd=travel.incremental_delta_usd,
+                fx_delta_usd=fx.delta_usd,
+            )
+        pricings.append(pricing)
+
+    # ── multi-program combination status per executable jurisdiction ──
+    # (generate_structure_scenarios is the delegated owner of program/
+    # stack combinatorics; with exactly one executable program per
+    # jurisdiction today there is nothing to combine — disclosed, never
+    # fabricated.)
+    programs_by_jur: dict[str, list[str]] = {JURISDICTION_CODE: ["mu_edb_incentive"]}
+    for code, slug in alts:
+        programs_by_jur.setdefault(code, []).append(slug)
+    stack_combinations = {
+        code: {
+            "executable_programs": slugs,
+            "combinations_enumerated": 0,
+            "status": (
+                "single executable program — nothing to combine; multi-program "
+                "combinations delegate to generate_structure_scenarios via "
+                "allocation_pricing.enumerate_segment_program_stacks when a "
+                "second executable program with real data exists."
+                if len(slugs) < 2 else "enumeration available"
+            ),
+        }
+        for code, slugs in sorted(programs_by_jur.items())
+    }
+
+    def _seg_dict(s) -> dict:
+        return {
+            "jurisdiction_code": s.jurisdiction_code,
+            "program_slug": s.program_slug,
+            "claims_incentive": s.claims_incentive,
+            "executable": s.executable,
+            "allocated_usd": s.allocated_usd,
+            "account_codes": list(s.account_codes),
+            "qpe_usd": s.qpe_usd,
+            "excluded_usd": s.excluded_usd,
+            "unresolved_usd": s.unresolved_usd,
+            "rate_floor": s.rate_floor,
+            "rate_ceiling": s.rate_ceiling,
+            "is_band_ceiling": s.is_band_ceiling,
+            "statutory_basis": s.statutory_basis,
+            "doctrine": s.doctrine,
+            "incentive_floor_usd": s.incentive_floor_usd,
+            "incentive_ceiling_usd": s.incentive_ceiling_usd,
+            "blockers": list(s.blockers),
+            "qualification_trace": list(s.register_trace),
+            "notes": list(s.notes),
+        }
+
+    def _pricing_dict(p) -> dict:
+        return {
+            "structure_id": p.structure_id,
+            "structure_type": p.structure_type,
+            "label": p.label,
+            "participants": list(p.participants),
+            "is_fully_priced": p.is_fully_priced,
+            "blockers": list(p.blockers),
+            "gross_budget_usd": p.gross_budget_usd,
+            "total_incentive_floor_usd": p.total_incentive_floor_usd,
+            "total_incentive_ceiling_usd": p.total_incentive_ceiling_usd,
+            "travel_incremental_delta_usd": p.travel_incremental_delta_usd,
+            "fx_delta_usd": p.fx_delta_usd,
+            "financing_cost_usd": p.financing_cost_usd,
+            "implementation_cost_usd": p.implementation_cost_usd,
+            "npc_verified_usd": p.npc_verified_usd,
+            "npc_with_adjustments_usd": p.npc_with_adjustments_usd,
+            "treaty_slug": p.treaty_slug,
+            "ownership_shares": p.ownership_shares,
+            "stacking_note": p.stacking_note,
+            "inkind_note": p.inkind_note,
+            "notes": list(p.notes),
+            "segments": [_seg_dict(s) for s in p.segments],
+            "allocation": {
+                "allocation_version": p.allocation.allocation_version,
+                "is_complete": p.allocation.is_complete,
+                "conserves": p.allocation.conserves,
+                "total_allocated_usd": p.allocation.total_allocated_usd,
+                "total_budget_lines_usd": p.allocation.total_budget_lines_usd,
+                "allocated_by_jurisdiction": p.allocation.allocated_by_jurisdiction(),
+                "unallocated_account_codes": list(p.allocation.unallocated_account_codes),
+                "duplicate_account_codes": list(p.allocation.duplicate_account_codes),
+                "notes": list(p.allocation.notes),
+                "assignments": [
+                    {
+                        "account_code": a.account_code,
+                        "description": a.description,
+                        "amount_usd": a.amount_usd,
+                        "component": a.component,
+                        "jurisdiction_code": a.jurisdiction_code,
+                        "assignment_kind": a.assignment_kind.value,
+                        "rationale": a.rationale,
+                        "governing_decision": a.governing_decision,
+                        "supporting_facts": list(a.supporting_facts),
+                        "authority": a.authority,
+                        "unresolved_requirements": list(a.unresolved_requirements),
+                        "split_pct": a.split_pct,
+                    }
+                    for a in p.allocation.assignments
+                ],
+            },
+            "recommendation": (
+                {
+                    "recommendation_id": p.recommendation.recommendation_id,
+                    "action": p.recommendation.action,
+                    "gated": p.recommendation.gated,
+                    "approval_chain": list(p.recommendation.approval_chain),
+                    "reversibility": p.recommendation.reversibility,
+                    "dependency_group": list(p.recommendation.dependency_group),
+                    "explanation": p.recommendation.explanation,
+                }
+                if p.recommendation else None
+            ),
+        }
+
+    return {
+        "version": "1.0.0",
+        "note": (
+            "Account->jurisdiction allocated structures: every cash account is "
+            "allocated exactly once per structure; each jurisdiction segment is "
+            "priced from its own PARTIAL qualification register (same derivation "
+            "ladder and pricing kernel as the baseline — never the full-budget "
+            "register reused); travel and FX apply once at structure level; only "
+            "fully-priced structures are ranked. The $2.00 source-document "
+            "variance between the authoritative gross budget and the leaf-account "
+            "sum is disclosed, not hidden (see budget_reconciliation on /production)."
+        ),
+        "structures": [_pricing_dict(p) for p in pricings],
+        "ranking": rank_allocated_structures(pricings),
+        "stack_combinations": stack_combinations,
+        "advisor_routing_decisions_input": advisor_routing,
     }
 
 

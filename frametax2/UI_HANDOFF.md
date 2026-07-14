@@ -214,3 +214,32 @@ For every item: **Current backend capability** / **Required UI work** / **Priori
 - **New served field for the UI to consume:** `/economics.structuring_advisory` — the Production Structuring Engine output (recommendations with full explainability + `routing_decisions`). No UI surfaces it yet; add a "Structuring advice" panel (SPV/in-kind/routing recommendations with authority/risk). Note the recommendation *prose* is still LU-specialized (amounts/gating are generic) — render fields, not assumptions.
 - **Backend engine ownership is not yet final:** see `ACCOUNT_TRANSFER_HANDOFF.md`. Several backend engines overlap and must be reconciled against the other Claude account before canonical choice. UI should bind to the served `/api/v1/cineglobe/*` routes (stable), not to any specific internal engine module.
 - The `frametax2/frontend` React app remains the UI baseline; §2–§3 live bugs and §4 missing screens are unchanged. No API contract changed this session.
+
+---
+
+## SESSION DELTA — API contract addition: /structures.allocated_structures
+
+Additive only — no existing field changed; every prior §2–§4 item stands.
+
+**New on `GET /structures`: `allocated_structures`** — the account→jurisdiction allocation
+surface the Rev C workspace needs:
+- `structures[]`: per structure — `structure_id/structure_type/label/participants`,
+  `is_fully_priced`, `blockers[]` (exact reasons a structure is excluded from ranking),
+  `segments[]` (per jurisdiction: allocated_usd, qpe_usd, rate floor/ceiling, statutory_basis,
+  doctrine, incentive floor/ceiling, per-account `qualification_trace[]`), full
+  `allocation.assignments[]` (account, amount, component, jurisdiction, assignment_kind
+  fixed/recommended/conditional/user_elected, rationale, governing_decision, supporting_facts,
+  authority, unresolved_requirements, split_pct), and a gated `recommendation`
+  (deterministic id, action, approval_chain, reversibility, dependency_group, full explanation).
+- `ranking[]`: fully-priced structures only (`npc_verified_usd`, `npc_with_adjustments_usd`);
+  unpriced entries carry `excluded_from_ranking_because[]`.
+- `stack_combinations`, `advisor_routing_decisions_input`.
+
+**New producer control**: `POST /facts {"answers": {"component_route_post": "MT"}}` routes the
+movable post/VFX/music components (executable jurisdictions only; validated server-side).
+Clearing: value `null`.
+
+UI mapping hints: Lane Rack lanes ← `structures[]` (one lane per structure; unpriced lanes show
+blockers, never blanks); Model Rail block treatment ← `allocation.assignments[]` per structure;
+Inspector trace ← segment `qualification_trace` + assignment rationale/authority; adopt-gating
+← `recommendation.approval_chain` / `dependency_group`.
