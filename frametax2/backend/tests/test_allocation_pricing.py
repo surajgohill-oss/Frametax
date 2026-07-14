@@ -304,3 +304,57 @@ def test_stack_enumeration_delegates_to_generate_structure_scenarios(monkeypatch
     assert out == ["SENTINEL"]
     assert calls["jurisdiction"] == {"id": "IE"}
     assert len(calls["candidate_programs"]) == 2
+
+
+# ── worldwide coverage: every category evaluated; zeros proven ──────────────
+
+class TestWorldwideCoverage:
+    """Acceptance: the served optimizer must EVALUATE every executable
+    structure category by default (no producer election) and PROVE any
+    category that legitimately produces zero priced candidates."""
+
+    def _out(self):
+        from app.demo.little_utopia_state import (
+            build_allocated_structures, get_state, reset_fact_answers,
+        )
+        reset_fact_answers()
+        return build_allocated_structures(get_state())
+
+    def test_component_routing_auto_evaluated_for_every_executable_partner(self):
+        out = self._out()
+        comp = [p for p in out["structures"]
+                if p["structure_type"] == "component_relocation"]
+        targets = {p["structure_id"].rsplit("-", 1)[-1] for p in comp}
+        # one anchor-component structure per executable partner (GR/IE/MT),
+        # evaluated WITHOUT any producer election
+        assert targets == {"GR", "IE", "MT"}
+        # at least one prices (MT, above its min spend); the others block
+        # honestly on their own minimum-spend rule — evaluated, not omitted
+        assert any(p["is_fully_priced"] for p in comp)
+        assert any((not p["is_fully_priced"]) and p["blockers"] for p in comp)
+
+    def test_coverage_report_proves_every_category(self):
+        cov = self._out()["coverage"]
+        cats = {c["category"]: c for c in cov["categories"]}
+        assert cats["single_jurisdiction"]["fully_priced"] == 4
+        assert cats["component_routing_anchor"]["candidates_evaluated"] == 3
+        # co-production is EVALUATED-as-zero with a proven reason (MU has no
+        # treaty instrument) — never silently omitted
+        assert cats["co_production_treaty"]["candidates_evaluated"] == 0
+        assert "no co-production treaty instrument" in \
+            cats["co_production_treaty"]["zero_reason"].lower()
+        assert cov["reachable_treaty_partners"] == []
+        # split is zero-by-design (needs an explicit producer split)
+        assert cats["split_production"]["candidates_evaluated"] == 0
+        assert "explicit producer" in cats["split_production"]["zero_reason"]
+
+    def test_ranking_covers_all_priced_structures_globally_optimal_is_reloc_gr(self):
+        out = self._out()
+        ranked = [r for r in out["ranking"] if r["rank"] is not None]
+        # 4 single + 1 priced component = 5 priced and ranked
+        assert len(ranked) == 5
+        # global financial optimum = full relocation to Greece (guaranteed
+        # 40% floor beats Mauritius' guaranteed 30% floor)
+        assert ranked[0]["structure_id"] == "ALLOC-RELOC-GR"
+        npcs = [r["npc_with_adjustments_usd"] for r in ranked]
+        assert npcs == sorted(npcs)  # strictly ascending NPC

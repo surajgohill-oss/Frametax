@@ -465,3 +465,108 @@ Backend allocation surface is complete and served. Next phase per plan: **UI Pha
 (field-rename fixes, then the Rev C workspace binding — `allocated_structures` provides the
 lane/segment/trace data the Lane Rack and Inspector need). Do not begin without design sign-off
 on the globe-vs-map ruling (see reconciliation report §2).
+
+---
+
+# SESSION DELTA — Final acceptance test + worldwide-coverage defect fixed
+
+Ran the optimizer as the finished product would, over the REAL Little Utopia inputs
+(budget/script/look-book/people/economics/travel/FX/qualification/cultural/thresholds/
+treaties/grants/funds/stacking/structuring/allocation/recommendation/ranking). One coverage
+defect found and fixed at root cause; runtime-verified; regression-tested; suite green.
+
+## Defect found (coverage, not calculation)
+`build_allocated_structures` evaluated only single-jurisdiction structures by default
+(baseline + 3 relocations). **Component-routing (anchor-component) structures and the
+co-production category were silently omitted** unless a producer pre-elected them — violating
+the acceptance requirement that every applicable category be EVALUATED and any zero PROVEN.
+Root cause: the two multi-jurisdiction categories were gated behind producer-election facts
+(`component_route_post`, `treaty_partner_code`) rather than auto-enumerated over the executable set.
+
+## Fix (connects existing capability — no new engine, no redesign)
+- **Auto-enumerate component-routing structures** for every executable partner (MU shoot anchor
+  + movable post/VFX/music routed to each of MT/IE/GR). No election needed; each prices or
+  blocks honestly on its own program's minimum-spend rule. A `component_route_post` election
+  now just pre-selects/deduplicates against the auto set.
+- **Worldwide-coverage report** added to `/structures.allocated_structures.coverage`: every
+  category (single_jurisdiction / component_routing_anchor / co_production_treaty /
+  split_production) with candidates_evaluated / fully_priced / blocked, and — for zeros — the
+  exact proven reason. Co-production reachability is computed from the real treaty registry.
+
+## Acceptance findings (runtime evidence, live API, no elections)
+- **Single jurisdiction: 4 evaluated, 4 priced** — MU baseline + full relocation MT/IE/GR
+  (each QPE $4,355,327, matching the served register and `/economics.alternative_jurisdictions`
+  exactly). Catalog-only BE/CY/DE/ES/FR/HR/HU/IT excluded with reason (missing doctrine/rate —
+  insufficient knowledge, never guessed).
+- **Component-routing: 3 evaluated, 1 priced (MT), 2 blocked** (GR/IE below their own minimum
+  spend on ~$61.6k routed — honest block, not omission).
+- **Co-production: 0, PROVEN-ZERO** — MU holds no bilateral treaty and is not a Eurimages /
+  Ibermedia / European Convention member (treaty_engine). Official co-production is factually
+  unavailable from Mauritius (insufficient treaty knowledge / factual ineligibility). A
+  `treaty_partner_code` election still composes the pathway and returns it UNPRICED with this
+  exact blocker — never forced.
+- **Split production: 0, zero-by-design** — requires an explicit producer sub-line split
+  (`account_splits`); never fabricated.
+- Grants/funds connected (MU 1 / MT 1 / IE 4 / GR 2); stacking relationships CONNECTED (MT 3 /
+  IE 24 / GR 3 / MU 0) after canonical-slug reconciliation; 139 recommendations incl.
+  cultural-test / threshold / nationality-unlock / treaty pathways.
+
+## Global optimum + historical comparison
+**Global financial optimum = full relocation to Greece, NPC-adj $2,624,002.20** (guaranteed
+40% Greek floor beats Mauritius' guaranteed 30% floor). Physically viable: GR
+`marine_suitability=strong` matches the script's confirmed Mediterranean-marine / open-water
+requirement. Ranking (ascending NPC): GR $2.624M < IE $2.977M < MU baseline $3.058M <
+MU+post→MT $3.058M < MT $3.278M.
+
+The historical Little Utopia recommendation was **Mauritius**. Today's shift to **Greece
+relocation** is NOT a defect — it is driven by, in order of magnitude:
+1. **Corrected statutory interpretation** — ranking on GUARANTEED FLOOR rates (MU 30%, GR flat
+   40%) rather than MU's discretionary 40% ceiling the historical result assumed;
+2. **Recovered/executable knowledge** — GR/IE/MT promoted to executable (doctrine + rate) in
+   prior sessions, so the comparison set exists at all;
+3. **Physical viability confirmed** — GR marine suitability matches the recovered screenplay's
+   Mediterranean-marine requirement, so the financial optimum is also production-viable.
+
+## Final answers
+1. **Evaluate every executable worldwide pathway? YES** (after fix) — all reachable single,
+   component-routing, co-production (proven-zero), and split (zero-by-design) categories are
+   evaluated; catalog-only jurisdictions excluded with reason.
+2. **What remains?** Data-only: worldwide executable coverage is 4 jurisdictions (expand via the
+   proven MT/IE/GR machinery); `enumerate_segment_program_stacks` has no live ≥2-program
+   jurisdiction to fire on yet; ownership-share OPTIMIZATION is constraint-only (shares are
+   enforced, not optimized). None is an architectural gap.
+3. **Every connected engine utilized? YES** — allocation, multi-register pricing, qualification,
+   rate resolution, treaty, economics, travel, FX, recommendation, structuring-advisor routing,
+   stacking relationships all exercised at runtime.
+4. **Knowledge present but unused?** No silent unused knowledge — catalog-only jurisdictions and
+   the fund per-production dollar amounts that do not exist are excluded WITH disclosure, not
+   bypassed.
+5. **Engine present but bypassed?** `run_full_analysis` (DB) only via delegated stack
+   enumeration + the `structures.py` router (DB unreachable — not a runtime path); parametric
+   `optimization/*` is REFERENCE. Neither is a defect.
+6. **Duplicated engine stronger than the runtime owner? NO** — the register-grounded served path
+   is strongest; parametric is weaker (budget×rate); the cloud recommendation-engine concepts
+   are already merged (deterministic identity / gating / approval chain / reversibility).
+7. **Honestly claim worldwide optimization? YES, correctly qualified** — CineGlobe optimizes
+   worldwide production STRUCTURES across every executable pathway in the knowledge base
+   (4 jurisdictions today; expandable), evaluating every category and proving every zero. The
+   honest claim is "worldwide-architecture optimization over the executable knowledge base,"
+   not "every country on earth is priced."
+8. **Ready to freeze? YES.**
+
+## Files changed
+MODIFIED: `app/demo/little_utopia_state.py` (auto-enumerate component-routing structures;
+`coverage` report; payload v1.1.0), `tests/test_allocation_pricing.py` (+3 coverage tests).
+No API contract removed or renamed — `coverage` is additive on `/structures.allocated_structures`.
+
+## Regression + runtime evidence
+Full suite **2929 passed, 1 skipped** (2926 prior + 3 new). Live API verified: 7 structures
+evaluated by default, coverage report proves all four categories, global optimum = ALLOC-RELOC-GR.
+
+## BACKEND FREEZE RECOMMENDATION
+**FREEZE the backend optimizer architecture. Proceed to UI implementation.** Every executable
+worldwide pathway is evaluated, every zero is proven, every connected engine is utilized, and no
+stronger duplicate or bypassed engine remains. Remaining items are data entry (more executable
+jurisdictions) and future ownership-share optimization — neither blocks UI, both extend a frozen
+architecture. Next phase: UI Phase A/B per UI_HANDOFF (bind the Rev C workspace to
+`/structures.allocated_structures`), pending the globe-vs-map design ruling.

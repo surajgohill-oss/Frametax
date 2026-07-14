@@ -195,3 +195,34 @@ no instrument registered; never forced), conservation exact everywhere. Suite: 2
 
 Legacy dispositions: parametric `app/optimization/*` = REFERENCE (taxonomy adopted);
 DB-backed `run_full_analysis` = engine behind delegated stack enumeration + REFERENCE.
+
+---
+
+## SESSION DELTA — Final acceptance: worldwide coverage proven; backend frozen
+
+The optimizer now EVALUATES every executable structure category by default (no producer
+election) and PROVES any zero:
+
+```
+DEFAULT optimizer run (real Little Utopia inputs, no elections):
+  single_jurisdiction      4 evaluated / 4 priced   (MU baseline + reloc MT/IE/GR)
+  component_routing_anchor  3 evaluated / 1 priced   (MU + post→MT; →GR/→IE blocked on min-spend)
+  co_production_treaty      0 — PROVEN-ZERO          (MU has no treaty instrument w/ any exec partner)
+  split_production          0 — zero-by-design       (needs explicit producer account_splits)
+  catalog_only              8 excluded WITH reason   (BE/CY/DE/ES/FR/HR/HU/IT: no doctrine+rate)
+  -> served on /structures.allocated_structures.coverage
+```
+
+Global financial optimum = **full relocation to Greece** (guaranteed 40% floor > MU 30% floor),
+also physically viable (GR marine_suitability=strong matches the Mediterranean-marine script).
+The historical "Mauritius" recommendation shifted to "Greece relocation" due to corrected
+statutory interpretation (floor not ceiling) + recovered executable knowledge (GR/IE/MT) +
+confirmed physical viability — not a defect.
+
+Fix this session: component-routing structures are auto-enumerated per executable partner and a
+coverage report is emitted (little_utopia_state.build_allocated_structures). No new engine, no
+redesign — pure connection of the existing allocation+pricing capability. Suite 2929 passed.
+
+**Backend optimizer architecture is FROZEN.** All 8 acceptance questions answered YES/none-
+outstanding. Remaining work is data (more executable jurisdictions) + future ownership-share
+optimization — extensions to a frozen architecture, not gaps in it. Transition to UI.

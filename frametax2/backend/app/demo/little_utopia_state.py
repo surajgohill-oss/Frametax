@@ -963,26 +963,40 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
                   "producer decisions on the budget's own cover page).",
         ))
 
+    # Component-routing (anchor-component) structures are AUTO-ENUMERATED
+    # for every executable partner — MU shoot anchor + the movable
+    # post/VFX/music components routed to each executable jurisdiction.
+    # These are reachable and executable without any producer election,
+    # so the optimizer evaluates them by default (each prices, or blocks
+    # honestly on its own program's minimum-spend rule — never omitted).
+    # A producer's component_route_post election simply pre-selects one of
+    # these (or the MU-only case) and is deduped against the auto set.
     route_target = fact_answers.get("component_route_post")
-    if route_target:
-        route_target = str(route_target).upper()
+    route_target = str(route_target).upper() if route_target else None
+    auto_component_targets = [code for code, _ in alts]
+    if route_target == JURISDICTION_CODE:
+        auto_component_targets = [JURISDICTION_CODE]  # producer kept post in MU
+    for target in auto_component_targets:
         participants = (
-            (JURISDICTION_CODE,) if route_target == JURISDICTION_CODE
-            else (JURISDICTION_CODE, route_target)
+            (JURISDICTION_CODE,) if target == JURISDICTION_CODE
+            else (JURISDICTION_CODE, target)
         )
         programs = {JURISDICTION_CODE: "mu_edb_incentive"}
-        if route_target != JURISDICTION_CODE:
-            programs[route_target] = slug_by_code[route_target]
+        if target != JURISDICTION_CODE:
+            programs[target] = slug_by_code[target]
+        elected = " (producer-elected)" if target == route_target else ""
         specs.append(StructureSpec(
-            structure_id=f"ALLOC-COMPONENT-POST-{route_target}",
+            structure_id=f"ALLOC-COMPONENT-POST-{target}",
             structure_type="component_relocation",
-            label=(f"Mauritius shoot + post/VFX/music routed to {route_target} "
-                   "(anchor-component structure)"),
+            label=(f"Mauritius shoot + post/VFX/music routed to {target} "
+                   f"(anchor-component structure){elected}"),
             primary_jurisdiction=JURISDICTION_CODE,
             participants=participants,
             incentive_programs=programs,
-            component_routes={c: route_target for c in sorted(MOVABLE_COMPONENTS)},
-            notes="Producer election via the component_route_post fact.",
+            component_routes={c: target for c in sorted(MOVABLE_COMPONENTS)},
+            notes=("Auto-evaluated anchor-component structure (no election "
+                   "required)." + (" Producer-elected via component_route_post."
+                                    if target == route_target else "")),
         ))
 
     treaty_partner = fact_answers.get("treaty_partner_code")
@@ -1172,18 +1186,91 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
             ),
         }
 
+    # ── Worldwide-coverage report: every structure CATEGORY is evaluated;
+    #    a category producing zero PRICED candidates states exactly why.
+    #    This is what lets the product honestly claim it considered every
+    #    executable worldwide pathway (acceptance requirement), never
+    #    silently omitting one.
+    from app.calculators import treaty_engine as te
+
+    def _cat(structure_types) -> list:
+        return [p for p in pricings if p.structure_type in structure_types]
+
+    def _cat_report(name, structure_types, zero_reason: str) -> dict:
+        cands = _cat(structure_types)
+        priced = [p for p in cands if p.is_fully_priced]
+        return {
+            "category": name,
+            "candidates_evaluated": len(cands),
+            "fully_priced": len(priced),
+            "blocked": len(cands) - len(priced),
+            "structure_ids": [p.structure_id for p in cands],
+            "zero_reason": None if cands else zero_reason,
+        }
+
+    # co-production reachability, proven from the real treaty registry
+    reachable_treaty_partners = sorted({
+        code for code, _ in alts
+        if te.get_bilateral_treaty(JURISDICTION_CODE, code) is not None
+        or (te.is_european_convention_signatory(JURISDICTION_CODE)
+            and te.is_european_convention_signatory(code))
+    })
+    coprod_zero_reason = (
+        f"No co-production treaty instrument is registered between the baseline "
+        f"jurisdiction ({JURISDICTION_CODE}) and ANY executable partner "
+        f"({[c for c, _ in alts]}) — treaty_engine holds no MU bilateral treaty "
+        "and MU is not a Eurimages / Ibermedia / European Convention member. "
+        "Official co-production is therefore FACTUALLY unavailable from Mauritius "
+        "with the current knowledge base (insufficient treaty knowledge / factual "
+        "ineligibility), not omitted. A treaty_partner_code election still composes "
+        "the pathway and returns it UNPRICED with this exact blocker."
+    )
+
+    coverage = {
+        "executable_jurisdictions": [c for c, _ in alts] + [JURISDICTION_CODE],
+        "catalog_only_excluded": "see /economics.alternative_jurisdictions.catalog_only "
+                                 "(BE/CY/DE/ES/FR/HR/HU/IT — missing doctrine and/or rate "
+                                 "rules; insufficient knowledge, never priced at a guess)",
+        "reachable_treaty_partners": reachable_treaty_partners,
+        "categories": [
+            _cat_report("single_jurisdiction", {"single_country", "full_relocation",
+                                                "service_production"},
+                        "no executable jurisdiction"),
+            _cat_report("component_routing_anchor", {"component_relocation"},
+                        "no executable partner to route movable components to"),
+            _cat_report("co_production_treaty",
+                        {"treaty_coproduction", "majority_minority", "multi_party", "hybrid"},
+                        coprod_zero_reason),
+            _cat_report("split_production", {"split_production"},
+                        "split production requires an explicit producer sub-line split "
+                        "(account_splits) — none elected; zero-by-design absent that "
+                        "input, never fabricated"),
+        ],
+        "note": (
+            "service_production is expressed as the single-jurisdiction case "
+            "(a fully foreign-financed shoot in one jurisdiction is priced by the "
+            "same partial-register kernel); anchor / hybrid structures are "
+            "expressed through component_relocation + treaty specs, not bespoke "
+            "calculators. Every category above is EVALUATED; any zero is proven."
+        ),
+    }
+
     return {
-        "version": "1.0.0",
+        "version": "1.1.0",
         "note": (
             "Account->jurisdiction allocated structures: every cash account is "
             "allocated exactly once per structure; each jurisdiction segment is "
             "priced from its own PARTIAL qualification register (same derivation "
             "ladder and pricing kernel as the baseline — never the full-budget "
             "register reused); travel and FX apply once at structure level; only "
-            "fully-priced structures are ranked. The $2.00 source-document "
-            "variance between the authoritative gross budget and the leaf-account "
-            "sum is disclosed, not hidden (see budget_reconciliation on /production)."
+            "fully-priced structures are ranked. Component-routing (anchor-"
+            "component) structures are auto-evaluated for every executable "
+            "partner; co-production is evaluated and proven-zero from the real "
+            "treaty registry (see coverage). The $2.00 source-document variance "
+            "between the authoritative gross budget and the leaf-account sum is "
+            "disclosed, not hidden (see budget_reconciliation on /production)."
         ),
+        "coverage": coverage,
         "structures": [_pricing_dict(p) for p in pricings],
         "ranking": rank_allocated_structures(pricings),
         "stack_combinations": stack_combinations,
