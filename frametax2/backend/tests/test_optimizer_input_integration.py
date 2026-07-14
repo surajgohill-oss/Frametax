@@ -517,3 +517,81 @@ class TestExecutableJurisdictionKnowledge:
             assert "travel_incremental_delta_usd" in e
             assert "fx_delta_usd" in e
             assert e["statutory_basis"]  # non-empty citation
+
+
+class TestGrantsAndFunds:
+    def test_real_funds_connected_for_executable_jurisdictions(self):
+        from app.demo.little_utopia_state import build_available_funds
+        out = build_available_funds()
+        assert set(out["by_jurisdiction"].keys()) == {"MU", "MT", "IE", "GR"}
+        ie_slugs = {e["program_slug"] for e in out["by_jurisdiction"]["IE"]}
+        assert "ie_screen_ireland_dev" in ie_slugs
+        assert "ie_rte" in ie_slugs
+
+    def test_base_incentive_never_double_counted_as_additional_fund(self):
+        from app.demo.little_utopia_state import build_available_funds
+        out = build_available_funds()
+        for code, entries in out["by_jurisdiction"].items():
+            base = [e for e in entries if e["is_base_incentive_already_priced"]]
+            assert len(base) == 1  # exactly the program itself, never duplicated
+
+    def test_no_fabricated_dollar_amount_on_additional_funds(self):
+        from app.demo.little_utopia_state import build_available_funds
+        out = build_available_funds()
+        for entries in out["by_jurisdiction"].values():
+            for e in entries:
+                if not e["is_base_incentive_already_priced"]:
+                    assert "estimated" not in e  # no dollar figure key present at all
+
+    def test_stacking_disconnection_is_disclosed_not_silently_reconciled(self):
+        from app.demo.little_utopia_state import build_available_funds
+        out = build_available_funds()
+        assert "NOT CONNECTED" in out["stacking_status"]
+        assert "mt_mfc_cash_rebate" in out["stacking_status"]
+
+
+class TestTravelDualDelta:
+    """Systems Validation phase: travel normalization must show a delta
+    against the production's actual stated budget (not just a model-vs-
+    model comparison) while never touching QPE."""
+
+    def test_london_is_a_supported_origin_city(self):
+        from app.calculators.production_normalization import TravelInputs, compute_travel_normalization
+        r = compute_travel_normalization(
+            "MT", TravelInputs(origin_city="London"),
+            original_budgeted_travel_usd=835_533.0, original_jurisdiction_code="MU",
+        )
+        assert r.origin_city == "London"
+        assert r.proposed_modeled_travel_usd > 0
+
+    def test_delta_vs_original_budget_is_computed_and_distinct_from_incremental(self):
+        from app.calculators.production_normalization import TravelInputs, compute_travel_normalization
+        r = compute_travel_normalization(
+            "MT", TravelInputs(origin_city="LA"),
+            original_budgeted_travel_usd=835_533.0, original_jurisdiction_code="MU",
+        )
+        assert r.delta_vs_original_budget_usd == pytest.approx(
+            r.proposed_modeled_travel_usd - 835_533.0, abs=0.01
+        )
+        assert r.delta_vs_original_budget_usd != r.incremental_delta_usd
+
+    def test_travel_never_touches_qpe(self):
+        """Travel normalization affects economics (NPC) only — the
+        qualification register/QPE must be identical regardless of any
+        travel control."""
+        from app.demo.little_utopia_state import get_state, reset_fact_answers, apply_economics_controls
+        reset_fact_answers()
+        base_qpe = sum(a.amount_usd for a in get_state().register if a.state.value == "qualifies")
+        apply_economics_controls({"origin_city": "London", "business_travelers": 12})
+        changed_qpe = sum(a.amount_usd for a in get_state().register if a.state.value == "qualifies")
+        assert base_qpe == changed_qpe
+        reset_fact_answers()
+
+    def test_alternative_jurisdictions_expose_both_travel_deltas(self):
+        from app.demo.little_utopia_state import get_state, reset_fact_answers, build_alternative_jurisdiction_comparisons
+        reset_fact_answers()
+        s = get_state()
+        out = build_alternative_jurisdiction_comparisons(s)
+        for e in out["executable"]:
+            assert "travel_incremental_delta_usd" in e
+            assert "travel_delta_vs_original_budget_usd" in e

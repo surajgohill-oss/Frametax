@@ -547,6 +547,7 @@ def build_normalized_structures(state: "LittleUtopiaState") -> dict:
                         "original_budgeted_travel_usd": r.travel.original_budgeted_travel_usd,
                         "original_modeled_travel_usd": r.travel.original_modeled_travel_usd,
                         "proposed_modeled_travel_usd": r.travel.proposed_modeled_travel_usd,
+                        "delta_vs_original_budget_usd": r.travel.delta_vs_original_budget_usd,
                         "pricing_mode": r.travel.pricing_mode,
                         "note": r.travel.note,
                     } if r.travel else None
@@ -668,6 +669,7 @@ def build_alternative_jurisdiction_comparisons(state: "LittleUtopiaState") -> di
                 "net_production_cost_usd": ceiling_result.net_production_cost_usd,
             },
             "travel_incremental_delta_usd": travel.incremental_delta_usd,
+            "travel_delta_vs_original_budget_usd": travel.delta_vs_original_budget_usd,
             "fx_delta_usd": fx.delta_usd,
             "marine_suitability": profile.marine_suitability,
         })
@@ -683,6 +685,75 @@ def build_alternative_jurisdiction_comparisons(state: "LittleUtopiaState") -> di
         ),
         "executable": executable,
         "catalog_only": catalog_only,
+    }
+
+
+def build_available_funds() -> dict:
+    """Grants/funds/stacking (Systems Validation phase): fund_economics_
+    model.py has 243 real, classified fund/grant/advance entries but
+    ProductionStructureCandidate.fund_graph_refs is empty for every
+    composed candidate — confirmed via runtime, never wired. This is a
+    BOUNDED, HONEST connection: for each of the 4 executable jurisdictions
+    (Part 1-3), list the REAL additional funds/grants registered for that
+    country prefix, with their REAL classification metadata (rebate/
+    grant/tax_credit/advance, repayable/recoupable/equity terms) — never
+    a fabricated dollar amount. Little-Utopia-specific award amounts are
+    NOT estimated (fund_economics_model has no per-production figures,
+    only typical_max_award_usd — a generic industry figure, never
+    presented as this production's entitlement).
+
+    STACKING: structure_graph_model.py has 523 real edges, but they use a
+    DIFFERENT slug convention (e.g. "mt_mfc_cash_rebate" vs this
+    codebase's "mt_mfc_rebate") that does not resolve 1:1 against the
+    executable-jurisdiction program slugs — disclosed, not silently
+    reconciled by guessing which edge means which program."""
+    from app.data.fund_economics_model import get_fund_economics, list_all_slugs
+    from app.data.program_spend_rules import get_program_doctrine
+    from app.data.program_rate_rules import get_rate_rules
+
+    _EXECUTABLE_PREFIXES = {"MU": "mu_", "MT": "mt_", "IE": "ie_", "GR": "gr_"}
+    all_slugs = list_all_slugs()
+
+    by_jurisdiction: dict[str, list[dict]] = {}
+    for code, prefix in _EXECUTABLE_PREFIXES.items():
+        entries = []
+        for slug in sorted(s for s in all_slugs if s.startswith(prefix)):
+            e = get_fund_economics(slug)
+            is_base_incentive = get_program_doctrine(slug) is not None and len(get_rate_rules(slug)) > 0
+            entries.append({
+                "program_slug": slug,
+                "classification": e.classification,
+                "is_repayable": e.is_repayable,
+                "is_recoupable": e.is_recoupable,
+                "has_equity_participation": e.has_equity_participation,
+                "equity_pct": e.equity_pct,
+                "is_base_incentive_already_priced": is_base_incentive,
+                "note": (
+                    "This IS the base incentive already priced in the QPE/NPC figures above."
+                    if is_base_incentive else
+                    "Additional fund/grant beyond the base incentive — real, sourced classification "
+                    "only; no dollar amount estimated for this production (never fabricated)."
+                ),
+            })
+        by_jurisdiction[code] = entries
+
+    return {
+        "version": "1.0.0",
+        "note": (
+            "fund_economics_model.py's real classification data for the 4 executable "
+            "jurisdictions, connected here for the first time. No stacking calculation "
+            "is applied — structure_graph_model.py's stacking edges use an incompatible "
+            "slug convention for these programs (disclosed below, not silently reconciled)."
+        ),
+        "by_jurisdiction": by_jurisdiction,
+        "stacking_status": (
+            "NOT CONNECTED: structure_graph_model.py has 523 real stacking edges, but "
+            "the Malta edges reference 'mt_mfc_cash_rebate' while this codebase's executable "
+            "program slug is 'mt_mfc_rebate' (and similarly for other programs) — the two "
+            "catalogs were built independently and do not share one slug vocabulary. "
+            "Resolving this requires a slug-reconciliation pass across both catalogs, "
+            "correctly scoped as separate work, not attempted here."
+        ),
     }
 
 

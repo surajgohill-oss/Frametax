@@ -61,7 +61,18 @@ class TravelNormalizationResult:
     incremental_delta_usd: float         # proposed_modeled - original_modeled — the
                                           # INCREMENTAL cost of shooting/routing crew
                                           # to the proposed jurisdiction INSTEAD OF (or
-                                          # in addition to) the original one
+                                          # in addition to) the original one; apples-to-
+                                          # apples (same traveler/cabin/rotation
+                                          # assumptions on both sides).
+    delta_vs_original_budget_usd: float  # proposed_modeled - original_budgeted_travel_usd
+                                          # — the candidate jurisdiction's modeled travel
+                                          # cost against the production's ACTUAL stated
+                                          # travel budget line (not a model-vs-model
+                                          # comparison). Both deltas are exposed: this one
+                                          # answers "how does the candidate compare to
+                                          # what was actually budgeted", the other answers
+                                          # "how does the candidate compare to staying put,
+                                          # holding modeling assumptions constant".
     pricing_mode: str
     estimate: TravelCostEstimate         # the PROPOSED jurisdiction's full cost breakdown
     note: str
@@ -126,6 +137,7 @@ def compute_travel_normalization(
         original_modeled_travel_usd=round(original_cost, 2),
         proposed_modeled_travel_usd=round(proposed_cost, 2),
         incremental_delta_usd=round(proposed_cost - original_cost, 2),
+        delta_vs_original_budget_usd=round(proposed_cost - original_budgeted_travel_usd, 2),
         pricing_mode=inputs.pricing_mode.value,
         estimate=proposed_est,
         note=note,

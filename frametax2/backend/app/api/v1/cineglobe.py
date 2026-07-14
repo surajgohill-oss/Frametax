@@ -257,8 +257,11 @@ def _economics_payload() -> dict[str, Any]:
     # for every jurisdiction with classified doctrine + rate rules on
     # file; every other cataloged jurisdiction is excluded, not priced at
     # a guessed rate.
-    from app.demo.little_utopia_state import build_alternative_jurisdiction_comparisons
+    from app.demo.little_utopia_state import (
+        build_alternative_jurisdiction_comparisons, build_available_funds,
+    )
     payload["alternative_jurisdictions"] = build_alternative_jurisdiction_comparisons(s)
+    payload["available_funds"] = build_available_funds()
     return payload
 
 
