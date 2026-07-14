@@ -338,6 +338,98 @@ def build_little_utopia_real_register(
     )
 
 
+# ── Alternative-jurisdiction "what-if" registers (Executable Jurisdiction ───
+#    Knowledge phase): the SAME real budget line items and the SAME
+#    jurisdiction-agnostic spend-category classification
+#    (LITTLE_UTOPIA_REAL_SPEND_CATEGORY — "vessel_marine", "vfx", "atl_cast"
+#    etc. describe WHAT a cost is, not WHERE it's incurred), run through the
+#    SAME generic derive_qualification_register() ladder against a
+#    DIFFERENT jurisdiction's real, sourced doctrine + rate rules. This
+#    answers "what would this budget's QPE/incentive/NPC be if the same
+#    production were made in jurisdiction X instead" — a genuine
+#    alternative-jurisdiction comparison, not a co-production add-on.
+#
+#    Post-location facts (editorial/sound in LA) are jurisdiction-
+#    independent producer decisions already stated on the real budget's
+#    own cover page — they carry over unchanged; nothing else is assumed
+#    "outside jurisdiction" for a hypothetical full relocation.
+#
+#    Returns None (never a fabricated register) when the target program
+#    has no doctrine classified yet — this is the honest EXCLUDE-until-
+#    executable behavior, checked by the caller before this is invoked.
+
+# Every PARSED/VERIFIED-tier program in this comparison set states its
+# QPE condition as territorial ("all qualifying Malta expenditure",
+# "eligible Irish expenditure" per Revenue.ie Section 481, "eligible
+# Greek expenditure" per Enterprise Greece) — sourced from the SAME
+# jurisdiction_comparison.py profile notes as the doctrine/rate wiring.
+# Without this, the ladder's TERRITORIAL_NEXUS step never fires (it is
+# gated on program_territorial_text being non-None) and LA-based
+# post-production would incorrectly qualify for every jurisdiction.
+_ALTERNATIVE_TERRITORIAL_TEXT: dict[str, str] = {
+    "mt_mfc_rebate": (
+        "Malta Film Commission rebate applies to 'all qualifying Malta "
+        "expenditure' (jurisdiction_comparison.py MALTA profile notes)."
+    ),
+    "ie_section_481": (
+        "Section 481 QPE is eligible Irish expenditure "
+        "(jurisdiction_comparison.py IRELAND profile; Revenue Commissioners "
+        "Ireland, revenue.ie)."
+    ),
+    "gr_cash_rebate": (
+        "Greece cash rebate QPE is eligible Greek expenditure "
+        "(jurisdiction_comparison.py GREECE profile; Enterprise Greece / "
+        "Greek Film Centre)."
+    ),
+}
+
+
+def build_little_utopia_register_for_jurisdiction(
+    jurisdiction_code: str,
+    program_slug: str,
+    rate: float,
+) -> list[AccountQualification]:
+    """Derive Little Utopia's real budget against an ALTERNATIVE
+    jurisdiction's program. Returns [] if program_slug has no classified
+    doctrine (get_program_doctrine() is None) — callers must check
+    get_program_doctrine(program_slug) is not None before relying on this
+    as "executable"; an empty/all-grey register is never silently priced."""
+    from app.calculators.qualification_derivation import (
+        BudgetLine,
+        ProductionFacts,
+        derive_qualification_register,
+    )
+    from app.data.little_utopia_real_budget import (
+        LITTLE_UTOPIA_REAL_ACCOUNTS_OUTSIDE_MU,
+        LITTLE_UTOPIA_REAL_BUDGET_LINES,
+        LITTLE_UTOPIA_REAL_SPEND_CATEGORY,
+    )
+    from app.data.program_spend_rules import get_program_doctrine
+
+    if get_program_doctrine(program_slug) is None:
+        return []
+
+    facts = ProductionFacts(
+        jurisdiction_code=jurisdiction_code,
+        # Editorial/sound-post-in-LA is a producer decision already fixed
+        # on the real budget's own cover page — independent of shoot
+        # jurisdiction, so it carries over to the hypothetical.
+        accounts_outside_jurisdiction=LITTLE_UTOPIA_REAL_ACCOUNTS_OUTSIDE_MU,
+    )
+    lines = [
+        BudgetLine(
+            account_code=code, description=desc, amount_usd=amt,
+            spend_category=LITTLE_UTOPIA_REAL_SPEND_CATEGORY.get(code),
+            is_memo=False,
+        )
+        for code, desc, amt, _page in LITTLE_UTOPIA_REAL_BUDGET_LINES
+    ]
+    return derive_qualification_register(
+        lines, program_slug=program_slug, facts=facts, rate=rate,
+        program_territorial_text=_ALTERNATIVE_TERRITORIAL_TEXT.get(program_slug),
+    )
+
+
 # ── Off-budget in-kind: explicitly never part of the register above ────────
 
 LITTLE_UTOPIA_INKIND_FMV_USD = 625_000.0

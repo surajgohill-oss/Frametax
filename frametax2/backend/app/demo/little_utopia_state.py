@@ -567,6 +567,125 @@ def build_normalized_structures(state: "LittleUtopiaState") -> dict:
     }
 
 
+def build_alternative_jurisdiction_comparisons(state: "LittleUtopiaState") -> dict:
+    """Executable Jurisdiction Knowledge phase, Parts 1-3: for every
+    jurisdiction in jurisdiction_comparison.ALL_PROFILES whose program has
+    BOTH a classified doctrine (program_spend_rules.py) AND rate rules
+    (program_rate_rules.py) — i.e. is genuinely EXECUTABLE, never merely
+    catalog-present — derive Little Utopia's real budget against that
+    jurisdiction's real statutory rate and produce QPE/incentive/NPC,
+    plus the SAME travel-incremental and FX deltas already computed for
+    treaty candidates (production_normalization.py, reused not
+    duplicated). Any jurisdiction lacking doctrine+rate rules is
+    EXCLUDED here, not silently priced at a fabricated/guessed rate —
+    listed separately as catalog_only with the reason."""
+    from app.calculators import jurisdiction_comparison as jc
+    from app.calculators.qualification_model import (
+        build_little_utopia_register_for_jurisdiction,
+    )
+    from app.calculators.optimization_engine import build_risk_cases, RiskCase
+    from app.calculators.production_normalization import (
+        TravelInputs, compute_travel_normalization, compute_fx_normalization,
+    )
+    from app.data.program_rate_rules import get_rate_rules, resolve_program_rate
+    from app.data.program_spend_rules import get_program_doctrine
+
+    travel_inputs = build_travel_inputs()
+    origin_budgeted_travel = budgeted_travel_usd(state.register)
+    fx_inputs = build_fx_inputs()
+
+    executable: list[dict] = []
+    catalog_only: list[dict] = []
+
+    for code in sorted(jc.ALL_PROFILES.keys()):
+        if code == JURISDICTION_CODE:
+            continue  # Mauritius is the baseline, served separately on /economics
+        profile = jc.ALL_PROFILES[code]
+        slug = profile.program_slug
+        has_doctrine = get_program_doctrine(slug) is not None
+        has_rate = len(get_rate_rules(slug)) > 0
+        if not (has_doctrine and has_rate):
+            catalog_only.append({
+                "jurisdiction_code": code,
+                "program_slug": slug,
+                "program_name": profile.program_name,
+                "confidence_tier": profile.confidence_tier,
+                "reason": (
+                    ("missing doctrine" if not has_doctrine else "")
+                    + (" and " if not has_doctrine and not has_rate else "")
+                    + ("missing rate rules" if not has_rate else "")
+                ) + " — present in the catalog, not yet executable.",
+            })
+            continue
+
+        register = build_little_utopia_register_for_jurisdiction(code, slug, 0.0)
+        from app.calculators.qualification_model import QualificationState as _QS
+        qpe = round(sum(a.amount_usd for a in register if a.state == _QS.QUALIFIES), 2)
+        excluded = [a.account_code for a in register if a.state == _QS.EXCLUDED]
+        excluded_usd = round(sum(a.amount_usd for a in register if a.state == _QS.EXCLUDED), 2)
+
+        rr = resolve_program_rate(slug, production_type="feature_film", qpe_usd=qpe)
+        if rr is None:
+            catalog_only.append({
+                "jurisdiction_code": code, "program_slug": slug,
+                "program_name": profile.program_name, "confidence_tier": profile.confidence_tier,
+                "reason": "rate rule present but did not resolve for this production "
+                          "type/QPE — excluded rather than guessed.",
+            })
+            continue
+
+        floor_result = build_risk_cases(
+            register=register, gross_budget_usd=state.gross_budget_usd, rate=rr.floor_rate,
+            structuring_paths=[], delay_weeks=0, bridge_rate=0.0,
+        ).cases[RiskCase.CONSERVATIVE]
+        ceiling_result = build_risk_cases(
+            register=register, gross_budget_usd=state.gross_budget_usd, rate=rr.modeled_rate,
+            structuring_paths=[], delay_weeks=0, bridge_rate=0.0,
+        ).cases[RiskCase.CONSERVATIVE]
+
+        travel = compute_travel_normalization(code, travel_inputs, origin_budgeted_travel, JURISDICTION_CODE)
+        fx = compute_fx_normalization(code, fx_inputs, floor_result.net_production_cost_usd)
+
+        executable.append({
+            "jurisdiction_code": code,
+            "program_slug": slug,
+            "program_name": profile.program_name,
+            "confidence_tier": profile.confidence_tier,
+            "doctrine": get_program_doctrine(slug).value,
+            "qpe_usd": qpe,
+            "excluded_accounts": excluded,
+            "excluded_usd": excluded_usd,
+            "rate_floor": rr.floor_rate,
+            "rate_ceiling": rr.modeled_rate,
+            "is_band_ceiling": rr.is_band_ceiling,
+            "statutory_basis": rr.basis,
+            "floor_case": {
+                "incentive_usd": floor_result.incentive_usd,
+                "net_production_cost_usd": floor_result.net_production_cost_usd,
+            },
+            "ceiling_case": {
+                "incentive_usd": ceiling_result.incentive_usd,
+                "net_production_cost_usd": ceiling_result.net_production_cost_usd,
+            },
+            "travel_incremental_delta_usd": travel.incremental_delta_usd,
+            "fx_delta_usd": fx.delta_usd,
+            "marine_suitability": profile.marine_suitability,
+        })
+
+    return {
+        "version": "1.0.0",
+        "note": (
+            "Alternative-jurisdiction 'what if the same real budget were made "
+            "here instead' comparisons — real QPE/incentive/NPC/travel/FX for "
+            "every EXECUTABLE jurisdiction (classified doctrine + rate rules "
+            "on file); every other cataloged jurisdiction is excluded, not "
+            "priced at a guessed rate, and listed under catalog_only with why."
+        ),
+        "executable": executable,
+        "catalog_only": catalog_only,
+    }
+
+
 def _production_facts() -> ProductionFacts:
     """The production's real current facts (from the actual budget's own
     header text — see app.data.little_utopia_real_budget), overlaid with

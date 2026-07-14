@@ -434,3 +434,72 @@ class TestScenarioExplainability:
                           grey_areas=s.grey_areas_baseline)
         if r.scenario_risk_adjusted_npc_usd is not None:
             assert r.notes == ""
+
+
+# ── Executable Jurisdiction Knowledge (Engine Completion phase) ─────────────
+
+class TestExecutableJurisdictionKnowledge:
+    def test_mt_ie_gr_are_executable_with_real_distinct_numbers(self):
+        from app.demo.little_utopia_state import build_alternative_jurisdiction_comparisons
+        s = get_state()
+        out = build_alternative_jurisdiction_comparisons(s)
+        codes = {e["jurisdiction_code"] for e in out["executable"]}
+        assert codes == {"MT", "IE", "GR"}
+        by_code = {e["jurisdiction_code"]: e for e in out["executable"]}
+        # Real, distinct QPE basis (same real budget for all — same QPE);
+        # distinct rates/NPCs per jurisdiction's own real statutory rate.
+        assert by_code["MT"]["rate_floor"] == 0.25
+        assert by_code["MT"]["rate_ceiling"] == 0.40
+        assert by_code["IE"]["rate_floor"] == by_code["IE"]["rate_ceiling"] == 0.32
+        assert by_code["GR"]["rate_floor"] == by_code["GR"]["rate_ceiling"] == 0.40
+        npcs = {by_code[c]["floor_case"]["net_production_cost_usd"] for c in ("MT", "IE", "GR")}
+        assert len(npcs) == 3  # genuinely distinct, not a copy-pasted number
+
+    def test_discovery_tier_jurisdictions_excluded_not_guessed(self):
+        from app.demo.little_utopia_state import build_alternative_jurisdiction_comparisons
+        s = get_state()
+        out = build_alternative_jurisdiction_comparisons(s)
+        catalog_codes = {c["jurisdiction_code"] for c in out["catalog_only"]}
+        assert catalog_codes == {"BE", "CY", "DE", "ES", "FR", "HR", "HU", "IT"}
+        executable_codes = {e["jurisdiction_code"] for e in out["executable"]}
+        assert catalog_codes.isdisjoint(executable_codes)
+        for c in out["catalog_only"]:
+            assert "not yet executable" in c["reason"]
+
+    def test_territorial_exclusion_applies_to_alternative_jurisdictions_too(self):
+        """LA-based post-production must be excluded for MT/IE/GR exactly
+        as it is for MU — the same real production fact, jurisdiction-
+        independent."""
+        from app.calculators.qualification_model import (
+            build_little_utopia_register_for_jurisdiction, QualificationState,
+        )
+        for code, slug in [("MT", "mt_mfc_rebate"), ("IE", "ie_section_481"), ("GR", "gr_cash_rebate")]:
+            reg = build_little_utopia_register_for_jurisdiction(code, slug, 0.30)
+            excluded = {a.account_code for a in reg if a.state == QualificationState.EXCLUDED}
+            assert excluded == {"5000", "5100", "5200", "5300", "5400", "5500", "6500"}
+
+    def test_rate_rules_reflect_real_sourced_profile_data(self):
+        from app.data.program_rate_rules import resolve_program_rate
+        mt = resolve_program_rate("mt_mfc_rebate", production_type="feature_film", qpe_usd=4_355_327.0)
+        assert mt.floor_rate == 0.25
+        assert mt.modeled_rate == 0.40
+        assert mt.is_band_ceiling is True
+        ie = resolve_program_rate("ie_section_481", production_type="feature_film", qpe_usd=4_355_327.0)
+        assert ie.modeled_rate == 0.32
+        assert ie.is_band_ceiling is False
+
+    def test_min_spend_threshold_uses_real_fx_conversion(self):
+        """MT/IE/GR min-spend thresholds are EUR in the source profile —
+        converted to USD via the real sourced FX rate, not a rough guess."""
+        from app.data.program_rate_rules import get_rate_rules
+        mt_rule = get_rate_rules("mt_mfc_rebate")[0]
+        assert mt_rule.min_qpe_usd == pytest.approx(57_026.20, abs=1.0)
+
+    def test_alternative_jurisdiction_carries_travel_and_fx_deltas(self):
+        s = get_state()
+        from app.demo.little_utopia_state import build_alternative_jurisdiction_comparisons
+        out = build_alternative_jurisdiction_comparisons(s)
+        for e in out["executable"]:
+            assert "travel_incremental_delta_usd" in e
+            assert "fx_delta_usd" in e
+            assert e["statutory_basis"]  # non-empty citation

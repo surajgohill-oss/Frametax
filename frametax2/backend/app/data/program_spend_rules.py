@@ -88,6 +88,31 @@ PROGRAM_DOCTRINE: dict[str, QualificationDoctrine] = {
     # Source: EDB Film Rebate Scheme — Submission Procedures (31 Jan 2020),
     # QPE lists for Motion Pictures vs. Digital Film Animation Projects.
     "mu_edb_incentive": QualificationDoctrine.HYBRID_CONDITIONAL,
+
+    # Malta Film Commission Cash Rebate: jurisdiction_comparison.py's own
+    # PARSED-tier profile states "Base 25% on all qualifying Malta
+    # expenditure" with ATL/BTL/VFX/music/marine ALL explicitly True and
+    # "No cultural test required for foreign productions" — a broad,
+    # unqualified positive statement with NO stated exclusions clause of
+    # any kind (unlike Mauritius's Digital-Animation contrast). Silence =
+    # inclusion. Source: jurisdiction_comparison.py MALTA profile notes.
+    "mt_mfc_rebate": QualificationDoctrine.OPEN_DEFAULT_INCLUDE,
+
+    # Greece Cash Rebate: same pattern — "ATL and BTL costs qualify as
+    # eligible Greek expenditure. Vessel charter and marine support
+    # qualify as production expenditure," no cultural test, no stated
+    # exclusions clause. Source: jurisdiction_comparison.py GREECE profile.
+    "gr_cash_rebate": QualificationDoctrine.OPEN_DEFAULT_INCLUDE,
+
+    # Ireland Section 481: ATL/BTL/VFX/music/marine ALL explicitly True in
+    # the PARSED-tier profile, no stated spend-category exclusions clause
+    # (the 80%-of-budget/EUR70M figure is a CAP on qualifying spend, not a
+    # category exclusion — see program_rate_rules.py's IE_RATE_RULES,
+    # disclosed as unenforced). The cultural test (Irish Qualifying Test)
+    # is a THRESHOLD eligibility gate (cultural_qualification_model.py's
+    # ie_section_481 required rows), not a spend-category doctrine
+    # question. Source: jurisdiction_comparison.py IRELAND profile.
+    "ie_section_481": QualificationDoctrine.OPEN_DEFAULT_INCLUDE,
 }
 
 

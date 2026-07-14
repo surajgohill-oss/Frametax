@@ -253,6 +253,12 @@ def _economics_payload() -> dict[str, Any]:
     # session's sourced fetches didn't cover (e.g. MUR beyond current).
     from app.calculators.production_normalization import fx_rate_snapshot
     payload["fx_horizons"] = {c: fx_rate_snapshot(c) for c in ("MUR", "EUR", "GBP")}
+    # Executable Jurisdiction Knowledge: real QPE/incentive/NPC/travel/FX
+    # for every jurisdiction with classified doctrine + rate rules on
+    # file; every other cataloged jurisdiction is excluded, not priced at
+    # a guessed rate.
+    from app.demo.little_utopia_state import build_alternative_jurisdiction_comparisons
+    payload["alternative_jurisdictions"] = build_alternative_jurisdiction_comparisons(s)
     return payload
 
 

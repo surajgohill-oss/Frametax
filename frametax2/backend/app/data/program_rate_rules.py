@@ -44,7 +44,10 @@ class RateCondition:
     condition_id: str
     description: str
     quote: str           # verbatim language from the cited document
-    kind: str            # "production_type" | "min_qpe_usd" | "discretionary_band" | "no_sponsorship_in_qpe"
+    kind: str            # "production_type" | "min_qpe_usd" | "discretionary_band" |
+                         # any other value (e.g. "no_sponsorship_in_qpe",
+                         # "cultural_test_required") falls into the generic
+                         # fact-dependent branch: satisfied=None, never assumed.
     threshold_usd: float | None = None
 
 
@@ -257,8 +260,155 @@ MU_BUDGET_EVIDENCED_RATES: tuple[BudgetEvidencedRate, ...] = (
 )
 
 
+## ── Malta, Ireland, Greece: PARSED-tier conversions ─────────────────────────
+#
+# Executable Jurisdiction Knowledge phase. Source: jurisdiction_comparison.py's
+# own MALTA/IRELAND/GREECE JurisdictionIncentiveProfile records —
+# confidence_tier="PARSED" (rates/caps already confirmed from a primary
+# source per that module's own discipline: "Do not promote any cell to
+# True without a primary-source citation"). This is a CONNECTION of
+# already-vetted data to the rate-resolution engine, not new legal
+# research — nothing here is invented.
+#
+# EUR->USD thresholds computed via the EXISTING FX engine
+# (apply_fx_rates.convert_to_usd), using the real sourced snapshot rate
+# on file (production_normalization.FX_RATE_SNAPSHOTS, EUR=0.87679,
+# fetched 2026-07-13) — never a rough/rounded guess.
+#   MT min spend  EUR 50,000   -> USD 57,026.20
+#   IE min spend  EUR 125,000  -> USD 142,565.49
+#   IE cap        EUR 70,000,000 (or 80% of budget, whichever lower) -> USD 79,836,676.97
+#   GR min spend  EUR 100,000  -> USD 114,052.40
+
+_MT_CITATION = (
+    "Malta Film Commission Cash Rebate (jurisdiction_comparison.py MALTA "
+    "profile, confidence_tier=PARSED; authority: Malta Film Commission, "
+    "maltafilmcommission.com)."
+)
+MT_RATE_RULES: tuple[RateRule, ...] = (
+    RateRule(
+        program_slug="mt_mfc_rebate", tier_id="mt-base-25",
+        rate=0.25, is_band_ceiling=False,
+        production_types=("feature_film",), min_qpe_usd=57_026.20,
+        conditions=(
+            RateCondition(
+                condition_id="mt-min-spend",
+                description="Minimum qualifying Malta expenditure",
+                quote="min_spend_local=EUR 50,000 (jurisdiction_comparison.py MALTA "
+                      "profile, PARSED tier)",
+                kind="min_qpe_usd", threshold_usd=57_026.20,
+            ),
+        ),
+        confidence_tier="PARSED",
+        citation=_MT_CITATION + " Base 25% on all qualifying Malta expenditure for "
+                 "non-Maltese productions; no cultural test required for foreign productions.",
+        source_ref="jurisdiction_comparison.MALTA",
+    ),
+    RateRule(
+        program_slug="mt_mfc_rebate", tier_id="mt-ceiling-40",
+        rate=0.40, is_band_ceiling=True,
+        production_types=("feature_film",), min_qpe_usd=57_026.20,
+        conditions=(
+            RateCondition(
+                condition_id="mt-min-spend",
+                description="Minimum qualifying Malta expenditure",
+                quote="min_spend_local=EUR 50,000 (jurisdiction_comparison.py MALTA "
+                      "profile, PARSED tier)",
+                kind="min_qpe_usd", threshold_usd=57_026.20,
+            ),
+            RateCondition(
+                condition_id="mt-uplifts",
+                description="Maximum rate requires stacking discretionary uplifts, "
+                            "not a guaranteed entitlement",
+                quote="Uplifts: +3% MFC cultural contribution, +3% VFX/post in Malta, "
+                      "+7% small-budget (<EUR 3M). Maximum with all uplifts: ~40%. "
+                      "(jurisdiction_comparison.py MALTA profile notes, PARSED tier)",
+                kind="discretionary_band",
+            ),
+        ),
+        confidence_tier="PARSED",
+        citation=_MT_CITATION + " 40% ceiling requires stacking all three uplifts "
+                 "(cultural contribution, VFX/post-in-Malta, small-budget) — the "
+                 "guaranteed floor is the base 25% tier.",
+        source_ref="jurisdiction_comparison.MALTA",
+    ),
+)
+
+_IE_CITATION = (
+    "Section 481 Film Tax Credit (jurisdiction_comparison.py IRELAND "
+    "profile, confidence_tier=PARSED — 'rates and cap confirmed from "
+    "Finance Act; cultural test points system unverified'; authority: "
+    "Revenue Commissioners Ireland, revenue.ie)."
+)
+IE_RATE_RULES: tuple[RateRule, ...] = (
+    RateRule(
+        program_slug="ie_section_481", tier_id="ie-flat-32",
+        rate=0.32, is_band_ceiling=False,
+        production_types=("feature_film",), min_qpe_usd=142_565.49,
+        conditions=(
+            RateCondition(
+                condition_id="ie-min-spend",
+                description="Minimum qualifying Irish expenditure",
+                quote="min_spend_local=EUR 125,000 (jurisdiction_comparison.py "
+                      "IRELAND profile, PARSED tier)",
+                kind="min_qpe_usd", threshold_usd=142_565.49,
+            ),
+            RateCondition(
+                condition_id="ie-cultural-test",
+                description="Cultural test required (Irish Qualifying Test) — a "
+                            "threshold eligibility gate, not a points contribution "
+                            "to this rate; passing threshold/points system itself "
+                            "unverified from primary source (disclosed data gap)",
+                quote="Cultural test required (Irish Qualifying Test). ... cultural "
+                      "test points system unverified. (jurisdiction_comparison.py "
+                      "IRELAND profile notes, PARSED tier)",
+                kind="cultural_test_required",  # falls into resolve_program_rate()'s
+                # generic fact-dependent else-branch (any kind other than the three
+                # explicitly dispatched ones) — satisfied=None, never silently assumed.
+            ),
+        ),
+        confidence_tier="PARSED",
+        citation=_IE_CITATION + " 32% flat refundable tax credit (not tiered — "
+                 "base_rate == max_rate in the source profile). Cap: 80% of budget "
+                 "or EUR 70,000,000 qualifying spend, whichever is lower — this cap "
+                 "is on QUALIFYING SPEND, not on the rate itself, and is NOT enforced "
+                 "by this rate-tier model (disclosed, not silently applied); see "
+                 "program's data_gaps.",
+        source_ref="jurisdiction_comparison.IRELAND",
+    ),
+)
+
+_GR_CITATION = (
+    "Greece Cash Rebate for International Productions (jurisdiction_"
+    "comparison.py GREECE profile, confidence_tier=PARSED; authority: "
+    "Enterprise Greece / Greek Film Centre, enterprisegreece.gov.gr)."
+)
+GR_RATE_RULES: tuple[RateRule, ...] = (
+    RateRule(
+        program_slug="gr_cash_rebate", tier_id="gr-flat-40",
+        rate=0.40, is_band_ceiling=False,
+        production_types=("feature_film",), min_qpe_usd=114_052.40,
+        conditions=(
+            RateCondition(
+                condition_id="gr-min-spend",
+                description="Minimum qualifying Greek expenditure",
+                quote="min_spend_local=EUR 100,000 (jurisdiction_comparison.py "
+                      "GREECE profile, PARSED tier)",
+                kind="min_qpe_usd", threshold_usd=114_052.40,
+            ),
+        ),
+        confidence_tier="PARSED",
+        citation=_GR_CITATION + " Flat 40% rebate (highest headline rate among Tier "
+                 "1 comparators); no cultural test required. Annual program "
+                 "allocation exists but the specific cap is not publicly confirmed "
+                 "(disclosed data gap, not enforced here) — budget oversubscription "
+                 "is a real scheduling risk per the source profile's own notes.",
+        source_ref="jurisdiction_comparison.GREECE",
+    ),
+)
+
+
 _RULES_BY_PROGRAM: dict[str, tuple[RateRule, ...]] = {}
-for _r in MU_RATE_RULES:
+for _r in MU_RATE_RULES + MT_RATE_RULES + IE_RATE_RULES + GR_RATE_RULES:
     _RULES_BY_PROGRAM.setdefault(_r.program_slug, ())
     _RULES_BY_PROGRAM[_r.program_slug] = _RULES_BY_PROGRAM[_r.program_slug] + (_r,)
 
