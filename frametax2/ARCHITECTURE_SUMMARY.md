@@ -150,3 +150,9 @@ No code changed this session — pure runtime audit.
 Pipeline addition: `... → compose_production_structures → generate_production_recommendations → _build_structuring_advisory (NEW, register-driven) → serve /economics.structuring_advisory`.
 
 Remaining: recommendation **prose** still LU-specialized (amounts/gating are generic); budget-allocation model still the keystone for co-production/split pricing. Structuring capability **~35% → ~55%**.
+
+---
+
+## SESSION DELTA — Account-transfer handoff (closeout #5, docs only)
+
+New doc `ACCOUNT_TRANSFER_HANDOFF.md` freezes state and maps **current runtime ownership** of all 24 capabilities, plus the **overlapping engines** that need reconciliation against the other Claude account before any canonical choice: structure enumeration (composer / `structure_generator` / `generate_structure_scenarios`), stacking, recommendations, ranking — across three incompatible data models (register-grounded / parametric / DB-row). **Warning carried forward:** do not rebuild/delete/merge/deprecate any engine until the other account's code + artifacts are inspected. No behavior/calculation/API change this session.

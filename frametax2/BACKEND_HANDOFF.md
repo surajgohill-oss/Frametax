@@ -331,3 +331,14 @@ Every served recommendation still carries statute/authority (`published_support`
 
 ## Updated completion estimate
 - Production Structuring (HOW-to-structure, integrated & register-grounded): **~35% → ~55%** — now de-hardcoded on inputs, signal-gated, connected live, emitting routing decisions; remaining 45% is prose-templating + the allocation model + fuller register-signal derivation.
+
+---
+
+# SESSION DELTA — Account-transfer handoff (closeout #5, docs only)
+
+- **structuring_advisor generalized + connected** (prior closeout #4, still current): served on `/economics.structuring_advisory`, driven by real register/facts; emits `routing_decisions`.
+- **Current runtime ownership** for all 24 capabilities captured in `ACCOUNT_TRANSFER_HANDOFF.md` §3 (served owner + alt implementations + connected? + unique + evidence).
+- **Unresolved engine overlaps** (need reconciliation, NOT resolved here): structure enumeration (composer vs `structure_generator` vs `generate_structure_scenarios`), stacking (build_available_funds vs `stacking_rules` vs `apply_stacking_adjustments`), recommendations (`production_recommendation_engine` vs structuring_advisor vs `optimization/recommendation_engine`), ranking (`rank_production_structures` vs `score_structures`/`maximization_engine`). Three incompatible data models coexist: register-grounded / parametric / DB-row.
+- **Must reconcile against other-account assets** before choosing canonical owners — see `ACCOUNT_TRANSFER_HANDOFF.md` §5–§7. Do NOT delete/merge/deprecate any engine first.
+- No engine behavior, calculation, or API contract changed this session (docs only). Smoke check: served state builds (44 accounts, 6 advisory recs).
+- **Resume step for next account:** open `ACCOUNT_TRANSFER_HANDOFF.md`, run §6 reconciliation for the structure-enumeration overlap first (highest duplication), after inspecting the other account per §5.

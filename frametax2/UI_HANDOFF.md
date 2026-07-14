@@ -206,3 +206,11 @@ For every item: **Current backend capability** / **Required UI work** / **Priori
 - **Stacking is now PARTIALLY CONNECTED.** `/economics.available_funds` (now v1.1.0) carries a new `stacking_by_jurisdiction` map — real relationship edges per executable jurisdiction (Ireland has 24: fund complements, dev-fund base reductions, treaty unlocks; Greece 1; Mauritius/Malta 0). No stacked dollar figure (deliberately not fabricated). The Stacking panel (was P3) can now render real relationships for Ireland; keep it honest — show edge relationships, never a computed stacked total.
 - **Jurisdiction comparison caveat for UI:** `/economics.alternative_jurisdictions` prices each executable jurisdiction at **100% relocation** (whole budget moved there), NOT as a co-production split. Label it as "if you relocated the entire production" — do not present it as a co-production/split economic. Co-production candidates on `/structures` remain `priceable_pct=0.5` and must show as "partially priced — split allocation not modeled," not blank.
 - No other backend field renames this session; the UI bugs in §2–§3 still stand.
+
+---
+
+## SESSION DELTA — Account-transfer handoff (closeout #5)
+
+- **New served field for the UI to consume:** `/economics.structuring_advisory` — the Production Structuring Engine output (recommendations with full explainability + `routing_decisions`). No UI surfaces it yet; add a "Structuring advice" panel (SPV/in-kind/routing recommendations with authority/risk). Note the recommendation *prose* is still LU-specialized (amounts/gating are generic) — render fields, not assumptions.
+- **Backend engine ownership is not yet final:** see `ACCOUNT_TRANSFER_HANDOFF.md`. Several backend engines overlap and must be reconciled against the other Claude account before canonical choice. UI should bind to the served `/api/v1/cineglobe/*` routes (stable), not to any specific internal engine module.
+- The `frametax2/frontend` React app remains the UI baseline; §2–§3 live bugs and §4 missing screens are unchanged. No API contract changed this session.
