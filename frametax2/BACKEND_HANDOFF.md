@@ -202,3 +202,95 @@ Present in `global_inventory*.py` (692 total programs) as descriptive metadata o
 
 ## Next task / resume point
 The only genuine architectural decision left for a true worldwide optimizer is **blocker #1 (budget-allocation model)**. Everything else is either DONE, data-entry (blocker #2), or UI (see `UI_HANDOFF.md`). Do not implement the allocation model without an explicit design sign-off — it changes how every co-production NPC is computed.
+
+---
+
+# SESSION DELTA — Production-Structuring audit (closeout #3, audit-only, no code change)
+
+**Files changed:** NONE (pure runtime audit; the only writes this session are this delta + the ARCHITECTURE_SUMMARY delta).
+**Commit:** `<this commit>` (parent `2be42a5`).
+
+## Biggest corrected assumption
+Prior deltas implied the **Production Structuring Engine** was essentially unbuilt / needed new architecture. **Runtime proof says otherwise: it already exists, in disconnected pieces.** The gap is *integration + de-hardcoding + one allocation model*, not greenfield engine-building.
+
+### The served runtime pipeline (ground truth, from `_build_state`)
+`build_jurisdiction_graph → build_little_utopia_real_register → resolve_program_rate → build_production_package → discover_all_opportunities → compose_production_structures → generate_production_recommendations → compose_candidate_structures → rank_production_structures → LegalEngine`.
+**`app/optimization/*` is NOT in this path.** It is reachable only via the separate (mounted) `optimization.py` router, on a **parametric** (`budget × rate`, caller-supplied codes) basis — not register-grounded.
+
+### Structuring engines that EXIST (runtime-classified)
+| Module | Role | Verdict | Runtime evidence |
+|---|---|---|---|
+| `production_structure_composer` (served) | jurisdiction/treaty/fund/stack composition + register-grounded risk-case pricing | **RUNTIME USED / VERIFIED** | composes 5 candidates; `PSC-MU` priced |
+| `optimization_engine` + `structuring_paths` (served) | risk-case math + structuring path conversion | **RUNTIME USED** | imported by `_build_state`, composer, constraint engine |
+| `rank_production_structures` (served) | scenario ranking | **RUNTIME USED** | `scenario_ranking` populated |
+| **`structuring_advisor.py` (948 lines)** | **the "HOW to structure within a jurisdiction" advisory** — SPV setup, in-kind FMV structuring, EDB rulings, music-recording routing, crew expansion; classifies EXPLICITLY_PERMITTED / INDUSTRY_STANDARD / REQUIRES_INTERPRETATION / UNKNOWN | **BUILT, FUNCTIONAL, DISCONNECTED** | `build_structuring_advisory(LittleUtopiaParams())` runs → 11 rich recommendations (audit_risk, financial_impact_usd, interpretation_body, published_support). **Hardcoded to demo `LittleUtopiaParams` (fixed dollar figures)** — zero importers |
+| `generate_structure_scenarios.py` | multi-program stacking scenario generator (all legal 1/2/3-program stacks, ranked by true_net_cost) | **BUILT, DISCONNECTED** | functional 14-param signature; 0 non-test importers |
+| `app/optimization/structure_generator` | parametric co-pro enumeration (`dual_country`/`multi_party`/`treaty_coproduction`/`split`) | **BUILT, CONNECTED (parametric router), not register-grounded** | `/api/v1/generate-structures` |
+| `app/optimization/maximization_engine` | parametric maximization | **BUILT, CONNECTED (parametric router)** | `/api/v1/maximize` |
+| `run_full_analysis` | DB-backed full analysis + stacking math | **BUILT, CONNECTED (`structures.py` router), NOT runtime-used** | DB path only; DB unreachable in this env |
+
+## Task 1 — capability matrix (runtime-proven)
+| Capability | Verdict | Evidence |
+|---|---|---|
+| production structures | **RUNTIME USED / VERIFIED** | composer produces `PSC-*` candidates |
+| treaty optimization | **RUNTIME USED** | `PSC-FR-MU` composes on election; discovery finds bilateral×2, multilateral×23, nationality_unlock×6 |
+| SPV optimization | **BUILT (assumption) + BUILT-DISCONNECTED (advisor)** | `SPV_PRODUCTION_STRUCTURE_DEFAULT` is a fixed assumption; `structuring_advisor._r_spv_frogsquad` optimizes it but is disconnected |
+| service production | **NOT IMPLEMENTED** | no `structure_type` |
+| split production | **PARTIAL** | parametric only; register-split blocked by allocation |
+| majority/minority co-production | **BUILT, CONNECTED (parametric)** | `structure_generator` `majority_minority`/`multi_party` |
+| grants | **RUNTIME USED** | `/economics.available_funds` |
+| funds | **RUNTIME USED** | `available_funds` + composer `_fund_compositions` |
+| stacking | **PARTIAL (relationships surfaced)** + BUILT-DISCONNECTED engine | `stacking_by_jurisdiction`; `generate_structure_scenarios` + `stacking_rules` disconnected |
+| anchor productions | **NOT IMPLEMENTED** | no `structure_type` |
+| hybrid productions | **NOT IMPLEMENTED** | no `structure_type` |
+| financing structures | **RUNTIME USED** | `mauritius_economics` financing controls; `optimization_engine` bridge |
+| production allocation | **NOT IMPLEMENTED** | no allocation computation exists (root blocker) |
+| recommendation generation | **RUNTIME USED / VERIFIED** | 139 recs served; advisor is a 2nd, disconnected recommender |
+
+## Task 2 — dependency map: the 15 structuring decisions
+| Decision | Where it lives today | Status |
+|---|---|---|
+| SPV structure | `SPV_PRODUCTION_STRUCTURE_DEFAULT` (assumption) + `structuring_advisor` (disconnected) | fixed assumption; optimizer-advice disconnected |
+| treaty structure | `treaty_engine` + composer `treaty_compositions` | RUNTIME USED |
+| ownership | SPV default only | fixed assumption |
+| production routing | `opportunity_discovery` `relocation_candidate` (movable_spend) | PARTIAL |
+| payroll routing | fact `payroll_routing_localized` | producer election (not optimized) |
+| production services | — | NOT IMPLEMENTED |
+| post location | fact `post_work_in_jurisdiction` + economics in-kind post | PARTIAL |
+| VFX location | bundled in movable_spend hint | PARTIAL |
+| animation | — | NOT IMPLEMENTED |
+| music | `structuring_advisor._r_music_recording_mu` (disconnected) + movable_spend | disconnected / partial |
+| financing | `mauritius_economics` + `optimization_engine` | RUNTIME USED (producer input) |
+| completion bond | register account (qualification), not a decision | N/A |
+| distribution | — | NOT IMPLEMENTED |
+| production split | `structure_generator` (parametric) / composer (blocked) | PARTIAL / BLOCKED |
+| jurisdiction allocation | — | NOT IMPLEMENTED (keystone) |
+
+**Dependency keystone:** *jurisdiction allocation* is the root precondition. production-routing, split, and per-department location (VFX/music/animation/post) all either feed INTO or depend ON an allocation. Without it the composer prices whole-budget-in-one-jurisdiction only.
+
+## Task 3 — budget allocation is an OUTPUT, not a standalone allocator
+Confirmed by architecture: routing each department/account to a jurisdiction **collectively produces** the allocation. So the correct architecture is *not* "build a budget allocator" but "a Production Structuring Engine whose per-account routing decisions emit the allocation, which then feeds one register per jurisdiction into the existing composer." `structuring_advisor` already makes SOME of these routing decisions (e.g. music→MU) but hardcoded + disconnected. **Why existing engines can't do it as-is:** `structuring_advisor` is hardcoded to `LittleUtopiaParams` (fabricated figures if served); `structure_generator` is parametric (no per-account register); the composer accepts a single whole-budget register. Bridging them needs (a) de-hardcoding `structuring_advisor` to read the real register, and (b) an allocation output feeding N registers to the composer — bounded integration, but a real design decision. STOP-and-recommend; not implemented.
+
+## Task 4 — explainability gaps (genuine only)
+Present and rich: **statute** (`authority_reference`), **authority** (composer `authority` constraints, per-jurisdiction), **production facts** (`evidence_reference`), **assumptions** (`confidence`; SPV assumption set), **optimizer decisions** (`category`/`subtype`/`specific_actions`), **treaty reasoning** (`PSC-FR-MU` carries per-jurisdiction authority/evidence/stacking_unknown constraints — runtime-confirmed). Genuine gaps: **budget-line refs** (reachable via `opportunity_ids`, not surfaced) and **allocation reasoning** (cannot exist until allocation exists). `structuring_advisor` additionally carries `interpretation_body`/`interpretation_question`/`published_support`/`audit_risk` — richer HOW-to-structure explainability, currently stranded by disconnection.
+
+## Task 5 — six-tier global-readiness assessment (these are different measurements)
+| Tier | State | Basis |
+|---|---|---|
+| **Knowledge Present** | ~215 jurisdiction profiles | `jurisdiction_comparison.ALL_PROFILES` |
+| **Executable Knowledge** | **4** (MU, MT, IE, GR) | doctrine + statutory rate rules |
+| **Connected Knowledge** | 4 executable + funds + stacking-relationships (IE rich) | served on `/economics` |
+| **Optimizer Capability** | **strong** for single-jurisdiction + full-relocation comparison | register-grounded pricing, ranking, recommendations, treaty composition all RUNTIME USED |
+| **Production Structuring Capability** | **exists but fragmented/disconnected** | `structuring_advisor` (HOW-to-structure, hardcoded), `generate_structure_scenarios` (stacking combos), parametric `optimization/*` — none integrated into the register-grounded served path |
+| **Worldwide Optimization Capability** | **NOT yet** | needs (a) executable knowledge for more jurisdictions [data] and (b) the allocation model to price co-productions/splits [architecture] |
+
+## Remaining architectural gaps (unchanged priority)
+1. **Budget-allocation model** — keystone; blocks register-grounded split/co-pro pricing. New architecture; STOP-and-recommend.
+2. **De-hardcode + integrate `structuring_advisor`** — parameterize `LittleUtopiaParams` from the real register/facts, then wire into the served recommendation surface (do NOT connect as-is — it would inject hardcoded figures). Bounded integration, not greenfield.
+3. **Worldwide executable coverage** — data-only, via the proven MT/IE/GR machinery.
+
+## Updated engine-completion estimates
+- Qualification / Legal / Economics / Travel / FX / Recommendation (served): **~90–100%**.
+- Optimizer (single-jurisdiction + relocation comparison): **~85%**.
+- Production Structuring (HOW-to-structure, integrated & register-grounded): **~35%** — pieces exist (`structuring_advisor`, `structure_generator`, `generate_structure_scenarios`) but disconnected/hardcoded/parametric; integration + allocation outstanding.
+- Worldwide multi-jurisdiction pricing: **~40%** — relocation comparison works; co-production/split blocked on allocation.

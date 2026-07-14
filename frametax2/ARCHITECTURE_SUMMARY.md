@@ -116,3 +116,23 @@ Stacking: `structure_graph_model.py` has 523 real edges, but Malta's edges use s
 **Stacking:** moved DISCONNECTED → **PARTIALLY CONNECTED** — real per-jurisdiction relationships now surfaced on `/economics.available_funds.stacking_by_jurisdiction` (IE 24 / GR 1 / MU 0 / MT 0), no stacked dollar figure (would be fabricated).
 
 **NOT IMPLEMENTED (proven, no `structure_type`):** anchor, hybrid, service production. **PARTIAL:** split & co-production (compose + parametric price; register price blocked by allocation).
+
+---
+
+## SESSION DELTA — Production-Structuring audit (closeout #3, audit-only)
+
+**Corrected assumption:** the Production Structuring Engine is **not unbuilt** — it exists in disconnected pieces.
+- **`structuring_advisor.py` (948 lines)** = the "HOW to structure within a jurisdiction" advisory (SPV, in-kind FMV, EDB rulings, music routing, crew). **Functional standalone (11 rich recommendations), but DISCONNECTED and hardcoded to `LittleUtopiaParams`.** This is the single most important stranded engine.
+- `generate_structure_scenarios.py` = multi-program stacking scenario generator. BUILT, DISCONNECTED.
+- `app/optimization/*` (`structure_generator`, `maximization_engine`) = parametric, CONNECTED via `optimization.py` router, not register-grounded.
+- `run_full_analysis` = DB-backed, CONNECTED via `structures.py` router, NOT runtime-used (DB unreachable).
+
+**Served path** (`_build_state`) uses only: `production_structure_composer` + `optimization_engine` + `structuring_paths` + `rank_production_structures` + recommendation/legal engines.
+
+**Structuring decisions (15):** treaty/financing = RUNTIME USED; routing/post/VFX/music/split = PARTIAL or disconnected; SPV/ownership = fixed assumption; payroll/post = producer fact inputs; services/animation/distribution/**jurisdiction-allocation** = NOT IMPLEMENTED.
+
+**Budget allocation is an OUTPUT of structuring, not a standalone allocator** — per-account routing decisions collectively emit the allocation, which then feeds N registers into the existing composer. Building it requires de-hardcoding `structuring_advisor` + an allocation output; bounded integration, not greenfield — but a real design decision. STOP-and-recommend.
+
+**Six-tier readiness:** Knowledge Present ~215 · Executable 4 · Connected 4+funds+stacking · Optimizer strong (single-jur + relocation) · **Production Structuring exists-but-fragmented (~35%)** · Worldwide Optimization not-yet (needs data + allocation model).
+
+No code changed this session — pure runtime audit.
