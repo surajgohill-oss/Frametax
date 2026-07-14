@@ -117,15 +117,29 @@ class TestCulturalTests:
 # ── Part 4: physical requirements -> territory matching ─────────────────────
 
 class TestTerritoryMatching:
-    def test_marine_requirement_derived_from_real_budget_not_script(self):
+    def test_marine_requirement_corroborated_by_script_and_budget(self):
         s = get_state()
         assert s.physical_requirements["marine_required"] is True
         assert s.physical_requirements["marine_spend_usd"] == 99_837.0
-        assert s.physical_requirements["source"] == "real_budget_account_spend"
+        assert s.physical_requirements["source"] == "script_and_real_budget_account_spend"
+        assert s.physical_requirements["script_requirements"]["marine"]["value"] is True
+        assert s.physical_requirements["script_requirements"]["marine"]["confidence"] == "CONFIRMED"
 
-    def test_no_screenplay_text_on_file(self):
+    def test_no_full_screenplay_parse_but_real_attributes_known(self):
+        """The real screenplay/synopsis/look book were recovered from
+        Google Drive, but no full page-by-page parse was performed —
+        script.known stays honestly False, while the CONFIRMED facts
+        from what was actually read are populated as known attributes."""
         s = get_state()
         assert s.package.script.known is False
+        attrs = s.package.script.attributes
+        assert attrs["marine_usage"].value == "true"
+        assert attrs["marine_usage"].state.value == "known"
+        assert attrs["period"].value == "true"
+        assert attrs["countries"].value == "GB, TR"
+        # Never guessed: underwater photography was not evidenced in the
+        # material read, so it must stay UNKNOWN, not asserted false.
+        assert attrs["underwater"].state.value == "unknown"
 
     def test_territory_match_uses_existing_jurisdiction_profiles(self):
         s = get_state()
