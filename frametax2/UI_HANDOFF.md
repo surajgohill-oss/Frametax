@@ -198,3 +198,11 @@ For every item: **Current backend capability** / **Required UI work** / **Priori
 **P2**: calculation provenance detail, doctrine badges, script intelligence panel, cultural-test visual distinction, co-production constraint detail, grants/funds panel, assumptions disclosure, confidence-tier consistency.
 
 **P3**: stacking disclosure (low value until backend connects it — see `BACKEND_HANDOFF.md` roadmap item 2).
+
+---
+
+## SESSION DELTA — closeout #2
+
+- **Stacking is now PARTIALLY CONNECTED.** `/economics.available_funds` (now v1.1.0) carries a new `stacking_by_jurisdiction` map — real relationship edges per executable jurisdiction (Ireland has 24: fund complements, dev-fund base reductions, treaty unlocks; Greece 1; Mauritius/Malta 0). No stacked dollar figure (deliberately not fabricated). The Stacking panel (was P3) can now render real relationships for Ireland; keep it honest — show edge relationships, never a computed stacked total.
+- **Jurisdiction comparison caveat for UI:** `/economics.alternative_jurisdictions` prices each executable jurisdiction at **100% relocation** (whole budget moved there), NOT as a co-production split. Label it as "if you relocated the entire production" — do not present it as a co-production/split economic. Co-production candidates on `/structures` remain `priceable_pct=0.5` and must show as "partially priced — split allocation not modeled," not blank.
+- No other backend field renames this session; the UI bugs in §2–§3 still stand.

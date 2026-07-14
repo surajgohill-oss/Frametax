@@ -702,16 +702,51 @@ def build_available_funds() -> dict:
     only typical_max_award_usd — a generic industry figure, never
     presented as this production's entitlement).
 
-    STACKING: structure_graph_model.py has 523 real edges, but they use a
-    DIFFERENT slug convention (e.g. "mt_mfc_cash_rebate" vs this
-    codebase's "mt_mfc_rebate") that does not resolve 1:1 against the
-    executable-jurisdiction program slugs — disclosed, not silently
-    reconciled by guessing which edge means which program."""
+    STACKING: structure_graph_model.py has 523 real edges. Where an edge's
+    slug matches an executable program slug EXACTLY, the real relationship
+    (complements / reduces / blocks / enables / unlocks / alternative_to)
+    is surfaced per jurisdiction below — no dollar amount computed, only
+    the sourced relationship the graph actually stores. Coverage is uneven
+    and reported honestly: Ireland's ie_section_481 has rich edges; Greece
+    one; Mauritius none; Malta's edges sit under a NON-executable variant
+    slug ('mt_mfc_cash_rebate' vs the executable 'mt_mfc_rebate') and are
+    NOT force-matched. No stacked NPC is produced — that would require a
+    per-fund dollar figure fund_economics_model deliberately does not hold."""
     from app.data.fund_economics_model import get_fund_economics, list_all_slugs
     from app.data.program_spend_rules import get_program_doctrine
     from app.data.program_rate_rules import get_rate_rules
+    from app.data.structure_graph_model import STRUCTURE_GRAPH_EDGES
 
     _EXECUTABLE_PREFIXES = {"MU": "mu_", "MT": "mt_", "IE": "ie_", "GR": "gr_"}
+    _EXECUTABLE_BASE_SLUG = {
+        "MU": "mu_edb_incentive", "MT": "mt_mfc_rebate",
+        "IE": "ie_section_481", "GR": "gr_cash_rebate",
+    }
+
+    def _stacking_relationships(base_slug: str) -> list[dict]:
+        """Real edges from structure_graph_model touching this exact base
+        slug — direction preserved, nothing inferred. Empty list = the
+        graph registers no stacking relationship for this exact slug."""
+        rels: list[dict] = []
+        for e in STRUCTURE_GRAPH_EDGES:
+            if e.source_slug == base_slug:
+                rels.append({
+                    "direction": "base_affects",
+                    "edge_type": e.edge_type,
+                    "other_program_slug": e.target_slug,
+                    "magnitude": getattr(e, "magnitude", None),
+                    "note": getattr(e, "notes", None),
+                })
+            elif e.target_slug == base_slug:
+                rels.append({
+                    "direction": "affects_base",
+                    "edge_type": e.edge_type,
+                    "other_program_slug": e.source_slug,
+                    "magnitude": getattr(e, "magnitude", None),
+                    "note": getattr(e, "notes", None),
+                })
+        return sorted(rels, key=lambda r: (r["edge_type"], r["other_program_slug"]))
+
     all_slugs = list_all_slugs()
 
     by_jurisdiction: dict[str, list[dict]] = {}
@@ -737,22 +772,35 @@ def build_available_funds() -> dict:
             })
         by_jurisdiction[code] = entries
 
+    # Real stacking relationships per executable jurisdiction — sourced from
+    # structure_graph_model, exact-slug-matched only, no dollar figure.
+    stacking_by_jurisdiction = {
+        code: _stacking_relationships(base) for code, base in _EXECUTABLE_BASE_SLUG.items()
+    }
+    _edge_counts = {c: len(v) for c, v in stacking_by_jurisdiction.items()}
+
     return {
-        "version": "1.0.0",
+        "version": "1.1.0",
         "note": (
             "fund_economics_model.py's real classification data for the 4 executable "
-            "jurisdictions, connected here for the first time. No stacking calculation "
-            "is applied — structure_graph_model.py's stacking edges use an incompatible "
-            "slug convention for these programs (disclosed below, not silently reconciled)."
+            "jurisdictions. Real stacking RELATIONSHIPS (not dollar amounts) are now "
+            "surfaced per jurisdiction from structure_graph_model.py where the edge slug "
+            "matches the executable program slug exactly."
         ),
         "by_jurisdiction": by_jurisdiction,
+        "stacking_by_jurisdiction": stacking_by_jurisdiction,
         "stacking_status": (
-            "NOT CONNECTED: structure_graph_model.py has 523 real stacking edges, but "
-            "the Malta edges reference 'mt_mfc_cash_rebate' while this codebase's executable "
-            "program slug is 'mt_mfc_rebate' (and similarly for other programs) — the two "
-            "catalogs were built independently and do not share one slug vocabulary. "
-            "Resolving this requires a slug-reconciliation pass across both catalogs, "
-            "correctly scoped as separate work, not attempted here."
+            "PARTIALLY CONNECTED (relationships only, no stacked dollar figure): "
+            f"exact-slug matches against structure_graph_model.py yield "
+            f"IE={_edge_counts['IE']} edges, GR={_edge_counts['GR']}, "
+            f"MU={_edge_counts['MU']}, MT={_edge_counts['MT']}. "
+            "Ireland's ie_section_481 carries the real stacking graph (fund complements, "
+            "development-fund base reductions, treaty unlocks); Greece one complement edge; "
+            "Mauritius none registered. Malta's edges live under the NON-executable variant "
+            "slug 'mt_mfc_cash_rebate' (vs executable 'mt_mfc_rebate') and are deliberately "
+            "NOT force-matched — reconciling that variant is a separate catalog task. "
+            "No stacked NPC is computed: fund_economics_model holds no per-production "
+            "dollar figure, so a stacked total would have to be fabricated (never done)."
         ),
     }
 

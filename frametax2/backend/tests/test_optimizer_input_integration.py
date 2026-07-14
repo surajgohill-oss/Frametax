@@ -543,11 +543,26 @@ class TestGrantsAndFunds:
                 if not e["is_base_incentive_already_priced"]:
                     assert "estimated" not in e  # no dollar figure key present at all
 
-    def test_stacking_disconnection_is_disclosed_not_silently_reconciled(self):
+    def test_stacking_relationships_surfaced_exact_slug_only_no_dollar_figure(self):
+        """Stacking is now PARTIALLY CONNECTED: real per-jurisdiction edges
+        from structure_graph_model are surfaced by EXACT slug match only,
+        with no fabricated stacked dollar figure. Malta's variant-slug edges
+        remain deliberately unmatched (disclosed, not force-reconciled)."""
         from app.demo.little_utopia_state import build_available_funds
         out = build_available_funds()
-        assert "NOT CONNECTED" in out["stacking_status"]
-        assert "mt_mfc_cash_rebate" in out["stacking_status"]
+        # honest status, not the old blanket "NOT CONNECTED"
+        assert "PARTIALLY CONNECTED" in out["stacking_status"]
+        assert "mt_mfc_cash_rebate" in out["stacking_status"]  # variant still disclosed
+        sbj = out["stacking_by_jurisdiction"]
+        assert set(sbj.keys()) == {"MU", "MT", "IE", "GR"}
+        # Ireland's ie_section_481 carries the real graph; MU/MT exact-match none
+        assert len(sbj["IE"]) > 0
+        assert len(sbj["MU"]) == 0 and len(sbj["MT"]) == 0
+        # every surfaced relationship is a real edge type, never a dollar amount
+        for rels in sbj.values():
+            for r in rels:
+                assert r["edge_type"] and r["other_program_slug"]
+                assert "estimated_usd" not in r and "amount_usd" not in r
 
 
 class TestTravelDualDelta:

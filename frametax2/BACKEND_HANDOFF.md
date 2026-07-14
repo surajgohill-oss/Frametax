@@ -131,3 +131,74 @@ Present in `global_inventory*.py` (692 total programs) as descriptive metadata o
 5. **Enforce the explainability chain uniformly** — extend `Recommendation.__post_init__`'s CREATIVE-only enforcement (evidence/authority/rationale required) to FINANCIAL/STRUCTURAL/REQUIRED_INPUT categories.
 6. **Anchor / hybrid / split / service production data models** — genuinely new architecture, not a connection task; needs an explicit design decision before implementation.
 7. **Scheduled FX refresh** — `FX_RATE_SNAPSHOTS` is a manually-fetched point-in-time table; wire a scheduled job (or document the manual refresh cadence) so "live" stays live.
+
+---
+
+# SESSION DELTA — Backend closeout #2 (worldwide-optimizer architecture close)
+
+**Commit:** `<this commit>` (parent `68d3747`).
+**Env note:** the project runs on `backend/.venv/bin/python3` (3.12.13). Bare `python3` resolves to macOS system Python 3.9, which cannot even import the models (`X | None` syntax) — always use the venv.
+
+## Files changed
+- `backend/app/demo/little_utopia_state.py` — `build_available_funds()`: added `stacking_by_jurisdiction` (real edges from `structure_graph_model.py`, exact-slug-match only, no dollar figure) + refined `stacking_status` to PARTIALLY CONNECTED. Bumped payload version 1.0.0 → 1.1.0.
+- `backend/tests/test_optimizer_input_integration.py` — replaced the stacking-disconnection test with `test_stacking_relationships_surfaced_exact_slug_only_no_dollar_figure` (asserts real relationships surfaced, IE>0, MU/MT exact-match 0, no dollar keys).
+
+## Runtime-proven findings (this session's whole point)
+
+### Two parallel structure systems exist — earlier "NOT IMPLEMENTED" notes were partly wrong
+- `app/optimization/` (`structure_generator.py`, `enumerate_structures.py`, `optimizer.py`, `stacking_rules.py`) = a **parametric** engine: enumerates & roughly prices co-pro structures via `budget × base_rate`. Reachable via `/api/v1/generate-structures`, `/gap-analysis`, `/maximize`, `/recommendations` (router `optimization.py`, mounted). **Not** register-grounded.
+- `app/calculators/production_structure_composer.py` = the **register-grounded** served path (`cineglobe.py` → `/structures`).
+- The ONLY produced `structure_type` values anywhere: `single, single_country, split, dual_country, majority_minority, multi_party, treaty_coproduction, grant_stack`.
+
+### Task 2 — structure systems (runtime-proven)
+| System | Verdict | Evidence |
+|---|---|---|
+| grants | **CONNECTED** | `/economics.available_funds` real classifications; `grant_stack` parametric type |
+| funds | **CONNECTED** | same + composer `_fund_compositions` (multilateral `fund_unlocks`) |
+| stacking | **PARTIALLY CONNECTED** (this session) | real edges surfaced per jurisdiction: IE=24, GR=1, MU/MT=0; no stacked $ (would be fabricated) |
+| treaty execution | **CONNECTED** | electing `treaty_partner_code=FR` composes `PSC-FR-MU` at runtime; treaties attach where a bilateral is registered |
+| co-production execution | **PARTIAL** | composes (`PSC-MU-CY/ES/GR/MT`) + parametric pricing exists, but register pricing stuck at `priceable_pct=0.5` |
+| anchor | **NOT IMPLEMENTED** | no `structure_type="anchor"` anywhere; mentions only |
+| hybrid | **NOT IMPLEMENTED** | no `structure_type="hybrid"`; mentions only |
+| split | **PARTIAL** | `structure_type="split"` in parametric path (`/generate-structures`); NOT register-grounded (same allocation blocker) |
+| service production | **NOT IMPLEMENTED** | no `structure_type`; 26 hits are data/notes |
+
+### Task 3 — missing-jurisdiction-knowledge vs missing-optimizer-capability: PROVEN, and it's BOTH, cleanly split by structure type
+- **Relocation / alternative-jurisdiction comparison:** binding constraint = **(A) missing jurisdiction knowledge only.** Runtime: GR/IE/MT each priced $4,355,327 QPE from their own register; `catalog_only` = BE, CY, DE, ES, FR, HR, HU, IT (profile but no doctrine+rate). Optimizer capability already exists.
+- **Co-production / split register pricing:** binding constraint = **(B) missing optimizer capability**, independent of jurisdiction knowledge. **Proof:** `PSC-MU-GR` and `PSC-MU-MT` stay at `priceable_pct=0.5` even though GR and MT are fully executable (they price $4.36M standalone). More jurisdiction data will NOT lift them.
+
+### Task 4 — multi-jurisdiction pricing via multiple registers: ANSWERED
+- **Full-relocation case: YES, and already connected.** `build_alternative_jurisdiction_comparisons` already builds a register per executable jurisdiction and prices each at 100% budget → served on `/economics.alternative_jurisdictions`. No optimizer redesign was needed. (This is the real "worldwide optimizer" output today.)
+- **Co-production / split case: NO — architectural blocker, STOP-and-recommend (not implemented).** The composer prices the **entire** `gross_budget_usd` against a single baseline register. Feeding a second full-budget register would price the whole budget in *each* jurisdiction = double-count. Correct split pricing requires a **per-jurisdiction budget-allocation model** (which budget accounts are incurred in which territory) — confirmed absent (grep: no allocation computation exists, only narrative notes + producer-facing "allocate spend" suggestion strings). This is NEW architecture, not wiring.
+- **Root-blocker correction:** the prior handoff called `has_register` single-jurisdiction the #1 blocker. More precisely, `has_register=one` is a *faithful symptom*; the true root blocker is the **absence of an account→jurisdiction allocation model.** Flipping `has_register` to multi-True without an allocation model would emit double-counted (fabricated) NPCs — forbidden. Roadmap item #1 should be restated as "design the budget-allocation model," not "lift the has_register flag."
+
+### Task 5 — explainability: 4/5 elements are direct fields on every `Recommendation`
+`authority_reference` (statute) · `evidence_reference`/`qualification_rationale` (facts) · `category`/`subtype`/`specific_actions` (optimizer decision) · `confidence` (assumptions). **Budget lines** are the only element not surfaced as a direct field — reachable via `opportunity_ids` → opportunity → account. Per "recommend only if missing": **recommendation** — resolve `opportunity_ids` to their driving account codes and attach as `budget_line_refs`. Not implemented (closeout restraint; not strictly missing, one hop away).
+
+## Task 6 — final runtime engine matrix
+| Engine | Status | Evidence |
+|---|---|---|
+| Qualification | WORKING | register built, `PSC-MU` priced |
+| Optimizer/ranking | WORKING | 5 candidates, 1 fully priced, ranked |
+| Economics | WORKING | `/economics` serves floor/ceiling/inkind/financing |
+| Composer | WORKING (single-register ceiling) | composes all candidates; co-pro `priceable_pct=0.5` |
+| Recommendation | WORKING | 139 recs, 4/5 explainability fields direct |
+| Treaty | WORKING | `PSC-FR-MU` composes on election |
+| Scenario | WORKING | `scenario_ranking`/`scenario_structures` present |
+| Explain Mode | PARTIAL | authority/evidence present; budget-line refs + legal-commit trace not surfaced (commit `None` by design) |
+| Travel | WORKING | `normalized_structures` served, dual-delta |
+| FX | WORKING | `fx_horizons` MUR/EUR/GBP served |
+| People | WORKING | `/people` get/post |
+| Script | PARTIAL | confirmed facts + honest unknowns; no full script text (never existed) |
+| Cultural | WORKING | eligibility-gate vs points recs distinguished |
+| Grants | WORKING | `available_funds` |
+| Funds | WORKING | `available_funds` + fund unlocks |
+| Stacking | PARTIAL | relationships surfaced (IE 24/GR 1/MU 0/MT 0); no stacked $ |
+
+## Known blockers
+1. **Budget-allocation model** (account→jurisdiction) — blocks register-grounded co-production/split pricing. New architecture; needs a design decision. STOP-and-recommend.
+2. **Worldwide relocation coverage** — data-only: add doctrine+rate for BE/CY/DE/ES/FR/HR/HU/IT via the proven MT/IE/GR machinery.
+3. **Malta stacking variant slug** — `mt_mfc_cash_rebate` vs executable `mt_mfc_rebate`; separate catalog-reconciliation task.
+
+## Next task / resume point
+The only genuine architectural decision left for a true worldwide optimizer is **blocker #1 (budget-allocation model)**. Everything else is either DONE, data-entry (blocker #2), or UI (see `UI_HANDOFF.md`). Do not implement the allocation model without an explicit design sign-off — it changes how every co-production NPC is computed.

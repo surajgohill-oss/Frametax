@@ -104,3 +104,15 @@ Stacking: `structure_graph_model.py` has 523 real edges, but Malta's edges use s
 ## One-line takeaway
 
 **Backend is well ahead of frontend.** Every economics/people/treaty/FX capability described above exists, is real, is sourced, and is served — the primary UI work is not building new backend features, it's building the ~6 missing screens/controls that expose what already runs, plus fixing 2-3 concrete rename/staleness bugs. See `UI_HANDOFF.md` §5 for the prioritized list.
+
+---
+
+## SESSION DELTA — closeout #2
+
+**Two structure systems (both real):** `app/optimization/*` is a **parametric** generator (`budget × rate`; co-pro types `dual_country`/`multi_party`/`treaty_coproduction`/`split`/`grant_stack`) reachable via `/api/v1/generate-structures`. `app/calculators/production_structure_composer.py` is the **register-grounded** served path. Both mounted; they are complementary, not duplicate.
+
+**Corrected root blocker for multi-jurisdiction pricing:** NOT the `has_register` flag. The true blocker is the **absence of a budget-allocation model** (which accounts are spent in which territory). Register-per-jurisdiction pricing already works for **full relocation** (`/economics.alternative_jurisdictions`, GR/IE/MT each priced from own register). It cannot extend to **co-production splits** without allocation — that would double-count. New architecture; STOP-and-recommend.
+
+**Stacking:** moved DISCONNECTED → **PARTIALLY CONNECTED** — real per-jurisdiction relationships now surfaced on `/economics.available_funds.stacking_by_jurisdiction` (IE 24 / GR 1 / MU 0 / MT 0), no stacked dollar figure (would be fabricated).
+
+**NOT IMPLEMENTED (proven, no `structure_type`):** anchor, hybrid, service production. **PARTIAL:** split & co-production (compose + parametric price; register price blocked by allocation).
