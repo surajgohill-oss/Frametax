@@ -893,6 +893,10 @@ class LittleUtopiaState:
     physical_requirements: dict = field(default_factory=dict)
     territory_physical_match: dict = field(default_factory=dict)
 
+    # Production Structuring Engine (structuring_advisor) output, built from
+    # this state's REAL register/facts/rate/people — not demo constants.
+    structuring_advisory: object = None
+
 
 # ── Part 4: physical production requirements -> territory matching ──────────
 # The real screenplay, look book, and pitch deck were recovered from
@@ -1014,6 +1018,56 @@ def _match_territory_physical(requirements: dict, composition: CompositionResult
             "any_weak_or_missing": any(e["status"] != "MATCH" for e in entries),
         }
     return match
+
+
+def _build_structuring_advisory(register, facts, rate, gross_budget_usd, inkind_fmv_usd):
+    """Production Structuring Engine, driven by THIS production's real data.
+
+    Derives structuring_advisor's inputs from the live register/facts/rate
+    instead of the demo constants baked into LittleUtopiaParams. Only signals
+    that are genuinely present in the real data are populated; everything else
+    is left at 0 so the corresponding recommendation is skipped (never
+    fabricated). For a different production with a different register this
+    yields a different advisory — that is the generalization.
+    """
+    from app.calculators.structuring_advisor import LittleUtopiaParams, build_structuring_advisory
+
+    def _acct_sum(predicate) -> float:
+        return round(sum(a.amount_usd for a in register if predicate(a)), 2)
+
+    outside = set(facts.accounts_outside_jurisdiction or ())
+    # Routable offshore spend: accounts currently incurred OUTSIDE the
+    # jurisdiction that an SPV could route through the local entity.
+    routable_offshore = _acct_sum(lambda a: a.account_code in outside)
+
+    def _is_atl(a) -> bool:
+        try:
+            return int(str(a.account_code)) < 2000 and str(a.state).endswith("QUALIFIES")
+        except (TypeError, ValueError):
+            return False
+    atl_qualifying = _acct_sum(_is_atl)
+
+    qpe_qualifies = _acct_sum(lambda a: str(a.state).endswith("QUALIFIES"))
+
+    inputs = LittleUtopiaParams(
+        gross_budget_usd=gross_budget_usd,
+        qpe_conservative_usd=qpe_qualifies,
+        qpe_base_usd=qpe_qualifies,
+        mu_rebate_rate=rate,
+        production_title=PRODUCTION_NAME,
+        jurisdiction_code=JURISDICTION_CODE,
+        # Real signals derived from THIS register; 0 => recommendation skipped.
+        frogsquad_usd=routable_offshore,
+        atl_qualifying_usd=atl_qualifying,
+        inkind_base_usd=round(inkind_fmv_usd or 0.0, 2),
+        # Not cleanly derivable from the register without fabrication -> skip.
+        hod_accom_usd=0.0,
+        local_perdiem_usd=0.0,
+        marine_expansion_usd=0.0,
+        local_crew_expansion_usd=0.0,
+        music_recording_usd=0.0,
+    )
+    return build_structuring_advisory(inputs)
 
 
 def get_state() -> LittleUtopiaState:
@@ -1221,6 +1275,14 @@ def _build_state(_fact_key: tuple, _people_key: tuple = ()) -> LittleUtopiaState
     physical_requirements = _derive_physical_requirements(register)
     territory_physical_match = _match_territory_physical(physical_requirements, composition)
 
+    # Production Structuring Engine — connected live, driven by the real
+    # register/facts/rate above (not demo constants). The in-kind FMV is the
+    # production's real off-budget post figure (economics control default).
+    structuring_advisory = _build_structuring_advisory(
+        register=register, facts=facts, rate=MU_RATE,
+        gross_budget_usd=MU_GROSS_BUDGET_USD, inkind_fmv_usd=625_000.0,
+    )
+
     return LittleUtopiaState(
         production_id=PRODUCTION_ID,
         production_name=PRODUCTION_NAME,
@@ -1246,4 +1308,5 @@ def _build_state(_fact_key: tuple, _people_key: tuple = ()) -> LittleUtopiaState
         legal_rerun=legal_rerun,
         physical_requirements=physical_requirements,
         territory_physical_match=territory_physical_match,
+        structuring_advisory=structuring_advisory,
     )

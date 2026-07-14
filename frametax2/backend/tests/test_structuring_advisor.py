@@ -429,3 +429,94 @@ class TestModuleConstants:
 
     def test_time_horizon_count(self):
         assert len(TimeHorizon) == 4
+
+
+# ── Generalization: generic inputs + signal-gating + routing decisions ────────
+
+class TestGenericStructuringEngine:
+    """The engine must operate from arbitrary production inputs, not demo
+    constants: identity flows from params, absent signals skip their
+    recommendation (never fabricated), and routing decisions are emitted."""
+
+    def test_identity_flows_from_params_not_hardcoded(self):
+        p = LittleUtopiaParams(production_title="Deep Blue", jurisdiction_code="IE")
+        result = build_structuring_advisory(p)
+        assert result.production_title == "Deep Blue"
+        assert result.jurisdiction_code == "IE"
+
+    def test_absent_signals_skip_their_recommendation(self):
+        # A production with only offshore-routable spend and nothing else:
+        # accommodation/perdiem/inkind/marine/crew/music/atl all zero.
+        p = LittleUtopiaParams(
+            production_title="Minimal", jurisdiction_code="MT",
+            hod_accom_usd=0.0, local_perdiem_usd=0.0, inkind_base_usd=0.0,
+            marine_expansion_usd=0.0, local_crew_expansion_usd=0.0,
+            music_recording_usd=0.0, atl_qualifying_usd=0.0,
+        )
+        result = build_structuring_advisory(p)
+        ids = {r.recommendation_id for r in result.recommendations}
+        # R-01 (offshore routing, frogsquad>0), R-10 protective, R-11 umbrella only
+        assert ids == {"R-01", "R-10", "R-11"}
+        # skipped ones are genuinely absent, not zero-value fabrications
+        assert "R-02" not in ids and "R-05" not in ids and "R-06" not in ids
+
+    def test_zero_offshore_skips_spv_routing(self):
+        p = LittleUtopiaParams(frogsquad_usd=0.0)
+        result = build_structuring_advisory(p)
+        assert not any(r.recommendation_id == "R-01" for r in result.recommendations)
+
+    def test_routing_decisions_emitted_for_routing_recs(self):
+        result = build_structuring_advisory(LittleUtopiaParams())
+        # LU fixture has SPV routing (R-01), music relocation (R-08), service
+        # agreement (R-09) -> at least those routing decisions present.
+        rids = {d["recommendation_id"] for d in result.routing_decisions}
+        assert {"R-01", "R-09"}.issubset(rids)
+        for d in result.routing_decisions:
+            assert d["target_jurisdiction"] == "MU"
+            assert "qualification_impact_usd" in d
+            # never a fabricated dollar key beyond the real qpe impact
+            assert "estimated_usd" not in d
+
+    def test_de_hardcoded_amounts_flow_from_params(self):
+        # The four promoted constants (marine/crew/music/atl) must scale with
+        # params, proving they are no longer baked into the builders.
+        p = LittleUtopiaParams(
+            marine_expansion_usd=200_000.0, local_crew_expansion_usd=150_000.0,
+            music_recording_usd=80_000.0, atl_qualifying_usd=300_000.0,
+        )
+        result = build_structuring_advisory(p)
+        by_id = {r.recommendation_id: r for r in result.recommendations}
+        assert abs(by_id["R-06"].qualification_impact_usd - 200_000.0) < 0.01
+        assert abs(by_id["R-07"].qualification_impact_usd - 150_000.0) < 0.01
+        assert abs(by_id["R-08"].qualification_impact_usd - 80_000.0) < 0.01
+        assert abs(by_id["R-09"].qualification_impact_usd - 300_000.0) < 0.01
+
+
+class TestStructuringEngineConnectedLive:
+    """The engine must be wired into the served state, driven by the real
+    register/facts (not demo constants), and JSON-serializable on /economics."""
+
+    def test_served_state_carries_data_driven_advisory(self):
+        from app.demo.little_utopia_state import get_state
+        adv = get_state().structuring_advisory
+        assert adv is not None
+        assert adv.production_title == "The Little Utopia"
+        assert adv.jurisdiction_code == "MU"
+        # R-01's offshore amount is derived from the real register's
+        # accounts_outside_jurisdiction, not the demo frogsquad_usd constant.
+        r01 = next((r for r in adv.recommendations if r.recommendation_id == "R-01"), None)
+        assert r01 is not None
+        assert abs(r01.qualification_impact_usd - 99_837.0) > 0.01  # NOT the demo constant
+
+    def test_economics_payload_serves_structuring_advisory(self):
+        import json
+        from app.api.v1.cineglobe import _economics_payload
+        sa = _economics_payload()["structuring_advisory"]
+        assert sa is not None
+        assert sa["recommendations"] and sa["routing_decisions"] is not None
+        # full explainability preserved through serialization
+        r = sa["recommendations"][0]
+        for field_name in ("reason", "audit_risk", "confidence",
+                           "required_documentation", "interpretation_question"):
+            assert field_name in r
+        json.dumps(sa)  # must be JSON-serializable

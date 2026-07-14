@@ -294,3 +294,40 @@ Present and rich: **statute** (`authority_reference`), **authority** (composer `
 - Optimizer (single-jurisdiction + relocation comparison): **~85%**.
 - Production Structuring (HOW-to-structure, integrated & register-grounded): **~35%** — pieces exist (`structuring_advisor`, `structure_generator`, `generate_structure_scenarios`) but disconnected/hardcoded/parametric; integration + allocation outstanding.
 - Worldwide multi-jurisdiction pricing: **~40%** — relocation comparison works; co-production/split blocked on allocation.
+
+---
+
+# SESSION DELTA — Production Structuring Engine generalized + connected (closeout #4)
+
+**Commit:** `<this commit>` (parent `8de669e`). Full suite: **2899 passed, 1 skipped** (venv Python 3.12).
+
+## What was generalized
+`structuring_advisor.py` (the "HOW to structure" engine) was hardcoded to Little Utopia. Now:
+- **Production identity is a param, not a literal.** `build_structuring_advisory` emitted `"The Little Utopia"`/`"MU"` literally; these moved to `LittleUtopiaParams.production_title`/`.jurisdiction_code` (LU defaults preserved). Result identity flows from inputs.
+- **Four baked-in amounts promoted to params:** `marine_expansion_usd` (was 112k literal in R-06), `local_crew_expansion_usd` (105k, R-07), `music_recording_usd` (60k, R-08), `atl_qualifying_usd` (260k, R-09). LU defaults preserved; a different production supplies different values.
+- **Signal-gating:** `build_structuring_advisory` now emits each amount-driven recommendation only when its governing amount `> 0`. Umbrella (R-11) and protective related-party (R-10) always emit. A production lacking a signal gets *fewer* recommendations — never a fabricated zero-value one.
+- **Routing decisions output:** `StructuringAdvisoryResult.routing_decisions` — the "what work happens where" placement (component → target jurisdiction, with qpe impact) derived from the routing-type recommendations (SPV_ROUTING / MUSIC_RELOCATION / SERVICE_AGREEMENT). This is the allocation seed (Task 3/4), an **output** of the structure, not a standalone allocator.
+
+## What was connected
+- New factory `_build_structuring_advisory(register, facts, rate, gross_budget, inkind_fmv)` in `little_utopia_state.py` derives the engine's inputs from the **real served state**: `production_title`/`jurisdiction`/`rate` from state; `qpe` from register QUALIFIES sum; **routable-offshore** from `facts.accounts_outside_jurisdiction` × register amounts; **ATL** from register accounts (code < 2000, QUALIFIES); in-kind from the real $625k post FMV. Signals not cleanly derivable (accommodation/perdiem/marine/crew/music) are left 0 → skipped, never fabricated.
+- Called in `_build_state`; attached as `LittleUtopiaState.structuring_advisory`; served on `/economics.structuring_advisory` with full explainability preserved (`_serialize_structuring_advisory` in `cineglobe.py`).
+
+## Files changed
+- `backend/app/calculators/structuring_advisor.py` — params for identity + 4 promoted amounts; signal-gated assembly; `routing_decisions`.
+- `backend/app/demo/little_utopia_state.py` — factory + `structuring_advisory` state field + wiring.
+- `backend/app/api/v1/cineglobe.py` — serialize + serve on `/economics`.
+- `backend/tests/test_structuring_advisor.py` — +7 tests (generic identity, signal-gating, de-hardcoded amounts, routing decisions, live-connection, JSON-serializability). All 70 original LU tests still pass unchanged.
+
+## Runtime proof (served state)
+6 data-driven recommendations (down from the 11-rec LU *fixture*, because the served register already qualifies most spend): R-11 umbrella, **R-01 SPV routing qpe=$9,068** (real `accounts_outside_jurisdiction` sum, *not* the $99,837 demo constant — asserted in tests), R-05/R-04 in-kind ($625k real), **R-09 ATL qpe=$538,444** (real register ATL total), R-10 protective. Accommodation/per-diem/marine/crew/music correctly **skipped** (no signal). `routing_decisions`: R-01→MU, R-09→MU. Explainability (authority/support/evidence/risk/reasoning) intact on every rec.
+
+## Explainability (Task 5) — preserved
+Every served recommendation still carries statute/authority (`published_support`), supporting evidence (`required_documentation`), facts (`reason`/`current_structure`), assumptions + risk (`confidence`/`audit_risk`), expected value (`financial_impact_usd`/`rebate_impact_usd`), and reasoning (`reason`/`interpretation_question`). Nothing became less explainable.
+
+## Remaining backend work (known, honest limits)
+1. **Recommendation PROSE stays LU-specialized.** Governing amounts are now data-driven, but the descriptive text in the builders still references LU specifics ("Frogsquad SA dive team", account codes). A different production gets correct *amounts/gating* but LU-flavored *prose*. Full prose-templating is a genuine design task (not a wiring fix) — deferred, not attempted (over-engineering guard). Minor known artifact: served R-09 amount ($538k register ATL) is broader than its prose's "$260k dir+writer" illustration.
+2. **Budget-allocation model** (keystone, unchanged) — `routing_decisions` is the seed, but feeding N per-jurisdiction registers into the composer for co-production/split pricing still needs the allocation architecture. STOP-and-recommend.
+3. **Accommodation/per-diem/marine/crew/music derivation** — needs register-account semantic tagging to light up R-02/03/06/07/08 generically without fabrication.
+
+## Updated completion estimate
+- Production Structuring (HOW-to-structure, integrated & register-grounded): **~35% → ~55%** — now de-hardcoded on inputs, signal-gated, connected live, emitting routing decisions; remaining 45% is prose-templating + the allocation model + fuller register-signal derivation.

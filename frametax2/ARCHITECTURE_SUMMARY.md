@@ -136,3 +136,17 @@ Stacking: `structure_graph_model.py` has 523 real edges, but Malta's edges use s
 **Six-tier readiness:** Knowledge Present ~215 · Executable 4 · Connected 4+funds+stacking · Optimizer strong (single-jur + relocation) · **Production Structuring exists-but-fragmented (~35%)** · Worldwide Optimization not-yet (needs data + allocation model).
 
 No code changed this session — pure runtime audit.
+
+---
+
+## SESSION DELTA — Structuring Engine generalized + connected (closeout #4)
+
+`structuring_advisor.py` moved from **disconnected + hardcoded** to **connected + data-driven**:
+- **Generalized inputs:** production identity + four previously-baked amounts (marine/crew/music/ATL) are now params; signal-gated so absent signals skip their recommendation (never fabricated).
+- **Connected live:** new factory in `little_utopia_state.py` derives inputs from the real register/facts/rate (routable-offshore from `accounts_outside_jurisdiction`; ATL from register codes<2000; in-kind from real $625k); attached to state; served on `/economics.structuring_advisory`.
+- **Routing decisions** (`routing_decisions`) emitted as the allocation seed — "what work happens where" — an OUTPUT of the structure, not a standalone allocator (Task 3/4).
+- **Explainability preserved** end-to-end; **all 70 original LU tests pass** + 7 new; suite 2899 passed.
+
+Pipeline addition: `... → compose_production_structures → generate_production_recommendations → _build_structuring_advisory (NEW, register-driven) → serve /economics.structuring_advisory`.
+
+Remaining: recommendation **prose** still LU-specialized (amounts/gating are generic); budget-allocation model still the keystone for co-production/split pricing. Structuring capability **~35% → ~55%**.

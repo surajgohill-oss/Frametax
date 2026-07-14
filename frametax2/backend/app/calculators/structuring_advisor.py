@@ -134,6 +134,13 @@ class StructuringAdvisoryResult:
     unknown_items: list[str]
     edb_questions: list[str]   # deduplicated list of questions to submit to EDB
 
+    # "What work should happen where" — the routing decisions implied by the
+    # routing-type recommendations (SPV_ROUTING / MUSIC_RELOCATION /
+    # SERVICE_AGREEMENT). This is the seed the qualification engine needs to
+    # place spend in a jurisdiction; it is an OUTPUT of the structure, never a
+    # standalone allocator. Empty when no routing recommendation applies.
+    routing_decisions: list[dict] = field(default_factory=list)
+
 
 # ── Little Utopia production parameters ──────────────────────────────────────
 
@@ -179,6 +186,23 @@ class LittleUtopiaParams:
     producer_nationalities: list[str] = field(
         default_factory=lambda: ["GB", "CA", "US"]
     )
+
+    # Governing amounts for the expansion / creative-fee recommendations.
+    # A value of 0.0 means the underlying signal is ABSENT for this
+    # production, and the corresponding recommendation is skipped (see
+    # build_structuring_advisory's gating). Defaults below are the Little
+    # Utopia fixture figures; the live pipeline derives them from the real
+    # register/facts instead (structuring_inputs_from_state).
+    marine_expansion_usd: float = 112_000.0     # R-06 governing amount
+    local_crew_expansion_usd: float = 105_000.0 # R-07 governing amount
+    music_recording_usd: float = 60_000.0       # R-08 governing amount
+    atl_qualifying_usd: float = 260_000.0        # R-09 governing amount (dir+writer fees)
+
+    # Production identity — generic; no longer hardcoded inside
+    # build_structuring_advisory (which used to emit "The Little Utopia"/"MU"
+    # literally). Defaults preserve the Little Utopia fixture.
+    production_title: str = "The Little Utopia"
+    jurisdiction_code: str = "MU"
 
 
 # ── Finance cost helper ───────────────────────────────────────────────────────
@@ -500,7 +524,7 @@ def _r_inkind_fmv_ruling(p: LittleUtopiaParams) -> StructuringRecommendation:
 
 def _r_marine_expansion(p: LittleUtopiaParams) -> StructuringRecommendation:
     """Expand marine unit spend — confirmed MU qualifying, no EDB required."""
-    candidate_additional = 112_000.0   # vessel + safety + equipment + fuel (see inkind_contribution)
+    candidate_additional = p.marine_expansion_usd   # vessel + safety + equipment + fuel
     rebate_delta = candidate_additional * p.mu_rebate_rate
     return StructuringRecommendation(
         recommendation_id="R-06",
@@ -557,7 +581,7 @@ def _r_marine_expansion(p: LittleUtopiaParams) -> StructuringRecommendation:
 
 def _r_local_crew_expansion(p: LittleUtopiaParams) -> StructuringRecommendation:
     """Expand local MU crew — confirmed qualifying, no EDB required."""
-    candidate_additional = 105_000.0  # extras + payroll + staff + art dept + wardrobe + catering
+    candidate_additional = p.local_crew_expansion_usd  # extras + payroll + staff + art + wardrobe
     rebate_delta = candidate_additional * p.mu_rebate_rate
     return StructuringRecommendation(
         recommendation_id="R-07",
@@ -611,7 +635,7 @@ def _r_local_crew_expansion(p: LittleUtopiaParams) -> StructuringRecommendation:
 
 def _r_music_recording_mu(p: LittleUtopiaParams) -> StructuringRecommendation:
     """Score recording sessions in Mauritius — qualifies if post QPE confirmed."""
-    candidate = 60_000.0
+    candidate = p.music_recording_usd
     rebate = candidate * p.mu_rebate_rate
     return StructuringRecommendation(
         recommendation_id="R-08",
@@ -707,8 +731,8 @@ def _r_atl_edb_ruling(p: LittleUtopiaParams) -> StructuringRecommendation:
             "confirmation (R-05) is favourable."
         ),
         financial_impact_usd=rebate_potential * 0.5,  # conservative: only dir+writer
-        qualification_impact_usd=260_000.0,           # director + writer fees
-        rebate_impact_usd=260_000.0 * p.mu_rebate_rate,
+        qualification_impact_usd=p.atl_qualifying_usd,           # director + writer fees
+        rebate_impact_usd=p.atl_qualifying_usd * p.mu_rebate_rate,
         required_documentation=[
             "MU SPV service agreement for director and writer services",
             "Director service contract with MU SPV as counterparty",
@@ -873,19 +897,33 @@ def build_structuring_advisory(
     """
     p = params or LittleUtopiaParams()
 
+    # Signal-gated assembly: each amount-driven recommendation is emitted only
+    # when its governing amount is present (> 0) for THIS production. The
+    # umbrella (R-11) and the protective related-party disclosure (R-10) are
+    # always emitted — they are not amount-driven. With the Little Utopia
+    # fixture every governing amount is non-zero, so all 11 emit unchanged; a
+    # different production emits only the recommendations that actually apply.
     recs: list[StructuringRecommendation] = [
-        _r_edb_pre_production_meeting(p),   # R-11: umbrella action (highest first)
-        _r_spv_frogsquad(p),                # R-01: $34,943 rebate
-        _r_edb_confirm_accommodation(p),    # R-02: $55,924 rebate
-        _r_edb_confirm_perdiem(p),          # R-03: $39,946 rebate
-        _r_inkind_fmv_ruling(p),            # R-05: $218,750 rebate (upside)
-        _r_inkind_fmv_structure(p),         # R-04: fallback if FMV ruling fails
-        _r_marine_expansion(p),             # R-06: $39,200 confirmed
-        _r_local_crew_expansion(p),         # R-07: $36,750 confirmed
-        _r_music_recording_mu(p),           # R-08: $21,000
-        _r_atl_edb_ruling(p),               # R-09: $91,000 potential
-        _r_related_party_disclosure(p),     # R-10: $0 direct; protective
+        _r_edb_pre_production_meeting(p),   # R-11: umbrella action (always)
     ]
+    if p.frogsquad_usd > 0:
+        recs.append(_r_spv_frogsquad(p))            # R-01
+    if p.hod_accom_usd > 0:
+        recs.append(_r_edb_confirm_accommodation(p))  # R-02
+    if p.local_perdiem_usd > 0:
+        recs.append(_r_edb_confirm_perdiem(p))      # R-03
+    if p.inkind_base_usd > 0:
+        recs.append(_r_inkind_fmv_ruling(p))        # R-05
+        recs.append(_r_inkind_fmv_structure(p))     # R-04 (fallback if R-05 fails)
+    if p.marine_expansion_usd > 0:
+        recs.append(_r_marine_expansion(p))         # R-06
+    if p.local_crew_expansion_usd > 0:
+        recs.append(_r_local_crew_expansion(p))     # R-07
+    if p.music_recording_usd > 0:
+        recs.append(_r_music_recording_mu(p))       # R-08
+    if p.atl_qualifying_usd > 0:
+        recs.append(_r_atl_edb_ruling(p))           # R-09
+    recs.append(_r_related_party_disclosure(p))     # R-10: protective (always)
 
     # Sort by time horizon priority, then financial impact descending
     horizon_order = {
@@ -933,9 +971,31 @@ def build_structuring_advisory(
         if r.confidence == RecommendationConfidence.UNKNOWN
     ]
 
+    # Routing decisions — "what work should happen where" — implied by the
+    # routing-type recommendations. Each is the placement the qualification
+    # engine needs (component → target jurisdiction), derived from the recs
+    # actually present; never a standalone allocator.
+    _routing_types = {
+        TransactionType.SPV_ROUTING,
+        TransactionType.MUSIC_RELOCATION,
+        TransactionType.SERVICE_AGREEMENT,
+    }
+    routing_decisions = [
+        {
+            "recommendation_id": r.recommendation_id,
+            "component": r.title,
+            "transaction_type": r.transaction_type.value,
+            "target_jurisdiction": p.jurisdiction_code,
+            "qualification_impact_usd": r.qualification_impact_usd,
+            "requires_official_interpretation": r.requires_official_interpretation,
+        }
+        for r in recs
+        if r.transaction_type in _routing_types
+    ]
+
     return StructuringAdvisoryResult(
-        production_title="The Little Utopia",
-        jurisdiction_code="MU",
+        production_title=p.production_title,
+        jurisdiction_code=p.jurisdiction_code,
         program_rate=p.mu_rebate_rate,
         advisor_version=ADVISOR_VERSION,
         total_immediate_rebate_uplift=round(immediate, 2),
@@ -945,4 +1005,5 @@ def build_structuring_advisory(
         recommendations=recs,
         unknown_items=unknowns,
         edb_questions=edb_qs,
+        routing_decisions=routing_decisions,
     )

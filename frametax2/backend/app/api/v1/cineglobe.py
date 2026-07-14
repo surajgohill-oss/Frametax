@@ -262,7 +262,56 @@ def _economics_payload() -> dict[str, Any]:
     )
     payload["alternative_jurisdictions"] = build_alternative_jurisdiction_comparisons(s)
     payload["available_funds"] = build_available_funds()
+    # Production Structuring Engine (structuring_advisor) — connected live,
+    # driven by the real register/facts/rate. Each recommendation keeps its
+    # full explainability (authority/support/evidence/risk/reasoning);
+    # routing_decisions is the "what work happens where" allocation seed.
+    payload["structuring_advisory"] = _serialize_structuring_advisory(s.structuring_advisory)
     return payload
+
+
+def _serialize_structuring_advisory(adv: Any) -> Optional[dict[str, Any]]:
+    """Serialize StructuringAdvisoryResult to plain JSON, preserving every
+    explainability field. Enums -> their .value."""
+    if adv is None:
+        return None
+    return {
+        "production_title": adv.production_title,
+        "jurisdiction_code": adv.jurisdiction_code,
+        "program_rate": adv.program_rate,
+        "advisor_version": adv.advisor_version,
+        "total_immediate_rebate_uplift": adv.total_immediate_rebate_uplift,
+        "total_medium_term_rebate_uplift": adv.total_medium_term_rebate_uplift,
+        "total_edb_conditional_rebate_uplift": adv.total_edb_conditional_rebate_uplift,
+        "total_potential_rebate_uplift": adv.total_potential_rebate_uplift,
+        "unknown_items": list(adv.unknown_items),
+        "edb_questions": list(adv.edb_questions),
+        "routing_decisions": list(adv.routing_decisions),
+        "recommendations": [
+            {
+                "recommendation_id": r.recommendation_id,
+                "title": r.title,
+                "time_horizon": r.time_horizon.value,
+                "transaction_type": r.transaction_type.value,
+                "current_structure": r.current_structure,
+                "suggested_structure": r.suggested_structure,
+                "reason": r.reason,
+                "financial_impact_usd": r.financial_impact_usd,
+                "qualification_impact_usd": r.qualification_impact_usd,
+                "rebate_impact_usd": r.rebate_impact_usd,
+                "required_documentation": list(r.required_documentation),
+                "audit_risk": r.audit_risk.value,
+                "confidence": r.confidence.value,
+                "implementation_difficulty": r.implementation_difficulty.value,
+                "published_support": r.published_support,
+                "requires_official_interpretation": r.requires_official_interpretation,
+                "interpretation_body": r.interpretation_body,
+                "interpretation_question": r.interpretation_question,
+                "notes": r.notes,
+            }
+            for r in adv.recommendations
+        ],
+    }
 
 
 @router.get("/economics")
