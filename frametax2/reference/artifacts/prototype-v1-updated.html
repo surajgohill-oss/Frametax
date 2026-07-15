@@ -1,4 +1,11 @@
-<!doctype html><html><head><!-- frame-runtime --><script>window.__FRAME_PREAMBLE={"capabilities":{"downloads":"downloads.DUzXFHNF.js","mcp":"mcp.CLzOm9JX.js","permissions":"permissions.C9OCnDjh.js","self":"self.DqF_PxOe.js"},"transforms":"_transforms.DYk1Ltlh.js","comments":"_comments.Dp6RDy7J.js"}</script><script>(function(){"use strict";const ce="modulepreload",le=function(e){return"/"+e},ue={},x=function(t,n,u){let o=Promise.resolve();function s(f){const a=new Event("vite:preloadError",{cancelable:!0});if(a.payload=f,window.dispatchEvent(a),!a.defaultPrevented)throw f}return o.then(f=>{for(const a of f||[])a.status==="rejected"&&s(a.reason);return t().catch(s)})},K=["light","dark","system"];function G(e){if(e==null||typeof e!="object")return!1;const t=e.__frame_init;return t!=null&&typeof t=="object"}function J(e){return e!=null&&typeof e=="object"&&e.__frame_size_poke===!0}function V(e){if(e==null||typeof e!="object")return!1;const t=e.__frame_theme;if(t==null||typeof t!="object")return!1;const n=t.theme;return typeof n=="string"&&K.includes(n)}function Y(e){try{typeof reportError=="function"?reportError(e):setTimeout(()=>{throw e},0)}catch{}}function z(e){if(window===top||e.type==="auxclick"&&e.button!==1)return;const t=e.composedPath?e.composedPath():[e.target];let n=null;for(let f=0;f<t.length;f++){const a=t[f];if(a&&a.matches&&a.matches("a[href],area[href]")){n=a;break}}if(!n&&e.target&&e.target.closest&&(n=e.target.closest("a[href],area[href]")),!n)return;const u=n.getAttribute("href");if(!u)return;let o,s;try{o=new URL(u,document.baseURI),s=new URL(document.baseURI).origin}catch{return}(o.protocol==="http:"||o.protocol==="https:")&&o.origin!==s&&(e.preventDefault(),parent.postMessage({__frame_nav:!0,url:o.href},"*"))}const D={};function T(e){if(window===top)return;const t=Date.now();t-(D[e]||0)<500||(D[e]=t,parent.postMessage({__frame_engaged:!0,kind:e},"*"))}const Q=2e3,U=["wheel","touchstart","touchmove","keydown","pointerdown"];let B=0;function X(e){e.isTrusted&&(B=Date.now())}function Z(){addEventListener("click",z,!0),addEventListener("auxclick",z,!0)}function ee(){for(let e=0;e<U.length;e++)addEventListener(U[e],X,{capture:!0,passive:!0});addEventListener("scroll",e=>{e.isTrusted&&Date.now()-B<Q&&T("scroll")},{capture:!0,passive:!0}),addEventListener("pointermove",e=>{e.isTrusted&&T("pointer")},{capture:!0,passive:!0}),addEventListener("click",e=>{e.isTrusted&&T("click")},{capture:!0,passive:!0})}function te(e,t,n){const u=[...t.values()].filter(o=>o.targets.some(s=>s.startsWith(e+".")));return{wrap(o,s){const f=`${e}.${o}`,a=u.filter(i=>i.targets.includes(f));return a.length===0?(...i)=>{try{return s(...i)}catch(p){return Promise.reject(p)}}:(...i)=>{let p=i;for(const c of a){const l=c.module.parameters;if(l)try{p=l(p)}catch{return Promise.reject({code:"transform_error",id:c.id,scope:e,message:"parameters transform failed"})}}let h;try{h=s(...p)}catch(c){h=Promise.reject(c)}return h.then(c=>{for(let l=a.length-1;l>=0;l--){const m=a[l],d=m.module.returns;if(d)try{c=d(c)}catch{return n({id:m.id,scope:e,leg:"returns"}),c}}return c},c=>{for(let l=a.length-1;l>=0;l--){const m=a[l],d=m.module.throws;if(d)try{c=d(c)}catch{return n({id:m.id,scope:e,leg:"throws"}),Promise.reject(c)}}return Promise.reject(c)})}}}}function ne(e,t,n,u=()=>{}){const o=new Set(e.changes??[]),s=new Map;for(const f of o){const a=t[f];a&&s.set(f,a)}return{contract:e.contract,changes:o,flags:new Set(e.flags??[]),capabilities:e.capabilities??{},capBudgets:e.capBudgets??{},transforms:s,shellOrigin:n.shellOrigin,mount:n.mount,pipe:f=>te(f,s,u)}}(function(){const e=Object.defineProperty,t=globalThis,n=["RTCPeerConnection","webkitRTCPeerConnection","RTCDataChannel","RTCIceCandidate","RTCSessionDescription","RTCRtpSender","RTCRtpReceiver"];let u=0;for(let o=0;o<n.length;o++){const s=n[o];try{e(t,s,{value:void 0,writable:!1,configurable:!1})}catch{try{delete t[s]}catch{}try{e(t,s,{value:void 0,writable:!1,configurable:!0})}catch{}}typeof t[s]=="function"&&u++}if(u&&window!==top)try{parent.postMessage({__frame_rtc_lockdown_failed:u},"*")}catch{}})();const re=1e4,oe=Object.freeze([...window.__FRAME_PREAMBLE?.origins??["https://claude.ai","https://preview.claude.ai"]]);function se(e){for(const t of oe)if(t.endsWith(":*"))try{const n=new URL(e);if(`${n.protocol}//${n.hostname}:*`===t)return!0}catch{}else if(e===t)return!0;return!1}const R=Object.freeze({...window.__FRAME_PREAMBLE?.capabilities??{}}),A=window.__FRAME_PREAMBLE?.transforms,k=window.__FRAME_PREAMBLE?.comments,C=/^[\w.-]+\.js$/,ie=/^[a-z][a-z0-9_-]{0,63}$/;let F=null,v=null;function N(e,t,n){try{Object.defineProperty(e,t,{value:n,writable:!1,configurable:!1,enumerable:!0})}catch{try{Object.defineProperty(e,t,{value:n,writable:!1,configurable:!0,enumerable:!0})}catch{}}}let I=!1;function H(e){const t=document.documentElement;e==="light"||e==="dark"?(t.dataset.theme=e,t.style.colorScheme=e,I=!0):I&&(delete t.dataset.theme,t.style.colorScheme="",I=!1)}const E={mcp:{watchTool:{handlerArg:3}}},P=new Map;function ae(e,t){const n=P.get(e);if(!n)return;Object.assign(n.impl,t),n.impl.__settled=()=>Promise.reject({code:"capability_removed",message:`${e}: method not in this runtime`});const u=n.queue;n.queue=[];for(const o of u){const s=t[o.method];if(s)if(E[e]?.[o.method])try{o.resolve(s(...o.args))}catch{O(o,E[e][o.method].handlerArg,{code:"transform_error",message:`${e}.${o.method} rejected its arguments`})}else s(...o.args).then(o.resolve,o.reject);else{const f={code:"capability_removed",message:`${e}.${o.method} is not in this runtime`},a=E[e]?.[o.method];if(a){O(o,a.handlerArg,f);continue}o.reject(f)}}}function $(e,t){const n=P.get(e);if(!n)return;n.impl.__settled=()=>Promise.reject(t);const u=n.queue;n.queue=[];for(const o of u){const s=E[e]?.[o.method];if(s){O(o,s.handlerArg,t);continue}o.reject(t)}}function O(e,t,n){if(e.syncState?.dead)return;const u=e.args[t];typeof u=="function"&&queueMicrotask(()=>{if(!e.syncState?.dead)try{u({type:"error",error:n})}catch(o){Y(o)}})}const q=Object.getOwnPropertyDescriptor(window,"claude");if(window!==top&&!(q&&q.writable===!1)){Z(),ee();const e=q?.value??{};N(window,"claude",e);const t=i=>{const p={impl:Object.create(null),queue:[]};P.set(i,p);const h=new Proxy(p.impl,{get:(c,l)=>{if(typeof l!="string"||l==="then"||l==="toJSON"||l==="valueOf")return;if(l==="toString")return Object.prototype.toString;const m=E[i]?.[l];return m?(...d)=>{if(typeof d[m.handlerArg]!="function")throw new TypeError(`${i}.${l} requires a handler function`);const g=c[l];if(g)return g(...d);if(c.__settled){const _={dead:!1},S={args:[...d],syncState:_};return c.__settled().catch(j=>O(S,m.handlerArg,j)),()=>{_.dead=!0}}let y=null;const w={dead:!1};return p.queue.push({method:l,args:d,resolve:_=>{y=typeof _=="function"?_:null,w.dead&&y?.()},reject:()=>{},syncState:w}),()=>{w.dead=!0,y?.()}}:(...d)=>{const g=c[l]??c.__settled;return g?g(...d):new Promise((y,w)=>{p.queue.push({method:l,args:d,resolve:y,reject:w})})}},set:()=>!1});N(e,i,h)};for(const i of Object.keys(R)){if(e[i]!==void 0){N(e,i,e[i]);continue}t(i)}let n=null,u=null,o=0;const s=i=>{i.source!==parent||!se(i.origin)||G(i.data)&&(n=i.data.__frame_init,v=i.origin,removeEventListener("message",s),clearTimeout(o),u?.())};addEventListener("message",s),parent.postMessage({__frame_connect:!0},"*");const f=new Promise(i=>{u=i,o=setTimeout(()=>{removeEventListener("message",s),i()},re)}),a=document.readyState==="loading"?new Promise(i=>document.addEventListener("DOMContentLoaded",()=>i(),{once:!0})):Promise.resolve();f.then(async()=>{if(!n||!v){for(const r of P.keys())$(r,{code:"not_granted",message:"frame initialization did not arrive - capability unavailable"});return}H(n.theme);const i=v;let p=!1;addEventListener("message",r=>{if(r.source!==parent||r.origin!==i)return;V(r.data)&&H(r.data.__frame_theme.theme);const b=r.data?.__fc_mode;b&&typeof b=="object"&&!p&&k&&C.test(k)&&(p=!0,h(k).then(L=>L.install?.(i,b.on===!0)).catch(()=>{}))});const h=r=>x(()=>import("/_runtime/"+r),void 0),c=Object.keys(n.capabilities??{});for(const r of c)Object.hasOwn(R,r)||ie.test(r)&&e[r]===void 0&&(t(r),$(r,{code:"capability_disabled",message:"capability not in this runtime generation"}));const l=c.filter(r=>Object.hasOwn(R,r)).map(r=>[r,R[r]]).filter(r=>typeof r[1]=="string"&&C.test(r[1])),[m,...d]=await Promise.allSettled([A&&C.test(A)?h(A):Promise.resolve({}),...l.map(([,r])=>h(r))]),g=v;F=ne(n,m.status==="fulfilled"&&m.value?.TRANSFORMS||{},{shellOrigin:g,mount:ae},r=>parent.postMessage({__frame_cap_telemetry:r},g));const y=r=>parent.postMessage({__frame_cap_telemetry:{kind:"cap-load-error",cap:r}},g),w=F;d.forEach((r,b)=>{const L=l[b][0];if(r.status!=="fulfilled"){y(L);return}try{r.value?.install?.(w)}catch{y(L)}});for(const[r,b]of P)b.queue.length===0&&Object.keys(b.impl).length>0||$(r,{code:c.includes(r)?"capability_disabled":"not_granted",message:"capability not available in this session"});await a,parent.postMessage({__frame_ready:!0},v);let _=-1,S=0;const j=()=>{S=0;const r=Math.max(document.documentElement.scrollHeight,document.body?document.body.scrollHeight:0);r!==_&&(_=r,parent.postMessage({__frame_size:!0,h:r},g))},M=()=>{S||(S=setTimeout(j,200))},W=new ResizeObserver(M);W.observe(document.documentElement),document.body&&W.observe(document.body),document.addEventListener("load",M,!0),document.fonts?.ready.then(M,()=>{}),addEventListener("beforeprint",()=>{_=-1,j()}),M(),addEventListener("message",r=>{r.source!==parent||r.origin!==g||J(r.data)&&(_=-1,M())})})}})();</script><!-- /frame-runtime --><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}</style></head><body>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+</head>
+<body>
+
 <!-- @dsCard group="Prototype" -->
 <title>FrameTax — Prototype v1</title>
 <style>
@@ -98,6 +105,26 @@ nav.rail{position:relative;width:224px;flex:none;background:var(--rail);color:va
 .pill i{width:5px;height:5px;border-radius:50%;background:currentColor}
 .pi-ok{background:var(--success-dim);color:var(--success)} .pi-warn{background:var(--warning-dim);color:var(--warning)}
 .pi-val{background:var(--value-dim);color:var(--value)} .pi-info{background:var(--accent-dim);color:var(--accent)}
+/* doctrine badges — statutory inclusion doctrine per jurisdiction/program */
+.doctrine{display:inline-flex;align-items:center;gap:5px;font:700 8.5px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--border-strong);border-radius:4px;padding:2px 7px;white-space:nowrap;cursor:help}
+.doctrine i{width:5px;height:5px;border-radius:50%;background:currentColor;flex:none}
+.doctrine.d-open{background:var(--success-dim);color:var(--success);border-color:var(--success)}
+.doctrine.d-closed{background:var(--accent-dim);color:var(--accent);border-color:var(--accent)}
+.doctrine.d-hybrid{background:var(--value-dim);color:var(--value);border-color:var(--value)}
+/* cultural qualification — categorical eligibility gate vs improvable points test */
+.cq{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--value);border-radius:0 8px 8px 0;padding:10px 13px;margin-bottom:8px}
+.cq.blocker{border-left-color:var(--error)}
+.cq.opportunity{border-left-color:var(--value)}
+.cq .cqh{display:flex;align-items:baseline;gap:9px;margin-bottom:5px;flex-wrap:wrap}
+.cq .cqh b{font-size:12.5px}
+.cq .cqk{font:700 8px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;border-radius:4px;padding:2px 7px;white-space:nowrap}
+.cq.blocker .cqk{background:var(--error-dim);color:var(--error)}
+.cq.opportunity .cqk{background:var(--value-dim);color:var(--value)}
+.cq .cqm{margin-left:auto;font:700 11px var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.cq.blocker .cqm{color:var(--error)} .cq.opportunity .cqm{color:var(--value)}
+.cq p{margin:0 0 7px;font-size:11.5px;color:var(--text-2);line-height:1.5}
+.cq .cqr{font-size:11px;color:var(--text);background:var(--surface-2);border-radius:6px;padding:7px 9px;line-height:1.5}
+.cq .cqr b{font:600 8.5px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);display:block;margin-bottom:2px}
 .theme-btn{background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:999px;padding:6px 13px;font:500 11.5px var(--f-body);cursor:pointer}
 .ico-btn{width:29px;height:29px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px}
 .ico-btn:hover{border-color:var(--border-strong);color:var(--text)}
@@ -1525,6 +1552,31 @@ var PROD_GEO = {
   'palace':null
 };
 var PROD_JUR = {"little-utopia":["Mauritius","Malta","Fiji"],"saltwater":["Ireland","Malta"],"redline":["Fiji"],"palace":[]};
+var DOCTRINE = {
+  "Mauritius":{code:"HYBRID_CONDITIONAL",short:"Hybrid · conditional",cls:"d-hybrid",note:"Hybrid conditional list — a defined base of qualifying spend exists, but key categories (in-kind post, per-diems, HOD accommodation) qualify only on a conditional ruling. Neither fully open nor a closed positive list."},
+  "Malta":{code:"CLOSED_POSITIVE_LIST",short:"Closed · positive list",cls:"d-closed",note:"Closed positive list — only expenditure on the enumerated eligible categories qualifies. Anything not named on the list is excluded by default."},
+  "Fiji":{code:"OPEN_DEFAULT_INCLUDE",short:"Open · default-include",cls:"d-open",note:"Open default-include — all production expenditure qualifies unless a specific exclusion applies. The burden is on exclusion, not on inclusion."},
+  "Ireland":{code:"HYBRID_CONDITIONAL",short:"Hybrid · conditional",cls:"d-hybrid",note:"Hybrid conditional — a defined base with cultural-test and co-production conditions that gate the enhanced band."},
+  "Greece":{code:"CLOSED_POSITIVE_LIST",short:"Closed · positive list",cls:"d-closed",note:"Closed positive list — only enumerated eligible categories qualify."}
+};
+function doctrineBadge(jur){
+  if(!jur) return '';
+  var U=(''+jur).toUpperCase(), key=null;
+  for(var k in DOCTRINE){ if(k.toUpperCase()===U){ key=k; break; } }
+  if(!key) return '';
+  var d=DOCTRINE[key];
+  return '<span class="doctrine '+d.cls+'" title="'+d.code+' — '+d.note+'"><i></i>'+d.short+'</span>';
+}
+var CULTURAL = {
+  "little-utopia":[
+    {kind:"blocker",jur:"Malta",gate:"Cultural eligibility gate",metric:"FAILED",
+     detail:"The Malta cash rebate is gated on a mandatory cultural eligibility test (EU/EEA cultural content). The Little Utopia fails the mandatory criterion, so no Malta rebate accrues at any spend level. This is categorical — a scoring shortfall would be recoverable; a failed gate is not.",
+     resolve:"Only a qualifying structural change lifts it: an EU/EEA co-production partner, or EEA-anchored cultural content. Until then Malta is ineligible, not merely low-scoring — do not model a Malta rebate at all."},
+    {kind:"opportunity",jur:"GB co-production",program:"BFI cultural test",metric:"14 / 18",threshold:16,
+     detail:"On the GB co-production route (one treaty path already open), the points-based cultural test scores 14 of 18 — two points below the 16-point pass mark. The route itself is eligible; the score only decides whether it certifies.",
+     resolve:"Recoverable: one EEA head-of-department (+2) or one UK-set exterior day (+2) reaches the threshold and certifies the co-production route. This is an optimization opportunity, not a blocker."}
+  ]
+};
 var SECTIONS = [
   {id:"overview",label:"Overview"},
   {id:"workspace",label:"Workspace"},
@@ -1718,6 +1770,17 @@ function ovHTML(prod){
   }).join('') || '<div class="sheetrow" style="padding-left:0"><span style="color:var(--text-3)">No record entries yet.</span></div>';
   var docs = DOCUMENTS.filter(function(d){return d.prod===state.prod});
   var lanesN = prod.lanes.length;
+  var cqList = (CULTURAL[state.prod]||[]);
+  var cqHTML = cqList.length ? '<div class="ovsec"><div class="oh"><b>Cultural qualification</b><span class="n">'+cqList.length+'</span></div>'+
+    '<div style="font-size:10.5px;color:var(--text-3);margin:-2px 0 8px;line-height:1.5">Two different mechanisms, never blended: an <b>eligibility gate</b> is pass/fail and categorical; a <b>points test</b> is a recoverable score.</div>'+
+    cqList.map(function(c){
+      if(c.kind==='blocker'){
+        return '<div class="cq blocker"><div class="cqh"><span class="cqk">Categorical blocker</span><b>'+c.gate+' · '+c.jur+'</b><span class="cqm">'+c.metric+'</span></div>'+
+          '<p>'+c.detail+'</p><div class="cqr"><b>How to resolve</b>'+c.resolve+'</div></div>';
+      }
+      return '<div class="cq opportunity"><div class="cqh"><span class="cqk">Optimization opportunity</span><b>'+c.program+' · '+c.jur+'</b><span class="cqm">'+c.metric+' → '+c.threshold+'</span></div>'+
+        '<p>'+c.detail+'</p><div class="cqr"><b>How to improve</b>'+c.resolve+'</div></div>';
+    }).join('')+'</div>' : '';
   return '<div class="ov2-hero"><div class="bg '+(PROD_ART[state.prod]||'art-new')+'"></div>'+
     '<div class="id"><div class="pillrow">'+(prod.sample?'<span class="sample-pill">Sample</span>':'')+
     '<span class="sample-pill" style="border-style:dashed">'+phase+'</span>'+
@@ -1725,7 +1788,7 @@ function ovHTML(prod){
     '<h2>'+prod.name+'</h2><div class="log2">'+(prod.logline||'')+'</div></div>'+
     '<div class="ov2-stats">'+
     '<div class="st"><div class="l2">Total production budget</div><div class="v2">'+(prod.gross||'—')+'</div></div>'+
-    '<div class="st"><div class="l2">Best jurisdiction</div><div class="v2">'+bestJur+'</div></div>'+
+    '<div class="st"><div class="l2">Best jurisdiction</div><div class="v2">'+bestJur+'</div>'+(doctrineBadge(bestJur)?'<div style="margin-top:4px">'+doctrineBadge(bestJur)+'</div>':'')+'</div></div>'+
     '<div class="st"><div class="l2">Net production cost · click to trace</div><div class="v2 gold">'+(prod.costShort?'<span class="tracelink" data-trace="'+state.prod+'" style="border-color:var(--value)">'+prod.costShort+'</span>':'—')+'</div></div>'+
     '<div class="st"><div class="l2">Remaining opportunity</div><div class="v2">'+(prod.save||'—')+'</div></div>'+
     '<div class="st"><div class="l2">Confidence</div><div class="v2" style="color:var(--text-3)">'+(prod.qOpen?prod.qOpen+' rulings pending':'—')+' · <span style="font-size:10px">scoring engine pending</span></div></div>'+
@@ -1757,6 +1820,7 @@ function ovHTML(prod){
       }).join('')
       :'<div style="font-size:12px;color:var(--text-3);padding:6px 0">Nothing conditional remains — every path is either qualified or closed.</div>')+
     '</div>'+
+    cqHTML+
     '<div class="ovsec"><div class="oh"><b>Intelligence · coming online</b></div>'+
     '<div class="rsv" style="border-bottom:none;padding-bottom:2px"><span>Reinvestment readiness — by jurisdiction</span><span class="tag">engine pending</span></div>'+
     '<table class="reinv"><tr><th>Jurisdiction</th><th>Reinvest</th><th>SPV</th><th>Equity subst.</th><th>Vendor</th><th>Approval</th></tr>'+
@@ -1851,7 +1915,7 @@ function prodKnowledgeHTML(prod){
     items.map(function(k){
       var tagColor = k.tag==='unresolved'?'var(--warning)':k.tag==='watch'?'var(--error)':'var(--text-2)';
       return '<div class="kcard"><div class="kh"><h3>'+k.title+'</h3><span class="ktag" style="color:'+tagColor+'">'+k.tag+'</span></div>'+
-        '<p>'+k.text+'</p><div class="kf"><span><b>Jurisdiction</b> '+k.jur+'</span><span><b>Source</b> '+k.src+'</span><span><b>Track record</b> '+k.stat+'</span></div></div>';
+        '<p>'+k.text+'</p><div class="kf"><span><b>Jurisdiction</b> '+k.jur+' '+doctrineBadge(k.jur)+'</span><span><b>Source</b> '+k.src+'</span><span><b>Track record</b> '+k.stat+'</span></div></div>';
     }).join('');
 }
 function prodReportsHTML(prod){
@@ -3031,6 +3095,5 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 })();
 </script>
-
-
-</body></html>
+</body>
+</html>
