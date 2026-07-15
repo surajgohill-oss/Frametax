@@ -298,7 +298,7 @@ nav.rail{position:relative;width:224px;flex:none;background:var(--rail);color:va
 .lane:hover{border-color:var(--border-strong)}
 .lane.anchor{border-color:var(--text);border-width:1.5px}
 .lane.draft{border-style:dashed;border-color:var(--accent)}
-.lane.sel{outline:2px solid var(--accent);outline-offset:2px}
+.lane.sel{outline:2px solid var(--accent);outline-offset:2px;box-shadow:var(--shadow-2)}
 .lane .lh{padding:10px 13px 8px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start}
 .lane .lh .nm{font:600 13px var(--f-body)}
 .lane .lh .lb{font:10px var(--f-mono);letter-spacing:.02em;text-transform:none;color:var(--text-3);margin-top:2px}
@@ -813,22 +813,45 @@ table.qt{width:100%;font-size:12px;border-collapse:collapse}
 .g-tip .tip-art{height:46px;border-radius:6px;margin:-3px -4px 8px}
 
 /* ══ Production Overview — identity hero + flat sheet ══ */
-.ov2-hero{position:relative;border-radius:10px;overflow:hidden;margin-bottom:0;min-height:186px;display:flex;flex-direction:column;justify-content:flex-end;
+.ov2-hero{position:relative;border-radius:10px;overflow:hidden;margin-bottom:0;min-height:126px;display:flex;flex-direction:column;justify-content:flex-end;
   box-shadow:inset 0 0 0 1px rgba(154,110,20,.22)}
 .ov2-hero .bg{position:absolute;inset:0}
-.ov2-hero .bg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,12,10,.12) 20%,rgba(10,12,10,.62))}
-.ov2-hero .id{position:relative;z-index:2;padding:18px 24px 14px;color:#F2F0E6}
-.ov2-hero .pillrow{display:flex;gap:8px;margin-bottom:8px}
-.ov2-hero h2{font-family:var(--f-disp);font-style:italic;font-weight:400;font-size:38px;margin:0;color:#F2F0E6;text-transform:none;letter-spacing:.01em;line-height:1.05}
-.ov2-hero .log2{font-family:var(--f-disp);font-style:italic;font-size:14px;opacity:.9;margin-top:3px}
-.ov2-stats{position:relative;z-index:2;display:flex;gap:0;background:var(--glass);backdrop-filter:blur(14px);
-  -webkit-backdrop-filter:blur(14px);border-top:2px solid rgba(154,110,20,.4);color:var(--text)}
-.ov2-stats .st{flex:1;padding:10px 20px;border-left:1px solid var(--glass-border)}
+.ov2-hero .bg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,12,10,.06) 30%,rgba(10,12,10,.5))}
+.ov2-hero .id{position:relative;z-index:2;padding:13px 22px 11px;color:#F2F0E6}
+.ov2-hero .pillrow{display:flex;gap:7px;margin-bottom:6px;flex-wrap:wrap}
+.ov2-hero h2{font-family:var(--f-disp);font-style:italic;font-weight:400;font-size:27px;margin:0;color:#F2F0E6;text-transform:none;letter-spacing:.01em;line-height:1.04}
+.ov2-hero .log2{font-family:var(--f-disp);font-style:italic;font-size:12.5px;opacity:.85;margin-top:1px}
+.ov2-stats{position:relative;z-index:2;display:flex;gap:0;background:var(--surface);border-top:2px solid var(--value);color:var(--text)}
+.ov2-stats .st{flex:1;padding:8px 18px;border-left:1px solid var(--border)}
 .ov2-stats .st:first-child{border-left:none}
-.ov2-stats .st .l2{font-size:10.5px;color:var(--text-2)}
-.ov2-stats .st .v2{font:15px var(--f-mono);font-variant-numeric:tabular-nums;margin-top:1px}
-.ov2-stats .st .v2.gold{color:var(--value)}
-.ov2-split{display:grid;grid-template-columns:1.55fr .95fr;gap:40px;margin-top:6px}
+.ov2-stats .st.key{background:var(--value-dim)}
+.ov2-stats .st.block{background:var(--error-dim)}
+.ov2-stats .st .l2{font:600 8.5px var(--f-mono);letter-spacing:.09em;text-transform:uppercase;color:var(--text-3)}
+.ov2-stats .st .v2{font:15px var(--f-mono);font-variant-numeric:tabular-nums;margin-top:3px}
+.ov2-stats .st .v2 small{font-family:var(--f-body);font-size:10px;color:var(--text-3)}
+.ov2-stats .st .v2.gold{color:var(--value);font-weight:600}
+.ov2-stats .st.block .v2{color:var(--error);font-weight:600}
+.ov2-split{display:grid;grid-template-columns:1.5fr 1fr;gap:22px;margin-top:14px}
+/* optimization queue — money-first framing of the qualification assistant */
+.optq-head{display:flex;align-items:baseline;gap:10px;margin:0 0 9px;padding:9px 12px;background:var(--value-dim);border:1px solid var(--value);border-radius:7px}
+.optq-head .amt{font:700 21px var(--f-mono);font-variant-numeric:tabular-nums;color:var(--value);letter-spacing:-.01em;line-height:1}
+.optq-head .lbl{font:600 11.5px var(--f-body);color:var(--text)}
+.optq-head .sub{margin-left:auto;font:500 10.5px var(--f-body);color:var(--text-2);text-align:right}
+.optq-row{display:flex;align-items:center;gap:12px;padding:8px 2px;border-top:1px solid var(--border);cursor:pointer}
+.optq-row:first-of-type{border-top:none}
+.optq-row:hover{background:var(--surface-2)}
+.optq-row .amt{font:700 13px var(--f-mono);font-variant-numeric:tabular-nums;color:var(--value);white-space:nowrap;min-width:82px;text-align:right}
+.optq-row.hot .amt{color:var(--warning)}
+.optq-row .body{min-width:0;flex:1}
+.optq-row .body b{font-size:12px;font-weight:600}
+.optq-row .body .meta{font-size:10.5px;color:var(--text-3);margin-top:1px}
+.optq-row .go{font:600 9.5px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--accent);white-space:nowrap;border:1px solid var(--border-strong);border-radius:5px;padding:3px 8px}
+.optq-row:hover .go{border-color:var(--accent);background:var(--accent-dim)}
+/* reference library — legal precedent supporting decisions */
+.refrow{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:0 7px 7px 0;padding:11px 15px;margin-bottom:8px}
+.refrow-h{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.refrow-h b{font:650 13px var(--f-body);letter-spacing:-.005em}
+.refrow-cite{font:10.5px var(--f-mono);color:var(--text-3);margin-top:4px}
 @media(max-width:1150px){.ov2-split{grid-template-columns:1fr}}
 .ovsec{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:11px 16px 9px;margin-bottom:12px}
 .ovsec .oh{display:flex;align-items:baseline;gap:8px;margin-bottom:6px}
@@ -1781,17 +1804,20 @@ function ovHTML(prod){
       return '<div class="cq opportunity"><div class="cqh"><span class="cqk">Optimization opportunity</span><b>'+c.program+' · '+c.jur+'</b><span class="cqm">'+c.metric+' → '+c.threshold+'</span></div>'+
         '<p>'+c.detail+'</p><div class="cqr"><b>How to improve</b>'+c.resolve+'</div></div>';
     }).join('')+'</div>' : '';
+  var anchor = (prod.lanes||[]).filter(function(l){return l.cls==='anchor'})[0] || (prod.lanes||[])[0];
+  var blocker = (prod.questions||[]).filter(function(q){return !q.done && q.hot})[0] || (prod.questions||[]).filter(function(q){return !q.done})[0];
+  var openN = (prod.questions||[]).filter(function(q){return !q.done}).length;
   return '<div class="ov2-hero"><div class="bg '+(PROD_ART[state.prod]||'art-new')+'"></div>'+
     '<div class="id"><div class="pillrow">'+(prod.sample?'<span class="sample-pill">Sample</span>':'')+
     '<span class="sample-pill" style="border-style:dashed">'+phase+'</span>'+
-    '<span class="sample-pill" data-cyclestatus="1" title="Company workflow status — click to change" style="border-color:var(--accent);color:var(--accent);cursor:pointer">'+(prod.status||'In Evaluation')+'</span></div>'+
+    '<span class="sample-pill" data-cyclestatus="1" title="Company workflow status — click to change" style="border-color:var(--accent);color:var(--accent);cursor:pointer">'+(prod.status||'In Evaluation')+'</span>'+(anchor?'<span class="sample-pill" style="border-color:var(--value-bright);color:var(--value-bright)">◈ '+anchor.name+' anchor</span>':'')+'</div>'+
     '<h2>'+prod.name+'</h2><div class="log2">'+(prod.logline||'')+'</div></div>'+
     '<div class="ov2-stats">'+
-    '<div class="st"><div class="l2">Total production budget</div><div class="v2">'+(prod.gross||'—')+'</div></div>'+
-    '<div class="st"><div class="l2">Best jurisdiction</div><div class="v2">'+bestJur+'</div>'+(doctrineBadge(bestJur)?'<div style="margin-top:4px">'+doctrineBadge(bestJur)+'</div>':'')+'</div></div>'+
-    '<div class="st"><div class="l2">Net production cost · click to trace</div><div class="v2 gold">'+(prod.costShort?'<span class="tracelink" data-trace="'+state.prod+'" style="border-color:var(--value)">'+prod.costShort+'</span>':'—')+'</div></div>'+
-    '<div class="st"><div class="l2">Remaining opportunity</div><div class="v2">'+(prod.save||'—')+'</div></div>'+
-    '<div class="st"><div class="l2">Confidence</div><div class="v2" style="color:var(--text-3)">'+(prod.qOpen?prod.qOpen+' rulings pending':'—')+' · <span style="font-size:10px">scoring engine pending</span></div></div>'+
+    '<div class="st"><div class="l2">Total budget</div><div class="v2">'+(prod.gross||'—')+'</div></div>'+
+    '<div class="st"><div class="l2">Recommended jurisdiction</div><div class="v2">'+bestJur+'</div>'+(doctrineBadge(bestJur)?'<div style="margin-top:4px">'+doctrineBadge(bestJur)+'</div>':'')+'</div>'+
+    '<div class="st"><div class="l2">Net production cost</div><div class="v2 gold">'+(prod.costShort?'<span class="tracelink" data-trace="'+state.prod+'" style="border-color:var(--value)">'+prod.costShort+'</span>':'—')+'</div></div>'+
+    '<div class="st key"><div class="l2">Optimization waiting</div><div class="v2 gold">'+(prod.qSwing?prod.qSwing.replace('±',''):'—')+'<small> · '+openN+' rulings</small></div></div>'+
+    (blocker?'<div class="st block"><div class="l2">Biggest blocker</div><div class="v2" data-goq="'+blocker.id+'" title="'+blocker.title+'">'+blocker.sw+'<small> · '+(blocker.age||'awaiting')+'</small></div></div>':'<div class="st"><div class="l2">Blockers</div><div class="v2" style="color:var(--success)">none</div></div>')+
     '</div></div>'+
     (FX_PAIR[state.prod]?'<div class="fx-strip"><span>FX</span><b>'+FX_PAIR[state.prod][0]+'</b><span>'+FX_PAIR[state.prod][1]+' · indicative sample</span>'+
     (FX_PAIR[state.prod][2]?'<span class="mono" style="color:var(--text-2)">'+FX_PAIR[state.prod][2].join(' · ')+'</span>':'<span style="color:var(--text-3)">spot only — no forward curve published</span>')+
@@ -1811,12 +1837,13 @@ function ovHTML(prod){
     '<div class="sheetrow" style="padding-left:0;padding-right:0"><span>Deal facts</span><span class="mono">'+(prod.facts||'—')+'</span></div>'+
     '<div class="sheetrow" style="padding-left:0;padding-right:0"><span>Sub-let / co-pro treaties</span><span class="mono">GB network · 1 path</span></div></div>'+
     '<div class="ovsec"><div class="oh"><b>Latest record</b><span class="act" data-gosec="record">Full record →</span></div>'+recs+'</div>'+
-    '<div class="ovsec"><div class="oh"><b>Qualification assistant</b><span class="n">'+(prod.questions||[]).filter(function(q){return !q.done}).length+' paths</span><span class="act" data-gows="1">Work the stack →</span></div>'+
-    ((prod.questions||[]).filter(function(q){return !q.done}).length?
+    '<div class="ovsec"><div class="oh"><b>Optimization queue</b><span class="act" data-gows="1">Work the stack →</span></div>'+
+    (openN?
+      '<div class="optq-head"><span class="amt">'+(prod.qSwing?prod.qSwing.replace('±',''):'—')+'</span><span class="lbl">waiting to be unlocked</span><span class="sub">'+openN+' rulings<br>gating optimization</span></div>'+
       (prod.questions||[]).filter(function(q){return !q.done}).map(function(q){
-        return '<div class="sheetrow" style="padding-left:0;padding-right:0;align-items:baseline"><span style="min-width:0"><b>Q'+q.id+'</b> · '+q.title+
-        '<br><span style="color:var(--text-3);font-size:10.5px">now '+(q.now||'—')+' · how to qualify: '+(q.memo?q.memo.action.toLowerCase():'bind the ruling')+' · '+q.who+'</span></span>'+
-        '<span class="mono" style="color:var(--value);white-space:nowrap">'+q.sw+'</span></div>';
+        return '<div class="optq-row'+(q.hot?' hot':'')+'" data-goq="'+q.id+'"><span class="amt">'+q.sw+'</span>'+
+        '<span class="body"><b>'+q.title+'</b><div class="meta">'+(q.hot?'<span style="color:var(--warning);font-weight:600">'+(q.age||'awaiting')+'</span> · ':'')+'now '+(q.now||'—')+' · '+(q.memo?q.memo.action:'bind the ruling')+'</div></span>'+
+        '<span class="go">Resolve →</span></div>';
       }).join('')
       :'<div style="font-size:12px;color:var(--text-3);padding:6px 0">Nothing conditional remains — every path is either qualified or closed.</div>')+
     '</div>'+
@@ -2701,9 +2728,8 @@ function renderKnowledge(){
     host.innerHTML = note + (keys.length ? keys.map(function(a){
       var kind = /reg\.|regulation|s481|section/i.test(a)?'STATUTE':/guideline|guidance/i.test(a)?'GUIDANCE':/pending|under review|silent/i.test(a)?'UNSETTLED':'PROGRAM RULE';
       var kColor = kind==='UNSETTLED'?'var(--warning)':'var(--text-3)';
-      return '<div class="krow" style="display:block;padding:11px 16px"><div style="display:flex;justify-content:space-between;gap:12px;align-items:baseline">'+
-        '<b style="font-size:13px">'+a+'</b><span class="ktag2" style="color:'+kColor+'">'+kind+'</span></div>'+
-        '<div style="font-size:11px;color:var(--text-3);margin-top:3px">cited by · '+refs[a].join(' · ')+'</div></div>';
+      return '<div class="refrow"><div class="refrow-h"><b>'+a+'</b><span class="ktag2" style="color:'+kColor+'">'+kind+'</span></div>'+
+        '<div class="refrow-cite">Cited by · '+refs[a].join(' · ')+'</div></div>';
     }).join('') : '<div style="padding:20px 0;color:var(--text-3);font-size:12.5px;border-top:1px solid var(--border)">Nothing matches this search in the reference library.</div>');
     return;
   }
