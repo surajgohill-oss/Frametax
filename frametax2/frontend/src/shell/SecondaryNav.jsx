@@ -1,5 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { Clapperboard, Globe2, BookOpen, FileBarChart, LayoutDashboard, FolderOpen, History, Settings, Building2 } from "lucide-react";
+import { useCineGlobe } from "../lib/useCineGlobe";
+import { useProjectStatus } from "../lib/useProjectStatus";
 
 const COMPANY_NAV = [
   { to: "/company/today", label: "Today", icon: LayoutDashboard },
@@ -22,6 +24,13 @@ export default function SecondaryNav() {
   const isProduction = location.pathname.startsWith("/production");
   const items = isProduction ? PRODUCTION_NAV : COMPANY_NAV;
 
+  // Company workflow status (in_development / in_evaluation / in_production)
+  // is production-scoped, frontend-local (see useProjectStatus.js) — shown
+  // here read-only; Settings hosts the editable control.
+  const { data } = useCineGlobe();
+  const productionId = isProduction ? data?.production?.production_id : null;
+  const { meta } = useProjectStatus(productionId);
+
   return (
     <nav className="secondary-nav" aria-label="Section navigation">
       <div className="secondary-nav-heading">
@@ -33,6 +42,11 @@ export default function SecondaryNav() {
           <span className="serif secondary-nav-title">{isProduction ? "The Little Utopia" : "CineGlobe"}</span>
         </div>
       </div>
+      {productionId && (
+        <span className={`badge ${meta.tier}`} style={{ margin: "-6px 0 12px" }} title={meta.description}>
+          {meta.label}
+        </span>
+      )}
       <ul>
         {items.map((item) => {
           const Icon = item.icon;

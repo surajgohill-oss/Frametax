@@ -25,6 +25,30 @@ function AccountInspector({ data }) {
           <strong className="text-secondary">Resolving evidence needed:</strong> {data.resolvingEvidence}
         </p>
       )}
+      {data.crossRef?.length > 0 && (
+        <div className="inspector-sect">
+          <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Jurisdiction comparison — affected structures</p>
+          <div className="row-list">
+            {data.crossRef.map((c) => (
+              <div className="row-item" key={c.structureId} style={{ cursor: "default" }}>
+                <div className="row-main">
+                  <div className="row-title small">{c.structureLabel}</div>
+                  <div className="row-sub">
+                    {c.jurisdictionCode}
+                    {c.claimsIncentive
+                      ? ` · QPE ${Math.round(c.qpeUsd).toLocaleString()}`
+                      : " · no incentive claimed here"}
+                    {c.blockers?.length > 0 ? ` · ${c.blockers[0]}` : ""}
+                  </div>
+                </div>
+                <div className="row-value mono small">
+                  {c.claimsIncentive ? <Money value={c.incentiveFloorUsd} /> : "—"}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -140,6 +164,118 @@ function QuestionInspector({ data }) {
   );
 }
 
+// The three renderer kinds below back the allocation / multi-register
+// pricing surface (GET /structures -> allocated_structures). Every
+// field is read verbatim from that payload — nothing here derives a
+// number client-side.
+
+function AllocationSegmentInspector({ data }) {
+  const trace = data.qualification_trace || [];
+  return (
+    <>
+      <p className="inspector-eyebrow">Jurisdiction segment{data.structureLabel ? ` · ${data.structureLabel}` : ""}</p>
+      <h3>{data.jurisdiction_code}{data.program_slug ? ` — ${data.program_slug}` : ""}</h3>
+      <dl className="kv-list">
+        <div><dt>Allocated spend</dt><dd className="mono"><Money value={data.allocated_usd} /></dd></div>
+        {data.claims_incentive ? (
+          <>
+            <div><dt>QPE</dt><dd className="mono"><Money value={data.qpe_usd} /></dd></div>
+            <div><dt>Excluded</dt><dd className="mono"><Money value={data.excluded_usd} /></dd></div>
+            <div><dt>Rate</dt><dd className="mono">{data.rate_floor != null ? `${Math.round(data.rate_floor * 100)}%` : "—"}{data.is_band_ceiling ? ` (up to ${Math.round(data.rate_ceiling * 100)}%)` : ""}</dd></div>
+            <div><dt>Incentive (floor)</dt><dd className="mono"><Money value={data.incentive_floor_usd} /></dd></div>
+          </>
+        ) : (
+          <div><dt>Incentive</dt><dd>None claimed here</dd></div>
+        )}
+      </dl>
+      {data.statutory_basis && <p className="text-secondary small" style={{ marginTop: 8 }}>{data.statutory_basis}</p>}
+      {data.blockers?.length > 0 && (
+        <div className="inspector-sect">
+          <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Why this segment isn't priced</p>
+          {data.blockers.map((b, i) => <p key={i} className="text-secondary small" style={{ margin: "4px 0" }}>{b}</p>)}
+        </div>
+      )}
+      {trace.length > 0 && (
+        <div className="inspector-sect">
+          <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Account qualification trace ({trace.length})</p>
+          <div className="row-list">
+            {trace.slice(0, 12).map((t) => (
+              <div className="row-item" key={t.account_code} style={{ cursor: "default" }}>
+                <div className="row-main">
+                  <div className="row-title small">{t.account_code} · {t.description}</div>
+                  <div className="row-sub">{accountStateLabel(t.state).label} · {t.reason}</div>
+                </div>
+                <div className="row-value mono small"><Money value={t.amount_usd} /></div>
+              </div>
+            ))}
+            {trace.length > 12 && <p className="text-tertiary small" style={{ marginTop: 6 }}>+{trace.length - 12} more accounts in this segment</p>}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function AllocationAssignmentInspector({ data }) {
+  return (
+    <>
+      <p className="inspector-eyebrow">Budget account routing</p>
+      <h3>{data.account_code} · {data.description}</h3>
+      <dl className="kv-list">
+        <div><dt>Amount</dt><dd className="mono"><Money value={data.amount_usd} /></dd></div>
+        <div><dt>Component</dt><dd style={{ textTransform: "capitalize" }}>{(data.component || "").replace(/_/g, " ")}</dd></div>
+        <div><dt>Routed to</dt><dd className="mono">{data.jurisdiction_code}</dd></div>
+        <div><dt>Assignment</dt><dd style={{ textTransform: "capitalize" }}>{(data.assignment_kind || "").replace(/_/g, " ")}</dd></div>
+        {data.split_pct != null && <div><dt>Split share</dt><dd className="mono">{Math.round(data.split_pct * 100)}%</dd></div>}
+      </dl>
+      <p className="text-secondary small" style={{ marginTop: 8 }}>{data.rationale}</p>
+      {data.authority && <p className="text-tertiary small" style={{ marginTop: 8 }}><strong className="text-secondary">Authority:</strong> {data.authority}</p>}
+      {data.supporting_facts?.length > 0 && (
+        <p className="text-tertiary small" style={{ marginTop: 8 }}><strong className="text-secondary">Supporting facts:</strong> {data.supporting_facts.join(" ")}</p>
+      )}
+      {data.unresolved_requirements?.length > 0 && (
+        <div className="inspector-sect">
+          <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Unresolved requirements</p>
+          {data.unresolved_requirements.map((r, i) => <p key={i} className="text-secondary small" style={{ margin: "4px 0" }}>{r}</p>)}
+        </div>
+      )}
+    </>
+  );
+}
+
+function StructureRecommendationInspector({ data }) {
+  const exp = data.explanation || {};
+  return (
+    <>
+      <p className="inspector-eyebrow">Structure recommendation · {data.reversibility === "hard_to_reverse" ? "hard to reverse" : "reversible before execution"}</p>
+      <h3>{data.action}</h3>
+      <dl className="kv-list">
+        <div><dt>Gated</dt><dd>{data.gated ? "Yes" : "No"}</dd></div>
+        <div><dt>Approval chain</dt><dd style={{ textTransform: "capitalize" }}>{(data.approval_chain || []).join(" → ")}</dd></div>
+      </dl>
+      {exp.calculations && (
+        <dl className="kv-list" style={{ marginTop: 8 }}>
+          <div><dt>Total incentive (floor)</dt><dd className="mono"><Money value={exp.calculations.total_incentive_floor_usd} /></dd></div>
+          <div><dt>NPC (verified)</dt><dd className="mono"><Money value={exp.calculations.npc_verified_usd} /></dd></div>
+          <div><dt>NPC (with adjustments)</dt><dd className="mono"><Money value={exp.calculations.npc_with_adjustments_usd} /></dd></div>
+        </dl>
+      )}
+      {data.dependency_group?.length > 0 && (
+        <div className="inspector-sect">
+          <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Dependencies / blockers</p>
+          {data.dependency_group.map((d, i) => <p key={i} className="text-secondary small" style={{ margin: "4px 0" }}>{d}</p>)}
+        </div>
+      )}
+      {exp.assumptions?.length > 0 && (
+        <div className="inspector-sect">
+          <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Assumptions</p>
+          {exp.assumptions.map((a, i) => <p key={i} className="text-tertiary small" style={{ margin: "4px 0" }}>{a}</p>)}
+        </div>
+      )}
+    </>
+  );
+}
+
 function JurisdictionInspector({ data }) {
   return (
     <>
@@ -162,6 +298,9 @@ const RENDERERS = {
   question: QuestionInspector,
   jurisdiction: JurisdictionInspector,
   account: AccountInspector,
+  "allocation-segment": AllocationSegmentInspector,
+  "allocation-assignment": AllocationAssignmentInspector,
+  "structure-recommendation": StructureRecommendationInspector,
 };
 
 export default function Inspector() {

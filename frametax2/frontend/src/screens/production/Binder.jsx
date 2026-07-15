@@ -1,11 +1,7 @@
 import { FileText, ExternalLink, ScanText, RefreshCw, Paperclip, Upload, FileUp, FolderSync } from "lucide-react";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
-
-const UPLOAD_BLOCKED_REASON =
-  "POST /api/v1/documents/upload exists and works (accepts PDF/CSV/XLSX/FDX, persists via SQLAlchemy), " +
-  "but little_utopia_state.py serves a static in-memory production disconnected from the SQL documents table " +
-  "it writes to — an upload would succeed but never appear here. Disabled until that read path exists.";
+import { UPLOAD_BLOCKED_REASON } from "../../lib/ingestion";
 
 export default function Binder() {
   const { data, error, loading } = useCineGlobe();

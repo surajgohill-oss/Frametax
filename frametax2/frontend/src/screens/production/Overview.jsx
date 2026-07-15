@@ -6,14 +6,17 @@ import { Money } from "../../lib/format";
 import FXStrip from "../../components/FXStrip";
 import RecommendationsList from "../../components/RecommendationsList";
 import QuestionStack from "../../components/QuestionStack";
+import QualificationPanel from "../../components/QualificationPanel";
+import QualificationAssistant from "../../components/QualificationAssistant";
+import ProductionIntake from "../../components/ProductionIntake";
 
 export default function Overview() {
-  const { data, error, loading } = useCineGlobe();
+  const { data, error, loading, refetch } = useCineGlobe();
   const navigate = useNavigate();
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
 
-  const { production, pkg, recommendations, structures, legal } = data;
+  const { production, pkg, recommendations, structures, legal, people, facts, economics } = data;
   const baseline = structures.candidates.find((c) => c.candidate_id === `PSC-${production.jurisdiction_code}`);
   const npc = baseline?.cases?.risk_adjusted?.net_production_cost_usd;
   const best = structures.ranking.find((r) => r.is_priceable);
@@ -57,10 +60,16 @@ export default function Overview() {
         </div>
       </section>
 
-      <FXStrip />
+      <FXStrip economics={economics} />
+
+      <QualificationAssistant allocatedStructures={structures.allocated_structures} recommendations={recommendations} />
 
       <div className="overview-sheet">
         <div className="overview-sheet-col">
+          <ProductionIntake />
+
+          <QualificationPanel people={people} facts={facts} script={pkg.script} refetch={refetch} />
+
           <section className="region region-conditional">
             <div className="region-title"><span>Open Questions</span><span className="count">{pkg.missing_inputs.length}</span></div>
             <QuestionStack missingInputs={pkg.missing_inputs.slice(0, 5)} greyAreas={[]} />

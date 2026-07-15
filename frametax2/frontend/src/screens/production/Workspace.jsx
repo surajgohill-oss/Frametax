@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Rows3, Globe2, Columns2, ChevronDown } from "lucide-react";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
-import { Money, Pct, structureLabel, accountStateLabel } from "../../lib/format";
+import { Money, accountStateLabel, humanizeToken } from "../../lib/format";
 import { buildAccountBlocks } from "../../lib/budgetBlocks";
 import { useAppState } from "../../state/AppState";
 import Globe3D from "../../components/Globe3D";
@@ -17,11 +17,40 @@ const MODES = [
   { key: "split", label: "Split", icon: Columns2 },
 ];
 
-function candidateTier(candidate, rankIndex) {
-  if (candidate.is_fully_priced && rankIndex === 0) return "gold";
-  if (candidate.is_fully_priced) return "jade";
-  if (candidate.constraints.length > 0) return "amber";
+const TIER_RANK = { gold: 4, jade: 3, amber: 2, silver: 1 };
+
+// Tier is derived entirely from the allocated structure's own real
+// fields (allocated_structures.ranking + is_fully_priced + blockers) —
+// never a client-side re-derivation of pricing.
+function structureTier(structure, rankById) {
+  const rank = rankById.get(structure.structure_id);
+  if (rank?.rank === 1) return "gold";
+  if (structure.is_fully_priced) return "jade";
+  if (structure.blockers?.length > 0) return "amber";
   return "silver";
+}
+
+// Cross-references one budget account against every allocated structure's
+// own segments — "jurisdiction comparison" / "affected structures" for
+// the Model Rail expanded view. Every field is read verbatim from
+// allocated_structures; a segment's blockers are its own explanation.
+function computeAccountCrossRef(code, allocated) {
+  if (!allocated) return [];
+  return allocated.structures
+    .map((s) => {
+      const seg = s.segments.find((sg) => sg.account_codes.includes(code));
+      if (!seg) return null;
+      return {
+        structureId: s.structure_id,
+        structureLabel: s.label,
+        jurisdictionCode: seg.jurisdiction_code,
+        claimsIncentive: seg.claims_incentive,
+        qpeUsd: seg.qpe_usd,
+        incentiveFloorUsd: seg.incentive_floor_usd,
+        blockers: seg.blockers,
+      };
+    })
+    .filter(Boolean);
 }
 
 function ModelRailBlock({ block, maxAmount, onSelectAccount }) {
@@ -55,44 +84,50 @@ function ModelRailBlock({ block, maxAmount, onSelectAccount }) {
   );
 }
 
-function JurisdictionLane({ candidate, tier, onSelect }) {
-  const cases = candidate.cases || {};
-  const baseCase = cases.base;
-  const pctLabel = `${Math.round(candidate.priceable_pct * 100)}%`;
+function AllocatedLane({ structure, tier, rank, onSelectStructure, onSelectSegment }) {
   return (
-    <div className={`lane lane-${tier}`} onClick={onSelect}>
+    <div className={`lane lane-${tier}`} onClick={() => onSelectStructure(structure)}>
       <div className="lane-header">
-        <span className="lane-title">{structureLabel(candidate.participating_jurisdictions)}</span>
+        <span className="lane-title">{structure.label}</span>
         <span className={`dot ${tier}`} />
       </div>
-      <p className="lane-sub text-tertiary small">{pctLabel} of this structure can currently be priced</p>
+      <p className="lane-sub text-tertiary small">
+        {humanizeToken(structure.structure_type)}{rank?.rank ? ` · rank ${rank.rank}` : ""}
+      </p>
 
-      {candidate.is_fully_priced && baseCase ? (
+      <div className="tag-row" style={{ marginTop: 6 }}>
+        {structure.participants.map((code) => (
+          <button
+            key={code}
+            className="tag"
+            onClick={(e) => { e.stopPropagation(); onSelectSegment(structure, code); }}
+          >
+            {code}
+          </button>
+        ))}
+      </div>
+
+      {structure.is_fully_priced ? (
         <>
-          <div className="lane-metric-row"><span className="label">Qualifying spend</span><span className="mono"><Money value={baseCase.qpe_usd} /></span></div>
-          <div className="lane-metric-row"><span className="label">Incentive value</span><span className="mono"><Money value={baseCase.incentive_usd} /></span></div>
-          <div className="lane-metric-row"><span className="label">Finance cost</span><span className="mono"><Money value={baseCase.finance_cost_usd} /></span></div>
-          <div className="lane-metric-row"><span className="label">Net production cost</span><span className="mono"><Money value={baseCase.net_production_cost_usd} /></span></div>
-        </>
-      ) : (
-        <>
-          <p className="lane-partial-note">
-            {Math.round(candidate.priceable_pct * 100)}% of this structure can currently be priced — the rest depends on{" "}
-            {candidate.constraints.length} unresolved requirement{candidate.constraints.length === 1 ? "" : "s"}, mostly
-            authority decisions for the added jurisdiction. A full cost comparison isn't available until those are resolved.
-          </p>
-          {candidate.informational_upside_usd != null ? (
-            <div className="lane-metric-row" style={{ marginTop: 8 }}>
-              <span className="label">Estimated routing opportunity</span>
-              <span className="mono"><Money value={candidate.informational_upside_usd} /></span>
-            </div>
-          ) : (
-            <p className="lane-sub text-tertiary small" style={{ marginTop: 8 }}>
-              No quantifiable rate advantage identified for this jurisdiction against the Mauritius baseline in current
-              program data.
-            </p>
+          <div className="lane-metric-row"><span className="label">Incentive (floor)</span><span className="mono"><Money value={structure.total_incentive_floor_usd} /></span></div>
+          <div className="lane-metric-row"><span className="label">Net production cost (verified)</span><span className="mono"><Money value={structure.npc_verified_usd} /></span></div>
+          <div className="lane-metric-row"><span className="label">Net production cost (with adjustments)</span><span className="mono"><Money value={structure.npc_with_adjustments_usd} /></span></div>
+          {structure.financing_cost_usd > 0 && (
+            <div className="lane-metric-row"><span className="label">Financing cost</span><span className="mono"><Money value={structure.financing_cost_usd} /></span></div>
           )}
         </>
+      ) : (
+        <div style={{ marginTop: 8 }}>
+          <p className="lane-partial-note">
+            Not yet priced — {structure.blockers.length} blocker{structure.blockers.length === 1 ? "" : "s"}.
+          </p>
+          {structure.blockers.slice(0, 3).map((b, i) => (
+            <p key={i} className="text-tertiary small" style={{ margin: "4px 0" }}>{b}</p>
+          ))}
+          {structure.blockers.length > 3 && (
+            <p className="text-tertiary small">+{structure.blockers.length - 3} more blocker(s) — open the recommendation for the full trace.</p>
+          )}
+        </div>
       )}
     </div>
   );
@@ -105,18 +140,47 @@ export default function Workspace() {
   const [activeGreyArea, setActiveGreyArea] = useState(null);
   const { openInspector } = useAppState();
 
-  const points = useMemo(() => {
-    if (!data) return [];
-    return data.structures.candidates
-      .map((c) => {
-        const code = c.participating_jurisdictions.find((j) => j !== data.production.jurisdiction_code) || data.production.jurisdiction_code;
-        const coord = JURISDICTION_COORDS[code];
-        if (!coord) return null;
-        const rankIndex = data.structures.ranking.findIndex((r) => r.structure_id === c.candidate_id);
-        return { lat: coord.lat, lng: coord.lng, tier: candidateTier(c, rankIndex), name: c.label, id: c.candidate_id };
-      })
-      .filter(Boolean);
-  }, [data]);
+  const allocated = data?.structures?.allocated_structures;
+
+  const rankById = useMemo(() => {
+    if (!allocated) return new Map();
+    return new Map(allocated.ranking.map((r) => [r.structure_id, r]));
+  }, [allocated]);
+
+  // Builds the globe's points/arcs from the SAME allocated_structures
+  // payload the Lane Rack renders — one live production model, never two
+  // divergent data sources feeding LANES vs MAP/SPLIT. structuresByCode
+  // (best-tier-first per jurisdiction) also drives globe click → Inspector.
+  const { points, arcs, structuresByCode } = useMemo(() => {
+    if (!allocated) return { points: [], arcs: [], structuresByCode: new Map() };
+    const tierByCode = new Map();
+    const byCode = new Map();
+    const arcList = [];
+    for (const s of allocated.structures) {
+      const tier = structureTier(s, rankById);
+      for (const code of s.participants) {
+        if (!JURISDICTION_COORDS[code]) continue;
+        const list = byCode.get(code) || [];
+        list.push(s);
+        byCode.set(code, list);
+        const existingTier = tierByCode.get(code);
+        if (!existingTier || TIER_RANK[tier] > TIER_RANK[existingTier]) tierByCode.set(code, tier);
+      }
+      if (s.treaty_slug && s.participants.length === 2) {
+        const [a, b] = s.participants;
+        const ca = JURISDICTION_COORDS[a];
+        const cb = JURISDICTION_COORDS[b];
+        if (ca && cb) arcList.push({ startLat: ca.lat, startLng: ca.lng, endLat: cb.lat, endLng: cb.lng, tier });
+      }
+    }
+    for (const list of byCode.values()) {
+      list.sort((x, y) => TIER_RANK[structureTier(y, rankById)] - TIER_RANK[structureTier(x, rankById)]);
+    }
+    const pointList = [...tierByCode.entries()].map(([code, tier]) => ({
+      lat: JURISDICTION_COORDS[code].lat, lng: JURISDICTION_COORDS[code].lng, tier, name: code, id: code,
+    }));
+    return { points: pointList, arcs: arcList, structuresByCode: byCode };
+  }, [allocated, rankById]);
 
   const budgetBlocks = useMemo(() => (data ? buildAccountBlocks(data.pkg.register) : []), [data]);
   const maxBlockAmount = useMemo(() => Math.max(1, ...budgetBlocks.map((b) => b.amount)), [budgetBlocks]);
@@ -124,16 +188,39 @@ export default function Workspace() {
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
 
-  const { production, pkg, structures, recommendations, legal } = data;
-  const best = structures.ranking.find((r) => r.is_priceable);
+  const { production, pkg, recommendations, legal } = data;
+  const best = allocated.ranking.find((r) => r.rank === 1);
+
+  function handleGlobeClick(pt) {
+    const list = structuresByCode.get(pt.id) || [];
+    const s = list[0];
+    if (!s) return;
+    const seg = s.segments.find((sg) => sg.jurisdiction_code === pt.id);
+    if (seg) openInspector("allocation-segment", { ...seg, structureLabel: s.label });
+    else if (s.recommendation) openInspector("structure-recommendation", s.recommendation);
+  }
+
+  function handleSelectStructure(structure) {
+    if (structure.recommendation) openInspector("structure-recommendation", structure.recommendation);
+    else if (structure.segments?.[0]) openInspector("allocation-segment", { ...structure.segments[0], structureLabel: structure.label });
+  }
+
+  function handleSelectSegment(structure, code) {
+    const seg = structure.segments.find((sg) => sg.jurisdiction_code === code);
+    if (seg) openInspector("allocation-segment", { ...seg, structureLabel: structure.label });
+  }
 
   return (
     <div className="workspace-screen">
       <div className="workspace-verdict">
-        <span className="dot gold" />
-        <span>Best current structure: <strong>{best?.label}</strong></span>
-        <span className="text-tertiary">·</span>
-        <span className="mono"><Money value={best?.risk_adjusted_npc_usd} /> risk-adjusted net production cost</span>
+        <span className={`dot ${best ? "gold" : "silver"}`} />
+        <span>Best current structure: <strong>{best?.label || "None fully priced yet"}</strong></span>
+        {best && (
+          <>
+            <span className="text-tertiary">·</span>
+            <span className="mono"><Money value={best.npc_with_adjustments_usd} /> net production cost (incentive, travel and FX applied)</span>
+          </>
+        )}
       </div>
 
       <div className="workspace-body">
@@ -148,7 +235,7 @@ export default function Workspace() {
               key={block.key}
               block={block}
               maxAmount={maxBlockAmount}
-              onSelectAccount={(line) => openInspector("account", line)}
+              onSelectAccount={(line) => openInspector("account", { ...line, crossRef: computeAccountCrossRef(line.code, allocated) })}
             />
           ))}
         </aside>
@@ -167,30 +254,28 @@ export default function Workspace() {
 
           {mode === "lanes" && (
             <div className="lanes-row scroll-x">
-              {structures.candidates.map((c) => {
-                const rankIndex = structures.ranking.findIndex((r) => r.structure_id === c.candidate_id);
-                return (
-                  <JurisdictionLane
-                    key={c.candidate_id}
-                    candidate={c}
-                    tier={candidateTier(c, rankIndex)}
-                    onSelect={() => openInspector("candidate", c)}
-                  />
-                );
-              })}
+              {allocated.structures.map((s) => (
+                <AllocatedLane
+                  key={s.structure_id}
+                  structure={s}
+                  tier={structureTier(s, rankById)}
+                  rank={rankById.get(s.structure_id)}
+                  onSelectStructure={handleSelectStructure}
+                  onSelectSegment={handleSelectSegment}
+                />
+              ))}
             </div>
           )}
 
           {mode === "map" && (
             <div className="globe-canvas-wrap dark-panel">
-              <Globe3D points={points} height={460} onPointClick={(pt) => {
-                const c = structures.candidates.find((cand) => cand.candidate_id === pt.id);
-                if (c) openInspector("candidate", c);
-              }} />
+              <Globe3D points={points} arcs={arcs} height={460} onPointClick={handleGlobeClick} />
               <p className="globe-caption small">
-                Gold = strongest priced structure · jade = another priced option · amber = requires an authority
-                decision before it can be priced · silver = viable but not yet priced. Treaty routes aren't shown —
-                none of today's candidates use a treaty structure.
+                Gold = top-ranked fully priced structure · jade = another fully priced structure · amber = allocated
+                but blocked by an unresolved requirement · silver = allocated, not the top-priced route.
+                {arcs.length > 0
+                  ? " Dashed arcs mark treaty co-production routes."
+                  : ` No treaty co-production structure is currently priced — see coverage.reachable_treaty_partners (${allocated.coverage.reachable_treaty_partners.length}) in Knowledge.`}
               </p>
             </div>
           )}
@@ -198,22 +283,20 @@ export default function Workspace() {
           {mode === "split" && (
             <div className="split-workspace">
               <div className="split-lane-row">
-                {structures.candidates.map((c) => {
-                  const rankIndex = structures.ranking.findIndex((r) => r.structure_id === c.candidate_id);
-                  const tier = candidateTier(c, rankIndex);
+                {allocated.structures.map((s) => {
+                  const tier = structureTier(s, rankById);
                   return (
-                    <div key={c.candidate_id} className={`split-lane-mini lane-${tier}`} onClick={() => openInspector("candidate", c)}>
-                      <div className="row-title" style={{ fontSize: 12 }}>{structureLabel(c.participating_jurisdictions)}</div>
-                      <div className="row-sub"><Pct value={c.priceable_pct} /> priceable</div>
+                    <div key={s.structure_id} className={`split-lane-mini lane-${tier}`} onClick={() => handleSelectStructure(s)}>
+                      <div className="row-title" style={{ fontSize: 12 }}>{s.label}</div>
+                      <div className="row-sub">
+                        {s.is_fully_priced ? "Fully priced" : `${s.blockers.length} blocker${s.blockers.length === 1 ? "" : "s"}`}
+                      </div>
                     </div>
                   );
                 })}
               </div>
               <div className="globe-canvas-wrap dark-panel">
-                <Globe3D points={points} height={340} onPointClick={(pt) => {
-                  const c = structures.candidates.find((cand) => cand.candidate_id === pt.id);
-                  if (c) openInspector("candidate", c);
-                }} />
+                <Globe3D points={points} arcs={arcs} height={340} onPointClick={handleGlobeClick} />
               </div>
             </div>
           )}

@@ -3,10 +3,12 @@ import { Scale, AlertTriangle, Eye, Clapperboard, CheckCircle2, ArrowRight, Plus
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
 import { Money, recommendationHeadline } from "../../lib/format";
+import { useProjectStatus } from "../../lib/useProjectStatus";
 
 export default function Today() {
   const { data, error, loading } = useCineGlobe();
   const navigate = useNavigate();
+  const { meta: statusMeta } = useProjectStatus(data?.production?.production_id);
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
 
@@ -95,7 +97,10 @@ export default function Today() {
           <div className="row-item" onClick={() => navigate("/production/overview")}>
             <Clapperboard size={16} color="var(--blue)" strokeWidth={1.8} />
             <div className="row-main">
-              <div className="row-title serif" style={{ fontSize: 14 }}>{production.production_name}</div>
+              <div className="row-title serif" style={{ fontSize: 14, display: "flex", alignItems: "center", gap: 8 }}>
+                {production.production_name}
+                <span className={`badge ${statusMeta.tier}`} title={statusMeta.description}>{statusMeta.label}</span>
+              </div>
               <div className="row-sub">{production.jurisdiction_code} baseline · {pkg.confidence} confidence</div>
             </div>
             <div className="row-value mono"><Money value={production.gross_budget_usd} /></div>

@@ -243,3 +243,88 @@ UI mapping hints: Lane Rack lanes ← `structures[]` (one lane per structure; un
 blockers, never blanks); Model Rail block treatment ← `allocation.assignments[]` per structure;
 Inspector trace ← segment `qualification_trace` + assignment rationale/authority; adopt-gating
 ← `recommendation.approval_chain` / `dependency_group`.
+
+---
+
+## SESSION DELTA — Workspace Rev C implementation (allocation-driven UI merge)
+
+**Implemented:**
+- `useCineGlobe.js`: fixed a StrictMode bug where the mounted-ref was only ever reset to `true`
+  in `useRef`'s initial value, never re-armed on the dev-only mount→cleanup→mount cycle — every
+  screen was silently stuck on "Loading from backend..." forever after the first StrictMode
+  cleanup. Extended the combined fetch to include `/economics`, `/people`, `/facts` (never
+  fetched by this app before); added `refetch()`.
+- `api.js`: added `getEconomics`/`postEconomicsControls`, `getPeople`/`postPeople`,
+  `getFacts`/`postFacts`, `uploadDocument` (multipart) — all real routes, none previously called.
+- `budgetBlocks.js`: fixed a stale account-code mapping (old `"10-00"` fixture scheme vs. the
+  real `"1000"`-series codes) that was silently dropping every Model Rail line.
+- `Workspace.jsx`: Lanes/Map/Split rewired from `structures.candidates`/`structures.ranking` to
+  `structures.allocated_structures` — real per-jurisdiction segment economics, real blockers,
+  real structure recommendations. Verdict banner now reads the same allocated ranking the Lane
+  Rack renders (one live model, not two divergent numbers). Model Rail account clicks open a real
+  cross-structure "jurisdiction comparison / affected structures" trace (new `AccountInspector`
+  `crossRef` section in `Inspector.jsx`). Added `IE` to `jurisdictions.js` (real allocated
+  structures use it; was missing, silently dropping that globe point).
+- `useProjectStatus.js`: 3-state company workflow status (In Development / In Evaluation / In
+  Production), frontend-only — no backend field exists (documented in-file). Rewritten from
+  `useState`+`useEffect` to `useSyncExternalStore` for correct cross-instance sync: a status
+  change in Settings now updates the SecondaryNav header chip and Today's production-row chip
+  live, same tab, no reload. Wired into `Settings.jsx` (editable control), `Today.jsx` (read-only
+  chip), `SecondaryNav.jsx` (read-only header chip).
+- `Overview.jsx` gained three new sections: `QualificationPanel` (People nationality/residency —
+  edited at the ROLE level, matching the backend's own override model, not per-person; production
+  facts editor driven dynamically from `/facts.answerable` so it never hardcodes field names;
+  read-only script/location display), `QualificationAssistant` (current qualification / missing
+  requirements / potential incentive increase / how to qualify — built only from recommendations
+  that actually carry a value: the one real $250k grey-area item plus the two real blocked
+  allocated structures; the ~130 zero-value worldwide-catalog recommendations, `treaty_composition_path`/`multilateral_membership` pairwise combinatorics, were deliberately excluded rather than
+  presented as if personalized), `ProductionIntake` (drag/drop + From-computer/Google-Drive/Gmail
+  buttons, all honestly disabled with the same reasoning `Binder.jsx` already established for its
+  own upload buttons — extracted to new `lib/ingestion.js` so the two screens can never disagree).
+- `FXStrip.jsx` rewritten from a static "unavailable" placeholder to render the real
+  `/economics.fx_horizons` table (current/1M/6M/12M per currency — MUR has spot only, EUR/GBP
+  have full curves). Commentary is a plain factual delta between two already-fetched numbers,
+  never a fabricated "consensus"; explicitly discloses the optimizer prices at current rates only.
+- `Knowledge.jsx` gained a "Reference Library" view — aggregates every citation already served
+  (`register.reason` for explicit-statute accounts, `allocated_structures` segment
+  `statutory_basis`, `recommendation.authority_reference`), deduplicated and grouped by kind. Not
+  a new source — the same citations already shown in Inspector/Workspace.
+- `shell.css`: added `.field-row`/`.field-select`/`.field-input`/`.field-unavailable`/
+  `.field-saved` — this app's first editable form controls, styled to the existing hairline/tag
+  language rather than a new input system.
+
+**Verified (runtime, in-browser, this session):**
+- Full `npm run build` + `oxlint` clean after every change.
+- Workspace Lanes/Map/Split confirmed rendering real `allocated_structures` data; segment-chip
+  click, lane click, and globe click all confirmed opening the correct Inspector kind with real
+  fields (tested against the live GR segment: $4,355,327 allocated, 40% rate, $1,742,131 floor).
+- Model Rail expand → account click → cross-structure comparison confirmed with real dollar
+  figures across all 7 allocated structures for account 1400 (CAST).
+- Qualification Panel: a real edit (writer residency → FR) confirmed `POST /people` firing,
+  refetching, and the "now GB/FR" display updating; reverted cleanly afterward.
+- Project status: confirmed instant cross-component sync (Settings toggle → header chip, no
+  reload) and confirmed persistence across a hard reload.
+- FXStrip and Reference Library confirmed rendering real backend data with zero console errors on
+  a clean browser tab.
+- Every console error observed during this session was confirmed to be stale/buffered history
+  from long-lived dev tabs — the identical "hook order" and "failed to reload" warnings still
+  printed on a tab that had been idle for minutes with no re-render possible, and vanished on a
+  freshly opened tab hitting the same route. Noting this so a future session doesn't re-chase the
+  same false trail; always verify a console error on a fresh tab before treating it as live.
+
+**Outstanding (scope boundary respected, not built this session):**
+- Qualification Panel fields with no backend-editable equivalent (Department heads, Production
+  companies, full Cast roster beyond lead, a Shoot-locations field distinct from the script's own
+  `setting`) are disclosed as unavailable, not fabricated — needs new backend fields/routes.
+- Production intake upload is real (`POST /api/v1/documents/upload`) but stays disabled
+  everywhere (`Binder.jsx` and now `Overview.jsx`) because `little_utopia_state.py` can't read
+  from the documents table it writes to — pre-existing gap, unchanged this session.
+- Google Drive / Gmail attachment intake are designed UI slots only; no connector wired
+  (`lib/ingestion.js`).
+- FXStrip's forward curve exists only for MUR/EUR/GBP; no live-fetch capability on the backend
+  (pre-existing, unchanged).
+- Reference Library's citation set is limited to the three fields that already exist server-side;
+  a jurisdiction-level `authority_name`/`authority_url_hint` would need a new backend route (same
+  gap noted in the earlier blueprint phase).
+- 12 checkpoint screenshots captured to `frontend/design-review/current/` for external visual
+  review — no autonomous visual polish performed past this checkpoint, per instruction.
