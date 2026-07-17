@@ -45,6 +45,19 @@
   --green: #2E6B4E;
   --green-dim: var(--surface-positive);
 
+  /* Approved CineGlobe identity accents (migrated from the frozen design
+     reference — reference/artifacts/prototype-v1-updated.html) */
+  --oxblood: #6B2A2E;
+  --oxblood-dim: rgba(107, 42, 46, 0.08);
+
+  /* Sidebar — Warm Graphite. The one dark shell surface in the approved
+     design; everything else stays on the light editorial canvas. */
+  --rail-bg: #3A3530;
+  --rail-deep: #332F2A;
+  --rail-text: #C8BFB7;
+  --rail-active: #F4EFE8;
+  --rail-divider: rgba(255, 255, 255, 0.10);
+
   /* Dark "Luxury Glass" panel palette — globe canvases and their immediate
      chrome ONLY. Never applied to the application shell or content screens. */
   --dark-canvas: #14120f;

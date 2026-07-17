@@ -1,47 +1,65 @@
 import { useCallback, useSyncExternalStore } from "react";
 
-// Company workflow status — a producer-set label for where a deal stands,
-// distinct from anything the optimizer computes. No backend field exists
-// for this yet (app/models/project.py and app/schemas/project.py carry no
-// status column — confirmed by direct inspection of the CineGlobe backend
-// this session); this is deliberately NOT the same concept as the DB
-// model's StructureStatus (DRAFT/CALCULATING/COMPLETE/ERROR/ARCHIVED),
-// which is per-candidate calculation-engine state, not company workflow.
+// Canonical production lifecycle — a producer-set stage for where the
+// production stands, distinct from anything the optimizer computes.
 //
-// Persisted to localStorage, keyed by production id, so the choice
-// survives a reload without inventing a backend write path. This is a
-// known, documented limitation (see CLAUDE.md SESSION DELTA) — the
-// correct permanent home is a new column + PATCH /projects/{id} route,
-// out of scope for a frontend-only implementation pass.
+// Evaluation comes FIRST: CineGlobe's initial job is determining whether
+// the project can be produced effectively — candidate jurisdictions,
+// qualifying structures, treaty possibilities, comparative economics —
+// before the production proceeds into development and packaging.
+// Financing is deliberately NOT a lifecycle stage.
+//
+// No backend column exists for this yet (app/models/project.py carries no
+// lifecycle field — confirmed by direct inspection). This store is a
+// presentation-level mapping persisted to localStorage, keyed by
+// production id. The permanent home is a new column + PATCH route —
+// documented for the data-model pass, out of scope for this migration.
 export const PROJECT_STATUSES = [
-  { key: "in_development", label: "In Development", tier: "silver",
-    description: "Script/budget still forming. The optimizer may run informally; nothing is being filed." },
-  { key: "in_evaluation", label: "In Evaluation", tier: "blue",
-    description: "Structure comparison underway. The production has not yet been accepted by the company." },
-  { key: "in_production", label: "In Production", tier: "gold",
-    description: "Structure locked, shooting or posting. Record and Reports become the primary surfaces." },
+  { key: "evaluation", label: "Evaluation", tier: "blue",
+    description: "Jurisdiction analysis, qualifying structures, treaty possibilities, and comparative production economics — determining whether and where the project can be produced effectively." },
+  { key: "development", label: "Development", tier: "silver",
+    description: "Script and budget forming; the production has proceeded beyond initial evaluation." },
+  { key: "packaging", label: "Packaging", tier: "gold",
+    description: "Cast, finance, and structure being assembled around the evaluated plan." },
+  { key: "pre_production", label: "Pre-Production", tier: "gold",
+    description: "Structure locked; crewing, locations, and schedules being executed." },
+  { key: "production", label: "Production", tier: "gold",
+    description: "Principal photography underway." },
+  { key: "post_production", label: "Post-Production", tier: "jade",
+    description: "Editorial, VFX, music, and mix." },
+  { key: "delivery", label: "Delivery", tier: "jade",
+    description: "Deliverables, certification, and audit toward release." },
+  { key: "released", label: "Released", tier: "jade",
+    description: "In release; incentive claims settling." },
+  { key: "archived", label: "Archived", tier: "charcoal",
+    description: "Closed. Record and Reports are the primary surfaces." },
 ];
 
+// Values persisted by the previous 3-status scheme map forward without
+// corrupting anything a user already set.
+const LEGACY_MAP = {
+  in_development: "development",
+  in_evaluation: "evaluation",
+  in_production: "production",
+};
+
 const STORAGE_PREFIX = "cineglobe:project-status:";
-const DEFAULT_STATUS = "in_evaluation"; // "has not yet been accepted by the company" — the honest default
+const DEFAULT_STATUS = "evaluation"; // new productions default to Evaluation
 
 function readStatus(productionId) {
   if (!productionId) return DEFAULT_STATUS;
   try {
-    return localStorage.getItem(STORAGE_PREFIX + productionId) || DEFAULT_STATUS;
+    const raw = localStorage.getItem(STORAGE_PREFIX + productionId) || DEFAULT_STATUS;
+    return LEGACY_MAP[raw] || raw;
   } catch {
     return DEFAULT_STATUS;
   }
 }
 
-// Multiple screens each call useProjectStatus(productionId) independently
-// (SecondaryNav, Today, Settings — same pattern as useCineGlobe, no shared
-// context). localStorage's own "storage" event never fires in the tab that
-// made the write, so without a subscription a status change in Settings
-// would leave every other already-mounted instance (e.g. the header chip)
-// stale until a full reload. useSyncExternalStore is the correct React
-// primitive for exactly this — external mutable store synced into React,
-// notifying every subscribed instance for the same productionId.
+// Multiple mounted instances (sidebar production row, project header
+// selector, Settings, Today) must stay synchronized — localStorage's own
+// "storage" event never fires in the writing tab, so useSyncExternalStore
+// with an in-module subscriber map is the correct primitive.
 const subscribers = new Map(); // productionId -> Set<() => void>
 
 function subscribe(productionId, listener) {
@@ -71,6 +89,6 @@ export function useProjectStatus(productionId) {
     notify(productionId);
   }, [productionId]);
 
-  const meta = PROJECT_STATUSES.find((s) => s.key === status) || PROJECT_STATUSES[1];
-  return { status, meta, setStatus, statuses: PROJECT_STATUSES };
+  const meta = PROJECT_STATUSES.find((s) => s.key === status) || PROJECT_STATUSES[0];
+  return { status: meta.key, meta, setStatus, statuses: PROJECT_STATUSES };
 }

@@ -6,29 +6,17 @@ import { Money, accountStateLabel, humanizeToken } from "../../lib/format";
 import { buildAccountBlocks } from "../../lib/budgetBlocks";
 import { useAppState } from "../../state/AppState";
 import Globe3D from "../../components/Globe3D";
-import { JURISDICTION_COORDS } from "../../lib/jurisdictions";
+import { buildGlobeData, structureTier } from "../../lib/globeData";
 import QuestionStack from "../../components/QuestionStack";
 import RecommendationsList from "../../components/RecommendationsList";
 import EconomicsTrace from "../../components/EconomicsTrace";
+import QualificationPanel from "../../components/QualificationPanel";
 
 const MODES = [
   { key: "lanes", label: "Lanes", icon: Rows3 },
   { key: "map", label: "Map", icon: Globe2 },
   { key: "split", label: "Split", icon: Columns2 },
 ];
-
-const TIER_RANK = { gold: 4, jade: 3, amber: 2, silver: 1 };
-
-// Tier is derived entirely from the allocated structure's own real
-// fields (allocated_structures.ranking + is_fully_priced + blockers) —
-// never a client-side re-derivation of pricing.
-function structureTier(structure, rankById) {
-  const rank = rankById.get(structure.structure_id);
-  if (rank?.rank === 1) return "gold";
-  if (structure.is_fully_priced) return "jade";
-  if (structure.blockers?.length > 0) return "amber";
-  return "silver";
-}
 
 // Cross-references one budget account against every allocated structure's
 // own segments — "jurisdiction comparison" / "affected structures" for
@@ -84,11 +72,18 @@ function ModelRailBlock({ block, maxAmount, onSelectAccount }) {
   );
 }
 
-function AllocatedLane({ structure, tier, rank, onSelectStructure, onSelectSegment }) {
+// Approved universal scenario card: identical internal structure on every
+// card — Gross Budget / Qualified Spend / Gross Incentive / dominant NPC,
+// then Inspect + Compare, then the leading-structure control. Every value
+// is read verbatim from the allocated structure (qualified spend = the
+// backend's own per-segment QPE, summed; incentive = total_incentive_floor_usd;
+// NPC = npc_with_adjustments_usd). No Net Benefit, no Timing.
+function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, onSetLeading, onInspect, onCompare, onSelectSegment }) {
+  const qualifiedSpend = structure.segments?.reduce((sum, sg) => sum + (sg.qpe_usd || 0), 0);
   return (
-    <div className={`lane lane-${tier}`} onClick={() => onSelectStructure(structure)}>
+    <div className={`lane lane-${tier}`}>
       <div className="lane-header">
-        <span className="lane-title">{structure.label}</span>
+        <span className="lane-title serif card-title">{structure.label}</span>
         <span className={`dot ${tier}`} />
       </div>
       <p className="lane-sub text-tertiary small">
@@ -109,12 +104,15 @@ function AllocatedLane({ structure, tier, rank, onSelectStructure, onSelectSegme
 
       {structure.is_fully_priced ? (
         <>
-          <div className="lane-metric-row"><span className="label">Incentive (floor)</span><span className="mono"><Money value={structure.total_incentive_floor_usd} /></span></div>
-          <div className="lane-metric-row"><span className="label">Net production cost (verified)</span><span className="mono"><Money value={structure.npc_verified_usd} /></span></div>
-          <div className="lane-metric-row"><span className="label">Net production cost (with adjustments)</span><span className="mono"><Money value={structure.npc_with_adjustments_usd} /></span></div>
-          {structure.financing_cost_usd > 0 && (
-            <div className="lane-metric-row"><span className="label">Financing cost</span><span className="mono"><Money value={structure.financing_cost_usd} /></span></div>
-          )}
+          <div className="card-rows">
+            <div className="card-row"><span className="label">Gross budget</span><span className="mono"><Money value={grossBudget} /></span></div>
+            <div className="card-row"><span className="label">Qualified spend</span><span className="mono"><Money value={qualifiedSpend} /></span></div>
+            <div className="card-row"><span className="label">Gross incentive</span><span className="mono card-incentive"><Money value={structure.total_incentive_floor_usd} /></span></div>
+          </div>
+          <div className="card-npc">
+            <span className="card-npc-label">Net production cost</span>
+            <span className="mono card-npc-value"><Money value={structure.npc_with_adjustments_usd} /></span>
+          </div>
         </>
       ) : (
         <div style={{ marginTop: 8 }}>
@@ -129,15 +127,31 @@ function AllocatedLane({ structure, tier, rank, onSelectStructure, onSelectSegme
           )}
         </div>
       )}
+
+      <div className="card-actions">
+        <button className="card-action" onClick={(e) => { e.stopPropagation(); onInspect(structure); }}>Inspect</button>
+        <button className="card-action" onClick={(e) => { e.stopPropagation(); onCompare(structure); }}>Compare</button>
+      </div>
+      <div className="card-lead-row">
+        {isLeading ? (
+          <button className="card-lead is-leading" disabled>● Current leading structure</button>
+        ) : (
+          <button className="card-lead" onClick={(e) => { e.stopPropagation(); onSetLeading(structure.structure_id); }}>◈ Set as leading</button>
+        )}
+      </div>
     </div>
   );
 }
 
 export default function Workspace() {
-  const { data, error, loading } = useCineGlobe();
+  const { data, error, loading, refetch } = useCineGlobe();
   const [mode, setMode] = useState("lanes");
   const [sideTab, setSideTab] = useState("questions");
   const [activeGreyArea, setActiveGreyArea] = useState(null);
+  // Presentation-only leading-structure choice (approved "Set as Leading"
+  // control). Defaults to the backend's own rank-1 structure; no backend
+  // persistence or re-ranking is wired in this pass.
+  const [leadingOverride, setLeadingOverride] = useState(null);
   const { openInspector } = useAppState();
 
   const allocated = data?.structures?.allocated_structures;
@@ -147,40 +161,12 @@ export default function Workspace() {
     return new Map(allocated.ranking.map((r) => [r.structure_id, r]));
   }, [allocated]);
 
-  // Builds the globe's points/arcs from the SAME allocated_structures
-  // payload the Lane Rack renders — one live production model, never two
-  // divergent data sources feeding LANES vs MAP/SPLIT. structuresByCode
-  // (best-tier-first per jurisdiction) also drives globe click → Inspector.
-  const { points, arcs, structuresByCode } = useMemo(() => {
-    if (!allocated) return { points: [], arcs: [], structuresByCode: new Map() };
-    const tierByCode = new Map();
-    const byCode = new Map();
-    const arcList = [];
-    for (const s of allocated.structures) {
-      const tier = structureTier(s, rankById);
-      for (const code of s.participants) {
-        if (!JURISDICTION_COORDS[code]) continue;
-        const list = byCode.get(code) || [];
-        list.push(s);
-        byCode.set(code, list);
-        const existingTier = tierByCode.get(code);
-        if (!existingTier || TIER_RANK[tier] > TIER_RANK[existingTier]) tierByCode.set(code, tier);
-      }
-      if (s.treaty_slug && s.participants.length === 2) {
-        const [a, b] = s.participants;
-        const ca = JURISDICTION_COORDS[a];
-        const cb = JURISDICTION_COORDS[b];
-        if (ca && cb) arcList.push({ startLat: ca.lat, startLng: ca.lng, endLat: cb.lat, endLng: cb.lng, tier });
-      }
-    }
-    for (const list of byCode.values()) {
-      list.sort((x, y) => TIER_RANK[structureTier(y, rankById)] - TIER_RANK[structureTier(x, rankById)]);
-    }
-    const pointList = [...tierByCode.entries()].map(([code, tier]) => ({
-      lat: JURISDICTION_COORDS[code].lat, lng: JURISDICTION_COORDS[code].lng, tier, name: code, id: code,
-    }));
-    return { points: pointList, arcs: arcList, structuresByCode: byCode };
-  }, [allocated, rankById]);
+  // One live production model feeding LANES and MAP/SPLIT alike — shared
+  // with Overview via lib/globeData.
+  const { points, arcs, structuresByCode } = useMemo(
+    () => buildGlobeData(allocated, rankById),
+    [allocated, rankById],
+  );
 
   const budgetBlocks = useMemo(() => (data ? buildAccountBlocks(data.pkg.register) : []), [data]);
   const maxBlockAmount = useMemo(() => Math.max(1, ...budgetBlocks.map((b) => b.amount)), [budgetBlocks]);
@@ -190,6 +176,10 @@ export default function Workspace() {
 
   const { production, pkg, recommendations, legal } = data;
   const best = allocated.ranking.find((r) => r.rank === 1);
+  // Effective leading structure: presentation override if set, otherwise
+  // the backend's own rank-1 result.
+  const leadingId = leadingOverride ?? best?.structure_id ?? null;
+  const leadingStructure = allocated.structures.find((s) => s.structure_id === leadingId);
 
   function handleGlobeClick(pt) {
     const list = structuresByCode.get(pt.id) || [];
@@ -212,17 +202,6 @@ export default function Workspace() {
 
   return (
     <div className="workspace-screen">
-      <div className="workspace-verdict">
-        <span className={`dot ${best ? "gold" : "silver"}`} />
-        <span>Best current structure: <strong>{best?.label || "None fully priced yet"}</strong></span>
-        {best && (
-          <>
-            <span className="text-tertiary">·</span>
-            <span className="mono"><Money value={best.npc_with_adjustments_usd} /> net production cost (incentive, travel and FX applied)</span>
-          </>
-        )}
-      </div>
-
       <div className="workspace-body">
         <aside className="model-rail">
           <p className="model-rail-heading">Model Rail — production budget</p>
@@ -255,12 +234,16 @@ export default function Workspace() {
           {mode === "lanes" && (
             <div className="lanes-row scroll-x">
               {allocated.structures.map((s) => (
-                <AllocatedLane
+                <ScenarioCard
                   key={s.structure_id}
                   structure={s}
                   tier={structureTier(s, rankById)}
                   rank={rankById.get(s.structure_id)}
-                  onSelectStructure={handleSelectStructure}
+                  grossBudget={production.gross_budget_usd}
+                  isLeading={s.structure_id === leadingId}
+                  onSetLeading={setLeadingOverride}
+                  onInspect={handleSelectStructure}
+                  onCompare={() => setSideTab("recommendations")}
                   onSelectSegment={handleSelectSegment}
                 />
               ))}
@@ -310,9 +293,12 @@ export default function Workspace() {
             <button className={sideTab === "recommendations" ? "active" : ""} onClick={() => setSideTab("recommendations")}>
               Recommendations
             </button>
+            <button className={sideTab === "inputs" ? "active" : ""} onClick={() => setSideTab("inputs")}>
+              Inputs
+            </button>
           </div>
           <div className="workspace-side-body">
-            {sideTab === "questions" ? (
+            {sideTab === "questions" && (
               <>
                 <QuestionStack missingInputs={pkg.missing_inputs} greyAreas={legal.grey_areas_current} />
                 <div className="trace-trigger-row">
@@ -324,12 +310,40 @@ export default function Workspace() {
                 </div>
                 {activeGreyArea && <EconomicsTrace greyArea={activeGreyArea} legal={legal} />}
               </>
-            ) : (
+            )}
+            {sideTab === "recommendations" && (
               <RecommendationsList byCategory={recommendations.by_category} legal={recommendations.legal} />
+            )}
+            {sideTab === "inputs" && (
+              /* Optimizer inputs — treaty eligibility, cultural qualification,
+                 allocation assumptions. Real POST /people + POST /facts wiring,
+                 relocated from Overview per the approved architecture (these
+                 belong in Workspace, not Overview). */
+              <QualificationPanel people={data.people} facts={data.facts} script={pkg.script} refetch={refetch} />
             )}
           </div>
         </aside>
       </div>
+
+      {/* Leading-structure rail — two aligned typographic groups, not one
+          flat sentence. Left: eyebrow / structure. Right: NPC. */}
+      <footer className="leading-rail">
+        <div className="lr-left">
+          <span className="lr-eyebrow">Leading structure</span>
+          <span className="serif lr-name">{leadingStructure?.label || "None fully priced yet"}</span>
+          {leadingStructure && (
+            <span className="lr-sub text-tertiary small">{humanizeToken(leadingStructure.structure_type)}</span>
+          )}
+        </div>
+        <div className="lr-right">
+          <span className="lr-label">Net production cost</span>
+          <span className="mono lr-value">
+            {leadingStructure?.is_fully_priced
+              ? <Money value={leadingStructure.npc_with_adjustments_usd} />
+              : "—"}
+          </span>
+        </div>
+      </footer>
     </div>
   );
 }

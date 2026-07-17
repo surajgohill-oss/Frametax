@@ -1,28 +1,101 @@
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LayoutDashboard, FolderOpen } from "lucide-react";
+import { LayoutDashboard } from "lucide-react";
 import { useCineGlobe } from "../../lib/useCineGlobe";
+import { useAppState } from "../../state/AppState";
+import { useProjectStatus } from "../../lib/useProjectStatus";
 import { Loading, ErrorBox } from "../../components/Async";
-import { Money } from "../../lib/format";
-import FXStrip from "../../components/FXStrip";
-import RecommendationsList from "../../components/RecommendationsList";
-import QuestionStack from "../../components/QuestionStack";
-import QualificationPanel from "../../components/QualificationPanel";
-import QualificationAssistant from "../../components/QualificationAssistant";
-import ProductionIntake from "../../components/ProductionIntake";
+import { Money, humanizeToken } from "../../lib/format";
+import { buildGlobeData, structureTier } from "../../lib/globeData";
+import Globe3D from "../../components/Globe3D";
+import ProductionDetails from "../../components/ProductionDetails";
+import BudgetRail from "../../components/BudgetRail";
+
+// Overview answers: WHAT is this production?
+// (Workspace answers how it should be structured and optimized — optimizer
+// inputs and treaty-solving controls live there, never here.)
+
+// Maximum-size square globe frame: CSS gives the frame aspect-ratio 1/1 at
+// full center-column width; Globe3D takes a fixed pixel height, so we
+// measure the frame once layout settles and mount the globe at that size.
+function SquareGlobe({ points, arcs, onPointClick }) {
+  const frameRef = useRef(null);
+  const [size, setSize] = useState(0);
+
+  useLayoutEffect(() => {
+    const el = frameRef.current;
+    if (!el) return;
+    const measure = () => {
+      const w = Math.round(el.getBoundingClientRect().width);
+      if (w > 0) setSize((s) => (s === 0 ? w : s));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <div className="globe-frame dark-panel" ref={frameRef}>
+      {size > 0 && <Globe3D points={points} arcs={arcs} height={size} onPointClick={onPointClick} />}
+    </div>
+  );
+}
+
+function fmtCompact(v) {
+  if (v === null || v === undefined) return null;
+  return `$${(Number(v) / 1e6).toFixed(2)}M`;
+}
 
 export default function Overview() {
   const { data, error, loading, refetch } = useCineGlobe();
   const navigate = useNavigate();
+  const { openInspector } = useAppState();
+  const { meta } = useProjectStatus(data?.production?.production_id);
+
+  const allocated = data?.structures?.allocated_structures;
+  const rankById = useMemo(() => {
+    if (!allocated) return new Map();
+    return new Map(allocated.ranking.map((r) => [r.structure_id, r]));
+  }, [allocated]);
+  const { points, arcs, structuresByCode } = useMemo(
+    () => buildGlobeData(allocated, rankById),
+    [allocated, rankById],
+  );
+
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
 
-  const { production, pkg, recommendations, structures, legal, people, facts, economics } = data;
-  const baseline = structures.candidates.find((c) => c.candidate_id === `PSC-${production.jurisdiction_code}`);
-  const npc = baseline?.cases?.risk_adjusted?.net_production_cost_usd;
+  const { production, pkg, structures, people } = data;
   const best = structures.ranking.find((r) => r.is_priceable);
+  const leadingLabel = best ? best.label.replace(/^Relocate /, "").replace(/ -> /g, " → ") : null;
+  const setting = pkg.script?.attributes?.setting?.value;
+
+  function handleGlobeClick(pt) {
+    const list = structuresByCode.get(pt.id) || [];
+    const s = list[0];
+    if (!s) return;
+    const seg = s.segments.find((sg) => sg.jurisdiction_code === pt.id);
+    if (seg) openInspector("allocation-segment", { ...seg, structureLabel: s.label });
+    else if (s.recommendation) openInspector("structure-recommendation", s.recommendation);
+  }
+
+  // Four leading structures — compact, subordinate to the globe: name,
+  // structure type, NPC, leading indicator. No card-level financial detail.
+  const strip = structures.ranking.slice(0, 4).map((r) => {
+    const full = allocated?.structures.find((s) => s.structure_id === r.structure_id);
+    return {
+      id: r.structure_id,
+      name: r.label.replace(/^Relocate /, "").replace(/ -> /g, " → "),
+      type: full ? humanizeToken(full.structure_type) : "",
+      npc: r.is_priceable ? fmtCompact(r.conservative_npc_usd) : null,
+      leading: r.rank === 1 && r.is_priceable,
+      tier: full ? structureTier(full, rankById) : "silver",
+    };
+  });
 
   return (
-    <div className="screen">
+    <div className="screen ov-screen">
       <section className="overview-hero">
         <div className="overview-hero-art" aria-hidden="true" />
         <div className="overview-hero-body">
@@ -32,96 +105,59 @@ export default function Overview() {
               <h1 className="serif overview-title">{production.production_name}</h1>
             </div>
             <div className="overview-hero-actions">
-              <button className="hero-action" onClick={() => navigate("/production/workspace")}>
-                <FolderOpen size={14} strokeWidth={1.8} /> New scenario
-              </button>
               <button className="hero-action primary" onClick={() => navigate("/production/workspace")}>
                 <LayoutDashboard size={14} strokeWidth={1.8} /> Open Workspace
               </button>
             </div>
           </div>
-          <p className="overview-logline">
-            An account-level production package structured under the Mauritius EDB Film Rebate Scheme.
-          </p>
+          {setting && <p className="overview-logline">Setting — {setting}.</p>}
           <div className="overview-stats">
             <div>
               <span className="text-tertiary small">Total production budget</span>
               <div className="mono overview-stat-value"><Money value={production.gross_budget_usd} /></div>
             </div>
             <div>
-              <span className="text-tertiary small">Recommended structure</span>
-              <div className="mono overview-stat-value">{best?.label || production.jurisdiction_code}</div>
+              <span className="text-tertiary small">Production stage</span>
+              <div className="overview-stat-value">{meta.label}</div>
             </div>
             <div>
-              <span className="text-tertiary small">Risk-adjusted net production cost</span>
-              <div className="mono overview-stat-value"><Money value={npc} /></div>
+              <span className="text-tertiary small">Leading structure</span>
+              <div className="overview-stat-value">{leadingLabel || <span className="text-tertiary">None fully priced yet</span>}</div>
             </div>
+            {best && (
+              <div>
+                <span className="text-tertiary small">Net production cost</span>
+                <div className="mono overview-stat-value"><Money value={best.conservative_npc_usd} /></div>
+              </div>
+            )}
           </div>
         </div>
       </section>
 
-      <FXStrip economics={economics} />
+      <div className="ov-grid">
+        <ProductionDetails people={people} script={pkg.script} refetch={refetch} />
 
-      <QualificationAssistant allocatedStructures={structures.allocated_structures} recommendations={recommendations} />
-
-      <div className="overview-sheet">
-        <div className="overview-sheet-col">
-          <ProductionIntake />
-
-          <QualificationPanel people={people} facts={facts} script={pkg.script} refetch={refetch} />
-
-          <section className="region region-conditional">
-            <div className="region-title"><span>Open Questions</span><span className="count">{pkg.missing_inputs.length}</span></div>
-            <QuestionStack missingInputs={pkg.missing_inputs.slice(0, 5)} greyAreas={[]} />
-            <button className="link-more" onClick={() => navigate("/production/workspace")}>Open Workspace →</button>
-          </section>
-
-          <section className="region">
-            <div className="region-title"><span>Production Sheet</span></div>
-            <dl className="kv-list">
-              <div><dt>Line items</dt><dd className="mono">{pkg.budget.line_item_count}</dd></div>
-              <div><dt>Above the line</dt><dd><Money value={pkg.budget.atl_total_usd} /></dd></div>
-              <div><dt>Below the line</dt><dd><Money value={pkg.budget.btl_total_usd} /></dd></div>
-              <div><dt>Post production</dt><dd><Money value={pkg.budget.post_total_usd} /></dd></div>
-            </dl>
-            <button className="link-more" onClick={() => navigate("/production/binder")}>Open Production Sheet →</button>
-          </section>
+        <div className="ov-center">
+          <SquareGlobe points={points} arcs={arcs} onPointClick={handleGlobeClick} />
+          <div className="scenario-strip">
+            {strip.map((s) => (
+              <button className="strip-cell" key={s.id} onClick={() => navigate("/production/workspace")}>
+                <span className="strip-name">
+                  {s.leading && <span className="dot gold" />}
+                  {s.name}
+                </span>
+                {s.type && <span className="strip-type">{s.type}</span>}
+                <span className="strip-npc mono">{s.npc || "not yet priced"}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="overview-sheet-col">
-          <section className="region region-warm">
-            <div className="region-title"><span>Scenarios</span><span className="count">{structures.candidates.length}</span></div>
-            <div className="row-list">
-              {structures.ranking.slice(0, 4).map((r) => (
-                <div className="row-item" key={r.structure_id} onClick={() => navigate("/production/workspace")}>
-                  <span className={`dot ${r.is_priceable ? "gold" : "charcoal"}`} />
-                  <div className="row-main">
-                    <div className="row-title" style={{ fontWeight: 400 }}>{r.label.replace(/^Relocate /, "").replace(/ -> /g, " → ")}</div>
-                  </div>
-                  <div className="row-value mono">{r.is_priceable ? <Money value={r.risk_adjusted_npc_usd} /> : <span className="text-tertiary small">not yet priced</span>}</div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="region region-positive">
-            <div className="region-title"><span>Latest Record</span></div>
-            {legal.committed_rule_id ? (
-              <p className="small" style={{ color: "var(--text-secondary)", lineHeight: 1.6 }}>
-                {legal.grey_areas_current.find((g) => g.graph_rule_id === legal.committed_rule_id)?.resolving_evidence} — resolved
-                with Authority Score {legal.authority_scores[legal.committed_rule_id]?.composite}/100.
-              </p>
-            ) : (
-              <p className="empty-state">No record entries yet.</p>
-            )}
-            <button className="link-more" onClick={() => navigate("/production/record")}>Open Record →</button>
-          </section>
-
-          <section className="region">
-            <div className="region-title"><span>Intelligence</span></div>
-            <RecommendationsList byCategory={recommendations.by_category} legal={recommendations.legal} compact />
-          </section>
-        </div>
+        <BudgetRail
+          production={production}
+          register={pkg.register}
+          onSelectAccount={(line) => openInspector("account", line)}
+        />
       </div>
     </div>
   );
