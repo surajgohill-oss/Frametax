@@ -7,6 +7,51 @@
   background: var(--canvas);
 }
 
+/* ── Top-level error boundary ───────────────────────────────────────── */
+.app-error-boundary {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  background: var(--canvas);
+  z-index: 9999;
+}
+.app-error-card {
+  max-width: 640px;
+  width: 100%;
+  background: var(--surface-1);
+  border: 0.5px solid var(--hairline-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--sp-8);
+}
+.app-error-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--red); margin: 0 0 6px; }
+.app-error-card h2 { font-size: 20px; margin-bottom: var(--sp-3); }
+.app-error-msg { font-size: 13.5px; color: var(--text-secondary); margin: 0 0 var(--sp-4); line-height: 1.5; }
+.app-error-stack {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-tertiary);
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-3);
+  max-height: 240px;
+  overflow: auto;
+  white-space: pre-wrap;
+  margin: 0 0 var(--sp-4);
+}
+.app-error-reload {
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--blue);
+  color: #FBFAF7;
+  font-size: 13px;
+  font-weight: 500;
+}
+
 /* ── Approved CineGlobe sidebar — Warm Graphite (#3A3530) ─────────────
    Single navigation panel replacing the old PrimaryRail + SecondaryNav:
    wordmark, identity globe, COMPANY / PRODUCTIONS / SYSTEM, user foot. */

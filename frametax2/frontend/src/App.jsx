@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AppStateProvider } from "./state/AppState";
 import AppShell from "./shell/AppShell";
+import ErrorBoundary from "./shell/ErrorBoundary";
 
 import Today from "./screens/company/Today";
 import CompanyGlobe from "./screens/company/CompanyGlobe";
@@ -18,6 +19,7 @@ export default function App() {
   return (
     <AppStateProvider>
       <BrowserRouter>
+        <ErrorBoundary>
         <AppShell>
           <Routes>
             <Route path="/" element={<Navigate to="/company/today" replace />} />
@@ -33,6 +35,7 @@ export default function App() {
             <Route path="/production/settings" element={<Settings />} />
           </Routes>
         </AppShell>
+        </ErrorBoundary>
       </BrowserRouter>
     </AppStateProvider>
   );
