@@ -177,8 +177,18 @@ export default function Globe3D({ points = [], arcs = [], onPointClick, onPointH
       resizeObserver.disconnect();
       controls.dispose();
       renderer.dispose();
+      // dispose() frees GPU resources but does NOT release the underlying
+      // WebGL context — it lingers on the detached canvas until GC. With a
+      // persistent sidebar globe plus route globes mounting/unmounting (and
+      // StrictMode's dev double-mount), those zombie contexts accumulate
+      // past the browser's hard ~16-context limit, after which every new
+      // THREE.WebGLRenderer fails with "Error creating WebGL context".
+      // forceContextLoss() releases the context immediately so it can't leak.
+      try { renderer.forceContextLoss(); } catch { /* context already lost */ }
       if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
       if (mount.contains(cssRenderer.domElement)) mount.removeChild(cssRenderer.domElement);
+      globeRef.current = null;
+      stateRef.current = {};
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
