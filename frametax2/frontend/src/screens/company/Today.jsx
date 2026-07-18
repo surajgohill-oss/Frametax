@@ -1,9 +1,18 @@
 import { useNavigate } from "react-router-dom";
-import { Scale, AlertTriangle, Eye, Clapperboard, CheckCircle2, ArrowRight, Plus } from "lucide-react";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
 import { Money, recommendationHeadline } from "../../lib/format";
 import { useProjectStatus } from "../../lib/useProjectStatus";
+
+// Today — the approved artifact company dashboard: a sticky metric topbar
+// over a two-column board (the decision queue on the left; productions and
+// recent activity on the right). The artifact is a four-production demo;
+// this backend serves one production (little_utopia_state.py), so the same
+// layout is populated with the single real production and its live queue.
+// Every value is read verbatim from useCineGlobe.
+
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 export default function Today() {
   const { data, error, loading } = useCineGlobe();
@@ -12,102 +21,131 @@ export default function Today() {
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
 
-  const { pkg, legal, recommendations, production } = data;
+  const { pkg, legal, recommendations, production, structures } = data;
+  const openGrey = legal.grey_areas_current.filter((g) => g.status === "open");
   const blockingQuestions = pkg.missing_inputs.filter((m) => m.blocking);
-  const openGreyAreas = legal.grey_areas_current.filter((g) => g.status === "open");
-  const highValueRecs = recommendations.by_category.financial
+  const watching = pkg.missing_inputs.filter((m) => !m.blocking);
+  const decisions = recommendations.by_category.financial
     .filter((r) => r.estimated_value_usd)
     .sort((a, b) => (b.estimated_value_usd || 0) - (a.estimated_value_usd || 0))
     .slice(0, 3);
 
+  const swingTotal = openGrey.reduce((s, g) => s + (g.amount_usd || 0), 0);
+  const openCount = pkg.missing_inputs.length + openGrey.length;
+  const blockingCount = blockingQuestions.length + openGrey.length;
+  const best = (structures.ranking || []).find((r) => r.is_priceable);
+
+  const now = new Date();
+  const goWorkspace = () => navigate("/production/workspace");
+
   return (
-    <div className="screen">
-      <header className="screen-header" style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
-        <div>
-          <p className="screen-eyebrow">Today</p>
-          <h1 className="screen-title">Work queue</h1>
+    <div className="tdx-screen">
+      <header className="tdx-topbar">
+        <div className="tdx-today">
+          <span>Today · {WEEKDAYS[now.getDay()]}</span>
+          <b>{now.getDate()} {MONTHS[now.getMonth()]} {now.getFullYear()}</b>
         </div>
-        <button
-          className="hero-action"
-          disabled
-          title="POST /api/v1/projects exists and works, but no CineGlobe screen reads from the projects table — every screen here is wired to the single cached Little Utopia demo state (little_utopia_state.py), not the database. Calling it would create an orphaned row with no visible effect, so this stays disabled until that wiring exists."
-        >
-          <Plus size={14} strokeWidth={1.8} /> Add production
-        </button>
+        <div className="tdx-stat">
+          <div className="l">Decisions waiting on you</div>
+          <div className="v gold">{openCount} <em>{swingTotal ? `±$${Math.round(swingTotal).toLocaleString()} at stake` : "in queue"}</em></div>
+        </div>
+        <div className="tdx-stat">
+          <div className="l">Optimization in play</div>
+          <div className="v">{swingTotal ? `$${Math.round(swingTotal).toLocaleString()}` : "—"}</div>
+        </div>
+        <div className="tdx-stat">
+          <div className="l">Blocking rulings</div>
+          <div className="v" style={{ color: blockingCount ? "var(--red)" : "var(--jade)" }}>
+            {blockingCount}{blockingCount ? " " : ""}<em>{blockingCount ? "authority pending" : "none"}</em>
+          </div>
+        </div>
+        {swingTotal > 0 && (
+          <button className="tdx-alert" onClick={goWorkspace}><i />In-kind FMV ruling awaited</button>
+        )}
       </header>
 
-      <section className="region region-cool">
-        <div className="region-title"><span>Needs a decision</span><span className="count">{highValueRecs.length}</span></div>
-        <div className="row-list">
-          {highValueRecs.map((r) => (
-            <div className="row-item" key={r.recommendation_id} onClick={() => navigate("/production/workspace")}>
-              <Scale size={16} color="var(--blue)" strokeWidth={1.8} />
-              <div className="row-main">
-                <div className="row-title">{recommendationHeadline(r)}</div>
-                <div className="row-sub">The Little Utopia · {r.requires_counsel_approval ? "counsel approval needed" : "producer approval needed"}</div>
-              </div>
-              <div className="row-value mono"><Money value={r.estimated_value_usd} /></div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="region region-blocker">
-        <div className="region-title"><span>Blocked</span><span className="count">{blockingQuestions.length}</span></div>
-        {blockingQuestions.length === 0 ? (
-          <div className="empty-row"><CheckCircle2 size={15} strokeWidth={1.8} />Nothing is blocked right now.</div>
-        ) : (
-          <div className="row-list">
-            {blockingQuestions.map((q) => (
-              <div className="row-item" key={q.identifier} onClick={() => navigate("/production/workspace")}>
-                <AlertTriangle size={16} color="var(--red)" strokeWidth={1.8} />
-                <div className="row-main">
-                  <div className="row-title">{q.question}</div>
-                  <div className="row-sub">{q.why_it_matters}</div>
+      <main className="tdx-board">
+        {/* Column 1 — the decision queue */}
+        <div>
+          <div className="tdx-sec-h"><h2>Requires your decision</h2><span className="n">{decisions.length}</span></div>
+          <div className="tdx-flat">
+            {decisions.length ? decisions.map((r) => (
+              <div className="tdx-trow" key={r.recommendation_id}>
+                <span className="bar dec" />
+                <div className="tt2">
+                  <b><i>{production.production_name}</i> — {recommendationHeadline(r)}</b>
+                  <div className="m2">{r.requires_counsel_approval ? "Counsel approval" : "Producer approval"} · <span className="mono" style={{ color: "var(--jade)" }}><Money value={r.estimated_value_usd} /></span> estimated value</div>
                 </div>
+                <div className="acts2"><button className="tdx-btn g" onClick={goWorkspace}>Open →</button></div>
               </div>
-            ))}
+            )) : <div className="tdx-empty">No decisions pending — every priced structure is settled.</div>}
           </div>
-        )}
-      </section>
 
-      <section className="region region-conditional">
-        <div className="region-title"><span>Watching</span><span className="count">{openGreyAreas.length}</span></div>
-        {openGreyAreas.length === 0 ? (
-          <div className="empty-row"><CheckCircle2 size={15} strokeWidth={1.8} />Nothing open to watch.</div>
-        ) : (
-          <div className="row-list">
-            {openGreyAreas.map((g) => (
-              <div className="row-item" key={g.item_id} onClick={() => navigate("/production/knowledge")}>
-                <Eye size={16} color="var(--amber)" strokeWidth={1.8} />
-                <div className="row-main">
-                  <div className="row-title">{g.resolving_evidence}</div>
-                  <div className="row-sub">{g.authority_to_ask} · {g.jurisdiction_code} <span className="mono text-tertiary">· {g.item_id}</span></div>
-                </div>
-                <div className="row-value mono"><Money value={g.amount_usd} /></div>
-              </div>
-            ))}
+          <div className="tdx-sec-h" style={{ marginTop: 26 }}><h2>Blocked</h2><span className="n">{blockingCount}</span></div>
+          <div className="tdx-flat">
+            {blockingCount ? (
+              <>
+                {openGrey.map((g) => (
+                  <div className="tdx-trow" key={g.item_id}>
+                    <span className="bar blk" />
+                    <div className="tt2">
+                      <b>{g.resolving_evidence}</b>
+                      <div className="m2">{g.authority_to_ask} · <span className="mono">±<Money value={g.amount_usd} bare /></span> at stake · {g.jurisdiction_code}</div>
+                    </div>
+                    <div className="acts2"><button className="tdx-btn s" onClick={goWorkspace}>Open →</button></div>
+                  </div>
+                ))}
+                {blockingQuestions.map((q) => (
+                  <div className="tdx-trow" key={q.identifier}>
+                    <span className="bar blk" />
+                    <div className="tt2"><b>{q.question}</b><div className="m2">{q.why_it_matters}</div></div>
+                    <div className="acts2"><button className="tdx-btn s" onClick={goWorkspace}>Open →</button></div>
+                  </div>
+                ))}
+              </>
+            ) : <div className="tdx-empty">Nothing is blocked right now.</div>}
           </div>
-        )}
-      </section>
 
-      <section className="region region-cool">
-        <div className="region-title"><span>Productions needing action</span></div>
-        <div className="row-list">
-          <div className="row-item" onClick={() => navigate("/production/overview")}>
-            <Clapperboard size={16} color="var(--blue)" strokeWidth={1.8} />
-            <div className="row-main">
-              <div className="row-title serif" style={{ fontSize: 14, display: "flex", alignItems: "center", gap: 8 }}>
-                {production.production_name}
-                <span className={`badge ${statusMeta.tier}`} title={statusMeta.description}>{statusMeta.label}</span>
+          <div className="tdx-sec-h" style={{ marginTop: 26 }}><h2>Watching — no action needed</h2><span className="n">{watching.length}</span></div>
+          <div className="tdx-flat">
+            {watching.length ? watching.map((q) => (
+              <div className="tdx-trow" key={q.identifier}>
+                <span className="bar wat" />
+                <div className="tt2"><div className="m2"><b style={{ color: "var(--text-primary)" }}>{q.question}</b> · {q.optimizer_value} priority</div></div>
               </div>
-              <div className="row-sub">{production.jurisdiction_code} baseline · {pkg.confidence} confidence</div>
-            </div>
-            <div className="row-value mono"><Money value={production.gross_budget_usd} /></div>
-            <ArrowRight size={14} color="var(--text-tertiary)" />
+            )) : <div className="tdx-empty">Nothing open to watch.</div>}
           </div>
         </div>
-      </section>
+
+        {/* Column 2 — productions + activity */}
+        <div>
+          <div className="tdx-sec-h">
+            <h2>Productions needing action</h2><span className="n">1</span>
+            <button className="all" disabled title="POST /api/v1/projects exists but no screen reads the projects table yet — every screen is wired to the single cached Little Utopia state.">＋ New production</button>
+          </div>
+          <div className="tdx-flat">
+            <div className="tdx-prow" onClick={() => navigate("/production/overview")}>
+              <div className="tdx-art" />
+              <span className="nm2">{production.production_name}</span>
+              <span className="ph2">{statusMeta.label}</span>
+              <span className="need2">{openCount} question{openCount === 1 ? "" : "s"} open</span>
+              <span className="bud2"><Money value={production.gross_budget_usd} /> budget</span>
+              <span className="cost2">{best ? <Money value={best.conservative_npc_usd} /> : "—"}</span>
+            </div>
+          </div>
+
+          <div className="tdx-sec-h" style={{ marginTop: 26 }}><h2>Since your last visit</h2></div>
+          <div className="tdx-flat">
+            <div className="tdx-empty">
+              Activity feed is served by the ingestion/event engine, which is not wired to this cached
+              production state yet — the Record page carries the production's append-only history.
+              <div style={{ marginTop: 8 }}>
+                <button className="tdx-btn g" onClick={() => navigate("/production/record")}>Open Record →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

@@ -10,6 +10,9 @@ import OrgReports from "./screens/company/OrgReports";
 
 import Overview from "./screens/production/Overview";
 import Workspace from "./screens/production/Workspace";
+import Scenarios from "./screens/production/Scenarios";
+import ProjectGlobe from "./screens/production/ProjectGlobe";
+import Reports from "./screens/production/Reports";
 import Binder from "./screens/production/Binder";
 import Knowledge from "./screens/production/Knowledge";
 import Record from "./screens/production/Record";
@@ -29,6 +32,9 @@ export default function App() {
             <Route path="/company/reports" element={<OrgReports />} />
             <Route path="/production/overview" element={<Overview />} />
             <Route path="/production/workspace" element={<Workspace />} />
+            <Route path="/production/scenarios" element={<Scenarios />} />
+            <Route path="/production/globe" element={<ProjectGlobe />} />
+            <Route path="/production/reports" element={<Reports />} />
             <Route path="/production/binder" element={<Binder />} />
             <Route path="/production/knowledge" element={<Knowledge />} />
             <Route path="/production/record" element={<Record />} />
