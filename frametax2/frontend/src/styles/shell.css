@@ -342,26 +342,26 @@
 .field-saved { color: var(--jade); font-size: 11px; }
 
 /* Generic section card used across Overview/Workspace/Knowledge */
+/* Flat editorial sections (migrated to the approved artifact language):
+   no filled/tinted cards — sections are separated by a hairline and a
+   section heading, matching Today / Overview / Workspace. The tinted
+   region-* variants are neutralised (kept as no-ops so page markup is
+   untouched) and their semantics now read from the section heading. */
 .region {
-  background: var(--surface-1);
-  border: 0.5px solid var(--hairline);
-  border-radius: var(--radius-lg);
-  padding: var(--sp-6);
-  margin-bottom: var(--sp-4);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  margin-bottom: var(--sp-6);
 }
-.region-title { font-size: 13.5px; color: var(--text-primary); font-weight: 500; margin-bottom: var(--sp-4); display: flex; align-items: center; justify-content: space-between; }
-.region-title .count { color: var(--text-tertiary); font-weight: 400; }
+.region-title { font: 600 12.5px var(--font-sans); color: var(--text-primary); margin-bottom: 9px; display: flex; align-items: baseline; gap: 9px; }
+.region-title .count { margin-left: auto; font: 600 10px var(--font-mono); color: var(--gold); font-weight: 600; }
 
-/* Region variants — distinguish adjacent sections with a tinted surface
-   instead of another dark bordered card. */
-.region-cool { background: var(--surface-cool); border-color: rgba(44,85,128,0.12); }
-.region-warm { background: var(--surface-warm); border-color: rgba(161,122,46,0.18); }
-.region-positive { background: var(--surface-positive); border-color: rgba(46,107,78,0.14); }
-.region-conditional { background: var(--surface-conditional); border-color: rgba(147,100,28,0.16); }
-.region-blocker { background: var(--surface-blocker); border-color: rgba(156,60,49,0.14); }
-.region-flat { background: transparent; border-color: transparent; padding: 0; }
+.region-cool, .region-warm, .region-positive, .region-conditional, .region-blocker, .region-flat {
+  background: transparent; border-color: transparent; padding: 0;
+}
 
-.row-list { display: flex; flex-direction: column; }
+.row-list { display: flex; flex-direction: column; border-top: 0.5px solid var(--hairline); }
 .row-item {
   display: flex;
   align-items: center;
