@@ -1,8 +1,27 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
 import ThreeGlobe from "three-globe";
+
+// Cheap, non-leaking probe for WebGL availability. Creates one throwaway
+// context and immediately releases it, so it never counts against the
+// browser's live-context budget. Returns false when WebGL is unavailable
+// (no hardware/driver support, GPU blocklist, or the per-page context
+// limit is currently exhausted) — the caller then renders the static
+// identity fallback instead of throwing.
+function webglAvailable() {
+  try {
+    const c = document.createElement("canvas");
+    const gl = c.getContext("webgl2") || c.getContext("webgl") || c.getContext("experimental-webgl");
+    if (!gl) return false;
+    const lose = gl.getExtension("WEBGL_lose_context");
+    if (lose) lose.loseContext();
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 const TIER_HEX = {
   gold: "#d8b569",
@@ -25,10 +44,21 @@ export default function Globe3D({ points = [], arcs = [], onPointClick, onPointH
   const mountRef = useRef(null);
   const globeRef = useRef(null);
   const stateRef = useRef({});
+  // When WebGL can't initialise, render a static identity globe instead of
+  // throwing — a globe failure must never take down the page it sits in.
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
+    // Guard against a duplicate renderer if this effect ever re-runs while a
+    // previous instance is still live (belt-and-suspenders with StrictMode).
+    if (stateRef.current.renderer) return;
+
+    // Detect unavailable WebGL up front and degrade gracefully rather than
+    // letting `new THREE.WebGLRenderer` throw an uncaught error.
+    if (!webglAvailable()) { setFailed(true); return; }
+
     // clientWidth can read 0/incorrect on first paint inside a flex/grid
     // parent whose own size isn't settled yet — fall back to the mount's
     // own parent width, and let the ResizeObserver below correct it the
@@ -42,7 +72,15 @@ export default function Globe3D({ points = [], arcs = [], onPointClick, onPointH
     const camera = new THREE.PerspectiveCamera(50, width / h, 0.1, 2000);
     camera.position.set(0, 0, 340);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    let renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    } catch {
+      // Context creation can still fail even after the probe passed (e.g. a
+      // transient limit). Fall back to the static identity globe.
+      setFailed(true);
+      return;
+    }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(width, h);
     mount.innerHTML = "";
@@ -201,6 +239,17 @@ export default function Globe3D({ points = [], arcs = [], onPointClick, onPointH
       globeRef.current.arcsData(arcs);
     }
   }, [points, arcs]);
+
+  // Static identity-globe fallback: a smoked-obsidian sphere with a warm
+  // rim, drawn purely in CSS. Preserves the CineGlobe identity when WebGL is
+  // unavailable and, critically, lets the surrounding page render normally.
+  if (failed) {
+    return (
+      <div className="globe-canvas globe-static" style={{ height }} role="img" aria-label="CineGlobe">
+        <div className="globe-static-sphere" />
+      </div>
+    );
+  }
 
   return <div ref={mountRef} className="globe-canvas" style={{ height }} />;
 }
