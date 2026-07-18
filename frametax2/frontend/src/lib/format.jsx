@@ -2,9 +2,10 @@ import { JURISDICTION_COORDS } from "./jurisdictions";
 
 // Pure display formatting only — no business logic, no derived facts.
 
-export function Money({ value }) {
+export function Money({ value, bare = false }) {
   if (value === null || value === undefined) return <span className="text-tertiary">—</span>;
-  return <span className="mono">${Number(value).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>;
+  const num = Number(value).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  return <span className="mono">{bare ? num : `$${num}`}</span>;
 }
 
 export function Pct({ value }) {

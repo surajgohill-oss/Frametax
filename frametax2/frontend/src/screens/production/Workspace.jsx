@@ -1,9 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { Rows3, Globe2, Columns2, ChevronDown } from "lucide-react";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
-import { Money, accountStateLabel, humanizeToken } from "../../lib/format";
-import { buildAccountBlocks } from "../../lib/budgetBlocks";
+import { Money, humanizeToken } from "../../lib/format";
 import { useAppState } from "../../state/AppState";
 import Globe3D from "../../components/Globe3D";
 import { buildGlobeData, structureTier } from "../../lib/globeData";
@@ -12,131 +12,75 @@ import RecommendationsList from "../../components/RecommendationsList";
 import EconomicsTrace from "../../components/EconomicsTrace";
 import QualificationPanel from "../../components/QualificationPanel";
 
+// Workspace — the approved artifact "rack" layout
+// (reference/artifacts/prototype-v1-updated.html): a collapsible question
+// stack on the left, a full-width grid of universal scenario cards in the
+// centre (or the Map/Split globe), and a two-group leading-structure strip
+// pinned to the bottom. The right-hand Inspector is the app-level overlay
+// (openInspector). Every card value is read verbatim from the allocated
+// structure — Qualified spend is the backend's own per-segment QPE summed;
+// Gross incentive is total_incentive_floor_usd; NPC is
+// npc_with_adjustments_usd. No client-side derivation.
+
 const MODES = [
   { key: "lanes", label: "Lanes", icon: Rows3 },
   { key: "map", label: "Map", icon: Globe2 },
   { key: "split", label: "Split", icon: Columns2 },
 ];
+const CIRCLED = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧"];
+const pct = (part, whole) => (whole ? Math.max(0, Math.min(100, (part / whole) * 100)) : 0);
 
-// Cross-references one budget account against every allocated structure's
-// own segments — "jurisdiction comparison" / "affected structures" for
-// the Model Rail expanded view. Every field is read verbatim from
-// allocated_structures; a segment's blockers are its own explanation.
-function computeAccountCrossRef(code, allocated) {
-  if (!allocated) return [];
-  return allocated.structures
-    .map((s) => {
-      const seg = s.segments.find((sg) => sg.account_codes.includes(code));
-      if (!seg) return null;
-      return {
-        structureId: s.structure_id,
-        structureLabel: s.label,
-        jurisdictionCode: seg.jurisdiction_code,
-        claimsIncentive: seg.claims_incentive,
-        qpeUsd: seg.qpe_usd,
-        incentiveFloorUsd: seg.incentive_floor_usd,
-        blockers: seg.blockers,
-      };
-    })
-    .filter(Boolean);
-}
-
-function ModelRailBlock({ block, maxAmount, onSelectAccount }) {
-  const [open, setOpen] = useState(false);
-  const pct = Math.min(100, Math.round((block.amount / maxAmount) * 100));
-  return (
-    <div className="budget-block">
-      <div className="budget-block-header" onClick={() => setOpen((o) => !o)}>
-        <span className="budget-block-name">{block.label}</span>
-        <span className="budget-block-amount mono"><Money value={block.amount} /></span>
-      </div>
-      <div className="budget-block-bar"><div className="budget-block-bar-fill" style={{ width: `${pct}%` }} /></div>
-      {open && (
-        <div className="budget-block-lines">
-          {block.lines.map((l) => {
-            const state = accountStateLabel(l.state);
-            return (
-              <div className="budget-line" key={l.key} onClick={(e) => { e.stopPropagation(); onSelectAccount(l); }}>
-                <span className="budget-line-name">
-                  <span className={`dot ${state.tier}`} />
-                  {l.label}
-                  {l.movement !== "unclassified" && <span className={`movement-chip ${l.movement}`}>{l.movement}</span>}
-                </span>
-                <span className="mono"><Money value={l.amount} /></span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Approved universal scenario card: identical internal structure on every
-// card — Gross Budget / Qualified Spend / Gross Incentive / dominant NPC,
-// then Inspect + Compare, then the leading-structure control. Every value
-// is read verbatim from the allocated structure (qualified spend = the
-// backend's own per-segment QPE, summed; incentive = total_incentive_floor_usd;
-// NPC = npc_with_adjustments_usd). No Net Benefit, no Timing.
 function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, onSetLeading, onInspect, onCompare, onSelectSegment }) {
-  const qualifiedSpend = structure.segments?.reduce((sum, sg) => sum + (sg.qpe_usd || 0), 0);
+  const priced = structure.is_fully_priced;
+  const qualifiedSpend = structure.segments?.reduce((sum, sg) => sum + (sg.qpe_usd || 0), 0) || 0;
+  const npc = structure.npc_with_adjustments_usd;
+
+  const laneClass = isLeading ? "anchor" : priced ? "" : "draft";
+  const badge = isLeading ? "① LEADING" : priced ? (CIRCLED[(rank?.rank || 1) - 1] || `#${rank?.rank}`) : "DRAFT";
+
   return (
-    <div className={`lane lane-${tier}`}>
-      <div className="lane-header">
-        <span className="lane-title serif card-title">{structure.label}</span>
-        <span className={`dot ${tier}`} />
-      </div>
-      <p className="lane-sub text-tertiary small">
-        {humanizeToken(structure.structure_type)}{rank?.rank ? ` · rank ${rank.rank}` : ""}
-      </p>
-
-      <div className="tag-row" style={{ marginTop: 6 }}>
-        {structure.participants.map((code) => (
-          <button
-            key={code}
-            className="tag"
-            onClick={(e) => { e.stopPropagation(); onSelectSegment(structure, code); }}
-          >
-            {code}
-          </button>
-        ))}
-      </div>
-
-      {structure.is_fully_priced ? (
-        <>
-          <div className="card-rows">
-            <div className="card-row"><span className="label">Gross budget</span><span className="mono"><Money value={grossBudget} /></span></div>
-            <div className="card-row"><span className="label">Qualified spend</span><span className="mono"><Money value={qualifiedSpend} /></span></div>
-            <div className="card-row"><span className="label">Gross incentive</span><span className="mono card-incentive"><Money value={structure.total_incentive_floor_usd} /></span></div>
+    <div className={`wsx-lane ${laneClass}`}>
+      <div className="wsx-lh">
+        <div className="wsx-lh-id">
+          <div className="wsx-nm">{structure.label}</div>
+          <div className="wsx-lb">
+            {humanizeToken(structure.structure_type)}
+            {structure.participants?.length ? ` · ${structure.participants.join(" · ")}` : ""}
           </div>
-          <div className="card-npc">
-            <span className="card-npc-label">Net production cost</span>
-            <span className="mono card-npc-value"><Money value={structure.npc_with_adjustments_usd} /></span>
+        </div>
+        <span className="wsx-badge">{badge}</span>
+      </div>
+
+      {priced ? (
+        <>
+          <div className="wsx-rows">
+            <div className="wsx-row"><span>Gross budget</span><span><Money value={grossBudget} bare /></span></div>
+            <div className="wsx-row"><span>Qualified spend</span><span><Money value={qualifiedSpend} bare /></span></div>
+            <div className="wsx-row"><span>Gross incentive</span><span className="incentive"><Money value={structure.total_incentive_floor_usd} bare /></span></div>
+          </div>
+          <div className="wsx-row net"><span>Net production cost</span><span><Money value={npc} bare /></span></div>
+          <div className="wsx-range">
+            <u style={{ left: 0, width: `${pct(qualifiedSpend, grossBudget)}%` }} />
+            <b style={{ left: `${pct(npc, grossBudget)}%` }} />
           </div>
         </>
       ) : (
-        <div style={{ marginTop: 8 }}>
-          <p className="lane-partial-note">
-            Not yet priced — {structure.blockers.length} blocker{structure.blockers.length === 1 ? "" : "s"}.
-          </p>
-          {structure.blockers.slice(0, 3).map((b, i) => (
-            <p key={i} className="text-tertiary small" style={{ margin: "4px 0" }}>{b}</p>
-          ))}
-          {structure.blockers.length > 3 && (
-            <p className="text-tertiary small">+{structure.blockers.length - 3} more blocker(s) — open the recommendation for the full trace.</p>
-          )}
+        <div className="wsx-partial">
+          <div className="note">Not yet priced — {structure.blockers.length} blocker{structure.blockers.length === 1 ? "" : "s"}.</div>
+          {structure.blockers.slice(0, 3).map((b, i) => <p key={i}>{b}</p>)}
+          {structure.blockers.length > 3 && <p>+{structure.blockers.length - 3} more — open the recommendation for the full trace.</p>}
         </div>
       )}
 
-      <div className="card-actions">
-        <button className="card-action" onClick={(e) => { e.stopPropagation(); onInspect(structure); }}>Inspect</button>
-        <button className="card-action" onClick={(e) => { e.stopPropagation(); onCompare(structure); }}>Compare</button>
+      <div className="wsx-foot">
+        <button onClick={() => onInspect(structure)}>Inspect</button>
+        <button onClick={() => onCompare(structure)}>Compare</button>
       </div>
-      <div className="card-lead-row">
+      <div className="wsx-lead-act">
         {isLeading ? (
-          <button className="card-lead is-leading" disabled>● Current leading structure</button>
+          <button className="wsx-lead is-leading" disabled>● Current leading structure</button>
         ) : (
-          <button className="card-lead" onClick={(e) => { e.stopPropagation(); onSetLeading(structure.structure_id); }}>◈ Set as leading</button>
+          <button className="wsx-lead" onClick={() => onSetLeading(structure.structure_id)}>◈ Set as leading</button>
         )}
       </div>
     </div>
@@ -145,94 +89,132 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, onSetLead
 
 export default function Workspace() {
   const { data, error, loading, refetch } = useCineGlobe();
-  const [mode, setMode] = useState("lanes");
-  const [sideTab, setSideTab] = useState("questions");
+  const location = useLocation();
+  const navTab = location.state?.tab;
+
+  const [mode, setMode] = useState(navTab === "map" || navTab === "split" ? navTab : "lanes");
+  const [qOpen, setQOpen] = useState(navTab === "inputs" || navTab === "recommendations");
+  const [qTab, setQTab] = useState(navTab === "inputs" || navTab === "recommendations" ? navTab : "questions");
   const [activeGreyArea, setActiveGreyArea] = useState(null);
-  // Presentation-only leading-structure choice (approved "Set as Leading"
-  // control). Defaults to the backend's own rank-1 structure; no backend
-  // persistence or re-ranking is wired in this pass.
   const [leadingOverride, setLeadingOverride] = useState(null);
   const { openInspector } = useAppState();
 
-  const allocated = data?.structures?.allocated_structures;
+  // Honor cross-page navigation intent (Overview "Deal facts → edit",
+  // "Project globe") once the location changes.
+  useEffect(() => {
+    if (navTab === "map" || navTab === "split") setMode(navTab);
+    if (navTab === "inputs" || navTab === "recommendations") { setQOpen(true); setQTab(navTab); }
+  }, [navTab]);
 
+  const allocated = data?.structures?.allocated_structures;
   const rankById = useMemo(() => {
     if (!allocated) return new Map();
     return new Map(allocated.ranking.map((r) => [r.structure_id, r]));
   }, [allocated]);
-
-  // One live production model feeding LANES and MAP/SPLIT alike — shared
-  // with Overview via lib/globeData.
   const { points, arcs, structuresByCode } = useMemo(
     () => buildGlobeData(allocated, rankById),
     [allocated, rankById],
   );
 
-  const budgetBlocks = useMemo(() => (data ? buildAccountBlocks(data.pkg.register) : []), [data]);
-  const maxBlockAmount = useMemo(() => Math.max(1, ...budgetBlocks.map((b) => b.amount)), [budgetBlocks]);
-
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
 
   const { production, pkg, recommendations, legal } = data;
+  const openGrey = (legal.grey_areas_current || []).filter((g) => g.status === "open");
+  const openCount = (pkg.missing_inputs?.length || 0) + openGrey.length;
   const best = allocated.ranking.find((r) => r.rank === 1);
-  // Effective leading structure: presentation override if set, otherwise
-  // the backend's own rank-1 result.
   const leadingId = leadingOverride ?? best?.structure_id ?? null;
   const leadingStructure = allocated.structures.find((s) => s.structure_id === leadingId);
 
+  // Collapsed-rail status dots — hot for any money-bearing / blocking item.
+  const dots = [
+    ...openGrey.map(() => "hot"),
+    ...(pkg.missing_inputs || []).map((m) => (m.blocking ? "hot" : "")),
+  ].slice(0, 8);
+
   function handleGlobeClick(pt) {
-    const list = structuresByCode.get(pt.id) || [];
-    const s = list[0];
+    const s = (structuresByCode.get(pt.id) || [])[0];
     if (!s) return;
     const seg = s.segments.find((sg) => sg.jurisdiction_code === pt.id);
     if (seg) openInspector("allocation-segment", { ...seg, structureLabel: s.label });
     else if (s.recommendation) openInspector("structure-recommendation", s.recommendation);
   }
-
   function handleSelectStructure(structure) {
     if (structure.recommendation) openInspector("structure-recommendation", structure.recommendation);
     else if (structure.segments?.[0]) openInspector("allocation-segment", { ...structure.segments[0], structureLabel: structure.label });
   }
-
   function handleSelectSegment(structure, code) {
     const seg = structure.segments.find((sg) => sg.jurisdiction_code === code);
     if (seg) openInspector("allocation-segment", { ...seg, structureLabel: structure.label });
   }
 
   return (
-    <div className="workspace-screen">
-      <div className="workspace-body">
-        <aside className="model-rail">
-          <p className="model-rail-heading">Model Rail — production budget</p>
-          <div className="rail-total">
-            <span className="text-tertiary small">Gross budget</span>
-            <span className="amount mono"><Money value={production.gross_budget_usd} /></span>
-          </div>
-          {budgetBlocks.map((block) => (
-            <ModelRailBlock
-              key={block.key}
-              block={block}
-              maxAmount={maxBlockAmount}
-              onSelectAccount={(line) => openInspector("account", { ...line, crossRef: computeAccountCrossRef(line.code, allocated) })}
-            />
-          ))}
-        </aside>
+    <div className="wsx-screen">
+      <div className={`wsx-work${qOpen ? " qopen" : ""}`}>
+        {/* Question stack — collapsible left rail. Collapsed by default per
+            the artifact; expands into the full work stack (Questions /
+            Recommendations / Inputs) so every backend-wired panel stays
+            reachable (QualificationPanel = the real POST /people, /facts). */}
+        {qOpen ? (
+          <aside className="wsx-qstack wsx-qstack-open">
+            <div className="wsx-qh">
+              Work stack · {openCount}
+              <button className="wsx-qcollapse" onClick={() => setQOpen(false)} aria-label="Collapse">⟨</button>
+            </div>
+            <div className="wsx-qtabs">
+              <button className={qTab === "questions" ? "active" : ""} onClick={() => setQTab("questions")}>Questions</button>
+              <button className={qTab === "recommendations" ? "active" : ""} onClick={() => setQTab("recommendations")}>Recs</button>
+              <button className={qTab === "inputs" ? "active" : ""} onClick={() => setQTab("inputs")}>Inputs</button>
+            </div>
+            {qTab === "questions" && (
+              <>
+                <QuestionStack missingInputs={pkg.missing_inputs} greyAreas={legal.grey_areas_current} />
+                {openGrey.length > 0 && (
+                  <div className="trace-trigger-row">
+                    {openGrey.map((g) => (
+                      <button key={g.item_id} className={`tag ${activeGreyArea?.item_id === g.item_id ? "active" : ""}`} onClick={() => setActiveGreyArea(g)}>
+                        Trace {g.jurisdiction_code} · <Money value={g.amount_usd} /> <ChevronDown size={12} />
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {activeGreyArea && <EconomicsTrace greyArea={activeGreyArea} legal={legal} />}
+              </>
+            )}
+            {qTab === "recommendations" && (
+              <RecommendationsList byCategory={recommendations.by_category} legal={recommendations.legal} />
+            )}
+            {qTab === "inputs" && (
+              <QualificationPanel people={data.people} facts={data.facts} script={pkg.script} refetch={refetch} />
+            )}
+          </aside>
+        ) : (
+          <aside className="wsx-qstack collapsed">
+            <button className="wsx-qexpand" onClick={() => setQOpen(true)} aria-label="Expand question stack">⟩</button>
+            <div className="wsx-qcount">{openCount}</div>
+            <div className="wsx-qdots">
+              {dots.map((d, i) => <i key={i} className={`wsx-qdot ${d}`} />)}
+            </div>
+          </aside>
+        )}
 
-        <div className="workspace-canvas">
-          <nav className="mode-tabs">
-            {MODES.map((m) => {
-              const Icon = m.icon;
-              return (
-                <button key={m.key} className={mode === m.key ? "active" : ""} onClick={() => setMode(m.key)}>
-                  <Icon size={14} strokeWidth={1.8} />{m.label}
-                </button>
-              );
-            })}
-          </nav>
+        {/* Station — card rack or globe */}
+        <div className="wsx-station">
+          <div className="wsx-station-head">
+            <div className="wsx-viewtabs">
+              {MODES.map((m) => {
+                const Icon = m.icon;
+                return (
+                  <button key={m.key} className={mode === m.key ? "active" : ""} onClick={() => setMode(m.key)}>
+                    <Icon size={13} strokeWidth={1.8} />{m.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           {mode === "lanes" && (
-            <div className="lanes-row scroll-x">
+            <div className="wsx-rack">
               {allocated.structures.map((s) => (
                 <ScenarioCard
                   key={s.structure_id}
@@ -243,105 +225,59 @@ export default function Workspace() {
                   isLeading={s.structure_id === leadingId}
                   onSetLeading={setLeadingOverride}
                   onInspect={handleSelectStructure}
-                  onCompare={() => setSideTab("recommendations")}
+                  onCompare={() => { setQOpen(true); setQTab("recommendations"); }}
                   onSelectSegment={handleSelectSegment}
                 />
               ))}
+              <div className="wsx-lane new" onClick={() => setMode("map")} role="button" title="Add a jurisdiction from the globe">
+                <span>+</span>
+              </div>
             </div>
           )}
 
           {mode === "map" && (
-            <div className="globe-canvas-wrap dark-panel">
+            <div className="wsx-globe dark-panel">
               <Globe3D points={points} arcs={arcs} height={460} onPointClick={handleGlobeClick} />
               <p className="globe-caption small">
                 Gold = top-ranked fully priced structure · jade = another fully priced structure · amber = allocated
-                but blocked by an unresolved requirement · silver = allocated, not the top-priced route.
-                {arcs.length > 0
-                  ? " Dashed arcs mark treaty co-production routes."
-                  : ` No treaty co-production structure is currently priced — see coverage.reachable_treaty_partners (${allocated.coverage.reachable_treaty_partners.length}) in Knowledge.`}
+                but blocked · silver = allocated, not the top-priced route.
+                {arcs.length > 0 ? " Dashed arcs mark treaty co-production routes." : ""}
               </p>
             </div>
           )}
 
           {mode === "split" && (
-            <div className="split-workspace">
+            <div className="split-workspace" style={{ padding: "14px 18px" }}>
               <div className="split-lane-row">
                 {allocated.structures.map((s) => {
                   const tier = structureTier(s, rankById);
                   return (
                     <div key={s.structure_id} className={`split-lane-mini lane-${tier}`} onClick={() => handleSelectStructure(s)}>
                       <div className="row-title" style={{ fontSize: 12 }}>{s.label}</div>
-                      <div className="row-sub">
-                        {s.is_fully_priced ? "Fully priced" : `${s.blockers.length} blocker${s.blockers.length === 1 ? "" : "s"}`}
-                      </div>
+                      <div className="row-sub">{s.is_fully_priced ? "Fully priced" : `${s.blockers.length} blocker${s.blockers.length === 1 ? "" : "s"}`}</div>
                     </div>
                   );
                 })}
               </div>
-              <div className="globe-canvas-wrap dark-panel">
+              <div className="wsx-globe dark-panel" style={{ margin: 0 }}>
                 <Globe3D points={points} arcs={arcs} height={340} onPointClick={handleGlobeClick} />
               </div>
             </div>
           )}
         </div>
-
-        <aside className="workspace-side">
-          <div className="workspace-side-tabs">
-            <button className={sideTab === "questions" ? "active" : ""} onClick={() => setSideTab("questions")}>
-              Questions <span className="text-tertiary">{pkg.missing_inputs.length + legal.grey_areas_current.filter((g) => g.status === "open").length}</span>
-            </button>
-            <button className={sideTab === "recommendations" ? "active" : ""} onClick={() => setSideTab("recommendations")}>
-              Recommendations
-            </button>
-            <button className={sideTab === "inputs" ? "active" : ""} onClick={() => setSideTab("inputs")}>
-              Inputs
-            </button>
-          </div>
-          <div className="workspace-side-body">
-            {sideTab === "questions" && (
-              <>
-                <QuestionStack missingInputs={pkg.missing_inputs} greyAreas={legal.grey_areas_current} />
-                <div className="trace-trigger-row">
-                  {legal.grey_areas_current.map((g) => (
-                    <button key={g.item_id} className={`tag ${activeGreyArea?.item_id === g.item_id ? "active" : ""}`} onClick={() => setActiveGreyArea(g)}>
-                      Trace {g.jurisdiction_code} · <Money value={g.amount_usd} /> <ChevronDown size={12} />
-                    </button>
-                  ))}
-                </div>
-                {activeGreyArea && <EconomicsTrace greyArea={activeGreyArea} legal={legal} />}
-              </>
-            )}
-            {sideTab === "recommendations" && (
-              <RecommendationsList byCategory={recommendations.by_category} legal={recommendations.legal} />
-            )}
-            {sideTab === "inputs" && (
-              /* Optimizer inputs — treaty eligibility, cultural qualification,
-                 allocation assumptions. Real POST /people + POST /facts wiring,
-                 relocated from Overview per the approved architecture (these
-                 belong in Workspace, not Overview). */
-              <QualificationPanel people={data.people} facts={data.facts} script={pkg.script} refetch={refetch} />
-            )}
-          </div>
-        </aside>
       </div>
 
-      {/* Leading-structure rail — two aligned typographic groups, not one
-          flat sentence. Left: eyebrow / structure. Right: NPC. */}
-      <footer className="leading-rail">
-        <div className="lr-left">
-          <span className="lr-eyebrow">Leading structure</span>
-          <span className="serif lr-name">{leadingStructure?.label || "None fully priced yet"}</span>
-          {leadingStructure && (
-            <span className="lr-sub text-tertiary small">{humanizeToken(leadingStructure.structure_type)}</span>
-          )}
+      {/* Leading-structure status strip */}
+      <footer className="wsx-status">
+        <div className="wsx-st-left">
+          <span className="wsx-st-k">Leading structure</span>
+          <b>{leadingStructure?.label || "None fully priced yet"}</b>
+          {leadingStructure && <span className="wsx-st-sub">{humanizeToken(leadingStructure.structure_type)}</span>}
         </div>
-        <div className="lr-right">
-          <span className="lr-label">Net production cost</span>
-          <span className="mono lr-value">
-            {leadingStructure?.is_fully_priced
-              ? <Money value={leadingStructure.npc_with_adjustments_usd} />
-              : "—"}
-          </span>
+        <div className="wsx-st-right">
+          <span className="lbl">Net production cost</span>
+          <span className="mono">{leadingStructure?.is_fully_priced ? <Money value={leadingStructure.npc_with_adjustments_usd} /> : "—"}</span>
+          <span className="meta">{openCount} question{openCount === 1 ? "" : "s"} open</span>
         </div>
       </footer>
     </div>
