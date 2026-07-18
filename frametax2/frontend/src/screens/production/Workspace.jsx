@@ -150,7 +150,11 @@ export default function Workspace() {
 
   return (
     <div className="wsx-screen">
-      <div className={`wsx-work${qOpen ? " qopen" : ""}`}>
+      {/* Grid geometry matches the artifact exactly: 48px | 1fr | 38px
+          collapsed, 220px when the stack is open. The Recs/Inputs panels
+          (preserved wiring the artifact has no slot for) need more room than
+          the question stack, so those tabs widen the column. */}
+      <div className={`wsx-work${qOpen ? " qopen" : ""}${qOpen && qTab !== "questions" ? " wide" : ""}`}>
         {/* Question stack — collapsible left rail. Collapsed by default per
             the artifact; expands into the full work stack (Questions /
             Recommendations / Inputs) so every backend-wired panel stays
@@ -158,8 +162,8 @@ export default function Workspace() {
         {qOpen ? (
           <aside className="wsx-qstack wsx-qstack-open">
             <div className="wsx-qh">
-              Work stack · {openCount}
-              <button className="wsx-qcollapse" onClick={() => setQOpen(false)} aria-label="Collapse">⟨</button>
+              Question stack · {openCount}
+              <button className="wsx-qcollapse" onClick={() => setQOpen(false)} aria-label="Collapse question stack">⟨</button>
             </div>
             <div className="wsx-qtabs">
               <button className={qTab === "questions" ? "active" : ""} onClick={() => setQTab("questions")}>Questions</button>
@@ -265,6 +269,12 @@ export default function Workspace() {
             </div>
           )}
         </div>
+
+        {/* Inspector gutter — the artifact reserves a 38px rail on the right
+            that the Inspector expands into. The Inspector itself is the
+            app-level overlay (openInspector); this keeps the station's
+            measure identical whether or not it is open. */}
+        <div className="wsx-insp-gutter" aria-hidden="true" />
       </div>
 
       {/* Leading-structure status strip */}

@@ -50,6 +50,10 @@
   --oxblood: #6B2A2E;
   --oxblood-dim: rgba(107, 42, 46, 0.08);
 
+  /* Faint graph-paper rule used behind the Workspace station (artifact
+     --grid-line): a 96px grid that reads as drafting paper, not a UI grid. */
+  --grid-line: rgba(47, 92, 136, 0.05);
+
   /* Sidebar — Warm Graphite. The one dark shell surface in the approved
      design; everything else stays on the light editorial canvas. */
   --rail-bg: #3A3530;

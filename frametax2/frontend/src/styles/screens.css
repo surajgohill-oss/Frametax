@@ -680,12 +680,23 @@
 
 /* ================= Workspace — artifact rack (wsx-) ================= */
 .wsx-screen { display: flex; flex-direction: column; height: 100%; min-height: 0; }
-.wsx-work { flex: 1; display: grid; grid-template-columns: 48px 1fr; min-height: 0; transition: grid-template-columns 0.16s ease; }
-.wsx-work.qopen { grid-template-columns: 320px 1fr; }
+/* Artifact geometry: 48px | 1fr | 38px, expanding the stack to 220px.
+   The station scrolls rather than reflowing, so opening the stack never
+   changes the card grid. Faint 96px graph-paper ground behind it. */
+.wsx-work {
+  flex: 1; display: grid; grid-template-columns: 48px 1fr 38px; min-height: 0;
+  transition: grid-template-columns 0.16s ease;
+  background-image:
+    repeating-linear-gradient(0deg, var(--grid-line) 0 1px, transparent 1px 96px),
+    repeating-linear-gradient(90deg, var(--grid-line) 0 1px, transparent 1px 96px);
+}
+.wsx-work.qopen { grid-template-columns: 220px 1fr 38px; }
+.wsx-work.qopen.wide { grid-template-columns: 340px 1fr 38px; }
+.wsx-insp-gutter { border-left: 0.5px solid var(--hairline); min-height: 0; }
 
 .wsx-qstack { border-right: 0.5px solid var(--hairline); background: var(--canvas); overflow-y: auto; min-height: 0; }
 .wsx-qstack.collapsed { padding: 12px 0; display: flex; flex-direction: column; align-items: center; }
-.wsx-qstack-open { padding: 14px 12px; }
+.wsx-qstack-open { padding: 14px 6px; }
 .wsx-qexpand, .wsx-qcollapse { all: unset; cursor: pointer; color: var(--text-tertiary); font-size: 12px; padding: 3px 6px; border-radius: 3px; }
 .wsx-qexpand:hover, .wsx-qcollapse:hover { color: var(--text-primary); background: var(--surface-2); }
 .wsx-qcount { font: 700 13px var(--font-mono); color: var(--text-secondary); margin: 10px 0 12px; }
@@ -699,13 +710,32 @@
 .wsx-qtabs button { flex: 1; padding: 7px 4px; font-size: 12px; color: var(--text-tertiary); border-bottom: 2px solid transparent; }
 .wsx-qtabs button.active { color: var(--text-primary); border-bottom-color: var(--blue); font-weight: 500; }
 
+/* Artifact question card — money-first swing, question, meta row. */
+.qcard { border: none; border-left: 2px solid transparent; border-bottom: 0.5px solid var(--hairline); border-radius: 0; padding: 7px; cursor: pointer; }
+.qcard:hover { background: var(--surface-2); }
+.qcard.hot { border-left-color: var(--amber); }
+.qcard.hot .sw { color: var(--amber); }
+.qcard.sel { border-left-color: var(--blue); border-left-width: 3px; background: var(--blue-dim); }
+.qcard.done { opacity: 0.55; }
+.qcard.done .sw { color: var(--jade); }
+.qcard .sw { font: 650 12px var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text-tertiary); letter-spacing: -0.01em; text-transform: capitalize; }
+.qcard .qt { font-size: 12px; color: var(--text-secondary); margin-top: 3px; line-height: 1.4; }
+.qcard .qt b { color: var(--text-primary); font-weight: 600; }
+.qcard .meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 6px; font: 11px var(--font-mono); color: var(--text-tertiary); }
+.qcard .meta span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qcard .meta .age { color: var(--red); flex: none; }
+.qs-empty { margin: 8px 6px; padding: 16px 10px; text-align: center; color: var(--text-tertiary); border: 1px dashed var(--hairline); border-radius: 9px; font-size: 12px; }
+.qs-hint { margin: 10px 6px 0; font-size: 10.5px; color: var(--text-tertiary); }
+
 .wsx-station { overflow: auto; position: relative; min-height: 0; display: flex; flex-direction: column; }
 .wsx-station-head { display: flex; align-items: center; justify-content: flex-end; padding: 12px 18px 0; }
 .wsx-viewtabs { display: inline-flex; background: var(--surface-2); border: 0.5px solid var(--hairline-strong); border-radius: 8px; padding: 2px; gap: 1px; }
 .wsx-viewtabs button { display: flex; align-items: center; gap: 6px; padding: 5px 13px; font: 600 11.5px var(--font-sans); color: var(--text-tertiary); border-radius: 6px; }
 .wsx-viewtabs button.active { background: var(--surface-1); color: var(--text-primary); box-shadow: var(--shadow-sm); }
 
-.wsx-rack { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 320px)); justify-content: start; gap: 18px; padding: 14px 18px 20px; }
+/* Pinned to 3 columns like the artifact — the station scrolls horizontally
+   when the question stack opens instead of reflowing the rack. */
+.wsx-rack { display: grid; grid-template-columns: repeat(3, minmax(310px, 320px)); justify-content: start; gap: 18px; padding: 14px 18px 20px; }
 
 .wsx-lane { background: var(--surface-1); border: 0.5px solid var(--hairline); border-radius: 5px; overflow: hidden; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; }
 .wsx-lane:hover { border-color: var(--hairline-strong); box-shadow: var(--shadow-md); }
@@ -764,8 +794,10 @@
 .tdx-stat .v { font: 15px var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text-primary); margin-top: 1px; }
 .tdx-stat .v em { font-style: normal; font-size: 10.5px; color: var(--text-tertiary); }
 .tdx-stat .v.gold { color: var(--gold); }
-.tdx-alert { margin-left: auto; display: flex; align-items: center; gap: 8px; background: var(--amber-dim); color: var(--amber); border: 0.5px solid rgba(147,100,28,0.3); border-radius: 999px; padding: 6px 13px; font: 500 11.5px var(--font-sans); }
+.tdx-alert { margin-left: auto; display: flex; align-items: center; gap: 8px; background: var(--amber-dim); color: var(--amber); border: 1px solid var(--amber); border-radius: 999px; padding: 5px 13px; font: 600 10.5px var(--font-sans); }
 .tdx-alert i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.tdx-ico { width: 30px; height: 30px; border-radius: 50%; border: 0.5px solid var(--hairline-strong); color: var(--text-tertiary); display: flex; align-items: center; justify-content: center; font-size: 13px; flex: none; }
+.tdx-ico:hover { color: var(--text-primary); background: var(--surface-2); }
 
 .tdx-board { display: grid; grid-template-columns: minmax(420px, 1.1fr) minmax(360px, 1fr); gap: 36px; padding: 20px 26px 40px; max-width: 1360px; align-items: start; }
 @media (max-width: 1100px) { .tdx-board { grid-template-columns: 1fr; gap: 20px; } }
@@ -794,6 +826,8 @@
 .tdx-btn.g { border: none; color: var(--blue); background: none; padding: 6px 4px; }
 .tdx-btn.g:hover { text-decoration: underline; }
 .tdx-btn.s { background: var(--surface-1); }
+.tdx-btn.p { background: var(--oxblood); border-color: var(--oxblood); color: var(--rail-active); }
+.tdx-btn.p:hover { background: #572226; border-color: #572226; color: var(--rail-active); }
 
 .tdx-prow { display: flex; flex-wrap: wrap; gap: 6px 11px; align-items: center; padding: 10px 2px; border-bottom: 0.5px solid var(--hairline); cursor: pointer; }
 .tdx-prow:hover { background: var(--surface-2); }

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { useAppState } from "../state/AppState";
-import { Money, humanizeToken } from "../lib/format";
 
 function isTypingTarget(el) {
   if (!el) return false;
@@ -8,36 +7,22 @@ function isTypingTarget(el) {
   return tag === "INPUT" || tag === "TEXTAREA" || el.isContentEditable;
 }
 
-// optimizer_value is an impact-priority rating ("high"/"medium"/"low"),
-// not a dollar figure — labeled explicitly so it never reads as a bare,
-// unexplained enum value next to the money column.
-function priorityBadgeClass(value) {
-  switch (value) {
-    case "high": return "amber";
-    case "medium": return "silver";
-    case "low": return "charcoal";
-    default: return "charcoal";
-  }
-}
-
-// Real status fields (MissingInput.blocking, GreyAreaItem.status) mapped
-// onto the plain-language workflow states a producer actually cares
-// about — never a raw enum value.
-function questionState(isGreyArea, data) {
-  if (isGreyArea) return { label: "Decision required", cls: "amber" };
-  return data.blocking ? { label: "Decision required", cls: "red" } : { label: "Unresolved", cls: "silver" };
-}
-
 /**
  * Unifies the two real kinds of open question this backend produces —
  * MissingInput (Question Engine, from /package) and open GreyAreaItem
- * (Legal Engine, from /legal) — into one workflow list. Nothing here is
- * fabricated: every field rendered is a real backend field.
+ * (Legal Engine, from /legal) — into one workflow list.
+ *
+ * Presentation is the approved artifact question card (.qcard): a
+ * money-first swing figure, then the question, then a jurisdiction/authority
+ * meta row. Money-bearing items are "hot" (amber rule). Nothing is
+ * fabricated — every field rendered is a real backend field, and the
+ * j/k keyboard navigation plus the Inspector wiring are unchanged.
  */
 export default function QuestionStack({ missingInputs = [], greyAreas = [] }) {
+  // Money-bearing grey areas lead — they are what gates optimization.
   const items = [
-    ...missingInputs.map((m) => ({ id: m.identifier, kind: "question", data: m })),
-    ...greyAreas.filter((g) => g.status === "open").map((g) => ({ id: g.item_id, kind: "question", data: g })),
+    ...greyAreas.filter((g) => g.status === "open").map((g) => ({ id: g.item_id, data: g, grey: true })),
+    ...missingInputs.map((m) => ({ id: m.identifier, data: m, grey: false })),
   ];
   const [activeIndex, setActiveIndex] = useState(items.length > 0 ? 0 : -1);
   const { openInspector } = useAppState();
@@ -49,59 +34,44 @@ export default function QuestionStack({ missingInputs = [], greyAreas = [] }) {
         if (e.key === "Escape") document.activeElement.blur();
         return;
       }
-      if (e.key === "j" || e.key === "J") {
-        setActiveIndex((i) => Math.min(items.length - 1, i + 1));
-      } else if (e.key === "k" || e.key === "K") {
-        setActiveIndex((i) => Math.max(0, i - 1));
-      }
+      if (e.key === "j" || e.key === "J") setActiveIndex((i) => Math.min(items.length - 1, i + 1));
+      else if (e.key === "k" || e.key === "K") setActiveIndex((i) => Math.max(0, i - 1));
     }
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [items.length]);
 
   if (items.length === 0) {
-    return <p className="empty-state">No open questions — every account is either qualified or has a resolved position.</p>;
+    return <p className="qs-empty">No open questions — every account is either qualified or has a resolved position.</p>;
   }
 
-  const isGreyArea = (data) => "authority_to_ask" in data;
-
   return (
-    <div className="row-list" ref={listRef}>
+    <div ref={listRef}>
       {items.map((item, i) => {
-        const grey = isGreyArea(item.data);
-        const state = questionState(grey, item.data);
+        const d = item.data;
+        // Swing column: real money for grey areas, priority rating otherwise.
+        const swing = item.grey
+          ? `±$${Math.round(d.amount_usd || 0).toLocaleString()}`
+          : (d.optimizer_value || "—");
+        const title = item.grey ? d.resolving_evidence : d.question;
+        const left = item.grey ? `${d.jurisdiction_code} · ${d.authority_to_ask}` : "Question engine";
+        const right = item.grey ? "authority pending" : (d.blocking ? "decision required" : "unresolved");
         return (
           <div
             key={item.id}
-            className={`row-item question-row ${i === activeIndex ? "active" : ""}`}
-            onClick={() => {
-              setActiveIndex(i);
-              openInspector("question", item.data);
-            }}
+            className={`qcard${item.grey ? " hot" : ""}${i === activeIndex ? " sel" : ""}`}
+            onClick={() => { setActiveIndex(i); openInspector("question", d); }}
           >
-            <div className="row-main">
-              <div className="row-title">{grey ? item.data.resolving_evidence : item.data.question}</div>
-              <div className="question-status-row">
-                <span className={`badge ${state.cls}`}>{state.label}</span>
-                {grey && item.data.account_codes?.length > 0 && (
-                  <span className="text-tertiary small mono">accounts {item.data.account_codes.join(", ")}</span>
-                )}
-                <span className="text-tertiary small">
-                  {grey
-                    ? `${item.data.authority_to_ask} · ${item.data.jurisdiction_code}`
-                    : `Affects ${(item.data.downstream_engines || []).map(humanizeToken).join(", ")}`}
-                </span>
-              </div>
-            </div>
-            <div className="row-value">
-              {grey
-                ? <Money value={item.data.amount_usd} />
-                : <span className={`badge ${priorityBadgeClass(item.data.optimizer_value)}`}>{item.data.optimizer_value} priority</span>}
+            <div className="sw">{swing}</div>
+            <div className="qt"><b>Q{i + 1}</b> · {title}</div>
+            <div className="meta">
+              <span>{left}</span>
+              <span className={item.grey ? "age" : ""}>{right}</span>
             </div>
           </div>
         );
       })}
-      <p className="text-tertiary small" style={{ marginTop: 8 }}>J / K to move between questions · click to inspect</p>
+      <p className="qs-hint">J / K to move · click to inspect</p>
     </div>
   );
 }

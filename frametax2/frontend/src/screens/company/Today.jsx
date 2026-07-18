@@ -59,9 +59,14 @@ export default function Today() {
             {blockingCount}{blockingCount ? " " : ""}<em>{blockingCount ? "authority pending" : "none"}</em>
           </div>
         </div>
+        <div className="tdx-stat">
+          <div className="l">Leading net production cost</div>
+          <div className="v">{best ? <Money value={best.conservative_npc_usd} /> : "—"}</div>
+        </div>
         {swingTotal > 0 && (
           <button className="tdx-alert" onClick={goWorkspace}><i />In-kind FMV ruling awaited</button>
         )}
+        <button className="tdx-ico" disabled title="Global search is not wired to a backend index yet">⌕</button>
       </header>
 
       <main className="tdx-board">
@@ -76,7 +81,10 @@ export default function Today() {
                   <b><i>{production.production_name}</i> — {recommendationHeadline(r)}</b>
                   <div className="m2">{r.requires_counsel_approval ? "Counsel approval" : "Producer approval"} · <span className="mono" style={{ color: "var(--jade)" }}><Money value={r.estimated_value_usd} /></span> estimated value</div>
                 </div>
-                <div className="acts2"><button className="tdx-btn g" onClick={goWorkspace}>Open →</button></div>
+                <div className="acts2">
+                  <button className="tdx-btn p" onClick={goWorkspace}>Review</button>
+                  <button className="tdx-btn g" onClick={goWorkspace}>Open →</button>
+                </div>
               </div>
             )) : <div className="tdx-empty">No decisions pending — every priced structure is settled.</div>}
           </div>
