@@ -48,30 +48,43 @@ export default function ProjectHeader() {
           <p className="ph-sub">Feature{jur ? ` · ${jur}` : ""}{data?.pkg?.confidence ? ` · ${data.pkg.confidence} confidence` : ""}</p>
           <div className="ph-stage">
             <span className="ph-stage-label">Production stage</span>
-            <select
-              className="ph-stage-select"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              title={meta.description}
-              aria-label="Production stage"
-            >
-              {statuses.map((s) => (
-                <option key={s.key} value={s.key}>{s.label}</option>
-              ))}
-            </select>
+            {/* Frozen-artifact stage control (.stage-dd): a details/summary
+                dropdown with a styled menu — same live setStatus wiring the
+                native select carried, one canonical lifecycle store. */}
+            <details className="ph-stage-dd" title={meta.description}>
+              <summary className="ph-stage-val" aria-label="Production stage">
+                {meta.label} <span className="car">▾</span>
+              </summary>
+              <div className="ph-stage-menu">
+                {statuses.map((s) => (
+                  <button
+                    key={s.key}
+                    className={s.key === status ? "on" : ""}
+                    onClick={(e) => { setStatus(s.key); e.currentTarget.closest("details").removeAttribute("open"); }}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </details>
           </div>
         </div>
         <div className="ph-budget">
-          <span className="ph-budget-label">Production budget</span>
           <span className="ph-budget-value mono">
             {production ? <Money value={production.gross_budget_usd} /> : "—"}
           </span>
+          <span className="ph-budget-label">production budget</span>
         </div>
         {data && (
           <button className="ph-qcount" onClick={() => navigate("/production/workspace")}>
             <i />{openQuestions} question{openQuestions === 1 ? "" : "s"} open{swing ? ` · ±$${Math.round(swing).toLocaleString()}` : ""}
           </button>
         )}
+        <div className="ph-hactions">
+          <button className="ph-ico" title="Upload document" onClick={() => navigate("/production/binder")}>⇪</button>
+          <button className="ph-ico ghosted" title="AI analyst — engine pending" disabled>◈</button>
+          <button className="ph-ico ghosted" title="Theme — no dark token set exists in this app yet" disabled>◐</button>
+        </div>
       </div>
       <nav className="project-tabs" aria-label="Production sections">
         {PRODUCTION_TABS.map((tab) => (

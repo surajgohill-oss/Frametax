@@ -83,6 +83,21 @@ export function humanizeToken(token) {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
+// Producer-facing incentive-program names — the frozen artifact's
+// terminology contract (ui-baseline-v1) for the four executable programs.
+// Presentation vocabulary only: never a rate, cap, or economic value.
+// Unknown slugs fall back to plain humanization, never invented names.
+const PROGRAM_NAMES = {
+  mu_edb_incentive: "EDB Film Rebate",
+  mt_mfc_rebate: "Malta Cash Rebate",
+  ie_section_481: "Section 481",
+  gr_cash_rebate: "Greece Cash Rebate",
+};
+export function programDisplay(slug) {
+  if (!slug) return null;
+  return PROGRAM_NAMES[slug] || humanizeToken(slug);
+}
+
 // Real AccountQualification.state values -> plain-language label + tier.
 export function accountStateLabel(state) {
   switch (state) {

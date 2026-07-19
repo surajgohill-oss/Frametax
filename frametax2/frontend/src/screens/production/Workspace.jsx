@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
-import { Money, humanizeToken } from "../../lib/format";
+import { Money, humanizeToken, programDisplay } from "../../lib/format";
 import { useAppState } from "../../state/AppState";
 import Globe3D from "../../components/Globe3D";
 import { buildGlobeData, structureTier } from "../../lib/globeData";
@@ -65,9 +65,13 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, fxHorizon
       <div className="wsx-lh">
         <div className="wsx-lh-id">
           <div className="wsx-nm">{structure.label}</div>
+          {/* Sub-line — the artifact's "program · rate" contract for priced
+              lanes, from the dominant segment's REAL program + floor rate;
+              drafts keep the canonical structure-type description. */}
           <div className="wsx-lb">
-            {humanizeToken(structure.structure_type)}
-            {structure.participants?.length ? ` · ${structure.participants.join(" · ")}` : ""}
+            {priced && dominant?.claims_incentive && dominant?.program_slug
+              ? `${programDisplay(dominant.program_slug)} · ${Math.round((dominant.rate_floor || 0) * 100)}%${dominant.is_band_ceiling ? " (up to)" : ""}`
+              : `${humanizeToken(structure.structure_type)}${structure.participants?.length ? ` · ${structure.participants.join(" · ")}` : ""}`}
           </div>
           {fxSpot != null && (
             <div className="wsx-lane-fx" onClick={() => onInspect(structure)} title={`USD/${fxCcy} · live spot`}>
@@ -116,6 +120,41 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, fxHorizon
   );
 }
 
+// Globe chrome — the frozen artifact's overlay panels (info HUD, Layers,
+// legend) over the project globe, shown in Map and Split. Counts and legend
+// entries describe only what this globe actually renders (live structures,
+// treaty arcs, tier colors); layer rows the engine doesn't support yet are
+// ghosted exactly like the artifact's own pending rows.
+function GlobeChrome({ productionName, nScenarios, nArcs }) {
+  return (
+    <>
+      <div className="wsx-g-hud">
+        <b>Project globe · {productionName}</b>
+        {nScenarios} scenario{nScenarios === 1 ? "" : "s"} · {nArcs} treaty path{nArcs === 1 ? "" : "s"}
+      </div>
+      <div className="wsx-g-layers">
+        <b>Layers</b>
+        <label className="on"><span className="sw2" />Production markers</label>
+        <label className="on"><span className="sw2" />Treaty arcs</label>
+        <label className="ghosted" title="MapLibre engine"><span className="sw2" />Jurisdiction overlays</label>
+        <label className="ghosted" title="MapLibre engine"><span className="sw2" />Country borders</label>
+        <label className="ghosted" title="Engine pending"><span className="sw2" />Incentive heat map</label>
+        <label className="ghosted" title="Engine pending"><span className="sw2" />Confidence halos</label>
+        <label className="ghosted" title="Engine pending"><span className="sw2" />Grey-area halos</label>
+        <label className="ghosted" title="Engine pending"><span className="sw2" />Clusters</label>
+        <div className="note">Three.js / three-globe — the same rendering engine used by the production terminal.</div>
+      </div>
+      <div className="wsx-g-legend">
+        <span>◉ gold = top-ranked priced</span>
+        <span>◉ jade = fully priced</span>
+        <span>◉ amber = allocated · blocked</span>
+        <span>◉ silver = allocated</span>
+        <span>┄ treaty path</span>
+      </div>
+    </>
+  );
+}
+
 export default function Workspace() {
   const { data, error, loading, refetch } = useCineGlobe();
   const location = useLocation();
@@ -126,6 +165,7 @@ export default function Workspace() {
   const [qTab, setQTab] = useState(navTab === "inputs" || navTab === "recommendations" ? navTab : "questions");
   const [activeGreyArea, setActiveGreyArea] = useState(null);
   const [leadingOverride, setLeadingOverride] = useState(null);
+  const [sortByMoney, setSortByMoney] = useState(true); // artifact "by $ ▾"
   const { openInspector, inspector, closeInspector, setDocked } = useAppState();
 
   // Dock the Inspector into the Workspace right column (frozen-artifact
@@ -194,7 +234,7 @@ export default function Workspace() {
       <div
         className="wsx-work"
         style={{
-          gridTemplateColumns: `${!qOpen ? "48px" : qTab !== "questions" ? "340px" : "220px"} 1fr ${inspector ? "300px" : "38px"}`,
+          gridTemplateColumns: `${!qOpen ? "48px" : qTab !== "questions" ? "340px" : "220px"} 1fr ${inspector ? "290px" : "38px"}`,
         }}
       >
         {/* Question stack — collapsible left rail. Collapsed by default per
@@ -204,7 +244,10 @@ export default function Workspace() {
         {qOpen ? (
           <aside className="wsx-qstack wsx-qstack-open">
             <div className="wsx-qh">
-              Question stack · {openCount}
+              Question Stack · {openCount}
+              <button className="wsx-qsort" onClick={() => setSortByMoney((v) => !v)} title="Toggle question ordering">
+                {sortByMoney ? "by $ ▾" : "by stack ▾"}
+              </button>
               <button className="wsx-qcollapse" onClick={() => setQOpen(false)} aria-label="Collapse question stack">⟨</button>
             </div>
             <div className="wsx-qtabs">
@@ -214,7 +257,7 @@ export default function Workspace() {
             </div>
             {qTab === "questions" && (
               <>
-                <QuestionStack missingInputs={pkg.missing_inputs} greyAreas={legal.grey_areas_current} />
+                <QuestionStack missingInputs={pkg.missing_inputs} greyAreas={legal.grey_areas_current} sortByMoney={sortByMoney} />
                 {openGrey.length > 0 && (
                   <div className="trace-trigger-row">
                     {openGrey.map((g) => (
@@ -280,13 +323,9 @@ export default function Workspace() {
           )}
 
           {mode === "map" && (
-            <div className="wsx-globe dark-panel">
+            <div className="wsx-globe dark-panel wsx-globe-chrome">
               <Globe3D points={points} arcs={arcs} height={460} onPointClick={handleGlobeClick} />
-              <p className="globe-caption small">
-                Gold = top-ranked fully priced structure · jade = another fully priced structure · amber = allocated
-                but blocked · silver = allocated, not the top-priced route.
-                {arcs.length > 0 ? " Dashed arcs mark treaty co-production routes." : ""}
-              </p>
+              <GlobeChrome productionName={production.production_name} nScenarios={allocated.structures.length} nArcs={arcs.length} />
             </div>
           )}
 
@@ -312,8 +351,9 @@ export default function Workspace() {
                 </div>
               </div>
               <div className="mcol">
-                <div className="wsx-globe dark-panel">
+                <div className="wsx-globe dark-panel wsx-globe-chrome">
                   <Globe3D points={points} arcs={arcs} height={480} onPointClick={handleGlobeClick} />
+                  <GlobeChrome productionName={production.production_name} nScenarios={allocated.structures.length} nArcs={arcs.length} />
                 </div>
               </div>
             </div>
@@ -345,7 +385,16 @@ export default function Workspace() {
         <div className="wsx-st-left">
           <span className="wsx-st-k">Leading structure</span>
           <b>{leadingStructure?.label || "None fully priced yet"}</b>
-          {leadingStructure && <span className="wsx-st-sub">{humanizeToken(leadingStructure.structure_type)}</span>}
+          {leadingStructure && (() => {
+            const seg = leadingStructure.segments?.slice().sort((a, b) => (b.qpe_usd || 0) - (a.qpe_usd || 0))[0];
+            return (
+              <span className="wsx-st-sub">
+                {seg?.claims_incentive && seg?.program_slug
+                  ? `${programDisplay(seg.program_slug)} · ${Math.round((seg.rate_floor || 0) * 100)}%`
+                  : humanizeToken(leadingStructure.structure_type)}
+              </span>
+            );
+          })()}
         </div>
         <div className="wsx-st-right">
           <span className="lbl">Net production cost</span>
