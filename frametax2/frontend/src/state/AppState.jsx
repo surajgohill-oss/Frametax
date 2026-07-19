@@ -6,12 +6,17 @@ const AppStateContext = createContext(null);
 
 export function AppStateProvider({ children }) {
   const [inspector, setInspector] = useState(null); // { kind, data } | null
+  // UI-only layout flag: the Workspace docks the Inspector as its right
+  // column (the frozen-artifact interaction) instead of the floating
+  // overlay. When docked, the app-level overlay stands down. This is
+  // presentation state, never a second copy of the selected data.
+  const [docked, setDocked] = useState(false);
 
   const openInspector = useCallback((kind, data) => setInspector({ kind, data }), []);
   const closeInspector = useCallback(() => setInspector(null), []);
 
   return (
-    <AppStateContext.Provider value={{ inspector, openInspector, closeInspector }}>
+    <AppStateContext.Provider value={{ inspector, openInspector, closeInspector, docked, setDocked }}>
       {children}
     </AppStateContext.Provider>
   );

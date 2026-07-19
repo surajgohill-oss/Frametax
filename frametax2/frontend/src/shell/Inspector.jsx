@@ -303,11 +303,19 @@ const RENDERERS = {
   "structure-recommendation": StructureRecommendationInspector,
 };
 
-export default function Inspector() {
-  const { inspector, closeInspector } = useAppState();
-  if (!inspector) return null;
-
+// Shared inspector body — the selected item's detail. Used by BOTH the
+// floating overlay (below) and the Workspace docked column, so the two
+// presentations never fork the render logic or the data.
+export function InspectorBody({ inspector }) {
   const Renderer = RENDERERS[inspector.kind];
+  return Renderer ? <Renderer data={inspector.data} /> : <p className="text-tertiary">No inspector view for this item.</p>;
+}
+
+export default function Inspector() {
+  const { inspector, closeInspector, docked } = useAppState();
+  // When the Workspace docks the Inspector into its right column, the
+  // app-level floating overlay stands down (single presentation at a time).
+  if (!inspector || docked) return null;
 
   return (
     <>
@@ -316,7 +324,7 @@ export default function Inspector() {
         <button className="inspector-close" onClick={closeInspector} aria-label="Close inspector">
           <X size={16} />
         </button>
-        {Renderer ? <Renderer data={inspector.data} /> : <p className="text-tertiary">No inspector view for this item.</p>}
+        <InspectorBody inspector={inspector} />
       </aside>
     </>
   );

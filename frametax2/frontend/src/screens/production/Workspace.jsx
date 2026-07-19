@@ -11,6 +11,20 @@ import QuestionStack from "../../components/QuestionStack";
 import RecommendationsList from "../../components/RecommendationsList";
 import EconomicsTrace from "../../components/EconomicsTrace";
 import QualificationPanel from "../../components/QualificationPanel";
+import { InspectorBody } from "../../shell/Inspector";
+
+// Docked-inspector header label per selection kind (frozen artifact
+// "Selection · Question" convention).
+const INSPECT_KIND_LABEL = {
+  question: "Question",
+  "allocation-segment": "Segment",
+  "allocation-assignment": "Routing",
+  "structure-recommendation": "Structure",
+  recommendation: "Recommendation",
+  candidate: "Candidate",
+  jurisdiction: "Jurisdiction",
+  account: "Account",
+};
 
 // Workspace — the approved artifact "rack" layout
 // (reference/artifacts/prototype-v1-updated.html): a collapsible question
@@ -112,7 +126,15 @@ export default function Workspace() {
   const [qTab, setQTab] = useState(navTab === "inputs" || navTab === "recommendations" ? navTab : "questions");
   const [activeGreyArea, setActiveGreyArea] = useState(null);
   const [leadingOverride, setLeadingOverride] = useState(null);
-  const { openInspector } = useAppState();
+  const { openInspector, inspector, closeInspector, setDocked } = useAppState();
+
+  // Dock the Inspector into the Workspace right column (frozen-artifact
+  // interaction) for as long as this screen is mounted; the app-level
+  // floating overlay stands down meanwhile.
+  useEffect(() => {
+    setDocked(true);
+    return () => setDocked(false);
+  }, [setDocked]);
 
   // Honor cross-page navigation intent (Overview "Deal facts → edit",
   // "Project globe") once the location changes.
@@ -165,11 +187,16 @@ export default function Workspace() {
 
   return (
     <div className="wsx-screen">
-      {/* Grid geometry matches the artifact exactly: 48px | 1fr | 38px
-          collapsed, 220px when the stack is open. The Recs/Inputs panels
-          (preserved wiring the artifact has no slot for) need more room than
-          the question stack, so those tabs widen the column. */}
-      <div className={`wsx-work${qOpen ? " qopen" : ""}${qOpen && qTab !== "questions" ? " wide" : ""}`}>
+      {/* Grid geometry matches the artifact: 48px | 1fr | 38px collapsed;
+          left widens to 220px (stack) / 340px (Recs/Inputs); the right
+          column widens from the 38px quiet rail to the 300px docked
+          Inspector when something is selected (frozen-artifact layoutWork). */}
+      <div
+        className="wsx-work"
+        style={{
+          gridTemplateColumns: `${!qOpen ? "48px" : qTab !== "questions" ? "340px" : "220px"} 1fr ${inspector ? "300px" : "38px"}`,
+        }}
+      >
         {/* Question stack — collapsible left rail. Collapsed by default per
             the artifact; expands into the full work stack (Questions /
             Recommendations / Inputs) so every backend-wired panel stays
@@ -293,11 +320,24 @@ export default function Workspace() {
           )}
         </div>
 
-        {/* Inspector gutter — the artifact reserves a 38px rail on the right
-            that the Inspector expands into. The Inspector itself is the
-            app-level overlay (openInspector); this keeps the station's
-            measure identical whether or not it is open. */}
-        <div className="wsx-insp-gutter" aria-hidden="true" />
+        {/* Inspector — docked into the right column per the frozen artifact.
+            Populated on selection (question / lane / segment / structure)
+            from the shared openInspector state; quiet 38px rail otherwise.
+            Same InspectorBody the overlay uses — no forked render, no
+            duplicated data. */}
+        {inspector ? (
+          <aside className="wsx-insp">
+            <div className="wsx-insp-inner">
+              <div className="wsx-insp-h">
+                <span className="kind">Selection · {INSPECT_KIND_LABEL[inspector.kind] || "Detail"}</span>
+                <button className="close" onClick={closeInspector} aria-label="Close inspector">✕</button>
+              </div>
+              <InspectorBody inspector={inspector} />
+            </div>
+          </aside>
+        ) : (
+          <div className="wsx-insp-gutter" aria-hidden="true" />
+        )}
       </div>
 
       {/* Leading-structure status strip */}

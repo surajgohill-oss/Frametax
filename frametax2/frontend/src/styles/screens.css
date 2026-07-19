@@ -737,6 +737,21 @@
 .wsx-work.qopen { grid-template-columns: 220px 1fr 38px; }
 .wsx-work.qopen.wide { grid-template-columns: 340px 1fr 38px; }
 .wsx-insp-gutter { border-left: 0.5px solid var(--hairline); min-height: 0; }
+/* Docked Inspector — frozen artifact .insp right column */
+.wsx-insp { border-left: 0.5px solid var(--hairline); background: var(--surface-1); overflow-y: auto; min-height: 0; }
+.wsx-insp-inner { padding: 13px 15px; }
+.wsx-insp-h { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.wsx-insp-h .kind { font: 600 12px var(--font-sans); letter-spacing: 0.02em; color: var(--text-tertiary); }
+.wsx-insp-h .close { background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 14px; padding: 2px; line-height: 1; }
+.wsx-insp-h .close:hover { color: var(--text-primary); }
+/* Reuse the shared inspector body styles inside the docked panel: the
+   InspectorBody markup uses .inspector-eyebrow / h3 / .kv-list / .inspector-sect
+   / .inspector-actions — scope those to the docked column so they read like
+   the artifact .insp sections without a floating drawer. */
+.wsx-insp h3 { font-family: var(--font-serif); font-style: italic; font-weight: 400; font-size: 18px; margin: 2px 0; }
+.wsx-insp .inspector-eyebrow { font: 600 9px var(--font-sans); text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tertiary); margin: 12px 0 6px; }
+.wsx-insp .kv-list { margin: 6px 0; }
+.wsx-insp .inspector-actions { margin-top: 14px; }
 
 .wsx-qstack { border-right: 0.5px solid var(--hairline); background: var(--canvas); overflow-y: auto; min-height: 0; }
 .wsx-qstack.collapsed { padding: 12px 0; display: flex; flex-direction: column; align-items: center; }
