@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { Rows3, Globe2, Columns2, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
 import { Money, humanizeToken } from "../../lib/format";
@@ -23,20 +23,28 @@ import QualificationPanel from "../../components/QualificationPanel";
 // npc_with_adjustments_usd. No client-side derivation.
 
 const MODES = [
-  { key: "lanes", label: "Lanes", icon: Rows3 },
-  { key: "map", label: "Map", icon: Globe2 },
-  { key: "split", label: "Split", icon: Columns2 },
+  { key: "lanes", label: "Lanes" },
+  { key: "map", label: "Map" },
+  { key: "split", label: "Split" },
 ];
 const CIRCLED = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧"];
 const pct = (part, whole) => (whole ? Math.max(0, Math.min(100, (part / whole) * 100)) : 0);
+// Display currency per jurisdiction, limited to what /economics.fx_horizons serves.
+const FX_CCY = { MU: "MUR", MT: "EUR", IE: "EUR", GR: "EUR", GB: "GBP", IT: "EUR", ES: "EUR", FR: "EUR", DE: "EUR" };
 
-function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, onSetLeading, onInspect, onCompare, onSelectSegment }) {
+function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, fxHorizons, onSetLeading, onInspect, onCompare, onSelectSegment }) {
   const priced = structure.is_fully_priced;
   const qualifiedSpend = structure.segments?.reduce((sum, sg) => sum + (sg.qpe_usd || 0), 0) || 0;
   const npc = structure.npc_with_adjustments_usd;
 
   const laneClass = isLeading ? "anchor" : priced ? "" : "draft";
   const badge = isLeading ? "① LEADING" : priced ? (CIRCLED[(rank?.rank || 1) - 1] || `#${rank?.rank}`) : "DRAFT";
+
+  // Per-lane FX chip — real spot for the structure's dominant jurisdiction
+  // currency (frozen-artifact .lane-fx presentation, honest backend data).
+  const dominant = structure.segments?.slice().sort((a, b) => (b.qpe_usd || 0) - (a.qpe_usd || 0))[0];
+  const fxCcy = FX_CCY[dominant?.jurisdiction_code];
+  const fxSpot = fxCcy ? fxHorizons?.[fxCcy]?.current : null;
 
   return (
     <div className={`wsx-lane ${laneClass}`}>
@@ -47,6 +55,12 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, onSetLead
             {humanizeToken(structure.structure_type)}
             {structure.participants?.length ? ` · ${structure.participants.join(" · ")}` : ""}
           </div>
+          {fxSpot != null && (
+            <div className="wsx-lane-fx" onClick={() => onInspect(structure)} title={`USD/${fxCcy} · live spot`}>
+              <span className="fx-pair">USD/{fxCcy}</span>
+              <span className="fx-note">{Number(fxSpot).toFixed(2)} · live spot</span>
+            </div>
+          )}
         </div>
         <span className="wsx-badge">{badge}</span>
       </div>
@@ -61,6 +75,7 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, onSetLead
           <div className="wsx-row net"><span>Net production cost</span><span><Money value={npc} bare /></span></div>
           <div className="wsx-range">
             <u style={{ left: 0, width: `${pct(qualifiedSpend, grossBudget)}%` }} />
+            <i style={{ left: `${pct(qualifiedSpend, grossBudget)}%`, right: 0 }} />
             <b style={{ left: `${pct(npc, grossBudget)}%` }} />
           </div>
         </>
@@ -206,14 +221,11 @@ export default function Workspace() {
         <div className="wsx-station">
           <div className="wsx-station-head">
             <div className="wsx-viewtabs">
-              {MODES.map((m) => {
-                const Icon = m.icon;
-                return (
-                  <button key={m.key} className={mode === m.key ? "active" : ""} onClick={() => setMode(m.key)}>
-                    <Icon size={13} strokeWidth={1.8} />{m.label}
-                  </button>
-                );
-              })}
+              {MODES.map((m) => (
+                <button key={m.key} className={mode === m.key ? "active" : ""} onClick={() => setMode(m.key)}>
+                  {m.label}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -227,6 +239,7 @@ export default function Workspace() {
                   rank={rankById.get(s.structure_id)}
                   grossBudget={production.gross_budget_usd}
                   isLeading={s.structure_id === leadingId}
+                  fxHorizons={data.economics?.fx_horizons}
                   onSetLeading={setLeadingOverride}
                   onInspect={handleSelectStructure}
                   onCompare={() => { setQOpen(true); setQTab("recommendations"); }}
@@ -251,20 +264,30 @@ export default function Workspace() {
           )}
 
           {mode === "split" && (
-            <div className="split-workspace" style={{ padding: "14px 18px" }}>
-              <div className="split-lane-row">
-                {allocated.structures.map((s) => {
-                  const tier = structureTier(s, rankById);
-                  return (
-                    <div key={s.structure_id} className={`split-lane-mini lane-${tier}`} onClick={() => handleSelectStructure(s)}>
-                      <div className="row-title" style={{ fontSize: 12 }}>{s.label}</div>
-                      <div className="row-sub">{s.is_fully_priced ? "Fully priced" : `${s.blockers.length} blocker${s.blockers.length === 1 ? "" : "s"}`}</div>
-                    </div>
-                  );
-                })}
+            <div className="wsx-splitv">
+              <div className="lcol">
+                <div className="wsx-rack">
+                  {allocated.structures.map((s) => (
+                    <ScenarioCard
+                      key={s.structure_id}
+                      structure={s}
+                      tier={structureTier(s, rankById)}
+                      rank={rankById.get(s.structure_id)}
+                      grossBudget={production.gross_budget_usd}
+                      isLeading={s.structure_id === leadingId}
+                      fxHorizons={data.economics?.fx_horizons}
+                      onSetLeading={setLeadingOverride}
+                      onInspect={handleSelectStructure}
+                      onCompare={() => { setQOpen(true); setQTab("recommendations"); }}
+                      onSelectSegment={handleSelectSegment}
+                    />
+                  ))}
+                </div>
               </div>
-              <div className="wsx-globe dark-panel" style={{ margin: 0 }}>
-                <Globe3D points={points} arcs={arcs} height={340} onPointClick={handleGlobeClick} />
+              <div className="mcol">
+                <div className="wsx-globe dark-panel">
+                  <Globe3D points={points} arcs={arcs} height={480} onPointClick={handleGlobeClick} />
+                </div>
               </div>
             </div>
           )}
