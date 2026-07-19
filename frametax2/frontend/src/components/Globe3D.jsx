@@ -33,12 +33,15 @@ const TIER_HEX = {
 };
 
 /**
- * A reusable "Luxury Glass Globe" instance — smoked-obsidian material
- * sphere (no satellite texture, no topographic realism, per spec),
- * warm key light + cool silver fill, restrained fresnel rim. Points and
- * arcs are supplied by the caller (Company Globe passes one Little
- * Utopia marker; Production Globe passes the composed candidates'
- * jurisdictions) — this component owns no business logic, only render.
+ * A reusable "Luxury Glass Globe" instance — graphite/obsidian material
+ * sphere (no satellite texture, no topographic realism, per spec), neutral
+ * cool-silver key + fill lighting, restrained steel-grey fresnel rim. No
+ * dominant gold tint on the globe body: gold is reserved for the
+ * best-recommendation marker/arc tier (TIER_HEX below). Points and arcs
+ * are supplied by the caller (Company Globe passes one Little Utopia
+ * marker; Workspace Map/Split and Project Globe pass the composed
+ * candidates' jurisdictions) — this ONE component is the shared production
+ * globe engine; no second renderer, no duplicated globe logic.
  */
 export default function Globe3D({ points = [], arcs = [], onPointClick, onPointHover, height = 520 }) {
   const mountRef = useRef(null);
@@ -67,10 +70,14 @@ export default function Globe3D({ points = [], arcs = [], onPointClick, onPointH
     const h = height;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#14120f");
+    scene.background = new THREE.Color("#0f1013");
 
     const camera = new THREE.PerspectiveCamera(50, width / h, 0.1, 2000);
-    camera.position.set(0, 0, 340);
+    // Closer framing than a bare default distance — Workspace Map/Split
+    // panels are wide-and-short, and a distant camera leaves excessive dark
+    // space around the sphere. This fills the frame properly while still
+    // clearing the HUD/Layers/legend overlays, which sit at the edges.
+    camera.position.set(0, 0, 280);
 
     let renderer;
     try {
@@ -99,20 +106,22 @@ export default function Globe3D({ points = [], arcs = [], onPointClick, onPointH
     cssRenderer.domElement.style.pointerEvents = "none";
     mount.appendChild(cssRenderer.domElement);
 
-    // Lighting: warm key + cool silver fill, per spec.
-    scene.add(new THREE.AmbientLight(0x3a352c, 0.9));
-    const key = new THREE.DirectionalLight(0xd8b569, 1.1);
+    // Lighting: neutral cool key + cooler silver fill — a graphite/obsidian
+    // luxury-glass treatment, not a marketing-gold cast. Gold is reserved
+    // for the best-recommendation marker/arc tier, never the globe body.
+    scene.add(new THREE.AmbientLight(0x363a40, 0.85));
+    const key = new THREE.DirectionalLight(0xcdd3da, 1.05);
     key.position.set(200, 120, 200);
     scene.add(key);
-    const fill = new THREE.DirectionalLight(0x9aa2ab, 0.55);
+    const fill = new THREE.DirectionalLight(0x7c8794, 0.5);
     fill.position.set(-200, -80, -150);
     scene.add(fill);
 
     const globe = new ThreeGlobe()
       .showGlobe(true)
       .showAtmosphere(true)
-      .atmosphereColor("#c9b98a")
-      .atmosphereAltitude(0.12)
+      .atmosphereColor("#5b6773")
+      .atmosphereAltitude(0.11)
       .pointsData(points)
       .pointLat("lat")
       .pointLng("lng")
@@ -156,12 +165,13 @@ export default function Globe3D({ points = [], arcs = [], onPointClick, onPointH
         return el;
       });
 
-    // Smoked-obsidian material — matte, no image texture, restrained sheen.
+    // Graphite/obsidian glass material — matte body, cool silver sheen,
+    // no image texture, no warm/gold cast on the globe itself.
     const material = globe.globeMaterial();
-    material.color = new THREE.Color("#1c1712");
-    material.emissive = new THREE.Color("#0c0a08");
-    material.shininess = 18;
-    material.specular = new THREE.Color("#5a4f3a");
+    material.color = new THREE.Color("#17181c");
+    material.emissive = new THREE.Color("#09090b");
+    material.shininess = 26;
+    material.specular = new THREE.Color("#6b7078");
 
     scene.add(globe);
     globeRef.current = globe;
@@ -177,8 +187,8 @@ export default function Globe3D({ points = [], arcs = [], onPointClick, onPointH
     // user's reduced-motion preference, and slow/weighted rather than lively.
     controls.autoRotate = points.length <= 1 && !prefersReducedMotion;
     controls.autoRotateSpeed = 0.22;
-    controls.minDistance = 180;
-    controls.maxDistance = 560;
+    controls.minDistance = 150;
+    controls.maxDistance = 460;
     controls.enablePan = false;
 
     let frameId;

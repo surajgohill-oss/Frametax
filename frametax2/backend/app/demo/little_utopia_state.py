@@ -1126,6 +1126,7 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
             "structure_id": p.structure_id,
             "structure_type": p.structure_type,
             "label": p.label,
+            "primary_jurisdiction": p.primary_jurisdiction,
             "participants": list(p.participants),
             "is_fully_priced": p.is_fully_priced,
             "blockers": list(p.blockers),

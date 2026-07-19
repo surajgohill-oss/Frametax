@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
-import { Money, humanizeToken, programDisplay } from "../../lib/format";
+import { Money, scenarioDisplay } from "../../lib/format";
 import { useAppState } from "../../state/AppState";
 import Globe3D from "../../components/Globe3D";
 import { buildGlobeData, structureTier } from "../../lib/globeData";
@@ -54,9 +54,11 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, fxHorizon
   const laneClass = isLeading ? "anchor" : priced ? "" : "draft";
   const badge = isLeading ? "① LEADING" : priced ? (CIRCLED[(rank?.rank || 1) - 1] || `#${rank?.rank}`) : "DRAFT";
 
-  // Per-lane FX chip — real spot for the structure's dominant jurisdiction
-  // currency (frozen-artifact .lane-fx presentation, honest backend data).
-  const dominant = structure.segments?.slice().sort((a, b) => (b.qpe_usd || 0) - (a.qpe_usd || 0))[0];
+  // Producer-facing title/subtitle — the ONE canonical formatter
+  // (lib/format.jsx scenarioDisplay), shared by Workspace/Overview/
+  // Scenarios/Reports. `dominant` (the priced segment driving the FX chip)
+  // comes back from the same call — no second derivation.
+  const { title, subtitle, dominant } = scenarioDisplay(structure);
   const fxCcy = FX_CCY[dominant?.jurisdiction_code];
   const fxSpot = fxCcy ? fxHorizons?.[fxCcy]?.current : null;
 
@@ -64,15 +66,8 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, fxHorizon
     <div className={`wsx-lane ${laneClass}`}>
       <div className="wsx-lh">
         <div className="wsx-lh-id">
-          <div className="wsx-nm">{structure.label}</div>
-          {/* Sub-line — the artifact's "program · rate" contract for priced
-              lanes, from the dominant segment's REAL program + floor rate;
-              drafts keep the canonical structure-type description. */}
-          <div className="wsx-lb">
-            {priced && dominant?.claims_incentive && dominant?.program_slug
-              ? `${programDisplay(dominant.program_slug)} · ${Math.round((dominant.rate_floor || 0) * 100)}%${dominant.is_band_ceiling ? " (up to)" : ""}`
-              : `${humanizeToken(structure.structure_type)}${structure.participants?.length ? ` · ${structure.participants.join(" · ")}` : ""}`}
-          </div>
+          <div className="wsx-nm">{title}</div>
+          <div className="wsx-lb">{subtitle}</div>
           {fxSpot != null && (
             <div className="wsx-lane-fx" onClick={() => onInspect(structure)} title={`USD/${fxCcy} · live spot`}>
               <span className="fx-pair">USD/{fxCcy}</span>
@@ -384,17 +379,8 @@ export default function Workspace() {
       <footer className="wsx-status">
         <div className="wsx-st-left">
           <span className="wsx-st-k">Leading structure</span>
-          <b>{leadingStructure?.label || "None fully priced yet"}</b>
-          {leadingStructure && (() => {
-            const seg = leadingStructure.segments?.slice().sort((a, b) => (b.qpe_usd || 0) - (a.qpe_usd || 0))[0];
-            return (
-              <span className="wsx-st-sub">
-                {seg?.claims_incentive && seg?.program_slug
-                  ? `${programDisplay(seg.program_slug)} · ${Math.round((seg.rate_floor || 0) * 100)}%`
-                  : humanizeToken(leadingStructure.structure_type)}
-              </span>
-            );
-          })()}
+          <b>{leadingStructure ? scenarioDisplay(leadingStructure).title : "None fully priced yet"}</b>
+          {leadingStructure && <span className="wsx-st-sub">{scenarioDisplay(leadingStructure).subtitle}</span>}
         </div>
         <div className="wsx-st-right">
           <span className="lbl">Net production cost</span>

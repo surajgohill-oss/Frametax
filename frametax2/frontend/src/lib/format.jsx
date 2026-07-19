@@ -1,5 +1,7 @@
 import { JURISDICTION_COORDS } from "./jurisdictions";
 
+const jurName = (code) => JURISDICTION_COORDS[code]?.name || code || "—";
+
 // Pure display formatting only — no business logic, no derived facts.
 
 export function Money({ value, bare = false }) {
@@ -96,6 +98,40 @@ const PROGRAM_NAMES = {
 export function programDisplay(slug) {
   if (!slug) return null;
   return PROGRAM_NAMES[slug] || humanizeToken(slug);
+}
+
+// Canonical scenario display — the ONE place a structure's producer-facing
+// title/subtitle is derived, shared by Workspace, Overview, Scenarios and
+// Reports so no screen invents its own wording. Reads only real backend
+// fields (primary_jurisdiction, participants, structure_type, segments) —
+// never the internal engineering label, never fabricated data. The
+// canonical structure_type/label/economics are untouched; this is
+// presentation only.
+export function scenarioDisplay(structure) {
+  const participants = structure.participants || [];
+  const primary = structure.primary_jurisdiction;
+  const others = participants.filter((p) => p !== primary);
+
+  let title;
+  if (!primary && !participants.length) {
+    title = structure.label; // defensive fallback — should not occur with real data
+  } else if (structure.structure_type === "single_country") {
+    title = jurName(primary);
+  } else if (structure.structure_type === "full_relocation") {
+    title = `Relocate to ${jurName(primary)}`;
+  } else if (structure.structure_type === "component_relocation" && others.length) {
+    title = `${jurName(primary)} + ${others.map(jurName).join(" + ")}`;
+  } else {
+    title = participants.length ? participants.map(jurName).join(" + ") : jurName(primary);
+  }
+
+  const segments = structure.segments || [];
+  const dominant = segments.slice().sort((a, b) => (b.qpe_usd || 0) - (a.qpe_usd || 0))[0];
+  const subtitle = structure.is_fully_priced && dominant?.claims_incentive && dominant?.program_slug
+    ? `${programDisplay(dominant.program_slug)} · ${Math.round((dominant.rate_floor || 0) * 100)}%${dominant.is_band_ceiling ? " (up to)" : ""}`
+    : humanizeToken(structure.structure_type);
+
+  return { title, subtitle, dominant };
 }
 
 // Real AccountQualification.state values -> plain-language label + tier.

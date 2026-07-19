@@ -130,6 +130,7 @@ class AllocatedStructurePricing:
     structure_id: str
     structure_type: str
     label: str
+    primary_jurisdiction: str
     participants: tuple[str, ...]
     allocation: AllocationResult
     segments: tuple[SegmentEconomics, ...]
@@ -472,6 +473,7 @@ def price_allocated_structure(
         structure_id=spec.structure_id,
         structure_type=spec.structure_type,
         label=spec.label,
+        primary_jurisdiction=spec.primary_jurisdiction,
         participants=spec.participants,
         allocation=allocation,
         segments=tuple(segments),

@@ -265,6 +265,11 @@
 .workspace-main {
   flex: 1;
   min-width: 0;
+  min-height: 0; /* nested-flex fix: without this the column can't shrink
+                    below its content's intrinsic height, so overflow-y:auto
+                    never engages and .app-shell's overflow:hidden clips
+                    content instead of scrolling it (Map/Split, tall Lanes
+                    grids). */
   overflow-y: auto;
   background: var(--canvas);
 }
