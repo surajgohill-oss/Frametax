@@ -21,6 +21,21 @@ const JUR_NAMES = {
   CA: "Canada", IN: "India", ZA: "South Africa", TR: "Türkiye",
 };
 const jurName = (code) => JUR_NAMES[code] || code || "—";
+
+// Doctrine badge — ported verbatim from the frozen artifact's DOCTRINE map
+// (ui-baseline-v1). When the jurisdiction appears in the live
+// /economics.alternative_jurisdictions payload, the SERVED doctrine wins;
+// this map is the artifact's presentation fallback for the baseline
+// jurisdiction (MU), whose doctrine the comparison payload doesn't carry.
+const DOCTRINE_BADGE = {
+  hybrid_conditional: { short: "Hybrid · conditional", cls: "d-hybrid" },
+  closed_positive_list: { short: "Closed · positive list", cls: "d-closed" },
+  open_default_include: { short: "Open · default-include", cls: "d-open" },
+};
+const ARTIFACT_DOCTRINE = { MU: "hybrid_conditional" }; // frozen-artifact entry for the baseline
+// Display currency per jurisdiction, limited to what /economics.fx_horizons
+// actually serves (MUR/EUR/GBP) — never a guessed pair.
+const FX_CCY = { MU: "MUR", MT: "EUR", IE: "EUR", GR: "EUR", GB: "GBP" };
 const NAT = { GB: "GB", US: "US", FR: "FR", DE: "DE", IT: "IT", ES: "ES", IE: "IE", MT: "MT", MU: "MU", FJ: "FJ", AU: "AU", NZ: "NZ", CA: "CA", IN: "IN", ZA: "ZA" };
 const natOf = (arr) => {
   const n = arr?.[0]?.nationality;
@@ -68,7 +83,7 @@ export default function Overview() {
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
 
-  const { production, pkg, structures, legal, people } = data;
+  const { production, pkg, structures, legal, people, economics, recommendations, facts } = data;
   const ranking = structures.ranking || [];
   const best = ranking.find((r) => r.is_priceable) || null;
 
@@ -89,6 +104,32 @@ export default function Overview() {
   const rateCeiling = production.rate_resolution?.is_band_ceiling;
 
   const dealFacts = `dir ${natOf(people.directors)} · writer ${natOf(people.writers)} · prod ${natOf(people.producers)} · cast ${natOf(people.cast)}`;
+
+  // Doctrine of the recommended jurisdiction — served value when the
+  // comparison payload covers it, artifact-map fallback for the baseline.
+  const recJurCode = dominantSeg?.jurisdiction_code || production.jurisdiction_code;
+  const servedDoctrine = (economics?.alternative_jurisdictions?.executable || [])
+    .find((e) => e.jurisdiction_code === recJurCode)?.doctrine;
+  const doctrine = DOCTRINE_BADGE[servedDoctrine || ARTIFACT_DOCTRINE[recJurCode]] || null;
+
+  // FX strip — real spot from /economics.fx_horizons for the production's
+  // display currency; horizons render only when the backend actually has
+  // them (MUR is genuinely spot-only today).
+  const fxCcy = FX_CCY[production.jurisdiction_code];
+  const fxH = fxCcy ? economics?.fx_horizons?.[fxCcy] : null;
+  const fxSpot = fxH?.current;
+  const fxForwards = fxH ? ["1m", "6m", "12m"].filter((k) => fxH[k] != null).map((k) => `${k.toUpperCase()} ${fxH[k]}`) : [];
+
+  // Cultural qualification — the two REAL mechanisms served on
+  // /recommendations, never blended: eligibility_gate_failed is categorical,
+  // cultural_test_gap is a recoverable score. Card hides when neither exists
+  // (exactly the frozen artifact's empty behavior).
+  const culturalRecs = Object.values(recommendations.by_category || {}).flat()
+    .filter((r) => r.subtype === "eligibility_gate_failed" || r.subtype === "cultural_test_gap");
+
+  const treatyElected = facts?.answers?.treaty_partner_code;
+  const reinvJurs = [production.jurisdiction_code,
+    ...(economics?.alternative_jurisdictions?.executable || []).map((e) => e.jurisdiction_code)];
 
   function openWorkspace(tab) {
     navigate("/production/workspace", tab ? { state: { tab } } : undefined);
@@ -118,10 +159,17 @@ export default function Overview() {
           <div className="st">
             <div className="l2">Recommended jurisdiction</div>
             <div className="v2">{recJur}</div>
+            {doctrine && (
+              <div style={{ marginTop: 4 }}>
+                <span className={`ovx-doctrine ${doctrine.cls}`} title={servedDoctrine || ARTIFACT_DOCTRINE[recJurCode]}><i />{doctrine.short}</span>
+              </div>
+            )}
           </div>
           <div className="st">
             <div className="l2">Net production cost</div>
-            <div className="v2 gold">{best ? <Money value={best.conservative_npc_usd} /> : "—"}</div>
+            <div className="v2 gold">
+              {best ? <span className="ovx-tracelink" title="Open the workspace trace" onClick={() => openWorkspace()}><Money value={best.conservative_npc_usd} /></span> : "—"}
+            </div>
           </div>
           <div className="st key">
             <div className="l2">Optimization waiting</div>
@@ -141,6 +189,20 @@ export default function Overview() {
         </div>
       </section>
 
+      {/* FX strip — frozen-artifact presentation over the REAL spot rate */}
+      {fxSpot != null && (
+        <div className="ovx-fxstrip">
+          <span>FX</span>
+          <b>USD/{fxCcy}</b>
+          <span>{Number(fxSpot).toFixed(2)} · live spot</span>
+          {fxForwards.length
+            ? <span className="mono" style={{ color: "var(--text-secondary)" }}>{fxForwards.join(" · ")}</span>
+            : <span style={{ color: "var(--text-tertiary)" }}>spot only — no forward curve published</span>}
+          <span className="tag2">forwards are commentary — optimizer prices at current rates</span>
+          <span style={{ color: "var(--text-tertiary)" }}>Historical trends &amp; volatility → Intelligence</span>
+        </div>
+      )}
+
       {/* Two-column split */}
       <div className="ovx-split">
         {/* LEFT — open decisions */}
@@ -159,6 +221,7 @@ export default function Overview() {
                       <td className="qid">Q{i + 1}</td>
                       <td className="qtitle">{q.title}</td>
                       <td className="qsw">{fmtSwing(q.swing) || <span style={{ color: "var(--text-tertiary)", fontFamily: "var(--font-sans)", fontSize: 11 }}>{q.priority} priority</span>}</td>
+                      <td className="qst">{q.hot ? <span className="late">blocking</span> : "awaiting"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -178,7 +241,7 @@ export default function Overview() {
             </div>
             {ranking.length ? ranking.map((r, i) => (
               <div className="ovx-sheetrow" key={r.structure_id}>
-                <span><b>{r.rank ? `${["①", "②", "③", "④", "⑤"][i] || r.rank} ` : ""}{r.label}</b>{r.is_priceable ? "" : " · not yet priced"}</span>
+                <span><b>{r.rank ? `${["①", "②", "③", "④", "⑤"][i] || r.rank} ` : ""}{r.label}</b>{r.is_priceable ? ` · ${rateModeled}${rateCeiling ? " (up to)" : ""}` : " · not yet priced"}</span>
                 <span className="mono">{r.is_priceable ? <Money value={r.conservative_npc_usd} /> : "—"}</span>
               </div>
             )) : (
@@ -197,13 +260,21 @@ export default function Overview() {
         <div>
           <section className="ovx-sec">
             <div className="oh"><b>Production sheet</b></div>
-            <div className="ovx-sheetrow"><span>Leading structure</span><span className="mono">{best ? best.label : "None priced"}</span></div>
-            <div className="ovx-sheetrow"><span>Recommended rate</span><span className="mono">{rateModeled}{rateCeiling ? " (up to)" : ""}</span></div>
+            <div className="ovx-sheetrow"><span>Model</span><span className="mono">budget · {pkg.register?.length ?? "—"} accounts</span></div>
             <div className="ovx-sheetrow"><span>Conditional swing</span><span className="mono">{swingTotal ? `±$${Math.round(swingTotal).toLocaleString()}` : "—"}</span></div>
-            <div className="ovx-sheetrow"><span>Open questions</span><span className="mono">{openN}</span></div>
+            <div className="ovx-sheetrow"><span>Documents bound</span><span className="mono">—</span></div>
             <div className="ovx-sheetrow click" onClick={() => openWorkspace("inputs")} title="Edit cast & crew nationality in Workspace → Inputs">
               <span>Deal facts</span><span className="mono">{dealFacts} <span style={{ color: "var(--blue)", fontFamily: "var(--font-sans)" }}>edit →</span></span>
             </div>
+            <div className="ovx-sheetrow"><span>Sub-let / co-pro treaties</span><span className="mono">{treatyElected ? `${treatyElected} · elected` : "none elected"}</span></div>
+          </section>
+
+          <section className="ovx-sec">
+            <div className="oh">
+              <b>Latest record</b>
+              <button className="act" onClick={() => navigate("/production/record")}>Full record →</button>
+            </div>
+            <div className="ovx-sheetrow"><span style={{ color: "var(--text-tertiary)" }}>No record entries yet.</span></div>
           </section>
 
           <section className="ovx-sec">
@@ -233,12 +304,53 @@ export default function Overview() {
             )}
           </section>
 
+          {culturalRecs.length > 0 && (
+            <section className="ovx-sec">
+              <div className="oh"><b>Cultural qualification</b><span className="n">{culturalRecs.length}</span></div>
+              <div style={{ fontSize: 10.5, color: "var(--text-tertiary)", margin: "-2px 0 8px", lineHeight: 1.5 }}>
+                Two different mechanisms, never blended: an <b>eligibility gate</b> is pass/fail and categorical; a <b>points test</b> is a recoverable score.
+              </div>
+              {culturalRecs.map((r) => {
+                const isBlocker = r.subtype === "eligibility_gate_failed";
+                return (
+                  <div className={`ovx-cq ${isBlocker ? "blocker" : "opportunity"}`} key={r.recommendation_id}>
+                    <div className="cqh">
+                      <span className="cqk">{isBlocker ? "Categorical blocker" : "Optimization opportunity"}</span>
+                      <b>{r.title}</b>
+                      {(r.jurisdiction_codes || []).length > 0 && <span className="cqm">{r.jurisdiction_codes.join(" · ")}</span>}
+                    </div>
+                    <p>{r.description}</p>
+                    {(r.specific_actions || []).length > 0 && (
+                      <div className="cqr"><b>{isBlocker ? "How to resolve" : "How to improve"}</b>{r.specific_actions.join(" ")}</div>
+                    )}
+                  </div>
+                );
+              })}
+            </section>
+          )}
+
           <section className="ovx-sec">
             <div className="oh"><b>Intelligence · coming online</b></div>
+            <div className="ovx-rsv" style={{ borderBottom: "none", paddingBottom: 2 }}>
+              <span>Reinvestment readiness — by jurisdiction</span><span className="tag2">engine pending</span>
+            </div>
+            <table className="ovx-reinv">
+              <thead>
+                <tr><th>Jurisdiction</th><th>Reinvest</th><th>SPV</th><th>Equity subst.</th><th>Vendor</th><th>Approval</th></tr>
+              </thead>
+              <tbody>
+                {reinvJurs.map((code) => (
+                  <tr key={code}>
+                    <td>{jurName(code)}</td>
+                    {["a", "b", "c", "d", "e"].map((k) => <td key={k}><span className="pend">pending</span></td>)}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
             {[
-              ["Reinvestment readiness — by jurisdiction", "engine pending"],
               ["Treaty opportunities", "reserved"],
               ["Currency normalization · historical FX", "reserved"],
+              ["Travel & labor normalization", "reserved"],
               ["Confidence scoring · conservative / base / optimistic", "reserved"],
             ].map(([label, tag]) => (
               <div className="ovx-rsv" key={label}><span>{label}</span><span className="tag2">{tag}</span></div>
@@ -251,9 +363,9 @@ export default function Overview() {
           <section className="ovx-sec">
             <div className="oh"><b>Shortcuts</b></div>
             <div className="ovx-actions" style={{ marginTop: 2 }}>
-              <button className="ovx-btn" onClick={() => navigate("/production/documents")}>Documents</button>
+              <button className="ovx-btn" onClick={() => navigate("/production/binder")}>Documents</button>
               <button className="ovx-btn" onClick={() => navigate("/production/knowledge")}>Knowledge</button>
-              <button className="ovx-btn" onClick={() => navigate("/production/record")}>Record</button>
+              <button className="ovx-btn" onClick={() => navigate("/production/reports")}>Reports</button>
             </div>
           </section>
         </div>
