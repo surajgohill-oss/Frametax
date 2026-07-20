@@ -4,7 +4,7 @@ import { useCineGlobe } from "../../lib/useCineGlobe";
 import { useAppState } from "../../state/AppState";
 import { useProjectStatus } from "../../lib/useProjectStatus";
 import { Loading, ErrorBox } from "../../components/Async";
-import { Money, humanizeToken } from "../../lib/format";
+import { Money, humanizeToken, scenarioDisplay } from "../../lib/format";
 
 // Overview — the approved artifact "identity hero + flat sheet" dashboard
 // (reference/artifacts/prototype-v1-updated.html). Two-column split: the
@@ -83,9 +83,21 @@ export default function Overview() {
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
 
-  const { production, pkg, structures, legal, people, economics, recommendations, facts } = data;
-  const ranking = structures.ranking || [];
-  const best = ranking.find((r) => r.is_priceable) || null;
+  const { production, pkg, legal, people, economics, recommendations, facts } = data;
+
+  // Scenario ranking — the account->jurisdiction allocation model
+  // (allocated_structures), the SAME canonical source Workspace uses.
+  // /structures also carries a separate, older `ranking`/`candidates` pair
+  // (global_scenario_ranker) with only 2 generic-labeled entries whose
+  // structure_ids never intersect allocated_structures' ALLOC-* ids —
+  // cross-referencing that older set here always failed silently (the
+  // "best" lookup below could never resolve a real structure). Reading
+  // allocated_structures.ranking directly fixes that and matches what the
+  // leading-structure footer on Workspace actually shows.
+  const structById = new Map((allocated?.structures || []).map((s) => [s.structure_id, s]));
+  const rankedStructures = allocated?.ranking || [];
+  const bestRank = rankedStructures.find((r) => r.rank === 1) || null;
+  const bestStruct = bestRank ? structById.get(bestRank.structure_id) : null;
 
   const swingTotal = (legal.grey_areas_current || [])
     .filter((g) => g.status === "open")
@@ -96,12 +108,9 @@ export default function Overview() {
   // Recommended jurisdiction — the leading (top priceable) structure's
   // dominant segment by qualifying spend; falls back to the production's
   // own base jurisdiction.
-  const bestStruct = allocated?.structures?.find((s) => s.structure_id === best?.structure_id);
   const dominantSeg = bestStruct?.segments?.slice().sort((a, b) => (b.qpe_usd || 0) - (a.qpe_usd || 0))[0];
   const recJur = jurName(dominantSeg?.jurisdiction_code || production.jurisdiction_code);
-
-  const rateModeled = production.rate != null ? `${Math.round(production.rate * 100)}%` : "—";
-  const rateCeiling = production.rate_resolution?.is_band_ceiling;
+  const bestDisplay = bestStruct ? scenarioDisplay(bestStruct) : null;
 
   const dealFacts = `dir ${natOf(people.directors)} · writer ${natOf(people.writers)} · prod ${natOf(people.producers)} · cast ${natOf(people.cast)}`;
 
@@ -144,7 +153,7 @@ export default function Overview() {
           <div className="ovx-pillrow">
             <span className="ovx-pill stage">{meta.label}</span>
             <span className="ovx-pill">{pkg.confidence} confidence</span>
-            {best && <span className="ovx-pill anchor">◈ {best.label} anchor</span>}
+            {bestStruct && <span className="ovx-pill anchor">◈ {bestDisplay.title} anchor</span>}
           </div>
           <h1>{production.production_name}</h1>
           {pkg.script?.attributes?.setting?.value && (
@@ -168,7 +177,7 @@ export default function Overview() {
           <div className="st">
             <div className="l2">Net production cost</div>
             <div className="v2 gold">
-              {best ? <span className="ovx-tracelink" title="Open the workspace trace" onClick={() => openWorkspace()}><Money value={best.conservative_npc_usd} /></span> : "—"}
+              {bestStruct ? <span className="ovx-tracelink" title="Open the workspace trace" onClick={() => openWorkspace()}><Money value={bestStruct.npc_with_adjustments_usd} /></span> : "—"}
             </div>
           </div>
           <div className="st key">
@@ -236,15 +245,19 @@ export default function Overview() {
           <section className="ovx-sec">
             <div className="oh">
               <b>Scenarios under evaluation</b>
-              <span className="n">{ranking.length}</span>
+              <span className="n">{rankedStructures.length}</span>
               <button className="act" onClick={() => openWorkspace()}>Compare →</button>
             </div>
-            {ranking.length ? ranking.map((r, i) => (
-              <div className="ovx-sheetrow" key={r.structure_id}>
-                <span><b>{r.rank ? `${["①", "②", "③", "④", "⑤"][i] || r.rank} ` : ""}{r.label}</b>{r.is_priceable ? ` · ${rateModeled}${rateCeiling ? " (up to)" : ""}` : " · not yet priced"}</span>
-                <span className="mono">{r.is_priceable ? <Money value={r.conservative_npc_usd} /> : "—"}</span>
-              </div>
-            )) : (
+            {rankedStructures.length ? rankedStructures.map((r, i) => {
+              const struct = structById.get(r.structure_id);
+              const disp = struct ? scenarioDisplay(struct) : null;
+              return (
+                <div className="ovx-sheetrow" key={r.structure_id}>
+                  <span><b>{r.rank ? `${["①", "②", "③", "④", "⑤"][i] || r.rank} ` : ""}{disp?.title || r.label}</b>{r.is_fully_priced ? ` · ${disp?.subtitle || ""}` : " · not yet priced"}</span>
+                  <span className="mono">{r.is_fully_priced ? <Money value={r.npc_with_adjustments_usd} /> : "—"}</span>
+                </div>
+              );
+            }) : (
               <div style={{ fontSize: 12, color: "var(--text-tertiary)", padding: "6px 0" }}>
                 No lanes yet — open the workspace.
               </div>
