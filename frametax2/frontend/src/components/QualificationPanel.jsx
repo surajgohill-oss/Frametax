@@ -31,7 +31,7 @@ function Iso2Input({ value, onChange }) {
   );
 }
 
-function PeopleRow({ role, people, overrides, onSaved }) {
+export function PeopleRow({ role, people, overrides, onSaved }) {
   const entries = people[role.dataKey] || [];
   const override = overrides[role.key] || { nationality: null, residency: null };
   const [nat, setNat] = useState(override.nationality || "");
@@ -101,7 +101,7 @@ function BoolFactRow({ factKey, meta, current, onSaved }) {
   );
 }
 
-function StrFactRow({ factKey, meta, current, onSaved }) {
+export function StrFactRow({ factKey, meta, current, onSaved, label }) {
   const [value, setValue] = useState(current || "");
   const [saving, setSaving] = useState(false);
   async function save() {
@@ -115,7 +115,7 @@ function StrFactRow({ factKey, meta, current, onSaved }) {
   }
   return (
     <div className="field-row">
-      <span className="field-label" title={meta.description}>{factKey.replace(/_/g, " ")}</span>
+      <span className="field-label" title={meta.description}>{label || factKey.replace(/_/g, " ")}</span>
       <div className="field-control">
         <span className="text-tertiary small mono">now {current || "unset"}</span>
         <input

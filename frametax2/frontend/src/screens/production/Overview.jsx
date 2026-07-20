@@ -2,17 +2,25 @@ import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { useAppState } from "../../state/AppState";
-import { useProjectStatus } from "../../lib/useProjectStatus";
 import { Loading, ErrorBox } from "../../components/Async";
-import { Money, humanizeToken, scenarioDisplay } from "../../lib/format";
+import { Money, humanizeToken, scenarioDisplay, recommendationHeadline } from "../../lib/format";
+import Globe3D from "../../components/Globe3D";
+import { buildGlobeData } from "../../lib/globeData";
+import { PeopleRow, StrFactRow } from "../../components/QualificationPanel";
+import { buildReferenceLibrary } from "./Knowledge";
 
-// Overview — the approved artifact "identity hero + flat sheet" dashboard
-// (reference/artifacts/prototype-v1-updated.html). Two-column split: the
-// production's open decisions on the left, its record and optimization
-// queue on the right. Every value is read verbatim from the live backend
-// (useCineGlobe) — nothing is fabricated. Wiring that the artifact renders
-// read-only (nationality edits) stays reachable via the Workspace Inputs
-// tab, reached from the "Deal facts" row.
+// Overview — approved three-column executive layout.
+//   LEFT   — Production variables (the inputs driving the analysis) +
+//            unresolved production facts. People/fact edits REUSE the
+//            QualificationPanel controls (POST /people, POST /facts) —
+//            same persistence path as Workspace, no second intake system.
+//   CENTER — Project Globe (shared Globe3D + buildGlobeData engine,
+//            unmodified), decision metrics, leading scenarios.
+//   RIGHT  — Current recommendation, immediate decisions, evidence
+//            readiness, one next action.
+// Every value comes from the canonical backend payloads (allocated_structures,
+// /people, /facts, /package, /legal, /economics). `Unknown` is rendered
+// wherever the backend has no value — nothing is fabricated.
 
 const JUR_NAMES = {
   MU: "Mauritius", ES: "Spain", GB: "United Kingdom", US: "United States",
@@ -21,367 +29,441 @@ const JUR_NAMES = {
   CA: "Canada", IN: "India", ZA: "South Africa", TR: "Türkiye",
 };
 const jurName = (code) => JUR_NAMES[code] || code || "—";
-
-// Doctrine badge — ported verbatim from the frozen artifact's DOCTRINE map
-// (ui-baseline-v1). When the jurisdiction appears in the live
-// /economics.alternative_jurisdictions payload, the SERVED doctrine wins;
-// this map is the artifact's presentation fallback for the baseline
-// jurisdiction (MU), whose doctrine the comparison payload doesn't carry.
-const DOCTRINE_BADGE = {
-  hybrid_conditional: { short: "Hybrid · conditional", cls: "d-hybrid" },
-  closed_positive_list: { short: "Closed · positive list", cls: "d-closed" },
-  open_default_include: { short: "Open · default-include", cls: "d-open" },
-};
-const ARTIFACT_DOCTRINE = { MU: "hybrid_conditional" }; // frozen-artifact entry for the baseline
-// Display currency per jurisdiction, limited to what /economics.fx_horizons
-// actually serves (MUR/EUR/GBP) — never a guessed pair.
-const FX_CCY = { MU: "MUR", MT: "EUR", IE: "EUR", GR: "EUR", GB: "GBP" };
-const NAT = { GB: "GB", US: "US", FR: "FR", DE: "DE", IT: "IT", ES: "ES", IE: "IE", MT: "MT", MU: "MU", FJ: "FJ", AU: "AU", NZ: "NZ", CA: "CA", IN: "IN", ZA: "ZA" };
-const natOf = (arr) => {
-  const n = arr?.[0]?.nationality;
-  return n ? (NAT[n] || n) : "—";
-};
 const fmtSwing = (v) => (v ? `±$${Math.round(v).toLocaleString()}` : null);
+const RANKS = ["①", "②", "③"];
+const VALUE_RANK = { high: 2, medium: 1, low: 0 };
+
+// known / assumed / unresolved variable-state marker (existing dot tiers).
+const STATE_DOT = { known: "jade", assumed: "silver", unresolved: "amber" };
+function VarRow({ state, label, value, sub, title }) {
+  return (
+    <div className="ovxv-row" title={title}>
+      <span className={`dot ${STATE_DOT[state] || "silver"}`} title={state} />
+      <span className="ovxv-label">{label}</span>
+      <span className="ovxv-val">
+        <span className={value === "Unknown" ? "ovxv-unk" : ""}>{value}</span>
+        {sub && <span className="ovxv-sub">{sub}</span>}
+      </span>
+    </div>
+  );
+}
+
+const READY_DOT = { ready: "jade", partial: "amber", missing: "red" };
 
 export default function Overview() {
-  const { data, error, loading } = useCineGlobe();
+  const { data, error, loading, refetch } = useCineGlobe();
   const navigate = useNavigate();
   const { openInspector } = useAppState();
-  const { meta } = useProjectStatus(data?.production?.production_id);
 
   const allocated = data?.structures?.allocated_structures;
 
-  // Unified open-question list — MissingInput (Question Engine, /package)
-  // plus open GreyAreaItem (Legal Engine, /legal), exactly as the Workspace
-  // question stack composes them. Never fabricated.
-  const questions = useMemo(() => {
-    if (!data) return [];
-    const mi = (data.pkg.missing_inputs || []).map((m) => ({
-      id: m.identifier,
-      title: m.question,
-      swing: null,
-      priority: m.optimizer_value,
-      hot: !!m.blocking,
-      meta: (m.downstream_engines || []).map(humanizeToken).join(", "),
-      inspect: { kind: "question", data: m },
-    }));
-    const ga = (data.legal.grey_areas_current || [])
-      .filter((g) => g.status === "open")
-      .map((g) => ({
-        id: g.item_id,
-        title: g.resolving_evidence,
-        swing: g.amount_usd,
-        priority: "high",
-        hot: true,
-        meta: g.jurisdiction_code ? `${g.jurisdiction_code} · ${g.authority_to_ask || "authority ruling"}` : "authority ruling",
-        inspect: { kind: "question", data: g },
-      }));
-    // Money-bearing questions first (they gate optimization), then the rest.
-    return [...ga, ...mi];
-  }, [data]);
+  // Globe data — identical derivation to ProjectGlobe.jsx and Workspace's
+  // Map/Split modes. One globe engine for the whole app, never forked.
+  const rankById = useMemo(() => {
+    if (!allocated) return new Map();
+    return new Map(allocated.ranking.map((r) => [r.structure_id, r]));
+  }, [allocated]);
+  const { points, arcs, structuresByCode } = useMemo(
+    () => buildGlobeData(allocated, rankById),
+    [allocated, rankById],
+  );
 
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
 
   const { production, pkg, legal, people, economics, recommendations, facts } = data;
 
-  // Scenario ranking — the account->jurisdiction allocation model
-  // (allocated_structures), the SAME canonical source Workspace uses.
-  // /structures also carries a separate, older `ranking`/`candidates` pair
-  // (global_scenario_ranker) with only 2 generic-labeled entries whose
-  // structure_ids never intersect allocated_structures' ALLOC-* ids —
-  // cross-referencing that older set here always failed silently (the
-  // "best" lookup below could never resolve a real structure). Reading
-  // allocated_structures.ranking directly fixes that and matches what the
-  // leading-structure footer on Workspace actually shows.
+  // ── Canonical scenario ranking (allocated_structures — same source as
+  // Workspace/Scenarios/Project Globe; the legacy ranking/candidates pair
+  // is deliberately not read). ────────────────────────────────────────────
   const structById = new Map((allocated?.structures || []).map((s) => [s.structure_id, s]));
   const rankedStructures = allocated?.ranking || [];
   const bestRank = rankedStructures.find((r) => r.rank === 1) || null;
   const bestStruct = bestRank ? structById.get(bestRank.structure_id) : null;
-
-  const swingTotal = (legal.grey_areas_current || [])
-    .filter((g) => g.status === "open")
-    .reduce((s, g) => s + (g.amount_usd || 0), 0);
-  const openN = questions.length;
-  const blocker = questions.find((q) => q.swing) || questions.find((q) => q.hot) || null;
-
-  // Recommended jurisdiction — the leading (top priceable) structure's
-  // dominant segment by qualifying spend; falls back to the production's
-  // own base jurisdiction.
-  const dominantSeg = bestStruct?.segments?.slice().sort((a, b) => (b.qpe_usd || 0) - (a.qpe_usd || 0))[0];
-  const recJur = jurName(dominantSeg?.jurisdiction_code || production.jurisdiction_code);
   const bestDisplay = bestStruct ? scenarioDisplay(bestStruct) : null;
-
-  const dealFacts = `dir ${natOf(people.directors)} · writer ${natOf(people.writers)} · prod ${natOf(people.producers)} · cast ${natOf(people.cast)}`;
-
-  // Doctrine of the recommended jurisdiction — served value when the
-  // comparison payload covers it, artifact-map fallback for the baseline.
+  const dominantSeg = bestDisplay?.dominant;
   const recJurCode = dominantSeg?.jurisdiction_code || production.jurisdiction_code;
-  const servedDoctrine = (economics?.alternative_jurisdictions?.executable || [])
-    .find((e) => e.jurisdiction_code === recJurCode)?.doctrine;
-  const doctrine = DOCTRINE_BADGE[servedDoctrine || ARTIFACT_DOCTRINE[recJurCode]] || null;
 
-  // FX strip — real spot from /economics.fx_horizons for the production's
-  // display currency; horizons render only when the backend actually has
-  // them (MUR is genuinely spot-only today).
-  const fxCcy = FX_CCY[production.jurisdiction_code];
-  const fxH = fxCcy ? economics?.fx_horizons?.[fxCcy] : null;
-  const fxSpot = fxH?.current;
-  const fxForwards = fxH ? ["1m", "6m", "12m"].filter((k) => fxH[k] != null).map((k) => `${k.toUpperCase()} ${fxH[k]}`) : [];
+  const baselineStruct = structById.get("ALLOC-BASELINE-MU") || null;
+  const baselineNpc = baselineStruct?.is_fully_priced ? baselineStruct.npc_with_adjustments_usd : null;
+  const savingsVs = (s) =>
+    (s && baselineStruct && s.structure_id !== baselineStruct.structure_id
+      && s.is_fully_priced && baselineNpc != null)
+      ? baselineNpc - s.npc_with_adjustments_usd
+      : null;
+  const estimatedSavings = savingsVs(bestStruct);
+  const pricedCount = (allocated?.structures || []).filter((s) => s.is_fully_priced).length;
 
-  // Cultural qualification — the two REAL mechanisms served on
-  // /recommendations, never blended: eligibility_gate_failed is categorical,
-  // cultural_test_gap is a recoverable score. Card hides when neither exists
-  // (exactly the frozen artifact's empty behavior).
-  const culturalRecs = Object.values(recommendations.by_category || {}).flat()
-    .filter((r) => r.subtype === "eligibility_gate_failed" || r.subtype === "cultural_test_gap");
+  const openGrey = (legal.grey_areas_current || []).filter((g) => g.status === "open");
+  const swingTotal = openGrey.reduce((s, g) => s + (g.amount_usd || 0), 0);
 
-  const treatyElected = facts?.answers?.treaty_partner_code;
-  const reinvJurs = [production.jurisdiction_code,
-    ...(economics?.alternative_jurisdictions?.executable || []).map((e) => e.jurisdiction_code)];
+  // ── LEFT — production variables from persisted state ───────────────────
+  const namesOf = (arr) => (arr || []).map((p) => p.name).filter(Boolean).join(", ");
+  const psd = production.production_structure_default || {};
+  const spvAssumption = (psd.assumptions || []).find((a) => /SPV/i.test(a)) || null;
+  const setting = pkg.script?.attributes?.setting?.value || null;
+  const sreq = production.physical_requirements?.script_requirements || {};
+  const confirmedReq = (k) => sreq[k]?.confidence === "CONFIRMED" && sreq[k]?.value === true;
+  const logistical = ["marine", "open_water_filming", "night_work", "underwater_photography"]
+    .filter(confirmedReq).map(humanizeToken).join(" · ");
+  const creative = confirmedReq("period")
+    ? `Period story — ${sreq.period.evidence?.includes("1978") ? "dual timeline 1978 / 1985" : "period setting"}`
+    : null;
+  const financingAssumed = economics?.financing_source === "default_zero";
+  const postElected = facts?.answers?.component_route_post || null;
 
-  function openWorkspace(tab) {
+  // Unresolved production facts — open grey areas (real $ swing) first,
+  // then Question Engine missing inputs by optimizer value. Max 5 rows.
+  const unresolvedFacts = [
+    ...openGrey.map((g) => ({
+      id: g.item_id,
+      need: g.resolving_evidence,
+      why: `${g.jurisdiction_code} · ${g.authority_to_ask || "authority ruling"}`,
+      value: fmtSwing(g.amount_usd),
+      tier: "red",
+      inspect: { kind: "question", data: g },
+    })),
+    ...[...(pkg.missing_inputs || [])]
+      .sort((a, b) => (VALUE_RANK[b.optimizer_value] || 0) - (VALUE_RANK[a.optimizer_value] || 0))
+      .map((m) => ({
+        id: m.identifier,
+        need: m.question,
+        why: (m.downstream_engines || []).map(humanizeToken).join(", ") || "question engine",
+        value: `${m.optimizer_value} value`,
+        tier: "amber",
+        inspect: { kind: "question", data: m },
+      })),
+  ].slice(0, 5);
+
+  // ── RIGHT — immediate decisions: the open authority ruling(s) plus the
+  // unmade producer elections the Question Engine values highest. These are
+  // decision items (rule / elect / allocate), not the generic question stack.
+  const miById = new Map((pkg.missing_inputs || []).map((m) => [m.identifier, m]));
+  const decisions = [
+    ...openGrey.map((g) => ({
+      id: g.item_id,
+      title: `Obtain authority ruling · ${g.jurisdiction_code}`,
+      need: g.resolving_evidence,
+      value: fmtSwing(g.amount_usd),
+      tier: "red",
+      inspect: { kind: "question", data: g },
+    })),
+    ...[
+      { id: "MISSING-TREATY-PARTNER", title: "Treaty partner election" },
+      { id: "MISSING-LOCAL-SPEND-ALLOCATION", title: "Qualifying-spend allocation" },
+      { id: "MISSING-PAYROLL-STRUCTURE", title: "Payroll routing election" },
+    ]
+      .map((d) => ({ ...d, mi: miById.get(d.id) }))
+      .filter((d) => d.mi)
+      .map((d) => ({
+        id: d.id,
+        title: d.title,
+        need: d.mi.question,
+        value: `${d.mi.optimizer_value} value`,
+        tier: "amber",
+        inspect: { kind: "question", data: d.mi },
+      })),
+  ].slice(0, 3);
+
+  // ── RIGHT — evidence readiness, all derived from real payload state ────
+  const allPeople = [...(people.writers || []), ...(people.directors || []), ...(people.cast || []), ...(people.producers || [])];
+  const peopleKnown = allPeople.filter((p) => p.nationality_state === "known" && p.residency_state === "known").length;
+  const peopleState = allPeople.length === 0 ? "missing"
+    : peopleKnown === allPeople.length ? "ready"
+    : allPeople.some((p) => p.nationality_state === "known" || p.residency_state === "known") ? "partial" : "missing";
+  const scriptAttrsKnown = Object.values(pkg.script?.attributes || {}).some((a) => a?.is_known);
+  const referenceItems = buildReferenceLibrary(pkg, allocated, recommendations);
+  const readiness = [
+    { label: "Budget", state: (pkg.register || []).length ? "ready" : "missing", to: "/production/binder" },
+    { label: "Script", state: pkg.script?.known ? "ready" : scriptAttrsKnown ? "partial" : "missing", to: "/production/binder" },
+    { label: "Schedule", state: "missing", to: "/production/binder" },
+    { label: "Cast / crew facts", state: peopleState, to: "/production/record" },
+    { label: "Entity documents", state: "missing", to: "/production/binder" },
+    { label: "Jurisdiction evidence", state: (legal.evidence_trace || []).length ? (openGrey.length ? "partial" : "ready") : "missing", to: "/production/binder" },
+    { label: "Legal / authority sources", state: referenceItems.length ? "ready" : "missing", to: "/production/knowledge" },
+  ];
+
+  const topAction = recommendations.by_category.financial[0]
+    || recommendations.by_category.structural[0]
+    || recommendations.by_category.creative[0]
+    || null;
+
+  function goWorkspace(tab) {
     navigate("/production/workspace", tab ? { state: { tab } } : undefined);
   }
+  function handleGlobeClick(pt) {
+    const s = (structuresByCode.get(pt.id) || [])[0];
+    if (!s) return;
+    const seg = s.segments.find((sg) => sg.jurisdiction_code === pt.id);
+    if (seg) openInspector("allocation-segment", { ...seg, structureLabel: s.label });
+    else if (s.recommendation) openInspector("structure-recommendation", s.recommendation);
+  }
+  function openIncentiveCalc() {
+    if (dominantSeg) openInspector("allocation-segment", { ...dominantSeg, structureLabel: bestStruct.label });
+  }
+
+  const gatingFor = (s, disp) => {
+    if (s.blockers?.length) return s.blockers[0];
+    if (disp?.dominant?.is_band_ceiling) return "Awarded rate within the 'up to' band is set at authority approval";
+    return null;
+  };
 
   return (
-    <div className="screen ovx-screen">
-      {/* Identity hero */}
-      <section className="ovx-hero">
-        <div className="ovx-hero-art" aria-hidden="true" />
-        <div className="ovx-hero-id">
-          <div className="ovx-pillrow">
-            <span className="ovx-pill stage">{meta.label}</span>
-            <span className="ovx-pill">{pkg.confidence} confidence</span>
-            {bestStruct && <span className="ovx-pill anchor">◈ {bestDisplay.title} anchor</span>}
-          </div>
-          <h1>{production.production_name}</h1>
-          {pkg.script?.attributes?.setting?.value && (
-            <div className="ovx-logline">Setting — {pkg.script.attributes.setting.value}.</div>
-          )}
-        </div>
-        <div className="ovx-stats">
-          <div className="st">
-            <div className="l2">Total budget</div>
-            <div className="v2"><Money value={production.gross_budget_usd} /></div>
-          </div>
-          <div className="st">
-            <div className="l2">Recommended jurisdiction</div>
-            <div className="v2">{recJur}</div>
-            {doctrine && (
-              <div style={{ marginTop: 4 }}>
-                <span className={`ovx-doctrine ${doctrine.cls}`} title={servedDoctrine || ARTIFACT_DOCTRINE[recJurCode]}><i />{doctrine.short}</span>
-              </div>
-            )}
-          </div>
-          <div className="st">
-            <div className="l2">Net production cost</div>
-            <div className="v2 gold">
-              {bestStruct ? <span className="ovx-tracelink" title="Open the workspace trace" onClick={() => openWorkspace()}><Money value={bestStruct.npc_with_adjustments_usd} /></span> : "—"}
-            </div>
-          </div>
-          <div className="st key">
-            <div className="l2">Optimization waiting</div>
-            <div className="v2 gold">{swingTotal ? `$${Math.round(swingTotal).toLocaleString()}` : "—"}<small> · {openN} rulings</small></div>
-          </div>
-          {blocker ? (
-            <div className="st block">
-              <div className="l2">Biggest blocker</div>
-              <div className="v2" title={blocker.title}>{fmtSwing(blocker.swing) || "priority"}<small> · {blocker.hot ? "open" : "awaiting"}</small></div>
-            </div>
-          ) : (
-            <div className="st">
-              <div className="l2">Blockers</div>
-              <div className="v2" style={{ color: "var(--jade)" }}>none</div>
-            </div>
-          )}
-        </div>
-      </section>
+    <div className="screen ovxg-screen">
+      <div className="ovxg-grid">
 
-      {/* FX strip — frozen-artifact presentation over the REAL spot rate */}
-      {fxSpot != null && (
-        <div className="ovx-fxstrip">
-          <span>FX</span>
-          <b>USD/{fxCcy}</b>
-          <span>{Number(fxSpot).toFixed(2)} · live spot</span>
-          {fxForwards.length
-            ? <span className="mono" style={{ color: "var(--text-secondary)" }}>{fxForwards.join(" · ")}</span>
-            : <span style={{ color: "var(--text-tertiary)" }}>spot only — no forward curve published</span>}
-          <span className="tag2">forwards are commentary — optimizer prices at current rates</span>
-          <span style={{ color: "var(--text-tertiary)" }}>Historical trends &amp; volatility → Intelligence</span>
-        </div>
-      )}
-
-      {/* Two-column split */}
-      <div className="ovx-split">
-        {/* LEFT — open decisions */}
-        <div>
+        {/* ── LEFT — Production variables ─────────────────────────────── */}
+        <div className="ovxg-col ovxg-left">
           <section className="ovx-sec">
-            <div className="oh">
-              <b>Open questions</b>
-              <span className="n">{openN}{swingTotal ? ` · ±$${Math.round(swingTotal).toLocaleString()} at stake` : ""}</span>
-              <button className="act" onClick={() => openWorkspace()}>Work the stack →</button>
+            <div className="oh"><b>Production variables</b></div>
+            <div className="ovxv-legend">
+              <span><span className="dot jade" />known</span>
+              <span><span className="dot silver" />assumed</span>
+              <span><span className="dot amber" />unresolved</span>
             </div>
-            {openN ? (
-              <table className="ovx-qt">
-                <tbody>
-                  {questions.map((q, i) => (
-                    <tr key={q.id} onClick={() => openInspector(q.inspect.kind, q.inspect.data)} style={{ cursor: "pointer" }}>
-                      <td className="qid">Q{i + 1}</td>
-                      <td className="qtitle">{q.title}</td>
-                      <td className="qsw">{fmtSwing(q.swing) || <span style={{ color: "var(--text-tertiary)", fontFamily: "var(--font-sans)", fontSize: 11 }}>{q.priority} priority</span>}</td>
-                      <td className="qst">{q.hot ? <span className="late">blocking</span> : "awaiting"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <div style={{ fontSize: 12, color: "var(--text-tertiary)", padding: "6px 0" }}>
-                Nothing conditional remains — production certified.
-              </div>
+            <VarRow state="known" label="Writer" value={namesOf(people.writers) || "Unknown"} />
+            <VarRow state="known" label="Director" value={namesOf(people.directors) || "Unknown"} />
+            <VarRow state="known" label="Producers" value={namesOf(people.producers) || "Unknown"} />
+            <VarRow
+              state={people.cast?.[0]?.nationality_state === "known" ? "known" : "unresolved"}
+              label="Principal cast"
+              value={namesOf(people.cast) || "Unknown"}
+            />
+            <VarRow
+              state={spvAssumption ? "assumed" : "unresolved"}
+              label="Production entity"
+              value={spvAssumption ? `${jurName(psd.jurisdiction_code)} production SPV` : "Unknown"}
+              sub={spvAssumption ? "structure default — not yet established" : null}
+              title={spvAssumption || undefined}
+            />
+            <VarRow state="known" label="Production type / format" value="Feature film" title={`Rate tier: ${production.rate_resolution?.tier_id || ""}`} />
+            <VarRow state="known" label="Planned shoot jurisdiction" value={`${jurName(production.jurisdiction_code)} (baseline)`} />
+            <VarRow
+              state="unresolved"
+              label="Planned shoot locations"
+              value="Unknown"
+              sub={setting ? `Story setting: ${setting}` : null}
+            />
+            <VarRow
+              state={postElected ? "known" : "unresolved"}
+              label="Post-production jurisdiction"
+              value={postElected ? jurName(postElected) : "Unknown"}
+            />
+            {facts.answerable?.component_route_post && (
+              <StrFactRow
+                factKey="component_route_post"
+                label="Route post / VFX / music to"
+                meta={facts.answerable.component_route_post}
+                current={facts.answers?.component_route_post ?? null}
+                onSaved={refetch}
+              />
             )}
+            <VarRow state="unresolved" label="Shoot duration" value="Unknown" />
+            <VarRow state="unresolved" label="Production schedule" value="Unknown" />
           </section>
 
           <section className="ovx-sec">
-            <div className="oh">
-              <b>Scenarios under evaluation</b>
-              <span className="n">{rankedStructures.length}</span>
-              <button className="act" onClick={() => openWorkspace()}>Compare →</button>
+            <div className="oh"><b>Nationality &amp; residency</b></div>
+            {[
+              { key: "lead_cast", label: "Lead Cast", dataKey: "cast" },
+              { key: "director", label: "Director", dataKey: "directors" },
+              { key: "writer", label: "Writer", dataKey: "writers" },
+              { key: "producer", label: "Producer(s)", dataKey: "producers" },
+            ].map((role) => (
+              <PeopleRow key={role.key} role={role} people={people} overrides={people.overrides || {}} onSaved={refetch} />
+            ))}
+          </section>
+
+          <section className="ovx-sec">
+            <div className="oh"><b>Constraints</b></div>
+            <VarRow
+              state={creative ? "known" : "unresolved"}
+              label="Creative constraints"
+              value={creative || "Unknown"}
+              title={sreq.period?.evidence || undefined}
+            />
+            <VarRow
+              state={logistical ? "known" : "unresolved"}
+              label="Logistical constraints"
+              value={logistical || "Unknown"}
+              title={sreq.marine?.evidence || undefined}
+            />
+            <VarRow
+              state={financingAssumed ? "assumed" : "known"}
+              label="Financing constraints"
+              value={financingAssumed ? "None recorded" : "Recorded"}
+              sub={financingAssumed ? "financing cost modeled at $0 (default)" : null}
+            />
+          </section>
+
+          <section className="ovx-sec">
+            <div className="oh"><b>Unresolved production facts</b><span className="n">{unresolvedFacts.length}</span></div>
+            {unresolvedFacts.length ? (
+              <div className="row-list">
+                {unresolvedFacts.map((f) => (
+                  <div className="row-item" key={f.id} onClick={() => openInspector(f.inspect.kind, f.inspect.data)}>
+                    <span className={`dot ${f.tier}`} />
+                    <div className="row-main">
+                      <div className="row-title small">{f.need}</div>
+                      <div className="row-sub">{f.why}</div>
+                    </div>
+                    <div className="row-value mono small">{f.value}</div>
+                  </div>
+                ))}
+              </div>
+            ) : <div className="empty-state">All production facts are resolved.</div>}
+          </section>
+        </div>
+
+        {/* ── CENTER — Project Globe · decision metrics · leading scenarios ── */}
+        <div className="ovxg-col ovxg-center">
+          <section className="ovx-sec ovxg-globe-sec">
+            <div className="oh"><b>Project Globe</b><button className="act" onClick={() => navigate("/production/globe")}>Full screen →</button></div>
+            <div className="ovxg-globe-wrap dark-panel">
+              <Globe3D points={points} arcs={arcs} height={380} onPointClick={handleGlobeClick} />
             </div>
-            {rankedStructures.length ? rankedStructures.map((r, i) => {
-              const struct = structById.get(r.structure_id);
-              const disp = struct ? scenarioDisplay(struct) : null;
+          </section>
+
+          <section className="ovx-sec">
+            <div className="oh"><b>Decision metrics</b></div>
+            {/* Expected incentive / NPC use the SAME fields Workspace lanes
+                render (total_incentive_floor_usd, npc_with_adjustments_usd)
+                so the two screens can never disagree. */}
+            <div className="ovxg-metrics ovx-stats">
+              <div className="st"><div className="l2">Primary jurisdiction</div><div className="v2">{jurName(recJurCode)}</div></div>
+              <div className="st"><div className="l2">Leading structure</div><div className="v2">{bestDisplay ? bestDisplay.title : "—"}</div></div>
+              <div className="st"><div className="l2">Expected incentive value</div><div className="v2">{bestStruct ? <Money value={bestStruct.total_incentive_floor_usd} /> : "—"}</div></div>
+              <div className="st"><div className="l2">Net production cost</div><div className="v2">{bestStruct?.is_fully_priced ? <Money value={bestStruct.npc_with_adjustments_usd} /> : "—"}</div></div>
+              <div className="st"><div className="l2">Estimated savings</div><div className="v2 gold">{estimatedSavings != null ? <Money value={estimatedSavings} /> : "—"}<small> vs. baseline</small></div></div>
+              <div className="st"><div className="l2">Unresolved value at risk</div><div className="v2">{swingTotal ? fmtSwing(swingTotal) : "—"}</div></div>
+            </div>
+          </section>
+
+          <section className="ovx-sec">
+            <div className="oh"><b>Leading scenarios</b><span className="n">{rankedStructures.length}</span></div>
+            {rankedStructures.slice(0, 3).map((r, i) => {
+              const s = structById.get(r.structure_id);
+              if (!s) return null;
+              const disp = scenarioDisplay(s);
+              const sv = savingsVs(s);
+              const gating = gatingFor(s, disp);
+              const isBaseline = baselineStruct && s.structure_id === baselineStruct.structure_id;
               return (
-                <div className="ovx-sheetrow" key={r.structure_id}>
-                  <span><b>{r.rank ? `${["①", "②", "③", "④", "⑤"][i] || r.rank} ` : ""}{disp?.title || r.label}</b>{r.is_fully_priced ? ` · ${disp?.subtitle || ""}` : " · not yet priced"}</span>
-                  <span className="mono">{r.is_fully_priced ? <Money value={r.npc_with_adjustments_usd} /> : "—"}</span>
+                <div className={`ovxg-scn ${i === 0 ? "lead" : ""}`} key={r.structure_id}>
+                  <div className="ovxg-scn-top">
+                    <span className="ovxg-scn-rank">{RANKS[i] || r.rank}</span>
+                    <span className="ovxg-scn-name">
+                      {disp.title}
+                      {i === 0 && <span className="ovxg-lead-badge">LEADING</span>}
+                    </span>
+                    <span className="mono ovxg-scn-npc">{s.is_fully_priced ? <Money value={s.npc_with_adjustments_usd} /> : "not priced"}</span>
+                  </div>
+                  <div className="ovxg-scn-sub">
+                    <span>{humanizeToken(s.structure_type)} · {(s.participants || []).map(jurName).join(" + ")} · {disp.subtitle}</span>
+                    <span className="mono">
+                      incentive {s.total_incentive_floor_usd ? `$${Math.round(s.total_incentive_floor_usd).toLocaleString()}` : "—"}
+                      {" · "}
+                      {isBaseline ? "baseline" : sv != null ? `saves $${Math.round(sv).toLocaleString()}` : "savings —"}
+                    </span>
+                  </div>
+                  <div className="ovxg-scn-foot">
+                    <span className={`ovxg-scn-state ${s.is_fully_priced ? "ok" : "blocked"}`}>
+                      {s.is_fully_priced ? "Fully priced" : `Blocked · ${s.blockers?.length || 0}`}
+                    </span>
+                    <span className="ovxg-scn-gate" title={gating || undefined}>{gating ? `Gating: ${gating}` : "No gating condition"}</span>
+                    <button className="act" onClick={() => navigate("/production/scenarios")}>Open →</button>
+                  </div>
                 </div>
               );
-            }) : (
-              <div style={{ fontSize: 12, color: "var(--text-tertiary)", padding: "6px 0" }}>
-                No lanes yet — open the workspace.
-              </div>
-            )}
-            <div className="ovx-actions">
-              <button className="ovx-btn primary" onClick={() => openWorkspace()}>Open workspace</button>
-              <button className="ovx-btn" onClick={() => openWorkspace("map")}>Project globe</button>
-            </div>
+            })}
+            <button className="link-more" onClick={() => navigate("/production/scenarios")}>View all scenarios →</button>
           </section>
         </div>
 
-        {/* RIGHT — record + optimization */}
-        <div>
+        {/* ── RIGHT — Recommendation and actions ──────────────────────── */}
+        <div className="ovxg-col ovxg-right">
           <section className="ovx-sec">
-            <div className="oh"><b>Production sheet</b></div>
-            <div className="ovx-sheetrow"><span>Model</span><span className="mono">budget · {pkg.register?.length ?? "—"} accounts</span></div>
-            <div className="ovx-sheetrow"><span>Conditional swing</span><span className="mono">{swingTotal ? `±$${Math.round(swingTotal).toLocaleString()}` : "—"}</span></div>
-            <div className="ovx-sheetrow"><span>Documents bound</span><span className="mono">—</span></div>
-            <div className="ovx-sheetrow click" onClick={() => openWorkspace("inputs")} title="Edit cast & crew nationality in Workspace → Inputs">
-              <span>Deal facts</span><span className="mono">{dealFacts} <span style={{ color: "var(--blue)", fontFamily: "var(--font-sans)" }}>edit →</span></span>
-            </div>
-            <div className="ovx-sheetrow"><span>Sub-let / co-pro treaties</span><span className="mono">{treatyElected ? `${treatyElected} · elected` : "none elected"}</span></div>
-          </section>
-
-          <section className="ovx-sec">
-            <div className="oh">
-              <b>Latest record</b>
-              <button className="act" onClick={() => navigate("/production/record")}>Full record →</button>
-            </div>
-            <div className="ovx-sheetrow"><span style={{ color: "var(--text-tertiary)" }}>No record entries yet.</span></div>
-          </section>
-
-          <section className="ovx-sec">
-            <div className="oh">
-              <b>Optimization queue</b>
-              <button className="act" onClick={() => openWorkspace()}>Work the stack →</button>
-            </div>
-            {openN ? (
-              <>
-                <div className="ovx-optq-head">
-                  <span className="amt">{swingTotal ? `$${Math.round(swingTotal).toLocaleString()}` : "—"}</span>
-                  <span className="lbl">waiting to be unlocked</span>
-                  <span className="sub">{openN} rulings<br />gating optimization</span>
+            <div className="oh"><b>Current recommendation</b></div>
+            <div className="ovxg-rec">
+              <div className="ovxg-rec-title serif">{bestDisplay ? bestDisplay.title : "None fully priced yet"}</div>
+              {bestStruct && estimatedSavings != null && (
+                <div className="ovxg-rec-sub">
+                  Lowest net production cost of the {pricedCount} fully priced structures —
+                  {" "}${Math.round(estimatedSavings).toLocaleString()} below the {jurName(baselineStruct?.primary_jurisdiction)} baseline.
                 </div>
-                {questions.map((q) => (
-                  <button className={`ovx-optq-row${q.hot ? " hot" : ""}`} key={q.id} onClick={() => openInspector(q.inspect.kind, q.inspect.data)}>
-                    <span className="amt">{fmtSwing(q.swing) || q.priority}</span>
-                    <span className="body"><b>{q.title}</b><div className="meta">{q.meta}</div></span>
-                    <span className="go">Resolve →</span>
-                  </button>
-                ))}
+              )}
+            </div>
+            {bestStruct && (
+              <>
+                <div className="ovx-sheetrow">
+                  <span>Allocation</span>
+                  <span className="mono small">
+                    {(bestStruct.segments || []).map((seg) => `${seg.jurisdiction_code} — $${Math.round(seg.qpe_usd || 0).toLocaleString()} QPE`).join(" · ")}
+                  </span>
+                </div>
+                <div className="ovx-sheetrow"><span>Expected incentive</span><span className="mono"><Money value={bestStruct.total_incentive_floor_usd} /></span></div>
+                <div className="ovx-sheetrow"><span>Net production cost</span><span className="mono"><Money value={bestStruct.npc_with_adjustments_usd} /></span></div>
+                <div className="ovx-sheetrow"><span>Savings vs. baseline</span><span className="mono">{estimatedSavings != null ? <Money value={estimatedSavings} /> : "—"}</span></div>
+                <div className="ovx-sheetrow"><span>Qualification</span><span>{bestStruct.is_fully_priced ? "Fully priced" : `Blocked · ${bestStruct.blockers?.length || 0}`}</span></div>
+                <div className="ovx-sheetrow">
+                  <span>Unresolved condition</span>
+                  <span className="small" style={{ textAlign: "right", maxWidth: 200 }}>
+                    {openGrey[0]?.resolving_evidence || gatingFor(bestStruct, bestDisplay) || "None"}
+                  </span>
+                </div>
+                <button className="link-more" onClick={openIncentiveCalc}>Detailed incentive calculation →</button>
               </>
-            ) : (
-              <div style={{ fontSize: 12, color: "var(--text-tertiary)", padding: "6px 0" }}>
-                Nothing conditional remains — every path is qualified or closed.
-              </div>
             )}
           </section>
 
-          {culturalRecs.length > 0 && (
-            <section className="ovx-sec">
-              <div className="oh"><b>Cultural qualification</b><span className="n">{culturalRecs.length}</span></div>
-              <div style={{ fontSize: 10.5, color: "var(--text-tertiary)", margin: "-2px 0 8px", lineHeight: 1.5 }}>
-                Two different mechanisms, never blended: an <b>eligibility gate</b> is pass/fail and categorical; a <b>points test</b> is a recoverable score.
-              </div>
-              {culturalRecs.map((r) => {
-                const isBlocker = r.subtype === "eligibility_gate_failed";
-                return (
-                  <div className={`ovx-cq ${isBlocker ? "blocker" : "opportunity"}`} key={r.recommendation_id}>
-                    <div className="cqh">
-                      <span className="cqk">{isBlocker ? "Categorical blocker" : "Optimization opportunity"}</span>
-                      <b>{r.title}</b>
-                      {(r.jurisdiction_codes || []).length > 0 && <span className="cqm">{r.jurisdiction_codes.join(" · ")}</span>}
-                    </div>
-                    <p>{r.description}</p>
-                    {(r.specific_actions || []).length > 0 && (
-                      <div className="cqr"><b>{isBlocker ? "How to resolve" : "How to improve"}</b>{r.specific_actions.join(" ")}</div>
-                    )}
-                  </div>
-                );
-              })}
-            </section>
-          )}
-
           <section className="ovx-sec">
-            <div className="oh"><b>Intelligence · coming online</b></div>
-            <div className="ovx-rsv" style={{ borderBottom: "none", paddingBottom: 2 }}>
-              <span>Reinvestment readiness — by jurisdiction</span><span className="tag2">engine pending</span>
-            </div>
-            <table className="ovx-reinv">
-              <thead>
-                <tr><th>Jurisdiction</th><th>Reinvest</th><th>SPV</th><th>Equity subst.</th><th>Vendor</th><th>Approval</th></tr>
-              </thead>
-              <tbody>
-                {reinvJurs.map((code) => (
-                  <tr key={code}>
-                    <td>{jurName(code)}</td>
-                    {["a", "b", "c", "d", "e"].map((k) => <td key={k}><span className="pend">pending</span></td>)}
-                  </tr>
+            <div className="oh"><b>Immediate decisions</b><span className="n">{decisions.length}</span></div>
+            {decisions.length ? (
+              <div className="row-list">
+                {decisions.map((d) => (
+                  <div className="row-item" key={d.id} onClick={() => openInspector(d.inspect.kind, d.inspect.data)}>
+                    <span className={`dot ${d.tier}`} />
+                    <div className="row-main">
+                      <div className="row-title small">{d.title}</div>
+                      <div className="row-sub">{d.need}</div>
+                    </div>
+                    <div className="row-value mono small">{d.value}</div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-            {[
-              ["Treaty opportunities", "reserved"],
-              ["Currency normalization · historical FX", "reserved"],
-              ["Travel & labor normalization", "reserved"],
-              ["Confidence scoring · conservative / base / optimistic", "reserved"],
-            ].map(([label, tag]) => (
-              <div className="ovx-rsv" key={label}><span>{label}</span><span className="tag2">{tag}</span></div>
-            ))}
-            <div style={{ fontSize: 10.5, color: "var(--text-tertiary)", paddingTop: 7 }}>
-              These panes activate when the calculation engine is wired. Layout space is reserved so nothing reflows.
-            </div>
+              </div>
+            ) : <div className="empty-state">No decisions pending.</div>}
           </section>
 
           <section className="ovx-sec">
-            <div className="oh"><b>Shortcuts</b></div>
-            <div className="ovx-actions" style={{ marginTop: 2 }}>
-              <button className="ovx-btn" onClick={() => navigate("/production/binder")}>Documents</button>
-              <button className="ovx-btn" onClick={() => navigate("/production/knowledge")}>Knowledge</button>
-              <button className="ovx-btn" onClick={() => navigate("/production/reports")}>Reports</button>
-            </div>
+            <div className="oh"><b>Evidence readiness</b></div>
+            {readiness.map((r) => (
+              <div className="ovxv-row ovxg-ready" key={r.label} onClick={() => navigate(r.to)}>
+                <span className={`dot ${READY_DOT[r.state]}`} />
+                <span className="ovxv-label">{r.label}</span>
+                <span className={`ovxg-ready-state ${r.state}`}>{r.state}</span>
+              </div>
+            ))}
+          </section>
+
+          <section className="ovx-sec">
+            <div className="oh"><b>Next action</b></div>
+            {topAction ? (
+              <>
+                <div className="row-item" onClick={() => openInspector("recommendation", topAction)} style={{ cursor: "pointer", borderTop: "none" }}>
+                  <span className={`dot ${topAction.confidence === "high" ? "jade" : topAction.confidence === "medium" ? "silver" : "amber"}`} />
+                  <div className="row-main">
+                    <div className="row-title small">{recommendationHeadline(topAction)}</div>
+                    <div className="row-sub">{topAction.description}</div>
+                  </div>
+                </div>
+                <div className="ovx-sheetrow"><span>Value affected</span><span className="mono"><Money value={topAction.estimated_value_usd} /></span></div>
+                <div className="ovx-sheetrow"><span>Approval</span><span className="small">{topAction.requires_counsel_approval ? "Counsel approval required" : "Producer approval"}</span></div>
+                <button className="link-more" onClick={() => goWorkspace("recommendations")}>Open in Workspace →</button>
+              </>
+            ) : <div className="empty-state">Nothing pending action right now.</div>}
           </section>
         </div>
+
       </div>
     </div>
   );

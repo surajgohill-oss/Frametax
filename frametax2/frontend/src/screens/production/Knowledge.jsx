@@ -12,7 +12,7 @@ const VIEWS = ["Grey Areas", "Reference Library"];
 // statutory_basis, recommendation.authority_reference) into one browsable
 // library. Nothing here is a new source; it's the same citations already
 // rendered in Inspector/Workspace, deduplicated and grouped.
-function buildReferenceLibrary(pkg, allocatedStructures, recommendations) {
+export function buildReferenceLibrary(pkg, allocatedStructures, recommendations) {
   const items = [];
   const seen = new Set();
 
