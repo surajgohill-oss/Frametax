@@ -95,11 +95,13 @@ add_verified_person(
 
 @dataclass(frozen=True)
 class PersonOverride:
-    """A user-supplied correction to one role's nationality/residency,
-    supported separately (a person can be a national of one country and
-    a tax resident of another)."""
+    """A user-supplied correction to one role's name / nationality /
+    residency, each supported separately (a person can be a national of
+    one country and a tax resident of another; a name can be confirmed
+    before any nationality is known — e.g. casting announced)."""
     nationality: Optional[str] = None
     residency: Optional[str] = None
+    name: Optional[str] = None
 
 
 # role key -> list of (person_id, name, PersonRole, verified-db lookup key)
@@ -142,6 +144,8 @@ def build_little_utopia_people(
                     nationality = override.nationality
                 if override.residency is not None:
                     residency = override.residency
+                if override.name:
+                    name = override.name
 
             people.append(PersonIntake(
                 person_id=person_id,

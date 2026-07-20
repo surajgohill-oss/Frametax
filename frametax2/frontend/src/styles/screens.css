@@ -131,18 +131,18 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 3px;
-  min-height: 96px;
-  padding: 10px 12px;
+  gap: 2px;
+  min-height: 72px;
+  padding: 9px 12px 8px;
   background: var(--surface-1);
   border: 0.5px solid var(--hairline);
   border-radius: var(--radius-md);
   text-align: left;
 }
 .strip-cell:hover { border-color: var(--hairline-strong); box-shadow: var(--shadow-sm); }
-.strip-name { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; color: var(--text-primary); }
-.strip-type { font-size: 11px; color: var(--text-tertiary); }
-.strip-npc { margin-top: auto; font-size: 13.5px; font-weight: 600; color: var(--text-primary); }
+.strip-name { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; color: var(--text-primary); }
+.strip-type { font-size: 10.5px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
+.strip-npc { margin-top: auto; font-size: 14px; font-weight: 600; color: var(--text-primary); }
 
 /* Production Budget rail */
 .brail-panel {
@@ -689,9 +689,26 @@
 .ovxg-globe-sec { padding-bottom: 10px; }
 .ovxg-globe-wrap { border-radius: var(--radius-lg); overflow: hidden; margin: 2px 0 10px; }
 
-/* Production Facts — missing-value highlight and requirements note. */
+/* Production Facts — editable name, missing-value highlight, notes. */
 .pd-select.pd-missing { border-color: var(--amber, #c99a4d); }
 .pd-req-note { font-size: 10.5px; color: var(--text-tertiary); margin: -4px 0 8px; }
+.pd-name-input {
+  border: none;
+  border-bottom: 1px dashed transparent;
+  background: none;
+  padding: 1px 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text-primary);
+  min-width: 0;
+  width: 100%;
+}
+.pd-name-input::placeholder { color: var(--text-tertiary); font-style: italic; }
+.pd-name-input:hover { border-bottom-color: var(--hairline-strong); }
+.pd-name-input:focus { outline: none; border-bottom-color: var(--amber, #c99a4d); }
+.pd-name-input.pd-missing { border-bottom-color: var(--amber, #c99a4d); }
+/* Location chip carrying a user override (script seed preserved beneath). */
+.tag.pd-overridden { box-shadow: inset 0 -2px 0 var(--amber, #c99a4d); }
 
 .ovx-sec { background: var(--surface-1); border: 0.5px solid var(--hairline); border-radius: 8px; padding: 10px 16px 8px; margin-bottom: 11px; }
 .ovx-sec .oh { display: flex; align-items: baseline; gap: 8px; margin-bottom: 5px; }

@@ -160,15 +160,20 @@
 /* ── Project header + tabs (production routes only) ─────────────────── */
 .app-main-col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .project-header-wrap { flex-shrink: 0; background: var(--surface-1); border-bottom: 0.5px solid var(--hairline-strong); }
+/* Compact operational header — dimensions taken from the frozen
+   artifact's .wshead (height 100px single row; back 36px; art 32px;
+   identity gap 6px, title 29px + 13px sub; budget label-over-value
+   33px at 40px offsets; qcount 40px; actions cluster right). */
 .project-header {
   display: flex;
   align-items: center;
   gap: 0;
-  padding: 14px 24px 12px;
+  height: 100px;
+  padding: 0 26px;
 }
 .ph-back {
   flex: none;
-  width: 52px;
+  width: 36px;
   color: var(--text-tertiary);
   font-size: 12.5px;
   padding-right: 14px;
@@ -178,18 +183,18 @@
 }
 .ph-back:hover { color: var(--text-primary); }
 .ph-art {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   flex-shrink: 0;
   margin-right: 14px;
   border-radius: var(--radius-sm);
   background: linear-gradient(160deg, #E4D3A0 0%, #A17A2E 55%, #6E551F 100%);
   border: 0.5px solid var(--hairline-strong);
 }
-.ph-identity { min-width: 230px; display: flex; flex-direction: column; gap: 3px; }
-.ph-title { font-size: 26px; line-height: 1.1; font-style: italic; }
-.ph-sub { margin: 0; font-size: 12.5px; color: var(--text-tertiary); }
-.ph-stage { display: flex; align-items: center; gap: 8px; margin-top: 3px; }
+.ph-identity { min-width: 230px; display: flex; flex-direction: column; gap: 6px; }
+.ph-title { font-size: 29px; line-height: 1.1; font-style: italic; }
+.ph-sub { margin: 0; font-size: 13px; color: var(--text-tertiary); }
+.ph-stage { display: flex; align-items: center; gap: 8px; }
 .ph-stage-label { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
 .ph-stage-select {
   height: 30px;
@@ -203,9 +208,10 @@
 }
 .ph-stage-select:hover { border-color: var(--oxblood); }
 /* Budget group — frozen artifact .verdict: value above, lowercase label below */
-.ph-budget { display: flex; flex-direction: column; gap: 2px; margin-left: 32px; min-width: 220px; flex-shrink: 0; }
-.ph-budget-label { font-size: 12.5px; color: var(--text-tertiary); }
-.ph-budget-value { font-size: 30px; font-weight: 600; letter-spacing: -0.01em; color: var(--text-primary); }
+.ph-budget { display: flex; flex-direction: column; gap: 4px; margin-left: 40px; min-width: 220px; flex-shrink: 0; }
+/* Artifact .verdict hierarchy: label ABOVE the value (.lo order:0, .v order:1). */
+.ph-budget-label { order: -1; font-size: 13px; color: var(--text-tertiary); }
+.ph-budget-value { font-size: 33px; font-weight: 600; letter-spacing: -0.01em; color: var(--text-primary); }
 .ph-budget-value .mono { font-size: inherit; }
 
 /* Stage control — frozen artifact .stage-dd details/summary dropdown */
@@ -221,7 +227,7 @@
 .ph-stage-menu button.on { color: var(--oxblood); font-weight: 600; }
 
 /* Header action icons — frozen artifact .hactions/.ico-btn */
-.ph-hactions { display: flex; gap: 7px; margin-left: 14px; flex-shrink: 0; }
+.ph-hactions { display: flex; gap: 5px; margin-left: 8px; flex-shrink: 0; }
 .ph-ico { width: 29px; height: 29px; border-radius: 8px; border: 1px solid var(--hairline); background: var(--surface-1); color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; }
 .ph-ico:hover { border-color: var(--hairline-strong); color: var(--text-primary); }
 .ph-ico.ghosted { opacity: 0.42; cursor: not-allowed; }
@@ -229,7 +235,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-left: 32px;
+  margin-left: 40px;
   margin-right: auto;
   font-size: 12.5px;
   font-weight: 600;
@@ -244,8 +250,8 @@
   display: flex;
   align-items: center;
   gap: 24px;
-  padding: 0 24px;
-  height: 44px;
+  padding: 0 26px;
+  height: 42px;
 }
 .project-tabs a {
   display: flex;

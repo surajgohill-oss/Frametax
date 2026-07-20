@@ -238,6 +238,7 @@ def reset_fact_answers() -> None:
     _fact_answers.clear()
     _economics_controls.clear()
     _people_overrides.clear()
+    _location_overrides.clear()
     _build_state.cache_clear()
 
 
@@ -250,33 +251,53 @@ def reset_fact_answers() -> None:
 # recast) without touching the verified nationality database.
 _people_overrides: dict[str, "PersonOverride"] = {}
 
-_PEOPLE_ROLE_KEYS: tuple[str, ...] = ("writer", "director", "lead_cast", "producer")
+# Canonical person-role schema (one shared inventory for the whole app).
+# The first four are the discovered/package roles. lead_cast_2/3 are the
+# additional lead-cast slots (castable before discovery finds anyone).
+# dop / editor / composer are the recurring cultural-test creative roles
+# extracted from the populated cultural_qualification_model rules DB
+# (role-frequency across programs: composer appears in au_producer_offset
+# + uk_avec point rules; editor and dop in the BFI AVEC weighted crew
+# sections) — the roles jurisdiction rule engines repeatedly consume.
+_PEOPLE_ROLE_KEYS: tuple[str, ...] = (
+    "writer", "director", "lead_cast", "lead_cast_2", "lead_cast_3",
+    "producer", "dop", "editor", "composer",
+)
+# Roles that exist ONLY as user-supplied facts (no discovered person in
+# the package pipeline yet) — served from the override store.
+_SLOT_ROLE_KEYS: tuple[str, ...] = ("lead_cast_2", "lead_cast_3", "dop", "editor", "composer")
 
 
 def apply_people_facts(answers: dict[str, object]) -> None:
-    """Set nationality/residency overrides. Recognized keys:
-      '{role}_nationality', '{role}_residency' for role in
-      ('writer', 'director', 'lead_cast', 'producer') — ISO2 country
-      codes. A value of None clears that field back to the verified
-      default (or UNKNOWN for producer, which has no verified default)."""
+    """Set name/nationality/residency overrides. Recognized keys:
+      '{role}_nationality', '{role}_residency', '{role}_name' for role in
+      _PEOPLE_ROLE_KEYS. Nationality/residency are ISO2 country codes;
+      name is a free-text person name. A value of None clears that field
+      back to the discovered/verified default (or UNKNOWN)."""
     from app.data.little_utopia_people import PersonOverride
     for key, value in answers.items():
         parts = key.rsplit("_", 1)
-        if len(parts) != 2 or parts[1] not in ("nationality", "residency"):
+        if len(parts) != 2 or parts[1] not in ("nationality", "residency", "name"):
             raise ValueError(
                 f"'{key}' is not a recognized people fact. Expected "
-                f"'{{role}}_nationality' or '{{role}}_residency' for role in "
-                f"{_PEOPLE_ROLE_KEYS}."
+                f"'{{role}}_nationality', '{{role}}_residency' or "
+                f"'{{role}}_name' for role in {_PEOPLE_ROLE_KEYS}."
             )
         role, field_name = parts
         if role not in _PEOPLE_ROLE_KEYS:
             raise ValueError(f"'{role}' is not a known role ({_PEOPLE_ROLE_KEYS}).")
-        if value is not None and (not isinstance(value, str) or len(value) != 2):
-            raise ValueError(f"'{key}' expects a 2-letter ISO country code, got: {value!r}")
+        if field_name == "name":
+            if value is not None and (not isinstance(value, str) or not value.strip()):
+                raise ValueError(f"'{key}' expects a non-empty name, got: {value!r}")
+            value = value.strip() if value else None
+        else:
+            if value is not None and (not isinstance(value, str) or len(value) != 2):
+                raise ValueError(f"'{key}' expects a 2-letter ISO country code, got: {value!r}")
+            value = value.upper() if value else None
         current = _people_overrides.get(role, PersonOverride())
-        kwargs = {"nationality": current.nationality, "residency": current.residency}
-        kwargs[field_name] = value.upper() if value else None
-        if kwargs["nationality"] is None and kwargs["residency"] is None:
+        kwargs = {"nationality": current.nationality, "residency": current.residency, "name": current.name}
+        kwargs[field_name] = value
+        if all(v is None for v in kwargs.values()):
             _people_overrides.pop(role, None)
         else:
             _people_overrides[role] = PersonOverride(**kwargs)
@@ -285,9 +306,25 @@ def apply_people_facts(answers: dict[str, object]) -> None:
 
 def current_people_facts() -> dict[str, dict[str, str | None]]:
     return {
-        role: {"nationality": o.nationality, "residency": o.residency}
+        role: {"nationality": o.nationality, "residency": o.residency, "name": o.name}
         for role, o in _people_overrides.items()
     }
+
+
+def _merge_override_role_codes(role_known_codes: dict[str, tuple[str, ...]]) -> dict[str, tuple[str, ...]]:
+    """Feed the slot-role nationalities (lead_cast_2/3, dop, editor,
+    composer — user-supplied facts with no package person yet) into the
+    cultural-gate role vocabulary. lead_cast_2/3 merge into 'lead_cast'
+    (they are lead-cast slots); dop/editor/composer map 1:1 to the
+    NationalityRequirement role names the rules DB already uses."""
+    merged = dict(role_known_codes)
+    for role in _SLOT_ROLE_KEYS:
+        o = _people_overrides.get(role)
+        if o is None or o.nationality is None:
+            continue
+        target = "lead_cast" if role.startswith("lead_cast") else role
+        merged[target] = tuple(sorted(set(merged.get(target, ())) | {o.nationality}))
+    return merged
 
 
 # ── Permanent production-structure default (explicit + traceable) ────────────
@@ -1433,12 +1470,106 @@ SCRIPT_SOURCE_NOTE = (
     "page read of the complete screenplay."
 )
 
+# ── Major-location taxonomy (canonical, controlled) ──────────────────────────
+# The concise environment taxonomy that materially differentiates
+# jurisdiction suitability. Script analysis SEEDS these (mapped from
+# SCRIPT_REQUIREMENTS + the read setting evidence, provenance preserved);
+# the user may confirm/override each category. Overrides are stored
+# separately (never overwriting the script extraction) and resolved into
+# an EFFECTIVE value exactly like the fact-answer pattern.
+LOCATION_TAXONOMY: dict[str, str] = {
+    "beach_coast": "Beach / Coast",
+    "marine_open_water": "Marine / Open Water",
+    "island_tropical": "Island / Tropical",
+    "jungle_rainforest": "Jungle / Rainforest",
+    "desert_arid": "Desert / Arid",
+    "mountains_alpine": "Mountains / Alpine",
+    "snow_arctic": "Snow / Arctic",
+    "urban_major_city": "Urban / Major City",
+    "small_town_suburban": "Small Town / Suburban",
+    "rural_countryside": "Rural / Countryside",
+    "forest_woodland": "Forest / Woodland",
+    "historic_old_world": "Historic / Old World",
+    "studio_stage": "Studio / Stage",
+}
+
+# Script-derived seeds: every True value maps to explicit evidence in the
+# read material (SCRIPT_REQUIREMENTS / setting facts above). Categories the
+# material does not evidence are None ("not evident"), never asserted False.
+_LOCATION_SCRIPT_SEED: dict[str, dict] = {
+    "beach_coast": {"value": True, "evidence": "EXT. BEACH. NIGHT scenes in the screenplay's opening pages; rural Cornish coast setting (1978 timeline)."},
+    "marine_open_water": {"value": True, "evidence": SCRIPT_REQUIREMENTS["marine"]["evidence"]},
+    "historic_old_world": {"value": True, "evidence": SCRIPT_REQUIREMENTS["period"]["evidence"]},
+    "rural_countryside": {"value": True, "evidence": "Setting is boat/open-sea and rural Cornish coast (city scenes not described)."},
+    "urban_major_city": {"value": None, "evidence": SCRIPT_REQUIREMENTS["city"]["evidence"]},
+    "desert_arid": {"value": None, "evidence": SCRIPT_REQUIREMENTS["desert"]["evidence"]},
+    "snow_arctic": {"value": None, "evidence": SCRIPT_REQUIREMENTS["snow"]["evidence"]},
+}
+_LOCATION_NOT_EVIDENT = "Not described in the material read."
+
+_location_overrides: dict[str, bool] = {}
+
+
+def apply_location_overrides(overrides: dict[str, object]) -> None:
+    """Record user-confirmed major-location categories. Value True/False
+    overrides the script-derived seed for that category; None clears the
+    override (the effective value returns to the script seed). Persisted
+    in the canonical Production Record store and invalidates the cached
+    state so territory matching / recommendations recompute."""
+    for slug, value in overrides.items():
+        if slug not in LOCATION_TAXONOMY:
+            raise ValueError(
+                f"'{slug}' is not a major-location category "
+                f"({sorted(LOCATION_TAXONOMY)})."
+            )
+        if value is None:
+            _location_overrides.pop(slug, None)
+        elif isinstance(value, bool):
+            _location_overrides[slug] = value
+        else:
+            raise ValueError(f"Location category '{slug}' expects true/false/null, got: {value!r}")
+    _build_state.cache_clear()
+
+
+def current_location_overrides() -> dict[str, bool]:
+    return dict(_location_overrides)
+
+
+def _derive_location_categories() -> dict[str, dict]:
+    """Effective major-location categories: script seed overridden by any
+    user-confirmed value. Script extraction is never overwritten — both
+    layers are served so provenance stays visible."""
+    out: dict[str, dict] = {}
+    for slug, label in LOCATION_TAXONOMY.items():
+        seed = _LOCATION_SCRIPT_SEED.get(slug, {"value": None, "evidence": _LOCATION_NOT_EVIDENT})
+        override = _location_overrides.get(slug)
+        effective = override if override is not None else bool(seed["value"])
+        out[slug] = {
+            "label": label,
+            "script_value": seed["value"],
+            "evidence": seed["evidence"],
+            "override": override,
+            "effective": effective,
+            "source": "user_override" if override is not None else "script_analysis",
+        }
+    return out
+
 
 def _derive_physical_requirements(register: list[AccountQualification]) -> dict:
     by_code = {a.account_code: a.amount_usd for a in register}
     marine_usd = by_code.get(_MARINE_ACCOUNT_CODE, 0.0)
     aerial_usd = by_code.get(_AERIAL_ACCOUNT_CODE, 0.0)
     script_marine = SCRIPT_REQUIREMENTS["marine"]["value"]
+    location_categories = _derive_location_categories()
+    marine_cat = location_categories["marine_open_water"]
+    # User override on the marine category takes precedence over both the
+    # script seed and the budget corroboration (a user-confirmed fact wins,
+    # exactly like every other fact answer); otherwise script OR budget.
+    marine_required = (
+        marine_cat["override"]
+        if marine_cat["override"] is not None
+        else bool(script_marine) or marine_usd > 0
+    )
     return {
         "source": "script_and_real_budget_account_spend",
         "source_note": (
@@ -1448,9 +1579,8 @@ def _derive_physical_requirements(register: list[AccountQualification]) -> dict:
         ),
         "script_requirements": SCRIPT_REQUIREMENTS,
         "script_source": SCRIPT_SOURCE_NOTE,
-        # marine_required now confirmed by BOTH script content AND budget
-        # spend (previously budget-only) — corroboration, not a new claim.
-        "marine_required": bool(script_marine) or marine_usd > 0,
+        "location_categories": location_categories,
+        "marine_required": marine_required,
         "marine_spend_usd": marine_usd,
         "marine_account": f"{_MARINE_ACCOUNT_CODE} SPECIAL EFFECTS & MARINE",
         "aerial_required": aerial_usd > 0,
@@ -1692,7 +1822,9 @@ def _build_state(_fact_key: tuple, _people_key: tuple = ()) -> LittleUtopiaState
     # Part 3 (threshold qualification): hard eligibility gates, evaluated
     # BEFORE any cultural-test points scoring, from the same real people
     # facts — never a second source of truth.
-    role_known_codes = production_package_to_role_known_codes(package)
+    role_known_codes = _merge_override_role_codes(
+        production_package_to_role_known_codes(package)
+    )
     recommendations = generate_production_recommendations(
         collection, composition_result=composition, register=register, rate=MU_RATE,
         jurisdiction_code=JURISDICTION_CODE,

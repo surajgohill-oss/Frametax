@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { postPeople, postFacts } from "../api";
+import { PERSON_ROLES } from "../lib/personRoles";
 
 // Every editable control here maps to a REAL backend mutation
 // (POST /people, POST /facts) — confirmed against app/api/v1/cineglobe.py
@@ -11,12 +12,10 @@ import { postPeople, postFacts } from "../api";
 // Shoot-locations field distinct from the script's own "setting") are
 // shown read-only or disclosed as unavailable — never fabricated.
 
-const ROLES = [
-  { key: "writer", label: "Writer", dataKey: "writers" },
-  { key: "director", label: "Director", dataKey: "directors" },
-  { key: "lead_cast", label: "Lead Cast", dataKey: "cast" },
-  { key: "producer", label: "Producer(s)", dataKey: "producers" },
-];
+// Role inventory comes from the SHARED canonical schema (lib/personRoles)
+// so this Workspace Inputs panel and Overview's Production Facts always
+// render the same people — one Production Record, one role vocabulary.
+const ROLES = PERSON_ROLES;
 
 function Iso2Input({ value, onChange }) {
   return (

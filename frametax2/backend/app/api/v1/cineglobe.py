@@ -47,6 +47,7 @@ from app.demo.little_utopia_state import (
     SPV_PRODUCTION_STRUCTURE_DEFAULT,
     apply_economics_controls,
     apply_fact_answers,
+    apply_location_overrides,
     apply_people_facts,
     build_financing_model,
     build_inkind_model,
@@ -349,12 +350,35 @@ async def get_people() -> dict[str, Any]:
             for p in role_people
         ]
 
+    # Slot roles — user-supplied person facts for roles the discovery
+    # pipeline has no person for yet (extra lead-cast slots + the
+    # recurring cultural-test creative roles). Served straight from the
+    # canonical override store: an empty list means "slot open".
+    overrides = current_people_facts()
+
+    def _slot(role: str) -> list[dict[str, Any]]:
+        o = overrides.get(role) or {}
+        if not (o.get("name") or o.get("nationality")):
+            return []
+        return [{
+            "person_id": f"{role}-1", "name": o.get("name"),
+            "nationality": o.get("nationality"),
+            "nationality_state": "known" if o.get("nationality") else "unknown",
+            "residency": o.get("residency"),
+            "residency_state": "known" if o.get("residency") else "unknown",
+        }]
+
     return {
         "writers": _people(pkg.writers),
         "directors": _people(pkg.directors),
         "cast": _people(pkg.cast),
         "producers": _people(pkg.producers),
-        "overrides": current_people_facts(),
+        "lead_cast_2": _slot("lead_cast_2"),
+        "lead_cast_3": _slot("lead_cast_3"),
+        "dop": _slot("dop"),
+        "editor": _slot("editor"),
+        "composer": _slot("composer"),
+        "overrides": overrides,
         "missing_inputs": [
             m.identifier for m in s.package.missing_inputs
             if "NATIONALITY" in m.identifier or "RESIDENCY" in m.identifier
@@ -369,6 +393,24 @@ async def post_people(body: PeopleAnswers) -> dict[str, Any]:
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
     return await get_people()
+
+
+class LocationOverrides(BaseModel):
+    overrides: dict[str, Any]
+
+
+@router.post("/locations")
+async def post_locations(body: LocationOverrides) -> dict[str, Any]:
+    """Persist user-confirmed major-location categories into the canonical
+    Production Record (override layer over the script-derived seeds) and
+    invalidate the cached state so territory matching and recommendations
+    recompute. Returns the updated effective category set."""
+    try:
+        apply_location_overrides(body.overrides)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    s = get_state()
+    return {"location_categories": s.physical_requirements["location_categories"]}
 
 
 # ── Screen 2: Package Intelligence (Budget / Script / Questions) ────────────

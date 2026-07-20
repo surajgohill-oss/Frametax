@@ -44,6 +44,12 @@ export const getPeople = () => request("/people");
 export const postPeople = (answers) =>
   request("/people", { method: "POST", body: JSON.stringify({ answers }) });
 
+// Major-location categories — user-confirmed overrides over the
+// script-derived seeds (canonical Production Record; effective values
+// feed territory matching / recommendations, which recompute on write).
+export const postLocations = (overrides) =>
+  request("/locations", { method: "POST", body: JSON.stringify({ overrides }) });
+
 // Production facts — payroll routing, post location, treaty election,
 // component routing. Answering one invalidates the cached state; every
 // downstream engine (qualification, treaty, structuring, allocation)

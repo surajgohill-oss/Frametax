@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
 import { Money, humanizeToken } from "../../lib/format";
@@ -11,12 +12,27 @@ import { useAppState } from "../../state/AppState";
 export default function Scenarios() {
   const { data, error, loading } = useCineGlobe();
   const { openInspector } = useAppState();
+  const location = useLocation();
+  const openedFromNav = useRef(false);
 
   const allocated = data?.structures?.allocated_structures;
   const rankById = useMemo(() => {
     if (!allocated) return new Map();
     return new Map(allocated.ranking.map((r) => [r.structure_id, r]));
   }, [allocated]);
+
+  // Deep link from the Overview jurisdiction snapshot strip: arrive with a
+  // canonical structure_id in navigation state -> open that scenario's
+  // detail (the same Inspector trace a header click opens). Once only.
+  useEffect(() => {
+    const structureId = location.state?.structureId;
+    if (!structureId || !allocated || openedFromNav.current) return;
+    const s = allocated.structures.find((x) => x.structure_id === structureId);
+    if (!s) return;
+    openedFromNav.current = true;
+    if (s.recommendation) openInspector("structure-recommendation", s.recommendation);
+    else if (s.segments?.[0]) openInspector("allocation-segment", { ...s.segments[0], structureLabel: s.label });
+  }, [location.state, allocated, openInspector]);
 
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;

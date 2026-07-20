@@ -99,7 +99,11 @@ export default function Overview() {
 
           <div className="scenario-strip">
             {snapshot.map((s) => (
-              <button className="strip-cell" key={s.structure_id} onClick={() => navigate("/production/scenarios")}>
+              <button
+                className="strip-cell"
+                key={s.structure_id}
+                onClick={() => navigate("/production/scenarios", { state: { structureId: s.structure_id } })}
+              >
                 <span className="strip-name">{jurName(s.primary_jurisdiction)}</span>
                 <span className="strip-type">
                   Incentive {s.total_incentive_floor_usd ? `$${Math.round(s.total_incentive_floor_usd).toLocaleString()}` : "—"}
