@@ -23,6 +23,21 @@ import { buildRecordRows } from "../../lib/recordEvents";
 
 const NEW_PRODUCTION_REASON = "Production intake — engine pending";
 
+// High-level operational groupings for the Hero's pipeline summary —
+// presentation only. The canonical CineGlobe lifecycle order (Evaluation
+// -> Development -> Packaging -> Pre-Production -> Production -> Post ->
+// Delivery -> Released -> Archived, from useProjectStatus's own
+// PROJECT_STATUSES) is unchanged and still drives every stage-level
+// computation on this page; grouping only changes how the hero
+// summarizes it, so nine mostly-empty cells don't stand in for a slate
+// this small. Each group's tooltip lists the exact stages it covers.
+const PIPELINE_GROUPS = [
+  { key: "shaping", label: "Shaping", stages: ["evaluation", "development", "packaging"] },
+  { key: "active", label: "Active Production", stages: ["pre_production", "production", "post_production"] },
+  { key: "wrapping", label: "Wrapping", stages: ["delivery", "released"] },
+  { key: "archived", label: "Archived", stages: ["archived"] },
+];
+
 // Momentum taxonomy, in the approved rank order (lower rank = more
 // urgent, sorts first): Blocked, Stalled, Advanced, Milestone, Healthy.
 // Reuses the app's existing 6-tier dot-color vocabulary — no new colors.
@@ -118,6 +133,18 @@ export default function Today() {
     const inStage = productions.filter((p) => p.stageMeta.key === s.key);
     return { ...s, count: inStage.length, budget: inStage.reduce((sum, p) => sum + (p.budget || 0), 0) };
   });
+  // Hero presentation: the same per-stage figures, rolled up into the
+  // operational groupings above. Every stage still contributes exactly
+  // once — this is a sum over stageLadder, not a re-derivation.
+  const pipelineGroups = PIPELINE_GROUPS.map((g) => {
+    const cells = stageLadder.filter((s) => g.stages.includes(s.key));
+    return {
+      ...g,
+      count: cells.reduce((sum, s) => sum + s.count, 0),
+      budget: cells.reduce((sum, s) => sum + s.budget, 0),
+      tooltip: cells.map((s) => `${s.label}: ${s.count}`).join(" · "),
+    };
+  });
 
   // ── Company Intelligence: compact, cross-production signals only —
   // never a production-level event (those belong on the slate row).
@@ -172,10 +199,10 @@ export default function Today() {
         <div className="tdy-pipeline">
           <div className="l2 tdy-pipeline-label">Pipeline Value</div>
           <div className="ovx-stats tdy-ladder">
-            {stageLadder.map((s) => (
-              <div className={`st ${s.count ? "" : "zero"}`} key={s.key} title={s.description}>
-                <div className="l2">{s.label}</div>
-                <div className="v2">{s.count} · <CompactMoney value={s.budget} /></div>
+            {pipelineGroups.map((g) => (
+              <div className={`st ${g.count ? "" : "zero"}`} key={g.key} title={g.tooltip}>
+                <div className="l2">{g.label}</div>
+                <div className="v2">{g.count} · <CompactMoney value={g.budget} /></div>
               </div>
             ))}
           </div>
