@@ -10,6 +10,21 @@ export function Money({ value, bare = false }) {
   return <span className="mono">{bare ? num : `$${num}`}</span>;
 }
 
+// Abbreviated currency for dense multi-cell displays (Today's lifecycle
+// ladder) where nine full-precision figures side by side would be
+// unreadable. Falls back to full precision below $1,000 — no rounding
+// that would misrepresent a genuinely small figure as "$0K".
+export function CompactMoney({ value }) {
+  if (value === null || value === undefined) return <span className="text-tertiary">—</span>;
+  const n = Number(value);
+  const abs = Math.abs(n);
+  let text;
+  if (abs >= 1_000_000) text = `$${(n / 1_000_000).toFixed(1)}M`;
+  else if (abs >= 1_000) text = `$${(n / 1_000).toFixed(0)}K`;
+  else text = `$${Math.round(n).toLocaleString()}`;
+  return <span className="mono">{text}</span>;
+}
+
 export function Pct({ value }) {
   if (value === null || value === undefined) return <span className="text-tertiary">—</span>;
   return <span className="mono">{(Number(value) * 100).toFixed(0)}%</span>;

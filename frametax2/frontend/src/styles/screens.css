@@ -913,86 +913,39 @@
 .wsx-st-right .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text-primary); font-size: 17px; font-weight: 600; }
 .wsx-st-right .meta { font-size: 13px; color: var(--text-tertiary); }
 
-/* ================= Today — artifact dashboard (tdx-) ================= */
-.tdx-screen { min-height: 100%; }
-.tdx-topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 22px; padding: 12px 24px; background: var(--surface-glass); backdrop-filter: blur(10px); border-bottom: 1px solid var(--hairline-strong); }
-.tdx-today b { display: block; font: 600 14.5px var(--font-sans); color: var(--text-primary); }
-.tdx-today span { font: 500 10.5px var(--font-sans); color: var(--text-tertiary); }
-.tdx-stat { padding-left: 22px; border-left: 1px solid var(--hairline); }
-.tdx-stat .l { font: 500 10.5px var(--font-sans); color: var(--text-tertiary); }
-.tdx-stat .v { font: 15px var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text-primary); margin-top: 1px; }
-.tdx-stat .v em { font-style: normal; font-size: 10.5px; color: var(--text-tertiary); }
-.tdx-stat .v.gold { color: var(--gold); }
-.tdx-alert { margin-left: auto; display: flex; align-items: center; gap: 8px; background: var(--amber-dim); color: var(--amber); border: 1px solid var(--amber); border-radius: 999px; padding: 5px 13px; font: 600 10.5px var(--font-sans); }
-.tdx-alert i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-.tdx-ico { width: 30px; height: 30px; border-radius: 50%; border: 0.5px solid var(--hairline-strong); color: var(--text-tertiary); display: flex; align-items: center; justify-content: center; font-size: 13px; flex: none; }
-.tdx-ico:hover { color: var(--text-primary); background: var(--surface-2); }
-.tdx-newprod { margin-left: auto; flex: none; }
-.tdx-newprod:disabled { opacity: 0.5; cursor: not-allowed; }
+/* ================= Today — company operating system (tdy-) =================
+   Built entirely from Overview's established vocabulary: .ovx-sec cards,
+   .oh headers, .row-list/.row-item rows, .dot tiers, .ovx-stats .l2/.v2
+   typography. No bespoke dashboard aesthetic — see Today.jsx header
+   comment for the full design rationale (approved blueprint, frozen). */
+.tdy-screen { max-width: 1200px; }
 
-/* Lifecycle-stage strip — one chip per canonical PROJECT_STATUSES entry,
-   counted across the real productions array (see Today.jsx). Dimmed to
-   near-invisible when a stage has zero productions — present for scan-
-   ability, not padded to look like a busier portfolio than it is. */
-.tdx-stages { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 8px 26px; border-bottom: 0.5px solid var(--hairline); background: var(--surface-0); }
-.tdx-stage-chip { display: inline-flex; align-items: center; gap: 5px; font: 500 11.5px var(--font-sans); color: var(--text-secondary); }
-.tdx-stage-chip b { font: 600 11.5px var(--font-mono); color: var(--text-primary); }
-.tdx-stage-chip.zero { opacity: 0.4; }
+/* Hero — "State of the Studio". */
+.tdy-hero { padding: 14px 18px 16px; }
+.tdy-hero-top { display: flex; align-items: flex-end; gap: 32px; flex-wrap: wrap; margin: 4px 0 16px; }
+.tdy-hn { display: flex; flex-direction: column; gap: 3px; }
+.tdy-hn .l2 { font: 600 8.5px var(--font-mono); letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-tertiary); }
+.tdy-hn-big { font: 26px var(--font-mono) !important; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.tdy-attention { margin-left: auto; align-self: center; font: 600 12.5px var(--font-sans); padding: 7px 14px; border-radius: 999px; }
+.tdy-attention.hot { background: var(--red-dim); color: var(--red); }
+.tdy-attention.calm { background: var(--jade-dim, var(--surface-2)); color: var(--jade); }
 
-.tdx-qact { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 26px; border-bottom: 0.5px solid var(--hairline); }
+.tdy-pipeline-label { margin-bottom: 6px; }
+.tdy-ladder { border-top: none; background: none; flex-wrap: wrap; }
+.tdy-ladder .st { flex: 1 1 100px; border-top: 1px solid var(--hairline); padding: 8px 12px; }
+.tdy-ladder .st.zero { opacity: 0.4; }
 
-.tdx-board { display: grid; grid-template-columns: minmax(420px, 1.1fr) minmax(360px, 1fr); gap: 36px; padding: 20px 26px 40px; max-width: 1360px; align-items: start; }
-@media (max-width: 1100px) { .tdx-board { grid-template-columns: 1fr; gap: 20px; } }
-
-.tdx-sec-h { display: flex; align-items: baseline; gap: 9px; margin: 0 0 9px; }
-.tdx-sec-h h2 { font: 600 12.5px var(--font-sans); color: var(--text-primary); margin: 0; }
-.tdx-sec-h .n { font: 600 10px var(--font-mono); color: var(--gold); }
-.tdx-sec-h .all { margin-left: auto; font: 500 11px var(--font-sans); color: var(--blue); background: none; border: none; padding: 0; }
-.tdx-sec-h .all:disabled { color: var(--text-tertiary); cursor: not-allowed; }
-
-.tdx-flat { border-top: 0.5px solid var(--hairline); }
-.tdx-trow { display: flex; gap: 13px; align-items: flex-start; padding: 9px 2px; border-bottom: 0.5px solid var(--hairline); }
-.tdx-trow .bar { width: 3px; align-self: stretch; border-radius: 2px; background: var(--gold); flex: none; }
-.tdx-trow .bar.blk { background: var(--red); }
-.tdx-trow .bar.wat { background: var(--hairline-strong); }
-.tdx-trow .bar.dec { background: var(--blue); }
-.tdx-trow .tt2 { flex: 1; min-width: 0; }
-.tdx-trow .tt2 b { font-size: 13px; color: var(--text-primary); }
-.tdx-trow .tt2 b i { font-family: var(--font-serif); font-weight: 400; font-size: 14px; font-style: italic; }
-.tdx-trow .tt2 .m2 { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
-.tdx-trow .tt2 .m2 .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
-.tdx-trow .acts2 { display: flex; gap: 8px; flex: none; align-items: center; }
-
-.tdx-btn { padding: 6px 10px; border-radius: 5px; font: 600 12px var(--font-sans); border: 0.5px solid var(--hairline-strong); background: var(--surface-0); color: var(--text-secondary); }
-.tdx-btn:hover { border-color: var(--oxblood); color: var(--text-primary); }
-.tdx-btn.g { border: none; color: var(--blue); background: none; padding: 6px 4px; }
-.tdx-btn.g:hover { text-decoration: underline; }
-.tdx-btn.s { background: var(--surface-1); }
-.tdx-btn.p { background: var(--oxblood); border-color: var(--oxblood); color: var(--rail-active); }
-.tdx-btn.p:hover { background: #572226; border-color: #572226; color: var(--rail-active); }
-
-.tdx-prow { display: flex; flex-wrap: wrap; gap: 6px 11px; align-items: center; padding: 10px 2px; border-bottom: 0.5px solid var(--hairline); cursor: pointer; }
-.tdx-prow:hover { background: var(--surface-2); }
-.tdx-art { width: 26px; height: 26px; border-radius: 4px; flex: none; background-image: radial-gradient(120% 65% at 72% 18%, rgba(232,201,126,0.5), transparent 58%), linear-gradient(165deg, #0B2C46, #186B82 55%, #E8C97E); }
-.tdx-prow .nm2 { font-family: var(--font-serif); font-style: italic; font-size: 15px; color: var(--text-primary); }
-.tdx-prow .ph2 { font-size: 11.5px; color: var(--text-tertiary); }
-.tdx-prow .need2 { flex: 1; min-width: 120px; font-size: 12px; color: var(--amber); font-weight: 600; }
-.tdx-prow .need2.calm { color: var(--jade); }
-.tdx-prow .bud2 { font: 11px var(--font-mono); color: var(--text-tertiary); white-space: nowrap; text-align: right; }
-.tdx-prow .cost2 { font: 12px var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text-secondary); white-space: nowrap; text-align: right; }
-
-/* Recent-activity feed rows (Today's "Since your last visit") — icon +
-   timestamp + text, same real events Record.jsx renders as a table
-   (lib/recordEvents.js), never a separate/duplicated event source. */
-.tdx-fi { display: flex; gap: 10px; align-items: baseline; padding: 8px 2px; border-bottom: 0.5px dashed var(--hairline); font-size: 12.5px; }
-.tdx-tm { font: 500 10.5px var(--font-mono); color: var(--text-tertiary); flex: none; width: 78px; }
-.tdx-ic { flex: none; color: var(--text-tertiary); }
-.tdx-tx { color: var(--text-secondary); min-width: 0; }
-.tdx-tx b { color: var(--text-primary); font-weight: 600; }
-.tdx-obj { color: var(--blue); cursor: pointer; }
-.tdx-obj:hover { text-decoration: underline; }
-
-.tdx-empty { padding: 12px 2px; font-size: 12px; color: var(--text-tertiary); line-height: 1.5; border-bottom: 0.5px solid var(--hairline); }
+/* Production Slate rows — extends .row-item with the extra fields a
+   production row carries (artwork, figures, momentum) that a generic
+   row-item doesn't. */
+.tdy-slate-row { gap: 12px; }
+.tdy-stage { font-size: 11.5px; color: var(--text-tertiary); font-weight: 400; }
+.tdy-delta { color: var(--text-tertiary); font-style: italic; }
+.tdy-slate-figs { display: flex; gap: 16px; flex-shrink: 0; }
+.tdy-fig { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font: 12.5px var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text-secondary); white-space: nowrap; }
+.tdy-fig .l2 { font: 600 8.5px var(--font-mono); letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-tertiary); }
+.tdy-momentum { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--surface-0); }
+.tdy-momentum.gold { color: var(--charcoal); }
 
 /* ========= Scenarios comparison + Reports (sc-/rpt-) ========= */
 .sc-screen { padding: 20px 26px 40px; max-width: 1200px; }
