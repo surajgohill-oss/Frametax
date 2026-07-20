@@ -1,25 +1,14 @@
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
 import { Money } from "../../lib/format";
+import { buildRecordRows } from "../../lib/recordEvents";
 
 export default function Record() {
   const { data, error, loading } = useCineGlobe();
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
 
-  const { legal, production } = data;
-  const rows = [];
-  rows.push({ date: production.as_of_date, event: "Baseline register established", detail: `${production.jurisdiction_code} qualification register` });
-  for (const g of legal.grey_areas_current) {
-    if (g.status !== "open") {
-      rows.push({
-        date: production.as_of_date,
-        event: `${g.jurisdiction_code} authority decision received`,
-        detail: `${g.resolving_evidence} — Authority Score ${legal.authority_scores[g.graph_rule_id]?.composite ?? "—"} (${legal.authority_scores[g.graph_rule_id]?.confidence ?? ""})`,
-        value: g.amount_usd,
-      });
-    }
-  }
+  const rows = buildRecordRows(data);
 
   return (
     <div className="screen">

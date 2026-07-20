@@ -927,6 +927,19 @@
 .tdx-alert i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .tdx-ico { width: 30px; height: 30px; border-radius: 50%; border: 0.5px solid var(--hairline-strong); color: var(--text-tertiary); display: flex; align-items: center; justify-content: center; font-size: 13px; flex: none; }
 .tdx-ico:hover { color: var(--text-primary); background: var(--surface-2); }
+.tdx-newprod { margin-left: auto; flex: none; }
+.tdx-newprod:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Lifecycle-stage strip — one chip per canonical PROJECT_STATUSES entry,
+   counted across the real productions array (see Today.jsx). Dimmed to
+   near-invisible when a stage has zero productions — present for scan-
+   ability, not padded to look like a busier portfolio than it is. */
+.tdx-stages { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 8px 26px; border-bottom: 0.5px solid var(--hairline); background: var(--surface-0); }
+.tdx-stage-chip { display: inline-flex; align-items: center; gap: 5px; font: 500 11.5px var(--font-sans); color: var(--text-secondary); }
+.tdx-stage-chip b { font: 600 11.5px var(--font-mono); color: var(--text-primary); }
+.tdx-stage-chip.zero { opacity: 0.4; }
+
+.tdx-qact { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 26px; border-bottom: 0.5px solid var(--hairline); }
 
 .tdx-board { display: grid; grid-template-columns: minmax(420px, 1.1fr) minmax(360px, 1fr); gap: 36px; padding: 20px 26px 40px; max-width: 1360px; align-items: start; }
 @media (max-width: 1100px) { .tdx-board { grid-template-columns: 1fr; gap: 20px; } }
@@ -964,8 +977,20 @@
 .tdx-prow .nm2 { font-family: var(--font-serif); font-style: italic; font-size: 15px; color: var(--text-primary); }
 .tdx-prow .ph2 { font-size: 11.5px; color: var(--text-tertiary); }
 .tdx-prow .need2 { flex: 1; min-width: 120px; font-size: 12px; color: var(--amber); font-weight: 600; }
+.tdx-prow .need2.calm { color: var(--jade); }
 .tdx-prow .bud2 { font: 11px var(--font-mono); color: var(--text-tertiary); white-space: nowrap; text-align: right; }
 .tdx-prow .cost2 { font: 12px var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text-secondary); white-space: nowrap; text-align: right; }
+
+/* Recent-activity feed rows (Today's "Since your last visit") — icon +
+   timestamp + text, same real events Record.jsx renders as a table
+   (lib/recordEvents.js), never a separate/duplicated event source. */
+.tdx-fi { display: flex; gap: 10px; align-items: baseline; padding: 8px 2px; border-bottom: 0.5px dashed var(--hairline); font-size: 12.5px; }
+.tdx-tm { font: 500 10.5px var(--font-mono); color: var(--text-tertiary); flex: none; width: 78px; }
+.tdx-ic { flex: none; color: var(--text-tertiary); }
+.tdx-tx { color: var(--text-secondary); min-width: 0; }
+.tdx-tx b { color: var(--text-primary); font-weight: 600; }
+.tdx-obj { color: var(--blue); cursor: pointer; }
+.tdx-obj:hover { text-decoration: underline; }
 
 .tdx-empty { padding: 12px 2px; font-size: 12px; color: var(--text-tertiary); line-height: 1.5; border-bottom: 0.5px solid var(--hairline); }
 
