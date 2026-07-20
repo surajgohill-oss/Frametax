@@ -1,22 +1,22 @@
 import { useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
 import { postPeople } from "../api";
 
-// Production Details panel — approved Overview left column.
-// People rows use the REAL backend contract (POST /people, role-level
-// nationality overrides — the backend's own model). Residency is not a
-// permanent field here per the approved design; the backend override is
-// left untouched when only nationality changes.
+// Production Facts — approved Overview left column. This panel is the
+// Overview representation of the SAME Production Record the Workspace
+// Inspector edits: rows use the real backend contract (POST /people,
+// role-level nationality overrides — the backend's own model), so an edit
+// here and an edit in Workspace hit the identical record. No duplicate
+// input model, no second intake system.
 //
-// The nationality dropdown offers common ISO2 values with demonym labels;
-// any already-stored code outside this list is preserved as an option so
-// an existing backend value is never clobbered by the UI.
-const ROLES = [
-  { key: "director", label: "Director", dataKey: "directors" },
-  { key: "writer", label: "Writer", dataKey: "writers" },
-  { key: "producer", label: "Producers", dataKey: "producers" },
-  { key: "lead_cast", label: "Lead Cast", dataKey: "cast" },
-];
+// Nationality/Citizenship is the canonical recurring qualification identity
+// the optimizer consumes across jurisdictions (cultural tests, treaty
+// composition, cast/crew rules). Residency is deliberately NOT shown here
+// per the approved design. No country-specific cultural-test inputs are
+// recreated here. The backend tracks no Editor role, so none is shown.
+//
+// Flow: values discovered from uploads/state are shown; missing values are
+// highlighted; completing one POSTs to /people and the optimizer recomputes
+// on the refetch.
 
 const NATIONALITIES = [
   ["GB", "British"], ["US", "American"], ["FR", "French"], ["DE", "German"],
@@ -25,13 +25,14 @@ const NATIONALITIES = [
   ["CA", "Canadian"], ["IN", "Indian"], ["ZA", "South African"],
 ];
 
-function NationalitySelect({ value, onChange, disabled, saving }) {
+function NationalitySelect({ value, onChange, disabled, saving, missing, title }) {
   const known = NATIONALITIES.some(([code]) => code === value);
   return (
     <select
-      className="pd-select"
+      className={`pd-select ${missing ? "pd-missing" : ""}`}
       value={value || ""}
       disabled={disabled || saving}
+      title={title}
       onChange={(e) => onChange(e.target.value || null)}
     >
       <option value="">—</option>
@@ -43,20 +44,18 @@ function NationalitySelect({ value, onChange, disabled, saving }) {
   );
 }
 
-function PersonRow({ role, people, overrides, onSaved }) {
-  const entries = people[role.dataKey] || [];
-  const override = overrides[role.key] || {};
-  const current = override.nationality || entries[0]?.nationality || "";
+// One fact row: role label, discovered name(s), and the single recurring
+// qualification fact (nationality). Rows without a backend person record
+// (Lead Cast 2/3 until cast is announced) render an honest disabled control
+// rather than an input that could not persist.
+function FactRow({ label, name, value, roleKey, onSaved }) {
   const [saving, setSaving] = useState(false);
-  const [expanded, setExpanded] = useState(false);
-
-  const primary = entries[0];
-  const extras = entries.slice(1);
+  const editable = !!roleKey;
 
   async function save(code) {
     setSaving(true);
     try {
-      await postPeople({ [`${role.key}_nationality`]: code });
+      await postPeople({ [`${roleKey}_nationality`]: code });
       onSaved();
     } finally {
       setSaving(false);
@@ -67,121 +66,102 @@ function PersonRow({ role, people, overrides, onSaved }) {
     <div className="pd-person">
       <div className="pd-row">
         <div className="pd-ident">
-          <span className="pd-role">{role.label}</span>
+          <span className="pd-role">{label}</span>
           <span className="pd-name">
-            {primary?.name || <span className="text-tertiary">Not yet named</span>}
-            {extras.length > 0 && (
-              <button className="pd-expand" onClick={() => setExpanded((e) => !e)}>
-                {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />} +{extras.length}
-              </button>
-            )}
+            {name || <span className="text-tertiary">Not yet named</span>}
           </span>
         </div>
-        <NationalitySelect value={current} onChange={save} saving={saving} />
+        <NationalitySelect
+          value={value}
+          onChange={save}
+          disabled={!editable}
+          saving={saving}
+          missing={editable && !value}
+          title={editable ? undefined : "No person record yet — nationality becomes editable once this cast member is added to the record"}
+        />
       </div>
-      {expanded && extras.map((p) => (
-        // Role-level nationality is the backend's own model — extra people
-        // share the role's dropdown above rather than getting a second one.
-        <div className="pd-row pd-row-extra" key={p.name}>
-          <div className="pd-ident"><span className="pd-name">{p.name}</span></div>
-          <span className="pd-extra-note text-tertiary small">same role override</span>
-        </div>
-      ))}
     </div>
   );
 }
 
-// Overview locations: production requirements, not jurisdiction candidates.
-// Story Locations derive from the real script attributes; the other three
-// categories have no backend source yet, so they render honest empty
-// states (presentation-only — no fabricated fixture entries).
-function LocationsAccordion({ script }) {
-  const [open, setOpen] = useState({ story: true });
-  const setting = script?.attributes?.setting?.value;
-  const countries = script?.attributes?.countries?.value;
-  const storyItems = [
-    ...(setting ? String(setting).split(/[,;·]/).map((s) => s.trim()).filter(Boolean) : []),
-    ...(countries ? [`Countries referenced — ${countries}`] : []),
-  ];
+// Production Requirements — script-derived physical requirements (NOT
+// selected jurisdictions). Auto-populated from the real script analysis
+// (production.physical_requirements.script_requirements); each chip's
+// tooltip carries the actual evidence line. These same flags already drive
+// the optimizer's territory physical matching (territory_physical_match).
+// No backend write path exists for these yet, so they are display-only —
+// no fake edit control is rendered.
+const REQ_LABELS = {
+  marine: "Marine / Open water",
+  open_water_filming: "Open-water filming",
+  underwater_photography: "Underwater",
+  period: "Historic / Period",
+  night_work: "Night work",
+  city: "Urban / City",
+  desert: "Desert",
+  snow: "Snow",
+  animals: "Animals",
+  vehicles: "Vehicle action",
+  crowds: "Crowds",
+};
 
-  const groups = [
-    { key: "story", label: "Story Locations", items: storyItems },
-    { key: "environments", label: "Production Environments", items: [] },
-    { key: "components", label: "Production Components", items: [] },
-    { key: "locked", label: "Required / Locked Locations", items: [] },
-  ];
+function ProductionRequirements({ requirements }) {
+  const sreq = requirements?.script_requirements || {};
+  const entries = Object.entries(sreq)
+    .filter(([k]) => REQ_LABELS[k])
+    .sort(([, a], [, b]) => (b?.value === true ? 1 : 0) - (a?.value === true ? 1 : 0));
 
   return (
     <div className="pd-locations">
-      <div className="pd-section-label">Locations</div>
-      {groups.map((g) => {
-        const isOpen = !!open[g.key];
-        return (
-          <div className="pd-loc-group" key={g.key}>
-            <button className="pd-loc-header" onClick={() => setOpen((o) => ({ ...o, [g.key]: !isOpen }))}>
-              {isOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-              <span>{g.label}</span>
-              <span className="pd-loc-count">{g.items.length}</span>
-            </button>
-            {isOpen && (
-              g.items.length > 0 ? (
-                <ul className="pd-loc-items">
-                  {g.items.map((item) => <li key={item}>{item}</li>)}
-                </ul>
-              ) : (
-                <p className="pd-loc-empty">None recorded yet.</p>
-              )
-            )}
-          </div>
-        );
-      })}
+      <div className="pd-section-label">Production requirements</div>
+      <p className="pd-req-note">Derived from script analysis · drives territory matching</p>
+      {entries.length === 0 ? (
+        <p className="pd-loc-empty">No script analysis available yet.</p>
+      ) : (
+        <div className="tag-row">
+          {entries.map(([k, v]) => (
+            <span
+              key={k}
+              className={`tag ${v?.value === true ? "active" : ""}`}
+              title={v?.evidence || "Not evident in the material read"}
+            >
+              {REQ_LABELS[k]}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-export default function ProductionDetails({ people, script, refetch }) {
+const namesOf = (arr) => (arr || []).map((p) => p.name).filter(Boolean).join(", ");
+
+export default function ProductionDetails({ people, requirements, refetch }) {
   const overrides = people?.overrides || {};
-  const language = script?.attributes?.language?.value || "English";
+  const cast = people?.cast || [];
+  const natOf = (roleKey, person) => overrides[roleKey]?.nationality || person?.nationality || "";
 
   return (
     <section className="pd-panel">
       <div className="pd-header">
-        <span className="pd-title">Production details</span>
+        <span className="pd-title">Production facts</span>
         <span className="pd-col-label">Nationality</span>
       </div>
 
-      {ROLES.map((role) => (
-        <PersonRow key={role.key} role={role} people={people} overrides={overrides} onSaved={refetch} />
-      ))}
+      <FactRow label="Writer" roleKey="writer" name={namesOf(people.writers)}
+        value={natOf("writer", people.writers?.[0])} onSaved={refetch} />
+      <FactRow label="Director" roleKey="director" name={namesOf(people.directors)}
+        value={natOf("director", people.directors?.[0])} onSaved={refetch} />
+      <FactRow label="Producers" roleKey="producer" name={namesOf(people.producers)}
+        value={natOf("producer", people.producers?.[0])} onSaved={refetch} />
+      <FactRow label="Lead Cast 1" roleKey="lead_cast" name={cast[0]?.name}
+        value={natOf("lead_cast", cast[0])} onSaved={refetch} />
+      <FactRow label="Lead Cast 2" roleKey={null} name={cast[1]?.name}
+        value={cast[1]?.nationality || ""} onSaved={refetch} />
+      <FactRow label="Lead Cast 3" roleKey={null} name={cast[2]?.name}
+        value={cast[2]?.nationality || ""} onSaved={refetch} />
 
-      <div className="pd-person">
-        <div className="pd-row">
-          <div className="pd-ident">
-            <span className="pd-role">Production Company</span>
-            <span className="pd-name text-tertiary">Not tracked by this backend yet</span>
-          </div>
-          {/* Column heading is contextually COUNTRY for a company —
-              disabled until a backend field exists. */}
-          <select className="pd-select" disabled title="No backend field yet"><option>—</option></select>
-        </div>
-      </div>
-
-      <div className="pd-person">
-        <div className="pd-row">
-          <div className="pd-ident">
-            <span className="pd-role">Language</span>
-            <span className="pd-name">Primary production language</span>
-          </div>
-          {/* Read-only: value comes from the parsed script (default English
-              for new productions); no backend write path exists, so the
-              control never overwrites a persisted value. */}
-          <select className="pd-select" value={language} disabled title="From the parsed script — presentation-only">
-            <option value={language}>{language}</option>
-          </select>
-        </div>
-      </div>
-
-      <LocationsAccordion script={script} />
+      <ProductionRequirements requirements={requirements} />
     </section>
   );
 }
