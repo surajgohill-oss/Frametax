@@ -1,20 +1,19 @@
 import { useState } from "react";
+import { Pencil } from "lucide-react";
 import { postPeople, postLocations } from "../api";
 import { PERSON_ROLES } from "../lib/personRoles";
 
-// Production Facts — approved Overview left column. This panel is the
-// Overview representation of the SAME canonical Production Record the
-// Workspace Inputs panel edits (POST /people role-level overrides — the
-// backend's own model; both surfaces render from the shared PERSON_ROLES
-// schema, so they can never diverge). Discovery (script/budget/upload
-// extraction) supplies names where it found them; every name and every
-// nationality/citizenship stays user-editable — including the unnamed
-// lead-cast slots. Missing values are highlighted, and every edit
-// invalidates the backend state so the Question Engine and optimizer
-// recompute from the same record. Residency is deliberately NOT shown
-// here per the approved design; no country-specific cultural-test
-// interface is recreated — these are the reusable personnel facts the
-// jurisdiction rule engines consume downstream.
+// Production Facts — approved Overview left column. READ-ONLY by default:
+// one Edit control switches the entire panel into edit mode (names,
+// nationalities, and major-location categories become editable together),
+// with explicit Save / Cancel. Save batches only the CHANGED fields to
+// the canonical Production Record (POST /people, POST /locations) and
+// refetches, so the Question Engine / optimizer / Workspace Inputs /
+// jurisdiction snapshots all recompute from the same record; Cancel
+// discards the draft without touching anything. No permanent inline edit
+// controls. Both surfaces (this panel and Workspace Inputs) render from
+// the shared PERSON_ROLES schema — one record, one role vocabulary.
+// Residency is deliberately absent here per the approved design.
 
 const NATIONALITIES = [
   ["GB", "British"], ["US", "American"], ["FR", "French"], ["DE", "German"],
@@ -22,14 +21,15 @@ const NATIONALITIES = [
   ["MU", "Mauritian"], ["FJ", "Fijian"], ["AU", "Australian"], ["NZ", "New Zealander"],
   ["CA", "Canadian"], ["IN", "Indian"], ["ZA", "South African"],
 ];
+const natLabel = (code) => (NATIONALITIES.find(([c]) => c === code) || [])[1] || code || "—";
 
-function NationalitySelect({ value, onChange, saving, missing }) {
+function NationalitySelect({ value, onChange, disabled }) {
   const known = NATIONALITIES.some(([code]) => code === value);
   return (
     <select
-      className={`pd-select ${missing ? "pd-missing" : ""}`}
+      className={`pd-select ${!value ? "pd-missing" : ""}`}
       value={value || ""}
-      disabled={saving}
+      disabled={disabled}
       onChange={(e) => onChange(e.target.value || null)}
     >
       <option value="">—</option>
@@ -41,125 +41,168 @@ function NationalitySelect({ value, onChange, saving, missing }) {
   );
 }
 
-// One fact row: role label, editable name, editable nationality. The name
-// input commits on blur/Enter when changed (empty clears the override,
-// returning to the discovered value); nationality commits on select.
-function FactRow({ role, people, overrides, onSaved }) {
-  const entries = people[role.dataKey] || [];
-  const override = overrides[role.key] || {};
-  const discoveredName = entries.map((p) => p.name).filter(Boolean).join(", ");
-  const currentName = override.name || discoveredName;
-  const currentNat = override.nationality || entries[0]?.nationality || "";
-  const [nameDraft, setNameDraft] = useState(null); // null = not editing
-  const [saving, setSaving] = useState(false);
-
-  async function save(fields) {
-    setSaving(true);
-    try {
-      await postPeople(fields);
-      onSaved();
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  function commitName() {
-    const v = (nameDraft ?? "").trim();
-    setNameDraft(null);
-    if (v === currentName) return;
-    save({ [`${role.key}_name`]: v || null });
-  }
-
-  return (
-    <div className="pd-person">
-      <div className="pd-row">
-        <div className="pd-ident">
-          <span className="pd-role">{role.label}</span>
-          <input
-            className={`pd-name-input ${!currentName ? "pd-missing" : ""}`}
-            value={nameDraft ?? currentName}
-            placeholder="Not yet named"
-            disabled={saving}
-            onFocus={() => setNameDraft(currentName)}
-            onChange={(e) => setNameDraft(e.target.value)}
-            onBlur={commitName}
-            onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
-          />
-        </div>
-        <NationalitySelect
-          value={currentNat}
-          saving={saving}
-          missing={!currentNat}
-          onChange={(code) => save({ [`${role.key}_nationality`]: code })}
-        />
-      </div>
-    </div>
-  );
-}
-
-// Major Location Requirements — the canonical controlled taxonomy of
-// physical location environments that materially differentiate
-// jurisdiction suitability. Script analysis SEEDS the categories
-// (production.physical_requirements.location_categories, evidence in the
-// tooltip); clicking a chip toggles a user-confirmed override, persisted
-// to the canonical Production Record (POST /locations) — the backend
-// invalidates its cached state so territory matching and recommendations
-// recompute. Script extraction is never overwritten; overrides layer on
-// top and can be cleared.
-function MajorLocations({ categories, onSaved }) {
-  const [saving, setSaving] = useState(false);
-  const entries = Object.entries(categories || {})
-    .sort(([, a], [, b]) => (b.effective ? 1 : 0) - (a.effective ? 1 : 0));
-
-  async function toggle(slug, cat) {
-    setSaving(true);
-    try {
-      await postLocations({ [slug]: !cat.effective });
-      onSaved();
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <div className="pd-locations">
-      <div className="pd-section-label">Major location requirements</div>
-      <p className="pd-req-note">Seeded from script analysis · click to confirm or override · drives jurisdiction matching</p>
-      {entries.length === 0 ? (
-        <p className="pd-loc-empty">No script analysis available yet.</p>
-      ) : (
-        <div className="tag-row">
-          {entries.map(([slug, cat]) => (
-            <button
-              key={slug}
-              className={`tag ${cat.effective ? "active" : ""} ${cat.override !== null && cat.override !== undefined ? "pd-overridden" : ""}`}
-              disabled={saving}
-              title={`${cat.evidence}${cat.source === "user_override" ? " — user override" : " — script analysis"}`}
-              onClick={() => toggle(slug, cat)}
-            >
-              {cat.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 export default function ProductionDetails({ people, requirements, refetch }) {
   const overrides = people?.overrides || {};
+  const categories = requirements?.location_categories || {};
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  // Effective current value per role — override (user-confirmed) over the
+  // discovered/served person data. Same resolution the backend applies.
+  const currentOf = (role) => {
+    const entries = people[role.dataKey] || [];
+    const o = overrides[role.key] || {};
+    return {
+      name: o.name || entries.map((p) => p.name).filter(Boolean).join(", "),
+      nationality: o.nationality || entries[0]?.nationality || "",
+    };
+  };
+
+  function beginEdit() {
+    const p = {};
+    for (const role of PERSON_ROLES) p[role.key] = { ...currentOf(role) };
+    const l = {};
+    for (const [slug, cat] of Object.entries(categories)) l[slug] = cat.effective;
+    setDraft({ people: p, locations: l });
+    setEditing(true);
+  }
+
+  function cancelEdit() {
+    setDraft(null);
+    setEditing(false);
+  }
+
+  async function saveEdit() {
+    setSaving(true);
+    try {
+      const answers = {};
+      for (const role of PERSON_ROLES) {
+        const before = currentOf(role);
+        const after = draft.people[role.key];
+        const name = (after.name || "").trim();
+        if (name !== before.name) answers[`${role.key}_name`] = name || null;
+        if ((after.nationality || "") !== before.nationality) {
+          answers[`${role.key}_nationality`] = after.nationality || null;
+        }
+      }
+      const locs = {};
+      for (const [slug, cat] of Object.entries(categories)) {
+        if (draft.locations[slug] !== cat.effective) locs[slug] = draft.locations[slug];
+      }
+      if (Object.keys(answers).length) await postPeople(answers);
+      if (Object.keys(locs).length) await postLocations(locs);
+      refetch();
+      setEditing(false);
+      setDraft(null);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const setPerson = (key, field, value) =>
+    setDraft((d) => ({ ...d, people: { ...d.people, [key]: { ...d.people[key], [field]: value } } }));
+  const toggleLocation = (slug) =>
+    setDraft((d) => ({ ...d, locations: { ...d.locations, [slug]: !d.locations[slug] } }));
+
+  const catEntries = Object.entries(categories)
+    .sort(([, a], [, b]) => (b.effective ? 1 : 0) - (a.effective ? 1 : 0));
+
   return (
     <section className="pd-panel">
       <div className="pd-header">
-        <span className="pd-title">Production facts</span>
+        <span className="pd-title-row">
+          <span className="pd-title">Production facts</span>
+          {editing ? (
+            <span className="pd-edit-actions">
+              <button className="ghost-action small" onClick={saveEdit} disabled={saving}>{saving ? "Saving…" : "Save"}</button>
+              <button className="ghost-action small" onClick={cancelEdit} disabled={saving}>Cancel</button>
+            </span>
+          ) : (
+            <button className="pd-edit-btn" title="Edit production facts" aria-label="Edit production facts" onClick={beginEdit}>
+              <Pencil size={13} />
+            </button>
+          )}
+        </span>
         <span className="pd-col-label">Nationality</span>
       </div>
 
-      {PERSON_ROLES.map((role) => (
-        <FactRow key={role.key} role={role} people={people} overrides={overrides} onSaved={refetch} />
-      ))}
+      {PERSON_ROLES.map((role) => {
+        const cur = editing ? draft.people[role.key] : currentOf(role);
+        return (
+          <div className="pd-person" key={role.key}>
+            <div className="pd-row">
+              <div className="pd-ident">
+                <span className="pd-role">{role.label}</span>
+                {editing ? (
+                  <input
+                    className={`pd-name-input ${!cur.name ? "pd-missing" : ""}`}
+                    value={cur.name}
+                    placeholder="Not yet named"
+                    disabled={saving}
+                    onChange={(e) => setPerson(role.key, "name", e.target.value)}
+                  />
+                ) : (
+                  <span className="pd-name">
+                    {cur.name || <span className="text-tertiary">Not yet named</span>}
+                  </span>
+                )}
+              </div>
+              {editing ? (
+                <NationalitySelect
+                  value={cur.nationality}
+                  disabled={saving}
+                  onChange={(code) => setPerson(role.key, "nationality", code)}
+                />
+              ) : (
+                <span className={`pd-nat-value ${!cur.nationality ? "pd-nat-missing" : ""}`}>
+                  {natLabel(cur.nationality)}
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      })}
 
-      <MajorLocations categories={requirements?.location_categories} onSaved={refetch} />
+      {/* Major Location Requirements — canonical taxonomy seeded from
+          script analysis (evidence in tooltips); editable only within the
+          panel's edit mode, persisted as overrides on Save. */}
+      <div className="pd-locations">
+        <div className="pd-section-label">Major location requirements</div>
+        <p className="pd-req-note">
+          Seeded from script analysis · drives jurisdiction matching
+          {editing ? " · click to toggle" : ""}
+        </p>
+        {catEntries.length === 0 ? (
+          <p className="pd-loc-empty">No script analysis available yet.</p>
+        ) : (
+          <div className="tag-row">
+            {catEntries.map(([slug, cat]) => {
+              const active = editing ? draft.locations[slug] : cat.effective;
+              const overridden = cat.override !== null && cat.override !== undefined;
+              return editing ? (
+                <button
+                  key={slug}
+                  className={`tag ${active ? "active" : ""}`}
+                  disabled={saving}
+                  title={cat.evidence}
+                  onClick={() => toggleLocation(slug)}
+                >
+                  {cat.label}
+                </button>
+              ) : (
+                <span
+                  key={slug}
+                  className={`tag pd-tag-static ${active ? "active" : ""} ${overridden ? "pd-overridden" : ""}`}
+                  title={`${cat.evidence}${cat.source === "user_override" ? " — user override" : " — script analysis"}`}
+                >
+                  {cat.label}
+                </span>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </section>
   );
 }

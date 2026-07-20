@@ -709,6 +709,14 @@
 .pd-name-input.pd-missing { border-bottom-color: var(--amber, #c99a4d); }
 /* Location chip carrying a user override (script seed preserved beneath). */
 .tag.pd-overridden { box-shadow: inset 0 -2px 0 var(--amber, #c99a4d); }
+/* Read-only default state: edit affordance + static value/chip rendering. */
+.pd-title-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.pd-edit-btn { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--hairline); background: var(--surface-1); color: var(--text-secondary); cursor: pointer; flex-shrink: 0; }
+.pd-edit-btn:hover { border-color: var(--hairline-strong); color: var(--text-primary); }
+.pd-edit-actions { display: inline-flex; gap: 6px; margin-left: 8px; flex-shrink: 0; }
+.pd-nat-value { font-size: 12.5px; color: var(--text-primary); flex-shrink: 0; }
+.pd-nat-missing { color: var(--amber, #c99a4d); font-style: italic; }
+.pd-tag-static { cursor: default; }
 
 .ovx-sec { background: var(--surface-1); border: 0.5px solid var(--hairline); border-radius: 8px; padding: 10px 16px 8px; margin-bottom: 11px; }
 .ovx-sec .oh { display: flex; align-items: baseline; gap: 8px; margin-bottom: 5px; }

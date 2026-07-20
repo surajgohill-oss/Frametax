@@ -8,6 +8,7 @@ import Globe3D from "../../components/Globe3D";
 import { buildGlobeData } from "../../lib/globeData";
 import ProductionDetails from "../../components/ProductionDetails";
 import BudgetRail from "../../components/BudgetRail";
+import FXStrip from "../../components/FXStrip";
 
 // Overview — approved closeout structure (restored from the approved-design
 // migration, commit 9644759):
@@ -55,7 +56,7 @@ export default function Overview() {
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
 
-  const { production, pkg, people } = data;
+  const { production, pkg, people, economics } = data;
 
   // Jurisdiction snapshot strip — the four whole-production jurisdiction
   // options (single-country baseline + full relocations), in optimizer rank
@@ -77,6 +78,12 @@ export default function Overview() {
 
   return (
     <div className="screen ovxg-screen">
+      {/* Approved FX / production-economics strip — beneath the header,
+          above the three-column layout. Real /economics.fx_horizons data
+          (spot + forward points); commentary only, never an optimizer
+          input (pricing stays on current rates). */}
+      <FXStrip economics={economics} />
+
       <div className="ovxg-grid">
 
         {/* ── LEFT — Production Facts + Production Requirements ─────────── */}

@@ -45,7 +45,10 @@ export default function ProjectHeader() {
         <div className="ph-art" aria-hidden="true" />
         <div className="ph-identity">
           <h1 className="serif ph-title">{production?.production_name || "—"}</h1>
-          <p className="ph-sub">Feature{jur ? ` · ${jur}` : ""}{data?.pkg?.confidence ? ` · ${data.pkg.confidence} confidence` : ""}</p>
+          {/* Identity facts only — the package-confidence grade was stale
+              workflow status here; it lives in the working surfaces, not
+              the production's identity line. */}
+          <p className="ph-sub">Feature{jur ? ` · ${jur}` : ""}</p>
           <div className="ph-stage">
             <span className="ph-stage-label">Production stage</span>
             {/* Frozen-artifact stage control (.stage-dd): a details/summary
