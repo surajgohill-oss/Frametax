@@ -145,31 +145,40 @@ export default function Today() {
     <div className="screen tdy-screen">
       {/* ── HERO — State of the Studio ─────────────────────────────── */}
       <section className="ovx-sec tdy-hero">
-        <div className="oh">
+        <div className="oh tdy-hero-oh">
           <b>State of the Studio</b>
+          <span className={`tdy-attention ${attentionCount ? "hot" : "calm"}`}>
+            <i />{attentionCount} Production{attentionCount === 1 ? "" : "s"} {attentionCount === 1 ? "Requires" : "Require"} Immediate Attention
+          </span>
         </div>
 
+        {/* Primary summary group: the two headline company figures, paired
+            and tightly grouped so they read as one executive anchor. */}
         <div className="tdy-hero-top">
-          <div className="tdy-hn tdy-hn-primary">
+          <div className="tdy-hn">
             <span className="l2">Active Productions</span>
             <span className="v2 tdy-hn-xl">{activeProductions.length}</span>
           </div>
+          <span className="tdy-hero-div" aria-hidden="true" />
           <div className="tdy-hn">
             <span className="l2">Total Active Budget</span>
             <span className="v2 tdy-hn-big"><Money value={totalActiveBudget} /></span>
           </div>
-          <div className={`tdy-attention ${attentionCount ? "hot" : "calm"}`}>
-            {attentionCount} Production{attentionCount === 1 ? "" : "s"} {attentionCount === 1 ? "Requires" : "Require"} Immediate Attention
-          </div>
         </div>
 
+        {/* Production Summary band — the three canonical lifecycle stages
+            (Evaluation → Development → Production), each with count and
+            aggregate budget. */}
         <div className="tdy-pipeline">
           <div className="l2 tdy-pipeline-label">Production Summary</div>
           <div className="ovx-stats tdy-ladder">
             {heroStages.map((s) => (
-              <div className={`st ${s.count ? "" : "zero"}`} key={s.key}>
+              <div className={`st ${s.count ? "active" : "zero"}`} key={s.key}>
                 <div className="l2">{s.label}</div>
-                <div className="v2 tdy-stage-val">{s.count} · <CompactMoney value={s.budget} /></div>
+                <div className="v2 tdy-stage-val">
+                  <span className="tdy-stage-n">{s.count}</span>
+                  <span className="tdy-stage-b"><CompactMoney value={s.budget} /></span>
+                </div>
               </div>
             ))}
           </div>
@@ -189,40 +198,31 @@ export default function Today() {
               <div className="tdy-fx-head">
                 <span className="tdy-fx-flag" aria-hidden="true">{it.flag}</span>
                 <span className="tdy-fx-code">{it.code}</span>
+                {it.available && it.deltaPct != null && (
+                  <span className={`tdy-fx-delta ${it.deltaPct > 0 ? "up" : "down"}`} title={`12-month move on USD/${it.code}`}>
+                    {it.deltaPct > 0 ? "▲" : "▼"} {Math.abs(it.deltaPct).toFixed(1)}%
+                  </span>
+                )}
               </div>
-              {it.available ? (
-                <>
-                  <div className="tdy-fx-pair">
-                    <span className="l2">USD / {it.code}</span>
-                    <span className="v2 mono">{it.current}</span>
-                  </div>
-                  <div className="tdy-fx-pair">
-                    <span className="l2">{it.code} / USD</span>
-                    <span className="v2 mono">{it.reverse}</span>
-                  </div>
-                  {it.deltaPct != null && (
-                    <span className={`tdy-fx-delta ${it.deltaPct > 0 ? "up" : "down"}`}>
-                      {it.deltaPct > 0 ? "▲" : "▼"} {Math.abs(it.deltaPct).toFixed(1)}% / 12m on USD/{it.code}
-                    </span>
-                  )}
-                </>
-              ) : (
-                <>
-                  <div className="tdy-fx-pair">
-                    <span className="l2">USD / {it.code}</span>
-                    <span className="v2 text-tertiary tdy-fx-unavailable">Rate not yet loaded</span>
-                  </div>
-                  <div className="tdy-fx-pair">
-                    <span className="l2">{it.code} / USD</span>
-                    <span className="v2 text-tertiary tdy-fx-unavailable">Rate not yet loaded</span>
-                  </div>
-                </>
-              )}
+              <div className="tdy-fx-rates">
+                <div className="tdy-fx-pair">
+                  <span className="l2">USD / {it.code}</span>
+                  <span className={`tdy-fx-val mono ${it.available ? "" : "tdy-fx-unavailable"}`}>
+                    {it.available ? it.current : "Not yet loaded"}
+                  </span>
+                </div>
+                <div className="tdy-fx-pair">
+                  <span className="l2">{it.code} / USD</span>
+                  <span className={`tdy-fx-val mono ${it.available ? "" : "tdy-fx-unavailable"}`}>
+                    {it.available ? it.reverse : "Not yet loaded"}
+                  </span>
+                </div>
+              </div>
             </div>
           ))}
         </div>
         <p className="text-tertiary small tdy-fx-note">
-          Reverse pairs are calculated from the same stored rate. Commentary only — the optimizer prices at current rates, not forwards.
+          Reference rates (ECB). Reverse pairs derive from the same rate; the optimizer prices at current rates, not forward movement.
         </p>
       </section>
 
@@ -247,7 +247,7 @@ export default function Today() {
               </div>
               <div className="tdy-slate-figs">
                 <span className="tdy-fig"><span className="l2">Budget</span><Money value={p.budget} /></span>
-                <span className="tdy-fig"><span className="l2">Net cost</span>{p.npc != null ? <Money value={p.npc} /> : "—"}</span>
+                <span className="tdy-fig tdy-fig-net"><span className="l2">Net cost</span>{p.npc != null ? <Money value={p.npc} /> : "—"}</span>
               </div>
               <span className={`dot ${p.momentum.tier} tdy-momentum`} title={p.momentum.label}>{p.momentum.glyph}</span>
             </div>

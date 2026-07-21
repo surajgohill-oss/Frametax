@@ -64,33 +64,41 @@ test("Little Utopia (Evaluation, $4,364,393) aggregates correctly under Evaluati
 });
 
 // ── FX strip ────────────────────────────────────────────────────────────
-test("FX strip contains exactly EUR, CAD, GBP in that order", () => {
-  assert.deepEqual(FX_STRIP_CODES, ["EUR", "CAD", "GBP"]);
-});
-
-test("real EUR/GBP snapshots render as available; CAD (no real data) renders unavailable, never fabricated", () => {
-  const fxHorizons = {
-    MUR: { current: 47.05, "1m": null, "6m": null, "12m": null },
-    EUR: { current: 0.87679, "1m": 0.86453, "6m": 0.85807, "12m": 0.85594 },
-    GBP: { current: 0.74699, "1m": 0.74613, "6m": 0.74309, "12m": 0.74099 },
-  };
-  const items = buildFxItems(fxHorizons);
-  const byCode = Object.fromEntries(items.map((it) => [it.code, it]));
-  assert.equal(byCode.EUR.available, true);
-  assert.equal(byCode.EUR.current, 0.87679);
-  assert.equal(byCode.GBP.available, true);
-  assert.equal(byCode.CAD.available, false, "CAD has no real snapshot anywhere in this codebase — must render unavailable");
-  assert.equal(byCode.CAD.current, undefined, "unavailable CAD must not carry a fabricated rate");
-});
-
-// ── FX reciprocal display ───────────────────────────────────────────────
 const RECIPROCAL_TOLERANCE = 1e-4;
+// Mirrors the real served economics.fx_horizons shape (backend
+// FX_RATE_SNAPSHOTS): EUR/GBP/CAD all sourced from ECB reference rates.
 const SAMPLE_FX_HORIZONS = {
   MUR: { current: 47.053589, "1m": null, "6m": null, "12m": null },
   EUR: { current: 0.87679, "1m": 0.86453, "6m": 0.85807, "12m": 0.85594 },
   GBP: { current: 0.74699, "1m": 0.74613, "6m": 0.74309, "12m": 0.74099 },
+  CAD: { current: 1.4135, "1m": 1.3988, "6m": 1.3877, "12m": 1.3701 },
 };
 
+test("FX strip contains exactly EUR, CAD, GBP in that order", () => {
+  assert.deepEqual(FX_STRIP_CODES, ["EUR", "CAD", "GBP"]);
+});
+
+test("EUR, GBP, and CAD all render as available from real snapshots", () => {
+  const items = buildFxItems(SAMPLE_FX_HORIZONS);
+  const byCode = Object.fromEntries(items.map((it) => [it.code, it]));
+  assert.equal(byCode.EUR.available, true);
+  assert.equal(byCode.EUR.current, 0.87679);
+  assert.equal(byCode.GBP.available, true);
+  assert.equal(byCode.CAD.available, true, "CAD now has a real canonical snapshot (ECB via frankfurter.dev)");
+  assert.equal(byCode.CAD.current, 1.4135, "CAD current must be the real stored ECB rate");
+});
+
+test("a currency with no snapshot still renders an honest unavailable state (fallback path intact)", () => {
+  // Guards the honest-fallback branch generically, decoupled from CAD:
+  // any currency whose canonical snapshot is absent must degrade cleanly.
+  const items = buildFxItems({ EUR: { current: 0.87679, "12m": 0.85594 } });
+  const cad = items.find((it) => it.code === "CAD");
+  assert.equal(cad.available, false);
+  assert.equal(cad.current, undefined, "a missing currency must not carry a fabricated rate");
+  assert.equal(cad.reverse, undefined, "a missing currency must not carry a fabricated reverse either");
+});
+
+// ── FX reciprocal display ───────────────────────────────────────────────
 test("EUR reverse pair equals 1 / USD_EUR (calculated, not a stored constant)", () => {
   const items = buildFxItems(SAMPLE_FX_HORIZONS);
   const eur = items.find((it) => it.code === "EUR");
@@ -111,12 +119,26 @@ test("GBP reverse pair equals 1 / USD_GBP (calculated, not a stored constant)", 
   );
 });
 
-test("both CAD directions remain unavailable together (no partial/fabricated reverse)", () => {
+test("CAD reverse pair equals 1 / USD_CAD (calculated from the canonical rate)", () => {
   const items = buildFxItems(SAMPLE_FX_HORIZONS);
   const cad = items.find((it) => it.code === "CAD");
-  assert.equal(cad.available, false);
-  assert.equal(cad.current, undefined);
-  assert.equal(cad.reverse, undefined, "unavailable CAD must not carry a fabricated reverse rate either");
+  assert.ok(cad.available, "CAD must be available now that it is in the canonical snapshot");
+  assert.ok(
+    Math.abs(cad.reverse - 1 / cad.current) < RECIPROCAL_TOLERANCE,
+    `CAD/USD (${cad.reverse}) must equal 1 / USD/CAD (${cad.current}) = ${1 / cad.current}`
+  );
+});
+
+test("canonical CAD snapshot is present in the backend FX source (not hardcoded in Today.jsx)", () => {
+  // Root cause of the prior "Rate not yet loaded": FX_RATE_SNAPSHOTS lacked
+  // CAD and the API built fx_horizons for MUR/EUR/GBP only. CAD must live
+  // in the shared canonical table + be served through the same path.
+  const fxSrc = readFileSync(join(__dirname, "../../backend/app/calculators/production_normalization.py"), "utf8");
+  assert.ok(/"CAD":\s*1\.4135/.test(fxSrc), "CAD current snapshot must be in FX_RATE_SNAPSHOTS");
+  const apiSrc = readFileSync(join(__dirname, "../../backend/app/api/v1/cineglobe.py"), "utf8");
+  assert.ok(/fx_rate_snapshot\(c\) for c in \([^)]*"CAD"/.test(apiSrc), "the API must serve CAD through fx_horizons");
+  const todayRaw = readFileSync(join(__dirname, "../src/screens/company/Today.jsx"), "utf8");
+  assert.ok(!/1\.4135/.test(todayRaw), "CAD rate must NOT be hardcoded in Today.jsx");
 });
 
 test("no independent reverse-rate constants exist in todayCompute.js (reverse is always 1/current)", () => {
@@ -144,13 +166,16 @@ test("FX_FLAGS map the foreign currency (EU / Canada / UK), not USD", () => {
   assert.ok(!Object.values(FX_FLAGS).includes(usFlag), "no US flag on any group — the flag identifies the foreign currency");
 });
 
-test("buildFxItems carries the correct flag on both available and unavailable currencies", () => {
+test("buildFxItems carries the correct flag on every currency group", () => {
   const items = buildFxItems(SAMPLE_FX_HORIZONS);
   const byCode = Object.fromEntries(items.map((it) => [it.code, it]));
   assert.equal(byCode.EUR.flag, "🇪🇺");
   assert.equal(byCode.GBP.flag, "🇬🇧");
-  assert.equal(byCode.CAD.flag, "🇨🇦", "unavailable CAD must still carry its flag for the group header");
-  assert.equal(byCode.CAD.available, false);
+  assert.equal(byCode.CAD.flag, "🇨🇦");
+  // The flag is present even on the honest-unavailable fallback path.
+  const missing = buildFxItems({ EUR: { current: 0.87679, "12m": 0.85594 } }).find((it) => it.code === "CAD");
+  assert.equal(missing.flag, "🇨🇦", "an unavailable group must still carry its flag for the header");
+  assert.equal(missing.available, false);
 });
 
 // ── Source-shape guards: don't reintroduce the legacy-ranking bug ──────

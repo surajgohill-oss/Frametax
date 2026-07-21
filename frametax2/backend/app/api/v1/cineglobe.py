@@ -253,7 +253,7 @@ def _economics_payload() -> dict[str, Any]:
     # this is what a future UI would render). None for any horizon this
     # session's sourced fetches didn't cover (e.g. MUR beyond current).
     from app.calculators.production_normalization import fx_rate_snapshot
-    payload["fx_horizons"] = {c: fx_rate_snapshot(c) for c in ("MUR", "EUR", "GBP")}
+    payload["fx_horizons"] = {c: fx_rate_snapshot(c) for c in ("MUR", "EUR", "GBP", "CAD")}
     # Executable Jurisdiction Knowledge: real QPE/incentive/NPC/travel/FX
     # for every jurisdiction with classified doctrine + rate rules on
     # file; every other cataloged jurisdiction is excluded, not priced at

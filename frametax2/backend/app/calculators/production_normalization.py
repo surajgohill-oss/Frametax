@@ -167,16 +167,21 @@ class FXRateSource(str, enum.Enum):
 #        historical endpoint, and no other free/connected source covers
 #        MUR, so MUR historical snapshots are honestly absent, never
 #        fabricated.
-#   EUR/GBP: https://api.frankfurter.dev (ECB reference rates) — both
-#        current and historical (ECB has no MUR cross-rate either).
-FX_RATES_VERSION = "2.0.0"
+#   EUR/GBP/CAD: https://api.frankfurter.dev (ECB reference rates) — both
+#        current and historical (ECB publishes a daily USD/CAD reference
+#        cross-rate alongside EUR/GBP; ECB has no MUR cross-rate). CAD
+#        snapshots were fetched from this same provider for the same four
+#        snapshot dates as EUR/GBP — the three historical EUR/GBP values
+#        returned by that fetch matched the pre-existing table exactly,
+#        confirming the identical authoritative source path.
+FX_RATES_VERSION = "2.1.0"
 
 # date string ("YYYY-MM-DD") -> {currency: local units per USD}
 FX_RATE_SNAPSHOTS: dict[str, dict[str, float]] = {
-    "2026-07-13": {"MUR": 47.053589, "EUR": 0.87679, "GBP": 0.74699},   # current (fetch date)
-    "2026-06-12": {"EUR": 0.86453, "GBP": 0.74613},                     # ~1 month prior
-    "2026-01-13": {"EUR": 0.85807, "GBP": 0.74309},                     # ~6 months prior
-    "2025-07-11": {"EUR": 0.85594, "GBP": 0.74099},                     # ~12 months prior
+    "2026-07-13": {"MUR": 47.053589, "EUR": 0.87679, "GBP": 0.74699, "CAD": 1.4135},   # current (fetch date)
+    "2026-06-12": {"EUR": 0.86453, "GBP": 0.74613, "CAD": 1.3988},                     # ~1 month prior
+    "2026-01-13": {"EUR": 0.85807, "GBP": 0.74309, "CAD": 1.3877},                     # ~6 months prior
+    "2025-07-11": {"EUR": 0.85594, "GBP": 0.74099, "CAD": 1.3701},                     # ~12 months prior
 }
 FX_LIVE_SNAPSHOT_DATE = "2026-07-13"
 FX_HORIZON_DATES: dict[str, str] = {
