@@ -130,10 +130,13 @@ export function scenarioDisplay(structure) {
   let title;
   if (!primary && !participants.length) {
     title = structure.label; // defensive fallback — should not occur with real data
-  } else if (structure.structure_type === "single_country") {
+  } else if (structure.structure_type === "single_country" || structure.structure_type === "full_relocation") {
+    // Frozen ui-baseline-v1 presentation: a single-jurisdiction card —
+    // whether the baseline or a full relocation — is titled with the plain
+    // jurisdiction name (prototype lanes name:"Mauritius"/"Malta"/"Ireland").
+    // The structure_type is conveyed by the badge + subtitle, never by
+    // prepending wording to the title. Reads canonical primary_jurisdiction.
     title = jurName(primary);
-  } else if (structure.structure_type === "full_relocation") {
-    title = `Relocate to ${jurName(primary)}`;
   } else if (structure.structure_type === "component_relocation" && others.length) {
     title = `${jurName(primary)} + ${others.map(jurName).join(" + ")}`;
   } else {

@@ -48,6 +48,12 @@ const FX_CCY = { MU: "MUR", MT: "EUR", IE: "EUR", GR: "EUR", GB: "GBP", IT: "EUR
 
 function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, fxHorizons, onSetLeading, onInspect, onCompare, onSelectSegment }) {
   const priced = structure.is_fully_priced;
+  // All four card figures read from THIS scenario's canonical allocated
+  // structure — gross from structure.gross_budget_usd (falls back to the
+  // production-level prop only if a structure ever omits it), qualified
+  // spend from its own per-segment QPE, incentive and NPC from its own
+  // priced fields. No production-level or prototype figure is shown.
+  const gross = structure.gross_budget_usd ?? grossBudget;
   const qualifiedSpend = structure.segments?.reduce((sum, sg) => sum + (sg.qpe_usd || 0), 0) || 0;
   const npc = structure.npc_with_adjustments_usd;
 
@@ -81,15 +87,15 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, fxHorizon
       {priced ? (
         <>
           <div className="wsx-rows">
-            <div className="wsx-row"><span>Gross budget</span><span><Money value={grossBudget} bare /></span></div>
+            <div className="wsx-row"><span>Gross budget</span><span><Money value={gross} bare /></span></div>
             <div className="wsx-row"><span>Qualified spend</span><span><Money value={qualifiedSpend} bare /></span></div>
             <div className="wsx-row"><span>Gross incentive</span><span className="incentive"><Money value={structure.total_incentive_floor_usd} bare /></span></div>
           </div>
           <div className="wsx-row net"><span>Net production cost</span><span><Money value={npc} bare /></span></div>
           <div className="wsx-range">
-            <u style={{ left: 0, width: `${pct(qualifiedSpend, grossBudget)}%` }} />
-            <i style={{ left: `${pct(qualifiedSpend, grossBudget)}%`, right: 0 }} />
-            <b style={{ left: `${pct(npc, grossBudget)}%` }} />
+            <u style={{ left: 0, width: `${pct(qualifiedSpend, gross)}%` }} />
+            <i style={{ left: `${pct(qualifiedSpend, gross)}%`, right: 0 }} />
+            <b style={{ left: `${pct(npc, gross)}%` }} />
           </div>
         </>
       ) : (
