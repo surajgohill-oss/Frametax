@@ -947,14 +947,17 @@
    subordinate to the Hero (smaller card, no big numbers) and above the
    Slate in the visual order. */
 .tdy-fxstrip { padding: 10px 18px 10px; }
-.tdy-fx-row { display: flex; gap: 28px; flex-wrap: wrap; margin-top: 2px; }
-.tdy-fx-item { display: flex; flex-direction: column; gap: 2px; min-width: 140px; }
-.tdy-fx-item .l2 { font: 600 8.5px var(--font-mono); letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-tertiary); }
-.tdy-fx-item .v2 { font-size: 15px; margin-top: 1px; }
+.tdy-fx-row { display: flex; gap: 30px; flex-wrap: wrap; margin-top: 2px; }
+/* One compact unit per currency, both quotation directions stacked
+   together inside it — not six unrelated cards. */
+.tdy-fx-item { display: flex; flex-direction: column; gap: 3px; min-width: 168px; }
+.tdy-fx-pair { display: flex; align-items: baseline; gap: 8px; }
+.tdy-fx-pair .l2 { font: 600 8.5px var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary); min-width: 62px; }
+.tdy-fx-pair .v2 { font-size: 14px; }
 .tdy-fx-delta { font: 500 11px var(--font-sans); margin-top: 1px; }
 .tdy-fx-delta.up { color: var(--jade); }
 .tdy-fx-delta.down { color: var(--amber); }
-.tdy-fx-unavailable { font-size: 12.5px; font-style: italic; }
+.tdy-fx-unavailable { font-size: 12px; font-style: italic; }
 .tdy-fx-note { margin: 10px 0 0; line-height: 1.5; }
 
 /* Production Slate — the dominant section on the page. Larger card

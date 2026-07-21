@@ -34,9 +34,26 @@ export function buildHeroStages(statuses, productions) {
 // a fabricated rate.
 export const FX_STRIP_CODES = ["EUR", "CAD", "GBP"];
 
+// Producer-facing precision for both quotation directions.
+const FX_DISPLAY_DECIMALS = 5;
+
 // fxHorizons: the real economics.fx_horizons payload, keyed by currency
 // code, each {current, "1m", "6m", "12m"} (nulls where no sourced
 // snapshot exists). Returns exactly FX_STRIP_CODES.length entries.
+//
+// Each available item carries BOTH quotation directions:
+//   current = local-currency units per 1 USD (the canonical stored rate,
+//             read verbatim from the backend snapshot — the only real
+//             number in play).
+//   reverse = 1 / current, computed here, every render — never a second
+//             stored constant, so the two directions can never drift
+//             out of mathematical agreement with each other.
+// The 12-month delta is computed against the canonical (USD/{code})
+// direction only; it is never reapplied with the same sign to the
+// reverse pair, since a currency strengthening against USD in the
+// USD/{code} quote is the SAME move as {code}/USD weakening — the
+// percentage magnitude carries, the interpretation does not, so no
+// second delta is fabricated for the reverse direction here at all.
 export function buildFxItems(fxHorizons) {
   return FX_STRIP_CODES.map((code) => {
     const h = fxHorizons?.[code];
@@ -47,7 +64,8 @@ export function buildFxItems(fxHorizons) {
     return {
       code,
       available: true,
-      current: h.current,
+      current: Number(h.current.toFixed(FX_DISPLAY_DECIMALS)),
+      reverse: Number((1 / h.current).toFixed(FX_DISPLAY_DECIMALS)),
       horizon12m: h["12m"],
       deltaPct,
     };

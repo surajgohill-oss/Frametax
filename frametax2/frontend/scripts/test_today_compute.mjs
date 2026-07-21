@@ -83,6 +83,58 @@ test("real EUR/GBP snapshots render as available; CAD (no real data) renders una
   assert.equal(byCode.CAD.current, undefined, "unavailable CAD must not carry a fabricated rate");
 });
 
+// ── FX reciprocal display ───────────────────────────────────────────────
+const RECIPROCAL_TOLERANCE = 1e-4;
+const SAMPLE_FX_HORIZONS = {
+  MUR: { current: 47.053589, "1m": null, "6m": null, "12m": null },
+  EUR: { current: 0.87679, "1m": 0.86453, "6m": 0.85807, "12m": 0.85594 },
+  GBP: { current: 0.74699, "1m": 0.74613, "6m": 0.74309, "12m": 0.74099 },
+};
+
+test("EUR reverse pair equals 1 / USD_EUR (calculated, not a stored constant)", () => {
+  const items = buildFxItems(SAMPLE_FX_HORIZONS);
+  const eur = items.find((it) => it.code === "EUR");
+  assert.ok(eur.available);
+  assert.ok(
+    Math.abs(eur.reverse - 1 / eur.current) < RECIPROCAL_TOLERANCE,
+    `EUR/USD (${eur.reverse}) must equal 1 / USD/EUR (${eur.current}) = ${1 / eur.current}`
+  );
+});
+
+test("GBP reverse pair equals 1 / USD_GBP (calculated, not a stored constant)", () => {
+  const items = buildFxItems(SAMPLE_FX_HORIZONS);
+  const gbp = items.find((it) => it.code === "GBP");
+  assert.ok(gbp.available);
+  assert.ok(
+    Math.abs(gbp.reverse - 1 / gbp.current) < RECIPROCAL_TOLERANCE,
+    `GBP/USD (${gbp.reverse}) must equal 1 / USD/GBP (${gbp.current}) = ${1 / gbp.current}`
+  );
+});
+
+test("both CAD directions remain unavailable together (no partial/fabricated reverse)", () => {
+  const items = buildFxItems(SAMPLE_FX_HORIZONS);
+  const cad = items.find((it) => it.code === "CAD");
+  assert.equal(cad.available, false);
+  assert.equal(cad.current, undefined);
+  assert.equal(cad.reverse, undefined, "unavailable CAD must not carry a fabricated reverse rate either");
+});
+
+test("no independent reverse-rate constants exist in todayCompute.js (reverse is always 1/current)", () => {
+  const computeSrc = readFileSync(join(__dirname, "../src/lib/todayCompute.js"), "utf8")
+    .split("\n").map((l) => l.replace(/\/\/.*$/, "")).join("\n");
+  // The only acceptable way "reverse" is produced is `1 / h.current` (or
+  // equivalent division by the canonical field) — never a second object,
+  // table, or hardcoded EUR/GBP/CAD number assigned to it.
+  assert.match(computeSrc, /reverse:\s*Number\(\(1\s*\/\s*h\.current\)/, "reverse must be computed as 1 / current, not a stored value");
+  assert.ok(!/reverse\s*:\s*[\d.]/.test(computeSrc), "found a numeric literal assigned to reverse — must be calculated, not fabricated");
+});
+
+test("both pair labels (USD/{code} and {code}/USD) render in Today.jsx for EUR, CAD, GBP", () => {
+  const raw = readFileSync(join(__dirname, "../src/screens/company/Today.jsx"), "utf8");
+  assert.ok(raw.includes("USD / {it.code}"), "expected the USD/{code} label to render for every currency");
+  assert.ok(raw.includes("{it.code} / USD"), "expected the {code}/USD reverse label to render for every currency");
+});
+
 // ── Source-shape guards: don't reintroduce the legacy-ranking bug ──────
 // Comments are stripped before these checks — this file's own comments
 // legitimately mention "structures.ranking" and "fx_horizons" by name

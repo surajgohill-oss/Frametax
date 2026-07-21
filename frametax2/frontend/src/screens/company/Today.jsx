@@ -179,30 +179,51 @@ export default function Today() {
         </div>
       </section>
 
-      {/* ── FX STRIP — company-level, beneath the hero, above the Slate ── */}
+      {/* ── FX STRIP — company-level, beneath the hero, above the Slate.
+          Each currency is one compact unit carrying BOTH quotation
+          directions (USD/{code} the canonical stored rate, {code}/USD
+          computed as 1/rate — see buildFxItems) so the relationship
+          reads together, not as two unrelated cards. ─────────────── */}
       <section className="ovx-sec tdy-fxstrip">
         <div className="oh"><b>FX</b></div>
         <div className="tdy-fx-row">
           {fxItems.map((it) => (
             <div className="tdy-fx-item" key={it.code}>
-              <span className="l2">USD / {it.code}</span>
               {it.available ? (
                 <>
-                  <span className="v2 mono">{it.current}</span>
+                  <div className="tdy-fx-pair">
+                    <span className="l2">USD / {it.code}</span>
+                    <span className="v2 mono">{it.current}</span>
+                  </div>
+                  <div className="tdy-fx-pair">
+                    <span className="l2">{it.code} / USD</span>
+                    <span className="v2 mono">{it.reverse}</span>
+                  </div>
                   {it.deltaPct != null && (
                     <span className={`tdy-fx-delta ${it.deltaPct > 0 ? "up" : "down"}`}>
-                      {it.deltaPct > 0 ? "▲" : "▼"} {Math.abs(it.deltaPct).toFixed(1)}% / 12m
+                      {it.deltaPct > 0 ? "▲" : "▼"} {Math.abs(it.deltaPct).toFixed(1)}% / 12m on USD/{it.code}
                     </span>
                   )}
                 </>
               ) : (
-                <span className="v2 text-tertiary tdy-fx-unavailable">Rate not yet loaded</span>
+                <>
+                  <div className="tdy-fx-pair">
+                    <span className="l2">USD / {it.code}</span>
+                    <span className="v2 text-tertiary tdy-fx-unavailable">Rate not yet loaded</span>
+                  </div>
+                  <div className="tdy-fx-pair">
+                    <span className="l2">{it.code} / USD</span>
+                    <span className="v2 text-tertiary tdy-fx-unavailable">Rate not yet loaded</span>
+                  </div>
+                </>
               )}
             </div>
           ))}
         </div>
         <p className="text-tertiary small tdy-fx-note">
-          Quoted as local-currency units per 1 USD (e.g. USD/EUR {fxItems[0]?.available ? fxItems[0].current : "—"} = 1 USD buys {fxItems[0]?.available ? fxItems[0].current : "—"} EUR). Commentary only — the optimizer prices every structure at current rates, never a forward.
+          EUR/USD, CAD/USD, GBP/USD are calculated as 1 / the stored USD/{"{"}code{"}"} rate — the same canonical
+          source both directions, never a second independent rate. Commentary only — the optimizer prices every
+          structure at current rates, never a forward.
         </p>
       </section>
 
