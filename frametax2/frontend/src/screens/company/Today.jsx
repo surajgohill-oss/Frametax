@@ -147,15 +147,12 @@ export default function Today() {
       <section className="ovx-sec tdy-hero">
         <div className="oh">
           <b>State of the Studio</b>
-          <button className="hero-action primary tdy-newprod" disabled title={NEW_PRODUCTION_REASON}>
-            ＋ New Production
-          </button>
         </div>
 
         <div className="tdy-hero-top">
-          <div className="tdy-hn">
+          <div className="tdy-hn tdy-hn-primary">
             <span className="l2">Active Productions</span>
-            <span className="v2 tdy-hn-big">{activeProductions.length}</span>
+            <span className="v2 tdy-hn-xl">{activeProductions.length}</span>
           </div>
           <div className="tdy-hn">
             <span className="l2">Total Active Budget</span>
@@ -167,12 +164,12 @@ export default function Today() {
         </div>
 
         <div className="tdy-pipeline">
-          <div className="l2 tdy-pipeline-label">Pipeline Value</div>
+          <div className="l2 tdy-pipeline-label">Production Summary</div>
           <div className="ovx-stats tdy-ladder">
             {heroStages.map((s) => (
               <div className={`st ${s.count ? "" : "zero"}`} key={s.key}>
                 <div className="l2">{s.label}</div>
-                <div className="v2">{s.count} · <CompactMoney value={s.budget} /></div>
+                <div className="v2 tdy-stage-val">{s.count} · <CompactMoney value={s.budget} /></div>
               </div>
             ))}
           </div>
@@ -189,6 +186,10 @@ export default function Today() {
         <div className="tdy-fx-row">
           {fxItems.map((it) => (
             <div className="tdy-fx-item" key={it.code}>
+              <div className="tdy-fx-head">
+                <span className="tdy-fx-flag" aria-hidden="true">{it.flag}</span>
+                <span className="tdy-fx-code">{it.code}</span>
+              </div>
               {it.available ? (
                 <>
                   <div className="tdy-fx-pair">
@@ -221,15 +222,18 @@ export default function Today() {
           ))}
         </div>
         <p className="text-tertiary small tdy-fx-note">
-          EUR/USD, CAD/USD, GBP/USD are calculated as 1 / the stored USD/{"{"}code{"}"} rate — the same canonical
-          source both directions, never a second independent rate. Commentary only — the optimizer prices every
-          structure at current rates, never a forward.
+          Reverse pairs are calculated from the same stored rate. Commentary only — the optimizer prices at current rates, not forwards.
         </p>
       </section>
 
       {/* ── PRODUCTION SLATE ────────────────────────────────────────── */}
       <section className="ovx-sec tdy-slate">
-        <div className="oh"><b>Production Slate</b><span className="n">{productions.length}</span></div>
+        <div className="oh">
+          <b>Production Slate</b><span className="n">{productions.length}</span>
+          <button className="hero-action primary tdy-newprod" disabled title={NEW_PRODUCTION_REASON}>
+            ＋ New Production
+          </button>
+        </div>
         <div className="row-list">
           {orderedProductions.map((p) => (
             <div className="row-item tdy-slate-row" key={p.id} onClick={() => navigate(p.route)}>

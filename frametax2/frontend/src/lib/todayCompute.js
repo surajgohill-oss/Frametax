@@ -34,6 +34,11 @@ export function buildHeroStages(statuses, productions) {
 // a fabricated rate.
 export const FX_STRIP_CODES = ["EUR", "CAD", "GBP"];
 
+// Foreign-currency flag per group — Unicode regional-indicator emoji, no
+// new asset dependency. The flag identifies the FOREIGN currency (EU /
+// Canada / UK), never a USD flag on every pair. EUR uses the EU flag.
+export const FX_FLAGS = { EUR: "🇪🇺", CAD: "🇨🇦", GBP: "🇬🇧" };
+
 // Producer-facing precision for both quotation directions.
 const FX_DISPLAY_DECIMALS = 5;
 
@@ -57,12 +62,14 @@ const FX_DISPLAY_DECIMALS = 5;
 export function buildFxItems(fxHorizons) {
   return FX_STRIP_CODES.map((code) => {
     const h = fxHorizons?.[code];
+    const flag = FX_FLAGS[code];
     if (!h || h.current == null) {
-      return { code, available: false };
+      return { code, flag, available: false };
     }
     const deltaPct = h["12m"] != null ? ((h["12m"] - h.current) / h.current) * 100 : null;
     return {
       code,
+      flag,
       available: true,
       current: Number(h.current.toFixed(FX_DISPLAY_DECIMALS)),
       reverse: Number((1 / h.current).toFixed(FX_DISPLAY_DECIMALS)),

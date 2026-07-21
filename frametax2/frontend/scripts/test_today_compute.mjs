@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { HERO_STAGE_KEYS, buildHeroStages, FX_STRIP_CODES, buildFxItems } from "../src/lib/todayCompute.js";
+import { HERO_STAGE_KEYS, buildHeroStages, FX_STRIP_CODES, FX_FLAGS, buildFxItems } from "../src/lib/todayCompute.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 let failures = 0;
@@ -135,6 +135,24 @@ test("both pair labels (USD/{code} and {code}/USD) render in Today.jsx for EUR, 
   assert.ok(raw.includes("{it.code} / USD"), "expected the {code}/USD reverse label to render for every currency");
 });
 
+// ── FX flags (foreign-currency identity, never a USD flag on every pair) ─
+test("FX_FLAGS map the foreign currency (EU / Canada / UK), not USD", () => {
+  assert.equal(FX_FLAGS.EUR, "🇪🇺", "EUR must carry the EU flag");
+  assert.equal(FX_FLAGS.CAD, "🇨🇦", "CAD must carry the Canadian flag");
+  assert.equal(FX_FLAGS.GBP, "🇬🇧", "GBP must carry the UK flag");
+  const usFlag = "🇺🇸";
+  assert.ok(!Object.values(FX_FLAGS).includes(usFlag), "no US flag on any group — the flag identifies the foreign currency");
+});
+
+test("buildFxItems carries the correct flag on both available and unavailable currencies", () => {
+  const items = buildFxItems(SAMPLE_FX_HORIZONS);
+  const byCode = Object.fromEntries(items.map((it) => [it.code, it]));
+  assert.equal(byCode.EUR.flag, "🇪🇺");
+  assert.equal(byCode.GBP.flag, "🇬🇧");
+  assert.equal(byCode.CAD.flag, "🇨🇦", "unavailable CAD must still carry its flag for the group header");
+  assert.equal(byCode.CAD.available, false);
+});
+
 // ── Source-shape guards: don't reintroduce the legacy-ranking bug ──────
 // Comments are stripped before these checks — this file's own comments
 // legitimately mention "structures.ranking" and "fx_horizons" by name
@@ -170,6 +188,28 @@ test("Company Intelligence rows have no sibling .row-value column (the collapse 
   const intelSectionMatch = todaySrc.match(/COMPANY INTELLIGENCE[\s\S]*$/);
   assert.ok(intelSectionMatch, "could not locate the Company Intelligence section");
   assert.ok(!intelSectionMatch[0].includes("row-value"), "found row-value inside Company Intelligence — reintroduces the collapse bug");
+});
+
+// ── Hero heading + New Production placement (section-scoped structural
+// checks — the heading and button are static JSX facts, so a scoped
+// substring check is the focused available assertion). ─────────────────
+// Isolate the three top-level sections by their className markers.
+const heroBlock = todaySrc.slice(todaySrc.indexOf('className="ovx-sec tdy-hero"'), todaySrc.indexOf('className="ovx-sec tdy-fxstrip"'));
+const slateBlock = todaySrc.slice(todaySrc.indexOf('className="ovx-sec tdy-slate"'), todaySrc.indexOf('COMPANY INTELLIGENCE'));
+
+test("hero heading is exactly 'Production Summary' (not 'Pipeline Value')", () => {
+  assert.ok(todaySrc.includes(">Production Summary<"), "expected the exact 'Production Summary' heading");
+  assert.ok(!todaySrc.includes("Pipeline Value"), "found 'Pipeline Value' — must be replaced by 'Production Summary'");
+});
+
+test("New Production does NOT render inside the State of the Studio hero", () => {
+  assert.ok(!heroBlock.includes("New Production"), "New Production must be removed from the hero");
+  assert.ok(!heroBlock.includes("tdy-newprod"), "the New Production button must not appear in the hero section");
+});
+
+test("New Production renders inside the Production Slate header", () => {
+  assert.ok(slateBlock.includes("New Production"), "New Production must render in the Production Slate header");
+  assert.ok(slateBlock.includes("tdy-newprod"), "the New Production button belongs in the Slate header");
 });
 
 console.log("");

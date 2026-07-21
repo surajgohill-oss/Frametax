@@ -928,51 +928,63 @@
    Production, in that fixed order — see HERO_STAGE_KEYS in
    lib/todayCompute.js). No rollup groupings, no ninth-of-the-pipeline
    database dump. */
-.tdy-hero { padding: 13px 18px 14px; }
-.tdy-hero-top { display: flex; align-items: flex-end; gap: 32px; flex-wrap: wrap; margin: 4px 0 14px; }
+.tdy-hero { padding: 13px 18px 15px; }
+.tdy-hero-top { display: flex; align-items: flex-end; gap: 34px; flex-wrap: wrap; margin: 6px 0 16px; }
 .tdy-hn { display: flex; flex-direction: column; gap: 3px; }
 .tdy-hn .l2 { font: 600 8.5px var(--font-mono); letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-tertiary); }
-.tdy-hn-big { font: 25px var(--font-mono) !important; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+/* Active Productions is the hero's strongest numeric anchor. */
+.tdy-hn-xl { font: 700 40px var(--font-mono) !important; font-variant-numeric: tabular-nums; color: var(--text-primary); line-height: 1; }
+/* Total Active Budget stays prominent but visually subordinate. */
+.tdy-hn-big { font: 26px var(--font-mono) !important; font-variant-numeric: tabular-nums; color: var(--text-secondary); }
 .tdy-attention { margin-left: auto; align-self: center; font: 600 12px var(--font-sans); padding: 6px 13px; border-radius: 999px; }
 .tdy-attention.hot { background: var(--red-dim); color: var(--red); }
 .tdy-attention.calm { background: var(--jade-dim, var(--surface-2)); color: var(--jade); }
 
-.tdy-pipeline-label { margin-bottom: 6px; }
+.tdy-pipeline-label { margin-bottom: 7px; }
 .tdy-ladder { border-top: none; background: none; flex-wrap: wrap; }
-.tdy-ladder .st { flex: 1 1 220px; border-top: 1px solid var(--hairline); padding: 7px 14px; }
-.tdy-ladder .st .v2 { font-size: 16px; margin-top: 2px; }
+.tdy-ladder .st { flex: 1 1 220px; border-top: 1px solid var(--hairline); padding: 9px 14px; }
+/* Stage count/budget materially larger than the prior metadata treatment. */
+.tdy-ladder .st .v2.tdy-stage-val { font-size: 19px; margin-top: 4px; }
 .tdy-ladder .st.zero { opacity: 0.38; }
 
 /* FX strip — company-level, between the Hero and the Slate. Deliberately
    subordinate to the Hero (smaller card, no big numbers) and above the
    Slate in the visual order. */
 .tdy-fxstrip { padding: 10px 18px 10px; }
-.tdy-fx-row { display: flex; gap: 30px; flex-wrap: wrap; margin-top: 2px; }
-/* One compact unit per currency, both quotation directions stacked
-   together inside it — not six unrelated cards. */
-.tdy-fx-item { display: flex; flex-direction: column; gap: 3px; min-width: 168px; }
-.tdy-fx-pair { display: flex; align-items: baseline; gap: 8px; }
-.tdy-fx-pair .l2 { font: 600 8.5px var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary); min-width: 62px; }
-.tdy-fx-pair .v2 { font-size: 14px; }
-.tdy-fx-delta { font: 500 11px var(--font-sans); margin-top: 1px; }
+.tdy-fx-row { display: flex; gap: 40px; flex-wrap: wrap; margin-top: 4px; }
+/* One compact unit per currency: a flag + code header, then both
+   quotation directions stacked beneath it — not six unrelated cards. */
+.tdy-fx-item { display: flex; flex-direction: column; gap: 3px; min-width: 176px; }
+.tdy-fx-head { display: flex; align-items: center; gap: 7px; margin-bottom: 3px; }
+.tdy-fx-flag { font-size: 16px; line-height: 1; }
+.tdy-fx-code { font: 650 12.5px var(--font-sans); letter-spacing: 0.03em; color: var(--text-primary); }
+.tdy-fx-pair { display: flex; align-items: baseline; gap: 10px; }
+.tdy-fx-pair .l2 { font: 600 8.5px var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary); min-width: 60px; }
+.tdy-fx-pair .v2 { font-size: 14px; font-variant-numeric: tabular-nums; }
+.tdy-fx-delta { font: 500 11px var(--font-sans); margin-top: 2px; }
 .tdy-fx-delta.up { color: var(--jade); }
 .tdy-fx-delta.down { color: var(--amber); }
 .tdy-fx-unavailable { font-size: 12px; font-style: italic; }
-.tdy-fx-note { margin: 10px 0 0; line-height: 1.5; }
+.tdy-fx-note { margin: 11px 0 0; line-height: 1.5; }
 
 /* Production Slate — the dominant section on the page. Larger card
    padding and stronger row typography than any other .ovx-sec on Today,
    deliberately, so the eye lands here first and lingers longest. */
 .tdy-slate { padding: 14px 18px 12px; }
+.tdy-slate .oh { align-items: center; }
 .tdy-slate .oh b { font-size: 14.5px; }
-.tdy-slate-row { gap: 14px; padding-top: 13px; padding-bottom: 13px; }
-.tdy-slate-row .row-title { font-size: 15.5px; }
-.tdy-slate-row .row-title .serif { font-size: 16.5px; }
-.tdy-slate-row .row-sub { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+/* New Production lives at the far right of the Slate header (moved out of
+   the hero); the only slate-creation action on the page. */
+.tdy-slate .oh .tdy-newprod { margin-left: auto; flex: none; }
+.tdy-slate .oh .tdy-newprod:disabled { opacity: 0.5; cursor: not-allowed; }
+.tdy-slate-row { gap: 16px; padding-top: 15px; padding-bottom: 15px; }
+.tdy-slate-row .row-title { font-size: 16px; }
+.tdy-slate-row .row-title .serif { font-size: 17.5px; }
+.tdy-slate-row .row-sub { font-size: 13px; color: var(--text-secondary); margin-top: 5px; }
 .tdy-stage { font-size: 12px; color: var(--text-tertiary); font-weight: 400; }
 .tdy-delta { font-size: 11.5px; color: var(--text-tertiary); font-style: italic; margin-top: 2px; }
-.tdy-slate-figs { display: flex; gap: 20px; flex-shrink: 0; }
-.tdy-fig { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font: 13.5px var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text-primary); white-space: nowrap; }
+.tdy-slate-figs { display: flex; gap: 24px; flex-shrink: 0; }
+.tdy-fig { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; font: 14px var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text-primary); white-space: nowrap; }
 .tdy-fig .l2 { font: 600 8.5px var(--font-mono); letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-tertiary); }
 .tdy-momentum { width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11.5px; color: var(--surface-0); }
 .tdy-momentum.gold { color: var(--charcoal); }
