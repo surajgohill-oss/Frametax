@@ -432,6 +432,13 @@ def apply_economics_controls(controls: dict[str, object]) -> None:
             _economics_controls[key] = value
         else:
             raise ValueError(f"'{key}' is not a recognized economics control.")
+    # Economics controls are a canonical input (financing, in-kind, awarded
+    # rate, travel, FX all shape the served results). Invalidate the cached
+    # state so the canonical recomputation stamp — and any state field that
+    # comes to depend on these controls — recomputes, exactly as the fact,
+    # people, and location stores already do. Without this the stamp would
+    # report a fingerprint that no longer matches the live economics inputs.
+    _build_state.cache_clear()
 
 
 def current_economics_controls() -> dict[str, object]:
@@ -1408,6 +1415,34 @@ class LittleUtopiaState:
     # this state's REAL register/facts/rate/people — not demo constants.
     structuring_advisory: object = None
 
+    # Canonical recomputation stamp — the version/time that identifies THIS
+    # computed state. computation_version is a deterministic fingerprint of
+    # every effective input (facts + people + location overrides +
+    # economics controls); computed_at is when this state was actually
+    # built. Both are set inside _build_state() at build time, so they
+    # change on every real recomputation and stay stable across cache-hit
+    # reads — letting downstream consumers distinguish current from stale
+    # and confirm they are all showing the same computation version.
+    computation_version: str = ""
+    computed_at: str = ""
+
+
+# Effective-input fingerprint: a stable, deterministic hash over every
+# input that can change the canonical computation. Used for the
+# recomputation version so the same inputs always yield the same version
+# and any real input change yields a new one.
+def canonical_input_fingerprint() -> dict:
+    import hashlib
+    import json as _json
+    sources = {
+        "facts": current_fact_answers(),
+        "people": current_people_facts(),
+        "locations": current_location_overrides(),
+        "economics": current_economics_controls(),
+    }
+    blob = _json.dumps(sources, sort_keys=True, default=str)
+    return {"sources": sources, "sha": hashlib.sha256(blob.encode()).hexdigest()[:16]}
+
 
 # ── Part 4: physical production requirements -> territory matching ──────────
 # The real screenplay, look book, and pitch deck were recovered from
@@ -1889,9 +1924,17 @@ def _build_state(_fact_key: tuple, _people_key: tuple = ()) -> LittleUtopiaState
         gross_budget_usd=MU_GROSS_BUDGET_USD, inkind_fmv_usd=625_000.0,
     )
 
+    # Canonical recomputation stamp — computed here, at build time, so it
+    # marks THIS recomputation and updates whenever the cache is cleared
+    # and rebuilt (every real input change).
+    from datetime import datetime, timezone
+    _fingerprint = canonical_input_fingerprint()
+
     return LittleUtopiaState(
         production_id=PRODUCTION_ID,
         production_name=PRODUCTION_NAME,
+        computation_version=_fingerprint["sha"],
+        computed_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
         jurisdiction_code=JURISDICTION_CODE,
         gross_budget_usd=MU_GROSS_BUDGET_USD,
         rate=MU_RATE,

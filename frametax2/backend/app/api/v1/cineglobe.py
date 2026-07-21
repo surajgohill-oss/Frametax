@@ -159,6 +159,16 @@ async def get_production() -> dict[str, Any]:
         "physical_requirements": s.physical_requirements,
         "territory_physical_match": s.territory_physical_match,
         "as_of_date": "2026-07-10",
+        # Canonical recomputation stamp — identifies THIS computed state.
+        # version is a deterministic fingerprint over every effective input
+        # (facts + people + location overrides + economics controls);
+        # computed_at is when the state was actually (re)built. Both change
+        # on every real input change, letting any consumer confirm it is
+        # reading the current computation and not a stale one.
+        "computation": {
+            "version": s.computation_version,
+            "computed_at": s.computed_at,
+        },
     }
 
 
