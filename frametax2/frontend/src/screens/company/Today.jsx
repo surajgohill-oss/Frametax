@@ -4,14 +4,15 @@ import { Loading, ErrorBox } from "../../components/Async";
 import { Money, CompactMoney } from "../../lib/format";
 import { useProjectStatus } from "../../lib/useProjectStatus";
 import { buildRecordRows } from "../../lib/recordEvents";
+import { buildHeroStages, buildFxItems } from "../../lib/todayCompute";
 
-// Today — the company operating system. Approved blueprint (frozen):
-// State of the Studio (hero) -> Production Slate (one row per production,
-// every operational fact attached to the production it belongs to,
-// ordered by executive importance) -> Company Intelligence (compact,
-// cross-production only). No separate issue queue exists anywhere on
-// this page — an issue is always an attribute of the production row it
-// belongs to, never its own object.
+// Today — the company operating system. Approved blueprint (frozen), page
+// order fixed: State of the Studio (hero) -> FX strip -> Production Slate
+// (one row per production, every operational fact attached to the
+// production it belongs to, ordered by executive importance) -> Company
+// Intelligence (compact, cross-production only, jurisdiction facts). No
+// separate issue queue exists anywhere on this page — an issue is always
+// an attribute of the production row it belongs to, never its own object.
 //
 // Built entirely from Overview's established visual language (.ovx-sec
 // cards, .oh headers, .row-list/.row-item rows, .dot tiers, .ovx-stats
@@ -20,23 +21,13 @@ import { buildRecordRows } from "../../lib/recordEvents";
 // computation below runs generically over a `productions` array so nothing
 // here needs to change when a second production exists, but nothing is
 // padded to look busier than the real slate is today.
+//
+// Hero stage buckets and FX-item building are pure functions in
+// lib/todayCompute.js (no React/DOM), independently regression-tested via
+// plain `node scripts/test_today_compute.mjs` — this frontend has no test
+// runner installed, and none is introduced here.
 
 const NEW_PRODUCTION_REASON = "Production intake — engine pending";
-
-// High-level operational groupings for the Hero's pipeline summary —
-// presentation only. The canonical CineGlobe lifecycle order (Evaluation
-// -> Development -> Packaging -> Pre-Production -> Production -> Post ->
-// Delivery -> Released -> Archived, from useProjectStatus's own
-// PROJECT_STATUSES) is unchanged and still drives every stage-level
-// computation on this page; grouping only changes how the hero
-// summarizes it, so nine mostly-empty cells don't stand in for a slate
-// this small. Each group's tooltip lists the exact stages it covers.
-const PIPELINE_GROUPS = [
-  { key: "shaping", label: "Shaping", stages: ["evaluation", "development", "packaging"] },
-  { key: "active", label: "Active Production", stages: ["pre_production", "production", "post_production"] },
-  { key: "wrapping", label: "Wrapping", stages: ["delivery", "released"] },
-  { key: "archived", label: "Archived", stages: ["archived"] },
-];
 
 // Momentum taxonomy, in the approved rank order (lower rank = more
 // urgent, sorts first): Blocked, Stalled, Advanced, Milestone, Healthy.
@@ -129,47 +120,26 @@ export default function Today() {
   const totalActiveBudget = activeProductions.reduce((s, p) => s + (p.budget || 0), 0);
   const attentionCount = productions.filter((p) => p.momentum.rank <= 1).length; // Blocked or Stalled
 
-  const stageLadder = statuses.map((s) => {
-    const inStage = productions.filter((p) => p.stageMeta.key === s.key);
-    return { ...s, count: inStage.length, budget: inStage.reduce((sum, p) => sum + (p.budget || 0), 0) };
-  });
-  // Hero presentation: the same per-stage figures, rolled up into the
-  // operational groupings above. Every stage still contributes exactly
-  // once — this is a sum over stageLadder, not a re-derivation.
-  const pipelineGroups = PIPELINE_GROUPS.map((g) => {
-    const cells = stageLadder.filter((s) => g.stages.includes(s.key));
-    return {
-      ...g,
-      count: cells.reduce((sum, s) => sum + s.count, 0),
-      budget: cells.reduce((sum, s) => sum + s.budget, 0),
-      tooltip: cells.map((s) => `${s.label}: ${s.count}`).join(" · "),
-    };
-  });
+  // Exactly Evaluation / Development / Production, in that fixed order —
+  // no rollup groupings, no alternative labels. See lib/todayCompute.js.
+  const heroStages = buildHeroStages(statuses, productions);
+
+  // ── FX strip: EUR / CAD / GBP, sourced from economics.fx_horizons
+  // (production_normalization.py's FX_RATE_SNAPSHOTS — a real, sourced
+  // table; EUR/GBP have live snapshots, CAD has none anywhere in this
+  // codebase — rendered as an honest unavailable state, never invented). ──
+  const fxItems = buildFxItems(economics.fx_horizons);
 
   // ── Company Intelligence: compact, cross-production signals only —
-  // never a production-level event (those belong on the slate row).
-  // Sourced from real, already-served jurisdiction and FX data. ──────
-  const intel = [];
-  for (const claim of production.rate_resolution?.unverified_claims || []) {
-    intel.push({
-      tier: "amber",
-      label: `${production.jurisdiction_code} — unverified requirement`,
-      text: claim.claim,
-      detail: claim.verification_status,
-    });
-  }
-  for (const [code, h] of Object.entries(economics.fx_horizons || {})) {
-    if (h.current == null || h["12m"] == null) continue;
-    const deltaPct = ((h["12m"] - h.current) / h.current) * 100;
-    if (Math.abs(deltaPct) < 1) continue;
-    intel.push({
-      tier: "silver",
-      label: `FX — USD/${code}`,
-      text: `Forward curve implies USD ${deltaPct > 0 ? "strengthens" : "weakens"} ${Math.abs(deltaPct).toFixed(1)}% over 12 months`,
-      detail: `${h.current} → ${h["12m"]}`,
-    });
-  }
-  const intelItems = intel.slice(0, 3);
+  // never a production-level event (those belong on the slate row), and
+  // FX no longer duplicated here now that it has its own strip. Sourced
+  // from real, already-served jurisdiction data. ─────────────────────
+  const intel = (production.rate_resolution?.unverified_claims || []).map((claim) => ({
+    tier: "amber",
+    label: `${production.jurisdiction_code} — unverified requirement`,
+    text: claim.claim,
+    detail: claim.verification_status,
+  }));
 
   return (
     <div className="screen tdy-screen">
@@ -199,14 +169,41 @@ export default function Today() {
         <div className="tdy-pipeline">
           <div className="l2 tdy-pipeline-label">Pipeline Value</div>
           <div className="ovx-stats tdy-ladder">
-            {pipelineGroups.map((g) => (
-              <div className={`st ${g.count ? "" : "zero"}`} key={g.key} title={g.tooltip}>
-                <div className="l2">{g.label}</div>
-                <div className="v2">{g.count} · <CompactMoney value={g.budget} /></div>
+            {heroStages.map((s) => (
+              <div className={`st ${s.count ? "" : "zero"}`} key={s.key}>
+                <div className="l2">{s.label}</div>
+                <div className="v2">{s.count} · <CompactMoney value={s.budget} /></div>
               </div>
             ))}
           </div>
         </div>
+      </section>
+
+      {/* ── FX STRIP — company-level, beneath the hero, above the Slate ── */}
+      <section className="ovx-sec tdy-fxstrip">
+        <div className="oh"><b>FX</b></div>
+        <div className="tdy-fx-row">
+          {fxItems.map((it) => (
+            <div className="tdy-fx-item" key={it.code}>
+              <span className="l2">USD / {it.code}</span>
+              {it.available ? (
+                <>
+                  <span className="v2 mono">{it.current}</span>
+                  {it.deltaPct != null && (
+                    <span className={`tdy-fx-delta ${it.deltaPct > 0 ? "up" : "down"}`}>
+                      {it.deltaPct > 0 ? "▲" : "▼"} {Math.abs(it.deltaPct).toFixed(1)}% / 12m
+                    </span>
+                  )}
+                </>
+              ) : (
+                <span className="v2 text-tertiary tdy-fx-unavailable">Rate not yet loaded</span>
+              )}
+            </div>
+          ))}
+        </div>
+        <p className="text-tertiary small tdy-fx-note">
+          Quoted as local-currency units per 1 USD (e.g. USD/EUR {fxItems[0]?.available ? fxItems[0].current : "—"} = 1 USD buys {fxItems[0]?.available ? fxItems[0].current : "—"} EUR). Commentary only — the optimizer prices every structure at current rates, never a forward.
+        </p>
       </section>
 
       {/* ── PRODUCTION SLATE ────────────────────────────────────────── */}
@@ -236,16 +233,16 @@ export default function Today() {
       {/* ── COMPANY INTELLIGENCE ────────────────────────────────────── */}
       <section className="ovx-sec tdy-intel">
         <div className="oh"><b>Company Intelligence</b></div>
-        {intelItems.length ? (
+        {intel.length ? (
           <div className="row-list">
-            {intelItems.map((it, i) => (
-              <div className="row-item" key={i} style={{ cursor: "default" }}>
+            {intel.map((it, i) => (
+              <div className="row-item tdy-intel-row" key={i} style={{ cursor: "default" }}>
                 <span className={`dot ${it.tier}`} />
                 <div className="row-main">
                   <div className="row-title small">{it.label}</div>
                   <div className="row-sub">{it.text}</div>
+                  <div className="row-sub text-tertiary">{it.detail}</div>
                 </div>
-                <div className="row-value small text-tertiary">{it.detail}</div>
               </div>
             ))}
           </div>

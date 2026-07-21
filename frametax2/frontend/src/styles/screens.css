@@ -923,8 +923,11 @@
    actual content; Company Intelligence is deliberately quiet/secondary. */
 .tdy-screen { max-width: 1200px; }
 
-/* Hero — "State of the Studio". Compact by design: three numbers and a
-   4-group pipeline summary, not a database dump of every lifecycle stage. */
+/* Hero — "State of the Studio". Compact by design: three numbers and
+   exactly three canonical lifecycle cells (Evaluation, Development,
+   Production, in that fixed order — see HERO_STAGE_KEYS in
+   lib/todayCompute.js). No rollup groupings, no ninth-of-the-pipeline
+   database dump. */
 .tdy-hero { padding: 13px 18px 14px; }
 .tdy-hero-top { display: flex; align-items: flex-end; gap: 32px; flex-wrap: wrap; margin: 4px 0 14px; }
 .tdy-hn { display: flex; flex-direction: column; gap: 3px; }
@@ -935,13 +938,24 @@
 .tdy-attention.calm { background: var(--jade-dim, var(--surface-2)); color: var(--jade); }
 
 .tdy-pipeline-label { margin-bottom: 6px; }
-/* Four operational groupings (not nine lifecycle stages) — see
-   PIPELINE_GROUPS in Today.jsx. Wider cells since there are fewer of
-   them; each carries a tooltip with its underlying stage breakdown. */
 .tdy-ladder { border-top: none; background: none; flex-wrap: wrap; }
-.tdy-ladder .st { flex: 1 1 190px; border-top: 1px solid var(--hairline); padding: 7px 14px; }
+.tdy-ladder .st { flex: 1 1 220px; border-top: 1px solid var(--hairline); padding: 7px 14px; }
 .tdy-ladder .st .v2 { font-size: 16px; margin-top: 2px; }
 .tdy-ladder .st.zero { opacity: 0.38; }
+
+/* FX strip — company-level, between the Hero and the Slate. Deliberately
+   subordinate to the Hero (smaller card, no big numbers) and above the
+   Slate in the visual order. */
+.tdy-fxstrip { padding: 10px 18px 10px; }
+.tdy-fx-row { display: flex; gap: 28px; flex-wrap: wrap; margin-top: 2px; }
+.tdy-fx-item { display: flex; flex-direction: column; gap: 2px; min-width: 140px; }
+.tdy-fx-item .l2 { font: 600 8.5px var(--font-mono); letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-tertiary); }
+.tdy-fx-item .v2 { font-size: 15px; margin-top: 1px; }
+.tdy-fx-delta { font: 500 11px var(--font-sans); margin-top: 1px; }
+.tdy-fx-delta.up { color: var(--jade); }
+.tdy-fx-delta.down { color: var(--amber); }
+.tdy-fx-unavailable { font-size: 12.5px; font-style: italic; }
+.tdy-fx-note { margin: 10px 0 0; line-height: 1.5; }
 
 /* Production Slate — the dominant section on the page. Larger card
    padding and stronger row typography than any other .ovx-sec on Today,
@@ -962,12 +976,20 @@
 
 /* Company Intelligence — deliberately the quietest section on the page:
    smaller header, flatter card, smaller row text. Reads as a footnote to
-   the Slate above it, never competing with it. */
+   the Slate above it, never competing with it.
+   Root-cause fix for the one-word-per-line collapse: every row's content
+   (title, claim text, verification-status detail) is a single .row-main
+   column now — there is no sibling .row-value carrying long free text
+   forcing .row-main's flex-basis:0/min-width:0 down to a sliver. .dot
+   stays fixed-width; .row-main is the only flexible child, so it always
+   claims the section's full available width. */
 .tdy-intel { padding: 10px 18px 8px; background: var(--surface-0); border-color: transparent; box-shadow: none; }
 .tdy-intel .oh b { font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-tertiary); }
-.tdy-intel .row-item { padding-top: 8px; padding-bottom: 8px; }
-.tdy-intel .row-title { font-size: 12px; }
-.tdy-intel .row-sub { font-size: 11.5px; }
+.tdy-intel-row { padding-top: 9px; padding-bottom: 9px; align-items: flex-start; }
+.tdy-intel-row .row-main { width: 100%; }
+.tdy-intel-row .row-title { font-size: 12.5px; margin-bottom: 3px; }
+.tdy-intel-row .row-sub { font-size: 12px; line-height: 1.5; margin-top: 3px; }
+.tdy-intel-row .row-sub:first-of-type { margin-top: 0; }
 
 /* ========= Scenarios comparison + Reports (sc-/rpt-) ========= */
 .sc-screen { padding: 20px 26px 40px; max-width: 1200px; }
