@@ -1,19 +1,29 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
 import { Money, humanizeToken } from "../../lib/format";
 import { useAppState } from "../../state/AppState";
 
+const MAX_VISIBLE = 6;
+
 // Scenarios — the approved artifact comparison view: the same structures as
 // the Workspace rack, aligned as columns for a reading pass. Every figure is
 // read verbatim from allocated_structures (Qualified spend = per-segment QPE
 // summed; Incentive = total_incentive_floor_usd; NPC = npc_with_adjustments).
+//
+// Canonical behavior: only the MAX_VISIBLE (6) active working scenarios are
+// shown as columns at once — never an unbounded/scrolling wall of every
+// composed structure. Ranked (priced) structures fill the visible slots
+// first; anything beyond that is reachable through the scenario selector,
+// which swaps a chosen structure into the last visible slot rather than
+// expanding the table.
 export default function Scenarios() {
   const { data, error, loading } = useCineGlobe();
   const { openInspector } = useAppState();
   const location = useLocation();
   const openedFromNav = useRef(false);
+  const [swapId, setSwapId] = useState("");
 
   const allocated = data?.structures?.allocated_structures;
   const rankById = useMemo(() => {
@@ -38,9 +48,23 @@ export default function Scenarios() {
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
 
   const { production } = data;
-  const cols = allocated.structures;
   const gross = production.gross_budget_usd;
   const qpe = (s) => s.segments?.reduce((sum, sg) => sum + (sg.qpe_usd || 0), 0) || 0;
+
+  // Rank order first (fully-priced structures, best NPC first), then
+  // everything unranked (drafts/blocked) in the order the backend composed
+  // them — a stable, meaningful ordering for "the six active scenarios."
+  const ordered = [...allocated.structures].sort((a, b) => {
+    const ra = rankById.get(a.structure_id)?.rank ?? Infinity;
+    const rb = rankById.get(b.structure_id)?.rank ?? Infinity;
+    return ra - rb;
+  });
+  const base = ordered.slice(0, MAX_VISIBLE);
+  const overflow = ordered.slice(MAX_VISIBLE);
+  const swapped = swapId ? ordered.find((s) => s.structure_id === swapId) : null;
+  // The selector swaps a chosen overflow scenario into the last visible
+  // slot — the visible count never exceeds MAX_VISIBLE.
+  const cols = swapped ? [...base.slice(0, MAX_VISIBLE - 1), swapped] : base;
 
   function inspect(s) {
     if (s.recommendation) openInspector("structure-recommendation", s.recommendation);
@@ -58,7 +82,24 @@ export default function Scenarios() {
       <p className="sc-note">
         Alternative structures for <b>{production.production_name}</b> — the same lanes as the Workspace
         rack, aligned for a reading pass. Click any structure to trace its derivation.
+        {overflow.length > 0 && ` Showing the ${MAX_VISIBLE} active working scenarios.`}
       </p>
+      {overflow.length > 0 && (
+        <div className="sc-selector">
+          <label htmlFor="sc-swap">Additional scenario</label>
+          <select
+            id="sc-swap"
+            className="field-select"
+            value={swapId}
+            onChange={(e) => setSwapId(e.target.value)}
+          >
+            <option value="">— {base[base.length - 1]?.label} —</option>
+            {overflow.map((s) => (
+              <option key={s.structure_id} value={s.structure_id}>{s.label}</option>
+            ))}
+          </select>
+        </div>
+      )}
       <div className="sc-wrap">
         <table className="sc-table">
           <thead>

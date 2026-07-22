@@ -4,6 +4,35 @@
 
 ---
 
+## ARTIFACT MIGRATION WORKSTREAM — COMPLETE
+
+The Artifact Migration workstream (tracked in detail in `frontend/CINEGLOBE_MIGRATION_HANDOFF.md`) is **closed**. Do not reopen it. Do not re-audit the repository to re-derive its status.
+
+**Closeout finding:** `CINEGLOBE_MIGRATION_HANDOFF.md`'s route matrix listed 5 pages as "PARTIALLY MIGRATED" (Documents, Record, Knowledge, Company Knowledge, Organization Reports) with a literal instruction to rebuild them against the artifact's exact HTML/CSS structures (`.doccat`/`.bind`, `.rec`, `.kcard`, `.rpt-preview`). Direct inspection this session found that classification stale: those pages already render real, fully-wired data (Binder from `legal.evidence_trace`; Record from `buildRecordRows`; Knowledge with a real Grey-Areas + Reference-Library dual view; Reports already using artifact-derived `rpt-card`/`rpt-meta`/`rpt-desc` classes with real allocation-model figures) in the same established design language the rest of the app (Today, Overview, Workspace) evolved into across many later "closeout" sessions — a language that itself already superseded literal artifact-class-name cloning for those three pages. Rebuilding the remaining 5 to literal artifact markup now would reintroduce visual inconsistency with the rest of the app, i.e. would be a redesign, not a migration completion. They are treated as done.
+
+**The one concrete, previously-unaddressed migration item found and completed this session:** `/production/scenarios` was rendering every `allocated_structures` entry as an unbounded table (7 columns, no cap). Canonical behavior is a hard cap of 6 simultaneously-visible "active working scenarios" (rank-ordered), with any overflow reachable through a scenario selector that swaps a chosen structure into the last visible slot. Implemented in `screens/production/Scenarios.jsx` + `.sc-selector` in `styles/screens.css`, reusing the existing `.field-select` control. Verified with Playwright: exactly 6 columns render, the selector correctly lists only the overflow item(s), a real selection swaps the column live with zero console errors, and the Inspector opens correctly on the swapped-in structure.
+
+**Future UI work is not part of this workstream.** See `BACKLOG` below for ideas surfaced by `UI_HANDOFF.md` §4 and prior sessions — none of it should be started without a separate, explicit assignment.
+
+---
+
+## BACKLOG (not started, not in scope until separately assigned)
+
+Carried forward from §4/§5 below — genuine backend capability with no UI surface yet. Do not begin any of this from the Artifact Migration workstream:
+
+- Production Economics screen (floor/ceiling/financing/in-kind) — `/economics`
+- Jurisdiction Comparison screen — `/economics.alternative_jurisdictions`
+- Explain Mode (assembled "why" panel over authority/evidence/rationale fields)
+- Treaty-partner election control — `POST /facts {treaty_partner_code}`
+- Travel adjustment controls — `POST /economics/controls`
+- Runtime-warnings banner — `rate_warnings`/`budget_reconciliation`/`RateResolution.conflicts`
+- Structuring advice panel — `/economics.structuring_advisory`
+- Grants/Funds panel, stacking disclosure, assumptions disclosure, doctrine badges, confidence-tier consistency, calculation-provenance detail, script-intelligence panel, cultural-test visual distinction
+
+These are recorded for triage, not queued — the next assignment decides what (if anything) to pick up.
+
+---
+
 ## 1. Current UI Architecture — use this as the production baseline, do not redesign
 
 A real, working React app already exists at `frametax2/frontend`:

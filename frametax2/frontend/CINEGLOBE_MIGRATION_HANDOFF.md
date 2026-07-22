@@ -1,5 +1,7 @@
 # CineGlobe Frontend — Migration Handoff
 
+**WORKSTREAM CLOSED.** See `UI_HANDOFF.md` top section for the closeout note and BACKLOG. Do not reopen this document's "5 PM pages" instruction below (§ Exact next task) — direct inspection found those pages already functionally complete in the app's current design language; rebuilding them to literal artifact CSS classes now would be a redesign, not a migration fix. The one genuine remaining item (Scenarios page unbounded column count) was found and closed in the same closeout session. This file is kept for historical record only.
+
 Last updated: 2026-07-18, by the Sonnet handoff-prep session (commit `710c8b1` was HEAD at session start; no source changes were required this session — see "This session's findings" below).
 
 ## Canonical environment
