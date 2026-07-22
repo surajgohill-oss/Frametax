@@ -1139,6 +1139,20 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
             fx = compute_fx_normalization(
                 spec.primary_jurisdiction, fx_inputs, pricing.npc_verified_usd,
             )
+            # Provenance for the FX delta above — the same real, sourced
+            # snapshot the calculation used (currency/rate/source/date/note),
+            # so the UI can explain WHY the delta is what it is rather than
+            # showing only the resulting number. None-valued fields (e.g. no
+            # local-currency mapping, or no sourced rate on file) are passed
+            # through honestly — never backfilled with a guess.
+            fx_basis = {
+                "jurisdiction_code": fx.jurisdiction_code,
+                "local_currency": fx.local_currency,
+                "rate_used": fx.rate_used,
+                "rate_source": fx.rate_source,
+                "rate_date": fx.rate_date,
+                "note": fx.note,
+            }
             pricing = price_allocated_structure(
                 spec=spec, allocation=allocation,
                 spend_category_by_code=LITTLE_UTOPIA_REAL_SPEND_CATEGORY,
@@ -1146,6 +1160,7 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
                 gross_budget_usd=state.gross_budget_usd,
                 travel_incremental_delta_usd=travel.incremental_delta_usd,
                 fx_delta_usd=fx.delta_usd,
+                fx_basis=fx_basis,
                 inkind_replacement_delta_usd=inkind_replacement_delta,
             )
         pricings.append(pricing)
@@ -1211,6 +1226,7 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
             "selected_incentive_usd": p.selected_incentive_usd,
             "travel_incremental_delta_usd": p.travel_incremental_delta_usd,
             "fx_delta_usd": p.fx_delta_usd,
+            "fx_basis": p.fx_basis,
             "inkind_replacement_delta_usd": p.inkind_replacement_delta_usd,
             "financing_cost_usd": p.financing_cost_usd,
             "implementation_cost_usd": p.implementation_cost_usd,

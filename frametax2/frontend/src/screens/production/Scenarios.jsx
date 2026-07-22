@@ -77,6 +77,31 @@ export default function Scenarios() {
     ["Gross incentive", (s) => (s.is_fully_priced ? s.selected_incentive_usd : null), false],
   ];
 
+  // FX basis — the real rate/currency/source this structure's pricing
+  // actually used (allocation_pricing's FXNormalizationResult, threaded
+  // through as fx_basis), not a client-side re-derivation. fx_delta_usd is
+  // real too: $0 is the honest "priced at spot, no currency stress
+  // modeled" answer under the default economics controls, shown as such
+  // rather than omitted or implied nonzero.
+  function fxCell(s) {
+    const fx = s.fx_basis;
+    if (!fx || fx.rate_used == null) return <span className="text-tertiary">—</span>;
+    const delta = s.fx_delta_usd;
+    return (
+      <span className="sc-fx" title={fx.note}>
+        USD/{fx.local_currency} {Number(fx.rate_used).toFixed(2)}
+        <span className="text-tertiary"> · {fx.rate_source === "live" ? "live spot" : fx.rate_source}</span>
+        {delta ? (
+          <span className={delta > 0 ? "sc-fx-up" : "sc-fx-down"}>
+            {" "}· {delta > 0 ? "+" : "−"}${Math.abs(Math.round(delta)).toLocaleString()}
+          </span>
+        ) : (
+          <span className="text-tertiary"> · no impact</span>
+        )}
+      </span>
+    );
+  }
+
   return (
     <div className="screen sc-screen">
       <p className="sc-note">
@@ -126,6 +151,12 @@ export default function Scenarios() {
                 })}
               </tr>
             ))}
+            <tr>
+              <td className="lbl">FX basis</td>
+              {cols.map((s) => (
+                <td key={s.structure_id} className="num">{fxCell(s)}</td>
+              ))}
+            </tr>
             <tr className="net">
               <td className="lbl">Net production cost</td>
               {cols.map((s) => (

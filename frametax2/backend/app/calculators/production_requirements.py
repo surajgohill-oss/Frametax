@@ -50,9 +50,20 @@ class ProductionRequirements:
 # Physical-requirement signal → canonical capability token. Data-driven: keys
 # are the signals `physical_requirements` already emits; values are the
 # capability vocabulary the jurisdiction capability profiles are scored on.
+#
+# "marine" and "open_water_filming" are deliberately NOT mapped here even
+# though physical_requirements emits both as script signals: each has an
+# overridable counterpart below (marine_filming <- pr["marine_required"];
+# open_water_filming <- the "marine_open_water" location-category's
+# effective value) that already correctly blends script + real-budget-spend
+# + a producer's confirmed override into ONE ternary. Mapping the raw
+# script_requirements signal here too would make it redundant with — and,
+# because environments/infrastructure only ever grow via set.add(), silently
+# override-proof against — that already-overridable source: a producer
+# clearing "Marine / Open Water" would never actually remove the capability
+# from discovery. Every other signal below has no overridable counterpart
+# and is intentionally sourced from the raw script fact only.
 _ENV_SIGNAL_TO_CAPABILITY = {
-    "marine": "marine_filming",
-    "open_water_filming": "open_water_filming",
     "underwater_photography": "underwater_filming",
     "period": "period_environments",
     "night_work": "night_environments",
@@ -113,6 +124,14 @@ def derive_production_requirements(physical_requirements: dict) -> ProductionReq
         infrastructure.add("marine_support")
         environments.add("marine_filming")
         evidence.setdefault("marine_support", pr.get("marine_account"))
+        # marine_filming's own evidence: prefer the real script quote (same
+        # text the removed raw-signal mapping used to carry), fall back to
+        # the real-budget account reference that also feeds marine_required.
+        evidence.setdefault(
+            "marine_filming",
+            (pr.get("script_requirements") or {}).get("marine", {}).get("evidence")
+            or pr.get("marine_account"),
+        )
     if pr.get("aerial_required"):
         infrastructure.add("aerial_support")
         evidence.setdefault("aerial_support", pr.get("aerial_account"))

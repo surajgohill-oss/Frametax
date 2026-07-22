@@ -226,6 +226,22 @@ def test_travel_and_fx_apply_once_at_structure_level():
         assert not hasattr(s, "fx_delta_usd")
 
 
+def test_fx_basis_threads_through_alongside_the_delta():
+    # fx_basis is the provenance for fx_delta_usd — the caller's own
+    # FXNormalizationResult (currency/rate/source/date/note), threaded
+    # through unmodified so the served payload can explain WHY the delta
+    # is what it is, not just the number.
+    basis = {
+        "jurisdiction_code": "MU", "local_currency": "MUR", "rate_used": 47.05,
+        "rate_source": "live", "rate_date": "2026-07-13", "note": "Live sourced snapshot.",
+    }
+    pricing = _price(BASELINE, fx_delta_usd=0.0, fx_basis=basis)
+    assert pricing.fx_basis == basis
+    # Never fabricated: no fx_basis kwarg -> None, not a guessed default.
+    pricing_no_fx = _price(BASELINE)
+    assert pricing_no_fx.fx_basis is None
+
+
 def test_inkind_post_never_enters_any_segment():
     # The off-budget MU in-kind post is never a budget line or QPE — it only
     # enters production economics as an NPC-level replacement normalization
@@ -382,3 +398,31 @@ class TestWorldwideCoverage:
         assert ranked[0]["inkind_replacement_delta_usd"] == 0.0
         npcs = [r["npc_with_adjustments_usd"] for r in ranked]
         assert npcs == sorted(npcs)  # strictly ascending NPC
+
+    def test_fx_basis_served_real_and_differentiated_per_structure(self):
+        # FX is real per-structure economics, not decorative metadata: every
+        # fully-priced structure carries its own sourced rate/currency/
+        # source/date (never fabricated), and it differs by jurisdiction
+        # currency (MUR vs EUR) — proving it is not a single hardcoded value.
+        out = self._out()
+        by_id = {p["structure_id"]: p for p in out["structures"]}
+        mu = by_id["ALLOC-BASELINE-MU"]
+        gr = by_id["ALLOC-RELOC-GR"]
+        assert mu["is_fully_priced"] and gr["is_fully_priced"]
+        assert mu["fx_basis"]["local_currency"] == "MUR"
+        assert gr["fx_basis"]["local_currency"] == "EUR"
+        assert mu["fx_basis"]["rate_used"] != gr["fx_basis"]["rate_used"]
+        for p in (mu, gr):
+            assert p["fx_basis"]["rate_source"] == "live"
+            assert p["fx_basis"]["rate_date"]
+            assert p["fx_basis"]["note"]
+            # fx_delta_usd == 0.0 under the default (no currency-stress)
+            # economics controls is the honest answer, not a missing field.
+            assert p["fx_delta_usd"] == 0.0
+        # Never priced -> never fabricated: no FX basis for a blocked
+        # structure (e.g. a component route below its program's min spend).
+        blocked = [p for p in out["structures"] if not p["is_fully_priced"]]
+        assert blocked  # sanity: this fixture always has at least one
+        for p in blocked:
+            assert p["fx_basis"] is None
+            assert p["fx_delta_usd"] is None

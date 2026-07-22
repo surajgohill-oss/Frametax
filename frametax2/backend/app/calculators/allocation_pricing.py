@@ -166,6 +166,13 @@ class AllocatedStructurePricing:
     ownership_shares: dict[str, float] = field(default_factory=dict)
     treaty_slug: str | None = None
     notes: tuple[str, ...] = ()
+    # FX provenance for this structure's primary jurisdiction — the same
+    # FXNormalizationResult that produced fx_delta_usd, so the UI can show
+    # WHY the delta is what it is (currency, rate, source, date) rather
+    # than only the resulting dollar figure. None when FX was never
+    # computed for this structure (never priced, or no local-currency
+    # jurisdiction mapping) — never fabricated.
+    fx_basis: dict | None = None
 
 
 # ── Segment pricing ──────────────────────────────────────────────────────────
@@ -379,6 +386,7 @@ def price_allocated_structure(
     gross_budget_usd: float,
     travel_incremental_delta_usd: float | None = None,
     fx_delta_usd: float | None = None,
+    fx_basis: dict | None = None,
     inkind_replacement_delta_usd: float | None = None,
     financing_cost_usd: float = 0.0,
     implementation_cost_usd: float = 0.0,
@@ -511,6 +519,7 @@ def price_allocated_structure(
         inkind_replacement_delta_usd=_inkind_repl,
         travel_incremental_delta_usd=travel_incremental_delta_usd,
         fx_delta_usd=fx_delta_usd,
+        fx_basis=fx_basis,
         financing_cost_usd=financing_cost_usd,
         implementation_cost_usd=implementation_cost_usd,
         npc_verified_usd=npc_verified,

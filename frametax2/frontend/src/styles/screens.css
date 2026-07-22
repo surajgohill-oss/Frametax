@@ -1052,6 +1052,9 @@
 .sc-table tr.net td.netv { cursor: pointer; }
 .sc-table tbody tr:hover td { background: var(--surface-2); }
 .sc-jurlist { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+.sc-fx { font-size: 11.5px; white-space: nowrap; }
+.sc-fx-up { color: var(--jade); }
+.sc-fx-down { color: var(--red); }
 
 .rpt-card { background: var(--surface-1); border: 0.5px solid var(--hairline); border-radius: var(--radius-md); padding: 18px 20px; margin-bottom: 16px; max-width: 620px; }
 .rpt-card h3 { font-size: 18px; font-style: italic; color: var(--text-primary); }

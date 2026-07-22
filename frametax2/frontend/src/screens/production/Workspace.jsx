@@ -44,10 +44,8 @@ const MODES = [
 ];
 const CIRCLED = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧"];
 const pct = (part, whole) => (whole ? Math.max(0, Math.min(100, (part / whole) * 100)) : 0);
-// Display currency per jurisdiction, limited to what /economics.fx_horizons serves.
-const FX_CCY = { MU: "MUR", MT: "EUR", IE: "EUR", GR: "EUR", GB: "GBP", IT: "EUR", ES: "EUR", FR: "EUR", DE: "EUR" };
 
-function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, fxHorizons, onSetLeading, onInspect, onCompare, onSelectSegment }) {
+function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, onSetLeading, onInspect, onCompare, onSelectSegment }) {
   const priced = structure.is_fully_priced;
   // All four card figures read from THIS scenario's canonical allocated
   // structure — gross from structure.gross_budget_usd (falls back to the
@@ -63,11 +61,16 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, fxHorizon
 
   // Producer-facing title/subtitle — the ONE canonical formatter
   // (lib/format.jsx scenarioDisplay), shared by Workspace/Overview/
-  // Scenarios/Reports. `dominant` (the priced segment driving the FX chip)
-  // comes back from the same call — no second derivation.
-  const { title, subtitle, dominant } = scenarioDisplay(structure);
-  const fxCcy = FX_CCY[dominant?.jurisdiction_code];
-  const fxSpot = fxCcy ? fxHorizons?.[fxCcy]?.current : null;
+  // Scenarios/Reports.
+  const { title, subtitle } = scenarioDisplay(structure);
+  // FX basis is server-authoritative (allocation_pricing's own
+  // FXNormalizationResult, threaded through as structure.fx_basis) — not
+  // re-derived client-side, so the chip always matches what the pricing
+  // kernel actually used (currency, rate, source, date). fx_delta_usd is
+  // real too: $0 under the default (no currency-stress) setting is an
+  // honest "priced at spot, no movement applied" answer, not a placeholder.
+  const fx = structure.fx_basis;
+  const fxDelta = structure.fx_delta_usd;
 
   return (
     <div className={`wsx-lane ${laneClass}`}>
@@ -75,10 +78,13 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, fxHorizon
         <div className="wsx-lh-id">
           <div className="wsx-nm">{title}</div>
           <div className="wsx-lb">{subtitle}</div>
-          {fxSpot != null && (
-            <div className="wsx-lane-fx" onClick={() => onInspect(structure)} title={`USD/${fxCcy} · live spot`}>
-              <span className="fx-pair">USD/{fxCcy}</span>
-              <span className="fx-note">{Number(fxSpot).toFixed(2)} · live spot</span>
+          {fx && fx.rate_used != null && (
+            <div className="wsx-lane-fx" onClick={() => onInspect(structure)} title={fx.note}>
+              <span className="fx-pair">USD/{fx.local_currency}</span>
+              <span className="fx-note">
+                {Number(fx.rate_used).toFixed(2)} · {fx.rate_source === "live" ? "live spot" : fx.rate_source}
+                {fxDelta ? ` · FX impact ${fxDelta > 0 ? "+" : "−"}$${Math.abs(Math.round(fxDelta)).toLocaleString()}` : " · no rate movement applied"}
+              </span>
             </div>
           )}
         </div>
@@ -311,7 +317,6 @@ export default function Workspace() {
                   rank={rankById.get(s.structure_id)}
                   grossBudget={production.gross_budget_usd}
                   isLeading={s.structure_id === leadingId}
-                  fxHorizons={data.economics?.fx_horizons}
                   onSetLeading={setLeadingOverride}
                   onInspect={handleSelectStructure}
                   onCompare={() => { setQOpen(true); setQTab("recommendations"); }}

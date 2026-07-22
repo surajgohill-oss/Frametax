@@ -104,6 +104,48 @@ class TestServedDiscoveryMetrics:
         assert ranked[0]["structure_id"] == "ALLOC-BASELINE-MU"
 
 
+class TestLocationOverrideDrivesDiscovery:
+    """Regression guard: a producer-confirmed location-category override
+    must actually reach discovery's required_capabilities — it used to be
+    silently defeated because marine_filming/open_water_filming were ALSO
+    sourced unconditionally from the raw (non-overridable) script signal,
+    and environments/infrastructure only ever grow via set.add(), so the
+    raw signal always won regardless of what the override said."""
+
+    def test_default_requires_marine_and_open_water(self):
+        assert set(_discovery().metrics["required_capabilities"]) == {
+            "marine_filming", "open_water_filming",
+        }
+
+    def test_confirmed_no_marine_clears_both_capabilities_and_reclassifies(self):
+        from app.demo.little_utopia_state import apply_location_overrides
+        before = _discovery().metrics
+        apply_location_overrides({"marine_open_water": False})
+        try:
+            after = _discovery().metrics
+            assert after["required_capabilities"] == []
+            # a real downstream effect, not just an empty list: at least one
+            # jurisdiction that needed marine capability to be production-
+            # capable is now reclassified (the whole point of discovery
+            # depending on requirements at all).
+            assert after["production_capable_count"] > before["production_capable_count"]
+            assert after["rejected_count"] < before["rejected_count"]
+            # incentive-readiness (statutory doctrine/rate knowledge) is a
+            # completely separate axis and must NOT move — capability and
+            # pricing knowledge are deliberately independent.
+            assert after["incentive_ready_count"] == before["incentive_ready_count"]
+        finally:
+            apply_location_overrides({"marine_open_water": None})
+
+    def test_clearing_the_override_restores_the_canonical_baseline(self):
+        from app.demo.little_utopia_state import apply_location_overrides
+        baseline = _discovery().metrics
+        apply_location_overrides({"marine_open_water": False})
+        apply_location_overrides({"marine_open_water": None})
+        restored = _discovery().metrics
+        assert restored == baseline
+
+
 class TestRecommendationTitles:
     def test_structure_titles_are_country_names_not_relocate(self):
         # the frozen presentation formatter titles cards by jurisdiction name;
