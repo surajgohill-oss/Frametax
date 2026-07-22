@@ -11,4 +11,7 @@ export const JURISDICTION_COORDS = {
   MT: { lat: 35.9, lng: 14.51, name: "Malta" },
   FR: { lat: 48.85, lng: 2.35, name: "France" },
   IE: { lat: 53.35, lng: -6.26, name: "Ireland" },
+  DE: { lat: 52.52, lng: 13.4, name: "Germany" },
+  HR: { lat: 45.81, lng: 15.98, name: "Croatia" },
+  HU: { lat: 47.5, lng: 19.04, name: "Hungary" },
 };

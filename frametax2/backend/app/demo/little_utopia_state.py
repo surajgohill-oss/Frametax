@@ -988,6 +988,24 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
     slug_by_code = {c: s for c, s in alts}
     fact_answers = state.fact_answers or {}
 
+    # Capability-only partners (production_discovery: production-capable,
+    # incentive pending — real doctrine and/or rate rules are simply not
+    # classified yet) are RETAINED by discovery, not discarded — so they
+    # must also reach structure generation, not just the discovery audit.
+    # Composing a structure for one never fabricates a price: price_segment
+    # already handles a doctrine-less/rate-less program_slug by returning
+    # an honest, sourced blocker ("no classified qualification doctrine
+    # and/or no statutory rate rules"). Slugs come from the same structured
+    # profile discovery itself used to classify capability (jc.ALL_PROFILES)
+    # — never invented, never a hard-coded jurisdiction list.
+    capability_only_codes = [
+        c for c in discovery.metrics["capability_only_jurisdictions"]
+        if jc.ALL_PROFILES.get(c) is not None
+    ]
+    for c in capability_only_codes:
+        slug_by_code.setdefault(c, jc.ALL_PROFILES[c].program_slug)
+    structure_partner_codes = [c for c, _ in alts] + capability_only_codes
+
     # ── structure specs from the production's real facts/elections ──
     specs: list[StructureSpec] = [StructureSpec(
         structure_id="ALLOC-BASELINE-MU",
@@ -999,14 +1017,14 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
         notes="The production's current plan: shoot Mauritius, post per the "
               "budget's own stated locations.",
     )]
-    for code, slug in alts:
+    for code in structure_partner_codes:
         specs.append(StructureSpec(
             structure_id=f"ALLOC-RELOC-{code}",
             structure_type="full_relocation",
             label=f"Full relocation to {code}",
             primary_jurisdiction=code,
             participants=(code,),
-            incentive_programs={code: slug},
+            incentive_programs={code: slug_by_code[code]},
             notes="Whole production relocated; stated-location post facts "
                   "carry over unchanged (they are jurisdiction-independent "
                   "producer decisions on the budget's own cover page).",
@@ -1022,7 +1040,7 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
     # these (or the MU-only case) and is deduped against the auto set.
     route_target = fact_answers.get("component_route_post")
     route_target = str(route_target).upper() if route_target else None
-    auto_component_targets = [code for code, _ in alts]
+    auto_component_targets = list(structure_partner_codes)
     if route_target == JURISDICTION_CODE:
         auto_component_targets = [JURISDICTION_CODE]  # producer kept post in MU
     for target in auto_component_targets:

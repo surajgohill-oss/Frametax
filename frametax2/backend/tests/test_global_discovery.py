@@ -90,11 +90,17 @@ class TestServedDiscoveryMetrics:
         assert len(d["examinations"]) == d["metrics"]["jurisdictions_examined"]
 
     def test_no_hardcoded_scenario_count(self):
-        # structure count must equal 1 baseline + N alternatives (relocation)
-        # + N components — a function of the accepted set, not a constant.
+        # structure count must equal 1 baseline + N structure partners
+        # (relocation) + N structure partners (components) — a function of
+        # the accepted (incentive-ready) set UNION the capability-only set,
+        # not a constant. Capability-only partners are production-capable
+        # but incentive-pending — they still enter structure generation and
+        # come back honestly blocked (never priced at a guess), so they
+        # count as generated structures same as any other.
         al = build_allocated_structures(get_state())
-        n_alt = al["discovery"]["metrics"]["accepted_count"] - 1  # minus home MU
-        assert al["discovery"]["generated_structures"] == 1 + n_alt + n_alt
+        m = al["discovery"]["metrics"]
+        n_partners = (m["accepted_count"] - 1) + m["capability_only_count"]  # minus home MU
+        assert al["discovery"]["generated_structures"] == 1 + n_partners + n_partners
 
     def test_ranking_uses_normalized_npc_ascending(self):
         al = build_allocated_structures(get_state())
@@ -146,6 +152,52 @@ class TestLocationOverrideDrivesDiscovery:
         assert restored == baseline
 
 
+class TestCapabilityOnlyStructureGeneration:
+    """Regression guard: capability-only jurisdictions (production-capable,
+    incentive pending) were classified and RETAINED by discovery but never
+    reached build_allocated_structures — full-relocation and anchor-
+    component generation iterated only the incentive-ready set. Discovery's
+    own docstring promises capability-only jurisdictions are 'retained, not
+    silently discarded'; that promise must hold all the way to the served
+    structures, not just the discovery audit."""
+
+    def test_every_capability_only_partner_gets_a_relocation_and_component_structure(self):
+        al = build_allocated_structures(get_state())
+        m = al["discovery"]["metrics"]
+        capability_only = set(m["capability_only_jurisdictions"])
+        assert capability_only, "fixture must have at least one capability-only partner"
+        ids = {s["structure_id"] for s in al["structures"]}
+        for code in capability_only:
+            assert f"ALLOC-RELOC-{code}" in ids
+            assert f"ALLOC-COMPONENT-POST-{code}" in ids
+
+    def test_capability_only_structures_are_never_priced_at_a_guess(self):
+        # no classified doctrine/rate exists for these partners — pricing
+        # must come back honestly blocked, never a fabricated NPC.
+        al = build_allocated_structures(get_state())
+        capability_only = set(al["discovery"]["metrics"]["capability_only_jurisdictions"])
+        by_id = {s["structure_id"]: s for s in al["structures"]}
+        for code in capability_only:
+            for sid in (f"ALLOC-RELOC-{code}", f"ALLOC-COMPONENT-POST-{code}"):
+                s = by_id[sid]
+                assert s["is_fully_priced"] is False
+                assert s["blockers"]
+                assert "no classified qualification doctrine" in s["blockers"][0] \
+                    or "no statutory rate rules" in s["blockers"][0]
+
+    def test_incentive_ready_partners_unaffected(self):
+        # the pre-existing incentive-ready structures (MT/IE/GR) keep their
+        # exact ids and at least one still prices — this fix only ADDS
+        # capability-only candidates, never changes the priced set.
+        al = build_allocated_structures(get_state())
+        ids = {s["structure_id"] for s in al["structures"]}
+        for code in ("MT", "IE", "GR"):
+            assert f"ALLOC-RELOC-{code}" in ids
+        priced = [s for s in al["structures"] if s["is_fully_priced"]]
+        assert len(priced) == al["discovery"]["final_ranked_structures"]
+        assert len(priced) >= 1
+
+
 class TestRecommendationTitles:
     def test_structure_titles_are_country_names_not_relocate(self):
         # the frozen presentation formatter titles cards by jurisdiction name;
@@ -158,3 +210,96 @@ class TestRecommendationTitles:
         if os.path.exists(fmt):
             code = re.sub(r"//.*", "", open(fmt).read())
             assert "Relocate to" not in code and "Relocate " not in code
+
+    def test_scenarios_and_workspace_both_use_the_canonical_title_formatter(self):
+        # regression guard: Scenarios.jsx previously rendered the raw
+        # backend structure.label ("Full relocation to GR") as its column
+        # header instead of the shared scenarioDisplay() formatter Workspace
+        # already used — the exact "recurring naming regression" this
+        # class exists to prevent. Both screens must call scenarioDisplay
+        # for their card/column title, not structure.label directly.
+        import os
+        base = os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "src", "screens", "production")
+        for fname in ("Scenarios.jsx", "Workspace.jsx"):
+            path = os.path.join(base, fname)
+            if not os.path.exists(path):
+                continue
+            code = re.sub(r"//.*", "", open(path).read())
+            assert "scenarioDisplay(" in code, f"{fname} must use the canonical scenarioDisplay formatter"
+            # the raw label must not be used for a visible card/column title
+            # (className="nm" / className="wsx-nm" are the title slots)
+            assert not re.search(r'className="(nm|wsx-nm)[^"]*">\{s\.label\}', code)
+
+
+class TestWorkspaceScenariosSynchronization:
+    """Backend may generate/rank far more structures than a card rack can
+    show at once (every discovery-retained partner now composes two
+    candidates). Both Workspace and Scenarios must read the SAME canonical
+    array from the SAME API payload (no separate/duplicated fetch, no
+    frontend slice that truncates backend generation) and both must honor
+    the six-visible-plus-overflow-selector contract, not just one screen."""
+
+    def _frontend_source(self, fname):
+        import os
+        base = os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "src", "screens", "production")
+        path = os.path.join(base, fname)
+        if not os.path.exists(path):
+            return None
+        return re.sub(r"//.*", "", open(path).read())
+
+    def test_both_screens_read_the_same_allocated_structures_path(self):
+        for fname in ("Scenarios.jsx", "Workspace.jsx"):
+            code = self._frontend_source(fname)
+            if code is None:
+                continue
+            assert "structures?.allocated_structures" in code or "structures.allocated_structures" in code
+
+    def test_both_screens_cap_visible_scenarios_at_six_with_overflow(self):
+        for fname in ("Scenarios.jsx", "Workspace.jsx"):
+            code = self._frontend_source(fname)
+            if code is None:
+                continue
+            assert re.search(r"MAX_VISIBLE\s*=\s*6", code), f"{fname} must define the 6-visible contract"
+            assert "overflow" in code.lower()
+
+    def test_neither_screen_slices_before_ranking(self):
+        # a `.slice(0, 6)` (or similar) applied directly to the raw backend
+        # array BEFORE rank-ordering would truncate backend generation
+        # rather than present a manageable subset of it. Both screens must
+        # sort/order the full array first, then slice.
+        for fname in ("Scenarios.jsx", "Workspace.jsx"):
+            code = self._frontend_source(fname)
+            if code is None:
+                continue
+            assert not re.search(r"allocated\.structures\.slice\(", code)
+
+
+class TestFXPresentationHidden:
+    """FX is real (allocation_pricing's FXNormalizationResult, threaded as
+    fx_basis/fx_delta_usd) but under default economics controls the delta
+    is always $0 — an honest 'no currency stress modeled' answer that reads
+    to a producer as a meaningful adjustment when it isn't one. Backend
+    keeps computing and serving it (see test_allocation_pricing.py); the
+    UI's prominent presentation is intentionally hidden until a real
+    currency-exposed-spend adjustment view exists."""
+
+    def _frontend_source(self, fname):
+        import os
+        base = os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "src", "screens", "production")
+        path = os.path.join(base, fname)
+        if not os.path.exists(path):
+            return None
+        return re.sub(r"//.*", "", open(path).read())
+
+    def test_scenarios_no_longer_renders_an_fx_row(self):
+        code = self._frontend_source("Scenarios.jsx")
+        if code is None:
+            return
+        assert "FX basis" not in code
+        assert "fxCell" not in code
+
+    def test_workspace_no_longer_renders_a_prominent_fx_chip(self):
+        code = self._frontend_source("Workspace.jsx")
+        if code is None:
+            return
+        assert "wsx-lane-fx" not in code

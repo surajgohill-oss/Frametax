@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
-import { Money, humanizeToken } from "../../lib/format";
+import { Money, scenarioDisplay } from "../../lib/format";
 import { useAppState } from "../../state/AppState";
 
 const MAX_VISIBLE = 6;
@@ -77,30 +77,12 @@ export default function Scenarios() {
     ["Gross incentive", (s) => (s.is_fully_priced ? s.selected_incentive_usd : null), false],
   ];
 
-  // FX basis — the real rate/currency/source this structure's pricing
-  // actually used (allocation_pricing's FXNormalizationResult, threaded
-  // through as fx_basis), not a client-side re-derivation. fx_delta_usd is
-  // real too: $0 is the honest "priced at spot, no currency stress
-  // modeled" answer under the default economics controls, shown as such
-  // rather than omitted or implied nonzero.
-  function fxCell(s) {
-    const fx = s.fx_basis;
-    if (!fx || fx.rate_used == null) return <span className="text-tertiary">—</span>;
-    const delta = s.fx_delta_usd;
-    return (
-      <span className="sc-fx" title={fx.note}>
-        USD/{fx.local_currency} {Number(fx.rate_used).toFixed(2)}
-        <span className="text-tertiary"> · {fx.rate_source === "live" ? "live spot" : fx.rate_source}</span>
-        {delta ? (
-          <span className={delta > 0 ? "sc-fx-up" : "sc-fx-down"}>
-            {" "}· {delta > 0 ? "+" : "−"}${Math.abs(Math.round(delta)).toLocaleString()}
-          </span>
-        ) : (
-          <span className="text-tertiary"> · no impact</span>
-        )}
-      </span>
-    );
-  }
+  // FX presentation is intentionally hidden here for now (see
+  // Workspace.jsx's ScenarioCard for the matching note) — the backend
+  // still computes and serves fx_basis/fx_delta_usd on every priced
+  // structure; a per-currency-exposed-spend adjustment view belongs in
+  // the Inspector later, not a prominent row that reads as a real
+  // economics adjustment when today it is exchange-rate provenance only.
 
   return (
     <div className="screen sc-screen">
@@ -118,9 +100,9 @@ export default function Scenarios() {
             value={swapId}
             onChange={(e) => setSwapId(e.target.value)}
           >
-            <option value="">— {base[base.length - 1]?.label} —</option>
+            <option value="">— {scenarioDisplay(base[base.length - 1] || {}).title} —</option>
             {overflow.map((s) => (
-              <option key={s.structure_id} value={s.structure_id}>{s.label}</option>
+              <option key={s.structure_id} value={s.structure_id}>{scenarioDisplay(s).title}</option>
             ))}
           </select>
         </div>
@@ -132,10 +114,11 @@ export default function Scenarios() {
               <th />
               {cols.map((s) => {
                 const rank = rankById.get(s.structure_id);
+                const { title, subtitle } = scenarioDisplay(s);
                 return (
                   <th key={s.structure_id} onClick={() => inspect(s)}>
-                    <span className="nm serif">{s.label}</span>
-                    <span className="sub">{humanizeToken(s.structure_type)}{rank?.rank ? ` · rank ${rank.rank}` : ""}</span>
+                    <span className="nm serif">{title}</span>
+                    <span className="sub">{subtitle}{rank?.rank ? ` · rank ${rank.rank}` : ""}</span>
                   </th>
                 );
               })}
@@ -151,12 +134,6 @@ export default function Scenarios() {
                 })}
               </tr>
             ))}
-            <tr>
-              <td className="lbl">FX basis</td>
-              {cols.map((s) => (
-                <td key={s.structure_id} className="num">{fxCell(s)}</td>
-              ))}
-            </tr>
             <tr className="net">
               <td className="lbl">Net production cost</td>
               {cols.map((s) => (

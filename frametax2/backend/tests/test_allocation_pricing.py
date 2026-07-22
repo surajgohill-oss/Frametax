@@ -361,11 +361,16 @@ class TestWorldwideCoverage:
         comp = [p for p in out["structures"]
                 if p["structure_type"] == "component_relocation"]
         targets = {p["structure_id"].rsplit("-", 1)[-1] for p in comp}
-        # one anchor-component structure per executable partner (GR/IE/MT),
-        # evaluated WITHOUT any producer election
-        assert targets == {"GR", "IE", "MT"}
+        # one anchor-component structure per discovery-retained partner:
+        # incentive-ready (GR/IE/MT) AND capability-only (production-
+        # capable, incentive pending — BE/CY/DE/ES/FR/HR/IT), evaluated
+        # WITHOUT any producer election. Capability-only partners are
+        # never silently dropped from structure generation.
+        assert targets == {"GR", "IE", "MT", "BE", "CY", "DE", "ES", "FR", "HR", "IT"}
         # at least one prices (MT, above its min spend); the others block
-        # honestly on their own minimum-spend rule — evaluated, not omitted
+        # honestly — GR/IE on their own minimum-spend rule, the
+        # capability-only partners on missing doctrine/rate rules —
+        # evaluated, never omitted, never guessed.
         assert any(p["is_fully_priced"] for p in comp)
         assert any((not p["is_fully_priced"]) and p["blockers"] for p in comp)
 
@@ -373,7 +378,7 @@ class TestWorldwideCoverage:
         cov = self._out()["coverage"]
         cats = {c["category"]: c for c in cov["categories"]}
         assert cats["single_jurisdiction"]["fully_priced"] == 4
-        assert cats["component_routing_anchor"]["candidates_evaluated"] == 3
+        assert cats["component_routing_anchor"]["candidates_evaluated"] == 10
         # co-production is EVALUATED-as-zero with a proven reason (MU has no
         # treaty instrument) — never silently omitted
         assert cats["co_production_treaty"]["candidates_evaluated"] == 0

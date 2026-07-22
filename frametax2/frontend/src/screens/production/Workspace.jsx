@@ -43,6 +43,27 @@ const MODES = [
   { key: "split", label: "Split" },
 ];
 const CIRCLED = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧"];
+
+// The optimizer may compose far more structures than a card rack can
+// usefully show at once (every discovery-retained partner — incentive-
+// ready AND capability-only — gets a full-relocation and a component
+// candidate). Six visible cards, swap-in overflow — the same contract
+// Scenarios.jsx uses, over the SAME ordering rule (rank-first, then
+// composition order), so both screens show the same six by default
+// without needing shared mutable state.
+const MAX_VISIBLE = 6;
+function visibleStructures(structures, rankById, swapId) {
+  const ordered = [...structures].sort((a, b) => {
+    const ra = rankById.get(a.structure_id)?.rank ?? Infinity;
+    const rb = rankById.get(b.structure_id)?.rank ?? Infinity;
+    return ra - rb;
+  });
+  const base = ordered.slice(0, MAX_VISIBLE);
+  const overflow = ordered.slice(MAX_VISIBLE);
+  const swapped = swapId ? ordered.find((s) => s.structure_id === swapId) : null;
+  const cols = swapped ? [...base.slice(0, MAX_VISIBLE - 1), swapped] : base;
+  return { base, overflow, cols };
+}
 const pct = (part, whole) => (whole ? Math.max(0, Math.min(100, (part / whole) * 100)) : 0);
 
 function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, onSetLeading, onInspect, onCompare, onSelectSegment }) {
@@ -63,14 +84,14 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, onSetLead
   // (lib/format.jsx scenarioDisplay), shared by Workspace/Overview/
   // Scenarios/Reports.
   const { title, subtitle } = scenarioDisplay(structure);
-  // FX basis is server-authoritative (allocation_pricing's own
-  // FXNormalizationResult, threaded through as structure.fx_basis) — not
-  // re-derived client-side, so the chip always matches what the pricing
-  // kernel actually used (currency, rate, source, date). fx_delta_usd is
-  // real too: $0 under the default (no currency-stress) setting is an
-  // honest "priced at spot, no movement applied" answer, not a placeholder.
-  const fx = structure.fx_basis;
-  const fxDelta = structure.fx_delta_usd;
+  // FX presentation is intentionally hidden here for now: structure.fx_basis
+  // is real, sourced exchange-rate provenance (currency/rate/source/date),
+  // but under the default economics controls fx_delta_usd is always $0 —
+  // "priced at spot, no currency stress modeled" — which reads to a
+  // producer as a meaningful adjustment when it isn't one yet. The backend
+  // still computes and serves it; a real FX adjustment (applied only to
+  // currency-exposed local spend) belongs in the Inspector later, not a
+  // prominent card chip.
 
   return (
     <div className={`wsx-lane ${laneClass}`}>
@@ -78,15 +99,6 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, onSetLead
         <div className="wsx-lh-id">
           <div className="wsx-nm">{title}</div>
           <div className="wsx-lb">{subtitle}</div>
-          {fx && fx.rate_used != null && (
-            <div className="wsx-lane-fx" onClick={() => onInspect(structure)} title={fx.note}>
-              <span className="fx-pair">USD/{fx.local_currency}</span>
-              <span className="fx-note">
-                {Number(fx.rate_used).toFixed(2)} · {fx.rate_source === "live" ? "live spot" : fx.rate_source}
-                {fxDelta ? ` · FX impact ${fxDelta > 0 ? "+" : "−"}$${Math.abs(Math.round(fxDelta)).toLocaleString()}` : " · no rate movement applied"}
-              </span>
-            </div>
-          )}
         </div>
         <span className="wsx-badge">{badge}</span>
       </div>
@@ -174,6 +186,7 @@ export default function Workspace() {
   const [activeGreyArea, setActiveGreyArea] = useState(null);
   const [leadingOverride, setLeadingOverride] = useState(null);
   const [sortByMoney, setSortByMoney] = useState(true); // artifact "by $ ▾"
+  const [swapId, setSwapId] = useState("");
   const { openInspector, inspector, closeInspector, setDocked } = useAppState();
 
   // Dock the Inspector into the Workspace right column (frozen-artifact
@@ -210,6 +223,7 @@ export default function Workspace() {
   const best = allocated.ranking.find((r) => r.rank === 1);
   const leadingId = leadingOverride ?? best?.structure_id ?? null;
   const leadingStructure = allocated.structures.find((s) => s.structure_id === leadingId);
+  const { overflow, cols } = visibleStructures(allocated.structures, rankById, swapId);
 
   // Collapsed-rail status dots — hot for any money-bearing / blocking item.
   const dots = [
@@ -305,11 +319,27 @@ export default function Workspace() {
                 </button>
               ))}
             </div>
+            {mode !== "map" && overflow.length > 0 && (
+              <div className="wsx-scenario-select">
+                <label htmlFor="wsx-swap">Additional scenario</label>
+                <select
+                  id="wsx-swap"
+                  className="field-select"
+                  value={swapId}
+                  onChange={(e) => setSwapId(e.target.value)}
+                >
+                  <option value="">— {scenarioDisplay(cols[cols.length - 1] || {}).title} —</option>
+                  {overflow.map((s) => (
+                    <option key={s.structure_id} value={s.structure_id}>{scenarioDisplay(s).title}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           {mode === "lanes" && (
             <div className="wsx-rack">
-              {allocated.structures.map((s) => (
+              {cols.map((s) => (
                 <ScenarioCard
                   key={s.structure_id}
                   structure={s}
@@ -340,7 +370,7 @@ export default function Workspace() {
             <div className="wsx-splitv">
               <div className="lcol">
                 <div className="wsx-rack">
-                  {allocated.structures.map((s) => (
+                  {cols.map((s) => (
                     <ScenarioCard
                       key={s.structure_id}
                       structure={s}
@@ -348,7 +378,6 @@ export default function Workspace() {
                       rank={rankById.get(s.structure_id)}
                       grossBudget={production.gross_budget_usd}
                       isLeading={s.structure_id === leadingId}
-                      fxHorizons={data.economics?.fx_horizons}
                       onSetLeading={setLeadingOverride}
                       onInspect={handleSelectStructure}
                       onCompare={() => { setQOpen(true); setQTab("recommendations"); }}
