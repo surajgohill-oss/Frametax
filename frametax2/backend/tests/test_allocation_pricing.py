@@ -166,7 +166,11 @@ def test_split_production_prices_both_partial_registers():
     ))
     gr2 = next(s for s in split2.segments if s.jurisdiction_code == "GR")
     assert gr2.qpe_usd != gr.qpe_usd
-    assert split2.npc_verified_usd != split.npc_verified_usd
+    # The canonical (best-supported/modeled) NPC is rate-driven: MU and GR
+    # share a 40% modeled rate, so re-splitting spend between them leaves the
+    # modeled NPC unchanged — correct. The conservative (floor-rate) NPC does
+    # move, because MU's 30% floor differs from GR's 40% floor.
+    assert split2.npc_conservative_usd != split.npc_conservative_usd
 
 
 # ── 5: treaty legality is evaluated, never forced ────────────────────────────
@@ -223,16 +227,32 @@ def test_travel_and_fx_apply_once_at_structure_level():
 
 
 def test_inkind_post_never_enters_any_segment():
-    for spec in (
-        BASELINE,
+    # The off-budget MU in-kind post is never a budget line or QPE — it only
+    # enters production economics as an NPC-level replacement normalization
+    # (Phase 5): $0 when the post stays in MU, the replacement cost when it
+    # moves out. Segment QPE never contains it.
+    base = _price(BASELINE)
+    assert base.allocation.total_allocated_usd == base.allocation.total_budget_lines_usd
+    assert "never enters any segment" in base.inkind_note
+    assert "NOT QPE" in base.inkind_note
+    # MU-anchored baseline keeps the post in MU → no replacement cost.
+    assert base.inkind_replacement_delta_usd == 0.0
+    # A full relocation out of MU absorbs the replacement cost at NPC level,
+    # still never touching any segment's QPE. (The orchestrator computes the
+    # delta from the in-kind model; here it is supplied explicitly to the
+    # pricer, which is what proves it enters NPC and not any segment.)
+    reloc = _price(
         _spec("P-RELOC-MT", "full_relocation", ("MT",), {"MT": "mt_mfc_rebate"}),
-    ):
-        pricing = _price(spec)
-        # no segment QPE can include the off-budget $625k (it is not a
-        # budget line, so the strongest check is conservation + the note)
-        assert pricing.allocation.total_allocated_usd == pricing.allocation.total_budget_lines_usd
-        assert "625,000" in pricing.inkind_note
-        assert "non-Mauritius segment" in pricing.inkind_note
+        inkind_replacement_delta_usd=625_000.0,
+    )
+    assert reloc.allocation.total_allocated_usd == reloc.allocation.total_budget_lines_usd
+    assert reloc.inkind_replacement_delta_usd == 625_000.0
+    assert all(getattr(s, "qpe_usd", 0) < GROSS for s in reloc.segments)  # in-kind not in any segment
+    # the replacement enters NPC, not any segment
+    assert reloc.npc_with_adjustments_usd == pytest.approx(
+        reloc.npc_verified_usd + (reloc.travel_incremental_delta_usd or 0.0)
+        + (reloc.fx_delta_usd or 0.0) + reloc.inkind_replacement_delta_usd, abs=0.01,
+    )
 
 
 # ── ranking & gating ─────────────────────────────────────────────────────────
@@ -348,13 +368,17 @@ class TestWorldwideCoverage:
         assert cats["split_production"]["candidates_evaluated"] == 0
         assert "explicit producer" in cats["split_production"]["zero_reason"]
 
-    def test_ranking_covers_all_priced_structures_globally_optimal_is_reloc_gr(self):
+    def test_ranking_covers_all_priced_structures_globally_optimal_is_baseline_mu(self):
         out = self._out()
         ranked = [r for r in out["ranking"] if r["rank"] is not None]
         # 4 single + 1 priced component = 5 priced and ranked
         assert len(ranked) == 5
-        # global financial optimum = full relocation to Greece (guaranteed
-        # 40% floor beats Mauritius' guaranteed 30% floor)
-        assert ranked[0]["structure_id"] == "ALLOC-RELOC-GR"
+        # Canonical optimization contract (Phase 5): ranking uses the
+        # BEST-SUPPORTED modeled incentive (MU reaches 40%, not its 30% floor)
+        # AND normalizes the off-budget MU in-kind post — every non-MU-post
+        # structure absorbs the replacement cost. Net result: staying in
+        # Mauritius (baseline) is the global optimum, not relocating to Greece.
+        assert ranked[0]["structure_id"] == "ALLOC-BASELINE-MU"
+        assert ranked[0]["inkind_replacement_delta_usd"] == 0.0
         npcs = [r["npc_with_adjustments_usd"] for r in ranked]
         assert npcs == sorted(npcs)  # strictly ascending NPC

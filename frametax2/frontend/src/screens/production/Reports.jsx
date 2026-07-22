@@ -29,7 +29,7 @@ export default function Reports() {
         ? [
             ["Gross budget", <Money value={production.gross_budget_usd} />],
             ["Qualified spend", <Money value={qpe} />],
-            ["Gross incentive (floor)", <Money value={best.total_incentive_floor_usd} />],
+            ["Gross incentive", <Money value={best.selected_incentive_usd} />],
             ["Net production cost", <Money value={best.npc_with_adjustments_usd} />],
           ]
         : [["Status", "No structure is fully priced yet"]],

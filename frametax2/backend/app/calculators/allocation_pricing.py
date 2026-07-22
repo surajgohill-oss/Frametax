@@ -141,10 +141,25 @@ class AllocatedStructurePricing:
     fx_delta_usd: float | None
     financing_cost_usd: float
     implementation_cost_usd: float
-    npc_verified_usd: float | None           # gross - floor incentives (+ financing)
-    npc_with_adjustments_usd: float | None   # + travel + fx (each applied once)
+    npc_verified_usd: float | None           # gross - BEST-SUPPORTED incentive (+ financing)
+    npc_with_adjustments_usd: float | None   # canonical NPC: + travel + fx + in-kind replacement
     is_fully_priced: bool
     blockers: tuple[str, ...]
+    # Canonical optimization contract (Phase 5): the served/ranked economics
+    # use the BEST-SUPPORTED modeled incentive, never the conservative floor.
+    # selected_incentive_usd is the modeled (best-supported) incentive that
+    # drives NPC and ranking; total_incentive_floor_usd remains the
+    # separately-surfaced conservative/uncertainty figure.
+    selected_incentive_usd: float = 0.0
+    # Off-budget Mauritius in-kind post normalization: a structure that moves
+    # that work out of MU must absorb the replacement cost (added to NPC);
+    # a structure that keeps the post in MU carries 0. Separate economic
+    # layer — never a budget line, never QPE.
+    inkind_replacement_delta_usd: float = 0.0
+    # Conservative (floor-rate) NPC with the same normalizations applied —
+    # surfaced as the downside of the approval-uncertainty band, never the
+    # ranked figure.
+    npc_conservative_usd: float | None = None
     stacking_note: str = ""
     inkind_note: str = ""
     recommendation: StructureRecommendation | None = None
@@ -364,6 +379,7 @@ def price_allocated_structure(
     gross_budget_usd: float,
     travel_incremental_delta_usd: float | None = None,
     fx_delta_usd: float | None = None,
+    inkind_replacement_delta_usd: float | None = None,
     financing_cost_usd: float = 0.0,
     implementation_cost_usd: float = 0.0,
     production_type: str = "feature_film",
@@ -431,17 +447,26 @@ def price_allocated_structure(
 
     fully_priced = not blockers
 
-    npc_verified = None
-    npc_adjusted = None
+    # Canonical optimization contract (Phase 5): rank/serve on the
+    # BEST-SUPPORTED modeled incentive (total_ceiling = rr.modeled_rate),
+    # not the conservative floor. The floor drives only the separately-
+    # surfaced npc_conservative_usd uncertainty figure. Normalizations
+    # (travel, FX, and the off-budget MU in-kind replacement) apply once.
+    selected_incentive = total_ceiling
+    _inkind_repl = inkind_replacement_delta_usd or 0.0
+    npc_verified = None      # here: best-supported NPC before normalizations
+    npc_adjusted = None      # canonical, normalized, ranked NPC
+    npc_conservative = None  # floor-rate NPC + same normalizations (uncertainty)
     if fully_priced:
+        _norm = (travel_incremental_delta_usd or 0.0) + (fx_delta_usd or 0.0) + _inkind_repl
         npc_verified = round(
-            gross_budget_usd - total_floor
+            gross_budget_usd - selected_incentive
             + financing_cost_usd + implementation_cost_usd, 2,
         )
-        npc_adjusted = round(
-            npc_verified
-            + (travel_incremental_delta_usd or 0.0)
-            + (fx_delta_usd or 0.0), 2,
+        npc_adjusted = round(npc_verified + _norm, 2)
+        npc_conservative = round(
+            gross_budget_usd - total_floor
+            + financing_cost_usd + implementation_cost_usd + _norm, 2,
         )
 
     unresolved_reqs = sorted({
@@ -455,10 +480,12 @@ def price_allocated_structure(
         "real multi-program knowledge exists for a segment's jurisdiction."
     )
     inkind_note = (
-        "The $625,000 off-budget in-kind post FMV is NOT included in any "
-        "segment here. It remains exclusively governed by the Mauritius "
-        "economics controls' selected treatment (/economics) and can never "
-        "attach to a non-Mauritius segment."
+        "The off-budget Mauritius in-kind post FMV is NOT a budget line and "
+        "NOT QPE — it never enters any segment. It enters production "
+        "economics only as a normalization: a structure that moves that work "
+        "out of Mauritius absorbs its replacement cost "
+        f"(inkind_replacement_delta_usd=${_inkind_repl:,.0f} on this "
+        "structure); a structure that keeps the post in Mauritius carries $0."
     )
     if travel_incremental_delta_usd is None:
         notes.append(
@@ -480,12 +507,15 @@ def price_allocated_structure(
         gross_budget_usd=gross_budget_usd,
         total_incentive_floor_usd=total_floor,
         total_incentive_ceiling_usd=total_ceiling,
+        selected_incentive_usd=selected_incentive if fully_priced else 0.0,
+        inkind_replacement_delta_usd=_inkind_repl,
         travel_incremental_delta_usd=travel_incremental_delta_usd,
         fx_delta_usd=fx_delta_usd,
         financing_cost_usd=financing_cost_usd,
         implementation_cost_usd=implementation_cost_usd,
         npc_verified_usd=npc_verified,
         npc_with_adjustments_usd=npc_adjusted,
+        npc_conservative_usd=npc_conservative,
         is_fully_priced=fully_priced,
         blockers=tuple(dict.fromkeys(blockers)),  # dedupe, order-preserving
         stacking_note=stacking_note,
@@ -575,10 +605,13 @@ def build_structure_recommendation(
                 s.jurisdiction_code: s.incentive_floor_usd for s in pricing.segments
             },
             "total_incentive_floor_usd": pricing.total_incentive_floor_usd,
+            "selected_incentive_usd": pricing.selected_incentive_usd,
             "travel_incremental_delta_usd": pricing.travel_incremental_delta_usd,
             "fx_delta_usd": pricing.fx_delta_usd,
+            "inkind_replacement_delta_usd": pricing.inkind_replacement_delta_usd,
             "npc_verified_usd": pricing.npc_verified_usd,
             "npc_with_adjustments_usd": pricing.npc_with_adjustments_usd,
+            "npc_conservative_usd": pricing.npc_conservative_usd,
         },
         "approvals_and_actions": unresolved_requirements + list(pricing.blockers),
     }
@@ -622,8 +655,11 @@ def rank_allocated_structures(
             "structure_id": p.structure_id,
             "label": p.label,
             "is_fully_priced": True,
+            "selected_incentive_usd": p.selected_incentive_usd,
+            "inkind_replacement_delta_usd": p.inkind_replacement_delta_usd,
             "npc_verified_usd": p.npc_verified_usd,
             "npc_with_adjustments_usd": p.npc_with_adjustments_usd,
+            "npc_conservative_usd": p.npc_conservative_usd,
         })
     for p in unpriced:
         ranking.append({

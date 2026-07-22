@@ -33,8 +33,9 @@ const INSPECT_KIND_LABEL = {
 // pinned to the bottom. The right-hand Inspector is the app-level overlay
 // (openInspector). Every card value is read verbatim from the allocated
 // structure — Qualified spend is the backend's own per-segment QPE summed;
-// Gross incentive is total_incentive_floor_usd; NPC is
-// npc_with_adjustments_usd. No client-side derivation.
+// Gross incentive is selected_incentive_usd (best-supported modeled rate);
+// NPC is npc_with_adjustments_usd (modeled + normalizations). No client-side
+// derivation.
 
 const MODES = [
   { key: "lanes", label: "Lanes" },
@@ -89,7 +90,7 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, fxHorizon
           <div className="wsx-rows">
             <div className="wsx-row"><span>Gross budget</span><span><Money value={gross} bare /></span></div>
             <div className="wsx-row"><span>Qualified spend</span><span><Money value={qualifiedSpend} bare /></span></div>
-            <div className="wsx-row"><span>Gross incentive</span><span className="incentive"><Money value={structure.total_incentive_floor_usd} bare /></span></div>
+            <div className="wsx-row"><span>Gross incentive</span><span className="incentive"><Money value={structure.selected_incentive_usd} bare /></span></div>
           </div>
           <div className="wsx-row net"><span>Net production cost</span><span><Money value={npc} bare /></span></div>
           <div className="wsx-range">

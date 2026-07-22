@@ -113,7 +113,7 @@ export default function Overview() {
               >
                 <span className="strip-name">{jurName(s.primary_jurisdiction)}</span>
                 <span className="strip-type">
-                  Incentive {s.total_incentive_floor_usd ? `$${Math.round(s.total_incentive_floor_usd).toLocaleString()}` : "—"}
+                  Incentive {s.selected_incentive_usd ? `$${Math.round(s.selected_incentive_usd).toLocaleString()}` : "—"}
                 </span>
                 <span className="strip-npc mono">
                   {s.is_fully_priced ? <Money value={s.npc_with_adjustments_usd} /> : "not priced"}

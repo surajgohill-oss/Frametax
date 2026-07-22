@@ -1073,8 +1073,32 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
     if state.structuring_advisory is not None:
         advisor_routing = list(getattr(state.structuring_advisory, "routing_decisions", []))
 
+    # Off-budget Mauritius in-kind post normalization (Phase 5 canonical
+    # economics): the ~$625k MU in-kind post FMV is NOT a budget line and
+    # NOT QPE. It enters production economics only as a replacement-cost
+    # normalization — a structure that moves the post/VFX/music work out of
+    # Mauritius must absorb the equivalent replacement cost; one that keeps
+    # the post in Mauritius carries $0. Sourced from the existing in-kind
+    # model (economics controls), never fabricated; gated on availability.
+    _inkind_model = build_inkind_model()
+    _inkind_replacement_cost = (
+        _inkind_model.replacement_post_cost_if_lost_usd
+        if _inkind_model.available else 0.0
+    )
+
     pricings = []
     for spec in specs:
+        # A structure keeps the MU in-kind post benefit iff it is
+        # MU-anchored AND does not route the movable post out of MU.
+        _routes_post_away = any(
+            t != JURISDICTION_CODE for t in spec.component_routes.values()
+        )
+        _retains_mu_inkind = (
+            spec.primary_jurisdiction == JURISDICTION_CODE and not _routes_post_away
+        )
+        inkind_replacement_delta = (
+            0.0 if _retains_mu_inkind else _inkind_replacement_cost
+        )
         allocation = derive_account_allocation(
             lines=lines,
             spend_category_by_code=LITTLE_UTOPIA_REAL_SPEND_CATEGORY,
@@ -1098,6 +1122,7 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
             gross_budget_usd=state.gross_budget_usd,
             travel_incremental_delta_usd=travel.incremental_delta_usd,
             fx_delta_usd=None,
+            inkind_replacement_delta_usd=inkind_replacement_delta,
         )
         if pricing.is_fully_priced:
             fx = compute_fx_normalization(
@@ -1110,6 +1135,7 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
                 gross_budget_usd=state.gross_budget_usd,
                 travel_incremental_delta_usd=travel.incremental_delta_usd,
                 fx_delta_usd=fx.delta_usd,
+                inkind_replacement_delta_usd=inkind_replacement_delta,
             )
         pricings.append(pricing)
 
@@ -1171,12 +1197,15 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
             "gross_budget_usd": p.gross_budget_usd,
             "total_incentive_floor_usd": p.total_incentive_floor_usd,
             "total_incentive_ceiling_usd": p.total_incentive_ceiling_usd,
+            "selected_incentive_usd": p.selected_incentive_usd,
             "travel_incremental_delta_usd": p.travel_incremental_delta_usd,
             "fx_delta_usd": p.fx_delta_usd,
+            "inkind_replacement_delta_usd": p.inkind_replacement_delta_usd,
             "financing_cost_usd": p.financing_cost_usd,
             "implementation_cost_usd": p.implementation_cost_usd,
             "npc_verified_usd": p.npc_verified_usd,
             "npc_with_adjustments_usd": p.npc_with_adjustments_usd,
+            "npc_conservative_usd": p.npc_conservative_usd,
             "treaty_slug": p.treaty_slug,
             "ownership_shares": p.ownership_shares,
             "stacking_note": p.stacking_note,

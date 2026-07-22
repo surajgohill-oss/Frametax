@@ -50,7 +50,7 @@ export default function Scenarios() {
   const rows = [
     ["Gross budget", () => gross, true],
     ["Qualified spend", (s) => (s.is_fully_priced ? qpe(s) : null), false],
-    ["Gross incentive", (s) => (s.is_fully_priced ? s.total_incentive_floor_usd : null), false],
+    ["Gross incentive", (s) => (s.is_fully_priced ? s.selected_incentive_usd : null), false],
   ];
 
   return (
