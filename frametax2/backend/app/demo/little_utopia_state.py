@@ -891,21 +891,11 @@ def build_available_funds() -> dict:
     }
 
 
-def _executable_alternatives() -> list[tuple[str, str]]:
-    """(jurisdiction_code, program_slug) for every non-baseline
-    jurisdiction with classified doctrine + statutory rate rules — the
-    same executability test build_alternative_jurisdiction_comparisons
-    applies; catalog-only jurisdictions never appear here."""
-    from app.data.program_rate_rules import get_rate_rules
-    from app.data.program_spend_rules import get_program_doctrine
-    out: list[tuple[str, str]] = []
-    for code in sorted(jc.ALL_PROFILES):
-        if code == JURISDICTION_CODE:
-            continue
-        slug = jc.ALL_PROFILES[code].program_slug
-        if get_program_doctrine(slug) is not None and len(get_rate_rules(slug)) > 0:
-            out.append((code, slug))
-    return out
+# Executable-jurisdiction discovery now lives in
+# app.calculators.production_discovery.discover_executable_jurisdictions —
+# the single, data-driven authority that examines EVERY implemented
+# jurisdiction (not just ALL_PROFILES) and returns the accepted set with a
+# full reasoned audit. build_allocated_structures calls it directly.
 
 
 _STATED_LOCATION_AUTHORITY = (
@@ -973,7 +963,22 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
     )
 
     lines = _budget_lines_for_allocation()
-    alts = _executable_alternatives()
+    # ── GLOBAL DISCOVERY (Phase 6): examine EVERY implemented jurisdiction
+    # in the database (not a hand-picked list), reject the non-executable
+    # with reasons, accept only those with the classified knowledge to price
+    # this production. The accepted set — never a hard-coded country list —
+    # is what enters structure generation. Full audit + metrics are exposed
+    # on the served payload under `discovery`.
+    from app.calculators.production_discovery import discover_executable_jurisdictions
+    _verified_qpe = round(
+        sum(a.amount_usd for a in state.register if a.state == QualificationState.QUALIFIES), 2
+    )
+    discovery = discover_executable_jurisdictions(
+        production_type=MU_PRODUCTION_TYPE,
+        qpe_usd=_verified_qpe,
+        home_code=JURISDICTION_CODE,
+    )
+    alts = discovery.accepted_alternatives(JURISDICTION_CODE)
     slug_by_code = {c: s for c, s in alts}
     fact_answers = state.fact_answers or {}
 
@@ -1296,9 +1301,14 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
 
     coverage = {
         "executable_jurisdictions": [c for c, _ in alts] + [JURISDICTION_CODE],
-        "catalog_only_excluded": "see /economics.alternative_jurisdictions.catalog_only "
-                                 "(BE/CY/DE/ES/FR/HR/HU/IT — missing doctrine and/or rate "
-                                 "rules; insufficient knowledge, never priced at a guess)",
+        "catalog_only_excluded": (
+            f"{discovery.metrics['rejected_count']} of "
+            f"{discovery.metrics['jurisdictions_examined']} examined jurisdictions "
+            "were rejected by global discovery (missing classified doctrine and/or "
+            "statutory rate rules, or the production's own conditions unmet) — "
+            "insufficient knowledge, never priced at a guess. See `discovery` for "
+            "the full per-jurisdiction audit."
+        ),
         "reachable_treaty_partners": reachable_treaty_partners,
         "categories": [
             _cat_report("single_jurisdiction", {"single_country", "full_relocation",
@@ -1339,6 +1349,31 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
             "disclosed, not hidden (see budget_reconciliation on /production)."
         ),
         "coverage": coverage,
+        # Requirement-first global discovery audit (Phase 6): every
+        # implemented jurisdiction examined, with accept/reject + reason and
+        # aggregate metrics. Exposed for debugging; the UI reads only the
+        # ranked structures, not this block.
+        "discovery": {
+            "metrics": discovery.metrics,
+            "generated_structures": len(pricings),
+            "optimized_structures": sum(1 for p in pricings if p.is_fully_priced),
+            "final_ranked_structures": sum(
+                1 for r in rank_allocated_structures(pricings) if r.get("rank") is not None
+            ),
+            "examinations": [
+                {
+                    "jurisdiction_code": e.jurisdiction_code,
+                    "jurisdiction_name": e.jurisdiction_name,
+                    "accepted": e.accepted,
+                    "reason": e.reason,
+                    "program_slug": e.program_slug,
+                    "has_doctrine": e.has_doctrine,
+                    "has_rate_rules": e.has_rate_rules,
+                    "resolves_for_production": e.resolves_for_production,
+                }
+                for e in discovery.examinations
+            ],
+        },
         "structures": [_pricing_dict(p) for p in pricings],
         "ranking": rank_allocated_structures(pricings),
         "stack_combinations": stack_combinations,
