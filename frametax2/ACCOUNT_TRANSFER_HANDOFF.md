@@ -12,7 +12,12 @@
 - **Executable jurisdiction knowledge**: MU, MT, IE, GR wired (doctrine + statutory rate rules).
 - **Grants/funds** connected on `/economics.available_funds`; **stacking** moved to PARTIALLY CONNECTED (real per-jurisdiction relationship edges surfaced, no fabricated dollar figure).
 - **Production-structuring audit** (closeout #3): proved the structuring engine already existed in disconnected pieces; corrected the "unbuilt" assumption.
-- **Structuring Advisor generalized + connected** (closeout #4, most recent): `structuring_advisor.py` de-hardcoded (identity + 4 amounts → params; signal-gated) and connected live via a factory that derives inputs from the real register/facts/rate; served on `/economics.structuring_advisory`; emits `routing_decisions` (allocation seed). 70 original LU tests unchanged + 7 new.
+- **Structuring Advisor generalized + connected** (closeout #4): `structuring_advisor.py` de-hardcoded (identity + 4 amounts → params; signal-gated) and connected live via a factory that derives inputs from the real register/facts/rate; served on `/economics.structuring_advisory`; emits `routing_decisions` (allocation seed). 70 original LU tests unchanged + 7 new.
+- **Workspace title/economics wiring fix** (Phase "restore"): scenario cards restored to frozen plain-jurisdiction-name titles (no "Relocate to X" — that wording is NOT canonical); all four displayed economics fields wired to the per-scenario canonical object.
+- **Optimizer reconciliation**: confirmed `allocated_structures` (account→jurisdiction allocation + multi-register pricing, commit `bfd6364` "keystone") is the single canonical served optimizer; removed the stale unconsumed Phase 7B `global_scenario_ranker` top-level `ranking` (STRUCT-*) output. Discovery-composer (`composition`/PSC-*) retained — it feeds `/recommendations`, not stale.
+- **Phase 5 — canonical optimization contract**: ranking/NPC switched from the conservative statutory floor to the **best-supported modeled incentive** (`selected_incentive_usd`); **"conservative" is retired as a product concept** — the floor-rate figure (`npc_conservative_usd`) is now purely a reference/uncertainty field, never the ranked number. Connected the off-budget Mauritius in-kind post (~$625k) as an **NPC-level replacement-cost normalization** (`inkind_replacement_delta_usd`) — never a budget line, never QPE. Result: Mauritius baseline (not Greece) is now the global optimum for Little Utopia.
+- **Phase 6 — global discovery engine**: replaced the private jurisdiction-knowledge-only filter with `app/calculators/production_discovery.py`, which examines **every implemented jurisdiction** (211, from `global_inventory.ALL_PROGRAMS` ∪ `jurisdiction_comparison.ALL_PROFILES`) and returns a full reasoned accept/reject audit + metrics — no hard-coded country list.
+- **Phase 7 — production-first discovery** (current, most recent): re-oriented discovery to ask "can this production be MADE here?" before "can this jurisdiction be priced?". New `app/calculators/production_requirements.py`: (a) derives structured production requirements (environments/infrastructure) from the existing `physical_requirements` (script + real-budget signals) — no fabrication; (b) an extensible keyword ontology abstracts any literal location string into reusable production categories (broad categories only, **no literal place-name matching**); (c) a jurisdiction **capability profile is kept structurally separate from its incentive profile** (geography/crew/infra fields vs. rate/doctrine fields) and matched against production requirements independent of pricing. Discovery now classifies every jurisdiction into one of three buckets — `incentive_ready` (production-capable AND priceable, enters optimization), `capability_only` (production-capable, incentive model pending — **retained and visible**, never silently discarded), `rejected` (capability mismatch or no data). See §3 below for runtime numbers.
 
 ---
 
@@ -22,7 +27,7 @@
 |---|---|
 | Repo root | `/Users/Suraj/cineglobe-frametax/frametax2` |
 | Branch | `claude/audit-frametax-features-NZcX5` |
-| Local HEAD | `41af3f8` (see §5 SESSION DELTA for the exact closeout commit) |
+| Local HEAD | see git log (Phase 7 production-first discovery closeout, this session) |
 | Remote HEAD | matches local (`git ls-remote` via SSH) |
 | Working tree | clean |
 | Backend path | `frametax2/backend` |
@@ -38,8 +43,10 @@
 | People sources | `app/data/little_utopia_people.py` (writer GB, director AU, lead cast GB, producer UNKNOWN) |
 | FX source | `FX_RATE_SNAPSHOTS` in `production_normalization.py` (live + 1M/6M/12M, manual point-in-time snapshot) |
 | Travel source | `travel_model.py` (LA/NYC/London/Toronto home bases + fallbacks) |
-| Executable jurisdictions | **MU, MT, IE, GR** (all other ~211 profiles are catalog-only) |
-| Test result | **2899 passed, 1 skipped** (venv) |
+| Executable (incentive_ready) jurisdictions | **MU, MT, IE, GR** (4 of 211 examined) |
+| Capability-only (incentive pending) jurisdictions | **BE, CY, DE, ES, FR, HR, IT** (7) — production-capable, no priceable incentive model yet; retained, never discarded |
+| Production-capable total | **11 of 211** examined jurisdictions (Little Utopia requires marine_filming + open_water_filming; HU rejected on genuine capability mismatch) |
+| Test result | **2967 passed, 1 skipped** (venv) |
 
 ---
 

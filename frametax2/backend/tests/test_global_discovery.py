@@ -26,8 +26,10 @@ def _reset():
 
 
 def _discovery():
+    from app.calculators.production_requirements import derive_production_requirements
+    reqs = derive_production_requirements(get_state().physical_requirements)
     return discover_executable_jurisdictions(
-        production_type="feature_film", qpe_usd=4_355_327, home_code="MU",
+        requirements=reqs, production_type="feature_film", qpe_usd=4_355_327, home_code="MU",
     )
 
 
@@ -49,7 +51,8 @@ class TestEveryJurisdictionExamined:
 
     def test_accepted_and_rejected_partition_the_universe(self):
         d = _discovery()
-        assert d.metrics["accepted_count"] + d.metrics["rejected_count"] == d.metrics["jurisdictions_examined"]
+        m = d.metrics
+        assert m["incentive_ready_count"] + m["capability_only_count"] + m["rejected_count"] == m["jurisdictions_examined"]
 
 
 class TestDataDrivenNoHardCoding:

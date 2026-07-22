@@ -213,15 +213,59 @@ DEFAULT optimizer run (real Little Utopia inputs, no elections):
   -> served on /structures.allocated_structures.coverage
 ```
 
-Global financial optimum = **full relocation to Greece** (guaranteed 40% floor > MU 30% floor),
-also physically viable (GR marine_suitability=strong matches the Mediterranean-marine script).
-The historical "Mauritius" recommendation shifted to "Greece relocation" due to corrected
-statutory interpretation (floor not ceiling) + recovered executable knowledge (GR/IE/MT) +
-confirmed physical viability — not a defect.
-
 Fix this session: component-routing structures are auto-enumerated per executable partner and a
 coverage report is emitted (little_utopia_state.build_allocated_structures). No new engine, no
 redesign — pure connection of the existing allocation+pricing capability. Suite 2929 passed.
+
+## SESSION DELTA — Phase 5/6/7: canonical optimization contract, global discovery, production-first (superseding the above)
+
+**"Conservative" is retired as a canonical product concept.** Ranking/NPC now use the
+**best-supported modeled incentive** (`selected_incentive_usd`, e.g. MU resolves its 40% ceiling
+tier, not the 30% floor), never the statutory floor. The floor figure (`npc_conservative_usd`)
+survives only as a reference/uncertainty field, never the ranked number. The off-budget Mauritius
+in-kind post (~$625k) is connected as an **NPC-level replacement-cost normalization**
+(`inkind_replacement_delta_usd`) — a structure that keeps the post in MU carries $0, one that
+routes it elsewhere absorbs the replacement cost. Net effect: **Mauritius baseline is now the
+global optimum** for Little Utopia (NPC ~2.62M vs. Greece ~3.25M) — supersedes the "Greece
+relocation" optimum stated above, which was floor-rate-driven.
+
+**Global discovery replaces the private knowledge-only filter** (`app/calculators/
+production_discovery.py`): examines every implemented jurisdiction (211, from
+`global_inventory.ALL_PROGRAMS` ∪ `jurisdiction_comparison.ALL_PROFILES`), no hard-coded country
+list.
+
+**Production-first discovery** (`app/calculators/production_requirements.py`) re-orders the
+question from "can this jurisdiction be priced?" to "can this production be MADE here?":
+structured production requirements (environments/infrastructure) are derived from the existing
+`physical_requirements` (script + real-budget signals); a keyword ontology abstracts any literal
+location string into **broad reusable production categories only — never literal place-name
+matching**; each jurisdiction's **capability profile is structurally separate from its incentive
+profile** (geography/crew/infra fields vs. rate/doctrine fields). Discovery classifies every
+jurisdiction into `incentive_ready` (enters optimization), `capability_only` (production-capable,
+incentive model pending — **retained and visible, never silently discarded**), or `rejected`
+(capability mismatch or no data).
+
+Little Utopia discovery result: 211 examined → 11 production-capable (requires marine_filming +
+open_water_filming) → 4 incentive_ready (MU/MT/IE/GR) + 7 capability_only (BE/CY/DE/ES/FR/HR/IT)
+→ 200 rejected (HU rejected on genuine capability mismatch; 199 no capability+no incentive data).
+
+Scenario titles remain plain jurisdiction names — **"Relocate to X" is not canonical wording**;
+movement/structure belongs in the explanation, not the title.
+
+Files: `app/calculators/allocation_pricing.py`, `app/demo/little_utopia_state.py`,
+`app/calculators/production_discovery.py` (new), `app/calculators/production_requirements.py`
+(new). Tests: `tests/test_canonical_optimization_contract.py` (new),
+`tests/test_global_discovery.py` (new), plus updates to `tests/test_allocation_pricing.py` and
+`tests/test_mock_contamination_guard.py`. Suite: 2967 passed, 1 skipped.
+
+**Known limitations (not implemented):** no labor-normalization engine; only Little Utopia is
+loaded (no multi-production ingestion yet); 7 capability_only jurisdictions still need incentive
+knowledge (doctrine + statutory rate rules) to become priceable; remaining ~200 jurisdictions have
+no capability data at all.
+
+**Next task:** classify doctrine + statutory rate rules for one capability_only jurisdiction
+(BE/CY/DE/ES/FR/HR/IT) to move it from `capability_only` to `incentive_ready` and prove the
+discovery pipeline admits it with zero code changes.
 
 **Backend optimizer architecture is FROZEN.** All 8 acceptance questions answered YES/none-
 outstanding. Remaining work is data (more executable jurisdictions) + future ownership-share

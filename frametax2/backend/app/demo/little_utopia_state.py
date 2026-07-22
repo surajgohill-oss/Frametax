@@ -970,10 +970,16 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
     # is what enters structure generation. Full audit + metrics are exposed
     # on the served payload under `discovery`.
     from app.calculators.production_discovery import discover_executable_jurisdictions
+    from app.calculators.production_requirements import derive_production_requirements
     _verified_qpe = round(
         sum(a.amount_usd for a in state.register if a.state == QualificationState.QUALIFIES), 2
     )
+    # PRODUCTION-FIRST (Phase 7): derive the production's structured
+    # environment + infrastructure requirements, then discover which
+    # jurisdictions can actually MAKE this production before pricing any.
+    _requirements = derive_production_requirements(state.physical_requirements)
     discovery = discover_executable_jurisdictions(
+        requirements=_requirements,
         production_type=MU_PRODUCTION_TYPE,
         qpe_usd=_verified_qpe,
         home_code=JURISDICTION_CODE,
@@ -1360,13 +1366,22 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
             "final_ranked_structures": sum(
                 1 for r in rank_allocated_structures(pricings) if r.get("rank") is not None
             ),
+            "production_requirements": {
+                "environments": sorted(_requirements.environments),
+                "infrastructure": sorted(_requirements.infrastructure),
+                "required_capabilities": sorted(_requirements.required_capabilities),
+            },
             "examinations": [
                 {
                     "jurisdiction_code": e.jurisdiction_code,
                     "jurisdiction_name": e.jurisdiction_name,
+                    "classification": e.classification,
+                    "production_capable": e.production_capable,
                     "accepted": e.accepted,
                     "reason": e.reason,
+                    "capability_reasons": list(e.capability_reasons),
                     "program_slug": e.program_slug,
+                    "has_capability_data": e.has_capability_data,
                     "has_doctrine": e.has_doctrine,
                     "has_rate_rules": e.has_rate_rules,
                     "resolves_for_production": e.resolves_for_production,

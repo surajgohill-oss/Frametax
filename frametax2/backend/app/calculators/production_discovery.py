@@ -37,9 +37,17 @@ from dataclasses import dataclass
 class JurisdictionExamination:
     jurisdiction_code: str
     jurisdiction_name: str
-    accepted: bool
+    # Production-first classification:
+    #   "incentive_ready"     — production-capable AND priceable → optimized
+    #   "capability_only"     — production-capable, incentive model pending
+    #   "rejected"            — cannot make the production here, or no data
+    classification: str
+    accepted: bool           # True only for incentive_ready (enters optimization)
+    production_capable: bool
     reason: str
+    capability_reasons: tuple[str, ...]
     program_slug: str | None
+    has_capability_data: bool
     has_doctrine: bool
     has_rate_rules: bool
     resolves_for_production: bool
@@ -62,14 +70,24 @@ class DiscoveryResult:
 
 def discover_executable_jurisdictions(
     *,
+    requirements,
     production_type: str,
     qpe_usd: float | None,
     home_code: str,
 ) -> DiscoveryResult:
-    """Examine every implemented jurisdiction and return the executable set
-    plus a full, reasoned audit. Pure function of the data + the production
-    facts; iterates registries, never a hard-coded country list."""
+    """Production-first discovery. Examine every implemented jurisdiction and,
+    for each, first ask 'can this PRODUCTION be made here?' (capability match)
+    and then 'can the incentive be priced?' (knowledge + statutory gate),
+    classifying it as incentive_ready / capability_only / rejected. Only
+    incentive_ready jurisdictions enter optimization; capability_only
+    jurisdictions are retained (production-capable, incentive pending) rather
+    than silently discarded. Pure function of the data + the production —
+    iterates registries, never a hard-coded country list."""
     from app.calculators import jurisdiction_comparison as jc
+    from app.calculators.production_requirements import (
+        jurisdiction_capability_profile,
+        match_capability,
+    )
     from app.data import global_inventory as gi
     from app.data.program_rate_rules import get_rate_rules, resolve_program_rate
     from app.data.program_spend_rules import get_program_doctrine
@@ -105,63 +123,85 @@ def discover_executable_jurisdictions(
         req_cultural = getattr(inv, "requires_cultural_test", None) if inv is not None else None
         req_entity = getattr(inv, "requires_local_entity", None) if inv is not None else None
 
+        # ── STAGE 1: can the PRODUCTION be made here? (capability, not tax) ──
+        cap = jurisdiction_capability_profile(code)
+        cm = match_capability(requirements, cap)
+        cap_reasons = cm.reasons
+
+        # ── STAGE 2: can the incentive be priced? (knowledge + statutory) ──
         resolves = False
-        if slug is None:
-            reason = ("Catalog inventory only — no structured executable profile "
-                      "(no classified qualification doctrine and no statutory rate "
-                      "rules). Cannot be priced without guessing; excluded.")
-            _reject("catalog_only_no_profile")
-            ok = False
-        elif not has_doctrine and not has_rate:
-            reason = ("Modeled profile but neither classified qualification doctrine "
-                      "nor statutory rate rules — insufficient knowledge to price; "
-                      "excluded rather than guessed.")
-            _reject("no_doctrine_no_rate")
-            ok = False
-        elif not has_doctrine:
-            reason = ("Statutory rate rules present but no classified qualification "
-                      "doctrine — cannot derive a qualification register; excluded "
-                      "rather than guessed.")
-            _reject("no_doctrine")
-            ok = False
-        elif not has_rate:
-            reason = ("Qualification doctrine present but no statutory rate rules — "
-                      "cannot resolve an incentive rate; excluded rather than guessed.")
-            _reject("no_rate_rules")
-            ok = False
-        else:
-            # KNOWLEDGE gate passed → REQUIREMENT gate: does THIS production
-            # (its type + qualifying spend) actually resolve a statutory rate?
+        priceable = False
+        if slug is not None and has_doctrine and has_rate:
             rr = resolve_program_rate(slug, production_type=production_type, qpe_usd=qpe_usd)
             resolves = rr is not None
-            if not resolves:
-                reason = ("Executable knowledge present, but this production's type "
-                          f"'{production_type}' / qualifying spend does not meet the "
-                          "program's statutory conditions (production-type scope or "
-                          "minimum spend); excluded rather than guessed.")
-                _reject("production_conditions_unmet")
-                ok = False
-            else:
-                reason = ("Executable: classified qualification doctrine + statutory "
-                          "rate rules present and the production resolves a statutory "
-                          "rate — enters optimization.")
-                ok = True
-                accepted.append((code, slug))
+            priceable = resolves
+
+        # ── Classification (production-first) ──
+        if cap.has_capability_data and not cm.production_capable:
+            classification = "rejected"
+            missing = ", ".join(cm.incompatible) or "a required environment"
+            reason = (f"Not production-capable: the production requires {missing}, which "
+                      f"this jurisdiction cannot provide. Rejected on capability, "
+                      "independent of any incentive.")
+            _reject("capability_mismatch")
+            ok = False
+            capable = False
+        elif cm.production_capable and priceable:
+            classification = "incentive_ready"
+            reason = ("Production-capable AND incentive-ready: capabilities match the "
+                      "production's requirements and a statutory incentive resolves — "
+                      "enters optimization.")
+            ok = True
+            capable = True
+            accepted.append((code, slug))
+        elif cm.production_capable and not priceable:
+            classification = "capability_only"
+            why_pending = ("no statutory rate rules" if not has_rate else
+                           "no classified qualification doctrine" if not has_doctrine else
+                           "the production's statutory conditions are unmet")
+            reason = ("Production-capable, incentive pending: the jurisdiction can "
+                      f"physically support the production, but {why_pending}. Retained "
+                      "for capability, not priced (never guessed).")
+            _reject("capability_only_incentive_pending")
+            ok = False
+            capable = True
+        else:
+            # No capability data AND not priceable → nothing to act on.
+            classification = "rejected"
+            reason = ("No structured capability profile and no priceable incentive "
+                      "model (catalog rate only, if any) — cannot assess production "
+                      "fit or price; excluded rather than guessed.")
+            _reject("no_capability_no_incentive")
+            ok = False
+            capable = False
 
         examinations.append(JurisdictionExamination(
-            jurisdiction_code=code, jurisdiction_name=name, accepted=ok, reason=reason,
-            program_slug=slug, has_doctrine=has_doctrine, has_rate_rules=has_rate,
-            resolves_for_production=resolves, stated_base_rate=stated_rate,
-            requires_cultural_test=req_cultural, requires_local_entity=req_entity,
+            jurisdiction_code=code, jurisdiction_name=name, classification=classification,
+            accepted=ok, production_capable=capable, reason=reason,
+            capability_reasons=cap_reasons, program_slug=slug,
+            has_capability_data=cap.has_capability_data, has_doctrine=has_doctrine,
+            has_rate_rules=has_rate, resolves_for_production=resolves,
+            stated_base_rate=stated_rate, requires_cultural_test=req_cultural,
+            requires_local_entity=req_entity,
         ))
 
+    n_capable = sum(1 for e in examinations if e.production_capable)
+    n_capability_only = sum(1 for e in examinations if e.classification == "capability_only")
     metrics = {
         "jurisdictions_examined": len(examinations),
-        "accepted_count": len(accepted),
-        "rejected_count": len(examinations) - len(accepted),
-        "accepted_jurisdictions": [c for c, _ in accepted],
+        "production_capable_count": n_capable,
+        "incentive_ready_count": len(accepted),
+        "capability_only_count": n_capability_only,
+        "rejected_count": sum(1 for e in examinations if e.classification == "rejected"),
+        "accepted_count": len(accepted),  # back-compat alias for incentive_ready
+        "incentive_ready_jurisdictions": [c for c, _ in accepted],
+        "capability_only_jurisdictions": [
+            e.jurisdiction_code for e in examinations if e.classification == "capability_only"
+        ],
+        "accepted_jurisdictions": [c for c, _ in accepted],  # back-compat alias
         "rejection_reason_counts": rejection_reason_counts,
         "home_jurisdiction": home_code,
         "production_type": production_type,
+        "required_capabilities": sorted(requirements.required_capabilities),
     }
     return DiscoveryResult(tuple(examinations), tuple(accepted), metrics)
