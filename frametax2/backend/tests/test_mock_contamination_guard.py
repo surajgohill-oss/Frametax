@@ -93,9 +93,15 @@ class TestPrimaryPipelineIsMockFree:
         )
         mu = next(c for c in state.composition.candidates if c.candidate_id == "PSC-MU")
         assert mu.cases[RiskCase.CONSERVATIVE].qpe_usd == pytest.approx(raw_qpe, abs=0.01)
-        rank1 = state.scenario_ranking.ranks[0]
-        scen = next(s for s in state.scenario_ranking.structures if s.structure_id == rank1.structure_id)
-        assert scen.cases[RiskCase.CONSERVATIVE].qpe_usd == pytest.approx(raw_qpe, abs=0.01)
+        # Canonical served optimizer: the MU baseline allocated structure's
+        # own line-by-line segment QPE must reconcile to the raw register
+        # (the legacy scenario_ranking path was removed — allocated_structures
+        # is the single served optimizer).
+        from app.demo.little_utopia_state import build_allocated_structures
+        alloc = build_allocated_structures(state)
+        mu_struct = next(s for s in alloc["structures"] if s["structure_id"] == "ALLOC-BASELINE-MU")
+        mu_seg = next(sg for sg in mu_struct["segments"] if sg["jurisdiction_code"] == "MU")
+        assert mu_seg["qpe_usd"] == pytest.approx(raw_qpe, abs=0.01)
 
     def test_mock_cycle_runs_but_never_auto_resolves_genuine_grey(self, state):
         """The research cycle still runs (questions detected/staged) but,

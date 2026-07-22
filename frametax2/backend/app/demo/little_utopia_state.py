@@ -61,12 +61,6 @@ from functools import lru_cache
 
 from app.calculators import jurisdiction_comparison as jc
 from app.calculators.evidence_graph import AuthorityTier
-from app.calculators.global_scenario_ranker import (
-    ProductionStructure,
-    StructureRankingResult,
-    compose_candidate_structures,
-    rank_production_structures,
-)
 from app.calculators.jurisdiction_graph import JurisdictionGraph, build_jurisdiction_graph
 from app.calculators.legal_authority_acquisition import ConnectorClass, MockConnector
 from app.calculators.legal_engine import AcquisitionCycleResult, CommitResult, LegalEngine, RerunResult
@@ -1387,8 +1381,6 @@ class LittleUtopiaState:
     fact_answers: dict = field(default_factory=dict)
     rate_resolution: RateResolution | None = None
     rate_warnings: list[str] = field(default_factory=list)
-    scenario_structures: list[ProductionStructure] = field(default_factory=list)
-    scenario_ranking: StructureRankingResult = None
     legal_engine: LegalEngine = None
     legal_cycle: AcquisitionCycleResult = None
     legal_commit: CommitResult = None
@@ -1869,13 +1861,6 @@ def _build_state(_fact_key: tuple, _people_key: tuple = ()) -> LittleUtopiaState
         treaty_partner_code=facts.treaty_partner_code,
     )
 
-    scenario_structures = compose_candidate_structures(
-        collection, register=register, gross_budget_usd=MU_GROSS_BUDGET_USD,
-        rate=MU_RATE, grey_areas=grey_areas,
-        delay_weeks=0, bridge_rate=0.0,
-    )
-    scenario_ranking = rank_production_structures(scenario_structures)
-
     # ── LEGAL / RESEARCH VIEW — explicitly labeled, mock-sourced ───────
     # One acquisition cycle through the sole shipped connector
     # (MockConnector — every excerpt self-labels "MOCK CONNECTOR — no
@@ -1948,8 +1933,6 @@ def _build_state(_fact_key: tuple, _people_key: tuple = ()) -> LittleUtopiaState
         rate_resolution=rate_resolution,
         rate_warnings=rate_warnings,
         fact_answers=current_fact_answers(),
-        scenario_structures=scenario_structures,
-        scenario_ranking=scenario_ranking,
         legal_engine=legal_engine,
         legal_cycle=legal_cycle,
         legal_commit=legal_commit,

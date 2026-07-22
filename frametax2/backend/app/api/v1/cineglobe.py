@@ -527,18 +527,16 @@ async def get_recommendations() -> dict[str, Any]:
 @router.get("/structures")
 async def get_structures() -> dict[str, Any]:
     """
-    NOTE on risk_adjusted_npc_usd: the scenario ranker's ORDER is still
-    computed on risk-adjusted NPC (global_scenario_ranker.py, untouched —
-    that ranking math is not in scope here). But the PRIMARY figure this
-    endpoint surfaces per candidate is conservative_npc_usd — the NPC
-    implied by the verified/conservative QPE only. Risk-adjusted NPC
-    blends in optimistic upside that has not been established as verified
-    QPE, so it is kept as a secondary field (risk_adjusted_npc_usd, still
-    present, just not primary) until the underlying grey areas/structuring
-    paths are actually resolved.
+    Serves the CANONICAL optimizer output: allocated_structures (the
+    account->jurisdiction allocation + multi-register pricing keystone,
+    little_utopia_state.build_allocated_structures), whose .ranking the UI
+    consumes. `candidates` is the opportunity-discovery composition set,
+    retained because the recommendation engine consumes it. The legacy
+    top-level `ranking` (global_scenario_ranker STRUCT-* order) was removed:
+    it was computed every request but consumed by no screen — the canonical
+    ranking is allocated_structures.ranking.
     """
     s = get_state()
-    ranked_structures_by_id = {st.structure_id: st for st in s.scenario_ranking.structures}
 
     def _candidate_dict(c) -> dict[str, Any]:
         return {
@@ -554,39 +552,20 @@ async def get_structures() -> dict[str, Any]:
             "included_opportunity_ids": list(c.included_opportunity_ids),
         }
 
-    def _conservative_npc(structure_id: str) -> float | None:
-        st = ranked_structures_by_id.get(structure_id)
-        if st is None or not st.cases:
-            return None
-        return st.cases[RiskCase.CONSERVATIVE].net_production_cost_usd
-
     from app.demo.little_utopia_state import build_allocated_structures
 
     return {
+        # composition candidates (opportunity discovery) — the input the
+        # recommendation engine consumes; retained here for that surface.
         "candidates": [_candidate_dict(c) for c in s.composition.candidates],
         "pruned": s.composition.pruned,
         # Account->jurisdiction allocation surface (production_allocation +
-        # allocation_pricing): per-structure account allocations, per-
-        # jurisdiction partial-register segment economics, qualification
-        # traces, unresolved conditions, approval dependencies, and gated
-        # structure recommendations.
+        # allocation_pricing): the CANONICAL served optimizer — per-structure
+        # account allocations, per-jurisdiction partial-register segment
+        # economics, qualification traces, unresolved conditions, approval
+        # dependencies, gated structure recommendations, and the ranking the
+        # UI reads (allocated_structures.ranking).
         "allocated_structures": build_allocated_structures(s),
-        "ranking": [
-            {
-                "rank": r.rank,
-                "structure_id": r.structure_id,
-                "label": r.label,
-                "is_priceable": r.is_priceable,
-                "conservative_npc_usd": _conservative_npc(r.structure_id),
-                "secondary_analysis": {
-                    "risk_adjusted_npc_usd": r.risk_adjusted_npc_usd,
-                    "note": "Blends optimistic upside (unresolved grey areas / structuring "
-                            "paths) into NPC. Informational only until those items are "
-                            "actually resolved — conservative_npc_usd is the primary figure.",
-                },
-            }
-            for r in s.scenario_ranking.ranks
-        ],
     }
 
 
