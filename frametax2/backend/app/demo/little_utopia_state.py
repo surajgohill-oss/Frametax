@@ -169,6 +169,23 @@ ANSWERABLE_FACTS: dict[str, dict] = {
             "structure pricing served on /structures.allocated_structures."
         ),
     },
+    "account_splits": {
+        "type": dict,
+        "answers_question": None,
+        "description": (
+            "Producer-supplied explicit split-production election: "
+            "{account_code: {jurisdiction_code: pct, ...}, ...} — the exact "
+            "portion of each named account's spend claimed in each "
+            "jurisdiction (percentages, not dollar amounts; each account's "
+            "shares need not sum to 1.0 — unassigned spend is not split). "
+            "Every jurisdiction referenced must be the baseline or a "
+            "discovery-retained partner (incentive-ready or capability-"
+            "only) — never invented. Composes one split_production "
+            "StructureSpec using account_allocation's existing, tested "
+            "explicit-split pricing path — never a fabricated default "
+            "percentage."
+        ),
+    },
 }
 
 _fact_answers: dict[str, object] = {}
@@ -220,6 +237,25 @@ def apply_fact_answers(answers: dict[str, object]) -> None:
                     "price at a guessed rate, which is never done."
                 )
             value = code
+        if key == "account_splits":
+            known = {JURISDICTION_CODE} | set(jc.ALL_PROFILES)
+            for account_code, shares in value.items():
+                if not isinstance(shares, dict) or not shares:
+                    raise ValueError(
+                        f"account_splits['{account_code}'] must be a non-empty "
+                        "{jurisdiction_code: pct} dict."
+                    )
+                for code, pct in shares.items():
+                    if code.upper() not in known:
+                        raise ValueError(
+                            f"'{code}' in account_splits['{account_code}'] is not "
+                            f"a modeled jurisdiction (known: {sorted(known)})."
+                        )
+                    if not isinstance(pct, (int, float)) or not (0 < pct <= 1):
+                        raise ValueError(
+                            f"account_splits['{account_code}']['{code}'] must be "
+                            f"a percentage in (0, 1], got {pct!r}."
+                        )
         _fact_answers[key] = value
     _build_state.cache_clear()
 
@@ -954,6 +990,7 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
     )
     from app.calculators.production_normalization import (
         compute_fx_normalization,
+        compute_local_cost_normalization,
         compute_travel_normalization,
     )
     from app.data.little_utopia_real_budget import (
@@ -1090,6 +1127,43 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
                   "evaluated against the real treaty registry, never assumed.",
         ))
 
+    # Split production: an explicit producer election of per-account
+    # jurisdiction splits (account_splits fact) composes ONE split_production
+    # StructureSpec using production_allocation's existing, tested explicit-
+    # split pricing path (account_splits field) — no new pricing logic, no
+    # fabricated default percentage. Unlike treaty/hybrid structures, a
+    # split does not require a treaty instrument (each jurisdiction prices
+    # its own claimed portion independently), so this reaches real pricing
+    # for Little Utopia, not just an honestly-blocked draft.
+    account_splits = fact_answers.get("account_splits")
+    if account_splits:
+        split_codes = sorted({c.upper() for shares in account_splits.values() for c in shares})
+        split_programs: dict[str, str] = {}
+        for code in split_codes:
+            if code == JURISDICTION_CODE:
+                split_programs[code] = "mu_edb_incentive"
+            elif code in slug_by_code:
+                split_programs[code] = slug_by_code[code]
+            else:
+                partner_profile = jc.ALL_PROFILES.get(code)
+                if partner_profile is not None:
+                    split_programs[code] = partner_profile.program_slug
+        primary = JURISDICTION_CODE if JURISDICTION_CODE in split_codes else split_codes[0]
+        participants = tuple(dict.fromkeys([primary, *split_codes]))
+        specs.append(StructureSpec(
+            structure_id="ALLOC-SPLIT-" + "-".join(split_codes),
+            structure_type="split_production",
+            label="Split production: " + " + ".join(split_codes),
+            primary_jurisdiction=primary,
+            participants=participants,
+            incentive_programs=split_programs,
+            account_splits={k: dict(v) for k, v in account_splits.items()},
+            notes="Elected via the account_splits fact — explicit producer-"
+                  "supplied per-account jurisdiction splits; each "
+                  "jurisdiction's claimed portion is priced independently "
+                  "against its own doctrine/rate rules, never guessed.",
+        ))
+
     # ── allocation + pricing per spec (travel/FX once, structure level) ──
     travel_inputs = build_travel_inputs()
     origin_budgeted_travel = budgeted_travel_usd(state.register)
@@ -1144,6 +1218,9 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
             spec.primary_jurisdiction, travel_inputs,
             origin_budgeted_travel, JURISDICTION_CODE,
         )
+        local_cost = compute_local_cost_normalization(
+            spec.primary_jurisdiction, JURISDICTION_CODE, state.gross_budget_usd,
+        )
         pricing = price_allocated_structure(
             spec=spec, allocation=allocation,
             spend_category_by_code=LITTLE_UTOPIA_REAL_SPEND_CATEGORY,
@@ -1152,6 +1229,12 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
             travel_incremental_delta_usd=travel.incremental_delta_usd,
             fx_delta_usd=None,
             inkind_replacement_delta_usd=inkind_replacement_delta,
+            local_cost_delta_usd=local_cost.incremental_delta_usd,
+            local_cost_basis={
+                "jurisdiction_code": local_cost.jurisdiction_code,
+                "original_jurisdiction_code": local_cost.original_jurisdiction_code,
+                "note": local_cost.note,
+            },
         )
         if pricing.is_fully_priced:
             fx = compute_fx_normalization(
@@ -1180,6 +1263,12 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
                 fx_delta_usd=fx.delta_usd,
                 fx_basis=fx_basis,
                 inkind_replacement_delta_usd=inkind_replacement_delta,
+                local_cost_delta_usd=local_cost.incremental_delta_usd,
+                local_cost_basis={
+                    "jurisdiction_code": local_cost.jurisdiction_code,
+                    "original_jurisdiction_code": local_cost.original_jurisdiction_code,
+                    "note": local_cost.note,
+                },
             )
         pricings.append(pricing)
 
@@ -1245,6 +1334,8 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
             "travel_incremental_delta_usd": p.travel_incremental_delta_usd,
             "fx_delta_usd": p.fx_delta_usd,
             "fx_basis": p.fx_basis,
+            "local_cost_delta_usd": p.local_cost_delta_usd,
+            "local_cost_basis": p.local_cost_basis,
             "inkind_replacement_delta_usd": p.inkind_replacement_delta_usd,
             "financing_cost_usd": p.financing_cost_usd,
             "implementation_cost_usd": p.implementation_cost_usd,
@@ -1814,6 +1905,16 @@ def _build_structuring_advisory(register, facts, rate, gross_budget_usd, inkind_
     return build_structuring_advisory(inputs)
 
 
+def _hashable_fact_value(value: object) -> object:
+    """lru_cache requires a hashable key; account_splits is a dict-of-dicts
+    (unhashable). Canonicalizes to a sorted nested tuple for the CACHE KEY
+    only — _fact_answers itself keeps its real dict values, read directly
+    by _production_facts()/build_allocated_structures()."""
+    if isinstance(value, dict):
+        return tuple(sorted((k, _hashable_fact_value(v)) for k, v in value.items()))
+    return value
+
+
 def get_state() -> LittleUtopiaState:
     """Current state under the current fact answers. Cached per
     fact-state; apply_fact_answers()/reset_fact_answers()/
@@ -1821,7 +1922,10 @@ def get_state() -> LittleUtopiaState:
     people_key = tuple(sorted(
         (role, o.nationality, o.residency) for role, o in _people_overrides.items()
     ))
-    return _build_state(tuple(sorted(_fact_answers.items())), people_key)
+    fact_key = tuple(sorted(
+        (k, _hashable_fact_value(v)) for k, v in _fact_answers.items()
+    ))
+    return _build_state(fact_key, people_key)
 
 
 @lru_cache(maxsize=8)

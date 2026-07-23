@@ -369,3 +369,82 @@ def normalize_candidates(
             normalized_npc_usd=normalized_npc,
         ))
     return sorted(results, key=lambda r: (r.normalized_npc_usd, r.candidate_id))
+
+
+# ── Local cost modeling (Priority 1 reconnection) ───────────────────────────
+#
+# Connects the existing app.calculators.production_adjustment engine (real,
+# already-built: airfare/hotel/per-diem/freight-carnet/visa-work-permit/
+# payroll-fringe/local-transport/legal-accounting/local-hire-premium/
+# equipment/stage-facility line items, each sourced from
+# app.data.location_cost_benchmarks.JurisdictionCostProfile) into the served
+# structure pricing, the same additive-delta pattern travel/FX already use.
+#
+# Only the categories travel/FX do NOT already cover are counted here
+# (airfare, hotel, per_diem, fx are toggled OFF — counting them again would
+# double the already-applied travel_incremental_delta_usd/fx_delta_usd).
+# EXISTING_BUDGET mode with existing_budget_iso2=the production's real
+# shooting geography gives the calculator's own "same jurisdiction -> all
+# deltas are 0.0" regression guarantee for the baseline structure, mirroring
+# travel normalization's origin==proposed convention.
+from app.calculators.production_adjustment import (  # noqa: E402
+    AdjustmentMode,
+    AdjustmentToggles,
+    ProductionAdjustmentInput,
+    ProductionAdjustmentResult,
+    calculate_production_adjustment,
+)
+
+_LOCAL_COST_TOGGLES = AdjustmentToggles(
+    airfare=False, hotel=False, per_diem=False, fx=False,
+)
+
+
+@dataclass(frozen=True)
+class LocalCostNormalizationResult:
+    jurisdiction_code: str            # the PROPOSED jurisdiction being evaluated
+    original_jurisdiction_code: str   # the production's actual/original shoot geography
+    incremental_delta_usd: float      # sum of non-travel, non-FX adjustment categories
+    result: ProductionAdjustmentResult  # full line-item breakdown, for the Inspector trace
+    note: str
+
+
+def compute_local_cost_normalization(
+    jurisdiction_code: str,
+    original_jurisdiction_code: str,
+    gross_budget_usd: float,
+) -> LocalCostNormalizationResult:
+    """Incremental non-travel, non-FX local cost delta for shooting/routing
+    work in jurisdiction_code instead of original_jurisdiction_code — crew
+    rate index, equipment rental, stage facility, legal/accounting, local-
+    hire premium, freight/carnet, visa/work permit, local transport, all
+    sourced from location_cost_benchmarks.py's real per-jurisdiction cost
+    profiles via the existing production_adjustment.py calculator. Reuses
+    the calculator's own crew/budget defaults (this production has no
+    granular crew-manifest fixture to override them with) — only the
+    jurisdiction codes and the production's real gross budget are supplied,
+    never a fabricated crew count or line-item rate."""
+    inp = ProductionAdjustmentInput(
+        home_base_iso2=original_jurisdiction_code,
+        destination_iso2=jurisdiction_code,
+        mode=AdjustmentMode.EXISTING_BUDGET,
+        existing_budget_iso2=original_jurisdiction_code,
+        toggles=_LOCAL_COST_TOGGLES,
+    )
+    inp.budget.total_budget_usd = gross_budget_usd
+    result = calculate_production_adjustment(inp)
+    note = (
+        f"Local cost modeling (production_adjustment.py, real per-jurisdiction "
+        f"cost benchmarks): incremental delta vs {original_jurisdiction_code} "
+        f"across freight/carnet, visa/work permit, payroll fringe, local "
+        f"transport, legal/accounting, local-hire premium, equipment, and "
+        f"stage facility. Airfare/hotel/per-diem/FX are excluded here — "
+        f"already modeled by travel and FX normalization."
+    )
+    return LocalCostNormalizationResult(
+        jurisdiction_code=jurisdiction_code,
+        original_jurisdiction_code=original_jurisdiction_code,
+        incremental_delta_usd=round(result.total_adjustment_usd, 2),
+        result=result,
+        note=note,
+    )

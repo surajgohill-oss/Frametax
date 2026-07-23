@@ -173,6 +173,15 @@ class AllocatedStructurePricing:
     # computed for this structure (never priced, or no local-currency
     # jurisdiction mapping) — never fabricated.
     fx_basis: dict | None = None
+    # Local cost modeling (production_adjustment.py + location_cost_
+    # benchmarks.py, real per-jurisdiction cost indices) — the incremental,
+    # non-travel/non-FX cost delta of this structure's primary jurisdiction
+    # vs the production's original shoot geography (crew rate, equipment,
+    # stage facility, legal/accounting, local-hire premium, freight/carnet,
+    # visa/work permit, local transport). 0.0 for the baseline (same
+    # jurisdiction). None when never computed for this structure.
+    local_cost_delta_usd: float | None = None
+    local_cost_basis: dict | None = None
 
 
 # ── Segment pricing ──────────────────────────────────────────────────────────
@@ -388,6 +397,8 @@ def price_allocated_structure(
     fx_delta_usd: float | None = None,
     fx_basis: dict | None = None,
     inkind_replacement_delta_usd: float | None = None,
+    local_cost_delta_usd: float | None = None,
+    local_cost_basis: dict | None = None,
     financing_cost_usd: float = 0.0,
     implementation_cost_usd: float = 0.0,
     production_type: str = "feature_film",
@@ -462,11 +473,15 @@ def price_allocated_structure(
     # (travel, FX, and the off-budget MU in-kind replacement) apply once.
     selected_incentive = total_ceiling
     _inkind_repl = inkind_replacement_delta_usd or 0.0
+    _local_cost = local_cost_delta_usd or 0.0
     npc_verified = None      # here: best-supported NPC before normalizations
     npc_adjusted = None      # canonical, normalized, ranked NPC
     npc_conservative = None  # floor-rate NPC + same normalizations (uncertainty)
     if fully_priced:
-        _norm = (travel_incremental_delta_usd or 0.0) + (fx_delta_usd or 0.0) + _inkind_repl
+        _norm = (
+            (travel_incremental_delta_usd or 0.0) + (fx_delta_usd or 0.0)
+            + _inkind_repl + _local_cost
+        )
         npc_verified = round(
             gross_budget_usd - selected_incentive
             + financing_cost_usd + implementation_cost_usd, 2,
@@ -520,6 +535,8 @@ def price_allocated_structure(
         travel_incremental_delta_usd=travel_incremental_delta_usd,
         fx_delta_usd=fx_delta_usd,
         fx_basis=fx_basis,
+        local_cost_delta_usd=local_cost_delta_usd,
+        local_cost_basis=local_cost_basis,
         financing_cost_usd=financing_cost_usd,
         implementation_cost_usd=implementation_cost_usd,
         npc_verified_usd=npc_verified,
