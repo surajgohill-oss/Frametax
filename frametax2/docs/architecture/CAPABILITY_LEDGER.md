@@ -47,3 +47,56 @@ This is not a missing function call (unlike Local Cost Modeling and Split Produc
 ## Broadcaster / Regional Funds: also stopped, for a different reason
 
 Not an architecture mismatch — a genuine data gap. No statutory doctrine or rate model exists for any broadcaster or regional fund program anywhere in the repository (confirmed: `PROGRAM_DOCTRINE` has exactly 4 keys, none broadcaster/regional). Composing a priced structure for one would require inventing a qualification/rate model, which every phase of this engagement has been explicitly instructed not to do. This is reported as blocked-on-data, not attempted.
+
+---
+
+## Closeout addendum (targeted verification pass, no code changed)
+
+This pass re-verified every capability above against the current commit (post-`90f3cd5`), added Union/Labor economics (not previously catalogued), established the global-structure-optimization status, and traced Little Utopia's script-data provenance. No prior classification in the table above was found incorrect; the additions below are new coverage, not corrections.
+
+### Union / Labor economics (new entry — not previously catalogued)
+
+| Capability | Runtime Status | Implementation Status | Integration Status | Dependencies |
+|---|---|---|---|---|
+| Union / Labor cost modeling | Not live | **Implemented but not served** (real, generic, DB-free calculator) + **data-limited** (no populated rules dataset exists anywhere) | Not integrated — no wiring gap to close; nothing real to wire | `app/calculators/apply_union_fringe_rules.py` |
+
+`apply_union_fringe_rules.py::apply_union_fringes(labor_items, union_fringe_rules)` is real, self-contained, plain-Python (no DB coupling at the calculator level — same shape as `evaluate_qualification_tests.py` before it was found already wired). Its only caller anywhere in the repository is `run_full_analysis.py`, part of the dormant, unreachable, DB-backed `/api/v1/structures` path — confirmed by grep, zero references from `little_utopia_state.py` or `app/api/v1/cineglobe.py`. Unlike Local Cost Modeling (which had a real, populated `location_cost_benchmarks.py` dataset ready to consume), **no `union_fringe_rules` dataset exists anywhere in `app/data/`** — `run_full_analysis()`'s own docstring documents `union_fringe_rules: list[dict]` with "empty list = no fringes" as the only value ever actually passed. Wiring the calculator today would be a no-op (zero real fringe rates to apply) or would require fabricating CBA/union rate data, which is out of scope. This is the same class of gap as Broadcaster/Regional Funds — a real calculator scaffold with no real data behind it — not a wiring defect.
+
+### Global structure optimization status (Objective 2)
+
+The canonical runtime **dynamically generates structures from a data-driven jurisdiction search** (211 jurisdictions examined every request via `production_discovery.py`, no hardcoded country list — confirmed by source-scan test `test_discovery_source_has_no_hardcoded_country_list`), and the accepted/capability-only set drives structure composition via a loop, not per-country hand-coded logic.
+
+However, **every structure the runtime can generate is anchored to Mauritius as a fixed home jurisdiction.** Verified directly in source: `JURISDICTION_CODE = "MU"` is a module-level constant in `little_utopia_state.py` (line 102), and `reachable_treaty_partners` only ever evaluates `te.get_bilateral_treaty(JURISDICTION_CODE, code)` — bilateral treaties between MU and each candidate partner. There is no code path anywhere that evaluates a treaty or structure between two jurisdictions that both exclude MU (e.g. a UK–Australia pairing). Every generated `StructureSpec` — baseline, full-relocation, anchor-component, treaty co-production, and the newly-added split-production — includes `JURISDICTION_CODE` as `primary_jurisdiction` or as a required participant.
+
+This is architecturally consistent with what `little_utopia_state.py` is: a single-production demo/fixture state for Little Utopia specifically (its own module docstring and every fact/budget/people constant in the file are Little-Utopia-specific), not a jurisdiction-agnostic, multi-production optimizer service. No evidence of a home-agnostic "compare any two jurisdictions" engine was found anywhere in the canonical path or the dormant DB-backed path.
+
+Answering the six questions directly:
+
+1. **Dynamic generation vs. narrow fixture logic**: dynamic, for the *set* of jurisdictions (driven by real discovery output) — but every generated structure is anchored to MU, never a fully independent worldwide pairing.
+2. **UK–Australia-style independent treaty search**: does not happen. Treaty search is MU-only, by construction (`JURISDICTION_CODE` hardcoded into the query).
+3. **Assumes satisfiable cultural/spend requirements, discloses the requirement**: yes, confirmed with a live example — Ireland's Section 481 rate rule carries a `cultural_test_required` condition whose evaluation intentionally resolves to `satisfied=None` (`program_rate_rules.py`, `resolve_program_rate()`), which does **not** block the modeled rate from being served; the caveat is disclosed in the segment's `statutory_basis` text, confirmed live in the served `/structures` payload ("cultural test points system unverified").
+4. **Retains rejected/unknown jurisdictions with reasons**: yes, extensively — `discovery.examinations` carries a reason for all 211 examined jurisdictions, every request.
+5. **Data incompleteness prevents potentially superior jurisdictions from being generated**: yes — 199 of 211 examined jurisdictions have no capability profile at all (`jurisdiction_comparison.py::ALL_PROFILES` has 12 entries), so they can never be assessed for production-capability match regardless of what incentive they might offer.
+6. **Broadcaster/regional funds, legal stacking, local costs, labor — participate in ranking or just surfaced?** Local costs: now **participate in ranking/NPC** (this engagement, Local Cost Modeling). Legal stacking (relationship-level) and Reinvestment: **surfaced as recommendations only**, never enter NPC or ranking. Broadcaster funds, regional funds, grants, and labor/union economics: **absent from the served path entirely** — not even surfaced, since no doctrine/rate/rules data exists for any of them.
+
+### Script data provenance (Objective 3)
+
+Confirmed directly from source comments in `little_utopia_state.py` (lines 1976–1998): Little Utopia's script-derived facts (`SCRIPT_REQUIREMENTS`, `_LOCATION_SCRIPT_SEED`, `script_known_attributes`) originated from **a one-time interpretive read**, not a parser run and not an automated pipeline. The code's own comment: *"the real screenplay/synopsis/look book were recovered from Google Drive this phase. No full parsed ScreenplayParseResult exists (script.known stays honestly False — this was a synopsis + opening-scenes + look-book read, not a full page-by-page parse)."* `SCRIPT_SOURCE_NOTE` names the exact source documents: `"The Little Utopia 1_30_26.pdf"` (screenplay, opening scenes only) and `"THE LITTLE UTOPIA LOOK BOOK.pdf"` (synopsis + director's reflections, read in full).
+
+The confirmed facts (marine, open_water_filming, period, night_work; NOT_EVIDENT: underwater_photography, city, desert, snow, animals, vehicles, crowds; vfx_intensity=moderate) were then hand-transcribed as sourced Python fixture data, each with an evidence citation quoting or paraphrasing the actual material — not generated by any parser or reusable pipeline. `build_production_package()` is called with a small, manually-curated `script_known_attributes` dict (marine_usage, period, period_classification, countries, setting, language, source_material, vfx_intensity) — never with a `ScreenplayParseResult`.
+
+**Existing reusable assets that were NOT used to produce this data, but exist for future development:**
+
+- `app/ingestion/screenplay_parser.py` (147 lines) — a real, self-contained, deterministic Step-1 extractor: regex-based scene-heading extraction (`INT.`/`EXT.`/`INT/EXT.` patterns), ALL-CAPS character-name-cue extraction, page/word counting, LLM-context-window chunking, and a location-from-heading extraction. Its own docstring names a designed-but-unimplemented Step 2 ("LLM-assisted: location identification, environment classification, writer nationality... always marked `is_llm_extracted=True`") — the `ExtractedElement.is_llm_extracted` field exists to receive that output, but no LLM-calling code exists in this file. No test file references it; no caller ever invokes `parse_screenplay_text()` for Little Utopia or any other production.
+- `app/calculators/production_package_intelligence.py` — imported and live in the canonical path (`build_production_package`, `production_package_to_cultural_test_inputs`, `production_package_to_relevant_cultural_test_slugs`, `production_package_to_role_known_codes` are all called from `little_utopia_state.py`). Its own docstring states it "extracts nothing new" — it is a thin, honest reshaping layer over whatever `screenplay_parser.ScreenplayParseResult` or caller-supplied `script_known_attributes` it's given, with every attribute the parser doesn't cover represented as UNKNOWN, never guessed. This module is real, live, and ready to consume a real `ScreenplayParseResult` the day one is produced — it is not the missing piece.
+- The Engine Boundaries' full requested breakdown surface (per-scene INT/EXT/DAY/NIGHT, principal/supporting/day-player/background character counts, minors, animals, stunts, special skills, weapons, fire, practical vs. visual effects, wardrobe, hair/makeup complexity, set builds vs. practical locations, weather/seasonal, sensitive subject matter, rating considerations) is **not covered by any existing code** — `screenplay_parser.py`'s deterministic layer only reaches scene headings, character name cues, and heading-derived location strings; everything else in that list would be new Step-2 (or further) work.
+
+### Data-limited vs. engine-limited — summary distinction
+
+| Class | Meaning | Examples |
+|---|---|---|
+| **Engine-limited (fixed this engagement)** | Real calculator + real data existed, simply never called | Local Cost Modeling, Split Production |
+| **Engine-limited, already fine** | Real calculator + real data, already called every request | Reinvestment, Qualification Tests (UK-only data), Discovery, Capability Matching, Anchor/Component, Travel, FX |
+| **Data-limited (not fixable by wiring)** | Real calculator/schema exists, but no real sourced dataset to feed it | Union/Labor (`apply_union_fringe_rules.py`, no fringe-rate dataset), Broadcaster Funds, Regional Funds (no doctrine for any program), Program Uplifts, Legal Stacking dollar-level (schema only) |
+| **Architecture-limited** | Real schema/calculator exists behind a different runtime paradigm (async DB) than the canonical synchronous in-memory path | Program Uplifts, Legal Stacking dollar-level (also data-limited — compound case) |
+| **Not built** | No code exists at all | Script scene/character/minors/animals/stunts breakdown beyond headings, Grant optimization, worldwide-independent (non-MU-anchored) structure search |
