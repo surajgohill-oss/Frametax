@@ -145,8 +145,14 @@ export function scenarioDisplay(structure) {
 
   const segments = structure.segments || [];
   const dominant = segments.slice().sort((a, b) => (b.qpe_usd || 0) - (a.qpe_usd || 0))[0];
+  // Guaranteed floor rate as the headline number, with the actual modeled
+  // ceiling spelled out (never just "(up to)" with no number) when a band
+  // exists — matches Inspector.jsx's own rate presentation exactly. The
+  // ranked NPC/incentive on this card is computed from the CEILING (the
+  // canonical optimization contract: best-supported modeled, never the
+  // floor), so the ceiling must be visible here, not only the floor.
   const subtitle = structure.is_fully_priced && dominant?.claims_incentive && dominant?.program_slug
-    ? `${programDisplay(dominant.program_slug)} · ${Math.round((dominant.rate_floor || 0) * 100)}%${dominant.is_band_ceiling ? " (up to)" : ""}`
+    ? `${programDisplay(dominant.program_slug)} · ${Math.round((dominant.rate_floor || 0) * 100)}%${dominant.is_band_ceiling ? ` (up to ${Math.round((dominant.rate_ceiling || 0) * 100)}%)` : ""}`
     : humanizeToken(structure.structure_type);
 
   return { title, subtitle, dominant };
