@@ -4,6 +4,22 @@ Canonical record of every optimizer capability's runtime/implementation/integrat
 
 Canonical served path: `frontend` → `app/api/v1/cineglobe.py` → `app/demo/little_utopia_state.py::build_allocated_structures()` → discovery/capability/qualification/allocation/pricing/normalization/ranking calculators → serialization → UI.
 
+## Canonical terminology
+
+Every candidate the optimizer searches, composes, compares, and ranks is a **Production Structure**. This replaces "Hybrid" / "Hybrid Structure" / "Hybrid Engine", which are retired legacy FrameTax terms and do not appear in canonical CineGlobe product language from this point forward. Production Structure sub-types (all served under the same `structure_type` contract):
+
+- Single-Jurisdiction Production (`single_country`, `full_relocation`)
+- Treaty Co-Production (`treaty_coproduction`)
+- Multi-Jurisdiction Production (`multi_party`, and the internal code identifier `hybrid` — see note below)
+- Component Production / anchor-component (`component_relocation`)
+- Split Production (`split_production`)
+- Service Production (`service_production`)
+- Regional Fund Structure, Broadcaster Structure, Grant/Fund Structure — not yet generatable; see Broadcaster/Regional Funds below
+- Reinvestment Structure — not yet generatable as a priced structure; reinvestment currently participates as a recommendation, not a structure (see Reinvestment row)
+- Layered / Stacked Structure — not yet generatable as a priced structure; stacking currently participates at the relationship level only (see Legal Stacking row)
+
+**Note on the code identifier `"hybrid"`:** `production_allocation.py::STRUCTURE_TYPES` still contains the literal string `"hybrid"` as a valid `structure_type` value, and it is referenced in a handful of tests and internal comments. This is retained as-is — renaming it would touch production code and multiple test files for a purely cosmetic reason, which is an unnecessary code rename this phase does not require. It has never been live-generated for Little Utopia (only constructed in synthetic test specs) and is never user-visible. If it is ever surfaced in the UI, it should render under the "Multi-Jurisdiction Production" label, not "Hybrid." A distinct, unrelated concept — `program_spend_rules.py::HYBRID_CONDITIONAL`, a program *doctrine* classification (a program's own qualification/spend rules being open/closed/hybrid) — also contains the word "hybrid" and is **not** part of this terminology change; it is a different domain entirely and was left untouched.
+
 | Capability | Runtime Status | Implementation Status | Integration Status | Dependencies | Date integrated |
 |---|---|---|---|---|---|
 | Production Discovery | Live | Complete | Fully integrated | `production_discovery.py` | pre-existing |
@@ -27,7 +43,7 @@ Canonical served path: `frontend` → `app/api/v1/cineglobe.py` → `app/demo/li
 | **Qualification Tests** | **Live** | Complete engine (`evaluate_qualification_tests.py::score_qualification_test`, real UK BFI cultural test rule-set) | **Verified already fully integrated** — wired via `cultural_test_rules.py`'s `CULTURAL_TEST_REGISTRY` into `production_recommendation_engine.py::generate_cultural_recommendations`, called every request; served live as `required_input`-category recommendations (e.g. `REC-REQUIRED-INPUT-uk_bfi_cultural_test`). No jurisdiction-specific test rule-set exists for MU/GR/IE/MT (only UK's), so it currently only fires for tests a producer has flagged as relevant, honestly | `evaluate_qualification_tests.py`, `cultural_test_rules.py`, `production_recommendation_engine.py` | verified this phase (no code change needed) |
 | **Local Cost Modeling** | **Live** | Complete engine (`production_adjustment.py::calculate_production_adjustment`, `location_cost_benchmarks.py`) | **Newly connected this phase** — `compute_local_cost_normalization()` added to `production_normalization.py`, wraps the existing calculator with `EXISTING_BUDGET` mode and airfare/hotel/per-diem/FX toggled off (already covered by travel/FX normalization), threaded into `price_allocated_structure()` as `local_cost_delta_usd` (freight/carnet, visa/work permit, payroll fringe, local transport, legal/accounting, local-hire premium, equipment, stage facility). Verified live: Greece's NPC moved from $3,249,002 → $3,673,602 | `production_adjustment.py`, `location_cost_benchmarks.py`, `allocation_pricing.py` | this phase |
 | **Split Production** | **Live** (on producer election) | Complete engine (`production_allocation.py`'s `account_splits` field, previously tested only against synthetic specs) | **Newly connected this phase** — `account_splits` fact added to `ANSWERABLE_FACTS`; when set, composes one `split_production` `StructureSpec` reusing the existing, tested explicit-split pricing path verbatim. Verified live: MU 60% / GR 40% split of a real $496,232 account produces a fully-priced structure with real per-jurisdiction QPE | `production_allocation.py`, `little_utopia_state.py` | this phase |
-| Hybrid Structures | Not auto-generated for Little Utopia | Complete engine (tested with synthetic specs) | **Investigated, not connected this phase** — hybrid structures are gated by the same treaty-instrument requirement as `treaty_coproduction` (`_treaty_requirements` in `allocation_pricing.py`); MU has zero registered bilateral treaties (proven-zero, independently reconfirmed this engagement). A hybrid `StructureSpec` for Little Utopia would always resolve to the identical honest blocker the existing `treaty_partner_code` election already surfaces — composing one would add no new information, only a redundant always-blocked card | `production_allocation.py`, `treaty_engine.py` | not this phase |
+| Multi-Jurisdiction Production (formerly listed as "Hybrid Structures" — **terminology corrected this phase, see Canonical terminology above**) | Not auto-generated for Little Utopia | Complete engine (tested with synthetic specs) | **Investigated, not connected this phase** — multi-jurisdiction structures (code identifier `hybrid`) are gated by the same treaty-instrument requirement as `treaty_coproduction` (`_treaty_requirements` in `allocation_pricing.py`); MU has zero registered bilateral treaties (proven-zero, independently reconfirmed this engagement). A structure of this type for Little Utopia would always resolve to the identical honest blocker the existing `treaty_partner_code` election already surfaces — composing one would add no new information, only a redundant always-blocked card | `production_allocation.py`, `treaty_engine.py` | not this phase |
 | Broadcaster Funds | Catalog-only | Data complete (`global_inventory_broadcaster_funds.py`); no doctrine | **Cannot be connected without new doctrine** — `GlobalProgramEntry` (the catalog record type) has no `program_slug` field and no statutory qualification/rate model exists for any broadcaster fund program. Pricing one would require fabricating doctrine, which this phase's rules explicitly forbid. Genuinely blocked on data, not wiring | `global_inventory_broadcaster_funds.py` | not this phase — stop and explain (see below) |
 | Regional Funds | Catalog-only | Data complete (`global_inventory_regional.py`); no doctrine | **Cannot be connected without new doctrine** — identical blocker to Broadcaster Funds | `global_inventory_regional.py` | not this phase — stop and explain |
 | Program Uplifts | Schema only (`ProgramUplift` DB model) | No calculator found anywhere in the repository | **Architecture mismatch — stop and explain** (Priority 3). See below | `app/models/incentive.py`, requires `AsyncSession` | not this phase |
@@ -79,6 +95,38 @@ Answering the six questions directly:
 5. **Data incompleteness prevents potentially superior jurisdictions from being generated**: yes — 199 of 211 examined jurisdictions have no capability profile at all (`jurisdiction_comparison.py::ALL_PROFILES` has 12 entries), so they can never be assessed for production-capability match regardless of what incentive they might offer.
 6. **Broadcaster/regional funds, legal stacking, local costs, labor — participate in ranking or just surfaced?** Local costs: now **participate in ranking/NPC** (this engagement, Local Cost Modeling). Legal stacking (relationship-level) and Reinvestment: **surfaced as recommendations only**, never enter NPC or ranking. Broadcaster funds, regional funds, grants, and labor/union economics: **absent from the served path entirely** — not even surfaced, since no doctrine/rate/rules data exists for any of them.
 
+### Optimizer architecture closeout: Mauritius-anchoring decision (this phase)
+
+The intended canonical search model is:
+
+```
+Production → Global Jurisdiction Discovery → Production Structure Generation → Economic Evaluation → Ranking → Recommendation
+```
+
+The **pipeline shape already matches this** — Discovery, Structure Generation, Pricing (Economic Evaluation), Ranking, and Recommendation are five real, distinct, already-implemented stages (see the canonical served path at the top of this document), and Discovery itself is genuinely global and data-driven (211 jurisdictions, no hardcoded list). What does not yet match the intent is that **jurisdiction identity is not yet a variable of that pipeline** — it is a constant baked into the production's own fixture data.
+
+**Investigated this phase: is a small, safe change possible, or does full removal require a larger feature? Larger feature — documented below, not attempted, per this phase's explicit instruction not to partially redesign the optimizer.**
+
+`JURISDICTION_CODE = "MU"` (`little_utopia_state.py`, line 102) is not an isolated flag that gates one code path — it is threaded through every stage that would need to change for the optimizer to stop conceptually anchoring on Mauritius:
+
+- **Register construction**: `build_little_utopia_real_register(mu_rate=MU_RATE, facts=facts)` computes Little Utopia's real qualifying-spend register assuming Mauritius is the shoot geography the budget was priced against. There is no parameterized "home jurisdiction" input to this function — MU is baked into the register's own construction, not passed as an argument that could be swapped.
+- **Account allocation**: `LITTLE_UTOPIA_REAL_SPEND_CATEGORY`, `_STATED_LOCATION_AUTHORITY`, and `LITTLE_UTOPIA_REAL_ACCOUNTS_OUTSIDE_MU` are real, sourced classifications of Little Utopia's actual budget lines relative to Mauritius specifically — they encode which accounts are "outside MU" as a fact about *this* production's *actual* budget, not a general rule a different home jurisdiction could reuse unchanged.
+- **In-kind economics**: the ~$625,000 Mauritius in-kind post-production FMV normalization (`build_inkind_model()`) is a real, specific economic fact of this production's actual Mauritius arrangement — not a generic "home jurisdiction in-kind" concept with MU as a default value.
+- **Travel/local-cost normalization origin**: `compute_travel_normalization(..., original_jurisdiction_code=JURISDICTION_CODE)` and this phase's `compute_local_cost_normalization(..., original_jurisdiction_code=JURISDICTION_CODE)` both take MU as the fixed comparison origin — mechanically easy to parameterize, but meaningless to change in isolation while the register/allocation layer beneath them still assumes MU.
+- **Treaty search**: `reachable_treaty_partners` only ever queries `te.get_bilateral_treaty(JURISDICTION_CODE, code)` — MU-partner pairs only, never independent pairings. This is the narrowest of the anchoring points, but generating a structure for a pairing that excludes MU entirely (e.g. a UK–Australia treaty) would produce a structure with no connection to Little Utopia's actual budget/register/facts at all — there is nothing in the current data model that would let such a structure price against *this* production's real numbers, so fixing treaty search alone would not produce a meaningful result.
+
+**Why this was not implemented this phase:** every one of these points is not a standalone hardcoded string that can be swapped for a variable — each is coupled to Little Utopia's *actual, real, sourced* production data (budget, in-kind arrangement, stated location authority). Genuinely removing the Mauritius anchor requires treating "home/origin jurisdiction" as a first-class **production input** the register, allocation, and normalization layers all read from — which in turn requires either (a) generalizing `little_utopia_state.py` from a single-production fixture into a multi-production, parameterized state builder, or (b) building a comparable state builder for a different production with different real facts. Both are substantially larger feature work, explicitly out of scope for "the smallest architectural change" this phase authorized, and attempting a partial version (e.g. parameterizing only the normalization-origin arguments while the register/allocation layer stays MU-fixed) would produce structures that don't actually reconcile against real production economics — exactly the kind of partial redesign this phase was told not to do.
+
+**Conclusion:** Mauritius remains an architectural anchor after this phase, for the reason above — not because it was not investigated, but because removing it safely is out of proportion to "smallest architectural change." No code was changed for this objective.
+
+**Precise engineering work remaining, if/when this is prioritized as its own feature phase:**
+1. Define a `ProductionHomeJurisdiction` concept (or equivalent) as an explicit field on the production's own fact set, distinct from any specific jurisdiction code.
+2. Parameterize register construction (`build_little_utopia_real_register` or its generalized successor) to accept home jurisdiction as an input rather than a closed-over constant.
+3. Generalize account-allocation classification (`LITTLE_UTOPIA_REAL_SPEND_CATEGORY`, `_STATED_LOCATION_AUTHORITY`, `*_ACCOUNTS_OUTSIDE_MU`) from Mauritius-specific fixture dicts into a per-production input shape.
+4. Generalize the in-kind economics model (`build_inkind_model()`) from a Mauritius-specific $625K fact into a per-production, per-jurisdiction input.
+5. Extend treaty search to evaluate pairings that do not include the home jurisdiction, once (1)–(4) make such a structure meaningfully priceable against real production data.
+6. Re-verify every existing test in `test_canonical_optimization_contract.py`, `test_allocation_pricing.py`, and `test_global_discovery.py` against the generalized model — many currently assert MU-specific structure IDs and values by name.
+
 ### Script data provenance (Objective 3)
 
 Confirmed directly from source comments in `little_utopia_state.py` (lines 1976–1998): Little Utopia's script-derived facts (`SCRIPT_REQUIREMENTS`, `_LOCATION_SCRIPT_SEED`, `script_known_attributes`) originated from **a one-time interpretive read**, not a parser run and not an automated pipeline. The code's own comment: *"the real screenplay/synopsis/look book were recovered from Google Drive this phase. No full parsed ScreenplayParseResult exists (script.known stays honestly False — this was a synopsis + opening-scenes + look-book read, not a full page-by-page parse)."* `SCRIPT_SOURCE_NOTE` names the exact source documents: `"The Little Utopia 1_30_26.pdf"` (screenplay, opening scenes only) and `"THE LITTLE UTOPIA LOOK BOOK.pdf"` (synopsis + director's reflections, read in full).
@@ -100,3 +148,23 @@ The confirmed facts (marine, open_water_filming, period, night_work; NOT_EVIDENT
 | **Data-limited (not fixable by wiring)** | Real calculator/schema exists, but no real sourced dataset to feed it | Union/Labor (`apply_union_fringe_rules.py`, no fringe-rate dataset), Broadcaster Funds, Regional Funds (no doctrine for any program), Program Uplifts, Legal Stacking dollar-level (schema only) |
 | **Architecture-limited** | Real schema/calculator exists behind a different runtime paradigm (async DB) than the canonical synchronous in-memory path | Program Uplifts, Legal Stacking dollar-level (also data-limited — compound case) |
 | **Not built** | No code exists at all | Script scene/character/minors/animals/stunts breakdown beyond headings, Grant optimization, worldwide-independent (non-MU-anchored) structure search |
+
+## Optimizer architecture phase — closeout status
+
+**Architecture Complete** (pipeline shape, terminology, and every capability confirmed `RUNTIME VERIFIED` in this document require no further architectural work — only data population, where noted, to widen their coverage):
+- Discovery → Production Structure Generation → Economic Evaluation → Ranking → Recommendation → Serialization → UI pipeline
+- Production Structure terminology adopted canonically; "Hybrid" retired from documentation (code identifier retained, not user-facing, see Canonical terminology above)
+- Production Discovery, Capability Matching, Qualification/Doctrine, QPE, NPC, Allocation, Ranking, Recommendation, Anchor/Component, Treaty (registry check), Travel Normalization, FX Normalization, Local Cost Modeling, Split Production, Reinvestment (recommendation-level), Qualification Tests (recommendation-level), Budget Parser, Document Management, Workspace, Scenario Comparison, Project Globe, Reports
+
+**Data Population Remaining** (architecture and wiring are not the blocker — sourced data is):
+- Capability profiles beyond 12/211 jurisdictions
+- Doctrine/rate models beyond 4/211 jurisdictions
+- Broadcaster Fund and Regional Fund doctrine/rate models (currently catalog-only, zero programs priceable)
+- Union/labor fringe-rate and CBA data (calculator exists, zero real rules registered)
+- Program Uplift and dollar-level Legal Stacking data (schema exists, requires an architecture decision on top of data population — see Priority 3 above)
+
+**Future Features** (require new capability, not wiring or data — explicitly out of scope for this and the prior optimizer-integration phase):
+- Multi-production, home-jurisdiction-agnostic optimizer (removing the Mauritius architectural anchor — see decision and remaining engineering work above)
+- Independent (non-home-anchored) treaty-pairing search (e.g. UK–Australia), which depends on the above
+- Grant optimization (no engine anywhere)
+- Script Breakdown / Script Analysis / Production Intelligence — **explicitly out of scope for this phase and left untouched**: `app/ingestion/screenplay_parser.py`, `app/calculators/production_package_intelligence.py`, and all script-derived fixture data in `little_utopia_state.py` (`SCRIPT_REQUIREMENTS`, `_LOCATION_SCRIPT_SEED`, `SCRIPT_SOURCE_NOTE`, `script_known_attributes`) were not modified this phase; confirmed via `git status` before commit
