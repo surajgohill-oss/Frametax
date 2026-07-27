@@ -219,3 +219,58 @@ These govern how work on this repository is done, independent of which Claude ac
 - **External research improves the repository, not just the current task.** A fact found while researching jurisdiction X often corrects or completes a record for jurisdiction Y, or a shared PARSED-tier artifact — check for that and propagate it before closing out.
 - **A huge amount of validated work can sit uncommitted for a long time.** Before assuming the working tree is small or clean, run `git status` in full — this repository once had ~140 files and 9 subsystems' worth of already-tested work sitting uncommitted across many sessions. Commit in coherent, reviewable groups by subsystem rather than one undifferentiated blob, and verify the full test suite both before and after committing.
 - **A stash is not lost work, but it is not finished work either.** If a `git stash list` turns up an entry, read its diff before assuming it's safe to drop or safe to apply — a paused reinterpretation of frozen logic (see the "default-inclusion doctrine" stash, `git stash show -p stash@{0}`) needs the regression trace it was paused for, not a blind pop.
+
+---
+
+## Engineering Environment Verification (2026-07-26, pre-account-transfer closeout)
+
+Verification-only pass. No CineGlobe functionality was implemented or modified in this session — this section exists solely to confirm the next account can start working immediately without re-deriving environment state.
+
+**Repository**
+| | |
+|---|---|
+| Path | `/Users/Suraj/cineglobe-frametax` |
+| Branch | `claude/audit-frametax-features-NZcX5` |
+| HEAD | matches `origin/claude/audit-frametax-features-NZcX5` exactly (confirmed via `git log origin/... -1 --format=%H` == `git rev-parse HEAD`) |
+| Working tree | clean, no uncommitted files |
+| Detached HEAD | no — on a proper branch ref |
+| Remote | `https://github.com/surajgohill-oss/Frametax.git` |
+
+**Runtime**
+| Check | Result |
+|---|---|
+| System `python3` | 3.9.6 (do NOT use — cannot import project models) |
+| Backend venv `python3` | 3.12.13, satisfies `pyproject.toml`'s `requires-python>=3.11` |
+| `pip check` | No broken requirements |
+| Full backend test suite | **3896 passed, 1 skipped, 0 failures** |
+| Node | v24.15.0 |
+| npm | 11.12.1 |
+| Frontend `node_modules` | installed |
+| Backend server | already running and healthy at `http://localhost:8010` (`/health` → 200; `/api/v1/cineglobe/structures` → 200) |
+| Frontend dev server | confirmed starts cleanly via `.claude/launch.json` config `cineglobe-frontend` (port 5173) — real served data rendered ("State of the Studio", live FX rates, Production Slate), zero console errors. Stopped after verification since it wasn't already running. |
+
+**Connector / MCP status**
+| Item | Status | Notes |
+|---|---|---|
+| GitHub | CONNECTED | `gh` CLI 2.96.0, authenticated as `surajgohill-oss` (repo/workflow/read:org/gist scopes). Git push/fetch also proven working directly this session. |
+| Git access | CONNECTED | Multiple commits + pushes succeeded this session. |
+| Local filesystem | CONNECTED | Read/write/edit confirmed throughout this session; repository confirmed writable. |
+| Google Drive | CONNECTED | `search_files` succeeded and located the real project source material ("THE LITTLE UTOPIA" script folder + PDF drafts) under `surajgohill@gmail.com`. |
+| Browser MCP (`mcp__Claude_Browser__*`) | CONNECTED | Started the frontend preview, read live page text, checked console, stopped cleanly. |
+| Playwright MCP (`mcp__playwright__*`) | CONNECTED | `browser_navigate` succeeded against the local backend. |
+| Perplexity MCP | NOT INSTALLED | No such tool is registered in this environment. |
+| Figma | INSTALLED BUT NOT CONNECTED | Tool responds but requires the Figma desktop app's Dev Mode MCP Server to be enabled locally — not currently active. Not used anywhere in this repository (no Figma links/configs found), so this is a non-blocker for CineGlobe work. |
+| Other MCPs (Desktop Commander, PDF tools, visualize, etc.) | AVAILABLE | Registered and reachable; not deep-tested since they aren't part of this project's core dev loop. |
+
+**Known environment issues**
+- None blocking. The only pre-existing, already-documented issues are the ones already tracked in §0.2 (10 SECONDARY jurisdictions pending further primary-source verification) and the paused `git stash` entry (a default-inclusion-doctrine reinterpretation of Mauritius QPE rules, explicitly not applied — see the Lessons Learned section above).
+- Figma has no active Dev Mode bridge; irrelevant unless a future task specifically needs Figma-sourced design specs.
+- Perplexity is not installed; `WebSearch` (Claude's built-in tool) and direct `WebFetch`/`curl` cover this project's research needs, as demonstrated throughout the Stage A/B database population work.
+
+**Recommended first command for the next account**
+```bash
+cd /Users/Suraj/cineglobe-frametax/frametax2/backend && .venv/bin/python3 -m pytest -q
+```
+This confirms the environment is still in the state this document describes before starting new work. If it passes cleanly (3896/1/0), proceed directly to Globe implementation without further environment setup.
+
+**Globe implementation readiness: YES.** Repository, runtime, and every connector actually required for CineGlobe development (GitHub, Git, filesystem, Browser MCP, Playwright MCP) are confirmed working. Google Drive is connected and can retrieve the original script source material if needed. Figma and Perplexity are not required by this project and their absence/inactivity does not block Globe work.
