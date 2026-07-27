@@ -56,7 +56,20 @@ class RateRule:
     """One rate tier of one program. is_band_ceiling=True means the
     source says 'up to' this rate — the exact awarded rate within the
     band is subject to the authority's assessment, so the rate is a
-    modeling ceiling, not a guaranteed entitlement."""
+    modeling ceiling, not a guaranteed entitlement.
+
+    graduated_brackets (optional): for a statute-confirmed MARGINAL/
+    BRACKETED rate structure (e.g. Spain Art. 36.2: 30% on the first
+    EUR 1M, 25% on the excess) — NOT a discretionary approval band like
+    MU's 'up to 40%'. A tuple of (bracket_ceiling_usd, rate_in_bracket)
+    pairs, applied progressively from 0. `rate` is the FINAL/marginal
+    rate applied to any QPE above the last bracket ceiling (kept as a
+    real field, not just the top of the tuple, so non-graduated callers
+    are unaffected). When set, resolve_program_rate() computes a real
+    BLENDED effective rate (total credit / QPE) instead of using `rate`
+    flat — this is the maximum-lawful-incentive representation: neither
+    the understated flat marginal rate nor an overstated flat top rate.
+    """
     program_slug: str
     tier_id: str
     rate: float
@@ -67,6 +80,7 @@ class RateRule:
     confidence_tier: str     # DISCOVERY | PARSED | VERIFIED
     citation: str
     source_ref: str
+    graduated_brackets: tuple[tuple[float, float], ...] | None = None
 
 
 @dataclass(frozen=True)
@@ -407,13 +421,248 @@ GR_RATE_RULES: tuple[RateRule, ...] = (
 )
 
 
+## ── Spain: Article 36.2 LIS foreign-production deduction ────────────────────
+#
+# Source: Ley 27/2014, de 27 de noviembre, del Impuesto sobre Sociedades
+# (BOE-A-2014-12328), Artículo 36.2 — the deduction for foreign productions
+# filming in Spain. Verbatim text confirmed from TWO independent legal-
+# database reproductions of the consolidated statute (iberley.es and a
+# web-search-corroborated summary of the same law), not a raw self-fetched
+# BOE.es document — hence PARSED, not VERIFIED, matching this file's own
+# tier discipline.
+#
+# CORRECTION OF A PRIOR DISCOVERY-TIER ERROR: an earlier pass (recorded in
+# jurisdiction_comparison.py's ES profile, confidence_tier=DISCOVERY) also
+# surfaced a contradicting 15% figure from a partial BOE preamble fetch —
+# that figure was not the operative Article 36.2 rate (likely a pre-
+# amendment or misattributed figure) and is superseded by the verbatim
+# text below.
+#
+# REAL, STATUTE-QUOTED STRUCTURE (not a flat rate): "Del 30 por ciento
+# respecto del primer millón de base de la deducción y del 25 por ciento
+# sobre el exceso" — 30% on the first EUR 1,000,000 of the deduction base,
+# 25% on any excess. CORRECTED (worldwide population phase, maximum-
+# lawful-incentive review): previously modeled at a flat conservative 25%
+# because RateRule had no way to represent a graduated bracket. That
+# understated the real, confirmed 30% first-bracket benefit — not the
+# "narrowest reusable" representation the project now requires. RateRule
+# gained an optional `graduated_brackets` field
+# (program_rate_rules.py, RateRule docstring) purely additive, every
+# other program unaffected — and resolve_program_rate() now computes a
+# real BLENDED effective rate (total credit / QPE) for Spain: for Little
+# Utopia's ~$4.36M QPE this comes to ~26.3%, correctly between the flat
+# 25% (understates) and flat 30% (overstates) figures.
+#
+# NOT MODELED — genuine disclosed gap, not a guess: the Canary Islands
+# enhanced rate (widely reported at 50%/45% by secondary sources and by
+# jurisdiction_comparison.py's own prior DISCOVERY-tier notes) does NOT
+# appear anywhere in Article 36 — confirmed by requesting the complete,
+# all-subsection text of Article 36 (36.1/36.2/36.3) and finding no
+# Canary Islands reference. It must derive from Canary Islands' separate
+# special economic/fiscal regime (Régimen Económico y Fiscal de
+# Canarias), which has not been located or read. Recorded below as an
+# UnverifiedRateClaim — never applied as a rule.
+#
+# Spend-category / QPE doctrine: Article 36.2 names only two enumerated
+# cost categories for the deduction base — creative-personnel costs (with
+# an EEA/Spain fiscal-residency condition) and technical-industry/
+# supplier costs — and defers further qualifying-expense detail to an
+# unretrieved Orden Ministerial ("Reglamentariamente se podrán establecer
+# otros requisitos..."). This is NOT enough primary-source basis to
+# classify a QualificationDoctrine (OPEN_DEFAULT_INCLUDE vs.
+# CLOSED_POSITIVE_LIST would both be a guess without that order's text).
+# Intentionally left unclassified in program_spend_rules.py — a disclosed
+# gap, not a silent default, per that module's own documented behavior
+# for an unclassified program_slug.
+
+_ES_CITATION = (
+    "Ley 27/2014, de 27 de noviembre, del Impuesto sobre Sociedades "
+    "(BOE-A-2014-12328), Artículo 36.2 — deducción por producciones "
+    "extranjeras. Verbatim: 'Del 30 por ciento respecto del primer "
+    "millón de base de la deducción y del 25 por ciento sobre el "
+    "exceso.' Min spend: 'los gastos realizados en territorio español "
+    "sean, al menos, de 1 millón de euros ... en el supuesto de "
+    "producciones de animación tales gastos serán, al menos, de "
+    "200.000 euros.' Cap: 'El importe de esta deducción no podrá ser "
+    "superior a 20 millones de euros, por cada producción realizada' "
+    "(10 millones de euros por episodio para series). Registration: "
+    "productores inscritos en el Registro Administrativo de Empresas "
+    "Cinematográficas y Audiovisuales (ICAA)."
+)
+ES_RATE_RULES: tuple[RateRule, ...] = (
+    RateRule(
+        program_slug="es_tax_credit_foreign", tier_id="es-graduated-30-25",
+        rate=0.25, is_band_ceiling=False,
+        production_types=("feature_film",), min_qpe_usd=1_140_523.96,
+        conditions=(
+            RateCondition(
+                condition_id="es-min-spend",
+                description="Minimum qualifying Spanish expenditure (EUR "
+                            "200,000 for animation — not modeled as a "
+                            "separate production_type tier here)",
+                quote="los gastos realizados en territorio español sean, "
+                      "al menos, de 1 millón de euros (Art. 36.2 LIS)",
+                kind="min_qpe_usd", threshold_usd=1_140_523.96,
+            ),
+            RateCondition(
+                condition_id="es-bracket-blended",
+                description="Statute rate is bracketed (30% first EUR 1M, "
+                            "25% excess) — a real, confirmed graduated "
+                            "structure, not a discretionary approval band. "
+                            "resolve_program_rate() computes a genuine "
+                            "blended effective rate from this bracket "
+                            "(total credit / QPE), not a flat rate",
+                quote="Del 30 por ciento respecto del primer millón de "
+                      "base de la deducción y del 25 por ciento sobre "
+                      "el exceso (Art. 36.2 LIS)",
+                kind="graduated_bracket_applied",
+            ),
+        ),
+        confidence_tier="PARSED",
+        citation=_ES_CITATION,
+        source_ref="BOE-A-2014-12328-Art36.2",
+        graduated_brackets=((1_140_523.96, 0.30),),
+    ),
+)
+
+ES_UNVERIFIED_CLAIMS: tuple[UnverifiedRateClaim, ...] = (
+    UnverifiedRateClaim(
+        program_slug="es_tax_credit_foreign",
+        claim="Canary Islands enhanced rate of 50% (mainland 30%) / 45% "
+              "(mainland 25% excess) applies to productions filming in "
+              "the Canary Islands.",
+        claimed_by="Secondary trade/production-services sources and this "
+                   "project's own prior DISCOVERY-tier jurisdiction_"
+                   "comparison.py notes; not found anywhere in Article 36 "
+                   "(all subsections 36.1-36.3 requested and reviewed)",
+        verification_status="NOT FOUND in Ley 27/2014 Article 36. Almost "
+                            "certainly derives from the separate Canary "
+                            "Islands Régimen Económico y Fiscal (REF) "
+                            "special tax regime, which has not been "
+                            "located or read. Requires that regime's "
+                            "primary text before it can be treated as a "
+                            "rule either way.",
+    ),
+)
+
+
+## ── France: CNC TRIP (Tax Rebate for International Productions) ────────────
+#
+# Source: CNC (Centre national du cinéma et de l'image animée) official TRIP
+# page, cnc.fr — fetched directly and quoted verbatim below. Per the
+# reconciliation discipline in docs/architecture/CAPABILITY_LEDGER.md: the
+# Alembic migration (0008_seed_marine_jurisdictions.py, later bulk-promoted
+# to VERIFIED by 0038 on a weak "source URL confirmed" basis, per that
+# migration's own docstring) was checked FIRST as a candidate lead — it had
+# the base rate (30%) and min spend (EUR 250,000) right, but MISSED the real
+# VFX-uplift band (40% when French VFX spend > EUR 2M) and the real EUR 30M
+# cap entirely. This is the same lesson as Spain: a migration's own
+# confidence-tier label is not a substitute for reading the actual source.
+#
+# Quoted from cnc.fr: "The TRIP amounts up to 30% (or 40%, if the French VFX
+# expenses are more than EUR 2M) ... can total a maximum of EUR 30 million
+# per project." Minimum spend: "EUR 250,000 or 50% of their world budgets in
+# French expenditures" (the 50%-of-world-budget alternative threshold is not
+# representable in this engine's single min_qpe_usd field — disclosed, not
+# computed). Live action also requires "at least 5 days of shooting in
+# France" (not modeled — no shooting-days fact exists in this engine).
+# Cultural test: "must include elements related to the French culture,
+# heritage, and territory" — the migration's claimed "2 of 6 French
+# elements" points breakdown was NOT found in the fetched cnc.fr text and is
+# NOT carried into this rule (unconfirmed, not asserted). Refundable:
+# confirmed ("if the amount of the tax rebate exceeds the corporate income
+# tax due for this year, the difference will be paid by the French State").
+
+_FR_CITATION = (
+    "CNC (Centre national du cinéma et de l'image animée), official TRIP "
+    "page (cnc.fr), fetched directly. 'The TRIP amounts up to 30% (or 40%, "
+    "if the French VFX expenses are more than EUR 2M) ... can total a "
+    "maximum of EUR 30 million per project.' Min spend: 'EUR 250,000 or "
+    "50% of their world budgets in French expenditures' (50%-of-budget "
+    "alternative not modeled). Live action also requires >=5 shooting days "
+    "in France (not modeled — no shooting-days fact exists in this "
+    "engine). Refundable: 'the difference will be paid by the French "
+    "State' if the rebate exceeds corporate income tax due."
+)
+FR_RATE_RULES: tuple[RateRule, ...] = (
+    RateRule(
+        program_slug="fr_trip", tier_id="fr-base-30",
+        rate=0.30, is_band_ceiling=False,
+        production_types=("feature_film",), min_qpe_usd=285_130.99,
+        conditions=(
+            RateCondition(
+                condition_id="fr-min-spend",
+                description="Minimum qualifying French expenditure (or 50% "
+                            "of world budget, whichever the production "
+                            "meets — the 50%-of-budget alternative is not "
+                            "computed by this engine)",
+                quote="EUR 250,000 or 50% of their world budgets in French "
+                      "expenditures (cnc.fr, TRIP page)",
+                kind="min_qpe_usd", threshold_usd=285_130.99,
+            ),
+            RateCondition(
+                condition_id="fr-cultural-test",
+                description="Cultural test required (French/European "
+                            "culture, heritage, territory elements) — "
+                            "exact points-based criteria not confirmed "
+                            "from the primary source fetched; a migration "
+                            "claim of '2 of 6 elements' was NOT found in "
+                            "the cnc.fr text and is not asserted here",
+                quote="must include elements related to the French "
+                      "culture, heritage, and territory (cnc.fr, TRIP page)",
+                kind="cultural_test_required",
+            ),
+        ),
+        confidence_tier="PARSED",
+        citation=_FR_CITATION,
+        source_ref="cnc.fr-TRIP-page",
+    ),
+    RateRule(
+        program_slug="fr_trip", tier_id="fr-vfx-ceiling-40",
+        rate=0.40, is_band_ceiling=True,
+        production_types=("feature_film",), min_qpe_usd=285_130.99,
+        conditions=(
+            RateCondition(
+                condition_id="fr-min-spend",
+                description="Minimum qualifying French expenditure",
+                quote="EUR 250,000 or 50% of their world budgets in French "
+                      "expenditures (cnc.fr, TRIP page)",
+                kind="min_qpe_usd", threshold_usd=285_130.99,
+            ),
+            RateCondition(
+                condition_id="fr-vfx-threshold",
+                description="40% rate requires French VFX expenditure "
+                            "exceeding EUR 2,000,000 — a real, confirmed "
+                            "threshold (not a discretionary approval band "
+                            "like MU's 'up to 40%'), but this engine has "
+                            "no fact tracking VFX-specific spend split "
+                            "from total QPE, so eligibility for this tier "
+                            "cannot be pre-evaluated and is modeled as the "
+                            "ceiling",
+                quote="40%, if the French VFX expenses are more than EUR "
+                      "2M (cnc.fr, TRIP page)",
+                kind="discretionary_band",
+            ),
+        ),
+        confidence_tier="PARSED",
+        citation=_FR_CITATION + " The 40% tier is a real, statute-confirmed "
+                 "threshold (VFX spend > EUR 2M), not discretionary "
+                 "approval — modeled as the ceiling because this engine "
+                 "cannot yet evaluate VFX-specific spend against total QPE; "
+                 "the guaranteed floor is the base 30% tier.",
+        source_ref="cnc.fr-TRIP-page",
+    ),
+)
+
+
 _RULES_BY_PROGRAM: dict[str, tuple[RateRule, ...]] = {}
-for _r in MU_RATE_RULES + MT_RATE_RULES + IE_RATE_RULES + GR_RATE_RULES:
+for _r in MU_RATE_RULES + MT_RATE_RULES + IE_RATE_RULES + GR_RATE_RULES + ES_RATE_RULES + FR_RATE_RULES:
     _RULES_BY_PROGRAM.setdefault(_r.program_slug, ())
     _RULES_BY_PROGRAM[_r.program_slug] = _RULES_BY_PROGRAM[_r.program_slug] + (_r,)
 
 _UNVERIFIED_BY_PROGRAM: dict[str, tuple[UnverifiedRateClaim, ...]] = {
     "mu_edb_incentive": MU_UNVERIFIED_CLAIMS,
+    "es_tax_credit_foreign": ES_UNVERIFIED_CLAIMS,
 }
 _BUDGET_RATES_BY_PROGRAM: dict[str, tuple[BudgetEvidencedRate, ...]] = {
     "mu_edb_incentive": MU_BUDGET_EVIDENCED_RATES,
@@ -422,6 +671,51 @@ _BUDGET_RATES_BY_PROGRAM: dict[str, tuple[BudgetEvidencedRate, ...]] = {
 
 def get_rate_rules(program_slug: str) -> tuple[RateRule, ...]:
     return _RULES_BY_PROGRAM.get(program_slug, ())
+
+
+def register_rate_rules(rules: tuple[RateRule, ...]) -> None:
+    """Registration hook for executable_jurisdiction_registry.py-derived
+    RateRule tuples (worldwide jurisdiction population phase) — lets a
+    new jurisdiction's rules be built from ONE canonical DoctrineRecord
+    (see executable_jurisdiction_registry.py) without a circular import:
+    that module imports RateRule/RateCondition FROM this file, so this
+    file cannot import it back at module scope. Per-jurisdiction record
+    modules call this function instead; see program_rate_rules_worldwide.py."""
+    for rule in rules:
+        _RULES_BY_PROGRAM.setdefault(rule.program_slug, ())
+        _RULES_BY_PROGRAM[rule.program_slug] = _RULES_BY_PROGRAM[rule.program_slug] + (rule,)
+
+
+# Bottom-of-file import (after register_rate_rules/_RULES_BY_PROGRAM exist)
+# — avoids the circular import that would result from importing this at
+# the top: program_rate_rules_worldwide.py itself imports RateRule/
+# RateCondition/register_rate_rules FROM this module.
+from app.data import program_rate_rules_worldwide  # noqa: F401,E402
+
+
+def _blended_effective_rate(tier: RateRule, qpe_usd: float | None) -> float:
+    """Real blended effective rate (total credit / QPE) for a statute-
+    confirmed graduated/bracketed tier — e.g. Spain Art. 36.2's 30% first
+    EUR 1M / 25% excess. This is the maximum-lawful-incentive
+    representation: NOT the flat marginal/excess rate (understates the
+    real benefit for a production of any size) and NOT the flat top-
+    bracket rate (overstates it for spend beyond the first bracket).
+    Falls back to tier.rate unchanged when graduated_brackets is None —
+    every existing non-graduated program is unaffected."""
+    if not tier.graduated_brackets or qpe_usd is None or qpe_usd <= 0:
+        return tier.rate
+    total_credit = 0.0
+    prev_ceiling = 0.0
+    for ceiling, bracket_rate in tier.graduated_brackets:
+        span = max(0.0, min(qpe_usd, ceiling) - prev_ceiling)
+        total_credit += span * bracket_rate
+        prev_ceiling = ceiling
+        if qpe_usd <= ceiling:
+            break
+    else:
+        if qpe_usd > prev_ceiling:
+            total_credit += (qpe_usd - prev_ceiling) * tier.rate
+    return total_credit / qpe_usd
 
 
 def resolve_program_rate(
@@ -459,6 +753,7 @@ def resolve_program_rate(
     tier = eligible[0]
     floor_candidates = [r for r in eligible if not r.is_band_ceiling]
     floor_rate = floor_candidates[0].rate if floor_candidates else tier.rate
+    effective_rate = _blended_effective_rate(tier, qpe_usd)
 
     evaluations: list[ConditionEvaluation] = []
     for cond in tier.conditions:
@@ -484,6 +779,16 @@ def resolve_program_rate(
                 note="Cannot be pre-satisfied: the awarded rate within the 'up to' "
                      "band is set by the authority at approval. The engine models "
                      "the ceiling; the guaranteed floor is the non-band tier.",
+            ))
+        elif cond.kind == "graduated_bracket_applied":
+            evaluations.append(ConditionEvaluation(
+                cond.condition_id, cond.description, cond.quote,
+                satisfied=True,
+                note=(f"Statute-confirmed bracket, not discretionary — blended to "
+                      f"a real effective rate of {effective_rate:.2%} for QPE "
+                      f"${qpe_usd:,.0f}." if qpe_usd is not None
+                      else "Bracket structure confirmed; blended rate requires a "
+                           "known QPE to compute."),
             ))
         else:  # no_sponsorship_in_qpe and any future fact-dependent kinds
             evaluations.append(ConditionEvaluation(
@@ -511,13 +816,19 @@ def resolve_program_rate(
         f"EDB approval; the guaranteed floor tier is {floor_rate:.0%}."
         if tier.is_band_ceiling else ""
     )
+    bracket_note = (
+        f" Statute-confirmed marginal/bracketed rate: blended to a real effective "
+        f"rate of {effective_rate:.2%} for this QPE (not the flat top-bracket "
+        f"marginal rate) — see RateRule.graduated_brackets."
+        if tier.graduated_brackets else ""
+    )
     return RateResolution(
         program_slug=program_slug,
-        modeled_rate=tier.rate,
+        modeled_rate=effective_rate,
         floor_rate=floor_rate,
         is_band_ceiling=tier.is_band_ceiling,
         tier_id=tier.tier_id,
-        basis=f"{tier.citation}{band_note}",
+        basis=f"{tier.citation}{band_note}{bracket_note}",
         conditions_evaluated=tuple(evaluations),
         unverified_claims=_UNVERIFIED_BY_PROGRAM.get(program_slug, ()),
         conflicts=tuple(conflicts),

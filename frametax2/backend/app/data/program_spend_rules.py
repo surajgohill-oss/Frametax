@@ -113,14 +113,296 @@ PROGRAM_DOCTRINE: dict[str, QualificationDoctrine] = {
     # ie_section_481 required rows), not a spend-category doctrine
     # question. Source: jurisdiction_comparison.py IRELAND profile.
     "ie_section_481": QualificationDoctrine.OPEN_DEFAULT_INCLUDE,
+
+    # ── Optimizer-integration phase additions ───────────────────────────────
+    # Added when the optimizer-integration phase surfaced that only 4 of the
+    # 110 executable jurisdictions could be PRICED, because doctrine — not
+    # rate data — was the binding constraint. Every profile carrying the
+    # SAME evidentiary pattern that justified Malta/Greece/Ireland above
+    # (an affirmative, unqualified statement that BOTH ATL and BTL qualify,
+    # with no stated exclusions clause and no unresolved doctrine gap) was
+    # re-examined. Exactly two cleared that bar; both are recorded here with
+    # their own basis. The examined-and-REJECTED set is documented below —
+    # a deliberate audit trail, because "we looked and it did not qualify"
+    # is a finding, not an omission.
+
+    # Dominican Republic: the profile states, without qualification, "25%
+    # freely-transferable tax credit on ALL above and below the line
+    # eligible expenditures for foreign film and television productions"
+    # (vitrina.ai, confirmed exactly) — ATL and BTL both affirmatively
+    # covered, no exclusions clause, and the profile carries NO unresolved
+    # data gaps at all. Same construction as Malta/Greece: silence =
+    # inclusion. Source: jurisdiction_comparison.py DOMINICAN REPUBLIC
+    # profile (atl_qualifies=True, btl_qualifies=True, data_gaps=[]).
+    "do_film_commission_incentive": QualificationDoctrine.OPEN_DEFAULT_INCLUDE,
+
+    # Slovakia AVF: "33% cash rebate which can be applied to both above-
+    # and below-the-line talents" (camaleonrental.com, confirmed exactly) —
+    # an explicitly broad-scoped positive statement covering both labor
+    # classes, no exclusions clause, and no unresolved data gaps on the
+    # profile. Source: jurisdiction_comparison.py SLOVAKIA profile
+    # (atl_qualifies=True, btl_qualifies=True, data_gaps=[]).
+    "sk_avf_production_incentive": QualificationDoctrine.OPEN_DEFAULT_INCLUDE,
+
+    # ── Final-closeout phase: primary-source QPE classification of the 5
+    # programs that resolved to EVIDENCE_CONSTRAINED and therefore priced at
+    # $0 QPE (everything greying). Each program's primary-source
+    # qualifying-expenditure definition was read directly; the concern that
+    # deferred each one is resolved below. The three programs whose primary
+    # source shows a broad "all local production spend qualifies" construction
+    # are OPEN_DEFAULT_INCLUDE; Georgia adds explicit exclusion rows for its
+    # named exclusions; Spain is HYBRID with explicit BTL inclusion rows (its
+    # ATL "creative personnel" category is genuinely conditioned on EEA tax
+    # residence, unconfirmed for this production, so ATL stays grey).
+
+    # Croatia HAVC: Invest Croatia (official investcroatia.gov.hr): "Qualified
+    # spend consists of the costs of goods and services purchased in Croatia
+    # AND wages paid to Croatian tax residents (both cast and crew) for
+    # services carried out in Croatia." Broad all-local-spend construction,
+    # ATL and BTL both named, only FORMAT exclusions (commercials/reality/
+    # game shows) — no spend-CATEGORY exclusions. The prior "unconfirmed VFX/
+    # music treatment" gap is resolved: goods and services purchased in
+    # Croatia are all qualifying, VFX/music included. Silence = inclusion.
+    "hr_cash_rebate": QualificationDoctrine.OPEN_DEFAULT_INCLUDE,
+
+    # Cyprus Film Scheme: Invest Cyprus (film.investcyprus.org.cy, official):
+    # ATL "includes costs for the producer, director, scriptwriters, casting
+    # directors and up to three leading roles, capped at 30% of total eligible
+    # expenditure"; BTL "covers ALL OTHER production costs, including crew
+    # salaries, accommodation, transportation, props, set design, and
+    # post-production services conducted in Cyprus." The prior "ATL scope
+    # unconfirmed" gap is resolved: ATL DOES qualify (subject to the 30% cap,
+    # disclosed but not per-person-enforceable here), BTL is all-inclusive.
+    "cy_film_rebate": QualificationDoctrine.OPEN_DEFAULT_INCLUDE,
+
+    # New York Film Tax Credit: Empire State Development (esd.ny.gov,
+    # official): "Qualified costs include certain above-the-line wages
+    # subject to a cap, below-the-line wages, and production costs directly
+    # related to the production." The prior "ATL only under a 40%-of-other-
+    # costs cap" gap is resolved: capped is NOT excluded — ATL qualifies
+    # subject to the cap (disclosed, not enforceable without a per-line ATL/
+    # BTL ratio), BTL and production costs qualify broadly. Named cost
+    # exclusions (story/script rights) are added as explicit rows below.
+    "us_ny_film_credit": QualificationDoctrine.OPEN_DEFAULT_INCLUDE,
+
+    # Georgia Film Tax Credit: Georgia DOR (dor.georgia.gov, official):
+    # "costs for pre-production, production, and post-production related to
+    # filming in Georgia are qualified expenditures" — broad inclusion — with
+    # an EXPRESS exclusions clause: "Development costs, promotion, marketing,
+    # story rights, and legal fees are NOT qualified." An express exclusions
+    # clause over a broad-inclusion base is the OPEN_DEFAULT_INCLUDE pattern
+    # (silence = inclusion; the statute names what is OUT). The per-person
+    # $500K ATL cap is disclosed but not per-person-enforceable here. Explicit
+    # qualifies=False rows for the named exclusions are added below.
+    "us_ga_film_credit": QualificationDoctrine.OPEN_DEFAULT_INCLUDE,
+
+    # Germany DFFF: FFA/BKM guidelines (ffa.de, official) — "the grant consists
+    # of up to 30% of German production costs," a broad-inclusion base, with an
+    # EXPRESS non-qualifying list: "pre-production costs, costs for rights to
+    # content and other existing works, materials/services provided free or at
+    # reduced charge, deferred fees, deferred overhead, and contingency funds
+    # unless dissolved in the final cost report." Broad inclusion + named
+    # exclusions = OPEN_DEFAULT_INCLUDE; the contingency exclusion (conditional
+    # on non-dissolution) is added as an explicit row below.
+    "de_dfff": QualificationDoctrine.OPEN_DEFAULT_INCLUDE,
+
+    # Italy tax credit (foreign): italianfilmcommissions.it / mestierecinema.it
+    # — "40% of eligible expenses incurred within Italian territory," a broad
+    # inclusion. Conditions (51% of BTL must be EU nationals; overhead capped
+    # at 7.5%; ATL outside the EEA at a reduced 30% rate) are threshold/rate
+    # conditions, not spend-category exclusions, and are disclosed on the rate
+    # side. Broad local-spend inclusion → OPEN_DEFAULT_INCLUDE.
+    "it_tax_credit_foreign": QualificationDoctrine.OPEN_DEFAULT_INCLUDE,
+
+    # Hungary NFI: nfi.hu (official) — "30% rebate based on all the DIRECT
+    # film production costs spent in the country," explicitly listing
+    # pre/post-production, crew wages, location fees, rentals, travel,
+    # producer fees, royalties, financing. Broad direct-cost inclusion; the
+    # per-category sub-caps (royalties 4%, producer fees 4%, advertising 2%)
+    # are disclosed conditions, not category exclusions → OPEN_DEFAULT_INCLUDE.
+    "hu_hipa_rebate": QualificationDoctrine.OPEN_DEFAULT_INCLUDE,
+
+    # New Mexico: tax.newmexico.gov FYI-370 (official) — "qualified
+    # expenditures are DIRECT production and post-production expenses made in
+    # New Mexico subject to NM taxation," covering wages to cast/crew and
+    # physical production expenses (equipment, facilities, goods). Broad
+    # direct-spend inclusion → OPEN_DEFAULT_INCLUDE. Nonresident-BTL limits
+    # are disclosed rate-side conditions, not category exclusions.
+    "us_nm_film_credit": QualificationDoctrine.OPEN_DEFAULT_INCLUDE,
+
+    # Belgium Tax Shelter: hub.info / scopeinvest.be (production-consultancy
+    # secondary sources, corroborating each other): "All production-related
+    # expenses qualifying as Belgian taxable income are eligible... shoot
+    # and/or post-production including VFX are eligible." Eligibility test is
+    # a TERRITORIAL/PAYEE test (paid to an individual/company subject to
+    # Belgian tax), not a positive category enumeration — the same
+    # construction as Mauritius's own "incurred locally" test. Administrative
+    # expenses are capped at 30% of the total (a PROPORTION condition,
+    # disclosed but not enforced here — same treatment as Italy's 7.5%
+    # overhead cap and Georgia's per-person ATL cap) — not a category
+    # exclusion. Broad inclusion, no category exclusions found →
+    # OPEN_DEFAULT_INCLUDE.
+    "be_tax_shelter": QualificationDoctrine.OPEN_DEFAULT_INCLUDE,
+
+    # Spain Art. 36.2 LIS: Agencia Tributaria (official) — the deduction base
+    # is "expenses incurred in Spanish territory directly related to
+    # production, including (1) expenses of CREATIVE PERSONNEL with tax
+    # residence in Spain or the EEA (max EUR 50,000 per person), and (2)
+    # expenses deriving from the use of TECHNICAL INDUSTRIES and other
+    # suppliers." Category (2) is a broad BTL/technical inclusion; category
+    # (1) (ATL/creative) is conditioned on EEA tax residence, which is NOT
+    # confirmed for this production's talent. Therefore HYBRID_CONDITIONAL
+    # (not OPEN): the technical/BTL categories are explicitly included below,
+    # and ATL creative-personnel categories correctly fall to a genuine grey
+    # (EEA-residency-dependent) rather than a silent inclusion.
+    "es_tax_credit_foreign": QualificationDoctrine.HYBRID_CONDITIONAL,
 }
+
+# ── Examined for doctrine classification and DELIBERATELY NOT classified ────
+# These programs share the surface pattern (atl_qualifies=True and
+# btl_qualifies=True) but each carries a specific, recorded reason that the
+# OPEN_DEFAULT_INCLUDE reasoning does NOT transfer. Classifying them would
+# be a guess with high leverage: doctrine governs how EVERY unmatched budget
+# line is treated, so a wrong doctrine silently mis-qualifies a whole
+# register. Each stays unclassified — the derivation ladder surfaces that as
+# an explicit modeling gap, and the jurisdiction is retained as
+# production-capable/incentive-pending rather than priced at a guess.
+# NOTE (final-closeout phase): es_tax_credit_foreign, cy_film_rebate,
+# us_ny_film_credit, us_ga_film_credit, and hr_cash_rebate were REMOVED from
+# this register after their primary-source qualifying-expenditure definitions
+# were read directly and classified in PROGRAM_DOCTRINE above (with explicit
+# SpendRule rows below where the statute names exclusions or conditions). The
+# entries remaining here are the programs whose governing QPE text still has
+# NOT been read from primary source — genuinely deferred, not yet resolvable.
+# Empty as of the Worldwide Incentive Engine Closeout phase: every program
+# that was previously deferred here (BE, DE, HR, HU, IT, US-NM, plus CY/ES/
+# US-GA/US-NY which were deferred separately in the optimizer-integration
+# phase) has had its primary-source qualifying-expenditure text read and
+# classified in PROGRAM_DOCTRINE above. This register is NOT deleted — it
+# remains the correct tier-2 mechanism (resolve_program_doctrine) for any
+# FUTURE program whose primary source shows the open-default reasoning does
+# not transfer. An empty dict here means zero such programs currently exist,
+# not that the mechanism is unused.
+DOCTRINE_EXAMINED_NOT_CLASSIFIED: dict[str, str] = {}
 
 
 def get_program_doctrine(program_slug: str) -> QualificationDoctrine | None:
-    """The program's qualification doctrine, or None if the program's legal
-    regime has not yet been classified (an explicit modeling gap, surfaced
-    by the derivation ladder — never treated as a silent default)."""
+    """The program's EXPLICITLY CLASSIFIED qualification doctrine, or None
+    when no primary-source classification has been recorded.
+
+    This accessor deliberately still returns None for unclassified
+    programs: callers that report modeling provenance (how much of a
+    result is read-from-statute vs. resolved under the canonical rule)
+    depend on that distinction. Callers that need to EXECUTE should use
+    resolve_program_doctrine(), which applies the canonical rule below."""
     return PROGRAM_DOCTRINE.get(program_slug)
+
+
+# ── Canonical doctrine resolution (execution path) ──────────────────────────
+# The CANONICAL QPE RULE stated at the top of this module — "every actual
+# budget item is included unless authoritative program language explicitly
+# excludes it; silence, uncertainty, industry convention, and engineering
+# interpretation are never exclusions" — IS, definitionally,
+# OPEN_DEFAULT_INCLUDE. It was written as the governing rule for the whole
+# module, not as a Mauritius-only convention.
+#
+# For a long time the engine nonetheless refused to price any program whose
+# doctrine had not been hand-classified, because every execution gate tested
+# `get_program_doctrine(slug) is not None`. That made an ABSENCE OF
+# CLASSIFICATION behave as a prohibition — the precise inversion the
+# canonical rule forbids, and the reason only 4 of 110 fully rate-modeled
+# jurisdictions could be priced. Doctrine, not legal knowledge, was the
+# binding constraint.
+#
+# Resolution is therefore three-tiered, strongest evidence first:
+#
+#   1. EXPLICIT           — a doctrine read from the program's own primary
+#                           source (PROGRAM_DOCTRINE). Always wins.
+#   2. EVIDENCE_CONSTRAINED — the program has recorded evidence that the
+#                           open-default reasoning does NOT transfer (a
+#                           statutory ATL cap, a closed two-category
+#                           enumeration, an unread ministerial order). The
+#                           canonical default is overridden DOWNWARD to
+#                           HYBRID_CONDITIONAL, so a line matching no
+#                           category becomes a genuine legal-interpretation
+#                           grey requiring authority — never a silent
+#                           inclusion and never a silent exclusion.
+#   3. CANONICAL_DEFAULT  — no contrary evidence exists, so the module's own
+#                           canonical rule governs: include unless explicitly
+#                           excluded.
+#
+# Tier 2 is what keeps tier 3 honest: the default applies only where nothing
+# is known to contradict it, exactly as the canonical rule requires.
+CANONICAL_DEFAULT_DOCTRINE = QualificationDoctrine.OPEN_DEFAULT_INCLUDE
+
+
+class DoctrineBasis(str, enum.Enum):
+    EXPLICIT = "explicit_classification"
+    EVIDENCE_CONSTRAINED = "evidence_constrained_hybrid"
+    CANONICAL_DEFAULT = "canonical_default_inclusion"
+
+
+@dataclass(frozen=True)
+class DoctrineResolution:
+    """The doctrine the engine will execute under, plus WHY — so a served
+    result can always state whether its qualification treatment was read
+    from statute or resolved under the canonical rule."""
+    program_slug: str
+    doctrine: QualificationDoctrine
+    basis: DoctrineBasis
+    explanation: str
+
+    @property
+    def is_explicit(self) -> bool:
+        return self.basis is DoctrineBasis.EXPLICIT
+
+
+def resolve_program_doctrine(program_slug: str) -> DoctrineResolution:
+    """The executable doctrine for a program. Never returns None: under the
+    canonical QPE rule, absence of an explicit classification is not a
+    prohibition. See the three-tier commentary above."""
+    explicit = PROGRAM_DOCTRINE.get(program_slug)
+    if explicit is not None:
+        return DoctrineResolution(
+            program_slug=program_slug,
+            doctrine=explicit,
+            basis=DoctrineBasis.EXPLICIT,
+            explanation=(
+                f"Doctrine '{explicit.value}' was classified directly from this "
+                "program's own primary source — see PROGRAM_DOCTRINE."
+            ),
+        )
+
+    contrary = DOCTRINE_EXAMINED_NOT_CLASSIFIED.get(program_slug)
+    if contrary is not None:
+        return DoctrineResolution(
+            program_slug=program_slug,
+            doctrine=QualificationDoctrine.HYBRID_CONDITIONAL,
+            basis=DoctrineBasis.EVIDENCE_CONSTRAINED,
+            explanation=(
+                "The canonical default-inclusion rule is NOT applied here: this "
+                "program carries recorded evidence that its qualifying-expenditure "
+                "construction is narrower than silence-equals-inclusion. Resolved "
+                "to HYBRID_CONDITIONAL, so a line matching no listed category "
+                "becomes a genuine legal-interpretation grey requiring authority, "
+                f"never a silent inclusion. Evidence: {contrary}"
+            ),
+        )
+
+    return DoctrineResolution(
+        program_slug=program_slug,
+        doctrine=CANONICAL_DEFAULT_DOCTRINE,
+        basis=DoctrineBasis.CANONICAL_DEFAULT,
+        explanation=(
+            "No primary-source doctrine classification and no evidence of a "
+            "narrower construction. The module's CANONICAL QPE RULE governs: "
+            "every actual budget item is included unless authoritative program "
+            "language explicitly excludes it — silence, uncertainty and "
+            "convention are never exclusions. Qualification remains subject to "
+            "the program's territorial requirement and its statutory rate "
+            "conditions, which are enforced separately."
+        ),
+    )
 
 
 @dataclass(frozen=True)
@@ -324,10 +606,118 @@ MU_EDB_RULES: tuple[SpendRule, ...] = (
 )
 
 
+# ── Germany DFFF — explicit exclusion rows ──────────────────────────────────
+# Germany is OPEN_DEFAULT_INCLUDE (broad "German production costs" base), but
+# the FFA/BKM guidelines (ffa.de, official) EXPRESSLY exclude "contingency
+# funds UNLESS they can be dissolved in the final cost report in favor of
+# goods and services eligible for the grant." This is the opposite default
+# from Mauritius's contingency treatment (included absent an exclusion) —
+# Germany excludes by default, conditionally un-excluding only on dissolution
+# evidence this production does not have. Modeled as EXCLUDED, not grey:
+# the statute states a clear default (excluded) and the condition for
+# reversal (dissolution) is a known, absent fact, not an unresolved question.
+_DE_CONTINGENCY_EXCLUSION_NOTE = (
+    "FFA/BKM DFFF Guidelines (ffa.de, official): 'contingency funds' are "
+    "excluded from German production costs 'unless they can be dissolved in "
+    "the final cost report in favor of goods and services eligible for the "
+    "grant.' No dissolution evidence exists for this production's "
+    "contingency reserve, so the statute's default (excluded) applies. "
+    "Source: FFA DFFF Guidelines of the BKM (ffa.de/guidelines-dfff)."
+)
+DE_DFFF_RULES: tuple[SpendRule, ...] = (
+    SpendRule(program_slug="de_dfff", spend_category="contingency",
+              qualifies=False, territorial_only=True, confidence_tier="PARSED",
+              notes=_DE_CONTINGENCY_EXCLUSION_NOTE, source_ref="FFA-DFFF-Guidelines-BKM"),
+)
+
+# ── Georgia Film Tax Credit — explicit exclusion rows ───────────────────────
+# Georgia is OPEN_DEFAULT_INCLUDE (broad "pre/production/post costs qualify"),
+# so the ONLY rows needed are the statute's EXPRESS exclusions. Source:
+# Georgia DOR (dor.georgia.gov), "Development costs, promotion, marketing,
+# story rights, and legal fees are not qualified expenditures." Of the
+# Little Utopia spend vocabulary, only 'legal_accounting' intersects an
+# express exclusion ("legal fees") — modeled as EXCLUDED, disclosing that the
+# statute's exclusion is specifically of legal fees (the accounting portion
+# of a combined legal/accounting account would qualify, but this engine has
+# no legal-vs-accounting split, so the conservative whole-account exclusion
+# is applied). Every other category follows the open-default (qualifies).
+_GA_LEGAL_EXCLUSION_NOTE = (
+    "Georgia DOR: 'legal fees are not qualified expenditures.' This engine's "
+    "'legal_accounting' category is a combined account; Georgia excludes the "
+    "legal-fees portion expressly (accounting/audit fees for the production "
+    "would qualify). With no legal-vs-accounting split available, the whole "
+    "combined account is conservatively EXCLUDED rather than silently "
+    "included. Source: dor.georgia.gov Film Tax Credit list of expenditures."
+)
+US_GA_RULES: tuple[SpendRule, ...] = (
+    SpendRule(program_slug="us_ga_film_credit", spend_category="legal_accounting",
+              qualifies=False, territorial_only=True, confidence_tier="PARSED",
+              notes=_GA_LEGAL_EXCLUSION_NOTE, source_ref="GA-DOR-Film-Expenditures-List"),
+)
+
+# ── New York Film Tax Credit — explicit exclusion rows ──────────────────────
+# New York is OPEN_DEFAULT_INCLUDE for below-the-line + production costs +
+# capped ATL. Source: esd.ny.gov. NY qualified production costs exclude
+# story/script RIGHTS acquisition costs, but 'atl_writer' in this vocabulary
+# is writer LABOR (a capped ATL wage that DOES qualify), not a rights
+# purchase — so no Little Utopia category maps to NY's story-rights
+# exclusion, and no exclusion row is required. ATL wages qualify subject to
+# the disclosed 40%-of-qualified-BTL cap (not per-line enforceable here),
+# consistent with how the rate-rule conditions are disclosed-but-unenforced.
+US_NY_RULES: tuple[SpendRule, ...] = ()
+
+# ── Spain Art. 36.2 LIS — explicit inclusion rows for the technical/BTL and
+# supplier categories the statute names, so that under HYBRID_CONDITIONAL the
+# broad category-(2) spend qualifies while the ATL creative-personnel
+# categories (category (1), EEA-tax-residence-conditioned) correctly fall to a
+# genuine grey rather than a silent inclusion. Source: Agencia Tributaria
+# (official), Art. 36.2 LIS: base = "expenses... deriving from the use of
+# TECHNICAL INDUSTRIES and other suppliers" (cameras/lighting/sound/SFX/
+# wardrobe/equipment/locations/sets/post/transport/etc.).
+_ES_TECHNICAL_NOTE = (
+    "Spain Art. 36.2 LIS names 'expenses deriving from the use of technical "
+    "industries and other suppliers' as an eligible category — a broad "
+    "below-the-line/technical inclusion covering equipment, cameras, "
+    "lighting, sound, SFX, wardrobe, locations, sets, transport, post and "
+    "supplier services incurred in Spain. Source: Agencia Tributaria "
+    "(sede.agenciatributaria.gob.es), Art. 36.2 LIS deduction base."
+)
+_ES_CREATIVE_NOTE = (
+    "Spain Art. 36.2 LIS: 'creative personnel' expenses qualify ONLY where "
+    "the person has tax residence in Spain or the EEA (max EUR 50,000 per "
+    "person). This production's creative-personnel EEA tax residency is NOT "
+    "confirmed, so these ATL categories are a genuine grey (EEA-residency-"
+    "dependent), never a silent inclusion. Source: Agencia Tributaria, "
+    "Art. 36.2 LIS."
+)
+def _es_tech(cat: str) -> SpendRule:
+    return SpendRule(program_slug="es_tax_credit_foreign", spend_category=cat,
+                     qualifies=True, territorial_only=True, confidence_tier="PARSED",
+                     notes=_ES_TECHNICAL_NOTE, source_ref="ES-AEAT-Art36.2-LIS")
+def _es_creative(cat: str) -> SpendRule:
+    return SpendRule(program_slug="es_tax_credit_foreign", spend_category=cat,
+                     qualifies=None, territorial_only=True, confidence_tier="PARSED",
+                     notes=_ES_CREATIVE_NOTE, source_ref="ES-AEAT-Art36.2-LIS")
+ES_RULES: tuple[SpendRule, ...] = (
+    # Category (2): technical industries + suppliers — broad BTL inclusion.
+    _es_tech("btl_crew_labor"), _es_tech("btl_resident_labor"), _es_tech("btl_nonresident_labor"),
+    _es_tech("btl_equipment_rental"), _es_tech("btl_location_fees"), _es_tech("btl_stage_facility"),
+    _es_tech("btl_set_construction"), _es_tech("btl_transportation"), _es_tech("btl_catering"),
+    _es_tech("vessel_marine"), _es_tech("travel"), _es_tech("lodging"), _es_tech("insurance"),
+    _es_tech("production_service_fees"), _es_tech("telecommunications"),
+    _es_tech("post_production"), _es_tech("sound"), _es_tech("vfx"), _es_tech("music"),
+    _es_tech("payroll_fringes"), _es_tech("contingency"), _es_tech("completion_bond"),
+    _es_tech("legal_accounting"),
+    # Category (1): creative personnel — ATL, EEA-tax-residence-conditioned → grey.
+    _es_creative("atl_writer"), _es_creative("atl_director"),
+    _es_creative("atl_producer"), _es_creative("atl_cast"),
+)
+
+
 # ── Registry ────────────────────────────────────────────────────────────────
 
 _ALL_RULES: dict[str, dict[str, SpendRule]] = {}
-for _rule in MU_EDB_RULES:
+for _rule in (*MU_EDB_RULES, *US_GA_RULES, *US_NY_RULES, *ES_RULES, *DE_DFFF_RULES):
     _ALL_RULES.setdefault(_rule.program_slug, {})[_rule.spend_category] = _rule
 
 

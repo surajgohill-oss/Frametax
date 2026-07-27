@@ -23,6 +23,19 @@ class GlobalProgramEntry:
     effective_from: str | None
     notes: str
     unknown_fields: list[str] = field(default_factory=list)
+    # Stable join key to the executable doctrine layer (program_rate_rules.py
+    # / executable_jurisdiction_registry.py DoctrineRecord.program_slug).
+    # None = not yet promoted to executable — this is the scalability
+    # bottleneck identified in the worldwide jurisdiction population phase:
+    # without this field, no catalog entry could be programmatically
+    # promoted into a RateRule, forcing fully manual hand-duplication
+    # between this file and program_rate_rules.py/jurisdiction_comparison.py.
+    # Set this to the program_slug once a DoctrineRecord exists for the
+    # entry (see executable_jurisdiction_registry.py) — existing 211-entry
+    # catalog rows are NOT bulk-slugged in this pass (would require
+    # verifying each name maps to a real, unambiguous program; done
+    # per-jurisdiction as doctrine is added, not guessed in bulk).
+    program_slug: str | None = None
 
 
 @dataclass
