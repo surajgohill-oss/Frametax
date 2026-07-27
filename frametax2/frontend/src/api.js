@@ -58,6 +58,16 @@ export const getFacts = () => request("/facts");
 export const postFacts = (answers) =>
   request("/facts", { method: "POST", body: JSON.stringify({ answers }) });
 
+// Contingency treatment (Task 91) — undeployed reserve is excluded from
+// QPE by default; deploying part of it to a real destination line makes
+// that amount inherit the destination's own eligibility treatment. No
+// blanket "qualify contingency" switch exists here or on the backend.
+export const getContingency = () => request("/contingency");
+export const postContingencyDeploy = (deployment) =>
+  request("/contingency/deploy", { method: "POST", body: JSON.stringify(deployment) });
+export const postContingencyReset = () =>
+  request("/contingency/reset", { method: "POST" });
+
 // Real document ingestion (app/api/v1/documents.py) — persists via
 // SQLAlchemy to the documents table. The currently-served production state
 // (little_utopia_state.py) is a static in-memory demo disconnected from

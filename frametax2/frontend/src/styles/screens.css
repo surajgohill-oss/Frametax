@@ -878,6 +878,14 @@
 .wsx-row.net { border-top: 1.5px solid var(--text-primary); font-weight: 700; padding: 16px 18px 12px; margin-top: 2px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-height: 96px; box-sizing: border-box; justify-content: center; }
 .wsx-row.net span:first-child { font-size: 12px; font-family: var(--font-sans); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-primary); }
 .wsx-row.net span:last-child { font-size: 27px; font-weight: 700; letter-spacing: -0.014em; color: var(--text-primary); }
+.wsx-conf { display: inline-block; margin-top: 6px; font-family: var(--font-sans); font-size: 10.5px; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; padding: 2px 7px; border-radius: 3px; cursor: help; border: 0.5px solid var(--hairline); }
+.wsx-conf.jade { color: var(--jade); background: color-mix(in srgb, var(--jade) 12%, transparent); }
+.wsx-conf.silver { color: var(--text-secondary); background: var(--surface-2); }
+.wsx-conf.amber { color: var(--amber); background: color-mix(in srgb, var(--amber) 12%, transparent); }
+.wsx-conf.red { color: var(--danger, #b23); background: color-mix(in srgb, var(--danger, #b23) 12%, transparent); }
+.wsx-conf.charcoal { color: var(--text-tertiary); background: var(--surface-2); }
+.wsx-recon-flag { cursor: help; color: var(--amber); font-size: 11px; margin-left: 2px; }
+.wsx-recon-note { font-size: 11px; color: var(--text-tertiary); line-height: 1.45; padding: 0 18px 8px; margin-top: -4px; }
 .wsx-range { position: relative; height: 6px; background: var(--surface-2); border: 0.5px solid var(--hairline); border-radius: 2px; margin: 9px 18px; }
 .wsx-range u { position: absolute; top: 0; bottom: 0; background: var(--jade); opacity: 0.4; text-decoration: none; }
 .wsx-range i { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(45deg, var(--amber) 0 3px, transparent 3px 6px); opacity: 0.7; }

@@ -30,6 +30,40 @@ export function Pct({ value }) {
   return <span className="mono">{(Number(value) * 100).toFixed(0)}%</span>;
 }
 
+// Final Global Discovery phase: requirements/timing fields are
+// tri-state (true / false / not confirmed) far more often than the rest
+// of this app's mostly-numeric surfaces — this is the one shared
+// renderer so "Not stated" never gets reinvented per call site, and a
+// real `false` (e.g. "no minimum spend") never collapses into the same
+// dash as "unknown".
+export function YesNo({ value }) {
+  if (value === null || value === undefined) return <span className="text-tertiary">Not stated</span>;
+  return <span>{value ? "Required" : "Not required"}</span>;
+}
+
+// Objective 5 / Objective 3's explicit instruction: a timing fact must
+// never render as if it were a firmer commitment than its basis
+// supports. Label text mirrors program_requirements.TimingBasis exactly.
+const TIMING_BASIS_LABEL = {
+  statutory_deadline: "Statutory deadline",
+  official_target: "Official target",
+  reported_practical: "Reported practical timing",
+  estimate: "Estimate",
+  unknown: "Unknown",
+};
+
+export function TimingFactValue({ fact }) {
+  if (!fact) return <span className="text-tertiary">Not stated</span>;
+  return (
+    <span>
+      {fact.value}
+      <span className="text-tertiary small" style={{ marginLeft: 6 }}>
+        ({TIMING_BASIS_LABEL[fact.basis] || fact.basis})
+      </span>
+    </span>
+  );
+}
+
 // Recommendation confidence -> the globe/badge semantic tiers this
 // product uses (gold/jade/silver/amber/red/charcoal). This is a display
 // mapping only, over values the backend already computed.
@@ -54,6 +88,33 @@ export function tierLabel(tier) {
     case "amber": return "Conditional / authority-dependent";
     case "red": return "Material blocker";
     default: return "Inactive";
+  }
+}
+
+// Recommendation-confidence status (backend Phase 2). Maps the backend's
+// deterministic status enum to a short producer-facing label + a tone class
+// reused from the existing card palette (jade/silver/amber/charcoal). Never
+// invents a status the backend didn't send.
+export function confidenceStatusLabel(status) {
+  switch (status) {
+    case "CONFIRMED": return "Confirmed";
+    case "PRICED": return "Priced · qualification not fully known";
+    case "PRICED_BUT_QUALIFICATION_PENDING": return "Priced · qualification pending";
+    case "CONDITIONAL": return "Conditional · mandatory gate unconfirmed";
+    case "UNAVAILABLE": return "Unavailable · cannot be priced";
+    case "UNKNOWN": return "Status unknown";
+    default: return status || "";
+  }
+}
+
+export function confidenceStatusTone(status) {
+  switch (status) {
+    case "CONFIRMED": return "jade";
+    case "PRICED": return "silver";
+    case "PRICED_BUT_QUALIFICATION_PENDING": return "amber";
+    case "CONDITIONAL": return "amber";
+    case "UNAVAILABLE": return "red";
+    default: return "charcoal";
   }
 }
 

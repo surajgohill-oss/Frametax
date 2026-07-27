@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
-import { Money, scenarioDisplay } from "../../lib/format";
+import { Money, scenarioDisplay, confidenceStatusLabel, confidenceStatusTone } from "../../lib/format";
 import { useAppState } from "../../state/AppState";
 import Globe3D from "../../components/Globe3D";
 import { buildGlobeData, structureTier } from "../../lib/globeData";
@@ -66,7 +66,7 @@ function visibleStructures(structures, rankById, swapId) {
 }
 const pct = (part, whole) => (whole ? Math.max(0, Math.min(100, (part / whole) * 100)) : 0);
 
-function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, onSetLeading, onInspect, onCompare, onSelectSegment }) {
+function ScenarioCard({ structure, tier, rank, grossBudget, budgetReconciliation, isLeading, onSetLeading, onInspect, onCompare, onSelectSegment }) {
   const priced = structure.is_fully_priced;
   // All four card figures read from THIS scenario's canonical allocated
   // structure — gross from structure.gross_budget_usd (falls back to the
@@ -76,6 +76,15 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, onSetLead
   const gross = structure.gross_budget_usd ?? grossBudget;
   const qualifiedSpend = structure.segments?.reduce((sum, sg) => sum + (sg.qpe_usd || 0), 0) || 0;
   const npc = structure.npc_with_adjustments_usd;
+  // Segment QPE is summed from the same 44 real leaf accounts the
+  // production's budget_reconciliation already discloses (GET /production).
+  // When a structure's own qualification pipeline excludes nothing from
+  // any segment, that sum lands on the leaf-account total rather than the
+  // source document's stated Grand Total ("Gross budget" above) — a $2
+  // source-document rounding variance, not fabricated or double-counted
+  // spend and not a statutory uplift. Disclose it inline rather than
+  // showing an unexplained "qualified spend > gross budget."
+  const overGross = qualifiedSpend > gross;
 
   const laneClass = isLeading ? "anchor" : priced ? "" : "draft";
   const badge = isLeading ? "① LEADING" : priced ? (CIRCLED[(rank?.rank || 1) - 1] || `#${rank?.rank}`) : "DRAFT";
@@ -99,6 +108,14 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, onSetLead
         <div className="wsx-lh-id">
           <div className="wsx-nm">{title}</div>
           <div className="wsx-lb">{subtitle}</div>
+          {structure.confidence_status && (
+            <div
+              className={`wsx-conf ${confidenceStatusTone(structure.confidence_status)}`}
+              title={(structure.confidence_reasons || []).join(" ")}
+            >
+              {confidenceStatusLabel(structure.confidence_status)}
+            </div>
+          )}
         </div>
         <span className="wsx-badge">{badge}</span>
       </div>
@@ -107,9 +124,32 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, onSetLead
         <>
           <div className="wsx-rows">
             <div className="wsx-row"><span>Gross budget</span><span><Money value={gross} bare /></span></div>
-            <div className="wsx-row"><span>Qualified spend</span><span><Money value={qualifiedSpend} bare /></span></div>
+            <div className="wsx-row">
+              <span>
+                Qualified spend
+                {overGross && (
+                  <sup
+                    className="wsx-recon-flag"
+                    title={
+                      budgetReconciliation?.note ||
+                      "Sums the same real budget accounts the production's Gross budget is drawn from, but on a leaf-account basis rather than the source document's stated Grand Total — a small source-document rounding variance, not additional or double-counted spend."
+                    }
+                  >
+                    †
+                  </sup>
+                )}
+              </span>
+              <span><Money value={qualifiedSpend} bare /></span>
+            </div>
             <div className="wsx-row"><span>Gross incentive</span><span className="incentive"><Money value={structure.selected_incentive_usd} bare /></span></div>
           </div>
+          {overGross && (
+            <div className="wsx-recon-note">
+              † Qualified spend exceeds gross budget by <Money value={qualifiedSpend - gross} bare /> — a disclosed
+              source-document rounding variance between the budget's stated Grand Total and the sum of its own leaf
+              accounts, not additional qualifying spend.
+            </div>
+          )}
           <div className="wsx-row net"><span>Net production cost</span><span><Money value={npc} bare /></span></div>
           <div className="wsx-range">
             <u style={{ left: 0, width: `${pct(qualifiedSpend, gross)}%` }} />
@@ -231,20 +271,21 @@ export default function Workspace() {
     ...(pkg.missing_inputs || []).map((m) => (m.blocking ? "hot" : "")),
   ].slice(0, 8);
 
+  const contingencyByAccount = allocated?.contingency || {};
   function handleGlobeClick(pt) {
     const s = (structuresByCode.get(pt.id) || [])[0];
     if (!s) return;
     const seg = s.segments.find((sg) => sg.jurisdiction_code === pt.id);
-    if (seg) openInspector("allocation-segment", { ...seg, structureLabel: s.label });
+    if (seg) openInspector("allocation-segment", { ...seg, structureLabel: s.label, contingencyByAccount });
     else if (s.recommendation) openInspector("structure-recommendation", s.recommendation);
   }
   function handleSelectStructure(structure) {
     if (structure.recommendation) openInspector("structure-recommendation", structure.recommendation);
-    else if (structure.segments?.[0]) openInspector("allocation-segment", { ...structure.segments[0], structureLabel: structure.label });
+    else if (structure.segments?.[0]) openInspector("allocation-segment", { ...structure.segments[0], structureLabel: structure.label, contingencyByAccount });
   }
   function handleSelectSegment(structure, code) {
     const seg = structure.segments.find((sg) => sg.jurisdiction_code === code);
-    if (seg) openInspector("allocation-segment", { ...seg, structureLabel: structure.label });
+    if (seg) openInspector("allocation-segment", { ...seg, structureLabel: structure.label, contingencyByAccount });
   }
 
   return (
@@ -346,6 +387,7 @@ export default function Workspace() {
                   tier={structureTier(s, rankById)}
                   rank={rankById.get(s.structure_id)}
                   grossBudget={production.gross_budget_usd}
+                  budgetReconciliation={production.budget_reconciliation}
                   isLeading={s.structure_id === leadingId}
                   onSetLeading={setLeadingOverride}
                   onInspect={handleSelectStructure}
@@ -377,6 +419,7 @@ export default function Workspace() {
                       tier={structureTier(s, rankById)}
                       rank={rankById.get(s.structure_id)}
                       grossBudget={production.gross_budget_usd}
+                      budgetReconciliation={production.budget_reconciliation}
                       isLeading={s.structure_id === leadingId}
                       onSetLeading={setLeadingOverride}
                       onInspect={handleSelectStructure}
@@ -422,6 +465,14 @@ export default function Workspace() {
           <span className="wsx-st-k">Leading structure</span>
           <b>{leadingStructure ? scenarioDisplay(leadingStructure).title : "None fully priced yet"}</b>
           {leadingStructure && <span className="wsx-st-sub">{scenarioDisplay(leadingStructure).subtitle}</span>}
+          {leadingStructure?.confidence_status && (
+            <span
+              className={`wsx-conf ${confidenceStatusTone(leadingStructure.confidence_status)}`}
+              title={(leadingStructure.confidence_reasons || []).join(" ")}
+            >
+              {confidenceStatusLabel(leadingStructure.confidence_status)}
+            </span>
+          )}
         </div>
         <div className="wsx-st-right">
           <span className="lbl">Net production cost</span>

@@ -1,6 +1,106 @@
 import { X } from "lucide-react";
 import { useAppState } from "../state/AppState";
-import { Money, Pct, tierBadgeClass, recommendationHeadline, questionStatusLabel, humanizeToken, structureLabel, accountStateLabel } from "../lib/format";
+import { Money, Pct, YesNo, TimingFactValue, tierBadgeClass, recommendationHeadline, questionStatusLabel, humanizeToken, structureLabel, accountStateLabel } from "../lib/format";
+
+// Final Global Discovery phase: the "Requirements & Timing" section of a
+// jurisdiction segment — extends the existing AllocationSegmentInspector
+// (below) rather than introducing a new surface. Reads
+// data.requirements verbatim from GET /structures; renders nothing when
+// the backend sent null (a program not yet covered by the Production
+// Requirements Database — "Not stated", never a guessed value).
+function RequirementsSection({ requirements }) {
+  if (!requirements) return null;
+  const r = requirements;
+  const additional = Object.entries(r.additional_facts || {});
+  return (
+    <div className="inspector-sect">
+      <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Requirements &amp; timing</p>
+      <dl className="kv-list">
+        <div><dt>Local entity required</dt><dd><YesNo value={r.local_entity_required} /></dd></div>
+        <div><dt>Cultural test required</dt><dd><YesNo value={r.cultural_test_required} /></dd></div>
+        {r.cultural_test_threshold != null && (
+          <div><dt>Cultural test threshold</dt><dd className="mono">{r.cultural_test_threshold} points</dd></div>
+        )}
+        {r.min_total_budget_usd != null && (
+          <div><dt>Minimum total budget</dt><dd className="mono"><Money value={r.min_total_budget_usd} /></dd></div>
+        )}
+        {r.min_local_spend_usd != null && (
+          <div><dt>Minimum local spend</dt><dd className="mono"><Money value={r.min_local_spend_usd} /></dd></div>
+        )}
+        {r.per_project_cap_usd != null && (
+          <div><dt>Per-project cap</dt><dd className="mono"><Money value={r.per_project_cap_usd} /></dd></div>
+        )}
+        {r.per_person_cap_usd != null && (
+          <div><dt>Per-person cap</dt><dd className="mono"><Money value={r.per_person_cap_usd} /></dd></div>
+        )}
+        {r.atl_cap_pct_of_other_costs != null && (
+          <div><dt>ATL cap</dt><dd className="mono"><Pct value={r.atl_cap_pct_of_other_costs} /> of other costs</dd></div>
+        )}
+        {r.annual_program_cap_usd != null && (
+          <div><dt>Annual program cap</dt><dd className="mono"><Money value={r.annual_program_cap_usd} /></dd></div>
+        )}
+        <div><dt>Application deadline</dt><dd><TimingFactValue fact={r.application_deadline} /></dd></div>
+        <div><dt>Audit / final certification</dt><dd><TimingFactValue fact={r.audit_or_final_certification_deadline} /></dd></div>
+        <div><dt>Payment timing</dt><dd><TimingFactValue fact={r.payment_timing} /></dd></div>
+        {r.sunset_date && <div><dt>Sunset date</dt><dd className="mono">{r.sunset_date}</dd></div>}
+        <div><dt>Refundable</dt><dd>{r.refundable === null ? <span className="text-tertiary">Not stated</span> : (r.refundable ? "Yes" : "No")}</dd></div>
+        <div><dt>Transferable</dt><dd>{r.transferable === null ? <span className="text-tertiary">Not stated</span> : (r.transferable ? "Yes" : "No")}</dd></div>
+      </dl>
+      {additional.length > 0 && (
+        <div style={{ marginTop: 8 }}>
+          {additional.map(([key, val]) => (
+            <p key={key} className="text-secondary small" style={{ margin: "3px 0" }}>
+              <strong className="text-secondary" style={{ textTransform: "capitalize" }}>{key.replace(/_/g, " ")}:</strong> {val}
+            </p>
+          ))}
+        </div>
+      )}
+      {r.evidence && (
+        <p className="text-tertiary small" style={{ marginTop: 10 }}>
+          <strong className="text-secondary">Source:</strong> {r.evidence.source_title} ({r.evidence.issuing_authority}) —{" "}
+          {r.evidence.source_type === "primary" ? "primary source" : "secondary source"}, {r.evidence.status}
+          {r.evidence.notes ? ` · ${r.evidence.notes}` : ""}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// Task 91 (contingency treatment): shows any contingency line whose
+// account_code appears in this segment, reading `contingencyByAccount`
+// verbatim from the top-level GET /structures `contingency` key (see
+// Workspace.jsx). Renders nothing when the segment has no contingency
+// account, or when the account is on file but fully undeployed (that
+// state is already visible in the qualification trace below as a plain
+// "excluded"/"qualifies" row — this section exists to surface the
+// DEPLOYMENT audit trail, not to duplicate the trace).
+function ContingencySection({ accountCodes = [], contingencyByAccount = {} }) {
+  const entries = accountCodes
+    .map((code) => contingencyByAccount[code])
+    .filter((c) => c && c.deployments.length > 0);
+  if (entries.length === 0) return null;
+  return (
+    <div className="inspector-sect">
+      <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Contingency deployment</p>
+      {entries.map((c) => (
+        <div key={c.source_account_code} style={{ marginBottom: 10 }}>
+          <dl className="kv-list">
+            <div><dt>Reserve</dt><dd>{c.source_description}</dd></div>
+            <div><dt>Original</dt><dd className="mono"><Money value={c.original_amount_usd} /></dd></div>
+            <div><dt>Deployed</dt><dd className="mono"><Money value={c.deployed_amount_usd} /></dd></div>
+            <div><dt>Undeployed (excluded)</dt><dd className="mono"><Money value={c.undeployed_amount_usd} /></dd></div>
+          </dl>
+          {c.deployments.map((d, i) => (
+            <p key={i} className="text-secondary small" style={{ margin: "4px 0" }}>
+              <Money value={d.amount_usd} /> → {d.destination_description} ({d.destination_spend_category}) —{" "}
+              {d.note} · {d.deployed_by}, {d.deployed_at.slice(0, 10)}
+            </p>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function AccountInspector({ data }) {
   const state = accountStateLabel(data.state);
@@ -195,6 +295,8 @@ function AllocationSegmentInspector({ data }) {
           {data.blockers.map((b, i) => <p key={i} className="text-secondary small" style={{ margin: "4px 0" }}>{b}</p>)}
         </div>
       )}
+      <RequirementsSection requirements={data.requirements} />
+      <ContingencySection accountCodes={data.account_codes} contingencyByAccount={data.contingencyByAccount} />
       {trace.length > 0 && (
         <div className="inspector-sect">
           <p className="inspector-eyebrow" style={{ marginTop: 12 }}>Account qualification trace ({trace.length})</p>

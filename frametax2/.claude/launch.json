@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "backend",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd /Users/Suraj/cineglobe-frametax/frametax2/backend && source .venv/bin/activate && uvicorn app.main:app --host 0.0.0.0 --port 8010 --reload"],
+      "port": 8010
+    },
+    {
+      "name": "frontend",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd /Users/Suraj/cineglobe-frametax/frametax2/frontend && npm run dev"],
+      "port": 5173
+    }
+  ]
+}
