@@ -345,6 +345,18 @@ _MALTA = JurisdictionIncentiveProfile(
         "Cashflow timing (20 weeks) is an estimate; verify against current MFC processing terms",
         "WHT on international cast: confirm under applicable tax treaty",
         "Maltese element definition (for +2% uplift) not verified from current guidelines",
+        "MATERIAL DISCREPANCY (flagged, not resolved, 2026-07-26): this record's 25%-base/40%-"
+        "ceiling-via-three-stacked-uplifts structure (min spend EUR 50,000, no cultural test) "
+        "traces to an undated internal citation. Five independently-converging 2024-era sources "
+        "(Zerafa Advocates, Saturation.io, PCP Malta, Atlas Film Fixers, Ecovis Malta) instead "
+        "describe a 35%-base/40%-for-micro-budget-QME-under-EUR-150k structure, min spend EUR "
+        "100,000 (budget over EUR 200,000), WITH a cultural test — apparently reflecting a "
+        "'revamped' 2024 scheme (per a Cineuropa headline: 'Malta launches revamped, bolder and "
+        "better cash rebate') and a June-2024-dated official Guidelines PDF, neither of which "
+        "could be directly fetched (403/unparseable) to confirm with certainty. base_rate/"
+        "max_rate/min_spend_local/requires_cultural_test are NOT altered here pending a clean "
+        "primary-source read of the 2024 guidelines — see app.data.program_requirements "
+        "mt_mfc_rebate for the full reconciliation writeup.",
     ],
 )
 
@@ -2142,8 +2154,8 @@ _SAUDI_ARABIA = JurisdictionIncentiveProfile(
     is_refundable=True,
     is_transferable=False,
     annual_cap_local=None,
-    min_spend_local=None,
-    requires_cultural_test=True,
+    min_spend_local=200_000.0,
+    requires_cultural_test=False,
     atl_qualifies=None,
     btl_qualifies=True,
     vfx_qualifies=None,
@@ -2163,18 +2175,23 @@ _SAUDI_ARABIA = JurisdictionIncentiveProfile(
     payroll_burden_pct=None,
     financing_friction=FinancingFriction.HIGH,
     authority_name="Saudi Film Commission",
-    authority_url_hint="saudifi.com",
+    authority_url_hint="film.sa",
     notes=(
         "CORRECTED — dramatically stale. The pre-existing catalog lead "
         "(40%) was superseded by a real 2026 increase to 60%, confirmed "
         "by 8 independent major industry sources (Deadline, Hollywood "
         "Reporter, Variety, Screen Daily, Arab News, etc.), positioning "
         "Saudi Arabia 'at the very top of the global film incentive "
-        "landscape.' Content restrictions apply (cultural/censorship "
-        "review). Emerging market under Vision 2030 — crew depth and "
-        "studio infrastructure still developing, modeled SHALLOW/False "
-        "pending verification; financing friction HIGH given the "
-        "market's youth and evolving disbursement process."
+        "landscape.' Min spend SAR 750,000 (feature; SAR 187,000 "
+        "documentary/animation) confirmed 2026-07-26 via direct fetch of "
+        "film.sa. No distinct cultural/values TEST exists (corrects a "
+        "prior True) — content vetting instead runs through two named "
+        "gates, Script Content Clearance and a Filming Non-Objection "
+        "Certificate, a regulatory content-clearance mechanism rather "
+        "than a cultural test. Emerging market under Vision 2030 — crew "
+        "depth and studio infrastructure still developing, modeled "
+        "SHALLOW/False pending verification; financing friction HIGH "
+        "given the market's youth and evolving disbursement process."
     ),
     data_gaps=[
         "Minimum spend threshold not found in any source checked",

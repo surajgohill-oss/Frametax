@@ -1956,8 +1956,9 @@ register_rate_rules(rate_rules_for(SE_DOCTRINE))
 # DISCOVERY-tier lead at 40%. STALE, and dramatically so — 8 independent
 # major industry sources (Deadline, Hollywood Reporter, Variety, Screen
 # Daily, Arab News, etc.) all corroborate a 2026 increase to 60%, "well
-# above the major European national rebates." No minimum spend figure
-# found in any source checked.
+# above the major European national rebates." 2026-07-26: min spend
+# figure and the requires_cultural_test correction both closed via direct
+# fetch of film.sa/incentive-programs/ -- see Requirements Profile.
 _SA_CITATION = (
     "Corroborated by 8 independent major industry sources (deadline.com, "
     "hollywoodreporter.com, variety.com, screendaily.com, arabnews.com, "
@@ -1974,12 +1975,22 @@ SA_DOCTRINE = register(DoctrineRecord(
     incentive_type="cash_rebate",
     is_refundable=True,
     is_transferable=False,
-    min_spend_usd=None,
+    min_spend_usd=200_000.0,       # SAR 750,000 feature-film threshold (documentary/animation
+                                    # SAR 187,000 -- see the Requirements Profile for the full
+                                    # per-format breakdown; feature film used as the general case)
     annual_cap_usd=None,
-    requires_cultural_test=True,   # content restrictions apply, per the
-                                    # pre-existing catalog lead's own notes
+    requires_cultural_test=False,  # 2026-07-26 knowledge reconciliation: direct fetch of
+                                    # film.sa/incentive-programs/ confirms there is NO distinct
+                                    # cultural/values test separate from production-quality
+                                    # review -- content vetting instead runs through two named
+                                    # gates (Script Content Clearance, Filming Non-Objection
+                                    # Certificate), a regulatory content-clearance mechanism, not
+                                    # a cultural test in the points-based/qualitative-artistic
+                                    # sense used elsewhere in this registry. Corrects this
+                                    # record's prior True, which had inherited the old DISCOVERY
+                                    # catalog's undifferentiated "content restrictions apply" note.
     citation=_SA_CITATION,
-    source_ref="8-corroborating-sources-saudi-60pct",
+    source_ref="8-corroborating-sources-saudi-60pct+film.sa-official-2026-07-26",
     tiers=(
         DoctrineRateTier(
             tier_id="sa-flat-60",

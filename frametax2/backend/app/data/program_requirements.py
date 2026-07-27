@@ -988,38 +988,158 @@ register(ProgramRequirementsProfile(
 
 register(ProgramRequirementsProfile(
     program_slug="mu_edb_incentive", jurisdiction_code="MU",
-    min_local_spend_usd=1_000_000.0,   # min_qpe_usd condition: "Minimum QPE of USD 1,000,000 (feature film)"
+    local_entity_required=True,        # confirmed via the same VERIFIED-tier internal record: "Locally incorporated/registered production company required (100% foreign ownership permitted)"
+    min_local_spend_usd=1_000_000.0,   # 40% feature-film tier (30% general tier: USD 100,000 foreign / USD 50,000 local production -- see additional_facts for the full tier structure)
     preapproval_mandatory=True,        # discretionary_band quote: Film Rebate Committee "provide recommendations to the ... CEO who shall approve projects"
     allocation_type=AllocationType.DISCRETIONARY,  # same quote: Committee+CEO approval is a discretionary act, not automatic entitlement
+    audit_required=True,               # "a certified report by the local auditors ... providing details of the amount of expenditures, and the amount of the qualified production expenditures, incurred in Mauritius" required at claim time
+    cpa_or_approved_auditor_required=True,
+    refundable=True,                   # cash rebate paid out
+    transferable=False,
     evidence=EvidenceRecord(
-        source_title="app.data.program_rate_rules — RateCondition on mu_edb_incentive",
-        source_url=None, issuing_authority="Internal — migrated from already-verified rate-rule condition",
-        source_type=SourceType.SECONDARY, status=RecordStatus.CURRENT,
-        notes="Pass A programmatic migration (2026-07-26) — zero new research performed. "
-              "min_local_spend_usd from RateCondition kind=min_qpe_usd (threshold_usd=1,000,000; "
-              "quote: 'Eligible for up to 40% rebate — Feature film ... 1,000,000 [Minimum QPE "
-              "(USD)]'). preapproval_mandatory + allocation_type=DISCRETIONARY from RateCondition "
-              "kind=discretionary_band (quote: 'The purpose of the Film Rebate Committee will be "
-              "to assess projects ... and provide recommendations to the Chief Executive Officer "
-              "who shall approve projects.') — a literal preapproval/discretionary-allocation "
-              "signal already present in the rate registry, not an inference.",
+        source_title="Film Rebate Scheme — Submission Procedures (Economic Development Board, 31 Jan 2020, citing the EDB (Film Rebate Scheme) Regulation 2018)",
+        source_url=None,
+        issuing_authority="Economic Development Board (EDB), Mauritius",
+        source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, access_date="2026-07-26",
+        notes="REPOSITORY BASELINE FIRST: this profile was a thin Pass A programmatic migration "
+              "(source_url=None, only min_local_spend_usd + allocation_type). A prior external "
+              "opportunistic-upgrade attempt (WebFetch of edbmauritius.org/schemes/film-rebate-"
+              "scheme) resolved to a navigation hub with zero scheme detail and was explicitly "
+              "abandoned as a dead end. Per 'existence before creation', this session instead "
+              "searched the REPOSITORY ITSELF before any further external attempt, and found the "
+              "actual EDB primary source document -- 'Film Rebate Scheme — Submission Procedures' "
+              "(31 Jan 2020) -- ALREADY extensively quoted verbatim at VERIFIED confidence tier "
+              "(this repository's highest tier) across app.data.program_rate_rules.py "
+              "(MU_RATE_RULES, MU_UNVERIFIED_CLAIMS) and app.data.program_spend_rules.py "
+              "(MU_EDB_RULES, 33-category QPE list), and in jurisdiction_comparison.py's MU "
+              "profile notes -- never previously reconciled into this Requirements Profile. This "
+              "upgrade reconciles that ALREADY-VERIFIED internal evidence rather than re-fetching "
+              "externally (the edbmauritius.org dead end stands; not retried). RATE STRUCTURE "
+              "(from MU_RATE_RULES, VERIFIED): two tiers -- 30% general rebate on QPE incurred "
+              "locally, minimum QPE USD 100,000 for a foreign production / USD 50,000 for a local "
+              "production, available to a wide list of formats (feature film, creative "
+              "documentary, digital animated film, TV serial/single drama, factual TV, natural "
+              "history, lifestyle magazine, commercial, music video, dubbing); UP TO 40% for "
+              "feature film production companies (or drama series at USD 150,000/episode), "
+              "minimum QPE USD 1,000,000 -- the 'up to' ceiling is a Film Rebate Committee "
+              "assessment + CEO approval band, not a guaranteed entitlement, hence "
+              "allocation_type=DISCRETIONARY. NO-SPONSORSHIP RULE (genuinely new to this "
+              "profile): 'The QPE quantum should not include any forms of sponsorships or "
+              "financial assistance obtained for the Mauritian schedule of the project' -- a "
+              "real QPE-composition exclusion, quoted directly. LOCAL ENTITY GATE (genuinely new "
+              "to this profile, already established elsewhere in the repo): production company "
+              "must be locally incorporated/registered in Mauritius; 100% foreign ownership is "
+              "permitted, so this is an incorporation requirement, not a local-ownership "
+              "requirement. AUDIT GATE (genuinely new to this profile): a certified report from "
+              "local Mauritian auditors, itemizing total expenditures and qualified production "
+              "expenditures incurred in Mauritius, is required at claim time. TWO CLAIMS "
+              "EXPLICITLY INVESTIGATED AND NOT FOUND in the primary EDB document or MCCI's "
+              "corroborating page (both reviewed verbatim in an earlier session, disclosed here "
+              "rather than silently omitted): (1) that the 40% tier requires 90% of filming to "
+              "take place in Mauritius (claimed only by a production-services/fixer site, no "
+              "government citation); (2) that foreign cast/crew remuneration must not exceed 40% "
+              "of the Mauritius-allocated budget (claimed only by secondary trade sources). "
+              "NEITHER is applied to this profile or the rate rules -- both require EDB written "
+              "confirmation before being treated as a rule either way, and are recorded as "
+              "explicitly-checked-and-unconfirmed rather than either asserted or silently dropped. "
+              "RATE CONFLICT DISCLOSED ELSEWHERE, NOT DUPLICATED HERE: the actual Little Utopia "
+              "production budget carries a line item 'EDB Rebate at 35%' -- this is "
+              "BUDGET-EVIDENCED (what one production's own paperwork assumed), not "
+              "AUTHORITY-EVIDENCED, and is recorded separately in "
+              "program_rate_rules.MU_BUDGET_EVIDENCED_RATES and explicitly IGNORED for all "
+              "calculations per that module's own Rules 1/2/5 -- not treated as a Material "
+              "Discrepancy against the 30%/40% statutory tiers, since budget assumptions are not "
+              "an authoritative source.",
     ),
+    additional_facts={
+        "rate_tiers": "30% general (min QPE USD 100,000 foreign / USD 50,000 local production, wide format list). Up to 40% feature film (min QPE USD 1,000,000; drama series USD 150,000/episode), discretionary via Film Rebate Committee + CEO approval.",
+        "no_sponsorship_rule": "QPE quantum must not include sponsorships or financial assistance obtained for the Mauritian schedule of the project.",
+        "local_entity_gate": "Production company must be locally incorporated/registered in Mauritius; 100% foreign ownership permitted.",
+        "audit_gate": "Certified report from local Mauritian auditors, itemizing total and qualified production expenditures incurred in Mauritius, required at claim time.",
+        "unconfirmed_claims_investigated_not_applied": "90%-of-filming-in-Mauritius condition for the 40% tier, and a 40%-of-Mauritius-budget cap on foreign cast/crew remuneration -- both claimed only by secondary/fixer sources, NOT found in the primary EDB document or MCCI's corroborating page, NOT applied.",
+        "budget_evidenced_vs_authority_rate": "A real production's own budget assumed 'EDB Rebate at 35%' -- recorded separately as budget-evidenced (not authoritative) in program_rate_rules.MU_BUDGET_EVIDENCED_RATES and explicitly ignored for calculations.",
+    },
 ))
 
 register(ProgramRequirementsProfile(
     program_slug="mt_mfc_rebate", jurisdiction_code="MT",
-    min_local_spend_usd=57_026.20,  # min_qpe_usd condition (EUR 50,000)
-    evidence=EvidenceRecord(
-        source_title="app.data.program_rate_rules — RateCondition on mt_mfc_rebate",
-        source_url=None, issuing_authority="Internal — migrated from already-verified rate-rule condition",
-        source_type=SourceType.SECONDARY, status=RecordStatus.CURRENT,
-        notes="Pass A programmatic migration (2026-07-26). min_local_spend_usd from RateCondition "
-              "kind=min_qpe_usd (threshold_usd=57,026.20; quote cites 'min_spend_local=EUR 50,000 "
-              "(jurisdiction_comparison.py MALTA profile, PARSED tier)'). The discretionary_band "
-              "condition here is about stacking optional uplifts (+3%/+3%/+7%) to reach the "
-              "ceiling rate — a rate-modeling nuance, not a program-level allocation/approval "
-              "fact — so no preapproval or allocation_type field was asserted from it.",
+    min_local_spend_usd=113_000.0,     # EUR 100,000 -- confirmed this session across multiple converging sources, supersedes the prior thin-migration EUR 50,000 figure (see evidence)
+    min_total_budget_usd=None,         # EUR 200,000 overall budget floor -- recorded in additional_facts, distinct concept from min_local_spend_usd
+    cultural_test_required=True,       # confirmed this session
+    preapproval_mandatory=True,        # application dossier required before principal photography
+    expenditure_before_approval_qualifies=False,
+    audit_required=True,
+    local_entity_required=True,        # applicant must be a "qualifying company," local or foreign, specifically established to produce audiovisual content
+    refundable=True,
+    transferable=False,
+    application_deadline=TimingFact(
+        value="Complete application dossier must be submitted at least 30 working days before "
+              "principal photography begins; the Film Commissioner has 30 working days to issue "
+              "a provisional certificate",
+        basis=TimingBasis.OFFICIAL_TARGET,
     ),
+    payment_timing=TimingFact(
+        value="A 10% advance may be claimed once filming begins, subject to well-documented and "
+              "audited expenses; the balance is paid no later than 5 months from receipt of the "
+              "final submission",
+        basis=TimingBasis.OFFICIAL_TARGET,
+    ),
+    sunset_date="2028-10-29",
+    evidence=EvidenceRecord(
+        source_title="Malta Film/TV Financial Incentives (Screen Malta / Malta Film Commission) — reconciled from multiple independently-converging sources",
+        source_url="https://screenmalta.com/wp-content/uploads/2024/07/Screen-Malta-Financial-Incentives-FILM-TV-GUIDELINES-UPDATES.pdf",
+        issuing_authority="Malta Film Commission (MFC), via its international arm Screen Malta",
+        source_type=SourceType.SECONDARY, status=RecordStatus.CURRENT, access_date="2026-07-26",
+        notes="REPOSITORY RECONCILIATION FIRST: this profile was a thin Pass A programmatic "
+              "migration (source_url=None, only min_local_spend_usd=EUR 50,000 from an internal "
+              "rate-rule condition). REPEATED DIRECT PRIMARY-SOURCE ATTEMPTS THIS SESSION, ALL "
+              "FAILED: screenmalta.com's own official June-2024 Guidelines PDF (403 Forbidden); "
+              "cineuropa.org's dossier article on the 'revamped' scheme (403 Forbidden); an older "
+              "(2019) official guidelines PDF hosted by Stargate Studios Malta was fetched as raw "
+              "binary but was NOT text-extractable by the tool used -- any apparent content from "
+              "that attempt is discarded rather than trusted, since a garbled/placeholder response "
+              "is not evidence. NOT upgraded to PRIMARY_VERIFIED as a result -- consistent with "
+              "this repository's own established standard (see the Austria/FISA+ profile, "
+              "at_fisa_plus, for the same treatment of strong-but-unfetchable-official corroboration). "
+              "WHAT WAS RECONCILED: FIVE independently-converging sources (Zerafa Advocates -- a "
+              "Maltese law firm's detailed legal-compliance analysis, the single richest and most "
+              "technically precise of the five; Saturation.io; PCP Malta; Atlas Film Fixers; "
+              "Ecovis Malta) all agree on the SAME structure, which supersedes and materially "
+              "corrects the thin migration's single EUR 50,000 figure: minimum spend EUR 100,000 in "
+              "Malta with an overall production budget exceeding EUR 200,000 (two distinct "
+              "thresholds, both real); base rate 35% of Qualifying Maltese Expenditure, rising to "
+              "up to 40% for productions with QME under EUR 150,000 (a MICRO-BUDGET bonus, not a "
+              "general ceiling) and separately for productions using Malta Film Studios or clearly "
+              "maximizing local resources; a cultural test tied to 'Maltese creative and cultural "
+              "identity' (specific points structure not found in any source reached); NO annual cap "
+              "and NO per-production cap (some major productions reported receiving in excess of "
+              "EUR 5-6 million); a qualifying-company applicant gate (local or foreign, specifically "
+              "established to produce audiovisual content); a 30-working-day pre-photography "
+              "application window with a 30-working-day Commissioner review; a 10% advance "
+              "mechanism once filming begins (documented/audited expenses required), balance paid "
+              "within 5 months of the final submission; MFC audit rights for up to 10 years "
+              "post-completion, with recovery-plus-interest for non-compliance and full reclaim for "
+              "fraud; a workforce condition requiring foreign productions to engage local "
+              "'Opportunity for All' service companies and employ a minimum of 5 trainees through "
+              "that program; and a scheme sunset of 2028-10-29. RECENT CHANGE (reported, not "
+              "independently confirmed on an official page): the scheme was updated to open "
+              "below-the-line labour costs to all international crews, removing a prior EU/EEA/UK "
+              "nationality restriction -- recorded here as reported, with that caveat.",
+    ),
+    additional_facts={
+        "rate_structure": "Base 35% of Qualifying Maltese Expenditure (QME); up to 40% for QME under EUR 150,000 (micro-budget bonus), and separately for productions using Malta Film Studios or clearly maximizing local resources.",
+        "min_total_budget_eur": "Overall production budget must exceed EUR 200,000, in addition to the EUR 100,000 minimum Maltese spend.",
+        "cultural_test": "Tied to contribution to Maltese creative and cultural identity; specific points structure not found in any source reached this session.",
+        "cap_structure": "No annual cap and no per-production cap; some major productions reported receiving in excess of EUR 5,000,000-6,000,000.",
+        "qualifying_company_gate": "Applicant must be a qualifying company, local or foreign, specifically established to produce audiovisual content.",
+        "application_process": "Complete dossier at least 30 working days before principal photography; Film Commissioner has 30 working days to issue a provisional certificate.",
+        "advance_payment": "10% advance available once filming begins (documented/audited expenses required); balance within 5 months of final submission.",
+        "audit_and_compliance": "MFC may audit for up to 10 years post-completion; non-compliant rebates recovered with interest; fraudulent claims fully reclaimed.",
+        "opportunity_for_all_program": "Foreign productions must engage local 'Opportunity for All' service companies and employ a minimum of 5 trainees through the program.",
+        "sunset": "Scheme active until 2028-10-29.",
+        "reported_recent_change": "Reported (not independently confirmed on an official page): below-the-line labour costs opened to all international crews, removing a prior EU/EEA/UK nationality restriction.",
+        "primary_source_attempts_2026_07_26": "screenmalta.com official PDF (403), cineuropa.org dossier (403), stargatestudios.com.mt 2019 PDF (fetched but not text-extractable, content discarded as untrustworthy). None reachable -- a future session should retry with a PDF-capable fetch tool.",
+    },
 ))
 
 register(ProgramRequirementsProfile(
@@ -1211,23 +1331,57 @@ register(ProgramRequirementsProfile(
         "lower_tier": "A second, lower qualifying tier also exists: >3 shoot days in Korea "
                      "with spend between ~$36,000 and ~$700,000 (50M-800M KRW) — source: "
                      "koreanfilm.or.kr.",
-        "primary_source_attempt_2026_07_26": "Direct fetch of koreanfilm.or.kr's own "
-            "'Guidelines on KOFIC Location Incentive Program' page did not render usable "
-            "content (portal navigation shell only). A separate koreanfilm.or.kr news article "
-            "('Ko-pick') fetched successfully but describes MATERIALLY DIFFERENT figures than "
-            "this repository's existing two-tier structure -- up to 25% (single ceiling, not "
-            "two named tiers), general min spend KRW 400,000,000, a KRW 300,000,000 cap "
-            "specific to foreign projects, a 5-day (not 3/10-day) minimum, and a KRW "
-            "896,000,000 ANNUAL programme budget (small enough to suggest this may describe an "
-            "older, smaller-scale iteration of the programme, or a different sub-scheme, rather "
-            "than superseding the existing figures). NOT reconciled into this profile or the "
-            "rate rule: the two characterizations conflict rather than corroborate, and forcing "
-            "a pick between them without a clean primary confirmation would be a guess, not a "
-            "verification. Existing two-tier structure (20% at 3+ days/>=100M KRW; 25% at 10+ "
-            "days/>=0.8B KRW) is LEFT UNCHANGED and this profile remains SECONDARY_VERIFIED "
-            "pending a cleaner primary-source read (the same fetched article separately "
-            "confirms Seoul's LOCAL commission scheme, 30%/KRW 300M cap, is a genuinely "
-            "distinct programme from the national KOFIC incentive -- not conflated here).",
+        "material_discrepancy_full_reconciliation_2026_07_26": (
+            "MATERIAL DISCREPANCY, formally documented after exhaustive reconciliation attempt "
+            "(four independent characterizations found, none reachable at a directly-fetchable "
+            "official guidelines document): "
+            "(1) THIS REPOSITORY'S EXISTING RECORD (program_rate_rules_worldwide.py, citing "
+            "Wikipedia/dbpedia + koreanfilm.or.kr from an earlier session): two-tier structure, "
+            "20% at 3+ shoot days / >=100,000,000 KRW spend, 25% at 10+ shoot days / "
+            ">=0.8 billion KRW spend. "
+            "(2) A KOREANFILM.OR.KR NEWS ARTICLE ('Ko-pick', official domain, fetched this "
+            "session): single 25% ceiling (no named lower tier), general minimum spend KRW "
+            "400,000,000, a KRW 300,000,000 cap specific to foreign projects, a 5-day (not "
+            "3/10-day) shoot minimum, and a KRW 896,000,000 TOTAL ANNUAL programme budget. "
+            "(3) EN.WIKIPEDIA.ORG (re-fetched directly this session to check the repository's own "
+            "citation basis): states 'up to 30% cash rebate' with NO tier structure described at "
+            "all -- this itself does not match what record (1) claims Wikipedia said, meaning "
+            "either the Wikipedia article changed since record (1) was written, or record (1)'s "
+            "citation was imprecise from the start. "
+            "(4) THE OFFICIAL koreanfilm.or.kr/eng/coProduction/locIncentive.jsp GUIDELINES PAGE "
+            "(the actual named source in this repository's original citation) did not render "
+            "usable content on direct fetch (portal shell only); web.archive.org is not reachable "
+            "from this environment. "
+            "REASONING ATTEMPTED PER THE FULL HYPOTHESIS LIST (not merely noting conflict and "
+            "stopping): NOT a translation issue (all four sources are in English). NOT an "
+            "eligibility-distinction issue in the sense of describing genuinely different "
+            "programmes -- source (2) itself explicitly and separately describes Seoul's REGIONAL "
+            "commission scheme (up to 30%, KRW 300,000,000 cap) as distinct from the NATIONAL "
+            "KOFIC incentive, and does not conflate the two; this rules out 'regional vs national "
+            "conflation' as the explanation for its OWN internal 25% figure. MOST PLAUSIBLE "
+            "EXPLANATION: different PROGRAM VERSIONS / EFFECTIVE DATES. KOFIC's Location Incentive "
+            "has run continuously since 2011 and is documented elsewhere (industry reporting) as "
+            "having been revised more than once; the four sources most likely capture different "
+            "snapshots of an evolving tier structure rather than describing four different "
+            "programmes or a live authoritative disagreement. SUPPORTING EVIDENCE for treating "
+            "source (2)'s KRW 896,000,000 annual-budget figure as describing an OLDER or SMALLER "
+            "iteration rather than the current programme: KRW 896,000,000 is approximately "
+            "USD 660,000 as a TOTAL annual envelope for a national incentive -- implausibly small "
+            "given Wikipedia's own citation that 'Avengers: Age of Ultron' filming in Korea (March "
+            "2014) generated 'approximately $23 million in anticipated economic benefits' under "
+            "this same programme; a program capable of being associated with a production of that "
+            "scale is very unlikely to be currently capped at a ~$660K annual budget. This "
+            "specific figure is therefore judged LOW CONFIDENCE for the CURRENT programme even "
+            "though the rate/threshold figures alongside it may still be current. CONCLUSION: "
+            "genuine, unresolved Material Discrepancy across four sources most likely explained by "
+            "program evolution over a 15-year history, not by a translation, terminology, or "
+            "national/regional-conflation error. NEITHER characterization is asserted as current "
+            "fact. This repository's existing two-tier structure (20%/25%) is LEFT UNCHANGED "
+            "(not overwritten by any of the newer, less-corroborated figures) and this profile "
+            "remains SECONDARY_VERIFIED. A future session should prioritize locating KOFIC's "
+            "actual current PDF guidelines document (not a news article or portal shell) before "
+            "attempting another reconciliation pass."
+        ),
     },
 ))
 
@@ -1809,9 +1963,9 @@ STATUTORY_AMOUNTS_ORIGINAL_CURRENCY: dict[str, dict[str, dict]] = {
     },
     "mt_mfc_rebate": {
         "min_local_spend": {
-            "amount": 50_000, "currency": "EUR", "basis": "Minimum qualifying Malta expenditure",
-            "source": "Malta Film Commission",
-            "effective_date": None, "legacy_usd_value": 57_026.20,
+            "amount": 100_000, "currency": "EUR", "basis": "Minimum qualifying Malta expenditure (overall production budget must additionally exceed EUR 200,000) -- updated 2026-07-26 from a prior EUR 50,000 figure per five independently-converging 2024-era sources; the frozen rate rule (program_rate_rules.py) still cites EUR 50,000 as an undated, unresolved Material Discrepancy -- see mt_mfc_rebate Requirements Profile evidence notes",
+            "source": "Reconciled from Zerafa Advocates, Saturation.io, PCP Malta, Atlas Film Fixers, Ecovis Malta (converging secondary sources; official screenmalta.com Guidelines PDF not directly fetchable)",
+            "effective_date": "2024-06-01", "legacy_usd_value": 113_000.0,
         },
     },
     "gr_cash_rebate": {
@@ -2143,6 +2297,13 @@ STATUTORY_AMOUNTS_ORIGINAL_CURRENCY: dict[str, dict[str, dict]] = {
             "effective_date": None, "legacy_usd_value": None,
         },
     },
+    "sa_film_commission_rebate": {
+        "min_local_spend": {
+            "amount": 750_000, "currency": "SAR", "basis": "Minimum qualifying spend, feature films (documentaries/animation SAR 187,000)",
+            "source": "Saudi Film Commission (SFC), Ministry of Culture — official Film Saudi incentive program page",
+            "effective_date": None, "legacy_usd_value": None,
+        },
+    },
     "us_mn_film_production_credit": {
         "min_local_spend": {
             "amount": 1_000_000, "currency": "USD", "basis": "Minimum eligible production costs incurred within any 12 consecutive months",
@@ -2429,7 +2590,9 @@ register(ProgramRequirementsProfile(
     program_slug="sa_film_commission_rebate", jurisdiction_code="SA",
     local_entity_required=True,        # international companies must have a local entity or a Saudi partner
     preapproval_mandatory=True,        # application + approval via the Film Saudi platform before production
-    cultural_test_required=False,      # no published points-based cultural test; a discretionary content review applies instead (see additional_facts)
+    cultural_test_required=False,      # confirmed directly, second fetch this session: no distinct cultural/values TEST — content vetting runs through Script Content Clearance + a Filming Non-Objection Certificate instead (see additional_facts)
+    min_local_spend_usd=200_000.0,     # SAR 750,000 feature-film threshold — confirmed this session (documentary/animation SAR 187,000 / ~$50,000, see additional_facts)
+    min_shoot_days=5,                  # confirmed this session: minimum 5 filming days with the main production unit
     refundable=True,                   # cash rebate paid out (the programme's "non-repayable grant" framing)
     transferable=False,
     allocation_type=AllocationType.DISCRETIONARY,  # selective review of script/treatment/mood board/schedule; not an automatic entitlement
@@ -2439,30 +2602,49 @@ register(ProgramRequirementsProfile(
         source_url="https://film.sa/incentive-programs/",
         issuing_authority="Saudi Film Commission (SFC), Ministry of Culture, Kingdom of Saudi Arabia",
         source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, access_date="2026-07-26",
-        notes="Film Saudi cash rebate, applications via the Commission's dedicated platform. RATE "
-              "CHANGE CONFIRMED: launched at up to 40% of eligible expenditure and INCREASED to up "
-              "to 60% as of May 2026 — the 60% ceiling matches the rate already carried in this "
-              "repository's rate rules, so the two sources agree. ELIGIBILITY: open to both Saudi "
-              "and international production companies, but an international applicant needs a "
-              "LOCAL ENTITY OR A SAUDI PARTNER. EXPRESS EXCLUSION: government, quasi-government, "
-              "state-owned entities and institutions are NOT eligible — a published exclusion, "
-              "recorded rather than inferred. Application requires proof of financial backing, "
-              "mood board, cast and crew list, script in BOTH English and Arabic, film treatment "
-              "(logline/synopsis/treatment) and a production schedule on the Commission's "
-              "template. Because approval turns on review of that creative package rather than an "
-              "automatic statutory formula, allocation_type is recorded DISCRETIONARY and "
-              "cultural_test_required False (there is no published points-based test — the review "
-              "is discretionary, which is a different mechanism). NO FINANCIAL CAP is referenced "
-              "in the materials reviewed. Minimum spend was not stated in the sources reviewed and "
-              "is deliberately not guessed.",
+        notes="REPOSITORY BASELINE FIRST (Stage B priority audit, 2026-07-26): this profile was "
+              "already PRIMARY_VERIFIED going into this session, built from an earlier direct fetch "
+              "of this same film.sa page. Re-fetched the same page this session specifically to "
+              "close the two items its own prior notes had flagged as open (minimum qualifying "
+              "spend not stated; deliberately not guessed) and to resolve an internal inconsistency "
+              "discovered against the rate-rule layer (program_rate_rules_worldwide.py's SA_DOCTRINE "
+              "carried requires_cultural_test=True, inherited from the old DISCOVERY catalog's "
+              "undifferentiated 'content restrictions apply' note, while this profile had already "
+              "reasoned its way to False). RATE CHANGE (carried forward, unchanged): launched at up "
+              "to 40% of eligible expenditure, increased to up to 60% as of May 2026 — matches this "
+              "repository's rate rules. ELIGIBILITY (carried forward, unchanged): open to Saudi and "
+              "international companies; international applicants need a local entity or Saudi "
+              "partner; government/quasi-government/state-owned entities are expressly excluded. "
+              "NEWLY CONFIRMED — MINIMUM SPEND (closes the profile's own prior open item): SAR "
+              "750,000 (~$200,000) for feature films; SAR 187,000 (~$50,000) for documentaries and "
+              "animation — a genuine per-format structure, not a single figure. NEWLY CONFIRMED — "
+              "SHOOT DAYS: minimum 5 filming days with the main production unit. CULTURAL-TEST "
+              "RECONCILIATION (resolves the rate-rule contradiction): the page confirms there is NO "
+              "distinct cultural/values test separate from the general production-quality review. "
+              "Content vetting instead runs through two SPECIFICALLY NAMED gates — 'Script Content "
+              "Clearance from Film Commission' and a 'Filming Non-Objection Certificate' — both "
+              "required before approval. This is a regulatory content-clearance/censorship mechanism "
+              "(comparable to a permit or classification gate), not a cultural test in the "
+              "points-based or qualitative-artistic-merit sense used elsewhere in this registry "
+              "(e.g. Finland's qualitative artistic-values criterion, Lithuania's 8-point scored "
+              "test) — cultural_test_required=False is therefore the correct, deliberate reading, "
+              "and the rate rule's prior True has been corrected to match (propagated to "
+              "program_rate_rules_worldwide.py and jurisdiction_comparison.py, not left isolated in "
+              "this profile alone). NO FINANCIAL CAP is referenced in the materials reviewed "
+              "(unchanged). Specific criteria for how content-clearance decisions are made, and "
+              "whether the 60% rate varies by expenditure category, remain undisclosed publicly — "
+              "not guessed.",
     ),
     additional_facts={
         "rate_history": "Launched at up to 40% of eligible expenditure; increased to up to 60% as of May 2026.",
         "local_partner_requirement": "International production companies require a local entity or a Saudi partner.",
         "express_exclusions": "Government, quasi-government, state-owned entities and institutions are expressly ineligible.",
+        "min_spend_by_format_sar": "SAR 750,000 (~$200,000) feature films; SAR 187,000 (~$50,000) documentaries and animation.",
+        "min_shoot_days": "Minimum 5 filming days with the main production unit.",
+        "content_clearance_gates": "Script Content Clearance from Film Commission and a Filming Non-Objection Certificate are both required before approval -- a regulatory content-clearance mechanism, not a points-based or qualitative cultural test.",
         "application_package": "Proof of financial backing, mood board, cast and crew list, script in English AND Arabic, film treatment (logline/synopsis/treatment), production schedule on the Commission's template.",
         "cap": "No financial cap referenced in the materials reviewed.",
-        "open_item": "Minimum qualifying spend not stated in the sources reviewed; not guessed.",
+        "open_item": "Specific content-clearance decision criteria and whether the 60% rate varies by expenditure category remain undisclosed publicly; not guessed.",
     },
 ))
 
@@ -3281,13 +3463,30 @@ register(ProgramRequirementsProfile(
               "production company. EFFECTIVE 2026-03-31 (day after publication); EXPIRES "
               "2030-09-30. All amounts stated in MXN and recorded in "
               "STATUTORY_AMOUNTS_ORIGINAL_CURRENCY; no USD field populated.\n\n"
-              "MARKED SECONDARY_VERIFIED: this is a law-firm analysis quoting the Decree, not the "
-              "Diario Oficial de la Federación text itself. Under the verification lifecycle a "
-              "professional legal analysis is secondary evidence however authoritative; upgrading "
-              "to PRIMARY_VERIFIED requires retrieving the DOF Decree and Guidelines of "
-              "2026-03-30 directly.",
+              "MARKED SECONDARY_VERIFIED (unchanged): this is a law-firm analysis quoting the Decree, "
+              "not the Diario Oficial de la Federación text itself. 2026-07-26 UPDATE: a direct "
+              "fetch of gob.mx/cultura (Secretaria de Cultura, an official Mexican federal "
+              "government domain) confirmed the programme's OFFICIAL NAME -- 'Estimulo Fiscal a "
+              "la Produccion Cinematografica y Audiovisual (EFICA)' -- and its administering "
+              "authority as IMCINE (Instituto Mexicano de Cinematografia) under the Secretaria de "
+              "Cultura, plus a two-stage certification process named precisely: 'Constancia de "
+              "presentacion de tramite' (confirms initial project review) followed by 'Constancia "
+              "de cumplimiento' (granted after validating completion; described as 'the "
+              "indispensable instrument to make the tax credit effective') -- this refines rather "
+              "than contradicts the existing 'certificate of presentation of procedure AND of "
+              "compliance' language already recorded. A DIRECT dof.gob.mx fetch was attempted "
+              "(the exact URL of the 2026-02-16 Decree announcement) but failed on a TLS "
+              "certificate verification error, not a content issue -- the DOF text itself remains "
+              "unretrieved. Per this profile's own previously-stated bar, this does NOT upgrade "
+              "the record to PRIMARY_VERIFIED (the rate/threshold figures still trace only to "
+              "Baker McKenzie's secondary analysis), but the gob.mx-confirmed facts are genuinely "
+              "new and are recorded below.",
     ),
     additional_facts={
+        "official_program_name": "Estimulo Fiscal a la Produccion Cinematografica y Audiovisual (EFICA) -- confirmed via direct gob.mx/cultura fetch, 2026-07-26.",
+        "administering_authority_confirmed": "IMCINE (Instituto Mexicano de Cinematografia), under the Secretaria de Cultura -- confirmed via direct gob.mx/cultura fetch.",
+        "two_stage_certification_named": "'Constancia de presentacion de tramite' (initial project review) then 'Constancia de cumplimiento' (post-completion validation; the instrument that makes the tax credit effective) -- confirmed via direct gob.mx/cultura fetch, refining the existing certification language.",
+        "priority_criteria_reported": "The gob.mx announcement mentions the framework prioritizes national supplier engagement, territorial impact outside metropolitan zones, cultural value, and knowledge-transfer initiatives -- not independently confirmed as binding eligibility gates vs. scoring criteria; recorded as reported.",
         "program_identity": "The incentive created by Presidential Decree and Guidelines published in the DOF on 2026-03-30. DISTINCT from EFICINE 189 (2006, Art. 189 LISR investor credit, MXN 25,000,000 per project, capped at 10% of prior-year ISR, via IMCINE), which is a separate programme and is not described here.",
         "min_spend_by_format_mxn": "MXN 40,000,000 feature films and narrative/animation series; MXN 20,000,000 documentary series and documentary features; MXN 5,000,000 animation, VFX or post-production only (authoritative original currency).",
         "national_supply_gate": "At least 70% national supply required.",

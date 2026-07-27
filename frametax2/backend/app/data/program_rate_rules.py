@@ -296,7 +296,13 @@ MU_BUDGET_EVIDENCED_RATES: tuple[BudgetEvidencedRate, ...] = (
 _MT_CITATION = (
     "Malta Film Commission Cash Rebate (jurisdiction_comparison.py MALTA "
     "profile, confidence_tier=PARSED; authority: Malta Film Commission, "
-    "maltafilmcommission.com)."
+    "maltafilmcommission.com). MATERIAL DISCREPANCY flagged 2026-07-26, "
+    "NOT resolved here: five independently-converging 2024-era sources "
+    "describe a different structure (35% base / 40% for QME<EUR 150k, "
+    "min spend EUR 100,000, cultural test required) apparently reflecting "
+    "a 2024 scheme revamp -- see app.data.program_requirements "
+    "mt_mfc_rebate for the full writeup. Tiers below NOT altered pending "
+    "a clean primary-source (screenmalta.com Guidelines PDF) read."
 )
 MT_RATE_RULES: tuple[RateRule, ...] = (
     RateRule(

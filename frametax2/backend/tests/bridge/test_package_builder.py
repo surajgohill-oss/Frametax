@@ -47,14 +47,22 @@ class TestPackageContent:
         assert pkg.evidence[0].primary_or_secondary in ("primary", "secondary")
 
     def test_evidence_reflects_real_profile_state_never_fabricated(self):
-        """mu_edb_incentive gained a real, internally-cited requirements
-        profile (Pass A migration, 2026-07-26) — the package now correctly
-        surfaces that ONE real evidence record, not an empty list and not a
-        fabricated one. secondary/internal sourcing is honestly labeled."""
+        """mu_edb_incentive's Requirements Profile was upgraded to
+        PRIMARY_VERIFIED during the Stage B verification sprint
+        (2026-07-26): repository baseline reconciliation found the actual
+        EDB primary source already quoted verbatim, at VERIFIED confidence
+        tier, across program_rate_rules.py and program_spend_rules.py --
+        never previously reconciled into this Requirements Profile. The
+        package now correctly surfaces that ONE real evidence record,
+        honestly labeled primary (not fabricated, not left as the earlier
+        thin Pass A migration's secondary/internal citation)."""
         pkg = build_package(operation=OperationType.REQUIREMENTS_EVIDENCE_REVIEW, structure_id="ALLOC-BASELINE-MU")
         assert len(pkg.evidence) == 1
-        assert pkg.evidence[0].primary_or_secondary == "secondary"
-        assert "mu_edb_incentive" in pkg.evidence[0].source_title
+        assert pkg.evidence[0].primary_or_secondary == "primary"
+        # source_title is now the real EDB document name (no longer the
+        # slug-literal internal citation the old thin migration used), so
+        # check the field that names the profile instead.
+        assert "mu_edb_incentive" in pkg.evidence[0].proposition_supported
 
     def test_size_within_default_limit(self):
         from app.bridge.config import get_bridge_settings
