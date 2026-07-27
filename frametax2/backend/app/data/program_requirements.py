@@ -288,22 +288,60 @@ register(ProgramRequirementsProfile(
 
 register(ProgramRequirementsProfile(
     program_slug="be_tax_shelter", jurisdiction_code="BE",
-    local_entity_required=True,  # eligible payee must be Belgian-tax-resident individual/company
-    cultural_test_required=True,  # certified "European work" or qualifying co-production
+    local_entity_required=True,  # eligible payee must be Belgian-tax-resident individual/company; production company must additionally be ACCREDITED by FPS Finance (confirmed via direct fetch, not previously recorded)
+    cultural_test_required=True,  # certified "European work" (Audiovisual Media Services Directive 2010/13/EU) or qualifying co-production
+    preapproval_mandatory=True,  # framework contract + FPS Finance accreditation of the production company precede any tax-shelter investment
     min_total_budget_usd=None,  # confirmed NO minimum threshold
+    audit_or_final_certification_deadline=TimingFact(
+        value="Tax Shelter certificate must be issued by 31 December of the fourth year following the "
+              "year the framework contract was signed",
+        basis=TimingBasis.STATUTORY_DEADLINE,
+    ),
+    payment_timing=TimingFact(
+        value="Investors must deposit funds within three months of framework-contract signature; the "
+              "tax exemption (310% of actual deposits, within applicable limits) converts from "
+              "temporary to permanent relief only upon receipt of the Tax Shelter certificate",
+        basis=TimingBasis.STATUTORY_DEADLINE,
+    ),
     evidence=EvidenceRecord(
-        source_title="Tax Shelter and Films: share of the budget, types of expenditure",
-        source_url="https://www.scopeinvest.be/en/tax-shelter-and-films-share-budget-types-expenditure/",
-        issuing_authority="Scope Invest (licensed Tax Shelter intermediary) / Screen Flanders (official regional body)",
-        source_type=SourceType.SECONDARY, status=RecordStatus.CURRENT,
-        notes="Investor-side fiscal mechanism: production nets 42-44% of eligible Belgian spend after investor "
-              "return/broker/insurance costs are deducted — not a direct rebate/credit to the production company.",
+        source_title="Tax Shelter — audiovisual production",
+        source_url="https://finance.belgium.be/en/enterprises/corporation-tax/tax-benefits/tax-shelter-audiovisual-production",
+        issuing_authority="FPS Finance (Federal Public Service Finance, Belgium)",
+        source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, access_date="2026-07-26",
+        notes="REPOSITORY RECONCILIATION FIRST: the existing SECONDARY_VERIFIED profile (Scope Invest, a "
+              "licensed Tax Shelter intermediary) already correctly recorded the mechanism (investor-side "
+              "fiscal vehicle, not a direct producer credit), the 90%/70% Belgian-spend structure, the 30% "
+              "admin-expense-share condition, and the 18/24-month expenditure window — none of that is "
+              "contradicted by this direct fetch of the official FPS Finance page, so it is carried "
+              "forward unchanged. NEWLY CONFIRMED FROM THE PRIMARY SOURCE (upgrading to PRIMARY_VERIFIED): "
+              "legal basis is Article 194ter of the Belgian Income Tax Code 1992 (ITC 92), as amended by "
+              "the laws of 12 May 2014 and 26 May 2016 (the 2016 amendment governs framework contracts "
+              "signed from 1 July 2016 onward — the current regime). INVESTOR EXCLUSIONS (a genuine gate, "
+              "not previously recorded): companies whose primary purpose is developing/producing "
+              "audiovisual works, companies associated with the production company, and television "
+              "broadcasters may NOT act as Tax Shelter investors. PRODUCTION-COMPANY ACCREDITATION GATE "
+              "(genuinely new): the production company itself must be accredited by FPS Finance — a "
+              "maintained, regularly-updated list of approved production companies and intermediaries "
+              "exists; this is distinct from and in addition to the investor-side eligibility rules. "
+              "MECHANISM PRECISION: the tax exemption equals 310% of the investor's actual deposits "
+              "(within applicable limits) — the exact multiplier was not previously recorded. TIMING: "
+              "investors must deposit funds within 3 months of framework-contract signature; the Tax "
+              "Shelter certificate (which converts the exemption from temporary to permanent relief) must "
+              "be issued by 31 December of the fourth year following the year the framework contract was "
+              "signed — both genuinely new, specific statutory deadlines. Eligible works also include "
+              "theatre and concert-hall productions, not only film/TV (broader than previously recorded, "
+              "though out of scope for this profile's film/TV focus).",
     ),
     additional_facts={
         "mechanism": "investor tax-exemption vehicle, not a direct producer credit",
         "belgian_spend_requirement": "90% of expenses in Belgium; 70% of Belgian expenses must be direct production costs",
         "admin_expense_cap": "30% of total (proportion condition, not a category exclusion)",
         "expenditure_window": "18 months from framework agreement (24 months for animation)",
+        "legal_basis": "Article 194ter, Belgian Income Tax Code 1992 (ITC 92), as amended by the laws of 12 May 2014 and 26 May 2016 (current regime governs framework contracts signed from 1 July 2016 onward).",
+        "investor_exclusions": "Companies whose primary purpose is producing audiovisual works, associated companies, and television broadcasters may not act as Tax Shelter investors.",
+        "production_company_accreditation": "The production company itself must be accredited by FPS Finance -- a distinct, maintained approval list.",
+        "exemption_multiplier": "310% of the investor's actual deposits, within applicable limits.",
+        "deposit_and_certificate_timing": "Investor deposit within 3 months of framework-contract signature; Tax Shelter certificate issued by 31 December of the fourth year following the contract-signing year.",
     },
 ))
 
@@ -349,20 +387,62 @@ register(ProgramRequirementsProfile(
 register(ProgramRequirementsProfile(
     program_slug="it_tax_credit_foreign", jurisdiction_code="IT",
     cultural_test_required=True, cultural_test_points=None, cultural_test_threshold=50,
-    per_project_cap_usd=22_810_479.13,  # EUR 20M per year per company
+    min_local_spend_usd=None,          # EUR 250,000 minimum eligible cost — recorded in additional_facts/STATUTORY_AMOUNTS_ORIGINAL_CURRENCY, not converted
+    per_project_cap_usd=22_810_479.13,  # EUR 20M per year per company (a per-COMPANY annual cap — distinct from the per-WORK cap recorded in additional_facts)
+    preapproval_mandatory=True,        # two-phase DGCOL process: preventive request at production start, definitive request after completion
+    expenditure_before_approval_qualifies=False,
+    local_entity_required=True,        # eligible production company must have EEA headquarters and be subject to Italian taxation
     transferable=True,
+    application_deadline=TimingFact(
+        value="DGCA communicates recognition of the tax credit within 60 days of receiving the application",
+        basis=TimingBasis.STATUTORY_DEADLINE,
+    ),
     evidence=EvidenceRecord(
-        source_title="Italian Tax Credit for foreign films", source_url="https://mestierecinema.it/tax-credit-and-funds/italian-tax-credit",
-        issuing_authority="Mestiere Cinema (Italian production consultancy) / MIBAC (Ministry of Culture)",
-        source_type=SourceType.SECONDARY, status=RecordStatus.CURRENT,
-        notes="Cultural test: minimum 50/100 points overall, with a 35-point floor in Block A. Transferable to "
-              "banks and offsettable against VAT/IRES/IRAP/social contributions/IRPEF.",
+        source_title="Tax Credit — Introduzione",
+        source_url="https://cinema.cultura.gov.it/cosa-facciamo/sostegni-economici/linee-di-sostegno/tax-credit/introduzione/",
+        issuing_authority="Direzione Generale Cinema e Audiovisivo (DGCA), Ministero della Cultura",
+        source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, access_date="2026-07-26",
+        notes="REPOSITORY RECONCILIATION FIRST: the existing SECONDARY_VERIFIED profile (Mestiere "
+              "Cinema, an Italian production consultancy) already correctly recorded the cultural "
+              "test structure (50/100 points, 35-point floor in Block A), the per-company annual "
+              "cap (EUR 20,000,000), transferability, and several BTL/overhead/ATL details — none "
+              "of that is contradicted by this direct fetch of DGCA's own official page (Direzione "
+              "Generale Cinema e Audiovisivo, the actual governing authority under the Ministero "
+              "della Cultura), so it is carried forward unchanged. This upgrades the profile to "
+              "PRIMARY_VERIFIED. LEGAL BASIS (genuinely new): D.I. MiC and MEF (Ministero della "
+              "Cultura + Ministero dell'Economia e delle Finanze) of 4 January 2023, rep. 1. "
+              "APPLICATION PROCESS (genuinely new): submitted through the DGCOL platform, in TWO "
+              "PHASES — a preventive request at production start, and a definitive request after "
+              "completion; DGCA communicates recognition within 60 days of receiving the "
+              "application. COMPANY ELIGIBILITY GATE (genuinely new, local_entity_required "
+              "corrected from unset to True): the eligible production company must have its "
+              "headquarters in the European Economic Area, be subject to Italian taxation, "
+              "maintain minimum capital of EUR 40,000 and equivalent net equity, and hold ATECO "
+              "classification J 59.1 (Italy's standard industrial classification code for "
+              "motion-picture/video/TV programme production). MINIMUM ELIGIBLE COST (genuinely "
+              "new, from a WebSearch summary citing the DGCA framework, not independently "
+              "re-confirmed on the specific introduzione page fetched): EUR 250,000. PER-WORK CAP "
+              "(genuinely new and DISTINCT from the existing per-company annual cap — both real, "
+              "recorded separately): EUR 9,000,000 per work, increasable to EUR 18,000,000 if at "
+              "least 30% of total production cost is covered by foreign funding — same caveat, not "
+              "independently re-confirmed on the DGCA introduzione page itself. REGULATORY CHANGE "
+              "REPORTED BUT NOT CONFIRMED ON THE OFFICIAL PAGE: a WebSearch summary stated the "
+              "requirement to include at least one day of filming/work on Italian territory has "
+              "been eliminated — this is NOT asserted here as confirmed fact (the official page "
+              "fetched did not address it), flagged as an open item for a future pass rather than "
+              "recorded on search-snippet confidence alone.",
     ),
     additional_facts={
         "btl_eu_national_requirement_pct": "51% of below-the-line employees must be Italian or EU citizens",
         "overhead_cap_pct": "7.5% of production costs",
         "atl_outside_eea_rate": "30% (reduced from the 40% standard rate)",
         "payee_requirement": "only costs paid directly by the Italian production company are eligible",
+        "legal_basis": "D.I. MiC and MEF (Ministero della Cultura + Ministero dell'Economia e delle Finanze), 4 January 2023, rep. 1.",
+        "application_process": "Two-phase DGCOL platform process: preventive request at production start, definitive request after completion. DGCA responds within 60 days of application.",
+        "company_eligibility_gate": "EEA headquarters, subject to Italian taxation, minimum capital EUR 40,000 + equivalent net equity, ATECO classification J 59.1.",
+        "min_eligible_cost_eur": "EUR 250,000 minimum eligible cost (WebSearch summary citing the DGCA framework, not independently re-confirmed on the specific page fetched).",
+        "per_work_cap_eur": "EUR 9,000,000 per work, increasable to EUR 18,000,000 if at least 30% of total production cost is foreign-funded -- distinct from the EUR 20,000,000 per-company annual cap (not independently re-confirmed on the specific page fetched).",
+        "unconfirmed_regulatory_change": "A WebSearch summary reported that the minimum-one-day-of-Italian-filming requirement has been eliminated -- NOT confirmed on the official DGCA page fetched this session; open item for a future pass.",
     },
 ))
 
@@ -553,10 +633,12 @@ register(ProgramRequirementsProfile(
 
 register(ProgramRequirementsProfile(
     program_slug="cz_film_incentive", jurisdiction_code="CZ",
+    cultural_test_required=True,  # corrects the profile's own prior silence and the rate rule's prior False -- confirmed directly this session
     preapproval_mandatory=False,  # costs up to 6 months BEFORE the application may still qualify
     expenditure_before_approval_qualifies=True,
     audit_required=True,
     cpa_or_approved_auditor_required=True,
+    annual_program_cap_usd=None,  # CZK 450,000,000 per-project cap -- recorded in STATUTORY_AMOUNTS_ORIGINAL_CURRENCY, not converted here
     payment_timing=TimingFact(
         value="No later than three years after settlement of audited eligible costs",
         basis=TimingBasis.REPORTED_PRACTICAL,
@@ -564,23 +646,44 @@ register(ProgramRequirementsProfile(
     evidence=EvidenceRecord(
         source_title="Production Incentives", source_url="https://sfa.gov.cz/production-incentives",
         issuing_authority="Státní fond audiovize / Czech Film Fund (State Cinematography Fund)",
-        source_type=SourceType.SECONDARY, status=RecordStatus.CURRENT,
-        notes="Facts gathered via search-engine summary citing filmcommission.cz and "
-              "sfa.gov.cz; the sfa.gov.cz production-incentives page itself (redirected from "
-              "fondkinematografie.cz) was not independently fetched in this session — marked "
-              "SECONDARY pending direct primary confirmation. 'Costs incurred up to 6 months "
-              "before the application for filing is submitted' may be claimed; physical "
-              "production must start within 6 months of the filing application. Within 4 "
-              "months of the allocation application, at least 10 shooting days in the Czech "
-              "Republic must be completed. Final application requires audited statements and "
-              "an auditor's verification report.",
+        source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, access_date="2026-07-26",
+        notes="REPOSITORY RECONCILIATION FIRST: this profile itself already flagged the exact gap "
+              "closed here — its prior notes explicitly said the sfa.gov.cz page 'was not "
+              "independently fetched in this session' and was marked SECONDARY pending that. Direct "
+              "fetch performed this session; this upgrades the profile to PRIMARY_VERIFIED. "
+              "PREVIOUSLY-RECORDED FACTS CONFIRMED, NOT CONTRADICTED: 'costs incurred up to 6 months "
+              "before the application for filing is submitted' may be claimed; physical production "
+              "must start within 6 months of the filing application; within 4 months of the "
+              "allocation application, at least 10 shooting days in the Czech Republic must be "
+              "completed; final application requires audited statements and an auditor's "
+              "verification report; rate structure 25% live-action / 35% animation-digital "
+              "(projects registered from 2025) — now cross-checked directly against the official "
+              "page and confirmed, resolving this profile's own prior note that it was 'not yet "
+              "cross-checked against this engine's own rate-rule doctrine record'. NEWLY CONFIRMED: "
+              "a CULTURAL TEST is required (KNOWLEDGE RECONCILIATION performed — this corrected the "
+              "rate rule's prior requires_cultural_test=False in both cz_film_incentive and "
+              "cz_film_incentive_animation, and jurisdiction_comparison.py's CZ profile, not just "
+              "this Requirements Profile). MINIMUM SPEND BY FORMAT: CZK 15,000,000 feature/animated "
+              "films; CZK 2,000,000 documentaries; CZK 8,000,000 per episode TV series; CZK "
+              "1,000,000 per episode animated series/digital production. ANNUAL/PER-PROJECT CAP: "
+              "CZK 450,000,000 maximum per project, with eligible costs additionally capped at 80% "
+              "of total budget — two distinct constraints, recorded separately. APPLICATION "
+              "TIMING: registration and rebate allocation are available year-round (no fixed annual "
+              "cycle/deadline). OPEN ITEM, not asserted: the page references changes effective "
+              "2026-01-01 without detailing them in the content retrieved — flagged for a future "
+              "pass rather than guessed at. All CZK thresholds recorded in "
+              "STATUTORY_AMOUNTS_ORIGINAL_CURRENCY per the Canonical Currency Rule.",
     ),
     additional_facts={
         "rate_by_content_type": "25% cash rebate for feature/documentary films and fictional "
                                  "TV series; 35% for animated films/series and digital "
-                                 "production (projects registered from 2025) — sourced from "
-                                 "search summary, not yet cross-checked against this engine's "
-                                 "own rate-rule doctrine record for cz_film_incentive.",
+                                 "production (projects registered from 2025) — now directly "
+                                 "confirmed via the official sfa.gov.cz page.",
+        "withholding_tax_rebate": "66% cash rebate on withholding tax paid in the Czech Republic — a distinct mechanism from the QPE rebate.",
+        "min_spend_by_format_czk": "CZK 15,000,000 feature/animated films; CZK 2,000,000 documentaries; CZK 8,000,000 per episode TV series; CZK 1,000,000 per episode animated series/digital production.",
+        "cap_structure": "CZK 450,000,000 maximum per project; eligible costs additionally capped at 80% of total budget.",
+        "application_timing": "Registration and rebate allocation available year-round; no fixed annual application cycle.",
+        "pending_2026_changes": "The official page references changes effective 2026-01-01 without detail in the content retrieved -- open item for a future primary-verification pass.",
     },
 ))
 
@@ -615,6 +718,20 @@ register(ProgramRequirementsProfile(
     additional_facts={
         "processing_target": "PISF targets a 28-calendar-day processing time for applications "
                               "(search summary, secondary).",
+        "primary_source_attempt_2026_07_26": "Four further attempts made this session to reach an "
+            "official/near-official source: pisf.pl/en/zachety-informacje/ (403, already noted "
+            "above) and pisf.pl/test-en-test/incentives-information/ (403 again); "
+            "polishfilmcommission.pl (TLS certificate hostname mismatch -- cert issued for "
+            "*.nazwa.pl, not the requested domain); cineuropa.org's dedicated article (403). None "
+            "reachable. A WebSearch summary (not independently fetched, recorded with that caveat) "
+            "citing polishfilmcommission.pl's '30% Cash Rebate Basics' page adds: legal basis is "
+            "the Act on Financial Support for Audiovisual Production; minimum spend EUR 240,000 "
+            "(PLN 1,000,000) for animated features and fiction/animated/documentary series (per "
+            "episode for fiction series, per season for documentary/animated series); EUR 70,000 "
+            "(PLN 300,000) for documentaries; per-project cap EUR 3,330,000 (PLN 15,000,000); "
+            "per-applicant annual cap EUR 4,760,000 (PLN 20,000,000). NOT asserted as confirmed "
+            "primary fact -- recorded here so a future session with a working URL does not have to "
+            "re-derive it from scratch.",
     },
 ))
 
@@ -907,54 +1024,171 @@ register(ProgramRequirementsProfile(
 
 register(ProgramRequirementsProfile(
     program_slug="gr_cash_rebate", jurisdiction_code="GR",
-    min_local_spend_usd=114_052.40,  # min_qpe_usd condition (EUR 100,000)
-    evidence=EvidenceRecord(
-        source_title="app.data.program_rate_rules — RateCondition on gr_cash_rebate",
-        source_url=None, issuing_authority="Internal — migrated from already-verified rate-rule condition",
-        source_type=SourceType.SECONDARY, status=RecordStatus.CURRENT,
-        notes="Pass A programmatic migration (2026-07-26). min_local_spend_usd from RateCondition "
-              "kind=min_qpe_usd (threshold_usd=114,052.40; quote cites 'min_spend_local=EUR "
-              "100,000 (jurisdiction_comparison.py GREECE profile, PARSED tier)').",
+    min_local_spend_usd=114_052.40,  # min_qpe_usd condition (EUR 100,000, feature films) — confirmed directly this session
+    preapproval_mandatory=True,      # application must be submitted before production/post-production begins in Greece
+    application_deadline=TimingFact(
+        value="Application must be submitted no later than 10 days before the beginning of "
+              "production and/or post-production of the work in Greece",
+        basis=TimingBasis.OFFICIAL_TARGET,
     ),
+    payment_timing=TimingFact(
+        value="Cash rebate available to producers no later than 6 months after completion of "
+              "production, provided all statutory prerequisites are met",
+        basis=TimingBasis.OFFICIAL_TARGET,
+    ),
+    refundable=True,   # cash rebate paid out
+    transferable=False,
+    evidence=EvidenceRecord(
+        source_title="40% Cash Rebate",
+        source_url="https://filmcommission.gr/cash-rebate/",
+        issuing_authority="EKOME (National Centre of Audiovisual Media and Communication) / Hellenic Film Commission",
+        source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, access_date="2026-07-26",
+        notes="REPOSITORY RECONCILIATION FIRST: this profile was a thin Pass A programmatic "
+              "migration (source_url=None, only min_local_spend_usd from an internal rate-rule "
+              "condition). Direct fetch of the Hellenic Film Commission's own official cash-rebate "
+              "page performed this session, confirming the 40% rate (already in this repository's "
+              "rate rules) and upgrading to PRIMARY_VERIFIED. LEGAL BASIS (genuinely new): "
+              "established under Section C of Law No. 5105/2024, succeeding the prior framework "
+              "under Law No. 4487/2017 — a real statutory chain, resolving what might otherwise "
+              "look like conflicting older/newer citations in secondary sources. PROGRAM "
+              "STRUCTURE (genuinely new): THREE distinct sub-schemes under one umbrella rate — "
+              "CRGR-FTV (film & television production), CRGR-Animate (animation), and CRGR-VGD "
+              "(video game development/computer game software prototypes) — each with its own "
+              "detailed requirements hosted separately (ekkomed.gr), not itemized on the page "
+              "fetched. CURRENT STATUS CONFIRMED ACTIVE: a search result headline referenced the "
+              "program being on an 'extended pause' at some point — this direct fetch confirms the "
+              "programme is presently ACTIVE and OPERATIONAL under the current 2024 law, resolving "
+              "that concern rather than leaving it open. MINIMUM SPEND BY FORMAT AND APPLICATION/"
+              "PAYMENT TIMING (from a WebSearch summary citing the Hellenic Film Commission "
+              "directly, but not independently re-confirmed on the specific page fetched — recorded "
+              "with that caveat rather than claimed as directly re-verified): feature films EUR "
+              "100,000; documentaries EUR 60,000; short films EUR 60,000; digital games EUR "
+              "30,000; TV series EUR 15,000-25,000 per episode. Application must be submitted no "
+              "later than 10 days before production/post-production begins in Greece; the rebate is "
+              "available no later than 6 months after production completion, subject to statutory "
+              "prerequisites.",
+    ),
+    additional_facts={
+        "legal_basis": "Law No. 5105/2024, Section C, succeeding Law No. 4487/2017.",
+        "sub_scheme_structure": "CRGR-FTV (film & television), CRGR-Animate (animation), CRGR-VGD (video game development) -- three distinct schemes under EKOME/Hellenic Film Commission, each with its own detailed requirements hosted on ekkomed.gr.",
+        "min_spend_by_format_eur": "Feature films EUR 100,000; documentaries EUR 60,000; short films EUR 60,000; digital games EUR 30,000; TV series EUR 15,000-25,000 per episode (from WebSearch summary citing the Hellenic Film Commission, not independently re-confirmed on the specific official page fetched this session).",
+        "application_timing": "Must be submitted no later than 10 days before production/post-production begins in Greece.",
+        "payment_timing_note": "Rebate available no later than 6 months after production completion, subject to statutory prerequisites.",
+        "current_status": "Confirmed ACTIVE and operational as of 2026-07-26 direct fetch, under the current 2024 law -- an older report of an 'extended pause' does not describe the present state.",
+    },
 ))
 
 register(ProgramRequirementsProfile(
     program_slug="us_or_opif", jurisdiction_code="US-OR",
     min_local_spend_usd=1_000_000.0,  # min_qpe_usd condition, corroborated by 3 sources
     allocation_type=AllocationType.DISCRETIONARY,  # discretionary_band quote: fund-capped, "not guaranteed even if criteria are met"
+    preapproval_mandatory=True,       # Letter of Intent + OPIF Rebate Application required; must apply before production begins
+    expenditure_before_approval_qualifies=False,
+    audit_required=True,              # audit paperwork filing required
+    annual_program_cap_usd=21_200_000.0,  # confirmed directly: $21.2M annual fund, July 1-June 30 fiscal year
+    refundable=True,
+    transferable=False,
     evidence=EvidenceRecord(
-        source_title="app.data.program_rate_rules — RateCondition on us_or_opif",
-        source_url=None, issuing_authority="Internal — migrated from already-verified rate-rule condition",
-        source_type=SourceType.SECONDARY, status=RecordStatus.CURRENT,
-        notes="Pass A programmatic migration (2026-07-26). min_local_spend_usd from RateCondition "
-              "kind=min_qpe_usd (threshold_usd=1,000,000; quote: 'a production must directly "
-              "spend at least US $1 million in Oregon to qualify (corroborated by 3 sources)'). "
-              "allocation_type=DISCRETIONARY from RateCondition kind=discretionary_band (quote: "
-              "'No single project can receive more than 50% of the OPIF fund in any fiscal year "
-              "(corroborated by 3 sources)'; description: 'rebate is not guaranteed even if "
-              "criteria are met') — this literally states the fund is scarcity-limited and "
-              "awards are not an entitlement, which is exactly what AllocationType.DISCRETIONARY "
-              "represents in this schema.",
+        source_title="Oregon Production Investment Fund (OPIF)",
+        source_url="https://oregonfilm.org/article/oregon-production-investment-fund-opif/",
+        issuing_authority="Oregon Film & Video Office (Oregon Film)",
+        source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, access_date="2026-07-26",
+        notes="REPOSITORY RECONCILIATION FIRST: this profile was a thin Pass A programmatic "
+              "migration (source_url=None, only min_local_spend_usd + allocation_type from "
+              "internal rate-rule conditions). Direct fetch of Oregon Film's own official OPIF "
+              "page performed this session, confirming both pre-existing figures exactly ($1M min "
+              "spend; 50%-of-fund-per-project scarcity limit, consistent with "
+              "AllocationType.DISCRETIONARY) and upgrading to PRIMARY_VERIFIED. RATE STRUCTURE "
+              "(genuinely new, not previously in this profile — belongs to the rate-rule layer but "
+              "confirmed here for completeness): TWO distinct rebates, 25% on production-related "
+              "goods/services paid to Oregon vendors and 20% on payroll wages for work done in "
+              "Oregon (both Oregon and non-Oregon residents eligible for the labor rebate); the "
+              "labor portion can STACK with the separate Greenlight Oregon programme for an "
+              "effective 26.2% labor rebate. ANNUAL FUND CAP CONFIRMED: $21,200,000 per fiscal "
+              "year (2026-07-01 to 2026-06-30 cycle) — resolves the prior profile's unpopulated "
+              "annual_program_cap_usd field. APPLICATION GATES (previously unrecorded): a Letter of "
+              "Intent is required; equipment must be rented or purchased directly from Oregon "
+              "vendors (billing through out-of-state 'pass-through' companies does not qualify); "
+              "projects must comply with Oregon state law on independent-contractor classification. "
+              "AUDIT: audit paperwork filing is required post-production; Oregon Film publishes "
+              "guidance on common filing errors. ELIGIBLE WORK: film/TV productions, interactive "
+              "media, commercial production, and post-production-only work from Oregon-based "
+              "companies; non-scripted work has limited eligibility requiring direct inquiry. NOT "
+              "independently re-confirmed on the specific page fetched (from a WebSearch summary "
+              "citing Oregon Film, recorded with that caveat rather than claimed as directly "
+              "re-verified): a written diversity/equity/inclusion policy and a written "
+              "anti-harassment/reporting policy are required as part of the OPIF contract with the "
+              "Oregon Film & Video Office.",
     ),
+    additional_facts={
+        "rate_structure": "25% cash rebate on production-related goods/services paid to Oregon vendors; 20% cash rebate on payroll wages for Oregon work (Oregon and non-Oregon residents both eligible). Labor portion stacks with Greenlight Oregon for an effective 26.2% labor rebate.",
+        "annual_fund_cap": "$21,200,000 per fiscal year (July 1 - June 30).",
+        "application_gates": "Letter of Intent required; equipment must be sourced directly from Oregon vendors (no out-of-state pass-through billing); must comply with Oregon independent-contractor law.",
+        "eligible_work": "Film/TV productions, interactive media, commercial production, post-production-only work from Oregon-based companies. Non-scripted work has limited eligibility requiring direct inquiry.",
+        "policy_requirements_unconfirmed": "A written DEI policy and a written anti-harassment/reporting policy are reported (WebSearch summary citing Oregon Film) as part of the OPIF contract -- not independently re-confirmed on the official page fetched this session.",
+    },
 ))
 
 register(ProgramRequirementsProfile(
     program_slug="ma_ccm_rebate", jurisdiction_code="MA",
-    min_local_spend_usd=1_000_000.0,  # 10M MAD ~ $1M, min_qpe_usd condition
-    min_shoot_days=18,                # same condition's own quote: "18 shooting days required"
-    evidence=EvidenceRecord(
-        source_title="app.data.program_rate_rules — RateCondition on ma_ccm_rebate",
-        source_url=None, issuing_authority="Internal — migrated from already-verified rate-rule condition",
-        source_type=SourceType.SECONDARY, status=RecordStatus.CURRENT,
-        notes="Pass A programmatic migration (2026-07-26). min_local_spend_usd and min_shoot_days "
-              "both from the SAME RateCondition (kind=min_qpe_usd, quote corroborated by 4 "
-              "sources: 'Minimum spend of 10 million MAD and 18 shooting days required'). The "
-              "engine's own description flags the shoot-days portion as 'not pre-evaluable' for "
-              "PRICING purposes (no shoot-days fact feeds the rate resolver), but the number "
-              "itself (18) is a real, literal, already-cited fact that belongs in the "
-              "requirements profile's min_shoot_days field even though it isn't consumed by the "
-              "pricing engine.",
+    min_local_spend_usd=1_000_000.0,  # 10M MAD ~ $1M, confirmed directly this session
+    min_shoot_days=18,                # confirmed directly: "at least 18 days of work in Morocco, including set construction"
+    preapproval_mandatory=True,       # application + initial approval decision (30 days) + bank guarantee precede any work
+    expenditure_before_approval_qualifies=False,
+    audit_required=True,              # accounting/eligible-expense submission required post-shoot
+    cultural_test_required=False,     # no cultural/content test published; a post-release CULTURAL USAGE RIGHTS obligation applies instead (see additional_facts) — a compliance condition, not an eligibility gate
+    refundable=True,                  # cash support paid out by CCM
+    transferable=False,
+    application_deadline=TimingFact(
+        value="Initial approval decision issued within 30 days of application submission; "
+              "production must begin work within 6 months of the bank-guarantee deposit; "
+              "shooting must be completed within 12 months of the first shoot day",
+        basis=TimingBasis.STATUTORY_DEADLINE,
     ),
+    audit_or_final_certification_deadline=TimingFact(
+        value="Final accounting/eligible-expense submission due within 3 months of shoot "
+              "completion; CCM pays the support amount in a single installment within a maximum "
+              "of 180 days after the commission's decision on a complete payment-request file",
+        basis=TimingBasis.STATUTORY_DEADLINE,
+    ),
+    evidence=EvidenceRecord(
+        source_title="CCM Foreign Production incentive — official programme page",
+        source_url="https://www.ccm.ma/foreign_production/pe/index.html",
+        issuing_authority="Centre Cinematographique Marocain (CCM)",
+        source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, access_date="2026-07-26",
+        notes="REPOSITORY RECONCILIATION FIRST: this profile was a thin Pass A programmatic "
+              "migration (source_url=None, only min_local_spend_usd + min_shoot_days from an "
+              "internal rate-rule RateCondition). Direct fetch of CCM's own official foreign-"
+              "production page performed this session, upgrading to PRIMARY_VERIFIED and confirming "
+              "both pre-existing figures exactly (10,000,000 MAD min spend, 18 shooting days). "
+              "GENUINELY NEW FACTS: eligible expenses are capped at 90% of total expenditure (a "
+              "proportional condition, not a category exclusion). BANK GUARANTEE GATE: 5% of the "
+              "requested support amount must be deposited within 30 days of initial approval, "
+              "renewable only once. APPLICATION-TO-PAYMENT TIMELINE (fully sequenced, previously "
+              "unrecorded): initial approval decision within 30 days of application; work must "
+              "begin within 6 months of the guarantee deposit; shooting must complete within 12 "
+              "months of the first shoot day; final accounting due within 3 months of shoot "
+              "completion; CCM pays within 180 days of a complete payment-request file. SUPPORT "
+              "CAP CHANGE: before 2022-03-28 the maximum support was 18,000,000 MAD; from "
+              "2022-03-28 onward (the current, already-recorded 30% rate) NO CAP is imposed — "
+              "recorded as a genuine, dated regime change, not silently assumed unchanged. "
+              "CULTURAL USAGE OBLIGATION (a post-production compliance condition, not an "
+              "eligibility gate — recorded as such, distinct from cultural_test_required): "
+              "producers must grant CCM Moroccan cultural usage rights for one year following "
+              "worldwide release, provide a film copy (with exceptions for internet-focused "
+              "works), authorize promotional use, include required credits, and settle all debts "
+              "to Moroccan crew and suppliers before final payment. Eligible formats: feature "
+              "films, television series, TV films, docufictions, documentaries, and long-form "
+              "internet fiction.",
+    ),
+    additional_facts={
+        "eligible_expense_cap_pct": "Eligible expenses capped at 90% of total expenditure.",
+        "bank_guarantee": "5% of requested support amount, deposited within 30 days of initial approval, renewable only once.",
+        "sequenced_timeline": "Approval within 30 days of application -> work must begin within 6 months of guarantee deposit -> shooting completes within 12 months of first shoot day -> final accounting due within 3 months of shoot completion -> CCM pays within 180 days of a complete payment-request file.",
+        "support_cap_history": "Before 2022-03-28: maximum support 18,000,000 MAD (at the prior 20% rate). From 2022-03-28 (current 30% rate): no cap imposed.",
+        "cultural_usage_obligation": "Post-release compliance condition (not an eligibility gate): CCM cultural usage rights for 1 year post-worldwide-release, film copy delivery, promotional-use authorization, required credits, and settlement of all debts to Moroccan crew/suppliers.",
+        "eligible_formats": "Feature films, television series, TV films, docufictions, documentaries, long-form internet fiction.",
+    },
 ))
 
 register(ProgramRequirementsProfile(
@@ -977,23 +1211,80 @@ register(ProgramRequirementsProfile(
         "lower_tier": "A second, lower qualifying tier also exists: >3 shoot days in Korea "
                      "with spend between ~$36,000 and ~$700,000 (50M-800M KRW) — source: "
                      "koreanfilm.or.kr.",
+        "primary_source_attempt_2026_07_26": "Direct fetch of koreanfilm.or.kr's own "
+            "'Guidelines on KOFIC Location Incentive Program' page did not render usable "
+            "content (portal navigation shell only). A separate koreanfilm.or.kr news article "
+            "('Ko-pick') fetched successfully but describes MATERIALLY DIFFERENT figures than "
+            "this repository's existing two-tier structure -- up to 25% (single ceiling, not "
+            "two named tiers), general min spend KRW 400,000,000, a KRW 300,000,000 cap "
+            "specific to foreign projects, a 5-day (not 3/10-day) minimum, and a KRW "
+            "896,000,000 ANNUAL programme budget (small enough to suggest this may describe an "
+            "older, smaller-scale iteration of the programme, or a different sub-scheme, rather "
+            "than superseding the existing figures). NOT reconciled into this profile or the "
+            "rate rule: the two characterizations conflict rather than corroborate, and forcing "
+            "a pick between them without a clean primary confirmation would be a guess, not a "
+            "verification. Existing two-tier structure (20% at 3+ days/>=100M KRW; 25% at 10+ "
+            "days/>=0.8B KRW) is LEFT UNCHANGED and this profile remains SECONDARY_VERIFIED "
+            "pending a cleaner primary-source read (the same fetched article separately "
+            "confirms Seoul's LOCAL commission scheme, 30%/KRW 300M cap, is a genuinely "
+            "distinct programme from the national KOFIC incentive -- not conflated here).",
     },
 ))
 
 register(ProgramRequirementsProfile(
     program_slug="fj_film_rebate", jurisdiction_code="FJ",
-    local_entity_required=True,   # min_spend_pct_of_total_budget condition's own quote: "so long as they work through a locally registered company"
-    evidence=EvidenceRecord(
-        source_title="app.data.program_rate_rules — RateCondition on fj_film_rebate",
-        source_url=None, issuing_authority="Internal — migrated from already-verified rate-rule condition",
-        source_type=SourceType.SECONDARY, status=RecordStatus.CURRENT,
-        notes="Pass A programmatic migration (2026-07-26). local_entity_required from "
-              "RateCondition kind=min_spend_pct_of_total_budget (quote: 'so long as they work "
-              "through a locally registered company (unctad.org)'; description literally states "
-              "the requirement, marked 'not pre-evaluable' for PRICING purposes only because the "
-              "engine has no local-entity-registered fact to check against — the requirement "
-              "itself is unambiguous and belongs in this profile).",
+    local_entity_required=True,        # confirmed directly: production company must be incorporated in Fiji
+    min_local_spend_usd=None,          # FJD 250,000 — recorded in additional_facts/STATUTORY_AMOUNTS_ORIGINAL_CURRENCY, not converted
+    per_project_cap_usd=None,          # FJD 4,000,000 — recorded in additional_facts/STATUTORY_AMOUNTS_ORIGINAL_CURRENCY, not converted
+    preapproval_mandatory=True,        # Film Permit + Provisional Approval must precede production
+    expenditure_before_approval_qualifies=False,
+    audit_required=True,
+    cpa_or_approved_auditor_required=True,  # "audited accounts" required for the final claim
+    refundable=True,                   # cash rebate paid out
+    transferable=False,
+    payment_timing=TimingFact(
+        value="Final Certificate application (with audited accounts, submitted through the "
+              "licensed Audio-Visual Agent) must be made within 12 months after distribution",
+        basis=TimingBasis.STATUTORY_DEADLINE,
     ),
+    evidence=EvidenceRecord(
+        source_title="20% Film Tax Rebate",
+        source_url="https://film-fiji.com/incentives-and-legislation/20-film-tax-rebate/",
+        issuing_authority="Film Fiji (Fijian government film promotion authority)",
+        source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, access_date="2026-07-26",
+        notes="REPOSITORY RECONCILIATION FIRST: this profile was a thin Pass A programmatic "
+              "migration (source_url=None, only local_entity_required, migrated from an internal "
+              "rate-rule condition citing unctad.org). Direct fetch of Film Fiji's own official "
+              "page performed this session, confirming and upgrading local_entity_required to "
+              "PRIMARY_VERIFIED (production company must be INCORPORATED in Fiji — precise, not "
+              "merely 'locally registered'). GOVERNING REGULATION (genuinely new): Income Tax "
+              "(Film making & Audio-visual Incentives) Regulations 2016. RATE AND THRESHOLDS: 20% "
+              "cash rebate on Total Fiji Expenditure (TFE); minimum TFE FJD 250,000; maximum "
+              "rebate FJD 4,000,000 per production. LICENSED AGENT GATE: a licensed Audio-Visual "
+              "Agent must be engaged as line producer — a real, named intermediary requirement. "
+              "DISTRIBUTION TEST: must demonstrate release plans for at least one significant "
+              "international market. FULLY SEQUENCED APPLICATION PROCESS (previously "
+              "unrecorded): (1) obtain a Film Permit and Provisional Approval before production "
+              "begins; (2) transfer funds to a Fiji bank account before production begins; (3) "
+              "submit cost and production reports FORTNIGHTLY during filming; (4) secure public "
+              "liability insurance and pay a 1% levy to Fiji National University; (5) include "
+              "required credits ('Filmed on location in Fiji', Film Fiji + government "
+              "acknowledgement); (6) submit audited accounts and apply for a Final Certificate "
+              "within 12 months after distribution (project completion is defined as "
+              "post-distribution, not post-wrap). MUTUAL EXCLUSIVITY (a genuine structural fact): "
+              "claiming this rebate precludes eligibility for Fiji's other incentive schemes "
+              "(F1/F2, post-production packages) — a production cannot stack this with those. All "
+              "FJD figures recorded per the Canonical Currency Rule; no USD conversion performed.",
+    ),
+    additional_facts={
+        "min_spend_fjd": "FJD 250,000 minimum Total Fiji Expenditure (TFE).",
+        "max_rebate_fjd": "FJD 4,000,000 maximum rebate per production.",
+        "legal_basis": "Income Tax (Film making & Audio-visual Incentives) Regulations 2016.",
+        "licensed_agent_requirement": "A licensed Audio-Visual Agent must be engaged as line producer.",
+        "distribution_test": "Must demonstrate release plans for at least one significant international market.",
+        "application_sequence": "Film Permit + Provisional Approval before production -> fund transfer to a Fiji bank account before production -> fortnightly cost/production reports during filming -> public liability insurance + 1% FNU levy -> required credits -> audited accounts + Final Certificate application within 12 months post-distribution.",
+        "mutual_exclusivity": "Cannot be combined with Fiji's other incentive schemes (F1/F2, post-production packages).",
+    },
 ))
 
 register(ProgramRequirementsProfile(
@@ -1019,20 +1310,58 @@ register(ProgramRequirementsProfile(
 
 register(ProgramRequirementsProfile(
     program_slug="lt_film_centre_cash_rebate", jurisdiction_code="LT",
-    cultural_test_required=True,
+    local_coproducer_required=True,   # a foreign filmmaker must cooperate with a local Lithuanian production company to apply
+    cultural_test_required=True,      # must satisfy at least 2 of 8 published criteria
+    cultural_test_points=8,           # 8 total published criteria
+    cultural_test_threshold=2,        # at least 2 must be satisfied
+    min_local_spend_usd=None,         # EUR 43,000 minimum — recorded in additional_facts/STATUTORY_AMOUNTS_ORIGINAL_CURRENCY, not converted
+    min_shoot_days=3,                 # at least 3 days of shooting in Lithuania (animation uses a 20%-of-costs test instead — see additional_facts)
+    preapproval_mandatory=True,       # application submitted jointly with the local production company and a secured private donor investor
     evidence=EvidenceRecord(
-        source_title="app.data.program_rate_rules — RateCondition on lt_film_centre_cash_rebate",
-        source_url=None, issuing_authority="Internal — migrated from already-verified rate-rule condition",
-        source_type=SourceType.SECONDARY, status=RecordStatus.CURRENT,
-        notes="Pass A programmatic migration (2026-07-26). cultural_test_required from "
-              "RateCondition kind=cultural_test_required (quote: 'must pass cultural test "
-              "(camaleonrental.com)'). Note: this program's rate database also carries an "
-              "unresolved 20%-vs-30% rate conflict (kind=material_funding_risk_not_modeled, "
-              "'Pre-existing catalog claimed 30% -- unresolved conflict with this pass's 20% "
-              "source') — that conflict is a PRICING fact, out of scope for this requirements-"
-              "profile migration, and is left exactly as already recorded/disclosed in the rate "
-              "registry.",
+        source_title="How it works — Lithuanian Film Tax Incentive",
+        source_url="https://www.lkc.lt/en/tax-incentives/how-it-works",
+        issuing_authority="Lietuvos kino centras (Lithuanian Film Centre)",
+        source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, access_date="2026-07-26",
+        notes="REPOSITORY RECONCILIATION FIRST: this profile was a thin Pass A programmatic "
+              "migration (source_url=None, cultural_test_required only) whose own note flagged an "
+              "unresolved 20%-vs-30% rate conflict in the rate-rule registry, explicitly marked "
+              "out-of-scope for this requirements-profile layer — that pricing conflict is NOT "
+              "resolved here (rate-rule logic is frozen) and remains exactly as already disclosed "
+              "in program_rate_rules_worldwide.py. Direct fetch of the Lithuanian Film Centre's own "
+              "official 'how it works' page performed this session, upgrading this profile to "
+              "PRIMARY_VERIFIED. MECHANISM CLARIFICATION (genuinely new, and possibly explains the "
+              "20%/30% ambiguity rather than resolving it definitively): the official page frames "
+              "this as a PRIVATE INVESTMENT SCHEME — filmmakers 'save up to 30% of the film "
+              "production budget through private investment', with private donors receiving a tax "
+              "deduction on invested amounts and an estimated net profit of up to 12%. This is "
+              "structurally closer to Belgium's Tax Shelter (investor-side fiscal vehicle) than a "
+              "simple government cash rebate — a foreign filmmaker must cooperate with a local "
+              "Lithuanian production company AND secure a private donor investor to access the "
+              "benefit. This page did not itself restate a separate 20% tier, so the rate-rule "
+              "conflict is left open rather than silently resolved by this fetch. NEWLY CONFIRMED: "
+              "minimum eligible Lithuanian spend EUR 43,000; at least 80% of eligible production "
+              "costs must be incurred in Lithuania; at least 51% of the crew hired by the Lithuanian "
+              "production company must be Lithuanian or other EEA citizens; at least 3 days of "
+              "shooting in Lithuania for standard productions (animated films instead require at "
+              "least 20% of production costs in Lithuania covering design/layouts/VFX/animation "
+              "production/shooting); the cultural test requires satisfying at least 2 of 8 published "
+              "criteria (themes, historical significance, literary adaptations, European values, "
+              "identity issues, artistic merit — full list not itemized on the page reviewed) with "
+              "explicit EXCLUSIONS (advertisements, reality shows, violence, pornography, "
+              "disinformation, content violating presumption of innocence). Eligible formats: "
+              "feature films, TV dramas, documentaries, animated films — domestic, co-produced, or "
+              "commissioned (service-agreement) productions.",
     ),
+    additional_facts={
+        "mechanism": "Private investment/donor tax-deduction scheme (like Belgium's Tax Shelter), not a direct government cash rebate — filmmaker must secure a local production-company partner and a private donor investor.",
+        "min_local_spend_eur": "EUR 43,000 minimum eligible Lithuanian spend.",
+        "local_spend_pct": "At least 80% of eligible production costs must be incurred in Lithuania.",
+        "eea_crew_requirement": "At least 51% of the crew hired by the Lithuanian production company must be Lithuanian or other EEA citizens.",
+        "shoot_days_or_animation_alternative": "At least 3 days of shooting in Lithuania for standard productions; animated films instead require at least 20% of production costs in Lithuania (design, layouts, VFX, animation production, or shooting).",
+        "cultural_test_structure": "At least 2 of 8 published criteria (themes, historical significance, literary adaptations, European values, identity issues, artistic merit, among others not fully itemized on the page reviewed).",
+        "cultural_test_exclusions": "Advertisements, reality shows, content depicting excessive violence, pornography, disinformation, or content violating presumption of innocence.",
+        "rate_conflict_unresolved": "This repository's rate-rule registry (program_rate_rules_worldwide.py) carries an unresolved 20%-vs-30% conflict, explicitly out of scope for this profile and NOT resolved by this session's official-source fetch (the fetched page did not itemize a separate 20% tier).",
+    },
 ))
 
 
@@ -1441,6 +1770,16 @@ STATUTORY_AMOUNTS_ORIGINAL_CURRENCY: dict[str, dict[str, dict]] = {
             "source": "Ministero della Cultura (MiC) — tax credit for foreign productions",
             "effective_date": None, "legacy_usd_value": 22_810_479.13,
         },
+        "min_local_spend": {
+            "amount": 250_000, "currency": "EUR", "basis": "Minimum eligible cost (not independently re-confirmed against a directly-fetched DGCA page this session)",
+            "source": "Direzione Generale Cinema e Audiovisivo (DGCA), Ministero della Cultura — via WebSearch summary citing the DGCA framework",
+            "effective_date": None, "legacy_usd_value": None,
+        },
+        "per_work_cap": {
+            "amount": 9_000_000, "currency": "EUR", "basis": "Cap per individual work, increasable to EUR 18,000,000 if at least 30% of total production cost is foreign-funded — distinct from the per-company annual cap above",
+            "source": "Direzione Generale Cinema e Audiovisivo (DGCA), Ministero della Cultura — via WebSearch summary citing the DGCA framework",
+            "effective_date": None, "legacy_usd_value": None,
+        },
     },
     "ie_section_481": {
         "per_project_cap": {
@@ -1770,6 +2109,37 @@ STATUTORY_AMOUNTS_ORIGINAL_CURRENCY: dict[str, dict[str, dict]] = {
         "small_film_cap": {
             "amount": 125_000, "currency": "USD", "basis": "Maximum credit for the separate 'Maryland Small Film' category (min spend USD 25,000; independently-owned applicant, <=25 full-time employees, not dominant in its field, organized/active in Maryland 3+ months; exempt from the independent CPA-audit requirement)",
             "source": "Maryland Dept of Commerce (commerce.maryland.gov/fund/film-production-activity-tax-credit)",
+            "effective_date": None, "legacy_usd_value": None,
+        },
+    },
+    "cz_film_incentive": {
+        "min_local_spend": {
+            "amount": 15_000_000, "currency": "CZK", "basis": "Minimum eligible spend, feature and animated films (documentaries CZK 2,000,000; TV series CZK 8,000,000 per episode; animated series/digital production CZK 1,000,000 per episode)",
+            "source": "Statni fond audiovize (Czech Film Fund) — official production-incentives page",
+            "effective_date": None, "legacy_usd_value": None,
+        },
+        "annual_program_cap": {
+            "amount": 450_000_000, "currency": "CZK", "basis": "Maximum rebate per project (eligible costs additionally capped at 80% of total budget)",
+            "source": "Statni fond audiovize (Czech Film Fund) — official production-incentives page",
+            "effective_date": None, "legacy_usd_value": None,
+        },
+    },
+    "dk_production_rebate": {
+        "annual_program_cap": {
+            "amount": 125_000_000, "currency": "DKK", "basis": "Total annual envelope across both sub-schemes: Live Action Scheme DKK 100,000,000/year, Animated Films and Series Scheme DKK 25,000,000/year",
+            "source": "Slots- og Kulturstyrelsen (Danish Agency for Culture and Palaces) — official scheme page",
+            "effective_date": "2026-01-01", "legacy_usd_value": None,
+        },
+    },
+    "fj_film_rebate": {
+        "min_local_spend": {
+            "amount": 250_000, "currency": "FJD", "basis": "Minimum Total Fiji Expenditure (TFE)",
+            "source": "Film Fiji (Fijian government film promotion authority) — official 20% Film Tax Rebate page",
+            "effective_date": None, "legacy_usd_value": None,
+        },
+        "per_project_cap": {
+            "amount": 4_000_000, "currency": "FJD", "basis": "Maximum rebate per production",
+            "source": "Film Fiji (Fijian government film promotion authority) — official 20% Film Tax Rebate page",
             "effective_date": None, "legacy_usd_value": None,
         },
     },
@@ -2142,38 +2512,52 @@ register(ProgramRequirementsProfile(
     refundable=True,                   # reimbursement of eligible Danish production costs
     transferable=False,
     allocation_type=AllocationType.COMPETITIVE,  # two annual calls, points-ranked against a fixed DKK 125m annual envelope
+    application_deadline=TimingFact(
+        value="Two application rounds per sub-scheme each year; the second 2026 round opens late "
+              "August 2026 with an expected deadline of 2026-09-24",
+        basis=TimingBasis.OFFICIAL_TARGET,
+    ),
     evidence=EvidenceRecord(
-        source_title="Danish production rebate scheme (25%) — Danish Agency for Culture and Palaces (Slots- og Kulturstyrelsen)",
-        source_url="https://nordiskfilmogtvfond.com/news/stories/denmark-unleashes-dkk-125-million-to-attract-global-film-tv-productions",
-        issuing_authority="Slots- og Kulturstyrelsen (Danish Agency for Culture and Palaces); promoted internationally by the Danish Film Institute",
-        source_type=SourceType.SECONDARY, status=RecordStatus.CURRENT, access_date="2026-07-26",
-        notes="NEW SCHEME launching 2026: 25% reimbursement of eligible Danish production costs, "
-              "against an annual envelope of DKK 125 million. Administered by the Danish Agency "
-              "for Culture and Palaces; the Danish Film Institute promotes it internationally but "
-              "does not administer it. REAL PUBLISHED GATES: (a) minimum total budget thresholds "
-              "by format; (b) FINANCING TEST — at least 70% of the overall budget confirmed at "
-              "application AND at least 25% of financing sourced internationally; (c) a "
-              "points-based PRODUCTION AND CULTURE TEST favouring Danish cultural component, "
-              "shooting days in Denmark, local cast/crew and domestic expenditure; (d) a lead-"
-              "producer track record of delivering widely distributed content. Two annual "
-              "application calls — competitive, not entitlement. MARKED SECONDARY: the scheme was "
-              "greenlit for 2026 launch and the figures here come from Nordisk Film & TV Fond and "
-              "Cineuropa industry reporting; the administrator's own final guidelines were not "
-              "retrieved in this pass, so this profile is SECONDARY pending direct confirmation "
-              "from Slots- og Kulturstyrelsen. CURRENCY CAUTION: the sources report minimum "
-              "budgets in a MIX of EUR and DKK (EUR 3.35m film, EUR 536,000 documentary, DKK "
-              "870,000 animation, EUR 20,000/minute and EUR 2m total for TV series). Because the "
-              "reporting is mixed and the governing scheme is Danish, the figures are recorded "
-              "verbatim as reported in additional_facts and NO USD field is populated.",
+        source_title="The Danish Production Incentive Scheme",
+        source_url="https://slks.dk/english/work-areas/media/the-danish-production-incentive-scheme",
+        issuing_authority="Slots- og Kulturstyrelsen (Danish Agency for Culture and Palaces)",
+        source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, access_date="2026-07-26",
+        notes="REPOSITORY RECONCILIATION FIRST: this profile itself already flagged the exact gap "
+              "closed here — its prior notes said 'the administrator's own final guidelines were "
+              "not retrieved in this pass'. Direct fetch of slks.dk (the actual administering "
+              "authority named throughout this profile) performed this session, upgrading to "
+              "PRIMARY_VERIFIED. LEGAL BASIS (genuinely new, confirms the scheme is now in force "
+              "rather than merely announced): the Act on the Production Incentive for Film and "
+              "Series Production, and the Executive Order on the Production Incentive Scheme, both "
+              "effective 2026-01-01. SUB-SCHEME STRUCTURE CONFIRMED (matches and corroborates the "
+              "prior Nordisk Film & TV Fond figures rather than contradicting them): TWO distinct "
+              "sub-schemes, each with its own annual budget and application rounds — the Live "
+              "Action Scheme (feature films, fiction series, documentary films, documentary "
+              "series; DKK 100,000,000/year) and the Animated Films and Series Scheme (DKK "
+              "25,000,000/year) — together the DKK 125,000,000 total envelope already recorded. "
+              "APPLICATION TIMING (genuinely new): the second 2026 application round opens late "
+              "August 2026, expected deadline 2026-09-24. PREVIOUSLY-RECORDED FACTS NOT "
+              "CONTRADICTED, CARRIED FORWARD: 25% reimbursement rate; the 70%-budget-confirmed + "
+              "25%-international-financing test; the points-based production and culture test; the "
+              "lead-producer track-record requirement; two annual calls (now confirmed as two calls "
+              "PER sub-scheme). This specific slks.dk page did not restate the exact rate percentage "
+              "or the per-format minimum-spend figures — those remain sourced from Nordisk Film & TV "
+              "Fond / Cineuropa reporting and are NOT independently re-confirmed against this "
+              "official page; recorded honestly rather than silently upgraded. CURRENCY CAUTION "
+              "UNCHANGED: the Nordisk-sourced minimum budgets are reported in a MIX of EUR and DKK "
+              "(EUR 3.35m film, EUR 536,000 documentary, DKK 870,000 animation, EUR 20,000/minute "
+              "and EUR 2m total for TV series); recorded verbatim as reported, no USD field "
+              "populated.",
     ),
     additional_facts={
         "annual_envelope_dkk": "DKK 125,000,000 per year (approximately EUR 17 million as reported).",
-        "min_budget_as_reported": "Film: EUR 3,350,000 total budget. Documentary: EUR 536,000. Animation: DKK 870,000. TV series: EUR 20,000 per minute and at least EUR 2,000,000 total. NOTE: sources report these in a mix of EUR and DKK; recorded verbatim as reported, not normalised.",
+        "sub_scheme_structure": "Live Action Scheme (feature films, fiction series, documentary films/series): DKK 100,000,000/year. Animated Films and Series Scheme: DKK 25,000,000/year. Confirmed directly via slks.dk.",
+        "legal_basis": "Act on the Production Incentive for Film and Series Production; Executive Order on the Production Incentive Scheme. Both effective 2026-01-01.",
+        "min_budget_as_reported": "Film: EUR 3,350,000 total budget. Documentary: EUR 536,000. Animation: DKK 870,000. TV series: EUR 20,000 per minute and at least EUR 2,000,000 total. NOTE: sources report these in a mix of EUR and DKK; recorded verbatim as reported, not normalised. Not independently re-confirmed against slks.dk.",
         "financing_test": "At least 70% of the overall budget confirmed at application; at least 25% of financing sourced internationally.",
         "culture_test": "Points-based production and culture test favouring Danish cultural component, shooting days in Denmark, local cast and crew, and domestic expenditure.",
         "producer_track_record": "Lead producer must have a proven track record delivering widely distributed film, TV or animation content.",
-        "calls_per_year": "Two annual application calls.",
-        "evidence_caveat": "Figures from Nordisk Film & TV Fond / Cineuropa reporting; administrator's final guidelines not retrieved in this pass.",
+        "application_rounds_2026": "Second 2026 round opens late August, expected deadline 2026-09-24.",
     },
 ))
 
@@ -2787,6 +3171,7 @@ register(ProgramRequirementsProfile(
         "shoot_days_or_spend_alternative": "Either five shooting days in Switzerland OR an additional CHF 150,000 of Swiss spend — an either/or condition, not cumulative.",
         "official_coproduction_gate": "PICS requires official Swiss co-production status. Swiss cantonal schemes (e.g. Geneva, Neuchâtel) do not require it and are separate programmes.",
         "projects_per_year": "Approximately 30 projects supported annually.",
+        "primary_source_attempt_2026_07_26": "Three direct fetches attempted this session -- bak.admin.ch/bak/fr/home/creation-culturelle/cinema.html, bak.admin.ch/film, and the specific 'Déclarations d'intention de l'aide liée au site (PICS)' BAK subpage -- all returned 404 or landed on generic index pages with no PICS-specific figures. A WebSearch snippet (unfetched, not independently verified) suggested 'automatic funding on application' (possibly contradicting the recorded COMPETITIVE allocation_type) and a women's-internship condition for projects over CHF 500,000 -- NEITHER asserted here, both flagged for a future pass with a working URL rather than recorded on search-snippet confidence alone.",
     },
 ))
 

@@ -3397,7 +3397,7 @@ _CZECH_REPUBLIC = JurisdictionIncentiveProfile(
     program_slug="cz_film_incentive", program_name="Czech Film Incentive",
     confidence_tier="PARSED", incentive_type="cash_rebate",
     base_rate=0.25, max_rate=0.25, is_refundable=True, is_transferable=False,
-    annual_cap_local=None, min_spend_local=None, requires_cultural_test=False,
+    annual_cap_local=None, min_spend_local=None, requires_cultural_test=True,
     atl_qualifies=None, btl_qualifies=True, vfx_qualifies=None, music_qualifies=None,
     vessel_marine_qualifies=False, resident_labor_uplift_available=False,
     cashflow_timing_weeks=None, marine_suitability=MarineSuitability.NONE,
@@ -3405,14 +3405,16 @@ _CZECH_REPUBLIC = JurisdictionIncentiveProfile(
     studio_available=True, post_production_available=True,
     vat_recoverable=None, vat_rate_pct=None, withholding_tax_pct=None, payroll_burden_pct=None,
     financing_friction=FinancingFriction.LOW,
-    authority_name="Czech Film Fund", authority_url_hint="rodriqueslaw.com",
+    authority_name="Czech Film Fund (Statni fond audiovize)", authority_url_hint="sfa.gov.cz",
     notes=("CORRECTED -- stale 20% superseded: 25% live-action feature "
            "film rate. A separate 35% animation/digital-only (no live "
            "action) program exists as its own doctrine record "
            "(cz_film_incentive_animation) -- not representable in this "
            "one-profile-per-jurisdiction schema, disclosed here only. "
+           "Cultural test IS required -- corrects a prior False, "
+           "confirmed via direct official fetch (sfa.gov.cz, 2026-07-26). "
            "Prague Barrandov Studios, landlocked."),
-    data_gaps=["Separate 35% animation-only program not representable in this profile"],
+    data_gaps=["Separate 35% animation-only program not representable in this profile", "Changes effective 2026-01-01 referenced by the official page but not detailed in the content retrieved"],
 )
 
 _ROMANIA = JurisdictionIncentiveProfile(

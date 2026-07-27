@@ -126,24 +126,24 @@
     "never_implemented_fields": [],
     "per_field_gap_distribution": {
       "application_timing": {
-        "disclosed_not_enforced": 14,
-        "missing": 96
+        "disclosed_not_enforced": 18,
+        "missing": 92
       },
       "audit": {
-        "disclosed_not_enforced": 8,
-        "missing": 102
+        "disclosed_not_enforced": 11,
+        "missing": 99
       },
       "cultural_test": {
-        "disclosed_not_enforced": 59,
-        "missing": 51
+        "disclosed_not_enforced": 61,
+        "missing": 49
       },
       "filing_deadline": {
-        "disclosed_not_enforced": 7,
-        "missing": 103
+        "disclosed_not_enforced": 9,
+        "missing": 101
       },
       "local_entity": {
-        "disclosed_not_enforced": 24,
-        "missing": 86
+        "disclosed_not_enforced": 25,
+        "missing": 85
       },
       "minimum_spend": {
         "disclosed_not_enforced": 14,
@@ -152,16 +152,16 @@
         "missing": 81
       },
       "preapproval": {
-        "disclosed_not_enforced": 49,
-        "missing": 61
+        "disclosed_not_enforced": 56,
+        "missing": 54
       },
       "stacking_restriction": {
         "disclosed_not_enforced": 1,
         "missing": 109
       },
       "transfer_monetization": {
-        "disclosed_not_enforced": 51,
-        "missing": 59
+        "disclosed_not_enforced": 55,
+        "missing": 55
       }
     },
     "programs_with_at_least_one_unknown_hard_gate": 110,

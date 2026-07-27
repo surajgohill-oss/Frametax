@@ -3998,14 +3998,17 @@ CZ_DOCTRINE = register(DoctrineRecord(
     program_name="Czech Film Incentive",
     confidence_tier="PARSED", incentive_type="cash_rebate",
     is_refundable=True, is_transferable=False, min_spend_usd=None,
-    annual_cap_usd=None, requires_cultural_test=False,
+    annual_cap_usd=None, requires_cultural_test=True,
     production_types=("feature_film",),
     citation="rodriqueslaw.com: 'The primary incentive rate will be 25%, "
               "up from the previous 20%.' Corrects catalog's stale 20% "
               "figure. (A separate 35% animation/digital-only rate is "
               "modeled as its own record, cz_film_incentive_animation, "
-              "below -- see note above.)",
-    source_ref="rodriqueslaw.com-czech-republic",
+              "below -- see note above.) 2026-07-26 knowledge "
+              "reconciliation: direct fetch of the official sfa.gov.cz "
+              "production-incentives page confirms applicants must pass "
+              "a cultural test -- corrects this record's prior False.",
+    source_ref="rodriqueslaw.com-czech-republic+sfa.gov.cz-official",
     tiers=(DoctrineRateTier(tier_id="cz-live-action-25", rate=0.25, is_band_ceiling=False),),
 ))
 register_rate_rules(rate_rules_for(CZ_DOCTRINE))
@@ -4015,7 +4018,7 @@ CZ_ANIMATION_DOCTRINE = register(DoctrineRecord(
     program_name="Czech Film Incentive — Animation/Digital",
     confidence_tier="PARSED", incentive_type="cash_rebate",
     is_refundable=True, is_transferable=False, min_spend_usd=None,
-    annual_cap_usd=None, requires_cultural_test=False,
+    annual_cap_usd=None, requires_cultural_test=True,
     production_types=("animation",),
     citation="rodriqueslaw.com: 'A 35% production incentive rate is also "
               "being introduced for animation and digital productions "

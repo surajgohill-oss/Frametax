@@ -66,8 +66,16 @@ class TestVerificationLifecycle:
 
     def test_known_secondary_profiles_are_not_claimed_as_primary(self):
         """Spot-check the profiles explicitly marked SECONDARY in their own
-        evidence notes because the administrator's guidance was not retrieved."""
-        for slug in ("dk_production_rebate", "se_production_rebate",
+        evidence notes because the administrator's guidance was not retrieved.
+
+        dk_production_rebate was upgraded to PRIMARY_VERIFIED during the
+        Stage B verification sprint (2026-07-26, direct fetch of
+        slks.dk) and removed from this list; ch_pics_national_rebate
+        substituted in as a still-genuinely-SECONDARY profile (three
+        direct primary-source fetch attempts this same session all
+        returned 404 or landed on generic pages -- see its evidence
+        notes)."""
+        for slug in ("ch_pics_national_rebate", "se_production_rebate",
                      "sg_made_with_singapore_rebate", "ae_dxb_dpip"):
             assert verification_state(slug) is VerificationState.SECONDARY_VERIFIED, slug
 

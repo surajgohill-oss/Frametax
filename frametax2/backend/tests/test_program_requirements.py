@@ -86,7 +86,11 @@ class TestKnownProfiles:
     def test_belgium_confirmed_no_minimum_spend(self):
         p = get_program_requirements("be_tax_shelter")
         assert p.min_total_budget_usd is None
-        assert p.evidence.source_type == SourceType.SECONDARY  # scopeinvest.be, not a statute text
+        # Upgraded to PRIMARY during the Stage B verification sprint (2026-07-26):
+        # direct fetch of finance.belgium.be (FPS Finance's own page) confirmed the
+        # mechanism and added the Article 194ter legal basis. Was scopeinvest.be
+        # (SECONDARY, an intermediary, not a statute text) before this upgrade.
+        assert p.evidence.source_type == SourceType.PRIMARY
 
     def test_spain_min_spend_matches_doctrine_threshold(self):
         from app.data.program_rate_rules import get_rate_rules
