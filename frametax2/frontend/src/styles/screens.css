@@ -140,6 +140,7 @@
   text-align: left;
 }
 .strip-cell:hover { border-color: var(--hairline-strong); box-shadow: var(--shadow-sm); }
+.strip-cell.active { border-color: var(--accent, var(--hairline-strong)); box-shadow: var(--shadow-sm); }
 .strip-name { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; color: var(--text-primary); }
 .strip-type { font-size: 10.5px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
 .strip-npc { margin-top: auto; font-size: 14px; font-weight: 600; color: var(--text-primary); }
@@ -192,6 +193,48 @@
   color: var(--text-secondary);
 }
 .brail-total-value { font-size: 17px; font-weight: 600; color: var(--text-primary); }
+
+/* Collapsed presentation: Total Budget / Credit / NPC. */
+.brail-headline {
+  display: flex;
+  gap: 10px;
+  padding: 2px 0 12px;
+  margin-bottom: 4px;
+  border-bottom: 0.5px solid var(--hairline);
+}
+.brail-headline-cell { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.brail-headline-k { font-size: 10.5px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.02em; }
+.brail-headline-v { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+
+/* Jurisdiction Allocation -> Included QPE -> Excluded -> Credit -> NPC trace. */
+.brail-line-wrap { display: flex; flex-direction: column; }
+.brail-trace { padding: 4px 4px 8px 15px; }
+.brail-trace-kv { display: flex; flex-direction: column; gap: 3px; }
+.brail-trace-kv > div { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; }
+.brail-trace-kv dt { color: var(--text-tertiary); }
+.brail-trace-kv dd { color: var(--text-secondary); }
+
+/* Original -> Adjustment -> Current preview (no persistence yet). */
+.brail-adj-row {
+  display: grid;
+  grid-template-columns: 1fr 70px 60px 70px;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 4px;
+  font-size: 11px;
+}
+.brail-adj-name { color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.brail-adj-v { color: var(--text-tertiary); text-align: right; }
+.brail-adj-input {
+  width: 100%;
+  background: var(--surface-2);
+  border: 0.5px solid var(--hairline);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 11px;
+  padding: 2px 5px;
+  text-align: right;
+}
 
 /* Controlled responsive fallback: below the width where the three
    column minimums (300 + 500 + 285 + gaps) plus the 232px sidebar can
@@ -1053,6 +1096,7 @@
 .sc-table { width: 100%; border-collapse: collapse; min-width: 520px; }
 .sc-table th { text-align: right; padding: 14px 18px; vertical-align: bottom; border-bottom: 1.5px solid var(--text-primary); cursor: pointer; }
 .sc-table th:first-child { border-bottom: none; }
+.sc-table th.leading { border-bottom-color: var(--accent, #c9a15e); }
 .sc-table th .nm { display: block; font-size: 16px; font-style: italic; color: var(--text-primary); }
 .sc-table th .sub { display: block; font-size: 10.5px; color: var(--text-tertiary); margin-top: 3px; font-weight: 400; }
 .sc-table td { padding: 11px 18px; text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 13.5px; color: var(--text-primary); border-bottom: 0.5px solid var(--hairline); }

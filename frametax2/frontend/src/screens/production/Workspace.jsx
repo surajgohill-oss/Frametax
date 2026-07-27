@@ -6,7 +6,7 @@ import { Loading, ErrorBox } from "../../components/Async";
 import { Money, scenarioDisplay, confidenceStatusLabel, confidenceStatusTone } from "../../lib/format";
 import { useAppState } from "../../state/AppState";
 import Globe3D from "../../components/Globe3D";
-import { buildGlobeData, structureTier } from "../../lib/globeData";
+import { buildGlobeData, structureTier, activeStructure } from "../../lib/globeData";
 import QuestionStack from "../../components/QuestionStack";
 import RecommendationsList from "../../components/RecommendationsList";
 import EconomicsTrace from "../../components/EconomicsTrace";
@@ -224,10 +224,14 @@ export default function Workspace() {
   const [qOpen, setQOpen] = useState(navTab === "inputs" || navTab === "recommendations");
   const [qTab, setQTab] = useState(navTab === "inputs" || navTab === "recommendations" ? navTab : "questions");
   const [activeGreyArea, setActiveGreyArea] = useState(null);
-  const [leadingOverride, setLeadingOverride] = useState(null);
   const [sortByMoney, setSortByMoney] = useState(true); // artifact "by $ ▾"
   const [swapId, setSwapId] = useState("");
-  const { openInspector, inspector, closeInspector, setDocked } = useAppState();
+  const [globeMode, setGlobeMode] = useState("jurisdictions"); // "jurisdictions" | "optimizer"
+  const {
+    openInspector, inspector, closeInspector, setDocked,
+    leadingStructureId, setLeadingStructureId,
+    selectedJurisdiction, setSelectedJurisdiction,
+  } = useAppState();
 
   // Dock the Inspector into the Workspace right column (frozen-artifact
   // interaction) for as long as this screen is mounted; the app-level
@@ -250,8 +254,8 @@ export default function Workspace() {
     return new Map(allocated.ranking.map((r) => [r.structure_id, r]));
   }, [allocated]);
   const { points, arcs, structuresByCode } = useMemo(
-    () => buildGlobeData(allocated, rankById),
-    [allocated, rankById],
+    () => buildGlobeData(allocated, rankById, { mode: globeMode, leadingStructureId, selectedJurisdiction }),
+    [allocated, rankById, globeMode, leadingStructureId, selectedJurisdiction],
   );
 
   if (loading) return <div className="screen"><Loading /></div>;
@@ -260,9 +264,8 @@ export default function Workspace() {
   const { production, pkg, recommendations, legal } = data;
   const openGrey = (legal.grey_areas_current || []).filter((g) => g.status === "open");
   const openCount = (pkg.missing_inputs?.length || 0) + openGrey.length;
-  const best = allocated.ranking.find((r) => r.rank === 1);
-  const leadingId = leadingOverride ?? best?.structure_id ?? null;
-  const leadingStructure = allocated.structures.find((s) => s.structure_id === leadingId);
+  const leadingStructure = activeStructure(allocated, leadingStructureId);
+  const leadingId = leadingStructure?.structure_id ?? null;
   const { overflow, cols } = visibleStructures(allocated.structures, rankById, swapId);
 
   // Collapsed-rail status dots — hot for any money-bearing / blocking item.
@@ -273,6 +276,7 @@ export default function Workspace() {
 
   const contingencyByAccount = allocated?.contingency || {};
   function handleGlobeClick(pt) {
+    setSelectedJurisdiction(pt.id);
     const s = (structuresByCode.get(pt.id) || [])[0];
     if (!s) return;
     const seg = s.segments.find((sg) => sg.jurisdiction_code === pt.id);
@@ -360,6 +364,12 @@ export default function Workspace() {
                 </button>
               ))}
             </div>
+            {(mode === "map" || mode === "split") && (
+              <div className="wsx-viewtabs" title="Jurisdictions: every participating jurisdiction, colored by qualification. Optimizer: only the leading structure's own routing chain.">
+                <button className={globeMode === "jurisdictions" ? "active" : ""} onClick={() => setGlobeMode("jurisdictions")}>Jurisdictions</button>
+                <button className={globeMode === "optimizer" ? "active" : ""} onClick={() => setGlobeMode("optimizer")}>Optimizer Overlay</button>
+              </div>
+            )}
             {mode !== "map" && overflow.length > 0 && (
               <div className="wsx-scenario-select">
                 <label htmlFor="wsx-swap">Additional scenario</label>
@@ -389,7 +399,7 @@ export default function Workspace() {
                   grossBudget={production.gross_budget_usd}
                   budgetReconciliation={production.budget_reconciliation}
                   isLeading={s.structure_id === leadingId}
-                  onSetLeading={setLeadingOverride}
+                  onSetLeading={setLeadingStructureId}
                   onInspect={handleSelectStructure}
                   onCompare={() => { setQOpen(true); setQTab("recommendations"); }}
                   onSelectSegment={handleSelectSegment}
@@ -421,7 +431,7 @@ export default function Workspace() {
                       grossBudget={production.gross_budget_usd}
                       budgetReconciliation={production.budget_reconciliation}
                       isLeading={s.structure_id === leadingId}
-                      onSetLeading={setLeadingOverride}
+                      onSetLeading={setLeadingStructureId}
                       onInspect={handleSelectStructure}
                       onCompare={() => { setQOpen(true); setQTab("recommendations"); }}
                       onSelectSegment={handleSelectSegment}

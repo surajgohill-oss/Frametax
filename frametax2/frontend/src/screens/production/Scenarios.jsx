@@ -20,7 +20,7 @@ const MAX_VISIBLE = 6;
 // expanding the table.
 export default function Scenarios() {
   const { data, error, loading } = useCineGlobe();
-  const { openInspector } = useAppState();
+  const { openInspector, leadingStructureId, setLeadingStructureId } = useAppState();
   const location = useLocation();
   const openedFromNav = useRef(false);
   const [swapId, setSwapId] = useState("");
@@ -71,6 +71,12 @@ export default function Scenarios() {
     else if (s.segments?.[0]) openInspector("allocation-segment", { ...s.segments[0], structureLabel: s.label });
   }
 
+  // Scenario Manager selection — synchronizes Globe / Budget Rail /
+  // Overview immediately (shared AppState.leadingStructureId), no refresh.
+  function selectAsLeading(s) {
+    if (s.is_fully_priced) setLeadingStructureId(s.structure_id);
+  }
+
   const rows = [
     ["Gross budget", () => gross, true],
     ["Qualified spend", (s) => (s.is_fully_priced ? qpe(s) : null), false],
@@ -115,10 +121,18 @@ export default function Scenarios() {
               {cols.map((s) => {
                 const rank = rankById.get(s.structure_id);
                 const { title, subtitle } = scenarioDisplay(s);
+                const isLeading = s.structure_id === leadingStructureId
+                  || (!leadingStructureId && rank?.rank === 1);
                 return (
-                  <th key={s.structure_id} onClick={() => inspect(s)}>
+                  <th
+                    key={s.structure_id}
+                    className={isLeading ? "leading" : ""}
+                    onClick={() => inspect(s)}
+                    onDoubleClick={() => selectAsLeading(s)}
+                    title="Click to inspect · double-click to set as leading structure"
+                  >
                     <span className="nm serif">{title}</span>
-                    <span className="sub">{subtitle}{rank?.rank ? ` · rank ${rank.rank}` : ""}</span>
+                    <span className="sub">{subtitle}{rank?.rank ? ` · rank ${rank.rank}` : ""}{isLeading ? " · leading" : ""}</span>
                   </th>
                 );
               })}

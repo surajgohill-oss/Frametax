@@ -32,6 +32,22 @@ const TIER_HEX = {
   charcoal: "#4c483f",
 };
 
+// Low-res (110m) Natural Earth country boundaries, bundled with three-globe
+// itself (node_modules/three-globe/example/country-polygons) and copied
+// verbatim into /public/geo — a recognizable-but-schematic landmass/border
+// layer, not satellite imagery or terrain. Fetched once and cached across
+// every Globe3D mount (sidebar mini-globe, Overview, Workspace, ProjectGlobe)
+// so navigating between views never re-fetches or re-parses the ~480KB file.
+let worldGeoPromise = null;
+function loadWorldGeo() {
+  if (!worldGeoPromise) {
+    worldGeoPromise = fetch("/geo/world-110m.geojson")
+      .then((r) => (r.ok ? r.json() : { features: [] }))
+      .catch(() => ({ features: [] }));
+  }
+  return worldGeoPromise;
+}
+
 /**
  * A reusable "Luxury Glass Globe" instance — graphite/obsidian material
  * sphere (no satellite texture, no topographic realism, per spec), neutral
@@ -122,15 +138,23 @@ export default function Globe3D({ points = [], arcs = [], onPointClick, onPointH
       .showAtmosphere(true)
       .atmosphereColor("#5b6773")
       .atmosphereAltitude(0.11)
+      // Recognizable continents/country boundaries — a flat, un-textured
+      // polygon layer (no satellite/terrain imagery), matte and slightly
+      // lighter than the globe body so landmasses read at a glance while
+      // staying within the graphite/obsidian material direction.
+      .polygonCapColor(() => "#202226")
+      .polygonSideColor(() => "rgba(0,0,0,0)")
+      .polygonStrokeColor(() => "#3a3d43")
+      .polygonAltitude(0.0015)
       .pointsData(points)
       .pointLat("lat")
       .pointLng("lng")
-      .pointColor((d) => TIER_HEX[d.tier] || TIER_HEX.charcoal)
+      .pointColor((d) => d.color || TIER_HEX[d.tier] || TIER_HEX.charcoal)
       .pointAltitude(0.015)
       .pointRadius((d) => (d.tier === "gold" ? 0.55 : 0.4))
       .pointResolution(24)
       .arcsData(arcs)
-      .arcColor((d) => TIER_HEX[d.tier] || TIER_HEX.silver)
+      .arcColor((d) => d.color || TIER_HEX[d.tier] || TIER_HEX.silver)
       .arcAltitude(0.25)
       .arcStroke(0.35)
       .arcDashLength(0.6)
@@ -175,6 +199,15 @@ export default function Globe3D({ points = [], arcs = [], onPointClick, onPointH
 
     scene.add(globe);
     globeRef.current = globe;
+
+    // Country polygons load async (cached after the first Globe3D mount
+    // anywhere in the app) and are applied only if this instance is still
+    // mounted — guards against setting data on a disposed globe during
+    // fast route/tab switching.
+    let cancelled = false;
+    loadWorldGeo().then((geo) => {
+      if (!cancelled && globeRef.current === globe) globe.polygonsData(geo.features || []);
+    });
 
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -221,6 +254,7 @@ export default function Globe3D({ points = [], arcs = [], onPointClick, onPointH
     stateRef.current = { renderer, controls, frameId };
 
     return () => {
+      cancelled = true;
       cancelAnimationFrame(frameId);
       resizeObserver.disconnect();
       controls.dispose();

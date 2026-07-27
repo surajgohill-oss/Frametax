@@ -1,11 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { useAppState } from "../../state/AppState";
 import { Loading, ErrorBox } from "../../components/Async";
 import { Money } from "../../lib/format";
 import Globe3D from "../../components/Globe3D";
-import { buildGlobeData } from "../../lib/globeData";
+import { buildGlobeData, activeStructure } from "../../lib/globeData";
 import ProductionDetails from "../../components/ProductionDetails";
 import BudgetRail from "../../components/BudgetRail";
 import FXStrip from "../../components/FXStrip";
@@ -38,20 +38,28 @@ const jurName = (code) => JUR_NAMES[code] || code || "—";
 export default function Overview() {
   const { data, error, loading, refetch } = useCineGlobe();
   const navigate = useNavigate();
-  const { openInspector } = useAppState();
+  const {
+    openInspector, leadingStructureId, setLeadingStructureId,
+    selectedJurisdiction, setSelectedJurisdiction,
+  } = useAppState();
+  const [globeMode, setGlobeMode] = useState("jurisdictions");
 
   const allocated = data?.structures?.allocated_structures;
 
   // Globe data — identical derivation to ProjectGlobe.jsx and Workspace's
   // Map/Split modes. One globe engine for the whole app, never forked.
+  // Same shared leadingStructureId/selectedJurisdiction as the Workspace —
+  // choosing a leading structure or jurisdiction on either screen updates
+  // both without a refresh.
   const rankById = useMemo(() => {
     if (!allocated) return new Map();
     return new Map(allocated.ranking.map((r) => [r.structure_id, r]));
   }, [allocated]);
   const { points, arcs, structuresByCode } = useMemo(
-    () => buildGlobeData(allocated, rankById),
-    [allocated, rankById],
+    () => buildGlobeData(allocated, rankById, { mode: globeMode, leadingStructureId, selectedJurisdiction }),
+    [allocated, rankById, globeMode, leadingStructureId, selectedJurisdiction],
   );
+  const structure = allocated ? activeStructure(allocated, leadingStructureId) : null;
 
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
@@ -69,6 +77,7 @@ export default function Overview() {
     .slice(0, 4);
 
   function handleGlobeClick(pt) {
+    setSelectedJurisdiction(pt.id);
     const s = (structuresByCode.get(pt.id) || [])[0];
     if (!s) return;
     const seg = s.segments.find((sg) => sg.jurisdiction_code === pt.id);
@@ -98,7 +107,14 @@ export default function Overview() {
         {/* ── CENTER — Project Globe + jurisdiction snapshot strip ──────── */}
         <div className="ovxg-col">
           <section className="ovx-sec ovxg-globe-sec">
-            <div className="oh"><b>Project Globe</b><button className="act" onClick={() => navigate("/production/globe")}>Full screen →</button></div>
+            <div className="oh">
+              <b>Project Globe</b>
+              <div className="wsx-viewtabs" style={{ marginLeft: 10 }}>
+                <button className={globeMode === "jurisdictions" ? "active" : ""} onClick={() => setGlobeMode("jurisdictions")}>Jurisdictions</button>
+                <button className={globeMode === "optimizer" ? "active" : ""} onClick={() => setGlobeMode("optimizer")}>Optimizer Overlay</button>
+              </div>
+              <button className="act" onClick={() => navigate("/production/globe")}>Full screen →</button>
+            </div>
             <div className="ovxg-globe-wrap dark-panel">
               <Globe3D points={points} arcs={arcs} height={420} onPointClick={handleGlobeClick} />
             </div>
@@ -107,9 +123,16 @@ export default function Overview() {
           <div className="scenario-strip">
             {snapshot.map((s) => (
               <button
-                className="strip-cell"
+                className={`strip-cell${s.structure_id === structure?.structure_id ? " active" : ""}`}
                 key={s.structure_id}
-                onClick={() => navigate("/production/scenarios", { state: { structureId: s.structure_id } })}
+                onClick={() => {
+                  // Selecting a jurisdiction snapshot IS choosing the leading
+                  // structure — synchronizes Globe, Budget Rail, and Inspector
+                  // immediately, then still offers the full comparison view.
+                  setLeadingStructureId(s.structure_id);
+                  setSelectedJurisdiction(s.primary_jurisdiction);
+                }}
+                onDoubleClick={() => navigate("/production/scenarios", { state: { structureId: s.structure_id } })}
               >
                 <span className="strip-name">{jurName(s.primary_jurisdiction)}</span>
                 <span className="strip-type">
@@ -128,7 +151,19 @@ export default function Overview() {
           <BudgetRail
             production={production}
             register={pkg.register}
-            onSelectAccount={(line) => openInspector("account", line)}
+            structure={structure}
+            economics={economics}
+            onSelectAccount={(line, alloc) => openInspector("account", {
+              ...line,
+              crossRef: alloc ? [{
+                structureId: structure.structure_id,
+                structureLabel: structure.label,
+                jurisdictionCode: alloc.jurisdictionCode,
+                claimsIncentive: alloc.claimsIncentive,
+                qpeUsd: alloc.included ? line.amount : 0,
+                incentiveFloorUsd: alloc.creditContributionUsd,
+              }] : [],
+            })}
           />
         </div>
 

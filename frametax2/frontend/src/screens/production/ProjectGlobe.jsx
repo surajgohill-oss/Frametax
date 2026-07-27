@@ -12,7 +12,7 @@ import { Money, humanizeToken } from "../../lib/format";
 // jurisdiction segment / structure recommendation in the Inspector.
 export default function ProjectGlobe() {
   const { data, error, loading } = useCineGlobe();
-  const { openInspector } = useAppState();
+  const { openInspector, leadingStructureId, selectedJurisdiction, setSelectedJurisdiction } = useAppState();
 
   const allocated = data?.structures?.allocated_structures;
   const rankById = useMemo(() => {
@@ -20,14 +20,15 @@ export default function ProjectGlobe() {
     return new Map(allocated.ranking.map((r) => [r.structure_id, r]));
   }, [allocated]);
   const { points, arcs, structuresByCode } = useMemo(
-    () => buildGlobeData(allocated, rankById),
-    [allocated, rankById],
+    () => buildGlobeData(allocated, rankById, { leadingStructureId, selectedJurisdiction }),
+    [allocated, rankById, leadingStructureId, selectedJurisdiction],
   );
 
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
 
   function handleClick(pt) {
+    setSelectedJurisdiction(pt.id);
     const s = (structuresByCode.get(pt.id) || [])[0];
     if (!s) return;
     const seg = s.segments.find((sg) => sg.jurisdiction_code === pt.id);
