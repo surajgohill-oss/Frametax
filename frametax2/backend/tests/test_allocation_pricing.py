@@ -104,21 +104,33 @@ def test_full_relocation_matches_alternative_jurisdiction_register():
 # ── 3/6: component routing changes segment QPE and total NPC ────────────────
 
 def test_component_route_changes_segment_qpe_and_npc():
+    # Malta's real, confirmed minimum spend is EUR 100,000 (~$113,000,
+    # corrected 2026-07-26 from a prior $57,026 figure) -- the routed
+    # component set here ($61,568) genuinely falls below it, so this
+    # structure is correctly NOT fully priced (mirrors the
+    # below-minimum-spend GR test two below). What this test actually
+    # validates -- QPE and NPC moving between segments when components
+    # are routed -- still holds regardless of final pricing eligibility,
+    # since account allocation is computed independently of whether the
+    # destination's incentive is ultimately awarded.
     baseline = _price(BASELINE)
     routed = _price(_spec(
         "P-COMP-MT", "component_relocation", ("MU", "MT"),
         {"MU": "mu_edb_incentive", "MT": "mt_mfc_rebate"},
         component_routes={c: "MT" for c in MOVABLE_COMPONENTS},
     ))
-    assert routed.is_fully_priced
+    assert not routed.is_fully_priced
+    assert any("minimum-spend" in b.lower() for b in routed.blockers)
     mu_base = next(s for s in baseline.segments if s.jurisdiction_code == "MU")
     mu_routed = next(s for s in routed.segments if s.jurisdiction_code == "MU")
     mt = next(s for s in routed.segments if s.jurisdiction_code == "MT")
     # VFX (6100, $52,500) left MU; editorial ($9,068) moved from US to MT
     assert mu_routed.qpe_usd < mu_base.qpe_usd
     assert mt.qpe_usd > 0
-    assert mt.executable
-    # both segment QPE and total NPC moved (validation point 6)
+    assert not mt.executable  # below MT's real minimum spend -- honestly excluded, not guessed
+    # both segment QPE and total NPC moved (validation point 6) even
+    # though the structure isn't fully priced -- QPE allocation and
+    # pricing eligibility are independent concerns.
     assert routed.npc_verified_usd != baseline.npc_verified_usd
     # no account is priced twice: segment account sets are disjoint
     seg_sets = [set(s.account_codes) for s in routed.segments]

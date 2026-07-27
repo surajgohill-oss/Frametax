@@ -467,7 +467,14 @@ class TestExecutableJurisdictionKnowledge:
         by_code = {e["jurisdiction_code"]: e for e in out["executable"]}
         # Real, distinct QPE basis (same real budget for all — same QPE);
         # distinct rates/NPCs per jurisdiction's own real statutory rate.
-        assert by_code["MT"]["rate_floor"] == 0.25
+        # Corrected 2026-07-26 (account-handoff session): the real MFC
+        # Guidelines general-category floor is 30% (not 25%, which was
+        # actually the Animation/VFX-specific base rate); ceiling remains
+        # 40% for the general tiers (the confirmed 50% "Difficult
+        # Audiovisual Work" ceiling is deliberately not priced -- see
+        # program_rate_rules.py's note on why it can't be safely modeled
+        # as a RateRule tier).
+        assert by_code["MT"]["rate_floor"] == 0.30
         assert by_code["MT"]["rate_ceiling"] == 0.40
         assert by_code["IE"]["rate_floor"] == by_code["IE"]["rate_ceiling"] == 0.32
         assert by_code["GR"]["rate_floor"] == by_code["GR"]["rate_ceiling"] == 0.40
@@ -523,7 +530,12 @@ class TestExecutableJurisdictionKnowledge:
     def test_rate_rules_reflect_real_sourced_profile_data(self):
         from app.data.program_rate_rules import resolve_program_rate
         mt = resolve_program_rate("mt_mfc_rebate", production_type="feature_film", qpe_usd=4_355_327.0)
-        assert mt.floor_rate == 0.25
+        # Corrected 2026-07-26: 0.25 was actually the Animation/VFX-specific
+        # base rate, not the general feature-film floor (30%). ceiling
+        # stays 40% -- the confirmed 50% "Difficult Audiovisual Work" tier
+        # is deliberately not priced (requires a budget CEILING the
+        # RateRule schema can't express; see program_rate_rules.py).
+        assert mt.floor_rate == 0.30
         assert mt.modeled_rate == 0.40
         assert mt.is_band_ceiling is True
         ie = resolve_program_rate("ie_section_481", production_type="feature_film", qpe_usd=4_355_327.0)
@@ -535,7 +547,10 @@ class TestExecutableJurisdictionKnowledge:
         converted to USD via the real sourced FX rate, not a rough guess."""
         from app.data.program_rate_rules import get_rate_rules
         mt_rule = get_rate_rules("mt_mfc_rebate")[0]
-        assert mt_rule.min_qpe_usd == pytest.approx(57_026.20, abs=1.0)
+        # Corrected 2026-07-26: confirmed general-case min spend is EUR
+        # 100,000 (was incorrectly EUR 50,000 -- that figure applies only
+        # to the separate, unpriced "Difficult Audiovisual Work" category).
+        assert mt_rule.min_qpe_usd == pytest.approx(113_000.0, abs=1.0)
 
     def test_alternative_jurisdiction_carries_travel_and_fx_deltas(self):
         s = get_state()

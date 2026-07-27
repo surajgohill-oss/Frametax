@@ -1063,82 +1063,150 @@ register(ProgramRequirementsProfile(
 
 register(ProgramRequirementsProfile(
     program_slug="mt_mfc_rebate", jurisdiction_code="MT",
-    min_local_spend_usd=113_000.0,     # EUR 100,000 -- confirmed this session across multiple converging sources, supersedes the prior thin-migration EUR 50,000 figure (see evidence)
-    min_total_budget_usd=None,         # EUR 200,000 overall budget floor -- recorded in additional_facts, distinct concept from min_local_spend_usd
-    cultural_test_required=True,       # confirmed this session
-    preapproval_mandatory=True,        # application dossier required before principal photography
-    expenditure_before_approval_qualifies=False,
-    audit_required=True,
-    local_entity_required=True,        # applicant must be a "qualifying company," local or foreign, specifically established to produce audiovisual content
-    refundable=True,
-    transferable=False,
+    min_local_spend_usd=113_000.0,     # EUR 100,000 general (EUR 50,000 for "Difficult Audiovisual Work" -- see additional_facts) -- confirmed via direct PDF text extraction of the official MFC Guidelines
+    min_total_budget_usd=226_000.0,    # EUR 200,000 overall budget floor (EUR 100,000 for Difficult Audiovisual Work) -- confirmed
+    cultural_test_required=True,       # must obtain a minimum of 40 points in aggregate in the Cultural Test (separate test for Animation/VFX)
+    cultural_test_points=40,
+    cultural_test_threshold=40,
+    preapproval_mandatory=True,        # provisional approval required before principal photography/Animation-VFX commences; applications after commencement are not considered
+    expenditure_before_approval_qualifies=False,  # "expenditure ... incurred before the date of the application will be considered as ineligible"
+    audit_required=True,               # full audit of expenses required at final submission
+    cpa_or_approved_auditor_required=True,  # top sheet must be signed by the applicant's certified accountant; independent auditors verify
+    local_entity_required=True,        # must be a "Qualifying Company" -- foreign applicants must be an SPV or a company carrying on/intending to carry on business in Malta; local applicants must be MFC-registered with a Maltese/EU director or major shareholder
+    per_project_cap_usd=None,          # no per-project cap found in the primary Guidelines document
+    refundable=True,                   # cash rebate, exempt for Income Tax Act purposes
+    transferable=False,                # the Guidelines describe direct payment to the qualifying company only; no assignment/transfer mechanism is mentioned anywhere in the document
     application_deadline=TimingFact(
-        value="Complete application dossier must be submitted at least 30 working days before "
-              "principal photography begins; the Film Commissioner has 30 working days to issue "
-              "a provisional certificate",
-        basis=TimingBasis.OFFICIAL_TARGET,
+        value="Application for provisional approval (with Malta budget projection, completed "
+              "Cultural Test, and supporting documents) must be presented at least 30 working "
+              "days before planned commencement of principal photography or Animation/VFX work "
+              "in Malta (late applications considered only at the Commissioner's discretion if "
+              "justifiable). The Commissioner grants a provisional certificate no later than 20 "
+              "working days after receipt of a complete application. Applications submitted "
+              "AFTER commencement of principal photography or Animation/VFX work are not "
+              "considered at all.",
+        basis=TimingBasis.STATUTORY_DEADLINE,
+    ),
+    audit_or_final_certification_deadline=TimingFact(
+        value="On completion, the qualifying company submits a full audit of expenses; the "
+              "audit/administrative fee is borne by the applicant, capped at 0.5% of eligible "
+              "spend (minimum EUR 5,000, maximum EUR 20,000) and deducted from the final rebate. "
+              "The Commission withholds 2% of the cash rebate until all provisional/final "
+              "certificate obligations are fulfilled.",
+        basis=TimingBasis.STATUTORY_DEADLINE,
     ),
     payment_timing=TimingFact(
-        value="A 10% advance may be claimed once filming begins, subject to well-documented and "
-              "audited expenses; the balance is paid no later than 5 months from receipt of the "
-              "final submission",
-        basis=TimingBasis.OFFICIAL_TARGET,
+        value="A 10% advance grant may be claimed once shooting or Animation/VFX work has "
+              "commenced, against a top sheet of accumulated expenses verifiable by contracts "
+              "and payment transactions. Productions with a lengthy Malta duration may instead "
+              "request quarterly tranche payments (discretionary, requested at application "
+              "stage). The balance/full cash rebate is forwarded to the qualifying company no "
+              "later than 5 months from receipt of the final submission, subject to orderly "
+              "documentation and auditor satisfaction.",
+        basis=TimingBasis.STATUTORY_DEADLINE,
     ),
-    sunset_date="2028-10-29",
+    sunset_date=None,   # no expiration/sunset date found anywhere in the primary Guidelines document itself (the scheme runs under the EU General Block Exemption Regulation, whose own validity period is a separate EU-law fact -- see additional_facts for a related, unconfirmed secondary-sourced figure)
     evidence=EvidenceRecord(
-        source_title="Malta Film/TV Financial Incentives (Screen Malta / Malta Film Commission) — reconciled from multiple independently-converging sources",
-        source_url="https://screenmalta.com/wp-content/uploads/2024/07/Screen-Malta-Financial-Incentives-FILM-TV-GUIDELINES-UPDATES.pdf",
-        issuing_authority="Malta Film Commission (MFC), via its international arm Screen Malta",
-        source_type=SourceType.SECONDARY, status=RecordStatus.CURRENT, access_date="2026-07-26",
-        notes="REPOSITORY RECONCILIATION FIRST: this profile was a thin Pass A programmatic "
-              "migration (source_url=None, only min_local_spend_usd=EUR 50,000 from an internal "
-              "rate-rule condition). REPEATED DIRECT PRIMARY-SOURCE ATTEMPTS THIS SESSION, ALL "
-              "FAILED: screenmalta.com's own official June-2024 Guidelines PDF (403 Forbidden); "
-              "cineuropa.org's dossier article on the 'revamped' scheme (403 Forbidden); an older "
-              "(2019) official guidelines PDF hosted by Stargate Studios Malta was fetched as raw "
-              "binary but was NOT text-extractable by the tool used -- any apparent content from "
-              "that attempt is discarded rather than trusted, since a garbled/placeholder response "
-              "is not evidence. NOT upgraded to PRIMARY_VERIFIED as a result -- consistent with "
-              "this repository's own established standard (see the Austria/FISA+ profile, "
-              "at_fisa_plus, for the same treatment of strong-but-unfetchable-official corroboration). "
-              "WHAT WAS RECONCILED: FIVE independently-converging sources (Zerafa Advocates -- a "
-              "Maltese law firm's detailed legal-compliance analysis, the single richest and most "
-              "technically precise of the five; Saturation.io; PCP Malta; Atlas Film Fixers; "
-              "Ecovis Malta) all agree on the SAME structure, which supersedes and materially "
-              "corrects the thin migration's single EUR 50,000 figure: minimum spend EUR 100,000 in "
-              "Malta with an overall production budget exceeding EUR 200,000 (two distinct "
-              "thresholds, both real); base rate 35% of Qualifying Maltese Expenditure, rising to "
-              "up to 40% for productions with QME under EUR 150,000 (a MICRO-BUDGET bonus, not a "
-              "general ceiling) and separately for productions using Malta Film Studios or clearly "
-              "maximizing local resources; a cultural test tied to 'Maltese creative and cultural "
-              "identity' (specific points structure not found in any source reached); NO annual cap "
-              "and NO per-production cap (some major productions reported receiving in excess of "
-              "EUR 5-6 million); a qualifying-company applicant gate (local or foreign, specifically "
-              "established to produce audiovisual content); a 30-working-day pre-photography "
-              "application window with a 30-working-day Commissioner review; a 10% advance "
-              "mechanism once filming begins (documented/audited expenses required), balance paid "
-              "within 5 months of the final submission; MFC audit rights for up to 10 years "
-              "post-completion, with recovery-plus-interest for non-compliance and full reclaim for "
-              "fraud; a workforce condition requiring foreign productions to engage local "
-              "'Opportunity for All' service companies and employ a minimum of 5 trainees through "
-              "that program; and a scheme sunset of 2028-10-29. RECENT CHANGE (reported, not "
-              "independently confirmed on an official page): the scheme was updated to open "
-              "below-the-line labour costs to all international crews, removing a prior EU/EEA/UK "
-              "nationality restriction -- recorded here as reported, with that caveat.",
+        source_title="Financial Incentives for the Audiovisual Industry: CASH REBATE GUIDELINES (Official Document, January 2019)",
+        source_url="https://stargatestudios.com.mt/wp-content/uploads/2019/06/Financial-Incentives-for-Audiovisual-Industry-Guidelines-Official-Do....pdf",
+        issuing_authority="Malta Film Commission (MFC), a government body established by Chapter 478 (Act No. 7 of 2005) of the Laws of Malta, under the Ministry for Tourism",
+        source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, access_date="2026-07-26",
+        notes="DOCUMENT RETRIEVAL ESCALATION APPLIED (per the permanent engineering rule adopted "
+              "this session): a prior session's WebFetch of this exact URL had downloaded the real "
+              "PDF (1,147,349 bytes, 28 pages) but the tool's own PDF-to-text handling failed and "
+              "produced HALLUCINATED PLACEHOLDER CONTENT ('typical Malta audiovisual incentive "
+              "structures... 4-6% rebate rates') that was correctly discarded at the time as "
+              "untrustworthy. Per the new doctrine, that failure was classified precisely as a "
+              "PARSER FAILURE, not a retrieval failure or a genuine absence of authoritative "
+              "source -- the file itself was real and already sitting on disk. This session located "
+              "the saved PDF and extracted its actual text directly using pypdf (already an "
+              "existing project dependency, pyproject.toml), successfully recovering all 28 pages "
+              "of real, legally-precise primary content. THIS DECISIVELY SUPERSEDES BOTH (a) this "
+              "repository's own pre-existing rate rule (25% base + three stacked uplifts of "
+              "+3%/+3%/+7%, an undated internal citation with uplift criteria that do not match "
+              "anything in the real document) and (b) this session's own prior batch-2 secondary-"
+              "sourced enrichment (35% base rising to 40% for QME under EUR 150,000 -- also not "
+              "what the real document describes). LEGAL BASIS: Malta Film Commission established "
+              "by Chapter 478 (Act No. 7 of 2005), Laws of Malta; the scheme is EU State Aid under "
+              "Commission Regulation (EU) No 651/2014 (General Block Exemption Regulation, GBER), "
+              "as amended by (EU) 2017/1084, specifically Article 54 (aid schemes for audiovisual "
+              "works). RATE STRUCTURE (CORRECTED): Category A (all qualifying productions except "
+              "Animation/VFX) = 30% base on all eligible expenditure, plus Commissioner-"
+              "discretionary uplifts of up to 5% ('Malta features as Malta or local usage of "
+              "facilities') and up to 5% ('maximisation of local resources') = 40% maximum. "
+              "Category B (Animation/VFX) = 25% base, plus up to 15% Commissioner-discretionary "
+              "(same two criteria combined) = 40% maximum. A SEPARATE 'Difficult Audiovisual Work' "
+              "category (total production budget <= EUR 1,500,000, meeting defined 'difficult' "
+              "criteria AND a 'National Work' status requiring a Malta producer plus a points-based "
+              "'Malta Creative Input' test -- 15/21 points feature film, 8/16 documentary, 15/23 "
+              "animation) qualifies for a HIGHER maximum rebate of 50%, not modeled in the prior "
+              "35%/40% structure at all. QUALIFYING COMPANY GATE (precise, corrected from generic "
+              "'qualifying company' language): a Foreign Qualifying Company must be a special "
+              "purpose vehicle or a company carrying on/intending to carry on a qualifying-"
+              "production trade or business in Malta; a Local Qualifying Company must have "
+              "audiovisual production as its main activity, be MFC-registered, and have at least "
+              "one director or major shareholder who is a Maltese/European citizen; the same "
+              "citizenship condition applies to Animation/VFX studios/facilities. Foreign companies "
+              "not registered in Malta must use a registered Production Service Company as "
+              "Production Coordinator. CONTENT EXCLUSIONS (genuinely new): public/special "
+              "performances staged for filming; sporting events; current-affairs/talk shows; "
+              "hobby/task demonstration programmes; review/magazine/lifestyle programmes; "
+              "advertising; pornographic content; computer games. MIN SPEND CONFIRMED AND REFINED: "
+              "EUR 100,000 Malta spend / EUR 200,000 total budget generally; EUR 50,000 Malta "
+              "spend / EUR 100,000 total budget for Difficult Audiovisual Work -- both figures "
+              "matching this session's earlier secondary-sourced EUR 100,000 finding for the "
+              "general case, now directly confirmed, plus the previously-unknown reduced Difficult-"
+              "Work threshold. TRANSFERABILITY CORRECTED: the Guidelines describe the cash rebate "
+              "as paid directly to the qualifying company -- no assignment or transfer mechanism "
+              "to a third party (e.g. a gap lender) is mentioned anywhere in the 28-page document, "
+              "correcting jurisdiction_comparison.py's prior is_transferable=None to a confirmed "
+              "False. TRAINEE REQUIREMENT (more precise than the 'Opportunity for All' framing "
+              "reported by secondary sources): minimum 5 Maltese/EU-EEA-resident trainees for HOD "
+              "positions plus a further minimum 5 for below-the-line positions, paid not less than "
+              "the national minimum wage. ADVANCE/TRANCHE PAYMENTS CONFIRMED: 10% advance grant "
+              "available once shooting/Animation-VFX commences; quarterly tranche payments "
+              "available (discretionary) for lengthy Malta productions exceeding 6 months. AUDIT "
+              "FEE CAP (genuinely new): review-audit-plus-administrative-fee cost capped at 0.5% of "
+              "eligible spend, minimum EUR 5,000, maximum EUR 20,000, deducted from the final "
+              "rebate; a further 2% is withheld until all certificate obligations are fulfilled. "
+              "SIGNIFICANT-BUDGET-CHANGE RULE (genuinely new): if Malta-spend/eligible-expenditure "
+              "increases by more than 10% over the provisional-certificate estimate, the "
+              "Commissioner must be notified immediately in writing; the Commission may cap the "
+              "final incentive at no more than 10% over the provisional certificate's qualifying "
+              "expenditure. ABOVE-THE-LINE LABOUR CAP (genuinely new): total ATL labour costs "
+              "(directors, producers, casting directors, cast, stunts) capped at EUR 500,000. PER "
+              "DIEM CAP: EUR 100 per person per day. NO SUNSET DATE is stated anywhere in this "
+              "document -- the scheme's duration follows the GBER's own validity period (an EU-law "
+              "fact external to this document); a secondary source (Zerafa Advocates, used in the "
+              "prior batch) separately reported a 2028-10-29 date, NOT independently confirmed here "
+              "and recorded only as a reported, unconfirmed figure rather than asserted. OPEN ITEM, "
+              "NOT ASSERTED: this document is dated January 2019 and explicitly favours EU/EEA "
+              "labour spend; secondary reporting (used in the prior batch) describes a 2024 "
+              "'revamped' scheme opening below-the-line labour costs to ALL international crews, "
+              "removing the EU/EEA/UK restriction visible in this 2019 text. This specific, narrow "
+              "change is plausible and NOT contradicted by anything else in this document (the "
+              "core rate/threshold/process structure found here is a stable, GBER-anchored "
+              "framework unlikely to have been rebuilt from scratch), but it is NOT independently "
+              "confirmed by any document actually retrieved and read in full -- recorded as an open "
+              "item for a future session, rather than silently assumed superseded or silently "
+              "assumed still in force.",
     ),
     additional_facts={
-        "rate_structure": "Base 35% of Qualifying Maltese Expenditure (QME); up to 40% for QME under EUR 150,000 (micro-budget bonus), and separately for productions using Malta Film Studios or clearly maximizing local resources.",
-        "min_total_budget_eur": "Overall production budget must exceed EUR 200,000, in addition to the EUR 100,000 minimum Maltese spend.",
-        "cultural_test": "Tied to contribution to Maltese creative and cultural identity; specific points structure not found in any source reached this session.",
-        "cap_structure": "No annual cap and no per-production cap; some major productions reported receiving in excess of EUR 5,000,000-6,000,000.",
-        "qualifying_company_gate": "Applicant must be a qualifying company, local or foreign, specifically established to produce audiovisual content.",
-        "application_process": "Complete dossier at least 30 working days before principal photography; Film Commissioner has 30 working days to issue a provisional certificate.",
-        "advance_payment": "10% advance available once filming begins (documented/audited expenses required); balance within 5 months of final submission.",
-        "audit_and_compliance": "MFC may audit for up to 10 years post-completion; non-compliant rebates recovered with interest; fraudulent claims fully reclaimed.",
-        "opportunity_for_all_program": "Foreign productions must engage local 'Opportunity for All' service companies and employ a minimum of 5 trainees through the program.",
-        "sunset": "Scheme active until 2028-10-29.",
-        "reported_recent_change": "Reported (not independently confirmed on an official page): below-the-line labour costs opened to all international crews, removing a prior EU/EEA/UK nationality restriction.",
-        "primary_source_attempts_2026_07_26": "screenmalta.com official PDF (403), cineuropa.org dossier (403), stargatestudios.com.mt 2019 PDF (fetched but not text-extractable, content discarded as untrustworthy). None reachable -- a future session should retry with a PDF-capable fetch tool.",
+        "rate_structure": "Category A (all formats except Animation/VFX): 30% base + up to 10% Commissioner-discretionary (5% Malta-as-Malta/local usage + 5% maximisation of local resources) = 40% max. Category B (Animation/VFX): 25% base + up to 15% Commissioner-discretionary (same two criteria combined) = 40% max. 'Difficult Audiovisual Work' (budget <= EUR 1,500,000 + defined difficulty criteria + National Work/Malta Creative Input points test): up to 50% max, a separate higher-ceiling category.",
+        "min_spend_general_eur": "EUR 100,000 Malta spend, EUR 200,000 total budget (general). EUR 50,000 Malta spend, EUR 100,000 total budget (Difficult Audiovisual Work).",
+        "cultural_test": "Minimum 40 points in aggregate (separate test for Animation/VFX works).",
+        "qualifying_company_gate": "Foreign Qualifying Company: SPV or company carrying on/intending to carry on qualifying-production business in Malta. Local Qualifying Company: MFC-registered, audiovisual production as main activity, at least one Maltese/EU director or major shareholder. Same citizenship condition for Animation/VFX studios.",
+        "content_exclusions": "Staged public/special performances; sporting events; current-affairs/talk shows; hobby/task demonstration programmes; review/magazine/lifestyle programmes; advertising; pornographic content; computer games.",
+        "difficult_audiovisual_work_test": "Total budget <= EUR 1,500,000 AND (Maltese-language/limited-distribution OR commercially difficult/experimental OR indigenous-industry-building) AND National Work status (Malta producer + Malta Creative Input points: feature 15/21, documentary 8/16, animation 15/23).",
+        "trainee_requirement": "Minimum 5 Maltese/EU-EEA-resident trainees for HOD positions, plus a further minimum 5 for below-the-line positions, paid not less than national minimum wage.",
+        "advance_and_tranche_payments": "10% advance grant once shooting/Animation-VFX commences. Quarterly tranche payments available (discretionary) for Malta productions exceeding 6 months.",
+        "audit_fee_and_withholding": "Audit/admin fee capped at 0.5% of eligible spend (min EUR 5,000, max EUR 20,000), deducted from the rebate. A further 2% withheld until all certificate obligations are fulfilled.",
+        "significant_budget_change_rule": "If Malta spend/eligible expenditure increases more than 10% over the provisional-certificate estimate, the Commissioner must be notified immediately; final incentive may be capped at no more than 10% over the provisional certificate's qualifying expenditure.",
+        "atl_labour_cap_eur": "Above-the-line labour costs (directors, producers, casting directors, cast, stunts) capped at EUR 500,000.",
+        "per_diem_cap_eur": "EUR 100 per person per day.",
+        "sunset_unconfirmed": "No sunset date in the primary Guidelines document (runs under the EU GBER's own validity period). A secondary source (Zerafa Advocates) separately reported 2028-10-29 -- not independently confirmed, recorded as reported only.",
+        "open_item_2024_crew_nationality_change": "Secondary reporting describes a 2024 change opening below-the-line labour to all international crews (this 2019 document still favours EU/EEA labour spend) -- plausible, not contradicted, but not independently confirmed by any document read in full this session.",
+        "document_retrieval_note": "This PDF was downloaded successfully in an earlier session but produced hallucinated placeholder analysis due to a tool parser limitation, not a retrieval failure -- the real 28-page document was recovered and read in full this session via direct pypdf text extraction.",
     },
 ))
 
@@ -1963,9 +2031,14 @@ STATUTORY_AMOUNTS_ORIGINAL_CURRENCY: dict[str, dict[str, dict]] = {
     },
     "mt_mfc_rebate": {
         "min_local_spend": {
-            "amount": 100_000, "currency": "EUR", "basis": "Minimum qualifying Malta expenditure (overall production budget must additionally exceed EUR 200,000) -- updated 2026-07-26 from a prior EUR 50,000 figure per five independently-converging 2024-era sources; the frozen rate rule (program_rate_rules.py) still cites EUR 50,000 as an undated, unresolved Material Discrepancy -- see mt_mfc_rebate Requirements Profile evidence notes",
-            "source": "Reconciled from Zerafa Advocates, Saturation.io, PCP Malta, Atlas Film Fixers, Ecovis Malta (converging secondary sources; official screenmalta.com Guidelines PDF not directly fetchable)",
-            "effective_date": "2024-06-01", "legacy_usd_value": 113_000.0,
+            "amount": 100_000, "currency": "EUR", "basis": "Minimum qualifying Malta expenditure, general case (EUR 50,000 for 'Difficult Audiovisual Work') -- CONFIRMED via direct pypdf text extraction of the official MFC Cash Rebate Guidelines (Official Document, January 2019); the frozen rate rule (program_rate_rules.py) still cites an undated EUR 50,000 general-case figure as an unresolved Material Discrepancy against this confirmed figure -- see mt_mfc_rebate Requirements Profile evidence notes",
+            "source": "Malta Film Commission -- Financial Incentives for the Audiovisual Industry: CASH REBATE GUIDELINES (Official Document, January 2019)",
+            "effective_date": "2019-01-01", "legacy_usd_value": 113_000.0,
+        },
+        "min_total_budget": {
+            "amount": 200_000, "currency": "EUR", "basis": "Minimum overall production budget, general case (EUR 100,000 for 'Difficult Audiovisual Work') -- CONFIRMED via direct pypdf text extraction of the official MFC Cash Rebate Guidelines",
+            "source": "Malta Film Commission -- Financial Incentives for the Audiovisual Industry: CASH REBATE GUIDELINES (Official Document, January 2019)",
+            "effective_date": "2019-01-01", "legacy_usd_value": 226_000.0,
         },
     },
     "gr_cash_rebate": {
@@ -3417,85 +3490,114 @@ register(ProgramRequirementsProfile(
 
 register(ProgramRequirementsProfile(
     program_slug="mx_federal_film_incentive_2026", jurisdiction_code="MX",
-    local_entity_required=True,        # foreign residents WITHOUT a Mexican permanent establishment must produce through a Mexican production company
-    cultural_test_required=False,      # the 70% national-supply rule is a supply-chain test, NOT a cultural/content test
-    preapproval_mandatory=True,        # Technical Committee "certificate of presentation of procedure" required
-    refundable=False,                  # expressly "does not generate refunds, compensations or balances in favor"
-    transferable=True,                 # "transferable for consideration"; may be assigned to national suppliers
-    sunset_date="2030-09-30",          # incentive expires 30 September 2030
-    audit_required=None,               # compliance certification required (see notes); a separate audit requirement is not stated in the source reviewed
+    local_entity_required=True,        # foreign residents WITHOUT a Mexican permanent establishment must produce through a Mexican production company (Decreto, Articulo Primero, verbatim)
+    cultural_test_required=False,      # the national-supply/min-spend rules are supply-chain and scale tests, NOT a cultural/content test
+    preapproval_mandatory=True,        # registration + Technical Committee certificate of presentation of procedure required
+    refundable=False,                  # a credit APPLIED against ISR owed (Decreto, Articulo Segundo) -- not a cash refund mechanism
+    transferable=True,                 # Decreto, Articulo Segundo, Fracciones I-II: a detailed two-stage transfer mechanism (see evidence notes)
+    annual_program_cap_usd=None,       # MXN 400,000,000 PER YEAR -- recorded in additional_facts/STATUTORY_AMOUNTS_ORIGINAL_CURRENCY, not converted
+    sunset_date="2030-09-30",          # incentive distributed from entry into force until 30 September 2030 (Decreto, Articulo Quinto)
+    audit_required=None,               # compliance certification (Constancia de cumplimiento) required; a separate independent-audit requirement is not stated in the Decreto text itself (may be addressed in the Lineamientos, not yet fully retrieved)
     evidence=EvidenceRecord(
-        source_title="Mexico: Tax Incentive for Film and Audiovisual Productions — Baker McKenzie analysis of the Presidential Decree and Guidelines (DOF, 30 March 2026)",
-        source_url="https://www.bakermckenzie.com/en/insight/publications/2026/04/mexico-tax-incentive-for-film-and-audiovisual-productions",
-        issuing_authority="Government of Mexico — Presidential Decree and Guidelines published in the Diario Oficial de la Federación (DOF) 2026-03-30; Technical Committee administers certification",
-        source_type=SourceType.SECONDARY, status=RecordStatus.CURRENT, access_date="2026-07-26",
-        notes="PROGRAM POSITIVELY IDENTIFIED BEFORE WRITING (Jurisdiction Isolation Rule). Mexico "
-              "operates at least two distinct federal audiovisual incentives: (a) EFICINE 189 — "
-              "the 2006 Article 189 LISR investor tax credit (contributions up to MXN 25,000,000 "
-              "per project, capped at 10% of the taxpayer's prior-year ISR, administered via "
-              "IMCINE); and (b) THIS programme — the incentive created by Presidential Decree and "
-              "Guidelines published in the DOF on 2026-03-30. THIS PROFILE DESCRIBES (b) ONLY. "
-              "Identification is not an inference: the repository's own rate rule for this slug "
-              "carries a 30% rate and cites the conditions 'minimum 70% national supply' and "
-              "'Technical Committee certificates for submission and compliance', attributed to "
-              "bakermckenzie.com — and the Baker McKenzie analysis fetched directly at that URL "
-              "confirms exactly those three features for the March 2026 Decree programme. Every "
-              "modelled condition matches (b) and none matches EFICINE 189, which is an investor "
-              "contribution credit with entirely different mechanics. EFICINE 189 is NOT recorded "
-              "here and must not be merged into this record.\n\n"
-              "TERMS OF THE MARCH 2026 DECREE PROGRAMME: tax credit of UP TO 30% of the total cost "
-              "of qualifying productions — matching the 0.30 rate already in this repository's "
-              "rate rules. MINIMUM SPEND BY FORMAT: MXN 40,000,000 (feature films, narrative and "
-              "animation series); MXN 20,000,000 (documentary series and documentary features); "
-              "MXN 5,000,000 (animation, VFX or post-production only). NATIONAL SUPPLY GATE: at "
-              "least 70% national supply. CERTIFICATION: beneficiaries must obtain certificates of "
-              "presentation of procedure AND of compliance, issued by the Technical Committee. "
-              "PER-PROJECT CAP MXN 40,000,000. PROGRAMME ENVELOPE MXN 400,000,000 distributed from "
-              "entry into force until 2030-09-30 — note this is a TOTAL envelope across the "
-              "programme's life as stated, not an annual appropriation, so it is recorded in "
-              "additional_facts rather than in annual_program_cap_usd. TAX TREATMENT: the credit "
-              "is transferable for consideration and may be assigned to national suppliers, or "
-              "applied against income tax; it is expressly NOT accruable income and 'does not "
-              "generate refunds, compensations or balances in favor' — hence refundable=False, "
-              "transferable=True. ELIGIBILITY: individuals and legal entities resident in Mexico; "
-              "residents abroad with a Mexican permanent establishment; and residents abroad "
-              "WITHOUT a permanent establishment provided they produce through a Mexican "
-              "production company. EFFECTIVE 2026-03-31 (day after publication); EXPIRES "
-              "2030-09-30. All amounts stated in MXN and recorded in "
-              "STATUTORY_AMOUNTS_ORIGINAL_CURRENCY; no USD field populated.\n\n"
-              "MARKED SECONDARY_VERIFIED (unchanged): this is a law-firm analysis quoting the Decree, "
-              "not the Diario Oficial de la Federación text itself. 2026-07-26 UPDATE: a direct "
-              "fetch of gob.mx/cultura (Secretaria de Cultura, an official Mexican federal "
-              "government domain) confirmed the programme's OFFICIAL NAME -- 'Estimulo Fiscal a "
-              "la Produccion Cinematografica y Audiovisual (EFICA)' -- and its administering "
-              "authority as IMCINE (Instituto Mexicano de Cinematografia) under the Secretaria de "
-              "Cultura, plus a two-stage certification process named precisely: 'Constancia de "
-              "presentacion de tramite' (confirms initial project review) followed by 'Constancia "
-              "de cumplimiento' (granted after validating completion; described as 'the "
-              "indispensable instrument to make the tax credit effective') -- this refines rather "
-              "than contradicts the existing 'certificate of presentation of procedure AND of "
-              "compliance' language already recorded. A DIRECT dof.gob.mx fetch was attempted "
-              "(the exact URL of the 2026-02-16 Decree announcement) but failed on a TLS "
-              "certificate verification error, not a content issue -- the DOF text itself remains "
-              "unretrieved. Per this profile's own previously-stated bar, this does NOT upgrade "
-              "the record to PRIMARY_VERIFIED (the rate/threshold figures still trace only to "
-              "Baker McKenzie's secondary analysis), but the gob.mx-confirmed facts are genuinely "
-              "new and are recorded below.",
+        source_title="DECRETO por el que se otorga un estimulo fiscal a la produccion cinematografica y audiovisual (Diario Oficial de la Federacion, 16 February 2026)",
+        source_url="https://www.dof.gob.mx/nota_detalle.php?codigo=5780237&fecha=16/02/2026",
+        issuing_authority="Presidencia de la Republica (Claudia Sheinbaum Pardo); Secretaria de Hacienda y Credito Publico; Secretaria de Cultura -- Gobierno de Mexico",
+        source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, access_date="2026-07-26",
+        notes="DOCUMENT RETRIEVAL ESCALATION APPLIED (per the permanent engineering rule adopted "
+              "this session): a prior direct fetch of dof.gob.mx failed with 'unable to verify the "
+              "first certificate'. Diagnosis via openssl s_client confirmed this is a SERVER-SIDE "
+              "TLS CHAIN MISCONFIGURATION on dof.gob.mx itself (missing intermediate certificate in "
+              "the chain it presents; verify error 21) -- a common, well-documented issue on older "
+              "government web servers, NOT a bot-detection block, NOT an authentication wall, and "
+              "NOT a case of the document genuinely being unavailable. curl with certificate "
+              "verification disabled (-k) reached the page with a normal HTTP 200 and returned the "
+              "real, complete Decree text -- this is retrieving public information through a "
+              "broken but non-adversarial TLS chain, not bypassing any access control, CAPTCHA, or "
+              "paywall. THIS UPGRADES THE RECORD TO PRIMARY_VERIFIED: the actual DOF Decree text "
+              "was read in full, not a law-firm paraphrase. PROGRAM POSITIVELY IDENTIFIED BEFORE "
+              "WRITING (Jurisdiction Isolation Rule, unchanged from the prior session): distinct "
+              "from EFICINE 189 (2006, Art. 189 LISR investor credit, MXN 25,000,000/project, "
+              "administered via IMCINE) -- EFICINE 189 is not recorded here. LEGAL BASIS (genuinely "
+              "new, exact citation): issued under Articulo 89, fraccion I of the Constitucion "
+              "Politica de los Estados Unidos Mexicanos (presidential regulatory power); Articulos "
+              "31 y 41 Bis of the Ley Organica de la Administracion Publica Federal; Articulo 39, "
+              "primer parrafo, fracciones II y III of the Codigo Fiscal de la Federacion. Signed by "
+              "President Claudia Sheinbaum Pardo, Secretary of Finance Edgar Abraham Amador Zamora, "
+              "and Secretary of Culture Claudia Stella Curiel de Icaza, dated 13 February 2026, "
+              "published in the DOF 16 February 2026. RATE CONFIRMED VERBATIM: 'un credito fiscal "
+              "de hasta el 30% del costo total del proyecto o proceso de produccion cinematografica "
+              "o audiovisual' -- exactly matches the 0.30 rate already in this repository's rate "
+              "rules. ANNUAL CAP CORRECTED (a genuine, material correction to this profile's own "
+              "prior characterization): the Decreto text states 'el monto total ANUAL del estimulo "
+              "fiscal que el Comite Tecnico autorice a los contribuyentes no excedera de 400 "
+              "millones de pesos' -- this is confirmed as an ANNUAL cap (MXN 400,000,000 PER YEAR), "
+              "NOT a one-time total programme envelope across the scheme's life as this profile had "
+              "previously recorded based on an imprecise Baker McKenzie paraphrase. TRANSFER "
+              "MECHANISM (genuinely new, richly detailed -- Articulo Segundo): a TWO-STAGE process, "
+              "not a single flat transferability fact. Stage 1 (Fraccion I): up to 100% of the "
+              "credit may be transferred for consideration ('a titulo oneroso') to national "
+              "suppliers directly related to the production, to incentivize the supply chain -- "
+              "with indirect expenses via such suppliers capped at 30% of the total credit. Stage 2 "
+              "(Fraccion II): any remaining balance after Stage 1 may be further transferred, for "
+              "consideration, to ANY Mexican ISR taxpayer, capped at 70% of the total credit, at a "
+              "transfer value not exceeding 85% of the amount transferred, and the transferred "
+              "credit received by any single recipient cannot exceed 15% of that recipient's prior-"
+              "year fiscal profit (utilidad fiscal). Recipients of a transferred credit CANNOT "
+              "re-transfer it to third parties, including via merger or spin-off. Beneficiaries and "
+              "transfer recipients must not be related parties to each other. ADMINISTRATIVE "
+              "SIMPLIFICATION (genuinely new, Articulo Cuarto): beneficiaries are relieved of the "
+              "notice-filing obligation under Articulo 25, primer parrafo of the Codigo Fiscal de "
+              "la Federacion. TECHNICAL COMMITTEE (Articulo Quinto, corroborates and refines the "
+              "gob.mx finding from the prior session): includes a representative of IMCINE; sets "
+              "the maximum rate/amount any applicant may receive per the Lineamientos. "
+              "DISQUALIFYING CONDITIONS (genuinely new, Articulo Sexto): taxpayers in liquidation; "
+              "subject to temporary restriction of digital seal use for CFDI issuance (Art. 17-H "
+              "Bis CFF); with cancelled CFDI-issuance certificates (Art. 17-H CFF); among others, "
+              "are excluded from the incentive. NON-COMPLIANCE CONSEQUENCES (genuinely new, "
+              "Articulo Septimo): a taxpayer who applied the credit and fails to meet any "
+              "requirement must pay the tax, inflation adjustment (actualizacion), and surcharges, "
+              "and the incentive is voided. SAT RULE-MAKING (Articulo Octavo): the Servicio de "
+              "Administracion Tributaria is empowered to issue general rules for the Decree's "
+              "proper application. EFFECTIVE DATE CLARIFIED (resolves an internal ambiguity from "
+              "the prior session): the DECREE itself took effect the day after its 2026-02-16 "
+              "publication (i.e. ~2026-02-17) per Transitorio Primero -- DISTINCT from the "
+              "separate, later Lineamientos (Guidelines) published 2026-03-30, which took effect "
+              "the following day (2026-03-31); both dates are genuine and refer to different "
+              "documents, not a contradiction. ELIGIBILITY (Articulo Primero, verbatim structure "
+              "confirmed): individuals or legal entities resident in Mexico taxed under Titulo II, "
+              "Titulo IV Capitulo II Seccion I, or Titulo VII Capitulo XII of the Ley del Impuesto "
+              "sobre la Renta; residents abroad WITH a Mexican permanent establishment under those "
+              "same regimes; and residents abroad WITHOUT a permanent establishment, provided they "
+              "produce through a Mexico-resident individual or entity dedicated to film/audiovisual "
+              "production. MINIMUM-SPEND-BY-FORMAT RECITAL CONFIRMED (the Decreto's own preamble "
+              "explains WHY thresholds exist, though the exact MXN figures by format are deferred "
+              "to the Lineamientos rather than stated in the Decreto itself): 'resulta necesario "
+              "establecer umbrales minimos de erogacion en territorio nacional, atendiendo a la "
+              "naturaleza, escala y complejidad de cada tipo de proyecto o proceso, en observancia "
+              "del principio de igualdad material' -- this confirms the MXN 40M/20M/5M by-format "
+              "figures already recorded (from Baker McKenzie) are consistent with the Decree's own "
+              "stated design principle, though those exact figures were not independently re-"
+              "confirmed in the Decreto text itself (they belong to the Lineamientos, a separate, "
+              "not-yet-fully-retrieved document) -- recorded with that caveat rather than claimed "
+              "as directly re-verified. All MXN amounts recorded per the Canonical Currency Rule; "
+              "no USD conversion performed.",
     ),
     additional_facts={
-        "official_program_name": "Estimulo Fiscal a la Produccion Cinematografica y Audiovisual (EFICA) -- confirmed via direct gob.mx/cultura fetch, 2026-07-26.",
-        "administering_authority_confirmed": "IMCINE (Instituto Mexicano de Cinematografia), under the Secretaria de Cultura -- confirmed via direct gob.mx/cultura fetch.",
-        "two_stage_certification_named": "'Constancia de presentacion de tramite' (initial project review) then 'Constancia de cumplimiento' (post-completion validation; the instrument that makes the tax credit effective) -- confirmed via direct gob.mx/cultura fetch, refining the existing certification language.",
-        "priority_criteria_reported": "The gob.mx announcement mentions the framework prioritizes national supplier engagement, territorial impact outside metropolitan zones, cultural value, and knowledge-transfer initiatives -- not independently confirmed as binding eligibility gates vs. scoring criteria; recorded as reported.",
-        "program_identity": "The incentive created by Presidential Decree and Guidelines published in the DOF on 2026-03-30. DISTINCT from EFICINE 189 (2006, Art. 189 LISR investor credit, MXN 25,000,000 per project, capped at 10% of prior-year ISR, via IMCINE), which is a separate programme and is not described here.",
-        "min_spend_by_format_mxn": "MXN 40,000,000 feature films and narrative/animation series; MXN 20,000,000 documentary series and documentary features; MXN 5,000,000 animation, VFX or post-production only (authoritative original currency).",
-        "national_supply_gate": "At least 70% national supply required.",
-        "technical_committee_certification": "Certificates of presentation of procedure AND of compliance must be obtained from the Technical Committee.",
-        "per_project_cap_mxn": "MXN 40,000,000 per project.",
-        "programme_envelope_mxn": "MXN 400,000,000 distributed from entry into force until 2030-09-30 — a total programme envelope as stated, not an annual appropriation.",
-        "tax_treatment": "Transferable for consideration; assignable to national suppliers; or applied against income tax. Not accruable income; generates no refunds, compensations or balances in favor.",
-        "eligibility": "Individuals and legal entities resident in Mexico; residents abroad with a Mexican permanent establishment; residents abroad without a permanent establishment producing through a Mexican production company.",
-        "effective_window": "Effective 2026-03-31 (day after DOF publication); expires 2030-09-30.",
+        "official_program_name": "Estimulo Fiscal a la Produccion Cinematografica y Audiovisual (EFICA) -- confirmed via direct gob.mx/cultura fetch, corroborated by the Decreto's own title.",
+        "administering_authority_confirmed": "IMCINE (Instituto Mexicano de Cinematografia) sits on the Technical Committee, under the Secretaria de Cultura; SAT (tax authority) empowered to issue implementing rules.",
+        "legal_basis": "Constitucion Politica de los Estados Unidos Mexicanos Art. 89 fraccion I; Ley Organica de la Administracion Publica Federal Arts. 31 y 41 Bis; Codigo Fiscal de la Federacion Art. 39 primer parrafo fracciones II y III. Decreto signed 2026-02-13, published DOF 2026-02-16, effective ~2026-02-17.",
+        "annual_cap_correction": "MXN 400,000,000 is an ANNUAL cap ('monto total anual'), corrected from this profile's own prior mischaracterization as a one-time total programme envelope.",
+        "transfer_mechanism_detailed": "Stage 1: up to 100% of the credit transferable to national suppliers directly related to the production (indirect expenses via such suppliers capped at 30% of the credit). Stage 2: any remaining balance transferable to any Mexican ISR taxpayer, capped at 70% of the total credit, transfer value capped at 85% of the amount transferred, and the transferred credit capped at 15% of the recipient's prior-year fiscal profit. No re-transfer by recipients, even via merger/spin-off. Beneficiary and recipient must not be related parties.",
+        "administrative_simplification": "Beneficiaries relieved of the notice-filing obligation under CFF Art. 25, primer parrafo.",
+        "disqualifying_conditions": "Taxpayers in liquidation; subject to temporary CFDI digital-seal restriction (CFF Art. 17-H Bis); with cancelled CFDI-issuance certificates (CFF Art. 17-H); among other conditions in Articulo Sexto.",
+        "non_compliance_consequences": "A taxpayer failing to meet any requirement after applying the credit must pay the tax, inflation adjustment, and surcharges; the incentive is voided.",
+        "min_spend_by_format_mxn": "MXN 40,000,000 feature films and narrative/animation series; MXN 20,000,000 documentary series and documentary features; MXN 5,000,000 animation, VFX or post-production only -- from Baker McKenzie's analysis; the Decreto's own recital confirms such thresholds exist by design but defers the exact figures to the separate Lineamientos, not yet fully retrieved.",
+        "national_supply_gate": "At least 70% national supply required (Baker McKenzie; not independently re-confirmed in the Decreto text itself, which defers operational detail to the Lineamientos).",
+        "technical_committee_certification": "Constancia de presentacion de tramite (initial review) then Constancia de cumplimiento (post-completion; makes the credit effective) -- both confirmed via direct gob.mx/cultura fetch.",
+        "per_project_cap_mxn": "MXN 40,000,000 per project (Baker McKenzie; not independently re-confirmed in the Decreto text, which defers per-project limits to the Lineamientos/Technical Committee determination).",
+        "eligibility": "Individuals and legal entities resident in Mexico (Titulo II/Titulo IV Cap II Secc I/Titulo VII Cap XII LISR); residents abroad with a Mexican permanent establishment; residents abroad without a permanent establishment producing through a Mexico-resident individual or entity.",
+        "effective_window": "Decreto effective ~2026-02-17 (day after 2026-02-16 DOF publication); Lineamientos effective 2026-03-31 (day after 2026-03-30 DOF publication); programme distributed until 2030-09-30.",
+        "document_retrieval_note": "dof.gob.mx has a server-side TLS certificate chain misconfiguration (missing intermediate cert, verify error 21) -- not a block, not an auth wall. Retrieved successfully with certificate verification disabled; the real Decree text was read in full via this method.",
     },
 ))
 

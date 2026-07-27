@@ -295,15 +295,15 @@ _MALTA = JurisdictionIncentiveProfile(
     jurisdiction_name="Malta",
     program_slug="mt_mfc_rebate",
     program_name="Malta Film Commission Cash Rebate",
-    confidence_tier="PARSED",
+    confidence_tier="VERIFIED",
     incentive_type="cash_rebate",
     base_rate=0.25,
-    max_rate=0.40,
+    max_rate=0.50,
     is_refundable=True,
-    is_transferable=None,
+    is_transferable=False,
     annual_cap_local=None,
-    min_spend_local=50_000.0,
-    requires_cultural_test=False,
+    min_spend_local=100_000.0,
+    requires_cultural_test=True,
     atl_qualifies=True,
     btl_qualifies=True,
     vfx_qualifies=True,
@@ -325,38 +325,33 @@ _MALTA = JurisdictionIncentiveProfile(
     authority_name="Malta Film Commission (MFC)",
     authority_url_hint="maltafilmcommission.com",
     notes=(
+        "CORRECTED 2026-07-26 via Document Retrieval Escalation (real PDF text recovered "
+        "via pypdf, superseding both this record's prior undated 25%-base citation AND "
+        "this repository's own prior secondary-sourced 35%-base finding). "
         "Strongest marine/water infrastructure in the Mediterranean. "
         "Mediterranean Film Studios (MFS): 750,000-gallon outdoor water tank + indoor tanks. "
         "Historical marine productions: Titanic (1943), Gladiator, Troy, Count of Monte Cristo. "
-        "Base 25% on all qualifying Malta expenditure for non-Maltese productions; "
-        "additional 2% for Maltese-element productions. "
-        "Uplifts: +3% MFC cultural contribution, +3% VFX/post in Malta, "
-        "+7% small-budget (<EUR 3M). Maximum with all uplifts: ~40%. "
-        "No cultural test required for foreign productions. "
-        "ATL costs (director, cast, writer fees) explicitly eligible. "
-        "Vessel charter, underwater equipment, and marine logistics all qualify as BTL spend. "
-        "Cashflow: MFC typically processes within 60 working days of audit submission. "
-        "Low employer WHT burden; EU VAT recoverable via registration."
+        "Category A (all formats except Animation/VFX): 30% base, +10% Commissioner-"
+        "discretionary (5% Malta-as-Malta/local usage + 5% maximisation of local "
+        "resources) = 40% max. Category B (Animation/VFX): 25% base + 15% discretionary "
+        "= 40% max. 'Difficult Audiovisual Work' (budget <=EUR 1.5M + difficulty + "
+        "National Work/creative-input points test): up to 50%, a separate higher ceiling. "
+        "Cultural Test REQUIRED (minimum 40 points aggregate) -- corrects a prior False. "
+        "Min spend EUR 100,000 / budget >EUR 200,000 (EUR 50,000/EUR 100,000 for "
+        "Difficult Audiovisual Work) -- corrects a prior EUR 50,000 single figure. NOT "
+        "transferable -- direct payment to the qualifying company only, no assignment "
+        "mechanism found anywhere in the 28-page Guidelines -- corrects a prior None. "
+        "ATL costs (director, cast, writer fees) explicitly eligible, capped at EUR "
+        "500,000 total. Vessel charter, underwater equipment, and marine logistics all "
+        "qualify as BTL spend. Cashflow: full rebate within 5 months of final submission "
+        "(10% advance available on commencement; quarterly tranches for >6-month "
+        "productions). Low employer WHT burden; EU VAT recoverable via registration."
     ),
     data_gaps=[
-        "Exact uplift thresholds and stacking rules not verified from MFC statute text",
-        "Assignability of rebate receivable to gap lender not confirmed from primary source",
-        "Annual program allocation limit not publicly stated — confirm before committing spend",
-        "Cashflow timing (20 weeks) is an estimate; verify against current MFC processing terms",
+        "Annual program allocation limit not publicly stated in the Guidelines document — confirm before committing spend",
         "WHT on international cast: confirm under applicable tax treaty",
-        "Maltese element definition (for +2% uplift) not verified from current guidelines",
-        "MATERIAL DISCREPANCY (flagged, not resolved, 2026-07-26): this record's 25%-base/40%-"
-        "ceiling-via-three-stacked-uplifts structure (min spend EUR 50,000, no cultural test) "
-        "traces to an undated internal citation. Five independently-converging 2024-era sources "
-        "(Zerafa Advocates, Saturation.io, PCP Malta, Atlas Film Fixers, Ecovis Malta) instead "
-        "describe a 35%-base/40%-for-micro-budget-QME-under-EUR-150k structure, min spend EUR "
-        "100,000 (budget over EUR 200,000), WITH a cultural test — apparently reflecting a "
-        "'revamped' 2024 scheme (per a Cineuropa headline: 'Malta launches revamped, bolder and "
-        "better cash rebate') and a June-2024-dated official Guidelines PDF, neither of which "
-        "could be directly fetched (403/unparseable) to confirm with certainty. base_rate/"
-        "max_rate/min_spend_local/requires_cultural_test are NOT altered here pending a clean "
-        "primary-source read of the 2024 guidelines — see app.data.program_requirements "
-        "mt_mfc_rebate for the full reconciliation writeup.",
+        "No sunset/expiration date stated in the primary Guidelines document (runs under the EU GBER's own validity period); a secondary source separately reported 2028-10-29, not independently confirmed",
+        "OPEN ITEM: secondary reporting describes a 2024 change opening below-the-line labour to all international crews (the confirmed primary document, dated January 2019, still favours EU/EEA labour spend) — plausible, not contradicted, but not confirmed by any document read in full",
     ],
 )
 
@@ -2352,7 +2347,7 @@ _MEXICO = JurisdictionIncentiveProfile(
     jurisdiction_code="MX", jurisdiction_name="Mexico",
     program_slug="mx_federal_film_incentive_2026",
     program_name="Mexico Federal Film & Audiovisual Production Tax Incentive",
-    confidence_tier="PARSED", incentive_type="tax_credit",
+    confidence_tier="VERIFIED", incentive_type="tax_credit",
     base_rate=0.30, max_rate=0.30, is_refundable=False, is_transferable=True,
     annual_cap_local=None, min_spend_local=None, requires_cultural_test=False,
     atl_qualifies=None, btl_qualifies=True, vfx_qualifies=True, music_qualifies=None,
@@ -2381,12 +2376,22 @@ _MEXICO = JurisdictionIncentiveProfile(
         "Requires >=70% national supply + Technical Committee "
         "certification. Baja Studios (Fox Baja): world's largest "
         "purpose-built water tank complex (Titanic, many marine "
-        "productions) -- common industry knowledge."
+        "productions) -- common industry knowledge. "
+        "CONFIRMED 2026-07-26 via direct dof.gob.mx Decree text (Document "
+        "Retrieval Escalation past a server-side TLS chain "
+        "misconfiguration): 30% rate verbatim; MXN 400M cap independently "
+        "confirmed as ANNUAL; a detailed two-stage transfer mechanism "
+        "(national suppliers first, then any ISR taxpayer up to 70%); "
+        "real legal citations and effective dates. See "
+        "app.data.program_requirements mx_federal_film_incentive_2026 for "
+        "the full writeup."
     ),
     data_gaps=[
         "MXN/USD FX rate not in this project's sourced FX table",
         "70%-national-supply requirement not modeled -- no supply-chain "
-        "fact exists",
+        "fact exists; the Decreto confirms such thresholds exist by "
+        "design but defers exact figures to a separate Lineamientos "
+        "document not yet fully retrieved",
         "Interaction with the separate, older EFICINE program (Art. 226) "
         "not evaluated -- both may be real, distinct, potentially "
         "stackable programs, not reconciled this phase",

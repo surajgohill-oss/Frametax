@@ -232,14 +232,23 @@ class TestMaltaProfile:
     def mt(self):
         return TIER1_PROFILES["MT"]
 
-    def test_parsed_tier(self, mt):
-        assert mt.confidence_tier == "PARSED"
+    def test_verified_tier(self, mt):
+        # Upgraded from PARSED to VERIFIED (2026-07-26, account-handoff
+        # session): the real MFC Cash Rebate Guidelines PDF (Jan 2019, 28
+        # pages) was recovered and read in full via direct pypdf text
+        # extraction, resolving an earlier tool parser failure that had
+        # produced hallucinated placeholder analysis instead of real text.
+        assert mt.confidence_tier == "VERIFIED"
 
     def test_base_rate(self, mt):
         assert mt.base_rate == 0.25
 
     def test_max_rate(self, mt):
-        assert mt.max_rate == 0.40
+        # Corrected from 0.40: the confirmed Guidelines describe a
+        # separate, higher-ceiling "Difficult Audiovisual Work" category
+        # (budget <= EUR 1.5M + a points-based National Work test)
+        # qualifying for up to 50%, not modeled before this session.
+        assert mt.max_rate == 0.50
 
     def test_excellent_marine(self, mt):
         assert mt.marine_suitability == MarineSuitability.EXCELLENT
@@ -257,10 +266,18 @@ class TestMaltaProfile:
         assert mt.financing_friction == FinancingFriction.LOW
 
     def test_min_spend(self, mt):
-        assert mt.min_spend_local == 50_000.0
+        # Corrected from EUR 50,000: the confirmed Guidelines state EUR
+        # 100,000 for the general case (EUR 50,000 applies only to the
+        # separate "Difficult Audiovisual Work" category, not the general
+        # minimum).
+        assert mt.min_spend_local == 100_000.0
 
-    def test_no_cultural_test(self, mt):
-        assert mt.requires_cultural_test is False
+    def test_cultural_test_required(self, mt):
+        # Corrected from False: the confirmed Guidelines require a
+        # minimum of 40 points in aggregate in a Cultural Test (Section
+        # 2.4) -- the prior False was never sourced from an official
+        # document.
+        assert mt.requires_cultural_test is True
 
 
 class TestGreeceProfile:

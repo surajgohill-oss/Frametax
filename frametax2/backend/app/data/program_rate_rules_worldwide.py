@@ -2205,16 +2205,29 @@ _MX_CITATION = (
     "does it generate refunds'). Requires >=70% national supply and "
     "Technical Committee certification. Effective 30 March 2026 through "
     "30 September 2030. MXN not converted — no sourced MXN/USD FX rate "
-    "exists in this project."
+    "exists in this project. 2026-07-26 CONFIRMED via Document Retrieval "
+    "Escalation: dof.gob.mx's real Decree text (retrieved by working "
+    "around a server-side TLS chain misconfiguration, not a block) "
+    "quotes the 30% rate verbatim ('un credito fiscal de hasta el 30% "
+    "del costo total del proyecto') and independently confirms the MXN "
+    "400,000,000 figure is explicitly ANNUAL ('el monto total ANUAL del "
+    "estimulo fiscal ... no excedera de 400 millones de pesos') -- "
+    "resolving in Baker McKenzie's favor a mischaracterization that had "
+    "crept into this repository's own Requirements Profile (which had "
+    "briefly recorded it as a one-time total envelope). The exact "
+    "per-project/per-format MXN figures remain sourced only to Baker "
+    "McKenzie (the Decreto itself defers those to a separate Lineamientos "
+    "document, not yet fully retrieved) -- see app.data.program_requirements "
+    "mx_federal_film_incentive_2026 for the full writeup."
 )
 MX_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="MX", program_slug="mx_federal_film_incentive_2026",
     program_name="Mexico Federal Film & Audiovisual Production Tax Incentive",
-    confidence_tier="PARSED",
+    confidence_tier="VERIFIED",
     incentive_type="tax_credit", is_refundable=False, is_transferable=True,
     min_spend_usd=None, annual_cap_usd=None,  # MXN, not converted
     requires_cultural_test=False,
-    citation=_MX_CITATION, source_ref="bakermckenzie.com-mexico-2026-incentive",
+    citation=_MX_CITATION, source_ref="bakermckenzie.com-mexico-2026-incentive+dof.gob.mx-decreto-2026-02-16-official",
     tiers=(
         DoctrineRateTier(
             tier_id="mx-flat-30", rate=0.30, is_band_ceiling=False,

@@ -187,7 +187,7 @@ MU_RATE_RULES: tuple[RateRule, ...] = (
         tier_id="mu_frs_40_feature",
         rate=0.40,
         is_band_ceiling=True,   # "Up to 40%" — exact rate within the band is discretionary
-        production_types=("feature_film", "television_drama_series"),
+        production_types=("feature_film", "tv_series"),
         min_qpe_usd=1_000_000.0,
         conditions=(
             RateCondition(
@@ -294,63 +294,127 @@ MU_BUDGET_EVIDENCED_RATES: tuple[BudgetEvidencedRate, ...] = (
 #   GR min spend  EUR 100,000  -> USD 114,052.40
 
 _MT_CITATION = (
-    "Malta Film Commission Cash Rebate (jurisdiction_comparison.py MALTA "
-    "profile, confidence_tier=PARSED; authority: Malta Film Commission, "
-    "maltafilmcommission.com). MATERIAL DISCREPANCY flagged 2026-07-26, "
-    "NOT resolved here: five independently-converging 2024-era sources "
-    "describe a different structure (35% base / 40% for QME<EUR 150k, "
-    "min spend EUR 100,000, cultural test required) apparently reflecting "
-    "a 2024 scheme revamp -- see app.data.program_requirements "
-    "mt_mfc_rebate for the full writeup. Tiers below NOT altered pending "
-    "a clean primary-source (screenmalta.com Guidelines PDF) read."
+    "CORRECTED 2026-07-26 via Document Retrieval Escalation: the prior "
+    "citation here (25% base + three stacked uplifts of +3%/+3%/+7%, "
+    "undated, traced only to this repository's own jurisdiction_comparison.py "
+    "PARSED-tier notes) is SUPERSEDED. A prior session had downloaded the "
+    "real MFC 'Financial Incentives for the Audiovisual Industry: CASH "
+    "REBATE GUIDELINES' (Official Document, January 2019, 28 pages) but a "
+    "tool parser limitation produced hallucinated placeholder analysis "
+    "instead of the real text -- classified precisely as a PARSER FAILURE, "
+    "not a retrieval failure, per the Document Retrieval Escalation "
+    "doctrine. This session recovered the actual saved PDF and extracted "
+    "its real text directly via pypdf, confirming the TRUE rate structure "
+    "below. Full detail in app.data.program_requirements mt_mfc_rebate."
 )
 MT_RATE_RULES: tuple[RateRule, ...] = (
     RateRule(
-        program_slug="mt_mfc_rebate", tier_id="mt-base-25",
-        rate=0.25, is_band_ceiling=False,
-        production_types=("feature_film",), min_qpe_usd=57_026.20,
+        program_slug="mt_mfc_rebate", tier_id="mt-general-30",
+        rate=0.30, is_band_ceiling=False,
+        production_types=("feature_film", "tv_series", "creative_documentary"),
+        min_qpe_usd=113_000.0,  # EUR 100,000
         conditions=(
             RateCondition(
                 condition_id="mt-min-spend",
-                description="Minimum qualifying Malta expenditure",
-                quote="min_spend_local=EUR 50,000 (jurisdiction_comparison.py MALTA "
-                      "profile, PARSED tier)",
-                kind="min_qpe_usd", threshold_usd=57_026.20,
+                description="Minimum qualifying Malta expenditure (general case); "
+                            "overall production budget must additionally exceed EUR 200,000",
+                quote="The minimum spend in Malta must be EUR 100,000 with an overall "
+                      "budget exceeding EUR 200,000 (MFC Cash Rebate Guidelines, Jan 2019, S.2.3)",
+                kind="min_qpe_usd", threshold_usd=113_000.0,
             ),
         ),
-        confidence_tier="PARSED",
-        citation=_MT_CITATION + " Base 25% on all qualifying Malta expenditure for "
-                 "non-Maltese productions; no cultural test required for foreign productions.",
-        source_ref="jurisdiction_comparison.MALTA",
+        confidence_tier="VERIFIED",
+        citation=_MT_CITATION + " Category A (all qualifying productions except "
+                 "Animation/VFX): 30% base on all eligible expenditure for non-Maltese "
+                 "productions (S.3.2.1).",
+        source_ref="MFC-Cash-Rebate-Guidelines-2019-01-official",
     ),
     RateRule(
-        program_slug="mt_mfc_rebate", tier_id="mt-ceiling-40",
+        program_slug="mt_mfc_rebate", tier_id="mt-general-ceiling-40",
         rate=0.40, is_band_ceiling=True,
-        production_types=("feature_film",), min_qpe_usd=57_026.20,
+        production_types=("feature_film", "tv_series", "creative_documentary"),
+        min_qpe_usd=113_000.0,
         conditions=(
             RateCondition(
                 condition_id="mt-min-spend",
-                description="Minimum qualifying Malta expenditure",
-                quote="min_spend_local=EUR 50,000 (jurisdiction_comparison.py MALTA "
-                      "profile, PARSED tier)",
-                kind="min_qpe_usd", threshold_usd=57_026.20,
+                description="Minimum qualifying Malta expenditure (general case)",
+                quote="The minimum spend in Malta must be EUR 100,000 with an overall "
+                      "budget exceeding EUR 200,000 (MFC Cash Rebate Guidelines, Jan 2019, S.2.3)",
+                kind="min_qpe_usd", threshold_usd=113_000.0,
             ),
             RateCondition(
                 condition_id="mt-uplifts",
-                description="Maximum rate requires stacking discretionary uplifts, "
-                            "not a guaranteed entitlement",
-                quote="Uplifts: +3% MFC cultural contribution, +3% VFX/post in Malta, "
-                      "+7% small-budget (<EUR 3M). Maximum with all uplifts: ~40%. "
-                      "(jurisdiction_comparison.py MALTA profile notes, PARSED tier)",
+                description="Maximum rate requires Commissioner discretion on two named "
+                            "criteria, not a guaranteed entitlement",
+                quote="The Commissioner has the discretion to award an additional 10% "
+                      "based on the Maltese cultural elements: (a) Malta features as "
+                      "Malta or local usage of facilities [5%]; (b) Maximisation of "
+                      "local resources [5%]. Maximum Rebate: 40% (MFC Cash Rebate "
+                      "Guidelines, Jan 2019, S.3.2.1)",
                 kind="discretionary_band",
             ),
         ),
-        confidence_tier="PARSED",
-        citation=_MT_CITATION + " 40% ceiling requires stacking all three uplifts "
-                 "(cultural contribution, VFX/post-in-Malta, small-budget) — the "
-                 "guaranteed floor is the base 25% tier.",
-        source_ref="jurisdiction_comparison.MALTA",
+        confidence_tier="VERIFIED",
+        citation=_MT_CITATION + " 40% ceiling requires the Commissioner to award both "
+                 "5% discretionary criteria on top of the 30% base — the guaranteed "
+                 "floor is the 30% base tier.",
+        source_ref="MFC-Cash-Rebate-Guidelines-2019-01-official",
     ),
+    RateRule(
+        program_slug="mt_mfc_rebate", tier_id="mt-animation-25",
+        rate=0.25, is_band_ceiling=False,
+        production_types=("animation", "digital_animated_film"),
+        min_qpe_usd=113_000.0,
+        conditions=(
+            RateCondition(
+                condition_id="mt-min-spend",
+                description="Minimum qualifying Malta expenditure (general case)",
+                quote="The minimum spend in Malta must be EUR 100,000 with an overall "
+                      "budget exceeding EUR 200,000 (MFC Cash Rebate Guidelines, Jan 2019, S.2.3)",
+                kind="min_qpe_usd", threshold_usd=113_000.0,
+            ),
+        ),
+        confidence_tier="VERIFIED",
+        citation=_MT_CITATION + " Category B (Animation/VFX): 25% base on all eligible "
+                 "expenditure (S.3.2.1) — a DIFFERENT, lower base rate than the general "
+                 "Category A tier; scoped as its own record since production_types is "
+                 "record-level, not tier-level.",
+        source_ref="MFC-Cash-Rebate-Guidelines-2019-01-official",
+    ),
+    RateRule(
+        program_slug="mt_mfc_rebate", tier_id="mt-animation-ceiling-40",
+        rate=0.40, is_band_ceiling=True,
+        production_types=("animation", "digital_animated_film"),
+        min_qpe_usd=113_000.0,
+        conditions=(
+            RateCondition(
+                condition_id="mt-uplifts-animation",
+                description="Maximum rate requires Commissioner discretion on the "
+                            "combined criteria, not a guaranteed entitlement",
+                quote="The Commissioner has the discretion to award an additional 15% "
+                      "based on the Maltese cultural elements and on the maximisation "
+                      "of local resources. Maximum Rebate: 40% (MFC Cash Rebate "
+                      "Guidelines, Jan 2019, S.3.2.1)",
+                kind="discretionary_band",
+            ),
+        ),
+        confidence_tier="VERIFIED",
+        citation=_MT_CITATION + " 40% ceiling for Animation/VFX requires the full 15% "
+                 "Commissioner-discretionary uplift on top of the 25% base.",
+        source_ref="MFC-Cash-Rebate-Guidelines-2019-01-official",
+    ),
+    # NOTE: 'Difficult Audiovisual Work' (up to 50%, MFC Cash Rebate Guidelines
+    # Jan 2019 S.3.2.2/S.3.3) is DELIBERATELY NOT modeled as a RateRule tier.
+    # It requires a MAXIMUM total budget of EUR 1,500,000 -- a ceiling
+    # condition -- but RateRule/resolve_program_rate() only supports MINIMUM
+    # thresholds (min_qpe_usd). Modeling it as a normal tier would make
+    # resolve_program_rate() select it as the highest-rate match for ANY
+    # Malta production above the EUR 50,000 floor, regardless of actual
+    # budget size -- a genuine correctness bug caught during the account-
+    # handoff repository consistency audit (2026-07-26) and deliberately
+    # avoided rather than shipped. Disclosed as additional_facts only, in
+    # both app.data.program_requirements (mt_mfc_rebate) and
+    # jurisdiction_comparison.py's MALTA profile -- never priced.
 )
 
 _IE_CITATION = (
