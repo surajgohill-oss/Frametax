@@ -90,7 +90,7 @@ def discover_executable_jurisdictions(
     )
     from app.data import global_inventory as gi
     from app.data.program_rate_rules import get_rate_rules, resolve_program_rate
-    from app.data.program_spend_rules import get_program_doctrine
+    from app.data.program_spend_rules import get_program_doctrine, resolve_program_doctrine
 
     # Every implemented jurisdiction: distinct codes across the full program
     # inventory, unioned with the structured profiles (the latter is normally
@@ -117,7 +117,16 @@ def discover_executable_jurisdictions(
             or code
         )
         slug = profile.program_slug if profile is not None else None
-        has_doctrine = slug is not None and get_program_doctrine(slug) is not None
+        # `has_doctrine` now reports whether an EXECUTABLE doctrine resolves —
+        # which, under the canonical QPE rule, it always does for a modeled
+        # program (explicitly classified, evidence-constrained, or the
+        # canonical default). `doctrine_basis` preserves the provenance
+        # distinction that `has_doctrine` used to carry, so a consumer can
+        # still tell statute-read treatment from canonically-defaulted
+        # treatment. See program_spend_rules.resolve_program_doctrine.
+        doctrine_resolution = resolve_program_doctrine(slug) if slug is not None else None
+        has_doctrine = doctrine_resolution is not None
+        doctrine_basis = doctrine_resolution.basis.value if doctrine_resolution else None
         has_rate = slug is not None and len(get_rate_rules(slug)) > 0
         stated_rate = getattr(inv, "base_rate", None) if inv is not None else None
         req_cultural = getattr(inv, "requires_cultural_test", None) if inv is not None else None

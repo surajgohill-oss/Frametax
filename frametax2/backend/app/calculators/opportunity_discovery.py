@@ -92,6 +92,14 @@ class OpportunityType(str, enum.Enum):
     REINVESTMENT = "reinvestment"
     NORMALIZATION = "normalization"
     GREY_AREA = "grey_area"
+    # The KNOWN BUT NON-PRICEABLE layer of the completed worldwide
+    # inventory (discretionary grants, development/co-production/broadcaster/
+    # regional funds). A conditional opportunity influences scenario
+    # generation as a funding avenue for structures that include its
+    # country, but never produces an automatic dollar calculation and
+    # never enters Net Production Cost — its estimated_upside_usd is
+    # always None. See conditional_programs.py.
+    CONDITIONAL = "conditional"
 
 
 @dataclass
@@ -753,6 +761,81 @@ def discover_grey_area_opportunities(
 
 # ── Dedup / ranking / top-level ──────────────────────────────────────────────
 
+# ── Pass 8: Conditional (KNOWN BUT NON-PRICEABLE) opportunities ──────────────
+
+def discover_conditional_opportunities(country_codes: list[str]) -> list[Opportunity]:
+    """
+    Surfaces the completed worldwide inventory's KNOWN BUT NON-PRICEABLE
+    layer — discretionary grants, development/co-production/broadcaster/
+    regional funds — as first-class conditional Opportunity nodes for the
+    given (modeled, reachable) countries.
+
+    Every emitted opportunity:
+    - carries estimated_upside_usd=None ALWAYS (a discretionary award has
+      no defensible dollar expectation without an application outcome —
+      this pass never invents one);
+    - is requires_evidence=True (participation is an application/approval,
+      not an automatic entitlement) and carries a stacking-unknown note
+      in attributes (whether it stacks with a statutory incentive is a
+      per-program legal fact no catalog record here evidences);
+    - is scoped to its parent country (jurisdiction_codes=(country,)) so
+      the composer includes it exactly in structures that country
+      participates in — never in a structure that doesn't touch it.
+
+    Only national/subnational conditional programs whose parent country
+    is in country_codes are surfaced here. Supranational funds
+    (Eurimages / Ibermedia) are membership-gated and handled at
+    structure-composition time by conditional_programs.conditional_nodes_for
+    (which reads the treaty_engine membership registries) — never guessed
+    into the world-level discovery stream where no single country scopes them.
+    """
+    from app.calculators.conditional_programs import get_conditional_program_index
+
+    index = get_conditional_program_index()
+    wanted = {c.upper() for c in country_codes}
+    opportunities: list[Opportunity] = []
+    for node in index.nodes:
+        if node.parent_country is None or node.parent_country not in wanted:
+            continue
+        opportunities.append(Opportunity(
+            opportunity_id=f"OPP-COND-{node.node_id}",
+            opportunity_type=OpportunityType.CONDITIONAL,
+            subtype=node.program_type,
+            description=(
+                f"{node.jurisdiction_name}: {node.program_name} "
+                f"({node.selection_basis.replace('_', ' ')}) — a conditional funding "
+                "avenue for a structure that includes this jurisdiction. "
+                "Non-priceable: award is discretionary, never auto-calculated."
+            ),
+            jurisdiction_codes=(node.parent_country,),
+            complexity="HIGH",
+            confidence=QualificationConfidence.LOW,
+            requires_evidence=True,
+            required_approvals=("Competitive/discretionary application and award decision.",),
+            required_evidence=(
+                "Program eligibility confirmation + application outcome (award is not automatic).",
+            ),
+            # Evidence-required, so it must resolve to a real follow-up
+            # docket entry (LAAE task-id scheme) rather than a silent gap —
+            # "confirm eligibility and apply to this discretionary program".
+            acquisition_task_refs=(f"TASK-conditional-program:{node.node_id}",),
+            graph_refs=(f"country:{node.parent_country}",),
+            source_ref=f"conditional_programs.get_conditional_program_index[{node.node_id}]",
+            estimated_upside_usd=None,
+            attributes={
+                "conditional_node_id": node.node_id,
+                "catalog_jurisdiction_code": node.jurisdiction_code,
+                "scope": node.scope,
+                "program_type": node.program_type,
+                "selection_basis": node.selection_basis,
+                "documented_cap_usd": node.documented_cap_usd,
+                "stacking": node.stacking,
+                "enters_npc": False,
+            },
+        ))
+    return opportunities
+
+
 def dedupe_opportunities(opportunities: list[Opportunity]) -> list[Opportunity]:
     """First occurrence wins, order preserved — duplicate suppression is
     by opportunity_id, which every pass constructs deterministically from
@@ -782,9 +865,11 @@ def discover_all_opportunities(
     grey_areas: Optional[list[GreyAreaItem]] = None,
 ) -> OpportunityCollection:
     """
-    Runs all seven passes over the currently modeled world (ALL_PROFILES'
+    Runs all eight passes over the currently modeled world (ALL_PROFILES'
     jurisdictions), dedupes, and returns a deterministically ordered
-    collection.
+    collection. The eighth pass (conditional) surfaces the completed
+    worldwide inventory's KNOWN BUT NON-PRICEABLE layer as conditional
+    opportunity nodes — see discover_conditional_opportunities.
 
     register / grey_areas (Engine Integration Phase 1): the caller's
     CURRENT qualification register and grey-area list — a facts-changed
@@ -823,12 +908,13 @@ def discover_all_opportunities(
         all_opportunities += discover_grey_area_opportunities(grey_areas, rate=mu_rate)
     all_opportunities += discover_reinvestment_opportunities(codes)
     all_opportunities += discover_normalization_opportunities(baseline_jurisdiction, graph=graph)
+    all_opportunities += discover_conditional_opportunities(codes)
 
     return OpportunityCollection(
         baseline_jurisdiction=baseline_jurisdiction,
         passes_run=(
             "jurisdiction", "treaty", "stacking", "structuring",
-            "reinvestment", "normalization", "grey_area",
+            "reinvestment", "normalization", "grey_area", "conditional",
         ),
         opportunities=rank_opportunities(dedupe_opportunities(all_opportunities)),
     )

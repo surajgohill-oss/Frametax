@@ -458,7 +458,12 @@ class TestExecutableJurisdictionKnowledge:
         s = get_state()
         out = build_alternative_jurisdiction_comparisons(s)
         codes = {e["jurisdiction_code"] for e in out["executable"]}
-        assert codes == {"MT", "IE", "GR"}
+        # Invariant-based rather than an exact snapshot: the executable set
+        # grows as doctrine resolution reaches more jurisdictions, so this
+        # asserts the three statute-read jurisdictions this test exists to
+        # protect are present with their real distinct numbers, not that the
+        # set is frozen at exactly those three.
+        assert {"MT", "IE", "GR"} <= codes
         by_code = {e["jurisdiction_code"]: e for e in out["executable"]}
         # Real, distinct QPE basis (same real budget for all — same QPE);
         # distinct rates/NPCs per jurisdiction's own real statutory rate.
@@ -470,11 +475,27 @@ class TestExecutableJurisdictionKnowledge:
         assert len(npcs) == 3  # genuinely distinct, not a copy-pasted number
 
     def test_discovery_tier_jurisdictions_excluded_not_guessed(self):
-        from app.demo.little_utopia_state import build_alternative_jurisdiction_comparisons
+        # Invariant-based (not a hardcoded set, per the Worldwide
+        # Jurisdiction Population phase's high-throughput testing
+        # discipline): catalog_only must be EXACTLY the jurisdictions with
+        # a real RateRule but no classified QualificationDoctrine — the
+        # registry's own definition of "priceable but not yet doctrine-
+        # complete," derived directly rather than snapshotted, so it
+        # never needs manual updates as new jurisdictions are added.
+        from app.demo.little_utopia_state import build_alternative_jurisdiction_comparisons, JURISDICTION_CODE
+        from app.calculators import jurisdiction_comparison as jc
+        from app.data.program_rate_rules import get_rate_rules
+        from app.data.program_spend_rules import get_program_doctrine
         s = get_state()
         out = build_alternative_jurisdiction_comparisons(s)
         catalog_codes = {c["jurisdiction_code"] for c in out["catalog_only"]}
-        assert catalog_codes == {"BE", "CY", "DE", "ES", "FR", "HR", "HU", "IT"}
+        expected = {
+            code for code, profile in jc.ALL_PROFILES.items()
+            if code != JURISDICTION_CODE
+            and get_rate_rules(profile.program_slug)
+            and get_program_doctrine(profile.program_slug) is None
+        }
+        assert catalog_codes == expected
         executable_codes = {e["jurisdiction_code"] for e in out["executable"]}
         assert catalog_codes.isdisjoint(executable_codes)
         for c in out["catalog_only"]:
@@ -483,14 +504,21 @@ class TestExecutableJurisdictionKnowledge:
     def test_territorial_exclusion_applies_to_alternative_jurisdictions_too(self):
         """LA-based post-production must be excluded for MT/IE/GR exactly
         as it is for MU — the same real production fact, jurisdiction-
-        independent."""
+        independent. Account 8300 (contingency) is ALSO excluded for all
+        three: Task 91 (contingency treatment) added a canonical default
+        excluding undeployed contingency wherever a program has no
+        explicit contingency rule of its own — none of MT/IE/GR has one
+        (unlike MU's verified inclusion or DE's verified exclusion), so
+        the new general default applies. This production has no
+        ContingencyAllocation on file, so the whole $301,131 is
+        undeployed."""
         from app.calculators.qualification_model import (
             build_little_utopia_register_for_jurisdiction, QualificationState,
         )
         for code, slug in [("MT", "mt_mfc_rebate"), ("IE", "ie_section_481"), ("GR", "gr_cash_rebate")]:
             reg = build_little_utopia_register_for_jurisdiction(code, slug, 0.30)
             excluded = {a.account_code for a in reg if a.state == QualificationState.EXCLUDED}
-            assert excluded == {"5000", "5100", "5200", "5300", "5400", "5500", "6500"}
+            assert excluded == {"5000", "5100", "5200", "5300", "5400", "5500", "6500", "8300"}
 
     def test_rate_rules_reflect_real_sourced_profile_data(self):
         from app.data.program_rate_rules import resolve_program_rate

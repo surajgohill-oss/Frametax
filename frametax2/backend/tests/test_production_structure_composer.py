@@ -127,16 +127,20 @@ class TestJurisdictionComposition:
         assert mu.jurisdiction_segments[0].has_register is True
         assert mu.jurisdiction_segments[0].program_slug == "mu_edb_incentive"
 
-    def test_multi_jurisdiction_candidates_from_discovered_partners(self, result):
+    def test_multi_jurisdiction_candidates_from_discovered_partners(self, result, collection):
+        # Invariant-based (not a hardcoded set, per the Worldwide
+        # Jurisdiction Population phase's high-throughput testing
+        # discipline): partners = exactly the union of relocation
+        # candidates and comparable jurisdictions the discovery layer
+        # itself found (collection fixture) — the composer must compose
+        # what discovery discovered, no more, no less.
         pair_ids = {c.candidate_id for c in result.candidates if len(c.participating_jurisdictions) == 2}
-        # partners = relocation candidates (ES only — MU's statutory max is
-        # 0.40, so 0.40-rate jurisdictions are not materially stronger; the
-        # old BE/IT/GR/MT relocation pairs existed only under the
-        # budget-evidenced 0.35 rate, which is never authority per the
-        # permanent rate rules) + Tier-1 comparables (CY, GR, MT).
-        assert pair_ids == {
-            "PSC-MU-CY", "PSC-MU-ES", "PSC-MU-GR", "PSC-MU-MT",
+        partner_codes = {
+            o.jurisdiction_codes[1] for o in collection.opportunities
+            if o.subtype in ("relocation_candidate", "comparable_jurisdiction")
         }
+        expected = {f"PSC-MU-{code}" for code in partner_codes}
+        assert pair_ids == expected
 
     def test_extra_jurisdiction_sets_composable(self, collection, graph):
         res = compose_production_structures(
@@ -251,15 +255,29 @@ class TestFundComposition:
 # ── Dependency / approval / authority preservation ───────────────────────────
 
 class TestConstraintPreservation:
-    def test_dependency_preserved(self, result, collection):
-        # OPP-NORM-VAT-MU-ES depends on OPP-JUR-RELOCATE-MU-ES; both live in PSC-MU-ES.
-        es = next(c for c in result.candidates if c.candidate_id == "PSC-MU-ES")
-        assert "OPP-JUR-RELOCATE-MU-ES" in es.included_opportunity_ids
-        assert "OPP-NORM-VAT-MU-ES" in es.included_opportunity_ids
+    def test_dependency_preserved(self, graph):
+        # Retargeted twice now (Executable Jurisdiction Model Completion
+        # phase — see docs/architecture/CAPABILITY_LEDGER.md's jurisdiction
+        # population log). Originally MU-ES: broken when Spain's Art. 36.2
+        # rate was corrected from an unverified 30%/50% to the confirmed
+        # 25% marginal rate, dropping it below MU's 40% ceiling. Then
+        # FR-BE: broken AGAIN when France's own TRIP rate was corrected
+        # from an unverified flat 30% to the confirmed 30%/40%-VFX-ceiling
+        # band (cnc.fr), which closed FR's materiality gap against BE's
+        # own 40% ceiling. DE-MT is used now specifically because DE's
+        # profile is still DISCOVERY-tier and untouched by this phase's
+        # corrections so far — if DE is corrected in a future jurisdiction
+        # pass and this breaks a third time, that is expected and should
+        # be fixed the same way, not treated as a regression.
+        collection = discover_all_opportunities(baseline_jurisdiction="DE", mu_rate=MU_RATE, graph=graph)
+        res = compose_production_structures(collection, graph, extra_jurisdiction_sets=[("DE", "MT")])
+        de_mt = next(c for c in res.candidates if c.candidate_id == "PSC-DE-MT")
+        assert "OPP-JUR-RELOCATE-DE-MT" in de_mt.included_opportunity_ids
+        assert "OPP-NORM-LABOR-DE-MT" in de_mt.included_opportunity_ids
         # In the baseline-only candidate the dependency cannot resolve, and the
         # dependent is excluded with the reason recorded — never silently included.
-        mu = _mu_candidate(result)
-        assert "OPP-NORM-VAT-MU-ES" not in mu.included_opportunity_ids
+        de = next(c for c in res.candidates if c.candidate_id == "PSC-DE")
+        assert "OPP-NORM-LABOR-DE-MT" not in de.included_opportunity_ids
 
     def test_approval_requirements_preserved(self, graph):
         collection = discover_all_opportunities(baseline_jurisdiction="FR", mu_rate=MU_RATE, graph=graph)
@@ -331,11 +349,17 @@ class TestDominancePruning:
         assert len(survivors) == 2  # tie in any case ⇒ both survive
         assert pruned == {}
 
-    def test_unpriced_candidates_never_pruned_by_dominance(self, result):
+    def test_unpriced_candidates_never_pruned_by_dominance(self, result, collection):
         # Real data: pairs are partially priced (0.5), so none can be
-        # dominance-compared, and none may vanish.
+        # dominance-compared, and none may vanish. Invariant-based count:
+        # baseline + one pair per discovered relocation/comparable partner
+        # (see test_multi_jurisdiction_candidates_from_discovered_partners).
         assert not result.pruned
-        assert len(result.candidates) == 5  # baseline + 4 pairs (ES, CY, GR, MT)
+        partner_codes = {
+            o.jurisdiction_codes[1] for o in collection.opportunities
+            if o.subtype in ("relocation_candidate", "comparable_jurisdiction")
+        }
+        assert len(result.candidates) == 1 + len(partner_codes)
 
     def test_partially_priced_never_dominates_or_is_dominated(self):
         priced = _priced_candidate("PSC-PRICED", {c: 1.0 for c in RiskCase})

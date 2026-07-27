@@ -79,6 +79,7 @@ from app.data.program_spend_rules import (
     SpendRule,
     get_program_doctrine,
     get_program_rules,
+    resolve_program_doctrine,
 )
 
 QUALIFICATION_DERIVATION_VERSION = "2.0.0"
@@ -172,7 +173,16 @@ def derive_qualification_register(
     looked up from the program; an unclassified program surfaces as an
     explicit modeling gap, never a silent default."""
     rules = rules if rules is not None else get_program_rules(program_slug)
-    doctrine = doctrine if doctrine is not None else get_program_doctrine(program_slug)
+    # Doctrine is RESOLVED, not merely looked up: an unclassified program
+    # falls to the module's CANONICAL QPE RULE (include unless explicitly
+    # excluded) rather than being treated as unqualifiable, while a program
+    # with recorded evidence of a narrower construction resolves to
+    # HYBRID_CONDITIONAL. An explicit caller-supplied doctrine still wins.
+    # See program_spend_rules.resolve_program_doctrine for the three tiers.
+    doctrine = (
+        doctrine if doctrine is not None
+        else resolve_program_doctrine(program_slug).doctrine
+    )
     jur = facts.jurisdiction_code
     register: list[AccountQualification] = []
 
@@ -273,6 +283,30 @@ def derive_qualification_register(
                                f"'{category}' spend.",
                       upside=round(amt * rate, 2),
                       grey_reason=GreyReason.REQUIRES_LEGAL_INTERPRETATION)
+            continue
+
+        # 5.5 Contingency, absent a program-specific rule (step 4 above
+        # already handled MU's verified inclusion and DE's verified
+        # exclusion — both keep their own statutory answer, unchanged).
+        # Final Global Discovery phase, Objective 4: an undeployed
+        # contingency reserve is not actual incurred qualifying
+        # expenditure. This is a STRUCTURAL_DEFINITION fact (what "QPE"
+        # means), not a doctrine question, so it is answered BEFORE the
+        # doctrine dispatch below and does not vary by OPEN/CLOSED/HYBRID.
+        # A deployed portion of this same reserve never reaches this
+        # branch — app.calculators.contingency_treatment re-tags it with
+        # its destination category before this function ever sees it, so
+        # it is priced under that category's own rule/doctrine instead.
+        if category == "contingency" and rule is None:
+            _acct(QualificationState.EXCLUDED, QualificationConfidence.MEDIUM,
+                  AuthorityBasis.STRUCTURAL_DEFINITION,
+                  f"{jur} program '{program_slug}' has no program-specific "
+                  "contingency rule. Canonical default (Objective 4): an "
+                  "undeployed contingency reserve is a budgeted amount, not "
+                  "incurred production spend, and is excluded from QPE "
+                  "until a producer deploys it to a real budget line — at "
+                  "which point the deployed amount is priced under that "
+                  "line's own category and rule, not this one.")
             continue
 
         # 6. No rule at all for this category — behavior is governed by the

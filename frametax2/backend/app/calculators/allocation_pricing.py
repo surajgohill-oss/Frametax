@@ -72,7 +72,7 @@ from app.calculators.qualification_model import (
 )
 from app.data.program_rate_rules import get_rate_rules, resolve_program_rate
 from app.data.program_slug_aliases import canonical_slug
-from app.data.program_spend_rules import get_program_doctrine
+from app.data.program_spend_rules import get_program_doctrine, resolve_program_doctrine
 
 ALLOCATION_PRICING_VERSION = "1.0.0"
 
@@ -213,10 +213,15 @@ def price_segment(
     spend_category_by_code: dict[str, str],
     offshore_payroll_accounts: frozenset[str],
     production_type: str = "feature_film",
+    contingency_allocations: dict | None = None,
 ) -> SegmentEconomics:
     """Derive this segment's PARTIAL register and price it with the
     existing kernel. A non-incentive segment (program_slug None) is
-    located spend only — no register, no incentive, never a blocker."""
+    located spend only — no register, no incentive, never a blocker.
+
+    contingency_allocations (Task 91): optional {account_code:
+    ContingencyAllocation}, defaulting to None (byte-identical prior
+    behavior) — see contingency_treatment.expand_contingency_lines."""
     allocated = round(sum(a.amount_usd for a in allocations), 2)
     codes = tuple(sorted({a.account_code for a in allocations}))
 
@@ -232,23 +237,32 @@ def price_segment(
         )
 
     slug = canonical_slug(program_slug)
-    doctrine = get_program_doctrine(slug)
+    # Doctrine is RESOLVED, never required to be pre-classified: under the
+    # module's CANONICAL QPE RULE an absent classification is not a
+    # prohibition (see program_spend_rules.resolve_program_doctrine). A
+    # program with recorded evidence of a narrower construction resolves to
+    # HYBRID_CONDITIONAL instead of the open default. Only a missing
+    # STATUTORY RATE still blocks execution — that is a genuine absence of
+    # the number itself, which no rule can supply.
+    doctrine_resolution = resolve_program_doctrine(slug)
+    doctrine = doctrine_resolution.doctrine
     has_rate = len(get_rate_rules(slug)) > 0
-    if doctrine is None or not has_rate:
+    if not has_rate:
         return SegmentEconomics(
             jurisdiction_code=jurisdiction_code, program_slug=slug,
             claims_incentive=True, allocated_usd=allocated,
             account_codes=codes, executable=False,
+            doctrine=doctrine.value,
             blockers=(
-                f"{jurisdiction_code}/{slug}: "
-                + ("no classified qualification doctrine" if doctrine is None else "")
-                + (" and " if doctrine is None and not has_rate else "")
-                + ("no statutory rate rules" if not has_rate else "")
-                + " — segment is not executable; never priced at a guessed rate.",
+                f"{jurisdiction_code}/{slug}: no statutory rate rules — segment "
+                "is not executable; never priced at a guessed rate.",
             ),
         )
 
-    lines = _segment_lines(allocations, spend_category_by_code)
+    from app.calculators.contingency_treatment import expand_contingency_lines
+    lines = expand_contingency_lines(
+        _segment_lines(allocations, spend_category_by_code), contingency_allocations,
+    )
     facts = ProductionFacts(
         jurisdiction_code=jurisdiction_code,
         # By construction every allocated line is incurred IN this
@@ -402,12 +416,17 @@ def price_allocated_structure(
     financing_cost_usd: float = 0.0,
     implementation_cost_usd: float = 0.0,
     production_type: str = "feature_film",
+    contingency_allocations: dict | None = None,
 ) -> AllocatedStructurePricing:
     """Price a complete structure from its allocation. Travel and FX
     deltas are structure-level, computed ONCE by the caller (for the
     primary jurisdiction against the original geography) and applied
     ONCE here. Financing/implementation default to zero — explicit
-    inputs only, never a silent assumption."""
+    inputs only, never a silent assumption.
+
+    contingency_allocations (Task 91): optional {account_code:
+    ContingencyAllocation}, defaulting to None (byte-identical prior
+    behavior), passed through to every segment's price_segment call."""
     blockers: list[str] = list()
     notes: list[str] = []
 
@@ -457,6 +476,7 @@ def price_allocated_structure(
             spend_category_by_code=spend_category_by_code,
             offshore_payroll_accounts=offshore_payroll_accounts,
             production_type=production_type,
+            contingency_allocations=contingency_allocations,
         )
         segments.append(seg)
         blockers.extend(seg.blockers)
@@ -661,14 +681,36 @@ def build_structure_recommendation(
 
 def rank_allocated_structures(
     pricings: list[AllocatedStructurePricing],
+    conditional_pursuable_by_structure: dict[str, int] | None = None,
 ) -> list[dict]:
     """Financial ranking over FULLY PRICED structures only (verified NPC
     with adjustments, ascending). Unpriced structures are listed after,
     unranked, with their exact blockers — never silently dropped and
-    never ranked on a partial number."""
+    never ranked on a partial number.
+
+    conditional_pursuable_by_structure (optimizer-integration phase):
+    structure_id -> count of PURSUABLE conditional funding avenues the
+    compatibility engine found for that structure (discretionary grants,
+    broadcaster/co-production/regional funds that are not barred by
+    evidence and not scope-mismatched).
+
+    This NEVER changes a structure's Net Production Cost and never
+    outranks it: NPC remains the sole primary key, exactly as before. It
+    is applied only as a TIE-BREAK between structures whose defensible NPC
+    is identical — among equally-costed structures, the one that opens
+    more real (if gated) funding avenues ranks first. A discretionary
+    award has no defensible dollar value, so it may inform a choice
+    between equals but must never manufacture an advantage over a
+    cheaper structure. Omitted (None) = byte-identical prior behavior.
+    """
+    counts = conditional_pursuable_by_structure or {}
     priced = sorted(
         (p for p in pricings if p.is_fully_priced),
-        key=lambda p: (p.npc_with_adjustments_usd, p.structure_id),
+        key=lambda p: (
+            p.npc_with_adjustments_usd,          # primary: lowest defensible NPC
+            -counts.get(p.structure_id, 0),      # tie-break: more pursuable avenues first
+            p.structure_id,                      # final deterministic tie-break
+        ),
     )
     unpriced = sorted(
         (p for p in pricings if not p.is_fully_priced),
@@ -686,6 +728,10 @@ def rank_allocated_structures(
             "npc_verified_usd": p.npc_verified_usd,
             "npc_with_adjustments_usd": p.npc_with_adjustments_usd,
             "npc_conservative_usd": p.npc_conservative_usd,
+            # Conditional (non-priceable) funding depth for this structure —
+            # surfaced alongside the ranked economics so two structures with
+            # equal NPC are distinguishable, never folded INTO the NPC.
+            "conditional_pursuable_count": counts.get(p.structure_id, 0),
         })
     for p in unpriced:
         ranking.append({

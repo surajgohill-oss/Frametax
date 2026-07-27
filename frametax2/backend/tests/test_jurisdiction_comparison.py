@@ -132,7 +132,24 @@ class TestScoringFramework:
 # ---------------------------------------------------------------------------
 
 TIER1_CODES = {"MU", "MT", "GR", "CY"}
-SECONDARY_CODES = {"IE", "FR", "IT", "ES", "HR", "HU", "BE", "DE"}
+SECONDARY_CODES = {
+    "IE", "FR", "IT", "ES", "HR", "HU", "BE", "DE", "GB",
+    "CA", "CA-BC", "CA-ON", "CA-QC", "AU", "NZ",
+    "US-GA", "US-CA", "US-NY", "US-NM", "US-OR", "US-LA",
+    "ZA", "AE-AD", "MA", "DK", "FI", "NO", "SE",
+    "SA", "JO", "TH", "MY", "PH", "KR", "MX", "CL", "IL", "JP", "EG",
+    "PA", "CR", "GH", "FJ", "GE", "TW", "KZ", "AL", "ME", "MK",
+    "US-NV", "US-RI", "TT", "QA", "UZ", "MN", "CH", "SI", "UA",
+    "PT", "AU-SA",
+    "US-WA", "US-IL", "US-NC", "US-SC", "US-MA", "US-TX", "US-CT", "US-PA",
+    "US-MD", "US-VA", "US-CO", "US-TN", "US-OK", "US-AL", "US-KY",
+    "CA-AB", "CA-MB", "CA-NS", "CA-NB",
+    "NL", "AT", "CZ", "RO", "RS", "IS",
+    "AU-NSW", "AU-QLD", "CO", "DO", "SG", "AE-DXB",
+    "BG", "EE", "LV", "LT", "PL", "SK", "LU",
+    "US-HI", "US-UT", "US-MN", "US-MS", "US-AZ", "US-PR",
+    "CA-SK", "CA-NL",
+}
 
 
 class TestTier1ProfilesPresent:
@@ -278,11 +295,16 @@ class TestCyprusProfile:
     def cy(self):
         return TIER1_PROFILES["CY"]
 
-    def test_discovery_tier(self, cy):
-        assert cy.confidence_tier == "DISCOVERY"
+    def test_parsed_tier(self, cy):
+        # Corrected worldwide-population phase: confirmed directly from the
+        # official Cyprus Film Commission page (film.investcyprus.org.cy),
+        # "up to 45%" — a real 35%/45% cultural-test band, not the flat 35%
+        # DISCOVERY-tier figure this test previously asserted.
+        assert cy.confidence_tier == "PARSED"
 
-    def test_base_rate_35(self, cy):
+    def test_base_rate_35_ceiling_45(self, cy):
         assert cy.base_rate == 0.35
+        assert cy.max_rate == 0.45
 
     def test_shallow_crew(self, cy):
         assert cy.crew_depth_rating == CrewDepth.SHALLOW
@@ -349,9 +371,22 @@ class TestProfileIntegrity:
         assert hu.vessel_marine_qualifies is False
         assert hu.has_open_water_filming is False
 
-    def test_spain_has_max_rate_50_canary(self):
+    def test_spain_rate_is_confirmed_marginal_25_not_flat_30_or_canary_50(self):
+        # Corrected per Executable Jurisdiction Model Completion phase: Article
+        # 36.2 LIS (BOE-A-2014-12328), verbatim text confirmed from two
+        # independent legal-database reproductions, is a MARGINAL/BRACKETED
+        # rate (30% first EUR 1M, 25% excess) — not the flat 30%/50% Canary
+        # Islands figures this test previously asserted (those were an
+        # unverified DISCOVERY-tier carryover; the 50% Canary Islands rate
+        # does not appear anywhere in Article 36's text). base_rate/max_rate
+        # are both set to the conservative 25% marginal rate that governs
+        # spend above the bracket break — see program_rate_rules.py
+        # ES_RATE_RULES and ES_UNVERIFIED_CLAIMS for the full citation trail.
         es = SECONDARY_PROFILES["ES"]
-        assert es.max_rate == 0.50, "Spain Canary Islands rate should be reflected in max_rate"
+        assert es.confidence_tier == "PARSED"
+        assert es.base_rate == 0.25
+        assert es.max_rate == 0.25
+        assert es.annual_cap_local == 20_000_000.0
 
     def test_ireland_transferable(self):
         ie = SECONDARY_PROFILES["IE"]

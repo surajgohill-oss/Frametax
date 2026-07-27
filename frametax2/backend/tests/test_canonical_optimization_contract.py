@@ -122,17 +122,19 @@ class TestLocalCostModeling:
         )
 
     def test_unpriced_structures_still_carry_a_disclosed_delta(self):
-        # local cost modeling runs before the doctrine/pricing gate — a
-        # capability-only structure with no rate rules is still unpriced
-        # (never fabricated), but its local-cost delta is real, sourced
-        # data and is disclosed regardless.
+        # Local cost modeling runs BEFORE the pricing gate: a structure that
+        # cannot be priced (no statutory rate rules) is still never
+        # fabricated, but its local-cost delta is real, sourced data and is
+        # disclosed regardless. Asserted over whatever is genuinely unpriced
+        # rather than over the capability-only set, which is normally empty
+        # now that doctrine resolves under the canonical rule.
         by_id, al = _by_id()
-        capability_only = al["discovery"]["metrics"]["capability_only_jurisdictions"]
-        assert capability_only, "fixture must have at least one capability-only partner"
-        for code in capability_only:
-            s = by_id[f"ALLOC-RELOC-{code}"]
-            assert s["is_fully_priced"] is False
-            assert s["local_cost_delta_usd"] is not None
+        unpriced = [s for s in al["structures"] if not s["is_fully_priced"]]
+        assert unpriced, "fixture must exercise at least one unpriced structure"
+        for s in unpriced:
+            assert s["local_cost_delta_usd"] is not None, (
+                f"{s['structure_id']} is unpriced but discloses no local-cost delta"
+            )
 
 
 class TestSplitProductionElection:

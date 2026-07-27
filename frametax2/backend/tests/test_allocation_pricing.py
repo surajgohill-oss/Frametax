@@ -360,13 +360,27 @@ class TestWorldwideCoverage:
         out = self._out()
         comp = [p for p in out["structures"]
                 if p["structure_type"] == "component_relocation"]
-        targets = {p["structure_id"].rsplit("-", 1)[-1] for p in comp}
-        # one anchor-component structure per discovery-retained partner:
-        # incentive-ready (GR/IE/MT) AND capability-only (production-
-        # capable, incentive pending — BE/CY/DE/ES/FR/HR/IT), evaluated
-        # WITHOUT any producer election. Capability-only partners are
-        # never silently dropped from structure generation.
-        assert targets == {"GR", "IE", "MT", "BE", "CY", "DE", "ES", "FR", "HR", "IT"}
+        # structure_id is "ALLOC-COMPONENT-POST-{code}" — strip the known
+        # prefix rather than rsplit by the last hyphen, which silently
+        # truncated hyphenated codes like "CA-BC"/"US-GA" to "BC"/"GA"
+        # once sub-national jurisdictions were added (Worldwide
+        # Jurisdiction Population phase).
+        targets = {p["structure_id"].removeprefix("ALLOC-COMPONENT-POST-") for p in comp}
+        # Invariant-based (not a hardcoded set, per the Worldwide
+        # Jurisdiction Population phase's high-throughput testing
+        # discipline): one anchor-component structure per discovery-
+        # retained partner — derived directly from discovery's own
+        # examinations (accepted=True), never a hand-maintained country
+        # list. A jurisdiction rejected on capability (e.g. landlocked,
+        # no marine/open-water filming) correctly does NOT appear here —
+        # confirmed via the SAME examinations discovery already computed,
+        # not guessed or hardcoded.
+        examinations = out["discovery"]["examinations"]
+        expected = {
+            ex["jurisdiction_code"] for ex in examinations
+            if ex["production_capable"] and ex["jurisdiction_code"] != "MU"
+        }
+        assert targets == expected
         # at least one prices (MT, above its min spend); the others block
         # honestly — GR/IE on their own minimum-spend rule, the
         # capability-only partners on missing doctrine/rate rules —
@@ -375,10 +389,29 @@ class TestWorldwideCoverage:
         assert any((not p["is_fully_priced"]) and p["blockers"] for p in comp)
 
     def test_coverage_report_proves_every_category(self):
-        cov = self._out()["coverage"]
+        out = self._out()
+        cov = out["coverage"]
         cats = {c["category"]: c for c in cov["categories"]}
-        assert cats["single_jurisdiction"]["fully_priced"] == 4
-        assert cats["component_routing_anchor"]["candidates_evaluated"] == 10
+        # Invariant rather than a snapshot: every single-jurisdiction
+        # candidate whose segment resolves a statutory rate must price. The
+        # count grows as doctrine resolution reaches more jurisdictions, so
+        # it is derived from the served structures themselves.
+        single_ids = set(cats["single_jurisdiction"]["structure_ids"])
+        expected_single_priced = sum(
+            1 for s in out["structures"]
+            if s["structure_id"] in single_ids and s["is_fully_priced"]
+        )
+        assert cats["single_jurisdiction"]["fully_priced"] == expected_single_priced
+        assert cats["single_jurisdiction"]["fully_priced"] >= 4
+        # Invariant: candidates_evaluated must equal the number of
+        # discovery-accepted, non-baseline partners (see the invariant in
+        # test_component_routing_auto_evaluated_for_every_executable_partner).
+        examinations = out["discovery"]["examinations"]
+        expected_evaluated = sum(
+            1 for ex in examinations
+            if ex["production_capable"] and ex["jurisdiction_code"] != "MU"
+        )
+        assert cats["component_routing_anchor"]["candidates_evaluated"] == expected_evaluated
         # co-production is EVALUATED-as-zero with a proven reason (MU has no
         # treaty instrument) — never silently omitted
         assert cats["co_production_treaty"]["candidates_evaluated"] == 0
@@ -392,8 +425,11 @@ class TestWorldwideCoverage:
     def test_ranking_covers_all_priced_structures_globally_optimal_is_baseline_mu(self):
         out = self._out()
         ranked = [r for r in out["ranking"] if r["rank"] is not None]
-        # 4 single + 1 priced component = 5 priced and ranked
-        assert len(ranked) == 5
+        # Invariant rather than a snapshot: exactly the fully-priced
+        # structures are ranked — nothing priced is dropped, nothing unpriced
+        # is ranked on a partial number.
+        assert len(ranked) == sum(1 for s in out["structures"] if s["is_fully_priced"])
+        assert len(ranked) >= 5
         # Canonical optimization contract (Phase 5): ranking uses the
         # BEST-SUPPORTED modeled incentive (MU reaches 40%, not its 30% floor)
         # AND normalizes the off-budget MU in-kind post — every non-MU-post

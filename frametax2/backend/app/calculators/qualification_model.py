@@ -281,6 +281,7 @@ def build_little_utopia_qualification_register(
 def build_little_utopia_real_register(
     mu_rate: float = 0.40,
     facts: "object | None" = None,
+    contingency_allocations: "dict | None" = None,
 ) -> list[AccountQualification]:
     """
     The account-by-account qualification register for The Little Utopia
@@ -304,7 +305,13 @@ def build_little_utopia_real_register(
     of this register (which is $4,364,395.00 — see
     little_utopia_real_budget.RECONCILIATION_NOTE for the accepted $2.00
     source-document variance between the two).
+
+    contingency_allocations (Task 91): optional {account_code:
+    ContingencyAllocation}, defaulting to None — None reproduces prior
+    behavior byte-for-byte (see
+    contingency_treatment.expand_contingency_lines).
     """
+    from app.calculators.contingency_treatment import expand_contingency_lines
     from app.calculators.qualification_derivation import (
         BudgetLine,
         ProductionFacts,
@@ -332,6 +339,7 @@ def build_little_utopia_real_register(
         )
         for code, desc, amt, _page in LITTLE_UTOPIA_REAL_BUDGET_LINES
     ]
+    lines = expand_contingency_lines(lines, contingency_allocations)
     return derive_qualification_register(
         lines, program_slug="mu_edb_incentive", facts=facts, rate=mu_rate,
         program_territorial_text=MU_TERRITORIAL_TEXT,
@@ -388,12 +396,18 @@ def build_little_utopia_register_for_jurisdiction(
     jurisdiction_code: str,
     program_slug: str,
     rate: float,
+    contingency_allocations: "dict | None" = None,
 ) -> list[AccountQualification]:
     """Derive Little Utopia's real budget against an ALTERNATIVE
     jurisdiction's program. Returns [] if program_slug has no classified
     doctrine (get_program_doctrine() is None) — callers must check
     get_program_doctrine(program_slug) is not None before relying on this
-    as "executable"; an empty/all-grey register is never silently priced."""
+    as "executable"; an empty/all-grey register is never silently priced.
+
+    contingency_allocations (Task 91): optional {account_code:
+    ContingencyAllocation}, defaulting to None (byte-identical prior
+    behavior) — see contingency_treatment.expand_contingency_lines."""
+    from app.calculators.contingency_treatment import expand_contingency_lines
     from app.calculators.qualification_derivation import (
         BudgetLine,
         ProductionFacts,
@@ -424,6 +438,7 @@ def build_little_utopia_register_for_jurisdiction(
         )
         for code, desc, amt, _page in LITTLE_UTOPIA_REAL_BUDGET_LINES
     ]
+    lines = expand_contingency_lines(lines, contingency_allocations)
     return derive_qualification_register(
         lines, program_slug=program_slug, facts=facts, rate=rate,
         program_territorial_text=_ALTERNATIVE_TERRITORIAL_TEXT.get(program_slug),

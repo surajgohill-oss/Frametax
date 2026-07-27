@@ -52,11 +52,14 @@ from app.demo.little_utopia_state import (
     build_financing_model,
     build_inkind_model,
     build_normalized_structures,
+    current_contingency_state,
     current_economics_controls,
     current_fact_answers,
     current_people_facts,
+    deploy_contingency,
     get_awarded_rate,
     get_state,
+    reset_contingency_allocations,
 )
 from app.calculators.mauritius_economics import compute_mauritius_economics
 from app.calculators.qualification_model import QualificationState
@@ -88,6 +91,81 @@ async def get_facts() -> dict[str, Any]:
 
 class FactAnswers(BaseModel):
     answers: dict[str, Any]
+
+
+# ── Contingency (Task 91) ────────────────────────────────────────────────────
+# Undeployed contingency is excluded from QPE by default (canonical rule,
+# qualification_derivation.py step 5.5). A producer explicitly DEPLOYS
+# part or all of a contingency line to a real destination budget line;
+# the deployed amount then inherits the RECEIVING line's own eligibility
+# treatment. No blanket "qualify contingency" toggle exists anywhere in
+# this surface — every dollar's fate is either the untouched
+# per-program contingency rule (undeployed remainder) or the untouched
+# per-program rule for the producer-chosen destination category
+# (deployed amount).
+
+def _contingency_dict() -> dict[str, Any]:
+    out: dict[str, Any] = {}
+    for code, alloc in current_contingency_state().items():
+        out[code] = {
+            "source_account_code": alloc.source_account_code,
+            "source_description": alloc.source_description,
+            "original_amount_usd": alloc.original_amount_usd,
+            "deployed_amount_usd": alloc.deployed_amount_usd,
+            "undeployed_amount_usd": alloc.undeployed_amount_usd,
+            "state": alloc.state.value,
+            "deployments": [
+                {
+                    "destination_account_code": d.destination_account_code,
+                    "destination_description": d.destination_description,
+                    "destination_spend_category": d.destination_spend_category,
+                    "amount_usd": d.amount_usd,
+                    "note": d.note,
+                    "deployed_by": d.deployed_by,
+                    "deployed_at": d.deployed_at,
+                }
+                for d in alloc.deployments
+            ],
+        }
+    return out
+
+
+@router.get("/contingency")
+async def get_contingency() -> dict[str, Any]:
+    return {"allocations": _contingency_dict()}
+
+
+class ContingencyDeploymentRequest(BaseModel):
+    source_account_code: str
+    destination_account_code: str
+    destination_description: str
+    destination_spend_category: str
+    amount_usd: float
+    note: str
+    deployed_by: str = "producer"
+
+
+@router.post("/contingency/deploy")
+async def post_contingency_deploy(body: ContingencyDeploymentRequest) -> dict[str, Any]:
+    try:
+        deploy_contingency(
+            source_account_code=body.source_account_code,
+            destination_account_code=body.destination_account_code,
+            destination_description=body.destination_description,
+            destination_spend_category=body.destination_spend_category,
+            amount_usd=body.amount_usd,
+            note=body.note,
+            deployed_by=body.deployed_by,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    return {"allocations": _contingency_dict()}
+
+
+@router.post("/contingency/reset")
+async def post_contingency_reset() -> dict[str, Any]:
+    reset_contingency_allocations()
+    return {"allocations": _contingency_dict()}
 
 
 @router.post("/facts")

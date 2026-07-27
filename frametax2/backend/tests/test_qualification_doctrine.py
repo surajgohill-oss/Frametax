@@ -82,13 +82,86 @@ class TestHybridDoctrine:
         assert all(a.grey_reason == GreyReason.REQUIRES_LEGAL_INTERPRETATION for a in reg)
 
 
-class TestUnclassifiedProgram:
-    def test_unclassified_doctrine_is_explicit_modeling_gap_not_silent(self):
+class TestUnclassifiedProgramFallsToCanonicalRule:
+    """An unclassified program is resolved under the module's CANONICAL QPE
+    RULE — "every actual budget item is included unless authoritative
+    program language explicitly excludes it" — rather than being treated as
+    unqualifiable.
+
+    This REPLACES the former assertion that an unclassified doctrine sent
+    100% of the budget to GREY. That behavior made an ABSENCE OF
+    CLASSIFICATION operate as a prohibition, which is the precise inversion
+    of the canonical rule, and it was the binding constraint that left only
+    4 of 110 fully rate-modeled jurisdictions priceable. The protection the
+    old test provided — nothing is ever silently decided — is preserved
+    below by asserting that the resolution always states its own basis.
+    """
+
+    def test_unclassified_program_resolves_to_canonical_default_inclusion(self):
+        from app.data.program_spend_rules import (
+            CANONICAL_DEFAULT_DOCTRINE,
+            DoctrineBasis,
+            resolve_program_doctrine,
+        )
+
+        resolution = resolve_program_doctrine("a_program_never_classified")
+        assert resolution.doctrine == CANONICAL_DEFAULT_DOCTRINE
+        assert resolution.basis is DoctrineBasis.CANONICAL_DEFAULT
+        # Never silent: the resolution always explains itself.
+        assert "CANONICAL QPE RULE" in resolution.explanation
+
+    def test_derivation_under_no_explicit_doctrine_includes_rather_than_greys(self):
         reg = _derive(None)
-        # Not silently included, not silently excluded — surfaced as a real
-        # modeling gap the engineer must resolve by classifying the program.
-        assert all(a.state == QualificationState.GREY_AREA_REQUIRES_AUTHORITY for a in reg)
-        assert all(a.grey_reason == GreyReason.PROGRAM_REGIME_UNCLASSIFIED for a in reg)
+        assert all(a.state == QualificationState.QUALIFIES for a in reg)
+        assert not any(
+            a.grey_reason == GreyReason.PROGRAM_REGIME_UNCLASSIFIED for a in reg
+        ), "absence of classification must no longer manufacture a modeling-gap grey"
+
+    def test_recorded_contrary_evidence_overrides_the_default_downward(self):
+        """The default applies only where nothing contradicts it. A program
+        with recorded evidence of a narrower construction resolves to
+        HYBRID_CONDITIONAL, so unmatched lines become genuine legal-
+        interpretation greys — never silent inclusions.
+
+        As of the Worldwide Incentive Engine Closeout phase,
+        DOCTRINE_EXAMINED_NOT_CLASSIFIED is legitimately EMPTY: every
+        program once deferred there (BE/DE/HR/HU/IT/US-NM, plus CY/ES/
+        US-GA/US-NY deferred separately) has had its primary-source
+        qualifying-expenditure text read and classified. Spain
+        (es_tax_credit_foreign) is the current real example of the
+        downward-override mechanism this test protects — verified directly
+        below instead of iterating an empty register."""
+        from app.data.program_spend_rules import (
+            DoctrineBasis,
+            QualificationDoctrine as QD,
+            resolve_program_doctrine,
+        )
+
+        resolution = resolve_program_doctrine("es_tax_credit_foreign")
+        assert resolution.doctrine == QD.HYBRID_CONDITIONAL
+        assert resolution.basis is DoctrineBasis.EXPLICIT
+        assert resolution.explanation  # never silent
+        # Explicit here (Spain's HYBRID classification is itself primary-
+        # source-read and recorded in PROGRAM_DOCTRINE, not merely inferred
+        # from a deferred-evidence note) — still the same downward-from-
+        # default outcome this test exists to protect: HYBRID_CONDITIONAL,
+        # not a silent OPEN_DEFAULT_INCLUDE, because Spain's ATL creative-
+        # personnel category is genuinely EEA-residency-conditioned (see the
+        # PROGRAM_DOCTRINE comment for es_tax_credit_foreign).
+        from app.data.program_spend_rules import PROGRAM_DOCTRINE
+        assert "es_tax_credit_foreign" in PROGRAM_DOCTRINE
+
+    def test_explicit_classification_always_wins(self):
+        from app.data.program_spend_rules import (
+            PROGRAM_DOCTRINE,
+            DoctrineBasis,
+            resolve_program_doctrine,
+        )
+
+        for slug, doctrine in PROGRAM_DOCTRINE.items():
+            resolution = resolve_program_doctrine(slug)
+            assert resolution.doctrine == doctrine
+            assert resolution.basis is DoctrineBasis.EXPLICIT
 
 
 class TestNoDefaultToGreyRegression:

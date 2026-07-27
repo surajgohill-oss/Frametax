@@ -536,16 +536,27 @@ class TestTreatyAbsenceDistinctFromNoDataLoaded:
         assert confirmed_absent["status"] != not_loaded["status"]
 
     def test_uk_has_known_treaty_availability(self, graph):
+        # Corrected (Worldwide Jurisdiction Population phase): GB now has a
+        # real NationalProgram (uk_avec, added this phase — see
+        # docs/architecture/CAPABILITY_LEDGER.md). The treaty registry
+        # already had real UK-DE/UK-FR/UK-IE bilateral treaty data (present
+        # before this phase, just dormant with no program to attach to) —
+        # this test previously confirmed the HONEST ABSENCE of a GB program;
+        # now that the program is real, the correct behavior mirrors
+        # test_ireland_or_france_treaty_availability_status below: GB's
+        # treaty_availability fact should be KNOWN with a real treaty list,
+        # not fabricated absence.
         gb_program = None
         for p in graph.nodes_of_type(NodeType.NATIONAL_PROGRAM):
             if p.attributes.get("jurisdiction_code") == "GB":
                 gb_program = p
                 break
-        # GB has no NationalProgram in jurisdiction_comparison.py's
-        # ALL_PROFILES (it only appears as a bilateral-treaty party) —
-        # so no treaty_availability fact is fabricated for it either;
-        # confirm that honest absence instead.
-        assert gb_program is None
+        assert gb_program is not None
+        node = graph.get_node("treaty_availability:uk_avec")
+        assert node is not None
+        if node.attributes["treaty_slugs"]:
+            assert node.node_type == NodeType.REQUIREMENT
+            assert node.attributes["status"] == FactStatus.KNOWN.value
 
     def test_ireland_or_france_treaty_availability_status(self, graph):
         """France participates in bilateral treaties (e.g. fr-de-bilateral)
@@ -661,6 +672,13 @@ class TestPhase5BNoOptimizerImpact:
 
     def test_building_graph_does_not_mutate_shared_registries(self, graph):
         """Building the graph must not have side effects on the source
-        modules' own module-level dicts (ALL_PROFILES, REINVESTMENT_REGISTRY)."""
+        modules' own module-level dicts (ALL_PROFILES, REINVESTMENT_REGISTRY).
+        Invariant-based (not a hardcoded count, per the Worldwide
+        Jurisdiction Population phase's high-throughput testing discipline):
+        building a second, independent graph must observe the exact same
+        ALL_PROFILES size as the fixture's graph did — proving no mutation
+        occurred, regardless of how many jurisdictions are registered."""
         assert "MU" in jc.ALL_PROFILES
-        assert len(jc.ALL_PROFILES) == 12
+        size_after_fixture_graph = len(jc.ALL_PROFILES)
+        build_jurisdiction_graph()
+        assert len(jc.ALL_PROFILES) == size_after_fixture_graph

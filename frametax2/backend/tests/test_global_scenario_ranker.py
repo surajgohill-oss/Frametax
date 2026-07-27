@@ -139,14 +139,31 @@ class TestDependencyEnforcement:
         assert "OPP-DEP" in baseline.included_opportunity_ids
         assert "OPP-CHILD" in baseline.included_opportunity_ids
 
-    def test_real_normalization_dependency_on_relocation_enforced(self, collection):
+    def test_real_normalization_dependency_on_relocation_enforced(self, collection, graph):
+        # ES no longer has a live dependency here: its Art. 36.2 rate is
+        # confirmed at 25% (see program_rate_rules.py ES_RATE_RULES),
+        # below MU's 40% ceiling, so ES is no longer a relocation
+        # candidate and OPP-JUR-RELOCATE-MU-ES doesn't exist. The VAT
+        # opportunity still fires independently, with an empty dependency.
         vat_to_es = next(o for o in collection.opportunities if o.opportunity_id == "OPP-NORM-VAT-MU-ES")
-        assert vat_to_es.dependent_opportunity_ids == ("OPP-JUR-RELOCATE-MU-ES",)
-        es_structure = next(
-            s for s in compose_candidate_structures(collection) if s.attributes.get("target_jurisdiction") == "ES"
+        assert vat_to_es.dependent_opportunity_ids == ()
+
+        # Real-data substitute for the "dependency enforced when present"
+        # half of this mechanism, retargeted from FR-BE to DE-MT after
+        # France's own TRIP rate was also corrected this phase (cnc.fr:
+        # 30% base / 40% VFX-ceiling, not a flat unverified 30%), which
+        # closed FR's materiality gap against BE. DE is still DISCOVERY-
+        # tier and untouched so far — see docs/architecture/
+        # CAPABILITY_LEDGER.md's jurisdiction population log.
+        de_collection = discover_all_opportunities(baseline_jurisdiction="DE", mu_rate=MU_RATE, graph=graph)
+        labor_to_mt = next(o for o in de_collection.opportunities if o.opportunity_id == "OPP-NORM-LABOR-DE-MT")
+        assert labor_to_mt.dependent_opportunity_ids == ("OPP-JUR-RELOCATE-DE-MT",)
+        mt_structure = next(
+            s for s in compose_candidate_structures(de_collection)
+            if s.attributes.get("target_jurisdiction") == "MT"
         )
-        assert "OPP-JUR-RELOCATE-MU-ES" in es_structure.included_opportunity_ids
-        assert "OPP-NORM-VAT-MU-ES" in es_structure.included_opportunity_ids
+        assert "OPP-JUR-RELOCATE-DE-MT" in mt_structure.included_opportunity_ids
+        assert "OPP-NORM-LABOR-DE-MT" in mt_structure.included_opportunity_ids
 
 
 # ── Claim ledger / duplicate suppression ─────────────────────────────────────
@@ -316,7 +333,26 @@ class TestRanking:
         assert priceable_ranks[0].rank == 1
 
     def test_non_priceable_ranked_after_priceable(self, structures):
-        result = rank_production_structures(structures)
+        # `structures` (MU baseline, real data) is now priceable-only: ES
+        # was the only non-priceable real candidate, and per the Executable
+        # Jurisdiction Model Completion phase its Art. 36.2 rate is
+        # confirmed at 25% (program_rate_rules.py ES_RATE_RULES), below
+        # MU's 40% ceiling, so it's no longer a relocation candidate at
+        # all. Register/pricing here is Little-Utopia/MU-anchored (see
+        # CAPABILITY_LEDGER.md's documented Mauritius-anchor constraint),
+        # so a different real baseline can't substitute the way it does
+        # for the opportunity-discovery tests. Add one synthetic non-
+        # priceable structure — same pattern as
+        # test_best_returns_none_when_nothing_priceable — to keep this
+        # ranking-order mechanism covered without fabricating jurisdiction
+        # doctrine.
+        synthetic_non_priceable = ProductionStructure(
+            structure_id="STRUCT-SYNTHETIC-NONPRICEABLE", label="synthetic",
+            baseline_jurisdiction="MU",
+            included_opportunity_ids=(), excluded_opportunity_ids=(), exclusion_reasons={},
+            claim_ledger=ClaimLedger(), blocking_requirements=("synthetic gap",), is_priceable=False,
+        )
+        result = rank_production_structures(list(structures) + [synthetic_non_priceable])
         priceable_positions = [r.rank for r in result.ranks if r.is_priceable]
         non_priceable_positions = [r.rank for r in result.ranks if not r.is_priceable]
         assert max(priceable_positions) < min(non_priceable_positions)

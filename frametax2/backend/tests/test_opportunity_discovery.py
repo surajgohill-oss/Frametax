@@ -9,6 +9,8 @@ and non-mutation of every consumed engine.
 """
 from __future__ import annotations
 
+import itertools
+
 import pytest
 
 from app.calculators import jurisdiction_comparison as jc
@@ -65,15 +67,15 @@ class TestModuleConstants:
     def test_version(self):
         assert OPPORTUNITY_DISCOVERY_VERSION == "1.0.0"
 
-    def test_seven_opportunity_types(self):
-        assert len(OpportunityType) == 7
+    def test_opportunity_types(self):
+        assert len(OpportunityType) == 8
         assert {t.value for t in OpportunityType} == {
             "jurisdiction", "treaty", "stacking", "structuring",
-            "reinvestment", "normalization", "grey_area",
+            "reinvestment", "normalization", "grey_area", "conditional",
         }
 
-    def test_all_seven_passes_run(self, collection):
-        assert len(collection.passes_run) == 7
+    def test_all_passes_run(self, collection):
+        assert len(collection.passes_run) == 8
         types_present = {o.opportunity_type for o in collection.opportunities}
         assert types_present == set(OpportunityType)
 
@@ -82,15 +84,21 @@ class TestModuleConstants:
 
 class TestJurisdictionDiscovery:
     def test_materially_stronger_jurisdictions_found(self):
+        # Invariant-based (not a hardcoded set, per the Worldwide
+        # Jurisdiction Population phase's high-throughput testing
+        # discipline): a jurisdiction is a relocation candidate iff its
+        # own max_rate exceeds MU's by at least MATERIAL_RATE_ADVANTAGE —
+        # derived directly from ALL_PROFILES rather than snapshotted.
         opps = discover_jurisdiction_opportunities("MU")
         relocations = [o for o in opps if o.subtype == "relocation_candidate"]
         codes = {o.jurisdiction_codes[1] for o in relocations}
-        # MU statutory max is 0.40 (EDB 'up to 40%' feature-film band), so
-        # only ES (0.50) clears the +0.05 materiality threshold. BE/GR/IT/MT
-        # at 0.40 are NOT stronger — the prior expectation of all five
-        # existed only because the profile carried the budget-evidenced
-        # 0.35, which is never authority (permanent Rules 1/2/4).
-        assert codes == {"ES"}
+        mu_max = jc.ALL_PROFILES["MU"].max_rate
+        expected = {
+            code for code, profile in jc.ALL_PROFILES.items()
+            if code != "MU" and profile.max_rate is not None
+            and profile.max_rate - mu_max >= MATERIAL_RATE_ADVANTAGE
+        }
+        assert codes == expected
 
     def test_rate_delta_carried_not_dollar_upside_invented(self):
         opps = discover_jurisdiction_opportunities("MU")
@@ -117,12 +125,25 @@ class TestJurisdictionDiscovery:
 
 class TestTreatyDiscovery:
     def test_bilateral_pairs_in_scope_found(self):
-        opps = discover_treaty_opportunities(sorted(jc.ALL_PROFILES.keys()))
+        # Invariant-based (not a hardcoded set, per the Worldwide
+        # Jurisdiction Population phase's high-throughput testing
+        # discipline): every bilateral opportunity discovered must
+        # correspond to a REAL treaty_engine.get_bilateral_treaty() entry
+        # between two ISO codes both present in ALL_PROFILES, and every
+        # such real treaty pair must be discovered — completeness in both
+        # directions, derived from the treaty registry itself rather than
+        # a hand-maintained snapshot list.
+        from app.calculators import treaty_engine as te
+        codes = sorted(jc.ALL_PROFILES.keys())
+        opps = discover_treaty_opportunities(codes)
         bilateral = {o.opportunity_id for o in opps if o.subtype == "bilateral_coproduction"}
-        assert bilateral == {
-            "OPP-TREATY-BILATERAL-fr-be-bilateral",
-            "OPP-TREATY-BILATERAL-fr-de-bilateral",
-        }
+
+        expected = set()
+        for a, b in itertools.combinations(codes, 2):
+            treaty = te.get_bilateral_treaty(a, b)
+            if treaty is not None and treaty.treaty_type == "bilateral":
+                expected.add(f"OPP-TREATY-BILATERAL-{treaty.treaty_slug}")
+        assert bilateral == expected
 
     def test_nationality_unlocks_depend_on_their_treaty(self):
         opps = discover_treaty_opportunities(["FR", "BE"])
@@ -227,10 +248,17 @@ class TestReinvestmentDiscovery:
 
 class TestNormalizationDiscovery:
     def test_vat_recovery_opportunities_from_existing_fields(self):
+        # MU vat_recoverable=False. Worldwide Jurisdiction Population phase:
+        # several new jurisdictions (CA/CA-BC/CA-ON/CA-QC/AU/NZ/GB/US-GA/
+        # US-CA) have vat_recoverable=None (genuinely not verified this
+        # phase, disclosed) rather than a confirmed True — the discovery
+        # mechanism correctly requires a KNOWN True to emit an opportunity,
+        # never assuming unknown means favorable. Count is every profile
+        # with vat_recoverable explicitly True, not every non-MU profile.
         opps = discover_normalization_opportunities("MU")
         vat = [o for o in opps if o.subtype == "vat_recovery"]
-        # MU vat_recoverable=False; every other modeled jurisdiction is True.
-        assert len(vat) == len(jc.ALL_PROFILES) - 1
+        known_true = sum(1 for p in jc.ALL_PROFILES.values() if p.vat_recoverable is True)
+        assert len(vat) == known_true
 
     def test_no_timing_comparison_against_unknown_baseline(self):
         # MU's cashflow_timing_weeks is None — no fund-timing comparison may be made.
@@ -258,9 +286,16 @@ class TestNormalizationDiscovery:
             assert o.acquisition_task_refs[0] in laae_task_ids
 
     def test_cross_jurisdiction_normalization_depends_on_relocation(self):
+        # ES's Art. 36.2 rate correction (30%/50% unverified -> confirmed
+        # 25% marginal) means ES no longer clears MU's materiality
+        # threshold, so OPP-JUR-RELOCATE-MU-ES no longer exists — the VAT
+        # normalization opportunity itself still fires (VAT recoverability
+        # is independent of relocation-candidate status) but now has no
+        # relocation dependency to point at. dependent_opportunity_ids
+        # correctly resolves to empty, not a stale/dangling reference.
         opps = discover_normalization_opportunities("MU")
         vat_to_es = next(o for o in opps if o.opportunity_id == "OPP-NORM-VAT-MU-ES")
-        assert vat_to_es.dependent_opportunity_ids == ("OPP-JUR-RELOCATE-MU-ES",)
+        assert vat_to_es.dependent_opportunity_ids == ()
 
 
 # ── Pass 7: grey area discovery ──────────────────────────────────────────────

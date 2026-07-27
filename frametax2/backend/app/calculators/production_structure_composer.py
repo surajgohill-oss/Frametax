@@ -192,6 +192,17 @@ class ProductionStructureCandidate:
         return tuple(s.jurisdiction_code for s in self.jurisdiction_segments)
 
     @property
+    def conditional_opportunity_ids(self) -> tuple[str, ...]:
+        """The KNOWN BUT NON-PRICEABLE conditional funding avenues
+        (discretionary grants / development / co-production / broadcaster /
+        regional funds) this structure surfaces — included because a
+        participating jurisdiction is the program's country, never priced
+        into NPC. Derived from included_opportunity_ids by the conditional
+        pass's deterministic OPP-COND- prefix, so no stored field or
+        constructor change is needed."""
+        return tuple(i for i in self.included_opportunity_ids if i.startswith("OPP-COND-"))
+
+    @property
     def is_fully_priced(self) -> bool:
         return self.cases is not None and self.priceable_pct >= 1.0
 

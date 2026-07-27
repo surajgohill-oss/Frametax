@@ -73,6 +73,7 @@ from app.calculators.production_package_intelligence import (
     production_package_to_role_known_codes,
 )
 from app.calculators.production_recommendation_engine import RecommendationSet, generate_production_recommendations
+from app.optimization.recommendation_confidence import confidence_status_for_structure
 from app.calculators.production_structure_composer import CompositionResult, compose_production_structures
 from app.calculators.qualification_derivation import ProductionFacts
 from app.data.program_rate_rules import RateResolution, resolve_program_rate
@@ -269,6 +270,96 @@ def reset_fact_answers() -> None:
     _economics_controls.clear()
     _people_overrides.clear()
     _location_overrides.clear()
+    _contingency_allocations.clear()
+    _build_state.cache_clear()
+
+
+# ── Task 91: first-class contingency treatment ──────────────────────────────
+# {account_code: ContingencyAllocation} — same module-level-dict +
+# cache-invalidation pattern as _fact_answers above. Empty by default: an
+# empty dict is what expand_contingency_lines() treats as "no allocation
+# on file", which is what makes the whole mechanism inert (byte-identical
+# to pre-Task-91 output) until a producer explicitly deploys something.
+_contingency_allocations: dict[str, "ContingencyAllocation"] = {}
+
+
+def _contingency_source_line(account_code: str) -> tuple[str, float]:
+    """(description, original_amount_usd) for a real contingency account
+    code, from the actual parsed budget — never fabricated."""
+    from app.data.little_utopia_real_budget import (
+        LITTLE_UTOPIA_REAL_BUDGET_LINES,
+        LITTLE_UTOPIA_REAL_SPEND_CATEGORY,
+    )
+    if LITTLE_UTOPIA_REAL_SPEND_CATEGORY.get(account_code) != "contingency":
+        raise ValueError(
+            f"'{account_code}' is not a contingency-category account in the "
+            f"real budget (known contingency accounts: "
+            f"{sorted(c for c, cat in LITTLE_UTOPIA_REAL_SPEND_CATEGORY.items() if cat == 'contingency')})."
+        )
+    for code, desc, amt, _page in LITTLE_UTOPIA_REAL_BUDGET_LINES:
+        if code == account_code:
+            return desc, amt
+    raise ValueError(f"'{account_code}' not found in the real budget line items.")
+
+
+def deploy_contingency(
+    source_account_code: str,
+    destination_account_code: str,
+    destination_description: str,
+    destination_spend_category: str,
+    amount_usd: float,
+    note: str,
+    deployed_by: str = "producer",
+) -> "ContingencyAllocation":
+    """Deploy part of a contingency reserve to a real destination budget
+    line. The deployed amount will be priced under
+    `destination_spend_category`'s own statutory rule — it inherits the
+    receiving line's eligibility, exactly as Objective 4 requires. Raises
+    ValueError if the amount exceeds the remaining undeployed balance
+    (the only validation performed here; every OTHER judgment about the
+    destination category is left to the statutory ladder). Returns the
+    new ContingencyAllocation state for this account (full audit trail:
+    original amount, every deployment with its own note/actor/date,
+    deployed/undeployed balances all derivable from it)."""
+    from datetime import datetime, timezone
+
+    from app.calculators.contingency_treatment import (
+        ContingencyAllocation, ContingencyDeployment, add_deployment,
+    )
+
+    existing = _contingency_allocations.get(source_account_code)
+    if existing is None:
+        desc, original_amount = _contingency_source_line(source_account_code)
+        existing = ContingencyAllocation(
+            source_account_code=source_account_code,
+            source_description=desc,
+            original_amount_usd=original_amount,
+        )
+    deployment = ContingencyDeployment(
+        destination_account_code=destination_account_code,
+        destination_description=destination_description,
+        destination_spend_category=destination_spend_category,
+        amount_usd=round(float(amount_usd), 2),
+        note=note,
+        deployed_by=deployed_by,
+        deployed_at=datetime.now(timezone.utc).isoformat(),
+    )
+    updated = add_deployment(existing, deployment)
+    _contingency_allocations[source_account_code] = updated
+    _build_state.cache_clear()
+    return updated
+
+
+def current_contingency_state() -> dict[str, "ContingencyAllocation"]:
+    return dict(_contingency_allocations)
+
+
+def reset_contingency_allocations() -> None:
+    """Return every contingency account to fully undeployed. A blanket
+    RESET action, never a blanket QUALIFY action — this clears
+    deployments (each of which must still be re-justified individually
+    if re-applied), it does not toggle any account to "included"."""
+    _contingency_allocations.clear()
     _build_state.cache_clear()
 
 
@@ -724,7 +815,9 @@ def build_alternative_jurisdiction_comparisons(state: "LittleUtopiaState") -> di
             })
             continue
 
-        register = build_little_utopia_register_for_jurisdiction(code, slug, 0.0)
+        register = build_little_utopia_register_for_jurisdiction(
+            code, slug, 0.0, contingency_allocations=_contingency_allocations,
+        )
         from app.calculators.qualification_model import QualificationState as _QS
         qpe = round(sum(a.amount_usd for a in register if a.state == _QS.QUALIFIES), 2)
         excluded = [a.account_code for a in register if a.state == _QS.EXCLUDED]
@@ -957,7 +1050,10 @@ def _budget_lines_for_allocation() -> list:
     ]
 
 
-def build_allocated_structures(state: "LittleUtopiaState") -> dict:
+def build_allocated_structures(
+    state: "LittleUtopiaState",
+    requirements_override: "ProductionRequirements | None" = None,
+) -> dict:
     """The ACCOUNT->JURISDICTION ALLOCATION surface: every structure the
     production's facts/elections currently express, partitioned account-
     by-account (production_allocation), priced from one partial register
@@ -978,6 +1074,19 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
     through the same generic StructureSpec (explicit producer splits,
     extra participants, ownership shares) — none is fabricated here
     without a producer election.
+
+    requirements_override (Acceptance Testing / Optimizer Validation
+    phase): substitutes the PRODUCTION-CAPABILITY requirements discovery
+    gates on, in place of the ones derived from this production's own
+    physical_requirements. Everything else about the production — budget,
+    register, QPE, statutory rate resolution, elections — is UNCHANGED;
+    only which capabilities are treated as hard-required is varied. This
+    is the mechanism the permanent validation harness
+    (production_validation_harness.py) uses to toggle creative/logistical
+    constraints on and off individually while holding the real Little
+    Utopia production constant, never a parallel/duplicated pipeline.
+    Defaults to None, which reproduces prior behavior byte-for-byte (the
+    requirements are derived from the real production exactly as before).
     """
     from app.calculators.allocation_pricing import (
         price_allocated_structure,
@@ -1014,7 +1123,10 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
     # PRODUCTION-FIRST (Phase 7): derive the production's structured
     # environment + infrastructure requirements, then discover which
     # jurisdictions can actually MAKE this production before pricing any.
-    _requirements = derive_production_requirements(state.physical_requirements)
+    _requirements = (
+        requirements_override if requirements_override is not None
+        else derive_production_requirements(state.physical_requirements)
+    )
     discovery = discover_executable_jurisdictions(
         requirements=_requirements,
         production_type=MU_PRODUCTION_TYPE,
@@ -1075,6 +1187,21 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
     # honestly on its own program's minimum-spend rule — never omitted).
     # A producer's component_route_post election simply pre-selects one of
     # these (or the MU-only case) and is deduped against the auto set.
+    # Some jurisdictions have a program SPECIFIC to a post/VFX/music-only
+    # routing, distinct from their general (shoot-anchored) production
+    # credit — e.g. New York's Empire State Film Post-Production Credit
+    # (us_ny_post_production_credit), which is the legally correct program
+    # for a "shot elsewhere, post routed to NY" structure and is CONFIRMED
+    # mutually exclusive with the main Production Credit for the same costs
+    # (see program_rate_rules_worldwide.py US_NY_POST_DOCTRINE). An
+    # anchor-component structure's routed segment is, by construction,
+    # exactly this post-only case — so it must use the post-specific
+    # program where one exists, never the general production credit (which
+    # requires the production itself to be principally shot there).
+    COMPONENT_POST_PROGRAM_OVERRIDE: dict[str, str] = {
+        "US-NY": "us_ny_post_production_credit",
+    }
+
     route_target = fact_answers.get("component_route_post")
     route_target = str(route_target).upper() if route_target else None
     auto_component_targets = list(structure_partner_codes)
@@ -1087,7 +1214,7 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
         )
         programs = {JURISDICTION_CODE: "mu_edb_incentive"}
         if target != JURISDICTION_CODE:
-            programs[target] = slug_by_code[target]
+            programs[target] = COMPONENT_POST_PROGRAM_OVERRIDE.get(target, slug_by_code[target])
         elected = " (producer-elected)" if target == route_target else ""
         specs.append(StructureSpec(
             structure_id=f"ALLOC-COMPONENT-POST-{target}",
@@ -1235,6 +1362,7 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
                 "original_jurisdiction_code": local_cost.original_jurisdiction_code,
                 "note": local_cost.note,
             },
+            contingency_allocations=_contingency_allocations,
         )
         if pricing.is_fully_priced:
             fx = compute_fx_normalization(
@@ -1269,6 +1397,7 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
                     "original_jurisdiction_code": local_cost.original_jurisdiction_code,
                     "note": local_cost.note,
                 },
+                contingency_allocations=_contingency_allocations,
             )
         pricings.append(pricing)
 
@@ -1295,6 +1424,72 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
         for code, slugs in sorted(programs_by_jur.items())
     }
 
+    def _requirements_dict(program_slug: str | None) -> dict | None:
+        """Final Global Discovery phase: the structured Production
+        Requirements profile for this segment's program, verbatim from
+        program_requirements.py — never computed, never fabricated. None
+        when the program has no requirements profile yet populated (a
+        disclosed scope boundary, not an error); the served field is
+        simply absent rather than filled with guessed defaults."""
+        if not program_slug:
+            return None
+        from app.data.program_requirements import get_program_requirements
+
+        p = get_program_requirements(program_slug)
+        if p is None:
+            return None
+
+        def _timing(fact) -> dict | None:
+            return {"value": fact.value, "basis": fact.basis.value} if fact else None
+
+        return {
+            "local_entity_required": p.local_entity_required,
+            "local_coproducer_required": p.local_coproducer_required,
+            "treaty_or_official_coproduction_required": p.treaty_or_official_coproduction_required,
+            "cultural_test_required": p.cultural_test_required,
+            "cultural_test_points": p.cultural_test_points,
+            "cultural_test_threshold": p.cultural_test_threshold,
+            "min_total_budget_usd": p.min_total_budget_usd,
+            "min_local_spend_usd": p.min_local_spend_usd,
+            "min_shoot_days": p.min_shoot_days,
+            "atl_cap_pct_of_other_costs": p.atl_cap_pct_of_other_costs,
+            "per_person_cap_usd": p.per_person_cap_usd,
+            "per_project_cap_usd": p.per_project_cap_usd,
+            "preapproval_mandatory": p.preapproval_mandatory,
+            "expenditure_before_approval_qualifies": p.expenditure_before_approval_qualifies,
+            "application_deadline": _timing(p.application_deadline),
+            "audit_or_final_certification_deadline": _timing(p.audit_or_final_certification_deadline),
+            "payment_timing": _timing(p.payment_timing),
+            "sunset_date": p.sunset_date,
+            "audit_required": p.audit_required,
+            "cpa_or_approved_auditor_required": p.cpa_or_approved_auditor_required,
+            "completion_bond_required": p.completion_bond_required,
+            "clawback_or_repayment_trigger": p.clawback_or_repayment_trigger,
+            "annual_program_cap_usd": p.annual_program_cap_usd,
+            "allocation_type": p.allocation_type.value if p.allocation_type else None,
+            "refundable": p.refundable,
+            "transferable": p.transferable,
+            "transfer_approval_required": p.transfer_approval_required,
+            "typical_transfer_price_pct_range": (
+                list(p.typical_transfer_price_pct_range) if p.typical_transfer_price_pct_range else None
+            ),
+            "cashflow_timing_weeks_estimate": p.cashflow_timing_weeks_estimate,
+            "additional_facts": dict(p.additional_facts),
+            "evidence": (
+                {
+                    "source_title": p.evidence.source_title,
+                    "source_url": p.evidence.source_url,
+                    "issuing_authority": p.evidence.issuing_authority,
+                    "source_type": p.evidence.source_type.value,
+                    "status": p.evidence.status.value,
+                    "effective_date": p.evidence.effective_date,
+                    "access_date": p.evidence.access_date,
+                    "notes": p.evidence.notes,
+                }
+                if p.evidence else None
+            ),
+        }
+
     def _seg_dict(s) -> dict:
         return {
             "jurisdiction_code": s.jurisdiction_code,
@@ -1316,16 +1511,85 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
             "blockers": list(s.blockers),
             "qualification_trace": list(s.register_trace),
             "notes": list(s.notes),
+            # Final Global Discovery phase: structured requirements/timing,
+            # verbatim from program_requirements.py; None when not yet
+            # populated for this program (disclosed, not fabricated).
+            "requirements": _requirements_dict(s.program_slug),
         }
 
+    # ── CONDITIONAL (KNOWN BUT NON-PRICEABLE) funding layer ──────────────
+    # The completed worldwide inventory's discretionary grants, development/
+    # co-production/broadcaster/regional funds are optimizer inputs, not
+    # ignored records: each structure surfaces the conditional funding
+    # avenues its OWN participating jurisdictions open (membership-gated for
+    # supranational funds via the real treaty registries). These never enter
+    # NPC — a discretionary award has no defensible auto-calculated value —
+    # but they influence which structures a producer would pursue.
+    from app.calculators.conditional_programs import (
+        conditional_nodes_for,
+        get_conditional_program_index,
+        node_to_dict,
+    )
+    from app.calculators.structure_compatibility import (
+        compatibility_to_dict,
+        evaluate_structure_compatibility,
+    )
+
+    def _conditional_for(participants) -> list[dict]:
+        return [node_to_dict(n) for n in conditional_nodes_for(tuple(participants))]
+
+    _compat_cache: dict[str, dict] = {}
+
+    def _compatibility_for(p) -> dict:
+        """Run the compatibility engine for one priced structure: which of
+        its conditional funding avenues are genuinely pursuable, which are
+        gated (and on what), which are scope-mismatched — plus the
+        qualification gates its own EXECUTABLE programs impose (cultural
+        tests, mutual-exclusivity clauses), all read from real conditions.
+
+        Memoized per structure_id: the result is a pure function of the
+        structure's participants + programs, and it is read by the
+        per-structure payload, the layer summary, and the ranking
+        tie-break."""
+        cached = _compat_cache.get(p.structure_id)
+        if cached is None:
+            cached = compatibility_to_dict(evaluate_structure_compatibility(
+                structure_id=p.structure_id,
+                participants=tuple(p.participants),
+                executable_program_slugs=tuple(
+                    s.program_slug for s in p.segments
+                    if s.claims_incentive and s.program_slug
+                ),
+                conditional_nodes=conditional_nodes_for(tuple(p.participants)),
+                graph=state.graph,
+            ))
+            _compat_cache[p.structure_id] = cached
+        return cached
+
+    # structure_id -> pursuable conditional-avenue count, supplied to the
+    # ranking engine as a TIE-BREAK only (never as an NPC component).
+    _pursuable_by_structure = {
+        p.structure_id: _compatibility_for(p)["pursuable_count"] for p in pricings
+    }
+
     def _pricing_dict(p) -> dict:
+        # Recommendation-confidence status (Final Backend Closeout Phase 2):
+        # a deterministic classification over signals the pricing/qualification
+        # engines already produce — never a new economic figure and never a
+        # re-rank. Ensures a structure can't read as a clean "recommended"
+        # purely on lowest NPC when mandatory qualification is missing.
+        _conf_status, _conf_reasons = confidence_status_for_structure(p)
         return {
             "structure_id": p.structure_id,
             "structure_type": p.structure_type,
             "label": p.label,
             "primary_jurisdiction": p.primary_jurisdiction,
             "participants": list(p.participants),
+            "conditional_programs": _conditional_for(p.participants),
+            "conditional_compatibility": _compatibility_for(p),
             "is_fully_priced": p.is_fully_priced,
+            "confidence_status": _conf_status.value,
+            "confidence_reasons": _conf_reasons,
             "blockers": list(p.blockers),
             "gross_budget_usd": p.gross_budget_usd,
             "total_incentive_floor_usd": p.total_incentive_floor_usd,
@@ -1489,7 +1753,8 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
             "generated_structures": len(pricings),
             "optimized_structures": sum(1 for p in pricings if p.is_fully_priced),
             "final_ranked_structures": sum(
-                1 for r in rank_allocated_structures(pricings) if r.get("rank") is not None
+                1 for r in rank_allocated_structures(pricings, _pursuable_by_structure)
+                if r.get("rank") is not None
             ),
             "production_requirements": {
                 "environments": sorted(_requirements.environments),
@@ -1515,9 +1780,87 @@ def build_allocated_structures(state: "LittleUtopiaState") -> dict:
             ],
         },
         "structures": [_pricing_dict(p) for p in pricings],
-        "ranking": rank_allocated_structures(pricings),
+        # Task 91: every contingency line's deployment state, independent
+        # of which structure is being viewed — the SAME allocation record
+        # governs every structure's pricing above (each already reflects
+        # it via price_segment's contingency_allocations param). Empty
+        # when no producer has deployed anything (the mechanism's inert
+        # default state).
+        "contingency": {
+            code: {
+                "source_account_code": alloc.source_account_code,
+                "source_description": alloc.source_description,
+                "original_amount_usd": alloc.original_amount_usd,
+                "deployed_amount_usd": alloc.deployed_amount_usd,
+                "undeployed_amount_usd": alloc.undeployed_amount_usd,
+                "state": alloc.state.value,
+                "deployments": [
+                    {
+                        "destination_account_code": d.destination_account_code,
+                        "destination_description": d.destination_description,
+                        "destination_spend_category": d.destination_spend_category,
+                        "amount_usd": d.amount_usd,
+                        "note": d.note,
+                        "deployed_by": d.deployed_by,
+                        "deployed_at": d.deployed_at,
+                    }
+                    for d in alloc.deployments
+                ],
+            }
+            for code, alloc in _contingency_allocations.items()
+        },
+        "ranking": rank_allocated_structures(pricings, _pursuable_by_structure),
         "stack_combinations": stack_combinations,
         "advisor_routing_decisions_input": advisor_routing,
+        # The conditional (KNOWN BUT NON-PRICEABLE) layer of the completed
+        # worldwide inventory, exposed as optimizer inputs: the full index
+        # size, the per-type breakdown, and — critically — which of THIS
+        # production's generated structures surface conditional funding and
+        # from which jurisdictions. These are never priced into NPC; they
+        # inform structure selection beyond the largest-rebate figure.
+        "conditional_program_layer": (lambda idx: {
+            "version": idx.version,
+            "total_nodes_worldwide": len(idx.nodes),
+            "by_program_type": {
+                t: sum(1 for n in idx.nodes if n.program_type == t)
+                for t in sorted({n.program_type for n in idx.nodes})
+            },
+            "structures_with_conditional_funding": [
+                {
+                    "structure_id": p.structure_id,
+                    "participants": list(p.participants),
+                    "conditional_program_count": len(_conditional_for(p.participants)),
+                    "conditional_jurisdictions": sorted({
+                        n["jurisdiction_code"] for n in _conditional_for(p.participants)
+                    }),
+                    # Compatibility-engine outcome for this structure: how many
+                    # of its conditional avenues are genuinely pursuable vs
+                    # gated/scope-mismatched, and the gate kinds involved.
+                    "pursuable_count": _compatibility_for(p)["pursuable_count"],
+                    "counts_by_verdict": _compatibility_for(p)["counts_by_verdict"],
+                    "gate_kinds": sorted({
+                        g["kind"]
+                        for c in _compatibility_for(p)["conditional"]
+                        for g in c["gates"]
+                    }),
+                }
+                for p in pricings
+                if _conditional_for(p.participants)
+            ],
+            "note": (
+                "Discretionary grants, development/co-production/broadcaster/"
+                "regional funds are optimizer inputs, not ignored records. "
+                "Each attaches to a structure whose participating jurisdiction "
+                "is the program's country (supranational funds are membership-"
+                "gated against the real treaty registries). None enters Net "
+                "Production Cost — a discretionary award has no defensible "
+                "auto-calculated value — but they influence which structure a "
+                "producer would pursue. A Mauritius-only baseline surfaces zero "
+                "(Mauritius has no catalogued conditional programs); every "
+                "co-production/relocation structure that touches a fund-bearing "
+                "jurisdiction surfaces its avenues."
+            ),
+        })(get_conditional_program_index()),
     }
 
 
@@ -1936,7 +2279,9 @@ def _build_state(_fact_key: tuple, _people_key: tuple = ()) -> LittleUtopiaState
     # Facts -> derived qualification register (Seam A+B), from the REAL
     # parsed production budget (app.data.little_utopia_real_budget) — the
     # sanitized fixture no longer contributes to the primary register.
-    register = build_little_utopia_real_register(mu_rate=MU_RATE, facts=facts)
+    register = build_little_utopia_real_register(
+        mu_rate=MU_RATE, facts=facts, contingency_allocations=_contingency_allocations,
+    )
     grey_areas = build_little_utopia_real_grey_areas()
     graph = build_jurisdiction_graph(mu_rate=MU_RATE, register=register)
 
