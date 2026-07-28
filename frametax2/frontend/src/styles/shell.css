@@ -73,6 +73,8 @@
   margin-bottom: 20px;
 }
 .cg-wordmark i { font-style: italic; }
+/* Engraved brand mark, not a glowing orb — no halo, no glow behind it. It
+   should sit directly on the rail the way a stamped emblem would. */
 .cg-identity-globe {
   width: 80px;
   height: 80px;
@@ -81,9 +83,7 @@
   margin: 0 auto 16px;
   border-radius: 50%;
   overflow: hidden;
-  background: radial-gradient(circle, rgba(231,223,212,0.10) 0%, rgba(231,223,212,0.04) 55%, transparent 75%);
 }
-.cg-identity-globe .globe-canvas { width: 80px; }
 .cg-tagline {
   flex: none;
   font-size: 10px;

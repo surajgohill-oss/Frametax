@@ -4,6 +4,7 @@ import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
 import Globe3D from "../../components/Globe3D";
 import { JURISDICTION_COORDS } from "../../lib/jurisdictions";
+import { STATUS_HEX } from "../../lib/globeData";
 import { Money } from "../../lib/format";
 
 export default function CompanyGlobe() {
@@ -31,7 +32,7 @@ export default function CompanyGlobe() {
           click to focus, click again (or Open) to enter the production.
         </p>
         <div className="portfolio-chip" onClick={() => navigate("/production/overview")}>
-          <span className="dot gold" />
+          <span className="dot" style={{ background: STATUS_HEX.gold }} />
           <div>
             <div className="row-title">{production.production_name}</div>
             <div className="row-sub">{production.jurisdiction_code} · <Money value={production.gross_budget_usd} /></div>
@@ -43,6 +44,10 @@ export default function CompanyGlobe() {
         <Globe3D
           points={points}
           height={560}
+          // .globe-screen-inspector is 320px wide, absolutely positioned
+          // over the right edge of this same canvas — reframe left so the
+          // one production marker stays clear of it once focused.
+          obscuredRightPx={focused ? 320 : 0}
           onPointHover={(pt) => setPreview(pt)}
           onPointClick={(pt) => {
             if (focused) navigate("/production/overview");

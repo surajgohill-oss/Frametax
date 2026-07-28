@@ -6,7 +6,8 @@ import { Loading, ErrorBox } from "../../components/Async";
 import { Money, scenarioDisplay, confidenceStatusLabel, confidenceStatusTone } from "../../lib/format";
 import { useAppState } from "../../state/AppState";
 import Globe3D from "../../components/Globe3D";
-import { buildGlobeData, structureTier, activeStructure } from "../../lib/globeData";
+import { buildGlobeView, structureTier, activeStructure } from "../../lib/globeData";
+import GlobeLegend from "../../components/GlobeLegend";
 import QuestionStack from "../../components/QuestionStack";
 import RecommendationsList from "../../components/RecommendationsList";
 import EconomicsTrace from "../../components/EconomicsTrace";
@@ -180,37 +181,23 @@ function ScenarioCard({ structure, tier, rank, grossBudget, budgetReconciliation
   );
 }
 
-// Globe chrome — the frozen artifact's overlay panels (info HUD, Layers,
-// legend) over the project globe, shown in Map and Split. Counts and legend
-// entries describe only what this globe actually renders (live structures,
-// treaty arcs, tier colors); layer rows the engine doesn't support yet are
-// ghosted exactly like the artifact's own pending rows.
+// Globe chrome — the two overlays that carry production value: a context
+// HUD (which production, how many composed scenarios) and the shared
+// status legend. The old "Layers" panel was prototype scaffolding — two
+// toggles that controlled nothing plus four permanently-ghosted "engine
+// pending" rows and a note naming the rendering library — so it has been
+// removed rather than shipped to producers. Country polygon fill and
+// borders are the Globe's primary always-on visualization, never a
+// togglable layer. The legend is the shared GlobeLegend component so this
+// screen cannot drift from Project Globe's wording or colours.
 function GlobeChrome({ productionName, nScenarios, nArcs }) {
   return (
     <>
       <div className="wsx-g-hud">
         <b>Project globe · {productionName}</b>
-        {nScenarios} scenario{nScenarios === 1 ? "" : "s"} · {nArcs} treaty path{nArcs === 1 ? "" : "s"}
+        {nScenarios} scenario{nScenarios === 1 ? "" : "s"} · {nArcs} structure route{nArcs === 1 ? "" : "s"}
       </div>
-      <div className="wsx-g-layers">
-        <b>Layers</b>
-        <label className="on"><span className="sw2" />Production markers</label>
-        <label className="on"><span className="sw2" />Treaty arcs</label>
-        <label className="ghosted" title="MapLibre engine"><span className="sw2" />Jurisdiction overlays</label>
-        <label className="ghosted" title="MapLibre engine"><span className="sw2" />Country borders</label>
-        <label className="ghosted" title="Engine pending"><span className="sw2" />Incentive heat map</label>
-        <label className="ghosted" title="Engine pending"><span className="sw2" />Confidence halos</label>
-        <label className="ghosted" title="Engine pending"><span className="sw2" />Grey-area halos</label>
-        <label className="ghosted" title="Engine pending"><span className="sw2" />Clusters</label>
-        <div className="note">Three.js / three-globe — the same rendering engine used by the production terminal.</div>
-      </div>
-      <div className="wsx-g-legend">
-        <span>◉ gold = top-ranked priced</span>
-        <span>◉ jade = fully priced</span>
-        <span>◉ amber = allocated · blocked</span>
-        <span>◉ silver = allocated</span>
-        <span>┄ treaty path</span>
-      </div>
+      <GlobeLegend className="globe-legend-overlay" showTreatyPath={nArcs > 0} />
     </>
   );
 }
@@ -227,6 +214,7 @@ export default function Workspace() {
   const [sortByMoney, setSortByMoney] = useState(true); // artifact "by $ ▾"
   const [swapId, setSwapId] = useState("");
   const [globeMode, setGlobeMode] = useState("jurisdictions"); // "jurisdictions" | "optimizer"
+  const [globeHover, setGlobeHover] = useState(null);
   const {
     openInspector, inspector, closeInspector, setDocked,
     leadingStructureId, setLeadingStructureId,
@@ -253,8 +241,8 @@ export default function Workspace() {
     if (!allocated) return new Map();
     return new Map(allocated.ranking.map((r) => [r.structure_id, r]));
   }, [allocated]);
-  const { points, arcs, structuresByCode } = useMemo(
-    () => buildGlobeData(allocated, rankById, { mode: globeMode, leadingStructureId, selectedJurisdiction }),
+  const { points, arcs, polygonColors, selectedIso, selectedLat, selectedLng, focusLat, focusLng, focusDistance, structuresByCode } = useMemo(
+    () => buildGlobeView(allocated, rankById, { mode: globeMode, leadingStructureId, selectedJurisdiction }),
     [allocated, rankById, globeMode, leadingStructureId, selectedJurisdiction],
   );
 
@@ -276,10 +264,11 @@ export default function Workspace() {
 
   const contingencyByAccount = allocated?.contingency || {};
   function handleGlobeClick(pt) {
-    setSelectedJurisdiction(pt.id);
-    const s = (structuresByCode.get(pt.id) || [])[0];
+    const code = pt.jurisdictionCode || pt.id;
+    setSelectedJurisdiction(code);
+    const s = (structuresByCode.get(code) || [])[0];
     if (!s) return;
-    const seg = s.segments.find((sg) => sg.jurisdiction_code === pt.id);
+    const seg = s.segments.find((sg) => sg.jurisdiction_code === code);
     if (seg) openInspector("allocation-segment", { ...seg, structureLabel: s.label, contingencyByAccount });
     else if (s.recommendation) openInspector("structure-recommendation", s.recommendation);
   }
@@ -413,8 +402,31 @@ export default function Workspace() {
 
           {mode === "map" && (
             <div className="wsx-globe dark-panel wsx-globe-chrome">
-              <Globe3D points={points} arcs={arcs} height={460} onPointClick={handleGlobeClick} />
+              <Globe3D
+                points={points}
+                arcs={arcs}
+                height={460}
+                pointRadius={0.22}
+                polygonColors={polygonColors}
+                selectedIso={selectedIso}
+                selectedLat={selectedLat}
+                selectedLng={selectedLng}
+          focusLat={focusLat}
+          focusLng={focusLng}
+          focusDistance={focusDistance}
+                onPointClick={handleGlobeClick}
+                onPointHover={setGlobeHover}
+              />
               <GlobeChrome productionName={production.production_name} nScenarios={allocated.structures.length} nArcs={arcs.length} />
+              {globeHover && (
+                <div className="globe-tooltip">
+                  <strong>{globeHover.jurisdictionName}</strong>
+                  <div className="text-tertiary small">{globeHover.statusLabel}</div>
+                  {globeHover.role && <div className="text-tertiary small">{globeHover.role}</div>}
+                  {globeHover.incentiveUsd != null && <div className="small">Incentive <Money value={globeHover.incentiveUsd} /></div>}
+                  {globeHover.npcUsd != null && <div className="small">NPC <Money value={globeHover.npcUsd} /></div>}
+                </div>
+              )}
             </div>
           )}
 
@@ -441,8 +453,31 @@ export default function Workspace() {
               </div>
               <div className="mcol">
                 <div className="wsx-globe dark-panel wsx-globe-chrome">
-                  <Globe3D points={points} arcs={arcs} height={480} onPointClick={handleGlobeClick} />
+                  <Globe3D
+                    points={points}
+                    arcs={arcs}
+                    height={480}
+                    pointRadius={0.22}
+                    polygonColors={polygonColors}
+                    selectedIso={selectedIso}
+                    selectedLat={selectedLat}
+                    selectedLng={selectedLng}
+          focusLat={focusLat}
+          focusLng={focusLng}
+          focusDistance={focusDistance}
+                    onPointClick={handleGlobeClick}
+                    onPointHover={setGlobeHover}
+                  />
                   <GlobeChrome productionName={production.production_name} nScenarios={allocated.structures.length} nArcs={arcs.length} />
+                  {globeHover && (
+                    <div className="globe-tooltip">
+                      <strong>{globeHover.jurisdictionName}</strong>
+                      <div className="text-tertiary small">{globeHover.statusLabel}</div>
+                      {globeHover.role && <div className="text-tertiary small">{globeHover.role}</div>}
+                      {globeHover.incentiveUsd != null && <div className="small">Incentive <Money value={globeHover.incentiveUsd} /></div>}
+                      {globeHover.npcUsd != null && <div className="small">NPC <Money value={globeHover.npcUsd} /></div>}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -5,7 +5,7 @@ import { useAppState } from "../../state/AppState";
 import { Loading, ErrorBox } from "../../components/Async";
 import { Money } from "../../lib/format";
 import Globe3D from "../../components/Globe3D";
-import { buildGlobeData, activeStructure } from "../../lib/globeData";
+import { buildGlobeView, activeStructure } from "../../lib/globeData";
 import ProductionDetails from "../../components/ProductionDetails";
 import BudgetRail from "../../components/BudgetRail";
 import FXStrip from "../../components/FXStrip";
@@ -39,10 +39,11 @@ export default function Overview() {
   const { data, error, loading, refetch } = useCineGlobe();
   const navigate = useNavigate();
   const {
-    openInspector, leadingStructureId, setLeadingStructureId,
+    inspector, openInspector, leadingStructureId, setLeadingStructureId,
     selectedJurisdiction, setSelectedJurisdiction,
   } = useAppState();
   const [globeMode, setGlobeMode] = useState("jurisdictions");
+  const [hover, setHover] = useState(null);
 
   const allocated = data?.structures?.allocated_structures;
 
@@ -55,8 +56,8 @@ export default function Overview() {
     if (!allocated) return new Map();
     return new Map(allocated.ranking.map((r) => [r.structure_id, r]));
   }, [allocated]);
-  const { points, arcs, structuresByCode } = useMemo(
-    () => buildGlobeData(allocated, rankById, { mode: globeMode, leadingStructureId, selectedJurisdiction }),
+  const { points, arcs, polygonColors, selectedIso, selectedLat, selectedLng, focusLat, focusLng, focusDistance, structuresByCode } = useMemo(
+    () => buildGlobeView(allocated, rankById, { mode: globeMode, leadingStructureId, selectedJurisdiction }),
     [allocated, rankById, globeMode, leadingStructureId, selectedJurisdiction],
   );
   const structure = allocated ? activeStructure(allocated, leadingStructureId) : null;
@@ -77,10 +78,11 @@ export default function Overview() {
     .slice(0, 4);
 
   function handleGlobeClick(pt) {
-    setSelectedJurisdiction(pt.id);
-    const s = (structuresByCode.get(pt.id) || [])[0];
+    const code = pt.jurisdictionCode || pt.id;
+    setSelectedJurisdiction(code);
+    const s = (structuresByCode.get(code) || [])[0];
     if (!s) return;
-    const seg = s.segments.find((sg) => sg.jurisdiction_code === pt.id);
+    const seg = s.segments.find((sg) => sg.jurisdiction_code === code);
     if (seg) openInspector("allocation-segment", { ...seg, structureLabel: s.label });
     else if (s.recommendation) openInspector("structure-recommendation", s.recommendation);
   }
@@ -115,8 +117,36 @@ export default function Overview() {
               </div>
               <button className="act" onClick={() => navigate("/production/globe")}>Full screen →</button>
             </div>
-            <div className="ovxg-globe-wrap dark-panel">
-              <Globe3D points={points} arcs={arcs} height={420} onPointClick={handleGlobeClick} />
+            <div className="ovxg-globe-wrap dark-panel" style={{ position: "relative" }}>
+              <Globe3D
+                points={points}
+                arcs={arcs}
+                height={420}
+                pointRadius={0.2}
+                polygonColors={polygonColors}
+                selectedIso={selectedIso}
+                selectedLat={selectedLat}
+                selectedLng={selectedLng}
+          focusLat={focusLat}
+          focusLng={focusLng}
+          focusDistance={focusDistance}
+                // The app-level floating Inspector (--inspector-width=400px)
+                // can cover the right edge of the viewport, including part of
+                // this panel on narrower layouts — same reframe as Project
+                // Globe, so a selected country never disappears behind it.
+                obscuredRightPx={inspector ? 400 : 0}
+                onPointClick={handleGlobeClick}
+                onPointHover={setHover}
+              />
+              {hover && (
+                <div className="globe-tooltip">
+                  <strong>{hover.jurisdictionName}</strong>
+                  <div className="text-tertiary small">{hover.statusLabel}</div>
+                  {hover.role && <div className="text-tertiary small">{hover.role}</div>}
+                  {hover.incentiveUsd != null && <div className="small">Incentive <Money value={hover.incentiveUsd} /></div>}
+                  {hover.npcUsd != null && <div className="small">NPC <Money value={hover.npcUsd} /></div>}
+                </div>
+              )}
             </div>
           </section>
 

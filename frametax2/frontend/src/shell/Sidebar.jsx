@@ -1,5 +1,5 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import Globe3D from "../components/Globe3D";
+import CompactSidebarGlobe from "../components/CompactSidebarGlobe";
 import ErrorBoundary from "./ErrorBoundary";
 import { useCineGlobe } from "../lib/useCineGlobe";
 import { useProjectStatus } from "../lib/useProjectStatus";
@@ -30,14 +30,14 @@ export default function Sidebar() {
     <nav className="cg-sidebar" aria-label="Application navigation">
       <div className="cg-wordmark serif">Cine<i>Globe</i></div>
 
-      {/* Identity globe — reuses the real Globe3D component as a stable
-          boundary; final identity-preset art direction is the next phase.
-          Scoped in its own error boundary: this is a WebGL renderer now
-          mounted on every route, so a context/init failure must degrade to
-          the CSS placeholder rather than blank the entire application shell. */}
+      {/* Identity mark — a fully decoupled, non-interactive compact globe
+          (CompactSidebarGlobe), not the production Globe3D engine. Scoped in
+          its own error boundary: this is a WebGL renderer mounted on every
+          route, so a context/init failure must degrade to the CSS
+          placeholder rather than blank the entire application shell. */}
       <div className="cg-identity-globe" aria-hidden="true">
         <ErrorBoundary label="sidebar-globe" fallback={null}>
-          <Globe3D points={[]} arcs={[]} height={76} />
+          <CompactSidebarGlobe size={80} />
         </ErrorBoundary>
       </div>
       <div className="cg-tagline mono">The Production Atlas</div>

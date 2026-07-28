@@ -1,37 +1,61 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
 import Globe3D from "../../components/Globe3D";
-import { buildGlobeData, structureTier } from "../../lib/globeData";
+import { buildGlobeView, structureTier, STATUS_HEX } from "../../lib/globeData";
+import GlobeLegend from "../../components/GlobeLegend";
 import { useAppState } from "../../state/AppState";
 import { Money, humanizeToken } from "../../lib/format";
 
 // Project Globe — the production's candidate jurisdictions and treaty routes
 // on the canonical globe. Same live model as the Workspace Map mode, given
-// its own full section per the approved artifact nav. Marker click opens the
-// jurisdiction segment / structure recommendation in the Inspector.
+// its own full section per the approved artifact nav. Country click opens
+// the jurisdiction segment / structure recommendation in the Inspector.
 export default function ProjectGlobe() {
   const { data, error, loading } = useCineGlobe();
-  const { openInspector, leadingStructureId, selectedJurisdiction, setSelectedJurisdiction } = useAppState();
+  const { inspector, openInspector, leadingStructureId, selectedJurisdiction, setSelectedJurisdiction } = useAppState();
+  const [globeMode, setGlobeMode] = useState("jurisdictions");
+  const [hover, setHover] = useState(null);
 
   const allocated = data?.structures?.allocated_structures;
   const rankById = useMemo(() => {
     if (!allocated) return new Map();
     return new Map(allocated.ranking.map((r) => [r.structure_id, r]));
   }, [allocated]);
-  const { points, arcs, structuresByCode } = useMemo(
-    () => buildGlobeData(allocated, rankById, { leadingStructureId, selectedJurisdiction }),
-    [allocated, rankById, leadingStructureId, selectedJurisdiction],
+  const { points, arcs, polygonColors, selectedIso, selectedLat, selectedLng, focusLat, focusLng, focusDistance, structuresByCode } = useMemo(
+    () => buildGlobeView(allocated, rankById, { mode: globeMode, leadingStructureId, selectedJurisdiction }),
+    [allocated, rankById, globeMode, leadingStructureId, selectedJurisdiction],
   );
 
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
 
-  function handleClick(pt) {
-    setSelectedJurisdiction(pt.id);
-    const s = (structuresByCode.get(pt.id) || [])[0];
+  function selectJurisdiction(code) {
+    setSelectedJurisdiction(code);
+    const s = (structuresByCode.get(code) || [])[0];
     if (!s) return;
-    const seg = s.segments.find((sg) => sg.jurisdiction_code === pt.id);
+    const seg = s.segments.find((sg) => sg.jurisdiction_code === code);
+    if (seg) openInspector("allocation-segment", { ...seg, structureLabel: s.label });
+    else if (s.recommendation) openInspector("structure-recommendation", s.recommendation);
+  }
+
+  // Candidate cards already have their own exact structure in hand —
+  // routing the click through selectJurisdiction()'s structuresByCode
+  // lookup was wrong whenever multiple structures share a participant
+  // (every "Mauritius + X" component structure shares MU as a
+  // participant): structuresByCode.get(code)[0] silently resolved to
+  // WHICHEVER structure happens to be first for that code, not the one
+  // whose card was actually clicked — clicking the "routed to SA" card
+  // could open the baseline structure's Inspector instead. This opens
+  // THIS structure's own segment directly, and frames the jurisdiction
+  // that makes this specific card distinct: the routed destination for a
+  // component/treaty structure, or the primary shoot for a single-country
+  // baseline.
+  function selectStructure(s) {
+    const routedTo = (s.participants || []).find((c) => c !== s.primary_jurisdiction);
+    const code = routedTo || s.primary_jurisdiction || s.participants?.[0];
+    setSelectedJurisdiction(code);
+    const seg = s.segments?.find((sg) => sg.jurisdiction_code === code) || s.segments?.[0];
     if (seg) openInspector("allocation-segment", { ...seg, structureLabel: s.label });
     else if (s.recommendation) openInspector("structure-recommendation", s.recommendation);
   }
@@ -42,31 +66,90 @@ export default function ProjectGlobe() {
         <p className="screen-eyebrow">Project Globe</p>
         <h1 className="serif" style={{ fontSize: 20 }}>Candidate jurisdictions</h1>
         <p className="text-tertiary small">
-          Every jurisdiction this production has allocated spend into. Gold = top-ranked fully priced
-          structure · jade = another fully priced structure · amber = allocated but blocked · silver =
-          allocated, not the top-priced route.
+          Every jurisdiction this production has been priced against, by production status.
         </p>
+        <GlobeLegend className="globe-legend-stack" />
+        <div className="wsx-viewtabs" style={{ marginBottom: 10 }}>
+          <button className={globeMode === "jurisdictions" ? "active" : ""} onClick={() => setGlobeMode("jurisdictions")}>Jurisdictions</button>
+          <button className={globeMode === "optimizer" ? "active" : ""} onClick={() => setGlobeMode("optimizer")}>Optimizer Overlay</button>
+        </div>
         <div className="sc-jurlist">
-          {allocated.structures.map((s) => (
-            <div className="portfolio-chip" key={s.structure_id} onClick={() => handleClick({ id: s.participants?.[0] })}>
-              <span className={`dot ${structureTier(s, rankById)}`} />
-              <div>
-                <div className="row-title small">{s.label}</div>
-                <div className="row-sub">
-                  {humanizeToken(s.structure_type)} · {s.is_fully_priced ? <Money value={s.npc_with_adjustments_usd} /> : `${s.blockers.length} blocker${s.blockers.length === 1 ? "" : "s"}`}
+          {/* Rank-first ordering — mirrors Workspace/Scenarios (visibleStructures),
+              so a producer scanning this list sees the leading option first
+              instead of raw generation order. Unranked candidates keep their
+              original order after every ranked one. */}
+          {[...allocated.structures]
+            .sort((a, b) => (rankById.get(a.structure_id)?.rank ?? Infinity) - (rankById.get(b.structure_id)?.rank ?? Infinity))
+            .map((s) => {
+              // Card <-> Globe selection sync: a card is "active" when the
+              // jurisdiction that makes IT distinct (its routed destination,
+              // or its primary shoot for a single-country baseline — same
+              // rule selectStructure() uses) is the currently selected
+              // jurisdiction, so the mapping is symmetric in both directions.
+              const routedTo = (s.participants || []).find((c) => c !== s.primary_jurisdiction);
+              const code = routedTo || s.primary_jurisdiction || s.participants?.[0];
+              const active = code && code === selectedJurisdiction;
+              return (
+                <div
+                  className={`portfolio-chip${active ? " active" : ""}`}
+                  key={s.structure_id}
+                  onClick={() => selectStructure(s)}
+                >
+                  {/* Inline colour from the Globe's own STATUS_HEX, not the
+                      ".dot" CSS class — that class pulls from unrelated
+                      app-wide --gold/--jade/--silver/--amber tokens (a
+                      different palette used by every other tier dot in the
+                      app), which meant this card's dot and the Globe's own
+                      fill for the same jurisdiction never actually matched
+                      colours despite sharing a category name. */}
+                  <span className="dot" style={{ background: STATUS_HEX[structureTier(s, rankById)] }} />
+                  <div>
+                    <div className="row-title small">{s.label}</div>
+                    <div className="row-sub">
+                      {humanizeToken(s.structure_type)} · {s.is_fully_priced ? <Money value={s.npc_with_adjustments_usd} /> : `${s.blockers.length} blocker${s.blockers.length === 1 ? "" : "s"}`}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
+              );
+            })}
         </div>
       </div>
 
-      <div className="globe-screen-canvas">
-        <Globe3D points={points} arcs={arcs} height={560} onPointClick={handleClick} />
+      <div className="globe-screen-canvas" style={{ position: "relative" }}>
+        <Globe3D
+          points={points}
+          arcs={arcs}
+          height={560}
+          pointRadius={0.22}
+          polygonColors={polygonColors}
+          selectedIso={selectedIso}
+          selectedLat={selectedLat}
+          selectedLng={selectedLng}
+          focusLat={focusLat}
+          focusLng={focusLng}
+          focusDistance={focusDistance}
+          // Inspector floats over this screen (not docked — see AppState),
+          // covering the right var(--inspector-width)=400px of the canvas.
+          // Bias camera framing left so a selected country stays clear of it.
+          obscuredRightPx={inspector ? 400 : 0}
+          onPointClick={(pt) => selectJurisdiction(pt.jurisdictionCode || pt.id)}
+          onPointHover={setHover}
+        />
+        {hover && (
+          <div className="globe-tooltip">
+            <strong>{hover.jurisdictionName}</strong>
+            <div className="text-tertiary small">{hover.statusLabel}</div>
+            {hover.role && <div className="text-tertiary small">{hover.role}</div>}
+            {hover.incentiveUsd != null && <div className="small">Incentive <Money value={hover.incentiveUsd} /></div>}
+            {hover.npcUsd != null && <div className="small">NPC <Money value={hover.npcUsd} /></div>}
+          </div>
+        )}
         <p className="globe-caption small" style={{ borderRadius: "0 0 var(--radius-lg) var(--radius-lg)" }}>
-          {arcs.length > 0
-            ? "Dashed arcs mark treaty co-production routes."
-            : `No treaty co-production structure is currently priced — see coverage.reachable_treaty_partners (${allocated.coverage.reachable_treaty_partners.length}) in Knowledge.`}
+          {globeMode === "optimizer"
+            ? "Showing the leading structure's production routing only."
+            : arcs.length > 0
+              ? "Dashed routes mark this production's real multi-jurisdiction structures."
+              : "No multi-jurisdiction structure is currently priced for this production."}
         </p>
       </div>
     </div>
