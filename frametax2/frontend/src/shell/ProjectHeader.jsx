@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useCineGlobe } from "../lib/useCineGlobe";
 import { useProjectStatus } from "../lib/useProjectStatus";
 import { Money } from "../lib/format";
+import { getTheme, toggleTheme } from "../lib/theme";
 
 // Approved project header (migrated from the frozen design reference):
 // back affordance, artwork, production identity with the lifecycle
@@ -28,6 +30,11 @@ const JUR_NAMES = { MU: "Mauritius", ES: "Spain", GB: "United Kingdom", US: "Uni
 export default function ProjectHeader() {
   const navigate = useNavigate();
   const { data } = useCineGlobe();
+  // Local mirror of the theme purely so the button's icon and aria-pressed
+  // re-render. The authoritative state is the `data-theme` attribute on
+  // <html> (see lib/theme.js) — deliberately NOT React state, so a theme
+  // switch cannot remount the Globe's WebGL context.
+  const [theme, setThemeState] = useState(getTheme);
 
   const production = data?.production;
   const productionId = production?.production_id;
@@ -86,7 +93,15 @@ export default function ProjectHeader() {
         <div className="ph-hactions">
           <button className="ph-ico" title="Upload document" onClick={() => navigate("/production/binder")}>⇪</button>
           <button className="ph-ico ghosted" title="AI analyst — engine pending" disabled>◈</button>
-          <button className="ph-ico ghosted" title="Theme — no dark token set exists in this app yet" disabled>◐</button>
+          <button
+            className="ph-ico"
+            title={theme === "night" ? "Switch to day mode" : "Switch to night mode"}
+            aria-label={theme === "night" ? "Switch to day mode" : "Switch to night mode"}
+            aria-pressed={theme === "night"}
+            onClick={() => setThemeState(toggleTheme())}
+          >
+            {theme === "night" ? "☾" : "◐"}
+          </button>
         </div>
       </div>
       <nav className="project-tabs" aria-label="Production sections">

@@ -144,3 +144,61 @@ it to the API default. To test a non-default leading structure you must use
 **in-app SPA navigation** (click the router `<a>`), never a browser
 navigation — otherwise you are unknowingly testing the default single-
 jurisdiction structure and will wrongly conclude arcs are broken.
+
+---
+
+## Batch: Day/Night Theme + Night Visual System (tag `globe-night-v1`)
+
+**Owns:** the day/night control, the night semantic token layer, and the
+Globe's night-mode palette response. Nothing else.
+
+### Phase-1 finding: there was no theme system to restore
+
+The header control shipped `disabled`, titled *"Theme — no dark token set
+exists in this app yet"*. No theme state existed in `state/`. `tokens.css`
+scoped its `--dark-*` block to "globe canvases and their immediate chrome
+ONLY. Never applied to the application shell or content screens." The failure
+chain had **no broken link** — the control was an honest placeholder. This
+batch built the missing owner on the existing token architecture rather than
+as a parallel system.
+
+### Architecture
+
+| Concern | Implementation |
+|---|---|
+| State owner | `data-theme` attribute on `<html>` — `frontend/src/lib/theme.js` |
+| Persistence | `localStorage` (device-level; **not** account-level, per brief) |
+| Boot | `initTheme()` in `main.jsx` before first render — no day-palette flash |
+| Application theming | `:root[data-theme="night"]` re-binds the **same** semantic token names |
+| Globe response | `subscribeTheme()` → in-place material mutation, **no remount** |
+
+**Why an attribute and not React state:** the design system is already CSS
+custom properties, so one attribute re-resolves every token at once with no
+re-render — and critically, the Globe's WebGL context and its PMREM bake are
+never torn down. Verified at runtime: the canvas DOM node is identical before
+and after a switch (`globeCanvasSameNode: true`), all 86 hit-targets survive.
+
+### Night Globe palette (day values unchanged)
+
+Ocean → midnight navy `#2b3956` with `#16243c` internal emissive; inactive
+land → navy-slate `#4a5570`; borders softened to `#8290a8`; limb to cool
+silver-blue; exposure +0.09; envMapIntensity 0.34 → 0.40. **The glass
+architecture is untouched** — same PMREM IBL, MeshPhysical, clearcoat, ACES,
+composer and bloom in both themes.
+
+**Why land changed hue:** neutral grey land on a navy ocean shares no hue
+family and is exactly what read as an "unfinished or missing asset". The
+legend's graphite swatch tracks the same value so the key keeps describing
+what is actually on screen.
+
+### Verified at runtime
+Day↔night in one click each way; icon and `aria-pressed` update; no reload
+needed; theme survives SPA navigation and is deterministic on refresh; Globe
+stays mounted and interactive through switches; selection, camera flight and
+Inspector all work in night mode; console clean; build and lint pass.
+
+### Not delivered by this batch (honest)
+Jurisdictions are recoloured for night but are **not yet true translucent
+mineral insets** — that needs a transmission/refraction pass on the polygon
+caps, which is a material-architecture change and its own batch. The
+atmospheric particulate field was likewise not implemented.

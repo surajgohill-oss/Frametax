@@ -221,3 +221,97 @@ a, button, .row-item, .tag, .rail-item, .lane, .badge, .ghost-action {
   border-radius: var(--radius-lg);
   border: 0.5px solid var(--dark-hairline);
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   NIGHT MODE — deep midnight-navy production shell
+   ══════════════════════════════════════════════════════════════════════
+   Added by the night-theme batch. This is a SEMANTIC re-binding of the
+   same token names declared in :root above, not a set of page-specific
+   overrides — every screen, card and control already consumes these
+   variables, so flipping `data-theme` on <html> re-resolves the entire
+   application at once with no component changes and no re-render.
+
+   Day mode is untouched: the :root block above still owns it in full, and
+   nothing here leaks outside this attribute selector.
+
+   Hierarchy (deepest -> lightest), matching the approved art direction:
+     sidebar  <  application canvas  <  panels  <  elevated cards
+   Deliberately NO pure black anywhere — the darkest value is a navy, so
+   the shell reads as a lit room at night rather than as an empty slab. */
+:root[data-theme="night"] {
+  /* Application canvas & surfaces — midnight navy, tonally separated */
+  --canvas: #0E141F;
+  --surface-0: #131A27;
+  --surface-1: #18202F;
+  --surface-2: #202A3B;
+  --surface-glass: rgba(19, 26, 39, 0.82);
+  --hairline: rgba(198, 214, 236, 0.10);
+  --hairline-strong: rgba(198, 214, 236, 0.19);
+
+  /* Tinted work surfaces — same semantic roles, re-tuned for dark ground.
+     Kept low-chroma so status colour comes from the accents, not the beds. */
+  --surface-cool: #16202E;
+  --surface-warm: #241E14;
+  --surface-positive: #14241C;
+  --surface-conditional: #26200F;
+  --surface-blocker: #291719;
+
+  /* Text — warm ivory primary against cool ground is what keeps the shell
+     from reading as a cold technical console. */
+  --text-primary: #F2EADB;
+  --text-secondary: #A8AEBC;
+  --text-tertiary: #737B8B;
+  --text-inverse: #0E141F;
+
+  /* Semantic status — brightened for dark ground while holding the SAME
+     hue family as day mode, so a producer never has to relearn the palette.
+     Gold is champagne, never orange; jade is mineral, never fluorescent. */
+  --gold: #E8C273;
+  --gold-dim: rgba(232, 194, 115, 0.13);
+  --jade: #5FBF92;
+  --jade-dim: rgba(95, 191, 146, 0.13);
+  --silver: #AFB6C2;
+  --silver-dim: rgba(175, 182, 194, 0.12);
+  --amber: #E0A83F;
+  --amber-dim: rgba(224, 168, 63, 0.13);
+  --red: #D2685C;
+  --red-dim: rgba(210, 104, 92, 0.14);
+  --charcoal: #6E7681;
+
+  /* UI semantics */
+  --blue: #6FA0D6;
+  --blue-dim: rgba(111, 160, 214, 0.13);
+  --green: #5FBF92;
+  --green-dim: rgba(95, 191, 146, 0.13);
+
+  /* Identity accents */
+  --oxblood: #B4636A;
+  --oxblood-dim: rgba(180, 99, 106, 0.13);
+
+  /* Drafting rule — barely-there on dark, or it reads as scanlines. */
+  --grid-line: rgba(160, 190, 225, 0.045);
+
+  /* Sidebar — the deepest surface, so the navigation recedes and the
+     content plane advances. */
+  --rail-bg: #0A0F18;
+  --rail-deep: #070B12;
+  --rail-text: #98A1B2;
+  --rail-active: #F2EADB;
+  --rail-divider: rgba(198, 214, 236, 0.09);
+
+  /* Globe panel chrome. In night mode the globe canvas and the application
+     finally share one continuous family instead of the dark panel being a
+     foreign inset in a light page. */
+  --dark-canvas: #080D16;
+  --dark-surface-0: #0C1220;
+  --dark-surface-1: #121A2A;
+  --dark-hairline: rgba(198, 214, 236, 0.12);
+  --dark-hairline-strong: rgba(198, 214, 236, 0.2);
+  --dark-text-primary: #F2EADB;
+  --dark-text-secondary: #A8AEBC;
+  --dark-text-tertiary: #737B8B;
+}
+
+/* The shell paints the page background from --canvas; without this the
+   browser's default white shows through during overscroll in night mode. */
+:root[data-theme="night"] body { background: var(--canvas); }

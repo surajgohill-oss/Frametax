@@ -8,6 +8,7 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { STATUS_HEX, GRAPHITE_HEX } from "../lib/globeData";
+import { subscribeTheme } from "../lib/theme";
 
 // ── Studio environment (image-based lighting) ───────────────────────────
 // THE architectural change in the premium-glass pass. Previously the Globe
@@ -140,7 +141,58 @@ const TIER_HEX = {
 // the R/G/B spread stays narrow (~13 steps) so it reads as smoked glass, not
 // as a blue sphere. Warm/taupe values are prohibited here: they are exactly
 // what produced the muddy cast this palette exists to prevent.
-const OCEAN_BODY = "#3a4250"; // smoked midnight glass — lit-side diffuse
+// ── Theme-responsive globe palette ──────────────────────────────────────
+// Night mode is not a filter over the day render: the ocean moves to a true
+// midnight NAVY (day mode's ocean is a neutral slate), the backdrop drops to
+// meet the night application canvas so the panel stops reading as a foreign
+// inset, and the limb picks up a faint cool illumination. Only these values
+// change — the glass ARCHITECTURE (PMREM IBL, MeshPhysical, clearcoat, ACES,
+// composer, bloom) is identical in both themes and must stay that way.
+const GLOBE_THEME = {
+  day: {
+    ocean: "#3a4250",
+    oceanEmissive: "#1e242c",
+    land: GRAPHITE_HEX,
+    stroke: "#9aa3b0",
+    rim: "#b9c1cb",
+    backdrop: ["#14161a", "#0f1114", "#0a0c0e"],
+    exposure: 0.95,
+    envIntensity: 0.34,
+  },
+  night: {
+    // Deep navy that still reads as water, never as a black hole.
+    ocean: "#2b3956",
+    // Faint internal blue illumination — the "lit from within" quality the
+    // art direction calls for, and the guarantee the ocean never collapses.
+    oceanEmissive: "#16243c",
+    // Neutral grey land on a navy ocean is precisely what reads as an
+    // unfinished or missing asset — the two share no hue family. Night land
+    // is a navy-slate: clearly lighter than the ocean, clearly darker than
+    // any status colour, and unmistakably part of the same material world.
+    land: "#4a5570",
+    // Borders soften markedly at night: on a dark ground the same value
+    // reads far hotter, and hard white admin lines are the single biggest
+    // contributor to the "technical GIS map" impression.
+    stroke: "#8290a8",
+    // Cool silver-blue limb rather than day's neutral platinum.
+    rim: "#9fb6d6",
+    // Meets --dark-canvas/--dark-surface-0 from the night token layer, so
+    // the globe panel and the application shell share one continuous field.
+    backdrop: ["#0d1420", "#0a1018", "#070b12"],
+    // Slightly hotter: the surrounding UI is far darker at night, so the
+    // same exposure reads dimmer by simultaneous contrast.
+    exposure: 1.04,
+    envIntensity: 0.40,
+  },
+};
+
+function globeTheme() {
+  return document.documentElement.getAttribute("data-theme") === "night"
+    ? GLOBE_THEME.night
+    : GLOBE_THEME.day;
+}
+
+const OCEAN_BODY = "#3a4250"; // smoked midnight glass — lit-side diffuse (day default)
 const NEUTRAL_FILL = GRAPHITE_HEX; // frosted graphite (canonical, shared with the legend)
 const NEUTRAL_STROKE = "#9aa3b0"; // etched border — reads above the fill, never a bright GIS line
 const BRAND_NEUTRAL_FILL = "#564d3e"; // higher contrast for the 76px mark
@@ -241,10 +293,11 @@ function makeOceanBackgroundTexture() {
   // in hue to the ocean for the sphere to separate from it. Neutral now, and
   // deliberately kept BELOW the ocean's emissive floor so the ocean always
   // reads as lighter than the backdrop it sits in.
+  const stops = globeTheme().backdrop;
   const grad = ctx.createLinearGradient(0, 0, 0, 256);
-  grad.addColorStop(0, "#14161a");
-  grad.addColorStop(0.55, "#0f1114");
-  grad.addColorStop(1, "#0a0c0e");
+  grad.addColorStop(0, stops[0]);
+  grad.addColorStop(0.55, stops[1]);
+  grad.addColorStop(1, stops[2]);
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, 2, 256);
   const tex = new THREE.CanvasTexture(c);
@@ -341,7 +394,7 @@ export default function Globe3D({
   // Mutable snapshot the polygon/point accessors read from — the accessors
   // are handed to three-globe once (stable identities), and re-assigning
   // them is how a selection/status change repaints without a remount.
-  const liveRef = useRef({ polygonColors: null, selectedIso: null, pointRadius: null, geoIsoSet: null });
+  const liveRef = useRef({ polygonColors: null, selectedIso: null, pointRadius: null, geoIsoSet: null, strokeColor: null, landColor: null });
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -511,12 +564,14 @@ export default function Globe3D({
     // the closest zoom, where the artifact is worst.
 
     const neutralFill = isBrand ? BRAND_NEUTRAL_FILL : NEUTRAL_FILL;
+    // Theme-driven inactive land; falls back to the frozen day value.
+    const resolvedNeutralFill = () => (isBrand ? BRAND_NEUTRAL_FILL : (liveRef.current.landColor || neutralFill));
 
     const capColorFn = (feat) => {
       const iso = isoOfFeature(feat);
       const colors = liveRef.current.polygonColors;
       const hex = colors?.get ? colors.get(iso) : colors?.[iso];
-      if (!hex) return neutralFill;
+      if (!hex) return resolvedNeutralFill();
       const sel = liveRef.current.selectedIso;
       if (sel && iso !== sel) return dimHex(hex);
       return hex;
@@ -527,7 +582,8 @@ export default function Globe3D({
       const colors = liveRef.current.polygonColors;
       const hex = colors?.get ? colors.get(iso) : colors?.[iso];
       if (hex === TIER_HEX.gold) return GOLD_STROKE;
-      return NEUTRAL_STROKE;
+      // Theme-driven: night mode softens borders markedly (see GLOBE_THEME).
+      return liveRef.current.strokeColor || NEUTRAL_STROKE;
     };
     // Extrusion sidewalls — previously fully transparent (`rgba(0,0,0,0)`
     // for every jurisdiction), which is why elevated status polygons read
@@ -1056,6 +1112,41 @@ export default function Globe3D({
     const clearHover = () => onPointHover && onPointHover(null);
     mount.addEventListener("mouseleave", clearHover);
 
+    // ── Live theme response ────────────────────────────────────────────
+    // Recolours the existing scene in place. Deliberately NOT a remount:
+    // rebuilding on every theme switch would drop and recreate the WebGL
+    // context (and with it the PMREM bake), which both costs a visible hitch
+    // and risks the context-exhaustion failure this component already
+    // guards against. Materials are mutated, `needsUpdate` is not required
+    // for colour-only changes on an existing program.
+    const applyTheme = () => {
+      const t = globeTheme();
+      material.color.set(t.ocean);
+      material.emissive.set(t.oceanEmissive);
+      material.envMapIntensity = t.envIntensity;
+      renderer.toneMappingExposure = t.exposure;
+      if (rimMesh) rimMesh.material.uniforms.uColor.value.set(t.rim);
+      // Rebuild the backdrop ramp; the old texture is disposed so the swap
+      // cannot leak a GPU allocation per toggle.
+      const nextBackdrop = makeOceanBackgroundTexture();
+      const prevBackdrop = scene.background;
+      scene.background = nextBackdrop;
+      if (prevBackdrop && prevBackdrop !== nextBackdrop) prevBackdrop.dispose();
+      stateRef.current.backdropTexture = nextBackdrop;
+      // Borders are read through the live accessor, so re-invoking it is
+      // what makes three-globe repaint the stroke colour.
+      liveRef.current.strokeColor = t.stroke;
+      liveRef.current.landColor = t.land;
+      if (globeRef.current) {
+        globeRef.current
+          .polygonStrokeColor(globeRef.current.polygonStrokeColor())
+          .polygonCapColor(globeRef.current.polygonCapColor())
+          .polygonCapMaterial(globeRef.current.polygonCapMaterial());
+      }
+    };
+    applyTheme();
+    const unsubscribeTheme = subscribeTheme(applyTheme);
+
     stateRef.current = { ...stateRef.current, renderer, controls, frameId, clearHoverListener: clearHover };
 
     return () => {
@@ -1077,7 +1168,13 @@ export default function Globe3D({
       scene.environment = null;
       material.dispose();
       renderer.dispose();
+      unsubscribeTheme();
       oceanTexture.dispose();
+      // applyTheme() swaps in a fresh backdrop texture; dispose whichever is
+      // current so a theme toggle before unmount cannot leak one.
+      if (stateRef.current.backdropTexture && stateRef.current.backdropTexture !== oceanTexture) {
+        stateRef.current.backdropTexture.dispose();
+      }
       capMaterialCache.forEach((m) => m.dispose());
       sideMaterialCache.forEach((m) => m.dispose());
       if (rimMesh) { rimMesh.geometry.dispose(); rimMesh.material.dispose(); }
