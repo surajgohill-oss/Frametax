@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
+// FROZEN (2026-07-28): this component's isolation from the production
+// Globe engine is the whole point of it existing — do not import Globe3D
+// or reuse its scene/material/lighting objects here for any reason. A
+// future change to this file requires the user to explicitly unlock this
+// subsystem first.
+//
 // Deliberately duplicated rather than imported from Globe3D.jsx — this
 // component must never share a scene-light or material mutation path with
 // the production Globe (2026-07-28 isolated material-correction pass,

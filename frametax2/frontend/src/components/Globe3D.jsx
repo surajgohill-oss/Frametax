@@ -4,6 +4,23 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
 import ThreeGlobe from "three-globe";
 
+// ══════════════════════════════════════════════════════════════════════
+// FROZEN (2026-07-28): production Globe materials, lighting, ocean,
+// inactive-land treatment, status base palette application, Admin-1
+// geometry composition, selection/camera/Inspector-framing behavior, and
+// beacon fallback are all verified working (live click-through of
+// California, New York, Georgia, Ontario, Quebec, British Columbia,
+// Mauritius, Malta, plus card sync, one-click A->B transfer, and Optimizer
+// Overlay arcs — see the closeout report for that session).
+//
+// Do not modify this file for an unrelated UI pass. A change here requires
+// the user to explicitly unlock this subsystem first. If you believe the
+// render is regressed, verify against a FRESH dev-server restart and a
+// hard browser reload before touching any material/lighting constant —
+// most "regressions" reported against this file have turned out to be a
+// dead dev server or a stale browser tab, not a code defect.
+// ══════════════════════════════════════════════════════════════════════
+
 // Cheap, non-leaking probe for WebGL availability. Creates one throwaway
 // context and immediately releases it, so it never counts against the
 // browser's live-context budget. Returns false when WebGL is unavailable
@@ -651,7 +668,13 @@ export default function Globe3D({
     // highlight, it did not stop it saturating to white). Now tinted warm
     // brass instead of cold blue-grey so the glint itself reads as metal
     // trim rather than chrome.
-    material.specular = new THREE.Color("#332619");
+    // Darkened one further notch (2026-07-28 freeze pass): at #332619 the
+    // key light's highlight was still clipping bright enough at some camera
+    // angles (confirmed live, Workspace/Project Globe over North America)
+    // to read as a soft blob wider than a restrained glint should be. This
+    // keeps the same warm-brass hue, just lower amplitude, so the highlight
+    // stays a tight point rather than blooming outward.
+    material.specular = new THREE.Color("#241a11");
 
     scene.add(globe);
     globeRef.current = globe;
