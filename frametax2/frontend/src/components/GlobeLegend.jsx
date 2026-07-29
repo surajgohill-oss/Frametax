@@ -1,4 +1,4 @@
-import { STATUS_HEX, STATUS_LABEL } from "../lib/globeData";
+import { STATUS_HEX, STATUS_LABEL, GRAPHITE_HEX } from "../lib/globeData";
 
 // The single source of the Globe's status key. Every Globe surface renders
 // THIS component rather than its own hand-written colour list, so the
@@ -7,13 +7,11 @@ import { STATUS_HEX, STATUS_LABEL } from "../lib/globeData";
 const ORDER = ["gold", "jade", "amber", "silver", "darkRed"];
 
 // Unevaluated landmass carries no status entry at all — it is the neutral
-// graphite base the choropleth sits on. It has no STATUS_HEX key because
-// it is the absence of a verdict, so it is declared here explicitly and
-// kept last, after the five real production statuses.
-// Must match Globe3D.jsx's NEUTRAL_FILL exactly — this swatch is a
-// duplicate by necessity (the legend has no live reference to the Globe's
-// own module-scope constant), not an independent colour choice.
-const GRAPHITE_SWATCH = "#4a4136";
+// graphite base the choropleth sits on, kept last after the five real
+// production statuses. It now comes from globeData.js's GRAPHITE_HEX, the
+// same constant Globe3D.jsx fills the polygon with, so the legend swatch
+// and the Globe can no longer drift apart (they previously held separate
+// hand-synced copies of this value).
 
 export default function GlobeLegend({ showTreatyPath = false, className = "" }) {
   return (
@@ -25,7 +23,7 @@ export default function GlobeLegend({ showTreatyPath = false, className = "" }) 
         </span>
       ))}
       <span>
-        <span className="globe-legend-dot" style={{ background: GRAPHITE_SWATCH }} />
+        <span className="globe-legend-dot" style={{ background: GRAPHITE_HEX }} />
         Not evaluated
       </span>
       {showTreatyPath && (

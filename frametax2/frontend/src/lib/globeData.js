@@ -56,6 +56,15 @@ export const STATUS_HEX = {
   silver: "#b0aca2",
   darkRed: "#a3453c",
 };
+
+// "Not evaluated" landmass — the absence of a verdict, so it has no entry in
+// STATUS_HEX above, but it IS part of the same canonical palette and must be
+// declared exactly once. Globe3D.jsx (polygon fill) and GlobeLegend.jsx (key
+// swatch) both import THIS constant; neither may re-declare its own copy.
+// Neutral graphite on purpose: it sits between the ocean and the status
+// colours in the frozen luminance hierarchy, and any warm/taupe value here
+// reintroduces the muddy cast this palette exists to prevent.
+export const GRAPHITE_HEX = "#6e7681";
 export const STATUS_LABEL = {
   gold: "Leading recommendation",
   jade: "Qualified / viable",

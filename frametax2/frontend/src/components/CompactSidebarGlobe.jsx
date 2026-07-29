@@ -28,13 +28,31 @@ function webglAvailable() {
 // production Globe's constants — a plain flat landmass silhouette with no
 // internal borders reads as "noisy" at production hues/scale, so this is
 // intentionally simpler and slightly higher-contrast.
-const COMPACT_OCEAN_DIFFUSE = "#221c14"; // baked into the texture; non-zero
+// Smoked dark GLASS, not brown. The previous trio (#221c14 / #161208 /
+// #8f7b57) was warm all the way through, which is why the emblem rendered as
+// a muddy brown ball with beige smears instead of a premium mark.
+// Note the narrower R->B spread than the production ocean: a small element
+// reads its hue as MORE saturated than a large one, so the same slate that
+// looks correctly neutral at 560px reads as navy at 80px.
+const COMPACT_OCEAN_DIFFUSE = "#333940"; // baked into the texture; non-zero
 // so the lit hemisphere still shows a subtle gradient, not a flat hole.
-const COMPACT_OCEAN_EMISSIVE = "#161208"; // guaranteed floor brightness, same
+const COMPACT_OCEAN_EMISSIVE = "#22262b"; // guaranteed floor brightness, same
 // technique as the production ocean fix — a lit sphere's diffuse base alone
 // cannot exceed itself in brightness, so emissive carries the "not black"
 // floor here too.
-const COMPACT_LAND = "#8f7b57"; // warm brass/ivory, muted for small-size legibility
+// The ONE warm element, and deliberately so: the brand mark's continents are
+// its ivory/brass signature against the smoked sphere. Brighter than the old
+// value because at 80px the landmass needs real contrast to read as
+// geography rather than as noise.
+const COMPACT_LAND = "#cbb692";
+
+// At 80px, small islands and archipelagos degenerate into single stray
+// pixels — the "beige fragments floating without recognizable geography"
+// failure. Rings whose projected bounding box is smaller than this fraction
+// of the texture are dropped, leaving only the major landmasses that
+// actually read as Earth at emblem scale. This is the geometry-complexity
+// reduction the compact component is supposed to own.
+const MIN_RING_EXTENT_FRAC = 0.018;
 
 function projectPoint(lon, lat, w, h) {
   return [((lon + 180) / 360) * w, ((90 - lat) / 180) * h];
@@ -57,7 +75,26 @@ function drawRing(ctx, ring, w, h) {
   ctx.closePath();
 }
 
+// True when a ring is large enough to be worth drawing at emblem scale.
+// Measured on the ring's own lon/lat bounding box so it is independent of
+// texture resolution.
+function ringIsSignificant(ring) {
+  let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity;
+  for (const [lon, lat] of ring) {
+    if (lon < minLon) minLon = lon;
+    if (lon > maxLon) maxLon = lon;
+    if (lat < minLat) minLat = lat;
+    if (lat > maxLat) maxLat = lat;
+  }
+  return (maxLon - minLon) / 360 > MIN_RING_EXTENT_FRAC
+    || (maxLat - minLat) / 180 > MIN_RING_EXTENT_FRAC;
+}
+
 function drawPolygon(ctx, rings, w, h) {
+  // rings[0] is the outer ring; if the landmass itself is too small to read
+  // at 80px, skip the whole polygon (holes included) rather than drawing a
+  // speck.
+  if (!rings.length || !ringIsSignificant(rings[0])) return;
   ctx.beginPath();
   for (const ring of rings) drawRing(ctx, ring, w, h);
   ctx.fill("evenodd");
@@ -133,14 +170,15 @@ export default function CompactSidebarGlobe({ size = 80, className = "" }) {
     mount.innerHTML = "";
     mount.appendChild(renderer.domElement);
 
-    // Same warm key/fill pairing family as the production rig, but its own
-    // instances — never the same THREE.Light objects, never mutated by
-    // Globe3D.jsx's selection/status effects.
-    scene.add(new THREE.AmbientLight(0x332b22, 0.8));
-    const key = new THREE.DirectionalLight(0xf2ead9, 1.0);
+    // Neutral white, for the same reason as the production rig: tinted lights
+    // multiply against every material and were a primary cause of this
+    // emblem reading as a brown ball. Its own THREE.Light instances — never
+    // shared with, or mutated by, Globe3D.jsx.
+    scene.add(new THREE.AmbientLight(0xffffff, 0.88));
+    const key = new THREE.DirectionalLight(0xffffff, 0.62);
     key.position.set(2, 1.4, 2);
     scene.add(key);
-    const fill = new THREE.DirectionalLight(0x8a7860, 0.35);
+    const fill = new THREE.DirectionalLight(0x8890a0, 0.20);
     fill.position.set(-2, -0.8, -1.5);
     scene.add(fill);
 
@@ -156,7 +194,7 @@ export default function CompactSidebarGlobe({ size = 80, className = "" }) {
         color: 0xffffff,
         emissive: new THREE.Color(COMPACT_OCEAN_EMISSIVE),
         shininess: 42,
-        specular: new THREE.Color("#2c2318"),
+        specular: new THREE.Color("#232a33"),
       }),
     );
     group.add(sphere);
@@ -165,6 +203,13 @@ export default function CompactSidebarGlobe({ size = 80, className = "" }) {
     getBakedLandCanvas().then((canvas) => {
       if (cancelled) return;
       const texture = new THREE.CanvasTexture(canvas);
+      // The canvas is authored in sRGB; without this the map is sampled as
+      // linear and the continents render washed out and desaturated.
+      texture.colorSpace = THREE.SRGBColorSpace;
+      // The emblem is only 80px but the texture is 1024px wide, so it is
+      // heavily minified at a grazing angle near the limb — anisotropy is
+      // what keeps the coastlines from shimmering into mush as it rotates.
+      texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
       sphere.material.map = texture;
       sphere.material.needsUpdate = true;
       stateRef.current.texture = texture;

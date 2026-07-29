@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
 import ThreeGlobe from "three-globe";
+import { STATUS_HEX, GRAPHITE_HEX } from "../lib/globeData";
 
 // ══════════════════════════════════════════════════════════════════════
 // FROZEN (2026-07-28): production Globe materials, lighting, ocean,
@@ -40,18 +41,15 @@ function webglAvailable() {
   }
 }
 
-// Kept in sync with lib/globeData.js STATUS_HEX by hand — three-globe's
-// point/beacon accessors run inside this file and have no import path back
-// to globeData.js's own module (would create a cycle), so this is the one
-// place that duplicate has to live. Brightened together in the 2026-07-28
-// regression-lock pass — see STATUS_HEX for the rationale.
+// DERIVED, never re-declared. This used to be a hand-synced duplicate of
+// globeData.js's STATUS_HEX, justified by a claimed import cycle — there is
+// no cycle (globeData.js imports only ./jurisdictions), so the duplicate was
+// pure drift risk and is now gone. `red`/`charcoal` are this file's internal
+// tier aliases for the canonical darkRed / not-evaluated graphite.
 const TIER_HEX = {
-  gold: "#e8c273",
-  jade: "#4bab7f",
-  silver: "#b0aca2",
-  amber: "#e0a83f",
-  red: "#a3453c",
-  charcoal: "#4c483f",
+  ...STATUS_HEX,
+  red: STATUS_HEX.darkRed,
+  charcoal: GRAPHITE_HEX,
 };
 
 // ── Visual hierarchy ────────────────────────────────────────────────────
@@ -60,32 +58,22 @@ const TIER_HEX = {
 //   ocean (deepest, warm blackened glass) < inactive land (lighter frosted
 //   graphite) < borders (lightest neutral) < status colours (the only
 //   saturated thing here).
-// Every hue below is deliberately grounded in the app's own "Dark Luxury
-// Glass" tokens (tokens.css --dark-canvas/--dark-surface-0/1/--dark-text-*)
-// plus --oxblood and --gold — the Globe previously invented an unrelated
-// cold-blue/cyan palette that shared no hue family with the warm ivory /
-// charcoal / oxblood / brass application shell around it. Status colours
-// (TIER_HEX below) are untouched: they were already warm and are never
-// recoloured by this pass.
-// Ocean tightened to true neutral obsidian (2026-07-28 closeout pass): the
-// previous value read as faintly brown at large sizes. Minimal R/G/B spread
-// on purpose — "smoked glass", not a tinted one. Land fill lightened further
-// for stronger ocean/land separation, per the same pass. Lifted one notch
-// again in the regression-lock pass — #100f0d read as flat pure black in
-// screenshots; this keeps the same neutral hue but with enough value to
-// still read as "smoked glass" rather than a hole in the sphere.
-// Isolated material-correction pass (2026-07-28): the ocean kept reading as
-// literal black in rendered screenshots no matter how many times this hex
-// alone was nudged — because a dark DIFFUSE colour is bounded above by
-// itself under Phong shading (base-colour x light can only ever go darker
-// than "lit", never brighter than the base colour on the unlit hemisphere).
-// Fixed at the material level below instead: material.emissive now carries
-// a real, non-trivial value so the sphere has a GUARANTEED visible floor
-// colour independent of camera/light angle, while the diffuse base below
-// still provides the lit-hemisphere variation ("internal depth").
-const OCEAN_BODY = "#211c15"; // near-neutral obsidian, negligible hue
-const NEUTRAL_FILL = "#4a4136"; // frosted graphite, warm taupe — clearly lighter than the ocean
-const NEUTRAL_STROKE = "#7d7362"; // == --dark-text-tertiary
+// ROOT-CAUSE NOTE (2026-07-28 recovery pass). Successive passes tried to
+// cure a muddy brown cast by nudging THESE hexes, and could not, because the
+// cast was never coming from the materials: every scene light below was
+// itself brown-tinted (ambient 0x332b22, fill 0x8a7860, rim 0xd4a860). Phong
+// shading multiplies material x light per channel, so a light rig with a
+// crushed blue channel forces EVERY surface toward brown no matter what
+// colour the material declares. The rig is now neutral (see the lighting
+// block), which is what finally lets these values render as written.
+//
+// Deliberately neutral charcoal with only a restrained midnight undertone —
+// the R/G/B spread stays narrow (~13 steps) so it reads as smoked glass, not
+// as a blue sphere. Warm/taupe values are prohibited here: they are exactly
+// what produced the muddy cast this palette exists to prevent.
+const OCEAN_BODY = "#3a4250"; // smoked midnight glass — lit-side diffuse
+const NEUTRAL_FILL = GRAPHITE_HEX; // frosted graphite (canonical, shared with the legend)
+const NEUTRAL_STROKE = "#9aa3b0"; // etched border — reads above the fill, never a bright GIS line
 const BRAND_NEUTRAL_FILL = "#564d3e"; // higher contrast for the 76px mark
 const SELECTED_STROKE = "#f4ecd9"; // == --dark-text-primary
 // The leading recommendation gets its own bright perimeter — the single
@@ -96,8 +84,8 @@ const GOLD_STROKE = "#f7e3ab";
 // rim colour itself is warm brass now (was a cold blue "#4a7fb5") — the
 // glass edge should read as gilt trim on a premium instrument, not a sci-fi
 // force field.
-const BASE_RIM_INTENSITY = 0.34;
-const SELECTED_RIM_INTENSITY = 0.5;
+const BASE_RIM_INTENSITY = 0.30;
+const SELECTED_RIM_INTENSITY = 0.44;
 // Selection is a substantial physical lift, not a hint — it must become the
 // focal point of the scene the moment it is chosen. Raised again ~25% in the
 // 2026-07-28 closeout pass (0.15 -> 0.19), on top of the earlier ~2.5x raise
@@ -173,10 +161,15 @@ function makeOceanBackgroundTexture() {
   // Darkened further in the closeout pass — the backdrop was competing with
   // the globe instead of receding behind it. It now exists only to keep the
   // sphere from reading as a hole cut in the page, nothing more.
+  // Quiet neutral charcoal. Was a warm near-black ramp (#161310/#100d0a/
+  // #070504) which contributed to the overall brown cast and sat too close
+  // in hue to the ocean for the sphere to separate from it. Neutral now, and
+  // deliberately kept BELOW the ocean's emissive floor so the ocean always
+  // reads as lighter than the backdrop it sits in.
   const grad = ctx.createLinearGradient(0, 0, 0, 256);
-  grad.addColorStop(0, "#161310");
-  grad.addColorStop(0.55, "#100d0a");
-  grad.addColorStop(1, "#070504");
+  grad.addColorStop(0, "#14161a");
+  grad.addColorStop(0.55, "#0f1114");
+  grad.addColorStop(1, "#0a0c0e");
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, 2, 256);
   const tex = new THREE.CanvasTexture(c);
@@ -338,24 +331,66 @@ export default function Globe3D({
       vignette.style.position = "absolute";
       vignette.style.inset = "0";
       vignette.style.pointerEvents = "none";
-      vignette.style.background = "radial-gradient(circle at 50% 45%, rgba(0,0,0,0) 52%, rgba(10,7,5,0.55) 100%)";
+      // Neutral and much lighter than before. This is a CSS layer painted ON
+      // TOP of the WebGL canvas, so it was double-penalising the render: the
+      // old rgba(10,7,5,0.55) is a WARM black at 55% opacity covering the
+      // outer ~48% of the panel, which both crushed the Globe's periphery
+      // (making the sphere look dark and flat however the lights were tuned)
+      // and re-imposed a brown tint over pixels the renderer had already
+      // produced correctly. It exists only to stop the panel edges glaring —
+      // it must stay subtle.
+      vignette.style.background = "radial-gradient(circle at 50% 45%, rgba(0,0,0,0) 64%, rgba(8,10,13,0.34) 100%)";
       mount.appendChild(vignette);
     }
 
-    // Lighting: a warm ivory key, a warm taupe fill, and a brass back/rim
-    // opposite the key. The rim is what gives the sphere mass — it separates
-    // the dark limb from the dark backdrop instead of letting them fuse.
-    // Every colour here is warm now (was a cold blue-grey trio) — this is
-    // one of the two biggest levers in pulling the Globe into the same
-    // family as the app's warm ivory / oxblood / brass shell.
-    scene.add(new THREE.AmbientLight(0x332b22, 0.72));
-    const key = new THREE.DirectionalLight(0xf2ead9, 1.12);
+    // Lighting — NEUTRAL BY MANDATE. This rig is the single highest-leverage
+    // thing in the file and the confirmed root cause of the "brown/muddy
+    // Globe": it previously ran a brown ambient (0x332b22), a taupe fill
+    // (0x8a7860) and a brass rim (0xd4a860). Because Phong multiplies
+    // material x light per channel, that crushed blue everywhere and pushed
+    // every surface — ocean, land, jade, silver — toward mud, which no
+    // material-hex edit could ever undo.
+    //
+    // The lights are now essentially neutral, so each material renders as the
+    // colour it actually declares: gold reads as true gold, jade as a jewel
+    // green, graphite as graphite. Warmth belongs to the STATUS COLOURS, not
+    // to the illumination. Do not re-tint these to "warm up" the Globe.
+    // Intensities are deliberately restrained. Neutralising the hues (above)
+    // removed the mud but, at the previous 0.85/1.05 strengths, the lit
+    // hemisphere washed out into a broad pale region that swallowed
+    // geography — the same "bright blob" failure in a new colour. Smoked
+    // glass needs a LOW overall exposure with a wide dark range.
+    // The lights are PURE WHITE and carry no hue whatsoever. Every colour on
+    // this Globe now comes from the materials alone, which is the only way to
+    // guarantee that gold renders as gold and graphite as graphite. (An
+    // intermediate attempt used a dark tinted ambient, 0x3a3d44 — that fails
+    // twice over: a dark ambient COLOUR caps how much light the term can ever
+    // contribute no matter how high its intensity, so the sphere just went
+    // black, and any tint reintroduces a cast.)
+    //
+    // The AMBIENT:KEY RATIO decides whether this reads as smoked glass or as
+    // a lit billiard ball. Ambient-dominant keeps the whole sphere legible
+    // and any specular hotspot small; the modest key plus the rim supplies
+    // curvature. Do not make the key dominant "for drama" — that is what
+    // produced the pale patch that swallowed the Arabian plate.
+    // NOTE ON LEVELS: three.js colour management (default since r152)
+    // converts every sRGB hex above into LINEAR space before lighting, then
+    // converts back on output. Intensities therefore need to be higher than
+    // naive sRGB arithmetic suggests — 0.62/0.55 looked correct on paper and
+    // rendered as a near-black sphere. These values are set empirically from
+    // the rendered result, not calculated.
+    scene.add(new THREE.AmbientLight(0xffffff, 0.98));
+    const key = new THREE.DirectionalLight(0xffffff, 0.42);
     key.position.set(200, 120, 200);
     scene.add(key);
-    const fill = new THREE.DirectionalLight(0x8a7860, 0.4);
+    const fill = new THREE.DirectionalLight(0x8890a0, 0.22);
     fill.position.set(-200, -80, -150);
     scene.add(fill);
-    const rim = new THREE.DirectionalLight(0xd4a860, isBrand ? 0.3 : 0.62);
+    // Back/rim gives the sphere mass by separating its dark limb from the
+    // dark backdrop. Pulled down from 0.62: at that strength, combined with
+    // the brass tint, it was producing the bright warm blob visible on the
+    // left limb in the failing screenshots.
+    const rim = new THREE.DirectionalLight(0xaeb6c2, isBrand ? 0.24 : 0.40);
     rim.position.set(-170, 70, -230);
     scene.add(rim);
     // NOTE: a camera-attached point light was tried here twice to get a
@@ -448,8 +483,11 @@ export default function Globe3D({
       if (!m) {
         m = new THREE.MeshPhongMaterial({
           color: new THREE.Color(hex),
-          shininess: 55,
-          specular: new THREE.Color("#3a3226"),
+          // Tighter + neutral (was 55 / #3a3226 brown): gives status caps a
+          // controlled glossy roll-off across the surface instead of the
+          // flat painted look, without tipping into chrome or plastic.
+          shininess: 70,
+          specular: new THREE.Color("#4a515a"),
           side: THREE.DoubleSide,
           depthWrite: true,
         });
@@ -463,8 +501,8 @@ export default function Globe3D({
       if (!m) {
         m = new THREE.MeshPhongMaterial({
           color: new THREE.Color(hex),
-          shininess: 16,
-          specular: new THREE.Color("#221c14"),
+          shininess: 18,
+          specular: new THREE.Color("#262b31"),
           side: THREE.DoubleSide,
           depthWrite: true,
         });
@@ -477,7 +515,19 @@ export default function Globe3D({
       const colors = liveRef.current.polygonColors;
       return colors?.get ? colors.get(iso) : colors?.[iso];
     };
-    const capMaterialFn = (feat) => (activeHex(feat) ? getCapMaterial(capColorFn(feat)) : null);
+    // Caps are lit for EVERY polygon, including not-evaluated land. This is
+    // the second half of the "flat painted land" fix: previously the inactive
+    // accessor returned null, so three-globe fell back to its own default
+    // MeshBasicMaterial — an UNLIT material — and the entire graphite
+    // landmass rendered as a flat colour fill that could not respond to the
+    // light rig at all. That is precisely why inactive land "lacked frosted
+    // depth" and why its shape was only legible from its border strokes.
+    // Giving it the same cached Phong treatment makes it read as frosted
+    // graphite glass with real curvature shading.
+    const capMaterialFn = (feat) => getCapMaterial(capColorFn(feat));
+    // Sidewalls stay active-only on purpose: not-evaluated land sits almost
+    // flush with the ocean (INACTIVE_POLYGON_ALTITUDE), so giving it a wall
+    // would just draw a thin dark seam around every country.
     const sideMaterialFn = (feat) => (activeHex(feat) ? getSideMaterial(sideColorFn(feat)) : null);
 
     // Beacon treatment is for jurisdictions the polygon set genuinely
@@ -661,20 +711,24 @@ export default function Globe3D({
     // reading as literal black regardless of the diffuse base colour above.
     // Emissive is additive and lighting-independent, so this is now a real
     // floor brightness the sphere can never fall below.
-    material.emissive = new THREE.Color("#1c170f");
+    // Emissive is additive and lighting-independent, so it is the sphere's
+    // GUARANTEED floor colour on the unlit hemisphere — the thing that stops
+    // the ocean collapsing to black at any camera angle. Raised and
+    // neutralised from #1c170f (a warm near-black that read as brown-black).
+    // It is deliberately set above the canvas backdrop's top stop (#14161a)
+    // so the ocean is always readable AS ocean against the panel behind it.
+    material.emissive = new THREE.Color("#252b34");
     material.shininess = 300;
     // Specular is kept very dark on purpose (same empirical finding as
     // before — raising shininess alone only shrank the key light's
     // highlight, it did not stop it saturating to white). Now tinted warm
     // brass instead of cold blue-grey so the glint itself reads as metal
     // trim rather than chrome.
-    // Darkened one further notch (2026-07-28 freeze pass): at #332619 the
-    // key light's highlight was still clipping bright enough at some camera
-    // angles (confirmed live, Workspace/Project Globe over North America)
-    // to read as a soft blob wider than a restrained glint should be. This
-    // keeps the same warm-brass hue, just lower amplitude, so the highlight
-    // stays a tight point rather than blooming outward.
-    material.specular = new THREE.Color("#241a11");
+    // Neutral and low-amplitude. Paired with shininess 300 (a very tight
+    // lobe) this yields a small polished glint rather than the broad warm
+    // blob the brass-tinted value produced. Highlight footprint stays well
+    // under the ~6% of visible Globe diameter the spec allows.
+    material.specular = new THREE.Color("#141920");
 
     scene.add(globe);
     globeRef.current = globe;
@@ -688,9 +742,16 @@ export default function Globe3D({
         new THREE.SphereGeometry(globe.getGlobeRadius() * 1.004, 64, 64),
         new THREE.ShaderMaterial({
           uniforms: {
-            uColor: { value: new THREE.Color("#c9a15a") },
+            // Cool platinum, not brass (#c9a15a) — brass here painted a warm
+            // ring onto the limb and fed the overall muddy cast. Deliberately
+            // NOT blue/cyan either: a saturated cool value here is what
+            // produces the "cyan halo" failure mode this shell is banned from
+            // reproducing. uPower raised 1.9 -> 2.4 to tighten the falloff
+            // hard against the silhouette, so it reads as a glass edge rather
+            // than a glow bleeding outward from the sphere.
+            uColor: { value: new THREE.Color("#b9c1cb") },
             uIntensity: { value: BASE_RIM_INTENSITY },
-            uPower: { value: 1.9 },
+            uPower: { value: 2.4 },
           },
           vertexShader: `
             varying vec3 vNormal;
