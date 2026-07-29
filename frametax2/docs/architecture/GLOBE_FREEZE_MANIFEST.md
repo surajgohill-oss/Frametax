@@ -50,10 +50,27 @@ files previously kept hand-synced duplicates and they drifted.
    three-globe fall back to unlit `MeshBasicMaterial` — that is what made
    land look flat and undimensional.
 
-## Known non-frozen issue
+## Optimizer arcs — verified working (correcting an earlier false negative)
 
-`arcs.length === 0` for this production's component-relocation structures, so
-Optimizer Overlay truthfully renders no route. This **predates** the freeze
-(visible in the pre-change baseline as "0 structure routes") and lives in the
-locked optimizer/structure-eligibility logic, so it was deliberately not
-touched during the rendering pass. It needs its own scoped task.
+`arcs.length === 0` is **correct behaviour**, not a defect, whenever the
+leading structure is single-jurisdiction: `buildGlobeView` draws arcs for
+treaty structures **plus the currently active/leading structure**, and this
+production's default leading structure is the Mauritius single-jurisdiction
+baseline, which has one participant. The Globe truthfully reports "No
+multi-jurisdiction structure is currently priced."
+
+Set a real multi-jurisdiction structure as leading and arcs render
+immediately — verified live with "Mauritius + Saudi Arabia" (a genuine
+`component_relocation` carrying **no** `treaty_slug`, i.e. exactly the
+non-treaty case that must not be suppressed): the caption flips to "Dashed
+routes mark this production's real multi-jurisdiction structures", a
+directed origin-hue→destination-hue arc renders from the gold Mauritius
+beacon to jade-highlighted Saudi Arabia, unrelated jurisdictions recede to
+neutral, and the dash pattern advances between successive frames.
+
+**Testing note that cost a full verification cycle:** `leadingStructureId`
+lives in in-memory AppState with no persistence. Any *full page load* resets
+it to the API default. To test a non-default leading structure you must use
+**in-app SPA navigation** (click the router `<a>`), never a browser
+navigation — otherwise you are unknowingly testing the default single-
+jurisdiction structure and will wrongly conclude arcs are broken.
