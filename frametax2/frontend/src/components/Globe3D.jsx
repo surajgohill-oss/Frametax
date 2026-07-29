@@ -3,7 +3,76 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
 import ThreeGlobe from "three-globe";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
+import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { STATUS_HEX, GRAPHITE_HEX } from "../lib/globeData";
+
+// ── Studio environment (image-based lighting) ───────────────────────────
+// THE architectural change in the premium-glass pass. Previously the Globe
+// was lit only by a directional key plus a flat ambient, which is why it
+// could never look like glass: a dielectric such as obsidian or optical
+// crystal derives almost all of its character from what it REFLECTS, and
+// with no environment map the only specular cue available is a single
+// directional lobe — one dot on an otherwise flat ball. No amount of
+// roughness/specular tuning can substitute for an environment.
+//
+// This builds a small studio "room" — a key softbox, a long thin strip
+// light, a cool rim panel and a faint warm bounce — which PMREMGenerator
+// converts into a pre-filtered radiance map. Assigning it to
+// scene.environment gives every physical material real, angle-varying
+// reflections: the elongated highlight that slides across the sphere as it
+// rotates is what reads as machined optical glass.
+//
+// Generated procedurally so it stays self-contained (no external HDRI, no
+// network fetch, nothing to ship or cache).
+function buildStudioEnvironment() {
+  const env = new THREE.Scene();
+  const box = new THREE.BoxGeometry(1, 1, 1);
+  box.deleteAttribute("uv");
+
+  // Enclosing dark room — keeps reflections from bottoming out to pure
+  // black, which is what makes an unlit side read as a hole rather than as
+  // a shadowed surface.
+  const room = new THREE.Mesh(
+    box,
+    new THREE.MeshBasicMaterial({ color: new THREE.Color("#0d0f13"), side: THREE.BackSide }),
+  );
+  room.scale.setScalar(24);
+  env.add(room);
+
+  const panel = (hex, intensity, pos, scale) => {
+    const m = new THREE.Mesh(
+      box,
+      new THREE.MeshBasicMaterial({ color: new THREE.Color(hex).multiplyScalar(intensity) }),
+    );
+    m.position.set(pos[0], pos[1], pos[2]);
+    m.scale.set(scale[0], scale[1], scale[2]);
+    env.add(m);
+  };
+
+  // Panel intensities are deliberately LOW. A first calibration ran the key
+  // at 2.2 and the strip at 3.0, which mirrored the panels onto the sphere
+  // as a discrete blown-white lamp image on the limb — a textbook blown-out
+  // hotspot. A premium instrument reflects a soft studio, not a visible
+  // bulb, so these stay dim and the map is heavily blurred below.
+  // Key softbox, upper front-right — the broad primary reflection. Kept
+  // physically LARGE and dim rather than small and bright: a big soft source
+  // wraps the curve, a small bright one prints a disc on it.
+  panel("#ffffff", 0.95, [5, 6, 5], [13, 0.2, 13]);
+  // Long thin strip — reads as a drawn specular streak across the curve.
+  // This single element does most of the "precision-machined" work.
+  panel("#ffffff", 1.45, [-2, 7.5, -3], [15, 0.14, 1.3]);
+  // Cool rim panel behind-left: separates the limb from the backdrop.
+  panel("#cfdaea", 0.7, [-8, 1, -7], [6, 6, 0.2]);
+  // Faint warm bounce from below — ties the glass to the app's brass/ivory
+  // shell WITHOUT tinting the light rig itself (which is what previously
+  // produced the muddy cast).
+  panel("#e8d6b8", 0.35, [6, -4.5, 2], [5, 0.2, 5]);
+
+  return env;
+}
 
 // ══════════════════════════════════════════════════════════════════════
 // FROZEN (2026-07-28): production Globe materials, lighting, ocean,
@@ -84,8 +153,14 @@ const GOLD_STROKE = "#f7e3ab";
 // rim colour itself is warm brass now (was a cold blue "#4a7fb5") — the
 // glass edge should read as gilt trim on a premium instrument, not a sci-fi
 // force field.
-const BASE_RIM_INTENSITY = 0.30;
-const SELECTED_RIM_INTENSITY = 0.44;
+// Cut hard in the premium-glass pass. The studio environment now defines
+// the limb by itself (a real reflection falls off toward grazing angles),
+// so the additive Fresnel shell became a second, redundant edge light —
+// the two stacked into a concentrated white point on the left limb. The
+// shell is retained only to keep the silhouette from fusing with the
+// backdrop when the environment happens to face away.
+const BASE_RIM_INTENSITY = 0.16;
+const SELECTED_RIM_INTENSITY = 0.26;
 // Selection is a substantial physical lift, not a hint — it must become the
 // focal point of the scene the moment it is chosen. Raised again ~25% in the
 // 2026-07-28 closeout pass (0.15 -> 0.19), on top of the earlier ~2.5x raise
@@ -308,9 +383,31 @@ export default function Globe3D({
     }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(width, h);
+    // Filmic tone mapping. The previous rig used NoToneMapping, which clips
+    // linearly: any highlight brighter than 1.0 slams to flat white, which
+    // is structurally what produced blown-out hotspots — they were being
+    // suppressed by dialling specular down until nothing was left, rather
+    // than by rolling off. ACES compresses the highlight shoulder, so a
+    // bright reflection stays bright AND keeps its hue instead of becoming
+    // a white blob. This is what makes real reflections safe to add.
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    // Below 1.0 on purpose: the environment now contributes exposure that
+    // the old rig got from a near-unity ambient, so holding the same
+    // exposure double-counts and washes the graphite land toward white.
+    renderer.toneMappingExposure = 0.95;
     mount.innerHTML = "";
     mount.style.position = "relative";
     mount.appendChild(renderer.domElement);
+
+    // Pre-filter the studio environment into a radiance map once per mount.
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const envScene = buildStudioEnvironment();
+    // The blur sigma is the difference between "reflects a studio" and
+    // "mirrors a lamp". At 0.04 the panels stayed sharp and printed a
+    // blown-white disc onto the limb; 0.22 smears them into the soft,
+    // directional gradient a real softbox produces.
+    const envRT = pmrem.fromScene(envScene, 0.34);
+    scene.environment = envRT.texture;
 
     // CSS2DRenderer: three-globe's htmlElementsData layer (the click/hover
     // hit-targets) renders via CSS2DObject, which needs this second
@@ -379,11 +476,22 @@ export default function Globe3D({
     // naive sRGB arithmetic suggests — 0.62/0.55 looked correct on paper and
     // rendered as a near-black sphere. These values are set empirically from
     // the rendered result, not calculated.
-    scene.add(new THREE.AmbientLight(0xffffff, 0.98));
-    const key = new THREE.DirectionalLight(0xffffff, 0.42);
+    // PREMIUM-GLASS PASS: the ambient is now almost gone. The studio
+    // environment above supplies the diffuse wrap AND the specular
+    // reflections, which a flat AmbientLight cannot do — ambient adds the
+    // same value to every pixel regardless of orientation, so a high ambient
+    // literally averages out the reflections that make a surface read as
+    // glass. Keeping it near zero is what lets the IBL be visible at all.
+    // It is retained only as a black-floor guard.
+    scene.add(new THREE.AmbientLight(0xffffff, 0.10));
+    // The key now only shapes form; the environment provides exposure. Held
+    // low because a directional key and an IBL both add specular — at 0.85
+    // the two stacked into the hotspot on the limb. This is enough to give
+    // the terminator a direction and no more.
+    const key = new THREE.DirectionalLight(0xffffff, 0.30);
     key.position.set(200, 120, 200);
     scene.add(key);
-    const fill = new THREE.DirectionalLight(0x8890a0, 0.22);
+    const fill = new THREE.DirectionalLight(0x8890a0, 0.20);
     fill.position.set(-200, -80, -150);
     scene.add(fill);
     // Back/rim gives the sphere mass by separating its dark limb from the
@@ -477,21 +585,37 @@ export default function Globe3D({
     // flush, no wall" inactive-land treatment cannot regress.
     // Materials are cached (never allocated per-frame) and disposed on
     // unmount below.
+    // PREMIUM-GLASS PASS: MeshPhong -> MeshPhysical. Phong has no roughness
+    // and no environment response, so "frosted" vs "glossy" could only ever
+    // be faked with colour. Physical makes it a real optical property:
+    // active status caps get low roughness + a clearcoat layer (polished
+    // enamel under lacquer), not-evaluated land gets high roughness and
+    // almost no clearcoat (sandblasted graphite glass). The two now differ
+    // by how they scatter the studio environment, which is what the eye
+    // actually reads as "material" — and it holds at every camera angle
+    // instead of only where the key light happens to point.
     const capMaterialCache = new Map();
-    const getCapMaterial = (hex) => {
-      let m = capMaterialCache.get(hex);
+    const getCapMaterial = (hex, frosted) => {
+      const cacheKey = `${hex}|${frosted ? "f" : "g"}`;
+      let m = capMaterialCache.get(cacheKey);
       if (!m) {
-        m = new THREE.MeshPhongMaterial({
+        m = new THREE.MeshPhysicalMaterial({
           color: new THREE.Color(hex),
-          // Tighter + neutral (was 55 / #3a3226 brown): gives status caps a
-          // controlled glossy roll-off across the surface instead of the
-          // flat painted look, without tipping into chrome or plastic.
-          shininess: 70,
-          specular: new THREE.Color("#4a515a"),
+          metalness: 0.0, // dielectric: glass/enamel, never metal
+          roughness: frosted ? 0.80 : 0.30,
+          clearcoat: frosted ? 0.12 : 1.0,
+          clearcoatRoughness: frosted ? 0.65 : 0.14,
+          // Inactive land sits in a narrow band: high enough that continents
+          // stay legible by their own tone (not only by their borders), low
+          // enough that the graphite base never competes with the status
+          // colours. 0.18 combined with the reduced exposure pushed the
+          // landmass too dark and leaned on the border strokes again.
+          envMapIntensity: frosted ? 0.30 : 0.5,
+          ior: 1.5,
           side: THREE.DoubleSide,
           depthWrite: true,
         });
-        capMaterialCache.set(hex, m);
+        capMaterialCache.set(cacheKey, m);
       }
       return m;
     };
@@ -499,10 +623,18 @@ export default function Globe3D({
     const getSideMaterial = (hex) => {
       let m = sideMaterialCache.get(hex);
       if (!m) {
-        m = new THREE.MeshPhongMaterial({
+        // Extrusion sidewalls are the cut face of the block, not its
+        // polished top: rougher, minimal clearcoat, low environment
+        // response. That contrast against the glossy cap is what gives a
+        // raised jurisdiction believable thickness.
+        m = new THREE.MeshPhysicalMaterial({
           color: new THREE.Color(hex),
-          shininess: 18,
-          specular: new THREE.Color("#262b31"),
+          metalness: 0.0,
+          roughness: 0.62,
+          clearcoat: 0.22,
+          clearcoatRoughness: 0.5,
+          envMapIntensity: 0.28,
+          ior: 1.5,
           side: THREE.DoubleSide,
           depthWrite: true,
         });
@@ -522,9 +654,12 @@ export default function Globe3D({
     // landmass rendered as a flat colour fill that could not respond to the
     // light rig at all. That is precisely why inactive land "lacked frosted
     // depth" and why its shape was only legible from its border strokes.
-    // Giving it the same cached Phong treatment makes it read as frosted
-    // graphite glass with real curvature shading.
-    const capMaterialFn = (feat) => getCapMaterial(capColorFn(feat));
+    // Giving it a lit material makes it read as frosted graphite glass with
+    // real curvature shading. Since the premium-glass pass, "frosted" is a
+    // genuine roughness value rather than a darker colour: not-evaluated
+    // land scatters the studio environment widely, status jurisdictions
+    // reflect it sharply, and that difference survives every camera angle.
+    const capMaterialFn = (feat) => getCapMaterial(capColorFn(feat), !activeHex(feat));
     // Sidewalls stay active-only on purpose: not-evaluated land sits almost
     // flush with the ocean (INACTIVE_POLYGON_ALTITUDE), so giving it a wall
     // would just draw a thin dark seam around every country.
@@ -697,38 +832,48 @@ export default function Globe3D({
         return el;
       });
 
-    // Deep, neutral smoked-obsidian body — not flat blue, not brown, not
-    // flat black. Specular is deliberately BOTH very tight (high shininess)
-    // and low-amplitude: at shininess 120 with a bright specular colour the
-    // key light's highlight grew into a large washed-out blob whenever the
-    // camera lined up with it — most visible in the Optimizer Overlay's
-    // pulled-back framing. These values keep a small polished glint at every
-    // camera angle instead.
-    const material = globe.globeMaterial();
-    material.color = new THREE.Color(OCEAN_BODY);
-    // Raised from #080706 — that value was too close to zero to guarantee
-    // visibility on the unlit hemisphere, which is why the ocean kept
-    // reading as literal black regardless of the diffuse base colour above.
-    // Emissive is additive and lighting-independent, so this is now a real
-    // floor brightness the sphere can never fall below.
-    // Emissive is additive and lighting-independent, so it is the sphere's
-    // GUARANTEED floor colour on the unlit hemisphere — the thing that stops
-    // the ocean collapsing to black at any camera angle. Raised and
-    // neutralised from #1c170f (a warm near-black that read as brown-black).
-    // It is deliberately set above the canvas backdrop's top stop (#14161a)
-    // so the ocean is always readable AS ocean against the panel behind it.
-    material.emissive = new THREE.Color("#252b34");
-    material.shininess = 300;
-    // Specular is kept very dark on purpose (same empirical finding as
-    // before — raising shininess alone only shrank the key light's
-    // highlight, it did not stop it saturating to white). Now tinted warm
-    // brass instead of cold blue-grey so the glint itself reads as metal
-    // trim rather than chrome.
-    // Neutral and low-amplitude. Paired with shininess 300 (a very tight
-    // lobe) this yields a small polished glint rather than the broad warm
-    // blob the brass-tinted value produced. Highlight footprint stays well
-    // under the ~6% of visible Globe diameter the spec allows.
-    material.specular = new THREE.Color("#141920");
+    // ── The smoked-obsidian body ───────────────────────────────────────
+    // PREMIUM-GLASS PASS: replaced three-globe's default MeshPhongMaterial
+    // with MeshPhysicalMaterial. Phong models a highlight as one analytic
+    // lobe per light; it has no concept of reflecting a room, so the sphere
+    // could only ever show a single glint and read as a painted ball.
+    // Physical + the studio environment above gives a real reflection field:
+    // the long strip light draws an elongated specular across the curve, and
+    // that streak MOVES as the globe rotates, which is the single strongest
+    // cue that a surface is polished rather than printed.
+    //
+    // clearcoat is the piece that sells "precision-machined optical glass":
+    // it adds a second, tighter specular layer over the diffuse body — the
+    // exact optical behaviour of a coated lens or a lacquered obsidian
+    // instrument face. roughness stays low but non-zero, because a perfect
+    // mirror reads as chrome, which the brief prohibits.
+    //
+    // Safe to swap wholesale: three-globe only overwrites globeMaterial.color
+    // when the material has NO color property (verified in dist source), and
+    // MeshPhysicalMaterial has one.
+    const material = new THREE.MeshPhysicalMaterial({
+      color: new THREE.Color(OCEAN_BODY),
+      metalness: 0.0, // dielectric — obsidian/glass, never metal
+      roughness: 0.38,
+      clearcoat: 1.0,
+      // The coat is SATIN, not mirror. At 0.16 it behaved as a near-perfect
+      // varnish and reflected the studio panels as two discrete white orbs
+      // over the Pacific — sharp clearcoat reflects the environment crisply
+      // no matter how rough the base layer underneath is, so this value, not
+      // `roughness`, is what governs whether reflections read as lamps.
+      clearcoatRoughness: 0.34,
+      envMapIntensity: 0.34,
+      ior: 1.52, // ~optical crown glass
+      // Emissive is additive and lighting-independent, so it is the sphere's
+      // GUARANTEED floor colour on the unlit hemisphere — the thing that
+      // stops the ocean collapsing to black at any camera angle. Kept
+      // deliberately above the canvas backdrop's top stop (#14161a) so the
+      // ocean always reads AS ocean against the panel behind it. Trimmed
+      // slightly from #252b34 because the environment now contributes its
+      // own ambient floor and the two would otherwise stack into haze.
+      emissive: new THREE.Color("#1e242c"),
+    });
+    globe.globeMaterial(material);
 
     scene.add(globe);
     globeRef.current = globe;
@@ -807,10 +952,33 @@ export default function Globe3D({
     controls.enablePan = false;
     controlsRef.current = controls;
 
+    // ── Post chain: render -> restrained bloom -> tone map/output ───────
+    // The bloom is deliberately threshold-gated high (0.86) and weak (0.16),
+    // so only genuinely bright pixels — the gold recommendation beacon, the
+    // crest of a specular streak — pick up a faint halation. Broad glow on
+    // the whole sphere is the game-engine look the brief prohibits; this is
+    // the optical bloom of a camera lens, which is what makes a highlight
+    // read as physically bright rather than merely light-coloured.
+    // OutputPass is last and performs the ACES tone map + sRGB conversion
+    // for the composer path (the renderer's own toneMapping is not applied
+    // to render targets, so without OutputPass the filmic curve is lost).
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    const bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(width, h),
+      0.09, // strength — deliberately far below the usual 1.0+ demo values
+      0.5,  // radius
+      0.93, // threshold — only the very top of the range blooms at all
+    );
+    composer.addPass(bloomPass);
+    composer.addPass(new OutputPass());
+    composer.setSize(width, h);
+    composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
     let frameId;
     const animate = () => {
       controls.update();
-      renderer.render(scene, camera);
+      composer.render();
       cssRenderer.render(scene, camera);
       frameId = requestAnimationFrame(animate);
     };
@@ -867,6 +1035,11 @@ export default function Globe3D({
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
+      // The composer owns its own render targets — resizing only the
+      // renderer would leave the post chain sampling a stale-sized buffer
+      // and the Globe would render soft/stretched after any panel resize.
+      composer.setSize(w, h);
+      bloomPass.setSize(w, h);
       cssRenderer.setSize(w, h);
       applyViewOffset();
     };
@@ -893,6 +1066,16 @@ export default function Globe3D({
       mount.removeEventListener("mouseleave", clearHover);
       resizeObserver.disconnect();
       controls.dispose();
+      // Post chain + IBL own real GPU allocations (multiple full-size render
+      // targets for bloom, a cubemap render target for the environment).
+      // Leaking these across route changes is far more expensive than
+      // leaking a material, so they are torn down explicitly.
+      composer.dispose();
+      bloomPass.dispose();
+      envRT.dispose();
+      pmrem.dispose();
+      scene.environment = null;
+      material.dispose();
       renderer.dispose();
       oceanTexture.dispose();
       capMaterialCache.forEach((m) => m.dispose());

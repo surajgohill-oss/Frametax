@@ -1,11 +1,81 @@
 # Globe Freeze Manifest
 
-**Frozen:** 2026-07-28 · commit `globe: recover finalize and freeze globe rendering`
+**Frozen:** 2026-07-28
+- `globe: recover finalize and freeze globe rendering` — recovery + functional freeze
+- `globe: premium glass rendering` — rendering architecture (tag `globe-glass-v1`)
 
 The subsystems listed below are **immutable**. They may not be changed by any
 future UI polish, theming, refactor, or "small tweak" pass. Changing any of
 them requires the user to **explicitly unlock that exact subsystem by name**
 first.
+
+---
+
+## Batch: Premium Glass Rendering — what it owns
+
+This batch owns **only** the production Globe's rendering architecture. It
+changed exactly one file (`Globe3D.jsx`) and touched no logic: no optimizer,
+routing, selection, Inspector, AppState, ranking, camera or event handling,
+and no change to `CompactSidebarGlobe.jsx` or to the status palette in
+`globeData.js`.
+
+**Owned and frozen by this batch:**
+
+| Element | Value / approach |
+|---|---|
+| Lighting model | Image-based (PMREM studio environment) + minimal directional key |
+| Environment | Procedural studio scene, `buildStudioEnvironment()`, blurred at sigma 0.34 |
+| Globe body material | `MeshPhysicalMaterial`, clearcoat 1.0 / clearcoatRoughness 0.34 |
+| Polygon cap materials | `MeshPhysicalMaterial`; frosted vs glossy is a **roughness** difference |
+| Tone mapping | `ACESFilmicToneMapping`, exposure 0.95 |
+| Post chain | `EffectComposer`: Render → UnrealBloom (0.09 / 0.5 / 0.93) → OutputPass |
+| Fresnel rim shell | Retained, cut to 0.16 base / 0.26 selected |
+
+### Why this architecture (do not "simplify" it back)
+
+The Globe previously used Blinn-Phong lit by one directional key and a flat
+ambient, with no environment map and no tone mapping. That is a hard ceiling,
+not a tuning problem: a dielectric (obsidian, optical glass) derives almost
+all of its character from **what it reflects**, and with no environment the
+only specular cue available is a single analytic lobe — one dot on an
+otherwise flat ball. Reverting to Phong, or removing `scene.environment`,
+returns the Globe to looking painted no matter how the parameters are set.
+
+### Non-obvious constraints learned by rendering and looking (all cost a cycle)
+
+1. **`clearcoatRoughness`, not `roughness`, governs whether reflections read
+   as lamps.** A sharp clearcoat mirrors the environment crisply however
+   rough the base layer beneath it is. At 0.16 it printed two discrete white
+   orbs over the Pacific; 0.34 turns them into a soft wash.
+2. **Environment panels must be large and dim, not small and bright.** A big
+   soft source wraps the curve; a small bright one prints a disc on it.
+3. **Blur sigma is the difference between "reflects a studio" and "mirrors a
+   lamp."** 0.04 produced a blown-white disc on the limb; 0.34 does not.
+4. **Ambient must stay near zero once IBL is present.** Ambient adds a
+   constant to every pixel regardless of orientation, which averages out the
+   very reflections that make a surface read as glass.
+5. **A directional key and an IBL both contribute specular.** Holding the old
+   key strength alongside the new environment stacked into a hotspot.
+6. **The Fresnel shell is now largely redundant** — the environment defines
+   the limb by itself; the two stacked into a white point until the shell was
+   cut to 0.16.
+7. **Exposure must come DOWN when adding IBL**, not stay flat, or the
+   graphite land washes toward white.
+
+### Verified at runtime, this batch
+
+Default view, Africa (ZA), Mediterranean (MT), North America (US-CA), Indian
+Ocean (MU), and Optimizer Overlay with a real multi-jurisdiction structure —
+consistent material, no blown highlight, no halo, no muddy cast, continents
+readable at every angle. Regression: routing arcs, optimizer overlay,
+selection, Inspector sync, compact globe, clean console, build and lint all
+pass.
+
+**Performance note (honest):** frame rate could not be measured in the test
+harness — the browser pane throttles `requestAnimationFrame` when it is not
+compositing (8 frames in 55 s), so any FPS number from here would be
+fabricated. Structural cost added is one one-time PMREM bake at mount plus a
+mip-chain bloom pass per frame at panel resolution.
 
 ## Frozen subsystems
 
