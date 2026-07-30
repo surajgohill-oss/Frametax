@@ -1048,3 +1048,35 @@ autorotation) — all verified still present and untouched.
     ceiling from the installed three.js source;
 17. add a fourth, independent studio-panel segment to "fix" the reflection
     shape — simplify the existing single tilted panel first.
+
+---
+
+### Addendum: Phase 3A final visual correction (moves `globe-phase3a-freeze`)
+
+**2026-07-30, same day, second pass.** Three defects remained visible in
+runtime screenshots after the freeze above. All three turned out to be the
+SAME lever pushed one step further, not new mechanisms — `Globe3D.jsx` only.
+
+- **Reflection still an isolated blob.** Root cause confirmed: the panel's
+  shape was never the limiting factor — `clearcoat`'s near-mirror sampling
+  turns even a long thin source into a sharp hotspot at its tangent point.
+  Fix: raised `clearcoatRoughness` base 0.56 → 0.68 (avg ~0.28 → ~0.34),
+  taller panel (0.07 → 0.16), steeper tilt (`Math.PI/10` → `Math.PI/7`),
+  intensity trimmed to compensate (0.95 → 0.78). No new panel added.
+- **Ocean texture not visible enough.** Added a compensated `roughnessMap`
+  (base `roughness` doubled, 0.38 → 0.76, same texture) alongside the
+  existing `bumpMap`/`clearcoatRoughnessMap` — same mean-bias-compensation
+  technique already used for clearcoat, now applied to base roughness too.
+  `bumpScale` nudged 0.32 → 0.34.
+- **Country curvature still flat.** Same curvature lever as the prior batch,
+  pushed one more step: `land` roughness 0.52 → 0.47 / envBase 0.38 → 0.42;
+  `quiet` roughness 0.48 → 0.43 / envBase 0.44 → 0.48. Grain shader amplitude
+  untouched (already at its documented ceiling).
+- **Palette**: fixture screenshot re-verified all four states (Recommended
+  gold beacon confirmed next to Madagascar, Optimized/Opportunity/Baseline
+  all distinct) — no mismatch found, no hex changed this pass.
+
+Verified: 28/28 tests, clean build, 0 console errors/warnings, production
+dark/light, fixture all-four-states, production restored, Inspector-open
+(selection/positioning only) — all captured as runtime screenshots, not
+described. Tag `globe-phase3a-freeze` moved to this commit.

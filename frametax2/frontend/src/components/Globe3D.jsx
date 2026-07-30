@@ -92,8 +92,21 @@ function buildStudioEnvironment() {
   // off a convex sphere already reads as curved as long as it is long/thin
   // enough for the curvature to show across its length; tilting it off-axis
   // is what keeps that curve from reading as a simple horizontal streak.
-  // Intensity trimmed (1.15 -> 0.95) to offset the added length.
-  panel("#ffffff", 0.95, [-2, 7.2, -3], [24, 0.07, 0.8], Math.PI / 10);
+  //
+  // PHASE 3A FINAL VISUAL CORRECTION: still printed as an isolated bright
+  // spot at normal page scale. The panel's LENGTH was already long enough to
+  // curve; the problem was the sharp clearcoat sampling it at near-mirror
+  // roughness, which turns even a long source into a small, high-contrast
+  // hotspot at its tangent point — the panel shape was never the limiting
+  // factor. Fixed by softening the reflector, not by adding a light:
+  // clearcoatRoughness raised further below (0.56 -> 0.68 base, still
+  // texture-varied) spreads the same energy over a visibly wider, softer
+  // patch. Paired with a taller panel (0.07 -> 0.16, same length/intensity
+  // otherwise) so the source itself is less needle-thin at its brightest
+  // point, and a slightly steeper tilt (Math.PI/10 -> Math.PI/7) so the
+  // streak reads as diagonal/curved rather than near-horizontal. Intensity
+  // trimmed again (0.95 -> 0.78) to offset the taller panel.
+  panel("#ffffff", 0.78, [-2, 7.2, -3], [24, 0.16, 0.8], Math.PI / 7);
   // Cool rim panel behind-left: separates the limb from the backdrop.
   panel("#cfdaea", 0.7, [-8, 1, -7], [6, 6, 0.2]);
   // Faint warm bounce from below — ties the glass to the app's brass/ivory
@@ -1151,12 +1164,16 @@ export default function Globe3D({
       // the sphere from lit to shadowed edge in a static frame, without
       // touching the grain shader's amplitude (already at its ceiling — see
       // applyLandGrainShader — and explicitly not to look like visible noise).
-      land: { roughness: 0.52, clearcoat: 0.12, clearcoatRoughness: 0.65, emissiveIntensity: 0.19, envBase: 0.38 },
+      // PHASE 3A FINAL VISUAL CORRECTION: roughness eased again (0.52 -> 0.47)
+      // and envBase raised again (0.38 -> 0.42) — a third increment on the
+      // same curvature lever (lower roughness lets the environment gradient
+      // vary more by each polygon's surface normal), not a new mechanism.
+      land: { roughness: 0.47, clearcoat: 0.12, clearcoatRoughness: 0.65, emissiveIntensity: 0.19, envBase: 0.42 },
       // Additional: roughness/clearcoat sit roughly a third of the way from
       // land toward enamel — enough that hovering/selecting it still reads
       // as "a real thing," not so much that it competes with Optimized or
       // Unlockable for attention.
-      quiet: { roughness: 0.48, clearcoat: 0.30, clearcoatRoughness: 0.45, emissiveIntensity: 0.16, envBase: 0.44 },
+      quiet: { roughness: 0.43, clearcoat: 0.30, clearcoatRoughness: 0.45, emissiveIntensity: 0.16, envBase: 0.48 },
       // Optimized alternative + Unlockable opportunity, unchanged from the
       // pre-3A "active status" recipe — proven, already reads as premium
       // satin/enamel, and step 1's runtime check confirmed it still holds
@@ -1518,7 +1535,17 @@ export default function Globe3D({
     const material = new THREE.MeshPhysicalMaterial({
       color: new THREE.Color(OCEAN_BODY),
       metalness: 0.0, // dielectric — obsidian/glass, never metal
-      roughness: 0.38,
+      // PHASE 3A FINAL VISUAL CORRECTION: added a compensated roughnessMap —
+      // an earlier pass rejected this for the base `roughness` channel
+      // because the texture's ~0.5 mean would have HALVED the average value
+      // (see makeOceanSurfaceTexture's comment). Same fix as the
+      // clearcoatRoughnessMap below: double the base first (0.38 -> 0.76) so
+      // the sphere-average stays ~0.38, but low-frequency reflectivity now
+      // genuinely varies per-pixel — this is the "low-frequency tonal
+      // variation" the correction batch asked for, using the existing
+      // texture, no new asset.
+      roughness: 0.76,
+      roughnessMap: oceanSurfaceTexture,
       clearcoat: 1.0,
       // PHASE 3A FINAL CORRECTION: restrained procedural surface variation —
       // see makeOceanSurfaceTexture's own comment for why this is bumpMap
@@ -1529,10 +1556,9 @@ export default function Globe3D({
       // clearcoat highlight's edge and adds faint tonal variation — enough
       // to read as "not a flat glossy tint" without reading as water text.
       bumpMap: oceanSurfaceTexture,
-      // Raised 0.28 -> 0.32 alongside the new third noise octave above —
-      // still well under the ~0.35 "visible ripple" line this file already
-      // documents as the hard ceiling.
-      bumpScale: 0.32,
+      // Raised 0.28 -> 0.32 -> 0.34 across two passes — still under the
+      // ~0.35 "visible ripple" line this file documents as the hard ceiling.
+      bumpScale: 0.34,
       // The coat is SATIN, not mirror. At 0.16 it behaved as a near-perfect
       // varnish and reflected the studio panels as two discrete white orbs
       // over the Pacific — sharp clearcoat reflects the environment crisply
@@ -1558,8 +1584,13 @@ export default function Globe3D({
       // for the base `roughness` channel without this compensation (see
       // makeOceanSurfaceTexture's own comment) — same texture, same
       // technique, done with the mean bias accounted for this time.
+      // PHASE 3A FINAL VISUAL CORRECTION: raised again, 0.56 -> 0.68 (average
+      // effective clearcoat roughness ~0.28 -> ~0.34) — see the panel-tilt
+      // comment above the studio-environment strip for why: clearcoat, not
+      // panel shape, was what kept the reflection reading as a sharp isolated
+      // spot regardless of how long/thin the source was made.
       clearcoatRoughnessMap: oceanSurfaceTexture,
-      clearcoatRoughness: 0.56,
+      clearcoatRoughness: 0.68,
       envMapIntensity: GLOBE_THEME.day.envIntensity,
       ior: 1.52, // ~optical crown glass
       // Emissive is additive and lighting-independent, so it is the sphere's
