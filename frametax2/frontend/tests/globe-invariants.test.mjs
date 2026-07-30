@@ -253,12 +253,36 @@ test("fixture codes are globe keys, not collapsing sub-national codes", () => {
 test("fixture carries its disclosure and cannot reach the backend", () => {
   assert.match(FIXTURE_DISCLOSURE, /not optimizer output/i);
   const src = read("lib/globeVisualFixture.js");
-  for (const forbidden of ["fetch(", "XMLHttpRequest", "localStorage", "sessionStorage", "POST"]) {
+  // The contract is "no backend writes / no production contamination", NOT "no
+  // client state". `localStorage` is deliberately used to LATCH the dev toggle
+  // (see below) — the original blanket ban was the wrong expression of the rule
+  // and would have blocked the fix for the fixture silently switching itself
+  // off. What must stay absent is anything that leaves the browser.
+  for (const forbidden of ["fetch(", "XMLHttpRequest", "POST", "PUT", "PATCH"]) {
     assert.ok(!src.includes(forbidden), `fixture must not use ${forbidden}`);
   }
-  // The query-parameter route must stay gated on DEV so a production build
-  // cannot be switched into fixture mode by a URL.
-  assert.match(src, /import\.meta\.env\?\.DEV\s*&&/);
+});
+
+test("fixture activation is durable AND every write path is DEV-gated", () => {
+  const code = stripComments(read("lib/globeVisualFixture.js"));
+  // Durable: it must not depend on the URL alone. The app's project tabs are
+  // react-router links to bare paths, so a query-param-only gate switches
+  // itself off on any in-app navigation — the confirmed root cause of the
+  // fixture "reverting after refresh".
+  assert.match(code, /localStorage/, "activation must latch into durable state");
+  assert.match(code, /function readLatch/, "expected a latch reader");
+  // Every mutation of that state must be unreachable in a production build.
+  assert.match(code, /function devOnly\(\)/);
+  assert.match(code, /if \(!devOnly\(\)\) return;/, "disableFixture must be DEV-gated");
+  const writeLatch = /function writeLatch[\s\S]*?\n}/.exec(code);
+  assert.ok(writeLatch, "writeLatch not found");
+  // writeLatch is only ever called from DEV-gated paths.
+  assert.ok(
+    /if \(devOnly\(\) && typeof window/.test(code),
+    "the URL latch must be inside a devOnly() guard",
+  );
+  // And the whole gate short-circuits in production regardless of stored state.
+  assert.match(code, /if \(!devOnly\(\)\) return false;/);
 });
 
 test("the fixture badge is the only place the disclosure is rendered, and it is gated", () => {
@@ -301,4 +325,125 @@ test("ambient motion stays gated on prefers-reduced-motion", () => {
   const src = read("components/Globe3D.jsx");
   assert.match(src, /prefers-reduced-motion/);
   assert.match(src, /stateRef\.current\.ambientMotion/);
+});
+
+// ── Emphasis ladder (the "Globe is mostly grey" regression) ─────────────
+
+// Perceived luminance. The same weights used to diagnose the inverted ladder.
+const lum = (hex) => {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return 0.299 * r + 0.587 * g + 0.114 * b;
+};
+
+test("semantic emphasis increases monotonically above untouched land", async () => {
+  const { GLOBE_SEMANTIC, GRAPHITE_HEX } = await import("../src/lib/globeData.js");
+  const land = lum(GRAPHITE_HEX);
+  const additional = lum(GLOBE_SEMANTIC.silver.hex);
+  const optimized = lum(GLOBE_SEMANTIC.jade.hex);
+  const unlockable = lum(GLOBE_SEMANTIC.amber.hex);
+  const recommended = lum(GLOBE_SEMANTIC.gold.hex);
+
+  // THE DEFECT THIS GUARDS: Additional shipped at #a9b2c0 (luminance 177),
+  // BRIGHTER than Optimized alternative (137) and Unlockable (161). Because
+  // Additional is the residual bucket — 61 of 86 jurisdictions — the Globe
+  // rendered as a field of light grey with the actionable states sitting
+  // beneath it. This is an ordering error in the palette; no material or
+  // lighting work can compensate for it.
+  assert.ok(additional > land, `Additional (${additional.toFixed(0)}) must sit above untouched land (${land.toFixed(0)})`);
+  assert.ok(optimized > additional, `Optimized (${optimized.toFixed(0)}) must outrank Additional (${additional.toFixed(0)})`);
+  assert.ok(unlockable > additional, `Unlockable (${unlockable.toFixed(0)}) must outrank Additional (${additional.toFixed(0)})`);
+  assert.ok(
+    recommended > unlockable && recommended > optimized,
+    `Recommended (${recommended.toFixed(0)}) must dominate both peer states`,
+  );
+  // Recommended must DOMINATE, not merely edge ahead.
+  assert.ok(
+    recommended - Math.max(optimized, unlockable) >= 25,
+    `Recommended must lead the peer states by >=25 luminance, got ${(recommended - Math.max(optimized, unlockable)).toFixed(0)}`,
+  );
+});
+
+test("neutral land has presence: clearly above the ocean it sits in", async () => {
+  const { GRAPHITE_HEX } = await import("../src/lib/globeData.js");
+  // Untouched countries must not read as empty/black. Compared against the
+  // day-mode ocean, which Globe3D declares in GLOBE_THEME.
+  const src = read("components/Globe3D.jsx");
+  const ocean = /GLOBE_THEME = \{[\s\S]*?day: \{[\s\S]*?ocean: "(#[0-9a-fA-F]{6})"/.exec(src);
+  assert.ok(ocean, "day ocean colour not found");
+  const gap = lum(GRAPHITE_HEX) - lum(ocean[1]);
+  assert.ok(gap >= 55, `neutral land must clear the ocean by >=55 luminance, got ${gap.toFixed(0)}`);
+});
+
+test("Additional stays desaturated — it is the quiet state, not a colour", async () => {
+  const { GLOBE_SEMANTIC } = await import("../src/lib/globeData.js");
+  const h = GLOBE_SEMANTIC.silver.hex.replace("#", "");
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const spread = Math.max(r, g, b) - Math.min(r, g, b);
+  assert.ok(spread <= 40, `Additional must stay near-neutral, channel spread ${spread}`);
+  // And it must not be a WARM grey — warm neutrals reintroduce the muddy cast.
+  assert.ok(b >= r, `Additional must be cool/neutral, not warm (r=${r} b=${b})`);
+});
+
+// ── US / Canada jurisdiction identity ───────────────────────────────────
+
+test("no US state or Canadian province is labelled with a city name", async () => {
+  const { JURISDICTION_COORDS } = await import("../src/lib/jurisdictions.js");
+  // A Globe jurisdiction is the state/province that runs the incentive
+  // programme. Nine were shipped as cities — CA-BC read "Vancouver", US-GA
+  // "Atlanta", US-CA "Los Angeles" — which mislabels the programme itself, not
+  // just the marker. Cities may appear inside the Inspector later; never as a
+  // Globe jurisdiction.
+  const CITIES = [
+    "Vancouver", "Toronto", "Montreal", "Los Angeles", "Atlanta",
+    "New Orleans", "Portland", "Austin", "Seattle", "Chicago", "Miami",
+  ];
+  const offenders = [];
+  for (const [code, v] of Object.entries(JURISDICTION_COORDS)) {
+    if (!/^(US|CA)-/.test(code)) continue;
+    if (CITIES.includes(v?.name)) offenders.push(`${code} = ${v.name}`);
+  }
+  assert.deepEqual(offenders, [], `city names used as jurisdictions: ${offenders.join(", ")}`);
+});
+
+test("every US/CA jurisdiction carries a non-empty name", async () => {
+  const { JURISDICTION_COORDS } = await import("../src/lib/jurisdictions.js");
+  for (const [code, v] of Object.entries(JURISDICTION_COORDS)) {
+    if (!/^(US|CA)-/.test(code)) continue;
+    assert.ok(v?.name && v.name.length > 2, `${code} has no usable name`);
+  }
+});
+
+test("no two jurisdictions share a display name", async () => {
+  const { JURISDICTION_COORDS } = await import("../src/lib/jurisdictions.js");
+  // Caught a real collision introduced while fixing the city-name defect: the
+  // COUNTRY Georgia (GE) and the US state Georgia (US-GA) both resolved to
+  // "Georgia", so hovering two jurisdictions on opposite sides of the world
+  // produced the same label. Asserted against the imported object rather than
+  // by regex — the first duplicate-scan missed it because `GE` is an unquoted
+  // key, which is exactly the kind of gap a source-text check leaves.
+  // The invariant is "two DIFFERENT PLACES must not share a label", so entries
+  // at identical coordinates are treated as aliases of one jurisdiction rather
+  // than a collision. That distinction is load-bearing: this check also
+  // surfaced `AE_AD` / `AE-AD`, a dead underscore-spelling alias with the same
+  // coordinates, the same name, no reference anywhere in the frontend, and no
+  // counterpart in the backend payload (which emits only `AE-AD`). Harmless.
+  // Georgia was the opposite case — GE at 41.72,44.79 and US-GA at
+  // 33.75,-84.39 are a continent apart and genuinely ambiguous.
+  const byName = new Map();
+  for (const [code, v] of Object.entries(JURISDICTION_COORDS)) {
+    if (!v?.name) continue;
+    if (!byName.has(v.name)) byName.set(v.name, []);
+    byName.get(v.name).push({ code, at: `${v.lat},${v.lng}` });
+  }
+  const dupes = [];
+  for (const [name, entries] of byName) {
+    const distinctPlaces = new Set(entries.map((e) => e.at));
+    if (distinctPlaces.size > 1) {
+      dupes.push(`${name} <- ${entries.map((e) => `${e.code}@${e.at}`).join(", ")}`);
+    }
+  }
+  assert.deepEqual(dupes, [], `ambiguous jurisdiction labels: ${dupes.join(" | ")}`);
 });

@@ -72,17 +72,42 @@ export function activeStructure(allocated, leadingStructureId) {
 // format.js's tierBadgeClass) keys off exactly these names, and renaming
 // them would churn surfaces this pass is explicitly scoped out of. What
 // changed is the SEMANTICS and the wording attached to them.
+// ── THE EMPHASIS LADDER (measured, not eyeballed) ───────────────────────
+// The four states must increase in emphasis monotonically. Perceived
+// luminance (0.299R + 0.587G + 0.114B) is the check, and the ladder below is
+// the contract:
+//
+//   untouched land  #78828f  129   (GRAPHITE_HEX — the base, no state)
+//   Additional      #8c96a4  149   desaturated slate, low emphasis
+//   Optimized alt.  #55d698  168   saturated green
+//   Unlockable      #eaa93c  176   saturated amber
+//   Recommended     #f7dc9b  221   brightest thing on the Globe
+//
+// FIXED HERE — the ladder was INVERTED and it is the measurable cause of the
+// "Globe is mostly grey" report. Additional was #a9b2c0 at luminance **177**,
+// i.e. BRIGHTER than both Optimized alternative (137) and Unlockable (161).
+// The lowest-emphasis state was the second-most-prominent thing on screen, and
+// because Additional is the residual bucket (61 of 86 jurisdictions), the
+// Globe rendered as a field of light grey with the actionable states sitting
+// *beneath* it. No amount of material or lighting work could have fixed that;
+// it is an ordering error in the palette itself.
+//
+// Optimized alternative and Unlockable are deliberately close in luminance
+// (168 / 176) — they are PEER states, and they separate by hue (green vs
+// amber), not by weight. Only Recommended is allowed to dominate.
+//
+// Saturation and contrast follow the approved reference render: the actionable
+// states carry real colour, the neutrals are genuinely desaturated. This is
+// hierarchy work, not final material tuning — materials, lighting, ocean and
+// atmosphere remain Phase 3.
 export const GLOBE_SEMANTIC = {
-  gold: { state: "recommended", label: "Recommended", hex: "#e8c273", pulse: true },
-  jade: { state: "alternative", label: "Optimized alternative", hex: "#4bab7f", pulse: false },
-  // Pulled darker and more orange than the old #e0a83f: amber sat close
-  // enough to gold in both hue and luminance that "conditional" and
-  // "recommended" competed. Gold must stay the brightest thing on the Globe.
-  amber: { state: "unlockable", label: "Unlockable opportunity", hex: "#d99a34", pulse: false },
-  // Neutral slate, NOT the old warm taupe (#b0aca2). Warm greys are
-  // prohibited in this palette — they are the specific cause of the muddy
+  gold: { state: "recommended", label: "Recommended", hex: "#f7dc9b", pulse: true },
+  jade: { state: "alternative", label: "Optimized alternative", hex: "#55d698", pulse: false },
+  amber: { state: "unlockable", label: "Unlockable opportunity", hex: "#eaa93c", pulse: false },
+  // Desaturated slate — deliberately the DIMMEST of the four, sitting just
+  // above untouched land. Never a warm/taupe grey: those reintroduce the muddy
   // cast the neutral light rig exists to prevent (see Globe3D lighting).
-  silver: { state: "additional", label: "Additional", hex: "#a9b2c0", pulse: false },
+  silver: { state: "additional", label: "Additional", hex: "#8c96a4", pulse: false },
 };
 
 // Derived, never hand-maintained. Existing consumers (Globe3D's TIER_HEX,
@@ -99,13 +124,21 @@ export const PULSE_TIERS = new Set(
 );
 
 // Untouched landmass — jurisdictions this production has no opinion about.
-// It carries no semantic state (it is the absence of one), so it has no
-// entry above, but it IS part of the same canonical palette and must be
-// declared exactly once. Globe3D.jsx imports THIS constant rather than
-// re-declaring its own copy. Neutral graphite on purpose: it sits between
-// the ocean and the four semantic colours in the frozen luminance
-// hierarchy, and any warm/taupe value here reintroduces the muddy cast.
-export const GRAPHITE_HEX = "#6e7681";
+// It carries no semantic state (it is the absence of one), so it has no entry
+// above, but it IS part of the same canonical palette and must be declared
+// exactly once. Globe3D.jsx imports THIS constant rather than re-declaring it.
+//
+// RAISED from #6e7681 (luminance 117 -> 129). Neutral countries were reading
+// as empty — near-black under the deliberately dim light rig — which made the
+// Globe look unfinished rather than quiet. The approved reference render shows
+// neutral land with real material presence, clearly above the ocean it sits in.
+// This is a colour change only: the lighting rig is untouched (Phase 3 owns
+// materials, ocean and atmosphere).
+//
+// It remains the BASE of the emphasis ladder — below Additional (149) and far
+// below every actionable state. Still strictly neutral: any warm/taupe value
+// here reintroduces the muddy cast the neutral rig exists to prevent.
+export const GRAPHITE_HEX = "#78828f";
 
 // Development-only: rewrite a status map to the visual fixture's assignments.
 // Lives HERE rather than in globeVisualFixture.js because this module is the

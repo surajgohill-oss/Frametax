@@ -687,3 +687,213 @@ From the day/night verification, relative to a premium finish:
 8. ship the visual fixture enabled, or let it write anywhere;
 9. remove `htmlElementVisibilityModifier` (back-facing markers would become
    clickable again).
+
+---
+
+## Batch: Phase 2 FINAL RECONCILIATION — fixture durability, colour hierarchy, US/CA identity (updates `globe-phase2-final-freeze`)
+
+**2026-07-30, second pass.** Reconciliation-first batch: the runtime was
+diagnosed before any code was written, per instruction.
+
+### APPROVED REFERENCE RENDER — received, and it conflicts with Phase 2
+
+The approved render is now the contractual **Phase 3 visual** target. It is
+stored as the acceptance target for optical finish only.
+
+**Recorded conflict, unresolved by design.** The render depicts:
+- a **persistent six-category legend** — "Leading recommendation / Qualified /
+  viable / Conditional / Evaluated / not applicable / No known incentive / Not
+  evaluated";
+- the heading **"Candidate jurisdictions"**;
+- a sidebar **"GLOBE MODE — Production"** control.
+
+The first two are exactly what Phase 2 deleted under explicit instruction (the
+legend, and the legacy database-state vocabulary including "No known incentive",
+which asserted a verdict the backend never reached). Read literally,
+"the render supersedes any previous interpretation" would reinstate a
+five/six-state model and the legend.
+
+**Interpretation applied:** the render governs OPTICS — ocean luminosity, land
+presence, saturation, contrast, hierarchy, atmosphere, graticule — and does NOT
+reinstate the legacy categories, the legacy heading, or the persistent legend.
+Grounds: this batch's own brief keeps semantics out of scope, forbids typography
+redesign, and says the render should guide "saturation, contrast, hierarchy".
+**If that reading is wrong it is a semantic reversal, not a polish item, and
+must be commissioned explicitly.**
+
+The render's persistent GLOBE MODE control DID inform this batch: a visible
+mode readout is part of the intended design, which is why the fixture indicator
+below is a mode indicator rather than debug furniture. Placing one properly in
+the shell chrome is Phase 3 layout work.
+
+### Q1 — Why the fixture reverted. VERIFIED CAUSE: **fixture disabled**
+
+Not speculation; the sequence was measured.
+
+| Step | URL | Fixture |
+|---|---|---|
+| Loaded with `?globeFixture=1` | `/production/globe?globeFixture=1` | **ON** |
+| Clicked the "Overview" project tab | `/production/overview` | OFF |
+| Clicked back to "Project Globe" | `/production/globe` | **OFF** |
+
+Activation was derived from `window.location.search` alone. The app's project
+tabs are react-router `<Link>`s to **bare paths**, so any in-app navigation
+discards the query string — and `.env` never set
+`VITE_GLOBE_VISUAL_FIXTURE`, so the fragile URL route was the only live gate.
+
+Ruled OUT by this evidence: not wired (it rendered at step 1), overwritten,
+cache, hot-reload, routing bug (the app routed correctly), and "production data
+replacing fixture" — production rendering is the CORRECT behaviour once the
+fixture is off. The fixture simply switched itself off.
+
+**Fix — activation now latches into durable client state:**
+1. `VITE_GLOBE_VISUAL_FIXTURE=true` — highest precedence, build-time.
+2. `?globeFixture=1` / `=0` — DEV-only, **latches** on/off, so one visit is
+   enough and the URL need not be carried around.
+3. otherwise the latched value, defaulting to **off**.
+
+`localStorage` is the store — client-side developer state, not a backend write,
+and every write path is gated on `import.meta.env.DEV`. Verified: the exact
+away-and-back sequence above now keeps the fixture ON with no query string.
+
+### Q2 — The four semantic states, verified per country
+
+| State | Colour | Count | Countries |
+|---|---|---|---|
+| Recommended | `#f7dc9b` | **1** | Mauritius |
+| Optimized alternative | `#55d698` | **12** | British Columbia, Chile, Georgia (US), Ireland, Mexico, Morocco, New Zealand, South Africa, South Korea, Spain, Thailand, United Kingdom |
+| Unlockable opportunity | `#eaa93c` | **12** | Australia, Colombia, Croatia, Egypt, Iceland, Israel, Italy, Jordan, Malaysia, New York, Philippines, Poland |
+| Additional | `#8c96a4` | **61** | Abu Dhabi, Alabama, Albania, Belgium, … Virginia, Washington |
+
+### B — The Globe was "mostly grey" because the emphasis ladder was INVERTED
+
+A measured ordering error, not a taste matter. Perceived luminance
+(0.299R+0.587G+0.114B) of the shipped palette:
+
+| | before | after |
+|---|---|---|
+| untouched land | 117 | **129** |
+| Additional | **177** ← 2nd brightest | **149** |
+| Optimized alternative | 137 | **168** |
+| Unlockable opportunity | 161 | **176** |
+| Recommended | 196 | **221** |
+
+Additional — the lowest-emphasis state and the residual bucket holding 61 of 86
+jurisdictions — was rendering BRIGHTER than both actionable states. The Globe
+was therefore a field of light grey with the actionable states sitting beneath
+it. No material or lighting work could have compensated; the palette order was
+wrong. Optimized and Unlockable are deliberately close (168/176): they are peer
+states separating by hue, and only Recommended may dominate (+45).
+
+Guarded by `npm test` — the ladder is asserted monotonic, Additional asserted
+desaturated and cool, and Recommended asserted to lead by ≥25.
+
+### C — Neutral countries now have presence
+
+`GRAPHITE_HEX` 117 → 129 (day) and night land 85 → 99, and — the substantive
+change — **polygon caps gained an emissive floor** (`emissiveIntensity` 0.13
+frosted / 0.17 glossy, keyed to each cap's own colour). Emissive is additive and
+lighting-independent: it is the same mechanism the ocean body already uses to
+avoid reading as a hole on the unlit hemisphere, and land caps had **no floor at
+all**, so on the shadowed side of the terminator neutral countries rendered as
+voids and the semantic hierarchy flattened entirely. Asserted in tests that land
+clears the ocean by ≥55 luminance. The lighting rig is untouched.
+
+### D — Card data source: **PRODUCTION ENGINE**, now labelled
+
+Determined from source, not assumed: the cards colour from
+`STATUS_HEX[structureTier(s, rankById)]` over the live allocated structures and
+ranking — production engine, in every mode, never fixture and never cached. The
+fixture only rewrites the Globe's semantic map, so fixture mode genuinely does
+put fixture colours beside production cards. That is now stated on screen:
+"Cards below show **production engine** data. The Globe is showing fixture
+states — the two will not agree." No card redesign.
+
+### E — US/Canada identity repaired
+
+Nine jurisdictions were labelled with **cities**, which mislabels the incentive
+programme itself rather than merely the marker:
+
+`CA-BC` Vancouver→**British Columbia** · `CA-ON` Toronto→**Ontario** ·
+`CA-QC` Montreal→**Quebec** · `US-CA` Los Angeles→**California** ·
+`US-GA` Atlanta→**Georgia (US)** · `US-LA` New Orleans→**Louisiana** ·
+`US-OR` Portland→**Oregon** · `US-TX` Austin→**Texas** ·
+`US-WA` Seattle→**Washington** · plus `CA-NL`→**Newfoundland and Labrador**.
+
+Coordinates are unchanged — a city coordinate is a fine marker position inside
+its state. Hover and selection already operated on admin-1 polygons; the defect
+was purely identity. Runtime confirmed: hover reads "California / Additional /
+Primary shoot"; selecting British Columbia opens "JURISDICTION SEGMENT · FULL
+RELOCATION TO CA-BC". No city is exposed as a Globe jurisdiction.
+
+**Two defects this fix surfaced, both caught by new tests:**
+1. **A collision I introduced** — the country Georgia (`GE`, 41.72/44.79) and the
+   US state (`US-GA`, 33.75/−84.39) both became "Georgia". Only the colliding
+   entry is qualified: "Georgia (US)".
+2. **A pre-existing dead alias** — `AE_AD` duplicates `AE-AD` (same coordinates,
+   same name, referenced nowhere, and absent from the backend payload, which
+   emits only `AE-AD`). Left in place as harmless; the invariant treats
+   same-coordinate entries as aliases, so it flags only genuinely different
+   places sharing a label.
+
+### F — Recommendation stability: **VERIFIED STABLE** (re-confirmed)
+
+Re-run after every change in this batch. Five repeated `GET /structures`
+byte-identical, and the hashes are **identical to the pre-change baseline** —
+`full=59827a0248826ad7`, `order=abd3053723335303`, rank 1 `ALLOC-BASELINE-MU`,
+NPC **$2,622,262.20** — proving these frontend-only changes did not perturb the
+engine at all.
+
+### Runtime acceptance — all pass
+
+| Item | Evidence |
+|---|---|
+| fixture mode visibly works | indicator "GLOBE MODE · VISUAL FIXTURE" + counts + activation source + exit control |
+| survives in-app navigation | away-and-back with no query string: still ON |
+| fixture off returns production | `?globeFixture=0` → latch cleared, no indicator, no card note, tally back to 1/84/1 |
+| four semantic colours visible | per-country table above; hierarchy monotonic |
+| no production contamination | production tally identical to pre-fixture |
+| recommendation stability | byte-identical to baseline |
+| US/CA interaction | state/province identity; no cities |
+| hover | "California / Additional / Primary shoot", no money, clears on leave |
+| selection | province selection opens the correct segment Inspector |
+| Inspector | opens/closes; 0px clipping in both states |
+| Overlay | 86 → 1 (`MU`) → 86, clean |
+| day/night | no remount (`sameCanvasNode: true`), 86 markers, 0 clip, indicator persists |
+| console | **0 errors** |
+| tests | **27/27** (`npm test`) |
+| build | clean |
+
+**A defect introduced and fixed within this batch, recorded for honesty:**
+publishing fixture counts synchronously from `noteFixtureCounts` — reached from
+`buildGlobeView` inside a `useMemo`, i.e. during render — called `setState` on
+the mode indicator while another component was rendering. React reported it and
+it is now deferred via `queueMicrotask`. Caught by the console-error acceptance
+gate, not by the build.
+
+### Phase 3 optical gaps, measured against the approved render
+
+The Globe is materially closer in hierarchy but remains far from the render's
+finish. Outstanding, all explicitly out of scope here:
+- **ocean** is near-black; the render's is a luminous deep blue with depth;
+- **atmospheric limb glow** absent (three-globe's own layer stays off — it
+  z-fights the sphere; the fresnel shell is an edge, not an atmosphere);
+- **graticule** (lat/long grid) absent entirely;
+- **overall exposure** far below the render — most of the visible hemisphere
+  sits in terminator shadow, which is why an emissive floor was needed at all;
+- **land material** still flat; the render shows varied, saturated territory;
+- **city-light / night-side detail** absent;
+- **`THREE.sigmaRadians 0.34 will clip`** persists — the environment blur is a
+  20-sample approximation, deliberately unchanged;
+- jurisdictions are opaque enamel, not translucent mineral insets;
+- a 400px Inspector over a narrow canvas still yields a small (66px radius)
+  fully-visible globe at 1180×820.
+
+### Added to the Phase 3 "may not" list
+
+10. reintroduce URL-only fixture activation (it silently switches itself off);
+11. invert the emphasis ladder — Additional must never outrank an actionable
+    state;
+12. remove the polygon emissive floor (neutral land collapses to black);
+13. label a US state or Canadian province with a city name;
+14. show fixture Globe colours beside unlabelled production cards.

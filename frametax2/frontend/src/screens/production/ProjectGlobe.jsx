@@ -3,7 +3,7 @@ import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
 import Globe3D from "../../components/Globe3D";
 import { buildGlobeView, structureTier, STATUS_HEX } from "../../lib/globeData";
-import GlobeFixtureBadge from "../../components/GlobeFixtureBadge";
+import { isFixtureActive } from "../../lib/globeVisualFixture";
 import { useAppState } from "../../state/AppState";
 import { Money, humanizeToken } from "../../lib/format";
 
@@ -20,13 +20,15 @@ export default function ProjectGlobe() {
   const { inspector, openInspector, leadingStructureId, selectedJurisdiction, setSelectedJurisdiction } = useAppState();
   const [globeMode, setGlobeMode] = useState("jurisdictions");
   const [hover, setHover] = useState(null);
+  // Read once per render: the fixture gate is durable state now, not a URL read.
+  const fixtureActive = isFixtureActive();
 
   const allocated = data?.structures?.allocated_structures;
   const rankById = useMemo(() => {
     if (!allocated) return new Map();
     return new Map(allocated.ranking.map((r) => [r.structure_id, r]));
   }, [allocated]);
-  const { points, arcs, polygonColors, selectedIso, selectedLat, selectedLng, focusLat, focusLng, focusDistance, structuresByCode, stateCounts } = useMemo(
+  const { points, arcs, polygonColors, selectedIso, selectedLat, selectedLng, focusLat, focusLng, focusDistance, structuresByCode } = useMemo(
     () => buildGlobeView(allocated, rankById, { mode: globeMode, leadingStructureId, selectedJurisdiction }),
     [allocated, rankById, globeMode, leadingStructureId, selectedJurisdiction],
   );
@@ -66,10 +68,6 @@ export default function ProjectGlobe() {
 
   return (
     <div className="globe-screen">
-      {/* Renders nothing unless the development-only visual fixture is
-          explicitly enabled. Its counts panel is the permitted dev diagnostic
-          that proves the four-state distribution during verification. */}
-      <GlobeFixtureBadge counts={stateCounts} />
       <div className="globe-screen-context">
         <p className="screen-eyebrow">Project Globe</p>
         {/* "Candidate jurisdictions" was the previous engine's framing — a
@@ -85,6 +83,17 @@ export default function ProjectGlobe() {
           <button className={globeMode === "jurisdictions" ? "active" : ""} onClick={() => setGlobeMode("jurisdictions")}>Jurisdictions</button>
           <button className={globeMode === "optimizer" ? "active" : ""} onClick={() => setGlobeMode("optimizer")}>Optimizer Overlay</button>
         </div>
+        {/* DATA-SOURCE LABEL (required). These cards read the PRODUCTION engine
+            — `structureTier()` over the live allocated structures and ranking —
+            in every mode. The visual fixture only rewrites the Globe's semantic
+            map, so in fixture mode the Globe and this list are deliberately
+            driven by different sources. That mismatch must never be silent. */}
+        {fixtureActive && (
+          <p className="globe-cards-source-note">
+            Cards below show <strong>production engine</strong> data. The Globe is
+            showing fixture states — the two will not agree.
+          </p>
+        )}
         <div className="sc-jurlist">
           {/* Rank-first ordering — mirrors Workspace/Scenarios (visibleStructures),
               so a producer scanning this list sees the leading option first

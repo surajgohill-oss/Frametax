@@ -208,7 +208,12 @@ const GLOBE_THEME = {
     // unfinished or missing asset — the two share no hue family. Night land
     // is a navy-slate: clearly lighter than the ocean, clearly darker than
     // any status colour, and unmistakably part of the same material world.
-    land: "#4a5570",
+    //
+    // RAISED from #4a5570 (luminance 85 -> 99), matching the day-mode lift of
+    // GRAPHITE_HEX: neutral countries must have presence in BOTH themes, or
+    // "not empty, not black" is only half true. Still the base of the night
+    // ladder — below Additional and far below every actionable state.
+    land: "#586479",
     // Borders soften markedly at night: on a dark ground the same value
     // reads far hotter, and hard white admin lines are the single biggest
     // contributor to the "technical GIS map" impression.
@@ -873,6 +878,20 @@ export default function Globe3D({
           ior: 1.5,
           side: THREE.DoubleSide,
           depthWrite: true,
+          // GUARANTEED FLOOR so no landmass can collapse to black. Emissive is
+          // additive and lighting-independent — exactly the mechanism the ocean
+          // body already uses to stop the water reading as a hole on the unlit
+          // hemisphere. Land caps had no floor at all, so on the shadowed side
+          // of the terminator neutral countries rendered as voids and the
+          // semantic states lost their hierarchy entirely. Keyed to the cap's
+          // OWN colour, so the ladder survives into shadow instead of flattening
+          // to a single grey.
+          //
+          // This is a material FLOOR, not a lighting change: the rig is
+          // untouched and final material/ocean/atmosphere tuning remains Phase 3.
+          // Deliberately small — at 0.30 it read as self-illuminated plastic.
+          emissive: new THREE.Color(hex),
+          emissiveIntensity: frosted ? 0.13 : 0.17,
         });
         applyCapEnvScale(m, frosted ? 0.30 : 0.5);
         capMaterialCache.set(cacheKey, m);

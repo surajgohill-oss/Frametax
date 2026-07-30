@@ -39,25 +39,101 @@
 export const FIXTURE_DISCLOSURE =
   "Visual validation fixture — hypothetical semantic assignments; not optimizer output.";
 
-// Activation. `VITE_GLOBE_VISUAL_FIXTURE=true` is the documented method (a
-// .env.local line, or inline for one run:
-//   VITE_GLOBE_VISUAL_FIXTURE=true npm run dev
-// ). The `?globeFixture=1` query parameter is a convenience for driving a
-// running dev server from a test harness and is DEV-ONLY.
+// ── Activation ──────────────────────────────────────────────────────────
+//
+// ROOT CAUSE THIS REPLACES (confirmed at runtime, not guessed). The first
+// implementation derived activation from `window.location.search` alone. That
+// is not durable state: the app's own project tabs are react-router <Link>s to
+// bare paths, so clicking "Overview" and back to "Project Globe" walks
+//   /production/globe?globeFixture=1  ->  /production/overview  ->  /production/globe
+// and the flag is gone. Measured exactly that sequence: badge true, false,
+// false. The `VITE_GLOBE_VISUAL_FIXTURE` route that WOULD have persisted was
+// never configured in `.env`, so the fragile URL route was the only live gate —
+// which is why the Globe "briefly showed fixture colours, then reverted".
+// Nothing was overwritten, cached, or replaced by production data: the fixture
+// simply switched itself off, and production rendering is the correct behaviour
+// once it does.
+//
+// The fix is to make activation LATCH into durable client-side state:
+//   1. `VITE_GLOBE_VISUAL_FIXTURE=true`  — forces on, highest precedence.
+//   2. `?globeFixture=1` / `?globeFixture=0` — DEV-only, latches the toggle on
+//      or off, so one visit is enough and the URL need not be carried around.
+//   3. otherwise the latched value, defaulting to OFF.
+//
+// localStorage is the store. It is client-side developer state — not a backend
+// write, not production data, and unreachable in a production build because
+// every write path is gated on `import.meta.env.DEV`.
+const STORAGE_KEY = "cineglobe.globeVisualFixture";
+
+function devOnly() {
+  try {
+    return !!import.meta.env?.DEV;
+  } catch {
+    return false;
+  }
+}
+
+function readLatch() {
+  try {
+    return window.localStorage.getItem(STORAGE_KEY) === "on";
+  } catch {
+    return false; // storage blocked (private mode, sandbox) — stay disabled
+  }
+}
+
+function writeLatch(on) {
+  try {
+    if (on) window.localStorage.setItem(STORAGE_KEY, "on");
+    else window.localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    /* storage blocked — the URL still governs this page view */
+  }
+}
+
+// Consumed once at module load so a `?globeFixture=` parameter takes effect
+// before the first render, and persists after the parameter is gone.
+let urlOverride = null;
+if (devOnly() && typeof window !== "undefined") {
+  try {
+    const raw = new URLSearchParams(window.location.search).get("globeFixture");
+    if (raw === "1" || raw === "true" || raw === "on") { urlOverride = true; writeLatch(true); }
+    else if (raw === "0" || raw === "false" || raw === "off") { urlOverride = false; writeLatch(false); }
+  } catch {
+    /* malformed URL — fall through to the latched value */
+  }
+}
+
 export function isFixtureActive() {
   try {
+    // Env flag wins outright — it is the documented, build-time method.
     if (import.meta.env?.VITE_GLOBE_VISUAL_FIXTURE === "true") return true;
-    if (
-      import.meta.env?.DEV &&
-      typeof window !== "undefined" &&
-      new URLSearchParams(window.location.search).get("globeFixture") === "1"
-    ) {
-      return true;
-    }
+    if (!devOnly()) return false; // inert in production builds, always
+    if (urlOverride !== null) return urlOverride;
+    return readLatch();
   } catch {
-    /* import.meta.env unavailable (non-Vite consumer) — stay disabled */
+    return false;
   }
-  return false;
+}
+
+// How the fixture came to be on — surfaced in the mode indicator so there is
+// never ambiguity about which mechanism is in play.
+export function fixtureActivationSource() {
+  try {
+    if (import.meta.env?.VITE_GLOBE_VISUAL_FIXTURE === "true") return "env";
+    if (!devOnly()) return null;
+    if (urlOverride === true) return "url";
+    if (readLatch()) return "latched";
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+// Programmatic off-switch, for the indicator's own control and for tests.
+export function disableFixture() {
+  if (!devOnly()) return;
+  urlOverride = false;
+  writeLatch(false);
 }
 
 // ── Deterministic assignments, keyed by GLOBE KEY ───────────────────────
@@ -135,10 +211,35 @@ export function fixtureSlotFor(globeKeyValue) {
 }
 
 let warned = false;
+let lastCounts = null;
+const countListeners = new Set();
 
 // Loud, once, in the console as well as on screen: anyone reading a screenshot
 // or a console log must know these are not real optimizer conclusions.
+//
+// Also publishes the counts so the GLOBE MODE indicator can be mounted ONCE at
+// the shell — the fixture recolours every Globe surface (Overview and Workspace
+// as well as Project Globe), so an indicator that only appeared on one screen
+// would leave exactly the ambiguity it exists to remove. Same subscribe pattern
+// as lib/theme.js.
 export function noteFixtureCounts(counts) {
+  const changed =
+    !lastCounts ||
+    ["gold", "jade", "amber", "silver"].some((k) => lastCounts[k] !== counts[k]);
+  lastCounts = { ...counts };
+  if (changed && countListeners.size) {
+    // DEFERRED OUT OF THE RENDER PHASE. This function is reached from
+    // buildGlobeView(), which screens call inside a useMemo — i.e. during
+    // render. Notifying synchronously called setState on the mode indicator
+    // while a different component was rendering, which React reports as
+    // "Cannot update a component while rendering a different component".
+    // A microtask runs as soon as the current synchronous render work
+    // finishes, so the indicator still updates before paint.
+    const snapshot = lastCounts;
+    queueMicrotask(() => {
+      for (const fn of countListeners) fn(snapshot);
+    });
+  }
   if (warned) return;
   warned = true;
   console.warn(
@@ -146,6 +247,16 @@ export function noteFixtureCounts(counts) {
       `Counts: Recommended ${counts.gold}, Optimized alternative ${counts.jade}, ` +
       `Unlockable opportunity ${counts.amber}, Additional ${counts.silver}.`,
   );
+}
+
+export function getFixtureCounts() {
+  return lastCounts;
+}
+
+export function subscribeFixtureCounts(fn) {
+  countListeners.add(fn);
+  if (lastCounts) fn(lastCounts);
+  return () => countListeners.delete(fn);
 }
 
 // Read-only count of what the fixture WOULD assign, for the dev diagnostic

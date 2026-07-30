@@ -1169,34 +1169,69 @@
 .rpt-acts { display: flex; gap: 10px; margin-top: 16px; }
 .rpt-acts .ovx-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* ── Globe visual fixture disclosure (development only) ──────────────────
-   Renders only when the Globe visual fixture is explicitly enabled (see
-   lib/globeVisualFixture.js). Deliberately conspicuous — amber, fixed, above
-   the Inspector — because its whole job is to stop hypothetical semantic
-   assignments being mistaken for real optimizer output in a screenshot. Never
-   present in a production build unless the fixture is enabled at build time. */
-.globe-fixture-badge {
+/* ── Globe MODE indicator: development visual fixture ────────────────────
+   Renders only when the fixture is explicitly enabled (see
+   lib/globeVisualFixture.js). Deliberately conspicuous and interactive: the
+   fixture previously switched itself off on any in-app navigation, so a
+   screenshot could show production colours while everyone believed the fixture
+   was running. It states the mode, the mechanism, the counts, and offers an
+   exit. Never present in a production build. */
+.globe-mode-indicator {
   position: fixed;
-  left: 12px;
-  bottom: 12px;
+  left: 14px;
+  bottom: 14px;
   z-index: 200;
-  max-width: 460px;
+  max-width: 340px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: rgba(58, 38, 6, 0.94);
-  border: 1px solid #d99a34;
+  gap: 4px;
+  padding: 10px 13px;
+  border-radius: 10px;
+  background: rgba(46, 30, 4, 0.95);
+  border: 1px solid #eaa93c;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.45);
   color: #f6e2bd;
   font: 11px/1.45 var(--font-sans);
-  box-shadow: var(--shadow-md);
-  pointer-events: none;
 }
-.globe-fixture-badge b {
+.gmi-head { display: flex; align-items: center; gap: 7px; }
+.gmi-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex: none;
+  background: #eaa93c;
+  box-shadow: 0 0 0 3px rgba(234, 169, 60, 0.22);
+}
+.globe-mode-indicator b {
   font: 600 11px var(--font-sans);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: #f2c777;
 }
-.globe-fixture-counts { font-family: var(--font-mono); font-size: 10px; opacity: 0.9; }
+.gmi-note { color: #e4d3b4; }
+.gmi-counts { font-family: var(--font-mono); font-size: 10px; opacity: 0.92; }
+.gmi-src { font-family: var(--font-mono); font-size: 10px; opacity: 0.7; }
+.gmi-exit {
+  align-self: flex-start;
+  margin-top: 3px;
+  padding: 4px 9px;
+  border-radius: 6px;
+  border: 0.5px solid rgba(246, 226, 189, 0.4);
+  background: rgba(246, 226, 189, 0.08);
+  color: #f6e2bd;
+  font: 600 10px var(--font-sans);
+  letter-spacing: 0.03em;
+  cursor: pointer;
+}
+.gmi-exit:hover { background: rgba(246, 226, 189, 0.16); }
+
+/* Data-source label above the Globe screen's structure cards. Present only in
+   fixture mode: the cards always read the production engine, so when the Globe
+   is showing fixture states the divergence must be stated, never implied. */
+.globe-cards-source-note {
+  margin: 0 0 10px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  border: 0.5px solid rgba(234, 169, 60, 0.55);
+  background: rgba(234, 169, 60, 0.10);
+  color: var(--text-secondary);
+  font: 11px/1.45 var(--font-sans);
+}
+.globe-cards-source-note strong { color: var(--text-primary); font-weight: 600; }
