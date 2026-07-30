@@ -7,7 +7,7 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
-import { STATUS_HEX, GRAPHITE_HEX } from "../lib/globeData";
+import { STATUS_HEX, GRAPHITE_HEX, PULSE_TIERS } from "../lib/globeData";
 import { subscribeTheme } from "../lib/theme";
 
 // ── Studio environment (image-based lighting) ───────────────────────────
@@ -76,13 +76,32 @@ function buildStudioEnvironment() {
 }
 
 // ══════════════════════════════════════════════════════════════════════
-// FROZEN (2026-07-28): production Globe materials, lighting, ocean,
-// inactive-land treatment, status base palette application, Admin-1
-// geometry composition, selection/camera/Inspector-framing behavior, and
-// beacon fallback are all verified working (live click-through of
-// California, New York, Georgia, Ontario, Quebec, British Columbia,
-// Mauritius, Malta, plus card sync, one-click A->B transfer, and Optimizer
-// Overlay arcs — see the closeout report for that session).
+// FROZEN (2026-07-29, Globe Phase 2 closeout): everything below is the
+// canonical Globe implementation that future UI work builds around.
+//
+// Frozen in this pass, on top of the 2026-07-28 freeze:
+//   • the four-state semantic system (GLOBE_SEMANTIC in globeData.js) and
+//     its application here — fill, stroke, altitude, beacon, ring;
+//   • pulse is RESERVED for the recommendation (PULSE_TIERS), in BOTH the
+//     mount path and the data-change path;
+//   • the hover response (brighten + border emphasis, instant, no camera
+//     or ring side effects) and its separation from selection;
+//   • ambient motion: specular drift, limb breath, recommendation breath,
+//     yielding autorotation — all gated on prefers-reduced-motion;
+//   • day/night calibration, with GLOBE_THEME as the single source for
+//     both themes (no module-level duplicate of any day value).
+//
+// Carried forward from 2026-07-28: materials, lighting, ocean,
+// untouched-land treatment, Admin-1 geometry composition,
+// selection/camera/Inspector-framing behavior, and beacon fallback (live
+// click-through of California, New York, Georgia, Ontario, Quebec, British
+// Columbia, Mauritius, Malta, plus card sync, one-click A->B transfer, and
+// Optimizer Overlay arcs).
+//
+// Phase 3 is Globe UX/polish (optical quality, micro-interactions, label
+// and typography polish, camera feel). It may tune the constants in this
+// file. It may NOT reintroduce a fifth semantic state, put a pulse on
+// anything but the recommendation, or re-add a persistent legend.
 //
 // Do not modify this file for an unrelated UI pass. A change here requires
 // the user to explicitly unlock this subsystem first. If you believe the
@@ -114,11 +133,14 @@ function webglAvailable() {
 // DERIVED, never re-declared. This used to be a hand-synced duplicate of
 // globeData.js's STATUS_HEX, justified by a claimed import cycle — there is
 // no cycle (globeData.js imports only ./jurisdictions), so the duplicate was
-// pure drift risk and is now gone. `red`/`charcoal` are this file's internal
-// tier aliases for the canonical darkRed / not-evaluated graphite.
+// pure drift risk and is now gone. `charcoal` is this file's internal alias
+// for the canonical untouched-landmass graphite.
+//
+// PHASE 2 CLOSEOUT: the `red` alias is gone with the darkRed state itself.
+// The semantic system is exactly four states (see GLOBE_SEMANTIC) and this
+// file must not reintroduce a fifth by aliasing one back into existence.
 const TIER_HEX = {
   ...STATUS_HEX,
-  red: STATUS_HEX.darkRed,
   charcoal: GRAPHITE_HEX,
 };
 
@@ -148,6 +170,18 @@ const TIER_HEX = {
 // inset, and the limb picks up a faint cool illumination. Only these values
 // change — the glass ARCHITECTURE (PMREM IBL, MeshPhysical, clearcoat, ACES,
 // composer, bloom) is identical in both themes and must stay that way.
+//
+// CALIBRATION CONSOLIDATION (Phase 2 closeout, objective 8): five of these
+// day values previously existed TWICE — once here and once as a module-level
+// constant used to initialise the material/renderer before applyTheme() first
+// ran (OCEAN_BODY, NEUTRAL_STROKE, the rim shader's uColor, the renderer's
+// toneMappingExposure, the ocean's envMapIntensity). Both copies happened to
+// agree, so nothing was visibly wrong — but "day and night are calibrated
+// consistently" cannot be verified by inspection while the day values live in
+// two places, and every previous material pass had to remember to edit both.
+// The constants below are now DERIVED from this table, so day is defined
+// exactly once and the two themes are structurally guaranteed to differ only
+// in the values listed here.
 const GLOBE_THEME = {
   day: {
     ocean: "#3a4250",
@@ -158,6 +192,10 @@ const GLOBE_THEME = {
     backdrop: ["#14161a", "#0f1114", "#0a0c0e"],
     exposure: 0.95,
     envIntensity: 0.34,
+    // Multiplier on the polygon cap/side materials' own envMapIntensity.
+    // Day is the identity by definition — the day render is the frozen,
+    // verified baseline and this consolidation must not alter a pixel of it.
+    capEnvScale: 1.0,
   },
   night: {
     // Deep navy that still reads as water, never as a black hole.
@@ -183,6 +221,14 @@ const GLOBE_THEME = {
     // same exposure reads dimmer by simultaneous contrast.
     exposure: 1.04,
     envIntensity: 0.40,
+    // Night lifts the LAND/status caps' environment response alongside the
+    // ocean's. Previously only the globe body's envMapIntensity was
+    // theme-driven, so at night the ocean gained reflectivity while every
+    // landmass and status polygon stayed pinned at its day value — the
+    // continents visibly flattened out relative to the water they sit in.
+    // This is the one calibration asymmetry between the two themes that a
+    // reader could not have found from the constants alone.
+    capEnvScale: 1.18,
   },
 };
 
@@ -192,14 +238,22 @@ function globeTheme() {
     : GLOBE_THEME.day;
 }
 
-const OCEAN_BODY = "#3a4250"; // smoked midnight glass — lit-side diffuse (day default)
-const NEUTRAL_FILL = GRAPHITE_HEX; // frosted graphite (canonical, shared with the legend)
-const NEUTRAL_STROKE = "#9aa3b0"; // etched border — reads above the fill, never a bright GIS line
+// Day-theme derivations — single-sourced from GLOBE_THEME.day above. These
+// seed the material/renderer at construction time; applyTheme() then owns
+// every subsequent change.
+const OCEAN_BODY = GLOBE_THEME.day.ocean; // smoked midnight glass — lit-side diffuse
+const NEUTRAL_FILL = GLOBE_THEME.day.land; // frosted graphite (== GRAPHITE_HEX)
+const NEUTRAL_STROKE = GLOBE_THEME.day.stroke; // etched border, never a bright GIS line
 const BRAND_NEUTRAL_FILL = "#564d3e"; // higher contrast for the 76px mark
 const SELECTED_STROKE = "#f4ecd9"; // == --dark-text-primary
-// The leading recommendation gets its own bright perimeter — the single
-// strongest "look here" cue on the Globe, present without interaction.
+// The recommendation gets its own bright perimeter — the single strongest
+// "look here" cue on the Globe, present without interaction.
 const GOLD_STROKE = "#f7e3ab";
+// Hover perimeter. Deliberately between the resting border and
+// SELECTED_STROKE: hover must be unmistakable as a response yet never be
+// mistaken for a committed selection. Neutral (no hue of its own) so it
+// reads identically over all four semantic states and over untouched land.
+const HOVER_STROKE = "#dfe4ec";
 
 // Fresnel rim strength. Raised on selection to read as "illuminated". The
 // rim colour itself is warm brass now (was a cold blue "#4a7fb5") — the
@@ -243,15 +297,74 @@ function easeOutQuart(t) {
 // Blend a status hex toward the neutral fill — used to softly dim
 // participating countries other than the current selection. Never used to
 // change a SELECTED country's own hue (selection never repaints status).
-function dimHex(hex, amount = 0.66) {
+// `toward` defaults to the day land colour but callers inside the scene pass
+// the LIVE (theme-resolved) land colour. Without that, dimming at night
+// blended every unselected jurisdiction toward day's graphite (#6e7681) while
+// the land around it was navy-slate (#4a5570) — so selecting anything at
+// night tinted the rest of the choropleth to a colour that appeared nowhere
+// else in the night scene. A real theme inconsistency, invisible in day mode.
+function dimHex(hex, amount = 0.66, toward = NEUTRAL_FILL) {
   try {
     const c = new THREE.Color(hex);
-    const n = new THREE.Color(NEUTRAL_FILL);
+    const n = new THREE.Color(toward);
     return `#${c.lerp(n, amount).getHexString()}`;
   } catch {
     return hex;
   }
 }
+
+// Hover response: lift a state colour toward white WITHOUT changing its hue
+// family, so a hovered jurisdiction reads as "lit" rather than as a
+// different semantic state. Deliberately gentle — hover is a preview cue,
+// selection is the commitment, and the two must never be confusable.
+//
+// This is safe against material sharing: three-globe assigns our overridden
+// cap material directly and skips its own shared-material colour mutation
+// (verified in dist source, `[!capMaterial && capColor]`), and the material
+// cache is keyed by the resolved hex — so a brightened country gets its own
+// cached material instead of recolouring every country in the same state.
+// It is also instant rather than tweened, which is exactly right for hover:
+// only altitude goes through polygonsTransitionDuration.
+function brightenHex(hex, amount = 0.24) {
+  try {
+    const c = new THREE.Color(hex);
+    return `#${c.lerp(new THREE.Color("#ffffff"), amount).getHexString()}`;
+  } catch {
+    return hex;
+  }
+}
+
+// ── Ambient motion (Phase 2 closeout, objective 4) ──────────────────────
+// The Globe must feel ALIVE, not ANIMATED. Everything below is measured in
+// tens of seconds and sub-percent amplitudes: the intent is that a producer
+// watching a still screen sees the instrument breathe, and never sees it
+// perform. No optimizer replay, no evaluation animation — that belongs to
+// the Optimizer page.
+//
+// All of it is gated on prefers-reduced-motion.
+//
+// 1. Specular drift: the studio environment rotates very slowly, so the
+//    strip light's specular streak slides across the sphere even when the
+//    camera and globe are both stationary. This is the single most
+//    convincing "polished physical object" cue available, and it costs one
+//    scalar per frame — no geometry, no extra draw call.
+const ENV_DRIFT_RAD_PER_SEC = 0.0125; // ~8.4 min per revolution
+// 2. Limb breathing: the fresnel rim shell's intensity oscillates a few
+//    percent, reading as atmosphere rather than as a hard glass edge.
+//    three-globe's own atmosphere layer stays off (it z-fights the sphere —
+//    see showAtmosphere below), so this shell is the only limb we have.
+const RIM_BREATH_PERIOD_SEC = 11.0;
+const RIM_BREATH_AMOUNT = 0.12; // ±12% of the current base intensity
+// 3. Recommendation breath: the gold beacon's glow shell swells slightly on
+//    a slow cycle. Paired with the ring pulse (gold-only), this is what
+//    makes the recommendation the thing the eye returns to.
+const GOLD_BREATH_PERIOD_SEC = 4.4;
+const GOLD_BREATH_AMOUNT = 0.16;
+// 4. Slow autorotation, and ONLY while the producer is neither inspecting
+//    nor driving the camera: any selection or any pointer interaction stops
+//    it immediately (see the controls block). A globe that keeps turning
+//    under a jurisdiction someone is reading is an irritation, not ambience.
+const AMBIENT_AUTOROTATE_SPEED = 0.16;
 
 function hexWithAlpha(hex, alpha) {
   const a = Math.max(0, Math.min(1, alpha));
@@ -370,6 +483,11 @@ export default function Globe3D({
   height = 520,
   polygonColors = null,
   selectedIso = null,
+  // The jurisdiction currently under the cursor. Drives the hover response
+  // (slight brighten + border emphasis) on the polygon itself — the hover
+  // CARD is the caller's, but the Globe owns the surface reaction, because
+  // only the Globe knows which polygon/material a jurisdiction resolved to.
+  hoveredIso = null,
   selectedLat = null,
   selectedLng = null,
   // Where the camera should settle. Defaults to the selected jurisdiction;
@@ -394,7 +512,7 @@ export default function Globe3D({
   // Mutable snapshot the polygon/point accessors read from — the accessors
   // are handed to three-globe once (stable identities), and re-assigning
   // them is how a selection/status change repaints without a remount.
-  const liveRef = useRef({ polygonColors: null, selectedIso: null, pointRadius: null, geoIsoSet: null, strokeColor: null, landColor: null });
+  const liveRef = useRef({ polygonColors: null, selectedIso: null, hoveredIso: null, pointRadius: null, geoIsoSet: null, strokeColor: null, landColor: null });
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -402,6 +520,10 @@ export default function Globe3D({
     if (!mount) return;
     if (stateRef.current.renderer) return;
     if (!webglAvailable()) { setFailed(true); return; }
+    // Populated by customThreeObject for pulse-eligible beacons; read by the
+    // ambient breath in the animate loop. Initialised before the globe is
+    // built so the accessor can never run against an undefined Map.
+    stateRef.current.breathingGlows = new Map();
 
     // getBoundingClientRect rather than clientWidth: for a tiny flex-basis
     // container (the 80px sidebar brand mark), clientWidth can still read 0
@@ -447,7 +569,9 @@ export default function Globe3D({
     // Below 1.0 on purpose: the environment now contributes exposure that
     // the old rig got from a near-unity ambient, so holding the same
     // exposure double-counts and washes the graphite land toward white.
-    renderer.toneMappingExposure = 0.95;
+    // Derived from GLOBE_THEME.day (applyTheme() overwrites it immediately
+    // below; this is only the pre-first-paint seed).
+    renderer.toneMappingExposure = GLOBE_THEME.day.exposure;
     mount.innerHTML = "";
     mount.style.position = "relative";
     mount.appendChild(renderer.domElement);
@@ -571,16 +695,37 @@ export default function Globe3D({
       const iso = isoOfFeature(feat);
       const colors = liveRef.current.polygonColors;
       const hex = colors?.get ? colors.get(iso) : colors?.[iso];
+      // Untouched land never carries a hover state: hit-targets are created
+      // only for jurisdictions this production actually touches (see the
+      // htmlElementsData layer), so `hoveredIso` can only ever name one of
+      // those. There is deliberately nothing to brighten here.
       if (!hex) return resolvedNeutralFill();
       const sel = liveRef.current.selectedIso;
-      if (sel && iso !== sel) return dimHex(hex);
-      return hex;
+      const hovered = !!iso && iso === liveRef.current.hoveredIso;
+      // Hover on the SELECTED jurisdiction is a no-op: it is already the
+      // brightest, most elevated thing on the Globe, and brightening it
+      // further would flatten the distinction selection just earned.
+      if (sel && iso === sel) return hex;
+      // Everything else brightens on hover — INCLUDING when nothing is
+      // selected. An earlier revision of this accessor only applied the
+      // brighten inside the `sel && iso !== sel` branch, which meant hover
+      // did nothing at all on a freshly-loaded Globe (the overwhelmingly
+      // common case) and only started working after the producer had already
+      // clicked something. Caught in runtime verification, not by the build.
+      const base = sel ? dimHex(hex, 0.66, resolvedNeutralFill()) : hex;
+      return hovered ? brightenHex(base, 0.30) : base;
     };
     const strokeColorFn = (feat) => {
       const iso = isoOfFeature(feat);
       if (liveRef.current.selectedIso && iso === liveRef.current.selectedIso) return SELECTED_STROKE;
       const colors = liveRef.current.polygonColors;
       const hex = colors?.get ? colors.get(iso) : colors?.[iso];
+      // Border emphasis is the second half of the hover response and the
+      // half that actually communicates "this is one clickable unit" — a
+      // brightened fill alone is ambiguous on a small or fragmented
+      // landmass. Ranked BELOW selection (which owns SELECTED_STROKE) and
+      // above every resting border.
+      if (iso && iso === liveRef.current.hoveredIso) return HOVER_STROKE;
       if (hex === TIER_HEX.gold) return GOLD_STROKE;
       // Theme-driven: night mode softens borders markedly (see GLOBE_THEME).
       return liveRef.current.strokeColor || NEUTRAL_STROKE;
@@ -600,7 +745,11 @@ export default function Globe3D({
       if (!hex) return "rgba(0,0,0,0)";
       try {
         const sel = liveRef.current.selectedIso;
-        const cap = sel && iso !== sel ? dimHex(hex) : hex;
+        let cap = sel && iso !== sel ? dimHex(hex, 0.66, resolvedNeutralFill()) : hex;
+        // Sidewalls track the cap's hover brighten, or a raised jurisdiction
+        // lights its top face while its cut faces stay dark — which reads as
+        // a rendering fault rather than as illumination.
+        if (iso && iso === liveRef.current.hoveredIso && iso !== sel) cap = brightenHex(cap, 0.30);
         const c = new THREE.Color(cap).multiplyScalar(0.42);
         return `#${c.getHexString()}`;
       } catch {
@@ -650,6 +799,13 @@ export default function Globe3D({
     // by how they scatter the studio environment, which is what the eye
     // actually reads as "material" — and it holds at every camera angle
     // instead of only where the key light happens to point.
+    // Base (day) environment response per material, multiplied by the live
+    // theme's capEnvScale. Stored on userData so applyTheme() can rescale an
+    // already-cached material without needing to know how it was built.
+    const applyCapEnvScale = (m, base) => {
+      m.userData.arBaseEnvIntensity = base;
+      m.envMapIntensity = base * (liveRef.current.capEnvScale ?? 1);
+    };
     const capMaterialCache = new Map();
     const getCapMaterial = (hex, frosted) => {
       const cacheKey = `${hex}|${frosted ? "f" : "g"}`;
@@ -666,11 +822,11 @@ export default function Globe3D({
           // enough that the graphite base never competes with the status
           // colours. 0.18 combined with the reduced exposure pushed the
           // landmass too dark and leaned on the border strokes again.
-          envMapIntensity: frosted ? 0.30 : 0.5,
           ior: 1.5,
           side: THREE.DoubleSide,
           depthWrite: true,
         });
+        applyCapEnvScale(m, frosted ? 0.30 : 0.5);
         capMaterialCache.set(cacheKey, m);
       }
       return m;
@@ -689,11 +845,11 @@ export default function Globe3D({
           roughness: 0.62,
           clearcoat: 0.22,
           clearcoatRoughness: 0.5,
-          envMapIntensity: 0.28,
           ior: 1.5,
           side: THREE.DoubleSide,
           depthWrite: true,
         });
+        applyCapEnvScale(m, 0.28);
         sideMaterialCache.set(hex, m);
       }
       return m;
@@ -731,7 +887,16 @@ export default function Globe3D({
       if (SUBNATIONAL_COUNTRY_ISOS.has(d.iso)) return false;
       return !geoSet.has(d.iso);
     };
-    const isRingEligible = (d) => d?.tier === "gold" || isSmallJurisdiction(d);
+    // PULSE IS RESERVED FOR THE RECOMMENDATION (objective 2). This
+    // previously read `d.tier === "gold" || isSmallJurisdiction(d)`, which
+    // pulsed every island/city-state regardless of its semantic state — so
+    // an Optimized alternative in Malta and an Unlockable opportunity in
+    // Singapore both pulsed, and the Globe appeared to be recommending three
+    // things at once. Beacon geometry is the correct answer to "this
+    // landmass is too small to fill"; a pulse is not, because a pulse means
+    // something. PULSE_TIERS comes from GLOBE_SEMANTIC, so this can only
+    // ever include states declared `pulse: true`.
+    const isRingEligible = (d) => !!d?.tier && PULSE_TIERS.has(d.tier);
     const pointRadiusFn = (d) => {
       // Small jurisdictions render as beacons; the point is the footprint
       // disc the beacon stands on.
@@ -752,7 +917,9 @@ export default function Globe3D({
     };
     const pointColorFn = (d) => {
       const hex = d.color || TIER_HEX[d.tier] || TIER_HEX.charcoal;
-      if (isSmallJurisdiction(d) && liveRef.current.selectedIso && d.iso !== liveRef.current.selectedIso) return dimHex(hex);
+      if (isSmallJurisdiction(d) && liveRef.current.selectedIso && d.iso !== liveRef.current.selectedIso) {
+        return dimHex(hex, 0.66, resolvedNeutralFill());
+      }
       return hex;
     };
 
@@ -788,10 +955,16 @@ export default function Globe3D({
       .ringLat("lat")
       .ringLng("lng")
       .ringAltitude(PARTICIPATING_POLYGON_ALTITUDE)
-      .ringColor((d) => (t) => hexWithAlpha(d.color || TIER_HEX.charcoal, 1 - t))
-      .ringMaxRadius(2.9)
-      .ringPropagationSpeed(0.9)
-      .ringRepeatPeriod(2600)
+      // SOFT pulse. `(1-t)^1.7` instead of a linear ramp: the ring leaves the
+      // marker at nearly full strength and fades early, so what reads is a
+      // quiet swell rather than a hard expanding ring travelling to its full
+      // radius. A linear falloff is what made this look like a radar sweep.
+      .ringColor((d) => (t) => hexWithAlpha(d.color || TIER_HEX.charcoal, Math.pow(1 - t, 1.7)))
+      // Tightened and slowed from 2.9 / 2600ms. This is the recommendation
+      // breathing, not a notification demanding attention.
+      .ringMaxRadius(2.5)
+      .ringPropagationSpeed(0.8)
+      .ringRepeatPeriod(3200)
       // Beacon layer — island/city-state jurisdictions the 110m polygon set
       // omits. Each gets a real object: a status-coloured luminous head on a
       // slim tapered stem, plus a soft glow shell, so a leading
@@ -818,6 +991,13 @@ export default function Globe3D({
         );
         glow.position.y = 3.9;
         group.add(glow);
+        // Register the recommendation's glow shell for its ambient breath
+        // (see the animate loop). Keyed by datum id, and the loop skips any
+        // entry three-globe has since detached (`parent === null`), so this
+        // self-prunes as data changes without separate bookkeeping.
+        if (d?.tier && PULSE_TIERS.has(d.tier) && d.id) {
+          stateRef.current.breathingGlows?.set(d.id, glow);
+        }
         return group;
       })
       .customThreeObjectUpdate((obj, d) => {
@@ -918,7 +1098,7 @@ export default function Globe3D({
       // no matter how rough the base layer underneath is, so this value, not
       // `roughness`, is what governs whether reflections read as lamps.
       clearcoatRoughness: 0.34,
-      envMapIntensity: 0.34,
+      envMapIntensity: GLOBE_THEME.day.envIntensity,
       ior: 1.52, // ~optical crown glass
       // Emissive is additive and lighting-independent, so it is the sphere's
       // GUARANTEED floor colour on the unlit hemisphere — the thing that
@@ -950,7 +1130,7 @@ export default function Globe3D({
             // reproducing. uPower raised 1.9 -> 2.4 to tighten the falloff
             // hard against the silhouette, so it reads as a glass edge rather
             // than a glow bleeding outward from the sphere.
-            uColor: { value: new THREE.Color("#b9c1cb") },
+            uColor: { value: new THREE.Color(GLOBE_THEME.day.rim) },
             uIntensity: { value: BASE_RIM_INTENSITY },
             uPower: { value: 2.4 },
           },
@@ -1000,8 +1180,24 @@ export default function Globe3D({
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
     controls.rotateSpeed = 0.4;
-    controls.autoRotate = points.length <= 1 && !prefersReducedMotion;
-    controls.autoRotateSpeed = 0.22;
+    // ── Ambient autorotation (objective 4) ─────────────────────────────
+    // Previously gated on `points.length <= 1`, i.e. it never ran on a real
+    // production Globe — the instrument sat perfectly inert. It now turns
+    // slowly by default, and yields permanently the moment the producer
+    // does anything: `controls.autoRotate` is cleared on the first drag/zoom
+    // (the 'start' event below) and whenever a jurisdiction is selected (the
+    // selection effect). Rotation that continues under a jurisdiction
+    // someone is reading is an irritation, not ambience — and once someone
+    // has taken the camera, it stays theirs for the life of the mount.
+    controls.autoRotate = !prefersReducedMotion;
+    controls.autoRotateSpeed = AMBIENT_AUTOROTATE_SPEED;
+    stateRef.current.userTookControl = false;
+    stateRef.current.ambientMotion = !prefersReducedMotion;
+    const onControlStart = () => {
+      stateRef.current.userTookControl = true;
+      controls.autoRotate = false;
+    };
+    controls.addEventListener("start", onControlStart);
     // Unchanged zoom range — only the default position above moved.
     controls.minDistance = 150;
     controls.maxDistance = 460;
@@ -1031,8 +1227,48 @@ export default function Globe3D({
     composer.setSize(width, h);
     composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
+    // ── Ambient motion loop (objective 4) ──────────────────────────────
+    // Three sub-percent oscillations plus a slow environment rotation. Each
+    // is a scalar write per frame: no geometry is rebuilt, no material is
+    // reallocated, nothing is added to the draw call count. The whole block
+    // is skipped outright under prefers-reduced-motion, which leaves the
+    // previous static render exactly as it was.
+    // performance.now() rather than THREE.Clock: Clock is deprecated in
+    // three 0.185 (it warns on construction, and this file must stay
+    // console-clean), and its replacement THREE.Timer needs a per-frame
+    // update() call for no benefit here — every oscillation below is a pure
+    // function of absolute elapsed time, not of frame delta.
+    const ambientT0 = performance.now();
     let frameId;
     const animate = () => {
+      const elapsed = (performance.now() - ambientT0) / 1000;
+      if (stateRef.current.ambientMotion) {
+        // 1. Specular drift — rotates the pre-filtered studio radiance map,
+        //    so the strip light's highlight slides across the sphere even
+        //    when both camera and globe are still. `environmentRotation` is a
+        //    scene-level Euler (three r163+; this project runs 0.185), which
+        //    means the reflection moves without moving any object.
+        scene.environmentRotation.y = elapsed * ENV_DRIFT_RAD_PER_SEC;
+        // 2. Limb breathing — the fresnel shell's intensity oscillates a few
+        //    percent around whatever the current base is, so it keeps
+        //    tracking the selection lift instead of overwriting it.
+        if (rimMesh) {
+          const base = liveRef.current.selectedIso ? SELECTED_RIM_INTENSITY : BASE_RIM_INTENSITY;
+          const breath = 1 + RIM_BREATH_AMOUNT * Math.sin((elapsed / RIM_BREATH_PERIOD_SEC) * Math.PI * 2);
+          rimMesh.material.uniforms.uIntensity.value = base * breath;
+        }
+        // 3. Recommendation breath — the gold beacon's glow shell swells on a
+        //    slow cycle, paired with (and deliberately slower than) the ring
+        //    pulse. Detached objects are skipped so this self-prunes.
+        const glows = stateRef.current.breathingGlows;
+        if (glows && glows.size) {
+          const s = 1 + GOLD_BREATH_AMOUNT * Math.sin((elapsed / GOLD_BREATH_PERIOD_SEC) * Math.PI * 2);
+          for (const [id, mesh] of glows) {
+            if (!mesh.parent) { glows.delete(id); continue; }
+            mesh.scale.setScalar(s);
+          }
+        }
+      }
       controls.update();
       composer.render();
       cssRenderer.render(scene, camera);
@@ -1137,6 +1373,15 @@ export default function Globe3D({
       // what makes three-globe repaint the stroke colour.
       liveRef.current.strokeColor = t.stroke;
       liveRef.current.landColor = t.land;
+      // Rescale every already-cached polygon material's environment response
+      // so land/status caps track the theme alongside the ocean. Colour-only
+      // and scalar changes on an existing program need no `needsUpdate`.
+      liveRef.current.capEnvScale = t.capEnvScale ?? 1;
+      for (const cache of [capMaterialCache, sideMaterialCache]) {
+        for (const m of cache.values()) {
+          applyCapEnvScale(m, m.userData.arBaseEnvIntensity ?? m.envMapIntensity);
+        }
+      }
       if (globeRef.current) {
         globeRef.current
           .polygonStrokeColor(globeRef.current.polygonStrokeColor())
@@ -1156,6 +1401,7 @@ export default function Globe3D({
       if (stateRef.current.offsetTweenCancel) stateRef.current.offsetTweenCancel();
       mount.removeEventListener("mouseleave", clearHover);
       resizeObserver.disconnect();
+      controls.removeEventListener("start", onControlStart);
       controls.dispose();
       // Post chain + IBL own real GPU allocations (multiple full-size render
       // targets for bloom, a cubemap render target for the environment).
@@ -1208,12 +1454,40 @@ export default function Globe3D({
       const geoSet = liveRef.current.geoIsoSet;
       if (geoSet) {
         const small = points.filter((d) => d?.iso && !geoSet.has(d.iso) && !SUBNATIONAL_COUNTRY_ISOS.has(d.iso));
-        globe.ringsData(points.filter((d) => d?.tier === "gold" || small.includes(d)));
+        // Pulse stays recommendation-only here too. This branch had its own
+        // hand-written copy of the ring predicate (`tier === "gold" ||
+        // small.includes(d)`) which re-added the small-jurisdiction pulse on
+        // every data change — so the fix in isRingEligible alone would have
+        // been undone the moment the producer changed an input.
+        globe.ringsData(points.filter((d) => !!d?.tier && PULSE_TIERS.has(d.tier)));
         globe.customLayerData(small);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [points, arcs, pointRadius]);
+
+  // Hover repaint. Separate from the selection effect on purpose: hover
+  // changes at pointer speed and must NOT re-run the camera flight, the
+  // rings, or the beacon update that the selection effect performs.
+  //
+  // Only the cap material, sidewall and stroke accessors are re-invoked.
+  // Because a cap material override is in play, three-globe swaps our cached
+  // material straight in and skips its own colour tween (verified in dist
+  // source), so the brighten lands on the same frame — the snap hover needs —
+  // while altitude, which nothing here touches, keeps its 500ms selection
+  // easing.
+  useEffect(() => {
+    if (liveRef.current.hoveredIso === hoveredIso) return;
+    liveRef.current.hoveredIso = hoveredIso;
+    const globe = globeRef.current;
+    if (!globe) return;
+    globe
+      .polygonCapColor(globe.polygonCapColor())
+      .polygonSideColor(globe.polygonSideColor())
+      .polygonCapMaterial(globe.polygonCapMaterial())
+      .polygonSideMaterial(globe.polygonSideMaterial())
+      .polygonStrokeColor(globe.polygonStrokeColor());
+  }, [hoveredIso]);
 
   useEffect(() => {
     stateRef.current.obscuredRightPx = obscuredRightPx;
@@ -1243,9 +1517,20 @@ export default function Globe3D({
       .pointAltitude(globe.pointAltitude())
       .pointRadius(globe.pointRadius());
     // Selection raises the glass rim slightly — the "illuminated" read that
-    // previously came from nudging the atmosphere altitude.
+    // previously came from nudging the atmosphere altitude. When ambient
+    // motion is active the animate loop recomputes this every frame from the
+    // same base, so this assignment only matters under reduced-motion (where
+    // the loop is skipped) — it is kept unconditionally so the two paths can
+    // never disagree about the resting value.
     const rm = stateRef.current.rimMesh;
     if (rm) rm.material.uniforms.uIntensity.value = selectedIso ? SELECTED_RIM_INTENSITY : BASE_RIM_INTENSITY;
+    // Ambient autorotation yields to inspection: a selected jurisdiction must
+    // hold still while it is being read. It resumes only if the selection is
+    // cleared AND the producer never took the camera themselves.
+    const ctl = controlsRef.current;
+    if (ctl) {
+      ctl.autoRotate = !!stateRef.current.ambientMotion && !stateRef.current.userTookControl && !selectedIso;
+    }
     globe.customThreeObjectUpdate(globe.customThreeObjectUpdate());
 
     if (stateRef.current.cameraTweenCancel) {

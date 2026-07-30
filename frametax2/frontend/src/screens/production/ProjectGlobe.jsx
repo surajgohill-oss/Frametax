@@ -3,14 +3,17 @@ import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
 import Globe3D from "../../components/Globe3D";
 import { buildGlobeView, structureTier, STATUS_HEX } from "../../lib/globeData";
-import GlobeLegend from "../../components/GlobeLegend";
 import { useAppState } from "../../state/AppState";
 import { Money, humanizeToken } from "../../lib/format";
 
-// Project Globe — the production's candidate jurisdictions and treaty routes
-// on the canonical globe. Same live model as the Workspace Map mode, given
-// its own full section per the approved artifact nav. Country click opens
-// the jurisdiction segment / structure recommendation in the Inspector.
+// Project Globe — this production's structures and their routing on the
+// canonical globe. Same live model as the Workspace Map mode, given its own
+// full section per the approved artifact nav. Country click opens the
+// jurisdiction segment / structure recommendation in the Inspector.
+//
+// DIVISION OF LABOUR (Phase 2 closeout): the Globe VISUALIZES, the Inspector
+// EXPLAINS. This screen therefore carries no legend and no figures in its
+// hover card — see the hover card below and globeData's buildCountryHoverData.
 export default function ProjectGlobe() {
   const { data, error, loading } = useCineGlobe();
   const { inspector, openInspector, leadingStructureId, selectedJurisdiction, setSelectedJurisdiction } = useAppState();
@@ -64,11 +67,15 @@ export default function ProjectGlobe() {
     <div className="globe-screen">
       <div className="globe-screen-context">
         <p className="screen-eyebrow">Project Globe</p>
-        <h1 className="serif" style={{ fontSize: 20 }}>Candidate jurisdictions</h1>
+        {/* "Candidate jurisdictions" was the previous engine's framing — a
+            database of things examined. This production's real unit of
+            decision is the production structure, which is also what the list
+            below and the Inspector both open onto. */}
+        <h1 className="serif" style={{ fontSize: 20 }}>Production structures</h1>
         <p className="text-tertiary small">
-          Every jurisdiction this production has been priced against, by production status.
+          The recommended structure for this production, its optimized alternatives,
+          and the opportunities still to unlock.
         </p>
-        <GlobeLegend className="globe-legend-stack" />
         <div className="wsx-viewtabs" style={{ marginBottom: 10 }}>
           <button className={globeMode === "jurisdictions" ? "active" : ""} onClick={() => setGlobeMode("jurisdictions")}>Jurisdictions</button>
           <button className={globeMode === "optimizer" ? "active" : ""} onClick={() => setGlobeMode("optimizer")}>Optimizer Overlay</button>
@@ -123,6 +130,7 @@ export default function ProjectGlobe() {
           pointRadius={0.22}
           polygonColors={polygonColors}
           selectedIso={selectedIso}
+          hoveredIso={hover?.iso ?? null}
           selectedLat={selectedLat}
           selectedLng={selectedLng}
           focusLat={focusLat}
@@ -135,18 +143,29 @@ export default function ProjectGlobe() {
           onPointClick={(pt) => selectJurisdiction(pt.jurisdictionCode || pt.id)}
           onPointHover={setHover}
         />
+        {/* Inspector preview, not a second Inspector. Jurisdiction, semantic
+            state, production role — the MEANING of what's under the cursor.
+            The incentive and NPC figures this used to print are the
+            Inspector's to explain (with their qualification trace, caps and
+            citations); duplicating them here gave a producer two places to
+            read the same number and one of them with no provenance. */}
         {hover && (
           <div className="globe-tooltip">
             <strong>{hover.jurisdictionName}</strong>
             <div className="text-tertiary small">{hover.statusLabel}</div>
             {hover.role && <div className="text-tertiary small">{hover.role}</div>}
-            {hover.incentiveUsd != null && <div className="small">Incentive <Money value={hover.incentiveUsd} /></div>}
-            {hover.npcUsd != null && <div className="small">NPC <Money value={hover.npcUsd} /></div>}
           </div>
         )}
         <p className="globe-caption small" style={{ borderRadius: "0 0 var(--radius-lg) var(--radius-lg)" }}>
+          {/* The overlay caption must describe what is actually on screen. It
+              previously always promised "production routing", but when the
+              recommended structure is single-jurisdiction there is no routing
+              to show — the overlay correctly lights one jurisdiction and draws
+              no arc, and the caption then read as a rendering failure. */}
           {globeMode === "optimizer"
-            ? "Showing the leading structure's production routing only."
+            ? arcs.length > 0
+              ? "Showing the recommended structure's production routing only."
+              : "The recommended structure is single-jurisdiction — no routing to show."
             : arcs.length > 0
               ? "Dashed routes mark this production's real multi-jurisdiction structures."
               : "No multi-jurisdiction structure is currently priced for this production."}

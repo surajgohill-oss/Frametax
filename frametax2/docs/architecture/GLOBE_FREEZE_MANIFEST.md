@@ -3,6 +3,12 @@
 **Frozen:** 2026-07-28
 - `globe: recover finalize and freeze globe rendering` — recovery + functional freeze
 - `globe: premium glass rendering` — rendering architecture (tag `globe-glass-v1`)
+- `globe: day/night theme + night visual system` (tag `globe-night-v1`)
+
+**Frozen:** 2026-07-29 — **Phase 2 closeout, tag `globe-phase2-freeze`**
+- `globe: phase 2 closeout — semantic system, ambient behaviour, hover, freeze`
+- This is the **canonical Globe implementation**. Phase 3 is UX/polish only;
+  see the closeout batch's explicit "may not" list at the end of this file.
 
 The subsystems listed below are **immutable**. They may not be changed by any
 future UI polish, theming, refactor, or "small tweak" pass. Changing any of
@@ -85,22 +91,27 @@ mip-chain bloom pass per frame at panel resolution.
 | Production Globe lighting rig (ambient / key / fill / rim) | `frontend/src/components/Globe3D.jsx` |
 | Ocean treatment (diffuse + emissive floor + specular) | `frontend/src/components/Globe3D.jsx` |
 | Inactive-land treatment (frosted graphite, lit caps) | `frontend/src/components/Globe3D.jsx` |
-| Status base colours (canonical palette) | `frontend/src/lib/globeData.js` (`STATUS_HEX`, `GRAPHITE_HEX`) |
+| Semantic state colours (canonical palette) | `frontend/src/lib/globeData.js` (`GLOBE_SEMANTIC`, `GRAPHITE_HEX`) |
 | Admin-1 geometry composition (US states / CA provinces) | `frontend/src/components/Globe3D.jsx` (`loadWorldGeo`) |
 | Selection behaviour + one-click A→B transfer | `Globe3D.jsx` + `ProjectGlobe.jsx` |
 | Inspector-aware camera auto-fit (`setViewOffset` lens shift) | `frontend/src/components/Globe3D.jsx` |
-| Candidate Jurisdiction ↔ Globe synchronisation | `frontend/src/screens/production/ProjectGlobe.jsx` |
+| Structure card ↔ Globe synchronisation | `frontend/src/screens/production/ProjectGlobe.jsx` |
 | Optimizer route (arc) rendering | `Globe3D.jsx` + `globeData.js` |
 | Beacon fallback for island / city-state jurisdictions | `frontend/src/components/Globe3D.jsx` |
 | Compact brand Globe (isolated engine) | `frontend/src/components/CompactSidebarGlobe.jsx` |
 
 ## Canonical colour source
 
-`frontend/src/lib/globeData.js` is the **single** source for Globe status
-colours. `STATUS_HEX` (gold / jade / amber / silver / darkRed) and
-`GRAPHITE_HEX` (not-evaluated) are imported by `Globe3D.jsx` and
-`GlobeLegend.jsx`. **Do not re-declare these values anywhere else** — both
-files previously kept hand-synced duplicates and they drifted.
+`frontend/src/lib/globeData.js` is the **single** source for Globe semantic
+colours. `GLOBE_SEMANTIC` (the four states) plus `GRAPHITE_HEX` (untouched
+landmass) are imported by `Globe3D.jsx`; `STATUS_HEX` / `STATUS_LABEL` /
+`PULSE_TIERS` are **derived** from `GLOBE_SEMANTIC`, never hand-maintained.
+**Do not re-declare these values anywhere else** — multiple files previously
+kept hand-synced duplicates and they drifted.
+
+Superseded by the Phase 2 closeout (2026-07-29): the five-value `STATUS_HEX`
+(gold / jade / amber / silver / **darkRed**) is gone, and so is
+`GlobeLegend.jsx` — see the closeout batch below.
 
 ## Non-obvious constraints (do not "fix" these)
 
@@ -202,3 +213,211 @@ Jurisdictions are recoloured for night but are **not yet true translucent
 mineral insets** — that needs a transmission/refraction pass on the polygon
 caps, which is a material-architecture change and its own batch. The
 atmospheric particulate field was likewise not implemented.
+
+---
+
+## Batch: Globe Phase 2 Closeout — semantic system, ambient behaviour, hover (tag `globe-phase2-freeze`)
+
+**Frozen:** 2026-07-29. This is the **canonical Globe implementation that
+future UI work builds around.** Phase 3 is Globe UX/polish only.
+
+**Owns:** the Globe's semantic vocabulary, its pulse rules, the hover
+response, ambient motion, the Globe↔Inspector division of labour, and the
+day/night calibration single-sourcing. It did **not** touch page
+architecture, Overview/Workspace/Hero layout, routing, the optimizer, or any
+backend path.
+
+### The four-state semantic system (do not add a fifth)
+
+`GLOBE_SEMANTIC` in `globeData.js` is the canonical source. Exactly four
+states, each describing **what a producer should do**, not what the database
+knows:
+
+| State | Slot key | Colour | Pulse |
+|---|---|---|---|
+| Recommended | `gold` | `#e8c273` | **yes** — the only pulsing state |
+| Optimized alternative | `jade` | `#4bab7f` | no |
+| Unlockable opportunity | `amber` | `#d99a34` | no |
+| Additional | `silver` | `#a9b2c0` | no |
+
+`STATUS_HEX`, `STATUS_LABEL` and `PULSE_TIERS` are all **derived** from it.
+
+**Why the old model was wrong, not just differently worded.** It shipped five
+database-state categories — "Qualified / viable", "Evaluated / not
+applicable", "No known incentive". A producer cannot act on "evaluated". And
+"No known incentive" asserted a verdict the backend had never reached: per
+the discovery audit, 103 of 124 `rejected` records mean *no knowledge-base
+entry exists for that jurisdiction*, not *checked and ineligible*. Painting
+those as a conclusion turned the instrument into a coverage map.
+
+**What happened to the fifth state.** `darkRed` is deleted outright.
+Discovery-examined jurisdictions with no participating structure now fold
+into **Additional**. The `has_capability_data` selectivity gate is
+**retained** — the 103 no-knowledge-base records still stay off the Globe
+entirely; only the 21 rejected on a real capability mismatch against this
+production's own requirements reach Additional.
+
+**Two colour corrections, both principled:** amber moved `#e0a83f` →
+`#d99a34` (it sat too close to gold in hue *and* luminance, so "conditional"
+competed with "recommended" — gold must stay the brightest thing on the
+Globe); silver moved `#b0aca2` → `#a9b2c0` (the old value was a **warm
+taupe**, the exact hue family this palette's neutral-light-rig rule
+prohibits).
+
+### Pulse is reserved for the recommendation
+
+The ring predicate was `d.tier === "gold" || isSmallJurisdiction(d)`, which
+pulsed **every** island/city-state regardless of state — so an Optimized
+alternative in Malta and an Unlockable opportunity in Singapore both pulsed
+and the Globe appeared to recommend three things at once. Beacon *geometry*
+is the correct answer to "this landmass is too small to fill"; a pulse is
+not, because a pulse means something.
+
+**This predicate existed in TWO places** — the mount path and the
+data-change path, the latter with its own hand-written copy. Fixing only one
+would have been silently undone the moment a producer changed an input. Both
+now read `PULSE_TIERS`.
+
+### Ambient motion — alive, not animated
+
+Four sub-percent oscillations, all gated on `prefers-reduced-motion`, each
+one scalar write per frame (no geometry rebuild, no reallocation, no extra
+draw call):
+
+| Motion | Mechanism | Rate |
+|---|---|---|
+| Specular drift | `scene.environmentRotation.y` (three ≥ r163) | ~8.4 min/rev |
+| Limb breathing | Fresnel shell `uIntensity` around its live base | 11 s, ±12% |
+| Recommendation breath | gold beacon glow shell scale | 4.4 s, ±16% |
+| Autorotation | `controls.autoRotate` | 0.16 (~9 px/s) |
+
+**Autorotation yields, permanently.** It was previously gated on
+`points.length <= 1` — i.e. it never ran on a real production Globe, which
+sat perfectly inert. It now turns by default and stops on **any** selection
+(a jurisdiction being read must hold still) and on the **first** user
+drag/zoom (`controls` `'start'` event), after which the camera stays the
+producer's for the life of the mount.
+
+`THREE.Clock` is **deliberately not used** — it is deprecated in three 0.185
+and warns on construction; this file must stay console-clean. Elapsed time
+comes from `performance.now()`.
+
+### Hover response
+
+Hover = **slight brighten + border emphasis + Inspector preview**. Selection
+= elevation + full-brightness fill + `SELECTED_STROKE` + camera flight. The
+two must never be confusable, so hover deliberately does **not** lift a
+polygon and is a no-op on the already-selected one.
+
+**Why hover is instant while selection eases.** Verified in the installed
+three-globe dist source: when a `polygonCapMaterial` override is present,
+three-globe assigns that material directly and **skips** its own
+shared-material colour mutation (`[!capMaterial && capColor]`). So a hover
+brighten is a cached-material swap landing on the same frame — exactly what
+hover needs — while `polygonAltitude`, which hover never touches, keeps its
+500 ms selection easing. The material cache is keyed by resolved hex, so a
+brightened country gets its own material rather than recolouring every
+country in its state.
+
+Hover lives in its **own effect**, separate from selection: it changes at
+pointer speed and must not re-run the camera flight, the ring layer, or the
+beacon update.
+
+### Globe visualizes, Inspector explains
+
+The persistent legend is **deleted** (`GlobeLegend.jsx` and all
+`.globe-legend*` CSS). A Globe that needs a colour key to be read has not
+been designed: states are learned by hovering one (which names it) and
+opening one (which explains it).
+
+The hover card carries **jurisdiction, semantic state, production role** and
+nothing else. It previously also printed incentive and NPC — figures the
+Inspector owns *with* their qualification trace, caps, rate ceiling and
+citations. Two places showing the same number, one of them without
+provenance, is worse than one. `incentiveUsd`/`npcUsd` remain in the hover
+payload (real fields, used by the preview path) but no Globe surface may
+render them.
+
+The Workspace HUD stays: it is context about the *production* (name,
+scenario count, route count), not an explanation of the instrument.
+
+### Day/night calibration single-sourcing
+
+`GLOBE_THEME` is now the **only** definition of either theme. Five day values
+previously existed twice — once in `GLOBE_THEME.day` and once as a
+module-level constant seeding the material/renderer before `applyTheme()`
+first ran (`OCEAN_BODY`, `NEUTRAL_STROKE`, the rim shader's `uColor`,
+`toneMappingExposure`, the ocean's `envMapIntensity`). Both copies happened
+to agree, so nothing looked wrong — but "day and night are consistently
+calibrated" cannot be verified by inspection while day is defined in two
+places, and every material pass had to remember to edit both. All five are
+now derived.
+
+**Two genuine night-mode asymmetries found and fixed** (neither visible in
+day mode, which is why they survived two previous material passes):
+
+1. **`capEnvScale`** — only the globe *body*'s `envMapIntensity` was
+   theme-driven. At night the ocean gained reflectivity while every landmass
+   and semantic polygon stayed pinned at its day value, so the continents
+   visibly flattened relative to the water they sit in. Cap/side materials
+   now scale too (day `1.0` by definition — the day render is the frozen
+   baseline and this consolidation must not alter a pixel of it; night
+   `1.18`).
+2. **`dimHex` blended toward the *day* graphite** (`#6e7681`) always. At
+   night, selecting anything tinted the rest of the choropleth toward a
+   colour that appears nowhere else in the night scene (night land is
+   `#4a5570`). It now dims toward the live theme's land colour.
+
+### Verified at runtime, this batch
+
+Measured in **Playwright** (a genuinely visible page at 65 fps), because the
+in-app browser pane throttles `requestAnimationFrame` when not compositing —
+7 frames in 15.9 s, which makes continuous motion unobservable and produced
+one false "autorotation is broken" reading before the cause was identified.
+Discrete state changes verify fine in the pane; continuous motion does not.
+
+| Check | Result |
+|---|---|
+| Semantic distribution across all 86 jurisdictions | **exactly 1** Recommended (Mauritius), 84 Optimized alternative, 1 Additional (Hungary) |
+| Legacy states present | **zero** — no darkRed, no legacy wording, on any surface |
+| Structure card colours | `#e8c273` / `#4bab7f` / `#d99a34` — new palette, no old amber |
+| Legend nodes remaining | **0** on Project Globe and on Workspace Map |
+| Hover card | "South Africa / Optimized alternative / Primary shoot" — **no money figures** |
+| Hover surface response | fill visibly brighter + border emphasised; clears on mouseleave |
+| Autorotation | 8 px / 1.5 s at rest → **0 px** after selection (yields correctly) |
+| Selection | camera flight settles, others dim, Inspector opens with full trace |
+| Optimizer Overlay | isolates the active structure: chain `["MU","CA-BC"]` for Mauritius + Vancouver, HUD "1 structure route", arc renders |
+| Overlay toggle round trip | Jurisdictions 86 → Overlay 2 → Jurisdictions 86, no regression |
+| Day/night | navy ocean, navy-slate land, states legible, borders softened, no remount |
+| Responsive | viewport 760 px → canvas 688 CSS = 688 attr, all 86 hit-targets survive |
+| Console | **0 errors** |
+| Build | clean (2176 modules) |
+
+### Not delivered / known open (honest)
+
+- **`THREE.sigmaRadians, 0.34, is too large and will clip`** — pre-existing,
+  cosmetic, and deliberately **not** changed here. The PMREM blur clips to 20
+  samples, so the actual environment blur is a 20-sample approximation of the
+  requested 0.34 rad. The frozen, verified appearance is built on that
+  approximation; any sigma change alters the look, which is Phase 3's remit
+  (optical quality), not a "final calibration only" pass.
+- **`prefers-reduced-motion` is code-verified, not runtime-verified.** The
+  gate is a single boolean read at mount feeding `ambientMotion` and
+  `autoRotate`; the harness could not emulate the media query.
+- **Unlockable opportunity does not appear at country level in this
+  dataset** — and that is correct, not a gap. `STATUS_RANK` resolves a
+  country to its highest state, so a jurisdiction with both a priced
+  structure and a blocked one reads as Optimized alternative: the opportunity
+  is not blocked if a viable path exists. It appears on structure cards.
+- Jurisdictions are still not true translucent mineral insets (carried over
+  from `globe-night-v1` — needs a transmission/refraction pass).
+
+### Phase 3 may tune the constants in `Globe3D.jsx`. It may NOT:
+
+1. reintroduce a fifth semantic state, or re-add a `darkRed`/`red` alias;
+2. put a pulse on anything but the recommendation, in either the mount path
+   or the data-change path;
+3. re-add a persistent legend or `.globe-legend*` CSS;
+4. render money figures in a Globe hover card;
+5. re-add a module-level duplicate of any `GLOBE_THEME` value;
+6. use `setTimeout`-free reasoning to justify `THREE.Clock` coming back.

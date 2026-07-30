@@ -125,6 +125,7 @@ export default function Overview() {
                 pointRadius={0.2}
                 polygonColors={polygonColors}
                 selectedIso={selectedIso}
+                hoveredIso={hover?.iso ?? null}
                 selectedLat={selectedLat}
                 selectedLng={selectedLng}
           focusLat={focusLat}
@@ -143,8 +144,6 @@ export default function Overview() {
                   <strong>{hover.jurisdictionName}</strong>
                   <div className="text-tertiary small">{hover.statusLabel}</div>
                   {hover.role && <div className="text-tertiary small">{hover.role}</div>}
-                  {hover.incentiveUsd != null && <div className="small">Incentive <Money value={hover.incentiveUsd} /></div>}
-                  {hover.npcUsd != null && <div className="small">NPC <Money value={hover.npcUsd} /></div>}
                 </div>
               )}
             </div>

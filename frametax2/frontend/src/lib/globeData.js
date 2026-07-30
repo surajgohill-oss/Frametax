@@ -1,7 +1,5 @@
 import { JURISDICTION_COORDS } from "./jurisdictions";
 
-export const TIER_RANK = { gold: 4, jade: 3, amber: 2, silver: 1 };
-
 // Great-circle angular separation (degrees) between two {lat, lng} points —
 // used only to size the Optimizer Overlay's auto-framing distance to the
 // routing chain's real geographic spread (see buildOptimizerPathway below).
@@ -13,12 +11,19 @@ function angularSeparationDeg(a, b) {
   return Math.acos(Math.max(-1, Math.min(1, cos))) * (180 / Math.PI);
 }
 
-// Tier is derived entirely from the allocated structure's own real
-// fields (allocated_structures.ranking + is_fully_priced + blockers) —
-// never a client-side re-derivation of pricing. Several surfaces (card
-// badges) key off this ranking tier; the Globe's country status below
-// reuses the SAME tier, just remapped onto the approved production-status
-// palette rather than inventing a second one.
+// A structure's semantic state, derived entirely from the allocated
+// structure's own real fields (allocated_structures.ranking +
+// is_fully_priced + blockers) — never a client-side re-derivation of
+// pricing. Several surfaces (card badges) key off these slot names; the
+// Globe's country state below reuses the SAME derivation rather than
+// inventing a second one, so a jurisdiction can never read as Recommended
+// on the Globe and as something else on its card.
+//
+// Reading of each branch under the semantic system (see GLOBE_SEMANTIC):
+//   rank 1          -> Recommended            (the one best structure)
+//   fully priced    -> Optimized alternative  (real, economically viable)
+//   has blockers    -> Unlockable opportunity (beneficial but conditional)
+//   otherwise       -> Additional             (touched, not actionable yet)
 export function structureTier(structure, rankById) {
   const rank = rankById.get(structure.structure_id);
   if (rank?.rank === 1) return "gold";
@@ -37,41 +42,69 @@ export function activeStructure(allocated, leadingStructureId) {
   return best ? byId.get(best.structure_id) : null;
 }
 
-// The Globe/candidate-card shared status palette — the ONE source every
-// Globe-adjacent surface reads from (GlobeLegend, Globe3D's TIER_HEX below,
-// ProjectGlobe's candidate cards). Reused here as PRODUCTION STATUS, not an
-// interaction state:
-//   gold    = Leading Recommendation
-//   jade    = Qualified / Viable
-//   amber   = Conditional (treaty / partner / cultural / qualification pending)
-//   silver  = Evaluated / Not Applicable
-//   darkRed = No Known Incentive / Ineligible
-// Brightened in the 2026-07-28 regression-lock pass — richer, more
-// saturated jewel tones so active jurisdictions read as enamel/glass
-// rather than chalky flat fills. Category meanings are unchanged.
-export const STATUS_HEX = {
-  gold: "#e8c273",
-  jade: "#4bab7f",
-  amber: "#e0a83f",
-  silver: "#b0aca2",
-  darkRed: "#a3453c",
+// ── The Globe's semantic system (Phase 2 closeout) ──────────────────────
+// EXACTLY FOUR production-decision states. This object is the canonical
+// source: every Globe-adjacent surface (choropleth fill, beacons, hover
+// card, structure cards) reads from here, and none may introduce a fifth.
+//
+// These states describe what a producer should DO about a jurisdiction, not
+// what the engine knows about it. The previous model shipped five
+// DATABASE-STATE categories — "Qualified / viable", "Evaluated / not
+// applicable", "No known incentive" — which described the discovery
+// engine's own bookkeeping. A producer cannot act on "evaluated", and
+// "No known incentive" actively misled: per the discovery audit, 103 of 124
+// rejected records mean "no knowledge-base entry exists", not "we checked
+// and it is ineligible", so painting them as a verdict asserted a
+// conclusion the backend never reached.
+//
+//   recommended  Gold   The single best production structure. Soft pulse.
+//   alternative  Green  An economically beneficial alternative. No pulse.
+//   unlockable   Amber  Beneficial but currently blocked — clearly conditional.
+//   additional   Slate  Everything else this production touches. Low emphasis.
+//
+// `pulse` is authoritative: ONLY the recommendation pulses (see Globe3D's
+// ring layer). An alternative that pulsed would read as a second
+// recommendation, which is the one thing this system exists to prevent.
+//
+// The slot keys (gold/jade/amber/silver) are retained deliberately — the
+// app-wide tier vocabulary OUTSIDE the Globe (ScenarioCard badges,
+// format.js's tierBadgeClass) keys off exactly these names, and renaming
+// them would churn surfaces this pass is explicitly scoped out of. What
+// changed is the SEMANTICS and the wording attached to them.
+export const GLOBE_SEMANTIC = {
+  gold: { state: "recommended", label: "Recommended", hex: "#e8c273", pulse: true },
+  jade: { state: "alternative", label: "Optimized alternative", hex: "#4bab7f", pulse: false },
+  // Pulled darker and more orange than the old #e0a83f: amber sat close
+  // enough to gold in both hue and luminance that "conditional" and
+  // "recommended" competed. Gold must stay the brightest thing on the Globe.
+  amber: { state: "unlockable", label: "Unlockable opportunity", hex: "#d99a34", pulse: false },
+  // Neutral slate, NOT the old warm taupe (#b0aca2). Warm greys are
+  // prohibited in this palette — they are the specific cause of the muddy
+  // cast the neutral light rig exists to prevent (see Globe3D lighting).
+  silver: { state: "additional", label: "Additional", hex: "#a9b2c0", pulse: false },
 };
 
-// "Not evaluated" landmass — the absence of a verdict, so it has no entry in
-// STATUS_HEX above, but it IS part of the same canonical palette and must be
-// declared exactly once. Globe3D.jsx (polygon fill) and GlobeLegend.jsx (key
-// swatch) both import THIS constant; neither may re-declare its own copy.
-// Neutral graphite on purpose: it sits between the ocean and the status
-// colours in the frozen luminance hierarchy, and any warm/taupe value here
-// reintroduces the muddy cast this palette exists to prevent.
+// Derived, never hand-maintained. Existing consumers (Globe3D's TIER_HEX,
+// ProjectGlobe's structure cards, CompanyGlobe) import these two.
+export const STATUS_HEX = Object.fromEntries(
+  Object.entries(GLOBE_SEMANTIC).map(([k, v]) => [k, v.hex]),
+);
+export const STATUS_LABEL = Object.fromEntries(
+  Object.entries(GLOBE_SEMANTIC).map(([k, v]) => [k, v.label]),
+);
+// Which states pulse. Globe3D reads this rather than hardcoding "gold".
+export const PULSE_TIERS = new Set(
+  Object.entries(GLOBE_SEMANTIC).filter(([, v]) => v.pulse).map(([k]) => k),
+);
+
+// Untouched landmass — jurisdictions this production has no opinion about.
+// It carries no semantic state (it is the absence of one), so it has no
+// entry above, but it IS part of the same canonical palette and must be
+// declared exactly once. Globe3D.jsx imports THIS constant rather than
+// re-declaring its own copy. Neutral graphite on purpose: it sits between
+// the ocean and the four semantic colours in the frozen luminance
+// hierarchy, and any warm/taupe value here reintroduces the muddy cast.
 export const GRAPHITE_HEX = "#6e7681";
-export const STATUS_LABEL = {
-  gold: "Leading recommendation",
-  jade: "Qualified / viable",
-  amber: "Conditional",
-  silver: "Evaluated / not applicable",
-  darkRed: "No known incentive",
-};
 
 // A jurisdiction code's country-level ISO2 — sub-national codes (US-CA,
 // CA-BC, AU-NSW, ...) map to their parent country; country-level codes
@@ -103,7 +136,7 @@ export function globeKey(jurisdictionCode) {
   return parent;
 }
 
-const STATUS_RANK = { gold: 5, jade: 4, amber: 3, silver: 2, darkRed: 1 };
+const STATUS_RANK = { gold: 4, jade: 3, amber: 2, silver: 1 };
 
 function roleFor(structure, code) {
   if (!structure) return null;
@@ -114,7 +147,7 @@ function roleFor(structure, code) {
   return "Participating jurisdiction";
 }
 
-// Country-level production status + hover data, built entirely from
+// Country-level semantic state + hover data, built entirely from
 // allocated_structures (participation/ranking) and its discovery audit
 // (examined-but-not-participating jurisdictions) — no new calculation,
 // no fabricated figures. Every jurisdiction the backend has an opinion
@@ -160,44 +193,51 @@ export function buildCountryStatuses(allocated, rankById) {
   }
 
   // 2. Discovery-examined jurisdictions with no participating structure —
-  //    capability_only -> silver (evaluated, not currently applicable);
-  //    rejected -> darkRed (no known incentive / ineligible). Never
-  //    overrides a stronger status already set from an actual structure.
-  //    (As of this data snapshot the discovery engine only ever emits
-  //    "rejected" or "incentive_ready" — every "incentive_ready" record
-  //    becomes a participant and is already handled in step 1, so no
-  //    country currently reaches silver through this branch. That is a
-  //    real gap in the backend's classification enum, not a mapping bug
-  //    here — see the Globe completion report.)
+  //    all fold into "Additional" (silver). Never overrides a stronger
+  //    state already set from an actual structure.
   //
-  //    "rejected" is NOT one uniform signal — confirmed against live data
-  //    (`has_capability_data`, an existing per-examination field): 103 of
-  //    124 rejected records are "no structured capability profile and no
-  //    priceable incentive model" — the backend simply has no knowledge
-  //    base entry for that jurisdiction at all, not a real evaluation.
-  //    Painting those Dark Red reads as "we checked, it's ineligible" when
-  //    the truth is "we never checked" — the exact coverage-map failure
-  //    mode the Globe must avoid; it should stay selective, weighted only
-  //    toward jurisdictions that matter for this production. Only the
-  //    remaining 21 records (`has_capability_data: true`, rejected on a
-  //    real capability mismatch against this production's own
-  //    requirements, e.g. marine/open-water filming) are a genuine
-  //    evaluated-and-ineligible signal, so only those reach Dark Red.
+  //    PHASE 2 CLOSEOUT: this branch previously split into two states —
+  //    capability_only -> silver ("evaluated / not applicable") and
+  //    rejected+has_capability_data -> darkRed ("no known incentive"). Both
+  //    were database states, and darkRed was the worse offender: it
+  //    asserted a verdict ("we checked, it's ineligible") on a Globe whose
+  //    job is to communicate production decisions. A producer cannot act on
+  //    either one; neither is a recommendation, an alternative, or an
+  //    unlockable opportunity. They are Additional, at low emphasis.
+  //
+  //    Note this is a semantic fold, not a loss of selectivity. The
+  //    `has_capability_data` gate is RETAINED: 103 of 124 rejected records
+  //    mean "no knowledge-base entry exists for this jurisdiction at all",
+  //    not "evaluated and ineligible", and those must still stay off the
+  //    Globe entirely — painting them any colour turns the instrument into
+  //    a coverage map. Only the 21 records rejected on a real capability
+  //    mismatch against this production's own requirements (e.g.
+  //    marine/open-water filming) are something this production actually
+  //    touched, so only those reach Additional.
   for (const e of allocated.discovery?.examinations || []) {
     const iso = globeKey(e.jurisdiction_code);
     if (byIso.has(iso)) continue;
-    if (e.classification === "capability_only") upsert(iso, "silver", e.jurisdiction_code, null);
-    else if (e.classification === "rejected" && e.has_capability_data) upsert(iso, "darkRed", e.jurisdiction_code, null);
+    const touched =
+      e.classification === "capability_only" ||
+      (e.classification === "rejected" && e.has_capability_data);
+    if (touched) upsert(iso, "silver", e.jurisdiction_code, null);
   }
 
   return byIso;
 }
 
-// Per-country hover payload (jurisdiction, status, estimated incentive,
-// estimated NPC, primary production role) — read verbatim from the best
-// (highest-status) structure touching that country. Countries with no
-// participating structure (silver/darkRed from discovery only) show
-// status + jurisdiction only — no incentive/NPC exists to show.
+// Per-country hover payload — read verbatim from the best (highest-state)
+// structure touching that country. Countries with no participating
+// structure (Additional, from discovery only) carry state + jurisdiction
+// only, because no structure exists to read figures from.
+//
+// INSPECTOR BOUNDARY (Phase 2 closeout): `incentiveUsd`/`npcUsd` remain in
+// this payload because they are real, already-computed fields and the
+// hover-to-Inspector preview path is built on it — but NO Globe surface may
+// RENDER them in its hover card. The Globe visualizes; the Inspector
+// explains. Hover states the jurisdiction, its semantic state and its
+// production role; the moment it starts printing money figures it becomes a
+// second, thinner Inspector and the two drift.
 export function buildCountryHoverData(statuses, rankById) {
   const byIso = new Map();
   for (const [iso, entry] of statuses) {
@@ -208,6 +248,7 @@ export function buildCountryHoverData(statuses, rankById) {
       jurisdictionName: JURISDICTION_COORDS[code]?.name || code,
       status: entry.status,
       statusLabel: STATUS_LABEL[entry.status],
+      semanticState: GLOBE_SEMANTIC[entry.status]?.state ?? null,
       hex: entry.hex,
       incentiveUsd: structure?.is_fully_priced ? structure.selected_incentive_usd : null,
       npcUsd: structure?.is_fully_priced ? structure.npc_with_adjustments_usd : null,
@@ -242,8 +283,9 @@ export function buildOptimizerPathway(allocated, leadingStructureId) {
   const qpeByCode = new Map((structure.segments || []).map((sg) => [sg.jurisdiction_code, sg.qpe_usd]));
   const maxQpe = Math.max(1, ...ordered.map((c) => qpeByCode.get(c) || 0));
 
-  // The primary shoot reads Gold; every downstream routed/co-production
-  // leg reads Jade — a production hierarchy, not a flat chain.
+  // The primary shoot reads Recommended; every downstream routed/
+  // co-production leg reads Optimized alternative — a production hierarchy,
+  // not a flat chain. No new state is introduced for overlay mode.
   const points = ordered.map((code, i) => {
     const status = i === 0 ? "gold" : "jade";
     return {

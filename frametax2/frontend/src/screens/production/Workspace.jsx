@@ -7,7 +7,6 @@ import { Money, scenarioDisplay, confidenceStatusLabel, confidenceStatusTone } f
 import { useAppState } from "../../state/AppState";
 import Globe3D from "../../components/Globe3D";
 import { buildGlobeView, structureTier, activeStructure } from "../../lib/globeData";
-import GlobeLegend from "../../components/GlobeLegend";
 import QuestionStack from "../../components/QuestionStack";
 import RecommendationsList from "../../components/RecommendationsList";
 import EconomicsTrace from "../../components/EconomicsTrace";
@@ -181,24 +180,25 @@ function ScenarioCard({ structure, tier, rank, grossBudget, budgetReconciliation
   );
 }
 
-// Globe chrome — the two overlays that carry production value: a context
-// HUD (which production, how many composed scenarios) and the shared
-// status legend. The old "Layers" panel was prototype scaffolding — two
-// toggles that controlled nothing plus four permanently-ghosted "engine
-// pending" rows and a note naming the rendering library — so it has been
-// removed rather than shipped to producers. Country polygon fill and
-// borders are the Globe's primary always-on visualization, never a
-// togglable layer. The legend is the shared GlobeLegend component so this
-// screen cannot drift from Project Globe's wording or colours.
+// Globe chrome — a context HUD only (which production, how many composed
+// scenarios, how many routes). The old "Layers" panel was prototype
+// scaffolding — two toggles that controlled nothing plus four permanently-
+// ghosted "engine pending" rows and a note naming the rendering library — so
+// it was removed rather than shipped to producers. Country polygon fill and
+// borders are the Globe's primary always-on visualization, never a togglable
+// layer.
+//
+// PHASE 2 CLOSEOUT: the persistent status legend is gone from here too. A
+// Globe that needs a colour key to be read is a Globe that hasn't been
+// designed; the states are learned by hovering (which names the state) and
+// by opening one (which explains it). The HUD stays because it is context
+// about the production, not an explanation of the instrument itself.
 function GlobeChrome({ productionName, nScenarios, nArcs }) {
   return (
-    <>
-      <div className="wsx-g-hud">
-        <b>Project globe · {productionName}</b>
-        {nScenarios} scenario{nScenarios === 1 ? "" : "s"} · {nArcs} structure route{nArcs === 1 ? "" : "s"}
-      </div>
-      <GlobeLegend className="globe-legend-overlay" showTreatyPath={nArcs > 0} />
-    </>
+    <div className="wsx-g-hud">
+      <b>Project globe · {productionName}</b>
+      {nScenarios} scenario{nScenarios === 1 ? "" : "s"} · {nArcs} structure route{nArcs === 1 ? "" : "s"}
+    </div>
   );
 }
 
@@ -354,7 +354,7 @@ export default function Workspace() {
               ))}
             </div>
             {(mode === "map" || mode === "split") && (
-              <div className="wsx-viewtabs" title="Jurisdictions: every participating jurisdiction, colored by qualification. Optimizer: only the leading structure's own routing chain.">
+              <div className="wsx-viewtabs" title="Jurisdictions: every jurisdiction this production touches, by what it means for the production. Optimizer Overlay: the recommended structure's own routing chain only.">
                 <button className={globeMode === "jurisdictions" ? "active" : ""} onClick={() => setGlobeMode("jurisdictions")}>Jurisdictions</button>
                 <button className={globeMode === "optimizer" ? "active" : ""} onClick={() => setGlobeMode("optimizer")}>Optimizer Overlay</button>
               </div>
@@ -409,6 +409,7 @@ export default function Workspace() {
                 pointRadius={0.22}
                 polygonColors={polygonColors}
                 selectedIso={selectedIso}
+                hoveredIso={globeHover?.iso ?? null}
                 selectedLat={selectedLat}
                 selectedLng={selectedLng}
           focusLat={focusLat}
@@ -423,8 +424,6 @@ export default function Workspace() {
                   <strong>{globeHover.jurisdictionName}</strong>
                   <div className="text-tertiary small">{globeHover.statusLabel}</div>
                   {globeHover.role && <div className="text-tertiary small">{globeHover.role}</div>}
-                  {globeHover.incentiveUsd != null && <div className="small">Incentive <Money value={globeHover.incentiveUsd} /></div>}
-                  {globeHover.npcUsd != null && <div className="small">NPC <Money value={globeHover.npcUsd} /></div>}
                 </div>
               )}
             </div>
@@ -460,6 +459,7 @@ export default function Workspace() {
                     pointRadius={0.22}
                     polygonColors={polygonColors}
                     selectedIso={selectedIso}
+                    hoveredIso={globeHover?.iso ?? null}
                     selectedLat={selectedLat}
                     selectedLng={selectedLng}
           focusLat={focusLat}
@@ -474,8 +474,6 @@ export default function Workspace() {
                       <strong>{globeHover.jurisdictionName}</strong>
                       <div className="text-tertiary small">{globeHover.statusLabel}</div>
                       {globeHover.role && <div className="text-tertiary small">{globeHover.role}</div>}
-                      {globeHover.incentiveUsd != null && <div className="small">Incentive <Money value={globeHover.incentiveUsd} /></div>}
-                      {globeHover.npcUsd != null && <div className="small">NPC <Money value={globeHover.npcUsd} /></div>}
                     </div>
                   )}
                 </div>

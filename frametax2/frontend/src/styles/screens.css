@@ -335,42 +335,12 @@
 }
 .globe-tooltip .text-tertiary { color: var(--dark-text-tertiary); }
 
-/* Shared Globe status key (components/GlobeLegend.jsx) — one definition
-   used by every Globe surface so the visual language cannot fork. Sans, not
-   mono — a status key is producer-facing chrome, not a data readout. */
-.globe-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 14px;
-  align-items: center;
-  font: 10px var(--font-sans);
-  letter-spacing: 0.01em;
-  color: var(--dark-text-secondary);
-}
-.globe-legend > span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
-.globe-legend-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
-.globe-legend-dash { width: 12px; height: 0; border-top: 1px dashed currentColor; flex: none; opacity: 0.8; }
-/* Legend in a light left rail (Project Globe context column). */
-.globe-legend-stack { margin: 8px 0 12px; color: var(--text-tertiary); }
-
-/* Legend floated over a globe canvas (Workspace Map/Split) — dark luxury
-   glass chrome (same plate as .globe-tooltip), matching the instrument it
-   sits on. This used to be the app's LIGHT ivory glass card floating on the
-   dark globe, which read as a mismatched debug overlay rather than the
-   Globe's own chrome. */
-.globe-legend-overlay {
-  position: absolute;
-  left: 12px;
-  bottom: 12px;
-  z-index: 6;
-  max-width: 72%;
-  background: rgba(25,23,19,0.88);
-  backdrop-filter: blur(10px);
-  border: 0.5px solid var(--dark-hairline-strong);
-  border-radius: 8px;
-  padding: 7px 11px;
-  color: var(--dark-text-secondary);
-}
+/* The persistent Globe status legend was REMOVED in the Globe Phase 2
+   closeout (2026-07-29) along with components/GlobeLegend.jsx. A Globe
+   that needs a colour key to be read has not been designed: the four
+   semantic states are learned by hovering one (which names it) and by
+   opening one (which explains it, in the Inspector). Do not re-add
+   .globe-legend* here — see the freeze notes in Globe3D.jsx. */
 .globe-screen-inspector {
   position: absolute;
   right: var(--sp-8);
@@ -897,13 +867,13 @@
 .wsx-qsort { font: 600 10px var(--font-mono); letter-spacing: 0.04em; color: var(--text-tertiary); background: none; border: none; cursor: pointer; text-transform: none; padding: 0; }
 .wsx-qsort:hover { color: var(--text-primary); }
 
-/* Globe chrome — the HUD overlay (nScenarios/nArcs context strip) and the
-   shared status legend (.globe-legend-overlay, styled with the Globe
-   above). Dark luxury glass, matching the instrument it sits on — this used
-   to be the app's LIGHT ivory glass card floating on the dark globe. The
-   old ".g-layers" toggle panel was prototype scaffolding (two toggles that
+/* Globe chrome — the HUD overlay (nScenarios/nArcs context strip). Dark
+   luxury glass, matching the instrument it sits on — this used to be the
+   app's LIGHT ivory glass card floating on the dark globe. The old
+   ".g-layers" toggle panel was prototype scaffolding (two toggles that
    controlled nothing, four permanently-ghosted rows) and has been removed
-   from the JSX; its dead CSS is removed here too. */
+   from the JSX; its dead CSS is removed here too. The status legend that
+   also used to float here went the same way in the Phase 2 closeout. */
 .wsx-globe-chrome { position: relative; }
 .wsx-g-hud { position: absolute; top: 12px; left: 12px; z-index: 5; background: rgba(25,23,19,0.88); backdrop-filter: blur(10px); border: 0.5px solid var(--dark-hairline-strong); border-radius: 9px; padding: 8px 12px; font: 10px/1.6 var(--font-sans); color: var(--dark-text-secondary); max-width: 250px; }
 .wsx-g-hud b { display: block; font: 600 11px var(--font-sans); color: var(--dark-text-primary); margin-bottom: 3px; }
