@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
 import Globe3D from "../../components/Globe3D";
+import GlobeLegend from "../../components/GlobeLegend";
 import { buildGlobeView, structureTier, STATUS_HEX } from "../../lib/globeData";
 import { isFixtureActive } from "../../lib/globeVisualFixture";
 import { useAppState } from "../../state/AppState";
@@ -137,6 +138,7 @@ export default function ProjectGlobe() {
       </div>
 
       <div className="globe-screen-canvas" style={{ position: "relative" }}>
+        <GlobeLegend />
         <Globe3D
           points={points}
           arcs={arcs}

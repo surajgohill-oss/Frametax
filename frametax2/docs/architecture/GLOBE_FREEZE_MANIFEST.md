@@ -1,5 +1,13 @@
 # Globe Freeze Manifest
 
+**Frozen:** 2026-07-30 — **Phase 3A OPTICAL FINISH, FINAL, tag `globe-phase3a-freeze`**
+- Optical reconciliation against the approved reference render, closed out in
+  three sequenced batches (foundation → full reconciliation pass → final
+  micro-pass). This is the canonical optical baseline; Phase 3B (motion/
+  roadmap/production-pathway visualization) has not started.
+- See "Batch: Phase 3A — Optical Reconciliation (FINAL)" below for the full
+  record — every value changed, why, and what remains open.
+
 **Frozen:** 2026-07-28
 - `globe: recover finalize and freeze globe rendering` — recovery + functional freeze
 - `globe: premium glass rendering` — rendering architecture (tag `globe-glass-v1`)
@@ -897,3 +905,146 @@ finish. Outstanding, all explicitly out of scope here:
 12. remove the polygon emissive floor (neutral land collapses to black);
 13. label a US state or Canadian province with a city name;
 14. show fixture Globe colours beside unlabelled production cards.
+
+---
+
+## Batch: Phase 3A — Optical Reconciliation (FINAL, tag `globe-phase3a-freeze`)
+
+**Frozen:** 2026-07-30. Closes Phase 3A. Ran as three sequenced batches
+against the approved reference render (a screenshot of an earlier build,
+provided directly in-conversation): foundation → full reconciliation →
+final micro-pass. Owns `Globe3D.jsx`, `globeData.js`, `GlobeLegend.jsx`
+(new), `ProjectGlobe.jsx` (one mount line), `screens.css` (legend styling),
+`tests/globe-invariants.test.mjs`. Did not touch the Inspector, Overview,
+Workspace, Scenarios, Optimizer, or any backend path.
+
+### A real bug found and fixed along the way: PMREM sigma clipping
+
+`pmrem.fromScene(envScene, 0.34)` had been silently clipping since the
+premium-glass pass was first written — three.js's `PMREMGenerator` caps the
+top mip's blur at 20 samples (`MAX_SAMPLES` in the installed source), and
+0.34 radians requests ~166. `THREE.sigmaRadians, 0.34, is too large and will
+clip` fired on every mount, every theme, in production, and had been
+carried in this manifest's own "Not delivered" list across three prior
+freezes as a known-but-deliberately-untouched item. Solved for the actual
+clip-free ceiling from the library's own sample-count formula and lowered
+to **0.035** — console is now genuinely clean, not just "acceptably noisy."
+
+### Legend restored, then its terminology corrected twice
+
+Phase 2 deleted the persistent legend outright (legacy six-category
+model). This batch reinstates it as new, tightly-scoped, tested
+`GlobeLegend.jsx` — exactly four states read live from `GLOBE_SEMANTIC`,
+visually secondary (10px type, low-contrast chrome), Project Globe only,
+production-visible (unlike the dev-only fixture badge). Labels moved twice
+in this batch, each an explicit, separate instruction:
+`Optimized alternative` → `Unlockable opportunity`/`Additional` → `Opportunity`/`Baseline`
+→ final: `Optimized alternative` → `Optimized`. Current canonical set:
+**Recommended / Optimized / Opportunity / Baseline.**
+
+**Known minor gap, not fixed (out of this batch's explicit scope):** the
+dev-only fixture disclosure (`globeVisualFixture.js`'s console warning and
+`GlobeFixtureBadge`'s on-screen text) still say "Optimized alternative" /
+"Unlockable" — hardcoded strings, not read from `GLOBE_SEMANTIC`. Both are
+DEV-only surfaces, never shipped to production, so this was left for a
+follow-up rather than expanding this batch's file list.
+
+### Semantic palette — reconciled twice, both times against real luminance math
+
+First pass sampled the approved render directly for jade/amber richness.
+Second pass (this freeze) replaced all four with explicit material
+identities given directly: **Recommended** `#e6d3a8` (warm champagne-gold),
+**Optimized** `#4cbd97` (richer jade, not pale mint), **Opportunity**
+`#d48a49` (restrained amber-copper), **Baseline** `#8494a4` (quiet
+blue-grey slate).
+
+**A real mistake made and caught in this same pass:** the first attempt at
+these four hexes was luminance-checked using `THREE.Color`'s own `.r/.g/.b`
+after `getHSL`/construction — which, under three.js's default colour
+management, are **linear-space** values, not the raw sRGB byte values the
+test file's `lum()` parses directly from the hex string. Multiplying those
+by 255 produced luminance numbers that didn't match reality and the test
+failed (`Optimized (164) must outrank Additional (168)`, using the test's
+real byte-parsed numbers). Recomputed with a raw hex→byte HSL/luminance
+harness matching the test exactly before finalizing: land 131 < Baseline
+145 < Optimized 151 < Opportunity 153 < Recommended 212. **Do not use
+`THREE.Color` for any future luminance check against this test — parse the
+hex bytes directly, the same way the test does.**
+
+### Country material depth — a curvature lever, not a noise lever
+
+Two rounds: first raised the existing `applyLandGrainShader` amplitude
+(0.10 → 0.14) and nudged `envBase`/`roughness` once. The final micro-pass
+was told explicitly not to add more visible grain — so depth was increased
+a second time purely via `roughness` (land 0.58 → 0.52, quiet 0.53 → 0.48)
+and `envBase` (0.34 → 0.38, 0.40 → 0.44) instead: lower roughness lets the
+existing environment gradient vary more by each polygon's own surface
+normal, which reads as curvature in a static frame without touching the
+grain shader again.
+
+### Ocean — richer variation via a corrected version of an earlier-abandoned idea
+
+Added a third, finer noise octave to `makeOceanSurfaceTexture` (breakup
+grain) and applied the SAME texture as `clearcoatRoughnessMap`, not just
+`bumpMap` — the Phase 3A-final batch had tried this for the base
+`roughness` channel and abandoned it because the texture's ~0.5 mean would
+have halved the average value. This time the base `clearcoatRoughness` was
+doubled first (0.28 → 0.56) to compensate, so the sphere-average stays
+~0.28 but now genuinely varies per-pixel. `envIntensity` raised modestly in
+both themes (0.40→0.44 day, 0.46→0.50 night) alongside it.
+
+### Atmosphere / rim — tightened together, not independently
+
+`ATMOSPHERE_ALTITUDE` pulled in again (0.11 → 0.095) and
+`BASE_RIM_INTENSITY`/`uPower` raised in step (0.21→0.24, 3.1→3.4) so the rim
+shell carries more of the curvature-reinforcement job as the library
+atmosphere shell narrows — two shells with two distinct jobs, not one
+shell doing both.
+
+### Reflection shape — one arc attempt, then simplified per explicit instruction
+
+First correction decomposed the single strip light into three shorter
+segments on a gentle arc; runtime proof showed this still merged into one
+bright spot rather than reading as curved. The final micro-pass explicitly
+said to simplify rather than add complexity if the arc didn't work
+reliably — reverted to **one** panel, longer and thinner, with a new
+`tilt` parameter on `panel()` (rotates it about its own Z axis) so a
+straight bar reflected off the sphere's own convex curvature reads as an
+angled, soft-edged streak rather than a straight line or a round dot.
+Verified close-up: elongated and diagonal, materially better than the
+prior round blob, though still a genuinely bright core — recorded honestly
+as improved, not eliminated.
+
+### Runtime acceptance — all pass, this freeze
+
+| Item | Evidence |
+|---|---|
+| Production mode, day | legend "Recommended / Optimized / Opportunity / Baseline"; richer jade/amber/gold visible |
+| Production mode, night, comparable orientation | same palette, no remount, no console warning |
+| Fixture mode, all four states | Optimized (Mexico, Japan, Thailand…), Opportunity (Philippines, Colombia, Saudi…), Baseline (background majority), Recommended (Mauritius gold beacon, confirmed via close crop next to Madagascar) |
+| Production restored after fixture disable | `?globeFixture=0` — no badge, no console disclosure, real production tally back |
+| Reflection close-up | angled soft-edged streak, not a round blob (see batch note above) |
+| Inspector-open | selection, opening, positioning only — content/layout untouched, confirmed against the frozen Inspector |
+| Graticule | absent (never re-enabled) |
+| Console | **0 errors, 0 warnings** (fresh navigation) |
+| Tests | **28/28** (`npm test`) |
+| Build | clean (`vite build`) |
+
+### Phase 3B (not started, explicitly out of scope here)
+
+Motion/roadmap: production-pathway visualization, opportunity-state pulses
+beyond the recommendation, optimization-replay animation, transition
+effects between structures. None of this batch touched motion beyond the
+existing frozen ambient set (env drift, rim breath, gold breath, yielding
+autorotation) — all verified still present and untouched.
+
+### Added to the "may not" list
+
+15. use `THREE.Color`'s `.r`/`.g`/`.b` (linear space) to luminance-check a
+    semantic hex against the test file's `lum()` (raw sRGB bytes) — parse
+    the hex string directly, the same way the test does;
+16. reintroduce `pmrem.fromScene`'s sigma above the clip-free ceiling
+    (~0.041 against this file's current `_lodMax`) without re-deriving the
+    ceiling from the installed three.js source;
+17. add a fourth, independent studio-panel segment to "fix" the reflection
+    shape — simplify the existing single tilted panel first.

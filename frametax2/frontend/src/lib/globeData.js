@@ -100,14 +100,38 @@ export function activeStructure(allocated, leadingStructureId) {
 // states carry real colour, the neutrals are genuinely desaturated. This is
 // hierarchy work, not final material tuning — materials, lighting, ocean and
 // atmosphere remain Phase 3.
+// PHASE 3A FINAL RECONCILIATION: jade/amber hue+saturation reconciled against
+// the approved reference render (sampled directly, not estimated) — richer,
+// more saturated "mineral/enamel" material colour, luminance held within the
+// already-verified ladder (see the monotonicity test below; both moved from
+// ~117 to ~117, i.e. same rank, just more pigment). gold/silver untouched:
+// the render has no analog for either (its "leading recommendation" swatch is
+// green, its neutrals are a legacy six-state grey/violet) — the render governs
+// material richness and colour, not a hue swap for states it doesn't map to.
+// PHASE 3A FINAL MICRO-PASS: four explicit material identities given directly
+// (not sampled), each re-solved in HSL and luminance-checked against the raw-
+// byte luminance the monotonicity test itself uses (NOT three.js's colour-
+// managed THREE.Color().r/.g/.b, which is a LINEAR value and gave a false
+// pass in an earlier draft of this pass) — "warm champagne-gold" / "richer
+// jade, not pale mint" / "restrained amber-copper" / "quiet blue-grey slate,
+// distinct from neutral land" (GRAPHITE_HEX, lum 131).
+// Ladder after this pass: land 131 < silver 145 < jade 151 < amber 153 < gold 212
+// (recommended leads the peer pair by 59, comfortably over the required 25).
 export const GLOBE_SEMANTIC = {
-  gold: { state: "recommended", label: "Recommended", hex: "#f7dc9b", pulse: true },
-  jade: { state: "alternative", label: "Optimized alternative", hex: "#55d698", pulse: false },
-  amber: { state: "unlockable", label: "Unlockable opportunity", hex: "#eaa93c", pulse: false },
+  gold: { state: "recommended", label: "Recommended", hex: "#e6d3a8", pulse: true },
+  // "Optimized alternative" -> "Optimized" (Phase 3A final: shorter, matches
+  // the other three single-word labels).
+  jade: { state: "alternative", label: "Optimized", hex: "#4cbd97", pulse: false },
+  // Label reconciled to executive/production terminology (Phase 3A final):
+  // "Unlockable opportunity" -> "Opportunity". Same slot, same hex family,
+  // same four-state count — a rename, not a reintroduction of the legacy
+  // six-category model the render's own legend still shows.
+  amber: { state: "unlockable", label: "Opportunity", hex: "#d48a49", pulse: false },
   // Desaturated slate — deliberately the DIMMEST of the four, sitting just
   // above untouched land. Never a warm/taupe grey: those reintroduce the muddy
   // cast the neutral light rig exists to prevent (see Globe3D lighting).
-  silver: { state: "additional", label: "Additional", hex: "#8c96a4", pulse: false },
+  // Label reconciled: "Additional" -> "Baseline" (Phase 3A final rename).
+  silver: { state: "additional", label: "Baseline", hex: "#8494a4", pulse: false },
 };
 
 // Derived, never hand-maintained. Existing consumers (Globe3D's TIER_HEX,
@@ -128,17 +152,23 @@ export const PULSE_TIERS = new Set(
 // above, but it IS part of the same canonical palette and must be declared
 // exactly once. Globe3D.jsx imports THIS constant rather than re-declaring it.
 //
-// RAISED from #6e7681 (luminance 117 -> 129). Neutral countries were reading
-// as empty — near-black under the deliberately dim light rig — which made the
-// Globe look unfinished rather than quiet. The approved reference render shows
-// neutral land with real material presence, clearly above the ocean it sits in.
-// This is a colour change only: the lighting rig is untouched (Phase 3 owns
-// materials, ocean and atmosphere).
+// PHASE 3A: hue moved from neutral-cool grey (#78828f) to teal-slate
+// (#6c8c90), LUMINANCE HELD at the same ladder position (~129 -> ~131,
+// effectively unchanged). This is the reconciliation-plan-approved response to
+// "numerically brighter is not accepted as fixed" — the Phase 2 pass raised
+// luminance only, which stopped land reading as void but left it a flat
+// neutral-cool grey rather than the approved render's teal-slate character.
+// Hue is the axis that changes now; luminance is deliberately NOT re-touched
+// here, because the ladder ordering (land < Additional < Optimized/Unlockable
+// < Recommended) is already correct and re-verified by `npm test` — moving hue
+// at fixed luminance is what keeps that test green while fixing the actual
+// complaint. Roughness/emissive/material-response changes that make this hue
+// read with real tonal variation (not just a flat swap) live in Globe3D.jsx's
+// `getCapMaterial` frosted branch, not here.
 //
-// It remains the BASE of the emphasis ladder — below Additional (149) and far
-// below every actionable state. Still strictly neutral: any warm/taupe value
-// here reintroduces the muddy cast the neutral rig exists to prevent.
-export const GRAPHITE_HEX = "#78828f";
+// Still strictly a TEAL-slate, never a warm/taupe one: warm neutrals here
+// reintroduce the muddy cast the neutral light rig exists to prevent.
+export const GRAPHITE_HEX = "#6c8c90";
 
 // Development-only: rewrite a status map to the visual fixture's assignments.
 // Lives HERE rather than in globeVisualFixture.js because this module is the

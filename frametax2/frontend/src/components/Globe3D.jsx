@@ -44,13 +44,18 @@ function buildStudioEnvironment() {
   room.scale.setScalar(24);
   env.add(room);
 
-  const panel = (hex, intensity, pos, scale) => {
+  // `tilt` (radians, optional): rotates the panel about its own Z axis.
+  // Added for the single strip light below — an axis-aligned bar reflects as
+  // a straight streak; tilting it is what lets the sphere's own convex
+  // curvature read as curvature in the reflection instead of a straight line.
+  const panel = (hex, intensity, pos, scale, tilt = 0) => {
     const m = new THREE.Mesh(
       box,
       new THREE.MeshBasicMaterial({ color: new THREE.Color(hex).multiplyScalar(intensity) }),
     );
     m.position.set(pos[0], pos[1], pos[2]);
     m.scale.set(scale[0], scale[1], scale[2]);
+    if (tilt) m.rotation.z = tilt;
     env.add(m);
   };
 
@@ -59,13 +64,36 @@ function buildStudioEnvironment() {
   // as a discrete blown-white lamp image on the limb — a textbook blown-out
   // hotspot. A premium instrument reflects a soft studio, not a visible
   // bulb, so these stay dim and the map is heavily blurred below.
-  // Key softbox, upper front-right — the broad primary reflection. Kept
-  // physically LARGE and dim rather than small and bright: a big soft source
-  // wraps the curve, a small bright one prints a disc on it.
-  panel("#ffffff", 0.95, [5, 6, 5], [13, 0.2, 13]);
-  // Long thin strip — reads as a drawn specular streak across the curve.
-  // This single element does most of the "precision-machined" work.
-  panel("#ffffff", 1.45, [-2, 7.5, -3], [15, 0.14, 1.3]);
+  //
+  // PHASE 3A FINAL CORRECTION: the ocean screenshots showed TWO separate
+  // isolated round hotspots, not one directional streak — because there were
+  // genuinely two independent bright sources each printing its own
+  // reflection. The fix is not "dim everything" (already tried, that's what
+  // produced the small-but-still-round spots); it is to give the two panels
+  // clearly DIFFERENT jobs so only one of them ever reads as a discrete
+  // highlight:
+  //   - the softbox is now larger and noticeably dimmer — a broad ambient
+  //     WRAP that shapes the sphere's general reflectivity, too large and
+  //     too faint to ever print its own point highlight;
+  //   - the strip is the ONLY element still meant to be seen as a highlight,
+  //     and is now longer and thinner for a more elongated, more clearly
+  //     "drawn across the curve" streak, with intensity trimmed slightly to
+  //     offset the batch's other reflection-strength increases (deeper
+  //     ocean, tighter clearcoatRoughness, raised envMapIntensity).
+  // Key softbox, upper front-right — broad ambient wrap only.
+  panel("#ffffff", 0.55, [5, 6, 5], [17, 0.2, 17]);
+  // PHASE 3A FINAL MICRO-PASS: the three-segment arc (previous pass) still
+  // read as a bright spot rather than a curved streak — three short panels
+  // at slightly different angles printed three overlapping near-round
+  // reflections that merged back into one blob instead of one curve.
+  // SIMPLIFIED per this batch's explicit instruction ("simplify rather than
+  // add complexity"): back to ONE panel, but longer, thinner, and TILTED
+  // (see the new `tilt` param on panel() above) — a straight bar reflected
+  // off a convex sphere already reads as curved as long as it is long/thin
+  // enough for the curvature to show across its length; tilting it off-axis
+  // is what keeps that curve from reading as a simple horizontal streak.
+  // Intensity trimmed (1.15 -> 0.95) to offset the added length.
+  panel("#ffffff", 0.95, [-2, 7.2, -3], [24, 0.07, 0.8], Math.PI / 10);
   // Cool rim panel behind-left: separates the limb from the backdrop.
   panel("#cfdaea", 0.7, [-8, 1, -7], [6, 6, 0.2]);
   // Faint warm bounce from below — ties the glass to the app's brass/ivory
@@ -183,50 +211,90 @@ const TIER_HEX = {
 // The constants below are now DERIVED from this table, so day is defined
 // exactly once and the two themes are structurally guaranteed to differ only
 // in the values listed here.
+// ── PHASE 3A: coordinated optical foundation ────────────────────────────
+// Land, ocean, atmosphere and exposure are tuned TOGETHER here, not as
+// independent passes — that was the explicit correction to this batch's
+// plan: perfecting land against the old (near-black, flat) ocean would have
+// meant re-doing land the moment ocean changed. Every value below was
+// re-verified live as one combined checkpoint (see the freeze manifest for
+// the runtime evidence), not derived from the hex alone.
 const GLOBE_THEME = {
   day: {
-    ocean: "#3a4250",
-    oceanEmissive: "#1e242c",
+    // DEEPENED + SATURATED from #3a4250 (a near-neutral slate that read as
+    // flat/near-black once rendered). This is a real saturated deep blue —
+    // the "luminous dimensional ocean" the approved render shows is carried
+    // mostly by the emissive floor and the sharpened clearcoat highlight
+    // below, but the base color itself now has to be a blue an eye would
+    // call "ocean" even unlit, not a desaturated gray-blue.
+    ocean: "#1c3350",
+    // Raised in step with the base color so the unlit hemisphere of the
+    // ocean still reads as deep blue rather than collapsing toward black —
+    // same guaranteed-floor role the land emissive floor plays below.
+    oceanEmissive: "#16283f",
     land: GRAPHITE_HEX,
     stroke: "#9aa3b0",
     rim: "#b9c1cb",
+    // PHASE 3A FINAL CORRECTION: deepened from the pale #8fc6ff, which read
+    // as washed-out/whitish once the altitude tightened — a limb glow needs
+    // enough of its own saturation to register as colour, not just as more
+    // white. Still cool and still close in hue to `rim`, so the two read as
+    // one coherent edge treatment rather than competing effects.
+    atmosphere: "#6fb4ef",
     backdrop: ["#14161a", "#0f1114", "#0a0c0e"],
-    exposure: 0.95,
-    envIntensity: 0.34,
+    // Raised modestly from 0.95: a first, conservative increment paired with
+    // the deepened ocean and the atmosphere re-enable, verified live rather
+    // than chased to a target number. The neutral-light-rig ratio (ambient
+    // must not dominate the key) is untouched — this is exposure only.
+    exposure: 1.02,
+    // PHASE 3A FINAL RECONCILIATION: 0.40 -> 0.44 — a small, deliberately
+    // modest raise (item 2/5: "reflection breakup", "center-to-limb depth"),
+    // paired with the clearcoatRoughnessMap above so the extra reflectivity
+    // has genuine per-pixel variation to break up rather than printing a
+    // single brighter blob.
+    envIntensity: 0.44,
     // Multiplier on the polygon cap/side materials' own envMapIntensity.
     // Day is the identity by definition — the day render is the frozen,
     // verified baseline and this consolidation must not alter a pixel of it.
     capEnvScale: 1.0,
   },
   night: {
-    // Deep navy that still reads as water, never as a black hole.
-    ocean: "#2b3956",
+    // Deepened in step with day, keeping the same relative move (a more
+    // saturated, less desaturated-gray navy). Still clearly darker than day's
+    // ocean — night must stay night — but no longer reads as a flat void.
+    ocean: "#152540",
     // Faint internal blue illumination — the "lit from within" quality the
     // art direction calls for, and the guarantee the ocean never collapses.
-    oceanEmissive: "#16243c",
+    oceanEmissive: "#10203a",
     // Neutral grey land on a navy ocean is precisely what reads as an
     // unfinished or missing asset — the two share no hue family. Night land
     // is a navy-slate: clearly lighter than the ocean, clearly darker than
     // any status colour, and unmistakably part of the same material world.
     //
-    // RAISED from #4a5570 (luminance 85 -> 99), matching the day-mode lift of
-    // GRAPHITE_HEX: neutral countries must have presence in BOTH themes, or
-    // "not empty, not black" is only half true. Still the base of the night
-    // ladder — below Additional and far below every actionable state.
-    land: "#586479",
+    // PHASE 3A: hue moved from navy-slate (#586479) to a teal-leaning
+    // navy-slate (#4f6870, luminance held ~97 vs the prior ~99), matching the
+    // day-mode land's teal-slate move (GRAPHITE_HEX) so both themes carry the
+    // same material character, not just the same luminance position.
+    land: "#4f6870",
     // Borders soften markedly at night: on a dark ground the same value
     // reads far hotter, and hard white admin lines are the single biggest
     // contributor to the "technical GIS map" impression.
     stroke: "#8290a8",
     // Cool silver-blue limb rather than day's neutral platinum.
     rim: "#9fb6d6",
+    // Deepened in step with day (same reasoning: the paler predecessor
+    // washed out once the shell tightened). Still cooler and quieter than
+    // day's — night reads as a deeper, more concentrated blue at the limb
+    // rather than a bright daytime glow.
+    atmosphere: "#4f8fd0",
     // Meets --dark-canvas/--dark-surface-0 from the night token layer, so
     // the globe panel and the application shell share one continuous field.
     backdrop: ["#0d1420", "#0a1018", "#070b12"],
     // Slightly hotter: the surrounding UI is far darker at night, so the
-    // same exposure reads dimmer by simultaneous contrast.
-    exposure: 1.04,
-    envIntensity: 0.40,
+    // same exposure reads dimmer by simultaneous contrast. Raised in the
+    // same proportion as day (1.04 -> 1.12).
+    exposure: 1.12,
+    // Raised in step with day (0.46 -> 0.50), same reasoning.
+    envIntensity: 0.50,
     // Night lifts the LAND/status caps' environment response alongside the
     // ocean's. Previously only the globe body's envMapIntensity was
     // theme-driven, so at night the ocean gained reflectivity while every
@@ -271,8 +339,19 @@ const HOVER_STROKE = "#dfe4ec";
 // the two stacked into a concentrated white point on the left limb. The
 // shell is retained only to keep the silhouette from fusing with the
 // backdrop when the environment happens to face away.
-const BASE_RIM_INTENSITY = 0.16;
-const SELECTED_RIM_INTENSITY = 0.26;
+// PHASE 3A FINAL CORRECTION: raised 0.16 -> 0.21, paired with the tighter
+// uPower below (2.4 -> 3.1) and the atmosphere shell pulled in (see
+// ATMOSPHERE_ALTITUDE). Three layers now do distinct jobs at the limb: this
+// shell is the CRISP curvature edge (tight falloff, close to the silhouette),
+// the atmosphere is the SOFT glow beyond it, and the studio IBL still
+// supplies the moving specular streak across the body — "layered depth near
+// the sphere edge" without any one of the three trying to do all three jobs.
+// PHASE 3A FINAL RECONCILIATION: 0.21 -> 0.24, paired with the tightened
+// ATMOSPHERE_ALTITUDE above — the rim now carries more of the "curvature
+// reinforcement" job (item 4) so the atmosphere can be narrower without the
+// limb going bare.
+const BASE_RIM_INTENSITY = 0.24;
+const SELECTED_RIM_INTENSITY = 0.32;
 // Selection is a substantial physical lift, not a hint — it must become the
 // focal point of the scene the moment it is chosen. Raised again ~25% in the
 // 2026-07-28 closeout pass (0.15 -> 0.19), on top of the earlier ~2.5x raise
@@ -327,6 +406,21 @@ const DEFAULT_CAMERA_DISTANCE = 285;
 // camera to keep the whole sphere visible.
 const ORBIT_MIN_DISTANCE = 150;
 const ORBIT_MAX_DISTANCE = 460;
+// PHASE 3A FINAL CORRECTION: pulled IN from the library default 0.15 -> 0.11.
+// At 0.15 the shell was wide enough to read as a soft uniform halo around the
+// whole disc ("glowing disc" behaviour, explicitly rejected feedback) rather
+// than a limb-concentrated glow. Tighter altitude keeps the glow hugging the
+// silhouette, where it reads as atmosphere; the Fresnel shell (BASE_RIM_
+// INTENSITY, uPower above) is the crisp inner edge, this is the soft outer
+// taper beyond it — two layers with two different jobs, not one wide wash.
+// PHASE 3A FINAL RECONCILIATION: pulled in further, 0.11 -> 0.095. Against
+// the approved render the atmosphere still read as one wide, fairly uniform
+// blue wash rather than a limb reinforcing the sphere's curvature. Tightening
+// this shell further and raising BASE_RIM_INTENSITY/uPower (below) in the same
+// pass is what turns two shells into two visibly DIFFERENT jobs — a crisp
+// curvature edge (rim) and a much narrower soft taper beyond it (atmosphere)
+// — instead of one wide glow doing both.
+const ATMOSPHERE_ALTITUDE = 0.095;
 
 function easeOutQuart(t) {
   return 1 - Math.pow(1 - t, 4);
@@ -410,6 +504,64 @@ function hexWithAlpha(hex, alpha) {
   return `${hex}${byte}`;
 }
 
+// ── Country surface grain (Phase 3A final correction) ───────────────────
+// "Countries read too flat" was investigated as a MATERIAL problem first —
+// checked whether polygon caps have usable UVs for a texture map the same
+// way the ocean got one above. They do not, in the sense that matters:
+// `three-conic-polygon-geometry` (verified directly in its installed source,
+// v0's `uvs.push(i / (numPoints - 1), v)`) parametrizes U by each polygon's
+// OWN perimeter walk index, not by any shared geographic frame — a country
+// with 40 boundary points and one with 400 get entirely different U scales,
+// and none of it corresponds to longitude/latitude. Mapping a single "world"
+// texture through these UVs would not read as geographic richness; it would
+// read as incoherent per-country noise at a random scale and orientation —
+// arguably worse than the flat cap it would replace.
+//
+// So this is UV-INDEPENDENT: a per-fragment hash computed from OBJECT-SPACE
+// vertex position (every polygon cap sits directly in the scene with no
+// extra transform, so object space IS the sphere's own coordinate frame —
+// continuous across a country's full extent, with no seam and no texture
+// sample, because it is a closed-form function of position, not a lookup).
+// This is exactly the "controlled shader variation" the brief's own allowed-
+// techniques list names, and it changes no geometry and needs no UVs.
+//
+// Injected at `#include <dithering_fragment>` — the last standard chunk in
+// every MeshPhysicalMaterial fragment shader, present regardless of which
+// optional features (envMap, clearcoat, etc.) are compiled in, which is why
+// this insertion point was chosen over an earlier, feature-conditional one.
+// The amplitude is small (~±5%) and applied as a multiply on the ALREADY-LIT
+// colour — it cannot invert the semantic ladder or make Additional compete
+// with an actionable state, since it perturbs every tier by the same tiny
+// fraction of whatever colour that tier already resolved to.
+function applyLandGrainShader(material) {
+  material.onBeforeCompile = (shader) => {
+    shader.vertexShader = `varying vec3 vArGrainPos;\n${shader.vertexShader}`.replace(
+      "#include <begin_vertex>",
+      "#include <begin_vertex>\n  vArGrainPos = position;",
+    );
+    shader.fragmentShader = `varying vec3 vArGrainPos;\n${shader.fragmentShader}`.replace(
+      "#include <dithering_fragment>",
+      `
+      {
+        float arN1 = fract(sin(dot(vArGrainPos, vec3(12.9898, 78.233, 45.164))) * 43758.5453);
+        float arN2 = fract(sin(dot(vArGrainPos * 2.7, vec3(93.989, 67.345, 12.123))) * 24634.6345);
+        // PHASE 3A FINAL RECONCILIATION: 0.10 -> 0.14 — countries still read
+        // too flat against the render's internal tonal variation (item 3).
+        // Still small enough that it cannot invert the semantic ladder (see
+        // this function's own header comment).
+        float arGrain = (arN1 * 0.6 + arN2 * 0.4 - 0.5) * 0.14;
+        gl_FragColor.rgb *= (1.0 + arGrain);
+      }
+      #include <dithering_fragment>`,
+    );
+  };
+  // The shader text above never depends on a per-material uniform, so every
+  // cap material that runs through this function compiles to byte-identical
+  // GLSL — three.js's default program cache key already covers that; no
+  // custom cache key is needed.
+  material.needsUpdate = true;
+}
+
 // Natural Earth's bundled 110m admin-0 set has a long-documented upstream
 // quirk: a handful of countries (France, Norway among them) ship with
 // ISO_A2 = "-99" — a sentinel, not a real code — because their overseas-
@@ -452,6 +604,90 @@ function makeOceanBackgroundTexture() {
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, 2, 256);
   const tex = new THREE.CanvasTexture(c);
+  tex.needsUpdate = true;
+  return tex;
+}
+
+// ── Procedural ocean surface variation (Phase 3A final correction) ─────
+// A real image asset was deliberately avoided — the authorization prefers a
+// procedural implementation if it can reach the target safely, and this
+// follows the exact same self-contained, no-network-fetch pattern already
+// used for the studio environment and the canvas backdrop above (both
+// generated to a <canvas> at mount time, nothing shipped or cached).
+//
+// Applied as `bumpMap` ONLY, not `roughnessMap`. A roughnessMap multiplies
+// material.roughness by the texture's green channel; this texture is
+// centered on mid-gray (~0.5), so using it as a roughnessMap would roughly
+// HALVE the ocean's average roughness — a global material change disguised
+// as "adding texture," not the subtle local variation asked for. A perturbed
+// NORMAL field (bumpMap) already gives the two things the brief actually
+// asked for — "fine roughness variation" reads as broken-up specular, and a
+// perturbed normal breaks up reflections exactly that way — without
+// double-counting the roughness value the ocean material already declares.
+//
+// Horizontal seam: the globe body's SphereGeometry UV wraps in U
+// (longitude), so every blob drawn near a horizontal edge is ALSO drawn at
+// its wrapped position on the opposite edge — a cheap toroidal technique
+// that keeps the antimeridian seam from showing, without needing true
+// seamless noise math. Vertical (pole) seams are not addressed: poles are
+// heavily distorted in any equirectangular mapping regardless, and are never
+// a primary viewing angle for a production Globe.
+//
+// Deterministic PRNG (not Math.random): the Globe's appearance must not
+// re-randomize on every mount/reload — same rule the rest of this file
+// already follows for every other constant.
+function makeOceanSurfaceTexture() {
+  const w = 1024, h = 512;
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  const ctx = c.getContext("2d");
+  // Neutral mid-gray: a bumpMap reads this as "no perturbation" — only
+  // deviation from this value raises or lowers the surface.
+  ctx.fillStyle = "#808080";
+  ctx.fillRect(0, 0, w, h);
+
+  let seed = 1337;
+  const rand = () => {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    return seed / 0x7fffffff;
+  };
+  const drawBlob = (x, y, r, delta) => {
+    const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
+    const mid = Math.round(128 + delta);
+    grad.addColorStop(0, `rgba(${mid},${mid},${mid},0.5)`);
+    grad.addColorStop(1, "rgba(128,128,128,0)");
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  };
+  // Two octaves — broad, faint low-frequency swells plus fine, faint
+  // high-frequency grain — is what reads as "depth," rather than one
+  // uniform grain size which reads as a flat repeating pattern.
+  // PHASE 3A FINAL RECONCILIATION: added a third, finer octave — the two
+  // original octaves gave "depth" but the finest detail (240px "reflection
+  // breakup" grain the approved render shows in its specular region) was
+  // still one size larger than it needed to be. Same deterministic PRNG,
+  // same toroidal wrap; only a third scale added, not a new technique.
+  const OCTAVES = [
+    { count: 90, rMin: 60, rMax: 140, deltaMax: 14 },
+    { count: 260, rMin: 8, rMax: 24, deltaMax: 22 },
+    { count: 420, rMin: 3, rMax: 9, deltaMax: 26 },
+  ];
+  for (const { count, rMin, rMax, deltaMax } of OCTAVES) {
+    for (let i = 0; i < count; i++) {
+      const x = rand() * w;
+      const y = rand() * h;
+      const r = rMin + rand() * (rMax - rMin);
+      const delta = (rand() * 2 - 1) * deltaMax;
+      drawBlob(x, y, r, delta);
+      if (x < rMax) drawBlob(x + w, y, r, delta);
+      if (x > w - rMax) drawBlob(x - w, y, r, delta);
+    }
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.ClampToEdgeWrapping;
   tex.needsUpdate = true;
   return tex;
 }
@@ -636,7 +872,21 @@ export default function Globe3D({
     // "mirrors a lamp". At 0.04 the panels stayed sharp and printed a
     // blown-white disc onto the limb; 0.22 smears them into the soft,
     // directional gradient a real softbox produces.
-    const envRT = pmrem.fromScene(envScene, 0.34);
+    // PHASE 3A FINAL RECONCILIATION: 0.34 was silently CLIPPING — three.js's
+    // PMREMGenerator caps the top mip's blur at 20 samples, and 0.34 radians
+    // requests ~166 (verified against the installed source's own MAX_SAMPLES
+    // constant and its `samples = 1 + floor(3 * sigmaRadians / (pi/(2*pixels)))`
+    // formula: solving for the top LOD's pixel count puts the clip-free
+    // ceiling at ~0.041). The console has been warning on every mount, in
+    // every theme, in production, since this was written — never a design
+    // choice, a bug. This also directly serves objective 5 (reflection
+    // shape): a clipped blur is truncated, not soft, which is part of why the
+    // studio panels printed as a harder-edged spot than the "soft directional
+    // gradient" this file's own comment says it wants. Below this threshold
+    // the finer per-roughness mip chain (below) supplies the actual softness
+    // each material samples from — see each MeshPhysicalMaterial's roughness/
+    // clearcoatRoughness, not this single scene-level pre-blur.
+    const envRT = pmrem.fromScene(envScene, 0.035);
     scene.environment = envRT.texture;
 
     // CSS2DRenderer: three-globe's htmlElementsData layer (the click/hover
@@ -713,22 +963,33 @@ export default function Globe3D({
     // literally averages out the reflections that make a surface read as
     // glass. Keeping it near zero is what lets the IBL be visible at all.
     // It is retained only as a black-floor guard.
+    // PHASE 3A FINAL CORRECTION: ambient is UNTOUCHED (protected — "ambient
+    // must not dominate the key" is what stops the sphere reading as a flat
+    // lit billiard ball; every previous failure in this file that tried to
+    // brighten by raising ambient produced exactly that). The fix for "reads
+    // like a flat circular map, not a sphere" is a WIDER key:fill ratio, not
+    // more ambient — a sharper terminator is what makes a sphere read as a
+    // sphere in a single static frame, which is the explicit acceptance bar
+    // here (a screenshot, not an animation).
     scene.add(new THREE.AmbientLight(0xffffff, 0.10));
-    // The key now only shapes form; the environment provides exposure. Held
-    // low because a directional key and an IBL both add specular — at 0.85
-    // the two stacked into the hotspot on the limb. This is enough to give
-    // the terminator a direction and no more.
-    const key = new THREE.DirectionalLight(0xffffff, 0.30);
+    // Key RAISED 0.30 -> 0.38, fill LOWERED 0.20 -> 0.15: the terminator gap
+    // (key minus fill) goes from 0.10 to 0.23, more than doubled, without
+    // touching total scene brightness in any global sense — this is a
+    // REDISTRIBUTION toward contrast, not an increase in overall exposure,
+    // which is exactly what was asked for ("do not solve this by increasing
+    // global brightness alone"). The environment still provides exposure;
+    // the key now does more of the "which way is the light coming from" work.
+    const key = new THREE.DirectionalLight(0xffffff, 0.38);
     key.position.set(200, 120, 200);
     scene.add(key);
-    const fill = new THREE.DirectionalLight(0x8890a0, 0.20);
+    const fill = new THREE.DirectionalLight(0x8890a0, 0.15);
     fill.position.set(-200, -80, -150);
     scene.add(fill);
     // Back/rim gives the sphere mass by separating its dark limb from the
-    // dark backdrop. Pulled down from 0.62: at that strength, combined with
-    // the brass tint, it was producing the bright warm blob visible on the
-    // left limb in the failing screenshots.
-    const rim = new THREE.DirectionalLight(0xaeb6c2, isBrand ? 0.24 : 0.40);
+    // dark backdrop. Raised slightly (0.40 -> 0.46, production only) to pair
+    // with the tightened Fresnel falloff below — a stronger rim behind a
+    // tighter falloff reads as a crisp curvature edge rather than a wash.
+    const rim = new THREE.DirectionalLight(0xaeb6c2, isBrand ? 0.24 : 0.46);
     rim.position.set(-170, 70, -230);
     scene.add(rim);
     // NOTE: a camera-attached point light was tried here twice to get a
@@ -859,41 +1120,98 @@ export default function Globe3D({
       m.userData.arBaseEnvIntensity = base;
       m.envMapIntensity = base * (liveRef.current.capEnvScale ?? 1);
     };
+    // ── Restrained per-tier material hierarchy (Phase 3A, step 2) ─────────
+    // Three tiers, not four — this is the explicit correction to the original
+    // reconciliation plan's per-state table. Optimized alternative and
+    // Unlockable opportunity share ONE recipe (`enamel`) and differ ONLY by
+    // hue, exactly as the authorization specifies ("same material family as
+    // Optimized. Different semantic colour only") — material must never be
+    // allowed to overpower what the COLOUR already means. Recommended gets a
+    // visibly finer finish (`jewel`) because it is the one state that should
+    // draw the eye before any click. Additional (`quiet`) sits much closer to
+    // untouched land than to the enamel tier — "close to neutral land, still
+    // visibly promoted" — a small clearcoat and roughness step is the whole
+    // difference, not a second colour language.
+    //
+    // Values are anchored at the two tiers already runtime-verified in step 1
+    // (`land` = the retuned neutral-land recipe; `enamel` = the untouched
+    // pre-3A active-state recipe, which was already correct and is NOT
+    // changed here). `quiet` and `jewel` are the only new tiers.
+    // PHASE 3A FINAL RECONCILIATION: land/quiet envBase raised slightly
+    // (0.30->0.34, 0.36->0.40) and land roughness eased (0.62->0.58) — a
+    // small step toward more curvature response on untouched land and
+    // Baseline (item 3), stopping well short of the enamel tier so the
+    // hierarchy (land < Baseline < enamel < jewel) is unchanged, only richer
+    // at each step.
+    const CAP_MATERIAL_RECIPES = {
+      // PHASE 3A FINAL MICRO-PASS: roughness eased once more (0.58 -> 0.52),
+      // envBase raised (0.34 -> 0.38). This is a CURVATURE lever, not a noise
+      // lever — lower roughness lets the environment's own gradient vary more
+      // by each polygon's surface normal, so a large country visibly follows
+      // the sphere from lit to shadowed edge in a static frame, without
+      // touching the grain shader's amplitude (already at its ceiling — see
+      // applyLandGrainShader — and explicitly not to look like visible noise).
+      land: { roughness: 0.52, clearcoat: 0.12, clearcoatRoughness: 0.65, emissiveIntensity: 0.19, envBase: 0.38 },
+      // Additional: roughness/clearcoat sit roughly a third of the way from
+      // land toward enamel — enough that hovering/selecting it still reads
+      // as "a real thing," not so much that it competes with Optimized or
+      // Unlockable for attention.
+      quiet: { roughness: 0.48, clearcoat: 0.30, clearcoatRoughness: 0.45, emissiveIntensity: 0.16, envBase: 0.44 },
+      // Optimized alternative + Unlockable opportunity, unchanged from the
+      // pre-3A "active status" recipe — proven, already reads as premium
+      // satin/enamel, and step 1's runtime check confirmed it still holds
+      // its place in the hierarchy against the retuned land/ocean.
+      enamel: { roughness: 0.30, clearcoat: 1.0, clearcoatRoughness: 0.14, emissiveIntensity: 0.17, envBase: 0.50 },
+      // Recommended only. Modest step beyond enamel (lower roughness, tighter
+      // clearcoat, a touch more emissive) — restrained, not a different
+      // material language: still the same dielectric family, just the finest
+      // finish in it.
+      jewel: { roughness: 0.22, clearcoat: 1.0, clearcoatRoughness: 0.10, emissiveIntensity: 0.20, envBase: 0.55 },
+    };
+    // Maps a jurisdiction's CANONICAL (undimmed, unbrightened) semantic hex to
+    // its tier. Built from STATUS_HEX rather than hardcoded strings so it can
+    // never drift from globeData.js's semantic table. Deliberately keyed on
+    // the RAW hex from `polygonColors` (see `activeHex` below), not on the
+    // hover/selection-modified colour capColorFn returns — dimming and
+    // brightening produce a effectively unbounded number of derived hex
+    // strings, and the material TIER must depend only on which of the four
+    // canonical states a jurisdiction actually has, never on its momentary
+    // on-screen shade.
+    const MATERIAL_TIER_BY_HEX = {
+      [STATUS_HEX.gold]: "jewel",
+      [STATUS_HEX.jade]: "enamel",
+      [STATUS_HEX.amber]: "enamel",
+      [STATUS_HEX.silver]: "quiet",
+    };
     const capMaterialCache = new Map();
-    const getCapMaterial = (hex, frosted) => {
-      const cacheKey = `${hex}|${frosted ? "f" : "g"}`;
+    const getCapMaterial = (hex, tier) => {
+      const recipe = CAP_MATERIAL_RECIPES[tier] || CAP_MATERIAL_RECIPES.land;
+      const cacheKey = `${hex}|${tier}`;
       let m = capMaterialCache.get(cacheKey);
       if (!m) {
         m = new THREE.MeshPhysicalMaterial({
           color: new THREE.Color(hex),
           metalness: 0.0, // dielectric: glass/enamel, never metal
-          roughness: frosted ? 0.80 : 0.30,
-          clearcoat: frosted ? 0.12 : 1.0,
-          clearcoatRoughness: frosted ? 0.65 : 0.14,
-          // Inactive land sits in a narrow band: high enough that continents
-          // stay legible by their own tone (not only by their borders), low
-          // enough that the graphite base never competes with the status
-          // colours. 0.18 combined with the reduced exposure pushed the
-          // landmass too dark and leaned on the border strokes again.
+          roughness: recipe.roughness,
+          clearcoat: recipe.clearcoat,
+          clearcoatRoughness: recipe.clearcoatRoughness,
           ior: 1.5,
           side: THREE.DoubleSide,
           depthWrite: true,
           // GUARANTEED FLOOR so no landmass can collapse to black. Emissive is
           // additive and lighting-independent — exactly the mechanism the ocean
           // body already uses to stop the water reading as a hole on the unlit
-          // hemisphere. Land caps had no floor at all, so on the shadowed side
-          // of the terminator neutral countries rendered as voids and the
-          // semantic states lost their hierarchy entirely. Keyed to the cap's
-          // OWN colour, so the ladder survives into shadow instead of flattening
-          // to a single grey.
-          //
-          // This is a material FLOOR, not a lighting change: the rig is
-          // untouched and final material/ocean/atmosphere tuning remains Phase 3.
-          // Deliberately small — at 0.30 it read as self-illuminated plastic.
+          // hemisphere. Keyed to the cap's OWN colour, so the ladder survives
+          // into shadow instead of flattening to a single grey.
           emissive: new THREE.Color(hex),
-          emissiveIntensity: frosted ? 0.13 : 0.17,
+          emissiveIntensity: recipe.emissiveIntensity,
         });
-        applyCapEnvScale(m, frosted ? 0.30 : 0.5);
+        applyCapEnvScale(m, recipe.envBase);
+        // See applyLandGrainShader's own comment: UV-independent surface
+        // variation, applied to every tier (including untouched land) so a
+        // large country reads as more than one flat fill without altering
+        // the semantic colour hierarchy.
+        applyLandGrainShader(m);
         capMaterialCache.set(cacheKey, m);
       }
       return m;
@@ -938,7 +1256,11 @@ export default function Globe3D({
     // genuine roughness value rather than a darker colour: not-evaluated
     // land scatters the studio environment widely, status jurisdictions
     // reflect it sharply, and that difference survives every camera angle.
-    const capMaterialFn = (feat) => getCapMaterial(capColorFn(feat), !activeHex(feat));
+    const capMaterialFn = (feat) => {
+      const raw = activeHex(feat);
+      const tier = raw ? MATERIAL_TIER_BY_HEX[raw] || "enamel" : "land";
+      return getCapMaterial(capColorFn(feat), tier);
+    };
     // Sidewalls stay active-only on purpose: not-evaluated land sits almost
     // flush with the ocean (INACTIVE_POLYGON_ALTITUDE), so giving it a wall
     // would just draw a thin dark seam around every country.
@@ -992,16 +1314,38 @@ export default function Globe3D({
 
     const globe = new ThreeGlobe()
       .showGlobe(true)
-      // three-globe's own atmosphere is OFF deliberately. Inspected live via
-      // the scene graph: its shader mesh is built at geometry radius 100 with
-      // scale 1.0 — exactly coincident with the globe sphere (also radius
-      // 100) — so the two z-fight and patches of the atmosphere shader win
-      // the depth test and paint a large soft blue blob across the sphere
-      // face. It appeared/vanished with camera angle, which is what made it
-      // look like a lighting bug for several passes. The fresnel shell below
-      // provides the same limb glow correctly at radius 100.4, so the
-      // atmosphere is redundant as well as broken here.
-      .showAtmosphere(false)
+      // PHASE 3A: RE-ENABLED. The prior comment here claimed a z-fight
+      // between the atmosphere shell and the globe body at "geometry radius
+      // 100, scale 1.0 — exactly coincident." That claim does NOT match the
+      // installed three-globe 2.45.2 source: `atmosphereAltitude` defaults to
+      // 0.15, and its glow geometry is the globe's own sphere extruded
+      // outward along vertex normals by `GLOBE_RADIUS * atmosphereAltitude`
+      // (= 15 units) — i.e. built at radius ~115, not coincident with the
+      // radius-100 body. Re-verified live at multiple camera angles in both
+      // themes for this batch with no z-fight reproducing; the old comment
+      // most likely described either a stale prior configuration (altitude
+      // left at 0 at some point, which WOULD coincide) or a misdiagnosis.
+      // Kept deliberately restrained (see ATMOSPHERE_ALTITUDE) — a limb glow,
+      // not a halo — and the fresnel shell stays alongside it rather than
+      // being replaced: the shell defines the hard glass edge, the
+      // atmosphere adds the soft luminous falloff beyond it. If a z-fight is
+      // ever found to genuinely reproduce (different GPU/driver, a future
+      // three-globe version), the documented fallback is to revert this one
+      // line to `false` and instead raise BASE_RIM_INTENSITY on the fresnel
+      // shell — do not remove the atmosphere and leave the limb bare.
+      .showAtmosphere(true)
+      .atmosphereAltitude(ATMOSPHERE_ALTITUDE)
+      .atmosphereColor(globeTheme().atmosphere)
+      // PHASE 3A FINAL CORRECTION: graticule REMOVED, not restyled. It was
+      // enabled with library defaults in the previous pass and read fine in
+      // isolation, but against the approved render it was explicit rejected
+      // feedback — a lat/long grid reads as cartographic/technical/flat, the
+      // opposite of the "premium instrument" character every other change in
+      // this batch is working toward. Country and state/province boundaries
+      // (polygonStrokeColor below) are the only line-work the Globe carries.
+      // Do not re-enable this, in any opacity, without the user explicitly
+      // asking for a grid specifically.
+      .showGraticules(false)
       .polygonCapColor(capColorFn)
       .polygonSideColor(sideColorFn)
       .polygonCapMaterial(capMaterialFn)
@@ -1168,17 +1512,54 @@ export default function Globe3D({
     // Safe to swap wholesale: three-globe only overwrites globeMaterial.color
     // when the material has NO color property (verified in dist source), and
     // MeshPhysicalMaterial has one.
+    // Generated once per mount, disposed on unmount alongside every other
+    // procedural texture in this file (see the cleanup block below).
+    const oceanSurfaceTexture = makeOceanSurfaceTexture();
     const material = new THREE.MeshPhysicalMaterial({
       color: new THREE.Color(OCEAN_BODY),
       metalness: 0.0, // dielectric — obsidian/glass, never metal
       roughness: 0.38,
       clearcoat: 1.0,
+      // PHASE 3A FINAL CORRECTION: restrained procedural surface variation —
+      // see makeOceanSurfaceTexture's own comment for why this is bumpMap
+      // only, not roughnessMap. bumpScale is deliberately tiny: at anything
+      // above ~0.35 the perturbation reads as visible ripples, which the
+      // brief explicitly prohibits ("do not add visible animated wave
+      // crests, exaggerated distortion"). At this scale it only breaks the
+      // clearcoat highlight's edge and adds faint tonal variation — enough
+      // to read as "not a flat glossy tint" without reading as water text.
+      bumpMap: oceanSurfaceTexture,
+      // Raised 0.28 -> 0.32 alongside the new third noise octave above —
+      // still well under the ~0.35 "visible ripple" line this file already
+      // documents as the hard ceiling.
+      bumpScale: 0.32,
       // The coat is SATIN, not mirror. At 0.16 it behaved as a near-perfect
       // varnish and reflected the studio panels as two discrete white orbs
       // over the Pacific — sharp clearcoat reflects the environment crisply
       // no matter how rough the base layer underneath is, so this value, not
       // `roughness`, is what governs whether reflections read as lamps.
-      clearcoatRoughness: 0.34,
+      //
+      // PHASE 3A: nudged 0.34 -> 0.28, paired with the deepened ocean colour
+      // and the raised envMapIntensity (now theme-driven, see GLOBE_THEME) —
+      // together these are what give the ocean "dimensional reflection"
+      // rather than a flat tint. A crisper coat alone, without the deeper
+      // base colour, would have reproduced the old "two white orbs" failure;
+      // it is safe here specifically because the base colour is darker and
+      // more saturated than the original satin pass was tuned against.
+      //
+      // PHASE 3A FINAL RECONCILIATION: added clearcoatRoughnessMap, reusing
+      // the same ocean texture instead of a second asset. A roughnessMap (or
+      // clearcoatRoughnessMap) multiplies the base value by the texture's
+      // green channel; this texture is centred at ~0.5, so the base value
+      // below is DOUBLED (0.28 -> 0.56) to compensate — the resulting AVERAGE
+      // clearcoat roughness across the sphere is unchanged (~0.28), but it
+      // now genuinely varies per-pixel instead of being one flat scalar. This
+      // is the correct version of an idea an earlier pass tried and abandoned
+      // for the base `roughness` channel without this compensation (see
+      // makeOceanSurfaceTexture's own comment) — same texture, same
+      // technique, done with the mean bias accounted for this time.
+      clearcoatRoughnessMap: oceanSurfaceTexture,
+      clearcoatRoughness: 0.56,
       envMapIntensity: GLOBE_THEME.day.envIntensity,
       ior: 1.52, // ~optical crown glass
       // Emissive is additive and lighting-independent, so it is the sphere's
@@ -1208,12 +1589,17 @@ export default function Globe3D({
             // ring onto the limb and fed the overall muddy cast. Deliberately
             // NOT blue/cyan either: a saturated cool value here is what
             // produces the "cyan halo" failure mode this shell is banned from
-            // reproducing. uPower raised 1.9 -> 2.4 to tighten the falloff
-            // hard against the silhouette, so it reads as a glass edge rather
-            // than a glow bleeding outward from the sphere.
+            // reproducing. uPower raised 1.9 -> 2.4 -> 3.1 (PHASE 3A FINAL
+            // CORRECTION): tightened further, paired with the raised
+            // BASE_RIM_INTENSITY, so this shell reads as a crisp curvature
+            // line right at the silhouette — the atmosphere (a separate,
+            // wider shell) is what supplies the soft falloff beyond it now,
+            // so this one no longer has to do both jobs at once.
             uColor: { value: new THREE.Color(GLOBE_THEME.day.rim) },
             uIntensity: { value: BASE_RIM_INTENSITY },
-            uPower: { value: 2.4 },
+            // PHASE 3A FINAL RECONCILIATION: 3.1 -> 3.4, tightened in step
+            // with the pulled-in atmosphere altitude above (item 4).
+            uPower: { value: 3.4 },
           },
           vertexShader: `
             varying vec3 vNormal;
@@ -1530,6 +1916,12 @@ export default function Globe3D({
       material.envMapIntensity = t.envIntensity;
       renderer.toneMappingExposure = t.exposure;
       if (rimMesh) rimMesh.material.uniforms.uColor.value.set(t.rim);
+      // Atmosphere colour is theme-driven the same way rim colour is. Calling
+      // .atmosphereColor() re-triggers three-globe's own atmosphere rebuild
+      // (see its `update()` — recreates the GlowMesh whenever colour or
+      // altitude changes); altitude is left untouched so this is a cheap,
+      // infrequent (theme-toggle-only) rebuild, not a per-frame cost.
+      if (globeRef.current) globeRef.current.atmosphereColor(t.atmosphere);
       // Rebuild the backdrop ramp; the old texture is disposed so the swap
       // cannot leak a GPU allocation per toggle.
       const nextBackdrop = makeOceanBackgroundTexture();
@@ -1585,6 +1977,7 @@ export default function Globe3D({
       renderer.dispose();
       unsubscribeTheme();
       oceanTexture.dispose();
+      oceanSurfaceTexture.dispose();
       // applyTheme() swaps in a fresh backdrop texture; dispose whichever is
       // current so a theme toggle before unmount cannot leak one.
       if (stateRef.current.backdropTexture && stateRef.current.backdropTexture !== oceanTexture) {

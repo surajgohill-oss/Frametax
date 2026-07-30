@@ -1235,3 +1235,33 @@
   font: 11px/1.45 var(--font-sans);
 }
 .globe-cards-source-note strong { color: var(--text-primary); font-weight: 600; }
+
+/* ── Four-state Globe legend (restored — explicit reversal of Phase 2) ───
+   Production-visible, unlike the dev-only fixture badge. Deliberately quiet:
+   small type, low-contrast dark-glass chrome (same plate family as
+   .globe-tooltip/.globe-caption), positioned inside the Globe stage so it
+   reads as part of the instrument rather than a floating panel. Never let
+   this grow past a single unwrapped row of four items — if it needs a
+   second row, it has stopped being "visually secondary." */
+.globe-legend-compact {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  z-index: 6;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 14px;
+  align-items: center;
+  max-width: calc(100% - 24px);
+  padding: 6px 11px;
+  border-radius: 8px;
+  background: rgba(20, 22, 26, 0.55);
+  backdrop-filter: blur(6px);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  font: 10px var(--font-sans);
+  letter-spacing: 0.01em;
+  color: var(--dark-text-secondary);
+  pointer-events: none;
+}
+.glc-item { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.glc-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }

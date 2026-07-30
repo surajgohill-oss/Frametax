@@ -149,11 +149,16 @@ test("no legacy database-state wording survives in any semantic label", async ()
   ]) {
     assert.ok(!labels.includes(legacy), `legacy wording "${legacy}" found in: ${labels}`);
   }
+  // PHASE 3A FINAL: "Optimized alternative" -> "Optimized", "Unlockable
+  // opportunity" -> "Opportunity", "Additional" -> "Baseline" — executive/
+  // production terminology rename, same four slots, same hex family, same
+  // count. Not a reintroduction of the legacy six-category wording the loop
+  // above still guards against.
   assert.deepEqual(Object.values(STATUS_LABEL).sort(), [
-    "Additional",
-    "Optimized alternative",
+    "Baseline",
+    "Opportunity",
+    "Optimized",
     "Recommended",
-    "Unlockable opportunity",
   ]);
 });
 
@@ -181,12 +186,47 @@ test("Globe3D derives pulse eligibility from PULSE_TIERS in BOTH code paths", ()
 
 // ── Legend and Inspector boundary ───────────────────────────────────────
 
-test("no persistent Globe legend component or CSS exists", () => {
-  assert.throws(() => read("components/GlobeLegend.jsx"), "GlobeLegend.jsx must stay deleted");
+// SUPERSEDED (Phase 3A final correction): Phase 2 deleted the persistent
+// legend outright, on the grounds that a Globe needing a colour key had not
+// been designed. That rule is EXPLICITLY reversed by direct authorization —
+// a compact, production-visible, four-state-only legend is now required
+// chrome, not a regression. What must never come back is the OLD legend:
+// six categories, legacy database-state wording, and — per the Phase 2
+// finding this test preserves — no re-declared colour table of its own.
+test("the restored Globe legend carries exactly the four current states, no legacy wording, and no re-declared colours", () => {
+  const src = stripComments(read("components/GlobeLegend.jsx"));
+  // Must read the canonical semantic table, never a hand-written duplicate —
+  // the exact drift Phase 2 fixed once already for the card dots and the
+  // fixture badge.
+  assert.match(src, /GLOBE_SEMANTIC/, "legend must import the canonical semantic table");
+  assert.ok(!/#[0-9a-fA-F]{3,6}/.test(src), "legend must not hardcode a hex colour of its own");
+  // Exactly the four current slot keys — no fifth, no legacy category name.
+  const orderMatch = /order\s*=\s*\[([^\]]+)\]/.exec(src);
+  assert.ok(orderMatch, "legend must declare an explicit state order");
+  const slots = orderMatch[1].split(",").map((s) => s.trim().replace(/["']/g, ""));
+  assert.deepEqual(slots.sort(), ["amber", "gold", "jade", "silver"]);
+  for (const legacy of [
+    "no known incentive", "qualified", "conditional", "evaluated",
+    "not evaluated", "candidate jurisdiction",
+  ]) {
+    assert.ok(!src.toLowerCase().includes(legacy), `legacy wording "${legacy}" found in GlobeLegend.jsx`);
+  }
+});
+
+test("the legend is scoped to Project Globe only, and stays visually secondary", () => {
+  // "Only the Project Globe rendering" — not Overview, not Workspace. Import
+  // check is a reasonable proxy: only ProjectGlobe.jsx may mount it.
+  const mounters = ["screens/production/Overview.jsx", "screens/production/Workspace.jsx"]
+    .filter((f) => stripComments(read(f)).includes("GlobeLegend"));
+  assert.deepEqual(mounters, [], `GlobeLegend must not be mounted outside Project Globe: ${mounters.join(", ")}`);
+  assert.match(read("screens/production/ProjectGlobe.jsx"), /<GlobeLegend\s*\/>/);
+  // Visually secondary: small type, not full-width, not styled as a modal —
+  // asserted structurally rather than by exact pixel values, which belong to
+  // design review, not a regression test.
   const css = read("styles/screens.css");
-  // Comments may reference the removed class; actual selectors may not.
-  const selectors = css.match(/^\s*\.globe-legend[\w-]*\s*[,{]/gm) || [];
-  assert.equal(selectors.length, 0, `legend selectors reintroduced: ${selectors.join(", ")}`);
+  const block = /\.globe-legend-compact\s*\{[^}]*\}/.exec(css);
+  assert.ok(block, ".globe-legend-compact rule not found");
+  assert.match(block[0], /font:\s*10px/, "legend type must stay small");
 });
 
 test("no Globe hover card renders money", () => {
