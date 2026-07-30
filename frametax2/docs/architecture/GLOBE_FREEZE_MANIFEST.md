@@ -5,10 +5,17 @@
 - `globe: premium glass rendering` — rendering architecture (tag `globe-glass-v1`)
 - `globe: day/night theme + night visual system` (tag `globe-night-v1`)
 
-**Frozen:** 2026-07-29 — **Phase 2 closeout, tag `globe-phase2-freeze`**
+**Frozen:** 2026-07-29 — Phase 2 closeout **checkpoint**, tag `globe-phase2-freeze`
 - `globe: phase 2 closeout — semantic system, ambient behaviour, hover, freeze`
-- This is the **canonical Globe implementation**. Phase 3 is UX/polish only;
-  see the closeout batch's explicit "may not" list at the end of this file.
+- An intermediate checkpoint, **preserved**, not final acceptance: post-freeze
+  review found sizing/composition regressions and an untrustworthy live
+  semantic distribution. See the reconciliation batch below.
+
+**Frozen:** 2026-07-30 — **Phase 2 FINAL, tag `globe-phase2-final-freeze`**
+- `globe: phase 2 post-freeze reconciliation — sizing, fixture, final freeze`
+- This is the **canonical Globe implementation** future UI work builds around.
+  Phase 3 is optical finish only; see the reconciliation batch's explicit
+  "may not" list at the end of this file.
 
 The subsystems listed below are **immutable**. They may not be changed by any
 future UI polish, theming, refactor, or "small tweak" pass. Changing any of
@@ -421,3 +428,262 @@ Discrete state changes verify fine in the pane; continuous motion does not.
 4. render money figures in a Globe hover card;
 5. re-add a module-level duplicate of any `GLOBE_THEME` value;
 6. use `setTimeout`-free reasoning to justify `THREE.Clock` coming back.
+
+---
+
+## Batch: Phase 2 POST-FREEZE RECONCILIATION — final functional freeze (tag `globe-phase2-final-freeze`)
+
+**Frozen:** 2026-07-30. `globe-phase2-freeze` (8001db9) is **preserved** as the
+intermediate checkpoint it was; this is the final Phase 2 acceptance.
+
+Phase 3 (optical finish against the approved reference render) has **not**
+started.
+
+### Canonical runtime proven before any change (Task 1)
+
+| Fact | Value |
+|---|---|
+| Repository root | `/Users/Suraj/cineglobe-frametax` |
+| Branch | `claude/audit-frametax-features-NZcX5` |
+| Commit at start | `8001db9` (== tag `globe-phase2-freeze`) |
+| Frontend | Vite dev server, port **5173** |
+| Backend | uvicorn `app.main:app`, port **8010** |
+| Frontend API target | `http://localhost:8010/api/v1/cineglobe` (`frontend/.env`) |
+| Production ID | **`LITTLE-UTOPIA`** — "The Little Utopia", MU anchor, $4,364,393, `as_of_date` 2026-07-10 |
+| Runtime data source | **No database.** Module-level in-memory state in `little_utopia_state.py` + `lru_cache`; zero `AsyncSession`/`get_db`/`Depends` in `cineglobe.py` or `little_utopia_state.py` |
+
+### Recommendation stability: **VERIFIED STABLE** (Task 2)
+
+Deterministic under identical inputs, proven three ways:
+
+| Check | Result |
+|---|---|
+| 5 repeated `GET /structures` | **byte-identical** (full-response SHA `59827a02…`, order hash `abd30537…`) |
+| Full **backend restart**, then re-read | **byte-identical** — every field, same hashes |
+| Ordinary page reload (UI) | deterministic — 177 cards, same order hash `aeeee6fe`, same rank 1 |
+| Overlay toggle / day-night / Inspector | inert w.r.t. structures (order hash unchanged) |
+| rank 1 | `ALLOC-BASELINE-MU`, NPC **$2,622,262.20** (matches the ledger invariant) |
+
+Ordinary page load does **not** regenerate or reshuffle, so **no containment
+was needed** and none was added.
+
+**The two real mechanisms behind the reported "changes between sessions"** —
+neither is nondeterminism, and neither is a Globe defect:
+
+1. **`leadingStructureId` is client-only and resets on every full page load.**
+   Verified live: set to "Mauritius + Vancouver", reload → back to "Mauritius"
+   (backend rank 1 unchanged throughout). Changing it changes what the Globe,
+   the Overlay and the LEADING STRUCTURE strip *display*, with no ranking
+   change. This is the most likely explanation of the report — including
+   because earlier verification batches set it themselves.
+2. **Engine inputs are mutable from the UI and are not persisted.** `POST
+   /facts`, `/people`, `/economics/controls`, `/locations`,
+   `/contingency/deploy` all mutate module-level state and `cache_clear()` the
+   LRU. Answering questions legitimately changes the ranking (intended); a
+   backend restart silently discards **every** answer and reverts the
+   recommendation. Recorded as a **VERIFIED DEFECT — DEFERRED BY PHASE**
+   (engine/persistence, not Globe). `POST /scenarios` exists in `api.js` but is
+   **called by nothing**, so it is not a source of new entrants.
+
+### Development-only four-state visual fixture (Task 3)
+
+**Why it exists:** live output resolves to 1 Recommended / 84 Optimized
+alternative / 0 Unlockable / 1 Additional. That does not exercise the fourth
+state, and it is **not credible as a production decision output** — "priced" or
+"technically viable" is not "optimized alternative". Globe visual acceptance is
+therefore isolated from engine output.
+
+| Aspect | Detail |
+|---|---|
+| Activation (documented) | `VITE_GLOBE_VISUAL_FIXTURE=true` — e.g. `VITE_GLOBE_VISUAL_FIXTURE=true npm run dev` |
+| Activation (dev convenience) | `?globeFixture=1`, additionally gated on `import.meta.env.DEV` |
+| Default | **disabled** |
+| Production build | **statically eliminated** — verified: neither `VITE_GLOBE_VISUAL_FIXTURE` nor `globeFixture` appears anywhere in `dist/assets/*.js` |
+| Writes | none. Presentation-layer only; asserted in tests that the module contains no `fetch(`/`XMLHttpRequest`/`localStorage`/`sessionStorage`/`POST` |
+| Disclosure | on-screen amber badge (`GlobeFixtureBadge`) + one `console.warn` |
+| Injection point | one — `buildGlobeView()` rewrites the status map, so fill, beacons, pulse eligibility, hover labels and card dots all follow with no second code path |
+| Owner split | the fixture supplies **slot names only**; `globeData.js` remains sole owner of what a state looks like, so the fixture can never introduce a colour or a fifth state |
+
+**Assignments (globe keys, deterministic):**
+- Recommended (1): `MU`
+- Optimized alternative (12): `GB IE ES` · `ZA MA` · `NZ KR TH` · `US-GA CA-BC MX CL`
+- Unlockable opportunity (12): `IT PL HR IS` · `EG JO IL` · `MY PH AU` · `US-NY CO`
+- Additional: everything else (**61** markers / 81 assigned states)
+
+Measured live: **1 / 12 / 12 / 61** hover markers, all four states present, all
+four regions represented in both non-baseline states.
+
+**Cost-a-cycle note:** the first version keyed on the winning structure's
+`jurisdiction_code` and `AU-QLD` silently never matched — Australia is not
+rendered at admin-1 level, so every `AU-*` code collapses to the globe key
+`AU`, whose representative code is whichever won the status upsert. Assignments
+are keyed on the **globe key** now, and a test enforces that only `US-*`/`CA-*`
+may carry a sub-national suffix.
+
+### Sizing and composition: four measured defects repaired (Task 4)
+
+All numbers below are live measurements, not estimates.
+
+| Defect | Before | After |
+|---|---|---|
+| **Sphere overflowed its frame.** `DEFAULT_CAMERA_DISTANCE = 225` put the silhouette at `tan(asin(100/225))/tan(25°)` = **106.4%** of the available half-height | 298px radius vs 280px half-height — **18px clipped top and bottom**; **12 European markers** (GB IE IS NO SE DK DE NL BE FR EE FI) projected outside the canvas | computed fit (`fitCameraDistance`), sphere at **80.7%** of half-height, **63px headroom**, **0 clipped** |
+| **Globe stage height unbounded.** `height: 100%` on an auto-rows grid is not a bound, so the 177-card rail drove the row | stage **19751px** tall at 1600×900 around a 560px canvas; page scrolled for screens | `grid-template-rows: minmax(0, 1fr)` + rail `overflow-y: auto` → stage **693px**, `scrollHeight === clientHeight` |
+| **Ellipse whenever the Inspector was open.** `setViewOffset` scales horizontal world span by `w/(w+px)` while still rendering into `w` pixels, so horizontal scale became `(w+px)/w` × vertical | horizontally stretched sphere for as long as an offset was applied | `camera.aspect` now describes the **virtual** sensor `(w+px)/h` → scales match, shift is a pure pan. Confirmed visually circular, Inspector open and closed |
+| **`maxDistance = 460` silently overrode the fit.** OrbitControls clamps on every `update()` | at 1180×820 the fit asked for 935, the ceiling won, **53px of the globe hung off the canvas** and the rest sat under the panel | ceiling **raised, never lowered**: `max(460, fit × 1.02)`. Disc centred in the visible region (669 vs 668), **0 clipped** |
+
+Also fixed: the canvas now tracks **height** as well as width (renderer,
+composer, bloom, CSS2D and camera aspect all resize together); `.globe-screen-canvas`
+lost its hard `max-width: 980px` (which both left a blank strip and was the
+binding constraint at 1600px) in favour of `--globe-stage-max-w`; the stage is a
+flex column so the caption is not eaten by `overflow: hidden`.
+
+**Centralized layout tokens** (`tokens.css`): `--globe-rail-w: 300px`,
+`--globe-stage-max-w: 1240px`, `--globe-stage-min-h: 420px`. Camera framing is
+computed from the resulting box, so these can be changed without reintroducing
+clipping.
+
+**Also repaired — back-facing hit targets.** three-globe computes
+`isBehindGlobe` for every html element but only acts on it when
+`htmlElementVisibilityModifier` is supplied, and it never was. Every jurisdiction
+on the far side kept a live 28px click target: a click on apparently empty canvas
+could select a country on the opposite side of the world. Now `display: none`
+when behind the globe — which also made "is the globe clipped" measurable at all
+(the first narrow-viewport check reported 29 phantom clipped markers before this).
+
+### Runtime acceptance matrix — RUNTIME VERIFIED
+
+Driven in Playwright (a genuinely visible page at ~65fps). The in-app browser
+pane throttles `requestAnimationFrame` when not compositing — measured **7
+frames in 15.9s** — which makes continuous motion unobservable there.
+
+Every cell: **0px clipping on all four edges**, exactly **1 Recommended**
+(Mauritius), hover reporting the semantic state with **no money**, **0 console
+errors**.
+
+| Viewport | Canvas | Disc R (closed) | Disc R (Inspector open) | Clipping, all cells |
+|---|---|---|---|---|
+| 1600×900 | 980×650 | 250px | 227px | 0 / 0 / 0 / 0 |
+| 1440×900 | 820×650 | 250px | 169px | 0 / 0 / 0 / 0 |
+| 1280×800 | 660×560 | 215–221px | 106px | 0 / 0 / 0 / 0 |
+| 1180×820 (extra narrow) | 560×570 | 221px | 66px | 0 / 0 / 0 / 0 |
+
+Each viewport verified in **day and night**, Inspector **closed and open**, plus
+a **closed-restored** cell confirming the composition returns to baseline.
+
+| Behaviour | Evidence |
+|---|---|
+| Autorotation at rest | 14px / 3s (Ghana, fresh load); 27px / 3s measured at 1280 earlier |
+| Autorotation yields to selection | **0px** while a jurisdiction is selected, both themes |
+| Hover | brighten + border emphasis; card reads e.g. "Egypt / Unlockable opportunity / Primary shoot"; clears on mouseleave |
+| Selection | camera flight settles, others dim, Inspector opens with full trace, selection survives Inspector close |
+| Overlay round trip | 86 → 1 (`["MU"]`) → 86, no stale route |
+| Overlay caption | now honest for a single-jurisdiction recommendation: "The recommended structure is single-jurisdiction — no routing to show." (previously always promised routing) |
+| Day/night | no remount — `sameCanvasNode: true`, all 86 markers survive, geometry identical |
+| Fixture off by default | no badge; live tally returns to 1 / 84 / 1 — **zero contamination** |
+
+**Honest limits of the automated checks.** Circularity was confirmed by
+**screenshot**, not by the marker-extent proxy — that proxy showed 3–11% skew
+depending on which latitudes happen to carry jurisdictions, so it cannot prove
+circularity and is not used as evidence. `prefers-reduced-motion` remains
+code-verified only (the harness cannot emulate the media query).
+
+### Regression protection (Task 8)
+
+`frontend/tests/globe-invariants.test.mjs`, run with `npm test` — Node's
+built-in `node --test`, **no new dependency**. **20 tests, 20 passing.**
+
+Covers: sphere and beacon containment at all four verification viewports;
+portrait frames pulling back rather than clipping; the previously-shipped 225 and
+246 distances still *failing* (so a loosened fit is caught); exactly four
+semantic states with no `darkRed`/`red`/`charcoal`; no legacy wording in any
+label; `PULSE_TIERS == ["gold"]` **and** ≥2 `PULSE_TIERS.has()` call sites in
+Globe3D with the old island/city-state predicate absent; `GlobeLegend.jsx` still
+deleted and no `.globe-legend*` selector; no `<Money>`/`incentiveUsd`/`npcUsd`
+inside any `.globe-tooltip`; fixture disabled by default, deterministic,
+canonical-slots-only, network-free, DEV-gated, globe-key-only; `GLOBE_THEME` the
+single source with both themes defining identical keys; `THREE.Clock` absent;
+ambient motion gated on `prefers-reduced-motion`.
+
+Geometry is in `lib/globeFit.js` — pure, no three.js or DOM — precisely so the
+no-clipping property is arithmetic in a test rather than opinion in a review.
+
+**Note:** code-level assertions strip comments first. This codebase deliberately
+quotes the defects it replaced, and the first run of the pulse-predicate test
+failed on the comment documenting the very fix it guards.
+
+### Approved reference image — NOT RECEIVED
+
+**No image was attached to the reconciliation prompt.** Consequently:
+- no reference file was preserved to a design/reference location;
+- **no reference path is recorded here**, rather than inventing one.
+
+Phase 3's contractual visual target is therefore still **outstanding input**.
+Everything else in this batch was completed. Re-supply the render and it can be
+stored and cited in one edit.
+
+### Phase 3 optical gaps (recorded, deliberately NOT addressed)
+
+From the day/night verification, relative to a premium finish:
+- **Daytime ocean** reads as a near-black neutral slate against the light
+  application shell — the globe looks like a dark inset rather than a lit object.
+- **Neutral-country material** is legible but flat; continents separate mainly by
+  border stroke rather than by their own tone.
+- **Saturation**: the four semantic colours are correct in hue but sit on a very
+  dark ground, so Additional in particular reads faint at small sizes.
+- **Borders** are still the dominant shape cue in day mode.
+- **Atmosphere**: three-globe's own layer stays off (it z-fights the sphere); the
+  fresnel shell is a limb, not an atmosphere. No particulate/haze field.
+- **Lighting**: single directional key + IBL; no terminator softening.
+- **Clearcoat / reflections**: `THREE.sigmaRadians 0.34 will clip` persists — the
+  PMREM blur clips to 20 samples, so the environment is a 20-sample
+  approximation of the requested blur. Deliberately unchanged: the frozen
+  appearance is built on that approximation, so altering sigma is Phase 3's
+  optical remit, not a "final calibration only" pass.
+- **Optical depth**: jurisdictions are opaque enamel, not translucent mineral
+  insets (carried over from `globe-night-v1` — needs a transmission/refraction
+  pass).
+- **Composition at narrow widths**: a 400px Inspector over a 560px canvas leaves
+  a 160px strip, so the fully-visible globe is necessarily small (66px radius at
+  1180×820). Compliant, but a narrower or docked Inspector at small widths is a
+  Phase 3 UX decision.
+
+### Engine defects recorded for the later optimizer workstream (all DEFERRED BY PHASE)
+
+1. **"Priced" is being treated as "optimized alternative."** 84 of 86 resolve to
+   Optimized alternative. An optimized alternative must show a real economic or
+   production advantage over the baseline **after** incremental relocation,
+   qualification, compliance, travel, legal, entity, payroll, financing and
+   operational costs. Not repaired here; no records were relabelled.
+2. **Single-jurisdiction coverage is conceptually incomplete.** Every eligible
+   single jurisdiction should ordinarily be priced; exclusion should require a
+   real production constraint (location impossibility, legal prohibition,
+   unavailable capability, scheduling infeasibility, mandatory cultural-test
+   failure, or another authoritative gate). Missing knowledge, a missing
+   prebuilt scenario, or the absence of a generated record is **not** a valid
+   exclusion. Current data: 21 discovery-touched jurisdictions carry no
+   structure at all.
+3. **Multi-jurisdiction combinations must provide measurable benefit** — post
+   uplift, VFX incentive, regional/federal stack, treaty qualification,
+   cultural-test uplift, grant/fund access, anchor-component economics,
+   labour/cost advantage, or a real qualification pathway — with incremental
+   friction and relocation costs included. Do not propose a combination merely
+   because two countries can both participate.
+4. **Known project attributes are unused for co-production pathways.**
+   Australian writer, UK director and UK lead actor should be exercised against
+   real co-production / cultural-qualification routes in the engine phase.
+5. **Engine inputs are not persisted** (see Task 2 above) — a backend restart
+   discards every answered fact and reverts the recommendation.
+
+### Phase 3 may tune constants. It may NOT:
+
+1. reintroduce a fifth semantic state, or a `darkRed`/`red` alias;
+2. put a pulse on anything but the recommendation, in **either** code path;
+3. re-add a persistent legend or `.globe-legend*` CSS;
+4. render money figures in a Globe hover card;
+5. re-add a module-level duplicate of any `GLOBE_THEME` value;
+6. reintroduce `THREE.Clock`;
+7. restore a hardcoded camera distance in place of `fitCameraDistance`, or lower
+   `maxDistance` below the computed fit;
+8. ship the visual fixture enabled, or let it write anywhere;
+9. remove `htmlElementVisibilityModifier` (back-facing markers would become
+   clickable again).

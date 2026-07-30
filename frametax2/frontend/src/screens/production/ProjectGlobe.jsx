@@ -3,6 +3,7 @@ import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
 import Globe3D from "../../components/Globe3D";
 import { buildGlobeView, structureTier, STATUS_HEX } from "../../lib/globeData";
+import GlobeFixtureBadge from "../../components/GlobeFixtureBadge";
 import { useAppState } from "../../state/AppState";
 import { Money, humanizeToken } from "../../lib/format";
 
@@ -25,7 +26,7 @@ export default function ProjectGlobe() {
     if (!allocated) return new Map();
     return new Map(allocated.ranking.map((r) => [r.structure_id, r]));
   }, [allocated]);
-  const { points, arcs, polygonColors, selectedIso, selectedLat, selectedLng, focusLat, focusLng, focusDistance, structuresByCode } = useMemo(
+  const { points, arcs, polygonColors, selectedIso, selectedLat, selectedLng, focusLat, focusLng, focusDistance, structuresByCode, stateCounts } = useMemo(
     () => buildGlobeView(allocated, rankById, { mode: globeMode, leadingStructureId, selectedJurisdiction }),
     [allocated, rankById, globeMode, leadingStructureId, selectedJurisdiction],
   );
@@ -65,6 +66,10 @@ export default function ProjectGlobe() {
 
   return (
     <div className="globe-screen">
+      {/* Renders nothing unless the development-only visual fixture is
+          explicitly enabled. Its counts panel is the permitted dev diagnostic
+          that proves the four-state distribution during verification. */}
+      <GlobeFixtureBadge counts={stateCounts} />
       <div className="globe-screen-context">
         <p className="screen-eyebrow">Project Globe</p>
         {/* "Candidate jurisdictions" was the previous engine's framing — a
@@ -126,6 +131,10 @@ export default function ProjectGlobe() {
         <Globe3D
           points={points}
           arcs={arcs}
+          // The stage owns the height (see --globe-stage-* tokens); 560 is now
+          // only the floor. Previously a hardcoded 560 regardless of how much
+          // vertical space the page actually had.
+          autoHeight
           height={560}
           pointRadius={0.22}
           polygonColors={polygonColors}

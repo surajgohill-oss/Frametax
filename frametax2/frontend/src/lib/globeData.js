@@ -1,4 +1,5 @@
-import { JURISDICTION_COORDS } from "./jurisdictions";
+import { JURISDICTION_COORDS } from "./jurisdictions.js";
+import { fixtureSlotFor, isFixtureActive, noteFixtureCounts } from "./globeVisualFixture.js";
 
 // Great-circle angular separation (degrees) between two {lat, lng} points —
 // used only to size the Optimizer Overlay's auto-framing distance to the
@@ -105,6 +106,26 @@ export const PULSE_TIERS = new Set(
 // the ocean and the four semantic colours in the frozen luminance
 // hierarchy, and any warm/taupe value here reintroduces the muddy cast.
 export const GRAPHITE_HEX = "#6e7681";
+
+// Development-only: rewrite a status map to the visual fixture's assignments.
+// Lives HERE rather than in globeVisualFixture.js because this module is the
+// sole owner of what a semantic state looks like — the fixture only supplies
+// slot names, so it can never introduce a colour or a fifth state. Mutates in
+// place because this map is the single upstream of every Globe surface.
+function applyFixtureStates(statuses) {
+  const counts = { gold: 0, jade: 0, amber: 0, silver: 0 };
+  // Keyed by the map's globe key, not the winning structure's jurisdiction
+  // code — the key is stable, the representative code depends on upsert order.
+  for (const [iso, entry] of statuses) {
+    const slot = fixtureSlotFor(iso);
+    const semantic = GLOBE_SEMANTIC[slot] ? slot : "silver";
+    entry.status = semantic;
+    entry.hex = GLOBE_SEMANTIC[semantic].hex;
+    counts[semantic] += 1;
+  }
+  noteFixtureCounts(counts);
+  return statuses;
+}
 
 // A jurisdiction code's country-level ISO2 — sub-national codes (US-CA,
 // CA-BC, AU-NSW, ...) map to their parent country; country-level codes
@@ -238,7 +259,7 @@ export function buildCountryStatuses(allocated, rankById) {
 // explains. Hover states the jurisdiction, its semantic state and its
 // production role; the moment it starts printing money figures it becomes a
 // second, thinner Inspector and the two drift.
-export function buildCountryHoverData(statuses, rankById) {
+export function buildCountryHoverData(statuses) {
   const byIso = new Map();
   for (const [iso, entry] of statuses) {
     const { structure, code } = entry.best;
@@ -363,11 +384,20 @@ export function buildGlobeView(
     points: [], arcs: [], polygonColors: new Map(), selectedIso: null,
     selectedLat: null, selectedLng: null, focusLat: null, focusLng: null, focusDistance: null,
     hoverByIso: new Map(), structuresByCode: new Map(),
+    stateCounts: { gold: 0, jade: 0, amber: 0, silver: 0 },
   };
   if (!allocated) return empty;
 
   const statuses = buildCountryStatuses(allocated, rankById);
-  const hoverByIso = buildCountryHoverData(statuses, rankById);
+  // Development-only visual fixture. THE single injection point for the whole
+  // Globe: polygon fill, beacons, ring/pulse eligibility, hover labels and the
+  // structure-card dots all derive from this one map, so rewriting it here
+  // keeps every surface consistent without a second rendering path. Disabled
+  // by default and inert in production builds — see globeVisualFixture.js.
+  // Presentation only: nothing here touches the backend response, the
+  // optimizer, or any persisted record.
+  if (isFixtureActive()) applyFixtureStates(statuses);
+  const hoverByIso = buildCountryHoverData(statuses);
   const polygonColors = new Map();
   for (const [iso, entry] of statuses) polygonColors.set(iso, entry.hex);
 
@@ -383,6 +413,15 @@ export function buildGlobeView(
   const selectedIso = selectedJurisdiction ? globeKey(selectedJurisdiction) : null;
   const selectedCoord = JURISDICTION_COORDS[selectedJurisdiction] || null;
 
+  // Per-state tally of what is actually on the Globe. Exposed so the dev
+  // fixture badge and the regression checks can assert the distribution
+  // (notably "exactly one Recommended") against the rendered truth rather than
+  // against a hardcoded expectation.
+  const stateCounts = { gold: 0, jade: 0, amber: 0, silver: 0 };
+  for (const [, entry] of statuses) {
+    if (stateCounts[entry.status] != null) stateCounts[entry.status] += 1;
+  }
+
   if (mode === "optimizer") {
     const pathway = buildOptimizerPathway(allocated, leadingStructureId);
     // Overlay isolation: ONLY the active structure's jurisdictions are
@@ -396,7 +435,7 @@ export function buildGlobeView(
       focusLat: selectedCoord?.lat ?? pathway.focusLat,
       focusLng: selectedCoord?.lng ?? pathway.focusLng,
       focusDistance: pathway.focusDistance,
-      hoverByIso, structuresByCode,
+      hoverByIso, structuresByCode, stateCounts,
     };
   }
 
@@ -448,7 +487,7 @@ export function buildGlobeView(
     points, arcs: structureArcs, polygonColors, selectedIso,
     selectedLat: selectedCoord?.lat ?? null, selectedLng: selectedCoord?.lng ?? null,
     focusLat: selectedCoord?.lat ?? null, focusLng: selectedCoord?.lng ?? null, focusDistance: null,
-    hoverByIso, structuresByCode,
+    hoverByIso, structuresByCode, stateCounts,
   };
 }
 

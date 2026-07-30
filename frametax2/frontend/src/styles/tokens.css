@@ -96,6 +96,16 @@
   --nav-width: 224px;
   --inspector-width: 400px;
 
+  /* Globe screen composition (Phase 2 post-freeze reconciliation).
+     Centralized so the Globe's page geometry is one declaration rather than
+     numbers scattered across screens.css and JSX height props. The camera
+     framing in Globe3D.jsx is COMPUTED from the resulting box (see
+     fitCameraDistance), so changing these changes the composition safely
+     without reintroducing sphere clipping. */
+  --globe-rail-w: 300px;      /* left context/structure-list column */
+  --globe-stage-max-w: 1240px; /* was a hard 980px cap that left a blank strip */
+  --globe-stage-min-h: 420px;  /* floor so a short viewport stays usable */
+
   /* Shadows — used sparingly: floating Inspector, hovered rows, popovers.
      Never on flat editorial sheets. */
   --shadow-sm: 0 1px 2px rgba(32,33,31,0.06), 0 1px 1px rgba(32,33,31,0.04);

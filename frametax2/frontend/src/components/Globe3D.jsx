@@ -8,6 +8,7 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { STATUS_HEX, GRAPHITE_HEX, PULSE_TIERS } from "../lib/globeData";
+import { CAMERA_FOV_DEG, fitCameraDistance } from "../lib/globeFit";
 import { subscribeTheme } from "../lib/theme";
 
 // ── Studio environment (image-based lighting) ───────────────────────────
@@ -285,10 +286,42 @@ const INACTIVE_POLYGON_ALTITUDE = 0.002;
 // curve is internal to the library (only duration is configurable); the
 // camera flight below uses a true easeOutQuart.
 const SELECTION_TRANSITION_MS = 500;
-// Default framing only. minDistance/maxDistance are untouched, so the
-// user's own zoom range is exactly as it was. Pulled in from 246 so the
-// globe fills more of its panel by default.
-const DEFAULT_CAMERA_DISTANCE = 225;
+
+// ── Camera fit (Phase 2 post-freeze reconciliation) ─────────────────────
+// Framing is now COMPUTED from the live canvas box instead of being a fixed
+// distance. The previous `DEFAULT_CAMERA_DISTANCE = 225` (itself "pulled in
+// from 246 so the globe fills more of its panel") is the confirmed cause of
+// the reported clipping, and it was clipping at BOTH values.
+//
+// The arithmetic, so nobody has to rediscover it: a sphere of radius R at
+// distance d has silhouette half-angle asin(R/d); it fits the frame only if
+// tan(asin(R/d)) <= tan(fovY/2) vertically, or <= tan(fovY/2) * aspect
+// horizontally. At R=100, d=225, fovY=50 that ratio is
+//   tan(asin(100/225)) / tan(25 deg) = 0.4966 / 0.4663 = 1.064
+// i.e. the sphere is 106.4% of the available half-height and overflows by
+// ~6% on every side. Measured live at 1600x900 before the fix: silhouette
+// radius 298px against a 280px half-height — 18px clipped top and bottom,
+// with 12 European markers (UK, IE, IS, NO, SE, DK, DE, NL, BE, FR, EE, FI)
+// projecting outside the canvas box entirely.
+//
+// Solving forward instead: pick the content radius that must stay inside the
+// frame, then derive d. GLOBE_CONTENT_RADIUS is the sphere PLUS the tallest
+// thing standing on it — a recommendation beacon's glow shell reaches ~6
+// units above its footprint, that footprint sits at
+// GOLD_BASELINE_POLYGON_ALTITUDE, and the whole group is scaled 1.28x when it
+// is the recommendation. Framing to the bare sphere (100) is exactly how the
+// recommendation marker ended up clipped against the edge.
+// The geometry itself lives in lib/globeFit.js — a pure module with no three.js
+// or DOM dependency, so the no-clipping property is unit-testable rather than
+// eyeballed. See that file for the full derivation and the measured history.
+//
+// Fallback only, for the brief window before the first real measurement.
+const DEFAULT_CAMERA_DISTANCE = 285;
+// The producer's zoom range. The floor is fixed; the ceiling is a BASELINE that
+// applySize() may raise (never lower) when a narrow frame needs a farther
+// camera to keep the whole sphere visible.
+const ORBIT_MIN_DISTANCE = 150;
+const ORBIT_MAX_DISTANCE = 460;
 
 function easeOutQuart(t) {
   return 1 - Math.pow(1 - t, 4);
@@ -481,6 +514,13 @@ export default function Globe3D({
   onPointClick,
   onPointHover,
   height = 520,
+  // When true the renderer's height tracks the MOUNT's own box instead of the
+  // `height` prop, so the Globe can be sized by CSS/layout rather than by a
+  // hardcoded pixel number. Opt-in on purpose: the fixed-height call sites
+  // (Overview, Workspace Map/Split, the brand mark) keep their exact frozen
+  // behaviour, so this cannot regress them. `height` is still used as the
+  // pre-measurement fallback and as the CSS min-height.
+  autoHeight = false,
   polygonColors = null,
   selectedIso = null,
   // The jurisdiction currently under the cursor. Drives the hover response
@@ -534,17 +574,25 @@ export default function Globe3D({
     // circular mask until a later resize happened to correct it.
     // getBoundingClientRect reflects the actual computed box at call time.
     const width = Math.round(mount.getBoundingClientRect().width) || mount.clientWidth || mount.parentElement?.clientWidth || 600;
-    const h = height;
+    // In autoHeight mode the mount is sized by CSS; fall back to the `height`
+    // prop until the box has been laid out (first synchronous measurement can
+    // legitimately read 0, same reason getBoundingClientRect is used above).
+    const measuredH = Math.round(mount.getBoundingClientRect().height);
+    const h = autoHeight && measuredH > 80 ? measuredH : height;
+    stateRef.current.lastWidth = width;
+    stateRef.current.lastHeight = h;
 
     const scene = new THREE.Scene();
     const oceanTexture = makeOceanBackgroundTexture();
     scene.background = oceanTexture;
 
-    const camera = new THREE.PerspectiveCamera(50, width / h, 0.1, 2000);
-    // Default framing only — pulled in so the globe dominates its panel.
-    // The OrbitControls min/max below are unchanged, so the user's own
-    // zoom range is exactly what it was.
-    camera.position.set(0, 0, DEFAULT_CAMERA_DISTANCE);
+    const camera = new THREE.PerspectiveCamera(CAMERA_FOV_DEG, width / h, 0.1, 2000);
+    // Default framing is COMPUTED so the whole sphere plus its tallest beacon
+    // fits this exact canvas box (see fitCameraDistance). OrbitControls'
+    // min/max below are untouched, so the producer's own zoom range is
+    // unchanged — this only moves where the camera STARTS.
+    stateRef.current.fitDistance = fitCameraDistance(width, h);
+    camera.position.set(0, 0, stateRef.current.fitDistance);
     cameraRef.current = camera;
     // The camera joins the scene graph so its child sheen light renders.
     scene.add(camera);
@@ -1035,6 +1083,20 @@ export default function Globe3D({
       .htmlLat("lat")
       .htmlLng("lng")
       .htmlAltitude(0.02)
+      // Hide hit-targets on the FAR side of the globe. three-globe already
+      // computes `isBehindGlobe` for every html element, but it only acts on it
+      // when this modifier is supplied — and it was never supplied, so every
+      // back-facing jurisdiction kept a live 28px click target projected to an
+      // arbitrary screen position. Two consequences, both real: a click on
+      // apparently empty canvas could select a country on the opposite side of
+      // the world, and any measurement of "is the globe clipped" was polluted by
+      // markers that legitimately sit far outside the sphere's projected disc
+      // (which is how a narrow-viewport check first reported 29 phantom
+      // clipped markers). display:none makes them inert AND zero-size, so both
+      // the interaction and the measurement become well-defined.
+      .htmlElementVisibilityModifier((el, isVisible) => {
+        el.style.display = isVisible ? "" : "none";
+      })
       .htmlElement((d) => {
         const el = document.createElement("div");
         el.className = "globe-hit-target";
@@ -1199,8 +1261,11 @@ export default function Globe3D({
     };
     controls.addEventListener("start", onControlStart);
     // Unchanged zoom range — only the default position above moved.
-    controls.minDistance = 150;
-    controls.maxDistance = 460;
+    controls.minDistance = ORBIT_MIN_DISTANCE;
+    // Baseline ceiling. applySize() raises this — never lowers it — when the
+    // computed fit needs a farther camera than 460 (narrow canvas with the
+    // Inspector open); see the note there.
+    controls.maxDistance = ORBIT_MAX_DISTANCE;
     controls.enablePan = false;
     controlsRef.current = controls;
 
@@ -1285,11 +1350,26 @@ export default function Globe3D({
     // the RIGHT slice of a WIDER frame, which pans the apparent scene content
     // left to clear the obscured region. This is three.js's documented
     // off-center/tiled-rendering technique, applied here for one tile.
+    //
+    // ELLIPSE BUG (found live in this reconciliation): the lens shift above
+    // silently broke circularity. three.js computes the frustum as
+    //   height = 2 * near * tan(fov/2);  width = aspect * height;
+    //   width *= view.width / view.fullWidth;      // <- offset applied here
+    // Vertical is untouched (offsetY 0, view.height == fullHeight), but the
+    // horizontal world span is multiplied by w/(w+px) and still rendered into
+    // w pixels — so the horizontal scale becomes (w+px)/w times the vertical
+    // one and the sphere renders as an ellipse for as long as an offset is
+    // applied. `camera.aspect` must therefore describe the VIRTUAL (wider)
+    // sensor, not the canvas: with aspect = (w+px)/h the two scales match
+    // exactly and the shift is a pure pan.
     const setOffsetPx = (px) => {
       const w = stateRef.current.lastWidth || width;
+      const hh = stateRef.current.lastHeight || h;
       if (px > 0.5 && w > px) {
-        camera.setViewOffset(w + px, h, px, 0, w, h);
+        camera.aspect = (w + px) / hh;
+        camera.setViewOffset(w + px, hh, px, 0, w, hh);
       } else {
+        camera.aspect = w / hh;
         camera.clearViewOffset();
       }
       camera.updateProjectionMatrix();
@@ -1321,26 +1401,95 @@ export default function Globe3D({
     };
     stateRef.current.animateViewOffsetTo = animateViewOffsetTo;
 
-    const applySize = (w) => {
+    // Animated companion to the lens shift. When the Inspector opens, the
+    // VISIBLE width shrinks, so the resting fit distance changes (see
+    // applySize) — applying that instantly would pop the globe's scale while
+    // the pan glided, and closing the Inspector (which fires no selection
+    // flight) would pop it back. Same duration and easing as the offset tween
+    // so the two read as one movement.
+    const animateFitDistanceTo = (targetDistance) => {
+      if (stateRef.current.fitTweenCancel) {
+        stateRef.current.fitTweenCancel();
+        stateRef.current.fitTweenCancel = null;
+      }
+      const startLen = camera.position.length();
+      if (!Number.isFinite(targetDistance) || Math.abs(targetDistance - startLen) < 1) return;
+      const duration = 500;
+      const startTime = performance.now();
+      let raf;
+      const step = (now) => {
+        const t = Math.min(1, (now - startTime) / duration);
+        camera.position.setLength(startLen + (targetDistance - startLen) * easeOutQuart(t));
+        if (t < 1) raf = requestAnimationFrame(step);
+      };
+      raf = requestAnimationFrame(step);
+      stateRef.current.fitTweenCancel = () => cancelAnimationFrame(raf);
+    };
+
+    // Resizes now carry HEIGHT as well as width. Previously only width was
+    // tracked, so a layout that changed the panel's height (or any autoHeight
+    // container) left the renderer, composer, CSS2D layer and camera aspect
+    // all sized to a stale height — which is the other half of how a
+    // "technically responsive" canvas could still compose wrongly.
+    const applySize = (w, hArg, { animateFit = false } = {}) => {
       if (!w) return;
+      const hh = Math.max(80, Math.round(hArg || stateRef.current.lastHeight || h));
       stateRef.current.lastWidth = w;
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
+      stateRef.current.lastHeight = hh;
+      // Re-fit the camera to the new box, measured against the VISIBLE width
+      // (an open Inspector covers part of the canvas). Only the resting
+      // framing is recomputed; a user zoom is respected because the camera is
+      // only repositioned when it is still sitting at the previous fit.
+      const prevFit = stateRef.current.fitDistance;
+      const visibleW = Math.max(120, w - (stateRef.current.obscuredRightPx || 0));
+      const nextFit = fitCameraDistance(visibleW, hh);
+      stateRef.current.fitDistance = nextFit;
+      // OrbitControls clamps distance to [minDistance, maxDistance] on EVERY
+      // update(), so a fit farther than maxDistance is silently overridden and
+      // the sphere stays too large for its frame. That is exactly what happened
+      // with the Inspector open on a narrow canvas: the fit asked for 935, the
+      // 460 ceiling won, and 53px of the globe hung off the canvas edge while
+      // the rest sat under the panel. Raise the CEILING only — never the floor,
+      // and never below the original 460 — so the producer's existing zoom-out
+      // range is preserved and merely extended when the layout demands it.
+      if (controlsRef.current) {
+        controlsRef.current.maxDistance = Math.max(ORBIT_MAX_DISTANCE, nextFit * 1.02);
+      }
+      const atRestingFraming =
+        prevFit == null || Math.abs(camera.position.length() - prevFit) < 1.5;
+      if (atRestingFraming) {
+        // Instant on a real container resize (animating would fight the
+        // resize); animated when the Inspector changed the visible width.
+        if (animateFit) animateFitDistanceTo(nextFit);
+        else camera.position.setLength(nextFit);
+      }
+
+      renderer.setSize(w, hh);
       // The composer owns its own render targets — resizing only the
       // renderer would leave the post chain sampling a stale-sized buffer
       // and the Globe would render soft/stretched after any panel resize.
-      composer.setSize(w, h);
-      bloomPass.setSize(w, h);
-      cssRenderer.setSize(w, h);
+      composer.setSize(w, hh);
+      bloomPass.setSize(w, hh);
+      cssRenderer.setSize(w, hh);
+      // applyViewOffset() owns camera.aspect + updateProjectionMatrix().
       applyViewOffset();
     };
 
     const resizeObserver = new ResizeObserver((entries) => {
-      const w = entries[0]?.contentRect?.width;
-      if (w) applySize(Math.round(w));
+      const box = entries[0]?.contentRect;
+      if (!box?.width) return;
+      applySize(Math.round(box.width), autoHeight ? Math.round(box.height) : undefined);
     });
     resizeObserver.observe(mount);
+    // Called by the obscuredRightPx effect: same re-fit path as a resize, but
+    // triggered by the Inspector changing how much of the canvas is visible.
+    stateRef.current.refitForObscuredWidth = () => {
+      applySize(stateRef.current.lastWidth || width, stateRef.current.lastHeight || h, { animateFit: true });
+    };
+    // First measurement: in autoHeight mode the mount's box is only final
+    // after layout, so run one explicit fit now rather than waiting for a
+    // resize that may never come if the box never changes again.
+    applySize(width, h);
 
     // Hit-targets only emit mouseleave while they stay under the cursor. If
     // the pointer exits the canvas altogether the last hover card would
@@ -1399,6 +1548,7 @@ export default function Globe3D({
       cancelAnimationFrame(frameId);
       if (stateRef.current.cameraTweenCancel) stateRef.current.cameraTweenCancel();
       if (stateRef.current.offsetTweenCancel) stateRef.current.offsetTweenCancel();
+      if (stateRef.current.fitTweenCancel) stateRef.current.fitTweenCancel();
       mount.removeEventListener("mouseleave", clearHover);
       resizeObserver.disconnect();
       controls.removeEventListener("start", onControlStart);
@@ -1491,6 +1641,10 @@ export default function Globe3D({
 
   useEffect(() => {
     stateRef.current.obscuredRightPx = obscuredRightPx;
+    // Re-fit to the width that remains VISIBLE once the Inspector covers part
+    // of the canvas, so an open Inspector can never crop the sphere. Only the
+    // resting framing is adjusted (see applySize); a user zoom is left alone.
+    stateRef.current.refitForObscuredWidth?.();
     // Animated reframe when the Inspector opens/closes — a snap here reads
     // as a glitch; a smooth pan reads as the Globe deliberately making room.
     stateRef.current.animateViewOffsetTo?.(obscuredRightPx || 0);
@@ -1537,6 +1691,12 @@ export default function Globe3D({
       stateRef.current.cameraTweenCancel();
       stateRef.current.cameraTweenCancel = null;
     }
+    // The Inspector's fit tween also writes camera.position; the selection
+    // flight below supersedes it, so cancel it or the two fight frame by frame.
+    if (stateRef.current.fitTweenCancel) {
+      stateRef.current.fitTweenCancel();
+      stateRef.current.fitTweenCancel = null;
+    }
     const camera = cameraRef.current;
     const controls = controlsRef.current;
     const targetLat = focusLat ?? selectedLat;
@@ -1549,7 +1709,12 @@ export default function Globe3D({
 
     const dest = globe.getCoords(targetLat, targetLng, 0);
     const dir = new THREE.Vector3(dest.x, dest.y, dest.z).normalize();
-    const distance = focusDistance ?? Math.max(camera.position.length(), DEFAULT_CAMERA_DISTANCE - 30);
+    // Floor the flight distance at the computed fit, so selecting a
+    // jurisdiction can never leave the sphere clipped. This replaces a
+    // hardcoded `DEFAULT_CAMERA_DISTANCE - 30` floor which, at the old
+    // distance, was itself inside the clipping range.
+    const restingFit = stateRef.current.fitDistance ?? DEFAULT_CAMERA_DISTANCE;
+    const distance = focusDistance ?? Math.max(camera.position.length(), restingFit);
     const endPos = dir.multiplyScalar(distance);
     const startPos = camera.position.clone();
     const duration = 700;
@@ -1577,5 +1742,14 @@ export default function Globe3D({
     );
   }
 
-  return <div ref={mountRef} className="globe-canvas" style={{ height }} />;
+  // autoHeight: the CSS box owns the height (the mount fills its stage, with
+  // the `height` prop acting only as a floor). Fixed-height callers keep the
+  // exact inline pixel height they had before.
+  return (
+    <div
+      ref={mountRef}
+      className="globe-canvas"
+      style={autoHeight ? { height: "100%", minHeight: height } : { height }}
+    />
+  );
 }
