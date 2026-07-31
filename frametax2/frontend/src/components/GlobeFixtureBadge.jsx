@@ -50,8 +50,8 @@ export default function GlobeFixtureBadge() {
         // number of hover markers on screen: a marker also needs a
         // JURISDICTION_COORDS entry, a polygon only needs its ISO code.
         <span className="gmi-counts">
-          Recommended {counts.gold} · Optimized {counts.jade} ·
-          {" "}Unlockable {counts.amber} · Additional {counts.silver}
+          Recommended {counts.gold} · Alternatives {counts.jade} ·
+          {" "}Co-Pro Opportunities {counts.amber} · Excluded {counts.silver}
         </span>
       )}
       {source && <span className="gmi-src">enabled via {SOURCE_LABEL[source] || source}</span>}

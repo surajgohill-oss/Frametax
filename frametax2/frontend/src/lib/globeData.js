@@ -1,5 +1,10 @@
 import { JURISDICTION_COORDS } from "./jurisdictions.js";
 import { fixtureSlotFor, isFixtureActive, noteFixtureCounts } from "./globeVisualFixture.js";
+// Reused, not re-derived: the SAME program-name + rate presentation
+// scenarioDisplay() already uses for structure cards across Overview,
+// Workspace and Scenarios (see format.jsx) — so a hovered jurisdiction's
+// "base incentive" line can never disagree with what its own card shows.
+import { programDisplay } from "./programNames.js";
 
 // Great-circle angular separation (degrees) between two {lat, lng} points —
 // used only to size the Optimizer Overlay's auto-framing distance to the
@@ -117,21 +122,23 @@ export function activeStructure(allocated, leadingStructureId) {
 // distinct from neutral land" (GRAPHITE_HEX, lum 131).
 // Ladder after this pass: land 131 < silver 145 < jade 151 < amber 153 < gold 212
 // (recommended leads the peer pair by 59, comfortably over the required 25).
+// PHASE 3A FINAL CLOSEOUT: labels reconciled a third time to the production's
+// actual executive terminology, given directly rather than guessed —
+// "Recommended" (unchanged) / "Alternatives" (was "Optimized") /
+// "Co-Production Opportunities" (was "Opportunity") / "Excluded" (was
+// "Baseline"). `fullLabel` carries the long form for hover/detail surfaces
+// where "Co-Production Opportunities" fits; `label` is the compact-legend
+// form ("Co-Pro Opportunities") used only where horizontal space is scarce.
+// Same four slots, same hex, same `state` keys, same logic — a wording pass
+// only, per this batch's explicit "do not change semantic logic" instruction.
 export const GLOBE_SEMANTIC = {
-  gold: { state: "recommended", label: "Recommended", hex: "#e6d3a8", pulse: true },
-  // "Optimized alternative" -> "Optimized" (Phase 3A final: shorter, matches
-  // the other three single-word labels).
-  jade: { state: "alternative", label: "Optimized", hex: "#4cbd97", pulse: false },
-  // Label reconciled to executive/production terminology (Phase 3A final):
-  // "Unlockable opportunity" -> "Opportunity". Same slot, same hex family,
-  // same four-state count — a rename, not a reintroduction of the legacy
-  // six-category model the render's own legend still shows.
-  amber: { state: "unlockable", label: "Opportunity", hex: "#d48a49", pulse: false },
+  gold: { state: "recommended", label: "Recommended", fullLabel: "Recommended", hex: "#e6d3a8", pulse: true },
+  jade: { state: "alternative", label: "Alternatives", fullLabel: "Alternatives", hex: "#4cbd97", pulse: false },
+  amber: { state: "unlockable", label: "Co-Pro Opportunities", fullLabel: "Co-Production Opportunities", hex: "#d48a49", pulse: false },
   // Desaturated slate — deliberately the DIMMEST of the four, sitting just
   // above untouched land. Never a warm/taupe grey: those reintroduce the muddy
   // cast the neutral light rig exists to prevent (see Globe3D lighting).
-  // Label reconciled: "Additional" -> "Baseline" (Phase 3A final rename).
-  silver: { state: "additional", label: "Baseline", hex: "#8494a4", pulse: false },
+  silver: { state: "additional", label: "Excluded", fullLabel: "Excluded", hex: "#8494a4", pulse: false },
 };
 
 // Derived, never hand-maintained. Existing consumers (Globe3D's TIER_HEX,
@@ -141,6 +148,12 @@ export const STATUS_HEX = Object.fromEntries(
 );
 export const STATUS_LABEL = Object.fromEntries(
   Object.entries(GLOBE_SEMANTIC).map(([k, v]) => [k, v.label]),
+);
+// Long form for hover/detail surfaces (e.g. "Co-Production Opportunities"
+// rather than the legend's compact "Co-Pro Opportunities"). Three of the
+// four slots are identical to STATUS_LABEL; only `amber` differs.
+export const STATUS_FULL_LABEL = Object.fromEntries(
+  Object.entries(GLOBE_SEMANTIC).map(([k, v]) => [k, v.fullLabel]),
 );
 // Which states pulse. Globe3D reads this rather than hardcoding "gold".
 export const PULSE_TIERS = new Set(
@@ -252,13 +265,19 @@ export function buildCountryStatuses(allocated, rankById) {
   const byIso = new Map(); // iso2 -> { status, hex, jurisdictionCodes:Set, best:{structure,code} }
   if (!allocated) return byIso;
 
-  const upsert = (iso, status, jurisdictionCode, structure) => {
+  // `meta` carries presentation-only extras that aren't part of the
+  // status/ranking decision itself — currently just the discovery
+  // examination's own real `reason` string for Excluded jurisdictions (see
+  // branch 2 below), so hover can state WHY without a second, invented
+  // explanation.
+  const upsert = (iso, status, jurisdictionCode, structure, meta = null) => {
     const cur = byIso.get(iso);
     if (!cur || STATUS_RANK[status] > STATUS_RANK[cur.status]) {
       byIso.set(iso, {
         status, hex: STATUS_HEX[status],
         jurisdictionCodes: cur ? cur.jurisdictionCodes.add(jurisdictionCode) : new Set([jurisdictionCode]),
         best: { structure, code: jurisdictionCode },
+        meta,
       });
     } else {
       cur.jurisdictionCodes.add(jurisdictionCode);
@@ -304,7 +323,10 @@ export function buildCountryStatuses(allocated, rankById) {
     const touched =
       e.classification === "capability_only" ||
       (e.classification === "rejected" && e.has_capability_data);
-    if (touched) upsert(iso, "silver", e.jurisdiction_code, null);
+    // e.reason is the backend's own real, already-generated sentence
+    // (production_discovery.py) — carried through so Excluded's hover can
+    // state the actual reason instead of a generic placeholder.
+    if (touched) upsert(iso, "silver", e.jurisdiction_code, null, { reason: e.reason || null });
   }
 
   return byIso;
@@ -312,30 +334,58 @@ export function buildCountryStatuses(allocated, rankById) {
 
 // Per-country hover payload — read verbatim from the best (highest-state)
 // structure touching that country. Countries with no participating
-// structure (Additional, from discovery only) carry state + jurisdiction
+// structure (Excluded, from discovery only) carry state + jurisdiction
 // only, because no structure exists to read figures from.
 //
-// INSPECTOR BOUNDARY (Phase 2 closeout): `incentiveUsd`/`npcUsd` remain in
-// this payload because they are real, already-computed fields and the
-// hover-to-Inspector preview path is built on it — but NO Globe surface may
-// RENDER them in its hover card. The Globe visualizes; the Inspector
-// explains. Hover states the jurisdiction, its semantic state and its
-// production role; the moment it starts printing money figures it becomes a
-// second, thinner Inspector and the two drift.
+// PHASE 3A FINAL CLOSEOUT — INSPECTOR BOUNDARY UPDATED (explicit,
+// user-directed reversal of the Phase 2 closeout rule below): hover is now
+// required to show "a lightweight economic summary" — base incentive
+// structure, its rate, and estimated NPC — so `incentiveUsd`/`npcUsd` may
+// now be RENDERED by the Globe hover card, not merely carried for an
+// Inspector preview. Nothing here is a second calculation: every figure
+// below is read verbatim from the same `structure`/`segments` fields the
+// Inspector and every structure card already read (see AllocationSegment
+// Inspector in Inspector.jsx and scenarioDisplay in format.jsx). What
+// remains off-limits is long source notes, the qualification trace,
+// account-level detail and any other Inspector-only content — those still
+// require opening the Inspector.
 export function buildCountryHoverData(statuses) {
   const byIso = new Map();
   for (const [iso, entry] of statuses) {
     const { structure, code } = entry.best;
+    // Base incentive structure + rate, read from the SAME segment field
+    // names Inspector.jsx's AllocationSegmentInspector renders (program_slug,
+    // rate_floor, rate_ceiling, is_band_ceiling, claims_incentive) — no
+    // second derivation. Only the segment for THIS jurisdiction's own code,
+    // not the structure's dominant segment (that's scenarioDisplay's job on
+    // the card, a different question: "what defines this whole structure").
+    const seg = structure?.segments?.find((sg) => sg.jurisdiction_code === code);
+    const baseIncentive = seg?.claims_incentive && seg.program_slug
+      ? {
+          programLabel: programDisplay(seg.program_slug),
+          ratePct: seg.rate_floor != null ? Math.round(seg.rate_floor * 100) : null,
+          rateCeilingPct: seg.is_band_ceiling && seg.rate_ceiling != null ? Math.round(seg.rate_ceiling * 100) : null,
+        }
+      : null;
     byIso.set(iso, {
       isoA2: iso,
       jurisdictionCode: code,
       jurisdictionName: JURISDICTION_COORDS[code]?.name || code,
       status: entry.status,
       statusLabel: STATUS_LABEL[entry.status],
+      // Long form for the hover card ("Co-Production Opportunities"); the
+      // legend keeps the compact STATUS_LABEL ("Co-Pro Opportunities").
+      fullStatusLabel: STATUS_FULL_LABEL[entry.status],
       semanticState: GLOBE_SEMANTIC[entry.status]?.state ?? null,
       hex: entry.hex,
       incentiveUsd: structure?.is_fully_priced ? structure.selected_incentive_usd : null,
       npcUsd: structure?.is_fully_priced ? structure.npc_with_adjustments_usd : null,
+      baseIncentive,
+      // Real backend text (production_discovery.py's own reason string) —
+      // only ever set for Excluded jurisdictions sourced from a discovery
+      // examination (see buildCountryStatuses branch 2). Never fabricated;
+      // absent when the engine hasn't actually classified a reason.
+      excludedReason: entry.meta?.reason ?? null,
       role: roleFor(structure, code),
       structureId: structure?.structure_id ?? null,
       structureLabel: structure?.label ?? null,

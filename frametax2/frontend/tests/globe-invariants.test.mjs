@@ -149,17 +149,25 @@ test("no legacy database-state wording survives in any semantic label", async ()
   ]) {
     assert.ok(!labels.includes(legacy), `legacy wording "${legacy}" found in: ${labels}`);
   }
-  // PHASE 3A FINAL: "Optimized alternative" -> "Optimized", "Unlockable
-  // opportunity" -> "Opportunity", "Additional" -> "Baseline" — executive/
-  // production terminology rename, same four slots, same hex family, same
-  // count. Not a reintroduction of the legacy six-category wording the loop
-  // above still guards against.
+  // PHASE 3A FINAL CLOSEOUT: labels reconciled a third time to the actual
+  // executive terminology — "Optimized" -> "Alternatives", "Opportunity" ->
+  // "Co-Pro Opportunities" (compact form; STATUS_FULL_LABEL carries
+  // "Co-Production Opportunities" for hover), "Baseline" -> "Excluded".
+  // Same four slots, same hex family, same count each time.
   assert.deepEqual(Object.values(STATUS_LABEL).sort(), [
-    "Baseline",
-    "Opportunity",
-    "Optimized",
+    "Alternatives",
+    "Co-Pro Opportunities",
+    "Excluded",
     "Recommended",
   ]);
+});
+
+test("hover/detail surfaces get the long form of Co-Pro Opportunities", async () => {
+  const { STATUS_FULL_LABEL } = await import("../src/lib/globeData.js");
+  assert.equal(STATUS_FULL_LABEL.amber, "Co-Production Opportunities");
+  assert.equal(STATUS_FULL_LABEL.gold, "Recommended");
+  assert.equal(STATUS_FULL_LABEL.jade, "Alternatives");
+  assert.equal(STATUS_FULL_LABEL.silver, "Excluded");
 });
 
 test("only the recommendation pulses", async () => {
@@ -229,21 +237,52 @@ test("the legend is scoped to Project Globe only, and stays visually secondary",
   assert.match(block[0], /font:\s*10px/, "legend type must stay small");
 });
 
-test("no Globe hover card renders money", () => {
-  // The Inspector owns figures, with their qualification trace and citations.
-  for (const file of [
-    "screens/production/ProjectGlobe.jsx",
-    "screens/production/Workspace.jsx",
-    "screens/production/Overview.jsx",
-  ]) {
-    const src = read(file);
-    for (const m of src.matchAll(/<div className="globe-tooltip">([\s\S]*?)<\/div>\s*\)/g)) {
-      assert.ok(
-        !/incentiveUsd|npcUsd|<Money/.test(m[1]),
-        `${file}: hover card renders money`,
-      );
-    }
+// PHASE 3A FINAL CLOSEOUT: this test previously banned ANY money figure from
+// the Globe hover card. That rule is explicitly, deliberately reversed this
+// batch — hover is now required to show "a lightweight economic summary"
+// (estimated NPC). The boundary that survives is narrower, not gone: hover
+// may show npcUsd via CompactMoney, but must never pull in Inspector-only
+// content (the qualification trace, account/source citations, requirements,
+// blockers) — that's still what opening the Inspector is for.
+//
+// The PREVIOUS version of this test used a regex anchored on the literal
+// string `<div className="globe-tooltip">` with nothing between the class
+// name and the closing `>`. Adding the `style={...}` attribute this batch
+// (to anchor the card near the hovered marker) made that regex match ZERO
+// occurrences — the test kept reporting green while asserting nothing at
+// all. Anchoring on the component/function instead of a brittle exact-tag
+// string is what this rewrite fixes.
+test("Globe hover card shows NPC but stays clear of Inspector-only content", () => {
+  const src = read("screens/production/ProjectGlobe.jsx");
+  const fn = /function GlobeHoverCard[\s\S]*?\n}/.exec(src);
+  assert.ok(fn, "GlobeHoverCard component not found");
+  const body = fn[0];
+  assert.ok(/CompactMoney/.test(body), "hover card must render estimated NPC via CompactMoney");
+  for (const forbidden of ["qualification_trace", "account_codes", "requirements", "blockers", "statutory_basis"]) {
+    assert.ok(!body.includes(forbidden), `hover card must not pull in Inspector-only field "${forbidden}"`);
   }
+});
+
+// REGRESSION (found live, Hungary, during Phase 3A final closeout runtime
+// verification): buildCountryHoverData's `status` field is the COLOUR-slot
+// key ("gold"/"jade"/"amber"/"silver"), never the `semanticState` key
+// ("recommended"/"alternative"/"unlockable"/"additional"). An earlier draft
+// of ProjectGlobe.jsx's fallback helpers checked `hover.status === "additional"`
+// / `"unlockable"` — those strings never appear in `status`, so the checks
+// silently never matched, and an Excluded jurisdiction with an actual (if
+// unpriceable) structure attached showed the generic "Base incentive · Not
+// available" / "Not priced" text instead of its real exclusion reason and
+// "Not viable". This test asserts the source checks the colour-slot keys
+// directly, so this exact regression can't reappear silently.
+test("hover fallback text keys off the colour-slot status, not semanticState", () => {
+  const src = read("screens/production/ProjectGlobe.jsx");
+  const baseFn = /function baseIncentiveLine[\s\S]*?\n}/.exec(src)[0];
+  const npcFn = /function npcFallback[\s\S]*?\n}/.exec(src)[0];
+  assert.ok(baseFn.includes('hover.status === "silver"'), 'baseIncentiveLine must check status === "silver"');
+  assert.ok(!/hover\.status === "additional"/.test(baseFn), 'baseIncentiveLine must not check the semanticState string "additional"');
+  assert.ok(npcFn.includes('hover.status === "amber"'), 'npcFallback must check status === "amber"');
+  assert.ok(npcFn.includes('hover.status === "silver"'), 'npcFallback must check status === "silver"');
+  assert.ok(!/hover\.status === "unlockable"/.test(npcFn), 'npcFallback must not check the semanticState string "unlockable"');
 });
 
 // ── Visual fixture ──────────────────────────────────────────────────────

@@ -1504,7 +1504,14 @@ export default function Globe3D({
           el.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); onPointClick(d); } });
         }
         if (onPointHover) {
-          el.addEventListener("mouseenter", () => onPointHover(d));
+          // PHASE 3A FINAL CLOSEOUT: the hover card now anchors near the
+          // hovered jurisdiction instead of sitting fixed at the panel's
+          // top-left, so a second argument — this hit-target's own
+          // viewport-relative box (the same box the marker itself occupies
+          // on screen) — is passed through. The caller converts it to a
+          // position relative to its own canvas container; Globe3D has no
+          // reason to know that container's identity.
+          el.addEventListener("mouseenter", () => onPointHover(d, el.getBoundingClientRect()));
           el.addEventListener("mouseleave", () => onPointHover(null));
         }
         return el;

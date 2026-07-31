@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
 import Globe3D from "../../components/Globe3D";
@@ -6,21 +6,29 @@ import GlobeLegend from "../../components/GlobeLegend";
 import { buildGlobeView, structureTier, STATUS_HEX } from "../../lib/globeData";
 import { isFixtureActive } from "../../lib/globeVisualFixture";
 import { useAppState } from "../../state/AppState";
-import { Money, humanizeToken } from "../../lib/format";
+import { Money, CompactMoney, humanizeToken } from "../../lib/format";
 
 // Project Globe — this production's structures and their routing on the
 // canonical globe. Same live model as the Workspace Map mode, given its own
 // full section per the approved artifact nav. Country click opens the
 // jurisdiction segment / structure recommendation in the Inspector.
 //
-// DIVISION OF LABOUR (Phase 2 closeout): the Globe VISUALIZES, the Inspector
-// EXPLAINS. This screen therefore carries no legend and no figures in its
-// hover card — see the hover card below and globeData's buildCountryHoverData.
+// DIVISION OF LABOUR (Phase 2 closeout; hover scope reopened Phase 3A final
+// closeout): the Globe VISUALIZES, the Inspector EXPLAINS — that boundary
+// still holds for source notes, qualification traces and account-level
+// detail, which stay Inspector-only. Hover was explicitly reopened to carry
+// "a lightweight economic summary" (jurisdiction, category, base incentive,
+// estimated NPC) — see buildHoverLines() below and globeData's
+// buildCountryHoverData, which is the sole source for every figure here.
 export default function ProjectGlobe() {
   const { data, error, loading } = useCineGlobe();
   const { inspector, openInspector, leadingStructureId, selectedJurisdiction, setSelectedJurisdiction } = useAppState();
   const [globeMode, setGlobeMode] = useState("jurisdictions");
   const [hover, setHover] = useState(null);
+  // Viewport-relative box of the hovered marker (see Globe3D's mouseenter),
+  // converted to a position relative to canvasRef below at render time.
+  const [hoverRect, setHoverRect] = useState(null);
+  const canvasRef = useRef(null);
   // Read once per render: the fixture gate is durable state now, not a URL read.
   const fixtureActive = isFixtureActive();
 
@@ -137,7 +145,7 @@ export default function ProjectGlobe() {
         </div>
       </div>
 
-      <div className="globe-screen-canvas" style={{ position: "relative" }}>
+      <div className="globe-screen-canvas" style={{ position: "relative" }} ref={canvasRef}>
         <GlobeLegend />
         <Globe3D
           points={points}
@@ -161,20 +169,16 @@ export default function ProjectGlobe() {
           // Bias camera framing left so a selected country stays clear of it.
           obscuredRightPx={inspector ? 400 : 0}
           onPointClick={(pt) => selectJurisdiction(pt.jurisdictionCode || pt.id)}
-          onPointHover={setHover}
+          onPointHover={(pt, rect) => { setHover(pt); setHoverRect(pt ? rect : null); }}
         />
-        {/* Inspector preview, not a second Inspector. Jurisdiction, semantic
-            state, production role — the MEANING of what's under the cursor.
-            The incentive and NPC figures this used to print are the
-            Inspector's to explain (with their qualification trace, caps and
-            citations); duplicating them here gave a producer two places to
-            read the same number and one of them with no provenance. */}
+        {/* Lightweight economic-summary card (Phase 3A final closeout —
+            explicit, user-directed reopening of the Phase 2 "no figures in
+            hover" rule). Anchored near the hovered marker via hoverRect
+            rather than fixed top-left. Long source notes, the qualification
+            trace and account-level detail remain Inspector-only — click
+            still opens the Inspector; hover never does. */}
         {hover && (
-          <div className="globe-tooltip">
-            <strong>{hover.jurisdictionName}</strong>
-            <div className="text-tertiary small">{hover.statusLabel}</div>
-            {hover.role && <div className="text-tertiary small">{hover.role}</div>}
-          </div>
+          <GlobeHoverCard hover={hover} hoverRect={hoverRect} canvasRef={canvasRef} />
         )}
         <p className="globe-caption small" style={{ borderRadius: "0 0 var(--radius-lg) var(--radius-lg)" }}>
           {/* The overlay caption must describe what is actually on screen. It
@@ -190,6 +194,75 @@ export default function ProjectGlobe() {
               ? "Dashed routes mark this production's real multi-jurisdiction structures."
               : "No multi-jurisdiction structure is currently priced for this production."}
         </p>
+      </div>
+    </div>
+  );
+}
+
+// The base-incentive line: read verbatim from buildCountryHoverData's
+// `baseIncentive` (program + rate, the same fields Inspector.jsx's
+// AllocationSegmentInspector renders) or `excludedReason` (the backend's own
+// real discovery-examination sentence). Never a fabricated percentage or
+// reason — an honest fallback string when the engine hasn't supplied one.
+function baseIncentiveLine(hover) {
+  // `hover.status` is the colour-slot key ("gold"/"jade"/"amber"/"silver"),
+  // NOT `semanticState` ("recommended"/"alternative"/"unlockable"/
+  // "additional") — an earlier draft of this function checked the wrong
+  // field (`=== "additional"`), which silently never matched, so Excluded
+  // jurisdictions with an actual (if unpriceable) structure attached fell
+  // through to the generic "Base incentive · Not available" branch instead
+  // of surfacing their real exclusion reason. Caught in runtime
+  // verification (Hungary), not by a test — see the test added below.
+  if (hover.status === "silver") {
+    return hover.excludedReason || "Current production constraints";
+  }
+  if (hover.baseIncentive) {
+    const { programLabel, ratePct, rateCeilingPct } = hover.baseIncentive;
+    if (ratePct == null) return programLabel;
+    const ceiling = rateCeilingPct != null ? ` (up to ${rateCeilingPct}%)` : "";
+    return `${programLabel} · ${ratePct}%${ceiling}`;
+  }
+  return "Base incentive · Not available";
+}
+
+// The NPC line's fallback text depends on WHY there's no number — an
+// honest distinction, not one generic dash: Co-Production Opportunities are
+// blocked-but-priceable ("not currently priced"), Excluded jurisdictions
+// have no structure to price at all ("not viable"). Never a client-computed
+// NPC — `hover.npcUsd` is the same `structure.npc_with_adjustments_usd` the
+// Inspector and every structure card already read.
+function npcFallback(hover) {
+  if (hover.status === "amber") return "Not currently priced";
+  if (hover.status === "silver") return "Not viable";
+  return "Not priced";
+}
+
+// Anchors the hover card near the hovered marker's own on-screen box
+// (Globe3D passes it through unmodified from the CSS2D hit-target's
+// getBoundingClientRect()) rather than a fixed panel corner. Clamped to stay
+// inside the canvas panel on every edge — no floating-ui/popper dependency;
+// a fixed approximate card width is enough for a compact, single-purpose
+// card that never wraps to more than a few short lines.
+const HOVER_CARD_W = 220;
+const HOVER_CARD_MARGIN = 10;
+function hoverCardStyle(hoverRect, canvasEl) {
+  if (!hoverRect || !canvasEl) return { display: "none" };
+  const box = canvasEl.getBoundingClientRect();
+  let left = hoverRect.left - box.left + hoverRect.width / 2 + HOVER_CARD_MARGIN;
+  let top = hoverRect.top - box.top - 8;
+  left = Math.max(HOVER_CARD_MARGIN, Math.min(left, box.width - HOVER_CARD_W - HOVER_CARD_MARGIN));
+  top = Math.max(HOVER_CARD_MARGIN, Math.min(top, box.height - 96));
+  return { left, top, width: HOVER_CARD_W };
+}
+
+function GlobeHoverCard({ hover, hoverRect, canvasRef }) {
+  return (
+    <div className="globe-tooltip" style={hoverCardStyle(hoverRect, canvasRef.current)}>
+      <strong>{hover.jurisdictionName}</strong>
+      <div className="text-tertiary small">{hover.fullStatusLabel}</div>
+      <div className="text-secondary small" style={{ marginTop: 4 }}>{baseIncentiveLine(hover)}</div>
+      <div className="text-secondary small">
+        Estimated NPC · {hover.npcUsd != null ? <CompactMoney value={hover.npcUsd} /> : npcFallback(hover)}
       </div>
     </div>
   );

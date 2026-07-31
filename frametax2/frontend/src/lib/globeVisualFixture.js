@@ -242,10 +242,13 @@ export function noteFixtureCounts(counts) {
   }
   if (warned) return;
   warned = true;
+  // PHASE 3A FINAL CLOSEOUT: literal strings updated to match the current
+  // production-facing labels (not imported from globeData.js — that module
+  // already imports FROM this one, and a back-import would create a cycle).
   console.warn(
     `[CineGlobe] GLOBE VISUAL FIXTURE ACTIVE — ${FIXTURE_DISCLOSURE} ` +
-      `Counts: Recommended ${counts.gold}, Optimized alternative ${counts.jade}, ` +
-      `Unlockable opportunity ${counts.amber}, Additional ${counts.silver}.`,
+      `Counts: Recommended ${counts.gold}, Alternatives ${counts.jade}, ` +
+      `Co-Production Opportunities ${counts.amber}, Excluded ${counts.silver}.`,
   );
 }
 

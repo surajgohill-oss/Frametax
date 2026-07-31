@@ -1080,3 +1080,57 @@ Verified: 28/28 tests, clean build, 0 console errors/warnings, production
 dark/light, fixture all-four-states, production restored, Inspector-open
 (selection/positioning only) — all captured as runtime screenshots, not
 described. Tag `globe-phase3a-freeze` moved to this commit.
+
+---
+
+### Addendum 2: Phase 3A final closeout — terminology + hover intelligence
+
+**Same day, third pass.** Two remaining Phase 3A items: production-facing
+terminology and Globe hover.
+
+**Terminology** (`globeData.js`): labels reconciled a third time to the
+production's actual executive vocabulary — `Recommended` (unchanged),
+`Optimized`→`Alternatives`, `Opportunity`→`Co-Production Opportunities`
+(compact legend form `Co-Pro Opportunities`, added a `fullLabel`/
+`STATUS_FULL_LABEL` pair so hover gets the long form and the legend keeps
+the short one), `Baseline`→`Excluded`. Same four slots, same hex, same
+`state` keys, same logic. The dev-only fixture disclosure (console warning
++ `GlobeFixtureBadge`) was also updated — Phase 3A-final's own manifest had
+flagged this exact drift as a known, deliberately-deferred gap; closed now.
+
+**Hover intelligence** (`ProjectGlobe.jsx`, `globeData.js`): the Phase 2
+closeout rule "no money in a Globe hover card" is **explicitly reversed**
+this batch, by direct user instruction — hover now shows jurisdiction,
+category, base incentive program + rate, and estimated NPC, anchored near
+the hovered marker (Globe3D's mouseenter now passes the hit-target's own
+`getBoundingClientRect()` through) rather than fixed at the panel's top-left.
+Every figure is read verbatim from existing fields — `structure.segments[]`
+program_slug/rate_floor/rate_ceiling (same fields Inspector.jsx already
+renders), `structure.npc_with_adjustments_usd`, and the discovery
+examination's own real `reason` string for Excluded jurisdictions — no
+second NPC calculation, no fabricated rate or reason. `programDisplay`/
+`humanizeToken` were moved out of `format.jsx` into a new plain-`.js`
+`programNames.js` (format.jsx re-exports them unchanged) specifically so
+`globeData.js` — imported directly by `node --test` with no JSX transform —
+can use them without pulling JSX into the test runner.
+
+**A real bug found in runtime verification, not by a test:** the hover
+fallback helpers (`baseIncentiveLine`, `npcFallback`) initially checked
+`hover.status === "additional"` / `"unlockable"` — those are `semanticState`
+values, but `hover.status` is the colour-slot key (`"gold"/"jade"/"amber"/
+"silver"`). The check silently never matched, so an Excluded jurisdiction
+with an actual (if unpriceable) structure attached — found live on Hungary —
+showed the generic "Not available"/"Not priced" fallback instead of its real
+backend-generated exclusion reason. Fixed to check `"silver"`/`"amber"`
+directly; a regression test now asserts the source checks the colour-slot
+keys, not the semantic-state strings.
+
+**Verified live** (Playwright, fresh navigation each time): Recommended
+(Mauritius — "EDB Film Rebate · 30% (up to 40%)" / "$2.6M"), Alternatives
+(Colombia and California, production data), Co-Production Opportunities
+(Egypt, fixture mode), Excluded (Hungary — real reason: "Not
+production-capable: the production requires marine_filming,
+open_water_filming..." / "Not viable"), US state + Canadian province hover,
+hover-vs-click distinction (hover never opens the Inspector; click still
+does, content/layout unchanged), light and dark app theme, fixture on/off
+round trip, zero console errors/warnings. 30/30 tests, clean build.
