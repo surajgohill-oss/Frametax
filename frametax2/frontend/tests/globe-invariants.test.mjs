@@ -238,28 +238,26 @@ test("the legend is scoped to Project Globe only, and stays visually secondary",
 });
 
 // PHASE 3A FINAL CLOSEOUT: this test previously banned ANY money figure from
-// the Globe hover card. That rule is explicitly, deliberately reversed this
-// batch — hover is now required to show "a lightweight economic summary"
-// (estimated NPC). The boundary that survives is narrower, not gone: hover
-// may show npcUsd via CompactMoney, but must never pull in Inspector-only
-// content (the qualification trace, account/source citations, requirements,
-// blockers) — that's still what opening the Inspector is for.
-//
-// The PREVIOUS version of this test used a regex anchored on the literal
-// string `<div className="globe-tooltip">` with nothing between the class
-// name and the closing `>`. Adding the `style={...}` attribute this batch
-// (to anchor the card near the hovered marker) made that regex match ZERO
-// occurrences — the test kept reporting green while asserting nothing at
-// all. Anchoring on the component/function instead of a brittle exact-tag
-// string is what this rewrite fixes.
-test("Globe hover card shows NPC but stays clear of Inspector-only content", () => {
+// the Globe hover card. That rule is explicitly, deliberately reversed —
+// hover shows "a lightweight economic summary" including estimated NPC and
+// incentive. PHASE 3B BATCH 1: money must be FULL precision (formatFullUsd /
+// Money), never CompactMoney's "$2.6M" abbreviation — an explicit
+// requirement this batch. The boundary that survives is narrower, not gone:
+// hover must never pull in Inspector-only content (the qualification trace,
+// account/source citations, requirements, blockers) — that's still what
+// opening the Inspector is for.
+test("Globe hover card shows full-precision money and stays clear of Inspector-only content", () => {
   const src = read("screens/production/ProjectGlobe.jsx");
   const fn = /function GlobeHoverCard[\s\S]*?\n}/.exec(src);
   assert.ok(fn, "GlobeHoverCard component not found");
-  const body = fn[0];
-  assert.ok(/CompactMoney/.test(body), "hover card must render estimated NPC via CompactMoney");
-  for (const forbidden of ["qualification_trace", "account_codes", "requirements", "blockers", "statutory_basis"]) {
-    assert.ok(!body.includes(forbidden), `hover card must not pull in Inspector-only field "${forbidden}"`);
+  assert.ok(!/CompactMoney/.test(src), "Phase 3B Batch 1 requires full-precision money — CompactMoney must not appear anywhere in this file");
+  assert.ok(/formatFullUsd/.test(src), "hover card must render money via formatFullUsd (no MM/K abbreviation)");
+  for (const bodyFnName of ["RecommendedOrAlternativeBody", "CoProductionBody", "ExcludedBody"]) {
+    const bodyFn = new RegExp(`function ${bodyFnName}[\\s\\S]*?\\n}`).exec(src);
+    assert.ok(bodyFn, `${bodyFnName} not found`);
+    for (const forbidden of ["qualification_trace", "account_codes", "requirements", "blockers", "statutory_basis"]) {
+      assert.ok(!bodyFn[0].includes(forbidden), `${bodyFnName} must not pull in Inspector-only field "${forbidden}"`);
+    }
   }
 });
 
@@ -267,22 +265,35 @@ test("Globe hover card shows NPC but stays clear of Inspector-only content", () 
 // verification): buildCountryHoverData's `status` field is the COLOUR-slot
 // key ("gold"/"jade"/"amber"/"silver"), never the `semanticState` key
 // ("recommended"/"alternative"/"unlockable"/"additional"). An earlier draft
-// of ProjectGlobe.jsx's fallback helpers checked `hover.status === "additional"`
-// / `"unlockable"` — those strings never appear in `status`, so the checks
-// silently never matched, and an Excluded jurisdiction with an actual (if
-// unpriceable) structure attached showed the generic "Base incentive · Not
-// available" / "Not priced" text instead of its real exclusion reason and
-// "Not viable". This test asserts the source checks the colour-slot keys
-// directly, so this exact regression can't reappear silently.
-test("hover fallback text keys off the colour-slot status, not semanticState", () => {
+// checked `hover.status === "additional"` / `"unlockable"` — those strings
+// never appear in `status`, so the checks silently never matched. PHASE 3B
+// BATCH 1 restructured the hover card into three category-specific body
+// components dispatched directly in GlobeHoverCard's own render — this test
+// now asserts THAT dispatch uses the colour-slot keys, so the exact same
+// regression can't reappear silently in the new shape.
+test("hover card dispatch keys off the colour-slot status, not semanticState", () => {
   const src = read("screens/production/ProjectGlobe.jsx");
-  const baseFn = /function baseIncentiveLine[\s\S]*?\n}/.exec(src)[0];
-  const npcFn = /function npcFallback[\s\S]*?\n}/.exec(src)[0];
-  assert.ok(baseFn.includes('hover.status === "silver"'), 'baseIncentiveLine must check status === "silver"');
-  assert.ok(!/hover\.status === "additional"/.test(baseFn), 'baseIncentiveLine must not check the semanticState string "additional"');
-  assert.ok(npcFn.includes('hover.status === "amber"'), 'npcFallback must check status === "amber"');
-  assert.ok(npcFn.includes('hover.status === "silver"'), 'npcFallback must check status === "silver"');
-  assert.ok(!/hover\.status === "unlockable"/.test(npcFn), 'npcFallback must not check the semanticState string "unlockable"');
+  const cardFn = /function GlobeHoverCard[\s\S]*?\n}/.exec(src)[0];
+  assert.ok(cardFn.includes('hover.status === "silver"'), 'GlobeHoverCard must dispatch Excluded on status === "silver"');
+  assert.ok(cardFn.includes('hover.status === "amber"'), 'GlobeHoverCard must dispatch Co-Production on status === "amber"');
+  assert.ok(!/hover\.status === "additional"/.test(cardFn), 'must not check the semanticState string "additional"');
+  assert.ok(!/hover\.status === "unlockable"/.test(cardFn), 'must not check the semanticState string "unlockable"');
+});
+
+// PHASE 3B BATCH 1 — click contract: a Globe click must never call the
+// backend, rerun optimization, or create/modify a scenario. `selectJurisdiction`
+// and `selectStructure` are pure client-state operations (setSelectedJurisdiction
+// + openInspector) over data already served; this guards against either
+// function growing a fetch/POST call in a future edit.
+test("Globe click contract never calls the backend", () => {
+  const src = read("screens/production/ProjectGlobe.jsx");
+  for (const fnName of ["selectJurisdiction", "selectStructure"]) {
+    const fn = new RegExp(`function ${fnName}\\([\\s\\S]*?\\n  }`).exec(src);
+    assert.ok(fn, `${fnName} not found`);
+    for (const forbidden of ["fetch(", "axios", "POST", ".post(", "await api"]) {
+      assert.ok(!fn[0].includes(forbidden), `${fnName} must not call the backend (found "${forbidden}")`);
+    }
+  }
 });
 
 // ── Visual fixture ──────────────────────────────────────────────────────
@@ -525,4 +536,90 @@ test("no two jurisdictions share a display name", async () => {
     }
   }
   assert.deepEqual(dupes, [], `ambiguous jurisdiction labels: ${dupes.join(" | ")}`);
+});
+
+// ── Phase 3B Batch 1: shared hover-presentation helpers ─────────────────
+
+test("formatFullUsd never abbreviates", async () => {
+  const { formatFullUsd } = await import("../src/lib/globeHoverFormat.js");
+  assert.equal(formatFullUsd(742131), "$742,131");
+  assert.equal(formatFullUsd(3622262), "$3,622,262");
+  assert.equal(formatFullUsd(null), null);
+});
+
+test("incentivePctOfGross divides incentive by GROSS BUDGET, not qualified spend", async () => {
+  const { incentivePctOfGross } = await import("../src/lib/globeHoverFormat.js");
+  // 742,131 / 4,364,393 = 17.0% — the worked example from the Phase 3B spec.
+  assert.equal(incentivePctOfGross(742131, 4364393), "17.0%");
+  assert.equal(incentivePctOfGross(null, 4364393), null);
+  assert.equal(incentivePctOfGross(742131, 0), null);
+  assert.equal(incentivePctOfGross(742131, null), null);
+});
+
+test("modeledRateInfo reads rate_ceiling (the engine's real modeled_rate), not rate_floor", async () => {
+  const { modeledRateInfo } = await import("../src/lib/globeHoverFormat.js");
+  // Confirmed from allocation_pricing.py: rate_ceiling is populated from
+  // rr.modeled_rate, the ONLY rate that feeds incentive_ceiling_usd /
+  // selected_incentive_usd / npc_with_adjustments_usd.
+  const seg = { claims_incentive: true, rate_floor: 0.30, rate_ceiling: 0.40, is_band_ceiling: true };
+  const info = modeledRateInfo(seg);
+  assert.equal(info.modeledPct, 40, "modeled rate must be the ceiling (40), matching what funds the incentive");
+  assert.equal(info.floorPct, 30);
+  assert.equal(info.isBandCeiling, true);
+  assert.equal(modeledRateInfo({ claims_incentive: false }), null);
+  assert.equal(modeledRateInfo(null), null);
+});
+
+test("presentExclusionReason truncates to the first real sentence and humanizes snake_case tokens, never a fabricated category", async () => {
+  const { presentExclusionReason } = await import("../src/lib/globeHoverFormat.js");
+  const raw = "Not production-capable: the production requires marine_filming, open_water_filming, which this jurisdiction cannot provide. Rejected on capability, independent of any incentive.";
+  const out = presentExclusionReason(raw);
+  assert.ok(!out.includes("_"), "must not leak raw snake_case engine tokens");
+  assert.ok(out.includes("marine filming"), "must humanize, not delete, the real requirement token");
+  assert.ok(!out.includes("Rejected on capability"), "must be truncated to the first sentence only");
+  assert.equal(presentExclusionReason(null), null);
+});
+
+test("relatedJurisdictions returns the structure's own real participants, excluding the hovered code", async () => {
+  const { relatedJurisdictions } = await import("../src/lib/globeHoverFormat.js");
+  const structure = { participants: ["MU", "BE", "FR"] };
+  const names = { MU: "Mauritius", BE: "Belgium", FR: "France" };
+  const out = relatedJurisdictions(structure, "MU", (c) => names[c]);
+  assert.deepEqual(out, [{ code: "BE", name: "Belgium" }, { code: "FR", name: "France" }]);
+  assert.deepEqual(relatedJurisdictions(null, "MU", (c) => names[c]), []);
+});
+
+// ── Phase 3B Batch 1: category-state diff engine ────────────────────────
+
+test("diffCategories reports only real changes, never a false positive on first observation", async () => {
+  const { diffCategories } = await import("../src/lib/globeCategoryDiff.js");
+  const prev = new Map([["MU", "gold"], ["BE", "jade"], ["FR", "amber"]]);
+  const curr = new Map([["MU", "gold"], ["BE", "amber"], ["FR", "amber"], ["DE", "silver"]]);
+  const changes = diffCategories(prev, curr);
+  // BE changed jade -> amber: reported. FR unchanged: not reported. DE has
+  // no prior entry (first observation): not reported, not a false positive.
+  // MU unchanged: not reported.
+  assert.deepEqual(changes, [{ iso: "BE", prevCategory: "jade", currCategory: "amber" }]);
+});
+
+test("diffCategories against an identical snapshot reports zero changes", async () => {
+  const { diffCategories } = await import("../src/lib/globeCategoryDiff.js");
+  const snapshot = new Map([["MU", "gold"], ["BE", "jade"]]);
+  assert.deepEqual(diffCategories(snapshot, new Map(snapshot)), []);
+});
+
+test("category snapshot persistence round-trips through localStorage and is keyed per production", async () => {
+  const { loadCategorySnapshot, saveCategorySnapshot } = await import("../src/lib/globeCategoryDiff.js");
+  // node --test has no localStorage by default; skip gracefully rather than
+  // fail the whole suite if the environment doesn't provide one (the real
+  // browser runtime always does).
+  if (typeof localStorage === "undefined") return;
+  const snap = new Map([["MU", "gold"], ["BE", "jade"]]);
+  saveCategorySnapshot("TEST-PROD-A", snap);
+  saveCategorySnapshot("TEST-PROD-B", new Map([["MU", "silver"]]));
+  const loadedA = loadCategorySnapshot("TEST-PROD-A");
+  const loadedB = loadCategorySnapshot("TEST-PROD-B");
+  assert.equal(loadedA.get("MU"), "gold");
+  assert.equal(loadedA.get("BE"), "jade");
+  assert.equal(loadedB.get("MU"), "silver", "productions must not share a snapshot key");
 });

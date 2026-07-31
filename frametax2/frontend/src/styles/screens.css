@@ -371,6 +371,10 @@
   z-index: 20;
 }
 .globe-tooltip .text-tertiary { color: var(--dark-text-tertiary); }
+/* Phase 3B Batch 1: each labelled row (Program / Modeled Rate / Estimated
+   Incentive / NPC / Reason / Co-Production With) in the hover card. */
+.globe-tooltip .hover-field { margin-top: 6px; }
+.globe-tooltip .hover-field:first-of-type { margin-top: 0; }
 
 /* The persistent Globe status legend was REMOVED in the Globe Phase 2
    closeout (2026-07-29) along with components/GlobeLegend.jsx. A Globe
