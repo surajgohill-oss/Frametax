@@ -233,7 +233,11 @@ export function globeKey(jurisdictionCode) {
   return parent;
 }
 
-const STATUS_RANK = { gold: 4, jade: 3, amber: 2, silver: 1 };
+// Exported (Phase 3B Batch 2) so the category-diff engine's consumer can
+// tell an IMPROVING transition (silver -> amber, amber -> jade, etc., the
+// "unlock pulse" case) from a downgrade, using the SAME rank the status
+// upsert itself already resolves by — never a second, parallel ordering.
+export const STATUS_RANK = { gold: 4, jade: 3, amber: 2, silver: 1 };
 
 function roleFor(structure, code) {
   if (!structure) return null;
@@ -418,6 +422,13 @@ export function buildCountryHoverData(statuses, grossBudgetUsd = null) {
       // for why this is the one real "related jurisdiction" relationship
       // this data model has, and the report for what's still missing.
       relatedCodes: structure?.participants?.filter((c) => c !== code) ?? [],
+      // PHASE 3B BATCH 2: the structure's own real `primary_jurisdiction` —
+      // used ONLY to let hover illumination make the primary related
+      // jurisdiction read slightly stronger than the rest, per the batch's
+      // explicit "only when such ranking is supported by real data, never
+      // invent a preferred partner" instruction. Real field, not a computed
+      // preference.
+      primaryJurisdictionCode: structure?.primary_jurisdiction ?? null,
       role: roleFor(structure, code),
       structureId: structure?.structure_id ?? null,
       structureLabel: structure?.label ?? null,

@@ -1,5 +1,18 @@
 # Globe Freeze Manifest
 
+**Frozen:** 2026-08-01 — **Phase 3B GLOBE CLOSEOUT, FINAL, tag `globe-phase3b-freeze`**
+- Semantic motion (Co-Production hover illumination incl. beacon
+  jurisdictions, category-transition unlock pulse), border z-fighting root
+  cause + fix, ocean drift, vertical legend, and the final hover-contract
+  rewrite (Program / Maximum Incentive / Modeled Incentive / NPC / Incentive
+  per Gross Budget — full dollars, full country names, no misleading rate
+  ranges). This is the canonical Globe implementation going forward; Phase 4
+  (Overview/broader production UX) has not started. Optimizer-rerun
+  investigation and the personnel-facts discrepancy finding are recorded
+  below and in `CAPABILITY_LEDGER.md` — no optimizer code was touched.
+- See "Batch: Phase 3B — Globe Experience, Semantic Motion & Closeout" below
+  for the full record.
+
 **Frozen:** 2026-07-30 — **Phase 3A OPTICAL FINISH, FINAL, tag `globe-phase3a-freeze`**
 - Optical reconciliation against the approved reference render, closed out in
   three sequenced batches (foundation → full reconciliation pass → final
@@ -1134,3 +1147,214 @@ open_water_filming..." / "Not viable"), US state + Canadian province hover,
 hover-vs-click distinction (hover never opens the Inspector; click still
 does, content/layout unchanged), light and dark app theme, fixture on/off
 round trip, zero console errors/warnings. 30/30 tests, clean build.
+
+---
+
+## Batch: Phase 3B — Globe Experience, Semantic Motion & Closeout
+
+**Frozen 2026-08-01, tag `globe-phase3b-freeze`.** Three sequenced pieces of
+work, closed out together: Batch 1 (data-model groundwork — category-diff
+engine, hover-format helpers, `STATUS_RANK` export), Batch 2 (border fix,
+ocean motion, semantic hover illumination, category-transition pulse — all
+under explicit authorization, motion/performance standards enforced), and
+the final closeout (optimizer-rerun/data-flow investigation, vertical
+legend, hover-contract rewrite, this documentation). No architecture change;
+`Globe3D.jsx` remains the single rendering file, `three-globe` 2.45.2 /
+three.js 0.185.1 unchanged, no new dependency added.
+
+### Border z-fighting — root cause and fix
+
+`three-globe`'s polygon layer renders each country/state's boundary as its
+**own** complete `LineSegments`, scaled to `1 + altitude + 1e-4` (a fixed
+relative offset above that feature's own cap). Two same-tier neighbors
+(e.g. both "neutral") share the same `altitude`, so their shared border is
+drawn **twice at the literal same radius** — coincident-depth GPU z-fighting,
+which read as the reported dashed/broken/noisy border appearance. This is a
+`three-globe` library behavior, not a bug in this codebase's config.
+
+**Fix:** a deterministic per-feature `altitudeJitter(iso)` (hash of ISO code
+→ a value in `[-2e-5, 2e-5)`) added to every branch of `altitudeFn`
+(selected/inactive/gold/participating). The jitter is two orders of
+magnitude below the smallest real semantic altitude step
+(`INACTIVE_POLYGON_ALTITUDE = 0.002`), so the cap/fill is visually
+unaffected but two same-tier neighbors no longer land on the exact same
+radius. Verified: continuous, non-dashed borders in multiple regions
+(Europe, Africa, the Americas), both themes. Regression test asserts every
+`altitudeFn` branch includes the jitter term and that the jitter magnitude
+stays below the real altitude step.
+
+### Ocean motion
+
+A restrained UV scroll — `oceanSurfaceTexture.offset.x` animated at
+`1/2400` per second — on the **same** procedural bump/roughness/clearcoat-
+roughness texture already built by `makeOceanSurfaceTexture()` (Phase 3A).
+No new shader, no new geometry, no new `requestAnimationFrame` owner: the
+step lives inside the existing single `animate()` loop, inside the existing
+`ambientMotion`/`prefers-reduced-motion` gate. Land uses a separate
+object-space grain shader with no texture, so it is unaffected by design.
+
+### Semantic hover illumination (Co-Production Opportunities)
+
+Hovering an Amber (Co-Production Opportunity) jurisdiction illuminates its
+real related jurisdictions, using `structure.participants` (a real backend
+field — this production's Co-Production Opportunities are
+`component_relocation` structures with blockers, not treaty co-productions;
+confirmed live that `reachable_treaty_partners: []` for this production, so
+no treaty relationship was fabricated). Illumination uses the existing
+`brightenHex()` helper only — no new color system — at two tiers: primary
+related jurisdiction (from `structure.primary_jurisdiction`) at 0.22, other
+related jurisdictions at 0.14. Ordinary hover stays at 0.30 (unchanged);
+the category-transition pulse (below) is 0.45, the strongest of the three,
+reserved for a genuine one-shot event.
+
+**Bug found and fixed during this batch:** beacon-rendered jurisdictions
+(Mauritius, Malta, Singapore — islands too small for the polygon layer,
+rendered via `three-globe`'s separate `pointColorFn`/point-data path) were
+not covered by the illumination/pulse logic at all — only the polygon path
+(`capColorFn`) had been extended. Fixed by mirroring the same
+`illuminatedIsos`/`pulsingIsos` checks into `pointColorFn`, and by adding
+`.pointColor(globe.pointColor())` to the repaint-trigger effects (which
+previously only re-invoked the four polygon accessors). Verified with a
+source-level regression test; the polygon case (Croatia) was additionally
+confirmed live.
+
+### Category-transition unlock pulse
+
+Reuses the existing `STATUS_RANK` (now exported from `globeData.js`) to
+detect a genuine rank **improvement** (e.g. Excluded → Alternatives) via the
+Batch 1 category-diff engine (`globeCategoryDiff.js` — `loadCategorySnapshot`
+/`saveCategorySnapshot`/`diffCategories`, localStorage-persisted per
+`production_id`, no false positive on first observation). On an improvement,
+the affected jurisdiction(s) pulse once at 0.45 brighten for 2.4s, gated on
+`prefers-reduced-motion`, with the timer owned by `ProjectGlobe.jsx` (the
+caller), not the Globe component itself — consistent with "no duplicate rAF
+loops, no new animation owner inside `Globe3D.jsx`."
+
+### Vertical legend
+
+Replaced the prior single-row 10px `.globe-legend-compact` with a vertical,
+left-edge, 13px `.globe-legend-vertical` (`GlobeLegend.jsx` + `screens.css`)
+using each state's `fullLabel` (long form, matching hover) rather than the
+compact chip label. `pointer-events: none` (unchanged behavior — never
+intercepts a click meant for the globe). Same four canonical states, same
+`GLOBE_SEMANTIC` source of truth, no hand-written duplicate list. Verified
+live: full four labels legible, positioned clear of the Inspector's
+right-side float and the bottom caption, both themes.
+
+### Hover-contract rewrite (final correction, direct user instruction)
+
+The prior hover framing — `Program: X · Up to 40%` plus a second line
+`Modeled Rate: 40% (guaranteed floor 30%)` — was flagged as reading like a
+misleading "30–40% range." Rewritten to five clean fields, verbatim from
+existing backend fields, no fabrication:
+
+| Field | Source | Example (Mauritius, this production) |
+|---|---|---|
+| Program | `program_slug` → `programDisplay()` | EDB Film Rebate Scheme |
+| Maximum Incentive | `rate_ceiling` (the pricing kernel's own `modeled_rate` — the only rate that funds every downstream dollar figure) | Up to 40% |
+| Modeled Incentive | `segmentIncentiveUsd` (`incentive_ceiling_usd`), full dollar, never abbreviated | $1,742,131 |
+| NPC | `npc_with_adjustments_usd`, full dollar | $2,622,262 |
+| Incentive / Gross Budget | `segmentIncentiveUsd / grossBudgetUsd`, its own top-level line (no longer a sub-line) | 39.9% |
+
+Verified against the live backend (`GET /structures`, `GET /production` for
+production `LITTLE-UTOPIA`): `gross_budget_usd=4,364,393`,
+`rate_resolution.modeled_rate=0.40`, candidate `PSC-MU` conservative case
+`incentive_usd=1,742,130.8`, `net_production_cost_usd=2,622,262.2` — the
+five displayed fields compute to exactly the values in the table above
+(39.92% rounds to 39.9%). No second NPC calculation, no rate invented. The
+Co-Production body's "Potential Uplift" field was renamed to "Co-Production
+Potential" (still the honest "Not modeled yet" fallback — the optimizer does
+not currently produce this figure; not fabricated).
+
+### Optimizer-rerun and data-flow investigation (report only — no code change)
+
+Traced the full path: `useCineGlobe()` (`getProduction, getPackage,
+getRecommendations, getStructures, getLegal, getEconomics, getPeople,
+getFacts` — all GET) is used **identically** by Overview, Workspace,
+Scenarios, Project Globe, Binder, Record, Settings, Knowledge, and Reports —
+one shared data path, no Globe-specific divergent fetch. Backend caching
+(`get_state()` → `_build_state(fact_key, people_key)`,
+`@lru_cache(maxsize=8)` in `little_utopia_state.py`) means repeated GETs
+(page loads, hover, click, zoom, rotate, fixture-switch, Inspector-open) are
+cache hits, not fresh optimizer runs — invalidated only by
+`apply_fact_answers()`/`reset_fact_answers()`/`apply_people_facts()` (i.e.
+POST `/facts`, `/people`). **Finding: the Globe never triggers an optimizer
+rerun on load, hover, select, zoom, rotate, fixture-switch, or Inspector-
+open.** This was already true of the architecture; no fix was required or
+made.
+
+**Personnel-facts discrepancy (reported, not corrected, per the no-
+fabrication instruction):** live `GET /people` for this production returns
+writer = Clara Salaman, nationality **GB**; director = Kim Farrant,
+nationality **AU**; lead cast = "Unannounced Lead Cast", nationality
+**unknown** (`missing_inputs: MISSING-NATIONALITY-cast-1`). This is the
+opposite of an "Australian writer / UK director / UK lead actor" premise —
+and the lead-actor nationality is genuinely unknown, not merely unentered
+with a known value. Per the strict one-optimizer-run budget and the
+no-fabrication instruction: **zero new optimizer runs were performed**, no
+fact was invented or overwritten to match the incorrect premise. This is a
+casting/data-entry gap for the production owner to resolve, not a Globe or
+optimizer defect.
+
+**Co-production qualification (reported, not built as a separate list):**
+`treaty_engine.py`'s `evaluate_bilateral_eligibility()` /
+`get_available_bilateral_treaties()` do not take personnel nationality as an
+input — nationality/cultural-test wiring into treaty eligibility is a
+separate, partially-implemented subsystem (a pre-existing, documented gap,
+not new). This production has zero `treaty_coproduction`-type structures
+and an empty `reachable_treaty_partners` list for Mauritius — every
+"Co-Production Opportunity" shown is a real `component_relocation`
+structure with real blockers, not a fabricated treaty relationship. No
+Globe-only treaty database was built; the existing Optimizer Overlay arc
+infrastructure (`buildOptimizerPathway` in `globeData.js`) was confirmed
+already built and already used in served runtime (verified live: toggling
+to "Optimizer Overlay" on the single-jurisdiction baseline correctly showed
+the Mauritius beacon and the honest caption "The recommended structure is
+single-jurisdiction — no routing to show") — reused, not rebuilt.
+
+### Product decisions recorded for a future UX phase (NOT implemented this batch)
+
+1. **Project Library** — a company-level, pre-optimization intake distinct
+   from active productions ("one project = one eventual production"),
+   holding script/budget/schedule/deck/artwork/notes. The Overview screen's
+   "New production" placeholder should eventually become a shortcut into
+   this library/intake flow.
+2. **Project Art** — the app should search uploaded materials for usable
+   key art, and eventually auto-generate artwork if none exists; the
+   project library should use visual cards, not a file-folder UI.
+3. **Company Knowledge** is explicitly **not** the project file library —
+   it is the institutional-learning layer (incentive outcomes, jurisdiction
+   performance, vendors, crew, costs, approval timing, audit behavior,
+   financing experience, historical assumptions vs. actuals), distinct from
+   the per-production record.
+
+These are recorded here as product direction only; no code was written for
+any of the three, per explicit instruction.
+
+### Verified live (Playwright, this batch)
+
+Border continuity (multiple regions, both themes); ocean drift motion
+(gated correctly, confirmed no land motion); Co-Production hover
+illumination (Croatia, polygon path, live; Mauritius/Malta/Singapore beacon
+path, source-level regression test after the `pointColorFn` fix — a live
+camera angle showing Mauritius simultaneously with a hovered European
+country was not chased once the identical underlying mechanism was already
+confirmed working and covered by a direct test, per the efficiency
+instruction not to chase animation capture when deterministic evidence is
+available); category pulse (reduced-motion gated, timer-owned by caller);
+vertical legend (all four full labels, both themes, positioned clear of
+Inspector and caption); final hover-contract rewrite on Mauritius,
+cross-checked against live backend values (`Up to 40%` / `$1,742,131` /
+`$2,622,262` / `39.9%`); zero console errors/warnings throughout;
+`globeFixture=0` (no fixture artifacts) for every check above. 46/46 tests
+passing, clean `vite build`.
+
+### Explicitly deferred (do not start without new authorization)
+
+- Phase 4 (Overview / broader production UX redesign).
+- Inspector redesign (Inspector remains the verified-only explanation
+  layer; its content/IA was not touched this batch).
+- Project Library implementation (recorded above, not built).
+- Optimizer nationality / cultural-test logic repair (the personnel-facts
+  and treaty-eligibility gaps above are pre-existing and out of scope for
+  the Globe).

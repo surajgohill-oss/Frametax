@@ -221,20 +221,24 @@ test("the restored Globe legend carries exactly the four current states, no lega
   }
 });
 
-test("the legend is scoped to Project Globe only, and stays visually secondary", () => {
+test("the legend is scoped to Project Globe only, is vertical, and never intercepts a click", () => {
   // "Only the Project Globe rendering" — not Overview, not Workspace. Import
   // check is a reasonable proxy: only ProjectGlobe.jsx may mount it.
   const mounters = ["screens/production/Overview.jsx", "screens/production/Workspace.jsx"]
     .filter((f) => stripComments(read(f)).includes("GlobeLegend"));
   assert.deepEqual(mounters, [], `GlobeLegend must not be mounted outside Project Globe: ${mounters.join(", ")}`);
   assert.match(read("screens/production/ProjectGlobe.jsx"), /<GlobeLegend\s*\/>/);
-  // Visually secondary: small type, not full-width, not styled as a modal —
-  // asserted structurally rather than by exact pixel values, which belong to
-  // design review, not a regression test.
+  // PHASE 3B GLOBE CLOSEOUT: the old "stay tiny, single row" rule is
+  // explicitly reversed — the legend was found too small to read and is
+  // rebuilt as a larger vertical stack. What must still hold: readable but
+  // not modal-sized, and it must never swallow a click meant for the globe
+  // underneath/beside it (pointer-events: none).
   const css = read("styles/screens.css");
-  const block = /\.globe-legend-compact\s*\{[^}]*\}/.exec(css);
-  assert.ok(block, ".globe-legend-compact rule not found");
-  assert.match(block[0], /font:\s*10px/, "legend type must stay small");
+  const block = /\.globe-legend-vertical\s*\{[^}]*\}/.exec(css);
+  assert.ok(block, ".globe-legend-vertical rule not found");
+  assert.match(block[0], /font:\s*1[0-4]px/, "legend type must be larger than the old 10px, but still a caption size, not a heading");
+  assert.match(block[0], /pointer-events:\s*none/, "legend must never intercept a click meant for the globe");
+  assert.match(block[0], /flex-direction:\s*column/, "legend must be vertical, per the closeout instruction");
 });
 
 // PHASE 3A FINAL CLOSEOUT: this test previously banned ANY money figure from
@@ -622,4 +626,87 @@ test("category snapshot persistence round-trips through localStorage and is keye
   assert.equal(loadedA.get("MU"), "gold");
   assert.equal(loadedA.get("BE"), "jade");
   assert.equal(loadedB.get("MU"), "silver", "productions must not share a snapshot key");
+});
+
+// ── Phase 3B Batch 2: border quality, hover illumination, category pulse ──
+
+test("altitudeJitter is deterministic and stays far below the smallest real altitude step", async () => {
+  const src = read("components/Globe3D.jsx");
+  const fn = /function altitudeJitter[\s\S]*?\n}/.exec(src);
+  assert.ok(fn, "altitudeJitter not found");
+  // eslint-disable-next-line no-eval
+  const altitudeJitter = new Function(`${fn[0]}; return altitudeJitter;`)();
+  const a = altitudeJitter("US-GA");
+  const b = altitudeJitter("US-GA");
+  const c = altitudeJitter("CA-BC");
+  assert.equal(a, b, "same ISO must jitter identically every call — never random per frame");
+  assert.ok(Math.abs(a) < 2e-5 + 1e-12, `jitter ${a} exceeds its own documented +/-2e-5 bound`);
+  // INACTIVE_POLYGON_ALTITUDE = 0.002 is the smallest real semantic step —
+  // jitter must be at least an order of magnitude below it or it would
+  // visibly perturb the cap/fill, not just tie-break the stroke.
+  assert.ok(Math.abs(a) < 0.002 / 10, "jitter must stay far below the smallest real altitude step");
+  assert.notEqual(a, c, "different ISOs should (almost always) get different jitter");
+});
+
+test("altitudeFn applies the jitter to every branch, so no branch reintroduces exact stroke coincidence", async () => {
+  const src = read("components/Globe3D.jsx");
+  const fn = /const altitudeFn = \(feat\) => \{[\s\S]*?\n    \};/.exec(src);
+  assert.ok(fn, "altitudeFn not found");
+  const body = fn[0];
+  // Every return in this function must include the jitter term.
+  const returns = body.match(/return [^;]+;/g) || [];
+  assert.ok(returns.length >= 4, `expected at least 4 return branches, found ${returns.length}`);
+  for (const r of returns) {
+    assert.ok(r.includes("jitter"), `altitudeFn branch does not apply the jitter: ${r}`);
+  }
+});
+
+test("ocean drift animates the SAME texture's UV offset only — no geometry, no land motion, gated on ambientMotion", async () => {
+  const src = read("components/Globe3D.jsx");
+  assert.match(src, /oceanSurfaceTexture\.offset\.x\s*=/, "ocean drift must animate the texture offset");
+  assert.ok(!/land.*\.offset\.[xy]\s*=/i.test(src), "land must never be animated by the ocean drift");
+  // The drift line must appear strictly between the ambientMotion gate and
+  // the frame's requestAnimationFrame call (i.e. inside that gated block,
+  // not a separately-scheduled or always-on animation).
+  const gateIdx = src.indexOf("if (stateRef.current.ambientMotion)");
+  const driftIdx = src.indexOf("oceanSurfaceTexture.offset.x =");
+  const rafIdx = src.indexOf("frameId = requestAnimationFrame(animate)");
+  assert.ok(gateIdx > -1 && driftIdx > gateIdx && driftIdx < rafIdx, "ocean drift must be inside the ambientMotion-gated animate loop");
+});
+
+test("Co-Production Opportunity hover illumination is a no-op for every other category", async () => {
+  const src = read("screens/production/ProjectGlobe.jsx");
+  const block = /const \{ illuminatedIsos, primaryIlluminatedIso \} = useMemo\(\(\) => \{[\s\S]*?\n  \}, \[/.exec(src);
+  assert.ok(block, "illumination useMemo not found");
+  assert.match(block[0], /hover\.status !== "amber"/, 'illumination must gate on status === "amber" only');
+  assert.match(block[0], /relatedCodes/, "illumination must be built from the real relatedCodes, not invented");
+});
+
+test("category pulse only fires on a real rank IMPROVEMENT, using the shared STATUS_RANK", async () => {
+  const src = read("screens/production/ProjectGlobe.jsx");
+  assert.match(src, /STATUS_RANK\[c\.currCategory\] > STATUS_RANK\[c\.prevCategory\]/, "pulse must gate on an improving STATUS_RANK comparison");
+  assert.match(src, /prefers-reduced-motion/, "pulse must check prefers-reduced-motion before scheduling");
+  assert.match(src, /clearTimeout\(pulseTimeoutRef\.current\)/, "a new pulse must clear any pending previous pulse timeout, never stack");
+});
+
+test("pulse brighten is the strongest of the three tiers, and never invents a new colour", async () => {
+  const src = read("components/Globe3D.jsx");
+  const capFn = /const capColorFn = \(feat\) => \{[\s\S]*?\n    \};/.exec(src)[0];
+  assert.match(capFn, /brightenHex\(base, 0\.45\)/, "pulse must use the documented 0.45 tier");
+  assert.match(capFn, /liveRef\.current\.pulsingIsos\?\.has\(iso\)/, "pulse must read from liveRef.current.pulsingIsos");
+  // All three tiers (hover/illumination/pulse) must route through the same
+  // brightenHex helper — never a second, hardcoded colour system.
+  const brightenCalls = (capFn.match(/brightenHex\(/g) || []).length;
+  assert.ok(brightenCalls >= 3, "hover, illumination and pulse should all route through brightenHex");
+});
+
+test("beacon-rendered jurisdictions (Mauritius/Malta/Singapore) also receive illumination/pulse, not just polygons", async () => {
+  const src = read("components/Globe3D.jsx");
+  const pointFn = /const pointColorFn = \(d\) => \{[\s\S]*?\n    \};/.exec(src);
+  assert.ok(pointFn, "pointColorFn not found");
+  assert.match(pointFn[0], /liveRef\.current\.illuminatedIsos\?\.has\(d\.iso\)/, "pointColorFn must check illuminatedIsos");
+  assert.match(pointFn[0], /liveRef\.current\.pulsingIsos\?\.has\(d\.iso\)/, "pointColorFn must check pulsingIsos");
+  // The repaint-trigger effects must re-invoke pointColor, or a beacon
+  // country's illumination would never repaint on hover start/end.
+  assert.match(src, /\.polygonStrokeColor\(globe\.polygonStrokeColor\(\)\)\s*\n\s*\.pointColor\(globe\.pointColor\(\)\)/, "illumination repaint effect must re-invoke pointColor too");
 });
