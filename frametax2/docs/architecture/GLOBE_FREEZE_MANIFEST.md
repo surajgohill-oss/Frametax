@@ -11,7 +11,9 @@
   investigation and the personnel-facts discrepancy finding are recorded
   below and in `CAPABILITY_LEDGER.md` — no optimizer code was touched.
 - See "Batch: Phase 3B — Globe Experience, Semantic Motion & Closeout" below
-  for the full record.
+  for the full record, and its "Addendum: final optical closeout" for the
+  legend/ocean/atmosphere corrections made after the first freeze pass
+  (final commit `ca689fd`).
 
 **Frozen:** 2026-07-30 — **Phase 3A OPTICAL FINISH, FINAL, tag `globe-phase3a-freeze`**
 - Optical reconciliation against the approved reference render, closed out in
@@ -1348,6 +1350,64 @@ cross-checked against live backend values (`Up to 40%` / `$1,742,131` /
 `$2,622,262` / `39.9%`); zero console errors/warnings throughout;
 `globeFixture=0` (no fixture artifacts) for every check above. 46/46 tests
 passing, clean `vite build`.
+
+### Addendum: final optical closeout (2026-08-01, second pass, commit `ca689fd`)
+
+A runtime screenshot taken after the batch above froze surfaced four
+remaining optical complaints. Each was investigated before any fix was
+applied, not patched on sight.
+
+**Sphere "distortion" — investigated, found NOT to be a real defect.**
+Instrumented `applySize()` at runtime (temporary debug hook, removed after
+verification) and confirmed at three viewport widths (660×560, 981×651,
+1240×831) that `camera.aspect` exactly equals the canvas's own pixel aspect
+ratio in every case, with no CSS transform anywhere in the canvas's parent
+chain and no devicePixelRatio mismatch (canvas intrinsic size == CSS size).
+A perspective camera with square pixels and matched aspect always projects
+a sphere as a circle, regardless of the aspect value itself — so the
+geometry was never actually wrong. The visual impression of distortion
+traced to an earlier, badly-composed screenshot (a collapsed/scrolled
+viewport from a prior session), not a rendering defect. No geometry code
+was changed as a result; this finding is recorded rather than a fix invented
+for a bug that didn't reproduce.
+
+**Legend, reduced further.** The vertical legend from the batch above was
+directionally correct but measured too large and too heavy on review:
+168×101px bounding box (was ~220×172px) — background opacity cut 0.6 → 0.28,
+padding/gap/font/dot size all reduced, border and shadow removed. Same four
+full labels, same `GLOBE_SEMANTIC` source of truth, still `pointer-events:
+none`, still positioned on the canvas's left edge clear of the Inspector.
+
+**Ocean, tuned for legibility.** `envMapIntensity` raised (0.44/0.50 →
+0.50/0.56 day/night) and `clearcoatRoughness` tightened (0.68 → 0.58,
+average effective ~0.34 → ~0.29) for a crisper, more dimensional specular
+response — base hue/saturation untouched, still dark navy, not brightened
+toward blue. The UV drift rate was raised from a ~40-minute full cycle
+(1/2400 per second) to a ~2.5-minute one (1/150 per second): the original
+rate was correct in code but too slow to ever perceive within a normal
+runtime observation window, and the brief explicitly required the motion be
+*visually* verified, not merely present in source. Verified live: a pixel
+diff between two screenshots of the same ocean region ~10s apart showed 44%
+of pixels changed by a meaningful amount.
+
+**Atmosphere, raised together with the rim shell.** `ATMOSPHERE_ALTITUDE`
+raised 0.095 → 0.125 and `BASE_RIM_INTENSITY` raised 0.24 → 0.29 in the same
+pass — the two shells do different jobs (soft outer taper vs. crisp
+curvature edge) and had been tightened down together in the original batch
+past the point of legibility. Raised partway back toward, not all the way
+to, the three-globe library default (0.15) that an earlier pass had
+rejected as "one wide uniform wash." A stale comment claiming three-globe's
+atmosphere layer "stays off" (dating from before Phase 3A re-enabled it) was
+also corrected in the same edit.
+
+**Responsive verification:** sphere confirmed circular and legend confirmed
+compact at 1280×800, 1600×900, and 1920×1080 — the sphere silhouette tracks
+the canvas aspect at every width with no cropping or stretching artifact.
+
+**Verified live:** clean console (0 errors/warnings) at every viewport,
+`globeFixture=0` throughout, 46/46 tests passing, clean `vite build`. Tag
+`globe-phase3b-freeze` moved to commit `ca689fd` (the final verified state)
+after this addendum.
 
 ### Explicitly deferred (do not start without new authorization)
 
