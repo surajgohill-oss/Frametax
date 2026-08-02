@@ -1251,36 +1251,37 @@
    plate family as .globe-tooltip/.globe-caption. */
 .globe-legend-vertical {
   position: absolute;
-  left: 14px;
+  left: 12px;
   top: 50%;
   transform: translateY(-50%);
   z-index: 6;
   display: flex;
   flex-direction: column;
-  gap: 11px;
-  padding: 14px 16px;
-  border-radius: 10px;
-  background: rgba(20, 22, 26, 0.6);
-  backdrop-filter: blur(6px);
-  border: 0.5px solid rgba(255, 255, 255, 0.1);
-  font: 13px/1.3 var(--font-sans);
+  gap: 6px;
+  padding: 7px 9px;
+  border-radius: 7px;
+  background: rgba(16, 18, 22, 0.28);
+  backdrop-filter: blur(3px);
+  border: none;
+  box-shadow: none;
+  font: 11px/1.25 var(--font-sans);
   letter-spacing: 0.005em;
   color: var(--dark-text-secondary);
   pointer-events: none;
-  max-width: min(220px, calc(100% - 28px));
+  max-width: min(168px, calc(100% - 24px));
 }
-.glv-item { display: flex; align-items: center; gap: 9px; }
-.glv-dot { width: 11px; height: 11px; border-radius: 50%; flex: none; }
+.glv-item { display: flex; align-items: center; gap: 6px; }
+.glv-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
 
 /* Narrow canvas (Inspector open on a smaller viewport, or the narrow-desktop
    breakpoint already used elsewhere in this stage): shrink rather than
    overlap or wrap awkwardly. */
 @media (max-width: 900px) {
   .globe-legend-vertical {
-    font-size: 12px;
-    padding: 11px 13px;
-    gap: 8px;
-    max-width: min(180px, calc(100% - 24px));
+    font-size: 10px;
+    padding: 6px 8px;
+    gap: 5px;
+    max-width: min(140px, calc(100% - 20px));
   }
-  .glv-dot { width: 9px; height: 9px; }
+  .glv-dot { width: 6px; height: 6px; }
 }

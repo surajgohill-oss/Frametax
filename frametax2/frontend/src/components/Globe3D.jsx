@@ -264,7 +264,11 @@ const GLOBE_THEME = {
     // paired with the clearcoatRoughnessMap above so the extra reflectivity
     // has genuine per-pixel variation to break up rather than printing a
     // single brighter blob.
-    envIntensity: 0.44,
+    // PHASE 3B CLOSEOUT: 0.44 -> 0.50 — the ocean read as flat/near-black in
+    // runtime review; a stronger reflected response, paired with the crisper
+    // clearcoatRoughness below, is what makes the surface read as dimensional
+    // rather than a flat tint. Base colour/hue untouched (still dark navy).
+    envIntensity: 0.50,
     // Multiplier on the polygon cap/side materials' own envMapIntensity.
     // Day is the identity by definition — the day render is the frozen,
     // verified baseline and this consolidation must not alter a pixel of it.
@@ -307,7 +311,8 @@ const GLOBE_THEME = {
     // same proportion as day (1.04 -> 1.12).
     exposure: 1.12,
     // Raised in step with day (0.46 -> 0.50), same reasoning.
-    envIntensity: 0.50,
+    // PHASE 3B CLOSEOUT: raised in step with day (0.50 -> 0.56).
+    envIntensity: 0.56,
     // Night lifts the LAND/status caps' environment response alongside the
     // ocean's. Previously only the globe body's envMapIntensity was
     // theme-driven, so at night the ocean gained reflectivity while every
@@ -363,7 +368,11 @@ const HOVER_STROKE = "#dfe4ec";
 // ATMOSPHERE_ALTITUDE above — the rim now carries more of the "curvature
 // reinforcement" job (item 4) so the atmosphere can be narrower without the
 // limb going bare.
-const BASE_RIM_INTENSITY = 0.24;
+// PHASE 3B CLOSEOUT: 0.24 -> 0.29, in step with the ATMOSPHERE_ALTITUDE raise
+// above — the crisp curvature edge needed to lift alongside the softer outer
+// taper, or the atmosphere raise alone would have widened a still-faint glow
+// rather than making the limb genuinely legible.
+const BASE_RIM_INTENSITY = 0.29;
 const SELECTED_RIM_INTENSITY = 0.32;
 // Selection is a substantial physical lift, not a hint — it must become the
 // focal point of the scene the moment it is chosen. Raised again ~25% in the
@@ -433,7 +442,13 @@ const ORBIT_MAX_DISTANCE = 460;
 // pass is what turns two shells into two visibly DIFFERENT jobs — a crisp
 // curvature edge (rim) and a much narrower soft taper beyond it (atmosphere)
 // — instead of one wide glow doing both.
-const ATMOSPHERE_ALTITUDE = 0.095;
+// PHASE 3B CLOSEOUT: 0.095 -> 0.125. Runtime review found the shell had been
+// tightened past legibility — at 0.095 the atmosphere was difficult to
+// perceive at all, not merely restrained. Nudged partway back toward (not to)
+// the library default 0.15, paired with the BASE_RIM_INTENSITY raise below,
+// so the limb reads as "the planet has atmosphere" without returning to the
+// "one wide uniform wash" failure the two comments above document.
+const ATMOSPHERE_ALTITUDE = 0.125;
 
 function easeOutQuart(t) {
   return 1 - Math.pow(1 - t, 4);
@@ -495,9 +510,10 @@ function brightenHex(hex, amount = 0.24) {
 //    scalar per frame — no geometry, no extra draw call.
 const ENV_DRIFT_RAD_PER_SEC = 0.0125; // ~8.4 min per revolution
 // 2. Limb breathing: the fresnel rim shell's intensity oscillates a few
-//    percent, reading as atmosphere rather than as a hard glass edge.
-//    three-globe's own atmosphere layer stays off (it z-fights the sphere —
-//    see showAtmosphere below), so this shell is the only limb we have.
+//    percent, reading as atmosphere rather than as a hard glass edge. This
+//    shell works ALONGSIDE three-globe's own atmosphere layer (re-enabled
+//    Phase 3A — see showAtmosphere below), not instead of it: the rim is the
+//    crisp curvature edge, the atmosphere is the soft glow beyond it.
 const RIM_BREATH_PERIOD_SEC = 11.0;
 const RIM_BREATH_AMOUNT = 0.12; // ±12% of the current base intensity
 // 3. Recommendation breath: the gold beacon's glow shell swells slightly on
@@ -505,10 +521,14 @@ const RIM_BREATH_AMOUNT = 0.12; // ±12% of the current base intensity
 //    makes the recommendation the thing the eye returns to.
 const GOLD_BREATH_PERIOD_SEC = 4.4;
 const GOLD_BREATH_AMOUNT = 0.16;
-// 3b. Ocean drift (Phase 3B Batch 2): full texture cycle every ~40 minutes —
-//    "perceptible only on deliberate observation," not something a producer
-//    glancing at the screen would ever consciously register as movement.
-const OCEAN_DRIFT_PER_SEC = 1 / 2400;
+// 3b. Ocean drift. PHASE 3B CLOSEOUT: sped up from a ~40-minute full cycle
+//    (1/2400) to a ~2.5-minute one — the prior rate was too slow to perceive
+//    within a normal runtime observation window, which the brief calls out
+//    explicitly ("motion must be visually verified, not merely present in
+//    source"). Still slow and restrained by any normal-speed standard (a full
+//    cycle takes longer than a minute hand's half-revolution); not a "rolling
+//    wave," just a slow specular/bump drift across the existing texture.
+const OCEAN_DRIFT_PER_SEC = 1 / 150;
 // 4. Slow autorotation, and ONLY while the producer is neither inspecting
 //    nor driving the camera: any selection or any pointer interaction stops
 //    it immediately (see the controls block). A globe that keeps turning
@@ -1698,7 +1718,12 @@ export default function Globe3D({
       // panel shape, was what kept the reflection reading as a sharp isolated
       // spot regardless of how long/thin the source was made.
       clearcoatRoughnessMap: oceanSurfaceTexture,
-      clearcoatRoughness: 0.68,
+      // PHASE 3B CLOSEOUT: 0.68 -> 0.58 (effective sphere-average clearcoat
+      // roughness ~0.34 -> ~0.29) — a crisper specular streak, paired with
+      // the raised envIntensity above, for visible surface dimensionality.
+      // Still well short of the ~0.16 "two white orbs" failure this file
+      // documents as the hard ceiling on the other end.
+      clearcoatRoughness: 0.58,
       envMapIntensity: GLOBE_THEME.day.envIntensity,
       ior: 1.52, // ~optical crown glass
       // Emissive is additive and lighting-independent, so it is the sphere's
