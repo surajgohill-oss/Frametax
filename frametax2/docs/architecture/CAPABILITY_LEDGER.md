@@ -122,6 +122,57 @@ freeze marker. The Globe freeze tags are unaffected and were not moved.
 Per the reconciliation rule, general Overview polish should not reopen
 without a genuine regression or new requirement.
 
+## PRODUCTION SHELL — FROZEN (2026-08-03)
+
+The cinematic `ProductionHero` (242px, Little Utopia key-art crop, live
+metrics, utility controls, no baked typography) is the shared production
+identity header for **all eight** production routes (Overview, Workspace,
+Scenarios, Project Globe, Documents, Record, Knowledge, Reports) — one
+`ProductionHero` instance rendered from `ProjectHeader.jsx`, one shared
+`<nav className="project-tabs">` beneath it. The former per-route compact
+`.project-header` bar (title/budget/question-count row) has been retired;
+its route-conditional branch in `ProjectHeader.jsx` was removed rather than
+kept as unreachable dead code. Its CSS classes remain in `shell.css` unused
+— removing CSS was judged a needless regression risk with nothing gained,
+since no other component references them.
+
+Runtime-verified at 1600px: all 8 routes render an identical hero
+(heroHeight=242 on every route), identical 8-tab nav, correct active-tab
+highlighting, and body content beginning at the same `bodyTop` immediately
+beneath the tabs (no gap, no overlap). No route's page content was resized
+or compressed to compensate for the taller header — each route's own
+scrollable body region (`.workspace-main`, `overflow-y:auto`, `flex:1`)
+simply starts lower in the viewport, exactly as the existing flex/scroll
+architecture already handled the Overview-only hero in the prior phase.
+Both themes verified on a non-Overview route (Reports). This is a shell/
+navigation-chrome freeze only — **it does not freeze Workspace, Scenarios,
+Documents, Record, Knowledge, or Reports UX**, only the shared header/tabs
+wrapping them.
+
+## PRODUCTION BUDGET — ADJUSTMENTS ROW CLASSIFIED (2026-08-03)
+
+Audited `BudgetRail.jsx`'s `AdjustmentsPreview` ("Adjustments (preview — not
+yet saved)"). Traced UI control → local `useState({reinvestment, inkind,
+labor, manual})` → no API call anywhere (confirmed zero references to
+"adjustment" in `api.js` or the backend `cineglobe.py` router) → the
+"Current" value shown is `original + adjustment`, computed and discarded in
+the browser only; it never touches `structure.npc_with_adjustments_usd` or
+any other canonical calculation. Reload always resets to zero — by design,
+not a bug.
+
+**Classification: B — intentionally preview-only / deferred.** The code's
+own comment names this "Workspace Phase 1: design only... the later 'User
+Adjustments' phase replaces the local state with a real mutation +
+refetch." The UI wording was independently checked against this batch's own
+bar ("do not leave misleading half-production wording") and already clears
+it without any change needed: the row label itself says "not yet saved,"
+the input's tooltip says "local preview only — not persisted," and an
+explicit paragraph beneath the rows states "nothing here is sent to the
+backend yet; persistence is the later User Adjustments phase." No UI or
+code change was made — this entry exists so the classification is formally
+recorded, per this batch's own requirement, rather than left as only an
+inline code comment.
+
 ---
 
 Canonical record of every optimizer capability's runtime/implementation/integration status. Updated as capabilities are reconnected — see the reconciliation series in this engagement's commit history for the underlying investigation.
