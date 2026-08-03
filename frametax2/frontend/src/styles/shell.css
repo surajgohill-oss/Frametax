@@ -161,49 +161,77 @@
    Cinematic replacement for `.project-header` on /production/overview
    alone — see ProjectHeader.jsx's `isOverviewHero` branch. Every other
    production route still renders `.project-header` below, completely
-   unchanged. Height ~230px (upper end of the approved 190-230px cinematic
-   range): tall enough to read as a title card, not a giant splash screen.
-   `.project-tabs` sits immediately below, same element/markup as the
-   compact-bar path, so tab styling/behavior cannot diverge by route. */
+   unchanged. Height 260px (approved 240-270px range — smallest height in
+   that range needing this composition was closer to 250, +10px kept for
+   the metric captions added this pass). `.project-tabs` sits immediately
+   below, same element/markup as the compact-bar path, so tab
+   styling/behavior cannot diverge by route.
+   ARCHITECTURE (visual-correction pass): the FIRST pass painted the
+   artwork directly as `.ph-hero`'s own background and covered it with one
+   near-uniform scrim — the crop that avoided the baked title happened to
+   be the darkest, least cinematic part of the source photo (shadowed
+   cliff steps), and the scrim then darkened that further. Corrected by
+   splitting into independent layers: `.ph-hero-art` (the photo, its own
+   scale/position, never touched by text layout) below a DIRECTIONAL
+   `.ph-hero-scrim` (strong only where live text sits) below the topbar/
+   content rows. */
 .ph-hero {
   position: relative;
-  height: 230px;
+  height: 260px;
   flex-shrink: 0;
-  background-size: cover;
-  /* PHASE: Overview Hero. Vertical position tuned so the visible crop sits
-     BELOW the artwork's own large serif "The / Little Utopia" title (which
-     runs to roughly image-y 420 of 948) — that title, at this hero's
-     aspect ratio, would otherwise land almost exactly behind the live DOM
-     title and read as a literal duplicate, confirmed at runtime. At this
-     position the crop instead shows the coastline/cliff steps and the
-     lower "A FEATURE FILM" line only, which the scrim fully suppresses. */
-  background-position: center 78%;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
 }
-/* Suppresses the key art's own baked-in title typography into pure
-   atmosphere (left-to-right + bottom gradient, per instruction) while
-   guaranteeing contrast for the REAL DOM title/metrics on top. Darkest at
-   bottom-left (where the live title sits) and along the bottom edge (where
-   the live metrics baseline sits); lightest at top-right, so the sky/sunset
-   in the photograph still reads as photography, not a black rectangle. */
+.ph-hero-art {
+  position: absolute;
+  inset: 0;
+  /* REGRESSION FOUND AND FIXED AT RUNTIME (1440px acceptance viewport):
+     `background-size: cover` on a FIXED-height container means the
+     vertical crop window's size, measured in the source image's own
+     pixels, grows as the container narrows (a narrower `cover` width
+     scales the whole image down further, so the same 260px hero shows a
+     TALLER slice of the original). A percentage `background-position` is
+     then a fraction of a window that itself keeps changing size — at
+     1440px the window grew enough that `center 93%` slid back UP into the
+     baked "MEDITERRANEAN DRAMA" line, confirmed by screenshot, not by
+     recomputing in the abstract. Fixed two ways together: `108% auto`
+     shrinks the window at every width (less of the source is ever in
+     play), and `center bottom` anchors the crop's END to the image's own
+     bottom edge — an absolute anchor, not a percentage of a
+     variable-sized window, so it cannot drift back toward the text as
+     the viewport narrows. Re-verified against the source pixels at the
+     narrowest required viewport (1440px, the binding case): visible
+     source range starts at y~617, a 49px margin below the baked text's
+     y568 end. */
+  background-size: 108% auto;
+  background-position: center bottom;
+}
+/* Directional overlay — replaces the first pass's near-uniform scrim.
+   Strong only behind the identity block (bottom-left, where the live
+   serif title sits) and in a shallow band at the very bottom (grounding
+   the hero into the tabs below); much lighter behind the metrics
+   (bottom-right) and nearly clear through the vertical middle, so the
+   sea/sunset/sailboat the artwork layer now actually shows read as
+   photography, not as a near-black rectangle with text stamped on it. */
 .ph-hero-scrim {
   position: absolute;
   inset: 0;
-  /* PHASE: Overview Hero. First pass (a top-light vertical gradient) left
-     the artwork's own baked-in "The Little Utopia / A FEATURE FILM" title
-     legible and competing with the live DOM title — confirmed at runtime,
-     not assumed. The visible crop of this artwork (cover + 38% vertical
-     position at hero height) lands almost entirely on that baked title, so
-     a UNIFORM heavy darkening is required across the whole hero, not a
-     gradient that stays light anywhere — layered with the left/bottom
-     emphasis the live text needs on top of that base. */
   background:
-    linear-gradient(180deg, rgba(8, 10, 14, 0.74) 0%, rgba(8, 10, 14, 0.66) 55%, rgba(6, 8, 12, 0.80) 100%),
-    linear-gradient(90deg, rgba(6, 8, 12, 0.55) 0%, rgba(6, 8, 12, 0.30) 45%, rgba(6, 8, 12, 0.05) 75%, rgba(6, 8, 12, 0.30) 100%),
-    rgba(7, 9, 13, 0.42);
+    /* A. identity gradient — darkest at bottom-left, clear by center. */
+    linear-gradient(115deg, rgba(6, 8, 12, 0.74) 0%, rgba(6, 8, 12, 0.48) 22%, rgba(6, 8, 12, 0.10) 48%, rgba(6, 8, 12, 0) 62%),
+    /* B. metric-side support — restrained, only near the bottom-right
+       where the metric baseline sits, so the sunset/sea stay visible. */
+    linear-gradient(245deg, rgba(6, 8, 12, 0.38) 0%, rgba(6, 8, 12, 0.10) 30%, rgba(6, 8, 12, 0) 55%),
+    /* C. bottom grounding band — modest, shallow, just enough to settle
+       the hero into the tabs boundary. */
+    linear-gradient(180deg, rgba(6, 8, 12, 0) 55%, rgba(5, 7, 11, 0.30) 88%, rgba(5, 7, 11, 0.5) 100%),
+    /* D. thin scrim across the very top, for the topbar icons only —
+       the baked text is already fully outside this crop (see
+       .ph-hero-art), so this is legibility support for the icons against
+       a bright sky, not text suppression. */
+    linear-gradient(180deg, rgba(6, 8, 12, 0.34) 0%, rgba(6, 8, 12, 0) 22%);
 }
 /* Back link + header action icons (upload/AI/theme) — same `.ph-back`/
    `.ph-hactions`/`.ph-ico` components the compact bar uses (passed in as
@@ -245,25 +273,37 @@
   gap: 24px;
   padding: 0 30px 22px 30px;
 }
-.ph-hero-identity { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+/* LEVEL 1 (title) must dominate every metric value below it — see the
+   typography-hierarchy requirement this pass corrected: title 40px vs.
+   metric values 26px is a ~1.5x ratio, clearly the largest thing in the
+   hero, vs. the prior pass's 38px/26px (~1.46x) which read closer to
+   peers under the heavier scrim. */
+.ph-hero-identity { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .ph-hero-title {
-  font-size: 38px;
-  line-height: 1.08;
+  font-size: 40px;
+  line-height: 1.06;
   font-style: italic;
   color: #F7F3E8;
-  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.45);
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.55), 0 1px 3px rgba(0, 0, 0, 0.5);
 }
+/* "Feature Film" + the stage control grouped as ONE identity block (LEVEL
+   4) rather than the title's own stack rhythm, per the requirement that
+   the stage control sit alongside the supporting line, not float on its
+   own vertical rhythm. */
+.ph-hero-identity-sub { display: flex; align-items: center; gap: 14px; }
 .ph-hero-sub {
   margin: 0;
   font-size: 13px;
   letter-spacing: 0.02em;
   color: rgba(247, 243, 232, 0.72);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
 }
 /* Stage dropdown reuses `.ph-stage`/`.ph-stage-dd`/etc from the compact bar
    verbatim (same component, passed in as `stageControl`) — only the two
    overrides below adapt its colours to sit on dark photography instead of
    `--surface-1`. */
-.ph-hero-identity .ph-stage-label { color: rgba(247, 243, 232, 0.62); }
+.ph-hero-identity .ph-stage { gap: 8px; }
+.ph-hero-identity .ph-stage-label { display: none; }
 .ph-hero-identity .ph-stage-val {
   background: rgba(20, 22, 20, 0.42);
   border-color: rgba(247, 243, 232, 0.28);
@@ -272,34 +312,48 @@
 }
 .ph-hero-identity .ph-stage-val:hover { border-color: rgba(247, 243, 232, 0.55); }
 
+/* Metric groups: LABEL (small caps, LEVEL 3) above VALUE (LEVEL 2) above a
+   supporting caption (LEVEL 3) — the label-first order this pass adopted,
+   so the eye reads "what this number is" before the number, matching the
+   approved pattern. Gap between groups raised 22px -> 26px (+18%, within
+   the requested 15-25% range) now that each group is three lines tall and
+   needs more visual separation to read as distinct groups, not one row. */
 .ph-hero-metrics {
   flex-shrink: 0;
   display: flex;
   align-items: flex-end;
-  gap: 22px;
+  gap: 26px;
 }
-.ph-hero-metric { display: flex; flex-direction: column; gap: 4px; white-space: nowrap; }
+.ph-hero-metric { display: flex; flex-direction: column; gap: 3px; white-space: nowrap; }
+.ph-hero-metric-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(247, 243, 232, 0.62);
+  white-space: nowrap;
+}
 .ph-hero-metric-value {
   font-size: 26px;
   font-weight: 600;
   letter-spacing: -0.01em;
   color: #F7F3E8;
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
 }
-.ph-hero-metric-label {
+.ph-hero-metric-caption {
   font-size: 12px;
   color: rgba(247, 243, 232, 0.68);
   white-space: nowrap;
 }
 .ph-hero-sep { width: 0.5px; align-self: stretch; margin-bottom: 3px; background: rgba(247, 243, 232, 0.22); }
 
-/* At 1440px the identity column has too little room for a 38px italic
-   serif title alongside the four-metric strip, and it wraps to two lines
-   — caught at the 1440 acceptance viewport, not assumed. Stepping the
-   title down keeps it on one line without touching the metrics' own size
-   (they still read clearly at 1440). */
+/* At 1440px the identity column has too little room for the title
+   alongside the four-metric strip, and it wraps to two lines — caught at
+   the 1440 acceptance viewport, not assumed. Stepping the title down
+   keeps it on one line without touching the metrics' own size (they still
+   read clearly at 1440). */
 @media (max-width: 1500px) {
-  .ph-hero-title { font-size: 32px; }
+  .ph-hero-title { font-size: 33px; }
 }
 @media (max-width: 1300px) {
   .ph-hero-metrics { gap: 16px; }
