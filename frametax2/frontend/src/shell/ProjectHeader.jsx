@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useCineGlobe } from "../lib/useCineGlobe";
 import { useProjectStatus } from "../lib/useProjectStatus";
 import { Money } from "../lib/format";
 import { getTheme, toggleTheme } from "../lib/theme";
+import ProductionHero from "../components/ProductionHero";
 
 // Approved project header (migrated from the frozen design reference):
 // back affordance, artwork, production identity with the lifecycle
@@ -29,6 +30,14 @@ const JUR_NAMES = { MU: "Mauritius", ES: "Spain", GB: "United Kingdom", US: "Uni
 
 export default function ProjectHeader() {
   const navigate = useNavigate();
+  const location = useLocation();
+  // PHASE: Overview Hero batch. Overview alone gets the cinematic hero;
+  // every other production route (Workspace, Scenarios, Project Globe,
+  // Documents, Record, Knowledge, Reports) keeps the exact compact bar
+  // below, byte-for-byte unchanged. `<nav className="project-tabs">` is
+  // the SAME element rendered at the end of this component either way, so
+  // tab behavior cannot drift between routes.
+  const isOverviewHero = location.pathname === "/production/overview";
   const { data } = useCineGlobe();
   // Local mirror of the theme purely so the button's icon and aria-pressed
   // re-render. The authoritative state is the `data-theme` attribute on
@@ -44,6 +53,85 @@ export default function ProjectHeader() {
   const openQuestions = (data?.pkg?.missing_inputs?.length || 0) + openGrey.length;
   const swing = openGrey.reduce((s, g) => s + (g.amount_usd || 0), 0);
   const jur = production?.jurisdiction_code ? (JUR_NAMES[production.jurisdiction_code] || production.jurisdiction_code) : null;
+
+  // Recommended Structure (hero only) — the SAME rank-1 resolution
+  // Overview.jsx's own `structure`/`snapshot` derivation uses
+  // (allocated.ranking, rank === 1), read here without importing Overview's
+  // internals so this component has no dependency on a screen file.
+  const allocated = data?.structures?.allocated_structures;
+  const topRank = allocated?.ranking?.find((r) => r.rank === 1);
+  const topStructure = topRank
+    ? allocated?.structures?.find((s) => s.structure_id === topRank.structure_id)
+    : null;
+
+  // Shared stage control — identical markup/behavior in both the hero and
+  // the compact bar, so the lifecycle dropdown is provably the same
+  // component either way, not a second implementation.
+  const stageControl = (
+    <div className="ph-stage">
+      <span className="ph-stage-label">Production stage</span>
+      <details className="ph-stage-dd" title={meta.description}>
+        <summary className="ph-stage-val" aria-label="Production stage">
+          {meta.label} <span className="car">▾</span>
+        </summary>
+        <div className="ph-stage-menu">
+          {statuses.map((s) => (
+            <button
+              key={s.key}
+              className={s.key === status ? "on" : ""}
+              onClick={(e) => { setStatus(s.key); e.currentTarget.closest("details").removeAttribute("open"); }}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </details>
+    </div>
+  );
+
+  // Header action icons — IDENTICAL markup/handlers to the compact bar's
+  // `.ph-hactions` (upload document, AI analyst placeholder, theme toggle).
+  // Extracted so the hero can't silently drop this functionality — it did,
+  // in an earlier pass of this batch, caught by runtime verification before
+  // completion, not by inspection.
+  const headerActions = (
+    <div className="ph-hactions">
+      <button className="ph-ico" title="Upload document" onClick={() => navigate("/production/binder")}>⇪</button>
+      <button className="ph-ico ghosted" title="AI analyst — engine pending" disabled>◈</button>
+      <button
+        className="ph-ico"
+        title={theme === "night" ? "Switch to day mode" : "Switch to night mode"}
+        aria-label={theme === "night" ? "Switch to day mode" : "Switch to night mode"}
+        aria-pressed={theme === "night"}
+        onClick={() => setThemeState(toggleTheme())}
+      >
+        {theme === "night" ? "☾" : "◐"}
+      </button>
+    </div>
+  );
+
+  if (isOverviewHero) {
+    return (
+      <header className="project-header-wrap">
+        <ProductionHero
+          production={production}
+          topStructure={topStructure}
+          stageControl={stageControl}
+          openQuestions={openQuestions}
+          swing={swing}
+          onBack={() => navigate("/company/today")}
+          headerActions={headerActions}
+        />
+        <nav className="project-tabs" aria-label="Production sections">
+          {PRODUCTION_TABS.map((tab) => (
+            <NavLink key={tab.to} to={tab.to} className={({ isActive }) => (isActive ? "on" : "")}>
+              {tab.label}
+            </NavLink>
+          ))}
+        </nav>
+      </header>
+    );
+  }
 
   return (
     <header className="project-header-wrap">

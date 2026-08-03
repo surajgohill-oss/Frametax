@@ -157,6 +157,155 @@
 .cg-foot-text b { color: var(--rail-active); font-size: 13px; font-weight: 600; }
 .cg-foot-text span { font-size: 12px; opacity: 0.6; }
 
+/* ── Production Hero (Overview route ONLY) ───────────────────────────────
+   Cinematic replacement for `.project-header` on /production/overview
+   alone — see ProjectHeader.jsx's `isOverviewHero` branch. Every other
+   production route still renders `.project-header` below, completely
+   unchanged. Height ~230px (upper end of the approved 190-230px cinematic
+   range): tall enough to read as a title card, not a giant splash screen.
+   `.project-tabs` sits immediately below, same element/markup as the
+   compact-bar path, so tab styling/behavior cannot diverge by route. */
+.ph-hero {
+  position: relative;
+  height: 230px;
+  flex-shrink: 0;
+  background-size: cover;
+  /* PHASE: Overview Hero. Vertical position tuned so the visible crop sits
+     BELOW the artwork's own large serif "The / Little Utopia" title (which
+     runs to roughly image-y 420 of 948) — that title, at this hero's
+     aspect ratio, would otherwise land almost exactly behind the live DOM
+     title and read as a literal duplicate, confirmed at runtime. At this
+     position the crop instead shows the coastline/cliff steps and the
+     lower "A FEATURE FILM" line only, which the scrim fully suppresses. */
+  background-position: center 78%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+/* Suppresses the key art's own baked-in title typography into pure
+   atmosphere (left-to-right + bottom gradient, per instruction) while
+   guaranteeing contrast for the REAL DOM title/metrics on top. Darkest at
+   bottom-left (where the live title sits) and along the bottom edge (where
+   the live metrics baseline sits); lightest at top-right, so the sky/sunset
+   in the photograph still reads as photography, not a black rectangle. */
+.ph-hero-scrim {
+  position: absolute;
+  inset: 0;
+  /* PHASE: Overview Hero. First pass (a top-light vertical gradient) left
+     the artwork's own baked-in "The Little Utopia / A FEATURE FILM" title
+     legible and competing with the live DOM title — confirmed at runtime,
+     not assumed. The visible crop of this artwork (cover + 38% vertical
+     position at hero height) lands almost entirely on that baked title, so
+     a UNIFORM heavy darkening is required across the whole hero, not a
+     gradient that stays light anywhere — layered with the left/bottom
+     emphasis the live text needs on top of that base. */
+  background:
+    linear-gradient(180deg, rgba(8, 10, 14, 0.74) 0%, rgba(8, 10, 14, 0.66) 55%, rgba(6, 8, 12, 0.80) 100%),
+    linear-gradient(90deg, rgba(6, 8, 12, 0.55) 0%, rgba(6, 8, 12, 0.30) 45%, rgba(6, 8, 12, 0.05) 75%, rgba(6, 8, 12, 0.30) 100%),
+    rgba(7, 9, 13, 0.42);
+}
+/* Back link + header action icons (upload/AI/theme) — same `.ph-back`/
+   `.ph-hactions`/`.ph-ico` components the compact bar uses (passed in as
+   `onBack`/`headerActions`), restyled here only to sit on dark photography
+   instead of `--surface-1`. Dropping these from the hero entirely was a
+   real regression caught by runtime verification in this batch — the
+   theme toggle disappeared from Overview outright. */
+.ph-hero-topbar {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 22px 0 22px;
+}
+.ph-hero-back {
+  border-right: none;
+  padding-right: 0;
+  margin-right: 0;
+  color: rgba(247, 243, 232, 0.75);
+}
+.ph-hero-back:hover { color: #F7F3E8; }
+.ph-hero-topbar .ph-ico {
+  background: rgba(20, 22, 20, 0.38);
+  border-color: rgba(247, 243, 232, 0.25);
+  color: rgba(247, 243, 232, 0.85);
+  backdrop-filter: blur(3px);
+}
+.ph-hero-topbar .ph-ico:hover { border-color: rgba(247, 243, 232, 0.5); color: #F7F3E8; }
+.ph-hero-topbar .ph-ico.ghosted { opacity: 0.4; }
+
+.ph-hero-row {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 0 30px 22px 30px;
+}
+.ph-hero-identity { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.ph-hero-title {
+  font-size: 38px;
+  line-height: 1.08;
+  font-style: italic;
+  color: #F7F3E8;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.45);
+}
+.ph-hero-sub {
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: rgba(247, 243, 232, 0.72);
+}
+/* Stage dropdown reuses `.ph-stage`/`.ph-stage-dd`/etc from the compact bar
+   verbatim (same component, passed in as `stageControl`) — only the two
+   overrides below adapt its colours to sit on dark photography instead of
+   `--surface-1`. */
+.ph-hero-identity .ph-stage-label { color: rgba(247, 243, 232, 0.62); }
+.ph-hero-identity .ph-stage-val {
+  background: rgba(20, 22, 20, 0.42);
+  border-color: rgba(247, 243, 232, 0.28);
+  color: #F7F3E8;
+  backdrop-filter: blur(3px);
+}
+.ph-hero-identity .ph-stage-val:hover { border-color: rgba(247, 243, 232, 0.55); }
+
+.ph-hero-metrics {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 22px;
+}
+.ph-hero-metric { display: flex; flex-direction: column; gap: 4px; white-space: nowrap; }
+.ph-hero-metric-value {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #F7F3E8;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
+}
+.ph-hero-metric-label {
+  font-size: 12px;
+  color: rgba(247, 243, 232, 0.68);
+  white-space: nowrap;
+}
+.ph-hero-sep { width: 0.5px; align-self: stretch; margin-bottom: 3px; background: rgba(247, 243, 232, 0.22); }
+
+/* At 1440px the identity column has too little room for a 38px italic
+   serif title alongside the four-metric strip, and it wraps to two lines
+   — caught at the 1440 acceptance viewport, not assumed. Stepping the
+   title down keeps it on one line without touching the metrics' own size
+   (they still read clearly at 1440). */
+@media (max-width: 1500px) {
+  .ph-hero-title { font-size: 32px; }
+}
+@media (max-width: 1300px) {
+  .ph-hero-metrics { gap: 16px; }
+  .ph-hero-metric-value { font-size: 22px; }
+}
+
 /* ── Project header + tabs (production routes only) ─────────────────── */
 .app-main-col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .project-header-wrap { flex-shrink: 0; background: var(--surface-1); border-bottom: 0.5px solid var(--hairline-strong); }
