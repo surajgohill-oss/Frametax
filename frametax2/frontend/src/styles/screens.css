@@ -67,7 +67,7 @@
 }
 .pd-title { font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-secondary); }
 .pd-col-label { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-tertiary); }
-.pd-person { padding: 10px 0; border-bottom: 0.5px solid var(--hairline); }
+.pd-person { padding: 8px 0; border-bottom: 0.5px solid var(--hairline); }
 .pd-person:last-of-type { border-bottom: none; }
 .pd-row {
   display: grid;
@@ -92,8 +92,8 @@
   padding: 0 8px;
 }
 .pd-select:disabled { color: var(--text-tertiary); background: var(--surface-2); }
-.pd-section-label { font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-secondary); margin: 14px 0 8px; }
-.pd-locations .pd-section-label { border-top: 0.5px solid var(--hairline); padding-top: 14px; }
+.pd-section-label { font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-secondary); margin: 12px 0 6px; }
+.pd-locations .pd-section-label { border-top: 0.5px solid var(--hairline); padding-top: 12px; }
 .pd-loc-group { border-bottom: 0.5px solid var(--hairline); }
 .pd-loc-group:last-child { border-bottom: none; }
 .pd-loc-header {
@@ -111,6 +111,10 @@
 .pd-loc-count { margin-left: auto; font-size: 11px; color: var(--text-tertiary); }
 .pd-loc-items { margin: 0 0 8px; padding-left: 22px; font-size: 12.5px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 4px; }
 .pd-loc-empty { margin: 0 0 8px; padding-left: 22px; font-size: 12px; color: var(--text-tertiary); }
+/* Scoped to Facts only — the bare .tag/.tag-row rules elsewhere are shared
+   with other screens (recommendation/knowledge tabs) and must stay untouched. */
+.pd-locations .tag-row { gap: 6px; margin-bottom: 0; }
+.pd-locations .tag-row .tag { padding: 5px 10px; font-size: 11.5px; }
 
 /* Center module — maximum square globe + subordinate scenario strip */
 .ov-center { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
@@ -129,12 +133,12 @@
 .ii-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 12px;
 }
 .ii-card {
   position: relative;
   display: flex;
-  min-height: 128px;
+  min-height: 178px;
   padding: 0;
   background: var(--surface-1);
   border: 0.5px solid var(--hairline);
@@ -148,7 +152,7 @@
 .ii-jade .ii-card-accent { background: var(--jade); }
 .ii-amber .ii-card-accent { background: var(--amber); }
 .ii-silver .ii-card-accent { background: var(--silver); }
-.ii-card-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; padding: 9px 11px 10px; }
+.ii-card-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 7px; padding: 14px 14px 13px; }
 
 .ii-head { display: flex; align-items: center; gap: 6px; }
 .ii-cat-label { font-size: 10px; font-weight: 650; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-tertiary); }
@@ -163,19 +167,19 @@
 .ii-country-name { font-size: 13.5px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ii-structure { font-size: 10.5px; color: var(--text-tertiary); margin-top: -2px; }
 
-.ii-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 10px; margin-top: 2px; }
-.ii-metric { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.ii-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; margin-top: 8px; }
+.ii-metric { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .ii-metric-label { font-size: 9px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-tertiary); }
 .ii-metric-value { font-size: 12.5px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.ii-reason { font-size: 11.5px; color: var(--text-secondary); line-height: 1.35; margin-top: 2px; }
+.ii-reason { font-size: 11.5px; color: var(--text-secondary); line-height: 1.45; margin-top: 6px; }
 
-.ii-related { margin-top: 2px; display: flex; flex-direction: column; gap: 2px; }
+.ii-related { margin-top: 6px; display: flex; flex-direction: column; gap: 3px; }
 .ii-related-label { font-size: 9px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-tertiary); }
 .ii-related-list { display: flex; flex-wrap: wrap; gap: 4px 8px; font-size: 11px; color: var(--text-secondary); }
 .ii-related-item { white-space: nowrap; }
 
-.ii-program { margin-top: auto; padding-top: 4px; font-size: 10px; color: var(--text-tertiary); border-top: 0.5px solid var(--hairline); }
+.ii-program { margin-top: auto; padding-top: 8px; font-size: 10px; color: var(--text-tertiary); border-top: 0.5px solid var(--hairline); }
 
 .ii-empty { margin-top: auto; margin-bottom: auto; font-size: 11.5px; color: var(--text-tertiary); }
 
@@ -188,7 +192,7 @@
   background: var(--surface-1);
   border: 0.5px solid var(--hairline);
   border-radius: var(--radius-lg);
-  padding: 14px 16px;
+  padding: 18px 18px 22px;
 }
 .brail-panel .pd-section-label { margin-top: 0; }
 .brail-block { border-bottom: 0.5px solid var(--hairline); }
@@ -198,7 +202,7 @@
   align-items: center;
   gap: 6px;
   width: 100%;
-  padding: 9px 0;
+  padding: 13px 0;
   font-size: 12.5px;
   color: var(--text-primary);
   text-align: left;
@@ -224,8 +228,8 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  padding-top: 12px;
-  margin-top: 4px;
+  padding-top: 16px;
+  margin-top: 6px;
   border-top: 1px solid var(--text-primary);
   font-size: 12px;
   color: var(--text-secondary);
@@ -236,8 +240,8 @@
 .brail-headline {
   display: flex;
   gap: 10px;
-  padding: 2px 0 12px;
-  margin-bottom: 4px;
+  padding: 4px 0 16px;
+  margin-bottom: 6px;
   border-bottom: 0.5px solid var(--hairline);
 }
 .brail-headline-cell { display: flex; flex-direction: column; gap: 2px; flex: 1; }

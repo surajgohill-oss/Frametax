@@ -70,6 +70,58 @@ reduce that distance (making the element MORE prominent) or leave it
 unchanged; increasing it requires an explicit, called-out justification, not
 a silent side effect of an unrelated addition.
 
+## OVERVIEW UX PHASE — FROZEN (2026-08-03)
+
+Closed via the Phase-Ledger Reconciliation Rule above. Full 30-item
+reconciliation, classifications, and final runtime measurements live in
+`git log` for the batch commits ending at the "Overview UX — Final Body
+Composition + Acceptance Closeout" pass. Summary of the frozen state:
+
+- Hero: cinematic key-art hero, Overview route only, ~242px, no baked
+  typography, all 7 other production routes keep the byte-identical compact
+  header (headerH=100, tabsCount=8, verified every batch).
+- Composition: Hero → single-row tabs → three columns (Facts+Locations /
+  Globe+Incentive Intelligence / Budget). No FX strip in this flow —
+  `FXStrip.jsx` and its data are untouched; a compact placement for it
+  elsewhere remains **EXPLICITLY DEFERRED** (no canonical precedent existed
+  to build against).
+- Globe: hard-frozen, unchanged from the existing Globe freeze tags
+  (`globe-phase3b-freeze` and earlier) — canvas/wrapper/camera/materials/
+  legend/interactions/animation/semantics were not touched by any Overview
+  batch. Prominence (tabs-to-Globe distance) preserved/improved, never
+  pushed down.
+- Center: Incentive Intelligence, 2×2, real production data only
+  (Recommended: Mauritius; Alternatives: Saudi Arabia; Co-Production
+  Opportunities: honest "not currently available" — this production's real
+  optimizer output has zero amber jurisdictions; Excluded: Austria with its
+  real discovery-examination reason). Flags + full country names throughout,
+  via the single shared `flagEmoji()`/`jurisdictionName()` helpers — no
+  second country-name mapping was introduced.
+- Left/Right: Facts and Budget IA, fields, calculations, and totals
+  unchanged — only row/section spacing was adjusted (Facts modestly
+  compacted, Budget rows given more breathing room) to bring the three
+  columns to a coherent shared baseline at the 1600px canonical viewport
+  purely through presentation formatting, per explicit instruction not to
+  truncate Facts or hide Budget rows to force alignment.
+- Interaction/network: Facts edit/save/cancel/persist-after-reload,
+  Location Requirements edit/save/persist-after-reload, Incentive card
+  click → existing Inspector (no fabricated destinations), Budget
+  expand/collapse — all runtime-verified. Zero optimizer executions from
+  page load, theme toggle, card click, or Budget expand/collapse; the one
+  permitted write (`POST /locations`) fires only on an explicit Save.
+- Both themes, 1440/1600/1920 verified without clipping or overflow; Globe
+  remains protected and unresized at every width.
+
+**No new git tag was created.** The existing per-phase tags in this repo
+(`globe-phase2-freeze`, `globe-phase3a-freeze`, `globe-phase3b-freeze`, …)
+are a Globe-specific convention with no Overview-scoped precedent; inventing
+an `overview-*` tag would be a new convention, which this phase's own
+instructions explicitly ruled out. This ledger entry is the Overview phase's
+freeze marker. The Globe freeze tags are unaffected and were not moved.
+
+Per the reconciliation rule, general Overview polish should not reopen
+without a genuine regression or new requirement.
+
 ---
 
 Canonical record of every optimizer capability's runtime/implementation/integration status. Updated as capabilities are reconnected — see the reconciliation series in this engagement's commit history for the underlying investigation.
