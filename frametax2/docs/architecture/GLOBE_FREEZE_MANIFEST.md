@@ -1,6 +1,6 @@
 # Globe Freeze Manifest
 
-**Frozen:** 2026-08-01 — **Phase 3B GLOBE CLOSEOUT, FINAL, tag `globe-phase3b-freeze`**
+**Frozen:** 2026-08-03 — **Phase 3B GLOBE CLOSEOUT, FINAL, tag `globe-phase3b-freeze`**
 - Semantic motion (Co-Production hover illumination incl. beacon
   jurisdictions, category-transition unlock pulse), border z-fighting root
   cause + fix, ocean drift, vertical legend, and the final hover-contract
@@ -11,9 +11,12 @@
   investigation and the personnel-facts discrepancy finding are recorded
   below and in `CAPABILITY_LEDGER.md` — no optimizer code was touched.
 - See "Batch: Phase 3B — Globe Experience, Semantic Motion & Closeout" below
-  for the full record, and its "Addendum: final optical closeout" for the
-  legend/ocean/atmosphere corrections made after the first freeze pass
-  (final commit `ca689fd`).
+  for the full record; "Addendum: final optical closeout" for the
+  legend/ocean/atmosphere corrections made after the first freeze pass; and
+  "Addendum 2: final category validation" for the category visual-token
+  audit, the Excluded material-recipe fix, and the full four-category
+  runtime matrix (including the one authorized Co-Production Opportunity
+  fixture test, fully restored to `globeFixture=0` afterward).
 
 **Frozen:** 2026-07-30 — **Phase 3A OPTICAL FINISH, FINAL, tag `globe-phase3a-freeze`**
 - Optical reconciliation against the approved reference render, closed out in
@@ -1405,9 +1408,99 @@ compact at 1280×800, 1600×900, and 1920×1080 — the sphere silhouette tracks
 the canvas aspect at every width with no cropping or stretching artifact.
 
 **Verified live:** clean console (0 errors/warnings) at every viewport,
-`globeFixture=0` throughout, 46/46 tests passing, clean `vite build`. Tag
-`globe-phase3b-freeze` moved to commit `ca689fd` (the final verified state)
-after this addendum.
+`globeFixture=0` throughout, 46/46 tests passing, clean `vite build`.
+
+### Addendum 2: final category validation (2026-08-03, third pass)
+
+**Category visual-token audit (requirement: one canonical source, no
+duplicate palettes).** Traced every consumer of category colour: polygon
+fills and beacon points both key off `STATUS_HEX` (`globeData.js`, itself
+derived from `GLOBE_SEMANTIC`); `Globe3D.jsx`'s `TIER_HEX` is `{...STATUS_HEX,
+charcoal: GRAPHITE_HEX}` — a spread, not a duplicate declaration; the legend
+dot reads `GLOBE_SEMANTIC[slot].hex` directly. Confirmed live: the rendered
+legend dot's `background-color` computed to `rgb(132, 148, 164)` —
+`#8494a4`, `STATUS_HEX.silver`'s exact value, byte for byte. **Finding: there
+was already exactly one source of truth; no centralization work was
+required.**
+
+**Excluded/legend mismatch — root cause was a material recipe, not a colour
+value.** The polygon material recipe for the silver/Excluded tier (`quiet`
+in `CAP_MATERIAL_RECIPES`) was written under the OLD "Additional" semantics,
+when this was the most-numerous, least-important residual bucket and was
+deliberately tuned to sit close to the untouched-land recipe ("closer to
+land than to enamel... not so much that it competes for attention" — the
+prior comment, verbatim). Under the CURRENT semantics this slot is
+"Excluded": a jurisdiction the discovery engine actively examined and
+rejected, a materially different fact from "never examined" (plain land) —
+but the material recipe still converged the two, so Excluded read as
+visually indistinguishable from empty map even though its hex was
+objectively different from land's. Fixed by widening the recipe gap from
+land (`roughness` 0.43→0.38, `clearcoat` 0.30→0.42, `clearcoatRoughness`
+0.45→0.38, `envBase` 0.48→0.52; `emissiveIntensity` held at land's own 0.19
+so Excluded never reads brighter than land on the shadow side) while keeping
+it well short of the `enamel` tier (`roughness` 0.30, `clearcoat` 1.0) — the
+brief's "subdued, readable, distinct from ocean, distinct from Alternatives"
+bar, not a promotion to enamel glossiness.
+
+**Runtime category matrix (Little Utopia production, real data unless
+noted):**
+
+| Category | Jurisdiction | Verified | Result |
+|---|---|---|---|
+| Recommended | Mauritius | hover | `Program: EDB Film Rebate` / `Maximum Incentive: Up to 40%` / `Modeled Incentive: $1,742,131` / `NPC: $2,622,262` / `Incentive / Gross Budget: 39.9%` — full field contract intact |
+| Alternatives | Ukraine | hover | `Program: Ua cash rebate` / `Up to 30%` / `$1,216,259` / `$4,502,434` / `27.9%` |
+| Alternatives | Montenegro | hover | `Program: Me cash rebate` / `Up to 25%` / `$1,013,549` / `$4,705,144` / `23.2%` |
+| Excluded | Hungary | hover, post-fix fill | `Reason: Not production-capable: the production requires marine filming, open water filming, which this jurisdiction cannot provide.` Fill visually confirmed as a distinct cool blue-grey, no longer blending into neutral land, in a cropped runtime screenshot |
+| Co-Production Opportunities | Egypt (fixture — see below) | hover | `Program: Eg empc cashback · 30%` / `Co-Production Potential: Not modeled yet` / `Best Modeled NPC: Not priced — structure is blocked` — the honest "not modeled" fallback, not a fabricated figure |
+
+**Co-Production Opportunity fixture test (per explicit instruction — real
+data has zero treaty co-production results for this production, confirmed
+again this pass).** Used the EXISTING `?globeFixture=1` dev mechanism
+(`globeVisualFixture.js`) — no new fixture code written. Confirmed live: the
+mandatory on-screen amber disclosure badge (`GLOBE MODE · VISUAL FIXTURE`,
+with live counts) and a console warning both fire, exactly as the fixture
+system was designed to do; Egypt (one of the fixture's `UNLOCKABLE_
+OPPORTUNITY` codes) rendered amber and its hover card correctly labelled
+`Co-Production Opportunities`. Related-jurisdiction illumination was **not**
+exercised via the fixture — the fixture assigns colour slots only, not
+`structure.participants` data, and illumination correctly no-ops without a
+real structure to read (per the standing no-fabrication rule; this is the
+same real-data-only illumination path already verified live against Croatia
+in the prior Phase 3B batch, unchanged this pass). **Fixture fully restored
+after the test**: navigated back to `?globeFixture=0`, confirmed the
+on-screen badge is gone, confirmed `localStorage.getItem
+('cineglobe.globeVisualFixture')` returns `null` (the actual key, verified
+against `globeVisualFixture.js` source rather than assumed), confirmed real
+production category counts return. The category-diff engine's own console
+log ("Globe category changes since last snapshot") fired on the transition
+back to real data — expected behaviour (the diff engine doing its documented
+job), not a defect. **Zero optimizer executions occurred at any point in
+this pass** — the fixture is presentation-layer only and never touches
+`/facts` or `/people`.
+
+**Ocean/atmosphere — one further legibility pass, per explicit instruction
+this round to continue only if still weak at normal zoom.** Raised octave-1
+`deltaMax` in `makeOceanSurfaceTexture` (14→20, the broad low-frequency
+swell that gives STILL-frame depth, as opposed to the finer two octaves
+which are mostly felt through specular breakup) and eased `clearcoatRoughness`
+back slightly (0.50→0.56, effective ~0.25→~0.28) — pulled back rather than
+tightened further, specifically because the brief warned against "isolated
+white blobs dominating the surface," and a broader/softer highlight needs
+more clearcoat roughness, not less. Reflection strength (`envMapIntensity`)
+was left unchanged. Atmosphere altitude/rim intensity were left at the
+values already raised in the prior addendum (0.16 / 0.34) — verified live
+this pass to already read as a continuous, visible limb at normal zoom in
+both themes without further increase.
+
+**Verified live, both themes, real data restored:** clean console (0
+errors/warnings), `globeFixture=0`, no fixture badge, sphere circular,
+legend chrome-free top-left, borders clean, ocean and atmosphere both
+legible at normal zoom without competing with category information. 46/46
+tests passing, clean `vite build`. Tag `globe-phase3b-freeze` moved to
+commit `db890ec` after Addendum 1, and to the commit landing this addendum
+after this pass — see the top of this file for the current pointer, which
+is kept in sync with `git rev-parse globe-phase3b-freeze` at every freeze
+rather than restated as a number here that can drift.
 
 ### Explicitly deferred (do not start without new authorization)
 

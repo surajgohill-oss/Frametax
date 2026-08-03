@@ -756,8 +756,14 @@ function makeOceanSurfaceTexture() {
   // breakup" grain the approved render shows in its specular region) was
   // still one size larger than it needed to be. Same deterministic PRNG,
   // same toroidal wrap; only a third scale added, not a new technique.
+  // PHASE 3B FINAL VISIBILITY PASS: octave 1's deltaMax raised (14 -> 20) —
+  // this is the BROAD, low-frequency swell that gives the ocean visible
+  // depth in a STILL frame (the other two octaves are fine grain, mostly
+  // felt through specular breakup, not through flat-lit tonal variation).
+  // Radius stays large (60-140px on a 1024px-wide texture) so the increase
+  // reads as soft depth, not as visible repeating blobs.
   const OCTAVES = [
-    { count: 90, rMin: 60, rMax: 140, deltaMax: 14 },
+    { count: 90, rMin: 60, rMax: 140, deltaMax: 20 },
     { count: 260, rMin: 8, rMax: 24, deltaMax: 22 },
     { count: 420, rMin: 3, rMax: 9, deltaMax: 26 },
   ];
@@ -1293,11 +1299,25 @@ export default function Globe3D({
       // same curvature lever (lower roughness lets the environment gradient
       // vary more by each polygon's surface normal), not a new mechanism.
       land: { roughness: 0.47, clearcoat: 0.12, clearcoatRoughness: 0.65, emissiveIntensity: 0.19, envBase: 0.42 },
-      // Additional: roughness/clearcoat sit roughly a third of the way from
-      // land toward enamel — enough that hovering/selecting it still reads
-      // as "a real thing," not so much that it competes with Optimized or
-      // Unlockable for attention.
-      quiet: { roughness: 0.43, clearcoat: 0.30, clearcoatRoughness: 0.45, emissiveIntensity: 0.16, envBase: 0.48 },
+      // Excluded (STATUS_HEX.silver — see MATERIAL_TIER_BY_HEX below).
+      // PHASE 3B FINAL CATEGORY VALIDATION: this recipe used to be tuned
+      // under the OLD "Additional" semantics ("sits much closer to untouched
+      // land than to the enamel tier... a real thing, not so much that it
+      // competes for attention") — appropriate when this was the most
+      // numerous, least-important residual bucket. Under the CURRENT
+      // semantics this slot is "Excluded": a jurisdiction the discovery
+      // engine actively examined and rejected, a materially different fact
+      // from "never examined" (plain untouched land). Runtime review found
+      // the two had converged close enough to be visually indistinguishable
+      // from the legend's distinct silver swatch. Widened the gap from land
+      // (roughness 0.43->0.38, clearcoat 0.30->0.42, clearcoatRoughness
+      // 0.45->0.38, envBase 0.48->0.52) while keeping it well short of the
+      // enamel tier (roughness 0.30, clearcoat 1.0) — still subdued, still
+      // never competing with Alternatives/Co-Production for attention, just
+      // no longer close enough to land to read as "no data." emissiveIntensity
+      // held at land's own value (0.19) so the shadow-side floor doesn't
+      // make Excluded brighter than untouched land in the unlit hemisphere.
+      quiet: { roughness: 0.38, clearcoat: 0.42, clearcoatRoughness: 0.38, emissiveIntensity: 0.19, envBase: 0.52 },
       // Optimized alternative + Unlockable opportunity, unchanged from the
       // pre-3A "active status" recipe — proven, already reads as premium
       // satin/enamel, and step 1's runtime check confirmed it still holds
@@ -1744,7 +1764,13 @@ export default function Globe3D({
       // PHASE 3B FINAL VISUAL DELTA: 0.58 -> 0.50 (effective ~0.29 -> ~0.25)
       // — still one more step short of the 0.16 failure line, for a
       // noticeably crisper specular streak at normal zoom.
-      clearcoatRoughness: 0.50,
+      // PHASE 3B FINAL VISIBILITY PASS: 0.50 -> 0.56 (effective ~0.25 ->
+      // ~0.28) — pulled back slightly. The category-matrix pass explicitly
+      // warned against "isolated white blobs dominating the surface"; a
+      // BROADER, softer highlight (the actual ask this round) needs a touch
+      // more clearcoat roughness, not less. Reflection STRENGTH stays put
+      // (envMapIntensity unchanged) — only its concentration is softened.
+      clearcoatRoughness: 0.56,
       envMapIntensity: GLOBE_THEME.day.envIntensity,
       ior: 1.52, // ~optical crown glass
       // Emissive is additive and lighting-independent, so it is the sphere's
