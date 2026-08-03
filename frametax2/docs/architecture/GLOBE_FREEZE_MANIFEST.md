@@ -12,11 +12,11 @@
   below and in `CAPABILITY_LEDGER.md` — no optimizer code was touched.
 - See "Batch: Phase 3B — Globe Experience, Semantic Motion & Closeout" below
   for the full record; "Addendum: final optical closeout" for the
-  legend/ocean/atmosphere corrections made after the first freeze pass; and
-  "Addendum 2: final category validation" for the category visual-token
-  audit, the Excluded material-recipe fix, and the full four-category
-  runtime matrix (including the one authorized Co-Production Opportunity
-  fixture test, fully restored to `globeFixture=0` afterward).
+  legend/ocean/atmosphere corrections; "Addendum 2: final category validation"
+  for the Excluded material-recipe fix; and **"Addendum 3: FULL PHASE 3B LEDGER
+  RECONCILIATION"** for the definitive close — which REOPENED and fixed
+  Co-Production illumination after finding it had never fired at runtime, and
+  which carries the complete 28-row item ledger with no blank statuses.
 
 **Frozen:** 2026-07-30 — **Phase 3A OPTICAL FINISH, FINAL, tag `globe-phase3a-freeze`**
 - Optical reconciliation against the approved reference render, closed out in
@@ -1220,8 +1220,15 @@ not covered by the illumination/pulse logic at all — only the polygon path
 `illuminatedIsos`/`pulsingIsos` checks into `pointColorFn`, and by adding
 `.pointColor(globe.pointColor())` to the repaint-trigger effects (which
 previously only re-invoked the four polygon accessors). Verified with a
-source-level regression test; the polygon case (Croatia) was additionally
-confirmed live.
+source-level regression test; ~~the polygon case (Croatia) was additionally
+confirmed live~~.
+
+> **CORRECTION (2026-08-03, Addendum 3).** The struck-through claim above is
+> FALSE and is left visible rather than deleted, so the drift is auditable.
+> Croatia's `relatedCodes` is `[]`, as it is for all 86 jurisdictions, so no
+> illumination could have been observed. The illumination path was a permanent
+> no-op until Addendum 3. See Addendum 3 for the measured root cause and the
+> runtime evidence that now exists.
 
 ### Category-transition unlock pulse
 
@@ -1501,6 +1508,166 @@ commit `db890ec` after Addendum 1, and to the commit landing this addendum
 after this pass — see the top of this file for the current pointer, which
 is kept in sync with `git rev-parse globe-phase3b-freeze` at every freeze
 rather than restated as a number here that can drift.
+
+### Addendum 3: FULL PHASE 3B LEDGER RECONCILIATION (2026-08-03)
+
+Conducted under the new **Phase-Ledger Reconciliation Rule** (see the top of
+`CAPABILITY_LEDGER.md`). The three prior Phase 3B freezes each verified only
+the newest prompt's items; this pass reconstructed the entire accumulated
+requirement set and re-derived every claim from live runtime.
+
+**The previous freeze was NOT valid.** One requirement recorded as complete was
+found never to have worked.
+
+#### DEFECT FOUND — Co-Production illumination had never fired at runtime
+
+The manifest above states the polygon illumination case "was additionally
+confirmed live (Croatia)". Re-derived from live output, that claim is **false**.
+`relatedCodes` is EMPTY for all 86 jurisdictions, so `illuminatedIsos` was
+always `null` and the illumination path was a permanent no-op.
+
+Root cause, measured not guessed. Two structures exist per partner jurisdiction:
+
+| structure | participants | tier |
+|---|---|---|
+| `ALLOC-RELOC-<X>` | `[X]` | fully priced → **jade** (rank 3) |
+| `ALLOC-COMPONENT-POST-<X>` | `[MU, X]` | has blockers → **amber** (rank 2) |
+
+`buildCountryStatuses`'s `upsert` keeps the HIGHER `STATUS_RANK`, so the
+single-participant structure always wins and `participants.filter(c => c !== code)`
+is always `[]`. Live category counts confirm it from the other side:
+**1 gold / 84 jade / 0 amber / 21 silver** — this production has ZERO
+Co-Production Opportunities, so the state could not be exercised at all.
+
+Whether ranking should prefer the multi-participant structure is an
+OPTIMIZER/semantics question, out of scope for the Globe phase and recorded in
+`CAPABILITY_LEDGER.md`. The Globe fix was to make the state demonstrable:
+`globeVisualFixture.js` now supplies ONE deterministic, dev-only, disclosed,
+non-persisting hypothetical relationship (`EG → IT, MA, GR, MT`), consumed via
+`entry.fixtureRelated` which `buildCountryHoverData` falls back through to the
+real `structure.participants` on every non-fixture path. Three new regression
+tests assert the fixture can never leak into real data.
+
+#### Co-Production illumination — RUNTIME VERIFIED (the evidence that was missing)
+
+Measured under `prefers-reduced-motion: reduce` so ambient motion could not
+confound the comparison; the open-ocean and canvas-backdrop control samples
+both moved **exactly 0.0** luminance between frames, confirming a clean
+measurement. Changed-pixel counts in a 19×19 box at each marker, hovering Egypt:
+
+| jurisdiction | role | render path | changed px |
+|---|---|---|---|
+| Egypt | hovered | polygon | 240 |
+| Morocco | related | polygon | 201 |
+| Italy | related | polygon | 174 |
+| Greece | related | polygon | 139 |
+| **Malta** | **related** | **beacon (`pointColorFn`)** | **122** |
+| Spain | unrelated control | polygon | **0** |
+| Hungary | unrelated control | polygon | **0** |
+| Mauritius | unrelated control | beacon | **0** |
+
+Every related jurisdiction illuminates, including the beacon path that a prior
+batch found was missing entirely; every unrelated control is exactly zero,
+including a second beacon. Hover-exit clears the tooltip and the illumination.
+
+#### Circularity — RUNTIME VERIFIED (previously asserted, now measured)
+
+Prior passes asserted circularity from the projection invariant only. Measured
+directly this pass by isolating the atmospheric rim: silhouette bounding box
+**529 × 528 px → aspect 1.0019, a 0.19% deviation** from a perfect circle. A
+circle of that radius overlaid on the render traces the limb all the way
+round. Note for future passes: naive luminance thresholding of the canvas does
+NOT work here — the backdrop's own vignette overlaps the globe's luminance
+range and yields fake 25–50% "deviations". Use the rim, or the invariant.
+
+#### Optimizer non-rerun — RUNTIME VERIFIED (network-level, per interaction)
+
+Backend requests captured per phase against `:8010`:
+
+| phase | requests |
+|---|---|
+| page load | 8 GET endpoints (`production, package, recommendations, structures, legal, economics, people, facts`), repeated by StrictMode/multiple consumers |
+| rotate (drag) | **0** |
+| zoom (wheel) | **0** |
+| hover | **0** |
+| click → Inspector | **0** |
+
+**Zero POST requests in any phase.** Since the backend `lru_cache` is
+invalidated only by `POST /facts` / `POST /people`, no optimizer execution
+occurred at any point — including throughout the fixture test.
+
+#### Performance gate — RUNTIME VERIFIED
+
+WebGL resource creation instrumented from before app boot, then 20 distinct
+jurisdictions hovered in sequence:
+
+- **textures created: 0** — no material or texture recreation per hover
+- buffers: +42 over 20 hovers (three-globe's bounded altitude/colour tween attributes)
+- programs: +3 over 20 hovers (lazy first-compile of material tiers, bounded)
+- render loop: exactly **one** `composer.render()` and one self-rescheduling
+  `requestAnimationFrame(animate)`; the other five rAF uses are finite one-shot
+  tweens, each with a matching `cancelAnimationFrame` cleanup — no duplicate loops
+
+#### Reduced motion — RUNTIME VERIFIED
+
+`matchMedia('(prefers-reduced-motion: reduce)')` true → autorotation stopped
+(marker positions byte-identical across 2.5 s) and ocean drift stopped (open-ocean
+sample delta exactly 0.0). Under normal motion the same ocean region changed
+across ~44% of its pixels over ~10 s.
+
+#### Ledger — every Phase 3B item, no blank statuses
+
+| # | Item | Status | Evidence |
+|---|---|---|---|
+| 1 | Recommended — fill / legend / hover / label | RUNTIME VERIFIED | Mauritius: `Up to 40%` / `$1,742,131` / `$2,622,262` / `39.9%` (SCREEN 2) |
+| 2 | Alternatives — fill / legend / hover / label | RUNTIME VERIFIED | Morocco `Up to 30%` / `$1,216,259` / `$4,062,114` / `27.9%` (SCREEN 3); Ukraine, Montenegro, Slovenia also confirmed |
+| 3 | Co-Production Opportunities — fill / legend / hover / label | RUNTIME VERIFIED | Egypt, amber, `Co-Production With: Italy, Morocco, Greece, Malta` (SCREEN 4) |
+| 4 | Excluded — fill / legend / hover / label | RUNTIME VERIFIED | Ghana (fixture, SCREEN 5); Hungary with real backend reason (real data) |
+| 5 | Co-Pro related-jurisdiction illumination | RUNTIME VERIFIED | changed-pixel table above; **reopened defect, now fixed** |
+| 6 | Unrelated jurisdictions do NOT illuminate | RUNTIME VERIFIED | Spain / Hungary / Mauritius all exactly 0 px |
+| 7 | Illumination clears on hover exit | RUNTIME VERIFIED | SCREEN 6, tooltip `NONE`, fills return to baseline |
+| 8 | Beacon jurisdictions illuminate like polygons | RUNTIME VERIFIED | Malta 122 px via `pointColorFn` |
+| 9 | Category identity preserved during illumination | RUNTIME VERIFIED | `brightenHex` on each own hue; no white-out in before/after crop |
+| 10 | Relationship arc / path infrastructure | STATIC VERIFIED — belongs to **Optimizer Overlay**, not Jurisdictions | `buildOptimizerPathway` exists and is reachable via the Optimizer Overlay toggle; not duplicated, not rebuilt |
+| 11 | Legend — top-left, no box/border/shadow, full labels, shared palette | RUNTIME VERIFIED | computed style `background rgba(0,0,0,0)`, `border 0px none`, `boxShadow none`; at (14,14), 168×93; dot colour `rgb(132,148,164)` == `STATUS_HEX.silver` |
+| 12 | Ocean — still-frame depth + perceptible drift | RUNTIME VERIFIED | visible tonal structure in master; ~44% ocean pixels change over ~10 s |
+| 13 | Atmosphere — visible rim, no halo | RUNTIME VERIFIED | rim traced by the circularity overlay; visible in both themes at normal zoom |
+| 14 | Reflections — broad, soft, no isolated blobs | RUNTIME VERIFIED | `clearcoatRoughness` 0.56 (effective ~0.28) after pulling back from 0.50 |
+| 15 | Borders — clean, continuous, subordinate | RUNTIME VERIFIED | altitude-jitter fix holding; no dashing in any 2026-08-03 capture |
+| 16 | Sphere circularity | RUNTIME VERIFIED | 529×528 px, 0.19% deviation; holds at 1440/1600/1920 |
+| 17 | Category transitions + one-time unlock pulse | STATIC VERIFIED | diff engine + `STATUS_RANK` improvement gate + caller-owned 2.4 s timer; **not runtime-exercised — needs a real category change between two sessions** |
+| 18 | Reduced motion | RUNTIME VERIFIED | autorotation and ocean drift both stop; deltas exactly 0.0 |
+| 19 | Click → correct Inspector jurisdiction | RUNTIME VERIFIED | Morocco → `MA — ma_ccm_rebate`; Hungary/Slovenia likewise |
+| 20 | Globe never triggers optimization | RUNTIME VERIFIED | zero POST, zero requests on rotate/zoom/hover/click |
+| 21 | Shared persisted data path, no Globe-only treaty list | STATIC VERIFIED | single `useCineGlobe()` GET set shared by all screens; no treaty data added |
+| 22 | Fixture restore to `globeFixture=0` | RUNTIME VERIFIED | badge absent, `localStorage['cineglobe.globeVisualFixture']` === `null`, real counts restored |
+| 23 | Dark / light theme | RUNTIME VERIFIED | SCREEN 7 / SCREEN 8, real production data |
+| 24 | Responsive desktop | RUNTIME VERIFIED | 1440×900, 1600×900, 1920×1080 — canvas pixel aspect == CSS aspect exactly; legend fixed at (14,14) |
+| 25 | Performance / no leaks | RUNTIME VERIFIED | 0 textures over 20 hovers; single render loop |
+| 26 | Luxury Glass reference comparison | ACCEPTABLE DEVIATION | see below |
+| 27 | Optimizer ranking prefers single-participant structure (item 5's root cause) | **EXPLICITLY DEFERRED** | optimizer/semantics scope, recorded in `CAPABILITY_LEDGER.md` |
+| 28 | Personnel-nationality → treaty eligibility wiring | **EXPLICITLY DEFERRED** | pre-existing engine gap |
+
+#### Luxury Glass target comparison
+
+No approved reference image exists in the repository (an earlier manifest entry
+records it as never received, and none was invented). Graded against the
+written target:
+
+| Aspect | Grade | Note |
+|---|---|---|
+| Globe depth / sphericity | MATCHED | 0.19% circular; layered rim + atmosphere read as one sphere |
+| Ocean | ACCEPTABLE DEVIATION | dark navy with visible low-frequency structure and slow drift; still a shade flatter than "luminous dimensional glass" at the disc centre |
+| Atmosphere | MATCHED | thin, continuous, lit-side stronger, no neon ring |
+| Reflections | MATCHED | broad and soft after the clearcoat pull-back; no isolated white blobs |
+| Land integration | ACCEPTABLE DEVIATION | shares the material family and curvature response; extrusion sidewalls still read slightly "inset panel" at high zoom |
+| Borders | MATCHED | continuous, subordinate to fill |
+| Category hierarchy | MATCHED | jewel > enamel > quiet > land ladder intact, survives lit and shadow sides |
+| Legend | MATCHED | chrome-free map key, top-left, never competes |
+| Motion | MATCHED | restrained, semantic, reduced-motion honoured |
+| Premium impression | ACCEPTABLE DEVIATION | reads as a premium instrument; not yet indistinguishable from a rendered glass object |
+
+No item graded MISSING or REGRESSION.
 
 ### Explicitly deferred (do not start without new authorization)
 

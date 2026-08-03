@@ -1,5 +1,5 @@
 import { JURISDICTION_COORDS } from "./jurisdictions.js";
-import { fixtureSlotFor, isFixtureActive, noteFixtureCounts } from "./globeVisualFixture.js";
+import { fixtureSlotFor, fixtureRelatedFor, isFixtureActive, noteFixtureCounts } from "./globeVisualFixture.js";
 // Reused, not re-derived: the SAME program-name + rate presentation
 // scenarioDisplay() already uses for structure cards across Overview,
 // Workspace and Scenarios (see format.jsx) — so a hovered jurisdiction's
@@ -198,6 +198,15 @@ function applyFixtureStates(statuses) {
     entry.status = semantic;
     entry.hex = GLOBE_SEMANTIC[semantic].hex;
     counts[semantic] += 1;
+    // Hypothetical Co-Production relationship, dev-only. Attached to the
+    // entry rather than passed separately so it travels the SAME path the
+    // real `structure.participants` relationship does, and so it can only
+    // ever exist on a map that applyFixtureStates has already rewritten —
+    // i.e. it is structurally impossible for it to reach production
+    // rendering. See fixtureRelatedFor's own comment for why the real data
+    // cannot exercise this state at all.
+    const rel = fixtureRelatedFor(iso);
+    if (rel) entry.fixtureRelated = rel;
   }
   noteFixtureCounts(counts);
   return statuses;
@@ -421,14 +430,26 @@ export function buildCountryHoverData(statuses, grossBudgetUsd = null) {
       // participants (this hover's code excluded) — see globeHoverFormat.js
       // for why this is the one real "related jurisdiction" relationship
       // this data model has, and the report for what's still missing.
-      relatedCodes: structure?.participants?.filter((c) => c !== code) ?? [],
+      // `entry.fixtureRelated` is set ONLY by applyFixtureStates (dev-only,
+      // see globeVisualFixture.js) and is absent on every real-data path, so
+      // the `??` below resolves to the real participants in production. It
+      // exists because the real relationship is unreachable for this
+      // production — measured, not assumed: the winning structure for every
+      // jurisdiction is the single-participant ALLOC-RELOC-* one, so this
+      // array is empty for all 86, and the illumination it drives has never
+      // fired at runtime.
+      relatedCodes:
+        entry.fixtureRelated?.related ??
+        structure?.participants?.filter((c) => c !== code) ??
+        [],
       // PHASE 3B BATCH 2: the structure's own real `primary_jurisdiction` —
       // used ONLY to let hover illumination make the primary related
       // jurisdiction read slightly stronger than the rest, per the batch's
       // explicit "only when such ranking is supported by real data, never
       // invent a preferred partner" instruction. Real field, not a computed
       // preference.
-      primaryJurisdictionCode: structure?.primary_jurisdiction ?? null,
+      primaryJurisdictionCode:
+        entry.fixtureRelated?.primary ?? structure?.primary_jurisdiction ?? null,
       role: roleFor(structure, code),
       structureId: structure?.structure_id ?? null,
       structureLabel: structure?.label ?? null,

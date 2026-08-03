@@ -1,5 +1,34 @@
 # CineGlobe Capability Ledger
 
+## PERMANENT PROJECT RULE — Phase-Ledger Reconciliation
+
+**Adopted 2026-08-03, after a Phase 3B closeout that had to be reopened three
+times.** Applies to every future phase: UX, optimizer, data-integrity,
+ingestion, production workflows, Inspector, Overview, Workspace.
+
+Before closing or freezing ANY CineGlobe phase:
+
+1. Read the canonical project/phase ledger (this file + the relevant freeze manifest).
+2. Reconcile **every** requirement, defect, deferred item and acceptance condition ever assigned to that phase.
+3. Classify each as **RUNTIME VERIFIED**, **STATIC VERIFIED**, **BLOCKED**, or **EXPLICITLY DEFERRED**.
+4. Do not close the phase while any in-scope item is unverified.
+5. Do not rely only on the most recent prompt.
+6. A previously flagged requirement does not disappear because later prompts focused elsewhere.
+7. Runtime-visible UX requirements require runtime-visible evidence.
+8. If an item was previously claimed complete but current evidence is insufficient, **reopen it automatically**.
+9. Freeze only after the full ledger reconciles.
+
+**Why this rule exists (the actual failure it prevents).** Phase 3B was frozen
+three times. Each freeze verified the newest prompt's items and silently
+carried forward earlier claims. The 2026-08-03 reconciliation then measured
+live output and found that Co-Production related-jurisdiction illumination —
+recorded in the manifest as "confirmed live" — had **never fired at runtime**,
+because `relatedCodes` was empty for all 86 jurisdictions. A source-level test
+passed, a screenshot was described, and no one re-derived the claim from live
+data. Rules 7 and 8 exist specifically for that class of error.
+
+---
+
 Canonical record of every optimizer capability's runtime/implementation/integration status. Updated as capabilities are reconnected — see the reconciliation series in this engagement's commit history for the underlying investigation.
 
 Canonical served path: `frontend` → `app/api/v1/cineglobe.py` → `app/demo/little_utopia_state.py::build_allocated_structures()` → discovery/capability/qualification/allocation/pricing/normalization/ranking calculators → serialization → UI.

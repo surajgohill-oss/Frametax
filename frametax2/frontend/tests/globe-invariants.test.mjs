@@ -36,6 +36,7 @@ import {
 import {
   FIXTURE_DISCLOSURE,
   FIXTURE_EXPECTED_COUNTS,
+  fixtureRelatedFor,
   fixtureSlotFor,
   isFixtureActive,
 } from "../src/lib/globeVisualFixture.js";
@@ -352,8 +353,16 @@ test("fixture carries its disclosure and cannot reach the backend", () => {
   // (see below) — the original blanket ban was the wrong expression of the rule
   // and would have blocked the fix for the fixture silently switching itself
   // off. What must stay absent is anything that leaves the browser.
+  //
+  // Checked against CODE, not comments — the file-level convention documented
+  // at the top of this suite. The Phase 3B reconciliation added a comment
+  // naming the real backend structure ids (ALLOC-COMPONENT-POST-<X>), whose
+  // text contains "POST"; failing the guard on a comment that merely EXPLAINS
+  // the data model is exactly the false positive stripComments exists for. The
+  // invariant itself is unchanged and still absolute for executable code.
+  const code = stripComments(src);
   for (const forbidden of ["fetch(", "XMLHttpRequest", "POST", "PUT", "PATCH"]) {
-    assert.ok(!src.includes(forbidden), `fixture must not use ${forbidden}`);
+    assert.ok(!code.includes(forbidden), `fixture must not use ${forbidden}`);
   }
 });
 
@@ -709,4 +718,60 @@ test("beacon-rendered jurisdictions (Mauritius/Malta/Singapore) also receive ill
   // The repaint-trigger effects must re-invoke pointColor, or a beacon
   // country's illumination would never repaint on hover start/end.
   assert.match(src, /\.polygonStrokeColor\(globe\.polygonStrokeColor\(\)\)\s*\n\s*\.pointColor\(globe\.pointColor\(\)\)/, "illumination repaint effect must re-invoke pointColor too");
+});
+
+// ── Phase 3B ledger reconciliation: Co-Production relationship fixture ────
+//
+// THE DEFECT THESE GUARD. The Phase 3B reconciliation measured live output and
+// found `relatedCodes` EMPTY for all 86 jurisdictions, so the Co-Production
+// illumination had never fired at runtime despite being implemented and
+// unit-tested. Cause: two structures exist per partner — ALLOC-RELOC-<X>
+// (participants [X], fully priced -> jade) and ALLOC-COMPONENT-POST-<X>
+// (participants [MU, X], blocked -> amber) — and buildCountryStatuses keeps the
+// HIGHER STATUS_RANK, so the single-participant one always wins. Live counts
+// confirm the same thing: 1 gold / 84 jade / 0 amber / 21 silver, i.e. this
+// production has no Co-Production Opportunities at all.
+
+test("the fixture Co-Production relationship is dev-only data and never a colour or a status", () => {
+  const rel = fixtureRelatedFor("EG");
+  assert.ok(rel, "the fixture must define at least one Co-Production relationship to validate against");
+  assert.ok(Array.isArray(rel.related) && rel.related.length >= 2 && rel.related.length <= 4,
+    "the relationship must name 2-4 related jurisdictions, per the acceptance fixture contract");
+  assert.ok(rel.related.includes(rel.primary), "the primary must be one of the related jurisdictions");
+  // Raw globe keys only — never a hex, never a semantic slot name.
+  for (const code of rel.related) {
+    assert.match(code, /^[A-Z]{2}(-[A-Z0-9]+)?$/, `${code} must be a plain globe key`);
+  }
+  const src = read("lib/globeVisualFixture.js");
+  assert.ok(!/#[0-9a-fA-F]{3,6}/.test(src), "the fixture must never declare a colour of its own");
+  assert.equal(fixtureRelatedFor("ZZ-NOT-A-PLACE"), null, "unlisted keys must return null, not a default relationship");
+});
+
+test("the fixture relationship anchor is an amber jurisdiction, or illumination could never fire", () => {
+  const rel = fixtureRelatedFor("EG");
+  assert.equal(fixtureSlotFor("EG"), "amber",
+    "illumination is gated on hover.status === 'amber' (ProjectGlobe.jsx), so the anchor must be amber");
+  // At least one related jurisdiction must be beacon-rendered, so the
+  // pointColorFn path is exercised and not just the polygon path.
+  assert.ok(rel.related.includes("MT"),
+    "the relationship must include a beacon-rendered jurisdiction (Malta) to exercise pointColorFn");
+});
+
+test("fixture relationships can never leak into the real-data path", () => {
+  const src = stripComments(read("lib/globeData.js"));
+  // The fixture relationship is attached to the entry ONLY inside
+  // applyFixtureStates, which is itself only called under isFixtureActive().
+  const applyFn = /function applyFixtureStates\(statuses\)[\s\S]*?\n\}/.exec(src);
+  assert.ok(applyFn, "applyFixtureStates not found");
+  assert.match(applyFn[0], /fixtureRelatedFor\(/, "the relationship must be attached inside applyFixtureStates");
+  assert.match(src, /if \(isFixtureActive\(\)\) applyFixtureStates\(statuses\)/,
+    "applyFixtureStates must stay gated on isFixtureActive()");
+  const others = src.split(/function applyFixtureStates\(statuses\)[\s\S]*?\n\}/).join("");
+  assert.ok(!/fixtureRelatedFor\(/.test(others),
+    "fixtureRelatedFor must be called from exactly one place — applyFixtureStates");
+  // And the hover payload must FALL BACK to the real participants.
+  assert.match(src, /entry\.fixtureRelated\?\.related\s*\?\?[\s\S]{0,120}participants/,
+    "relatedCodes must fall back to the structure's real participants when no fixture relationship exists");
+  assert.match(src, /entry\.fixtureRelated\?\.primary\s*\?\?\s*structure\?\.primary_jurisdiction/,
+    "primaryJurisdictionCode must fall back to the structure's real primary_jurisdiction");
 });
