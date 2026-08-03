@@ -858,7 +858,6 @@
 .pd-nat-value { font-size: 12.5px; color: var(--text-primary); flex-shrink: 0; }
 .pd-flag { margin-right: 5px; }
 .pd-nat-missing { color: var(--amber, #c99a4d); font-style: italic; }
-.pd-tag-static { cursor: default; }
 
 .ovx-sec { background: var(--surface-1); border: 0.5px solid var(--hairline); border-radius: 8px; padding: 10px 16px 8px; margin-bottom: 11px; }
 .ovx-sec .oh { display: flex; align-items: baseline; gap: 8px; margin-bottom: 5px; }

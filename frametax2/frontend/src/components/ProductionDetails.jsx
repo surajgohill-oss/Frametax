@@ -69,6 +69,24 @@ export default function ProductionDetails({ people, requirements, refetch }) {
     setEditing(true);
   }
 
+  // A location chip is the one control on this panel a user can act on
+  // directly, without first discovering the generic Edit button — clicking
+  // an inactive/active chip in normal view enters edit state AND toggles
+  // that chip in the same action. Builds the same draft `beginEdit()`
+  // would, with the clicked slug already flipped, so this is one state
+  // transition (not beginEdit() followed by a second, separately-batched
+  // toggle). The user still reviews the change via the Save/Cancel bar
+  // that appears — this does not silently persist on click.
+  function beginEditAndToggleLocation(slug) {
+    const p = {};
+    for (const role of PERSON_ROLES) p[role.key] = { ...currentOf(role) };
+    const l = {};
+    for (const [s, cat] of Object.entries(categories)) l[s] = cat.effective;
+    l[slug] = !l[slug];
+    setDraft({ people: p, locations: l });
+    setEditing(true);
+  }
+
   function cancelEdit() {
     setDraft(null);
     setEditing(false);
@@ -172,8 +190,7 @@ export default function ProductionDetails({ people, requirements, refetch }) {
       <div className="pd-locations">
         <div className="pd-section-label">Major location requirements</div>
         <p className="pd-req-note">
-          Seeded from script analysis · drives jurisdiction matching
-          {editing ? " · click to toggle" : ""}
+          Seeded from script analysis · drives jurisdiction matching · click to toggle
         </p>
         {catEntries.length === 0 ? (
           <p className="pd-loc-empty">No script analysis available yet.</p>
@@ -182,24 +199,20 @@ export default function ProductionDetails({ people, requirements, refetch }) {
             {catEntries.map(([slug, cat]) => {
               const active = editing ? draft.locations[slug] : cat.effective;
               const overridden = cat.override !== null && cat.override !== undefined;
-              return editing ? (
+              const title = editing
+                ? cat.evidence
+                : `${cat.evidence}${cat.source === "user_override" ? " — user override" : " — script analysis"} — click to toggle`;
+              return (
                 <button
                   key={slug}
-                  className={`tag ${active ? "active" : ""}`}
+                  type="button"
+                  className={`tag ${active ? "active" : ""} ${!editing && overridden ? "pd-overridden" : ""}`}
                   disabled={saving}
-                  title={cat.evidence}
-                  onClick={() => toggleLocation(slug)}
+                  title={title}
+                  onClick={() => (editing ? toggleLocation(slug) : beginEditAndToggleLocation(slug))}
                 >
                   {cat.label}
                 </button>
-              ) : (
-                <span
-                  key={slug}
-                  className={`tag pd-tag-static ${active ? "active" : ""} ${overridden ? "pd-overridden" : ""}`}
-                  title={`${cat.evidence}${cat.source === "user_override" ? " — user override" : " — script analysis"}`}
-                >
-                  {cat.label}
-                </span>
               );
             })}
           </div>

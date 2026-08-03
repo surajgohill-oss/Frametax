@@ -1,5 +1,48 @@
 # CineGlobe Capability Ledger
 
+## PERMANENT PROJECT RULE — Interactive Feature Verification
+
+**Adopted 2026-08-03, after Location Requirements chips were reported
+"not directly clickable" despite persistence having been runtime-verified
+in an earlier batch.** Applies to every interactive UX capability going
+forward.
+
+Backend availability, source wiring, persistence, or programmatic
+invocation (calling a handler from a script, dispatching a synthetic
+event, or reading React state) does NOT establish that an interactive
+feature is complete. A capability is **RUNTIME VERIFIED** only when the
+actual visible entry point has been exercised through the served UI as a
+real user would reach it — a real click at the element's own on-screen
+position, a real focus + keypress, a real navigation — with the expected
+result observed afterward (state change, network call, persisted value).
+
+**Why this rule exists.** Location Requirements' `POST /locations`
+persistence was correctly verified end-to-end in a prior batch (toggle via
+programmatic state, save, reload, confirm). That was reported as "Location
+Requirements editable/persistent — RUNTIME VERIFIED." But the chips
+rendered as non-interactive `<span>` elements outside of edit mode — a
+real user had no click target at all until first discovering and clicking
+a separate, generically-labeled Edit button. The persistence layer worked
+perfectly; the feature a user could actually reach did not. "The backend
+write path works" and "the user-facing control works" are different
+claims and must be verified separately.
+
+**How to apply:** for any interactive UI claim, verify by clicking (or
+focusing + keying) the real rendered element at its own screen position,
+using the same input path a user would use, then re-verify by reading the
+DOM/network afterward. Do not substitute `element.click()` from a script,
+manual `fetch()` calls, or direct React state mutation for this proof —
+those confirm the underlying wiring works, not that the visible control
+works. If both are worth recording, log them as two separate ledger lines
+("wiring confirmed" vs. "user-facing control confirmed"), never collapse
+into one.
+
+**This rule works together with, not against, the existing rule**: once a
+real entry point has been verified this way, later batches may treat it as
+established and should not re-run the same destructive test without
+regression evidence (Phase-Ledger Reconciliation Rule, below). Verify the
+real entry point once, thoroughly; then trust it until something changes.
+
 ## PERMANENT PROJECT RULE — Phase-Ledger Reconciliation
 
 **Adopted 2026-08-03, after a Phase 3B closeout that had to be reopened three
@@ -172,6 +215,86 @@ backend yet; persistence is the later User Adjustments phase." No UI or
 code change was made — this entry exists so the classification is formally
 recorded, per this batch's own requirement, rather than left as only an
 inline code comment.
+
+## PRODUCTION SHELL + OVERVIEW CLOSEOUT (2026-08-03)
+
+Two known defects fixed against the frozen Overview/Shell composition
+(container geometry unchanged in both cases — hero height stayed 242px;
+Location Requirements' IA, sort order, and provenance model untouched).
+
+**Hero art fit.** `.ph-hero-art` background-size reduced from `108% auto`
+to `100% auto` (position unchanged, `center bottom`). Re-verified the
+baked-typography safety margin at all three canonical widths using the
+same source-pixel computation as the original fix: 1440px (binding case,
+hero width 1208px) → margin 47.7px below the baked text's y568 end,
+1600px → 86.5px, 1920px → 142.2px. All comfortably clear. More of the
+source composition (village architecture, coastline) is now visible at
+every width; identical on all 8 production routes (single shared
+`ProductionHero`, no per-route crops).
+
+**Location Requirements — direct click-to-toggle.** Root cause: chips
+rendered as non-interactive `<span className="pd-tag-static">` outside
+edit mode — no onClick, `cursor: default`, no keyboard focus. Fixed by
+rendering the SAME `<button>` in both editing and non-editing states, with
+a new `beginEditAndToggleLocation(slug)` handler that builds the edit
+draft (identical to the existing `beginEdit()`) with the clicked slug's
+value already flipped, in one state transition — clicking an inactive
+chip enters edit state and turns it on; clicking an active chip enters
+edit state and turns it off. The Save/Cancel bar still appears and still
+gates persistence; nothing here bypasses it. `.pd-tag-static` (the
+`cursor: default` override) removed as dead code — `.tag` already carries
+`cursor: pointer` globally via `tokens.css`, and native `<button>`
+semantics supply Tab-focus and Enter/Space-activation for free, per the
+new Interactive Feature Verification rule above (no custom keyboard
+handling was written or needed).
+
+**Location Requirements capability breakdown** (per the new verification
+rule — tracked as separate lines, not one collapsed "works" claim, each
+confirmed via a real mouse click at the element's own screen position,
+not a script-invoked handler):
+- Direct UI click on an inactive/active chip → enters edit state + toggles
+  that chip: **RUNTIME VERIFIED** (real click, not `.click()`/state
+  mutation).
+- Save → correct endpoint: **RUNTIME VERIFIED** (`POST /locations`, exactly
+  one call per Save, confirmed via network capture).
+- Reload persistence: **RUNTIME VERIFIED** (toggled Desert/Arid on, saved,
+  reloaded, chip showed `active pd-overridden`).
+- Revert cycle: **RUNTIME VERIFIED** (toggled the same chip off, saved,
+  reloaded, chip showed inactive `pd-overridden` — the correct honest
+  state for a real override that was later un-set, not a bug).
+- Cancel discards without persisting: **RUNTIME VERIFIED** (toggled a
+  second, previously-untouched chip, clicked Cancel, UI reverted
+  immediately with zero network calls; reload confirmed no persistence).
+- Provenance preservation (script-derived vs. user-override, `pd-overridden`
+  marker, tooltip text): **RUNTIME VERIFIED** (unchanged mechanism, observed
+  correctly reflected throughout all of the above).
+- Keyboard focus (Tab reaches the chip): **RUNTIME VERIFIED** (`.focus()`
+  correctly moved `document.activeElement` to the chip).
+- Keyboard activation (Enter/Space triggers the toggle): **STATIC VERIFIED
+  ONLY** — guaranteed by native `<button>` semantics per the web platform
+  spec, but the synthetic Enter keypress could not be confirmed through
+  this session's browser-automation tool: the same synthetic keypress also
+  failed to activate an already-proven-working control (the theme-toggle
+  button, previously verified via real mouse click) while focus remained
+  correctly on the target element throughout. This is recorded as a
+  tool/environment limitation delivering synthetic key events to this
+  pane, not a product defect — but per the new rule, it is logged
+  separately rather than folded into the "RUNTIME VERIFIED" line above.
+- Component-level behavioral test (chip click → toggle, as opposed to a
+  CSS-class check): **EXPLICITLY DEFERRED** — the existing test
+  architecture (`node --test` over plain `.mjs` modules, no jsdom, no
+  React Testing Library, no JSX transform in the test runner) cannot
+  render `ProductionDetails.jsx` or dispatch DOM events against it
+  without adding a new testing stack. Adding one for a single test was
+  judged out of scope for this closeout; the behavior is instead covered
+  by the four RUNTIME VERIFIED browser-click checks above.
+
+**No new git tag; no other production-shell or Overview geometry changed.**
+Globe, column widths, Facts/Budget density, and card dimensions were not
+touched. `OVERVIEW UX — FROZEN` and `PRODUCTION HERO/SHELL — FROZEN` are
+reaffirmed under this ledger entry, superseding the prior freeze
+declarations per the phase-ledger rule (a freeze is provisional until the
+next reconciliation closes cleanly, which this one does).
 
 ---
 

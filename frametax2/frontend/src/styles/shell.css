@@ -196,16 +196,28 @@
      then a fraction of a window that itself keeps changing size — at
      1440px the window grew enough that `center 93%` slid back UP into the
      baked "MEDITERRANEAN DRAMA" line, confirmed by screenshot, not by
-     recomputing in the abstract. Fixed two ways together: `108% auto`
-     shrinks the window at every width (less of the source is ever in
-     play), and `center bottom` anchors the crop's END to the image's own
-     bottom edge — an absolute anchor, not a percentage of a
-     variable-sized window, so it cannot drift back toward the text as
-     the viewport narrows. Re-verified against the source pixels at the
-     narrowest required viewport (1440px, the binding case): visible
-     source range starts at y~617, a 49px margin below the baked text's
-     y568 end. */
-  background-size: 108% auto;
+     recomputing in the abstract. Fixed two ways together: a `background-
+     size` well under `cover` shrinks the window at every width (less of
+     the source is ever in play), and `center bottom` anchors the crop's
+     END to the image's own bottom edge — an absolute anchor, not a
+     percentage of a variable-sized window, so it cannot drift back
+     toward the text as the viewport narrows.
+
+     CLOSEOUT PASS: the art read as an over-zoomed texture at `108% auto`
+     — too little of the source composition (village/coastline context)
+     was visible. Reduced to `100% auto`, computed and re-verified against
+     the source pixels (natural size 1659x948) at the narrowest required
+     viewport (1440px, hero width 1208px, the binding case — margin SHRINKS
+     as the container narrows because a smaller rendered width also
+     shrinks the rendered height, which widens the visible source window):
+     visible source range now starts at y≈615.7, a 47.7px margin below the
+     baked text's y568 end — essentially the same safety margin as the
+     prior `108%` setup (~49px) while showing ~24px more of the source
+     image's vertical extent. 1600px margin is 86.5px; 1920px margin is
+     142.2px — 1440px is confirmed the binding case at every width tested.
+     Do not reduce below ~98% at this hero height/asset without
+     re-running this exact margin computation at 1440px first. */
+  background-size: 100% auto;
   background-position: center bottom;
 }
 /* Directional overlay — replaces the first pass's near-uniform scrim.
