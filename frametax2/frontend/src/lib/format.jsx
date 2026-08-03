@@ -125,6 +125,23 @@ export function jurisdictionName(code) {
   return JURISDICTION_COORDS[code]?.name || code;
 }
 
+// One shared flag mechanism for the whole app — standardized Unicode
+// regional-indicator derivation (no asset/library dependency; the same
+// technique already used ad hoc for the three FX_FLAGS in
+// todayCompute.js, generalized here to any ISO2 rather than a hardcoded
+// three-entry map). Sub-national jurisdictions (US-NY, CA-BC, AU-NSW, ...)
+// have no flag of their own — this shows the PARENT country's flag, never
+// a fabricated regional one. Unknown/empty input renders nothing (no
+// placeholder flag invented for an unset nationality).
+export function flagEmoji(code) {
+  if (!code) return null;
+  const iso2 = code.split("-")[0].toUpperCase();
+  if (!/^[A-Z]{2}$/.test(iso2)) return null;
+  const base = 0x1f1e6; // regional indicator "A"
+  const chars = [...iso2].map((c) => base + (c.charCodeAt(0) - 65));
+  return String.fromCodePoint(...chars);
+}
+
 // Turns a jurisdiction list like ["MU","BE"] into a readable structure
 // name: the baseline jurisdiction plus any co-production partners.
 export function structureLabel(codes = []) {

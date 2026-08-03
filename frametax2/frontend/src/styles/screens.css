@@ -122,28 +122,66 @@
   padding: 0;
 }
 .globe-frame .globe-canvas { width: 100%; height: 100%; }
-.scenario-strip {
+/* Incentive Intelligence — compact 2x2 grid beneath Project Globe (Batch 2).
+   Reuses .ovx-sec for the outer card/header (see IncentiveIntelligence.jsx);
+   this block styles only the grid and its four cards. Category accents
+   reuse the existing gold/jade/amber/silver tokens — no new palette. */
+.ii-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
-.strip-cell {
+.ii-card {
+  position: relative;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  min-height: 72px;
-  padding: 9px 12px 8px;
+  min-height: 128px;
+  padding: 0;
   background: var(--surface-1);
   border: 0.5px solid var(--hairline);
   border-radius: var(--radius-md);
   text-align: left;
+  overflow: hidden;
 }
-.strip-cell:hover { border-color: var(--hairline-strong); box-shadow: var(--shadow-sm); }
-.strip-cell.active { border-color: var(--accent, var(--hairline-strong)); box-shadow: var(--shadow-sm); }
-.strip-name { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; color: var(--text-primary); }
-.strip-type { font-size: 10.5px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
-.strip-npc { margin-top: auto; font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.ii-card.ii-clickable:hover { border-color: var(--hairline-strong); box-shadow: var(--shadow-sm); }
+.ii-card-accent { width: 3px; flex-shrink: 0; background: var(--hairline-strong); }
+.ii-gold .ii-card-accent { background: var(--gold); }
+.ii-jade .ii-card-accent { background: var(--jade); }
+.ii-amber .ii-card-accent { background: var(--amber); }
+.ii-silver .ii-card-accent { background: var(--silver); }
+.ii-card-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; padding: 9px 11px 10px; }
+
+.ii-head { display: flex; align-items: center; gap: 6px; }
+.ii-cat-label { font-size: 10px; font-weight: 650; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-tertiary); }
+.ii-gold .ii-cat-label { color: var(--gold); }
+.ii-jade .ii-cat-label { color: var(--jade); }
+.ii-amber .ii-cat-label { color: var(--amber); }
+.ii-silver .ii-cat-label { color: var(--silver); }
+.ii-role { margin-left: auto; font-size: 10px; color: var(--text-tertiary); }
+
+.ii-country { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.ii-flag { font-size: 14px; line-height: 1; flex-shrink: 0; }
+.ii-country-name { font-size: 13.5px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ii-structure { font-size: 10.5px; color: var(--text-tertiary); margin-top: -2px; }
+
+.ii-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 10px; margin-top: 2px; }
+.ii-metric { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.ii-metric-label { font-size: 9px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-tertiary); }
+.ii-metric-value { font-size: 12.5px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.ii-reason { font-size: 11.5px; color: var(--text-secondary); line-height: 1.35; margin-top: 2px; }
+
+.ii-related { margin-top: 2px; display: flex; flex-direction: column; gap: 2px; }
+.ii-related-label { font-size: 9px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-tertiary); }
+.ii-related-list { display: flex; flex-wrap: wrap; gap: 4px 8px; font-size: 11px; color: var(--text-secondary); }
+.ii-related-item { white-space: nowrap; }
+
+.ii-program { margin-top: auto; padding-top: 4px; font-size: 10px; color: var(--text-tertiary); border-top: 0.5px solid var(--hairline); }
+
+.ii-empty { margin-top: auto; margin-bottom: auto; font-size: 11.5px; color: var(--text-tertiary); }
+
+@media (max-width: 1150px) {
+  .ii-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 
 /* Production Budget rail */
 .brail-panel {
@@ -814,6 +852,7 @@
 .pd-edit-btn:hover { border-color: var(--hairline-strong); color: var(--text-primary); }
 .pd-edit-actions { display: inline-flex; gap: 6px; margin-left: 8px; flex-shrink: 0; }
 .pd-nat-value { font-size: 12.5px; color: var(--text-primary); flex-shrink: 0; }
+.pd-flag { margin-right: 5px; }
 .pd-nat-missing { color: var(--amber, #c99a4d); font-style: italic; }
 .pd-tag-static { cursor: default; }
 

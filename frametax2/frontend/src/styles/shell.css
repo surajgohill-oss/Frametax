@@ -177,7 +177,7 @@
    content rows. */
 .ph-hero {
   position: relative;
-  height: 260px;
+  height: 242px;
   flex-shrink: 0;
   overflow: hidden;
   display: flex;

@@ -3,12 +3,17 @@ import { useNavigate } from "react-router-dom";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { useAppState } from "../../state/AppState";
 import { Loading, ErrorBox } from "../../components/Async";
-import { Money } from "../../lib/format";
 import Globe3D from "../../components/Globe3D";
-import { buildGlobeView, activeStructure } from "../../lib/globeData";
+import { buildGlobeView, activeStructure, buildCountryStatuses, buildCountryHoverData } from "../../lib/globeData";
 import ProductionDetails from "../../components/ProductionDetails";
 import BudgetRail from "../../components/BudgetRail";
-import FXStrip from "../../components/FXStrip";
+import IncentiveIntelligence from "../../components/IncentiveIntelligence";
+// FXStrip: REMOVED from this Overview position this batch (see Batch 2 —
+// the full-width strip demoted the Globe and broke the approved
+// hero -> tabs -> three-column composition). FXStrip.jsx itself is
+// UNCHANGED and untouched — only this screen's render call was removed.
+// No approved compact placement exists yet in canonical docs; a new
+// placement is EXPLICITLY DEFERRED, not designed in this batch.
 
 // Overview — approved closeout structure (restored from the approved-design
 // migration, commit 9644759):
@@ -26,14 +31,6 @@ import FXStrip from "../../components/FXStrip";
 //            account Inspector, which carries the real qualified /
 //            partially-qualified / excluded state from the QPE engine —
 //            nothing recalculated here).
-
-const JUR_NAMES = {
-  MU: "Mauritius", GR: "Greece", IE: "Ireland", MT: "Malta",
-  GB: "United Kingdom", US: "United States", ES: "Spain", FJ: "Fiji",
-  IT: "Italy", FR: "France", DE: "Germany", AU: "Australia",
-  NZ: "New Zealand", CA: "Canada", IN: "India", ZA: "South Africa",
-};
-const jurName = (code) => JUR_NAMES[code] || code || "—";
 
 export default function Overview() {
   const { data, error, loading, refetch } = useCineGlobe();
@@ -62,20 +59,60 @@ export default function Overview() {
   );
   const structure = allocated ? activeStructure(allocated, leadingStructureId) : null;
 
+  // Incentive Intelligence — ONE representative jurisdiction per canonical
+  // category (Recommended/Alternatives/Co-Production Opportunities/
+  // Excluded), read from the SAME per-jurisdiction data the Globe itself
+  // renders (buildCountryStatuses + buildCountryHoverData — no second
+  // derivation). Selection is a pure display choice over real data:
+  //   gold   — the single rank-1 jurisdiction (there is always exactly one).
+  //   jade   — the Alternative with the highest own-segment incentive.
+  //   amber  — the first Co-Production Opportunity, if this production's
+  //            real optimizer output has one (currently it does not — see
+  //            IncentiveIntelligence.jsx's own comment for why).
+  //   silver — an Excluded jurisdiction that carries a REAL discovery
+  //            examination reason, so the card never shows an empty one.
+  // `amber`/`silver` may legitimately be null; IncentiveIntelligence.jsx
+  // renders an honest empty state rather than fabricating a card.
+  // Computed BEFORE the loading/error early-return below — every hook in
+  // this component must run unconditionally on every render (Rules of
+  // Hooks), so no useMemo can sit after a conditional return.
+  const countryStatuses = useMemo(
+    () => buildCountryStatuses(allocated, rankById),
+    [allocated, rankById],
+  );
+  const hoverData = useMemo(
+    () => buildCountryHoverData(countryStatuses, data?.production?.gross_budget_usd),
+    [countryStatuses, data],
+  );
+  const representatives = useMemo(() => {
+    const entries = [...hoverData.values()];
+    const byStatus = (s) => entries.filter((e) => e.status === s);
+    const gold = byStatus("gold")[0] || null;
+    const jade = byStatus("jade").sort(
+      (a, b) => (b.segmentIncentiveUsd || 0) - (a.segmentIncentiveUsd || 0),
+    )[0] || null;
+    const amberAll = byStatus("amber");
+    const amber = amberAll.find((e) => e.excludedReason || e.relatedCodes?.length) || amberAll[0] || null;
+    const silverAll = byStatus("silver");
+    const silver = silverAll.find((e) => e.excludedReason) || silverAll[0] || null;
+    return { gold, jade, amber, silver };
+  }, [hoverData]);
+
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
 
   const { production, pkg, people, economics } = data;
 
-  // Jurisdiction snapshot strip — the four whole-production jurisdiction
-  // options (single-country baseline + full relocations), in optimizer rank
-  // order. Values are the same canonical fields the Workspace lanes render
-  // (total_incentive_floor_usd / npc_with_adjustments_usd).
   const structById = new Map((allocated?.structures || []).map((s) => [s.structure_id, s]));
-  const snapshot = (allocated?.ranking || [])
-    .map((r) => structById.get(r.structure_id))
-    .filter((s) => s && (s.structure_type === "single_country" || s.structure_type === "full_relocation"))
-    .slice(0, 4);
+
+  function openIntelligenceCard(entry) {
+    setSelectedJurisdiction(entry.jurisdictionCode);
+    const s = structById.get(entry.structureId);
+    if (!s) return;
+    const seg = s.segments.find((sg) => sg.jurisdiction_code === entry.jurisdictionCode);
+    if (seg) openInspector("allocation-segment", { ...seg, structureLabel: s.label });
+    else if (s.recommendation) openInspector("structure-recommendation", s.recommendation);
+  }
 
   function handleGlobeClick(pt) {
     const code = pt.jurisdictionCode || pt.id;
@@ -89,12 +126,6 @@ export default function Overview() {
 
   return (
     <div className="screen ovxg-screen">
-      {/* Approved FX / production-economics strip — beneath the header,
-          above the three-column layout. Real /economics.fx_horizons data
-          (spot + forward points); commentary only, never an optimizer
-          input (pricing stays on current rates). */}
-      <FXStrip economics={economics} />
-
       <div className="ovxg-grid">
 
         {/* ── LEFT — Production Facts + Production Requirements ─────────── */}
@@ -149,30 +180,10 @@ export default function Overview() {
             </div>
           </section>
 
-          <div className="scenario-strip">
-            {snapshot.map((s) => (
-              <button
-                className={`strip-cell${s.structure_id === structure?.structure_id ? " active" : ""}`}
-                key={s.structure_id}
-                onClick={() => {
-                  // Selecting a jurisdiction snapshot IS choosing the leading
-                  // structure — synchronizes Globe, Budget Rail, and Inspector
-                  // immediately, then still offers the full comparison view.
-                  setLeadingStructureId(s.structure_id);
-                  setSelectedJurisdiction(s.primary_jurisdiction);
-                }}
-                onDoubleClick={() => navigate("/production/scenarios", { state: { structureId: s.structure_id } })}
-              >
-                <span className="strip-name">{jurName(s.primary_jurisdiction)}</span>
-                <span className="strip-type">
-                  Incentive {s.selected_incentive_usd ? `$${Math.round(s.selected_incentive_usd).toLocaleString()}` : "—"}
-                </span>
-                <span className="strip-npc mono">
-                  {s.is_fully_priced ? <Money value={s.npc_with_adjustments_usd} /> : "not priced"}
-                </span>
-              </button>
-            ))}
-          </div>
+          <IncentiveIntelligence
+            representatives={representatives}
+            onSelect={openIntelligenceCard}
+          />
         </div>
 
         {/* ── RIGHT — Budget Rail (traceability over the canonical register) ── */}

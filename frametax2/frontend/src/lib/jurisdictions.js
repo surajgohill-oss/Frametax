@@ -20,6 +20,7 @@ export const JURISDICTION_COORDS = {
   "AE-AD": { lat: 24.47, lng: 54.37, name: "Abu Dhabi" },
   "AE-DXB": { lat: 25.2, lng: 55.27, name: "Dubai" },
   AL: { lat: 41.33, lng: 19.82, name: "Albania" },
+  AT: { lat: 48.21, lng: 16.37, name: "Austria" },
   AU: { lat: -35.28, lng: 149.13, name: "Australia" },
   "AU-NSW": { lat: -33.87, lng: 151.21, name: "Sydney" },
   "AU-QLD": { lat: -27.47, lng: 153.03, name: "Brisbane" },

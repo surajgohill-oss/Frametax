@@ -27,6 +27,49 @@ because `relatedCodes` was empty for all 86 jurisdictions. A source-level test
 passed, a screenshot was described, and no one re-derived the claim from live
 data. Rules 7 and 8 exist specifically for that class of error.
 
+## PERMANENT PROJECT RULE — Preservation Includes Prominence and Position
+
+**Adopted 2026-08-03, during Overview Batch 2 (body formatting + Incentive
+Intelligence).** Applies to every future UX phase that touches a screen
+containing a "protected" element (Project Globe, Budget Rail, any frozen
+component).
+
+Preserving a protected element means preserving **all** of:
+1. Its own dimensions (width/height/aspect ratio).
+2. Its **screen position** — where it sits in the viewport, not just its size.
+3. Its **visual prominence** — how quickly a viewer's eye reaches it.
+4. Its **hierarchy** relative to surrounding content.
+5. Its **surrounding whitespace/rhythm** and relationship to adjacent
+   components.
+
+A protected component with byte-identical dimensions but pushed materially
+down the page by a new element inserted above it **is a regression**, even
+though every "protected invariant" measurement (width, height, canvas size)
+still reads unchanged. Dimension-only preservation checks miss this class of
+defect entirely — they can pass while the actual user-visible outcome (can the
+user still see the Globe without scrolling?) has gotten worse.
+
+**Why this rule exists.** Overview Batch 1 froze Project Globe's canvas
+(550×420px) and wrapper (~551×421px) as protected invariants and verified them
+at every subsequent batch. Those checks all passed. But a full-width FX strip
+was later positioned directly above the Globe in the same column flow,
+demoting it well below the fold on common viewports — a real regression that
+every existing "protected invariant" measurement was structurally blind to,
+because none of them measured position, only size. Batch 2's fix (removing
+the FX strip from that position, preserving the component/data for later
+reuse) was the correct response; this rule exists so the NEXT phase measures
+Globe-top-Y / tabs-to-content distance as a first-class protected invariant
+alongside width/height, not as an afterthought discovered by a user
+complaint.
+
+**How to apply:** before/after any UX phase touching a screen with a protected
+element, measure and record: (a) the element's own box dimensions, (b) its
+distance from the nearest fixed landmark above it (e.g. tabs bottom), (c) its
+`getBoundingClientRect().top` at the canonical viewport. A phase may only
+reduce that distance (making the element MORE prominent) or leave it
+unchanged; increasing it requires an explicit, called-out justification, not
+a silent side effect of an unrelated addition.
+
 ---
 
 Canonical record of every optimizer capability's runtime/implementation/integration status. Updated as capabilities are reconnected — see the reconciliation series in this engagement's commit history for the underlying investigation.

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Pencil } from "lucide-react";
 import { postPeople, postLocations } from "../api";
 import { PERSON_ROLES } from "../lib/personRoles";
+import { flagEmoji } from "../lib/format";
 
 // Production Facts — approved Overview left column. READ-ONLY by default:
 // one Edit control switches the entire panel into edit mode (names,
@@ -156,6 +157,7 @@ export default function ProductionDetails({ people, requirements, refetch }) {
                 />
               ) : (
                 <span className={`pd-nat-value ${!cur.nationality ? "pd-nat-missing" : ""}`}>
+                  {cur.nationality && <span className="pd-flag" aria-hidden="true">{flagEmoji(cur.nationality)}</span>}
                   {natLabel(cur.nationality)}
                 </span>
               )}
