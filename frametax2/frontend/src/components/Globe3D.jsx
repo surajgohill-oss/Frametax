@@ -268,7 +268,10 @@ const GLOBE_THEME = {
     // runtime review; a stronger reflected response, paired with the crisper
     // clearcoatRoughness below, is what makes the surface read as dimensional
     // rather than a flat tint. Base colour/hue untouched (still dark navy).
-    envIntensity: 0.50,
+    // PHASE 3B FINAL VISUAL DELTA: 0.50 -> 0.58 — still read as too close to
+    // flat at NORMAL zoom (not a crop) on the next runtime pass. Base colour/
+    // hue still untouched.
+    envIntensity: 0.58,
     // Multiplier on the polygon cap/side materials' own envMapIntensity.
     // Day is the identity by definition — the day render is the frozen,
     // verified baseline and this consolidation must not alter a pixel of it.
@@ -312,7 +315,8 @@ const GLOBE_THEME = {
     exposure: 1.12,
     // Raised in step with day (0.46 -> 0.50), same reasoning.
     // PHASE 3B CLOSEOUT: raised in step with day (0.50 -> 0.56).
-    envIntensity: 0.56,
+    // PHASE 3B FINAL VISUAL DELTA: raised in step with day (0.56 -> 0.64).
+    envIntensity: 0.64,
     // Night lifts the LAND/status caps' environment response alongside the
     // ocean's. Previously only the globe body's envMapIntensity was
     // theme-driven, so at night the ocean gained reflectivity while every
@@ -372,8 +376,14 @@ const HOVER_STROKE = "#dfe4ec";
 // above — the crisp curvature edge needed to lift alongside the softer outer
 // taper, or the atmosphere raise alone would have widened a still-faint glow
 // rather than making the limb genuinely legible.
-const BASE_RIM_INTENSITY = 0.29;
-const SELECTED_RIM_INTENSITY = 0.32;
+// PHASE 3B FINAL VISUAL DELTA: 0.29 -> 0.34, paired with another
+// ATMOSPHERE_ALTITUDE raise below — still not perceptible at NORMAL zoom
+// (not a crop) on the next runtime pass. SELECTED_RIM_INTENSITY raised in
+// the same proportion (was left at 0.32 in the prior pass, which shrank the
+// "substantial lift on selection" gap from ~33% relative to ~10% — an
+// unintended regression, corrected here).
+const BASE_RIM_INTENSITY = 0.34;
+const SELECTED_RIM_INTENSITY = 0.44;
 // Selection is a substantial physical lift, not a hint — it must become the
 // focal point of the scene the moment it is chosen. Raised again ~25% in the
 // 2026-07-28 closeout pass (0.15 -> 0.19), on top of the earlier ~2.5x raise
@@ -448,7 +458,11 @@ const ORBIT_MAX_DISTANCE = 460;
 // the library default 0.15, paired with the BASE_RIM_INTENSITY raise below,
 // so the limb reads as "the planet has atmosphere" without returning to the
 // "one wide uniform wash" failure the two comments above document.
-const ATMOSPHERE_ALTITUDE = 0.125;
+// PHASE 3B FINAL VISUAL DELTA: 0.125 -> 0.16 — still imperceptible at NORMAL
+// zoom (not a crop) on the next runtime pass. Now slightly past the library
+// default (0.15) rather than under it, paired with the BASE_RIM_INTENSITY
+// raise above so the crisp edge and the soft taper lift together.
+const ATMOSPHERE_ALTITUDE = 0.16;
 
 function easeOutQuart(t) {
   return 1 - Math.pow(1 - t, 4);
@@ -528,7 +542,11 @@ const GOLD_BREATH_AMOUNT = 0.16;
 //    source"). Still slow and restrained by any normal-speed standard (a full
 //    cycle takes longer than a minute hand's half-revolution); not a "rolling
 //    wave," just a slow specular/bump drift across the existing texture.
-const OCEAN_DRIFT_PER_SEC = 1 / 150;
+//    PHASE 3B FINAL VISUAL DELTA: 1/150 (~2.5min cycle) -> 1/45 (~45s cycle)
+//    — the 2.5-minute rate proved via pixel-diff but was still too slow for
+//    a human glancing at the NORMAL viewport to register as "moving" within
+//    a few seconds of looking. 45s is still a slow drift, not a wave.
+const OCEAN_DRIFT_PER_SEC = 1 / 45;
 // 4. Slow autorotation, and ONLY while the producer is neither inspecting
 //    nor driving the camera: any selection or any pointer interaction stops
 //    it immediately (see the controls block). A globe that keeps turning
@@ -1723,7 +1741,10 @@ export default function Globe3D({
       // the raised envIntensity above, for visible surface dimensionality.
       // Still well short of the ~0.16 "two white orbs" failure this file
       // documents as the hard ceiling on the other end.
-      clearcoatRoughness: 0.58,
+      // PHASE 3B FINAL VISUAL DELTA: 0.58 -> 0.50 (effective ~0.29 -> ~0.25)
+      // — still one more step short of the 0.16 failure line, for a
+      // noticeably crisper specular streak at normal zoom.
+      clearcoatRoughness: 0.50,
       envMapIntensity: GLOBE_THEME.day.envIntensity,
       ior: 1.52, // ~optical crown glass
       // Emissive is additive and lighting-independent, so it is the sphere's

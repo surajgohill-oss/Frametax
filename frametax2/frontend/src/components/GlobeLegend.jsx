@@ -1,14 +1,16 @@
 import { GLOBE_SEMANTIC } from "../lib/globeData";
 
-// ── Four-state Globe legend — vertical, readable (Phase 3B Globe closeout) ──
+// ── Four-state Globe legend — top-left, chrome-free (Phase 3B closeout) ──
 //
-// PHASE 3B GLOBE CLOSEOUT: the original compact horizontal chip (10px type,
-// a single unwrapped row) was too small to read; a first vertical rewrite
-// then overcorrected into a large, heavy, near-opaque panel. Rebuilt again as
-// a QUIET vertical stack — small dots, small type, a barely-there near-
-// transparent plate — on the canvas's own left edge, clear of the Inspector,
-// which floats in from the right. The four-state contract from every prior
-// pass is UNCHANGED and still structurally enforced:
+// PHASE 3B GLOBE CLOSEOUT: three treatments tried, in order — a 10px
+// horizontal chip (too small), a vertical panel with a near-opaque plate
+// (read as a UI card), a vertical panel with a quiet translucent plate
+// (still read as a container competing with the globe). FINAL: no
+// container at all — just dot + label, anchored to the Globe viewport's
+// true top-left corner, legible over any background via a text-shadow
+// halo (see screens.css) rather than a plate behind it. The four-state
+// contract from every prior pass is UNCHANGED and still structurally
+// enforced:
 //
 //   - EXACTLY the four current states (Recommended / Alternatives /
 //     Co-Production Opportunities / Excluded), read live from GLOBE_SEMANTIC

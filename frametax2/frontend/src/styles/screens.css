@@ -1240,38 +1240,48 @@
 }
 .globe-cards-source-note strong { color: var(--text-primary); font-weight: 600; }
 
-/* ── Four-state Globe legend — vertical (Phase 3B Globe closeout) ────────
-   Production-visible, unlike the dev-only fixture badge. The previous
-   single-row 10px chip was found too small to read at normal operating
-   distance; rebuilt as a vertical stack on the canvas's own LEFT edge
-   (the Inspector floats in from the right, so this is the side that never
-   competes with it), vertically centered, larger type and markers.
+/* ── Four-state Globe legend — top-left, chrome-free (Phase 3B closeout) ──
+   Production-visible, unlike the dev-only fixture badge. Two prior
+   treatments were both rejected on runtime review: a 10px single-row chip
+   (too small to read) and a vertical panel with its own background plate
+   (read as a UI card competing with the globe, even after that plate's
+   opacity was cut). FINAL TREATMENT: no container at all — dot + label
+   only, printed directly on the canvas like a map key, anchored to the
+   Globe viewport's true top-left corner (the Inspector floats in from the
+   right, so top-left never competes with it). Legibility over the ocean's
+   dark navy AND the lighter land/status fills comes from a soft dark
+   text-shadow halo, the same technique a printed map legend over varied
+   terrain would use, not from an opaque plate behind the text.
    `pointer-events: none` throughout — it must never intercept a click meant
-   for the globe or a country marker beneath/beside it. Same dark-glass
-   plate family as .globe-tooltip/.globe-caption. */
+   for the globe or a country marker beneath/beside it. */
 .globe-legend-vertical {
   position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
+  left: 14px;
+  top: 14px;
   z-index: 6;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 7px 9px;
-  border-radius: 7px;
-  background: rgba(16, 18, 22, 0.28);
-  backdrop-filter: blur(3px);
+  padding: 0;
+  background: none;
+  backdrop-filter: none;
   border: none;
   box-shadow: none;
-  font: 11px/1.25 var(--font-sans);
+  font: 12px/1.25 var(--font-sans);
   letter-spacing: 0.005em;
-  color: var(--dark-text-secondary);
+  color: #f3f5f8;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85), 0 0 6px rgba(0, 0, 0, 0.55);
   pointer-events: none;
-  max-width: min(168px, calc(100% - 24px));
+  max-width: min(168px, calc(100% - 28px));
 }
 .glv-item { display: flex; align-items: center; gap: 6px; }
-.glv-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.glv-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55), 0 1px 2px rgba(0, 0, 0, 0.6);
+}
 
 /* Narrow canvas (Inspector open on a smaller viewport, or the narrow-desktop
    breakpoint already used elsewhere in this stage): shrink rather than
@@ -1279,9 +1289,8 @@
 @media (max-width: 900px) {
   .globe-legend-vertical {
     font-size: 10px;
-    padding: 6px 8px;
     gap: 5px;
-    max-width: min(140px, calc(100% - 20px));
+    max-width: min(140px, calc(100% - 24px));
   }
   .glv-dot { width: 6px; height: 6px; }
 }
