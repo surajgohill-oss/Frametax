@@ -1,11 +1,11 @@
 import { Money } from "../lib/format";
 import { humanizeToken, jurisdictionName } from "../lib/format";
-import heroArt from "../assets/production-art/little-utopia-hero.png";
+import heroArt from "../assets/production-art/little-utopia-hero-banner.png";
 
-// Overview-only cinematic replacement for the compact `.project-header`
-// bar. Rendered by ProjectHeader.jsx ONLY when the current route is
-// /production/overview — every other production route keeps the existing
-// compact bar completely untouched (see ProjectHeader.jsx's branch).
+// Shared production identity header — rendered by ProjectHeader.jsx on
+// ALL 8 production routes (Overview, Workspace, Scenarios, Project Globe,
+// Documents, Record, Knowledge, Reports). One ProductionHero instance,
+// one artwork, no per-route crops.
 //
 // Every field below is read from the SAME `data` object ProjectHeader
 // already fetches via useCineGlobe() — no new request, no new derivation
@@ -13,21 +13,23 @@ import heroArt from "../assets/production-art/little-utopia-hero.png";
 // resolution mirrors Overview.jsx's own `snapshot`/`structure` logic;
 // question-count/swing mirrors ProjectHeader's existing compact-bar calc).
 //
-// The supplied key art (frontend/src/assets/production-art/
-// little-utopia-hero.png, 1659x948) has its own title typography baked in
-// — measured directly (pixel analysis, not eyeballed): "The Little Utopia"
-// spans y223-418, the "A FEATURE FILM / MEDITERRANEAN DRAMA" subtitle spans
-// y511-568. The crop (see .ph-hero-art in shell.css: `108% auto` /
-// `center bottom`) stays clear of that band at every required viewport —
-// a plain `cover`+percentage-position attempt regressed at 1440px because
-// the vertical crop window's source-pixel size grows as a fixed-height
-// container narrows, confirmed by screenshot and fixed by anchoring to
-// the image's own bottom edge instead of a percentage of that moving
-// window. Still shows the base of the village architecture, the lower
-// two-thirds of the sailboat silhouette (y472-947), open sea, and the
-// sunset's reflection on the water. The artwork is its OWN
-// absolutely-positioned layer (`.ph-hero-art`), independent of the scrim
-// and of the text layout — never coupled to hero content geometry.
+// PRODUCTION SHELL CLOSEOUT (asset-level fix): the original key art
+// (little-utopia-hero.png, 1659x948, aspect ~1.75:1) could never fit this
+// hero's actual rendered shape (measured 4.99:1 at 1440px up to 6.98:1 at
+// 1920px, canonical 1600px ≈5.65:1) without either showing a tiny sliver
+// of the image or repeatedly re-tuning background-size/position — the
+// asset's own geometry was the problem, not the CSS. `little-utopia-
+// hero-banner.png` is a purpose-built derivative: a horizontal band
+// cropped from the same source (full 1659px width, y640-948, ratio
+// 5.386:1 — within the measured target range) chosen by direct pixel
+// measurement to sit safely below the baked subtitle text (which a row-
+// brightness scan confirmed ends at y568, giving this crop a 72px margin)
+// while keeping the full sailboat, the rocky coastline, sunset reflection,
+// and enough of the village (steps, blue door, flowers, white walls) that
+// the intended village → coast → sea → sunset read survives. No baked
+// typography survives in this derivative at all (the crop excludes that
+// entire vertical band, not just at one viewport). See the Asset-Aspect-
+// Ratio permanent rule in CAPABILITY_LEDGER.md.
 export default function ProductionHero({
   production,
   topStructure,

@@ -296,6 +296,136 @@ reaffirmed under this ledger entry, superseding the prior freeze
 declarations per the phase-ledger rule (a freeze is provisional until the
 next reconciliation closes cleanly, which this one does).
 
+## PERMANENT PROJECT RULE — Asset-Aspect-Ratio Rule
+
+**Adopted 2026-08-03**, after the Hero artwork was re-tuned via CSS
+`background-size`/`background-position` across three separate batches and
+still read as an aggressively cropped strip. Applies to every visual
+asset in the app: heroes, production artwork, project cards, thumbnails,
+background imagery, generated production art, future CineGlobe assets.
+
+Before repeatedly adjusting an image's crop/position values:
+1. Measure the source asset's own aspect ratio.
+2. Measure the target container's actual rendered aspect ratio (not an
+   assumption — read it from the live DOM at canonical widths).
+3. Determine whether the required composition can physically survive that
+   mismatch. A container at ~5-7:1 cannot show a ~1.75:1 source image's
+   full composition no matter what `background-size`/`background-position`
+   value is chosen — the two shapes are incompatible.
+4. If not, produce the correct derivative asset at (or near) the
+   container's own ratio, rather than continuing to fight the mismatch in
+   CSS.
+5. Do not cycle through CSS crop values attempting to solve an impossible
+   composition — each cycle looks like a fix in isolation and fails again
+   at the next viewport or the next review.
+
+**Why this rule exists.** The Hero's source key art is 1659×948
+(≈1.75:1). The Hero's own rendered shape is ≈4.99:1 at 1440px up to
+≈6.98:1 at 1920px. Three rounds of `background-size` tuning (`cover`+
+`center 93%` → `108% auto`+`center bottom` → `100% auto`+`center bottom`)
+each fixed a narrow symptom (baked text resurfacing, over-zoomed texture)
+while the root cause — an asset whose own shape cannot fit this container
+— remained. Fixed by producing `little-utopia-hero-banner.png`, a
+5.386:1 derivative cropped from the same source at the exact vertical
+band (y640-948, confirmed via row-brightness pixel scan to sit 72px below
+the baked subtitle's last text row) that preserves the village, the full
+coastline, the full sailboat, and the sunset reflection. Once the asset's
+own ratio was close to the container's, plain `background-size: cover;
+background-position: center;` became sufficient — no further per-viewport
+tuning needed.
+
+## SAUDI ARABIA ALTERNATIVE — NPC / INCENTIVE / STRUCTURE-COST RECONCILIATION AUDIT REQUIRED
+
+**Logged 2026-08-03, engine-phase issue — no engine math changed in this
+UX pass.** Raised from the Overview Incentive Intelligence Alternatives
+card (🇸🇦 Saudi Arabia, `structure_id: ALLOC-RELOC-SA`, `structure_type:
+full_relocation`, `primary_jurisdiction: SA`).
+
+**Visible arithmetic check (performed before any anomaly claim, per the
+Numeric Anomaly rule below):** $2,432,518 ÷ $4,364,393 ≈ 55.7% — the
+displayed "Incentive / Budget" percentage is arithmetically consistent
+with the displayed modeled incentive and production budget. That is not
+where the apparent inconsistency is. `$4,364,393 − $2,432,518 ≈
+$1,931,875` does NOT match the displayed NPC of `$3,286,175` — a
+`$1,354,300` gap that the card gives no visible explanation for.
+
+**Traced source fields** (live `GET /structures`, `ALLOC-RELOC-SA`):
+
+| Field | Value |
+|---|---|
+| `structure_id` | `ALLOC-RELOC-SA` |
+| `structure_type` | `full_relocation` |
+| `primary_jurisdiction` | `SA` |
+| `gross_budget_usd` (structure-level) | `$4,364,393.00` — identical to the production-level gross budget; no separate structure-specific budget field exists for this structure |
+| Saudi segment `qpe_usd` | `$4,054,196.00` |
+| Saudi segment `allocated_usd` | `$4,355,327.00` |
+| Saudi segment `excluded_usd` | `$301,131.00` |
+| `rate_floor` / `rate_ceiling` | `0.6` / `0.6` (flat 60%, not banded — `is_band_ceiling: false`) |
+| `selected_incentive_usd` (= modeled incentive shown on card) | `$2,432,517.60` → displays as `$2,432,518` |
+| `npc_verified_usd` (= `gross_budget_usd − selected_incentive_usd`, the simple subtraction a user would do by eye) | `$1,931,875.40` |
+| `local_cost_delta_usd` | `$729,300.00` |
+| `inkind_replacement_delta_usd` | `$625,000.00` |
+| `travel_incremental_delta_usd` / `fx_delta_usd` / `financing_cost_usd` / `implementation_cost_usd` | `$0` each |
+| `npc_with_adjustments_usd` (= the exact field the card displays as "NPC") | `$3,286,175.40` → displays as `$3,286,175` |
+| Denominator used for the displayed 55.7% | `gross_budget_usd` = `$4,364,393` (production-level; same value, not a hidden second budget) |
+
+**Reconciliation result:** `npc_verified_usd` (`$1,931,875.40`) +
+`local_cost_delta_usd` (`$729,300.00`) + `inkind_replacement_delta_usd`
+(`$625,000.00`) = `$3,286,175.40` — an **exact match, to the cent**, with
+the displayed NPC. The $1,354,300 gap a user computing budget-minus-
+incentive by eye would find is fully accounted for by two real,
+already-computed structure-specific adjustment fields. The engine's own
+`inkind_note` on this structure explains the second one directly: *"a
+structure that moves that work out of Mauritius absorbs its replacement
+cost (inkind_replacement_delta_usd=$625,000 on this structure)."*
+`local_cost_delta_usd` ($729,300) is a Saudi-specific local production
+cost uplift relative to the Mauritius baseline; this audit did not trace
+its own internal derivation further, per the "no engine work in this
+pass" boundary.
+
+**Classification: arithmetic is NOT wrong; the calculation reconciles
+exactly.** This is an **unexplained economic reconciliation** (per the
+Numeric Anomaly rule's own taxonomy), not an arithmetic inconsistency or
+an engine-rule inconsistency — the gap is that the Overview card shows
+`selected_incentive_usd` and `npc_with_adjustments_usd` side by side
+without surfacing the `local_cost_delta_usd` / `inkind_replacement_delta_usd`
+bridge between them, so a reader has no way to see that the NPC is not
+simply budget-minus-incentive for a relocated structure. **Recorded as a
+mandatory input to the next engine/UX workstream — not fixed here.**
+Candidate direction for that workstream (not decided or scoped now):
+surface the structure-specific cost-bridge line items (or a compact
+"why NPC ≠ budget − incentive" affordance) on any card where those deltas
+are non-zero, using the same real fields traced above — never a new
+calculation.
+
+## PERMANENT PROJECT RULE — Numeric Anomaly Identification Rule
+
+**Adopted 2026-08-03**, applied for the first time in the Saudi Arabia
+trace above. Applies to every future numeric-consistency question raised
+against this app's UI.
+
+Before flagging a calculation anomaly:
+1. Identify the exact rendered jurisdiction/entity by its full displayed
+   name and flag, where available.
+2. Never infer identity from an abbreviation (e.g. "SA" is not
+   necessarily "South Africa" — in this app it is Saudi Arabia; confirm
+   from the rendered flag/name, not the code).
+3. Recompute the visible arithmetic first, using only the numbers already
+   on screen.
+4. Separate the finding into one of three categories: an **arithmetic
+   inconsistency** (the on-screen numbers don't even relate to each other
+   correctly), an **unexplained economic reconciliation** (two on-screen
+   numbers are each individually correct but their relationship isn't
+   visible without additional fields), or an **engine-rule inconsistency**
+   (the underlying calculation itself appears to violate a stated rule).
+5. Trace the real source fields feeding the screen before asserting root
+   cause — an apparent gap is very often a real, already-computed
+   adjustment the UI simply doesn't surface yet, not a bug.
+
+Never label an engine calculation wrong solely because two UI numbers do
+not reconcile without first checking whether they use different cost
+bases or an unsurfaced adjustment layer.
+
 ---
 
 Canonical record of every optimizer capability's runtime/implementation/integration status. Updated as capabilities are reconnected — see the reconciliation series in this engagement's commit history for the underlying investigation.

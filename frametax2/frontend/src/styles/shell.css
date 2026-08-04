@@ -187,38 +187,19 @@
 .ph-hero-art {
   position: absolute;
   inset: 0;
-  /* REGRESSION FOUND AND FIXED AT RUNTIME (1440px acceptance viewport):
-     `background-size: cover` on a FIXED-height container means the
-     vertical crop window's size, measured in the source image's own
-     pixels, grows as the container narrows (a narrower `cover` width
-     scales the whole image down further, so the same 260px hero shows a
-     TALLER slice of the original). A percentage `background-position` is
-     then a fraction of a window that itself keeps changing size — at
-     1440px the window grew enough that `center 93%` slid back UP into the
-     baked "MEDITERRANEAN DRAMA" line, confirmed by screenshot, not by
-     recomputing in the abstract. Fixed two ways together: a `background-
-     size` well under `cover` shrinks the window at every width (less of
-     the source is ever in play), and `center bottom` anchors the crop's
-     END to the image's own bottom edge — an absolute anchor, not a
-     percentage of a variable-sized window, so it cannot drift back
-     toward the text as the viewport narrows.
-
-     CLOSEOUT PASS: the art read as an over-zoomed texture at `108% auto`
-     — too little of the source composition (village/coastline context)
-     was visible. Reduced to `100% auto`, computed and re-verified against
-     the source pixels (natural size 1659x948) at the narrowest required
-     viewport (1440px, hero width 1208px, the binding case — margin SHRINKS
-     as the container narrows because a smaller rendered width also
-     shrinks the rendered height, which widens the visible source window):
-     visible source range now starts at y≈615.7, a 47.7px margin below the
-     baked text's y568 end — essentially the same safety margin as the
-     prior `108%` setup (~49px) while showing ~24px more of the source
-     image's vertical extent. 1600px margin is 86.5px; 1920px margin is
-     142.2px — 1440px is confirmed the binding case at every width tested.
-     Do not reduce below ~98% at this hero height/asset without
-     re-running this exact margin computation at 1440px first. */
-  background-size: 100% auto;
-  background-position: center bottom;
+  /* PRODUCTION SHELL CLOSEOUT: every prior regression here (baked text
+     resurfacing at 1440px, over-zoomed/under-zoomed composition) came from
+     forcing an asset with the wrong aspect ratio (1659x948, ~1.75:1) into
+     a hero shape that is actually 4.99:1 (1440px) to 6.98:1 (1920px) — no
+     background-size/position value can solve a source/container geometry
+     mismatch that large. Fixed at the ASSET level instead: `little-utopia-
+     hero-banner.png` is a purpose-built 5.386:1 derivative (see
+     ProductionHero.jsx's own comment for how/why), so plain `cover`/
+     `center` is now sufficient — no zoom hack, no per-viewport tuning.
+     See the Asset-Aspect-Ratio permanent rule in CAPABILITY_LEDGER.md
+     before ever reintroducing a mismatched asset here. */
+  background-size: cover;
+  background-position: center;
 }
 /* Directional overlay — replaces the first pass's near-uniform scrim.
    Strong only behind the identity block (bottom-left, where the live
