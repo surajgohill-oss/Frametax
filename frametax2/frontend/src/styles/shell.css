@@ -187,18 +187,20 @@
 .ph-hero-art {
   position: absolute;
   inset: 0;
-  /* PRODUCTION SHELL CLOSEOUT: every prior regression here (baked text
-     resurfacing at 1440px, over-zoomed/under-zoomed composition) came from
-     forcing an asset with the wrong aspect ratio (1659x948, ~1.75:1) into
-     a hero shape that is actually 4.99:1 (1440px) to 6.98:1 (1920px) — no
-     background-size/position value can solve a source/container geometry
-     mismatch that large. Fixed at the ASSET level instead: `little-utopia-
-     hero-banner.png` is a purpose-built 5.386:1 derivative (see
-     ProductionHero.jsx's own comment for how/why), so plain `cover`/
-     `center` is now sufficient — no zoom hack, no per-viewport tuning.
-     See the Asset-Aspect-Ratio permanent rule in CAPABILITY_LEDGER.md
-     before ever reintroducing a mismatched asset here. */
-  background-size: cover;
+  /* PROJECT ART FIT RULE (permanent — see CAPABILITY_LEDGER.md): the
+     master key art is never cropped, stretched, zoomed, or recomposed to
+     fill this container. `contain` scales the WHOLE image down until it
+     fits entirely inside the Hero box, so every prior regression class
+     here (baked text resurfacing, lost focal content, stitched-seam
+     artifacts) is structurally impossible — there is no crop window to
+     mis-tune. The Hero (~5-7:1) is far wider than the source photo
+     (~1.75:1) by design, so this intentionally leaves empty space on both
+     sides of the artwork; that space is `.project-header-wrap`'s own
+     background showing through (no background-color needed here), plus
+     `.ph-hero-scrim` below. Do not switch this back to `cover` — that is
+     exactly the destructive-crop behavior this rule forbids. */
+  background-size: contain;
+  background-repeat: no-repeat;
   background-position: center;
 }
 /* Directional overlay — replaces the first pass's near-uniform scrim.
@@ -214,16 +216,19 @@
   background:
     /* A. identity gradient — darkest at bottom-left, clear by center. */
     linear-gradient(115deg, rgba(6, 8, 12, 0.74) 0%, rgba(6, 8, 12, 0.48) 22%, rgba(6, 8, 12, 0.10) 48%, rgba(6, 8, 12, 0) 62%),
-    /* B. metric-side support — restrained, only near the bottom-right
-       where the metric baseline sits, so the sunset/sea stay visible. */
-    linear-gradient(245deg, rgba(6, 8, 12, 0.38) 0%, rgba(6, 8, 12, 0.10) 30%, rgba(6, 8, 12, 0) 55%),
+    /* B. metric-side support — strengthened for the `contain`-fit artwork
+       (Project Art Fit Rule): the metrics can now sit directly over the
+       letterboxed image itself (not just its bottom edge) at narrower
+       viewports, closer to the master art's own baked text than the old
+       full-bleed crop ever placed them. Still directional/fading, not a
+       flat block, so the sunset/sea stay visible where the metrics don't
+       reach. */
+    linear-gradient(245deg, rgba(6, 8, 12, 0.5) 0%, rgba(6, 8, 12, 0.24) 30%, rgba(6, 8, 12, 0.06) 55%, rgba(6, 8, 12, 0) 72%),
     /* C. bottom grounding band — modest, shallow, just enough to settle
        the hero into the tabs boundary. */
     linear-gradient(180deg, rgba(6, 8, 12, 0) 55%, rgba(5, 7, 11, 0.30) 88%, rgba(5, 7, 11, 0.5) 100%),
-    /* D. thin scrim across the very top, for the topbar icons only —
-       the baked text is already fully outside this crop (see
-       .ph-hero-art), so this is legibility support for the icons against
-       a bright sky, not text suppression. */
+    /* D. thin scrim across the very top, for the topbar icons' legibility
+       against a bright sky. */
     linear-gradient(180deg, rgba(6, 8, 12, 0.34) 0%, rgba(6, 8, 12, 0) 22%);
 }
 /* Back link + header action icons (upload/AI/theme) — same `.ph-back`/

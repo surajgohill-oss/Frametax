@@ -1,6 +1,6 @@
 import { Money } from "../lib/format";
 import { humanizeToken, jurisdictionName } from "../lib/format";
-import heroArt from "../assets/production-art/little-utopia-hero-banner.png";
+import heroArt from "../assets/production-art/little-utopia-hero.png";
 
 // Shared production identity header — rendered by ProjectHeader.jsx on
 // ALL 8 production routes (Overview, Workspace, Scenarios, Project Globe,
@@ -13,32 +13,23 @@ import heroArt from "../assets/production-art/little-utopia-hero-banner.png";
 // resolution mirrors Overview.jsx's own `snapshot`/`structure` logic;
 // question-count/swing mirrors ProjectHeader's existing compact-bar calc).
 //
-// PRODUCTION SHELL CLOSEOUT (asset-level fix): the original key art
-// (little-utopia-hero.png, 1659x948, aspect ~1.75:1) could never fit this
-// hero's actual rendered shape (measured 4.99:1 at 1440px up to 6.98:1 at
-// 1920px, canonical 1600px ≈5.65:1) — the asset's own geometry was the
-// problem, not the CSS. A first derivative (a single horizontal band
-// cropped from the source) technically avoided the baked title but lost
-// the blue-domed church — the village's most identifiable feature — since
-// the domes sit well above any band tall enough to also clear the text
-// safely and short enough to hit the target ratio.
-//
-// `little-utopia-hero-banner.png` (1659x308, ratio 5.386:1) is instead a
-// TWO-REGION composite of the SAME source photograph, both regions taken
-// at native (unscaled, undistorted) pixel resolution so neither is
-// stretched: a village panel (x0-460, y150-458 — both domes, the bell
-// tower, steps, blue door, flowers, fully clear of the baked title, which
-// a row-brightness pixel scan confirmed never reaches past x~480) placed
-// beside a coast/sea/sunset panel (x460-1659, y640-948 — cliff, full
-// sailboat, sunset reflection, confirmed 72px below the baked subtitle's
-// last text row at y568). Both panels are the same real photograph at the
-// same native scale, so joining them reads as a continuous wide shot, not
-// a collage; the ~16px join is feather-blended only to soften the hard
-// pixel edge, not to hide a scale or lighting mismatch. Composed with
-// local Pillow only — no generative/outpainting dependency. Zero baked
-// typography survives (both source regions are chosen entirely outside
-// the text band). See the Asset-Aspect-Ratio and Project Art Derivative
-// permanent rules in CAPABILITY_LEDGER.md.
+// PROJECT ART FIT RULE (permanent — see CAPABILITY_LEDGER.md): master
+// production artwork is preserved intact by default. This renders the
+// ORIGINAL master key art (little-utopia-hero.png, 1659x948, ~1.75:1) —
+// never a crop, never a composite/panorama derivative — scaled down as a
+// whole to fit inside the Hero's art area with its own aspect ratio
+// preserved (`.ph-hero-art`'s `background-size: contain`), so the
+// complete source composition (both blue domes, the full coastline, the
+// sailboat, the sunset) is always visible in full, never cropped away.
+// The Hero (~5-7:1) is far wider than the source photo (~1.75:1), so this
+// intentionally leaves empty space on both sides of the artwork — that
+// space is handled by the presentation layer (`.ph-hero`'s own background
+// + `.ph-hero-scrim`), never by cropping/stretching/zooming/splicing the
+// master image to fill it. Earlier batches tried the opposite (crop or
+// composite the source to fill the Hero) and were reverted — see the
+// Project Art Fit Rule for why that direction is wrong for this asset
+// class. A Hero-specific crop/derivative is used only when a producer
+// explicitly supplies or approves one; none is approved here.
 export default function ProductionHero({
   production,
   topStructure,

@@ -296,83 +296,65 @@ reaffirmed under this ledger entry, superseding the prior freeze
 declarations per the phase-ledger rule (a freeze is provisional until the
 next reconciliation closes cleanly, which this one does).
 
-## PERMANENT PROJECT RULE — Asset-Aspect-Ratio Rule
+## SUPERSEDED — Asset-Aspect-Ratio Rule / Project Art Derivative Rule (2026-08-03)
 
-**Adopted 2026-08-03**, after the Hero artwork was re-tuned via CSS
-`background-size`/`background-position` across three separate batches and
-still read as an aggressively cropped strip. Applies to every visual
-asset in the app: heroes, production artwork, project cards, thumbnails,
-background imagery, generated production art, future CineGlobe assets.
+The two rules formerly here (adopted earlier in this same phase) directed
+engineers to produce a Hero-specific derivative — a crop, then a
+two-region composite — whenever a master image's aspect ratio didn't
+match the destination container. **That direction was wrong and is
+superseded by the Project Art Fit Rule immediately below.** Preserved
+here, struck through in spirit rather than deleted, per this project's
+own audit-trail convention (see the Phase-Ledger Reconciliation Rule).
 
-Before repeatedly adjusting an image's crop/position values:
-1. Measure the source asset's own aspect ratio.
-2. Measure the target container's actual rendered aspect ratio (not an
-   assumption — read it from the live DOM at canonical widths).
-3. Determine whether the required composition can physically survive that
-   mismatch. A container at ~5-7:1 cannot show a ~1.75:1 source image's
-   full composition no matter what `background-size`/`background-position`
-   value is chosen — the two shapes are incompatible.
-4. If not, produce the correct derivative asset at (or near) the
-   container's own ratio, rather than continuing to fight the mismatch in
-   CSS.
-5. Do not cycle through CSS crop values attempting to solve an impossible
-   composition — each cycle looks like a fix in isolation and fails again
-   at the next viewport or the next review.
+Both derivative attempts were reverted in the same phase after direct
+visual review: the single-band crop lost the blue-domed church (the
+village's most identifiable feature); the two-region composite retained
+it but was, on inspection, still a splice of two different parts of the
+same photograph presented as one continuous shot — not the master
+composition. **Matching the container's aspect ratio was never actually
+the objective.** Preserving the approved master composition intact was.
+The correct fix was not a better derivative — it was to stop deriving
+and scale the whole original image down to fit instead (`background-size:
+contain`), letting the presentation layer (background field + scrim)
+absorb the resulting empty space rather than cropping the artwork to
+eliminate that space. See the Project Art Fit Rule below.
 
-**Why this rule exists.** The Hero's source key art is 1659×948
-(≈1.75:1). The Hero's own rendered shape is ≈4.99:1 at 1440px up to
-≈6.98:1 at 1920px. Three rounds of `background-size` tuning (`cover`+
-`center 93%` → `108% auto`+`center bottom` → `100% auto`+`center bottom`)
-each fixed a narrow symptom (baked text resurfacing, over-zoomed texture)
-while the root cause — an asset whose own shape cannot fit this container
-— remained. First fixed with a single-band crop derivative (`little-
-utopia-hero-banner.png`, 5.386:1, y640-948 of the source) — which
-technically hit the target ratio but, being only a thin horizontal slice,
-lost the blue-domed church, the village's most identifiable feature.
-Corrected again in the same phase by replacing that derivative with a
-two-region native-scale composite (same source photograph, a village
-panel and a coast/sea/sunset panel from different parts of the same
-image, joined at native resolution with a narrow feather blend — see
-`ProductionHero.jsx`'s own comment for the exact regions and why this
-avoids both stretching and an obvious seam) — the Project Art Derivative
-rule below generalizes the lesson that motivated this second pass: even a
-correctly-ratioed derivative can still fail if it was produced by a
-mechanical crop rather than a deliberately composed one.
+## PERMANENT PROJECT RULE — Project Art Fit Rule
 
-## PERMANENT PROJECT RULE — Project Art Derivative Rule
+**Adopted 2026-08-03**, replacing the two ratio/derivative rules above
+after two consecutive Hero-art batches (a single crop, then a composite)
+were both rejected on visual review for the same underlying reason: each
+correctly hit a target aspect ratio while cropping or splicing away part
+of the approved master composition to get there. Applies to every current
+and future CineGlobe visual surface that displays project key art: hero
+banners, project-library cards, thumbnails, and any other fixed-aspect
+destination.
 
-**Adopted 2026-08-03**, after a first Hero derivative that correctly
-matched the container's aspect ratio (via a single crop) still read as a
-thin, incomplete slice of the approved composition — hitting the right
-*ratio* is necessary but not sufficient; the derivative must also carry
-the right *content*. Applies to every current and future CineGlobe visual
-surface: hero banners, project-library cards, thumbnails, and any other
-fixed-aspect destination for a project's master key art.
+**Master production artwork is preserved intact by default.** CineGlobe
+scales the complete source image proportionally to fit the destination's
+art area (`background-size`/`object-fit`: `contain`, not `cover`) — never
+automatically cropped, spliced, stretched, zoomed, outpainted, or
+recomposed merely to fill the container. Remaining space in the
+destination (which is expected and not a defect when the container's
+aspect ratio is wider or narrower than the source) is handled by that
+surface's own presentation layer — background field, gradient, existing
+overlay/scrim — never by removing part of the master image. A Hero- or
+surface-specific crop/derivative is used **only** when a producer
+explicitly supplies or approves one for that surface; it is not the
+default engineering response to an aspect-ratio mismatch.
 
-A project's master/key art is not expected to fit every UI surface
-directly — each destination surface gets its own derivative, produced
-deliberately for that surface, not reused via a single crop/scale value
-applied everywhere. For each required surface:
-1. Measure the destination's actual rendered aspect ratio (see the
-   Asset-Aspect-Ratio rule above).
-2. Generate or recompose a derivative specifically for that ratio —
-   composing from multiple regions of the master art at native scale
-   when a single crop window cannot hold every important element (this is
-   not "cropping harder"; it is deliberately choosing which real content
-   from the master art appears in the derivative, and how it is joined).
-3. Preserve the focal content that makes the composition read correctly
-   (for Little Utopia: village architecture, coastline, sea, sunset —
-   the identity established in the approved key art), not merely
-   whatever happens to survive a mechanical crop window.
-4. Remove baked UI/title typography from the derivative where the live
-   DOM already supplies that text — never solve this by scrimming over
-   readable source text instead.
-5. Avoid repeated CSS crop/position tuning once the derivative exists —
-   if the derivative is correct, the CSS rendering it should be simple
-   (`cover`/`center` or equivalent).
+If baked source typography or other embedded content conflicts with live
+DOM UI once the complete image is shown, resolve it with that surface's
+existing overlay/gradient/scrim treatment where practical (adjusting
+overlay strength is presentation-layer work, not a change to the master
+art). If no presentation-layer treatment can make the surface legible,
+stop and report that specific constraint rather than independently
+deciding to crop, composite, or regenerate a replacement composition.
 
-This rule applies to all future CineGlobe projects' key art, not only
-Little Utopia's.
+**The engineering lesson, stated directly: target-aspect-ratio matching
+is not the objective. Preserving the approved source composition is the
+objective.** A derivative that hits the right ratio by removing approved
+content is not a fix.
 
 ## SAUDI ARABIA ALTERNATIVE — NPC / INCENTIVE / STRUCTURE-COST RECONCILIATION AUDIT REQUIRED
 
