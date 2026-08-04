@@ -1,6 +1,6 @@
 import { Money } from "../lib/format";
 import { humanizeToken, jurisdictionName } from "../lib/format";
-import heroArt from "../assets/production-art/little-utopia-hero.png";
+import heroArt from "../assets/production-art/little-utopia-hero-clean.png";
 
 // Shared production identity header — rendered by ProjectHeader.jsx on
 // ALL 8 production routes (Overview, Workspace, Scenarios, Project Globe,
@@ -13,23 +13,25 @@ import heroArt from "../assets/production-art/little-utopia-hero.png";
 // resolution mirrors Overview.jsx's own `snapshot`/`structure` logic;
 // question-count/swing mirrors ProjectHeader's existing compact-bar calc).
 //
-// PROJECT ART FIT RULE (permanent — see CAPABILITY_LEDGER.md): master
-// production artwork is preserved intact by default. This renders the
-// ORIGINAL master key art (little-utopia-hero.png, 1659x948, ~1.75:1) —
-// never a crop, never a composite/panorama derivative — scaled down as a
-// whole to fit inside the Hero's art area with its own aspect ratio
-// preserved (`.ph-hero-art`'s `background-size: contain`), so the
-// complete source composition (both blue domes, the full coastline, the
-// sailboat, the sunset) is always visible in full, never cropped away.
-// The Hero (~5-7:1) is far wider than the source photo (~1.75:1), so this
-// intentionally leaves empty space on both sides of the artwork — that
-// space is handled by the presentation layer (`.ph-hero`'s own background
-// + `.ph-hero-scrim`), never by cropping/stretching/zooming/splicing the
-// master image to fill it. Earlier batches tried the opposite (crop or
-// composite the source to fill the Hero) and were reverted — see the
-// Project Art Fit Rule for why that direction is wrong for this asset
-// class. A Hero-specific crop/derivative is used only when a producer
-// explicitly supplies or approves one; none is approved here.
+// FULL-ART HERO RULE (permanent — see CAPABILITY_LEDGER.md): the complete
+// approved key art fills the entire Hero artwork rectangle, edge to edge,
+// with the whole image visible — never letterboxed, never cropped.
+// `little-utopia-hero-clean.png` is the SAME master photograph
+// (little-utopia-hero.png, 1659x948) with ONLY the baked title/subtitle
+// typography removed (inpainted locally with OpenCV's Telea algorithm
+// against a precise glyph mask — a classical, non-generative pixel-
+// diffusion technique, not AI outpainting — so every other pixel of the
+// original composition — both domes, the full village, coastline, sea,
+// sailboat, sunset — is byte-for-byte the same photograph, nothing added,
+// moved, or invented). `.ph-hero-art` renders it as a plain `<img>` with
+// `width/height: 100%` + `object-fit: fill`, so the complete image is
+// stretched (modest non-uniform scaling, not cropped) to exactly fill the
+// Hero's ~5-7:1 rectangle. This intentionally does NOT preserve the
+// source's own 1.75:1 aspect ratio — full-image-visible + full-Hero-fill
+// take priority over aspect-ratio preservation, per the Full-Art Hero
+// Rule. Do not reintroduce `object-fit: cover`/`contain`, a crop, or a
+// composite here; see CAPABILITY_LEDGER.md for why both were tried and
+// reverted.
 export default function ProductionHero({
   production,
   topStructure,
@@ -48,12 +50,10 @@ export default function ProductionHero({
 
   return (
     <div className="ph-hero">
-      {/* Artwork layer — absolutely positioned, overflow-clipped by `.ph-hero`,
-          scaled/positioned entirely independently of the text layout below.
-          `background-position` percentages are resolution-independent (the
-          same math as `object-position`), so this crop holds at every
-          viewport without a breakpoint of its own. */}
-      <div className="ph-hero-art" style={{ backgroundImage: `url(${heroArt})` }} aria-hidden="true" />
+      {/* Artwork layer — the complete master image, stretched via
+          object-fit:fill to exactly cover the Hero rectangle (see the
+          Full-Art Hero Rule in the file header comment above). */}
+      <img className="ph-hero-art" src={heroArt} alt="" aria-hidden="true" />
       {/* Overlay: directional, not uniform — strongest behind the identity
           block (left) and in a shallow band at the bottom (grounding into
           the tabs), much lighter behind the metrics (right) and near-clear

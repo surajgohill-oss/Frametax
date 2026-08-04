@@ -187,21 +187,20 @@
 .ph-hero-art {
   position: absolute;
   inset: 0;
-  /* PROJECT ART FIT RULE (permanent — see CAPABILITY_LEDGER.md): the
-     master key art is never cropped, stretched, zoomed, or recomposed to
-     fill this container. `contain` scales the WHOLE image down until it
-     fits entirely inside the Hero box, so every prior regression class
-     here (baked text resurfacing, lost focal content, stitched-seam
-     artifacts) is structurally impossible — there is no crop window to
-     mis-tune. The Hero (~5-7:1) is far wider than the source photo
-     (~1.75:1) by design, so this intentionally leaves empty space on both
-     sides of the artwork; that space is `.project-header-wrap`'s own
-     background showing through (no background-color needed here), plus
-     `.ph-hero-scrim` below. Do not switch this back to `cover` — that is
-     exactly the destructive-crop behavior this rule forbids. */
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
+  /* FULL-ART HERO RULE (permanent — see CAPABILITY_LEDGER.md): the
+     complete master image fills the entire Hero rectangle edge to edge.
+     `object-fit: fill` stretches the whole image (non-uniformly, since
+     the source's 1.75:1 aspect ratio does not match the Hero's ~5-7:1) so
+     no part of it is ever cropped or left as empty letterbox space —
+     full-image-visible and full-Hero-fill both hold simultaneously. This
+     is `<img>`, not a `background-image`, so `object-fit` applies
+     directly; width/height 100% matches it to `.ph-hero`'s own box via
+     the `inset: 0` positioning above. Do not switch this to `cover` or
+     `contain` — both were tried and reverted (see CAPABILITY_LEDGER.md
+     for why: `cover` crops, `contain` letterboxes). */
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
 }
 /* Directional overlay — replaces the first pass's near-uniform scrim.
    Strong only behind the identity block (bottom-left, where the live
@@ -216,13 +215,11 @@
   background:
     /* A. identity gradient — darkest at bottom-left, clear by center. */
     linear-gradient(115deg, rgba(6, 8, 12, 0.74) 0%, rgba(6, 8, 12, 0.48) 22%, rgba(6, 8, 12, 0.10) 48%, rgba(6, 8, 12, 0) 62%),
-    /* B. metric-side support — strengthened for the `contain`-fit artwork
-       (Project Art Fit Rule): the metrics can now sit directly over the
-       letterboxed image itself (not just its bottom edge) at narrower
-       viewports, closer to the master art's own baked text than the old
-       full-bleed crop ever placed them. Still directional/fading, not a
-       flat block, so the sunset/sea stay visible where the metrics don't
-       reach. */
+    /* B. metric-side support — the artwork now fills the full Hero edge
+       to edge (Full-Art Hero Rule), so the metrics always sit directly
+       over real image content, not empty background. Still directional/
+       fading, not a flat block, so the sunset/sea stay visible where the
+       metrics don't reach. */
     linear-gradient(245deg, rgba(6, 8, 12, 0.5) 0%, rgba(6, 8, 12, 0.24) 30%, rgba(6, 8, 12, 0.06) 55%, rgba(6, 8, 12, 0) 72%),
     /* C. bottom grounding band — modest, shallow, just enough to settle
        the hero into the tabs boundary. */

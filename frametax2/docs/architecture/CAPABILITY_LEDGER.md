@@ -356,6 +356,78 @@ is not the objective. Preserving the approved source composition is the
 objective.** A derivative that hits the right ratio by removing approved
 content is not a fix.
 
+**SUPERSEDED 2026-08-04 by the Full-Art Hero Rule immediately below.**
+Preserved here, struck through in spirit rather than deleted, per this
+project's own audit-trail convention. The `contain`-fit approach above was
+implemented and visually verified (1440/1600/1920 + Workspace), and was
+itself then escalated past: the approved requirement turned out to be
+stricter than "preserve aspect ratio, let empty space appear" — it is
+"the whole picture must be visible AND the picture must occupy the full
+Hero rectangle," both mandatory simultaneously, with aspect-ratio
+preservation explicitly subordinate to those two when they conflict. Do
+not read the paragraphs above as current guidance for the Hero; they
+remain accurate history of why `contain` was tried and why it was not
+the final answer.
+
+## PERMANENT PROJECT RULE — Full-Art Hero Rule
+
+**Adopted 2026-08-04**, superseding the Project Art Fit Rule's `contain`
+framing above for the Production Hero specifically (the Project Art Fit
+Rule's broader "don't crop/splice/outpaint the master" principle still
+holds for other surfaces — library cards, thumbnails — this rule
+sharpens what "fit" means for the full-bleed Hero banner).
+
+**The complete approved key art must be visible, and it must occupy the
+entire Hero rectangle — both requirements are mandatory at once.** Where
+they conflict with preserving the source image's native aspect ratio,
+aspect ratio yields: a modest non-uniform scale (stretch) is explicitly
+acceptable to satisfy both requirements simultaneously. What remains
+forbidden, unchanged from the Project Art Fit Rule: cropping any edge,
+zooming past full-frame, `cover`-style crop-to-fill, `contain`-style
+letterboxing/empty side fields, showing only part of the composition,
+panoramic re-cropping, splicing/stitching multiple regions, duplicating
+scenery, outpainting, or otherwise manufacturing/moving content that
+isn't in the master photograph. Baked source typography that conflicts
+with live DOM fields (title, subtitle, metrics) is handled by producing
+a text-free version of the *same* master image (typography removed via
+local, non-generative pixel-diffusion inpainting — never AI outpainting,
+never a re-crop, never a recomposition) — not by cropping, panning, or
+compositing around the text.
+
+The product must handle newly uploaded production artwork automatically
+under this rule: a new project's key art should render correctly via the
+same `width:100%; height:100%; object-fit:fill` mechanism without a
+developer manually constructing a per-project derivative, crop, or
+banner. Manual derivative production remains an option only for the
+one-time typography-removal step when a source image has baked text
+conflicting with live fields — not for aspect-ratio reconciliation.
+
+## PERMANENT PROJECT RULE — Literal Design Requirement Rule
+
+**Adopted 2026-08-04**, generalizing a repeated failure pattern across
+several Hero-art batches: an approved visual requirement was stated
+explicitly and specifically, and the implementation substituted a
+different, more "conventional" CSS technique that felt like a reasonable
+reading of the same intent but did not actually satisfy the literal
+requirement (`cover` when full-image-visibility was required; `contain`
+when full-rectangle-fill was required; aspect-ratio preservation when the
+approved behavior explicitly prioritized full-visible + full-fill over
+it).
+
+**When an approved visual requirement explicitly specifies geometry or
+image behavior, implement that literal requirement — do not silently
+substitute a different fit/crop/scale strategy because it is more
+idiomatic, more common, or "usually what people mean."** If two stated
+requirements appear to be in tension (e.g., "show the whole image" and
+"fill the whole rectangle" when the source aspect ratio doesn't match the
+destination), do not resolve the tension by picking one and quietly
+dropping the other — surface the conflict and the resolution the brief
+itself already gave (here: aspect-ratio distortion is explicitly
+authorized to satisfy both) before implementing, and if a brief is ever
+genuinely silent on how to resolve such a conflict, stop and ask rather
+than picking an interpretation and repeatedly re-implementing alternates
+across sessions.
+
 ## SAUDI ARABIA ALTERNATIVE — NPC / INCENTIVE / STRUCTURE-COST RECONCILIATION AUDIT REQUIRED
 
 **Logged 2026-08-03, engine-phase issue — no engine math changed in this
