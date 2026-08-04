@@ -1859,23 +1859,60 @@ export default function Globe3D({
     controls.dampingFactor = 0.08;
     controls.rotateSpeed = 0.4;
     // ── Ambient autorotation (objective 4) ─────────────────────────────
-    // Previously gated on `points.length <= 1`, i.e. it never ran on a real
-    // production Globe — the instrument sat perfectly inert. It now turns
-    // slowly by default, and yields permanently the moment the producer
-    // does anything: `controls.autoRotate` is cleared on the first drag/zoom
-    // (the 'start' event below) and whenever a jurisdiction is selected (the
-    // selection effect). Rotation that continues under a jurisdiction
-    // someone is reading is an irritation, not ambience — and once someone
-    // has taken the camera, it stays theirs for the life of the mount.
+    // Turns slowly by default. Any intentional camera manipulation (drag,
+    // wheel/zoom) suspends it immediately for the duration of that
+    // interaction; it resumes automatically ~4s after the producer stops
+    // touching the globe, picking up from whatever orientation they left
+    // it at (autoRotate is a per-frame increment applied on top of the
+    // current camera state — enabling it never repositions the camera or
+    // resets the target). A selected jurisdiction holds the camera still
+    // regardless of the idle timer, same as before, because rotation under
+    // something someone is actively reading is an irritation, not ambience.
     controls.autoRotate = !prefersReducedMotion;
     controls.autoRotateSpeed = AMBIENT_AUTOROTATE_SPEED;
-    stateRef.current.userTookControl = false;
     stateRef.current.ambientMotion = !prefersReducedMotion;
+    // True once the ~4s post-interaction idle window has elapsed (or no
+    // interaction has happened yet) — i.e. autoRotate is allowed to run as
+    // far as the idle timer is concerned. False while dragging/zooming and
+    // for the 4s after releasing.
+    stateRef.current.autoRotateIdleElapsed = true;
+    stateRef.current.userInteracting = false;
+    let idleResumeTimer = null;
+    const AUTOROTATE_RESUME_DELAY_MS = 4000;
+    const clearIdleResumeTimer = () => {
+      if (idleResumeTimer) { clearTimeout(idleResumeTimer); idleResumeTimer = null; }
+    };
+    // Single source of truth for whether the globe should be spinning right
+    // now — called from the interaction handlers below AND from the
+    // selection effect elsewhere in this file (via stateRef, since that's a
+    // separate useEffect closure). One centralized idle timer; every new
+    // interaction (onControlStart) clears and effectively restarts it via
+    // the next onControlEnd, so timers never accumulate.
+    const updateAutoRotate = () => {
+      controls.autoRotate = !!stateRef.current.ambientMotion
+        && !stateRef.current.userInteracting
+        && !!stateRef.current.autoRotateIdleElapsed
+        && !liveRef.current.selectedIso;
+    };
+    stateRef.current.updateAutoRotate = updateAutoRotate;
     const onControlStart = () => {
-      stateRef.current.userTookControl = true;
-      controls.autoRotate = false;
+      clearIdleResumeTimer();
+      stateRef.current.userInteracting = true;
+      stateRef.current.autoRotateIdleElapsed = false;
+      updateAutoRotate();
+    };
+    const onControlEnd = () => {
+      stateRef.current.userInteracting = false;
+      clearIdleResumeTimer();
+      idleResumeTimer = setTimeout(() => {
+        idleResumeTimer = null;
+        stateRef.current.autoRotateIdleElapsed = true;
+        updateAutoRotate();
+      }, AUTOROTATE_RESUME_DELAY_MS);
+      updateAutoRotate();
     };
     controls.addEventListener("start", onControlStart);
+    controls.addEventListener("end", onControlEnd);
     // Unchanged zoom range — only the default position above moved.
     controls.minDistance = ORBIT_MIN_DISTANCE;
     // Baseline ceiling. applySize() raises this — never lowers it — when the
@@ -2186,7 +2223,9 @@ export default function Globe3D({
       if (stateRef.current.fitTweenCancel) stateRef.current.fitTweenCancel();
       mount.removeEventListener("mouseleave", clearHover);
       resizeObserver.disconnect();
+      clearIdleResumeTimer();
       controls.removeEventListener("start", onControlStart);
+      controls.removeEventListener("end", onControlEnd);
       controls.dispose();
       // Post chain + IBL own real GPU allocations (multiple full-size render
       // targets for bloom, a cubemap render target for the environment).
@@ -2357,12 +2396,10 @@ export default function Globe3D({
     const rm = stateRef.current.rimMesh;
     if (rm) rm.material.uniforms.uIntensity.value = selectedIso ? SELECTED_RIM_INTENSITY : BASE_RIM_INTENSITY;
     // Ambient autorotation yields to inspection: a selected jurisdiction must
-    // hold still while it is being read. It resumes only if the selection is
-    // cleared AND the producer never took the camera themselves.
-    const ctl = controlsRef.current;
-    if (ctl) {
-      ctl.autoRotate = !!stateRef.current.ambientMotion && !stateRef.current.userTookControl && !selectedIso;
-    }
+    // hold still while it is being read. It resumes once the selection is
+    // cleared, subject to the same idle-interaction rule as any other
+    // resume (see updateAutoRotate in the setup effect).
+    stateRef.current.updateAutoRotate?.();
     globe.customThreeObjectUpdate(globe.customThreeObjectUpdate());
 
     if (stateRef.current.cameraTweenCancel) {

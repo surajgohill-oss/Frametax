@@ -26,6 +26,22 @@ export function CompactMoney({ value }) {
   return <span className="mono">{text}</span>;
 }
 
+// Global CineGlobe display rule: when two figures that are SUPPOSED to
+// represent the same real-world quantity differ only by economically
+// immaterial source-document rounding noise (a few dollars on a multi-
+// million-dollar budget — e.g. a leaf-account sum vs. the source document's
+// own stated Grand Total), display them as equal rather than surfacing a
+// dagger/footnote/explanatory paragraph a producer has no use for. This is
+// presentation-only — it never touches the underlying data, never changes a
+// real QPE/exclusion calculation, and never applies when the difference
+// exceeds the threshold (a genuine, economically material divergence must
+// still render as-is, unnormalized).
+const TRIVIAL_VARIANCE_USD = 5;
+export function normalizeTrivialVariance(value, reference, thresholdUsd = TRIVIAL_VARIANCE_USD) {
+  if (value == null || reference == null) return value;
+  return Math.abs(value - reference) <= thresholdUsd ? reference : value;
+}
+
 export function Pct({ value }) {
   if (value === null || value === undefined) return <span className="text-tertiary">—</span>;
   return <span className="mono">{(Number(value) * 100).toFixed(0)}%</span>;
@@ -218,6 +234,39 @@ export function scenarioDisplay(structure) {
     : humanizeToken(structure.structure_type);
 
   return { title, subtitle, dominant };
+}
+
+// Workspace-only compact scenario identity — the previously approved
+// compact card format ("🇲🇺 Mauritius" / "Up to 40%"), restored after the
+// verbose "EDB Film Rebate · 30% (up to 40%)" program-mechanics presentation
+// drifted in. Deliberately separate from scenarioDisplay above (still used
+// by Overview/Scenarios/Reports, which DO want the program name) so this
+// change is scoped to Workspace only. Reuses the same existing flagEmoji /
+// jurisdictionName helpers — no new country/flag mapping. Detailed program
+// mechanics belong in Inspector, not the primary card identity.
+export function compactScenarioIdentity(structure) {
+  const participants = structure.participants || [];
+  const primary = structure.primary_jurisdiction;
+  const codes = participants.length ? participants : (primary ? [primary] : []);
+  const flags = codes.map(flagEmoji).filter(Boolean).join(" ");
+  const name = codes.length ? codes.map(jurisdictionName).join(" + ") : (structure.label || "—");
+
+  // "Up to X%" is the best real modeled rate anywhere in the structure —
+  // the highest rate_ceiling (falling back to rate_floor) across every
+  // incentive-claiming segment, not just the biggest-QPE one. A component
+  // structure's headline is its best-supported ceiling (e.g. Mauritius +
+  // Saudi Arabia tops out at Saudi's real 60% modeled rate, not Mauritius's
+  // smaller 40%), matching the same ceiling-not-floor convention Inspector
+  // and the optimizer's own ranking already use.
+  const segments = structure.segments || [];
+  const rates = segments
+    .filter((sg) => sg.claims_incentive)
+    .map((sg) => sg.rate_ceiling ?? sg.rate_floor)
+    .filter((r) => r != null);
+  const rate = rates.length ? Math.max(...rates) : null;
+  const subtitle = rate != null ? `Up to ${Math.round(rate * 100)}%` : humanizeToken(structure.structure_type);
+
+  return { flags, name, subtitle };
 }
 
 // Real AccountQualification.state values -> plain-language label + tier.

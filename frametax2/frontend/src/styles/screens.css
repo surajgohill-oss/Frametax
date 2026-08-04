@@ -960,6 +960,13 @@
 .wsx-globe-chrome { position: relative; }
 .wsx-g-hud { position: absolute; top: 12px; left: 12px; z-index: 5; background: rgba(25,23,19,0.88); backdrop-filter: blur(10px); border: 0.5px solid var(--dark-hairline-strong); border-radius: 9px; padding: 8px 12px; font: 10px/1.6 var(--font-sans); color: var(--dark-text-secondary); max-width: 250px; }
 .wsx-g-hud b { display: block; font: 600 11px var(--font-sans); color: var(--dark-text-primary); margin-bottom: 3px; }
+/* Jurisdictions / Optimizer Overlay — a secondary control belonging to the
+   Globe pane itself, not the primary Lanes/Map/Split row (see
+   .wsx-station-head). Dark-panel styling matches .wsx-g-hud rather than the
+   light-theme .wsx-viewtabs, since it sits directly on the globe canvas. */
+.wsx-g-modetoggle { position: absolute; top: 12px; right: 12px; z-index: 5; display: inline-flex; align-items: center; height: 28px; box-sizing: border-box; background: rgba(25,23,19,0.88); backdrop-filter: blur(10px); border: 0.5px solid var(--dark-hairline-strong); border-radius: 7px; padding: 2px; gap: 1px; }
+.wsx-g-modetoggle button { height: 24px; box-sizing: border-box; display: inline-flex; align-items: center; padding: 0 10px; font: 500 11px var(--font-sans); letter-spacing: 0.02em; text-transform: uppercase; color: var(--dark-text-secondary); border-radius: 5px; }
+.wsx-g-modetoggle button.active { background: rgba(255,255,255,0.14); color: var(--dark-text-primary); }
 .wsx-qtabs { display: flex; gap: 2px; margin-bottom: 10px; border-bottom: 0.5px solid var(--hairline); }
 .wsx-qtabs button { flex: 1; padding: 7px 4px; font-size: 12px; color: var(--text-tertiary); border-bottom: 2px solid transparent; }
 .wsx-qtabs button.active { color: var(--text-primary); border-bottom-color: var(--blue); font-weight: 500; }
@@ -982,9 +989,11 @@
 .qs-hint { margin: 10px 6px 0; font-size: 10.5px; color: var(--text-tertiary); }
 
 .wsx-station { overflow: auto; position: relative; min-height: 0; display: flex; flex-direction: column; }
-.wsx-station-head { display: flex; align-items: center; justify-content: flex-end; gap: 14px; padding: 12px 18px 0; }
-.wsx-scenario-select { display: flex; align-items: center; gap: 8px; }
-.wsx-scenario-select label { font-size: 11.5px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; }
+/* Centered over the scenario-comparison region below it (the rack / split
+   columns), not pushed to the right — the mode selector belongs to that
+   region. The Jurisdictions/Optimizer Overlay toggle now lives docked to
+   the globe pane itself (.wsx-g-modetoggle) so it never distorts this. */
+.wsx-station-head { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 12px 18px 0; }
 .wsx-viewtabs { display: inline-flex; align-items: center; height: 30px; box-sizing: border-box; background: var(--surface-2); border: 0.5px solid var(--hairline); border-radius: 7px; padding: 2px; gap: 1px; }
 .wsx-viewtabs button { height: 26px; box-sizing: border-box; display: inline-flex; align-items: center; padding: 0 12px; font: 500 12px var(--font-sans); letter-spacing: 0.02em; text-transform: uppercase; color: var(--text-secondary); border-radius: 5px; }
 .wsx-viewtabs button.active { background: var(--surface-1); color: var(--text-primary); box-shadow: var(--shadow-sm); }
@@ -1017,14 +1026,6 @@
 .wsx-row.net { border-top: 1.5px solid var(--text-primary); font-weight: 700; padding: 16px 18px 12px; margin-top: 2px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-height: 96px; box-sizing: border-box; justify-content: center; }
 .wsx-row.net span:first-child { font-size: 12px; font-family: var(--font-sans); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-primary); }
 .wsx-row.net span:last-child { font-size: 27px; font-weight: 700; letter-spacing: -0.014em; color: var(--text-primary); }
-.wsx-conf { display: inline-block; margin-top: 6px; font-family: var(--font-sans); font-size: 10.5px; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; padding: 2px 7px; border-radius: 3px; cursor: help; border: 0.5px solid var(--hairline); }
-.wsx-conf.jade { color: var(--jade); background: color-mix(in srgb, var(--jade) 12%, transparent); }
-.wsx-conf.silver { color: var(--text-secondary); background: var(--surface-2); }
-.wsx-conf.amber { color: var(--amber); background: color-mix(in srgb, var(--amber) 12%, transparent); }
-.wsx-conf.red { color: var(--danger, #b23); background: color-mix(in srgb, var(--danger, #b23) 12%, transparent); }
-.wsx-conf.charcoal { color: var(--text-tertiary); background: var(--surface-2); }
-.wsx-recon-flag { cursor: help; color: var(--amber); font-size: 11px; margin-left: 2px; }
-.wsx-recon-note { font-size: 11px; color: var(--text-tertiary); line-height: 1.45; padding: 0 18px 8px; margin-top: -4px; }
 .wsx-range { position: relative; height: 6px; background: var(--surface-2); border: 0.5px solid var(--hairline); border-radius: 2px; margin: 9px 18px; }
 .wsx-range u { position: absolute; top: 0; bottom: 0; background: var(--jade); opacity: 0.4; text-decoration: none; }
 .wsx-range i { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(45deg, var(--amber) 0 3px, transparent 3px 6px); opacity: 0.7; }
@@ -1051,16 +1052,6 @@
 .wsx-splitv .lcol .wsx-rack { padding: 0; grid-template-columns: 1fr; gap: 13px; }
 .wsx-splitv .mcol { position: relative; }
 .wsx-splitv .mcol .wsx-globe { margin: 0; max-width: none; height: 100%; border-radius: 0; box-shadow: none; }
-
-.wsx-status { flex: none; height: 68px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 16px; background: var(--canvas); border-top: 1px solid var(--hairline-strong); }
-.wsx-st-left { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.wsx-st-k { font: 700 12px var(--font-sans); letter-spacing: 0.09em; text-transform: uppercase; color: var(--oxblood); white-space: nowrap; }
-.wsx-st-left b { font-family: var(--font-serif); font-style: italic; font-weight: 400; font-size: 18px; color: var(--text-primary); white-space: nowrap; }
-.wsx-st-sub { font-size: 13px; color: var(--text-tertiary); white-space: nowrap; }
-.wsx-st-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; color: var(--text-tertiary); white-space: nowrap; font-size: 13px; flex-shrink: 0; }
-.wsx-st-right .lbl { font-size: 12px; color: var(--text-tertiary); }
-.wsx-st-right .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text-primary); font-size: 17px; font-weight: 600; }
-.wsx-st-right .meta { font-size: 13px; color: var(--text-tertiary); }
 
 /* ================= Today — company operating system (tdy-) =================
    Built from Overview's established vocabulary (.ovx-sec cards, .oh

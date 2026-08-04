@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
-import { Money, scenarioDisplay, confidenceStatusLabel, confidenceStatusTone } from "../../lib/format";
+import { Money, compactScenarioIdentity, normalizeTrivialVariance } from "../../lib/format";
 import { useAppState } from "../../state/AppState";
 import Globe3D from "../../components/Globe3D";
 import { buildGlobeView, structureTier, activeStructure } from "../../lib/globeData";
@@ -47,26 +47,20 @@ const CIRCLED = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧"];
 // The optimizer may compose far more structures than a card rack can
 // usefully show at once (every discovery-retained partner — incentive-
 // ready AND capability-only — gets a full-relocation and a component
-// candidate). Six visible cards, swap-in overflow — the same contract
-// Scenarios.jsx uses, over the SAME ordering rule (rank-first, then
-// composition order), so both screens show the same six by default
-// without needing shared mutable state.
+// candidate). Workspace shows the top MAX_VISIBLE by rank; Scenarios.jsx
+// is the dedicated screen for browsing/swapping the full set.
 const MAX_VISIBLE = 6;
-function visibleStructures(structures, rankById, swapId) {
+function visibleStructures(structures, rankById) {
   const ordered = [...structures].sort((a, b) => {
     const ra = rankById.get(a.structure_id)?.rank ?? Infinity;
     const rb = rankById.get(b.structure_id)?.rank ?? Infinity;
     return ra - rb;
   });
-  const base = ordered.slice(0, MAX_VISIBLE);
-  const overflow = ordered.slice(MAX_VISIBLE);
-  const swapped = swapId ? ordered.find((s) => s.structure_id === swapId) : null;
-  const cols = swapped ? [...base.slice(0, MAX_VISIBLE - 1), swapped] : base;
-  return { base, overflow, cols };
+  return { cols: ordered.slice(0, MAX_VISIBLE) };
 }
 const pct = (part, whole) => (whole ? Math.max(0, Math.min(100, (part / whole) * 100)) : 0);
 
-function ScenarioCard({ structure, tier, rank, grossBudget, budgetReconciliation, isLeading, onSetLeading, onInspect, onCompare, onSelectSegment }) {
+function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, onSetLeading, onInspect, onCompare, onSelectSegment }) {
   const priced = structure.is_fully_priced;
   // All four card figures read from THIS scenario's canonical allocated
   // structure — gross from structure.gross_budget_usd (falls back to the
@@ -74,25 +68,23 @@ function ScenarioCard({ structure, tier, rank, grossBudget, budgetReconciliation
   // spend from its own per-segment QPE, incentive and NPC from its own
   // priced fields. No production-level or prototype figure is shown.
   const gross = structure.gross_budget_usd ?? grossBudget;
-  const qualifiedSpend = structure.segments?.reduce((sum, sg) => sum + (sg.qpe_usd || 0), 0) || 0;
+  const qualifiedSpendRaw = structure.segments?.reduce((sum, sg) => sum + (sg.qpe_usd || 0), 0) || 0;
+  // Segment QPE is summed from the same real leaf accounts the production's
+  // Gross budget is drawn from; when a structure excludes nothing, that sum
+  // can land a few dollars off the source document's own stated Grand Total
+  // (Gross budget) — economically immaterial rounding noise, not additional
+  // or double-counted spend. Normalized via the shared global rule rather
+  // than surfaced to producers (see normalizeTrivialVariance in lib/format).
+  const qualifiedSpend = normalizeTrivialVariance(qualifiedSpendRaw, gross);
   const npc = structure.npc_with_adjustments_usd;
-  // Segment QPE is summed from the same 44 real leaf accounts the
-  // production's budget_reconciliation already discloses (GET /production).
-  // When a structure's own qualification pipeline excludes nothing from
-  // any segment, that sum lands on the leaf-account total rather than the
-  // source document's stated Grand Total ("Gross budget" above) — a $2
-  // source-document rounding variance, not fabricated or double-counted
-  // spend and not a statutory uplift. Disclose it inline rather than
-  // showing an unexplained "qualified spend > gross budget."
-  const overGross = qualifiedSpend > gross;
 
   const laneClass = isLeading ? "anchor" : priced ? "" : "draft";
   const badge = isLeading ? "① LEADING" : priced ? (CIRCLED[(rank?.rank || 1) - 1] || `#${rank?.rank}`) : "DRAFT";
 
-  // Producer-facing title/subtitle — the ONE canonical formatter
-  // (lib/format.jsx scenarioDisplay), shared by Workspace/Overview/
-  // Scenarios/Reports.
-  const { title, subtitle } = scenarioDisplay(structure);
+  // Compact card identity (flag + full jurisdiction name + "Up to X%") —
+  // the approved Workspace format. See compactScenarioIdentity in
+  // lib/format.jsx; detailed program mechanics live in Inspector, not here.
+  const { flags, name, subtitle } = compactScenarioIdentity(structure);
   // FX presentation is intentionally hidden here for now: structure.fx_basis
   // is real, sourced exchange-rate provenance (currency/rate/source/date),
   // but under the default economics controls fx_delta_usd is always $0 —
@@ -106,16 +98,8 @@ function ScenarioCard({ structure, tier, rank, grossBudget, budgetReconciliation
     <div className={`wsx-lane ${laneClass}`}>
       <div className="wsx-lh">
         <div className="wsx-lh-id">
-          <div className="wsx-nm">{title}</div>
+          <div className="wsx-nm">{flags ? `${flags} ${name}` : name}</div>
           <div className="wsx-lb">{subtitle}</div>
-          {structure.confidence_status && (
-            <div
-              className={`wsx-conf ${confidenceStatusTone(structure.confidence_status)}`}
-              title={(structure.confidence_reasons || []).join(" ")}
-            >
-              {confidenceStatusLabel(structure.confidence_status)}
-            </div>
-          )}
         </div>
         <span className="wsx-badge">{badge}</span>
       </div>
@@ -124,32 +108,9 @@ function ScenarioCard({ structure, tier, rank, grossBudget, budgetReconciliation
         <>
           <div className="wsx-rows">
             <div className="wsx-row"><span>Gross budget</span><span><Money value={gross} bare /></span></div>
-            <div className="wsx-row">
-              <span>
-                Qualified spend
-                {overGross && (
-                  <sup
-                    className="wsx-recon-flag"
-                    title={
-                      budgetReconciliation?.note ||
-                      "Sums the same real budget accounts the production's Gross budget is drawn from, but on a leaf-account basis rather than the source document's stated Grand Total — a small source-document rounding variance, not additional or double-counted spend."
-                    }
-                  >
-                    †
-                  </sup>
-                )}
-              </span>
-              <span><Money value={qualifiedSpend} bare /></span>
-            </div>
+            <div className="wsx-row"><span>Qualified spend</span><span><Money value={qualifiedSpend} bare /></span></div>
             <div className="wsx-row"><span>Gross incentive</span><span className="incentive"><Money value={structure.selected_incentive_usd} bare /></span></div>
           </div>
-          {overGross && (
-            <div className="wsx-recon-note">
-              † Qualified spend exceeds gross budget by <Money value={qualifiedSpend - gross} bare /> — a disclosed
-              source-document rounding variance between the budget's stated Grand Total and the sum of its own leaf
-              accounts, not additional qualifying spend.
-            </div>
-          )}
           <div className="wsx-row net"><span>Net production cost</span><span><Money value={npc} bare /></span></div>
           <div className="wsx-range">
             <u style={{ left: 0, width: `${pct(qualifiedSpend, gross)}%` }} />
@@ -212,7 +173,6 @@ export default function Workspace() {
   const [qTab, setQTab] = useState(navTab === "inputs" || navTab === "recommendations" ? navTab : "questions");
   const [activeGreyArea, setActiveGreyArea] = useState(null);
   const [sortByMoney, setSortByMoney] = useState(true); // artifact "by $ ▾"
-  const [swapId, setSwapId] = useState("");
   const [globeMode, setGlobeMode] = useState("jurisdictions"); // "jurisdictions" | "optimizer"
   const [globeHover, setGlobeHover] = useState(null);
   const {
@@ -254,7 +214,7 @@ export default function Workspace() {
   const openCount = (pkg.missing_inputs?.length || 0) + openGrey.length;
   const leadingStructure = activeStructure(allocated, leadingStructureId);
   const leadingId = leadingStructure?.structure_id ?? null;
-  const { overflow, cols } = visibleStructures(allocated.structures, rankById, swapId);
+  const { cols } = visibleStructures(allocated.structures, rankById);
 
   // Collapsed-rail status dots — hot for any money-bearing / blocking item.
   const dots = [
@@ -343,7 +303,11 @@ export default function Workspace() {
           </aside>
         )}
 
-        {/* Station — card rack or globe */}
+        {/* Station — card rack or globe. The Lanes/Map/Split selector is
+            centered over the scenario-comparison region it controls; the
+            Jurisdictions/Optimizer Overlay toggle is secondary to the Globe
+            itself and lives docked to the globe pane (see wsx-g-modetoggle
+            below), not here, so it never distorts this row's alignment. */}
         <div className="wsx-station">
           <div className="wsx-station-head">
             <div className="wsx-viewtabs">
@@ -353,28 +317,6 @@ export default function Workspace() {
                 </button>
               ))}
             </div>
-            {(mode === "map" || mode === "split") && (
-              <div className="wsx-viewtabs" title="Jurisdictions: every jurisdiction this production touches, by what it means for the production. Optimizer Overlay: the recommended structure's own routing chain only.">
-                <button className={globeMode === "jurisdictions" ? "active" : ""} onClick={() => setGlobeMode("jurisdictions")}>Jurisdictions</button>
-                <button className={globeMode === "optimizer" ? "active" : ""} onClick={() => setGlobeMode("optimizer")}>Optimizer Overlay</button>
-              </div>
-            )}
-            {mode !== "map" && overflow.length > 0 && (
-              <div className="wsx-scenario-select">
-                <label htmlFor="wsx-swap">Additional scenario</label>
-                <select
-                  id="wsx-swap"
-                  className="field-select"
-                  value={swapId}
-                  onChange={(e) => setSwapId(e.target.value)}
-                >
-                  <option value="">— {scenarioDisplay(cols[cols.length - 1] || {}).title} —</option>
-                  {overflow.map((s) => (
-                    <option key={s.structure_id} value={s.structure_id}>{scenarioDisplay(s).title}</option>
-                  ))}
-                </select>
-              </div>
-            )}
           </div>
 
           {mode === "lanes" && (
@@ -386,7 +328,6 @@ export default function Workspace() {
                   tier={structureTier(s, rankById)}
                   rank={rankById.get(s.structure_id)}
                   grossBudget={production.gross_budget_usd}
-                  budgetReconciliation={production.budget_reconciliation}
                   isLeading={s.structure_id === leadingId}
                   onSetLeading={setLeadingStructureId}
                   onInspect={handleSelectStructure}
@@ -419,6 +360,10 @@ export default function Workspace() {
                 onPointHover={setGlobeHover}
               />
               <GlobeChrome productionName={production.production_name} nScenarios={allocated.structures.length} nArcs={arcs.length} />
+              <div className="wsx-g-modetoggle" title="Jurisdictions: every jurisdiction this production touches, by what it means for the production. Optimizer Overlay: the recommended structure's own routing chain only.">
+                <button className={globeMode === "jurisdictions" ? "active" : ""} onClick={() => setGlobeMode("jurisdictions")}>Jurisdictions</button>
+                <button className={globeMode === "optimizer" ? "active" : ""} onClick={() => setGlobeMode("optimizer")}>Optimizer Overlay</button>
+              </div>
               {globeHover && (
                 <div className="globe-tooltip">
                   <strong>{globeHover.jurisdictionName}</strong>
@@ -440,7 +385,6 @@ export default function Workspace() {
                       tier={structureTier(s, rankById)}
                       rank={rankById.get(s.structure_id)}
                       grossBudget={production.gross_budget_usd}
-                      budgetReconciliation={production.budget_reconciliation}
                       isLeading={s.structure_id === leadingId}
                       onSetLeading={setLeadingStructureId}
                       onInspect={handleSelectStructure}
@@ -469,6 +413,10 @@ export default function Workspace() {
                     onPointHover={setGlobeHover}
                   />
                   <GlobeChrome productionName={production.production_name} nScenarios={allocated.structures.length} nArcs={arcs.length} />
+                  <div className="wsx-g-modetoggle" title="Jurisdictions: every jurisdiction this production touches, by what it means for the production. Optimizer Overlay: the recommended structure's own routing chain only.">
+                    <button className={globeMode === "jurisdictions" ? "active" : ""} onClick={() => setGlobeMode("jurisdictions")}>Jurisdictions</button>
+                    <button className={globeMode === "optimizer" ? "active" : ""} onClick={() => setGlobeMode("optimizer")}>Optimizer Overlay</button>
+                  </div>
                   {globeHover && (
                     <div className="globe-tooltip">
                       <strong>{globeHover.jurisdictionName}</strong>
@@ -501,28 +449,6 @@ export default function Workspace() {
           <div className="wsx-insp-gutter" aria-hidden="true" />
         )}
       </div>
-
-      {/* Leading-structure status strip */}
-      <footer className="wsx-status">
-        <div className="wsx-st-left">
-          <span className="wsx-st-k">Leading structure</span>
-          <b>{leadingStructure ? scenarioDisplay(leadingStructure).title : "None fully priced yet"}</b>
-          {leadingStructure && <span className="wsx-st-sub">{scenarioDisplay(leadingStructure).subtitle}</span>}
-          {leadingStructure?.confidence_status && (
-            <span
-              className={`wsx-conf ${confidenceStatusTone(leadingStructure.confidence_status)}`}
-              title={(leadingStructure.confidence_reasons || []).join(" ")}
-            >
-              {confidenceStatusLabel(leadingStructure.confidence_status)}
-            </span>
-          )}
-        </div>
-        <div className="wsx-st-right">
-          <span className="lbl">Net production cost</span>
-          <span className="mono">{leadingStructure?.is_fully_priced ? <Money value={leadingStructure.npc_with_adjustments_usd} /> : "—"}</span>
-          <span className="meta">{openCount} question{openCount === 1 ? "" : "s"} open</span>
-        </div>
-      </footer>
     </div>
   );
 }
