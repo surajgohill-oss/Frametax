@@ -47,16 +47,24 @@ const CIRCLED = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧"];
 // The optimizer may compose far more structures than a card rack can
 // usefully show at once (every discovery-retained partner — incentive-
 // ready AND capability-only — gets a full-relocation and a component
-// candidate). Workspace shows the top MAX_VISIBLE by rank; Scenarios.jsx
-// is the dedicated screen for browsing/swapping the full set.
+// candidate). Six visible cards, swap-in overflow — the same contract
+// Scenarios.jsx uses, over the SAME ordering rule (rank-first, then
+// composition order). This is EXISTING optimizer output navigation
+// ("Other Scenarios"), not scenario creation — the optimizer already
+// generated every one of these; the control only changes which of them
+// occupies a visible lane.
 const MAX_VISIBLE = 6;
-function visibleStructures(structures, rankById) {
+function visibleStructures(structures, rankById, swapId) {
   const ordered = [...structures].sort((a, b) => {
     const ra = rankById.get(a.structure_id)?.rank ?? Infinity;
     const rb = rankById.get(b.structure_id)?.rank ?? Infinity;
     return ra - rb;
   });
-  return { cols: ordered.slice(0, MAX_VISIBLE) };
+  const base = ordered.slice(0, MAX_VISIBLE);
+  const overflow = ordered.slice(MAX_VISIBLE);
+  const swapped = swapId ? ordered.find((s) => s.structure_id === swapId) : null;
+  const cols = swapped ? [...base.slice(0, MAX_VISIBLE - 1), swapped] : base;
+  return { overflow, cols };
 }
 const pct = (part, whole) => (whole ? Math.max(0, Math.min(100, (part / whole) * 100)) : 0);
 
@@ -173,6 +181,10 @@ export default function Workspace() {
   const [qTab, setQTab] = useState(navTab === "inputs" || navTab === "recommendations" ? navTab : "questions");
   const [activeGreyArea, setActiveGreyArea] = useState(null);
   const [sortByMoney, setSortByMoney] = useState(true); // artifact "by $ ▾"
+  // Which overflow (optimizer-generated, not user-created) structure is
+  // swapped into the last visible lane via "Other Scenarios" — selecting,
+  // never creating.
+  const [swapId, setSwapId] = useState("");
   const [globeMode, setGlobeMode] = useState("jurisdictions"); // "jurisdictions" | "optimizer"
   const [globeHover, setGlobeHover] = useState(null);
   const {
@@ -214,7 +226,7 @@ export default function Workspace() {
   const openCount = (pkg.missing_inputs?.length || 0) + openGrey.length;
   const leadingStructure = activeStructure(allocated, leadingStructureId);
   const leadingId = leadingStructure?.structure_id ?? null;
-  const { cols } = visibleStructures(allocated.structures, rankById);
+  const { overflow, cols } = visibleStructures(allocated.structures, rankById, swapId);
 
   // Collapsed-rail status dots — hot for any money-bearing / blocking item.
   const dots = [
@@ -319,6 +331,30 @@ export default function Workspace() {
             </div>
           </div>
 
+          {/* Other Scenarios — navigates among structures the optimizer
+              already generated but that don't currently occupy a visible
+              lane; it swaps the last lane's contents, it never creates a
+              new structure and never reruns the optimizer. Secondary to
+              the Lanes/Map/Split row above it, own row, still centered —
+              not the old right-aligned "Additional scenario" placement. */}
+          {mode !== "map" && overflow.length > 0 && (
+            <div className="wsx-other-scenarios">
+              <label htmlFor="wsx-swap">Other scenarios</label>
+              <select
+                id="wsx-swap"
+                className="field-select"
+                value={swapId}
+                onChange={(e) => setSwapId(e.target.value)}
+              >
+                <option value="">— {(() => { const last = cols[cols.length - 1]; if (!last) return "—"; const { flags, name } = compactScenarioIdentity(last); return flags ? `${flags} ${name}` : name; })()} —</option>
+                {overflow.map((s) => {
+                  const { flags, name } = compactScenarioIdentity(s);
+                  return <option key={s.structure_id} value={s.structure_id}>{flags ? `${flags} ${name}` : name}</option>;
+                })}
+              </select>
+            </div>
+          )}
+
           {mode === "lanes" && (
             <div className="wsx-rack">
               {cols.map((s) => (
@@ -335,9 +371,6 @@ export default function Workspace() {
                   onSelectSegment={handleSelectSegment}
                 />
               ))}
-              <div className="wsx-lane new" onClick={() => setMode("map")} role="button" title="Add a jurisdiction from the globe">
-                <span>+</span>
-              </div>
             </div>
           )}
 

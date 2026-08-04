@@ -994,6 +994,13 @@
    region. The Jurisdictions/Optimizer Overlay toggle now lives docked to
    the globe pane itself (.wsx-g-modetoggle) so it never distorts this. */
 .wsx-station-head { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 12px 18px 0; }
+/* Other Scenarios — navigation among EXISTING optimizer-generated
+   structures beyond the visible lanes, never a scenario-creation control.
+   Its own row below the Lanes/Map/Split selector (never the same row —
+   that was the rejected "Additional scenario" placement), still centered,
+   visually secondary (smaller, quieter) to the mode selector above it. */
+.wsx-other-scenarios { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 18px 0; }
+.wsx-other-scenarios label { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; }
 .wsx-viewtabs { display: inline-flex; align-items: center; height: 30px; box-sizing: border-box; background: var(--surface-2); border: 0.5px solid var(--hairline); border-radius: 7px; padding: 2px; gap: 1px; }
 .wsx-viewtabs button { height: 26px; box-sizing: border-box; display: inline-flex; align-items: center; padding: 0 12px; font: 500 12px var(--font-sans); letter-spacing: 0.02em; text-transform: uppercase; color: var(--text-secondary); border-radius: 5px; }
 .wsx-viewtabs button.active { background: var(--surface-1); color: var(--text-primary); box-shadow: var(--shadow-sm); }
@@ -1037,9 +1044,6 @@
 .wsx-lead { width: 100%; height: 32px; font: 600 13px var(--font-sans); letter-spacing: 0.02em; padding: 0 10px; border-radius: 5px; border: 0.5px solid var(--hairline); background: var(--surface-1); color: var(--oxblood); }
 .wsx-lead:hover { border-color: var(--oxblood); background: var(--oxblood-dim); }
 .wsx-lead.is-leading { color: var(--text-primary); border-color: var(--oxblood); cursor: default; background: var(--oxblood-dim); font-weight: 600; }
-.wsx-lane.new { border-style: dashed; align-items: center; justify-content: center; color: var(--text-tertiary); cursor: pointer; min-height: 200px; }
-.wsx-lane.new:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-dim); }
-.wsx-lane.new span { font-size: 24px; font-weight: 300; }
 .wsx-partial { padding: 10px 18px 16px; }
 .wsx-partial .note { font-size: 12px; color: var(--amber); margin-bottom: 6px; }
 .wsx-partial p { font-size: 11.5px; color: var(--text-tertiary); margin: 4px 0; line-height: 1.45; }
