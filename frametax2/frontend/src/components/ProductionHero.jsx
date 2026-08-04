@@ -16,20 +16,29 @@ import heroArt from "../assets/production-art/little-utopia-hero-banner.png";
 // PRODUCTION SHELL CLOSEOUT (asset-level fix): the original key art
 // (little-utopia-hero.png, 1659x948, aspect ~1.75:1) could never fit this
 // hero's actual rendered shape (measured 4.99:1 at 1440px up to 6.98:1 at
-// 1920px, canonical 1600px ≈5.65:1) without either showing a tiny sliver
-// of the image or repeatedly re-tuning background-size/position — the
-// asset's own geometry was the problem, not the CSS. `little-utopia-
-// hero-banner.png` is a purpose-built derivative: a horizontal band
-// cropped from the same source (full 1659px width, y640-948, ratio
-// 5.386:1 — within the measured target range) chosen by direct pixel
-// measurement to sit safely below the baked subtitle text (which a row-
-// brightness scan confirmed ends at y568, giving this crop a 72px margin)
-// while keeping the full sailboat, the rocky coastline, sunset reflection,
-// and enough of the village (steps, blue door, flowers, white walls) that
-// the intended village → coast → sea → sunset read survives. No baked
-// typography survives in this derivative at all (the crop excludes that
-// entire vertical band, not just at one viewport). See the Asset-Aspect-
-// Ratio permanent rule in CAPABILITY_LEDGER.md.
+// 1920px, canonical 1600px ≈5.65:1) — the asset's own geometry was the
+// problem, not the CSS. A first derivative (a single horizontal band
+// cropped from the source) technically avoided the baked title but lost
+// the blue-domed church — the village's most identifiable feature — since
+// the domes sit well above any band tall enough to also clear the text
+// safely and short enough to hit the target ratio.
+//
+// `little-utopia-hero-banner.png` (1659x308, ratio 5.386:1) is instead a
+// TWO-REGION composite of the SAME source photograph, both regions taken
+// at native (unscaled, undistorted) pixel resolution so neither is
+// stretched: a village panel (x0-460, y150-458 — both domes, the bell
+// tower, steps, blue door, flowers, fully clear of the baked title, which
+// a row-brightness pixel scan confirmed never reaches past x~480) placed
+// beside a coast/sea/sunset panel (x460-1659, y640-948 — cliff, full
+// sailboat, sunset reflection, confirmed 72px below the baked subtitle's
+// last text row at y568). Both panels are the same real photograph at the
+// same native scale, so joining them reads as a continuous wide shot, not
+// a collage; the ~16px join is feather-blended only to soften the hard
+// pixel edge, not to hide a scale or lighting mismatch. Composed with
+// local Pillow only — no generative/outpainting dependency. Zero baked
+// typography survives (both source regions are chosen entirely outside
+// the text band). See the Asset-Aspect-Ratio and Project Art Derivative
+// permanent rules in CAPABILITY_LEDGER.md.
 export default function ProductionHero({
   production,
   topStructure,

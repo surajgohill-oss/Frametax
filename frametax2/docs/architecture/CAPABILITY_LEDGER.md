@@ -325,14 +325,54 @@ Before repeatedly adjusting an image's crop/position values:
 `center 93%` → `108% auto`+`center bottom` → `100% auto`+`center bottom`)
 each fixed a narrow symptom (baked text resurfacing, over-zoomed texture)
 while the root cause — an asset whose own shape cannot fit this container
-— remained. Fixed by producing `little-utopia-hero-banner.png`, a
-5.386:1 derivative cropped from the same source at the exact vertical
-band (y640-948, confirmed via row-brightness pixel scan to sit 72px below
-the baked subtitle's last text row) that preserves the village, the full
-coastline, the full sailboat, and the sunset reflection. Once the asset's
-own ratio was close to the container's, plain `background-size: cover;
-background-position: center;` became sufficient — no further per-viewport
-tuning needed.
+— remained. First fixed with a single-band crop derivative (`little-
+utopia-hero-banner.png`, 5.386:1, y640-948 of the source) — which
+technically hit the target ratio but, being only a thin horizontal slice,
+lost the blue-domed church, the village's most identifiable feature.
+Corrected again in the same phase by replacing that derivative with a
+two-region native-scale composite (same source photograph, a village
+panel and a coast/sea/sunset panel from different parts of the same
+image, joined at native resolution with a narrow feather blend — see
+`ProductionHero.jsx`'s own comment for the exact regions and why this
+avoids both stretching and an obvious seam) — the Project Art Derivative
+rule below generalizes the lesson that motivated this second pass: even a
+correctly-ratioed derivative can still fail if it was produced by a
+mechanical crop rather than a deliberately composed one.
+
+## PERMANENT PROJECT RULE — Project Art Derivative Rule
+
+**Adopted 2026-08-03**, after a first Hero derivative that correctly
+matched the container's aspect ratio (via a single crop) still read as a
+thin, incomplete slice of the approved composition — hitting the right
+*ratio* is necessary but not sufficient; the derivative must also carry
+the right *content*. Applies to every current and future CineGlobe visual
+surface: hero banners, project-library cards, thumbnails, and any other
+fixed-aspect destination for a project's master key art.
+
+A project's master/key art is not expected to fit every UI surface
+directly — each destination surface gets its own derivative, produced
+deliberately for that surface, not reused via a single crop/scale value
+applied everywhere. For each required surface:
+1. Measure the destination's actual rendered aspect ratio (see the
+   Asset-Aspect-Ratio rule above).
+2. Generate or recompose a derivative specifically for that ratio —
+   composing from multiple regions of the master art at native scale
+   when a single crop window cannot hold every important element (this is
+   not "cropping harder"; it is deliberately choosing which real content
+   from the master art appears in the derivative, and how it is joined).
+3. Preserve the focal content that makes the composition read correctly
+   (for Little Utopia: village architecture, coastline, sea, sunset —
+   the identity established in the approved key art), not merely
+   whatever happens to survive a mechanical crop window.
+4. Remove baked UI/title typography from the derivative where the live
+   DOM already supplies that text — never solve this by scrimming over
+   readable source text instead.
+5. Avoid repeated CSS crop/position tuning once the derivative exists —
+   if the derivative is correct, the CSS rendering it should be simple
+   (`cover`/`center` or equivalent).
+
+This rule applies to all future CineGlobe projects' key art, not only
+Little Utopia's.
 
 ## SAUDI ARABIA ALTERNATIVE — NPC / INCENTIVE / STRUCTURE-COST RECONCILIATION AUDIT REQUIRED
 
