@@ -12,8 +12,13 @@
 export const HERO_STAGE_KEYS = ["evaluation", "development", "production"];
 
 // statuses: PROJECT_STATUSES (key/label pairs). productions: array of
-// {stageMeta: {key}, budget}. Returns exactly 3 entries, in
-// HERO_STAGE_KEYS order, each a real sum over the productions array.
+// {stageMeta: {key}, budget, npc, momentum: {rank}}. Returns exactly 3
+// entries, in HERO_STAGE_KEYS order, each a real sum/count over the
+// productions array — npc sums only productions with a real (non-null)
+// priced NPC, never substituting budget or zero for an unpriced one;
+// attention counts productions whose momentum rank is Blocked(0) or
+// Stalled(1), the same two-tier definition Today's hero attention badge
+// already uses.
 export function buildHeroStages(statuses, productions) {
   return HERO_STAGE_KEYS.map((key) => {
     const meta = statuses.find((s) => s.key === key) || { key, label: key };
@@ -23,6 +28,9 @@ export function buildHeroStages(statuses, productions) {
       label: meta.label,
       count: inStage.length,
       budget: inStage.reduce((sum, p) => sum + (p.budget || 0), 0),
+      npc: inStage.reduce((sum, p) => sum + (p.npc || 0), 0),
+      attention: inStage.filter((p) => (p.momentum?.rank ?? 99) <= 1).length,
+      productions: inStage,
     };
   });
 }

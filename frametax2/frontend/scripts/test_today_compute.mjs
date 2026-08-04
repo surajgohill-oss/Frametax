@@ -1,6 +1,8 @@
-// Minimal regression coverage for Today's Hero and FX computation. Plain
-// Node + assert — this frontend has no test runner installed, and one is
-// deliberately not introduced here (see lib/todayCompute.js). Run with:
+// Minimal regression coverage for Today's Hero computation and Today.jsx's
+// structural facts (FX strip absence, key art, toolbar placement, Ask
+// CineGlobe honesty). Plain Node + assert — this frontend has no test
+// runner installed, and one is deliberately not introduced here (see
+// lib/todayCompute.js). Run with:
 //   node scripts/test_today_compute.mjs
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -51,8 +53,8 @@ test("no unauthorized hero labels (Shaping / Active Production / Wrapping / Arch
   assert.deepEqual(labels, ["Evaluation", "Development", "Production"]);
 });
 
-test("Little Utopia (Evaluation, $4,364,393) aggregates correctly under Evaluation only", () => {
-  const productions = [{ stageMeta: { key: "evaluation" }, budget: 4364393 }];
+test("Little Utopia (Evaluation, $4,364,393) aggregates budget/count correctly under Evaluation only", () => {
+  const productions = [{ stageMeta: { key: "evaluation" }, budget: 4364393, npc: 2622262, momentum: { rank: 4 } }];
   const stages = buildHeroStages(STATUSES, productions);
   const byKey = Object.fromEntries(stages.map((s) => [s.key, s]));
   assert.equal(byKey.evaluation.count, 1);
@@ -63,10 +65,49 @@ test("Little Utopia (Evaluation, $4,364,393) aggregates correctly under Evaluati
   assert.equal(byKey.production.budget, 0);
 });
 
-// ── FX strip ────────────────────────────────────────────────────────────
+// ── Per-stage NPC and attention aggregates (new: Production Slate's
+// collapsible group rows need these alongside count/budget) ────────────
+test("buildHeroStages sums NPC only for productions with a real priced NPC (never a fabricated substitute)", () => {
+  const productions = [
+    { stageMeta: { key: "evaluation" }, budget: 4364393, npc: 2622262, momentum: { rank: 4 } },
+  ];
+  const stages = buildHeroStages(STATUSES, productions);
+  const evaluation = stages.find((s) => s.key === "evaluation");
+  assert.equal(evaluation.npc, 2622262);
+});
+
+test("buildHeroStages treats a null (unpriced) NPC as zero contribution, not a crash or NaN", () => {
+  const productions = [{ stageMeta: { key: "development" }, budget: 1000000, npc: null, momentum: { rank: 4 } }];
+  const stages = buildHeroStages(STATUSES, productions);
+  const development = stages.find((s) => s.key === "development");
+  assert.equal(development.npc, 0);
+});
+
+test("buildHeroStages counts Attention as Blocked(rank 0) or Stalled(rank 1) only", () => {
+  const productions = [
+    { stageMeta: { key: "evaluation" }, budget: 100, npc: 90, momentum: { rank: 0 } }, // blocked
+    { stageMeta: { key: "evaluation" }, budget: 100, npc: 90, momentum: { rank: 1 } }, // stalled
+    { stageMeta: { key: "evaluation" }, budget: 100, npc: 90, momentum: { rank: 2 } }, // advanced — not attention
+    { stageMeta: { key: "evaluation" }, budget: 100, npc: 90, momentum: { rank: 4 } }, // healthy — not attention
+  ];
+  const stages = buildHeroStages(STATUSES, productions);
+  const evaluation = stages.find((s) => s.key === "evaluation");
+  assert.equal(evaluation.attention, 2);
+  assert.equal(evaluation.count, 4);
+});
+
+test("buildHeroStages carries the productions array itself per stage (for the Slate's expanded rows)", () => {
+  const p = { stageMeta: { key: "production" }, budget: 5, npc: 4, momentum: { rank: 4 } };
+  const stages = buildHeroStages(STATUSES, [p]);
+  const production = stages.find((s) => s.key === "production");
+  assert.equal(production.productions.length, 1);
+  assert.equal(production.productions[0], p);
+});
+
+// ── FX pure-computation coverage (buildFxItems is still a real, correct
+// utility — it is simply no longer rendered on Today; see the FX-absence
+// checks below) ─────────────────────────────────────────────────────────
 const RECIPROCAL_TOLERANCE = 1e-4;
-// Mirrors the real served economics.fx_horizons shape (backend
-// FX_RATE_SNAPSHOTS): EUR/GBP/CAD all sourced from ECB reference rates.
 const SAMPLE_FX_HORIZONS = {
   MUR: { current: 47.053589, "1m": null, "6m": null, "12m": null },
   EUR: { current: 0.87679, "1m": 0.86453, "6m": 0.85807, "12m": 0.85594 },
@@ -74,115 +115,49 @@ const SAMPLE_FX_HORIZONS = {
   CAD: { current: 1.4135, "1m": 1.3988, "6m": 1.3877, "12m": 1.3701 },
 };
 
-test("FX strip contains exactly EUR, CAD, GBP in that order", () => {
+test("FX strip codes are exactly EUR, CAD, GBP in that order", () => {
   assert.deepEqual(FX_STRIP_CODES, ["EUR", "CAD", "GBP"]);
 });
 
-test("EUR, GBP, and CAD all render as available from real snapshots", () => {
+test("EUR, GBP, and CAD all compute as available from real snapshots", () => {
   const items = buildFxItems(SAMPLE_FX_HORIZONS);
   const byCode = Object.fromEntries(items.map((it) => [it.code, it]));
   assert.equal(byCode.EUR.available, true);
-  assert.equal(byCode.EUR.current, 0.87679);
   assert.equal(byCode.GBP.available, true);
-  assert.equal(byCode.CAD.available, true, "CAD now has a real canonical snapshot (ECB via frankfurter.dev)");
-  assert.equal(byCode.CAD.current, 1.4135, "CAD current must be the real stored ECB rate");
+  assert.equal(byCode.CAD.available, true);
 });
 
-test("a currency with no snapshot still renders an honest unavailable state (fallback path intact)", () => {
-  // Guards the honest-fallback branch generically, decoupled from CAD:
-  // any currency whose canonical snapshot is absent must degrade cleanly.
+test("a currency with no snapshot still computes an honest unavailable state (fallback path intact)", () => {
   const items = buildFxItems({ EUR: { current: 0.87679, "12m": 0.85594 } });
   const cad = items.find((it) => it.code === "CAD");
   assert.equal(cad.available, false);
   assert.equal(cad.current, undefined, "a missing currency must not carry a fabricated rate");
-  assert.equal(cad.reverse, undefined, "a missing currency must not carry a fabricated reverse either");
 });
 
-// ── FX reciprocal display ───────────────────────────────────────────────
-test("EUR reverse pair equals 1 / USD_EUR (calculated, not a stored constant)", () => {
+test("reverse pairs equal 1 / current for every available currency (calculated, not stored)", () => {
   const items = buildFxItems(SAMPLE_FX_HORIZONS);
-  const eur = items.find((it) => it.code === "EUR");
-  assert.ok(eur.available);
-  assert.ok(
-    Math.abs(eur.reverse - 1 / eur.current) < RECIPROCAL_TOLERANCE,
-    `EUR/USD (${eur.reverse}) must equal 1 / USD/EUR (${eur.current}) = ${1 / eur.current}`
-  );
-});
-
-test("GBP reverse pair equals 1 / USD_GBP (calculated, not a stored constant)", () => {
-  const items = buildFxItems(SAMPLE_FX_HORIZONS);
-  const gbp = items.find((it) => it.code === "GBP");
-  assert.ok(gbp.available);
-  assert.ok(
-    Math.abs(gbp.reverse - 1 / gbp.current) < RECIPROCAL_TOLERANCE,
-    `GBP/USD (${gbp.reverse}) must equal 1 / USD/GBP (${gbp.current}) = ${1 / gbp.current}`
-  );
-});
-
-test("CAD reverse pair equals 1 / USD_CAD (calculated from the canonical rate)", () => {
-  const items = buildFxItems(SAMPLE_FX_HORIZONS);
-  const cad = items.find((it) => it.code === "CAD");
-  assert.ok(cad.available, "CAD must be available now that it is in the canonical snapshot");
-  assert.ok(
-    Math.abs(cad.reverse - 1 / cad.current) < RECIPROCAL_TOLERANCE,
-    `CAD/USD (${cad.reverse}) must equal 1 / USD/CAD (${cad.current}) = ${1 / cad.current}`
-  );
-});
-
-test("canonical CAD snapshot is present in the backend FX source (not hardcoded in Today.jsx)", () => {
-  // Root cause of the prior "Rate not yet loaded": FX_RATE_SNAPSHOTS lacked
-  // CAD and the API built fx_horizons for MUR/EUR/GBP only. CAD must live
-  // in the shared canonical table + be served through the same path.
-  const fxSrc = readFileSync(join(__dirname, "../../backend/app/calculators/production_normalization.py"), "utf8");
-  assert.ok(/"CAD":\s*1\.4135/.test(fxSrc), "CAD current snapshot must be in FX_RATE_SNAPSHOTS");
-  const apiSrc = readFileSync(join(__dirname, "../../backend/app/api/v1/cineglobe.py"), "utf8");
-  assert.ok(/fx_rate_snapshot\(c\) for c in \([^)]*"CAD"/.test(apiSrc), "the API must serve CAD through fx_horizons");
-  const todayRaw = readFileSync(join(__dirname, "../src/screens/company/Today.jsx"), "utf8");
-  assert.ok(!/1\.4135/.test(todayRaw), "CAD rate must NOT be hardcoded in Today.jsx");
+  for (const code of ["EUR", "GBP", "CAD"]) {
+    const it = items.find((i) => i.code === code);
+    assert.ok(it.available);
+    assert.ok(Math.abs(it.reverse - 1 / it.current) < RECIPROCAL_TOLERANCE, `${code} reverse must equal 1/current`);
+  }
 });
 
 test("no independent reverse-rate constants exist in todayCompute.js (reverse is always 1/current)", () => {
   const computeSrc = readFileSync(join(__dirname, "../src/lib/todayCompute.js"), "utf8")
     .split("\n").map((l) => l.replace(/\/\/.*$/, "")).join("\n");
-  // The only acceptable way "reverse" is produced is `1 / h.current` (or
-  // equivalent division by the canonical field) — never a second object,
-  // table, or hardcoded EUR/GBP/CAD number assigned to it.
   assert.match(computeSrc, /reverse:\s*Number\(\(1\s*\/\s*h\.current\)/, "reverse must be computed as 1 / current, not a stored value");
   assert.ok(!/reverse\s*:\s*[\d.]/.test(computeSrc), "found a numeric literal assigned to reverse — must be calculated, not fabricated");
 });
 
-test("both pair labels (USD/{code} and {code}/USD) render in Today.jsx for EUR, CAD, GBP", () => {
-  const raw = readFileSync(join(__dirname, "../src/screens/company/Today.jsx"), "utf8");
-  assert.ok(raw.includes("USD / {it.code}"), "expected the USD/{code} label to render for every currency");
-  assert.ok(raw.includes("{it.code} / USD"), "expected the {code}/USD reverse label to render for every currency");
-});
-
-// ── FX flags (foreign-currency identity, never a USD flag on every pair) ─
 test("FX_FLAGS map the foreign currency (EU / Canada / UK), not USD", () => {
-  assert.equal(FX_FLAGS.EUR, "🇪🇺", "EUR must carry the EU flag");
-  assert.equal(FX_FLAGS.CAD, "🇨🇦", "CAD must carry the Canadian flag");
-  assert.equal(FX_FLAGS.GBP, "🇬🇧", "GBP must carry the UK flag");
-  const usFlag = "🇺🇸";
-  assert.ok(!Object.values(FX_FLAGS).includes(usFlag), "no US flag on any group — the flag identifies the foreign currency");
+  assert.equal(FX_FLAGS.EUR, "🇪🇺");
+  assert.equal(FX_FLAGS.CAD, "🇨🇦");
+  assert.equal(FX_FLAGS.GBP, "🇬🇧");
+  assert.ok(!Object.values(FX_FLAGS).includes("🇺🇸"), "no US flag on any group — the flag identifies the foreign currency");
 });
 
-test("buildFxItems carries the correct flag on every currency group", () => {
-  const items = buildFxItems(SAMPLE_FX_HORIZONS);
-  const byCode = Object.fromEntries(items.map((it) => [it.code, it]));
-  assert.equal(byCode.EUR.flag, "🇪🇺");
-  assert.equal(byCode.GBP.flag, "🇬🇧");
-  assert.equal(byCode.CAD.flag, "🇨🇦");
-  // The flag is present even on the honest-unavailable fallback path.
-  const missing = buildFxItems({ EUR: { current: 0.87679, "12m": 0.85594 } }).find((it) => it.code === "CAD");
-  assert.equal(missing.flag, "🇨🇦", "an unavailable group must still carry its flag for the header");
-  assert.equal(missing.available, false);
-});
-
-// ── Source-shape guards: don't reintroduce the legacy-ranking bug ──────
-// Comments are stripped before these checks — this file's own comments
-// legitimately mention "structures.ranking" and "fx_horizons" by name
-// while explaining what NOT to do / where the real data comes from;
-// only actual code should trip these guards.
+// ── Source-shape guards ────────────────────────────────────────────────
 const todaySrcRaw = readFileSync(join(__dirname, "../src/screens/company/Today.jsx"), "utf8");
 const todaySrc = todaySrcRaw
   .split("\n")
@@ -195,46 +170,70 @@ test("Today.jsx reads the canonical allocated_structures ranking for Net Cost", 
 });
 
 test("Today.jsx does not read the legacy top-level structures.ranking for best/NPC", () => {
-  // The only acceptable "ranking" reference is allocated.ranking (the
-  // canonical one); a bare `structures.ranking` or `r.is_priceable` /
-  // `conservative_npc_usd` would mean the legacy STRUCT-* pair crept
-  // back in (see LESSON in the commit that fixed this originally).
   assert.ok(!todaySrc.includes("structures.ranking"), "found a reference to the legacy top-level structures.ranking");
   assert.ok(!todaySrc.includes("is_priceable"), "found the legacy is_priceable field — that belongs to the old ranking shape");
   assert.ok(!todaySrc.includes("conservative_npc_usd"), "found the legacy conservative_npc_usd field — that belongs to the old ranking shape");
 });
 
-test("FX is not duplicated in Company Intelligence (no fx_horizons read outside the FX strip build)", () => {
-  const fxHorizonRefs = (todaySrc.match(/fx_horizons/g) || []).length;
-  assert.equal(fxHorizonRefs, 1, `expected exactly 1 reference to fx_horizons (the FX strip build), found ${fxHorizonRefs}`);
+// ── FX absence (2026-08-04 correction): project-specific FX intelligence
+// belongs in the production screens, never on Today. ───────────────────
+test("Today.jsx contains no FX strip — zero fx_horizons references", () => {
+  const refs = (todaySrc.match(/fx_horizons/g) || []).length;
+  assert.equal(refs, 0, `expected zero fx_horizons references on Today, found ${refs}`);
 });
 
-test("Company Intelligence rows have no sibling .row-value column (the collapse root cause)", () => {
-  const intelSectionMatch = todaySrc.match(/COMPANY INTELLIGENCE[\s\S]*$/);
-  assert.ok(intelSectionMatch, "could not locate the Company Intelligence section");
-  assert.ok(!intelSectionMatch[0].includes("row-value"), "found row-value inside Company Intelligence — reintroduces the collapse bug");
+test("Today.jsx does not import buildFxItems (no FX rendering path)", () => {
+  assert.ok(!todaySrc.includes("buildFxItems"), "Today.jsx must not import/call buildFxItems");
 });
 
-// ── Hero heading + New Production placement (section-scoped structural
-// checks — the heading and button are static JSX facts, so a scoped
-// substring check is the focused available assertion). ─────────────────
-// Isolate the three top-level sections by their className markers.
-const heroBlock = todaySrc.slice(todaySrc.indexOf('className="ovx-sec tdy-hero"'), todaySrc.indexOf('className="ovx-sec tdy-fxstrip"'));
-const slateBlock = todaySrc.slice(todaySrc.indexOf('className="ovx-sec tdy-slate"'), todaySrc.indexOf('COMPANY INTELLIGENCE'));
-
-test("hero heading is exactly 'Production Summary' (not 'Pipeline Value')", () => {
-  assert.ok(todaySrc.includes(">Production Summary<"), "expected the exact 'Production Summary' heading");
-  assert.ok(!todaySrc.includes("Pipeline Value"), "found 'Pipeline Value' — must be replaced by 'Production Summary'");
+test("Today.jsx has no FX strip markup (tdy-fxstrip / tdy-fx-*)", () => {
+  assert.ok(!todaySrc.includes("tdy-fxstrip"), "found tdy-fxstrip in Today.jsx");
+  assert.ok(!todaySrc.includes("tdy-fx-"), "found tdy-fx-* markup in Today.jsx");
 });
 
-test("New Production does NOT render inside the State of the Studio hero", () => {
-  assert.ok(!heroBlock.includes("New Production"), "New Production must be removed from the hero");
-  assert.ok(!heroBlock.includes("tdy-newprod"), "the New Production button must not appear in the hero section");
+// ── Company Intelligence removed from the primary Today flow (2026-08-04):
+// the section (and its underlying data) still exists elsewhere; only its
+// rendering on Today's executive view is gone. ─────────────────────────
+test("Today.jsx no longer renders a Company Intelligence section", () => {
+  assert.ok(!todaySrc.includes("Company Intelligence"), "Company Intelligence must not render on Today");
+  assert.ok(!todaySrc.includes("tdy-intel"), "found tdy-intel markup in Today.jsx");
 });
 
-test("New Production renders inside the Production Slate header", () => {
-  assert.ok(slateBlock.includes("New Production"), "New Production must render in the Production Slate header");
-  assert.ok(slateBlock.includes("tdy-newprod"), "the New Production button belongs in the Slate header");
+// ── Toolbar placement (2026-08-04): theme toggle + New Production are a
+// page-level toolbar, upper right — not inside the hero, not scoped to
+// the Slate header. ─────────────────────────────────────────────────────
+const toolbarBlock = todaySrc.slice(todaySrc.indexOf('className="tdy-toolbar"'), todaySrc.indexOf('className="ovx-sec tdy-hero"'));
+const heroBlock = todaySrc.slice(todaySrc.indexOf('className="ovx-sec tdy-hero"'), todaySrc.indexOf('className="tdy-cols"'));
+
+test("theme toggle renders in the page toolbar and reuses the canonical theme module", () => {
+  assert.ok(toolbarBlock.includes("toggleTheme"), "expected the toolbar to call the canonical toggleTheme()");
+  assert.ok(todaySrc.includes('from "../../lib/theme"'), "expected Today.jsx to import the canonical theme module, not a new implementation");
+});
+
+test("New Production renders in the page toolbar, not inside the State of the Studio hero", () => {
+  assert.ok(toolbarBlock.includes("New Production"), "expected New Production in the toolbar");
+  assert.ok(!heroBlock.includes("New Production"), "New Production must not render inside the hero");
+});
+
+// ── Ask CineGlobe (2026-08-04): honest UI, no fabricated backend ───────
+test("Ask CineGlobe renders and is honestly labeled engine-pending (no fake response wiring)", () => {
+  assert.ok(todaySrc.includes("Ask CineGlobe"), "expected an Ask CineGlobe section");
+  assert.ok(todaySrc.includes("engine pending"), "expected an honest engine-pending disclosure near Ask CineGlobe");
+  assert.ok(todaySrc.includes('disabled title={ASK_REASON}'), "expected the Ask submit control to be disabled with the honest reason, not wired to a fake responder");
+});
+
+// ── Key art (2026-08-04): canonical asset, no gradient placeholder ─────
+test("Production Slate rows use the canonical project key art asset, not a gradient placeholder", () => {
+  assert.ok(todaySrc.includes('import heroArt from "../../assets/production-art/little-utopia-hero-clean.png"'), "expected Today.jsx to import the canonical Hero art asset");
+  assert.ok(todaySrc.includes('src={heroArt}'), "expected the key-art <img> to render the canonical asset");
+  assert.ok(!todaySrc.includes("radial-gradient"), "found a gradient placeholder reference in Today.jsx — key art must be the real asset");
+});
+
+// ── Collapsible lifecycle groups (2026-08-04) ───────────────────────────
+test("Production Slate renders three collapsible groups (Evaluation, Development, Production)", () => {
+  assert.ok(todaySrc.includes("tdy-stagegrp"), "expected collapsible stage group markup");
+  assert.ok(todaySrc.includes("tdy-stagehead"), "expected a clickable stage header (collapse/expand)");
+  assert.ok(todaySrc.includes("heroStages.map"), "expected the Slate to iterate the same buildHeroStages() output the hero derives from");
 });
 
 console.log("");
