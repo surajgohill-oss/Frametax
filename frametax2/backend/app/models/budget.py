@@ -33,9 +33,18 @@ class BudgetDocument(Base):
     extraction_status: Mapped[str] = mapped_column(String(20), default="pending")
     notes: Mapped[str | None] = mapped_column(Text)
 
+    # Additive Phase B link into the universal Document/DocumentVersion
+    # layer. Nullable — this rich typed table is preserved as-is; a
+    # DocumentVersion may optionally point to its parsed BudgetDocument
+    # representation once ingestion (Phase E) creates one.
+    document_version_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("document_versions.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+
     # Relationships
     project: Mapped["Project"] = relationship(back_populates="budget_documents")
     line_items: Mapped[list["BudgetLineItem"]] = relationship(back_populates="budget_document")
+    document_version: Mapped["DocumentVersion | None"] = relationship()
 
 
 class BudgetLineItem(Base):

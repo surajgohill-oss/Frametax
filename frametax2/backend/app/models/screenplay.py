@@ -23,12 +23,19 @@ class ScreenplayDocument(Base):
     extraction_status: Mapped[str] = mapped_column(String(20), default="pending")
     notes: Mapped[str | None] = mapped_column(Text)
 
+    # Additive Phase B link into the universal Document/DocumentVersion
+    # layer — same pattern as BudgetDocument.document_version_id.
+    document_version_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("document_versions.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+
     # Relationships
     project: Mapped["Project"] = relationship(back_populates="screenplay_documents")
     chunks: Mapped[list["ScreenplayChunk"]] = relationship(back_populates="screenplay")
     extracted_elements: Mapped[list["ExtractedScriptElement"]] = relationship(
         back_populates="screenplay"
     )
+    document_version: Mapped["DocumentVersion | None"] = relationship()
 
 
 class ScreenplayChunk(Base):

@@ -1,6 +1,12 @@
+import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import PostgresDsn, RedisDsn, field_validator
 from typing import Any
+
+# Phase A found /tmp/frametax2/storage non-durable (does not survive reboot).
+# Phase B moves the default to a real, per-user application-data directory,
+# matching the ~/.awardradar convention used by the sibling project.
+DEFAULT_LOCAL_STORAGE_PATH = os.path.expanduser("~/.cineglobe/storage")
 
 
 class Settings(BaseSettings):
@@ -27,7 +33,7 @@ class Settings(BaseSettings):
 
     # Storage
     STORAGE_BACKEND: str = "local"  # "local" | "s3"
-    LOCAL_STORAGE_PATH: str = "/tmp/frametax2/storage"
+    LOCAL_STORAGE_PATH: str = DEFAULT_LOCAL_STORAGE_PATH
     S3_BUCKET: str = ""
     S3_ENDPOINT_URL: str = ""
     S3_ACCESS_KEY: str = ""
@@ -58,6 +64,13 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+# Create the durable storage root if missing. Safe: exist_ok=True, never
+# touches or moves any existing user file, only ensures the destination
+# directory CineGlobe's own cached copies will eventually live in actually
+# exists. No document is ingested here — this is the foundation only.
+if settings.STORAGE_BACKEND == "local":
+    os.makedirs(settings.LOCAL_STORAGE_PATH, exist_ok=True)
 
 
 def get_settings() -> Settings:

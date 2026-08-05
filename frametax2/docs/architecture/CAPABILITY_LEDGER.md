@@ -1682,3 +1682,100 @@ None found that would block proceeding. Specifically confirmed NOT blocking: the
 ## PERMANENT PROJECT RULE — Migration History Repair Standard
 
 **Adopted 2026-08-05.** When a dormant/never-executed migration fails, the fix always goes at the exact origin of the defect (the migration that first creates the wrong column type, or the specific `INSERT` that references a column/table that doesn't exist), never as a downstream patch or a value-rounding workaround that would falsify real seed data. Migration history may be edited when — and only when — every affected migration has never been applied to any real or shared database (verified, not assumed) and the fix is a mechanical correction (column width, column/table name, missing timestamp columns, parameter type ambiguity), not a redesign. Column-width fixes always widen to match an existing convention already used elsewhere in the same codebase (e.g. `Numeric(18,2)` for USD amounts, matching `Project.total_budget_usd`) rather than picking an arbitrary new size. Existence guards (`WHERE ... IS NOT NULL`) are preferred over fabricating missing reference data when a later migration references a jurisdiction/program that an earlier migration never seeded.
+
+## Project Library Phase B — Persistence Foundation Schema (2026-08-05)
+
+**Objective**: build the persistence primitives the Company Project Library needs (lifecycle, aliases, universal Document/DocumentVersion/DocumentVersionSource, artwork, facts+provenance, activity log, leading-structure persistence, calculation-input provenance, final-vs-modeled results, organization documents, durable storage) — as one new additive migration (`0062`) on top of the Phase A foundation (`ccfc922`, `0061`). No product schema was redesigned; no existing table's existing columns were altered or dropped; no Little Utopia data was migrated; no Library UI, ingestion, or optimizer logic was touched.
+
+### BASELINE RECONCILIATION
+
+Confirmed before any schema change: branch `claude/audit-frametax-features-NZcX5`, `ccfc922` present in history, working tree clean, `alembic current` → `0061 (head)`, `GET /api/v1/projects` → `200 []` against the already-running (never restarted) dev server, Little Utopia's `GET /api/v1/cineglobe/production` unchanged. Existing models (`Organization`, `Project`, `BudgetDocument`/`BudgetLineItem`, `ScreenplayDocument`/`ScreenplayChunk`/`ExtractedScriptElement`, `ProductionStructure`/`StructureCalculationResult`, `ProductionContribution`, `TalentProfile`, `SourceDocument`) re-inspected directly from source, not from memory, before extending any of them.
+
+### CANONICAL PROJECT PRINCIPLE — held throughout
+
+One `Project` row for the entire lifecycle. `ProductionStructure` stays owned by `project_id`; `StructureCalculationResult` stays owned by `structure_id`. No `Project → Production → Scenario` second hierarchy was introduced anywhere in this migration — verified by re-reading `production.py` before touching it and only adding columns/relationships, never a new top-level entity.
+
+### CAPABILITY STATUS
+
+| Capability | Status | Notes |
+|---|---|---|
+| Project lifecycle | **RUNTIME VERIFIED** | `projects.lifecycle` (`String(20)`, `NOT NULL`, `server_default='EVALUATION'`), backed by `enums.ProjectLifecycle` (`EVALUATION/DEVELOPMENT/PRODUCTION/COMPLETED/ARCHIVED`) — the exact five values and default already established by the frontend's `useProjectStatus.js`/"Production Lifecycle Rule". Nothing in this migration or any model writes to it automatically; only a human/future-API call would. Test: `test_lifecycle_persists_and_defaults`. |
+| Project aliases | **RUNTIME VERIFIED** | `project_aliases` (`project_id`, `alias`, `source`). Test: `test_project_alias_persists`. |
+| Canonical Document architecture | **RUNTIME VERIFIED** | `documents` table, owned by exactly one of `project_id`/`organization_id`, enforced by `ck_documents_exactly_one_owner` (a genuine DB-level CHECK, not just application discipline — verified it actually rejects a neither-owner row: `test_document_cannot_have_both_or_neither_owner`). `category` is a plain string column (`DocumentCategory` enum: screenplay/budget/schedule/deck/lookbook/finance/cast/crew/incentive/legal/artwork/other) — no per-category table. |
+| DocumentVersion | **RUNTIME VERIFIED** | `document_versions`: checksum, file_size, detected_date, version_label, is_current, supersedes_version_id (nullable self-FK, never fabricated — `test_ambiguous_version_lineage_not_forced` proves two versions can coexist with no claimed ordering). Changing `documents.current_version_id` never deletes the superseded row (`test_current_version_change_preserves_history`). |
+| DocumentVersionSource | **RUNTIME VERIFIED** | `document_version_sources`, `UNIQUE(document_version_id, source_pointer)`. One version, three sources (Drive canonical / Drive Downloads mirror / local Mac Downloads) proven directly against the real Little Utopia discovery finding — `test_document_version_owns_multiple_sources`. |
+| Checksum/dedup foundation | **RUNTIME VERIFIED** | `document_versions.checksum_sha256`, indexed (not unique — deliberately, per the architecture review: a unique constraint would be unsafe against not-yet-hashed/legacy rows). No dedup algorithm implemented — persistence only, per instruction. |
+| BudgetDocument/ScreenplayDocument integration | **RUNTIME VERIFIED** | Both existing typed tables gained one nullable, additive `document_version_id` FK into the universal layer. Zero existing columns touched, zero data migrated (both tables are empty). This is the "additive convergence, not a parser rewrite" the architecture review called for. |
+| ProjectAsset (artwork) | **RUNTIME VERIFIED** | `project_assets`: kind, source_type (`uploaded/extracted_from_deck/extracted_from_lookbook/discovered_image/generated`), checksum, `is_master`, optional `source_document_version_id` provenance link. No uniqueness constraint forcing exactly one master yet (explicitly deferred — "a partial unique index would be the natural future tightening once real selection logic exists," per the model's own docstring) — multiple `is_master=True` rows are physically possible today; application logic, not the DB, is the current guard. Little Utopia's current hardcoded frontend artwork import was NOT touched. |
+| ProjectFact + provenance | **RUNTIME VERIFIED** | `project_facts`, `UNIQUE(project_id, fact_key)` — exactly one CURRENT row per fact. Answers WHAT (value/value_type), WHERE (source_document_version_id + source_location), HOW CONFIDENT (extraction_confidence), REVIEWED? (review_status, reusing the existing `ReviewStatus` enum rather than inventing a parallel one). Deliberately has **no** `previous_value` column — a fact override updates the row in place; the transition is recorded via `ProjectActivity` instead (`test_fact_override_recorded_via_activity_not_previous_value` proves both halves: current value updates, and the before/after pair lands in the activity log, not on the fact row itself). |
+| People/talent reconciliation | **RUNTIME VERIFIED — reused, not duplicated** | Inspected `talent.py` before writing anything: `TalentProfile` (name/role/nationality/residencies/guild memberships) plus its own jurisdiction-qualification-attribute machinery were already real and rich. Added only `project_people`, a thin join (`project_id`, `talent_id`, `role`, `is_confirmed`) answering "who is attached to THIS project, as what" — no second person-identity model. |
+| Location requirements | **RUNTIME VERIFIED** | No existing model was a correct home (confirmed by inspection, not assumed) — added `project_location_requirements` (description, `is_flexible`, optional source provenance). Explicitly PROJECT-scoped requirements ("Mediterranean coastal town"), not jurisdiction recommendations. No script-extraction logic added. |
+| ProjectActivity | **RUNTIME VERIFIED** | `project_activity`: actor, action, entity_type/entity_id, before_json/after_json. `Base.created_at` is the event timestamp. Immutable by convention — no code anywhere in this codebase issues an UPDATE or DELETE against this table; it is pure persistence in this phase, not wired into any write path yet. |
+| Leading structure persistence | **RUNTIME VERIFIED** | `projects.leading_structure_id`, nullable FK to `production_structures.id`, `ON DELETE SET NULL`. No second `LeadingScenario` table. Required explicit `foreign_keys=` disambiguation on both sides of the `Project` <-> `ProductionStructure` relationship pair (two independent FK paths between the same two tables — the same class of ambiguity Phase A hit with `Jurisdiction.local_cost_benchmarks`, caught proactively this time by testing `configure_mappers()` before writing the migration, not after a 500). `post_update=True` set on the `leading_structure` relationship since the two tables can reference each other circularly at the row level. |
+| Calculation-input provenance | **RUNTIME VERIFIED** | `structure_calculation_results` gained three additive nullable columns: `input_budget_document_version_id` (FK), `input_fingerprint`, `input_snapshot_json` (frozen copy of the facts/totals actually used). `test_calculation_result_input_provenance` proves the real scenario this exists for: a calculation result keeps pointing at budget version v1 even after the document's `current_version_id` moves to v2 — "this was calculated from an older budget" becomes a direct, queryable fact instead of requiring a recalculation to discover. Zero optimizer/calculation code touched. |
+| FinalProductionResult | **RUNTIME VERIFIED** | `final_production_results`, `UNIQUE(project_id)` — 1:1, per the architecture review's own documented choice (no evidence in the current corpus for reboot/reshoot multiplicity; not over-engineered speculatively). `modeled_economics_snapshot` is a frozen JSONB copy, independent of the live `StructureCalculationResult` row. Not populated for Little Utopia or anyone else — persistence only. |
+| Organization document support | **RUNTIME VERIFIED** | Same `documents`/`document_versions` tables, `organization_id` scope instead of `project_id` — proven directly (`test_organization_document_without_project`) rather than building a second, duplicated "OrganizationDocument" implementation. This is the direct architectural answer to where MTS's investor decks/financial models/exhibits will eventually live (not ingested this phase). |
+| Durable storage root | **RUNTIME VERIFIED** | `LOCAL_STORAGE_PATH` default changed from `/tmp/frametax2/storage` to `~/.cineglobe/storage` (`os.path.expanduser`, matching the sibling `~/.awardradar` convention). Directory created with `os.makedirs(..., exist_ok=True)` once, at settings-module-import time — safe if missing, never touches/moves any existing user file (there was nothing at the old `/tmp` path to move — Phase A already confirmed that). `test_durable_storage_path_initializes` checks both that the path is no longer under `/tmp` and that the directory actually exists on disk. |
+
+**Explicitly NOT built this phase** (all correctly out of scope, none silently skipped): source scanners, Drive/Mac traversal, classification/association heuristics, a review queue, auto-filing, any Library UI, any new API endpoints for the new tables, any ingestion of the real MTS/Little Utopia corpus, any change to optimizer/incentive-calculation code.
+
+### MIGRATION RESULT
+
+New migration `0062_project_library_phase_b.py`, `down_revision = "0061"`. **Both required paths verified, both succeeded on the first attempt** (no fix iterations needed, unlike Phase A):
+- **Existing-DB upgrade path**: the real Phase A `frametax2` database (already at `0061`) → `alembic upgrade head` → `0062`, clean.
+- **Fresh-DB path**: a disposable `frametax2_freshtest` database, `0001` → `0062` end to end, clean; dropped immediately after verification (never left behind).
+
+Handled one genuine circular table dependency correctly: `documents.current_version_id` → `document_versions.id` and `document_versions.document_id` → `documents.id` — resolved by creating `documents` first (nullable `current_version_id` column, no inline FK), then `document_versions`, then a separate `op.create_foreign_key` closing the loop. `downgrade()` is fully implemented and reverses every step in the correct dependency order (not just a stub) — not exercised in this pass beyond code review, since nothing needed to be rolled back.
+
+Live schema spot-checked directly via `psql \d` (not inferred from model source): `documents`' CHECK constraint, all FKs, and `document_versions`' full reverse-reference list (8 tables correctly pointing at it: `budget_documents`, `screenplay_documents`, `structure_calculation_results`, `project_assets`, `project_facts`, `project_location_requirements`, `documents.current_version_id`, and its own `supersedes_version_id` self-reference) all confirmed present exactly as modeled.
+
+### TARGETED TEST RESULT
+
+New file `tests/test_project_library_phase_b.py` — **21 passed**, covering all 18 required items from the Phase B brief (some items split across more than one test for clarity, e.g. the CHECK-constraint negative case). Every test runs inside a real Postgres transaction against the actual `frametax2` dev database, rolled back at the end — confirmed empty afterward (`organizations=0, projects=0, documents=0, document_versions=0, project_facts=0, project_activity=0, final_production_results=0, talent_profiles=0`), so no fake Project/Document/etc. row was left in the shared dev DB, per instruction.
+
+### FULL BACKEND TEST RESULT
+
+Full suite run once after the schema change: **3916 passed, 1 skipped, 1 failed** (152.63s). 3916 = the Phase A baseline of 3895 plus this phase's 21 new tests — confirms zero new failures. The one failure is the same pre-existing, already-documented, unrelated `test_global_discovery.py::TestRecommendationTitles::test_scenarios_and_workspace_both_use_the_canonical_title_formatter`, carried forward unchanged from Phase A.
+
+### LITTLE UTOPIA REGRESSION RESULT
+
+No regression. `GET /api/v1/cineglobe/production` checked before and after every schema change in this phase — identical response at every checkpoint. `little_utopia_state.py` was not read from, imported differently, or touched. The dev server (backend :8010, frontend :5173) ran continuously throughout this entire phase and was never restarted — only auto-`--reload`'d on model file changes, normal dev-server behavior.
+
+### FILES CHANGED
+
+New: `app/models/project_alias.py`, `app/models/library_document.py`, `app/models/project_asset.py`, `app/models/project_fact.py`, `app/models/project_activity.py`, `app/models/project_location_requirement.py`, `app/models/project_person.py`, `app/models/final_production_result.py`, `alembic/versions/0062_project_library_phase_b.py`, `tests/test_project_library_phase_b.py`. Extended: `app/models/project.py` (lifecycle, leading_structure_id, new relationships), `app/models/organization.py` (documents relationship), `app/models/production.py` (ProductionStructure.project foreign_keys= disambiguation, StructureCalculationResult input-provenance columns), `app/models/budget.py` and `app/models/screenplay.py` (document_version_id link), `app/models/enums.py` (eight new enums), `app/models/__init__.py` (new model imports), `app/core/config.py` (durable storage root + creation).
+
+### ACCEPTANCE GATE
+
+- [x] Phase A baseline confirmed
+- [x] existing `0061` database upgrades successfully to `0062`
+- [x] fresh empty database upgrades from `0001` through `0062`
+- [x] Project lifecycle persists
+- [x] Project aliases persist
+- [x] universal Document identity/version architecture exists
+- [x] existing Budget/Screenplay architecture preserved and integrated (additive link only)
+- [x] multiple physical sources can reference one DocumentVersion
+- [x] SHA-256 checksum supported
+- [x] Project artwork persistence exists
+- [x] ProjectFact + provenance exists
+- [x] people/talent architecture reconciled without duplication
+- [x] location requirements have a persistent home
+- [x] ProjectActivity history exists
+- [x] leading ProductionStructure persists
+- [x] calculation-input version/snapshot provenance exists
+- [x] FinalProductionResult exists
+- [x] organization-level documents have a correct home
+- [x] durable local storage replaces `/tmp`
+- [x] no source files touched
+- [x] no files ingested
+- [x] no Project Library UI built
+- [x] no optimizer/incentive logic changed
+- [x] no Little Utopia data migrated
+- [x] current Little Utopia runtime still works
+- [x] relevant/targeted tests pass (21/21)
+- [x] full backend suite has no NEW failure (3916 passed vs. Phase A's 3895 + this phase's 21 new; same single pre-existing failure)
+- [x] ledger updated
+- [x] commit created (see below)
+- [x] working tree clean after commit
+
+**PHASE B — RUNTIME VERIFIED.**

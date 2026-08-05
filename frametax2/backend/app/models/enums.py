@@ -163,3 +163,79 @@ class StructureStatus(str, enum.Enum):
     COMPLETE = "complete"
     ERROR = "error"
     ARCHIVED = "archived"
+
+
+class ProjectLifecycle(str, enum.Enum):
+    """
+    Canonical Project lifecycle stage — user-controlled only. The engine
+    (optimizer, document completeness, incentive qualification) must never
+    change this automatically. See CAPABILITY_LEDGER.md "Production Lifecycle
+    Rule" — this enum is the persistent backend counterpart of the frontend's
+    existing PROJECT_STATUSES (useProjectStatus.js), same five stages, same
+    order, same default (EVALUATION).
+    """
+    EVALUATION = "EVALUATION"
+    DEVELOPMENT = "DEVELOPMENT"
+    PRODUCTION = "PRODUCTION"
+    COMPLETED = "COMPLETED"
+    ARCHIVED = "ARCHIVED"
+
+
+class DocumentScope(str, enum.Enum):
+    """Which owner a Document belongs to — exactly one is set, enforced by a CHECK constraint."""
+    PROJECT = "project"
+    ORGANIZATION = "organization"
+
+
+class DocumentCategory(str, enum.Enum):
+    SCREENPLAY = "screenplay"
+    BUDGET = "budget"
+    SCHEDULE = "schedule"
+    DECK = "deck"
+    LOOKBOOK = "lookbook"
+    FINANCE = "finance"
+    CAST = "cast"
+    CREW = "crew"
+    INCENTIVE = "incentive"
+    LEGAL = "legal"
+    ARTWORK = "artwork"
+    OTHER = "other"
+
+
+class DocumentSourceType(str, enum.Enum):
+    LOCAL = "local"
+    GOOGLE_DRIVE = "google_drive"
+    UPLOAD = "upload"
+    GENERATED = "generated"
+    OTHER = "other"
+
+
+class DocumentSourceStatus(str, enum.Enum):
+    OK = "ok"
+    UNREACHABLE = "unreachable"
+    DELETED_AT_SOURCE = "deleted_at_source"
+
+
+class ProjectAssetKind(str, enum.Enum):
+    ARTWORK = "artwork"
+    OTHER = "other"
+
+
+class ProjectAssetSourceType(str, enum.Enum):
+    UPLOADED = "uploaded"
+    EXTRACTED_FROM_DECK = "extracted_from_deck"
+    EXTRACTED_FROM_LOOKBOOK = "extracted_from_lookbook"
+    DISCOVERED_IMAGE = "discovered_image"
+    GENERATED = "generated"
+
+
+class ProjectFactSourceType(str, enum.Enum):
+    EXTRACTED = "extracted"
+    USER_OVERRIDE = "user_override"
+
+
+class FinalResultStatus(str, enum.Enum):
+    NOT_STARTED = "not_started"
+    APPLIED = "applied"
+    APPROVED = "approved"
+    REALIZED = "realized"

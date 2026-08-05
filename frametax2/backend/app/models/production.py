@@ -42,7 +42,9 @@ class ProductionStructure(Base):
     notes: Mapped[str | None] = mapped_column(Text)
 
     # Relationships
-    project: Mapped["Project"] = relationship(back_populates="production_structures")
+    project: Mapped["Project"] = relationship(
+        back_populates="production_structures", foreign_keys=[project_id]
+    )
     calculation_results: Mapped[list["StructureCalculationResult"]] = relationship(
         back_populates="structure"
     )
@@ -95,5 +97,19 @@ class StructureCalculationResult(Base):
     warnings: Mapped[list | None] = mapped_column(JSONB)
     optimization_opportunities: Mapped[list | None] = mapped_column(JSONB)
 
+    # Calculation-input provenance — added Phase B, additive only. Lets a
+    # later reader determine "this result was calculated from an older
+    # budget version" without redesigning the optimizer or recalculating
+    # anything. input_snapshot_json is an immutable copy of the key
+    # facts/budget totals actually used, taken at calculation time — a
+    # frozen snapshot, not a live reference, so it stays accurate even if
+    # ProjectFact/BudgetDocument rows are edited afterward.
+    input_budget_document_version_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("document_versions.id", ondelete="SET NULL"), nullable=True
+    )
+    input_fingerprint: Mapped[str | None] = mapped_column(String(64))
+    input_snapshot_json: Mapped[dict | None] = mapped_column(JSONB)
+
     # Relationships
     structure: Mapped["ProductionStructure"] = relationship(back_populates="calculation_results")
+    input_budget_document_version: Mapped["DocumentVersion | None"] = relationship()

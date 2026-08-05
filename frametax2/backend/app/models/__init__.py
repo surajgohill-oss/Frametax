@@ -37,3 +37,13 @@ from app.models.program_intelligence import (  # noqa: F401
     BenchmarkIngestionLog,
     FundEconomics,
 )
+
+# Project Library Phase B — persistence foundation
+from app.models.project_alias import ProjectAlias  # noqa: F401
+from app.models.library_document import Document, DocumentVersion, DocumentVersionSource  # noqa: F401
+from app.models.project_asset import ProjectAsset  # noqa: F401
+from app.models.project_fact import ProjectFact  # noqa: F401
+from app.models.project_activity import ProjectActivity  # noqa: F401
+from app.models.project_location_requirement import ProjectLocationRequirement  # noqa: F401
+from app.models.project_person import ProjectPerson  # noqa: F401
+from app.models.final_production_result import FinalProductionResult  # noqa: F401
