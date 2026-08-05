@@ -444,11 +444,22 @@
   white-space: nowrap;
 }
 .ph-qcount i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+/* Distributed across the SAME content width Overview's own body uses
+   (.screen.ovxg-screen: max-width 1520px, centered, var(--sp-8)=32px side
+   padding — confirmed via measured boundaries, not assumed) — Overview
+   begins at that left boundary and Reports ends at that right boundary,
+   with the intermediate tabs spread evenly between via space-between
+   rather than a fixed gap. One shared rule for every production route (no
+   route-specific CSS) — the row's own box model does the work, matching
+   Overview's regardless of any other screen's own (possibly narrower)
+   content width. */
 .project-tabs {
   display: flex;
   align-items: center;
-  gap: 24px;
-  padding: 0 26px;
+  justify-content: space-between;
+  max-width: 1520px;
+  margin: 0 auto;
+  padding: 0 var(--sp-8);
   height: 42px;
 }
 .project-tabs a {

@@ -340,8 +340,20 @@ def _economics_payload() -> dict[str, Any]:
     # Part 7: engine-side current/1M/6M/12M FX data (no UI built here —
     # this is what a future UI would render). None for any horizon this
     # session's sourced fetches didn't cover (e.g. MUR beyond current).
-    from app.calculators.production_normalization import fx_rate_snapshot
-    payload["fx_horizons"] = {c: fx_rate_snapshot(c) for c in ("MUR", "EUR", "GBP", "CAD")}
+    from app.calculators.production_normalization import fx_rate_snapshot, _JURISDICTION_CURRENCY
+    # Workspace's FX strip needs a rate lookup for whichever jurisdiction is
+    # currently Leading (client-side selection state, not known to the
+    # backend) — so this serves every currency the engine has a real
+    # jurisdiction mapping for, not just the fixed EUR/CAD/GBP trio. Any
+    # currency with no FX_RATE_SNAPSHOTS entry still returns cleanly (every
+    # horizon None) via fx_rate_snapshot's own honest-unavailable path.
+    fx_codes = sorted({"MUR", "EUR", "GBP", "CAD"} | set(_JURISDICTION_CURRENCY.values()))
+    payload["fx_horizons"] = {c: fx_rate_snapshot(c) for c in fx_codes}
+    # jurisdiction_code -> currency_code, real ISO identity only (see
+    # _JURISDICTION_CURRENCY's own docstring) — lets the frontend resolve
+    # "the current Leading Structure's local currency" without duplicating
+    # this mapping client-side.
+    payload["jurisdiction_currency"] = dict(_JURISDICTION_CURRENCY)
     # Executable Jurisdiction Knowledge: real QPE/incentive/NPC/travel/FX
     # for every jurisdiction with classified doctrine + rate rules on
     # file; every other cataloged jurisdiction is excluded, not priced at

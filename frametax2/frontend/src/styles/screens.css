@@ -906,6 +906,18 @@
 
 /* ================= Workspace — artifact rack (wsx-) ================= */
 .wsx-screen { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+/* Project FX strip — subordinate to the Lanes/Map/Split row below it, never
+   a banner: a single compact line, four positions (EUR, CAD, GBP, then
+   whichever currency the current Leading Structure carries). Every rate
+   is read verbatim from economics.fx_horizons; an unavailable leader
+   currency renders honestly rather than inventing a number. */
+.wsx-fxstrip { flex: none; display: flex; align-items: center; gap: 22px; padding: 8px 18px; border-bottom: 0.5px solid var(--hairline); background: var(--surface-1); }
+.wsx-fx-item { display: flex; align-items: baseline; gap: 6px; }
+.wsx-fx-code { font-size: 11.5px; font-weight: 650; letter-spacing: 0.03em; color: var(--text-tertiary); }
+.wsx-fx-val { font-size: 13px; color: var(--text-primary); }
+.wsx-fx-val.wsx-fx-unavailable { font-size: 11px; font-style: italic; color: var(--text-tertiary); }
+.wsx-fx-item.leader .wsx-fx-code { color: var(--oxblood); }
+.wsx-fx-tag { font: 600 9px var(--font-sans); text-transform: uppercase; letter-spacing: 0.06em; color: var(--oxblood); background: var(--oxblood-dim); border-radius: 3px; padding: 1px 5px; }
 /* Artifact geometry: 48px | 1fr | 38px, expanding the stack to 220px.
    The station scrolls rather than reflowing, so opening the stack never
    changes the card grid. Faint 96px graph-paper ground behind it. */
@@ -1056,6 +1068,18 @@
 .wsx-splitv .lcol .wsx-rack { padding: 0; grid-template-columns: 1fr; gap: 13px; }
 .wsx-splitv .mcol { position: relative; }
 .wsx-splitv .mcol .wsx-globe { margin: 0; max-width: none; height: 100%; border-radius: 0; box-shadow: none; }
+
+/* Map view — side-by-side, NOT a full-width globe: a single scenario's
+   economics (the current Leading structure) on the left, geography on the
+   right, both visible at once, never stacked vertically. Narrower left
+   column than Split (one card, not a rack) so the globe reads as the
+   dominant instrument while the economics stay genuinely present, not an
+   afterthought squeezed underneath. */
+.wsx-mapv { display: grid; grid-template-columns: 360px 1fr; min-height: 480px; height: 100%; }
+.wsx-mapv .lcol { border-right: 0.5px solid var(--hairline); overflow-y: auto; padding: 13px; }
+.wsx-mapv .mcol { position: relative; }
+.wsx-mapv .mcol .wsx-globe { margin: 0; max-width: none; height: 100%; border-radius: 0; box-shadow: none; }
+@media (max-width: 1150px) { .wsx-mapv { grid-template-columns: 300px 1fr; } }
 
 /* ================= Today — company command center (tdy-) =================
    Built from the app's established vocabulary (.ovx-sec cards, .oh

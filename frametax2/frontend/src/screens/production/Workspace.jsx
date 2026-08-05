@@ -68,6 +68,35 @@ function visibleStructures(structures, rankById, swapId) {
 }
 const pct = (part, whole) => (whole ? Math.max(0, Math.min(100, (part / whole) * 100)) : 0);
 
+// Project FX strip — Workspace-only, subordinate to the mode row below it.
+// Exactly four positions: the two production-relevant reference currencies
+// (EUR, GBP) plus CAD, and a fourth slot that tracks whatever jurisdiction
+// currently leads (client-side leadingStructureId selection, never an
+// engine concept) — never a fifth/sixth currency, never a full local-
+// costing breakdown (that stays ENGINE-PENDING). Every rate is read
+// verbatim from economics.fx_horizons (the same real, sourced snapshot
+// table FXStrip.jsx already reads on Overview — no second FX calculation,
+// no live fetch, no fabricated number); a leader currency with no snapshot
+// entry renders as an honest "unavailable", never invented.
+const FX_FIXED_CODES = ["EUR", "CAD", "GBP"];
+function buildWorkspaceFxItems(economics, leadingStructure) {
+  const horizons = economics?.fx_horizons || {};
+  const jurisdictionCurrency = economics?.jurisdiction_currency || {};
+  const leaderJurisdiction = leadingStructure?.primary_jurisdiction;
+  const leaderIso2 = leaderJurisdiction ? leaderJurisdiction.split("-")[0].toUpperCase() : null;
+  const leaderCode = leaderIso2 ? jurisdictionCurrency[leaderIso2] : null;
+  const codes = [...FX_FIXED_CODES, leaderCode || "—"];
+  return codes.map((code, i) => {
+    const h = horizons[code];
+    return {
+      code,
+      isLeader: i === codes.length - 1,
+      available: !!(h && h.current != null),
+      current: h?.current ?? null,
+    };
+  });
+}
+
 function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, onSetLeading, onInspect, onCompare, onSelectSegment }) {
   const priced = structure.is_fully_priced;
   // All four card figures read from THIS scenario's canonical allocated
@@ -221,12 +250,13 @@ export default function Workspace() {
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
 
-  const { production, pkg, recommendations, legal } = data;
+  const { production, pkg, recommendations, legal, economics } = data;
   const openGrey = (legal.grey_areas_current || []).filter((g) => g.status === "open");
   const openCount = (pkg.missing_inputs?.length || 0) + openGrey.length;
   const leadingStructure = activeStructure(allocated, leadingStructureId);
   const leadingId = leadingStructure?.structure_id ?? null;
   const { overflow, cols } = visibleStructures(allocated.structures, rankById, swapId);
+  const fxItems = buildWorkspaceFxItems(economics, leadingStructure);
 
   // Collapsed-rail status dots — hot for any money-bearing / blocking item.
   const dots = [
@@ -255,6 +285,22 @@ export default function Workspace() {
 
   return (
     <div className="wsx-screen">
+      {/* Project FX strip — immediately below the shared production tabs
+          (rendered by ProjectHeader, outside this component) and
+          immediately above the Lanes/Map/Split mode row. Subordinate to
+          the mode row, never a banner — see .wsx-fxstrip in screens.css. */}
+      <div className="wsx-fxstrip">
+        {fxItems.map((it) => (
+          <div className={`wsx-fx-item ${it.isLeader ? "leader" : ""}`} key={`${it.code}-${it.isLeader ? "leader" : "fixed"}`}>
+            <span className="wsx-fx-code mono">{it.code}</span>
+            <span className={`wsx-fx-val mono ${it.available ? "" : "wsx-fx-unavailable"}`}>
+              {it.available ? it.current : "unavailable"}
+            </span>
+            {it.isLeader && <span className="wsx-fx-tag">Leading</span>}
+          </div>
+        ))}
+      </div>
+
       {/* Grid geometry matches the artifact: 48px | 1fr | 38px collapsed;
           left widens to 220px (stack) / 340px (Recs/Inputs); the right
           column widens from the 38px quiet rail to the 300px docked
@@ -374,36 +420,64 @@ export default function Workspace() {
             </div>
           )}
 
+          {/* Map — side-by-side, NOT a full-width globe: left is the
+              current scenario's own economics (the Leading structure — the
+              same "current scenario" concept Set as Leading already
+              establishes elsewhere in Workspace), right is the geographic
+              view. Distinct from Split (which shows the full comparison
+              rack beside the globe) — Map shows exactly one scenario in
+              geographic context. Reuses the existing ScenarioCard and the
+              same shared Globe3D usage, unmodified. */}
           {mode === "map" && (
-            <div className="wsx-globe dark-panel wsx-globe-chrome">
-              <Globe3D
-                points={points}
-                arcs={arcs}
-                height={460}
-                pointRadius={0.22}
-                polygonColors={polygonColors}
-                selectedIso={selectedIso}
-                hoveredIso={globeHover?.iso ?? null}
-                selectedLat={selectedLat}
-                selectedLng={selectedLng}
-          focusLat={focusLat}
-          focusLng={focusLng}
-          focusDistance={focusDistance}
-                onPointClick={handleGlobeClick}
-                onPointHover={setGlobeHover}
-              />
-              <GlobeChrome productionName={production.production_name} nScenarios={allocated.structures.length} nArcs={arcs.length} />
-              <div className="wsx-g-modetoggle" title="Jurisdictions: every jurisdiction this production touches, by what it means for the production. Optimizer Overlay: the recommended structure's own routing chain only.">
-                <button className={globeMode === "jurisdictions" ? "active" : ""} onClick={() => setGlobeMode("jurisdictions")}>Jurisdictions</button>
-                <button className={globeMode === "optimizer" ? "active" : ""} onClick={() => setGlobeMode("optimizer")}>Optimizer Overlay</button>
+            <div className="wsx-mapv">
+              <div className="lcol wsx-map-econ">
+                {leadingStructure && (
+                  <ScenarioCard
+                    key={leadingStructure.structure_id}
+                    structure={leadingStructure}
+                    tier={structureTier(leadingStructure, rankById)}
+                    rank={rankById.get(leadingStructure.structure_id)}
+                    grossBudget={production.gross_budget_usd}
+                    isLeading={leadingStructure.structure_id === leadingId}
+                    onSetLeading={setLeadingStructureId}
+                    onInspect={handleSelectStructure}
+                    onCompare={() => { setQOpen(true); setQTab("recommendations"); }}
+                    onSelectSegment={handleSelectSegment}
+                  />
+                )}
               </div>
-              {globeHover && (
-                <div className="globe-tooltip">
-                  <strong>{globeHover.jurisdictionName}</strong>
-                  <div className="text-tertiary small">{globeHover.statusLabel}</div>
-                  {globeHover.role && <div className="text-tertiary small">{globeHover.role}</div>}
+              <div className="mcol">
+                <div className="wsx-globe dark-panel wsx-globe-chrome">
+                  <Globe3D
+                    points={points}
+                    arcs={arcs}
+                    height={460}
+                    pointRadius={0.22}
+                    polygonColors={polygonColors}
+                    selectedIso={selectedIso}
+                    hoveredIso={globeHover?.iso ?? null}
+                    selectedLat={selectedLat}
+                    selectedLng={selectedLng}
+                    focusLat={focusLat}
+                    focusLng={focusLng}
+                    focusDistance={focusDistance}
+                    onPointClick={handleGlobeClick}
+                    onPointHover={setGlobeHover}
+                  />
+                  <GlobeChrome productionName={production.production_name} nScenarios={allocated.structures.length} nArcs={arcs.length} />
+                  <div className="wsx-g-modetoggle" title="Jurisdictions: every jurisdiction this production touches, by what it means for the production. Optimizer Overlay: the recommended structure's own routing chain only.">
+                    <button className={globeMode === "jurisdictions" ? "active" : ""} onClick={() => setGlobeMode("jurisdictions")}>Jurisdictions</button>
+                    <button className={globeMode === "optimizer" ? "active" : ""} onClick={() => setGlobeMode("optimizer")}>Optimizer Overlay</button>
+                  </div>
+                  {globeHover && (
+                    <div className="globe-tooltip">
+                      <strong>{globeHover.jurisdictionName}</strong>
+                      <div className="text-tertiary small">{globeHover.statusLabel}</div>
+                      {globeHover.role && <div className="text-tertiary small">{globeHover.role}</div>}
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           )}
 

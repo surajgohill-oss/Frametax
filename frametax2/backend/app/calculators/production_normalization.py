@@ -192,6 +192,20 @@ _JURISDICTION_CURRENCY: dict[str, str] = {
     "MU": "MUR", "MT": "EUR", "GR": "EUR", "ES": "EUR", "CY": "EUR",
     "FR": "EUR", "IE": "EUR", "IT": "EUR", "DE": "EUR", "BE": "EUR", "HR": "EUR", "HU": "EUR",
     "GB": "GBP",
+    # Real ISO 4217 codes only — added for jurisdiction identity (Workspace's
+    # FX strip 4th slot: "current Leading Structure local currency"), not
+    # because a rate exists for them. A currency with no FX_RATE_SNAPSHOTS
+    # entry renders as an honest unavailable state (fx_rate_snapshot()
+    # already returns None for every horizon in that case) — never a
+    # fabricated rate. See CAPABILITY_LEDGER.md, SCENARIO LOCAL-CURRENCY
+    # COSTING / FX NORMALIZATION (still ENGINE-PENDING).
+    "SA": "SAR", "QA": "QAR", "AE": "AED", "JP": "JPY", "SG": "SGD",
+    "IL": "ILS", "KR": "KRW", "CH": "CHF", "NL": "EUR", "IS": "ISK", "AL": "ALL", "CO": "COP",
+    # US/CA participants are frequently sub-national (e.g. "US-TX", "CA-BC")
+    # — the frontend resolves those to their country prefix before this
+    # lookup, so the plain "US"/"CA" entries below cover every US state and
+    # Canadian province candidate this production's optimizer can propose.
+    "US": "USD", "CA": "CAD",
 }
 
 
