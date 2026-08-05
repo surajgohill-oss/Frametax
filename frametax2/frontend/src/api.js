@@ -3,9 +3,11 @@
 // this backend call, never computed client-side.
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8010/api/v1/cineglobe";
-// /documents lives on a sibling router (app/api/v1/documents.py), not under
-// the /cineglobe prefix — same host, different top-level path.
+// /documents and /projects live on sibling routers (app/api/v1/documents.py,
+// app/api/v1/projects.py), not under the /cineglobe prefix — same host,
+// different top-level path.
 const DOCUMENTS_BASE = API_BASE.replace(/\/cineglobe$/, "/documents");
+const PROJECTS_BASE = API_BASE.replace(/\/cineglobe$/, "/projects");
 
 async function request(path, options) {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -77,6 +79,23 @@ export async function uploadDocument(file) {
   const form = new FormData();
   form.append("file", file);
   const res = await fetch(`${DOCUMENTS_BASE}/upload`, { method: "POST", body: form });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`${res.status} ${res.statusText}: ${body}`);
+  }
+  return res.json();
+}
+
+// Project Library Phase C — partial update of the real persistent Project
+// row (app/models/project.py). Only lifecycle and leading_structure_id are
+// wired today; both are user-driven writes, never inferred/triggered by
+// this call itself.
+export async function patchProject(projectId, changes) {
+  const res = await fetch(`${PROJECTS_BASE}/${projectId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(changes),
+  });
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`${res.status} ${res.statusText}: ${body}`);

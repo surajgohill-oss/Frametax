@@ -65,7 +65,10 @@ function classifyMomentum({ hasOpenBlocker, hasFreshActivity, hasResolvedItem, i
 export default function Today() {
   const { data, error, loading } = useCineGlobe();
   const navigate = useNavigate();
-  const { meta: statusMeta, statuses } = useProjectStatus(data?.production?.production_id);
+  const { meta: statusMeta, statuses } = useProjectStatus(data?.production?.production_id, {
+    projectId: data?.production?.project_id,
+    backendLifecycle: data?.production?.lifecycle,
+  });
   // Local mirror of the theme purely so the button's icon re-renders —
   // same pattern as ProjectHeader's own toggle. The authoritative state
   // is the `data-theme` attribute on <html> (lib/theme.js), never React

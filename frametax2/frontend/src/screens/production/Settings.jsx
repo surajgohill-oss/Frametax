@@ -5,7 +5,10 @@ import { useProjectStatus } from "../../lib/useProjectStatus";
 
 export default function Settings() {
   const { data, error, loading } = useCineGlobe();
-  const { status, setStatus, statuses } = useProjectStatus(data?.production?.production_id);
+  const { status, setStatus, statuses } = useProjectStatus(data?.production?.production_id, {
+    projectId: data?.production?.project_id,
+    backendLifecycle: data?.production?.lifecycle,
+  });
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
   const { production } = data;

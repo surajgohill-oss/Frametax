@@ -23,7 +23,10 @@ export default function Sidebar() {
 
   const production = data?.production;
   const productionId = production?.production_id;
-  const { meta } = useProjectStatus(productionId);
+  const { meta } = useProjectStatus(productionId, {
+    projectId: production?.project_id,
+    backendLifecycle: production?.lifecycle,
+  });
   const onProduction = location.pathname.startsWith("/production");
 
   return (

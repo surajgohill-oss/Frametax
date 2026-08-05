@@ -1779,3 +1779,115 @@ New: `app/models/project_alias.py`, `app/models/library_document.py`, `app/model
 - [x] working tree clean after commit
 
 **PHASE B — RUNTIME VERIFIED.**
+
+---
+
+## Project Library Phase C — Little Utopia Persistence Migration (2026-08-05)
+
+**Objective**: migrate exactly ONE project — The Little Utopia — into the real persistent architecture Phases A/B built, while preserving all current user-visible behavior. Delta-only: no other MTS title ingested, no Library UI built, no engine/optimizer/incentive-calculation logic touched.
+
+### BASELINE RECONCILIATION
+
+Confirmed before any change: branch `claude/audit-frametax-features-NZcX5`, `948429b` (Phase B) in history, `alembic current` → `0062 (head)`, `GET /api/v1/projects` → `200 []`, Little Utopia's `GET /api/v1/cineglobe/production` unchanged. Backend/frontend dev servers found dead from the prior session's interruption — restarted via `mcp__Claude_Browser__preview_start` using this repo's actual `.claude/launch.json` entries (`cineglobe-backend`, `cineglobe-frontend`), not the generic names attempted first.
+
+### MIGRATION RESULT
+
+New migration `0063_migrate_little_utopia.py`, `down_revision = "0062"`. Required a full DB rebuild-and-rerun cycle once genuine sizing defects were found in Phase B's own migration (`ingested_at`, `last_verified_at`, `recorded_at` were `String(30)`, too narrow for a full ISO8601 timestamp with microseconds — widened to `String(40)` in both `0062` and the corresponding models, per the "Migration History Repair Standard": `0062` was still locally-only/unapplied-in-shared-history, so editing it in place was safe). Full chain `0001`→`0063` verified clean afterward.
+
+Created, in one migration:
+- 1 Organization ("Mind The Story Media") + 1 Project ("The Little Utopia", `lifecycle='EVALUATION'`, matching the frontend's last confirmed localStorage value — never inferred from optimizer state), 1 ProjectAlias ("The Boat")
+- 5 Documents / 6 DocumentVersions / 10 DocumentVersionSources (screenplay, budget, look book, deck, artwork), each version's SHA-256 independently re-verified via direct `shasum -a 256` after a subagent download (never trusted as self-reported), cached under the durable `~/.cineglobe/storage/little-utopia/` root
+- 1 BudgetDocument (linked via `document_version_id`) + 44 BudgetLineItems (reused verbatim from the already-verified `little_utopia_real_budget.py`, not re-parsed)
+- 1 ScreenplayDocument (linked via `document_version_id`)
+- 11 ProjectFacts, all `source_type='recovered_demo_state'` with real Wikipedia/IMDb citations in `source_location` — including `lead_cast_nationality` left `value=NULL, review_status='pending'`, genuinely unknown, never fabricated
+- 4 TalentProfiles + ProjectPeople (Clara Salaman/writer/GB, Kim Farrant/director/AU, Rachel Winter + Max Botkin/producer/US)
+- 4 ProjectLocationRequirements — only the script's CONFIRMED=True requirements (marine/open-water, period, night exterior), linked to the screenplay version
+- 1 ProductionStructure ("ALLOC-BASELINE-MU") + 1 StructureCalculationResult, with `projects.leading_structure_id` set to it — explicitly the currently-*effective* structure (optimizer rank #1 fallback), since the frontend's `leadingStructureId` had no explicit override at migration time; documented as such in the migration's own SQL comments, not presented as a fabricated user selection
+
+`downgrade()` fully implemented (deletes the project by title, cascades, conditionally deletes the org) — not exercised beyond code review.
+
+### KNOWN DISCREPANCIES (deferred, not fixed here — logged per instruction)
+
+| Discrepancy | Detail | Deferred to |
+|---|---|---|
+| Deck file has two genuinely different sizes | Local Mac copy (830,698 bytes) vs. Drive canonical (589,045 bytes) — not assumed identical. Two separate `DocumentVersion` rows created, `supersedes_version_id=NULL` on both — no fabricated ordering. | Document review UI (Phase D/E) — a human should determine which is canonical |
+| Screenplay has an unmigrated near-duplicate | A third Drive "Downloads mirror" copy (1,250,032 bytes vs. the migrated 1,250,024 bytes — an 8-byte difference) was found but deliberately NOT migrated as a source or a second version — too ambiguous to merge or fork confidently. | Same |
+| Leading structure is a fallback, not an explicit selection | `projects.leading_structure_id` was set to the optimizer's rank-#1 structure because the frontend never had an explicit override to migrate. Honest representation of "currently effective," not "a producer chose this." | N/A — correct as recorded |
+| "Set as Leading" backend write-through can't yet target new selections | The optimizer's in-memory structures use their own string identifiers (e.g. `ALLOC-COMPONENT-POST-SA`, `ALLOC-BASELINE-MU`) — none are real `production_structures.id` UUIDs, including the one just-migrated baseline. The PATCH endpoint and persistence path are proven correct (verified live: a matching UUID round-trips and survives restart), but no frontend click can currently produce a NEW persisted `leading_structure_id` — every attempt 422s on the UUID FK and is handled as an expected, logged (`console.info`, not `console.error`) case, never surfaced as a failure. Only a future phase that persists the optimizer's own generated structures (not in Phase C's scope — engine/optimizer logic is explicitly off-limits) closes this gap. | Engine/structure-persistence phase |
+| Read paths for people/facts/locations still serve demo state | Only `lifecycle` and `leading_structure_id` were moved to backend-as-source-of-truth this phase, per the explicit brief. `GET /api/v1/cineglobe/people`, `/facts`, etc. still read from `little_utopia_state.py`, not the newly-migrated `project_people`/`project_facts` tables — the DB rows exist and are verified correct, but nothing reads them yet. | Broader Library/multi-project read-path work |
+| Pre-existing, unrelated test failure carried forward | `test_global_discovery.py::TestRecommendationTitles::test_scenarios_and_workspace_both_use_the_canonical_title_formatter` — confirmed via `git stash` that it fails identically against the pre-Phase-C base; Workspace.jsx has never called `scenarioDisplay(`, only `compactScenarioIdentity(`. Not touched (no unrelated fixes). | Whichever phase owns Scenario naming conventions |
+
+### FRONTEND DATA-PATH WIRING
+
+- `app/api/v1/projects.py`: new `PATCH /{project_id}` (partial update, `lifecycle`/`leading_structure_id` only, `exclude_unset`). `app/schemas/project.py`: `ProjectUpdate` request schema; `ProjectRead` extended with `lifecycle`/`leading_structure_id` (both were missing initially — caught live when a PATCH response didn't echo the just-written value, fixed before proceeding).
+- `app/api/v1/cineglobe.py`'s `get_production()`: now looks up the real `Project` row by title and adds `project_id`, `lifecycle`, `leading_structure_id` to the response — verified live returning real UUIDs, not placeholders.
+- `frontend/src/api.js`: new `patchProject()` helper against the sibling `/api/v1/projects` router (confirmed via `main.py`'s `include_router` prefix, not guessed).
+- `frontend/src/lib/useProjectStatus.js`: extended (backward-compatible — existing localStorage-only call sites still work) to accept optional `{ projectId, backendLifecycle }`, reconciling localStorage to the backend value once on mount and writing lifecycle changes through via `patchProject`. Wired at all 4 existing call sites (`Sidebar.jsx`, `ProjectHeader.jsx`, `Settings.jsx`, `Today.jsx`) — no dropdown UX change.
+- "Set as Leading" wired at its 2 actual call sites (`Workspace.jsx`'s `handleSetLeading`, `Scenarios.jsx`'s `selectAsLeading`) — `Overview.jsx` destructures `setLeadingStructureId` but never calls it, confirmed by grep, so nothing to wire there.
+
+### RESTART-PERSISTENCE RESULT (the critical proof)
+
+Backend deliberately killed (`SIGTERM`, confirmed dead — port 8010 free) and restarted fresh from the same launch command. Before/after comparison, byte-identical:
+
+| Field | Before | After |
+|---|---|---|
+| `project_id` | `fa5cade5-0669-4816-bfe6-72146f8d3bae` | same |
+| `lifecycle` | `EVALUATION` | same |
+| `leading_structure_id` | `236e70bb-2f40-451a-9aff-abecdb3d39d6` | same |
+| `gross_budget_usd` | `4364393.0` | same |
+| `alembic current` | `0063` | same |
+| documents / versions / facts / people / locations / structures | 5 / 6 / 11 / 4 / 4 / 1 | same |
+
+Frontend (Overview) reloaded against the restarted backend — headline values, stage dropdown, writer/director all matched the pre-restart baseline; zero console errors on a clean tab.
+
+### UI VERIFICATION
+
+Stage dropdown: opened, changed Evaluation → Development via real click, confirmed `PATCH` fired and the DB read back `DEVELOPMENT`, then changed back to `EVALUATION` via the same UI path and confirmed the DB round-tripped. "Set as Leading": clicked on a non-migrated structure, confirmed shared `AppState` selection updates the UI exactly as before (LEADING badge moves), confirmed the expected 422 is logged via `console.info` not `console.error`. One transient hook-order console error was observed mid-session from Vite hot-swapping `useProjectStatus.js` (which gained a new `useEffect`/`useRef`) into an already-mounted component tree — confirmed to be an HMR artifact only, not a real defect: a fresh tab (no HMR history) shows zero console errors at every checkpoint.
+
+### TARGETED TEST RESULT
+
+New file `tests/test_project_library_phase_c.py` — **11 passed**. Read-only verification against the real migrated Little Utopia data (no rollback needed — nothing is written), covering: exactly one real Organization/Project, core Project fields, the alias, documents/versions/sources counts and a screenplay checksum spot-check, the linked BudgetDocument + 44 line items, the linked ScreenplayDocument, the master ProjectAsset, all 11 ProjectFacts with provenance (including the genuinely-unknown `lead_cast_nationality`), the 4 ProjectPeople and their roles, the 4 ProjectLocationRequirements, and the ProductionStructure + StructureCalculationResult + `leading_structure_id` linkage.
+
+`tests/test_project_library_phase_b.py` re-run once (regression check, since `0062` was retroactively edited) — **21 passed**, unchanged.
+
+### FULL BACKEND TEST RESULT
+
+Full suite run once, justified since `app/api/v1/cineglobe.py` and `app/api/v1/projects.py` are common backend code: **3927 passed, 1 skipped, 1 failed** (272.07s). 3927 = Phase B's 3916 baseline + this phase's 11 new tests. The one failure is the same pre-existing, unrelated `test_scenarios_and_workspace_both_use_the_canonical_title_formatter` documented above — confirmed via `git stash` to fail identically without any Phase C change present.
+
+### FRONTEND BUILD RESULT
+
+`npm run build` — clean, no new errors (pre-existing chunk-size-over-500kB warning unrelated to this change).
+
+### FILES CHANGED
+
+New: `alembic/versions/0063_migrate_little_utopia.py`, `tests/test_project_library_phase_c.py`. Extended (backend): `app/models/enums.py` (`RECOVERED_DEMO_STATE` added to `ProjectFactSourceType`), `app/models/library_document.py` + `app/models/final_production_result.py` + `alembic/versions/0062_project_library_phase_b.py` (timestamp column widening — see Known Discrepancies for why this was safe), `app/schemas/project.py` (`ProjectUpdate`, extended `ProjectRead`), `app/api/v1/projects.py` (`PATCH /{project_id}`), `app/api/v1/cineglobe.py` (extended `/production` response). Extended (frontend): `frontend/src/api.js` (`patchProject`), `frontend/src/lib/useProjectStatus.js` (backend reconciliation + write-through), `frontend/src/shell/Sidebar.jsx`, `frontend/src/shell/ProjectHeader.jsx`, `frontend/src/screens/production/Settings.jsx`, `frontend/src/screens/company/Today.jsx` (pass `projectId`/`backendLifecycle` to the hook), `frontend/src/screens/production/Workspace.jsx`, `frontend/src/screens/production/Scenarios.jsx` (leading-structure write-through).
+
+### ACCEPTANCE GATE
+
+- [x] Phase B baseline confirmed
+- [x] exactly one real Organization created
+- [x] exactly one real Little Utopia Project created, with a real persistent UUID
+- [x] documents/versions/sources migrated from already-discovered canonical locations (no new search run)
+- [x] duplicate source locations recorded as additional DocumentVersionSource rows, not duplicate Documents
+- [x] artwork persisted
+- [x] facts migrated with honest provenance (including a genuinely-unknown fact left unknown)
+- [x] people migrated via existing TalentProfile architecture, no invention
+- [x] locations migrated (script-CONFIRMED only)
+- [x] lifecycle moved to backend Project.lifecycle, frontend reads/writes through it, dropdown UX unchanged
+- [x] leading structure persisted to `Project.leading_structure_id`, "Set as Leading" UX unchanged
+- [x] Little Utopia resolved by persistent Project ID in the served path (`production.project_id`)
+- [x] no engine/optimizer/incentive-calculation logic touched
+- [x] restart-persistence proven byte-identical across a deliberate backend restart
+- [x] current-app parity confirmed (Overview/Workspace load, headline values match baseline, stage selector and Set as Leading both work via real UI interaction)
+- [x] no unintended optimizer execution caused by any migration/read/write operation
+- [x] Migration Parity Snapshot compared before/after — no material deltas
+- [x] focused Phase C tests pass (11/11), Phase B regression-checked (21/21)
+- [x] full backend suite has no NEW failure (3927 passed vs. 3916 baseline + 11 new; same single pre-existing, confirmed-unrelated failure)
+- [x] frontend build clean, fresh console check clean (HMR-only transient noted and explained, not a real defect)
+- [x] no other MTS project ingested
+- [x] no Library UI built
+- [x] ledger updated
+- [x] commit created (see below)
+- [x] working tree clean after commit
+
+**PHASE C — RUNTIME VERIFIED.**

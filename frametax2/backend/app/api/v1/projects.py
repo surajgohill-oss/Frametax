@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
 from app.models.project import Project
-from app.schemas.project import ProjectCreate, ProjectRead
+from app.schemas.project import ProjectCreate, ProjectRead, ProjectUpdate
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
@@ -53,4 +53,29 @@ async def get_project(
     row = result.scalar_one_or_none()
     if not row:
         raise HTTPException(status_code=404, detail="Project not found")
+    return row
+
+
+@router.patch("/{project_id}", response_model=ProjectRead)
+async def update_project(
+    project_id: str,
+    body: ProjectUpdate,
+    db: AsyncSession = Depends(get_db),
+) -> Project:
+    """
+    Partial update. Phase C wiring: this is how the shared Production
+    Stage control and "Set as Leading" persist lifecycle/leading_structure_id
+    against the real Project row instead of frontend-only state. This
+    endpoint itself never changes lifecycle on the engine's behalf — it
+    only writes whatever the caller (a human action) explicitly supplies.
+    """
+    result = await db.execute(select(Project).where(Project.id == project_id))
+    row = result.scalar_one_or_none()
+    if not row:
+        raise HTTPException(status_code=404, detail="Project not found")
+    changes = body.model_dump(exclude_unset=True)
+    for field, value in changes.items():
+        setattr(row, field, value)
+    await db.commit()
+    await db.refresh(row)
     return row

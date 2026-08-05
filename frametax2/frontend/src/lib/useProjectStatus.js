@@ -1,4 +1,5 @@
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
+import { patchProject } from "../api";
 
 // Canonical production lifecycle — a producer-set stage for where the
 // production stands, distinct from anything the optimizer computes.
@@ -15,14 +16,17 @@ import { useCallback, useSyncExternalStore } from "react";
 // before the production proceeds into development. Financing is
 // deliberately NOT a lifecycle stage.
 //
-// No backend column exists for this yet (app/models/project.py carries no
-// lifecycle field — confirmed by direct inspection). This store is a
-// presentation-level mapping persisted to localStorage, keyed by
-// production id, and is the one canonical mechanism every consumer reads
-// (Sidebar, Settings, ProjectHeader/Hero, Today's lifecycle grouping) — no
-// screen keeps a second copy of this state. The permanent home is a new
-// column + PATCH route — documented for the data-model pass, out of scope
-// for this migration.
+// Project Library Phase C: Project.lifecycle (app/models/project.py) is now
+// the persistent source of truth, written via PATCH /api/v1/projects/{id}.
+// localStorage remains the synchronous read + offline/bounded fallback that
+// every consumer already relies on (Sidebar, Settings, ProjectHeader/Hero,
+// Today's lifecycle grouping) — no screen keeps a second copy of this state.
+// Callers that have the backend's project_id/lifecycle (from
+// production.project_id / production.lifecycle) pass them as the optional
+// second argument so this hook can reconcile localStorage to the backend
+// value on first read and write changes through to the backend; callers
+// that don't (or before the backend value has loaded) still work exactly
+// as before, localStorage-only.
 export const PROJECT_STATUSES = [
   { key: "evaluation", label: "Evaluation", tier: "blue",
     description: "Jurisdiction analysis, qualifying structures, treaty possibilities, and comparative production economics — determining whether and where the project can be produced effectively." },
@@ -80,11 +84,34 @@ function notify(productionId) {
   subscribers.get(productionId)?.forEach((listener) => listener());
 }
 
-export function useProjectStatus(productionId) {
+export function useProjectStatus(productionId, backend = {}) {
+  const { projectId, backendLifecycle } = backend;
+
   const status = useSyncExternalStore(
     (listener) => subscribe(productionId, listener),
     () => readStatus(productionId),
   );
+
+  // One-time-per-mount reconciliation: once the backend's persisted
+  // lifecycle arrives, adopt it into the localStorage cache this hook
+  // already reads synchronously. Guarded so it never fires more than once
+  // per productionId per component instance — it must not fight a user's
+  // in-session change or re-run on every unrelated re-render.
+  const reconciledFor = useRef(null);
+  useEffect(() => {
+    if (!productionId || !backendLifecycle) return;
+    if (reconciledFor.current === productionId) return;
+    reconciledFor.current = productionId;
+    const backendKey = LEGACY_MAP[backendLifecycle.toLowerCase()] || backendLifecycle.toLowerCase();
+    if (backendKey !== status) {
+      try {
+        localStorage.setItem(STORAGE_PREFIX + productionId, backendKey);
+      } catch {
+        // ignore — falls through to session-only state via notify()
+      }
+      notify(productionId);
+    }
+  }, [productionId, backendLifecycle, status]);
 
   const setStatus = useCallback((key) => {
     try {
@@ -94,7 +121,17 @@ export function useProjectStatus(productionId) {
       // updates for this session, just doesn't persist across reload.
     }
     notify(productionId);
-  }, [productionId]);
+
+    // Phase C write-through. Fire-and-forget from the UI's perspective —
+    // localStorage above is what the dropdown already reads synchronously,
+    // so a slow or failed PATCH never blocks or reverts the visible
+    // selection; it only means the backend falls behind until retried.
+    if (projectId) {
+      patchProject(projectId, { lifecycle: key.toUpperCase() }).catch((err) => {
+        console.error("[useProjectStatus] failed to persist lifecycle to backend:", err);
+      });
+    }
+  }, [productionId, projectId]);
 
   const meta = PROJECT_STATUSES.find((s) => s.key === status) || PROJECT_STATUSES[0];
   return { status: meta.key, meta, setStatus, statuses: PROJECT_STATUSES };

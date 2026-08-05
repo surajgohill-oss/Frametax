@@ -23,8 +23,13 @@ from __future__ import annotations
 from dataclasses import asdict
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.api.deps import get_db
+from app.models.project import Project
 
 from app.calculators.optimization_engine import RiskCase
 from app.calculators.production_constraint_engine import (
@@ -60,6 +65,7 @@ from app.demo.little_utopia_state import (
     get_awarded_rate,
     get_state,
     reset_contingency_allocations,
+    PRODUCTION_NAME,
 )
 from app.calculators.mauritius_economics import compute_mauritius_economics
 from app.calculators.qualification_model import QualificationState
@@ -191,13 +197,27 @@ async def post_facts(body: FactAnswers) -> dict[str, Any]:
 # ── Screen 1: Production ─────────────────────────────────────────────────────
 
 @router.get("/production")
-async def get_production() -> dict[str, Any]:
+async def get_production(db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
     s = get_state()
     rr = s.rate_resolution
+
+    # Phase C: resolve the real persistent Project row backing this demo
+    # production, if the one-time migration has run. Everything else on
+    # this endpoint still comes from the in-memory engine state — only
+    # project_id/lifecycle/leading_structure_id have a real DB home so
+    # far. Never creates a Project here; a missing row just means the
+    # migration hasn't run (fields come back null, nothing breaks).
+    project_row = (
+        await db.execute(select(Project).where(Project.title == PRODUCTION_NAME))
+    ).scalar_one_or_none()
+
     return {
         "production_id": s.production_id,
         "production_name": s.production_name,
         "jurisdiction_code": s.jurisdiction_code,
+        "project_id": str(project_row.id) if project_row else None,
+        "lifecycle": project_row.lifecycle if project_row else None,
+        "leading_structure_id": str(project_row.leading_structure_id) if project_row and project_row.leading_structure_id else None,
         "gross_budget_usd": s.gross_budget_usd,
         "rate": s.rate,
         # Permanent rate-authority rules: the rate's full statutory

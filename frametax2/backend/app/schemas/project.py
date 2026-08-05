@@ -33,6 +33,20 @@ class ProjectRead(TimestampedSchema):
     home_jurisdiction_id: uuid.UUID | None
     target_shoot_year: int | None
     notes: str | None
+    lifecycle: str | None = None
+    leading_structure_id: uuid.UUID | None = None
+
+
+class ProjectUpdate(BaseModel):
+    """
+    Partial update — Phase C wiring for the two fields whose source of
+    truth is moving from frontend-only state to the real Project row:
+    lifecycle (user-controlled only — never set by this API on the
+    engine's behalf) and leading_structure_id (the producer's "Set as
+    Leading" selection). Both optional; only supplied fields are changed.
+    """
+    lifecycle: str | None = None
+    leading_structure_id: uuid.UUID | None = None
 
 
 class ProjectList(BaseModel):

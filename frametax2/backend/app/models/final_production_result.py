@@ -47,7 +47,7 @@ class FinalProductionResult(Base):
         String(20), nullable=False, default=FinalResultStatus.NOT_STARTED,
         server_default=FinalResultStatus.NOT_STARTED.value,
     )
-    recorded_at: Mapped[str | None] = mapped_column(String(30))
+    recorded_at: Mapped[str | None] = mapped_column(String(40))
     recorded_by: Mapped[str | None] = mapped_column(String(320))
 
     # Relationships

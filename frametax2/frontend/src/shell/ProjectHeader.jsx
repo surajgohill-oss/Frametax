@@ -39,7 +39,10 @@ export default function ProjectHeader() {
 
   const production = data?.production;
   const productionId = production?.production_id;
-  const { status, setStatus, statuses, meta } = useProjectStatus(productionId);
+  const { status, setStatus, statuses, meta } = useProjectStatus(productionId, {
+    projectId: production?.project_id,
+    backendLifecycle: production?.lifecycle,
+  });
 
   // ROOT CAUSE (traced live, not assumed): `.ph-hero` is `overflow: hidden`
   // — required for the Hero art/scrim treatment, frozen, never touched —

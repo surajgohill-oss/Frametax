@@ -232,6 +232,13 @@ class ProjectAssetSourceType(str, enum.Enum):
 class ProjectFactSourceType(str, enum.Enum):
     EXTRACTED = "extracted"
     USER_OVERRIDE = "user_override"
+    # A fact hand-recovered/sourced during a prior migration (e.g. cross-
+    # verified against Wikipedia/IMDb and the production's own documents,
+    # per little_utopia_people.py) rather than produced by an automated
+    # document-extraction pipeline or a user's own in-app correction.
+    # Kept distinct so provenance is never misrepresented as either of the
+    # other two — see Phase C "Little Utopia Persistence Migration".
+    RECOVERED_DEMO_STATE = "recovered_demo_state"
 
 
 class FinalResultStatus(str, enum.Enum):

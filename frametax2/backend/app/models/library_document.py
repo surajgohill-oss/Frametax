@@ -102,7 +102,7 @@ class DocumentVersion(Base):
     detected_date: Mapped[str | None] = mapped_column(String(20))
     # Best-effort date parsed from filename/metadata — never fabricated
     version_label: Mapped[str | None] = mapped_column(String(255))
-    ingested_at: Mapped[str | None] = mapped_column(String(30))
+    ingested_at: Mapped[str | None] = mapped_column(String(40))
     is_current: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     supersedes_version_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("document_versions.id", ondelete="SET NULL"), nullable=True
@@ -142,7 +142,7 @@ class DocumentVersionSource(Base):
     source_status: Mapped[DocumentSourceStatus] = mapped_column(
         String(20), nullable=False, default=DocumentSourceStatus.OK, server_default=DocumentSourceStatus.OK.value,
     )
-    last_verified_at: Mapped[str | None] = mapped_column(String(30))
+    last_verified_at: Mapped[str | None] = mapped_column(String(40))
 
     # Relationships
     document_version: Mapped["DocumentVersion"] = relationship(back_populates="sources")
