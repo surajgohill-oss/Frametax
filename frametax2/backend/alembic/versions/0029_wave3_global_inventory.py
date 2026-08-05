@@ -454,7 +454,7 @@ def upgrade() -> None:
                 SELECT :id, NULL, :name, :code, :iso_code, :level,
                     :currency, :country_code, true, :now, :now
                 WHERE NOT EXISTS (
-                    SELECT 1 FROM jurisdictions WHERE code = :code
+                    SELECT 1 FROM jurisdictions WHERE code = :code ::varchar
                 )
             """),
             {
@@ -473,7 +473,7 @@ def upgrade() -> None:
                     (SELECT id FROM jurisdictions WHERE code = :parent_code LIMIT 1),
                     :name, :code, :iso_code, :level, :currency, :country_code, true, :now, :now
                 WHERE NOT EXISTS (
-                    SELECT 1 FROM jurisdictions WHERE code = :code
+                    SELECT 1 FROM jurisdictions WHERE code = :code ::varchar
                 )
             """),
             {
@@ -505,7 +505,7 @@ def upgrade() -> None:
                     :req_cultural, NULL, :req_local,
                     'DISCOVERY', 'pending', :authority_url, :notes, :now, :now
                 WHERE NOT EXISTS (
-                    SELECT 1 FROM incentive_programs WHERE slug = :slug
+                    SELECT 1 FROM incentive_programs WHERE slug = :slug ::varchar
                 )
             """),
             {

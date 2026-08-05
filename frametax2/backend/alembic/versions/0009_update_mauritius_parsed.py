@@ -20,6 +20,7 @@ from typing import Union
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects import postgresql
 
 revision: str = "0009"
 down_revision: Union[str, None] = "0008"
@@ -51,7 +52,10 @@ def upgrade() -> None:
                 updated_at         = :now
             WHERE id = :prog_id
             """
-        ).bindparams(prog_id=PROG_MU_ID, now=NOW)
+        ).bindparams(
+            sa.bindparam("prog_id", value=PROG_MU_ID, type_=postgresql.UUID(as_uuid=False)),
+            sa.bindparam("now", value=NOW, type_=sa.DateTime(timezone=True)),
+        )
     )
 
 
@@ -69,5 +73,8 @@ def downgrade() -> None:
                 updated_at      = :now
             WHERE id = :prog_id
             """
-        ).bindparams(prog_id=PROG_MU_ID, now=NOW)
+        ).bindparams(
+            sa.bindparam("prog_id", value=PROG_MU_ID, type_=postgresql.UUID(as_uuid=False)),
+            sa.bindparam("now", value=NOW, type_=sa.DateTime(timezone=True)),
+        )
     )

@@ -215,7 +215,7 @@ def upgrade() -> None:
         row = conn.execute(
             sa.text(
                 "SELECT id FROM incentive_programs "
-                "WHERE LOWER(program_name) LIKE :frag LIMIT 1"
+                "WHERE LOWER(name) LIKE :frag LIMIT 1"
             ),
             {"frag": f"%{fragment.lower()}%"},
         ).fetchone()
@@ -233,9 +233,11 @@ def upgrade() -> None:
             sa.text(
                 """
                 INSERT INTO legal_stacking_rules
-                    (program_a_id, program_b_id, rule_type, condition_text, confidence_tier)
+                    (id, program_a_id, program_b_id, rule_type, condition_text, confidence_tier,
+                     created_at, updated_at)
                 VALUES
-                    (:a, :b, :rule_type, :condition_text, 'PARSED')
+                    (gen_random_uuid(), :a, :b, :rule_type, :condition_text, 'PARSED',
+                     now(), now())
                 ON CONFLICT DO NOTHING
                 """
             ),
@@ -256,7 +258,7 @@ def downgrade() -> None:
         row = conn.execute(
             sa.text(
                 "SELECT id FROM incentive_programs "
-                "WHERE LOWER(program_name) LIKE :frag LIMIT 1"
+                "WHERE LOWER(name) LIKE :frag LIMIT 1"
             ),
             {"frag": f"%{fragment.lower()}%"},
         ).fetchone()

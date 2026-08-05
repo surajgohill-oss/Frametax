@@ -78,11 +78,11 @@ class ProgramAdminDetails(Base):
         comment="Notes on bridge financing availability, lender appetite, discount rates.",
     )
     first_window_open_relative: Mapped[str | None] = mapped_column(
-        String(100),
+        Text,
         comment="When application window first opens (e.g. 'before principal photography').",
     )
     final_claim_deadline: Mapped[str | None] = mapped_column(
-        String(100),
+        Text,
         comment="Claim submission deadline relative to wrap (e.g. '12 months after delivery').",
     )
     confidence_tier: Mapped[ConfidenceTier] = mapped_column(

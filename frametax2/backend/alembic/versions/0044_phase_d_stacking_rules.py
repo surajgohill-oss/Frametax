@@ -152,10 +152,12 @@ def upgrade() -> None:
             sa.text("""
                 INSERT INTO legal_stacking_rules
                     (id, program_a_id, program_b_id, rule_type,
-                     condition_text, statutory_reference, confidence_tier, notes)
+                     condition_text, statutory_reference, confidence_tier, notes,
+                     created_at, updated_at)
                 VALUES
                     (:id, :a, :b, :rule_type,
-                     :condition_text, :statutory_reference, :confidence_tier, :notes)
+                     :condition_text, :statutory_reference, :confidence_tier, :notes,
+                     now(), now())
                 ON CONFLICT (id) DO NOTHING
             """),
             {

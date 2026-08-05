@@ -175,15 +175,15 @@ def upgrade() -> None:
                 INSERT INTO legal_stacking_rules (
                     id, program_a_id, program_b_id, rule_type,
                     condition_text, statutory_reference,
-                    confidence_tier, notes
+                    confidence_tier, notes, created_at, updated_at
                 )
                 SELECT
                     :id,
                     (SELECT id FROM incentive_programs WHERE slug = :slug_a LIMIT 1),
                     (SELECT id FROM incentive_programs WHERE slug = :slug_b LIMIT 1),
-                    :rule_type, :cond, :stat, :tier, :notes
+                    :rule_type, :cond, :stat, :tier, :notes, :now, :now
                 WHERE NOT EXISTS (
-                    SELECT 1 FROM legal_stacking_rules WHERE id = :id
+                    SELECT 1 FROM legal_stacking_rules WHERE id = :id ::uuid
                 )
                   AND (SELECT id FROM incentive_programs WHERE slug = :slug_a LIMIT 1) IS NOT NULL
                   AND (SELECT id FROM incentive_programs WHERE slug = :slug_b LIMIT 1) IS NOT NULL
@@ -191,7 +191,7 @@ def upgrade() -> None:
             {
                 "id": rule_id, "slug_a": slug_a, "slug_b": slug_b,
                 "rule_type": rule_type, "cond": condition_text,
-                "stat": statutory_ref, "tier": tier, "notes": notes,
+                "stat": statutory_ref, "tier": tier, "notes": notes, "now": NOW,
             },
         )
 

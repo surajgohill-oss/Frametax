@@ -474,14 +474,20 @@ def upgrade() -> None:
 
     for (slug_a, slug_b, rule_type, condition_text, confidence) in _RULES:
         conn.execute(text("""
-            INSERT INTO stacking_rules
-                (program_slug_a, program_slug_b, rule_type, condition_text, confidence_tier)
-            VALUES
-                (:a, :b, :rt, :ct, :conf)
-            ON CONFLICT (program_slug_a, program_slug_b) DO UPDATE SET
-                rule_type = EXCLUDED.rule_type,
-                condition_text = EXCLUDED.condition_text,
-                confidence_tier = EXCLUDED.confidence_tier
+            INSERT INTO legal_stacking_rules
+                (id, program_a_id, program_b_id, rule_type, condition_text,
+                 confidence_tier, created_at, updated_at)
+            SELECT gen_random_uuid(),
+                (SELECT id FROM incentive_programs WHERE slug = :a ::varchar LIMIT 1),
+                (SELECT id FROM incentive_programs WHERE slug = :b ::varchar LIMIT 1),
+                :rt, :ct, :conf, now(), now()
+            WHERE (SELECT id FROM incentive_programs WHERE slug = :a ::varchar LIMIT 1) IS NOT NULL
+              AND (SELECT id FROM incentive_programs WHERE slug = :b ::varchar LIMIT 1) IS NOT NULL
+              AND NOT EXISTS (
+                  SELECT 1 FROM legal_stacking_rules
+                  WHERE program_a_id = (SELECT id FROM incentive_programs WHERE slug = :a ::varchar LIMIT 1)
+                    AND program_b_id = (SELECT id FROM incentive_programs WHERE slug = :b ::varchar LIMIT 1)
+              )
         """), {
             "a": slug_a, "b": slug_b, "rt": rule_type,
             "ct": condition_text, "conf": confidence,

@@ -153,7 +153,7 @@ def upgrade() -> None:
                 WHERE p.slug = :slug
                   AND NOT EXISTS (
                       SELECT 1 FROM program_spend_treatments t
-                      WHERE t.program_id = p.id AND t.labor_type = :labor_type
+                      WHERE t.program_id = p.id AND t.labor_type = :labor_type ::varchar
                   )
                 LIMIT 1
             """),

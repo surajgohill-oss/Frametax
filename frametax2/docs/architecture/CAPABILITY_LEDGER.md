@@ -1598,3 +1598,87 @@ The strip previously assumed a Leading structure has exactly one local currency 
 **Adopted 2026-08-04.** Previously runtime-verified work (an explicit prior "RUNTIME VERIFIED" / "FROZEN" ledger declaration) is not retested in a later bounded pass unless: (a) the current change directly touches the same component/file, or (b) new evidence during implementation contradicts the prior verification. A prompt scoped to "delta only" is followed literally — broad re-audits of already-frozen surfaces (Hero, Map, Split, Globe, Cards, Overview, Today layout) waste the pass's budget and risk introducing exactly the kind of unauthorized redesign the project's other permanent rules (No Unsolicited Product Design; Full-Project Reconciliation) already prohibit.
 
 **UX FOUNDATION — CLOSED.**
+
+## Project Library Phase A — Persistence Foundation Verification (2026-08-05)
+
+**Objective**: prove or disprove whether the dormant Postgres/SQLAlchemy architecture (Organization → Project → BudgetDocument/ScreenplayDocument → ProductionStructure → StructureCalculationResult, 62 migrations, never previously provisioned) can actually serve as Project Library's foundation, per the prior architecture review's conditional recommendation to "activate + extend." No product schema added, no Little Utopia migration, no file ingestion, no frontend change, no optimizer/calculation-engine change — this pass is verification only.
+
+### DATABASE FOUNDATION / POSTGRES STATUS
+
+Postgres 16.14 (Homebrew, already installed and already running locally — no new install, no Docker, no Postgres.app, per the "use the lowest-risk existing setup" instruction) confirmed live via `pg_isready`. Role `frametax` (`LOGIN`, `CREATEDB`) and database `frametax2`, owned by `frametax`, provisioned to match `DATABASE_URL`'s existing default (`postgresql+psycopg://frametax:frametax@localhost:5432/frametax2`) exactly — zero config changes. Connectivity confirmed as the app's own role: `SELECT current_database(), current_user` → `frametax2 / frametax`.
+
+### ALEMBIC STATUS
+
+Initial state: single head, `0061`, no branch points, clean linear history (`alembic heads` confirmed before any DB existed). `alembic upgrade head` against the fresh database failed and was rerun from a clean `DROP DATABASE`/`CREATE DATABASE` cycle after each fix — **19 fix iterations total** before reaching head. Every failure was individually root-caused, classified, and fixed at the smallest correct point before rerunning; migration history was never "casually" edited to force a pass. Final state: `alembic current` → `0061 (head)`, exit code 0, full chain 0001→0061 applies cleanly to an empty database.
+
+**Fixes applied, by class** (all are genuine pre-existing defects in migrations that had never once been executed against a real database — none are schema redesign, none touch Little Utopia, none add Project Library concepts):
+
+| Class | Root cause | Files touched |
+|---|---|---|
+| Environment/dependency defect | `greenlet` required by SQLAlchemy's async engine but never declared in `pyproject.toml` | `pyproject.toml` (added `greenlet>=3.1.0`) |
+| Undersized numeric column | `program_uplifts.condition_threshold` declared `Numeric(10,6)` (max <10,000) but real seed data is a $10M budget threshold | `0001` (origin), `app/models/incentive.py` |
+| Undersized varchar column | `jurisdictions.country_code` declared `String(5)` but real "supranational" entries (e.g. "NORDIC") exceed it | `0001` (origin), `app/models/jurisdiction.py` |
+| Undersized text column | `program_admin_details.first_window_open_relative` / `final_claim_deadline` declared `String(100)` but real seed values are full descriptive sentences | `0014` (origin), `app/models/program_intelligence.py` |
+| Missing `created_at`/`updated_at` in raw INSERT | `Base`'s timestamp columns have Python-side defaults only (no `server_default`); several hand-written `INSERT`/`bulk_insert` statements omitted them entirely, violating `NOT NULL` | `0007`, `0022`, `0044`, `0045`, `0052`, `0053`, `0055` |
+| `op.execute(sqltext, params)` misuse | Alembic's `op.execute()` takes one positional argument; several migrations called it Connection-`execute()`-style with a second params dict | `0012`, `0013` |
+| Ambiguous reused bind parameter | The same named parameter (`:code`, `:slug`, `:labor_type`, `:id`) used in two different Postgres type-inference contexts (a literal SELECT-list position and a typed WHERE comparison) within one `sa.text()` block → `AmbiguousParameter: inconsistent types deduced` | `0015`, `0017`, `0018`, `0019`, `0021`, `0022`, `0024`, `0026`, `0028`, `0029`, `0031`, `0032`, `0034`, `0035`, `0037`, `0060` (fixed via an explicit `::varchar`/`::uuid` cast on the ambiguous occurrence — space-separated from the bind token, since SQLAlchemy's `text()` tokenizer misparses `:name::type` with no space) |
+| Wrong/nonexistent column or table name in raw SQL | `region` (no such column — real field is `level`), `parent_code` (no such column — real FK is `parent_id`, needs a subselect), `notes` on `program_spend_treatments` (real column is `treatment_notes`), `program_name`/`jurisdiction_code`/`min_spend_usd`/`annual_cap_usd`/`program_slug`/`classification`/`is_soft_money`/`is_government_assistance` on `incentive_programs`/`fund_economics` (none exist — real columns are `name`/`jurisdiction_id`(FK)/`annual_cap_local`/`program_id`(FK)/`stackable_with_incentives`), and a wrong table name `stacking_rules` (real table is `legal_stacking_rules`) | `0032`, `0035`, `0039`, `0041`, `0050`, `0054`, `0056`, `0057`, `0060`, `0061` |
+| Wrong value scale | `base_rate`/`max_rate` (`Numeric(7,6)`, fractional convention — `0.35` for 35%, matching every other migration in the codebase) seeded as whole-number percentages (`30.0`, `20.0`) in two later migrations, overflowing the column | `0056`, `0060` (divided by 100 at bind time) |
+| Missing existence guard | Several later "wave"/"final sweep" migrations reference jurisdiction codes or program slugs that no earlier migration ever seeded; without a guard this is a `NOT NULL` violation on the resolved FK | `0050`, `0056`, `0057`, `0061` (added `WHERE (subselect) IS NOT NULL` guards; unmatched rows are silently skipped, consistent with this codebase's existing idempotent-seed idiom — not a redesign) |
+
+37 migration files + 3 model files + `pyproject.toml` modified — every edit isolated to the exact defect it fixes, verified by rerunning the full chain from an empty database after each change (not batched blindly). No migration's business intent, seeded facts, or numeric values were altered except the two whole-number-percentage corrections above, which fix a unit-scale bug, not the underlying rate.
+
+### MODEL/SCHEMA RECONCILIATION
+
+Live schema inspected directly via `psql \dt` and `\d` (not inferred from model source). **42 tables** exist (41 + `alembic_version`), covering every model read during the architecture review (`Organization`, `User`, `Project`, `BudgetDocument`/`BudgetLineItem`, `ScreenplayDocument`/`ScreenplayChunk`/`ExtractedScriptElement`, `ProductionStructure`/`StructureCalculationResult`, `ProductionContribution`) plus the full incentive/jurisdiction reference-data schema (`jurisdictions`, `incentive_programs`, `fund_economics`, `legal_stacking_rules`, `program_admin_details`, `program_spend_treatments`, etc.).
+
+`projects`, `organizations`, `users` columns spot-checked column-by-column against `Project`/`Organization`/`User` — **MATCHED**, zero drift. `projects.organization_id` confirmed `NOT NULL` (Organization mandatory), `projects.owner_id` confirmed nullable (User optional) — both at the live-schema level, not just read from source.
+
+**One genuine pre-existing model defect found and fixed, unrelated to any migration**: `Jurisdiction.local_cost_benchmarks` relationship omitted `foreign_keys=`, and `LocalCostBenchmark` has two FKs to `jurisdictions` (`jurisdiction_id`, `baseline_jurisdiction_id`) — SQLAlchemy's mapper configuration raised `AmbiguousForeignKeysError` on the **first ORM query against any model**, not just `Jurisdiction` itself (mapper configuration is registry-wide). This is exactly why `GET /api/v1/projects` returned HTTP 500 even though `Project` itself has no ambiguity — the whole registry fails to configure. **BLOCKING**, now fixed (`app/models/jurisdiction.py`, one line: `foreign_keys="LocalCostBenchmark.jurisdiction_id"`).
+
+Every other model/table pair checked is **MATCHED**. No **MIGRATION MISSING** or **DATABASE STALE** cases found. **BENIGN DRIFT**: none found this pass (the widened `country_code`/`condition_threshold`/`first_window_open_relative` columns are migration-origin fixes, not drift — model and DB were already consistent with each other, both were simply undersized against real data).
+
+The known future Phase B additions (lifecycle, artwork, `ProjectFact`, `DocumentVersion`, `ProjectActivity`, `leading_structure_id`, `FinalProductionResult`, `OrganizationDocument`) are absent from both model and database, exactly as expected — **not defects**, per the architecture review's own framing.
+
+### PROJECT API STATUS
+
+`GET /api/v1/projects` against the already-running dev server (port 8010, `--reload`, never restarted by this pass) — previously HTTP 500 (no database), then HTTP 500 again after DB provisioning alone (the `Jurisdiction` relationship bug above), now **HTTP 200, `[]`** after the model fix. The `--reload` server picked up the one-line model fix automatically; no manual restart was performed at any point, satisfying "preserve current application" throughout.
+
+Full CRUD exercised in an isolated, explicitly rolled-back transaction (not against the dev server — a direct script using the app's own `engine`/`AsyncSession`): create `Organization` → create `Project` (real `organization_id` FK) → read → update `title` → `session.rollback()`. Post-rollback verification query confirms **zero rows persisted** (`projects=0 orgs=0`). Final `frametax2` state after this entire pass: `organizations=0, users=0, projects=0, budget_documents=0, screenplay_documents=0, production_structures=0, production_contributions=0` — no demo data, no test data, no Little Utopia, nothing migrated. The 187 jurisdictions / 262 incentive programs / etc. present are the application's own reference-data corpus (seeded by the migrations themselves, part of the incentive-calculation knowledge base) — not project data, and were already an intended part of these migrations' content, not something this pass added.
+
+### STORAGE STATUS
+
+`LOCAL_STORAGE_PATH=/tmp/frametax2/storage` (unchanged, not touched this pass) does not exist on disk — confirmed via direct `ls`. `documents.py` and `budgets.py` both reference it directly for file read/write. This reconfirms the architecture review's finding: `/tmp` does not survive reboot on macOS, so this path is non-durable and must become a real directory (matching the `~/.awardradar`-style pattern used in the sibling project) in Phase B, before any document is actually ingested. Not fixed this pass — verification only, per instruction.
+
+### CURRENT LITTLE UTOPIA RUNTIME — REGRESSION STATUS
+
+**No regression.** `GET /api/v1/cineglobe/production` (the demo endpoint powering the entire live app) checked before DB provisioning, after DB provisioning, and after the model fix — identical response (`production_id: LITTLE-UTOPIA`, full budget/rate data) at every checkpoint. `little_utopia_state.py` was not read from, imported differently, or touched in any way. The dev server (backend :8010, frontend :5173) ran continuously throughout this entire pass and was never restarted or interrupted by this work — only a `--reload` pickup of one Python file edit, which is normal dev-server behavior, not an action this pass took.
+
+### RELEVANT TEST RESULTS
+
+Targeted subset (`test_movie_magic_budget_parser`, `test_qualification_model`, `test_budget_parser_text`, `test_classify_budget`, `test_fund_economics_model`): **162 passed**. Full backend suite run once (DB provisioning affects the shared test environment): **3895 passed, 1 skipped, 1 failed**. The one failure — `test_global_discovery.py::TestRecommendationTitles::test_scenarios_and_workspace_both_use_the_canonical_title_formatter` — is the same pre-existing, already-documented-elsewhere-in-this-ledger failure (a stale literal-string assertion against `Workspace.jsx`, unrelated to this pass; the regression guard's real intent is still satisfied via `compactScenarioIdentity()`). Not touched, per "classify, do not branch into unrelated repair."
+
+### BLOCKERS FOR PHASE B
+
+None found that would block proceeding. Specifically confirmed NOT blocking: the 62-migration chain (now 61, all clean), the core Organization/Project/Document/Structure schema (MATCHED, no drift), the Project API (live, HTTP 200). Two items Phase B must still address, both already anticipated by the architecture review and neither a surprise from this pass: (1) `LOCAL_STORAGE_PATH` must move off `/tmp` before any real document upload; (2) `greenlet` must stay a declared dependency (fixed this pass) — any future dependency-pinning/lockfile regeneration should re-verify it's still present, since nothing else in the async SQLAlchemy stack will surface its absence except this exact `AmbiguousParameter`-style late failure at first-query time.
+
+### ACCEPTANCE GATE
+
+- [x] local Postgres operational
+- [x] `frametax2` database exists
+- [x] existing Alembic chain reaches head (0061)
+- [x] actual schema inspected (live `\dt`/`\d`, not model source)
+- [x] blocking model/schema mismatches identified/resolved (`Jurisdiction.local_cost_benchmarks` ambiguous FK)
+- [x] existing DB-backed Project API responds successfully (HTTP 200, `[]`)
+- [x] no demo data migrated (DB confirmed empty of project/org/user rows post-verification)
+- [x] current Little Utopia runtime still works (unchanged response, dev server never restarted)
+- [x] no frontend regressions introduced (frontend untouched)
+- [x] no Project Library schema added (no lifecycle/artwork/fact/version/activity tables or columns)
+- [x] relevant tests pass; the one pre-existing failure is explicitly classified, not fixed
+- [x] working tree contains only justified Phase A changes (37 migrations + 3 models + `pyproject.toml`, each traced to a specific defect above)
+
+**PHASE A — RUNTIME VERIFIED.**
+
+## PERMANENT PROJECT RULE — Migration History Repair Standard
+
+**Adopted 2026-08-05.** When a dormant/never-executed migration fails, the fix always goes at the exact origin of the defect (the migration that first creates the wrong column type, or the specific `INSERT` that references a column/table that doesn't exist), never as a downstream patch or a value-rounding workaround that would falsify real seed data. Migration history may be edited when — and only when — every affected migration has never been applied to any real or shared database (verified, not assumed) and the fix is a mechanical correction (column width, column/table name, missing timestamp columns, parameter type ambiguity), not a redesign. Column-width fixes always widen to match an existing convention already used elsewhere in the same codebase (e.g. `Numeric(18,2)` for USD amounts, matching `Project.total_budget_usd`) rather than picking an arbitrary new size. Existence guards (`WHERE ... IS NOT NULL`) are preferred over fabricating missing reference data when a later migration references a jurisdiction/program that an earlier migration never seeded.

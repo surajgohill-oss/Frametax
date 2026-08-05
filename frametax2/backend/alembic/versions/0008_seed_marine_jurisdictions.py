@@ -706,8 +706,8 @@ UPLIFTS = [
 def upgrade() -> None:
     jur_table = sa.table(
         "jurisdictions",
-        sa.column("id", sa.String),
-        sa.column("parent_id", sa.String),
+        sa.column("id", postgresql.UUID(as_uuid=True)),
+        sa.column("parent_id", postgresql.UUID(as_uuid=True)),
         sa.column("name", sa.String),
         sa.column("code", sa.String),
         sa.column("iso_code", sa.String),
@@ -717,15 +717,15 @@ def upgrade() -> None:
         sa.column("is_active", sa.Boolean),
         sa.column("notes", sa.Text),
         sa.column("metadata_json", postgresql.JSONB),
-        sa.column("created_at", sa.String),
-        sa.column("updated_at", sa.String),
+        sa.column("created_at", sa.DateTime(timezone=True)),
+        sa.column("updated_at", sa.DateTime(timezone=True)),
     )
 
     prog_table = sa.table(
         "incentive_programs",
-        sa.column("id", sa.String),
-        sa.column("jurisdiction_id", sa.String),
-        sa.column("source_document_id", sa.String),
+        sa.column("id", postgresql.UUID(as_uuid=True)),
+        sa.column("jurisdiction_id", postgresql.UUID(as_uuid=True)),
+        sa.column("source_document_id", postgresql.UUID(as_uuid=True)),
         sa.column("name", sa.String),
         sa.column("slug", sa.String),
         sa.column("program_type", sa.String),
@@ -739,7 +739,7 @@ def upgrade() -> None:
         sa.column("annual_cap_local", sa.Numeric),
         sa.column("fixed_grant_amount_usd", sa.Numeric),
         sa.column("requires_cultural_test", sa.Boolean),
-        sa.column("cultural_test_id", sa.String),
+        sa.column("cultural_test_id", postgresql.UUID(as_uuid=True)),
         sa.column("requires_local_entity", sa.Boolean),
         sa.column("effective_from", sa.String),
         sa.column("effective_until", sa.String),
@@ -748,28 +748,28 @@ def upgrade() -> None:
         sa.column("authority_url", sa.String),
         sa.column("last_verified_date", sa.String),
         sa.column("notes", sa.Text),
-        sa.column("created_at", sa.String),
-        sa.column("updated_at", sa.String),
+        sa.column("created_at", sa.DateTime(timezone=True)),
+        sa.column("updated_at", sa.DateTime(timezone=True)),
     )
 
     qsc_table = sa.table(
         "qualifying_spend_categories",
-        sa.column("id", sa.String),
-        sa.column("program_id", sa.String),
+        sa.column("id", postgresql.UUID(as_uuid=True)),
+        sa.column("program_id", postgresql.UUID(as_uuid=True)),
         sa.column("spend_category", sa.String),
         sa.column("qualifies", sa.Boolean),
         sa.column("jurisdiction_spend_only", sa.Boolean),
         sa.column("notes", sa.Text),
         sa.column("confidence_tier", sa.String),
-        sa.column("created_at", sa.String),
-        sa.column("updated_at", sa.String),
+        sa.column("created_at", sa.DateTime(timezone=True)),
+        sa.column("updated_at", sa.DateTime(timezone=True)),
     )
 
     rule_table = sa.table(
         "incentive_rules",
-        sa.column("id", sa.String),
-        sa.column("program_id", sa.String),
-        sa.column("source_document_id", sa.String),
+        sa.column("id", postgresql.UUID(as_uuid=True)),
+        sa.column("program_id", postgresql.UUID(as_uuid=True)),
+        sa.column("source_document_id", postgresql.UUID(as_uuid=True)),
         sa.column("rule_type", sa.String),
         sa.column("threshold_numeric", sa.Numeric),
         sa.column("threshold_text", sa.String),
@@ -779,14 +779,14 @@ def upgrade() -> None:
         sa.column("source_excerpt", sa.Text),
         sa.column("statutory_reference", sa.String),
         sa.column("confidence_tier", sa.String),
-        sa.column("created_at", sa.String),
-        sa.column("updated_at", sa.String),
+        sa.column("created_at", sa.DateTime(timezone=True)),
+        sa.column("updated_at", sa.DateTime(timezone=True)),
     )
 
     uplift_table = sa.table(
         "program_uplifts",
-        sa.column("id", sa.String),
-        sa.column("program_id", sa.String),
+        sa.column("id", postgresql.UUID(as_uuid=True)),
+        sa.column("program_id", postgresql.UUID(as_uuid=True)),
         sa.column("name", sa.String),
         sa.column("additional_rate", sa.Numeric),
         sa.column("applies_to", sa.String),
@@ -795,8 +795,8 @@ def upgrade() -> None:
         sa.column("condition_text", sa.String),
         sa.column("is_stackable_with_other_uplifts", sa.Boolean),
         sa.column("confidence_tier", sa.String),
-        sa.column("created_at", sa.String),
-        sa.column("updated_at", sa.String),
+        sa.column("created_at", sa.DateTime(timezone=True)),
+        sa.column("updated_at", sa.DateTime(timezone=True)),
     )
 
     op.bulk_insert(jur_table, JURISDICTIONS)

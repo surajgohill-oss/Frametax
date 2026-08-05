@@ -863,26 +863,30 @@ def upgrade() -> None:
         existing = conn.execute(
             sa.text(
                 "SELECT id FROM incentive_programs WHERE jurisdiction_id = :jid AND "
-                "LOWER(program_name) = :name LIMIT 1"
+                "LOWER(name) = :name LIMIT 1"
             ),
             {"jid": jur_id, "name": prog["program_name"].lower()},
         ).fetchone()
         if existing:
             prog_id = existing[0]
         else:
+            slug = prog["program_name"].lower().replace(" ", "_").replace("-", "_").replace("'", "").replace("—", "_")
             result = conn.execute(
                 sa.text(
                     """
                     INSERT INTO incentive_programs
-                        (jurisdiction_id, program_name, program_type, base_rate, notes, confidence_tier)
+                        (id, jurisdiction_id, name, slug, program_type, credit_basis,
+                         base_rate, notes, confidence_tier, created_at, updated_at)
                     VALUES
-                        (:jid, :name, :ptype, :base_rate, :notes, 'DISCOVERY')
+                        (gen_random_uuid(), :jid, :name, :slug, :ptype, 'qualifying_spend',
+                         :base_rate, :notes, 'DISCOVERY', now(), now())
                     RETURNING id
                     """
                 ),
                 {
                     "jid": jur_id,
                     "name": prog["program_name"],
+                    "slug": slug,
                     "ptype": prog["program_type"],
                     "base_rate": prog.get("base_rate"),
                     "notes": prog.get("notes"),
@@ -914,7 +918,7 @@ def upgrade() -> None:
     for frag, econ in _ECON_BY_NAME_FRAGMENT:
         prog_row = conn.execute(
             sa.text(
-                "SELECT id FROM incentive_programs WHERE LOWER(program_name) LIKE :frag LIMIT 1"
+                "SELECT id FROM incentive_programs WHERE LOWER(name) LIKE :frag LIMIT 1"
             ),
             {"frag": f"%{frag.lower()}%"},
         ).fetchone()
@@ -986,7 +990,7 @@ def downgrade() -> None:
     for prog in _BROADCASTER_PROGRAMS:
         conn.execute(
             sa.text(
-                "DELETE FROM incentive_programs WHERE LOWER(program_name) = :name"
+                "DELETE FROM incentive_programs WHERE LOWER(name) = :name"
             ),
             {"name": prog["program_name"].lower()},
         )

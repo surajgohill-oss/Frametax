@@ -222,7 +222,8 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     ids = [d["id"] for d in SOURCE_DOCS]
-    op.execute(
+    conn = op.get_bind()
+    conn.execute(
         sa.text("DELETE FROM source_documents WHERE id IN :ids").bindparams(
             sa.bindparam("ids", expanding=True)
         ),

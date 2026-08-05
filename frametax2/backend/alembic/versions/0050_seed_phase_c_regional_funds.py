@@ -235,40 +235,49 @@ def upgrade() -> None:
         conn.execute(
             sa.text(
                 """
-                INSERT INTO jurisdictions (code, name, region, country_code)
-                VALUES (:code, :name, :region, :country_code)
-                ON CONFLICT (code) DO NOTHING
+                INSERT INTO jurisdictions
+                    (id, code, name, level, currency_code, country_code,
+                     is_active, created_at, updated_at)
+                SELECT gen_random_uuid(), :code, :name, 'region', 'EUR', :country_code,
+                    true, now(), now()
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM jurisdictions WHERE code = :code ::varchar
+                )
                 """
             ),
-            j,
+            {"code": j["code"], "name": j["name"], "country_code": j["country_code"]},
         )
 
     # 2. Insert incentive_programs and capture IDs
     program_ids: dict[str, object] = {}
     for p in _PROGRAMS:
+        slug = p["program_name"].lower().replace(" ", "_").replace("-", "_").replace("'", "").replace("é", "e")
         row = conn.execute(
             sa.text(
                 """
                 INSERT INTO incentive_programs
-                    (jurisdiction_code, program_name, program_type, base_rate,
-                     description, confidence_tier)
-                VALUES
-                    (:jurisdiction_code, :program_name, :program_type, :base_rate,
-                     :description, :confidence_tier)
-                ON CONFLICT DO NOTHING
+                    (id, jurisdiction_id, name, slug, program_type, credit_basis,
+                     base_rate, notes, confidence_tier, created_at, updated_at)
+                SELECT gen_random_uuid(),
+                    (SELECT id FROM jurisdictions WHERE code = :jurisdiction_code ::varchar LIMIT 1),
+                    :program_name, :slug, :program_type, 'qualifying_spend',
+                    :base_rate, :description, :confidence_tier, now(), now()
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM incentive_programs WHERE slug = :slug ::varchar
+                )
                 RETURNING id
                 """
             ),
-            p,
+            {**p, "slug": slug},
         ).fetchone()
         if row:
             program_ids[p["program_name"]] = row[0]
         else:
             row2 = conn.execute(
                 sa.text(
-                    "SELECT id FROM incentive_programs WHERE program_name = :name"
+                    "SELECT id FROM incentive_programs WHERE slug = :slug"
                 ),
-                {"name": p["program_name"]},
+                {"slug": slug},
             ).fetchone()
             if row2:
                 program_ids[p["program_name"]] = row2[0]
@@ -304,7 +313,7 @@ def downgrade() -> None:
     for p in _PROGRAMS:
         conn.execute(
             sa.text(
-                "DELETE FROM incentive_programs WHERE program_name = :name"
+                "DELETE FROM incentive_programs WHERE name = :name"
             ),
             {"name": p["program_name"]},
         )

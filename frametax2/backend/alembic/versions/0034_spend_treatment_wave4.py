@@ -89,7 +89,7 @@ def upgrade() -> None:
                       AND NOT EXISTS (
                           SELECT 1 FROM program_spend_treatments t
                           WHERE t.program_id = p.id
-                            AND t.labor_type = :labor_type
+                            AND t.labor_type = :labor_type ::varchar
                       )
                     LIMIT 1
                 """),

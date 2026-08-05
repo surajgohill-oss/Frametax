@@ -131,7 +131,7 @@ class ProgramUplift(Base):
     applies_to: Mapped[str] = mapped_column(String(50), nullable=False)
     # "same_qualifying_spend" | "vfx_spend_only" | "music_spend_only"
     condition_type: Mapped[str] = mapped_column(String(50), nullable=False)
-    condition_threshold: Mapped[float | None] = mapped_column(Numeric(10, 6))
+    condition_threshold: Mapped[float | None] = mapped_column(Numeric(18, 2))
     condition_text: Mapped[str | None] = mapped_column(String(512))
     is_stackable_with_other_uplifts: Mapped[bool] = mapped_column(Boolean, default=True)
     confidence_tier: Mapped[ConfidenceTier] = mapped_column(

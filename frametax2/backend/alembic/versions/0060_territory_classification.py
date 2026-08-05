@@ -727,11 +727,15 @@ def upgrade() -> None:
     for code, name, region, country_code in _JURS:
         conn.execute(
             sa.text("""
-                INSERT INTO jurisdictions (code, name, region, country_code)
-                VALUES (:code, :name, :region, :country_code)
-                ON CONFLICT (code) DO NOTHING
+                INSERT INTO jurisdictions (id, code, name, level, currency_code, country_code,
+                    is_active, created_at, updated_at)
+                SELECT gen_random_uuid(), :code, :name, 'country', 'USD', :country_code,
+                    true, now(), now()
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM jurisdictions WHERE code = :code ::varchar
+                )
             """),
-            {"code": code, "name": name, "region": region, "country_code": country_code},
+            {"code": code, "name": name, "country_code": country_code},
         )
 
     # ------------------------------------------------------------------
@@ -740,26 +744,29 @@ def upgrade() -> None:
     for row in _NEW_PROGRAMS:
         (jcode, jname, pname, slug, ptype, brate, mrate, refund, transfer,
          mspend, acap, cult, local_ent, conf, src_title, src_url) = row
+        brate = brate / 100.0 if brate is not None else None
+        mrate = mrate / 100.0 if mrate is not None else None
         conn.execute(
             sa.text("""
                 INSERT INTO incentive_programs
-                    (jurisdiction_code, jurisdiction_name, program_name, program_type,
+                    (id, jurisdiction_id, name, slug, program_type, credit_basis,
                      base_rate, max_rate, is_refundable, is_transferable,
-                     min_spend_usd, annual_cap_usd, requires_cultural_test,
-                     requires_local_entity, confidence_tier)
-                VALUES
-                    (:jcode, :jname, :pname, :ptype,
-                     :brate, :mrate, :refund, :transfer,
-                     :mspend, :acap, :cult, :local_ent, :conf)
-                ON CONFLICT (jurisdiction_code, program_name) DO UPDATE SET
-                    program_type     = EXCLUDED.program_type,
-                    base_rate        = EXCLUDED.base_rate,
-                    confidence_tier  = EXCLUDED.confidence_tier
+                     annual_cap_local, requires_cultural_test,
+                     requires_local_entity, confidence_tier, created_at, updated_at)
+                SELECT gen_random_uuid(),
+                    (SELECT id FROM jurisdictions WHERE code = :jcode ::varchar LIMIT 1),
+                    :pname, :slug, :ptype, 'qualifying_spend',
+                    :brate, :mrate, :refund, :transfer,
+                    :acap, :cult, :local_ent, :conf, now(), now()
+                WHERE (SELECT id FROM jurisdictions WHERE code = :jcode ::varchar LIMIT 1) IS NOT NULL
+                  AND NOT EXISTS (
+                    SELECT 1 FROM incentive_programs WHERE slug = :slug ::varchar
+                )
             """),
             {
-                "jcode": jcode, "jname": jname, "pname": pname, "ptype": ptype,
+                "jcode": jcode, "pname": pname, "slug": slug, "ptype": ptype,
                 "brate": brate, "mrate": mrate, "refund": refund, "transfer": transfer,
-                "mspend": mspend, "acap": acap, "cult": cult,
+                "acap": acap, "cult": cult,
                 "local_ent": local_ent, "conf": conf,
             },
         )
@@ -837,7 +844,7 @@ def upgrade() -> None:
                     WHERE p.slug = :slug
                       AND NOT EXISTS (
                           SELECT 1 FROM program_spend_treatments t
-                          WHERE t.program_id = p.id AND t.labor_type = :labor_type
+                          WHERE t.program_id = p.id AND t.labor_type = :labor_type ::varchar
                       )
                     LIMIT 1
                 """),
@@ -858,21 +865,19 @@ def upgrade() -> None:
         conn.execute(
             sa.text("""
                 INSERT INTO fund_economics
-                    (program_slug, classification, is_repayable, is_recoupable,
-                     has_equity_participation, is_soft_money, is_government_assistance,
+                    (program_id, is_repayable, is_recoupable,
+                     has_equity_participation, stackable_with_incentives,
                      typical_max_award_usd, notes)
-                VALUES
-                    (:slug, :cls, :repay, :recoup, :equity, :soft, :govt, :maxusd, :notes)
-                ON CONFLICT (program_slug) DO UPDATE SET
-                    classification            = EXCLUDED.classification,
-                    is_repayable              = EXCLUDED.is_repayable,
-                    is_government_assistance  = EXCLUDED.is_government_assistance,
-                    typical_max_award_usd     = EXCLUDED.typical_max_award_usd,
-                    notes                     = EXCLUDED.notes
+                SELECT ip.id, :repay, :recoup, :equity, :govt, :maxusd, :notes
+                FROM incentive_programs ip
+                WHERE ip.slug = :slug ::varchar
+                  AND NOT EXISTS (
+                      SELECT 1 FROM fund_economics fe WHERE fe.program_id = ip.id
+                  )
             """),
             {
-                "slug": slug, "cls": classif, "repay": repayable, "recoup": recoup,
-                "equity": equity, "soft": soft, "govt": govt,
+                "slug": slug, "repay": repayable, "recoup": recoup,
+                "equity": equity, "govt": not govt,
                 "maxusd": max_usd, "notes": notes_txt,
             },
         )

@@ -16,6 +16,7 @@ Revises: 0006
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timezone
 from typing import Union
 
 import sqlalchemy as sa
@@ -26,6 +27,8 @@ revision: str = "0007"
 down_revision: Union[str, None] = "0006"
 branch_labels = None
 depends_on = None
+
+NOW = datetime.now(timezone.utc).isoformat()
 
 # ---------------------------------------------------------------------------
 # Stable UUIDs (deterministic for repeatable migrations)
@@ -71,9 +74,9 @@ def upgrade() -> None:
         sa.text("""
             INSERT INTO source_documents
                 (id, title, authority_name, source_url, document_type,
-                 confidence_tier, notes)
+                 confidence_tier, notes, created_at, updated_at)
             VALUES
-                (:id, :title, :auth, :url, :dtype, :tier, :notes)
+                (:id, :title, :auth, :url, :dtype, :tier, :notes, :created_at, :updated_at)
             ON CONFLICT (id) DO NOTHING
         """),
         {
@@ -85,6 +88,7 @@ def upgrade() -> None:
             "tier":  "PARSED",
             "notes": "PARSED — sourced from public program summary pages; "
                      "not independently verified against enabling legislation",
+            "created_at": NOW, "updated_at": NOW,
         },
     )
 
@@ -98,13 +102,15 @@ def upgrade() -> None:
                  program_type, credit_basis, base_rate, max_rate,
                  is_refundable, is_transferable, is_competitive,
                  fixed_grant_amount_usd, requires_local_entity,
-                 confidence_tier, review_status, authority_url, notes)
+                 confidence_tier, review_status, authority_url, notes,
+                 created_at, updated_at)
             VALUES
                 (:id, :jur, :src, :name, :slug,
                  :ptype, :cbasis, :brate, :mrate,
                  :refund, :transfer, :competitive,
                  :grant_amt, :local_entity,
-                 :tier, :rstatus, :url, :notes)
+                 :tier, :rstatus, :url, :notes,
+                 :created_at, :updated_at)
             ON CONFLICT (id) DO NOTHING
         """),
         {
@@ -131,6 +137,7 @@ def upgrade() -> None:
                 "vary by project. Grant must be deducted from qualifying expenditure base "
                 "for CPTC and OFTTC per CRA T4283 and OMDC guidelines."
             ),
+            "created_at": NOW, "updated_at": NOW,
         },
     )
 
@@ -141,9 +148,11 @@ def upgrade() -> None:
         sa.text("""
             INSERT INTO legal_stacking_rules
                 (id, program_a_id, program_b_id, rule_type, condition_text,
-                 statutory_reference, confidence_tier, notes)
+                 statutory_reference, confidence_tier, notes,
+                 created_at, updated_at)
             VALUES
-                (:id, :a, :b, :rtype, :cond, :stat, :tier, :notes)
+                (:id, :a, :b, :rtype, :cond, :stat, :tier, :notes,
+                 :created_at, :updated_at)
             ON CONFLICT (id) DO NOTHING
         """),
         [
@@ -159,6 +168,7 @@ def upgrade() -> None:
                 "stat":  "Ontario Reg 37/09 under Corporations Tax Act; OMDC OFTTC guidelines",
                 "tier":  "PARSED",
                 "notes": "spend_reduction: NOHFC grant reduces OFTTC qualifying spend basis",
+                "created_at": NOW, "updated_at": NOW,
             },
             {
                 "id":    STACKING_RULE_NOHFC_CPTC_ID,
@@ -172,6 +182,7 @@ def upgrade() -> None:
                 "stat":  "Income Tax Act § 125.4(1) 'assistance'; CRA T4283 Guide",
                 "tier":  "PARSED",
                 "notes": "spend_reduction: NOHFC grant reduces CPTC qualifying labour basis",
+                "created_at": NOW, "updated_at": NOW,
             },
         ],
     )

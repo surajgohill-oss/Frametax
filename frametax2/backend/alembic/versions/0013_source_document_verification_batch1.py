@@ -62,8 +62,9 @@ DOC_CY_ID = _did("doc:cy_cipa_film_production_rebate")
 
 
 def upgrade() -> None:
+    conn = op.get_bind()
     # MU — official URL confirmed; max rate confirmed 40%; foreign crew cap confirmed
-    op.execute(
+    conn.execute(
         sa.text("""
             UPDATE source_documents SET
                 source_url    = :url,
@@ -99,7 +100,7 @@ def upgrade() -> None:
     )
 
     # MT — specific programme page URL confirmed; 2024 updated guidelines noted
-    op.execute(
+    conn.execute(
         sa.text("""
             UPDATE source_documents SET
                 source_url    = :url,
@@ -132,7 +133,7 @@ def upgrade() -> None:
     )
 
     # GR — Enterprise Greece audiovisual-specific URL confirmed; EKOME confirmed
-    op.execute(
+    conn.execute(
         sa.text("""
             UPDATE source_documents SET
                 source_url    = :url,
@@ -165,7 +166,7 @@ def upgrade() -> None:
     )
 
     # CY — no official source found; source_url cleared; notes updated
-    op.execute(
+    conn.execute(
         sa.text("""
             UPDATE source_documents SET
                 source_url    = NULL,
@@ -194,8 +195,9 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    conn = op.get_bind()
     # Restore to pre-0013 state (0010 original values)
-    op.execute(
+    conn.execute(
         sa.text("UPDATE source_documents SET source_url = NULL, authority_name = :auth, notes = :notes, updated_at = :now WHERE id = :id"),
         {
             "id": DOC_MU_ID,
@@ -204,7 +206,7 @@ def downgrade() -> None:
             "now": NOW,
         },
     )
-    op.execute(
+    conn.execute(
         sa.text("UPDATE source_documents SET source_url = :url, notes = :notes, updated_at = :now WHERE id = :id"),
         {
             "id": DOC_MT_ID,
@@ -213,7 +215,7 @@ def downgrade() -> None:
             "now": NOW,
         },
     )
-    op.execute(
+    conn.execute(
         sa.text("UPDATE source_documents SET source_url = :url, authority_name = :auth, notes = :notes, updated_at = :now WHERE id = :id"),
         {
             "id": DOC_GR_ID,
@@ -223,7 +225,7 @@ def downgrade() -> None:
             "now": NOW,
         },
     )
-    op.execute(
+    conn.execute(
         sa.text("UPDATE source_documents SET source_url = :url, notes = :notes, updated_at = :now WHERE id = :id"),
         {
             "id": DOC_CY_ID,

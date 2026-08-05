@@ -100,7 +100,7 @@ _QUALIFIES_CATEGORIES = [
 _UPSERT_SQL = sa.text("""
     UPDATE program_spend_treatments pst
        SET qualifies      = :qualifies,
-           notes          = :note,
+           treatment_notes = :note,
            updated_at     = :now
       FROM incentive_programs ip
      WHERE ip.id        = pst.program_id
@@ -111,7 +111,7 @@ _UPSERT_SQL = sa.text("""
 _RESET_SQL = sa.text("""
     UPDATE program_spend_treatments pst
        SET qualifies      = NULL,
-           notes          = NULL,
+           treatment_notes = NULL,
            updated_at     = :now
       FROM incentive_programs ip
      WHERE ip.id        = pst.program_id

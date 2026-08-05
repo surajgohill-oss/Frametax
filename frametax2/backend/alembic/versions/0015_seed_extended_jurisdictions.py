@@ -389,12 +389,13 @@ def upgrade() -> None:
                 SELECT :id, NULL, :name, :code, :iso_code, :level,
                     :currency, :country_code, true, :now, :now
                 WHERE NOT EXISTS (
-                    SELECT 1 FROM jurisdictions WHERE code = :code
+                    SELECT 1 FROM jurisdictions WHERE code = :code_check
                 )
             """),
             {
                 "id": _uid(f"jur:{code}"), "name": name, "code": code, "iso_code": code,
                 "level": level, "currency": currency, "country_code": country_code, "now": NOW,
+                "code_check": code,
             },
         )
 
@@ -410,13 +411,13 @@ def upgrade() -> None:
                     (SELECT id FROM jurisdictions WHERE code = :parent_code LIMIT 1),
                     :name, :code, :iso_code, :level, :currency, :country_code, true, :now, :now
                 WHERE NOT EXISTS (
-                    SELECT 1 FROM jurisdictions WHERE code = :code
+                    SELECT 1 FROM jurisdictions WHERE code = :code_check
                 )
             """),
             {
                 "id": _uid(f"jur:{code}"), "name": name, "code": code, "iso_code": code,
                 "level": level, "currency": currency, "country_code": country_code,
-                "parent_code": parent_code, "now": NOW,
+                "parent_code": parent_code, "now": NOW, "code_check": code,
             },
         )
 
@@ -444,7 +445,7 @@ def upgrade() -> None:
                     :req_cultural, NULL, :req_local,
                     'DISCOVERY', 'pending', :authority_url, :notes, :now, :now
                 WHERE NOT EXISTS (
-                    SELECT 1 FROM incentive_programs WHERE slug = :slug
+                    SELECT 1 FROM incentive_programs WHERE slug = :slug_check
                 )
             """),
             {
@@ -456,6 +457,7 @@ def upgrade() -> None:
                 "annual_cap_local": annual_cap_local,
                 "req_cultural": req_cultural, "req_local": req_local,
                 "authority_url": authority_url, "notes": notes, "now": NOW,
+                "slug_check": slug,
             },
         )
 

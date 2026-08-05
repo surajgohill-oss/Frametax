@@ -286,7 +286,7 @@ def upgrade() -> None:
         fragment = rec["program_name_fragment"]
         row = conn.execute(
             sa.text(
-                "SELECT id FROM incentive_programs WHERE LOWER(program_name) LIKE :frag LIMIT 1"
+                "SELECT id FROM incentive_programs WHERE LOWER(name) LIKE :frag LIMIT 1"
             ),
             {"frag": f"%{fragment}%"},
         ).fetchone()
@@ -342,7 +342,7 @@ def downgrade() -> None:
         fragment = rec["program_name_fragment"]
         row = conn.execute(
             sa.text(
-                "SELECT id FROM incentive_programs WHERE LOWER(program_name) LIKE :frag LIMIT 1"
+                "SELECT id FROM incentive_programs WHERE LOWER(name) LIKE :frag LIMIT 1"
             ),
             {"frag": f"%{fragment}%"},
         ).fetchone()

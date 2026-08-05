@@ -139,13 +139,15 @@ def upgrade() -> None:
             sa.text("""
                 INSERT INTO jurisdictions (
                     id, code, name, level, currency_code,
-                    country_code, parent_code, created_at, updated_at
+                    country_code, parent_id, created_at, updated_at
                 )
                 SELECT
                     :id, :code, :name, :level, :currency,
-                    :country_code, :parent_code, :now, :now
+                    :country_code,
+                    (SELECT id FROM jurisdictions WHERE code = :parent_code ::varchar LIMIT 1),
+                    :now, :now
                 WHERE NOT EXISTS (
-                    SELECT 1 FROM jurisdictions WHERE code = :code
+                    SELECT 1 FROM jurisdictions WHERE code = :code ::varchar
                 )
             """),
             {
@@ -179,7 +181,7 @@ def upgrade() -> None:
                 FROM jurisdictions j
                 WHERE j.code = :jur_code
                   AND NOT EXISTS (
-                      SELECT 1 FROM incentive_programs p WHERE p.slug = :slug
+                      SELECT 1 FROM incentive_programs p WHERE p.slug = :slug ::varchar
                   )
                 LIMIT 1
             """),

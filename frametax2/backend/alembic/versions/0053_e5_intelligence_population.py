@@ -296,7 +296,7 @@ def upgrade() -> None:
     for frag, updates in _FUND_ECON_NOTES:
         prog_row = conn.execute(
             sa.text(
-                "SELECT id FROM incentive_programs WHERE LOWER(program_name) LIKE :frag LIMIT 1"
+                "SELECT id FROM incentive_programs WHERE LOWER(name) LIKE :frag LIMIT 1"
             ),
             {"frag": f"%{frag.lower()}%"},
         ).fetchone()
@@ -347,7 +347,7 @@ def upgrade() -> None:
     def find_pid(fragment: str) -> object | None:
         row = conn.execute(
             sa.text(
-                "SELECT id FROM incentive_programs WHERE LOWER(program_name) LIKE :frag LIMIT 1"
+                "SELECT id FROM incentive_programs WHERE LOWER(name) LIKE :frag LIMIT 1"
             ),
             {"frag": f"%{fragment.lower()}%"},
         ).fetchone()
@@ -362,9 +362,11 @@ def upgrade() -> None:
             sa.text(
                 """
                 INSERT INTO legal_stacking_rules
-                    (program_a_id, program_b_id, rule_type, condition_text, confidence_tier)
+                    (id, program_a_id, program_b_id, rule_type, condition_text, confidence_tier,
+                     created_at, updated_at)
                 VALUES
-                    (:a, :b, :rule_type, :condition_text, 'PARSED')
+                    (gen_random_uuid(), :a, :b, :rule_type, :condition_text, 'PARSED',
+                     now(), now())
                 ON CONFLICT DO NOTHING
                 """
             ),
@@ -378,7 +380,7 @@ def downgrade() -> None:
     def find_pid(fragment: str) -> object | None:
         row = conn.execute(
             sa.text(
-                "SELECT id FROM incentive_programs WHERE LOWER(program_name) LIKE :frag LIMIT 1"
+                "SELECT id FROM incentive_programs WHERE LOWER(name) LIKE :frag LIMIT 1"
             ),
             {"frag": f"%{fragment.lower()}%"},
         ).fetchone()

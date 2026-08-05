@@ -124,26 +124,28 @@ def upgrade() -> None:
     for row in _NEW_PROGRAMS:
         (jcode, jname, pname, ptype, brate, mrate, refund, transfer,
          mspend, acap, cult_test, local_ent, conf) = row
+        slug = pname.lower().replace(" ", "_").replace("-", "_").replace("/", "_").replace("(", "").replace(")", "").replace(",", "")
         conn.execute(text("""
             INSERT INTO incentive_programs
-                (jurisdiction_code, jurisdiction_name, program_name, program_type,
+                (id, jurisdiction_id, name, slug, program_type, credit_basis,
                  base_rate, max_rate, is_refundable, is_transferable,
-                 min_spend_usd, annual_cap_usd, requires_cultural_test,
-                 requires_local_entity, confidence_tier)
-            VALUES
-                (:jcode, :jname, :pname, :ptype,
-                 :brate, :mrate, :refund, :transfer,
-                 :mspend, :acap, :cult, :local_ent, :conf)
-            ON CONFLICT (jurisdiction_code, program_name) DO UPDATE SET
-                program_type = EXCLUDED.program_type,
-                base_rate = EXCLUDED.base_rate,
-                max_rate = EXCLUDED.max_rate,
-                is_refundable = EXCLUDED.is_refundable,
-                confidence_tier = EXCLUDED.confidence_tier
+                 annual_cap_local, requires_cultural_test,
+                 requires_local_entity, confidence_tier, created_at, updated_at)
+            SELECT gen_random_uuid(),
+                (SELECT id FROM jurisdictions WHERE code = :jcode ::varchar LIMIT 1),
+                :pname, :slug, :ptype, 'qualifying_spend',
+                :brate, :mrate, :refund, :transfer,
+                :acap, :cult, :local_ent, :conf, now(), now()
+            WHERE (SELECT id FROM jurisdictions WHERE code = :jcode ::varchar LIMIT 1) IS NOT NULL
+              AND NOT EXISTS (
+                SELECT 1 FROM incentive_programs WHERE slug = :slug ::varchar
+            )
         """), {
-            "jcode": jcode, "jname": jname, "pname": pname, "ptype": ptype,
-            "brate": brate, "mrate": mrate, "refund": refund, "transfer": transfer,
-            "mspend": mspend, "acap": acap, "cult": cult_test,
+            "jcode": jcode, "pname": pname, "slug": slug, "ptype": ptype,
+            "brate": brate / 100.0 if brate is not None else None,
+            "mrate": mrate / 100.0 if mrate is not None else None,
+            "refund": refund, "transfer": transfer,
+            "acap": acap, "cult": cult_test,
             "local_ent": local_ent, "conf": conf,
         })
 
@@ -329,20 +331,18 @@ def upgrade() -> None:
         (slug, classif, repayable, recoup, equity, soft, govt_assist, max_usd, notes_txt) = row
         conn.execute(text("""
             INSERT INTO fund_economics
-                (program_slug, classification, is_repayable, is_recoupable,
-                 has_equity_participation, is_soft_money, is_government_assistance,
+                (program_id, is_repayable, is_recoupable,
+                 has_equity_participation, stackable_with_incentives,
                  typical_max_award_usd, notes)
-            VALUES
-                (:slug, :cls, :repay, :recoup, :equity, :soft, :govt, :maxusd, :notes)
-            ON CONFLICT (program_slug) DO UPDATE SET
-                classification = EXCLUDED.classification,
-                is_repayable = EXCLUDED.is_repayable,
-                is_government_assistance = EXCLUDED.is_government_assistance,
-                typical_max_award_usd = EXCLUDED.typical_max_award_usd,
-                notes = EXCLUDED.notes
+            SELECT ip.id, :repay, :recoup, :equity, :govt, :maxusd, :notes
+            FROM incentive_programs ip
+            WHERE ip.slug = :slug ::varchar
+              AND NOT EXISTS (
+                  SELECT 1 FROM fund_economics fe WHERE fe.program_id = ip.id
+              )
         """), {
-            "slug": slug, "cls": classif, "repay": repayable, "recoup": recoup,
-            "equity": equity, "soft": soft, "govt": govt_assist,
+            "slug": slug, "repay": repayable, "recoup": recoup,
+            "equity": equity, "govt": not govt_assist,
             "maxusd": max_usd, "notes": notes_txt,
         })
 

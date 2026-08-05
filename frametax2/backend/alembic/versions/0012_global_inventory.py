@@ -211,8 +211,9 @@ def upgrade() -> None:
     # ------------------------------------------------------------------
     import json
 
+    conn = op.get_bind()
     for (code, crew, equip, stage, loc, post, vfx, catering, travel, overrides) in BENCHMARKS:
-        op.execute(
+        conn.execute(
             sa.text("""
                 INSERT INTO local_cost_benchmarks (
                     id, jurisdiction_id,
@@ -253,9 +254,10 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    conn = op.get_bind()
     # Remove benchmarks by code lookup
     for (code, *_) in BENCHMARKS:
-        op.execute(
+        conn.execute(
             sa.text("""
                 DELETE FROM local_cost_benchmarks
                 WHERE jurisdiction_id = (
@@ -265,11 +267,11 @@ def downgrade() -> None:
             {"code": code},
         )
 
-    op.execute(
+    conn.execute(
         sa.text("DELETE FROM incentive_programs WHERE id IN (:au, :nz)"),
         {"au": AU_PROG_ID, "nz": NZ_PROG_ID},
     )
-    op.execute(
+    conn.execute(
         sa.text("DELETE FROM jurisdictions WHERE id IN (:au, :nz)"),
         {"au": AU_JUR_ID, "nz": NZ_JUR_ID},
     )

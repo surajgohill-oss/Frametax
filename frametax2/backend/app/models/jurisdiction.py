@@ -22,7 +22,7 @@ class Jurisdiction(Base):
     iso_code: Mapped[str | None] = mapped_column(String(20), unique=True)
     level: Mapped[JurisdictionLevel] = mapped_column(String(20), nullable=False, index=True)
     currency_code: Mapped[str] = mapped_column(String(10), nullable=False, default="USD")
-    country_code: Mapped[str] = mapped_column(String(5), nullable=False, index=True)
+    country_code: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
     # ISO 3166-1 alpha-2 of the containing country
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     notes: Mapped[str | None] = mapped_column(Text)
@@ -35,5 +35,5 @@ class Jurisdiction(Base):
     # Programs in this jurisdiction
     incentive_programs: Mapped[list["IncentiveProgram"]] = relationship(back_populates="jurisdiction")
     local_cost_benchmarks: Mapped[list["LocalCostBenchmark"]] = relationship(
-        back_populates="jurisdiction"
+        back_populates="jurisdiction", foreign_keys="LocalCostBenchmark.jurisdiction_id"
     )
