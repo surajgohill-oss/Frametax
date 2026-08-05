@@ -3,10 +3,11 @@ import { useLocation } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
-import { Money, compactScenarioIdentity, normalizeTrivialVariance } from "../../lib/format";
+import { Money, compactScenarioIdentity, normalizeTrivialVariance, flagEmoji } from "../../lib/format";
 import { useAppState } from "../../state/AppState";
 import Globe3D from "../../components/Globe3D";
 import { buildGlobeView, structureTier, activeStructure } from "../../lib/globeData";
+import { buildFxItems } from "../../lib/todayCompute";
 import QuestionStack from "../../components/QuestionStack";
 import RecommendationsList from "../../components/RecommendationsList";
 import EconomicsTrace from "../../components/EconomicsTrace";
@@ -68,33 +69,38 @@ function visibleStructures(structures, rankById, swapId) {
 }
 const pct = (part, whole) => (whole ? Math.max(0, Math.min(100, (part / whole) * 100)) : 0);
 
-// Project FX strip — Workspace-only, subordinate to the mode row below it.
-// Exactly four positions: the two production-relevant reference currencies
-// (EUR, GBP) plus CAD, and a fourth slot that tracks whatever jurisdiction
-// currently leads (client-side leadingStructureId selection, never an
-// engine concept) — never a fifth/sixth currency, never a full local-
-// costing breakdown (that stays ENGINE-PENDING). Every rate is read
-// verbatim from economics.fx_horizons (the same real, sourced snapshot
-// table FXStrip.jsx already reads on Overview — no second FX calculation,
-// no live fetch, no fabricated number); a leader currency with no snapshot
-// entry renders as an honest "unavailable", never invented.
-const FX_FIXED_CODES = ["EUR", "CAD", "GBP"];
-function buildWorkspaceFxItems(economics, leadingStructure) {
+// Project FX strip — Workspace-only, same component family as Today's
+// original FX strip (flag + code, optional 12-month delta chip, both
+// quotation directions USD/{code} and {code}/USD, honest-unavailable
+// fallback) — reused visually and computationally, not redesigned.
+// Exactly four positions: the fixed EUR/CAD/GBP trio (via the SAME
+// buildFxItems() Today's strip used, unchanged) plus a fourth slot that
+// tracks whatever jurisdiction currently leads (client-side
+// leadingStructureId selection, never an engine concept) — never a
+// fifth/sixth currency, never a full local-costing breakdown (that stays
+// ENGINE-PENDING). Every rate is read verbatim from economics.fx_horizons;
+// a leader currency with no snapshot entry renders as an honest
+// "unavailable", never invented.
+function buildLeaderFxItem(economics, leadingStructure) {
   const horizons = economics?.fx_horizons || {};
   const jurisdictionCurrency = economics?.jurisdiction_currency || {};
   const leaderJurisdiction = leadingStructure?.primary_jurisdiction;
   const leaderIso2 = leaderJurisdiction ? leaderJurisdiction.split("-")[0].toUpperCase() : null;
-  const leaderCode = leaderIso2 ? jurisdictionCurrency[leaderIso2] : null;
-  const codes = [...FX_FIXED_CODES, leaderCode || "—"];
-  return codes.map((code, i) => {
-    const h = horizons[code];
-    return {
-      code,
-      isLeader: i === codes.length - 1,
-      available: !!(h && h.current != null),
-      current: h?.current ?? null,
-    };
-  });
+  const code = (leaderIso2 ? jurisdictionCurrency[leaderIso2] : null) || "—";
+  const h = horizons[code];
+  const flag = leaderJurisdiction ? flagEmoji(leaderJurisdiction) : null;
+  if (!h || h.current == null) {
+    return { code, flag, available: false, isLeader: true };
+  }
+  const deltaPct = h["12m"] != null ? ((h["12m"] - h.current) / h.current) * 100 : null;
+  // Same 5-decimal display precision buildFxItems() uses for the fixed
+  // three, so the leader cell never reads visually inconsistent with its
+  // siblings — reverse is still always 1/current, computed here, never a
+  // second stored constant.
+  return {
+    code, flag, isLeader: true, available: true,
+    current: Number(h.current.toFixed(5)), reverse: Number((1 / h.current).toFixed(5)), deltaPct,
+  };
 }
 
 function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, onSetLeading, onInspect, onCompare, onSelectSegment }) {
@@ -256,7 +262,7 @@ export default function Workspace() {
   const leadingStructure = activeStructure(allocated, leadingStructureId);
   const leadingId = leadingStructure?.structure_id ?? null;
   const { overflow, cols } = visibleStructures(allocated.structures, rankById, swapId);
-  const fxItems = buildWorkspaceFxItems(economics, leadingStructure);
+  const fxItems = [...buildFxItems(economics?.fx_horizons), buildLeaderFxItem(economics, leadingStructure)];
 
   // Collapsed-rail status dots — hot for any money-bearing / blocking item.
   const dots = [
@@ -287,19 +293,46 @@ export default function Workspace() {
     <div className="wsx-screen">
       {/* Project FX strip — immediately below the shared production tabs
           (rendered by ProjectHeader, outside this component) and
-          immediately above the Lanes/Map/Split mode row. Subordinate to
-          the mode row, never a banner — see .wsx-fxstrip in screens.css. */}
-      <div className="wsx-fxstrip">
-        {fxItems.map((it) => (
-          <div className={`wsx-fx-item ${it.isLeader ? "leader" : ""}`} key={`${it.code}-${it.isLeader ? "leader" : "fixed"}`}>
-            <span className="wsx-fx-code mono">{it.code}</span>
-            <span className={`wsx-fx-val mono ${it.available ? "" : "wsx-fx-unavailable"}`}>
-              {it.available ? it.current : "unavailable"}
-            </span>
-            {it.isLeader && <span className="wsx-fx-tag">Leading</span>}
-          </div>
-        ))}
-      </div>
+          immediately above the Lanes/Map/Split mode row. Same component
+          family as Today's original FX strip (flag + code, 12-month delta
+          chip, both quotation directions, honest-unavailable fallback) —
+          reused visually and structurally under a wsx- prefix since Today
+          no longer renders FX at all. */}
+      <section className="wsx-fxstrip">
+        <div className="wsx-fx-row">
+          {fxItems.map((it) => (
+            <div className={`wsx-fx-item ${it.isLeader ? "leader" : ""}`} key={`${it.code}-${it.isLeader ? "leader" : "fixed"}`}>
+              <div className="wsx-fx-head">
+                <span className="wsx-fx-flag" aria-hidden="true">{it.flag}</span>
+                <span className="wsx-fx-code">{it.code}</span>
+                {it.isLeader && <span className="wsx-fx-tag">Leading</span>}
+                {it.available && it.deltaPct != null && (
+                  <span className={`wsx-fx-delta ${it.deltaPct > 0 ? "up" : "down"}`} title={`12-month move on USD/${it.code}`}>
+                    {it.deltaPct > 0 ? "▲" : "▼"} {Math.abs(it.deltaPct).toFixed(1)}%
+                  </span>
+                )}
+              </div>
+              <div className="wsx-fx-rates">
+                <div className="wsx-fx-pair">
+                  <span className="l2">USD / {it.code}</span>
+                  <span className={`wsx-fx-val mono ${it.available ? "" : "wsx-fx-unavailable"}`}>
+                    {it.available ? it.current : "unavailable"}
+                  </span>
+                </div>
+                <div className="wsx-fx-pair">
+                  <span className="l2">{it.code} / USD</span>
+                  <span className={`wsx-fx-val mono ${it.available ? "" : "wsx-fx-unavailable"}`}>
+                    {it.available ? it.reverse : "unavailable"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="text-tertiary small wsx-fx-note">
+          Reference rates (ECB). Reverse pairs derive from the same rate; the optimizer prices at current rates, not forward movement.
+        </p>
+      </section>
 
       {/* Grid geometry matches the artifact: 48px | 1fr | 38px collapsed;
           left widens to 220px (stack) / 340px (Recs/Inputs); the right
@@ -361,13 +394,18 @@ export default function Workspace() {
           </aside>
         )}
 
-        {/* Station — card rack or globe. The Lanes/Map/Split selector is
-            centered over the scenario-comparison region it controls; the
-            Jurisdictions/Optimizer Overlay toggle is secondary to the Globe
-            itself and lives docked to the globe pane (see wsx-g-modetoggle
-            below), not here, so it never distorts this row's alignment. */}
+        {/* Station — card rack or globe. One horizontal control row:
+            Lanes/Map/Split stays centered over the scenario-comparison
+            region (a fixed left spacer column balances the right-hand
+            Other Scenarios column so the tabs never drift off-center
+            depending on whether Other Scenarios is present); Other
+            Scenarios sits at the right, same baseline, never a second
+            row. The Jurisdictions/Optimizer Overlay toggle is secondary
+            to the Globe itself and lives docked to the globe pane (see
+            wsx-g-modetoggle below), not here. */}
         <div className="wsx-station">
           <div className="wsx-station-head">
+            <div className="wsx-station-head-spacer" aria-hidden="true" />
             <div className="wsx-viewtabs">
               {MODES.map((m) => (
                 <button key={m.key} className={mode === m.key ? "active" : ""} onClick={() => setMode(m.key)}>
@@ -375,31 +413,28 @@ export default function Workspace() {
                 </button>
               ))}
             </div>
+            {/* Other Scenarios — navigates among structures the optimizer
+                already generated but that don't currently occupy a visible
+                lane; it swaps the last lane's contents, it never creates a
+                new structure and never reruns the optimizer. */}
+            {mode !== "map" && overflow.length > 0 ? (
+              <div className="wsx-other-scenarios">
+                <label htmlFor="wsx-swap">Other scenarios</label>
+                <select
+                  id="wsx-swap"
+                  className="field-select"
+                  value={swapId}
+                  onChange={(e) => setSwapId(e.target.value)}
+                >
+                  <option value="">— {(() => { const last = cols[cols.length - 1]; if (!last) return "—"; const { flags, name } = compactScenarioIdentity(last); return flags ? `${flags} ${name}` : name; })()} —</option>
+                  {overflow.map((s) => {
+                    const { flags, name } = compactScenarioIdentity(s);
+                    return <option key={s.structure_id} value={s.structure_id}>{flags ? `${flags} ${name}` : name}</option>;
+                  })}
+                </select>
+              </div>
+            ) : <div aria-hidden="true" />}
           </div>
-
-          {/* Other Scenarios — navigates among structures the optimizer
-              already generated but that don't currently occupy a visible
-              lane; it swaps the last lane's contents, it never creates a
-              new structure and never reruns the optimizer. Secondary to
-              the Lanes/Map/Split row above it, own row, still centered —
-              not the old right-aligned "Additional scenario" placement. */}
-          {mode !== "map" && overflow.length > 0 && (
-            <div className="wsx-other-scenarios">
-              <label htmlFor="wsx-swap">Other scenarios</label>
-              <select
-                id="wsx-swap"
-                className="field-select"
-                value={swapId}
-                onChange={(e) => setSwapId(e.target.value)}
-              >
-                <option value="">— {(() => { const last = cols[cols.length - 1]; if (!last) return "—"; const { flags, name } = compactScenarioIdentity(last); return flags ? `${flags} ${name}` : name; })()} —</option>
-                {overflow.map((s) => {
-                  const { flags, name } = compactScenarioIdentity(s);
-                  return <option key={s.structure_id} value={s.structure_id}>{flags ? `${flags} ${name}` : name}</option>;
-                })}
-              </select>
-            </div>
-          )}
 
           {mode === "lanes" && (
             <div className="wsx-rack">

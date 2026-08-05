@@ -907,17 +907,33 @@
 /* ================= Workspace — artifact rack (wsx-) ================= */
 .wsx-screen { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 /* Project FX strip — subordinate to the Lanes/Map/Split row below it, never
-   a banner: a single compact line, four positions (EUR, CAD, GBP, then
-   whichever currency the current Leading Structure carries). Every rate
-   is read verbatim from economics.fx_horizons; an unavailable leader
-   currency renders honestly rather than inventing a number. */
-.wsx-fxstrip { flex: none; display: flex; align-items: center; gap: 22px; padding: 8px 18px; border-bottom: 0.5px solid var(--hairline); background: var(--surface-1); }
-.wsx-fx-item { display: flex; align-items: baseline; gap: 6px; }
-.wsx-fx-code { font-size: 11.5px; font-weight: 650; letter-spacing: 0.03em; color: var(--text-tertiary); }
-.wsx-fx-val { font-size: 13px; color: var(--text-primary); }
-.wsx-fx-val.wsx-fx-unavailable { font-size: 11px; font-style: italic; color: var(--text-tertiary); }
+   a banner. Same component family as Today's original FX strip (see the
+   removed .tdy-fx-* rules in this file's history): flag + code identity
+   header with an optional 12-month delta chip, then both reciprocal rates
+   (USD/{code} and {code}/USD) stacked beneath — just compacted vertically
+   (tighter padding/gaps, no forward-curve chips) to fit a subordinate
+   Workspace strip rather than Today's full-page hero band. Every rate is
+   read verbatim from economics.fx_horizons; an unavailable currency (the
+   Leading structure's own, most commonly) renders honestly rather than
+   inventing a number. */
+.wsx-fxstrip { flex: none; padding: 8px 18px 6px; border-bottom: 0.5px solid var(--hairline); background: var(--surface-1); }
+.wsx-fx-row { display: flex; flex-wrap: wrap; align-items: stretch; }
+.wsx-fx-item { display: flex; flex-direction: column; gap: 4px; padding: 0 18px; border-left: 0.5px solid var(--hairline); }
+.wsx-fx-item:first-child { padding-left: 0; border-left: none; }
+.wsx-fx-head { display: flex; align-items: center; gap: 6px; }
+.wsx-fx-flag { font-size: 14px; line-height: 1; }
+.wsx-fx-code { font: 650 12px var(--font-sans); letter-spacing: 0.04em; color: var(--text-primary); }
 .wsx-fx-item.leader .wsx-fx-code { color: var(--oxblood); }
-.wsx-fx-tag { font: 600 9px var(--font-sans); text-transform: uppercase; letter-spacing: 0.06em; color: var(--oxblood); background: var(--oxblood-dim); border-radius: 3px; padding: 1px 5px; }
+.wsx-fx-delta { margin-left: auto; font: 600 10px var(--font-sans); }
+.wsx-fx-delta.up { color: var(--jade); }
+.wsx-fx-delta.down { color: var(--amber); }
+.wsx-fx-tag { font: 600 8.5px var(--font-sans); text-transform: uppercase; letter-spacing: 0.06em; color: var(--oxblood); background: var(--oxblood-dim); border-radius: 3px; padding: 1px 5px; }
+.wsx-fx-rates { display: flex; flex-direction: column; gap: 2px; }
+.wsx-fx-pair { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.wsx-fx-pair .l2 { font: 600 8.5px var(--font-mono); letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-tertiary); }
+.wsx-fx-val { font-size: 12.5px; color: var(--text-primary); }
+.wsx-fx-val.wsx-fx-unavailable { font-size: 10.5px; font-style: italic; color: var(--text-tertiary); }
+.wsx-fx-note { margin: 6px 0 0; line-height: 1.4; }
 /* Artifact geometry: 48px | 1fr | 38px, expanding the stack to 220px.
    The station scrolls rather than reflowing, so opening the stack never
    changes the card grid. Faint 96px graph-paper ground behind it. */
@@ -1001,18 +1017,21 @@
 .qs-hint { margin: 10px 6px 0; font-size: 10.5px; color: var(--text-tertiary); }
 
 .wsx-station { overflow: auto; position: relative; min-height: 0; display: flex; flex-direction: column; }
-/* Centered over the scenario-comparison region below it (the rack / split
-   columns), not pushed to the right — the mode selector belongs to that
-   region. The Jurisdictions/Optimizer Overlay toggle now lives docked to
-   the globe pane itself (.wsx-g-modetoggle) so it never distorts this. */
-.wsx-station-head { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 12px 18px 0; }
+/* One horizontal row: a fixed-width left spacer, the centered Lanes/Map/
+   Split selector, and Other Scenarios at the right — same baseline, never
+   two rows. The spacer column balances the right column's width so the
+   mode selector stays visually centered over the scenario region whether
+   or not Other Scenarios is present (mode==="map", or no overflow). The
+   Jurisdictions/Optimizer Overlay toggle lives docked to the globe pane
+   itself (.wsx-g-modetoggle), never here, so it never distorts this row. */
+.wsx-station-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 14px; padding: 12px 18px 0; }
+.wsx-station-head-spacer { min-width: 0; }
 /* Other Scenarios — navigation among EXISTING optimizer-generated
    structures beyond the visible lanes, never a scenario-creation control.
-   Its own row below the Lanes/Map/Split selector (never the same row —
-   that was the rejected "Additional scenario" placement), still centered,
-   visually secondary (smaller, quieter) to the mode selector above it. */
-.wsx-other-scenarios { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 18px 0; }
-.wsx-other-scenarios label { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; }
+   Right column of the shared control row, same baseline as Lanes/Map/
+   Split — never a second row (that was the rejected placement). */
+.wsx-other-scenarios { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.wsx-other-scenarios label { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
 .wsx-viewtabs { display: inline-flex; align-items: center; height: 30px; box-sizing: border-box; background: var(--surface-2); border: 0.5px solid var(--hairline); border-radius: 7px; padding: 2px; gap: 1px; }
 .wsx-viewtabs button { height: 26px; box-sizing: border-box; display: inline-flex; align-items: center; padding: 0 12px; font: 500 12px var(--font-sans); letter-spacing: 0.02em; text-transform: uppercase; color: var(--text-secondary); border-radius: 5px; }
 .wsx-viewtabs button.active { background: var(--surface-1); color: var(--text-primary); box-shadow: var(--shadow-sm); }
