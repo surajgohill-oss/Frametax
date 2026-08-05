@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useCineGlobe } from "../lib/useCineGlobe";
 import { useProjectStatus } from "../lib/useProjectStatus";
@@ -40,6 +41,47 @@ export default function ProjectHeader() {
   const productionId = production?.production_id;
   const { status, setStatus, statuses, meta } = useProjectStatus(productionId);
 
+  // ROOT CAUSE (traced live, not assumed): `.ph-hero` is `overflow: hidden`
+  // — required for the Hero art/scrim treatment, frozen, never touched —
+  // which clips ANY descendant that visually extends past the Hero's
+  // 242px box, regardless of the descendant's own position:absolute/fixed.
+  // The stage dropdown's native <details>/<summary> menu lived inside the
+  // Hero and needed ~270px, so it opened correctly (verified: `open`
+  // attribute set, state/persistence all fine) but was invisible — clipped
+  // by the Hero, not broken logic. Fixed by portaling the menu to
+  // document.body with position:fixed computed from the trigger's own
+  // on-screen rect, which escapes the Hero's clip entirely. Nothing about
+  // the Hero itself changes.
+  const [stageOpen, setStageOpen] = useState(false);
+  const [stageMenuPos, setStageMenuPos] = useState({ top: 0, left: 0 });
+  const stageTriggerRef = useRef(null);
+
+  useEffect(() => {
+    if (!stageOpen) return;
+    function handleOutside(e) {
+      if (stageTriggerRef.current?.contains(e.target)) return;
+      if (e.target.closest?.(".ph-stage-menu")) return;
+      setStageOpen(false);
+    }
+    function handleKey(e) {
+      if (e.key === "Escape") setStageOpen(false);
+    }
+    document.addEventListener("mousedown", handleOutside);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [stageOpen]);
+
+  function toggleStageMenu() {
+    if (!stageOpen && stageTriggerRef.current) {
+      const r = stageTriggerRef.current.getBoundingClientRect();
+      setStageMenuPos({ top: r.bottom + 6, left: r.left });
+    }
+    setStageOpen((v) => !v);
+  }
+
   const openGrey = data?.legal?.grey_areas_current?.filter((g) => g.status === "open") || [];
   const openQuestions = (data?.pkg?.missing_inputs?.length || 0) + openGrey.length;
   const swing = openGrey.reduce((s, g) => s + (g.amount_usd || 0), 0);
@@ -54,28 +96,41 @@ export default function ProjectHeader() {
     ? allocated?.structures?.find((s) => s.structure_id === topRank.structure_id)
     : null;
 
-  // Shared stage control — identical markup/behavior in both the hero and
-  // the compact bar, so the lifecycle dropdown is provably the same
-  // component either way, not a second implementation.
+  // Shared stage control. The menu itself is portaled to document.body
+  // (see the effect above) so it always escapes the Hero's overflow clip,
+  // regardless of which route/context renders this control.
   const stageControl = (
     <div className="ph-stage">
       <span className="ph-stage-label">Production stage</span>
-      <details className="ph-stage-dd" title={meta.description}>
-        <summary className="ph-stage-val" aria-label="Production stage">
+      <div className="ph-stage-dd" title={meta.description}>
+        <button
+          type="button"
+          ref={stageTriggerRef}
+          className="ph-stage-val"
+          aria-label="Production stage"
+          aria-haspopup="listbox"
+          aria-expanded={stageOpen}
+          onClick={toggleStageMenu}
+        >
           {meta.label} <span className="car">▾</span>
-        </summary>
-        <div className="ph-stage-menu">
-          {statuses.map((s) => (
-            <button
-              key={s.key}
-              className={s.key === status ? "on" : ""}
-              onClick={(e) => { setStatus(s.key); e.currentTarget.closest("details").removeAttribute("open"); }}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
-      </details>
+        </button>
+        {stageOpen && createPortal(
+          <div className="ph-stage-menu" role="listbox" style={{ position: "fixed", top: stageMenuPos.top, left: stageMenuPos.left }}>
+            {statuses.map((s) => (
+              <button
+                key={s.key}
+                role="option"
+                aria-selected={s.key === status}
+                className={s.key === status ? "on" : ""}
+                onClick={() => { setStatus(s.key); setStageOpen(false); }}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>,
+          document.body,
+        )}
+      </div>
     </div>
   );
 

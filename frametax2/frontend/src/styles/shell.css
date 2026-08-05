@@ -412,13 +412,16 @@
 .ph-budget-value { font-size: 33px; font-weight: 600; letter-spacing: -0.01em; color: var(--text-primary); }
 .ph-budget-value .mono { font-size: inherit; }
 
-/* Stage control — frozen artifact .stage-dd details/summary dropdown */
+/* Stage control — trigger button + a menu portaled to document.body (see
+   ProjectHeader.jsx) so it always escapes `.ph-hero`'s overflow:hidden
+   clip, wherever this control is rendered. */
 .ph-stage-dd { position: relative; }
-.ph-stage-dd summary { list-style: none; cursor: pointer; }
-.ph-stage-dd summary::-webkit-details-marker { display: none; }
-.ph-stage-val { display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 30px; max-width: 150px; box-sizing: border-box; font: 13px var(--font-sans); color: var(--text-primary); background: var(--surface-1); border: 1px solid var(--hairline-strong); border-radius: 5px; padding: 0 10px; white-space: nowrap; }
+.ph-stage-val { all: unset; box-sizing: border-box; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 30px; max-width: 150px; font: 13px var(--font-sans); color: var(--text-primary); background: var(--surface-1); border: 1px solid var(--hairline-strong); border-radius: 5px; padding: 0 10px; white-space: nowrap; }
 .ph-stage-val:hover { border-color: var(--oxblood); }
 .ph-stage-val .car { font-size: 10px; color: var(--text-tertiary); flex: none; }
+/* Base position/top/left below are overridden inline (position:fixed +
+   computed top/left) once portaled — kept here only as a harmless
+   non-portaled fallback default. */
 .ph-stage-menu { position: absolute; top: 34px; left: 0; z-index: 30; background: var(--surface-1); border: 1px solid var(--hairline-strong); border-radius: 7px; padding: 4px; min-width: 150px; box-shadow: var(--shadow-md); }
 .ph-stage-menu button { all: unset; display: block; width: 100%; box-sizing: border-box; padding: 7px 9px; border-radius: 5px; cursor: pointer; font: 13px var(--font-sans); color: var(--text-secondary); }
 .ph-stage-menu button:hover { background: var(--surface-2); color: var(--text-primary); }

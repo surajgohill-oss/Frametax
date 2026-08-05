@@ -72,35 +72,51 @@ const pct = (part, whole) => (whole ? Math.max(0, Math.min(100, (part / whole) *
 // Project FX strip — Workspace-only, same component family as Today's
 // original FX strip (flag + code, optional 12-month delta chip, both
 // quotation directions USD/{code} and {code}/USD, honest-unavailable
-// fallback) — reused visually and computationally, not redesigned.
-// Exactly four positions: the fixed EUR/CAD/GBP trio (via the SAME
-// buildFxItems() Today's strip used, unchanged) plus a fourth slot that
-// tracks whatever jurisdiction currently leads (client-side
-// leadingStructureId selection, never an engine concept) — never a
-// fifth/sixth currency, never a full local-costing breakdown (that stays
-// ENGINE-PENDING). Every rate is read verbatim from economics.fx_horizons;
-// a leader currency with no snapshot entry renders as an honest
-// "unavailable", never invented.
-function buildLeaderFxItem(economics, leadingStructure) {
+// fallback) — reused visually and computationally, not redesigned. The
+// fixed EUR/CAD/GBP trio (via the SAME buildFxItems() Today's strip used,
+// unchanged) is always present; after that, one cell per DISTINCT local
+// currency among the current Leading structure's real participants — one
+// cell for a single-jurisdiction leader (MUR), two for a genuine
+// multi-jurisdiction leader (MUR + SAR), deduplicated so two participants
+// sharing a currency (e.g. two Eurozone jurisdictions) never render twice.
+// Never a full local-costing breakdown (that stays ENGINE-PENDING). Every
+// rate is read verbatim from economics.fx_horizons; a participant currency
+// with no snapshot entry renders as an honest "unavailable", never
+// invented — this is metadata/identity only, no frontend FX math.
+function buildLeaderFxItems(economics, leadingStructure) {
   const horizons = economics?.fx_horizons || {};
   const jurisdictionCurrency = economics?.jurisdiction_currency || {};
-  const leaderJurisdiction = leadingStructure?.primary_jurisdiction;
-  const leaderIso2 = leaderJurisdiction ? leaderJurisdiction.split("-")[0].toUpperCase() : null;
-  const code = (leaderIso2 ? jurisdictionCurrency[leaderIso2] : null) || "—";
-  const h = horizons[code];
-  const flag = leaderJurisdiction ? flagEmoji(leaderJurisdiction) : null;
-  if (!h || h.current == null) {
-    return { code, flag, available: false, isLeader: true };
+  // Same participants-or-primary fallback compactScenarioIdentity() uses,
+  // so this reads the identical real structure fields, never a second
+  // derivation of "which jurisdictions this structure touches."
+  const participants = leadingStructure?.participants?.length
+    ? leadingStructure.participants
+    : (leadingStructure?.primary_jurisdiction ? [leadingStructure.primary_jurisdiction] : []);
+
+  const seenCodes = new Set();
+  const items = [];
+  for (const jurisdiction of participants) {
+    const iso2 = jurisdiction.split("-")[0].toUpperCase();
+    const code = jurisdictionCurrency[iso2] || iso2; // no mapping: show the jurisdiction's own code rather than dropping it
+    if (seenCodes.has(code)) continue; // dedupe — never a repeated currency cell
+    seenCodes.add(code);
+    const flag = flagEmoji(jurisdiction);
+    const h = horizons[code];
+    if (!h || h.current == null) {
+      items.push({ code, flag, available: false, isLeader: true });
+      continue;
+    }
+    const deltaPct = h["12m"] != null ? ((h["12m"] - h.current) / h.current) * 100 : null;
+    // Same 5-decimal display precision buildFxItems() uses for the fixed
+    // three, so leader cells never read visually inconsistent with their
+    // siblings — reverse is still always 1/current, computed here, never a
+    // second stored constant.
+    items.push({
+      code, flag, isLeader: true, available: true,
+      current: Number(h.current.toFixed(5)), reverse: Number((1 / h.current).toFixed(5)), deltaPct,
+    });
   }
-  const deltaPct = h["12m"] != null ? ((h["12m"] - h.current) / h.current) * 100 : null;
-  // Same 5-decimal display precision buildFxItems() uses for the fixed
-  // three, so the leader cell never reads visually inconsistent with its
-  // siblings — reverse is still always 1/current, computed here, never a
-  // second stored constant.
-  return {
-    code, flag, isLeader: true, available: true,
-    current: Number(h.current.toFixed(5)), reverse: Number((1 / h.current).toFixed(5)), deltaPct,
-  };
+  return items.length ? items : [{ code: "—", flag: null, available: false, isLeader: true }];
 }
 
 function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, onSetLeading, onInspect, onCompare, onSelectSegment }) {
@@ -262,7 +278,7 @@ export default function Workspace() {
   const leadingStructure = activeStructure(allocated, leadingStructureId);
   const leadingId = leadingStructure?.structure_id ?? null;
   const { overflow, cols } = visibleStructures(allocated.structures, rankById, swapId);
-  const fxItems = [...buildFxItems(economics?.fx_horizons), buildLeaderFxItem(economics, leadingStructure)];
+  const fxItems = [...buildFxItems(economics?.fx_horizons), ...buildLeaderFxItems(economics, leadingStructure)];
 
   // Collapsed-rail status dots — hot for any money-bearing / blocking item.
   const dots = [

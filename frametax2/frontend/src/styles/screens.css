@@ -917,8 +917,16 @@
    Leading structure's own, most commonly) renders honestly rather than
    inventing a number. */
 .wsx-fxstrip { flex: none; padding: 8px 18px 6px; border-bottom: 0.5px solid var(--hairline); background: var(--surface-1); }
+/* Cells distribute evenly across the FULL strip width (flex:1 on each
+   item, not width-by-content) so the strip reads as one continuous band
+   spanning the same width as the scenario columns below it — never
+   bunched left with empty space on the right. Works unmodified whether
+   there are 4 cells (single-jurisdiction leader) or 5 (a genuine
+   multi-jurisdiction leader, e.g. Mauritius + Saudi Arabia both leading
+   currencies shown); flex-wrap is a defensive fallback only, not the
+   normal path at canonical widths. */
 .wsx-fx-row { display: flex; flex-wrap: wrap; align-items: stretch; }
-.wsx-fx-item { display: flex; flex-direction: column; gap: 4px; padding: 0 18px; border-left: 0.5px solid var(--hairline); }
+.wsx-fx-item { flex: 1 1 0; min-width: 130px; display: flex; flex-direction: column; gap: 4px; padding: 0 18px; border-left: 0.5px solid var(--hairline); }
 .wsx-fx-item:first-child { padding-left: 0; border-left: none; }
 .wsx-fx-head { display: flex; align-items: center; gap: 6px; }
 .wsx-fx-flag { font-size: 14px; line-height: 1; }
