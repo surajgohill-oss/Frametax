@@ -143,13 +143,13 @@ export default function ProjectLibrary() {
             : "No projects match this search or filter."}
         </div>
       ) : (
-        <div className="lib-grid">
+        <div className={`lib-grid ${filter === "all" ? "compact" : ""}`}>
           {visible.map((p) => {
             const meta = lifecycleMeta(p.lifecycle);
             return (
               <button
                 key={p.id}
-                className={`lib-card ${meta.key === "archived" ? "arch" : ""}`}
+                className={`lib-card ${filter === "all" ? "compact" : ""} ${meta.key === "archived" ? "arch" : ""}`}
                 onClick={() => navigate(`/company/library/${p.id}`)}
               >
                 <div className="lib-art">

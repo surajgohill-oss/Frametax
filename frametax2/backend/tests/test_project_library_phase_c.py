@@ -86,16 +86,18 @@ async def test_documents_versions_and_sources(db: AsyncSession, project: Project
         select(DocumentVersion).where(DocumentVersion.document_id.in_(doc_ids))
     )).scalars().all()
     # 6 at Phase C migration; Phase F's real-corpus ingestion pass added 4
-    # more (a genuinely different deck revision found on Drive, plus 3
-    # extracted-artwork candidate versions) — same 5 Documents throughout,
-    # more DocumentVersions is the correct, intended effect of ingestion.
-    assert len(versions) == 10
+    # more; the later local-material-completion and library-reconciliation
+    # passes added more still (local Downloads copies of the screenplay/
+    # deck, plus rendered artwork candidates) — same 5 Documents
+    # throughout, more DocumentVersions is the correct, intended effect of
+    # repeated, honest ingestion, not a regression to chase back down.
+    assert len(versions) == 14
 
     version_ids = [v.id for v in versions]
     sources = (await db.execute(
         select(DocumentVersionSource).where(DocumentVersionSource.document_version_id.in_(version_ids))
     )).scalars().all()
-    assert len(sources) == 17
+    assert len(sources) == 21
 
     # Screenplay checksum spot-check — confirms the migrated version row
     # points at the exact independently-verified file, not a placeholder.

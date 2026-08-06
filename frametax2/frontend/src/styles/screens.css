@@ -1397,13 +1397,18 @@
 .lib-card:hover { border-color: var(--hairline-strong); box-shadow: var(--shadow-sm); }
 .lib-card.arch { opacity: 0.78; }
 .lib-art {
+  width: 100%;
   height: 128px;
   flex-shrink: 0;
   background: var(--surface-2);
   border-bottom: 0.5px solid var(--hairline);
   display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
 }
-.lib-art img { width: 100%; height: 100%; object-fit: contain; }
+/* Library cards fill the artwork frame edge-to-edge (cover), unlike the
+   Project Record hero which uses contain so the complete artwork is
+   always visible — these are deliberately different, don't unify them. */
+.lib-art img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
 .lib-noart { font-size: 10.5px; color: var(--text-tertiary); letter-spacing: 0.03em; }
 .lib-body { padding: 10px 12px; display: flex; flex-direction: column; gap: 5px; }
 .lib-stage { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--text-tertiary); }
@@ -1432,6 +1437,23 @@
   color: var(--text-tertiary);
 }
 .lib-pip.have { background: var(--surface-positive); border-color: rgba(46,107,78,0.26); color: var(--jade); }
+
+/* ALL filter — higher-density portfolio view. Same card language, smaller
+   proportions, not a redesign: only sizing changes below, no new
+   elements. Only applied when the lifecycle filter is "All"; every other
+   filter keeps the richer .lib-card treatment above. */
+.lib-grid.compact { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px 12px; }
+.lib-card.compact .lib-art { height: 112px; }
+.lib-card.compact .lib-body { padding: 8px 10px; gap: 4px; }
+.lib-card.compact .lib-stage { font-size: 10px; }
+.lib-card.compact .lib-title {
+  font-size: 15px;
+  line-height: 18px;
+  -webkit-line-clamp: 1;
+}
+.lib-card.compact .lib-meta { font-size: 11px; }
+.lib-card.compact .lib-pips { margin-top: 1px; }
+.lib-card.compact .lib-pip { font-size: 8.5px; padding: 1.5px 0; }
 
 /* ======================= Project Record (Phase D) ======================= */
 
@@ -1560,9 +1582,26 @@
   display: flex; flex-direction: column; gap: 10px;
   overflow: hidden;
 }
-.ing-discover-row { display: flex; gap: 8px; }
+.ing-discover-row { display: flex; gap: 8px; align-items: center; }
 .ing-discover-row .field-input { flex: 1; }
 .ing-hint { margin: 0; }
+
+.ing-source-chooser { display: flex; flex-direction: column; gap: 8px; }
+.ing-source-option {
+  display: flex; flex-direction: column; gap: 2px;
+  text-align: left; padding: 10px 12px;
+  border: 0.5px solid var(--hairline); border-radius: var(--radius-sm);
+  background: var(--surface-0); cursor: pointer; font: inherit; color: inherit;
+}
+.ing-source-option:hover:not(.disabled) { border-color: var(--hairline-strong); background: var(--surface-2); }
+.ing-source-option.disabled { cursor: not-allowed; opacity: 0.55; }
+.ing-source-label { font: 600 13px var(--font-sans); color: var(--text-primary); }
+.ing-source-desc { font-size: 11.5px; color: var(--text-tertiary); }
+.ing-source-back {
+  background: none; border: none; color: var(--text-tertiary); cursor: pointer;
+  font: 500 11.5px var(--font-sans); padding: 0 4px 0 0; white-space: nowrap;
+}
+.ing-source-back:hover { color: var(--text-secondary); }
 
 .ing-table-wrap { overflow: auto; border: 0.5px solid var(--hairline); border-radius: var(--radius-sm); }
 .ing-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }

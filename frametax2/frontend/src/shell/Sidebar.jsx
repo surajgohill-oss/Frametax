@@ -69,14 +69,6 @@ export default function Sidebar() {
         </span>
       </button>
 
-      {/* Frozen-artifact "＋ New production" affordance. No create-production
-          backend exists yet (documents router only ingests files), so the
-          control is presented ghosted per the artifact's own engine-pending
-          convention rather than wired to an invented mutation. */}
-      <button className="cg-navlink cg-newprod ghosted" title="Production intake — engine pending" disabled>
-        ＋ New production
-      </button>
-
       <div className="cg-group">System</div>
       <NavLink
         to="/production/settings"

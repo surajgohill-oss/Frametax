@@ -1951,3 +1951,31 @@ Populates the real MTS project corpus (22 project folders on the local Drive mou
 **Guards untouched:** zero optimizer/QPE/jurisdiction/incentive code touched; no Little Utopia optimizer output changed; no Library/Record redesign; no second ingestion architecture; no OCR; no semantic extraction.
 
 **PHASE F — MTS PROJECT LIBRARY POPULATED. ARTWORK DISCOVERY VERIFIED.**
+
+---
+
+## Library Reconciliation + Artwork Completion + UX Correction (2026-08-06)
+
+Two data passes plus a UX corrective pass, reusing Phase E/F's ingestion architecture throughout — no new pipeline.
+
+**Data pass 1 (local material completion):** a bounded, name-matched local filesystem pass (Documents/Desktop/Downloads/iCloud/My-Drive-root, matched against the existing 21 project titles — not a fresh full-disk crawl) found 16 local files Phase F's Drive-only pass had missed. 9 were exact duplicates of already-ingested Drive copies (recorded as additional `DocumentVersionSource` only); 7 were genuine local revisions (Terezin deck ×2, Little Utopia screenplay ×1 and deck ×2, White Feather screenplay ×1), retained as current-unresolved versions. Terezin — previously artless — got 2 new competing artwork candidates from its new deck files, correctly left unresolved (no clear winner).
+
+**Data pass 2 (2 new historical projects + artwork completion sweep):** found "F#K Valentine's Day" and "Underwater" — real historical MTS productions in `~/Documents/thesystem/roombelow/fuckvday/` (screenplay, deck, Greece budget topsheet for the former; screenplay, deck, budget for the latter) — inside the same already-gathered local file listing, one directory level below the earlier scan's depth limit. Created as new title-only Projects (21 → 23) and ingested their material; two files needed a reviewer-style manual category correction (a budget "TOPSHEET" and a deck "Presentation," neither matching the classifier's keyword list) — applied the same way a human reviewer would via the existing correction mechanism, no classifier code changed for these one-off cases. A separate real find, "The Room Below"/"Parce" (script, budget, term sheet, waterfall economics), was deliberately NOT ingested — no MTS branding evidence and a conflicting company reference ("Parce"), left as an identified-but-unconfirmed finding rather than guessed into the Library.
+
+**New capability — Tier 3 artwork fallback:** `render_pdf_page_as_candidate()` in `artwork_extraction.py`. Real corpus decks can be entirely vector/typography-composed with no embedded raster image at all (F#K Valentine's Day's deck WAS embedded-image-based and didn't need this, but the fallback exists for decks that aren't). Renders the whole page and gates on non-white pixel coverage (`MIN_NONWHITE_RATIO = 0.30`, calibrated: screenplay title pages 0.005–0.013, budget/topsheet pages 0.14–0.19, a thin near-blank deck cover 0.037, real designed covers 0.79–0.99) — callers restrict this to deck/lookbook categories only, never screenplay/budget, as a second independent guard. Ran across every project without a master: 2 more got real masters (F#K Valentine's Day, Underwater); the rest of the still-blank projects (14) have no deck/lookbook material at all to render from — confirmed with the user rather than guessed, and AI-generated placeholder artwork (the spec's Tier 5) was explicitly deferred at the user's choice, not built this pass.
+
+**Artwork masters — before/after:** 6 → 8. Every pre-existing master (Little Utopia, Almost Perfect, Model Wars, The Men We Leave Behind, Unconditional Love, White Line Highway) confirmed byte-unchanged throughout both passes.
+
+**UX corrections:**
+- `.lib-art img` — `object-fit: contain` → `cover` (Library only; Project Record's hero deliberately keeps `contain` so the complete artwork stays visible).
+- Library `ALL` filter now renders `.lib-card.compact` (112px artwork, 15px single-line title, ~205px card height) — every other lifecycle filter keeps the existing richer card, same markup/classes, sizing-only CSS.
+- Removed the disabled, never-wired `＋ New production` sidebar button (`Sidebar.jsx`) — `+ New Project` in the Library header is now the sole creation entry point.
+- `IngestionReviewModal` (shared by Library "Import Material" and Record "Add Material") now opens on an explicit source chooser — Local Folder / Local Files / Google Drive — before the discover form. Local Folder and Local Files both resolve to the same `discoverIngestion(path)` call and say so in their own copy, since the app reads by filesystem path and has no separate browser-upload ingestion path; building one would be a second ingestion implementation, which this modal deliberately avoids. Google Drive shown as "Connect / Unavailable," not faked.
+
+**Tests:** 4 new (`render_pdf_page_as_candidate` accept/reject/out-of-range) in `test_ingestion_phase_f.py`, 18 total in that file, all passing. Two Phase C assertions updated again (not weakened) to match Little Utopia's further-grown material set from these two passes (versions 10→14, sources 17→21) — same "real ingestion legitimately changes shape" reasoning as the prior update. Regression: Phase B/C/C-closeout/E-classifier/E-API/F = 72 passed together. Full suite not re-run (no shared backend infrastructure changed).
+
+**Verification:** frontend build clean; fresh-tab console clean on `/company/library` (cover-fit artwork, compact ALL grid, source chooser) and on Terezin's Record (competing candidates correctly unresolved, sidebar creation button gone).
+
+**Guards untouched:** zero optimizer/QPE/jurisdiction/incentive code touched; no existing master silently replaced; no Little Utopia optimizer output changed; no further Library/Record redesign beyond the named corrections; no second ingestion or artwork architecture; no OCR; no semantic extraction; no historical-evidence-driven optimizer learning.
+
+**LIBRARY RECONCILIATION + ARTWORK COMPLETION + UX CORRECTION — COMPLETE. TIER 5 (GENERATED ARTWORK) DEFERRED AT USER'S REQUEST.**

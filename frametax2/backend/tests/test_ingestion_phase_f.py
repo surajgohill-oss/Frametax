@@ -35,7 +35,9 @@ from app.models.project_asset import ProjectAsset
 from app.models.ingestion_candidate import IngestionCandidate
 from app.api.v1.ingestion import discover, commit_candidate, DiscoverRequest, _commit_candidate_impl
 from app.services.ingestion_classifier import classify_file
-from app.services.artwork_extraction import extract_pdf_cover, extract_pptx_cover, extract_cover_image
+from app.services.artwork_extraction import (
+    extract_pdf_cover, extract_pptx_cover, extract_cover_image, render_pdf_page_as_candidate,
+)
 
 
 @pytest.fixture
@@ -185,6 +187,58 @@ def test_extract_cover_image_dispatches_by_extension_only(tmp_path):
     other = Path(tmp_path) / "budget.xlsx"
     other.write_bytes(b"not an image container")
     assert extract_cover_image(other) is None
+
+
+# ── artwork_extraction: Tier 3 whole-page-render fallback ──────────────
+
+def test_render_pdf_page_accepts_composed_color_cover(tmp_path):
+    doc = fitz.open()
+    page = doc.new_page(width=1920, height=1080)
+    page.draw_rect(page.rect, color=(0.7, 0.15, 0.15), fill=(0.7, 0.15, 0.15))
+    path = Path(tmp_path) / "cover.pdf"
+    doc.save(path)
+    doc.close()
+
+    result = render_pdf_page_as_candidate(path)
+    assert result is not None
+    assert result.ext == "png"
+    assert result.width and result.height
+
+
+def test_render_pdf_page_rejects_plain_text_title_page(tmp_path):
+    doc = fitz.open()
+    page = doc.new_page(width=612, height=792)
+    page.insert_text((72, 360), "FADE IN:")
+    page.insert_text((72, 380), "EXT. SOMEWHERE - DAY")
+    path = Path(tmp_path) / "title_page.pdf"
+    doc.save(path)
+    doc.close()
+
+    assert render_pdf_page_as_candidate(path) is None
+
+
+def test_render_pdf_page_rejects_sparse_table_page(tmp_path):
+    doc = fitz.open()
+    page = doc.new_page(width=612, height=792)
+    for row in range(20):
+        y = 60 + row * 30
+        page.draw_line((50, y), (560, y), color=(0, 0, 0))
+        page.insert_text((60, y - 5), f"Line item {row}    $1,234.00")
+    path = Path(tmp_path) / "topsheet.pdf"
+    doc.save(path)
+    doc.close()
+
+    assert render_pdf_page_as_candidate(path) is None
+
+
+def test_render_pdf_page_out_of_range_index_returns_none(tmp_path):
+    doc = fitz.open()
+    doc.new_page(width=612, height=792)
+    path = Path(tmp_path) / "single_page.pdf"
+    doc.save(path)
+    doc.close()
+
+    assert render_pdf_page_as_candidate(path, page_index=5) is None
 
 
 # ── commit_candidate: auto_master + extraction provenance ──────────────

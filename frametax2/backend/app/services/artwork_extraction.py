@@ -146,3 +146,59 @@ def extract_cover_image(path: Path) -> ExtractedImage | None:
     if ext == ".pptx":
         return extract_pptx_cover(path)
     return None
+
+
+# A page whose non-white pixel coverage falls below this is "mostly blank
+# page with sparse ink" — a plain screenplay title page or a financial
+# table/topsheet — never a composed cover. Calibrated against real
+# examples: screenplay title pages measured at 0.005–0.013; budget/
+# topsheet pages (grid lines + numbers) at 0.14–0.19; a thin, mostly-
+# white deck-cover title treatment at 0.037; genuine designed deck covers
+# (color field / photo background) measured at 0.79–0.99. The threshold
+# sits well above the budget/topsheet band so those are never mistaken
+# for a cover, and well below the real-cover band.
+MIN_NONWHITE_RATIO = 0.30
+_WHITE_THRESHOLD = 235  # per-channel; pixels lighter than this count as "white"
+
+
+def render_pdf_page_as_candidate(path: Path, page_index: int = 0) -> ExtractedImage | None:
+    """Tier 3 fallback — used only when extract_pdf_cover() found no
+    embedded raster image candidate. A composed deck/look-book cover can
+    be built entirely from vector shapes, gradients, and typography with
+    no embedded photo at all; that page IS the artwork. Renders the whole
+    page as a flat image and evaluates its own visual richness (not
+    content/OCR) to reject plain text pages and financial tables — see
+    MIN_NONWHITE_RATIO. Callers are responsible for only invoking this for
+    deck/lookbook categories, never screenplay/budget/legal (rejecting a
+    plain screenplay title page or a budget topsheet by CATEGORY is a
+    stronger, cheaper guarantee than trying to detect it visually alone)."""
+    doc = fitz.open(path)
+    try:
+        if page_index >= doc.page_count:
+            return None
+        page = doc[page_index]
+        pix = page.get_pixmap(matrix=fitz.Matrix(1.5, 1.5))
+        if pix.width * pix.height == 0:
+            return None
+
+        samples = pix.samples
+        stride = pix.n
+        total = pix.width * pix.height
+        step = max(1, total // 20000)  # sample for speed on large pages
+        nonwhite, sampled = 0, 0
+        for i in range(0, total, step):
+            off = i * stride
+            px = samples[off:off + min(3, stride)]
+            if len(px) < 3:
+                continue
+            r, g, b = px[0], px[1], px[2]
+            if not (r > _WHITE_THRESHOLD and g > _WHITE_THRESHOLD and b > _WHITE_THRESHOLD):
+                nonwhite += 1
+            sampled += 1
+        ratio = nonwhite / sampled if sampled else 0.0
+        if ratio < MIN_NONWHITE_RATIO:
+            return None
+
+        return ExtractedImage(data=pix.tobytes("png"), ext="png", width=pix.width, height=pix.height)
+    finally:
+        doc.close()
