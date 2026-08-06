@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { API_ORIGIN, getProjectRecord } from "../../api";
+import { API_ORIGIN, deleteProject, getProjectRecord, setMasterArtwork } from "../../api";
 import { Loading, ErrorBox } from "../../components/Async";
 import { Money } from "../../lib/format";
 import { PROJECT_STATUSES } from "../../lib/useProjectStatus";
+import { getTheme, toggleTheme } from "../../lib/theme";
+import IngestionReviewModal from "../../components/IngestionReviewModal";
+import DeleteProjectDialog from "../../components/DeleteProjectDialog";
 
 // Project Record — "what do we know and possess about this production?"
 // Not a replacement for Overview/Workspace: no economics, no scenario
@@ -40,12 +43,21 @@ export default function ProjectRecord() {
   const [record, setRecord] = useState(null);
   const [error, setError] = useState(null);
   const [tab, setTab] = useState("Overview");
+  const [theme, setThemeState] = useState(getTheme);
+  const [importOpen, setImportOpen] = useState(false);
+  const [artworkPickerOpen, setArtworkPickerOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
+  function load() {
+    setError(null);
+    getProjectRecord(projectId).then(setRecord).catch((err) => setError(err.message || String(err)));
+  }
 
   useEffect(() => {
     setRecord(null);
-    setError(null);
     setTab("Overview");
-    getProjectRecord(projectId).then(setRecord).catch((err) => setError(err.message || String(err)));
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
@@ -55,15 +67,38 @@ export default function ProjectRecord() {
   const meta = lifecycleMeta(project.lifecycle);
   const isServedProduction = project.is_served_production;
 
+  async function selectMaster(assetId) {
+    await setMasterArtwork(project.id, assetId);
+    setArtworkPickerOpen(false);
+    load();
+  }
+
   return (
     <div className="screen rec-screen">
-      <div className="rec-crumb" onClick={() => navigate("/company/library")}>← Project Library</div>
+      <div className="rec-toprow">
+        <div className="rec-crumb" onClick={() => navigate("/company/library")}>← Project Library</div>
+        <div className="rec-toprow-actions">
+          <button
+            className="ph-ico"
+            title={theme === "night" ? "Switch to day mode" : "Switch to night mode"}
+            aria-label={theme === "night" ? "Switch to day mode" : "Switch to night mode"}
+            aria-pressed={theme === "night"}
+            onClick={() => setThemeState(toggleTheme())}
+          >
+            {theme === "night" ? "☾" : "◐"}
+          </button>
+          <button className="hero-action" onClick={() => setImportOpen(true)}>Add Material</button>
+        </div>
+      </div>
 
       <div className="rec-idband">
         <div className="rec-idart">
           {artwork.master
             ? <img src={`${API_ORIGIN}${artwork.master.url}`} alt="" />
             : <span className="lib-noart">No artwork yet</span>}
+          {artwork.candidates.length > 0 && (
+            <button className="rec-art-change" onClick={() => setArtworkPickerOpen((v) => !v)}>Change Artwork ▾</button>
+          )}
         </div>
         <div className="rec-idmain">
           <div className="rec-title">{project.title}</div>
@@ -89,6 +124,16 @@ export default function ProjectRecord() {
               <div className="rec-idf"><span className="l2">Shoot year</span><span className="v mono">{project.target_shoot_year}</span></div>
             )}
           </div>
+          {artworkPickerOpen && (
+            <div className="rec-art-picker">
+              {artwork.candidates.map((c) => (
+                <button key={c.id} className={`rec-art-cand ${c.is_master ? "on" : ""}`} onClick={() => selectMaster(c.id)}>
+                  <img src={`${API_ORIGIN}${c.url}`} alt="" />
+                  {c.is_master && <span className="rec-art-master-tag">Master</span>}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         <div className="rec-idact">
           {isServedProduction ? (
@@ -99,6 +144,9 @@ export default function ProjectRecord() {
             <button className="hero-action primary" disabled title="Evaluation is not yet wired to arbitrary Library projects — Little Utopia only">
               Begin Evaluation
             </button>
+          )}
+          {!isServedProduction && (
+            <button className="rec-delete-link" onClick={() => setDeleteOpen(true)}>Delete Project…</button>
           )}
         </div>
       </div>
@@ -190,6 +238,22 @@ export default function ProjectRecord() {
       {tab === "Analysis" && <AnalysisPanel analysis={analysis} full />}
 
       {tab === "History" && <ActivityPanel activity={activity} full />}
+
+      {importOpen && (
+        <IngestionReviewModal
+          scopeProjectId={project.id}
+          onClose={() => setImportOpen(false)}
+          onCommitted={() => { setImportOpen(false); load(); }}
+        />
+      )}
+
+      {deleteOpen && (
+        <DeleteProjectDialog
+          project={project}
+          onClose={() => setDeleteOpen(false)}
+          onDeleted={() => navigate("/company/library")}
+        />
+      )}
     </div>
   );
 }

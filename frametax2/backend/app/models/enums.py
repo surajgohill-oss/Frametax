@@ -200,6 +200,15 @@ class DocumentCategory(str, enum.Enum):
     LEGAL = "legal"
     ARTWORK = "artwork"
     OTHER = "other"
+    # Phase E — historical incentive-evidence categories (the trustworthy
+    # corpus a later phase compares MODELED vs PRE-QUALIFIED/ESTIMATED vs
+    # APPLIED vs APPROVED vs REALIZED against; this phase only preserves
+    # them with correct provenance, never acts on them).
+    PRE_QUALIFICATION = "pre_qualification"
+    INCENTIVE_ESTIMATE = "incentive_estimate"
+    INCENTIVE_APPLICATION = "incentive_application"
+    INCENTIVE_CERTIFICATE = "incentive_certificate"
+    COST_REPORT = "cost_report"
 
 
 class DocumentSourceType(str, enum.Enum):
@@ -246,3 +255,31 @@ class FinalResultStatus(str, enum.Enum):
     APPLIED = "applied"
     APPROVED = "approved"
     REALIZED = "realized"
+
+
+class IngestionCandidateStatus(str, enum.Enum):
+    """A staged candidate's lifecycle. Nothing becomes a canonical Document
+    until COMMITTED — DISCOVER/CLASSIFY/ASSOCIATE only ever write to this
+    staging row, never to documents/document_versions directly."""
+    PENDING = "pending"
+    COMMITTED = "committed"
+    IGNORED = "ignored"
+
+
+class MatchConfidence(str, enum.Enum):
+    """Shared by both category classification and Project association —
+    same three-tier vocabulary, same meaning: HIGH may be preselected in
+    review; MEDIUM/LOW always require explicit user confirmation."""
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+    NONE = "none"
+
+
+class VersionStatus(str, enum.Enum):
+    """What a candidate's checksum tells us relative to already-persisted
+    DocumentVersions — never a claim about temporal ordering unless the
+    evidence actually supports one."""
+    NEW_DOCUMENT = "new_document"
+    EXACT_DUPLICATE = "exact_duplicate"
+    POSSIBLE_NEW_VERSION = "possible_new_version"

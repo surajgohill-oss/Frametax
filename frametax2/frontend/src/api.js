@@ -9,6 +9,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8010/api
 const DOCUMENTS_BASE = API_BASE.replace(/\/cineglobe$/, "/documents");
 const PROJECTS_BASE = API_BASE.replace(/\/cineglobe$/, "/projects");
 const ORGANIZATIONS_BASE = API_BASE.replace(/\/cineglobe$/, "/organizations");
+const INGESTION_BASE = API_BASE.replace(/\/cineglobe$/, "/ingestion");
 
 // The backend's own origin (frontend dev server runs on a different
 // port) — endpoints that return a path rather than a full URL (project
@@ -141,3 +142,42 @@ async function request2(url) {
   }
   return res.json();
 }
+
+// Generic JSON verb helper (POST/PATCH/DELETE) — same error convention,
+// used by delete/set-master/ingestion below rather than repeating the
+// fetch+error-check boilerplate at each call site.
+async function verb(method, url, body) {
+  const res = await fetch(url, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) {
+    const errBody = await res.text();
+    throw new Error(`${res.status} ${res.statusText}: ${errBody}`);
+  }
+  return res.status === 204 ? null : res.json();
+}
+
+// Project deletion (Phase E) — permanent, cascades every record the
+// Project owns. Confirmation is the CALLER's job (see the Project Record
+// "Delete Project" dialog) — this is the raw operation.
+export const deleteProject = (projectId) => verb("DELETE", `${PROJECTS_BASE}/${projectId}`);
+
+// Artwork candidate master-selection (Phase E) — never deletes the
+// previous master row, only flips which one is_master.
+export const setMasterArtwork = (projectId, assetId) =>
+  verb("POST", `${PROJECTS_BASE}/${projectId}/artwork/${assetId}/set-master`);
+
+// Ingestion (Phase E) — DISCOVER -> CLASSIFY -> ASSOCIATE -> STAGE ->
+// REVIEW -> COMMIT. Nothing here is canonical until commitIngestionCandidate.
+export const discoverIngestion = (sourcePointer, projectId) =>
+  verb("POST", `${INGESTION_BASE}/discover`, { source_type: "local", source_pointer: sourcePointer, project_id: projectId || null });
+export const listIngestionCandidates = (status = "pending") =>
+  request2(`${INGESTION_BASE}/candidates?status=${encodeURIComponent(status)}`);
+export const updateIngestionCandidate = (candidateId, changes) =>
+  verb("PATCH", `${INGESTION_BASE}/candidates/${candidateId}`, changes);
+export const commitIngestionCandidate = (candidateId) =>
+  verb("POST", `${INGESTION_BASE}/candidates/${candidateId}/commit`);
+export const ignoreIngestionCandidate = (candidateId) =>
+  verb("POST", `${INGESTION_BASE}/candidates/${candidateId}/ignore`);

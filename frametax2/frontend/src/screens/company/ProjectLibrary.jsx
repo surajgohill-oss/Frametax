@@ -4,7 +4,9 @@ import { API_ORIGIN, getProjects } from "../../api";
 import { Loading, ErrorBox } from "../../components/Async";
 import { Money } from "../../lib/format";
 import { PROJECT_STATUSES } from "../../lib/useProjectStatus";
+import { getTheme, toggleTheme } from "../../lib/theme";
 import NewProjectModal from "../../components/NewProjectModal";
+import IngestionReviewModal from "../../components/IngestionReviewModal";
 
 // Project Library — CineGlobe's durable production corpus. Every real
 // persisted Project (Phase C migrated the first one; this is where a
@@ -43,6 +45,12 @@ export default function ProjectLibrary() {
   const [filter, setFilter] = useState("all");
   const [sort, setSort] = useState("updated");
   const [newOpen, setNewOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  // Same canonical theme module Today.jsx uses — Company routes render no
+  // ProjectHeader, so this is its own trigger for the SAME theme state
+  // (document.documentElement's data-theme attribute), never a second
+  // theme implementation.
+  const [theme, setThemeState] = useState(getTheme);
 
   function load() {
     setError(null);
@@ -83,7 +91,19 @@ export default function ProjectLibrary() {
           <h1 className="screen-title">Project Library</h1>
           <p className="lib-sub">All productions across the company</p>
         </div>
-        <button className="hero-action primary" onClick={() => setNewOpen(true)}>+ New Project</button>
+        <div className="lib-head-actions">
+          <button
+            className="ph-ico"
+            title={theme === "night" ? "Switch to day mode" : "Switch to night mode"}
+            aria-label={theme === "night" ? "Switch to day mode" : "Switch to night mode"}
+            aria-pressed={theme === "night"}
+            onClick={() => setThemeState(toggleTheme())}
+          >
+            {theme === "night" ? "☾" : "◐"}
+          </button>
+          <button className="hero-action" onClick={() => setImportOpen(true)}>Import Material</button>
+          <button className="hero-action primary" onClick={() => setNewOpen(true)}>+ New Project</button>
+        </div>
       </div>
 
       <div className="lib-searchrow">
@@ -161,6 +181,13 @@ export default function ProjectLibrary() {
         <NewProjectModal
           onClose={() => setNewOpen(false)}
           onCreated={(project) => { setNewOpen(false); navigate(`/company/library/${project.id}`); }}
+        />
+      )}
+
+      {importOpen && (
+        <IngestionReviewModal
+          onClose={() => setImportOpen(false)}
+          onCommitted={() => { setImportOpen(false); load(); }}
         />
       )}
     </div>

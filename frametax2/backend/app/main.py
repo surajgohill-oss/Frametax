@@ -6,7 +6,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1 import budgets, cineglobe, documents, incentive_programs, jurisdictions, optimization, organizations, projects, structures
+from app.api.v1 import budgets, cineglobe, documents, incentive_programs, ingestion, jurisdictions, optimization, organizations, projects, structures
 from app.bridge.api import router as bridge_router
 from app.core.config import settings
 
@@ -34,6 +34,7 @@ app.include_router(jurisdictions.router, prefix="/api/v1")
 app.include_router(incentive_programs.router, prefix="/api/v1")
 app.include_router(organizations.router, prefix="/api/v1")
 app.include_router(projects.router, prefix="/api/v1")
+app.include_router(ingestion.router, prefix="/api/v1")
 app.include_router(documents.router, prefix="/api/v1")
 app.include_router(budgets.router, prefix="/api/v1")
 app.include_router(structures.router, prefix="/api/v1")

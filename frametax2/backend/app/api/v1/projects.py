@@ -13,7 +13,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
@@ -122,6 +122,49 @@ async def get_project(
     return row
 
 
+@router.delete("/{project_id}", status_code=204)
+async def delete_project(project_id: str, db: AsyncSession = Depends(get_db)) -> None:
+    """Permanently removes a CineGlobe Project and every record it owns —
+    documents/versions/sources, artwork, facts, people-links, location
+    requirements, structures/calculation results, aliases, activity — via
+    the ON DELETE CASCADE already declared on every FK back to
+    projects.id (verified directly against the model source before this
+    endpoint was written, not assumed). Shared entities a project merely
+    REFERENCES (TalentProfile, Organization) are never touched: only
+    ProjectPerson — the join row — cascades.
+
+    Never deletes original source files (Drive/local) — this table only
+    ever held a cached copy path + provenance pointer, never the source
+    itself. Deletion is Archive's opposite: Archive keeps the project and
+    everything about it; this removes the CineGlobe record entirely, for
+    the accidental/test/duplicate/mistaken-import case only.
+
+    Refuses to delete the project the demo engine (Overview/Workspace/
+    Scenarios) currently serves — a cheap, deliberate safety net, not a
+    general restriction: nothing else about this endpoint is special-
+    cased to Little Utopia.
+    """
+    project = (await db.execute(select(Project).where(Project.id == project_id))).scalar_one_or_none()
+    if project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    if project.title == PRODUCTION_NAME:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot delete the project currently served by the production engine.",
+        )
+    # A Core DELETE, not db.delete(project): the ORM relationship() calls
+    # on Document/BudgetDocument/etc. carry no cascade= argument (this
+    # codebase relies on the DB's own ON DELETE CASCADE), so the ORM's
+    # default ("save-update, merge" only) tries to NULL the child's FK
+    # instead of deleting it first — and since documents.project_id is
+    # nullable (a Document may instead be organization-owned), that NULL
+    # trips the ck_documents_exactly_one_owner CHECK constraint. A plain
+    # DELETE statement never loads or touches child rows at all; the
+    # already-verified DB-level CASCADE does the real work.
+    await db.execute(delete(Project).where(Project.id == project_id))
+    await db.commit()
+
+
 @router.get("/{project_id}/artwork")
 async def get_project_artwork(project_id: str, db: AsyncSession = Depends(get_db)) -> FileResponse:
     """Serves the master ProjectAsset's cached bytes. Deliberately scoped
@@ -138,6 +181,40 @@ async def get_project_artwork(project_id: str, db: AsyncSession = Depends(get_db
     if not full_path.is_file():
         raise HTTPException(status_code=404, detail="Artwork file missing from storage")
     return FileResponse(full_path)
+
+
+@router.get("/{project_id}/artwork/{asset_id}")
+async def get_project_artwork_candidate(project_id: str, asset_id: str, db: AsyncSession = Depends(get_db)) -> FileResponse:
+    """Serves ONE specific ProjectAsset's bytes (master or candidate) —
+    the picker needs to preview every candidate, not only the current
+    master. Scoped to this project's own assets, same as the master route."""
+    asset = (await db.execute(
+        select(ProjectAsset).where(ProjectAsset.id == asset_id, ProjectAsset.project_id == project_id)
+    )).scalar_one_or_none()
+    if asset is None or not asset.storage_path:
+        raise HTTPException(status_code=404, detail="Asset not found for this project")
+    full_path = Path(settings.LOCAL_STORAGE_PATH) / asset.storage_path
+    if not full_path.is_file():
+        raise HTTPException(status_code=404, detail="Asset file missing from storage")
+    return FileResponse(full_path)
+
+
+@router.post("/{project_id}/artwork/{asset_id}/set-master")
+async def set_master_artwork(project_id: str, asset_id: str, db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
+    """Explicit user selection of master artwork. Never deletes the
+    previous master row — only flips is_master, so prior candidates/
+    history remain fully retained and selectable again later."""
+    target = (await db.execute(
+        select(ProjectAsset).where(ProjectAsset.id == asset_id, ProjectAsset.project_id == project_id)
+    )).scalar_one_or_none()
+    if target is None:
+        raise HTTPException(status_code=404, detail="Asset not found for this project")
+
+    all_assets = (await db.execute(select(ProjectAsset).where(ProjectAsset.project_id == project_id))).scalars().all()
+    for a in all_assets:
+        a.is_master = (a.id == target.id)
+    await db.commit()
+    return {"project_id": project_id, "master_asset_id": str(target.id)}
 
 
 @router.get("/{project_id}/documents/{version_id}/file")
@@ -297,7 +374,7 @@ async def get_project_record(project_id: str, db: AsyncSession = Depends(get_db)
             # already returned so the Record has a sensible place to
             # eventually render them, without a second fetch.
             "candidates": [
-                {"id": str(a.id), "url": f"/api/v1/projects/{project.id}/artwork", "is_master": a.is_master,
+                {"id": str(a.id), "url": f"/api/v1/projects/{project.id}/artwork/{a.id}", "is_master": a.is_master,
                  "source_type": a.source_type}
                 for a in assets
             ],
