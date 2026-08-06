@@ -4,6 +4,7 @@ import {
   discoverIngestion, listIngestionCandidates, updateIngestionCandidate,
   commitIngestionCandidate, ignoreIngestionCandidate, getProjects,
 } from "../api";
+import IngestionSourceChooser, { INGESTION_SOURCES } from "./IngestionSourceChooser";
 
 // Phase E — DISCOVER -> CLASSIFY -> ASSOCIATE -> STAGE -> REVIEW -> COMMIT,
 // the shared review workflow "Import Material" (Library, unscoped) and
@@ -35,22 +36,6 @@ function fmtBytes(n) {
   if (n >= 1_000) return `${(n / 1_000).toFixed(0)} KB`;
   return `${n} B`;
 }
-
-// Explicit source chooser (Library "Import Material" / Record "Add
-// Material" both render this modal — same chooser, same downstream call).
-// CineGlobe reads from disk BY PATH, not a browser upload — there is no
-// separate "upload individual files" backend capability, and building
-// one just for this entry point would be a second ingestion path, which
-// this modal deliberately avoids. "Local Folder" and "Local Files" both
-// resolve to the same discoverIngestion(path) call for that reason; the
-// copy under "Local Files" says so rather than implying an upload picker
-// that doesn't exist. Google Drive has no backend connector yet — shown
-// disabled rather than faked.
-const SOURCES = [
-  { key: "folder", label: "Local Folder", desc: "Point at a folder on this Mac — every file inside is discovered." },
-  { key: "files", label: "Local Files", desc: "Enter the folder containing the specific file(s) — CineGlobe reads by path, not browser upload." },
-  { key: "drive", label: "Google Drive", desc: "Connect / Unavailable — no Drive connector is wired up yet.", disabled: true },
-];
 
 export default function IngestionReviewModal({ scopeProjectId, onClose, onCommitted }) {
   const [source, setSource] = useState(null);
@@ -146,25 +131,11 @@ export default function IngestionReviewModal({ scopeProjectId, onClose, onCommit
         </div>
 
         {source === null ? (
-          <div className="ing-source-chooser">
-            <p className="text-tertiary small ing-hint">Import from</p>
-            {SOURCES.map((s) => (
-              <button
-                key={s.key}
-                type="button"
-                className={`ing-source-option ${s.disabled ? "disabled" : ""}`}
-                disabled={s.disabled}
-                onClick={() => setSource(s.key)}
-              >
-                <span className="ing-source-label">{s.label}</span>
-                <span className="ing-source-desc">{s.desc}</span>
-              </button>
-            ))}
-          </div>
+          <IngestionSourceChooser onSelect={setSource} />
         ) : (
         <form className="ing-discover-row" onSubmit={runDiscover}>
           <button type="button" className="ing-source-back" onClick={() => setSource(null)}>
-            ← {SOURCES.find((s) => s.key === source)?.label}
+            ← {INGESTION_SOURCES.find((s) => s.key === source)?.label}
           </button>
           <input
             className="field-input"

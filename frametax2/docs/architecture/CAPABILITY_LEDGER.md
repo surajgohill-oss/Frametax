@@ -2027,3 +2027,19 @@ Closes the gap between 46 persisted projects and their staged-but-uncommitted ma
 **Guards untouched:** zero optimizer/QPE/jurisdiction/incentive/Workspace/Overview code touched; no existing Document/Version/Source overwritten; no artwork generated or masters changed; no full-disk/Drive/Dropbox-wide scan (one bounded, already-known-location lookup); Library card design and Project Record layout untouched beyond the named delete-action presentation change.
 
 **PROJECT LIBRARY CORPUS CLOSEOUT — COMPLETE.**
+
+---
+
+## New Project Ingestion Closeout — material-based project creation (2026-08-06)
+
+`+ New Project` no longer forces create-empty → leave → Import Material → re-associate. It now opens the same source chooser Import Material/Add Material use, extracted into a small shared `IngestionSourceChooser.jsx` component (both modals render it identically) plus a 4th option, "Create Empty Project", which reveals the original title/format/lifecycle form unchanged.
+
+**Local Folder / Local Files:** `NewProjectModal.jsx` calls the existing `discoverIngestion(path, null)` (no project scope yet — none exists), proposes a title from the folder's own basename (a small client-side heuristic — snake_case/camelCase/ALL-CAPS all normalize to Title Case, mixed-case names like "McCarthy" are left alone), lets the user correct it, then on confirm: `createProject()`, then `updateIngestionCandidate(id, {proposed_project_id})` for every discovered candidate — the same PATCH the review-table "Project" dropdown already uses, which is also what the backend already promotes to `association_confidence: "high"` (a human just confirmed it). Only candidates whose CATEGORY is also confidently classified auto-commit; the rest stay staged for review on the new Project's own Record — identical behavior to Import Material, just funneled into one new Project instead of requiring the user to pick from the full existing list. Zero backend code changed — this is pure frontend orchestration of already-existing endpoints.
+
+**Google Drive:** unchanged, honest "Connect / Unavailable" — no connector exists.
+
+**Verification:** one temporary project ("ZZZ Verify New Project Flow") created via Local Folder against a throwaway one-file test folder, confirmed exactly one Project created, its screenplay committed and visible on its own real Record, then deleted via the existing DELETE endpoint. Corpus returned to exactly 51 projects / 85 documents / 123 document_versions — byte-identical to the pre-verification baseline. Create Empty Project's form confirmed to still appear unchanged (Cancelled, not submitted — no second project created). One frontend build, clean. No dedicated frontend test suite exists for these components; no backend code changed, so no backend tests run.
+
+**Guards untouched:** none of the 51 existing projects, their Documents, or artwork masters touched; no filesystem rescan of the existing corpus; no second ingestion/classification/commit logic — 100% reuse of `discoverIngestion`/`updateIngestionCandidate`/`commitIngestionCandidate`/`createProject`; Library cards and Project Record layout untouched; Import Material's own behavior unchanged (still adds to an existing Project).
+
+**NEW PROJECT INGESTION CLOSEOUT — COMPLETE.**

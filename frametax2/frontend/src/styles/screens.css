@@ -1556,6 +1556,9 @@
   padding: 16px 18px 18px;
   display: flex; flex-direction: column; gap: 12px;
 }
+/* Material-based "+ New Project" needs room for the discovered-files
+   table — same modal chrome, just wider, matching .ing-modal's width. */
+.np-modal-wide { width: 860px; max-height: calc(100vh - 64px); overflow: auto; }
 .np-head { display: flex; align-items: center; justify-content: space-between; }
 .np-head h2 { margin: 0; font-family: var(--font-serif); font-weight: 400; font-size: 19px; }
 .np-close { background: none; border: none; color: var(--text-tertiary); font-size: 14px; cursor: pointer; padding: 2px; }
