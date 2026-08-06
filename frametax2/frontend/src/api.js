@@ -8,6 +8,14 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8010/api
 // different top-level path.
 const DOCUMENTS_BASE = API_BASE.replace(/\/cineglobe$/, "/documents");
 const PROJECTS_BASE = API_BASE.replace(/\/cineglobe$/, "/projects");
+const ORGANIZATIONS_BASE = API_BASE.replace(/\/cineglobe$/, "/organizations");
+
+// The backend's own origin (frontend dev server runs on a different
+// port) — endpoints that return a path rather than a full URL (project
+// artwork, document version files) need this prefixed before use in an
+// <img src> or <a href>, or the browser resolves them against the
+// frontend's own origin instead.
+export const API_ORIGIN = new URL(API_BASE).origin;
 
 async function request(path, options) {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -96,6 +104,37 @@ export async function patchProject(projectId, changes) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(changes),
   });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`${res.status} ${res.statusText}: ${body}`);
+  }
+  return res.json();
+}
+
+// Project Library (Phase D) — every real persisted Project as a grid
+// card (artwork + material completeness), the full Project Record for
+// one project, and creation. All read the same real tables Phase C
+// migrated into; no separate/duplicate project-summary store.
+export const getProjects = () => request2(`${PROJECTS_BASE}`);
+export const getProjectRecord = (projectId) => request2(`${PROJECTS_BASE}/${projectId}/record`);
+export const getOrganizations = () => request2(`${ORGANIZATIONS_BASE}`);
+export async function createProject(body) {
+  const res = await fetch(PROJECTS_BASE, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const errBody = await res.text();
+    throw new Error(`${res.status} ${res.statusText}: ${errBody}`);
+  }
+  return res.json();
+}
+
+// Thin GET helper for the non-/cineglobe bases above — same error
+// convention as request(), just not hardcoded to API_BASE.
+async function request2(url) {
+  const res = await fetch(url, { headers: { "Content-Type": "application/json" } });
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`${res.status} ${res.statusText}: ${body}`);

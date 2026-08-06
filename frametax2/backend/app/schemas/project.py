@@ -53,3 +53,24 @@ class ProjectList(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     items: list[ProjectRead]
     total: int
+
+
+class MaterialsCompleteness(BaseModel):
+    """The four CORE categories the Project Library card and Project
+    Record both key off — never the full document taxonomy (that lives
+    on the Record's Materials panel). Fixed set, not a variable list, so
+    a card stays scannable at a glance."""
+    script: bool
+    budget: bool
+    deck: bool
+    schedule: bool
+
+
+class ProjectCard(ProjectRead):
+    """Project Library grid card — ProjectRead plus the two fields the
+    grid needs that a plain Project row doesn't carry: artwork and
+    at-a-glance material completeness. Never used by create/get/update,
+    which don't need the extra queries this costs."""
+    organization_name: str | None = None
+    artwork_url: str | None = None
+    materials: MaterialsCompleteness

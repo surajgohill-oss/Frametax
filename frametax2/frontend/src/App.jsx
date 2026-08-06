@@ -4,6 +4,8 @@ import AppShell from "./shell/AppShell";
 import ErrorBoundary from "./shell/ErrorBoundary";
 
 import Today from "./screens/company/Today";
+import ProjectLibrary from "./screens/company/ProjectLibrary";
+import ProjectRecord from "./screens/company/ProjectRecord";
 import CompanyGlobe from "./screens/company/CompanyGlobe";
 import CompanyKnowledge from "./screens/company/CompanyKnowledge";
 import OrgReports from "./screens/company/OrgReports";
@@ -27,6 +29,8 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Navigate to="/company/today" replace />} />
             <Route path="/company/today" element={<Today />} />
+            <Route path="/company/library" element={<ProjectLibrary />} />
+            <Route path="/company/library/:projectId" element={<ProjectRecord />} />
             <Route path="/company/globe" element={<CompanyGlobe />} />
             <Route path="/company/knowledge" element={<CompanyKnowledge />} />
             <Route path="/company/reports" element={<OrgReports />} />

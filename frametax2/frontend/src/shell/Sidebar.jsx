@@ -11,6 +11,7 @@ import { useProjectStatus } from "../lib/useProjectStatus";
 // real react-router routes those components used.
 const COMPANY_NAV = [
   { to: "/company/today", label: "Today" },
+  { to: "/company/library", label: "Project Library" },
   { to: "/company/globe", label: "Company Globe" },
   { to: "/company/knowledge", label: "Company Knowledge" },
   { to: "/company/reports", label: "Organization Reports" },
