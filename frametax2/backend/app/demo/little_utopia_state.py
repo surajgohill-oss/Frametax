@@ -432,6 +432,18 @@ def current_people_facts() -> dict[str, dict[str, str | None]]:
     }
 
 
+def hydrate_people_overrides(overrides: dict[str, "PersonOverride"]) -> None:
+    """Project Library Phase C closeout: merge Postgres-persisted
+    writer/director/producer-primary overrides into this in-memory store
+    (the ONLY thing build_little_utopia_people()/the qualification engine
+    actually reads) so a value written to TalentProfile before a restart
+    is visible again after one, without changing how the engine applies
+    an override — apply_people_facts() below remains the single write
+    path engine-side; this is purely a read-time rehydration."""
+    _people_overrides.update(overrides)
+    _build_state.cache_clear()
+
+
 def _merge_override_role_codes(role_known_codes: dict[str, tuple[str, ...]]) -> dict[str, tuple[str, ...]]:
     """Feed the slot-role nationalities (lead_cast_2/3, dop, editor,
     composer — user-supplied facts with no package person yet) into the
@@ -2107,6 +2119,19 @@ def apply_location_overrides(overrides: dict[str, object]) -> None:
 
 def current_location_overrides() -> dict[str, bool]:
     return dict(_location_overrides)
+
+
+def hydrate_location_overrides(overrides: dict[str, bool]) -> None:
+    """Project Library Phase C closeout: replace this in-memory store
+    (the ONLY thing _derive_location_categories()/territory matching
+    actually reads) wholesale from Postgres-persisted category overrides,
+    so a value written before a restart is visible again after one,
+    without changing how the engine applies an override —
+    apply_location_overrides() below remains the single write path
+    engine-side; this is purely a read-time rehydration."""
+    _location_overrides.clear()
+    _location_overrides.update(overrides)
+    _build_state.cache_clear()
 
 
 def _derive_location_categories() -> dict[str, dict]:

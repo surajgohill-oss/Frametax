@@ -28,6 +28,14 @@ class ProjectLocationRequirement(Base):
     )
     notes: Mapped[str | None] = mapped_column(Text)
 
+    # Phase C closeout: which canonical LOCATION_TAXONOMY slug (if any) this
+    # row backs, and the producer's override value for it — the durable
+    # home for the frontend's click-to-toggle location-category chips.
+    # NULL/NULL for the free-text script-requirement rows written by 0063;
+    # only used by category-override rows written by 0064+.
+    category_key: Mapped[str | None] = mapped_column(String(64))
+    override: Mapped[bool | None] = mapped_column(Boolean)
+
     # Relationships
     project: Mapped["Project"] = relationship(back_populates="location_requirements")
     source_document_version: Mapped["DocumentVersion | None"] = relationship()

@@ -30,6 +30,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
 from app.models.project import Project
+from app.models.project_person import ProjectPerson
+from app.models.project_location_requirement import ProjectLocationRequirement
+from app.models.project_fact import ProjectFact
+from app.models.talent import TalentProfile
+from app.models.enums import ProjectFactSourceType
+from app.data.little_utopia_people import PersonOverride, primary_person_name
 
 from app.calculators.optimization_engine import RiskCase
 from app.calculators.production_constraint_engine import (
@@ -64,13 +70,85 @@ from app.demo.little_utopia_state import (
     deploy_contingency,
     get_awarded_rate,
     get_state,
+    hydrate_location_overrides,
+    hydrate_people_overrides,
     reset_contingency_allocations,
+    LOCATION_TAXONOMY,
     PRODUCTION_NAME,
 )
 from app.calculators.mauritius_economics import compute_mauritius_economics
 from app.calculators.qualification_model import QualificationState
 
 router = APIRouter(prefix="/cineglobe", tags=["cineglobe"])
+
+
+# ── Project Library Phase C closeout: persisted source of truth ─────────────
+# People (writer/director/producer-primary nationality/residency/name) and
+# location-category overrides now live in Postgres (ProjectPerson +
+# TalentProfile; ProjectLocationRequirement.category_key/override) instead
+# of only the process-local dicts little_utopia_state.py already reads for
+# engine computation. Rather than rebuild the engine's read/derive paths,
+# each request re-hydrates those existing in-memory stores from Postgres
+# before calling get_state() — the engine's own override-application logic
+# (apply_people_facts / apply_location_overrides / build_little_utopia_
+# people / _derive_location_categories) is completely unchanged. Slot
+# roles with no persisted row yet (lead_cast_2/3, dop, editor, composer)
+# and cast (genuinely unknown) still serve/write purely from the demo
+# module — an explicit, minimal, documented fallback, not a silent gap.
+
+async def _get_project(db: AsyncSession) -> Project | None:
+    return (
+        await db.execute(select(Project).where(Project.title == PRODUCTION_NAME))
+    ).scalar_one_or_none()
+
+
+async def _hydrate_people_from_db(db: AsyncSession, project: Project) -> None:
+    """Load the writer/director/producer-primary TalentProfile rows for
+    this project and feed them into the in-memory override store as
+    PersonOverrides, so build_little_utopia_people() reflects Postgres
+    truth for this request (and after a restart) without any change to
+    how it merges an override."""
+    rows = (
+        await db.execute(
+            select(ProjectPerson, TalentProfile)
+            .join(TalentProfile, ProjectPerson.talent_id == TalentProfile.id)
+            .where(ProjectPerson.project_id == project.id)
+        )
+    ).all()
+    overrides: dict[str, PersonOverride] = {}
+    for role_key in ("writer", "director", "producer"):
+        primary_name = primary_person_name(role_key)
+        match = next(
+            (tp for pp, tp in rows if pp.role == role_key and tp.name == primary_name),
+            None,
+        )
+        if match is None:
+            continue
+        residency = None
+        if match.known_residencies:
+            first = match.known_residencies[0]
+            residency = first.get("jurisdiction_code") if isinstance(first, dict) else None
+        overrides[role_key] = PersonOverride(
+            nationality=match.primary_nationality, residency=residency, name=match.name,
+        )
+    hydrate_people_overrides(overrides)
+
+
+async def _hydrate_locations_from_db(db: AsyncSession, project: Project) -> None:
+    """Load category-keyed override rows for this project and feed them
+    into the in-memory override store, so _derive_location_categories()
+    reflects Postgres truth for this request (and after a restart)
+    without any change to how it merges an override."""
+    rows = (
+        await db.execute(
+            select(ProjectLocationRequirement).where(
+                ProjectLocationRequirement.project_id == project.id,
+                ProjectLocationRequirement.category_key.isnot(None),
+            )
+        )
+    ).scalars().all()
+    overrides = {r.category_key: r.override for r in rows if r.override is not None}
+    hydrate_location_overrides(overrides)
 
 
 # ── Production facts (Engine Integration Phase 1, Seam B) ───────────────────
@@ -198,18 +276,23 @@ async def post_facts(body: FactAnswers) -> dict[str, Any]:
 
 @router.get("/production")
 async def get_production(db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
+    # Phase C: resolve the real persistent Project row backing this demo
+    # production, if the one-time migration has run. Never creates a
+    # Project here; a missing row just means the migration hasn't run
+    # (fields come back null, nothing breaks).
+    project_row = await _get_project(db)
+
+    # Phase C closeout: rehydrate the location-category override store
+    # from Postgres BEFORE get_state() — this response's own
+    # physical_requirements.location_categories, and the cached engine
+    # state get_state() builds, both read that in-memory store. Must
+    # happen first so a cold-restarted process (or any request that
+    # hasn't hit /locations yet) still reflects persisted overrides.
+    if project_row is not None:
+        await _hydrate_locations_from_db(db, project_row)
+
     s = get_state()
     rr = s.rate_resolution
-
-    # Phase C: resolve the real persistent Project row backing this demo
-    # production, if the one-time migration has run. Everything else on
-    # this endpoint still comes from the in-memory engine state — only
-    # project_id/lifecycle/leading_structure_id have a real DB home so
-    # far. Never creates a Project here; a missing row just means the
-    # migration hasn't run (fields come back null, nothing breaks).
-    project_row = (
-        await db.execute(select(Project).where(Project.title == PRODUCTION_NAME))
-    ).scalar_one_or_none()
 
     return {
         "production_id": s.production_id,
@@ -455,8 +538,89 @@ class PeopleAnswers(BaseModel):
     answers: dict[str, Any]
 
 
+_DB_BACKED_PEOPLE_ROLES: tuple[str, ...] = ("writer", "director", "producer")
+
+
+async def _resolve_primary_talent(db: AsyncSession, project: Project, role: str) -> TalentProfile | None:
+    """The persisted TalentProfile row for a role's PRIMARY person (see
+    little_utopia_people.primary_person_name — matches idx==0, the only
+    person an override in this role currently applies to). Writer/director
+    have exactly one row; producer has two, disambiguated by matching the
+    verified original name. Known, narrow limitation (documented, not
+    fixed, per Phase C closeout scope): renaming the primary producer via
+    a `producer_name` write breaks this name-based match on a SUBSEQUENT
+    request, since the lookup key is the original verified name, not
+    whatever it was most recently renamed to."""
+    primary_name = primary_person_name(role)
+    if primary_name is None:
+        return None
+    rows = (
+        await db.execute(
+            select(TalentProfile)
+            .join(ProjectPerson, ProjectPerson.talent_id == TalentProfile.id)
+            .where(ProjectPerson.project_id == project.id, ProjectPerson.role == role)
+        )
+    ).scalars().all()
+    if len(rows) == 1:
+        return rows[0]
+    return next((tp for tp in rows if tp.name == primary_name), None)
+
+
+# Maps a DB-backed (role, field_name) people-fact edit to the matching
+# ProjectFact.fact_key migrated by 0063 — the SAME edit updates both the
+# live TalentProfile row (what /people and the engine read) and the fact's
+# audit-trail row (what a future Facts/Record UI reads), never two
+# independently-writable copies. Residency has no matching migrated fact
+# key (0063 never migrated a residency fact) — a residency edit updates
+# TalentProfile only, which is correct, not a gap.
+_PERSON_FIELD_TO_FACT_KEY: dict[tuple[str, str], str] = {
+    ("writer", "name"): "writer_name",
+    ("writer", "nationality"): "writer_nationality",
+    ("director", "name"): "director_name",
+    ("director", "nationality"): "director_nationality",
+    ("producer", "name"): "producer_1_name",
+    ("producer", "nationality"): "producer_1_nationality",
+}
+
+
+async def _persist_person_field(db: AsyncSession, project: Project, role: str, field_name: str, value: object) -> None:
+    """Write-through for the subset of people-fact edits backed by a real
+    TalentProfile row (writer, director, producer-primary). Slot roles
+    (lead_cast_2/3, dop, editor, composer) and non-primary producers have
+    no persisted row and are intentionally left to the existing in-memory-
+    only fallback — an explicit, minimal, documented gap, not silent."""
+    if role not in _DB_BACKED_PEOPLE_ROLES:
+        return
+    talent = await _resolve_primary_talent(db, project, role)
+    if talent is None:
+        return
+    if field_name == "name":
+        talent.name = value
+    elif field_name == "nationality":
+        talent.primary_nationality = value
+    elif field_name == "residency":
+        talent.known_residencies = [{"jurisdiction_code": value, "confirmed": True}] if value else []
+
+    fact_key = _PERSON_FIELD_TO_FACT_KEY.get((role, field_name))
+    if fact_key is not None:
+        fact = (
+            await db.execute(
+                select(ProjectFact).where(
+                    ProjectFact.project_id == project.id, ProjectFact.fact_key == fact_key,
+                )
+            )
+        ).scalar_one_or_none()
+        if fact is not None:
+            fact.value = value
+            fact.source_type = ProjectFactSourceType.USER_OVERRIDE.value
+
+
 @router.get("/people")
-async def get_people() -> dict[str, Any]:
+async def get_people(db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
+    project = await _get_project(db)
+    if project is not None:
+        await _hydrate_people_from_db(db, project)
+
     s = get_state()
     pkg = s.package.package
 
@@ -507,12 +671,25 @@ async def get_people() -> dict[str, Any]:
 
 
 @router.post("/people")
-async def post_people(body: PeopleAnswers) -> dict[str, Any]:
+async def post_people(body: PeopleAnswers, db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
     try:
         apply_people_facts(body.answers)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
-    return await get_people()
+
+    # Phase C closeout: mirror the DB-backed subset of this write into
+    # Postgres so it survives a restart. apply_people_facts() above
+    # already validated every key/role/type and applied it to the
+    # in-memory store the engine reads — this only adds durability for
+    # writer/director/producer-primary; slot roles are unaffected.
+    project = await _get_project(db)
+    if project is not None:
+        for key, value in body.answers.items():
+            role, field_name = key.rsplit("_", 1)
+            await _persist_person_field(db, project, role, field_name, value)
+        await db.commit()
+
+    return await get_people(db)
 
 
 class LocationOverrides(BaseModel):
@@ -520,15 +697,51 @@ class LocationOverrides(BaseModel):
 
 
 @router.post("/locations")
-async def post_locations(body: LocationOverrides) -> dict[str, Any]:
+async def post_locations(body: LocationOverrides, db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
     """Persist user-confirmed major-location categories into the canonical
     Production Record (override layer over the script-derived seeds) and
     invalidate the cached state so territory matching and recommendations
-    recompute. Returns the updated effective category set."""
+    recompute. Returns the updated effective category set.
+
+    Phase C closeout: also writes each change to Postgres
+    (ProjectLocationRequirement.category_key/override) so it survives a
+    restart. apply_location_overrides() below remains the single
+    validation + engine-recompute path, unchanged; the DB write here is
+    purely additive durability alongside it."""
     try:
         apply_location_overrides(body.overrides)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
+
+    project = await _get_project(db)
+    if project is not None:
+        for slug, value in body.overrides.items():
+            if slug not in LOCATION_TAXONOMY:
+                continue  # already rejected above; defensive only
+            row = (
+                await db.execute(
+                    select(ProjectLocationRequirement).where(
+                        ProjectLocationRequirement.project_id == project.id,
+                        ProjectLocationRequirement.category_key == slug,
+                    )
+                )
+            ).scalar_one_or_none()
+            if value is None:
+                if row is not None:
+                    row.override = None
+                continue
+            if row is None:
+                row = ProjectLocationRequirement(
+                    project_id=project.id,
+                    description=LOCATION_TAXONOMY[slug],
+                    category_key=slug,
+                    override=bool(value),
+                )
+                db.add(row)
+            else:
+                row.override = bool(value)
+        await db.commit()
+
     s = get_state()
     return {"location_categories": s.physical_requirements["location_categories"]}
 

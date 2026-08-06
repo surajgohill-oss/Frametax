@@ -118,6 +118,16 @@ _ROLE_SOURCE: dict[str, list[tuple[str, str, PersonRole, Optional[str]]]] = {
 ROLE_KEYS: tuple[str, ...] = tuple(_ROLE_SOURCE)
 
 
+def primary_person_name(role_key: str) -> Optional[str]:
+    """The verified name of the role's PRIMARY (first-listed) person — the
+    one apply_people_facts()/build_little_utopia_people() overrides apply
+    to. Single source of truth for which persisted TalentProfile row (of
+    possibly several sharing a role, e.g. two producers) a people-fact
+    edit should also be written through to."""
+    entries = _ROLE_SOURCE.get(role_key)
+    return entries[0][1] if entries else None
+
+
 def build_little_utopia_people(
     overrides: Optional[dict[str, PersonOverride]] = None,
 ) -> list[PersonIntake]:

@@ -160,8 +160,14 @@ async def test_project_people(db: AsyncSession, project: Project):
 
 
 async def test_project_location_requirements(db: AsyncSession, project: Project):
+    # Scoped to category_key IS NULL: the Phase C closeout (0064) added
+    # category-override rows to this same table, so an unscoped count no
+    # longer means "the migrated script requirements".
     locations = (await db.execute(
-        select(ProjectLocationRequirement).where(ProjectLocationRequirement.project_id == project.id)
+        select(ProjectLocationRequirement).where(
+            ProjectLocationRequirement.project_id == project.id,
+            ProjectLocationRequirement.category_key.is_(None),
+        )
     )).scalars().all()
     assert len(locations) == 4
     descriptions = {loc.description for loc in locations}

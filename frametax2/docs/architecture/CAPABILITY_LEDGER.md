@@ -1891,3 +1891,29 @@ New: `alembic/versions/0063_migrate_little_utopia.py`, `tests/test_project_libra
 - [x] working tree clean after commit
 
 **PHASE C — RUNTIME VERIFIED.**
+
+---
+
+### Phase C Closeout — Persisted people/facts/location source of truth (2026-08-05)
+
+Closes the one remaining Phase C gap: the served `/people`, `/facts`-adjacent and location reads/writes still depended on process-local dicts in `app/demo/little_utopia_state.py`, so any producer edit was lost on backend restart.
+
+| Capability | Status | Notes |
+|---|---|---|
+| People source of truth | **POSTGRES** | `GET/POST /people` now read/write `ProjectPerson` + `TalentProfile`. Each request rehydrates the existing in-memory override store from Postgres before `get_state()`, so the engine's own override-application logic (`build_little_utopia_people`, cultural-gate role vocabulary) is completely unchanged — no engine read-path rewrite. |
+| Facts source of truth | **POSTGRES** | A people edit updates both the live `TalentProfile` row and its matching migrated `ProjectFact` row (`_PERSON_FIELD_TO_FACT_KEY`), flipping `source_type` to `user_override`. One edit, two rows, never two independently-writable copies. |
+| Location requirements source of truth | **POSTGRES** | `POST /locations` writes category overrides to `project_location_requirements.category_key/override` (new columns, migration `0064`, partial unique index on `(project_id, category_key)` verified live to actually reject duplicates). `GET /production` rehydrates them before `get_state()`. |
+| Restart persistence | **VERIFIED** | Backend killed (port confirmed free) and restarted once. Director nationality, producer set, location-category state, lifecycle and `leading_structure_id` all identical after restart. |
+| Arbitrary generated-scenario leading persistence | **DEFERRED** | Unchanged from Phase C: optimizer structures carry non-UUID string ids, so only the one migrated structure has a real row. Belongs to later engine integration — not touched here. |
+
+**Explicit, minimal fallbacks (documented, not silent):** slot roles (`lead_cast_2/3`, `dop`, `editor`, `composer`) and non-primary producers have no persisted `TalentProfile` row and remain in-memory only. Residency has no migrated `ProjectFact` key, so a residency edit updates `TalentProfile` only — correct, not a gap. `little_utopia_state.py` is retained as historical seed/provenance and as the serving path for everything not yet migrated; it is no longer the source of truth for people/facts/locations.
+
+**Known narrow limitation:** `_resolve_primary_talent` disambiguates the two producer rows by matching the original verified name, so renaming the primary producer breaks that match on a subsequent request. Documented in-code rather than fixed, since the fix belongs with broader person-identity work.
+
+**Delta-only verification:** people read → edit (`director_nationality` AU→NZ) → DB write confirmed in both `talent_profiles` and `project_facts` → reload confirmed → restored to AU. Location toggle (`desert_arid` → true) → DB write confirmed → engine recompute confirmed (`effective: true`, `source: user_override`) → reload confirmed → restored to null. One backend restart confirmed all restored values durable. One Overview page load confirmed no visible breakage, zero console errors. All verification residue removed afterward (fact provenance and the probe row both restored) — DB re-checked clean.
+
+**Optimizer executions caused:** none beyond the existing, intentional `_build_state.cache_clear()` recompute that `apply_location_overrides`/`apply_people_facts` already performed before this change. That behavior was not altered.
+
+**Tests:** new `tests/test_project_library_phase_c_closeout.py` — 6 passed. Regression: Phase B (21) + Phase C (11) = 38 passed together. Every suite touching the edited demo-state modules re-run — 308 passed. Full suite deliberately NOT re-run (no shared backend infrastructure changed). Two Phase C assertions were corrected, not weakened: the location count is now scoped to `category_key IS NULL` (the table legitimately holds two row-kinds now).
+
+**PHASE C — CLOSED. PERSISTED PROJECT DATA SOURCE OF TRUTH — VERIFIED.**
