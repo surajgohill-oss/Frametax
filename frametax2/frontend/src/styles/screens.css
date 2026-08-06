@@ -1649,11 +1649,29 @@
   font-size: 7.5px; padding: 1px 3px; border-radius: 2px;
 }
 
-.rec-delete-link {
-  background: none; border: none; color: var(--text-tertiary); font-size: 11px;
-  padding: 4px 2px; cursor: pointer; text-align: right;
+/* Compact project-actions control — replaces the easy-to-miss text link.
+   Same destructive confirmation dialog underneath, only the entry point
+   presentation changed. */
+.rec-actions-menu { position: relative; align-self: flex-end; }
+.rec-actions-trigger {
+  background: var(--surface-0); border: 0.5px solid var(--hairline); border-radius: var(--radius-sm);
+  color: var(--text-secondary); font-size: 14px; line-height: 1; letter-spacing: 0.08em;
+  padding: 6px 10px; cursor: pointer;
 }
-.rec-delete-link:hover { color: var(--red); text-decoration: underline; }
+.rec-actions-trigger:hover { border-color: var(--hairline-strong); background: var(--surface-2); }
+.rec-actions-scrim { position: fixed; inset: 0; z-index: 40; }
+.rec-actions-dropdown {
+  position: absolute; top: calc(100% + 4px); right: 0; z-index: 41;
+  min-width: 160px; background: var(--surface-1); border: 0.5px solid var(--hairline-strong);
+  border-radius: var(--radius-sm); box-shadow: var(--shadow-sm); padding: 4px; display: flex; flex-direction: column;
+}
+.rec-actions-item {
+  background: none; border: none; text-align: left; padding: 7px 8px; border-radius: 4px;
+  font: 500 12px var(--font-sans); color: var(--text-primary); cursor: pointer;
+}
+.rec-actions-item:hover { background: var(--surface-2); }
+.rec-actions-item.destructive { color: var(--red); }
+.rec-actions-item.destructive:hover { background: var(--surface-blocker); }
 
 .hero-action.destructive { background: var(--surface-blocker); color: var(--red); border-color: rgba(156,60,49,0.3); }
 .hero-action.destructive:hover { background: #F0D2CE; }

@@ -2005,3 +2005,25 @@ Reconciles a named manifest of ~29 previously-identified production identities a
 **Guards untouched:** zero optimizer/QPE/jurisdiction/incentive/Workspace/Overview/Globe/Knowledge code touched; no existing project renamed or duplicated; no existing document/version/source overwritten; no existing master replaced; no artwork generated or extracted this pass; no OCR; no full-disk crawl (one bounded name-matched search, reusing an already-gathered file listing, plus one deeper look at an already-partially-known folder).
 
 **PROJECT LIBRARY CORPUS RECONCILIATION — COMPLETE.**
+
+---
+
+## Project Library Corpus Closeout — zero-document reconciliation + Dropbox + Delete UX (2026-08-06)
+
+Closes the gap between 46 persisted projects and their staged-but-uncommitted material. Root cause of the "Materials = 0" projects (Jeepers Creepers named specifically): the classifier's own confidence gate is conservative by design — `legal`/`finance`/`incentive_estimate`/`cost_report` keyword matches are MEDIUM confidence, and folder-scoped `discover()` hints only ever produce MEDIUM association (never HIGH) unless a file's own name/path matches a title literally. Neither gate is a bug; both are why every prior phase's "HIGH+HIGH only" auto-commit left this material staged. Confirmed zero already-high+high candidates existed uncommitted — everything remaining genuinely needed judgment.
+
+**Zero-document reconciliation (13 → 4 remaining):** each of the 13 was individually inspected, not bulk-processed. 9 projects reviewer-corrected file-by-file (same mechanism a human using the review UI would use — never a classifier code change): Rocky Mountain, 5 LBS OF PRESSURE, Jeepers Creepers, Lips Like Sugar, Rust, Safehaven, 97 Minutes (partial — only its 2 unambiguous incentive-estimate files), Artists of Cinema, Maggie Moves On. Files left staged when genuinely ambiguous even after inspection (e.g. Trope's 3 "redline" docx files — could be script drafts or contract markups, not decidable without opening the actual document body). 4 remain: Braking Point/One Night Stand/Spice Route (legitimately no material was ever found — title/folder only) and Trope (ambiguous, reported not guessed).
+
+**Six Dropbox titles:** `~/Dropbox` exists and was NOT previously scanned this engagement. One bounded, targeted lookup (the six named titles only, not a folder scan) found all 6 real screenplays. Created all 6 as new Projects, ran one `discover()` call scoped to `~/Dropbox` itself (12 items total, verified bounded before running), 5 auto-committed on title-match; the 6th (Sky Unconditional's script) needed one reviewer correction since its filename joins the title with an underscore (`SKY_UNCONDITIONAL`) rather than a space, missing the literal-substring title match. Projects 46 → 52.
+
+**Result:** Documents 64 → 85 (+21 from reconciliation) → 85 confirmed final; pending candidates 269 → 251 (Dropbox added ~10 more staged, netting fewer than the ~40 committed since new candidates were created too). Zero duplicate Project titles (verified). Zero artwork activity — `project_assets` unchanged at 14 throughout, all 8 existing masters unchanged.
+
+**Delete Project UX:** the text link under "Begin Evaluation" was easy to miss. Replaced with a compact `•••` control in the same header action area — click opens a small dropdown with `Delete Project…`, which opens the exact same, unmodified `DeleteProjectDialog` and hits the exact same `DELETE` endpoint. No new deletion pathway, no Library-card delete action.
+
+**Manifest:** `docs/architecture/PROJECT_CORPUS_MANIFEST.json` regenerated (46 → 52 projects) — same generation script, re-run against the current DB state.
+
+**Verification:** project/document/version/source counts before→after; zero duplicate titles; Jeepers Creepers confirmed Materials=3 via live API; masters confirmed unchanged (8, same as before); one fresh Project Record load (Jeepers Creepers) confirmed the `•••` control opens the dropdown and the existing confirmation dialog renders correctly with title-match confirmation; zero console errors. No backend code changed (pure data reconciliation) — no backend suite run. One frontend build (clean) for the `•••` control.
+
+**Guards untouched:** zero optimizer/QPE/jurisdiction/incentive/Workspace/Overview code touched; no existing Document/Version/Source overwritten; no artwork generated or masters changed; no full-disk/Drive/Dropbox-wide scan (one bounded, already-known-location lookup); Library card design and Project Record layout untouched beyond the named delete-action presentation change.
+
+**PROJECT LIBRARY CORPUS CLOSEOUT — COMPLETE.**

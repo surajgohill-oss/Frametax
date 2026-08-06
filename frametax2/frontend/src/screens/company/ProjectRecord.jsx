@@ -47,6 +47,7 @@ export default function ProjectRecord() {
   const [importOpen, setImportOpen] = useState(false);
   const [artworkPickerOpen, setArtworkPickerOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
 
   function load() {
     setError(null);
@@ -146,7 +147,31 @@ export default function ProjectRecord() {
             </button>
           )}
           {!isServedProduction && (
-            <button className="rec-delete-link" onClick={() => setDeleteOpen(true)}>Delete Project…</button>
+            <div className="rec-actions-menu">
+              <button
+                type="button"
+                className="rec-actions-trigger"
+                onClick={() => setActionsOpen((v) => !v)}
+                aria-label="Project actions"
+                aria-expanded={actionsOpen}
+              >
+                •••
+              </button>
+              {actionsOpen && (
+                <>
+                  <div className="rec-actions-scrim" onClick={() => setActionsOpen(false)} />
+                  <div className="rec-actions-dropdown">
+                    <button
+                      type="button"
+                      className="rec-actions-item destructive"
+                      onClick={() => { setActionsOpen(false); setDeleteOpen(true); }}
+                    >
+                      Delete Project…
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           )}
         </div>
       </div>
