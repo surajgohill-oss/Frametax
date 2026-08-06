@@ -1359,8 +1359,12 @@
    classes below cover only the grid/card geometry those don't already
    provide. */
 
-.lib-screen { max-width: 1400px; padding: 20px 24px 28px; }
+.lib-screen { max-width: 1450px; padding: 20px 32px 28px; }
 .lib-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+/* Library-specific title size — a deliberate page-identity moment (approved
+   render target), not a change to the shared .screen-title other Company
+   pages use. */
+.lib-head .screen-title { font-size: 32px; line-height: 38px; }
 .lib-sub { margin: 2px 0 0; color: var(--text-secondary); font-size: 13px; }
 
 .lib-searchrow { margin-bottom: 12px; }
@@ -1401,7 +1405,7 @@
 }
 .lib-art img { width: 100%; height: 100%; object-fit: contain; }
 .lib-noart { font-size: 10.5px; color: var(--text-tertiary); letter-spacing: 0.03em; }
-.lib-body { padding: 10px 12px 9px; display: flex; flex-direction: column; gap: 5px; }
+.lib-body { padding: 10px 12px; display: flex; flex-direction: column; gap: 5px; }
 .lib-stage { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--text-tertiary); }
 .lib-title {
   font-family: var(--font-serif);
@@ -1431,7 +1435,7 @@
 
 /* ======================= Project Record (Phase D) ======================= */
 
-.rec-screen { max-width: 1300px; padding: 18px 24px 28px; }
+.rec-screen { max-width: 1340px; padding: 18px 32px 28px; }
 .rec-crumb { font-size: 11.5px; color: var(--blue); cursor: pointer; margin-bottom: 10px; display: inline-block; }
 .rec-crumb:hover { text-decoration: underline; }
 
@@ -1485,7 +1489,7 @@
 /* Compact label/value row family shared by Materials / Known-info /
    Facts / Locations / Activity panels — new, since no existing screen
    needed a generic "key : value" row until now. */
-.mrow { display: flex; align-items: center; gap: 9px; padding: 6px 0; border-bottom: 0.5px solid var(--hairline); font-size: 11.5px; }
+.mrow { display: flex; align-items: center; gap: 9px; padding: 13px 0; border-bottom: 0.5px solid var(--hairline); font-size: 11.5px; }
 .mrow:last-child { border-bottom: none; }
 .mrow .k { width: 84px; flex-shrink: 0; font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-tertiary); }
 .mrow .f { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
