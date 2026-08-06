@@ -234,6 +234,7 @@ class ProjectAssetSourceType(str, enum.Enum):
     UPLOADED = "uploaded"
     EXTRACTED_FROM_DECK = "extracted_from_deck"
     EXTRACTED_FROM_LOOKBOOK = "extracted_from_lookbook"
+    EXTRACTED_FROM_SCREENPLAY = "extracted_from_screenplay"
     DISCOVERED_IMAGE = "discovered_image"
     GENERATED = "generated"
 

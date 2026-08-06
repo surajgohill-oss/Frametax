@@ -70,8 +70,20 @@ class IngestionCandidate(Base):
     discovered_at: Mapped[str] = mapped_column(String(40), nullable=False)
     notes: Mapped[str | None] = mapped_column(Text)
 
+    # Phase F — set only for an ARTWORK candidate that was extracted from a
+    # cover/title page of another document (a deck, a look book, a
+    # screenplay), never for a standalone discovered image file. Read by
+    # commit_candidate() to give the resulting ProjectAsset real provenance
+    # (which DocumentVersion it came from, and what kind of page) instead
+    # of defaulting to a self-referential DISCOVERED_IMAGE.
+    extracted_from_document_version_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("document_versions.id", ondelete="SET NULL"), nullable=True
+    )
+    artwork_extraction_kind: Mapped[str | None] = mapped_column(String(20))  # "deck" | "lookbook" | "screenplay"
+
     # Relationships
     proposed_project: Mapped["Project | None"] = relationship(foreign_keys=[proposed_project_id])
     duplicate_of_version: Mapped["DocumentVersion | None"] = relationship(foreign_keys=[duplicate_of_version_id])
     committed_document_version: Mapped["DocumentVersion | None"] = relationship(foreign_keys=[committed_document_version_id])
     committed_project_asset: Mapped["ProjectAsset | None"] = relationship(foreign_keys=[committed_project_asset_id])
+    extracted_from_document_version: Mapped["DocumentVersion | None"] = relationship(foreign_keys=[extracted_from_document_version_id])

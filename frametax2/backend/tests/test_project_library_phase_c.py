@@ -85,13 +85,17 @@ async def test_documents_versions_and_sources(db: AsyncSession, project: Project
     versions = (await db.execute(
         select(DocumentVersion).where(DocumentVersion.document_id.in_(doc_ids))
     )).scalars().all()
-    assert len(versions) == 6
+    # 6 at Phase C migration; Phase F's real-corpus ingestion pass added 4
+    # more (a genuinely different deck revision found on Drive, plus 3
+    # extracted-artwork candidate versions) — same 5 Documents throughout,
+    # more DocumentVersions is the correct, intended effect of ingestion.
+    assert len(versions) == 10
 
     version_ids = [v.id for v in versions]
     sources = (await db.execute(
         select(DocumentVersionSource).where(DocumentVersionSource.document_version_id.in_(version_ids))
     )).scalars().all()
-    assert len(sources) == 10
+    assert len(sources) == 17
 
     # Screenplay checksum spot-check — confirms the migrated version row
     # points at the exact independently-verified file, not a placeholder.
@@ -125,11 +129,17 @@ async def test_screenplay_document_linked(db: AsyncSession, project: Project):
 
 
 async def test_project_asset_artwork(db: AsyncSession, project: Project):
-    asset = (await db.execute(
+    assets = (await db.execute(
         select(ProjectAsset).where(ProjectAsset.project_id == project.id)
-    )).scalar_one_or_none()
-    assert asset is not None
-    assert asset.is_master is True
+    )).scalars().all()
+    assert len(assets) >= 1
+    # The Phase C-migrated master is sticky — Phase F's real-corpus
+    # ingestion pass discovered 3 more legitimate artwork candidates
+    # (extracted from the look book and 2 deck revisions) but, per the
+    # never-silently-replace-a-master rule, none of them became master.
+    masters = [a for a in assets if a.is_master]
+    assert len(masters) == 1
+    assert masters[0].checksum_sha256 == "a6df89962c92588f65bb0bf06513a4d4b78a4a1899b97dac93cc7295066425c6"
 
 
 async def test_project_facts_with_provenance(db: AsyncSession, project: Project):

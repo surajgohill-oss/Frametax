@@ -37,6 +37,11 @@ from app.models.enums import (
 )
 from app.services.ingestion_classifier import classify_file, associate_file
 
+try:
+    import fitz  # PyMuPDF — optional, only used for PDF structural metadata
+except ImportError:  # pragma: no cover
+    fitz = None
+
 router = APIRouter(prefix="/ingestion", tags=["ingestion"])
 
 # Skipped outright during a folder walk — never staged as candidates.
@@ -129,7 +134,17 @@ async def discover(body: DiscoverRequest, db: AsyncSession = Depends(get_db)) ->
             continue  # already discovered in a prior run — discovery never re-stages
         scanned += 1
 
-        classification = classify_file(path.name)
+        page_count, page_size = None, None
+        if fitz is not None and path.suffix.lower() == ".pdf":
+            try:
+                with fitz.open(path) as pdf_doc:
+                    page_count = pdf_doc.page_count
+                    if page_count:
+                        r = pdf_doc[0].rect
+                        page_size = (r.width, r.height)
+            except Exception:
+                pass  # structural metadata is a bonus signal, never required
+        classification = classify_file(path.name, page_count=page_count, page_size=page_size)
         association = associate_file(path.name, str(path.parent), list(projects), list(aliases))
         if body.project_id and association.confidence == "none":
             # An explicit scope hint from the caller (e.g. "Add Material"
@@ -271,12 +286,26 @@ def _slugify(title: str) -> str:
 
 @router.post("/candidates/{candidate_id}/commit")
 async def commit_candidate(candidate_id: str, db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
+    return await _commit_candidate_impl(candidate_id, db)
+
+
+async def _commit_candidate_impl(candidate_id: str, db: AsyncSession, auto_master: bool = True) -> dict[str, Any]:
     """Creates the real, canonical records. Exact-checksum duplicates
     never create a second physical DocumentVersion — only an additional
     DocumentVersionSource on the existing one. A POSSIBLE_NEW_VERSION
     candidate always becomes its own new DocumentVersion with
     supersedes_version_id left NULL — this endpoint never guesses at
-    ordering evidence it doesn't have."""
+    ordering evidence it doesn't have.
+
+    `auto_master` (Phase F): when an artwork commit would otherwise become
+    the project's first/only master by default (no master exists yet),
+    the CALLER can suppress that — used by batch ingestion when several
+    plausible artwork candidates for the same project are being committed
+    together and there is no clear winner (see Section 6: never guess a
+    master when multiple legitimate candidates compete; leave all of them
+    as candidates and surface the project as needing an explicit
+    selection). The interactive review endpoint above always leaves this
+    True — a human is committing one row at a time there."""
     candidate = (await db.execute(select(IngestionCandidate).where(IngestionCandidate.id == candidate_id))).scalar_one_or_none()
     if candidate is None:
         raise HTTPException(status_code=404, detail="Candidate not found")
@@ -409,12 +438,28 @@ async def commit_candidate(candidate_id: str, db: AsyncSession = Depends(get_db)
         has_master = (await db.execute(
             select(ProjectAsset).where(ProjectAsset.project_id == project.id, ProjectAsset.is_master.is_(True))
         )).scalar_one_or_none()
+        # Phase F provenance: an artwork candidate EXTRACTED from a deck/
+        # lookbook/screenplay cover page carries the original document's
+        # own version id + kind (see ingestion_candidate.py) so the asset
+        # points at its real source, not at itself. A standalone
+        # discovered image file (no extraction kind set) keeps the prior
+        # Phase E behavior — self-referential DISCOVERED_IMAGE.
+        _EXTRACTION_SOURCE_TYPE = {
+            "deck": ProjectAssetSourceType.EXTRACTED_FROM_DECK.value,
+            "lookbook": ProjectAssetSourceType.EXTRACTED_FROM_LOOKBOOK.value,
+            "screenplay": ProjectAssetSourceType.EXTRACTED_FROM_SCREENPLAY.value,
+        }
+        asset_source_type = _EXTRACTION_SOURCE_TYPE.get(
+            candidate.artwork_extraction_kind, ProjectAssetSourceType.DISCOVERED_IMAGE.value
+        )
+        asset_source_version_id = candidate.extracted_from_document_version_id or version.id
         asset = ProjectAsset(
             id=uuid.uuid4(), project_id=project.id, kind=ProjectAssetKind.ARTWORK.value,
-            source_type=ProjectAssetSourceType.DISCOVERED_IMAGE.value,
+            source_type=asset_source_type,
             storage_path=storage_rel_path, checksum_sha256=candidate.checksum_sha256,
-            file_size=candidate.file_size, is_master=has_master is None,
-            source_document_version_id=version.id,
+            file_size=candidate.file_size, is_master=(has_master is None) and auto_master,
+            source_document_version_id=asset_source_version_id,
+            notes=candidate.notes,
         )
         db.add(asset)
         await db.flush()

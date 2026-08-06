@@ -40,6 +40,19 @@ _CATEGORY_RULES: list[tuple[tuple[str, ...], str, str]] = [
 ]
 
 
+# A PDF that matches no filename keyword falls back here only when its
+# own page geometry is the industry-standard screenplay signature (US
+# Letter, feature-length page count) — structural PDF metadata, not
+# content/OCR. Real corpus evidence (Phase F): "ADAM & EVE 9-15-25.pdf",
+# "GIFTED.pdf" etc. are genuine screenplays with no "script"/"screenplay"
+# in the filename; every deck/lookbook/budget PDF in the same corpus is
+# either far shorter or a non-Letter presentation aspect ratio, so this
+# heuristic does not collide with any other category found in practice.
+_SCREENPLAY_PAGE_RANGE = (55, 260)
+_LETTER_WIDTH_RANGE = (595.0, 625.0)
+_LETTER_HEIGHT_RANGE = (775.0, 800.0)
+
+
 class ClassificationResult(NamedTuple):
     category: str
     confidence: str  # "high" | "medium" | "low"
@@ -52,11 +65,24 @@ class AssociationResult:
     evidence: str
 
 
-def classify_file(filename: str) -> ClassificationResult:
-    """Category from filename + extension only. An image extension is
-    always ARTWORK at HIGH confidence — every other category comes from
-    keyword matching against the filename; no match falls back to OTHER
-    at LOW confidence rather than guessing."""
+def classify_file(
+    filename: str,
+    *,
+    page_count: int | None = None,
+    page_size: tuple[float, float] | None = None,
+) -> ClassificationResult:
+    """Category from filename + extension only, by default. An image
+    extension is always ARTWORK at HIGH confidence — every other category
+    comes from keyword matching against the filename first.
+
+    `page_count`/`page_size` are optional, caller-supplied PDF structural
+    metadata (never read by this function itself — it stays pure/no-I/O).
+    When filename keywords find nothing and this metadata is present and
+    matches the industry-standard screenplay signature (US Letter,
+    feature-length), that's still a deterministic, auditable, no-OCR
+    fallback to SCREENPLAY at HIGH confidence rather than OTHER — see
+    `_SCREENPLAY_PAGE_RANGE` above. No match at all falls back to OTHER at
+    LOW confidence rather than guessing."""
     ext = PurePosixPath(filename).suffix.lower()
     if ext in IMAGE_EXTENSIONS:
         return ClassificationResult("artwork", "high")
@@ -65,6 +91,17 @@ def classify_file(filename: str) -> ClassificationResult:
     for keywords, category, confidence in _CATEGORY_RULES:
         if any(kw in lower for kw in keywords):
             return ClassificationResult(category, confidence)
+
+    if (
+        ext == ".pdf"
+        and page_count is not None
+        and _SCREENPLAY_PAGE_RANGE[0] <= page_count <= _SCREENPLAY_PAGE_RANGE[1]
+        and page_size is not None
+        and _LETTER_WIDTH_RANGE[0] <= page_size[0] <= _LETTER_WIDTH_RANGE[1]
+        and _LETTER_HEIGHT_RANGE[0] <= page_size[1] <= _LETTER_HEIGHT_RANGE[1]
+    ):
+        return ClassificationResult("screenplay", "high")
+
     return ClassificationResult("other", "low")
 
 
