@@ -1,0 +1,743 @@
+{
+  "generated": "2026-08-06T10:01:05.624118+00:00",
+  "projects": [
+    {
+      "canonical_title": "10 Double Zero",
+      "aliases": [],
+      "library_project_id": "3519feda-d280-435f-badc-1e4c788a2cb3",
+      "known_source_locations": [
+        "/Users/Suraj/Downloads"
+      ],
+      "material_categories_committed": [
+        "budget",
+        "screenplay"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 2,
+      "pending_review_count": 17,
+      "unresolved_issues": "17 candidate file(s) staged pending manual review (medium/low classification confidence \u2014 legal, finance, incentive, or unclassified material)."
+    },
+    {
+      "canonical_title": "5 LBS OF PRESSURE",
+      "aliases": [],
+      "library_project_id": "98b440b9-a93a-4713-86c8-a5f75b54da97",
+      "known_source_locations": [],
+      "material_categories_committed": [],
+      "ingestion_status": "project created, no material committed yet",
+      "committed_document_count": 0,
+      "pending_review_count": 18,
+      "unresolved_issues": "18 candidate file(s) staged pending manual review (medium/low classification confidence \u2014 legal, finance, incentive, or unclassified material)."
+    },
+    {
+      "canonical_title": "97 Minutes",
+      "aliases": [],
+      "library_project_id": "f3b4b398-b08f-43b4-a6e1-6847575d385c",
+      "known_source_locations": [],
+      "material_categories_committed": [],
+      "ingestion_status": "project created, no material committed yet",
+      "committed_document_count": 0,
+      "pending_review_count": 21,
+      "unresolved_issues": "21 candidate file(s) staged pending manual review (medium/low classification confidence \u2014 legal, finance, incentive, or unclassified material)."
+    },
+    {
+      "canonical_title": "Adam & Eve",
+      "aliases": [],
+      "library_project_id": "c7e384ee-9c85-4999-a738-2abc6338900c",
+      "known_source_locations": [
+        "/Users/Suraj/Library/CloudStorage/GoogleDrive-surajgohill@gmail.com/.shortcut-targets-by-id/1ShXFFjb4H3-S-9k6XF7l9GeGuG8nm2Ug/MindtheStory/PROJECTS/ADAM AND EVE"
+      ],
+      "material_categories_committed": [
+        "screenplay"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 1,
+      "pending_review_count": 0,
+      "unresolved_issues": null
+    },
+    {
+      "canonical_title": "All My Friends Are Dead",
+      "aliases": [
+        "AMFAD"
+      ],
+      "library_project_id": "e3f50d06-68c5-4d36-8b3a-e1f87e5c7a44",
+      "known_source_locations": [
+        "/Users/Suraj/Documents/AMFAD"
+      ],
+      "material_categories_committed": [
+        "budget",
+        "screenplay"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 2,
+      "pending_review_count": 41,
+      "unresolved_issues": "41 candidate file(s) staged pending manual review (medium/low classification confidence \u2014 legal, finance, incentive, or unclassified material)."
+    },
+    {
+      "canonical_title": "Almost Perfect",
+      "aliases": [],
+      "library_project_id": "e5a8cd87-4978-4fa1-a29b-161c212e5db0",
+      "known_source_locations": [
+        "/Users/Suraj/Library/CloudStorage/GoogleDrive-surajgohill@gmail.com/.shortcut-targets-by-id/1ShXFFjb4H3-S-9k6XF7l9GeGuG8nm2Ug/MindtheStory/PROJECTS/ALMOST PERFECT/Deck",
+        "/Users/Suraj/Library/CloudStorage/GoogleDrive-surajgohill@gmail.com/.shortcut-targets-by-id/1ShXFFjb4H3-S-9k6XF7l9GeGuG8nm2Ug/MindtheStory/PROJECTS/ALMOST PERFECT/Script",
+        "extracted from deck cover: Almost Perfect Pitch Deck_DD.pdf"
+      ],
+      "material_categories_committed": [
+        "artwork",
+        "deck",
+        "screenplay"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 3,
+      "pending_review_count": 0,
+      "unresolved_issues": null
+    },
+    {
+      "canonical_title": "Artists of Cinema",
+      "aliases": [],
+      "library_project_id": "b02575e3-f906-4c4c-98d8-7958dedf7a2e",
+      "known_source_locations": [],
+      "material_categories_committed": [],
+      "ingestion_status": "project created, no material committed yet",
+      "committed_document_count": 0,
+      "pending_review_count": 1,
+      "unresolved_issues": "1 candidate file(s) staged pending manual review (medium/low classification confidence \u2014 legal, finance, incentive, or unclassified material)."
+    },
+    {
+      "canonical_title": "Bad Hombres",
+      "aliases": [
+        "Godkiller"
+      ],
+      "library_project_id": "4355ae88-a636-4c18-af60-ad73b2646124",
+      "known_source_locations": [
+        "/Users/Suraj/Documents"
+      ],
+      "material_categories_committed": [
+        "budget"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 1,
+      "pending_review_count": 26,
+      "unresolved_issues": "26 candidate file(s) staged pending manual review (medium/low classification confidence \u2014 legal, finance, incentive, or unclassified material)."
+    },
+    {
+      "canonical_title": "Baron Samedi",
+      "aliases": [],
+      "library_project_id": "fcbb9190-5b9c-4af8-96fa-359fce1cf79a",
+      "known_source_locations": [
+        "/Users/Suraj/Documents/Baron"
+      ],
+      "material_categories_committed": [
+        "budget",
+        "deck",
+        "schedule"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 3,
+      "pending_review_count": 8,
+      "unresolved_issues": "8 candidate file(s) staged pending manual review (medium/low classification confidence \u2014 legal, finance, incentive, or unclassified material)."
+    },
+    {
+      "canonical_title": "Being Britney",
+      "aliases": [],
+      "library_project_id": "54e96121-cab7-4bde-ab8b-d28be273e30b",
+      "known_source_locations": [
+        "/Users/Suraj/Documents/beingbritney"
+      ],
+      "material_categories_committed": [
+        "deck"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 1,
+      "pending_review_count": 0,
+      "unresolved_issues": null
+    },
+    {
+      "canonical_title": "Braking Point",
+      "aliases": [],
+      "library_project_id": "e089508b-3022-4140-96e0-a1dd5f36a2e8",
+      "known_source_locations": [],
+      "material_categories_committed": [],
+      "ingestion_status": "project created, no material committed yet",
+      "committed_document_count": 0,
+      "pending_review_count": 0,
+      "unresolved_issues": null
+    },
+    {
+      "canonical_title": "Dead After Dark",
+      "aliases": [],
+      "library_project_id": "bff5d04c-d8f9-482a-84cf-d0e380c6282e",
+      "known_source_locations": [
+        "/Users/Suraj/Documents",
+        "/Users/Suraj/Library/CloudStorage/GoogleDrive-surajgohill@gmail.com/.shortcut-targets-by-id/1ShXFFjb4H3-S-9k6XF7l9GeGuG8nm2Ug/MindtheStory/PROJECTS/DeadafterDark"
+      ],
+      "material_categories_committed": [
+        "screenplay"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 1,
+      "pending_review_count": 1,
+      "unresolved_issues": "1 candidate file(s) staged pending manual review (medium/low classification confidence \u2014 legal, finance, incentive, or unclassified material)."
+    },
+    {
+      "canonical_title": "F#K Valentine's Day",
+      "aliases": [],
+      "library_project_id": "6c6f1c13-2d49-4bbc-bafb-2a12efa93112",
+      "known_source_locations": [
+        "/Users/Suraj/Documents/thesystem/roombelow/fuckvday",
+        "rendered/extracted from deck cover: Fck Valentines Day - - 2.9.24 deck.pdf"
+      ],
+      "material_categories_committed": [
+        "artwork",
+        "budget",
+        "deck",
+        "screenplay"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 4,
+      "pending_review_count": 0,
+      "unresolved_issues": null
+    },
+    {
+      "canonical_title": "Flash Before the Bang",
+      "aliases": [],
+      "library_project_id": "28b66731-2d86-4697-affe-5793aeb4f7a5",
+      "known_source_locations": [
+        "/Users/Suraj/Documents/Flashb4bang"
+      ],
+      "material_categories_committed": [
+        "screenplay"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 1,
+      "pending_review_count": 53,
+      "unresolved_issues": "53 candidate file(s) staged pending manual review (medium/low classification confidence \u2014 legal, finance, incentive, or unclassified material)."
+    },
+    {
+      "canonical_title": "Gifted",
+      "aliases": [],
+      "library_project_id": "3f512a28-51ae-400e-abe3-7bdcbb3734e3",
+      "known_source_locations": [
+        "/Users/Suraj/Documents/Gifted",
+        "/Users/Suraj/Library/CloudStorage/GoogleDrive-surajgohill@gmail.com/.shortcut-targets-by-id/1ShXFFjb4H3-S-9k6XF7l9GeGuG8nm2Ug/MindtheStory/PROJECTS/Gifted"
+      ],
+      "material_categories_committed": [
+        "screenplay"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 1,
+      "pending_review_count": 0,
+      "unresolved_issues": null
+    },
+    {
+      "canonical_title": "Give or Take",
+      "aliases": [],
+      "library_project_id": "a68d5820-8566-45ee-918f-b288d5505c60",
+      "known_source_locations": [
+        "/Users/Suraj/Downloads",
+        "/Users/Suraj/Library/CloudStorage/GoogleDrive-surajgohill@gmail.com/.shortcut-targets-by-id/1ShXFFjb4H3-S-9k6XF7l9GeGuG8nm2Ug/MindtheStory/PROJECTS/GIVE OR TAKE"
+      ],
+      "material_categories_committed": [
+        "screenplay"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 1,
+      "pending_review_count": 0,
+      "unresolved_issues": null
+    },
+    {
+      "canonical_title": "Going Places",
+      "aliases": [],
+      "library_project_id": "dee8feca-7b94-4330-ac19-79969e8facb8",
+      "known_source_locations": [
+        "/Users/Suraj/Downloads"
+      ],
+      "material_categories_committed": [
+        "budget"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 1,
+      "pending_review_count": 2,
+      "unresolved_issues": "2 candidate file(s) staged pending manual review (medium/low classification confidence \u2014 legal, finance, incentive, or unclassified material)."
+    },
+    {
+      "canonical_title": "Hightower",
+      "aliases": [],
+      "library_project_id": "5b345adc-db05-4d65-b055-8862ce304b6c",
+      "known_source_locations": [
+        "/Users/Suraj/Documents",
+        "/Users/Suraj/Library/CloudStorage/GoogleDrive-surajgohill@gmail.com/.shortcut-targets-by-id/1ShXFFjb4H3-S-9k6XF7l9GeGuG8nm2Ug/MindtheStory/PROJECTS/Hightower"
+      ],
+      "material_categories_committed": [
+        "screenplay"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 1,
+      "pending_review_count": 2,
+      "unresolved_issues": "2 candidate file(s) staged pending manual review (medium/low classification confidence \u2014 legal, finance, incentive, or unclassified material)."
+    },
+    {
+      "canonical_title": "Interference",
+      "aliases": [],
+      "library_project_id": "565744c5-86fd-4c1d-bdb5-fdd4b910d0b0",
+      "known_source_locations": [
+        "/Users/Suraj/Documents/Interference"
+      ],
+      "material_categories_committed": [
+        "budget"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 1,
+      "pending_review_count": 3,
+      "unresolved_issues": "3 candidate file(s) staged pending manual review (medium/low classification confidence \u2014 legal, finance, incentive, or unclassified material)."
+    },
+    {
+      "canonical_title": "Jeepers Creepers",
+      "aliases": [],
+      "library_project_id": "47df118c-4a36-4edd-8f27-05cef12a3f00",
+      "known_source_locations": [],
+      "material_categories_committed": [],
+      "ingestion_status": "project created, no material committed yet",
+      "committed_document_count": 0,
+      "pending_review_count": 4,
+      "unresolved_issues": "4 candidate file(s) staged pending manual review (medium/low classification confidence \u2014 legal, finance, incentive, or unclassified material)."
+    },
+    {
+      "canonical_title": "Lips Like Sugar",
+      "aliases": [],
+      "library_project_id": "ab10b319-978e-44d3-9331-af2a5f2cccc2",
+      "known_source_locations": [],
+      "material_categories_committed": [],
+      "ingestion_status": "project created, no material committed yet",
+      "committed_document_count": 0,
+      "pending_review_count": 3,
+      "unresolved_issues": "3 candidate file(s) staged pending manual review (medium/low classification confidence \u2014 legal, finance, incentive, or unclassified material)."
+    },
+    {
+      "canonical_title": "Maggie Moves On",
+      "aliases": [],
+      "library_project_id": "13d323b3-0b7a-4067-87be-f37968ba9128",
+      "known_source_locations": [],
+      "material_categories_committed": [],
+      "ingestion_status": "project created, no material committed yet",
+      "committed_document_count": 0,
+      "pending_review_count": 1,
+      "unresolved_issues": "1 candidate file(s) staged pending manual review (medium/low classification confidence \u2014 legal, finance, incentive, or unclassified material)."
+    },
+    {
+      "canonical_title": "Model Wars",
+      "aliases": [],
+      "library_project_id": "7aa768f5-656b-43c4-8ee6-57d33ce52698",
+      "known_source_locations": [
+        "/Users/Suraj/Library/CloudStorage/GoogleDrive-surajgohill@gmail.com/.shortcut-targets-by-id/1ShXFFjb4H3-S-9k6XF7l9GeGuG8nm2Ug/MindtheStory/PROJECTS/MODEL WARS",
+        "extracted from deck cover: Copy of Paul Fisher Full Deck.pdf"
+      ],
+      "material_categories_committed": [
+        "artwork",
+        "deck"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 2,
+      "pending_review_count": 0,
+      "unresolved_issues": null
+    },
+    {
+      "canonical_title": "One Night Stand",
+      "aliases": [],
+      "library_project_id": "3c007759-9ca2-4aef-a3aa-0fef3bd391ae",
+      "known_source_locations": [],
+      "material_categories_committed": [],
+      "ingestion_status": "project created, no material committed yet",
+      "committed_document_count": 0,
+      "pending_review_count": 0,
+      "unresolved_issues": null
+    },
+    {
+      "canonical_title": "Otherwise Engaged",
+      "aliases": [],
+      "library_project_id": "36a9fa0f-fc2b-4314-871f-83058ce42868",
+      "known_source_locations": [
+        "/Users/Suraj/Downloads",
+        "/Users/Suraj/Library/CloudStorage/GoogleDrive-surajgohill@gmail.com/.shortcut-targets-by-id/1ShXFFjb4H3-S-9k6XF7l9GeGuG8nm2Ug/MindtheStory/PROJECTS/OTHERWISE ENGAGED",
+        "/private/tmp/claude-501/-Users-Suraj-awardradar/8e961445-2e2a-4394-b2f1-405c85bf7121/scratchpad/dup-test"
+      ],
+      "material_categories_committed": [
+        "deck",
+        "screenplay"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 2,
+      "pending_review_count": 0,
+      "unresolved_issues": null
+    },
+    {
+      "canonical_title": "Rocky Mountain",
+      "aliases": [],
+      "library_project_id": "191f1422-79a1-4a6c-a3fb-cafa0c2c2343",
+      "known_source_locations": [],
+      "material_categories_committed": [],
+      "ingestion_status": "project created, no material committed yet",
+      "committed_document_count": 0,
+      "pending_review_count": 2,
+      "unresolved_issues": "2 candidate file(s) staged pending manual review (medium/low classification confidence \u2014 legal, finance, incentive, or unclassified material)."
+    },
+    {
+      "canonical_title": "Rust",
+      "aliases": [],
+      "library_project_id": "053a13ef-cc8c-4397-9e5a-2e0e59ee9877",
+      "known_source_locations": [],
+      "material_categories_committed": [],
+      "ingestion_status": "project created, no material committed yet",
+      "committed_document_count": 0,
+      "pending_review_count": 4,
+      "unresolved_issues": "4 candidate file(s) staged pending manual review (medium/low classification confidence \u2014 legal, finance, incentive, or unclassified material)."
+    },
+    {
+      "canonical_title": "Safehaven",
+      "aliases": [],
+      "library_project_id": "13d71d64-05dd-46ab-b488-69600f301140",
+      "known_source_locations": [],
+      "material_categories_committed": [],
+      "ingestion_status": "project created, no material committed yet",
+      "committed_document_count": 0,
+      "pending_review_count": 1,
+      "unresolved_issues": "1 candidate file(s) staged pending manual review (medium/low classification confidence \u2014 legal, finance, incentive, or unclassified material)."
+    },
+    {
+      "canonical_title": "Sierra Madre",
+      "aliases": [],
+      "library_project_id": "f3dc1f71-03eb-455d-aa1e-6910affcd973",
+      "known_source_locations": [
+        "/Users/Suraj/Documents/sierremadre"
+      ],
+      "material_categories_committed": [
+        "screenplay"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 1,
+      "pending_review_count": 7,
+      "unresolved_issues": "7 candidate file(s) staged pending manual review (medium/low classification confidence \u2014 legal, finance, incentive, or unclassified material)."
+    },
+    {
+      "canonical_title": "Spice Route",
+      "aliases": [],
+      "library_project_id": "5c306374-3caf-4826-896c-3ab0aacf086e",
+      "known_source_locations": [],
+      "material_categories_committed": [],
+      "ingestion_status": "project created, no material committed yet",
+      "committed_document_count": 0,
+      "pending_review_count": 0,
+      "unresolved_issues": null
+    },
+    {
+      "canonical_title": "Terezin",
+      "aliases": [],
+      "library_project_id": "2c11248e-9bc3-4bc5-994e-3650dc0fca92",
+      "known_source_locations": [
+        "/Users/Suraj/Downloads",
+        "/Users/Suraj/Downloads/files",
+        "/Users/Suraj/Library/CloudStorage/GoogleDrive-surajgohill@gmail.com/.shortcut-targets-by-id/1ShXFFjb4H3-S-9k6XF7l9GeGuG8nm2Ug/MindtheStory/PROJECTS/TEREZIN",
+        "/Users/Suraj/Library/CloudStorage/GoogleDrive-surajgohill@gmail.com/My Drive",
+        "extracted from deck cover: Terezin_Slide.pdf",
+        "extracted from deck cover: Terezin_Slide.pptx"
+      ],
+      "material_categories_committed": [
+        "artwork",
+        "deck",
+        "screenplay"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 3,
+      "pending_review_count": 0,
+      "unresolved_issues": null
+    },
+    {
+      "canonical_title": "The Arrangement",
+      "aliases": [],
+      "library_project_id": "eadbd3f9-e47b-4b86-8f44-1d95007f84fa",
+      "known_source_locations": [
+        "/Users/Suraj/Library/CloudStorage/GoogleDrive-surajgohill@gmail.com/.shortcut-targets-by-id/1ShXFFjb4H3-S-9k6XF7l9GeGuG8nm2Ug/MindtheStory/PROJECTS/THE ARRANGEMENT"
+      ],
+      "material_categories_committed": [
+        "screenplay"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 1,
+      "pending_review_count": 0,
+      "unresolved_issues": null
+    },
+    {
+      "canonical_title": "The Cure",
+      "aliases": [],
+      "library_project_id": "f3c1a6f1-a357-407f-8072-7dfbba87ceae",
+      "known_source_locations": [
+        "/Users/Suraj/Documents/Flashb4bang/Thecure",
+        "/Users/Suraj/Documents/thecure"
+      ],
+      "material_categories_committed": [
+        "budget",
+        "screenplay"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 2,
+      "pending_review_count": 11,
+      "unresolved_issues": "11 candidate file(s) staged pending manual review (medium/low classification confidence \u2014 legal, finance, incentive, or unclassified material)."
+    },
+    {
+      "canonical_title": "The Dale",
+      "aliases": [],
+      "library_project_id": "d11c0b59-b1b1-411f-8592-3fec887214ef",
+      "known_source_locations": [
+        "/Users/Suraj/Library/CloudStorage/GoogleDrive-surajgohill@gmail.com/.shortcut-targets-by-id/1ShXFFjb4H3-S-9k6XF7l9GeGuG8nm2Ug/MindtheStory/PROJECTS/THE DALE"
+      ],
+      "material_categories_committed": [
+        "deck",
+        "screenplay"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 2,
+      "pending_review_count": 0,
+      "unresolved_issues": null
+    },
+    {
+      "canonical_title": "The Little Utopia",
+      "aliases": [
+        "The Boat"
+      ],
+      "library_project_id": "fa5cade5-0669-4816-bfe6-72146f8d3bae",
+      "known_source_locations": [
+        "/Users/Suraj/Downloads",
+        "/Users/Suraj/Downloads/The Little Utopia 1_30_26.pdf",
+        "/Users/Suraj/Downloads/The Little Utopia Budget Mauritius 3rd June 2025 v1 (1).pdf",
+        "/Users/Suraj/Downloads/TheLittleUtopia_Slide.pptx",
+        "/Users/Suraj/Downloads/files",
+        "/Users/Suraj/Library/CloudStorage/GoogleDrive-surajgohill@gmail.com/.shortcut-targets-by-id/1ShXFFjb4H3-S-9k6XF7l9GeGuG8nm2Ug/MindtheStory/PROJECTS/THE LITTLE UTOPIA",
+        "Drive: 'Downloads' mirror folder (NOT the canonical PROJECTS folder) \u2014 only location found",
+        "Drive: Downloads-mirror copy, same reported size (736,227 bytes)",
+        "Drive: PROJECTS/THE LITTLE UTOPIA/THE LITTLE UTOPIA LOOK BOOK .pdf",
+        "Drive: PROJECTS/THE LITTLE UTOPIA/The Little Utopia 1_30_26.pdf (canonical)",
+        "Drive: PROJECTS/THE LITTLE UTOPIA/The Little Utopia Budget Mauritius 3rd June 2025 v1 (1).pdf (canonical)",
+        "Drive: PROJECTS/THE LITTLE UTOPIA/TheLittleUtopia_Slide.pptx \u2014 589,045 bytes, NOT the same size as the local copy (830,698 bytes); not assumed identical, not downloaded/checksummed this pass \u2014 recorded as a distinct version, lineage unordered.",
+        "Drive: second 1,250,024-byte copy found during discovery (same size, not independently re-verified byte-for-byte)",
+        "extracted from deck cover: TheLittleUtopia_Slide.pptx",
+        "extracted from deck cover: TheLittleUtopia_Slide__1_.pdf",
+        "extracted from lookbook cover: THE LITTLE UTOPIA LOOK BOOK .pdf"
+      ],
+      "material_categories_committed": [
+        "artwork",
+        "budget",
+        "deck",
+        "lookbook",
+        "screenplay"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 5,
+      "pending_review_count": 0,
+      "unresolved_issues": null
+    },
+    {
+      "canonical_title": "The Men We Leave Behind",
+      "aliases": [],
+      "library_project_id": "b35ef854-4ccd-4af3-b348-3cf81605c7fd",
+      "known_source_locations": [
+        "/Users/Suraj/Library/CloudStorage/GoogleDrive-surajgohill@gmail.com/.shortcut-targets-by-id/1ShXFFjb4H3-S-9k6XF7l9GeGuG8nm2Ug/MindtheStory/PROJECTS/THE MEN WE LEAVE BEHIND/Lookbook",
+        "/Users/Suraj/Library/CloudStorage/GoogleDrive-surajgohill@gmail.com/.shortcut-targets-by-id/1ShXFFjb4H3-S-9k6XF7l9GeGuG8nm2Ug/MindtheStory/PROJECTS/THE MEN WE LEAVE BEHIND/Script",
+        "extracted from lookbook cover: \u110f\u1173\u1105\u1175\u1109\u1173\u1106\u1161\u1109\u1173\u110f\u1161\u1100\u1169_Look Book(ENG)_final copy.pdf"
+      ],
+      "material_categories_committed": [
+        "artwork",
+        "lookbook",
+        "screenplay"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 3,
+      "pending_review_count": 0,
+      "unresolved_issues": null
+    },
+    {
+      "canonical_title": "The Room Below",
+      "aliases": [],
+      "library_project_id": "b8571e40-8942-48d3-8b0d-7b06a28bb818",
+      "known_source_locations": [
+        "/Users/Suraj/Documents/roombelow",
+        "/Users/Suraj/Documents/thesystem/roombelow"
+      ],
+      "material_categories_committed": [
+        "screenplay"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 1,
+      "pending_review_count": 18,
+      "unresolved_issues": "18 candidate file(s) staged pending manual review (medium/low classification confidence \u2014 legal, finance, incentive, or unclassified material)."
+    },
+    {
+      "canonical_title": "The System",
+      "aliases": [],
+      "library_project_id": "e1f2444d-4eac-410e-9c92-45637b8f2ae0",
+      "known_source_locations": [
+        "/Users/Suraj/Documents/thesystem"
+      ],
+      "material_categories_committed": [
+        "budget",
+        "schedule",
+        "screenplay"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 3,
+      "pending_review_count": 7,
+      "unresolved_issues": "7 candidate file(s) staged pending manual review (medium/low classification confidence \u2014 legal, finance, incentive, or unclassified material)."
+    },
+    {
+      "canonical_title": "Trail Mates",
+      "aliases": [],
+      "library_project_id": "f94c7e3b-d7a5-41cc-80dc-7ad87fa6f910",
+      "known_source_locations": [
+        "/Users/Suraj/Documents/Trailmates"
+      ],
+      "material_categories_committed": [
+        "screenplay"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 1,
+      "pending_review_count": 5,
+      "unresolved_issues": "5 candidate file(s) staged pending manual review (medium/low classification confidence \u2014 legal, finance, incentive, or unclassified material)."
+    },
+    {
+      "canonical_title": "Trope",
+      "aliases": [],
+      "library_project_id": "3600300a-232e-4f18-88f3-dfe6f2159f80",
+      "known_source_locations": [],
+      "material_categories_committed": [],
+      "ingestion_status": "project created, no material committed yet",
+      "committed_document_count": 0,
+      "pending_review_count": 3,
+      "unresolved_issues": "3 candidate file(s) staged pending manual review (medium/low classification confidence \u2014 legal, finance, incentive, or unclassified material)."
+    },
+    {
+      "canonical_title": "Twilight of the Dead",
+      "aliases": [],
+      "library_project_id": "92167170-9e42-4bbb-9754-877ce1692b8a",
+      "known_source_locations": [
+        "/Users/Suraj/Documents/twlightdead"
+      ],
+      "material_categories_committed": [
+        "budget"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 1,
+      "pending_review_count": 1,
+      "unresolved_issues": "1 candidate file(s) staged pending manual review (medium/low classification confidence \u2014 legal, finance, incentive, or unclassified material)."
+    },
+    {
+      "canonical_title": "Unconditional Love",
+      "aliases": [],
+      "library_project_id": "b4e8c5d4-600f-415b-b4cd-54ef5667eeb3",
+      "known_source_locations": [
+        "/Users/Suraj/Library/CloudStorage/GoogleDrive-surajgohill@gmail.com/.shortcut-targets-by-id/1ShXFFjb4H3-S-9k6XF7l9GeGuG8nm2Ug/MindtheStory/PROJECTS/UNCONDITIONAL LOVE",
+        "extracted from deck cover: UnconditionalLove_Slide (1).pptx"
+      ],
+      "material_categories_committed": [
+        "artwork",
+        "deck",
+        "screenplay"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 3,
+      "pending_review_count": 1,
+      "unresolved_issues": "1 candidate file(s) staged pending manual review (medium/low classification confidence \u2014 legal, finance, incentive, or unclassified material)."
+    },
+    {
+      "canonical_title": "Underwater",
+      "aliases": [],
+      "library_project_id": "f1292c56-0288-4575-91ec-1f00081f07a0",
+      "known_source_locations": [
+        "/Users/Suraj/Documents/thesystem/roombelow/fuckvday/underwater",
+        "rendered/extracted from deck cover: Underwater Presentation.pptx (1) (1) (1).pdf"
+      ],
+      "material_categories_committed": [
+        "artwork",
+        "budget",
+        "deck",
+        "screenplay"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 4,
+      "pending_review_count": 0,
+      "unresolved_issues": null
+    },
+    {
+      "canonical_title": "Werewolf",
+      "aliases": [],
+      "library_project_id": "49b9cde2-d558-45d2-981f-a32ef69dbf01",
+      "known_source_locations": [
+        "/Users/Suraj/Documents/werewolf"
+      ],
+      "material_categories_committed": [
+        "budget",
+        "screenplay"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 2,
+      "pending_review_count": 2,
+      "unresolved_issues": "2 candidate file(s) staged pending manual review (medium/low classification confidence \u2014 legal, finance, incentive, or unclassified material)."
+    },
+    {
+      "canonical_title": "White Feather",
+      "aliases": [],
+      "library_project_id": "a32d36b1-3621-4022-952b-25dd85a58a57",
+      "known_source_locations": [
+        "/Users/Suraj/Downloads",
+        "/Users/Suraj/Library/CloudStorage/GoogleDrive-surajgohill@gmail.com/.shortcut-targets-by-id/1ShXFFjb4H3-S-9k6XF7l9GeGuG8nm2Ug/MindtheStory/PROJECTS/White Feather"
+      ],
+      "material_categories_committed": [
+        "screenplay"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 1,
+      "pending_review_count": 0,
+      "unresolved_issues": null
+    },
+    {
+      "canonical_title": "White Line Highway",
+      "aliases": [],
+      "library_project_id": "61d4f38e-be9a-4628-8c1b-d8baaefeb7d7",
+      "known_source_locations": [
+        "/Users/Suraj/Library/CloudStorage/GoogleDrive-surajgohill@gmail.com/.shortcut-targets-by-id/1ShXFFjb4H3-S-9k6XF7l9GeGuG8nm2Ug/MindtheStory/PROJECTS/WHITE LINE HIGHWAY",
+        "extracted from deck cover: WhiteLineHighway_Slide.pptx"
+      ],
+      "material_categories_committed": [
+        "artwork",
+        "deck",
+        "screenplay"
+      ],
+      "ingestion_status": "material committed",
+      "committed_document_count": 3,
+      "pending_review_count": 0,
+      "unresolved_issues": null
+    }
+  ],
+  "unresolved_candidates": [
+    {
+      "title": "Jellyfish",
+      "status": "found_but_not_created",
+      "reason": "Real folder/files found (~/Documents/Jellyfish) but content reads as a slate/investment-platform memo, not a film production \u2014 per explicit instruction, left unresolved rather than auto-created."
+    },
+    {
+      "title": "Beach Soccer",
+      "status": "found_but_not_created",
+      "reason": "Real folder/files found (~/Documents/beachsoccer) but content reads as a sports/JV business deal, not a film production \u2014 per explicit instruction, left unresolved rather than auto-created."
+    }
+  ],
+  "not_found": [
+    "David",
+    "Drug Honey",
+    "Jane Millen",
+    "Replacements",
+    "Serpent Girl",
+    "Sky Unconditional"
+  ],
+  "excluded_entity_names": [
+    "Ivanhoe Pictures",
+    "JADE / Origo",
+    "FilmNation"
+  ]
+}

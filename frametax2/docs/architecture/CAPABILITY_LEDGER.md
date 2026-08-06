@@ -1979,3 +1979,29 @@ Two data passes plus a UX corrective pass, reusing Phase E/F's ingestion archite
 **Guards untouched:** zero optimizer/QPE/jurisdiction/incentive code touched; no existing master silently replaced; no Little Utopia optimizer output changed; no further Library/Record redesign beyond the named corrections; no second ingestion or artwork architecture; no OCR; no semantic extraction; no historical-evidence-driven optimizer learning.
 
 **LIBRARY RECONCILIATION + ARTWORK COMPLETION + UX CORRECTION — COMPLETE. TIER 5 (GENERATED ARTWORK) DEFERRED AT USER'S REQUEST.**
+
+---
+
+## Project Library Corpus Reconciliation — 23 new historical projects (2026-08-06)
+
+Reconciles a named manifest of ~29 previously-identified production identities against the Library. A bounded, name-matched local search (reusing the file listing already gathered in the prior pass, one deeper directory level explored where a named folder — `thesystem` — was known to nest further) confirmed real, well-documented material for 23 of them; 6 ("David", "Drug Honey", "Jane Millen", "Replacements", "Serpent Girl", "Sky Unconditional") were not found locally after a targeted lookup. "Jellyfish" and "Beach Soccer" have real folders but read as a slate-financing memo and a sports JV deal respectively, not film productions — left unresolved per explicit instruction rather than auto-created.
+
+**Projects:** 23 → 46. All 23 new projects created title-only then populated via the existing `discover()`/`commit_candidate` pipeline — folder-scoped for productions with a dedicated folder (deepest-first where folders nest, e.g. `thesystem/roombelow/fuckvday/underwater` — already-staged subtrees skip via the existing `already_staged` check rather than being reprocessed or misattributed), curated-file-list for productions whose real material sits loose among thousands of unrelated personal files (10 Double Zero, 97 Minutes, Going Places, Jeepers Creepers, Rust, Trope, Safehaven, and stray Bad Hombres files) — the same direct-staging pattern proven for F#K Valentine's Day/Underwater in the prior pass. No duplicate Project rows (verified by title GROUP BY).
+
+**V-BRAT/Greece:** read the PDF's own text rather than guessing from the filename — it is genuinely "F#*K VALENTINES DAY / PRELIMINARY BUDGET - GREECE" (real director/producer names, a 40% Greek cash-rebate calculation against a real budget). Confirms the prior pass's attachment to F#K Valentine's Day was correct; no change needed.
+
+**Historical evidence:** real incentive/legal/finance material was found in volume (Mississippi Tax Letter, LA/UK tax credit opinions, incentive estimates, CAM agreements, distribution/sales agreements, term sheets, cost reports, cash-flow forecasts) but almost all of it classifies at MEDIUM confidence under the existing classifier (legal/finance/incentive_estimate/cost_report are MEDIUM-confidence categories by design) — per the same auto-commit gate every prior phase has enforced (HIGH+HIGH only), this stayed staged as `IngestionCandidate` rows rather than auto-promoted to canonical Documents. The evidence IS durably preserved (checksum, path, category proposal, project association all in Postgres) — "preserve the evidence correctly" was satisfied without loosening the confidence gate, which was not authorized this pass. 39 files committed at high confidence (mostly screenplay/budget/schedule/deck); 257 staged pending review.
+
+**Dedup:** exact-byte duplicates collapsed to a single source (verified spot-check); two copies of The Room Below's own script (found in two different folders, `thesystem/roombelow/` and the separate top-level `roombelow/`) turned out to have genuinely different checksums — correctly retained as two distinct DocumentVersions, not forced together.
+
+**Durable corpus manifest (new, required by this task):** `docs/architecture/PROJECT_CORPUS_MANIFEST.json` — one row per Library project (canonical title, aliases, Library project ID, known source locations, committed material categories, ingestion status, pending-review count) plus `unresolved_candidates` (Jellyfish, Beach Soccer) and `not_found`. Inventory/index only — no document metadata or checksums duplicated from the database. Regenerable from the DB at any time; must be updated in the same task whenever a new legitimate project is discovered, per this task's own process-fix mandate.
+
+**Library UX (2 small corrections only):** default sort changed to "Title A–Z" (`ProjectLibrary.jsx` — `SORTS` reordered, default `useState` changed); ALL-filter compact density and the removed sidebar "+ New production" button were both already in place from the prior pass, confirmed from source, no browser time spent on the latter.
+
+**Artwork:** untouched this pass, as instructed — 0 new ProjectAssets, all existing masters unchanged.
+
+**Verification:** project count 23→46, no duplicate titles; Documents 41→64, Versions 56→95, Sources 71→110 (ProjectAssets unchanged at 14, confirming no artwork activity); dedup spot-checked; one fresh-tab Library load confirms 46 projects, A–Z default, zero console errors. No backend code changed this pass (pure data reconciliation) — no backend tests run, consistent with "run only directly affected tests."
+
+**Guards untouched:** zero optimizer/QPE/jurisdiction/incentive/Workspace/Overview/Globe/Knowledge code touched; no existing project renamed or duplicated; no existing document/version/source overwritten; no existing master replaced; no artwork generated or extracted this pass; no OCR; no full-disk crawl (one bounded name-matched search, reusing an already-gathered file listing, plus one deeper look at an already-partially-known folder).
+
+**PROJECT LIBRARY CORPUS RECONCILIATION — COMPLETE.**

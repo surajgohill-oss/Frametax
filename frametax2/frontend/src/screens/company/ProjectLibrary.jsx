@@ -27,8 +27,8 @@ const MATERIAL_LABELS = [
 ];
 
 const SORTS = [
+  { key: "title", label: "Title A–Z" },
   { key: "updated", label: "Recently Updated" },
-  { key: "title", label: "Title" },
   { key: "budget", label: "Budget" },
 ];
 
@@ -43,7 +43,7 @@ export default function ProjectLibrary() {
   const [error, setError] = useState(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
-  const [sort, setSort] = useState("updated");
+  const [sort, setSort] = useState("title");
   const [newOpen, setNewOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   // Same canonical theme module Today.jsx uses — Company routes render no
