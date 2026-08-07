@@ -10,3 +10,4 @@ build/
 .pytest_cache/
 *.db
 /tmp/
+backend/.bridge_runs/

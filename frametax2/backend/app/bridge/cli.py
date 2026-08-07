@@ -191,5 +191,64 @@ def missing_requirements_cmd(limit: int):
         click.echo(f"{t.jurisdiction_code}\t{t.program_slug}")
 
 
+# ── Manual / file-based mode — no paid API call in any of these three ──
+
+@cli.command("export-run")
+@click.option("--operation", required=True, help="OperationType value, e.g. qpe_audit")
+@click.option("--structure-id", default=None, help="Structure ID; defaults to the ranked leader")
+@click.option("--confidentiality", default="internal", help="safe | internal | confidential")
+@click.option("--production-id", default="little-utopia")
+def export_run_cmd(operation: str, structure_id: str | None, confidentiality: str, production_id: str):
+    """Export a portable .bridge_runs/<package_id>/ directory — package.json
+    + instructions.md + an empty responses/ — for independent review by
+    Claude/Codex/Gemini outside this codebase. No provider is called."""
+    from app.bridge.manual_run import export_run
+    from app.bridge.schema import ConfidentialityClassification, OperationType
+
+    run_dir = export_run(
+        operation=OperationType(operation), structure_id=structure_id,
+        confidentiality=ConfidentialityClassification(confidentiality),
+        production_or_scenario_id=production_id,
+    )
+    click.echo(json.dumps({"run_dir": str(run_dir)}, indent=2))
+
+
+@cli.command("import-response")
+@click.argument("run_dir", type=click.Path(exists=True, file_okay=False))
+@click.option("--provider", required=True, type=click.Choice(["anthropic", "openai", "gemini"]))
+@click.argument("response_path", type=click.Path(exists=True, dir_okay=False))
+def import_response_cmd(run_dir: str, provider: str, response_path: str):
+    """Validate and import one completed response JSON file into the run's
+    responses/ directory and the existing ProviderResponseRecord table."""
+    from pathlib import Path
+    from app.bridge.manual_run import ManualRunError, import_response
+    from app.bridge.schema import ProviderID
+
+    try:
+        response = import_response(Path(run_dir), ProviderID(provider), Path(response_path))
+    except ManualRunError as exc:
+        raise click.ClickException(str(exc))
+    click.echo(json.dumps({
+        "imported": True, "provider": provider, "review_id": response.review_id,
+        "overall_disposition": response.overall_disposition.value, "findings": len(response.findings),
+    }, indent=2))
+
+
+@cli.command("reconcile-run")
+@click.argument("run_dir", type=click.Path(exists=True, file_okay=False))
+def reconcile_run_cmd(run_dir: str):
+    """Run the existing reconciliation.reconcile() over every response file
+    present in run_dir/responses/ and write reconciliation.json. Never
+    modifies any CineGlobe rule/calculation/optimizer state."""
+    from pathlib import Path
+    from app.bridge.manual_run import ManualRunError, reconcile_run
+
+    try:
+        result = reconcile_run(Path(run_dir))
+    except ManualRunError as exc:
+        raise click.ClickException(str(exc))
+    click.echo(json.dumps(result, indent=2))
+
+
 if __name__ == "__main__":
     cli()
