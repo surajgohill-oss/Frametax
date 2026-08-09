@@ -19,6 +19,7 @@ from app.bridge.schema import (
     ConfidentialityClassification,
     EconomicsSummary,
     EvidenceRecordRef,
+    NonClaimingSegment,
     OperationType,
     PackageInputs,
     QualificationFacts,
@@ -78,6 +79,27 @@ def build_qpe_trace(structure: dict, contingency: dict) -> list[BudgetQpeLine]:
     return lines
 
 
+def build_non_claiming_segments(structure: dict) -> list[NonClaimingSegment]:
+    """Incentive/Optimizer Core Closeout (Bridge export fix, item 2):
+    surface segments that are real, allocated spend but claim no
+    incentive (program_slug=None) — previously entirely absent from the
+    exported package, which is why every prior reviewer (Claude, Codex,
+    Gemini) flagged the gross_budget_usd-vs-QPE-trace-sum gap as an
+    unexplained defect rather than the real, disclosed, intentional
+    non-local/non-claiming spend it actually is."""
+    out: list[NonClaimingSegment] = []
+    for seg in structure.get("segments", []):
+        if seg.get("program_slug") is not None:
+            continue
+        out.append(NonClaimingSegment(
+            jurisdiction_code=seg["jurisdiction_code"],
+            account_codes=list(seg.get("account_codes", [])),
+            allocated_usd=seg.get("allocated_usd") or 0.0,
+            note=(seg.get("notes") or [None])[0],
+        ))
+    return out
+
+
 def build_qualification_facts(structure: dict) -> QualificationFacts:
     facts = QualificationFacts()
     for seg in structure.get("segments", []):
@@ -125,6 +147,15 @@ def build_structure_summary(structure: dict) -> StructureSummary:
 
 
 def build_economics_summary(structure: dict) -> EconomicsSummary:
+    # Incentive/Optimizer Core Closeout (Bridge export fix, item 1):
+    # npc_usd now sources from npc_with_adjustments_usd — the SAME figure
+    # allocation_pricing.rank_allocated_structures() actually ranks on —
+    # instead of npc_verified_usd (the pre-adjustment figure, which
+    # understated real relocation cost for every non-anchor jurisdiction
+    # in every external review of this package). npc_verified_usd is kept
+    # available under its own field for anyone who wants the base figure.
+    # allocation_pricing.py / the ranking algorithm are unchanged; this is
+    # a package-representation fix only.
     return EconomicsSummary(
         gross_budget_usd=structure.get("gross_budget_usd"),
         qpe_usd=sum(
@@ -136,7 +167,8 @@ def build_economics_summary(structure: dict) -> EconomicsSummary:
         travel_delta_usd=structure.get("travel_incremental_delta_usd"),
         fx_delta_usd=structure.get("fx_delta_usd"),
         net_incentive_usd=structure.get("selected_incentive_usd"),
-        npc_usd=structure.get("npc_verified_usd"),
+        npc_usd=structure.get("npc_with_adjustments_usd"),
+        npc_verified_usd=structure.get("npc_verified_usd"),
     )
 
 
@@ -204,6 +236,7 @@ def build_package(
             unknowns=list(structure.get("blockers", [])),
         ),
         budget_qpe_trace=build_qpe_trace(structure, served.get("contingency", {})),
+        non_claiming_segments=build_non_claiming_segments(structure),
         contingency_summary=served.get("contingency", {}),
         qualification=build_qualification_facts(structure),
         structures_considered=[build_structure_summary(s) for s in structures],

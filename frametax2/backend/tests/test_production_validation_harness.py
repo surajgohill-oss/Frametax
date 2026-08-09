@@ -45,13 +45,44 @@ class TestHarnessDoesNotMutateProduction:
 class TestStage1EngineValidation:
     def test_unconstrained_reaches_the_complete_executable_set_for_readiness(self):
         """With the capability gate off, incentive_ready must equal the
-        full executable set (jc.ALL_PROFILES) — nothing statutory should
-        be blocked by a physical/creative capability requirement."""
+        full executable set (jc.ALL_PROFILES) MINUS jurisdictions whose
+        OWN statutory conditions are genuinely unmet for this production
+        — nothing statutory should be blocked by a physical/creative
+        capability requirement, but a real statutory gate is not a
+        capability requirement and must still bind.
+
+        Incentive/Optimizer Core Closeout: Australia's Location Offset
+        now enforces its real A$20M minimum QAPE (via the conservative
+        USD bound documented on au-location-offset-30 in
+        program_rate_rules_worldwide.py), which Little Utopia's real QPE
+        (~$4M) does not meet — AU is therefore correctly EXPECTED_
+        EXCLUSION at the discovery stage itself ("the production's
+        statutory conditions are unmet"), one fewer than the full set.
+        This is the test's own documented invariant ("minimum spend...
+        remain fully enforced, never relaxed") now actually holding for
+        AU, which it could not before this threshold was enforced."""
         from app.calculators import jurisdiction_comparison as jc
 
         s1 = run_stage1_engine_validation()
-        assert s1["incentive_ready_count"] == len(jc.ALL_PROFILES)
+        assert s1["incentive_ready_count"] == len(jc.ALL_PROFILES) - 1
         assert s1["total_executable_jurisdictions"] == len(jc.ALL_PROFILES)
+
+    def test_australia_is_the_one_statutory_exclusion(self):
+        """Names the exclusion explicitly so a FUTURE unrelated drop in
+        incentive_ready_count fails loudly instead of silently matching
+        a stale '-1'."""
+        from app.demo.little_utopia_state import build_allocated_structures, get_state
+        from app.calculators.production_requirements import derive_production_requirements
+        from app.calculators.production_validation_harness import _requirements_with_capabilities
+
+        state = get_state()
+        real_requirements = derive_production_requirements(state.physical_requirements)
+        unconstrained = _requirements_with_capabilities(real_requirements, frozenset())
+        out = build_allocated_structures(state, requirements_override=unconstrained)
+        au_ex = next(e for e in out["discovery"]["examinations"] if e["jurisdiction_code"] == "AU")
+        assert au_ex["accepted"] is False
+        assert au_ex["resolves_for_production"] is False
+        assert "statutory conditions are unmet" in au_ex["reason"]
 
     def test_no_unexplained_failures(self):
         s1 = run_stage1_engine_validation()

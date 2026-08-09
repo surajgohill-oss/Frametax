@@ -246,9 +246,26 @@ MU_UNVERIFIED_CLAIMS: tuple[UnverifiedRateClaim, ...] = (
         claim="The 40% tier requires 90% of filming to take place in Mauritius.",
         claimed_by="identicalpictures.com (production-services/fixer site); no "
                    "government source or regulation cited for the claim",
-        verification_status="NOT FOUND in EDB Submission Procedures (31 Jan 2020) "
-                            "or MCCI guidance. Requires EDB written confirmation "
-                            "before it can be treated as a rule either way.",
+        verification_status="RESOLVED — REJECTED. Incentive/Optimizer Core Closeout "
+                            "final rule resolution "
+                            "(docs/validation/CODEX_FINAL_RULE_RESOLUTION.md §1.1, "
+                            "cross-checked against docs/validation/"
+                            "GEMINI_FINAL_RULE_RESOLUTION.md §1 where the two final "
+                            "resolutions conflicted): the 90% condition belongs to a "
+                            "SEPARATE measure — the Government's 2023/24 Budget "
+                            "double deduction available to LOCAL companies "
+                            "financing/sponsoring/marketing/distributing an approved "
+                            "film — not to the EDB Film Rebate Scheme's 40% uplift, "
+                            "per the National Assembly Hansard (14 May 2019) "
+                            "explaining Regulations 2018 and the current EDB "
+                            "submission guidance, neither of which attaches a 90% "
+                            "production test to the rebate uplift. Codex's resolution "
+                            "was preferred over Gemini's contrary (unsourced) answer "
+                            "because it cites a specific parliamentary record and "
+                            "dated primary guidance pages; Gemini's answer cited only "
+                            "a generic, non-specific guidelines reference. NOT "
+                            "enforced as a gate (confirmed correct, not merely "
+                            "un-enforced).",
     ),
     UnverifiedRateClaim(
         program_slug="mu_edb_incentive",
@@ -343,21 +360,41 @@ MT_RATE_RULES: tuple[RateRule, ...] = (
                 kind="min_qpe_usd", threshold_usd=113_000.0,
             ),
             RateCondition(
-                condition_id="mt-uplifts",
-                description="Maximum rate requires Commissioner discretion on two named "
-                            "criteria, not a guaranteed entitlement",
-                quote="The Commissioner has the discretion to award an additional 10% "
-                      "based on the Maltese cultural elements: (a) Malta features as "
-                      "Malta or local usage of facilities [5%]; (b) Maximisation of "
-                      "local resources [5%]. Maximum Rebate: 40% (MFC Cash Rebate "
-                      "Guidelines, Jan 2019, S.3.2.1)",
+                condition_id="mt-uplift-limb-a-malta-as-malta",
+                description="Limb (a), +5%: Malta portrayed as Malta, or local "
+                            "usage of facilities — Commissioner-discretionary, "
+                            "no published objective points test for this limb",
+                quote="Malta features as Malta or local usage of facilities [5%] "
+                      "(MFC Cash Rebate Guidelines, Jan 2019, S.3.4; confirmed "
+                      "current per Screen Malta Financial Incentives Guidelines "
+                      "2024, S.3.4)",
+                kind="discretionary_band",
+            ),
+            RateCondition(
+                condition_id="mt-uplift-limb-b-local-resources",
+                description="Limb (b), +5%: maximisation of local resources — "
+                            "Annex 1 gives objective minimum local-crew "
+                            "percentages by department (e.g. Production 80%, "
+                            "Direction 60%, Locations & Unit 90%, Camera 50%, "
+                            "Transport 90%) as EVIDENCE criteria, not a "
+                            "self-executing points formula; final award still "
+                            "requires Commissioner assessment and audit at "
+                            "final submission",
+                quote="Maximisation of local resources [5%] ... Annex 1 "
+                      "(Screen Malta Financial Incentives Guidelines 2024, "
+                      "S.3.4 and Annex 1)",
                 kind="discretionary_band",
             ),
         ),
         confidence_tier="VERIFIED",
         citation=_MT_CITATION + " 40% ceiling requires the Commissioner to award both "
-                 "5% discretionary criteria on top of the 30% base — the guaranteed "
-                 "floor is the 30% base tier.",
+                 "independent 5% discretionary limbs on top of the 30% base — the "
+                 "guaranteed floor is the 30% base tier. Per the Incentive/Optimizer "
+                 "Core Closeout final rule resolution "
+                 "(docs/validation/CODEX_FINAL_RULE_RESOLUTION.md §4.1): limb (b) has "
+                 "objective department-level local-crew benchmarks (Annex 1) that "
+                 "function as evidence, not an automatic-award formula — final "
+                 "certificate percentage controls either way.",
         source_ref="MFC-Cash-Rebate-Guidelines-2019-01-official",
     ),
     RateRule(
@@ -462,31 +499,43 @@ IE_RATE_RULES: tuple[RateRule, ...] = (
 )
 
 _GR_CITATION = (
-    "Greece Cash Rebate for International Productions (jurisdiction_"
-    "comparison.py GREECE profile, confidence_tier=PARSED; authority: "
-    "Enterprise Greece / Greek Film Centre, enterprisegreece.gov.gr)."
+    "Greece Cash Rebate for International Productions. Rate (40%, flat, "
+    "no cultural test) sourced via jurisdiction_comparison.py GREECE "
+    "profile (Enterprise Greece / Greek Film Centre, enterprisegreece.gov.gr). "
+    "Minimum-spend threshold and the 80% eligible-spend cap (see "
+    "program_rate_rules.QPE_CAP_RULES['gr_cash_rebate']) updated per the "
+    "Incentive/Optimizer Core Closeout final rule resolution "
+    "(docs/validation/CODEX_FINAL_RULE_RESOLUTION.md §2), itself sourced to "
+    "JMD 607434 (Government Gazette B' 87/14.01.2026, arts. 4-6) as amended "
+    "by JMD 140524 (Gazette B' 2204/20.04.2026): fiction film/TV film floor "
+    "is EUR 200,000 minimum eligible Greek spend AND EUR 400,000 minimum "
+    "total production budget — both floors apply, neither substitutes for "
+    "the other."
 )
 GR_RATE_RULES: tuple[RateRule, ...] = (
     RateRule(
         program_slug="gr_cash_rebate", tier_id="gr-flat-40",
         rate=0.40, is_band_ceiling=False,
-        production_types=("feature_film",), min_qpe_usd=114_052.40,
+        production_types=("feature_film",),
+        # EUR 200,000 fiction-film floor, converted at the same implied
+        # EUR/USD ratio (1.140524) already committed to by this program's
+        # prior EUR 100,000 -> USD 114,052.40 figure — not a new/fabricated
+        # rate, the program's own existing conversion basis reapplied to
+        # the corrected threshold.
+        min_qpe_usd=228_104.80,
         conditions=(
             RateCondition(
                 condition_id="gr-min-spend",
-                description="Minimum qualifying Greek expenditure",
-                quote="min_spend_local=EUR 100,000 (jurisdiction_comparison.py "
-                      "GREECE profile, PARSED tier)",
-                kind="min_qpe_usd", threshold_usd=114_052.40,
+                description="Minimum qualifying Greek expenditure (fiction film/TV film)",
+                quote="Minimum eligible Greek spend EUR 200,000 for fiction film/TV "
+                      "film (JMD 607434 art. 6 threshold table, as amended by JMD "
+                      "140524)",
+                kind="min_qpe_usd", threshold_usd=228_104.80,
             ),
         ),
-        confidence_tier="PARSED",
-        citation=_GR_CITATION + " Flat 40% rebate (highest headline rate among Tier "
-                 "1 comparators); no cultural test required. Annual program "
-                 "allocation exists but the specific cap is not publicly confirmed "
-                 "(disclosed data gap, not enforced here) — budget oversubscription "
-                 "is a real scheduling risk per the source profile's own notes.",
-        source_ref="jurisdiction_comparison.GREECE",
+        confidence_tier="VERIFIED",
+        citation=_GR_CITATION,
+        source_ref="JMD-607434-art-6-CODEX-final-resolution",
     ),
 )
 
@@ -741,6 +790,65 @@ _BUDGET_RATES_BY_PROGRAM: dict[str, tuple[BudgetEvidencedRate, ...]] = {
 
 def get_rate_rules(program_slug: str) -> tuple[RateRule, ...]:
     return _RULES_BY_PROGRAM.get(program_slug, ())
+
+
+# ── QPE eligible-spend caps (Incentive/Optimizer Core Closeout) ─────────────
+#
+# A cap on ELIGIBLE SPEND (the QPE base itself), distinct from a rate cap
+# or an annual program cap. Applied to a segment's own qpe_usd BEFORE rate
+# resolution, so a capped QPE also correctly affects which rate tier's
+# min_qpe_usd threshold is met. cap_base:
+#   "segment_allocated"      — cap is a % of THIS segment's own allocated
+#                               total (a proxy for "total core expenditure"
+#                               on a full-relocation structure, where the
+#                               segment IS effectively the whole production).
+#   "total_worldwide_budget" — cap is a % of the STRUCTURE's entire gross
+#                               budget, regardless of how much of it is
+#                               allocated to this segment.
+@dataclass(frozen=True)
+class QpeCapRule:
+    program_slug: str
+    cap_pct: float
+    cap_base: str  # "segment_allocated" | "total_worldwide_budget"
+    description: str
+    quote: str
+    source_ref: str
+
+
+_GB_CAP_QUOTE = (
+    "'AVEC is available on qualifying UK production expenditure, which is "
+    "the lower of either 80% of total core expenditure or the actual UK "
+    "core expenditure incurred' (bfi.org.uk, corroborated by HMRC "
+    "CREC061300/CREC060100: 'the lesser of UK relevant global expenditure "
+    "and 80% of total relevant global expenditure/core expenditure')."
+)
+_GR_CAP_QUOTE = (
+    "'implemented within the Greek territory and not exceeding eighty "
+    "percent (80%) of the total production cost for the entirety of the "
+    "audiovisual production work' — the cap base is the production's total "
+    "worldwide cost, not Greek spend alone (JMD 607434, Gazette B' 87/"
+    "14.01.2026, arts. 4-5, as amended by JMD 140524)."
+)
+
+QPE_CAP_RULES: dict[str, QpeCapRule] = {
+    "uk_avec": QpeCapRule(
+        program_slug="uk_avec", cap_pct=0.80, cap_base="segment_allocated",
+        description="Ordinary AVEC qualifying expenditure is capped at the "
+                     "lower of actual UK core expenditure or 80% of total "
+                     "core expenditure.",
+        quote=_GB_CAP_QUOTE, source_ref="HMRC-CREC061300-CREC060100",
+    ),
+    "gr_cash_rebate": QpeCapRule(
+        program_slug="gr_cash_rebate", cap_pct=0.80, cap_base="total_worldwide_budget",
+        description="Eligible Greek production expenditure is capped at 80% "
+                     "of the production's total (worldwide) production cost.",
+        quote=_GR_CAP_QUOTE, source_ref="JMD-607434-arts-4-5",
+    ),
+}
+
+
+def get_qpe_cap(program_slug: str) -> QpeCapRule | None:
+    return QPE_CAP_RULES.get(program_slug)
 
 
 def register_rate_rules(rules: tuple[RateRule, ...]) -> None:

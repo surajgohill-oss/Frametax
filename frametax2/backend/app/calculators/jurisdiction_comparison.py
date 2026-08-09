@@ -360,14 +360,20 @@ _GREECE = JurisdictionIncentiveProfile(
     jurisdiction_name="Greece",
     program_slug="gr_cash_rebate",
     program_name="Greece Cash Rebate for International Productions",
-    confidence_tier="PARSED",
+    # Confidence tier and minimum spend updated per the Incentive/
+    # Optimizer Core Closeout final rule resolution
+    # (docs/validation/CODEX_FINAL_RULE_RESOLUTION.md §2, sourced to JMD
+    # 607434 arts. 4-6 as amended by JMD 140524) — kept in sync with
+    # program_rate_rules.GR_RATE_RULES (this module and that one must
+    # never diverge; see test_jurisdiction_doctrine_consistency.py).
+    confidence_tier="VERIFIED",
     incentive_type="cash_rebate",
     base_rate=0.40,
     max_rate=0.40,
     is_refundable=True,
     is_transferable=None,
     annual_cap_local=None,
-    min_spend_local=100_000.0,
+    min_spend_local=200_000.0,  # EUR, fiction film/TV film floor
     requires_cultural_test=False,
     atl_qualifies=True,
     btl_qualifies=True,

@@ -70,7 +70,7 @@ from app.calculators.qualification_model import (
     QualificationState,
     _ALTERNATIVE_TERRITORIAL_TEXT,
 )
-from app.data.program_rate_rules import get_rate_rules, resolve_program_rate
+from app.data.program_rate_rules import get_qpe_cap, get_rate_rules, resolve_program_rate
 from app.data.program_slug_aliases import canonical_slug
 from app.data.program_spend_rules import get_program_doctrine, resolve_program_doctrine
 
@@ -107,6 +107,23 @@ class SegmentEconomics:
     blockers: tuple[str, ...] = ()
     register_trace: tuple[dict, ...] = ()   # per-account state/reason for the UI
     notes: tuple[str, ...] = ()
+    # Task: Incentive/Optimizer Core Closeout. True when the resolved rate
+    # tier is a band ceiling (rate_ceiling, is_band_ceiling=True) AND at
+    # least one of its RateConditions evaluated to satisfied=None (a
+    # discretionary/fact-dependent condition the engine cannot pre-confirm
+    # — e.g. Mauritius's Film Rebate Committee discretion, Malta's
+    # Commissioner-awarded uplift limbs, the UK's VFX Additional Credit
+    # eligibility). When True, the structure-level selected/ranked
+    # incentive uses this segment's FLOOR, not its ceiling, unless the
+    # caller supplies an explicit per-program confirmation (see
+    # confirmed_ceiling_programs on price_allocated_structure/
+    # price_segment) — a project-specific certificate/approval overriding
+    # the modeled default for that one scenario only. Never flips a
+    # jurisdiction WITHOUT a discretionary condition (e.g. Greece's flat
+    # 40%, Australia's flat 30%) — those have is_band_ceiling=False and
+    # this stays False.
+    ceiling_requires_confirmation: bool = False
+    qpe_cap_applied_usd: float = 0.0   # amount excluded by a program-level QPE cap (e.g. GB/GR 80%)
 
 
 @dataclass
@@ -214,6 +231,8 @@ def price_segment(
     offshore_payroll_accounts: frozenset[str],
     production_type: str = "feature_film",
     contingency_allocations: dict | None = None,
+    gross_budget_usd: float | None = None,
+    confirmed_ceiling_programs: frozenset[str] | None = None,
 ) -> SegmentEconomics:
     """Derive this segment's PARTIAL register and price it with the
     existing kernel. A non-incentive segment (program_slug None) is
@@ -221,7 +240,22 @@ def price_segment(
 
     contingency_allocations (Task 91): optional {account_code:
     ContingencyAllocation}, defaulting to None (byte-identical prior
-    behavior) — see contingency_treatment.expand_contingency_lines."""
+    behavior) — see contingency_treatment.expand_contingency_lines.
+
+    gross_budget_usd (Incentive/Optimizer Core Closeout): the STRUCTURE's
+    total gross budget, needed only for a program-level QPE cap whose
+    cap_base is "total_worldwide_budget" (e.g. Greece's 80%-of-total-cost
+    ceiling). Omitted (None) = byte-identical prior behavior for any
+    program without such a cap.
+
+    confirmed_ceiling_programs (Incentive/Optimizer Core Closeout): a
+    project/scenario-specific set of program_slugs whose discretionary
+    rate ceiling (Mauritius Committee discretion, Malta Commissioner
+    uplift, UK VFX Additional Credit, etc.) has been CONFIRMED for this
+    specific production by real evidence (a certificate, an approval
+    letter) — never a canonical rule change, only a per-scenario override.
+    Omitted (None) = no ceiling is assumed confirmed, which is the safe
+    default and what Little Utopia currently uses everywhere."""
     allocated = round(sum(a.amount_usd for a in allocations), 2)
     codes = tuple(sorted({a.account_code for a in allocations}))
 
@@ -287,33 +321,74 @@ def price_segment(
                        QualificationState.STRUCTURING_OPPORTUNITY)
     ), 2)
 
+    # Incentive/Optimizer Core Closeout: program-level QPE eligible-spend
+    # cap (e.g. UK/Greece 80%), applied to the QPE base BEFORE rate
+    # resolution so a capped QPE also correctly affects min_qpe_usd
+    # threshold checks downstream. Inert (byte-identical) for any program
+    # without a registered QpeCapRule.
+    qpe_cap_applied = 0.0
+    cap_rule = get_qpe_cap(slug)
+    if cap_rule is not None:
+        cap_base_amount = (
+            gross_budget_usd if cap_rule.cap_base == "total_worldwide_budget"
+            else allocated
+        )
+        if cap_base_amount is not None:
+            cap_ceiling = round(cap_base_amount * cap_rule.cap_pct, 2)
+            if qpe > cap_ceiling:
+                qpe_cap_applied = round(qpe - cap_ceiling, 2)
+                qpe = cap_ceiling
+
     rr = resolve_program_rate(slug, production_type=production_type, qpe_usd=qpe)
     if rr is None:
+        cap_blocker = (
+            (f"{jurisdiction_code}/{slug}: ${qpe_cap_applied:,.0f} of eligible "
+             f"spend was excluded by the program's {cap_rule.cap_pct:.0%} QPE "
+             "cap before this check — see qpe_cap_applied_usd.",)
+            if qpe_cap_applied > 0 else ()
+        )
         return SegmentEconomics(
             jurisdiction_code=jurisdiction_code, program_slug=slug,
             claims_incentive=True, allocated_usd=allocated,
             account_codes=codes, executable=False,
             qpe_usd=qpe, excluded_usd=excluded, unresolved_usd=unresolved,
             doctrine=doctrine.value,
+            qpe_cap_applied_usd=qpe_cap_applied,
             blockers=(
                 f"{jurisdiction_code}/{slug}: statutory rate did not resolve for "
                 f"this production type / segment QPE (${qpe:,.0f}) — minimum-"
                 "spend or eligibility conditions unmet; excluded rather than guessed.",
-            ),
+            ) + cap_blocker,
         )
 
-    # Same pricing kernel as everything else — no new math. Financing
-    # is zero here by policy (explicit structure-level input only).
-    floor_case = build_risk_cases(
-        register=register, gross_budget_usd=allocated, rate=rr.floor_rate,
-        structuring_paths=[], delay_weeks=0, bridge_rate=0.0,
-        jurisdiction_code=jurisdiction_code,
-    ).cases[RiskCase.CONSERVATIVE]
-    ceiling_case = build_risk_cases(
-        register=register, gross_budget_usd=allocated, rate=rr.modeled_rate,
-        structuring_paths=[], delay_weeks=0, bridge_rate=0.0,
-        jurisdiction_code=jurisdiction_code,
-    ).cases[RiskCase.CONSERVATIVE]
+    if qpe_cap_applied > 0:
+        # A QPE cap was applied above. build_risk_cases() re-derives its
+        # own QPE total directly from `register`'s QUALIFIES-state
+        # accounts (the full, uncapped statutory register — kept
+        # unmodified so the register_trace/qualification_trace still
+        # shows the true line-by-line statutory classification, cap
+        # applied separately and disclosed via qpe_cap_applied_usd). With
+        # no structuring_paths/grey_areas/overrides passed by this caller
+        # (confirmed: structuring_paths=[] always, no other risk inputs
+        # exposed here), build_risk_cases's CONSERVATIVE case reduces
+        # exactly to incentive_usd = qpe_usd * rate — so the capped
+        # incentive is computed directly rather than re-deriving from an
+        # uncapped register that would silently ignore the cap.
+        floor_incentive_usd = round(qpe * rr.floor_rate, 2)
+        ceiling_incentive_usd = round(qpe * rr.modeled_rate, 2)
+    else:
+        # Same pricing kernel as everything else — no new math. Financing
+        # is zero here by policy (explicit structure-level input only).
+        floor_incentive_usd = build_risk_cases(
+            register=register, gross_budget_usd=allocated, rate=rr.floor_rate,
+            structuring_paths=[], delay_weeks=0, bridge_rate=0.0,
+            jurisdiction_code=jurisdiction_code,
+        ).cases[RiskCase.CONSERVATIVE].incentive_usd
+        ceiling_incentive_usd = build_risk_cases(
+            register=register, gross_budget_usd=allocated, rate=rr.modeled_rate,
+            structuring_paths=[], delay_weeks=0, bridge_rate=0.0,
+            jurisdiction_code=jurisdiction_code,
+        ).cases[RiskCase.CONSERVATIVE].incentive_usd
 
     trace = tuple(
         {
@@ -327,6 +402,20 @@ def price_segment(
         for a in register
     )
 
+    # Incentive/Optimizer Core Closeout: a ceiling tier "requires
+    # confirmation" when it is a band ceiling AND at least one of its
+    # conditions could not be pre-evaluated (satisfied=None) — e.g.
+    # Mauritius's Film Rebate Committee discretion, Malta's Commissioner-
+    # awarded uplift limbs, the UK's VFX Additional Credit sourcing
+    # caveat. resolve_program_rate() already computes and discloses these
+    # evaluations; this is the first place anything actually ACTS on that
+    # disclosure instead of unconditionally serving the ceiling.
+    ceiling_requires_confirmation = bool(
+        rr.is_band_ceiling
+        and any(e.satisfied is None for e in rr.conditions_evaluated)
+        and not (confirmed_ceiling_programs and slug in confirmed_ceiling_programs)
+    )
+
     return SegmentEconomics(
         jurisdiction_code=jurisdiction_code, program_slug=slug,
         claims_incentive=True, allocated_usd=allocated,
@@ -334,10 +423,12 @@ def price_segment(
         qpe_usd=qpe, excluded_usd=excluded, unresolved_usd=unresolved,
         rate_floor=rr.floor_rate, rate_ceiling=rr.modeled_rate,
         is_band_ceiling=rr.is_band_ceiling, statutory_basis=rr.basis,
-        incentive_floor_usd=floor_case.incentive_usd,
-        incentive_ceiling_usd=ceiling_case.incentive_usd,
+        incentive_floor_usd=floor_incentive_usd,
+        incentive_ceiling_usd=ceiling_incentive_usd,
         doctrine=doctrine.value,
         register_trace=trace,
+        ceiling_requires_confirmation=ceiling_requires_confirmation,
+        qpe_cap_applied_usd=qpe_cap_applied,
     )
 
 
@@ -417,6 +508,7 @@ def price_allocated_structure(
     implementation_cost_usd: float = 0.0,
     production_type: str = "feature_film",
     contingency_allocations: dict | None = None,
+    confirmed_ceiling_programs: frozenset[str] | None = None,
 ) -> AllocatedStructurePricing:
     """Price a complete structure from its allocation. Travel and FX
     deltas are structure-level, computed ONCE by the caller (for the
@@ -426,7 +518,11 @@ def price_allocated_structure(
 
     contingency_allocations (Task 91): optional {account_code:
     ContingencyAllocation}, defaulting to None (byte-identical prior
-    behavior), passed through to every segment's price_segment call."""
+    behavior), passed through to every segment's price_segment call.
+
+    confirmed_ceiling_programs (Incentive/Optimizer Core Closeout):
+    passed through to price_segment — see its docstring. Omitted (None)
+    = no discretionary ceiling is assumed confirmed for any segment."""
     blockers: list[str] = list()
     notes: list[str] = []
 
@@ -477,6 +573,8 @@ def price_allocated_structure(
             offshore_payroll_accounts=offshore_payroll_accounts,
             production_type=production_type,
             contingency_allocations=contingency_allocations,
+            gross_budget_usd=gross_budget_usd,
+            confirmed_ceiling_programs=confirmed_ceiling_programs,
         )
         segments.append(seg)
         blockers.extend(seg.blockers)
@@ -486,12 +584,21 @@ def price_allocated_structure(
 
     fully_priced = not blockers
 
-    # Canonical optimization contract (Phase 5): rank/serve on the
-    # BEST-SUPPORTED modeled incentive (total_ceiling = rr.modeled_rate),
-    # not the conservative floor. The floor drives only the separately-
-    # surfaced npc_conservative_usd uncertainty figure. Normalizations
-    # (travel, FX, and the off-budget MU in-kind replacement) apply once.
-    selected_incentive = total_ceiling
+    # Canonical optimization contract (Phase 5), REVISED under the
+    # Incentive/Optimizer Core Closeout: rank/serve on the BEST-SUPPORTED
+    # incentive that is actually CONFIRMED — a discretionary ceiling
+    # (ceiling_requires_confirmation=True; see SegmentEconomics) uses this
+    # segment's FLOOR instead, unless confirmed_ceiling_programs overrides
+    # it for this scenario. A jurisdiction with no discretionary condition
+    # (e.g. Greece's flat 40%, Australia's flat 30%) is unaffected — its
+    # ceiling IS its floor in every case that matters here. The
+    # conservative floor total (total_floor/total_ceiling) remains
+    # separately surfaced for disclosure; selected_incentive is now a
+    # per-segment conditional sum, not an unconditional ceiling sum.
+    selected_incentive = round(sum(
+        (s.incentive_floor_usd if s.ceiling_requires_confirmation else s.incentive_ceiling_usd)
+        for s in segments
+    ), 2)
     _inkind_repl = inkind_replacement_delta_usd or 0.0
     _local_cost = local_cost_delta_usd or 0.0
     npc_verified = None      # here: best-supported NPC before normalizations

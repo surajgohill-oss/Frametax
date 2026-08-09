@@ -97,7 +97,16 @@ def test_full_relocation_matches_alternative_jurisdiction_register():
     alt_register = build_little_utopia_register_for_jurisdiction("GR", "gr_cash_rebate", 0.0)
     alt_qpe = round(sum(a.amount_usd for a in alt_register
                         if a.state == QualificationState.QUALIFIES), 2)
-    assert gr.qpe_usd == alt_qpe  # same truth as /economics.alternative_jurisdictions
+    # Incentive/Optimizer Core Closeout: Greece's confirmed 80%-of-total-
+    # worldwide-production-cost eligible-spend cap (program_rate_rules.
+    # QPE_CAP_RULES["gr_cash_rebate"]) is applied to the segment's own QPE
+    # before rate resolution — gr.qpe_usd is now the CAPPED figure, no
+    # longer expected to equal the uncapped alternative-jurisdiction
+    # register total. Assert the cap was applied by the exact, disclosed
+    # amount instead.
+    expected_cap_usd = round(GROSS * 0.80, 2)
+    assert gr.qpe_usd == expected_cap_usd
+    assert gr.qpe_cap_applied_usd == round(alt_qpe - expected_cap_usd, 2)
     assert pricing.npc_verified_usd == round(GROSS - gr.qpe_usd * 0.40, 2)
 
 
@@ -156,15 +165,20 @@ def test_component_route_below_minimum_spend_blocks_honestly():
 # ── 4: genuine split production ──────────────────────────────────────────────
 
 def test_split_production_prices_both_partial_registers():
+    # Incentive/Optimizer Core Closeout: Greece's minimum eligible spend
+    # was updated to the confirmed current EUR 200,000 fiction-film floor
+    # ($228,104.80 — program_rate_rules.GR_RATE_RULES). The GR split share
+    # is raised from 0.3/0.4 to 0.5/0.6 so both scenarios still clear the
+    # (now higher) minimum-spend gate — same test intent, correct threshold.
     split = _price(_spec(
         "P-SPLIT-MU-GR", "split_production", ("MU", "GR"),
         {"MU": "mu_edb_incentive", "GR": "gr_cash_rebate"},
-        account_splits={"3400": {"MU": 0.7, "GR": 0.3}},
+        account_splits={"3400": {"MU": 0.5, "GR": 0.5}},
     ))
     assert split.is_fully_priced
     mu = next(s for s in split.segments if s.jurisdiction_code == "MU")
     gr = next(s for s in split.segments if s.jurisdiction_code == "GR")
-    assert gr.allocated_usd == round(496_232.0 * 0.3, 2)
+    assert gr.allocated_usd == round(496_232.0 * 0.5, 2)
     assert gr.qpe_usd > 0 and mu.qpe_usd > 0
     # the split account appears in both segments ONLY via its explicit portions
     assert "3400" in mu.account_codes and "3400" in gr.account_codes
@@ -174,7 +188,7 @@ def test_split_production_prices_both_partial_registers():
     split2 = _price(_spec(
         "P-SPLIT-MU-GR-2", "split_production", ("MU", "GR"),
         {"MU": "mu_edb_incentive", "GR": "gr_cash_rebate"},
-        account_splits={"3400": {"MU": 0.6, "GR": 0.4}},
+        account_splits={"3400": {"MU": 0.4, "GR": 0.6}},
     ))
     gr2 = next(s for s in split2.segments if s.jurisdiction_code == "GR")
     assert gr2.qpe_usd != gr.qpe_usd

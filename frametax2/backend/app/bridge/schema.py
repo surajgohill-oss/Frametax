@@ -157,6 +157,21 @@ class PackageInputs(BaseModel):
     assumptions: list[str] = Field(default_factory=list)
 
 
+class NonClaimingSegment(BaseModel):
+    """Incentive/Optimizer Core Closeout: a structure segment whose spend
+    is real, allocated, and disclosed but claims NO incentive in this
+    structure (program_slug=None) — e.g. Little Utopia's $9,068 US/LA
+    post-production segment (accounts 5000-5500, 6500), previously
+    invisible in the exported package even though it fully explains the
+    gross_budget_usd-vs-trace-sum gap every prior reviewer flagged as
+    unexplained. Never part of budget_qpe_trace (that section is
+    QPE-claiming segments only) — a separate, honestly-labeled section."""
+    jurisdiction_code: str
+    account_codes: list[str] = Field(default_factory=list)
+    allocated_usd: float = 0.0
+    note: Optional[str] = None
+
+
 class BudgetQpeLine(BaseModel):
     account_code: str
     description: str
@@ -211,7 +226,19 @@ class EconomicsSummary(BaseModel):
     travel_delta_usd: Optional[float] = None
     fx_delta_usd: Optional[float] = None
     net_incentive_usd: Optional[float] = None
+    # Incentive/Optimizer Core Closeout: npc_usd now carries the SAME
+    # fully-adjusted figure (gross - net_incentive + local_cost + travel
+    # + fx + in-kind replacement) that allocation_pricing.rank_allocated_
+    # structures() actually ranks on — previously this field carried the
+    # PRE-adjustment npc_verified_usd, silently understating relocation
+    # cost for every non-anchor jurisdiction while the real engine ranked
+    # correctly all along (see docs/validation/
+    # CANONICAL_RULE_ADJUDICATION_MU_MT_GR_GB_AU.md §1.3). npc_verified_usd
+    # is now ALSO exposed separately below so both figures are visible —
+    # this is a package-export correction only; allocation_pricing.py and
+    # the ranking algorithm were never wrong and are unchanged.
     npc_usd: Optional[float] = None
+    npc_verified_usd: Optional[float] = None  # pre-adjustment base figure, for reference only — NOT the ranking basis
     ranking_basis: str = "lowest_defensible_net_production_cost"
 
 
@@ -245,6 +272,7 @@ class AuditPackage(BaseModel):
 
     # C. Budget / QPE trace
     budget_qpe_trace: list[BudgetQpeLine] = Field(default_factory=list)
+    non_claiming_segments: list[NonClaimingSegment] = Field(default_factory=list)
     contingency_summary: dict[str, Any] = Field(default_factory=dict)
 
     # D. Qualification

@@ -1212,7 +1212,14 @@ register(ProgramRequirementsProfile(
 
 register(ProgramRequirementsProfile(
     program_slug="gr_cash_rebate", jurisdiction_code="GR",
-    min_local_spend_usd=114_052.40,  # min_qpe_usd condition (EUR 100,000, feature films) — confirmed directly this session
+    # Updated per Incentive/Optimizer Core Closeout final rule resolution
+    # (docs/validation/CODEX_FINAL_RULE_RESOLUTION.md §2.2, sourced to JMD
+    # 607434 art. 6 as amended by JMD 140524): fiction film/TV film floor is
+    # EUR 200,000 minimum eligible Greek spend AND EUR 400,000 minimum total
+    # production budget — both floors, not a single figure. EUR/USD
+    # conversion reuses this program's own existing 1.140524 ratio.
+    min_local_spend_usd=228_104.80,   # EUR 200,000 — matches GR_RATE_RULES min_qpe_usd
+    min_total_budget_usd=456_209.60,  # EUR 400,000
     preapproval_mandatory=True,      # application must be submitted before production/post-production begins in Greece
     application_deadline=TimingFact(
         value="Application must be submitted no later than 10 days before the beginning of "

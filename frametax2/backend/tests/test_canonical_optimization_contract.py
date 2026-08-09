@@ -1,11 +1,23 @@
 """
 test_canonical_optimization_contract.py
 
-Phase 5 canonical optimization contract: the served optimizer ranks on the
-BEST-SUPPORTED modeled incentive (never the conservative floor), normalizes
-the off-budget Mauritius in-kind post by replacement cost, and keeps
-uncertainty (the floor-rate figure) as a separate field — never the ranked
-number.
+Phase 5 canonical optimization contract, REVISED under the Incentive/
+Optimizer Core Closeout: the served optimizer ranks on the BEST-SUPPORTED
+*confirmed* incentive. For a rate tier that is NOT a discretionary band
+ceiling (flat rate, e.g. Greece), or one whose ceiling has been explicitly
+confirmed for this scenario, that is still the modeled/ceiling figure —
+never the conservative floor by default. But for a genuine discretionary
+band ceiling with an unresolved condition (Mauritius's Film Rebate
+Committee discretion, Malta's Commissioner-awarded uplift, the UK's VFX
+Additional Credit) — the SAME kind of rate tier this contract always
+called "best-supported modeled" — the served figure now correctly falls
+back to the guaranteed floor by default, because "best-supported" a
+discretionary ceiling is not automatically "confirmed". A project/
+scenario-specific confirmed_ceiling_programs override still selects the
+ceiling for a specific production with real evidence (a certificate, an
+approval letter). The off-budget Mauritius in-kind post replacement-cost
+normalization, and floor-rate uncertainty as a separate field, are
+unchanged.
 """
 from __future__ import annotations
 
@@ -27,19 +39,26 @@ def _by_id():
 
 
 class TestModeledNotFloor:
-    def test_mu_uses_best_supported_modeled_incentive_not_floor(self):
+    def test_mu_ceiling_requires_confirmation_and_serves_floor_by_default(self):
         mu = _by_id()[0]["ALLOC-BASELINE-MU"]
-        # MU resolves a 30% floor / 40% modeled band. The served/ranked
-        # incentive must be the 40% best-supported figure (== ceiling),
-        # strictly greater than the 30% floor.
-        assert mu["selected_incentive_usd"] == pytest.approx(mu["total_incentive_ceiling_usd"], abs=0.5)
-        assert mu["selected_incentive_usd"] > mu["total_incentive_floor_usd"]
+        # MU's 40% tier is a discretionary band ceiling (Film Rebate
+        # Committee discretion) — unconfirmed by default, so the served/
+        # ranked incentive is the 30% guaranteed floor, matching
+        # total_incentive_floor_usd exactly, strictly less than the
+        # (unconfirmed) ceiling.
+        assert mu["selected_incentive_usd"] == pytest.approx(mu["total_incentive_floor_usd"], abs=0.5)
+        assert mu["selected_incentive_usd"] < mu["total_incentive_ceiling_usd"]
 
-    def test_npc_is_computed_on_modeled_incentive(self):
+    def test_npc_is_computed_on_the_confirmed_floor_incentive(self):
         mu = _by_id()[0]["ALLOC-BASELINE-MU"]
-        # canonical NPC uses selected (modeled) incentive; conservative NPC
-        # uses the floor — and the two differ for a banded jurisdiction.
-        assert mu["npc_with_adjustments_usd"] < mu["npc_conservative_usd"]
+        # With the ceiling unconfirmed by default, the canonical
+        # (npc_with_adjustments) and conservative (floor-rate) NPCs both
+        # use the same 30% floor incentive for Mauritius specifically —
+        # they are equal here, not "canonical < conservative" (that
+        # relationship only holds when a ceiling IS being served above
+        # the floor, which the discretionary MU tier no longer is by
+        # default).
+        assert mu["npc_with_adjustments_usd"] == pytest.approx(mu["npc_conservative_usd"], abs=0.5)
 
     def test_ranking_does_not_use_floor(self):
         by, al = _by_id()
@@ -151,7 +170,11 @@ class TestSplitProductionElection:
 
     def test_election_composes_and_prices_a_real_split_structure(self):
         from app.demo.little_utopia_state import apply_fact_answers
-        apply_fact_answers({"account_splits": {"3400": {"MU": 0.6, "GR": 0.4}}})
+        # Incentive/Optimizer Core Closeout: Greece's minimum eligible
+        # spend is now the confirmed current EUR 200,000 fiction-film
+        # floor ($228,104.80) — the GR split share is raised from 0.4 to
+        # 0.5 so it still clears the (now higher) minimum-spend gate.
+        apply_fact_answers({"account_splits": {"3400": {"MU": 0.5, "GR": 0.5}}})
         try:
             al = build_allocated_structures(get_state())
             splits = [s for s in al["structures"] if s["structure_type"] == "split_production"]

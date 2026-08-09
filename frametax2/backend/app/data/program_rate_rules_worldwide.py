@@ -529,8 +529,9 @@ _GB_CITATION = (
     "tax) = 25.5%). 'AVEC is available on qualifying UK production "
     "expenditure, which is the lower of either 80% of total core "
     "expenditure or the actual UK core expenditure incurred' (QPE-"
-    "eligibility cap, not a rate cap — not modeled, no such mechanism "
-    "exists in this engine). 'at least 10% of costs spent on UK "
+    "eligibility cap, not a rate cap — Incentive/Optimizer Core Closeout: "
+    "now enforced via program_rate_rules.QPE_CAP_RULES['uk_avec'], applied "
+    "to the segment's own QPE before rate resolution). 'at least 10% of costs spent on UK "
     "qualifying production expenditure' required (ratio condition, not "
     "modeled as an absolute min_qpe_usd). 'There is no cap on the amount "
     "which can be claimed' (confirmed no dollar cap, not merely unknown). "
@@ -612,6 +613,79 @@ GB_DOCTRINE = register(DoctrineRecord(
     ),
 ))
 register_rate_rules(rate_rules_for(GB_DOCTRINE))
+
+# ── United Kingdom: Independent Film Tax Credit (IFTC) ──────────────────────
+#
+# Incentive/Optimizer Core Closeout. IFTC is NOT a separate statutory
+# credit — per the final rule resolution (docs/validation/
+# CODEX_FINAL_RULE_RESOLUTION.md §3.1-3.2, cross-checked against
+# docs/validation/GEMINI_FINAL_RULE_RESOLUTION.md §3, which agrees on the
+# substance), "IFTC" is the industry name for AVEC's enhanced treatment of
+# BFI-certified "low-budget films." Modeled here as its OWN program_slug
+# (gb_iftc_enhanced_avec), deliberately NOT "uk_avec" — this is the same
+# pattern already used for Australia's mutually-exclusive Location/PDV/
+# Producer Offsets: distinct, non-stacking programs each get their own
+# slug, and only the ONE actually pursued is wired into a production's
+# segments. Little Utopia's GB segments use program_slug="uk_avec" (see
+# little_utopia_state.py) — this record exists for correctness/future use
+# and is NEVER assigned to any Little Utopia segment, because Little
+# Utopia has no BFI low-budget certification or creative-connection fact
+# (empty cast_writer_director_facts) to support it. Do not wire this
+# program into Little Utopia's structures without that evidence.
+_GB_IFTC_CITATION = (
+    "HMRC CREC021110/CREC021120 (Creative Industries Expenditure Credit "
+    "Manual), BFI 'About UK creative-industry expenditure credits', "
+    "Finance (No. 2) Act 2024 s.14. Gross credit rate 53% (net ~39.75% "
+    "after 25% UK corporation tax, same net-of-tax convention already "
+    "used for standard AVEC's 34%->25.5%). Conditions: BFI low-budget "
+    "certificate; principal photography on/after 1 April 2024; total core "
+    "expenditure GBP 23,500,000 or less; only the first GBP 15,000,000 of "
+    "relevant global expenditure enters the enhanced-credit calculation; "
+    "'Modified Creative Connection' via a UK writer, UK director, or "
+    "official co-production, plus the standard BFI cultural "
+    "test/certification route. Enhanced VFX uplift cannot stack with IFTC "
+    "(independent films receive 53% treatment on their qualifying costs "
+    "instead)."
+)
+GB_IFTC_DOCTRINE = register(DoctrineRecord(
+    jurisdiction_code="GB",
+    program_slug="gb_iftc_enhanced_avec",
+    program_name="Independent Film Tax Credit (enhanced AVEC for certified low-budget films)",
+    confidence_tier="VERIFIED",
+    incentive_type="tax_credit",
+    is_refundable=None,
+    is_transferable=None,
+    min_spend_usd=None,
+    annual_cap_usd=None,
+    requires_cultural_test=True,
+    citation=_GB_IFTC_CITATION,
+    source_ref="HMRC-CREC021110-CREC021120-CODEX-final-resolution",
+    tiers=(
+        DoctrineRateTier(
+            tier_id="gb-iftc-net-3975",
+            rate=0.3975,
+            is_band_ceiling=True,  # certification/eligibility unconfirmed for any given production by default
+            conditions=(
+                RateCondition(
+                    condition_id="gb-iftc-certification-unconfirmed",
+                    description="Requires BFI low-budget certification, the "
+                                "Modified Creative Connection, and the "
+                                "GBP 23.5M total-core-expenditure ceiling — "
+                                "none evidenced by default for any "
+                                "production; this engine has no fact "
+                                "confirming these unless explicitly "
+                                "supplied per project/scenario",
+                    quote="obtain a BFI low-budget certificate ... total "
+                          "core expenditure GBP 23.5 million or less ... "
+                          "Modified Creative Connection condition (HMRC "
+                          "CREC021110/CREC021120)",
+                    kind="discretionary_band",
+                ),
+            ),
+        ),
+    ),
+))
+register_rate_rules(rate_rules_for(GB_IFTC_DOCTRINE))
 
 # ── Canada (federal): Production Services Tax Credit (PSTC) ────────────────
 #
@@ -919,7 +993,42 @@ AU_DOCTRINE = register(DoctrineRecord(
             tier_id="au-location-offset-30",
             rate=0.30,
             is_band_ceiling=False,
+            # Incentive/Optimizer Core Closeout: enforce the real AUD $20M
+            # minimum QAPE hard gate, reusing the SAME min_qpe_usd mechanism
+            # that already correctly blocks ~25 other jurisdictions (never a
+            # new gating code path). Root cause (canonical adjudication
+            # §6): no sourced AUD/USD FX rate exists in this project's
+            # FX_RATE_SNAPSHOTS table, so the threshold cannot be converted
+            # with a live rate without fabricating one. Fix: apply a
+            # disclosed, deliberately CONSERVATIVE (production-favorable)
+            # historical-bound rate of 0.50 USD/AUD — well below any
+            # AUD/USD rate observed in modern history (post-2001 lows are
+            # ~0.55-0.60) — giving threshold_usd = AUD 20,000,000 x 0.50 =
+            # USD 10,000,000. This is a bound, not a live conversion: if
+            # Little Utopia's USD QPE clears USD 10,000,000, the gate still
+            # requires re-evaluation against a real rate before being
+            # trusted; if it does NOT clear USD 10,000,000 (as here, QPE
+            # ~$4.05M), the gate is conclusively failed under ANY
+            # historically plausible AUD/USD rate, so blocking now is safe
+            # and does not depend on sourcing a live rate. Replace with a
+            # live-sourced FX_RATE_SNAPSHOTS conversion the moment one
+            # exists for AUD (see production_adjustment.py fx handling —
+            # same missing input also explains fx_delta_usd=$0 for AU).
+            min_qpe_usd=10_000_000.0,
             conditions=(
+                RateCondition(
+                    condition_id="au-min-qape-conservative-bound",
+                    description="AUD $20,000,000 minimum QAPE, applied as a "
+                                "conservative (production-favorable) USD "
+                                "bound of $10,000,000 (0.50 USD/AUD) pending "
+                                "a live-sourced AUD/USD rate — see tier "
+                                "comment for full reasoning",
+                    quote="A$20 million for a film (c21media.net, "
+                          "corroborating the 2026 rate increase; "
+                          "screenaustralia.gov.au for the 30% rate itself)",
+                    kind="min_qpe_usd",
+                    threshold_usd=10_000_000.0,
+                ),
                 RateCondition(
                     condition_id="au-mutually-exclusive",
                     description="Location Offset, PDV Offset, and Producer "

@@ -286,7 +286,12 @@ class TestGreeceProfile:
         return TIER1_PROFILES["GR"]
 
     def test_parsed_tier(self, gr):
-        assert gr.confidence_tier == "PARSED"
+        # Incentive/Optimizer Core Closeout: bumped to VERIFIED alongside
+        # program_rate_rules.GR_RATE_RULES, per the final rule resolution
+        # sourced to JMD 607434 (see docs/validation/
+        # CODEX_FINAL_RULE_RESOLUTION.md §2). Kept in sync by
+        # test_jurisdiction_doctrine_consistency.py.
+        assert gr.confidence_tier == "VERIFIED"
 
     def test_base_rate_40(self, gr):
         assert gr.base_rate == 0.40

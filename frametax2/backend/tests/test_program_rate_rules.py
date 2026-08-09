@@ -115,7 +115,17 @@ class TestUnverifiedSecondaryClaims:
     def test_resolution_carries_the_unverified_claims(self):
         rr = resolve_program_rate("mu_edb_incentive", "feature_film", 2_000_000.0)
         assert len(rr.unverified_claims) >= 1
-        assert all("NOT FOUND" in u.verification_status for u in rr.unverified_claims)
+        # Incentive/Optimizer Core Closeout: the 90%-local-filming claim
+        # was RESOLVED (rejected — it belongs to a separate 2023/24 Budget
+        # double-deduction measure, not the Film Rebate Scheme uplift; see
+        # docs/validation/CODEX_FINAL_RULE_RESOLUTION.md §1.1) and its
+        # verification_status updated accordingly; the OTHER logged claim
+        # (foreign cast/crew remuneration cap) remains genuinely
+        # unresolved ("NOT FOUND"). Both states are legitimate — assert
+        # each claim is one or the other, not that every claim is still
+        # an open "NOT FOUND".
+        for u in rr.unverified_claims:
+            assert "NOT FOUND" in u.verification_status or "RESOLVED" in u.verification_status
 
 
 class TestCrossModuleMirror:

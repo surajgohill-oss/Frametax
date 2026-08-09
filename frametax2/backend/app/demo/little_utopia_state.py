@@ -1062,6 +1062,41 @@ def _budget_lines_for_allocation() -> list:
     ]
 
 
+def _with_proven_zero_categories(ranking: list[dict], coverage: dict) -> list[dict]:
+    """Incentive/Optimizer Core Closeout, Part E. `coverage["categories"]`
+    (built above, from the REAL treaty_engine registry and the REAL
+    executable-jurisdiction discovery — never fabricated) already PROVES
+    certain structure categories (co-production treaty, split production)
+    are unavailable for this production, with the exact reason, but that
+    proof previously lived only in the `coverage` diagnostic object —
+    invisible next to the actual ranked/blocked candidate list, unlike
+    e.g. a blocked jurisdiction's structure (which DOES appear in
+    `ranking` with rank=None and its blocker). This surfaces the SAME
+    already-computed proof as an equivalent visible, unranked entry —
+    connecting an existing evaluation to the existing display surface,
+    never generating a new eligibility claim or a new treaty/pricing
+    computation. Categories with real generated (and possibly priced)
+    candidates are untouched here — only genuinely EMPTY categories
+    (candidates_evaluated == 0, i.e. never even attempted because the
+    real registry already proves it futile) get a synthetic entry, and
+    only one per category, not one per hypothetical partner."""
+    zero_categories = [
+        c for c in coverage.get("categories", [])
+        if c.get("zero_reason") and c.get("candidates_evaluated", 0) == 0
+    ]
+    extra = [
+        {
+            "rank": None,
+            "structure_id": f"PROVEN-ZERO-{c['category'].upper()}",
+            "label": c["category"].replace("_", " ").title(),
+            "is_fully_priced": False,
+            "excluded_from_ranking_because": [c["zero_reason"]],
+        }
+        for c in zero_categories
+    ]
+    return list(ranking) + extra
+
+
 def build_allocated_structures(
     state: "LittleUtopiaState",
     requirements_override: "ProductionRequirements | None" = None,
@@ -1520,6 +1555,8 @@ def build_allocated_structures(
             "doctrine": s.doctrine,
             "incentive_floor_usd": s.incentive_floor_usd,
             "incentive_ceiling_usd": s.incentive_ceiling_usd,
+            "ceiling_requires_confirmation": s.ceiling_requires_confirmation,
+            "qpe_cap_applied_usd": s.qpe_cap_applied_usd,
             "blockers": list(s.blockers),
             "qualification_trace": list(s.register_trace),
             "notes": list(s.notes),
@@ -1821,7 +1858,9 @@ def build_allocated_structures(
             }
             for code, alloc in _contingency_allocations.items()
         },
-        "ranking": rank_allocated_structures(pricings, _pursuable_by_structure),
+        "ranking": _with_proven_zero_categories(
+            rank_allocated_structures(pricings, _pursuable_by_structure), coverage,
+        ),
         "stack_combinations": stack_combinations,
         "advisor_routing_decisions_input": advisor_routing,
         # The conditional (KNOWN BUT NON-PRICEABLE) layer of the completed
