@@ -1,0 +1,1572 @@
+{
+  "schema_version": "1.0",
+  "scope": "GEMINI_MISSING_PROGRAM_VALIDATION",
+  "codex_discoveries": [
+    {
+      "jurisdiction": "Canada",
+      "subjurisdiction": null,
+      "program_name": "Film or Video Production Services Tax Credit (PSTC)",
+      "program_slug": null,
+      "program_type": "refundable_tax_credit",
+      "existing_in_cineglobe": false,
+      "CineGlobe_source": null,
+      "authoritative_source": [
+        "https://www.canada.ca/en/canadian-heritage/services/funding/cavco-tax-credits/film-video-production-services.html",
+        "https://www.canada.ca/en/revenue-agency/services/tax/international-non-residents/film-media-tax-credits/film-video-production-services-tax-credit-program/legislative-requirements.html"
+      ],
+      "source_effective_date": "2026-07-14",
+      "validation_status": "CONFIRMED_MISSING",
+      "rate": {
+        "stored_base": null,
+        "stored_max": null,
+        "authoritative_rule": "16% qualified Canadian labour; refundable; no credit cap."
+      },
+      "uplifts": {
+        "stored": [],
+        "material_gap": true
+      },
+      "caps": {
+        "stored_annual_local": null,
+        "stored_project_usd": null,
+        "authoritative_rule": "16% qualified Canadian labour; refundable; no credit cap."
+      },
+      "thresholds": {
+        "stored_rules": [],
+        "status": "absent"
+      },
+      "hard_gates": {
+        "summary": "Canadian/foreign-owned taxable corporation with Canadian permanent establishment; accredited production; cost minimum; exclusive with CPTC."
+      },
+      "QPE_rule_summary": {
+        "general_rule": "Canadian-resident labour/services in Canada, net of assistance.",
+        "warning": "Implement the authority's general test before category defaults."
+      },
+      "territoriality": {
+        "structured_general_predicate": false,
+        "summary": "Residence and Canadian service performance; payer alone insufficient."
+      },
+      "stacking": {
+        "stored_edge_count": 0,
+        "summary": "Validate national/regional interaction."
+      },
+      "treaty_relationships": {
+        "summary": "Official status may affect eligibility but requires approval."
+      },
+      "CineGlobe_mismatch": "Material current pathway absent.",
+      "missing_data": [
+        "machine rule set",
+        "effective-dated source capture",
+        "stacking"
+      ],
+      "required_remediation": "Create a separately sourced canonical program after reconciliation.",
+      "unresolved_items": [
+        "Discretionary allocation, budget availability or project approval where applicable."
+      ],
+      "project_dependent": [
+        "format",
+        "budget/local spend",
+        "applicant",
+        "timing",
+        "co-production status"
+      ]
+    },
+    {
+      "jurisdiction": "Canada",
+      "subjurisdiction": "British Columbia",
+      "program_name": "Film Incentive BC (FIBC)",
+      "program_slug": null,
+      "program_type": "refundable_tax_credit",
+      "existing_in_cineglobe": false,
+      "CineGlobe_source": null,
+      "authoritative_source": [
+        "https://www2.gov.bc.ca/gov/content/taxes/income-taxes/corporate/credits/film-tv/film-incentive"
+      ],
+      "source_effective_date": "current",
+      "validation_status": "CONFIRMED_MISSING",
+      "rate": {
+        "stored_base": null,
+        "stored_max": null,
+        "authoritative_rule": "Distinct domestic/Canadian-content BC labour credit with regional/DAVE components."
+      },
+      "uplifts": {
+        "stored": [],
+        "material_gap": true
+      },
+      "caps": {
+        "stored_annual_local": null,
+        "stored_project_usd": null,
+        "authoritative_rule": "Distinct domestic/Canadian-content BC labour credit with regional/DAVE components."
+      },
+      "thresholds": {
+        "stored_rules": [],
+        "status": "absent"
+      },
+      "hard_gates": {
+        "summary": "Eligible BC production corporation and Canadian-content rules."
+      },
+      "QPE_rule_summary": {
+        "general_rule": "Qualified BC labour.",
+        "warning": "Implement the authority's general test before category defaults."
+      },
+      "territoriality": {
+        "structured_general_predicate": false,
+        "summary": "BC-resident labour."
+      },
+      "stacking": {
+        "stored_edge_count": 0,
+        "summary": "Validate national/regional interaction."
+      },
+      "treaty_relationships": {
+        "summary": "Official status may affect eligibility but requires approval."
+      },
+      "CineGlobe_mismatch": "Material current pathway absent.",
+      "missing_data": [
+        "machine rule set",
+        "effective-dated source capture",
+        "stacking"
+      ],
+      "required_remediation": "Create a separately sourced canonical program after reconciliation.",
+      "unresolved_items": [
+        "Discretionary allocation, budget availability or project approval where applicable."
+      ],
+      "project_dependent": [
+        "format",
+        "budget/local spend",
+        "applicant",
+        "timing",
+        "co-production status"
+      ]
+    },
+    {
+      "jurisdiction": "Canada",
+      "subjurisdiction": "Quebec",
+      "program_name": "Refundable Tax Credit for Film Production Services",
+      "program_slug": null,
+      "program_type": "refundable_tax_credit",
+      "existing_in_cineglobe": false,
+      "CineGlobe_source": null,
+      "authoritative_source": [
+        "https://sodec.gouv.qc.ca/en/program/tax-credit-for-film-production-services/"
+      ],
+      "source_effective_date": "current",
+      "validation_status": "CONFIRMED_MISSING",
+      "rate": {
+        "stored_base": null,
+        "stored_max": null,
+        "authoritative_rule": "Separate Quebec services credit with basic and VFX/animation components."
+      },
+      "uplifts": {
+        "stored": [],
+        "material_gap": true
+      },
+      "caps": {
+        "stored_annual_local": null,
+        "stored_project_usd": null,
+        "authoritative_rule": "Separate Quebec services credit with basic and VFX/animation components."
+      },
+      "thresholds": {
+        "stored_rules": [],
+        "status": "absent"
+      },
+      "hard_gates": {
+        "summary": "Eligible Quebec corporation; SODEC qualification and Revenu Qu\u00e9bec claim."
+      },
+      "QPE_rule_summary": {
+        "general_rule": "Qualified Quebec service-production costs.",
+        "warning": "Implement the authority's general test before category defaults."
+      },
+      "territoriality": {
+        "structured_general_predicate": false,
+        "summary": "Quebec qualifying services/costs; payer alone insufficient."
+      },
+      "stacking": {
+        "stored_edge_count": 0,
+        "summary": "Validate national/regional interaction."
+      },
+      "treaty_relationships": {
+        "summary": "Official status may affect eligibility but requires approval."
+      },
+      "CineGlobe_mismatch": "Material current pathway absent.",
+      "missing_data": [
+        "machine rule set",
+        "effective-dated source capture",
+        "stacking"
+      ],
+      "required_remediation": "Create a separately sourced canonical program after reconciliation.",
+      "unresolved_items": [
+        "Discretionary allocation, budget availability or project approval where applicable."
+      ],
+      "project_dependent": [
+        "format",
+        "budget/local spend",
+        "applicant",
+        "timing",
+        "co-production status"
+      ]
+    },
+    {
+      "jurisdiction": "United States",
+      "subjurisdiction": "New Jersey",
+      "program_name": "Garden State Film and Digital Media Jobs Act \u2014 Film Credit",
+      "program_slug": null,
+      "program_type": "transferable_refundable_tax_credit",
+      "existing_in_cineglobe": false,
+      "CineGlobe_source": null,
+      "authoritative_source": [
+        "https://www.nj.gov/njfilm/incentives-credit.shtml",
+        "https://www.nj.gov/treasury/taxation/gardenstatefilm.shtml"
+      ],
+      "source_effective_date": "2026",
+      "validation_status": "CONFIRMED_MISSING",
+      "rate": {
+        "stored_base": null,
+        "stored_max": null,
+        "authoritative_rule": "35% generally; 30% within 30-mile NYC radius; diversity bonus up to 4%."
+      },
+      "uplifts": {
+        "stored": [],
+        "material_gap": true
+      },
+      "caps": {
+        "stored_annual_local": null,
+        "stored_project_usd": null,
+        "authoritative_rule": "35% generally; 30% within 30-mile NYC radius; diversity bonus up to 4%."
+      },
+      "thresholds": {
+        "stored_rules": [],
+        "status": "absent"
+      },
+      "hard_gates": {
+        "summary": "Allocation, qualified-production/spend tests, audit and diversity rules."
+      },
+      "QPE_rule_summary": {
+        "general_rule": "Qualified NJ expenses and employees.",
+        "warning": "Implement the authority's general test before category defaults."
+      },
+      "territoriality": {
+        "structured_general_predicate": false,
+        "summary": "NJ goods/services/labour; geographic rate split."
+      },
+      "stacking": {
+        "stored_edge_count": 0,
+        "summary": "Validate national/regional interaction."
+      },
+      "treaty_relationships": {
+        "summary": "Official status may affect eligibility but requires approval."
+      },
+      "CineGlobe_mismatch": "Material current pathway absent.",
+      "missing_data": [
+        "machine rule set",
+        "effective-dated source capture",
+        "stacking"
+      ],
+      "required_remediation": "Create a separately sourced canonical program after reconciliation.",
+      "unresolved_items": [
+        "Discretionary allocation, budget availability or project approval where applicable."
+      ],
+      "project_dependent": [
+        "format",
+        "budget/local spend",
+        "applicant",
+        "timing",
+        "co-production status"
+      ]
+    },
+    {
+      "jurisdiction": "United States",
+      "subjurisdiction": "New York",
+      "program_name": "Film Tax Credit \u2014 Post-Production",
+      "program_slug": null,
+      "program_type": "refundable_tax_credit",
+      "existing_in_cineglobe": false,
+      "CineGlobe_source": null,
+      "authoritative_source": [
+        "https://esd.ny.gov/new-york-state-film-tax-credit-program-post-production"
+      ],
+      "source_effective_date": "current",
+      "validation_status": "CONFIRMED_MISSING",
+      "rate": {
+        "stored_base": null,
+        "stored_max": null,
+        "authoritative_rule": "30% qualified post; conditioned additional 5% upstate."
+      },
+      "uplifts": {
+        "stored": [],
+        "material_gap": true
+      },
+      "caps": {
+        "stored_annual_local": null,
+        "stored_project_usd": null,
+        "authoritative_rule": "30% qualified post; conditioned additional 5% upstate."
+      },
+      "thresholds": {
+        "stored_rules": [],
+        "status": "absent"
+      },
+      "hard_gates": {
+        "summary": "Separate application, post/VFX thresholds, final certification."
+      },
+      "QPE_rule_summary": {
+        "general_rule": "Qualified NY post/VFX/animation.",
+        "warning": "Implement the authority's general test before category defaults."
+      },
+      "territoriality": {
+        "structured_general_predicate": false,
+        "summary": "Services/costs at qualifying NY facilities."
+      },
+      "stacking": {
+        "stored_edge_count": 0,
+        "summary": "Validate national/regional interaction."
+      },
+      "treaty_relationships": {
+        "summary": "Official status may affect eligibility but requires approval."
+      },
+      "CineGlobe_mismatch": "Material current pathway absent.",
+      "missing_data": [
+        "machine rule set",
+        "effective-dated source capture",
+        "stacking"
+      ],
+      "required_remediation": "Create a separately sourced canonical program after reconciliation.",
+      "unresolved_items": [
+        "Discretionary allocation, budget availability or project approval where applicable."
+      ],
+      "project_dependent": [
+        "format",
+        "budget/local spend",
+        "applicant",
+        "timing",
+        "co-production status"
+      ]
+    },
+    {
+      "jurisdiction": "United States",
+      "subjurisdiction": "New York",
+      "program_name": "Empire State Independent Film Production Credit",
+      "program_slug": null,
+      "program_type": "refundable_tax_credit",
+      "existing_in_cineglobe": false,
+      "CineGlobe_source": null,
+      "authoritative_source": [
+        "https://www.tax.ny.gov/pit/credits/empire-state-independent-film-production-credit.htm",
+        "https://www.tax.ny.gov/legal/2025/pit-corp-changes.htm"
+      ],
+      "source_effective_date": "2025-01-01",
+      "validation_status": "CONFIRMED_MISSING",
+      "rate": {
+        "stored_base": null,
+        "stored_max": null,
+        "authoritative_rule": "30% qualified costs with separately conditioned 10% additions."
+      },
+      "uplifts": {
+        "stored": [],
+        "material_gap": true
+      },
+      "caps": {
+        "stored_annual_local": null,
+        "stored_project_usd": null,
+        "authoritative_rule": "30% qualified costs with separately conditioned 10% additions."
+      },
+      "thresholds": {
+        "stored_rules": [],
+        "status": "absent"
+      },
+      "hard_gates": {
+        "summary": "Independent-film definition, facility/shooting/budget/location tests, MPTV certificate."
+      },
+      "QPE_rule_summary": {
+        "general_rule": "Statutory qualified production costs.",
+        "warning": "Implement the authority's general test before category defaults."
+      },
+      "territoriality": {
+        "structured_general_predicate": false,
+        "summary": "NY facility, performance and property-use tests."
+      },
+      "stacking": {
+        "stored_edge_count": 0,
+        "summary": "Validate national/regional interaction."
+      },
+      "treaty_relationships": {
+        "summary": "Official status may affect eligibility but requires approval."
+      },
+      "CineGlobe_mismatch": "Material current pathway absent.",
+      "missing_data": [
+        "machine rule set",
+        "effective-dated source capture",
+        "stacking"
+      ],
+      "required_remediation": "Create a separately sourced canonical program after reconciliation.",
+      "unresolved_items": [
+        "Discretionary allocation, budget availability or project approval where applicable."
+      ],
+      "project_dependent": [
+        "format",
+        "budget/local spend",
+        "applicant",
+        "timing",
+        "co-production status"
+      ]
+    },
+    {
+      "jurisdiction": "United States",
+      "subjurisdiction": "Ohio",
+      "program_name": "Ohio Motion Picture Tax Credit",
+      "program_slug": null,
+      "program_type": "refundable_tax_credit",
+      "existing_in_cineglobe": false,
+      "CineGlobe_source": null,
+      "authoritative_source": [
+        "https://codes.ohio.gov/ohio-revised-code/section-122.85",
+        "https://dam.assets.ohio.gov/image/upload/development.ohio.gov/business/stateincentives/OMPTC_Instruction_FY2026_July.pdf"
+      ],
+      "source_effective_date": "2025-09-30",
+      "validation_status": "CONFIRMED_MISSING",
+      "rate": {
+        "stored_base": null,
+        "stored_max": null,
+        "authoritative_rule": "30% eligible expenditure."
+      },
+      "uplifts": {
+        "stored": [],
+        "material_gap": true
+      },
+      "caps": {
+        "stored_annual_local": null,
+        "stored_project_usd": null,
+        "authoritative_rule": "30% eligible expenditure."
+      },
+      "thresholds": {
+        "stored_rules": [],
+        "status": "absent"
+      },
+      "hard_gates": {
+        "summary": "Ohio registration; pre-certification; USD300k minimum."
+      },
+      "QPE_rule_summary": {
+        "general_rule": "Goods/services purchased and consumed in Ohio.",
+        "warning": "Implement the authority's general test before category defaults."
+      },
+      "territoriality": {
+        "structured_general_predicate": false,
+        "summary": "Ohio purchase-and-consumption/services test."
+      },
+      "stacking": {
+        "stored_edge_count": 0,
+        "summary": "Validate national/regional interaction."
+      },
+      "treaty_relationships": {
+        "summary": "Official status may affect eligibility but requires approval."
+      },
+      "CineGlobe_mismatch": "Material current pathway absent.",
+      "missing_data": [
+        "machine rule set",
+        "effective-dated source capture",
+        "stacking"
+      ],
+      "required_remediation": "Create a separately sourced canonical program after reconciliation.",
+      "unresolved_items": [
+        "Discretionary allocation, budget availability or project approval where applicable."
+      ],
+      "project_dependent": [
+        "format",
+        "budget/local spend",
+        "applicant",
+        "timing",
+        "co-production status"
+      ]
+    },
+    {
+      "jurisdiction": "United States",
+      "subjurisdiction": "Arkansas",
+      "program_name": "Digital Product and Motion Picture Industry Incentive",
+      "program_slug": null,
+      "program_type": "rebate_or_transferable_tax_credit",
+      "existing_in_cineglobe": false,
+      "CineGlobe_source": null,
+      "authoritative_source": [
+        "https://www.arkansasedc.com/why-arkansas/business-climate/incentives/pages/film-production-incentives",
+        "https://www.dfa.arkansas.gov/office/taxes/other-taxes/tax-credits-special-refunds/business-incentives-and-credits/"
+      ],
+      "source_effective_date": "current",
+      "validation_status": "CONFIRMED_MISSING",
+      "rate": {
+        "stored_base": null,
+        "stored_max": null,
+        "authoritative_rule": "Current AEDC: 25% base plus 10% qualified resident/veteran payroll or veteran-owned vendors."
+      },
+      "uplifts": {
+        "stored": [],
+        "material_gap": true
+      },
+      "caps": {
+        "stored_annual_local": null,
+        "stored_project_usd": null,
+        "authoritative_rule": "Current AEDC: 25% base plus 10% qualified resident/veteran payroll or veteran-owned vendors."
+      },
+      "thresholds": {
+        "stored_rules": [],
+        "status": "absent"
+      },
+      "hard_gates": {
+        "summary": "State certification and discretionary approval."
+      },
+      "QPE_rule_summary": {
+        "general_rule": "Qualified Arkansas production/post costs; wage cap/withholding.",
+        "warning": "Implement the authority's general test before category defaults."
+      },
+      "territoriality": {
+        "structured_general_predicate": false,
+        "summary": "Arkansas incurrence; bank payment recommended, not qualifying test."
+      },
+      "stacking": {
+        "stored_edge_count": 0,
+        "summary": "Validate national/regional interaction."
+      },
+      "treaty_relationships": {
+        "summary": "Official status may affect eligibility but requires approval."
+      },
+      "CineGlobe_mismatch": "Material current pathway absent.",
+      "missing_data": [
+        "machine rule set",
+        "effective-dated source capture",
+        "stacking"
+      ],
+      "required_remediation": "Create a separately sourced canonical program after reconciliation.",
+      "unresolved_items": [
+        "Discretionary allocation, budget availability or project approval where applicable."
+      ],
+      "project_dependent": [
+        "format",
+        "budget/local spend",
+        "applicant",
+        "timing",
+        "co-production status"
+      ]
+    },
+    {
+      "jurisdiction": "United States",
+      "subjurisdiction": "West Virginia",
+      "program_name": "West Virginia Film Production Tax Credit",
+      "program_slug": null,
+      "program_type": "transferable_tax_credit",
+      "existing_in_cineglobe": false,
+      "CineGlobe_source": null,
+      "authoritative_source": [
+        "https://westvirginia.gov/filmincentives/"
+      ],
+      "source_effective_date": "current",
+      "validation_status": "CONFIRMED_MISSING",
+      "rate": {
+        "stored_base": null,
+        "stored_max": null,
+        "authoritative_rule": "27% base plus 4% resident-hire gate; agency states no current project/fiscal cap."
+      },
+      "uplifts": {
+        "stored": [],
+        "material_gap": true
+      },
+      "caps": {
+        "stored_annual_local": null,
+        "stored_project_usd": null,
+        "authoritative_rule": "27% base plus 4% resident-hire gate; agency states no current project/fiscal cap."
+      },
+      "thresholds": {
+        "stored_rules": [],
+        "status": "absent"
+      },
+      "hard_gates": {
+        "summary": "USD50k spend; WV registration; application."
+      },
+      "QPE_rule_summary": {
+        "general_rule": "Qualified in-state and specified vendor/withholding costs.",
+        "warning": "Implement the authority's general test before category defaults."
+      },
+      "territoriality": {
+        "structured_general_predicate": false,
+        "summary": "WV incurrence/vendor or WV-taxed services."
+      },
+      "stacking": {
+        "stored_edge_count": 0,
+        "summary": "Validate national/regional interaction."
+      },
+      "treaty_relationships": {
+        "summary": "Official status may affect eligibility but requires approval."
+      },
+      "CineGlobe_mismatch": "Material current pathway absent.",
+      "missing_data": [
+        "machine rule set",
+        "effective-dated source capture",
+        "stacking"
+      ],
+      "required_remediation": "Create a separately sourced canonical program after reconciliation.",
+      "unresolved_items": [
+        "Discretionary allocation, budget availability or project approval where applicable."
+      ],
+      "project_dependent": [
+        "format",
+        "budget/local spend",
+        "applicant",
+        "timing",
+        "co-production status"
+      ]
+    },
+    {
+      "jurisdiction": "United States",
+      "subjurisdiction": "Missouri",
+      "program_name": "Motion Media Production Tax Credit",
+      "program_slug": null,
+      "program_type": "tax_credit",
+      "existing_in_cineglobe": false,
+      "CineGlobe_source": null,
+      "authoritative_source": [
+        "https://ded.mo.gov/programs/business-workforce/motion-media-production-tax-credit-program"
+      ],
+      "source_effective_date": "2023-10",
+      "validation_status": "CONFIRMED_MISSING",
+      "rate": {
+        "stored_base": null,
+        "stored_max": null,
+        "authoritative_rule": "Current program; statutory additions depend on project/workforce attributes."
+      },
+      "uplifts": {
+        "stored": [],
+        "material_gap": true
+      },
+      "caps": {
+        "stored_annual_local": null,
+        "stored_project_usd": null,
+        "authoritative_rule": "Current program; statutory additions depend on project/workforce attributes."
+      },
+      "thresholds": {
+        "stored_rules": [],
+        "status": "absent"
+      },
+      "hard_gates": {
+        "summary": "USD50k/100k minimums; apprentice/veteran hires; preapplication/final filing."
+      },
+      "QPE_rule_summary": {
+        "general_rule": "Qualified Missouri production/post costs.",
+        "warning": "Implement the authority's general test before category defaults."
+      },
+      "territoriality": {
+        "structured_general_predicate": false,
+        "summary": "Missouri expense/workforce rules."
+      },
+      "stacking": {
+        "stored_edge_count": 0,
+        "summary": "Validate national/regional interaction."
+      },
+      "treaty_relationships": {
+        "summary": "Official status may affect eligibility but requires approval."
+      },
+      "CineGlobe_mismatch": "Material current pathway absent.",
+      "missing_data": [
+        "machine rule set",
+        "effective-dated source capture",
+        "stacking"
+      ],
+      "required_remediation": "Create a separately sourced canonical program after reconciliation.",
+      "unresolved_items": [
+        "Discretionary allocation, budget availability or project approval where applicable."
+      ],
+      "project_dependent": [
+        "format",
+        "budget/local spend",
+        "applicant",
+        "timing",
+        "co-production status"
+      ]
+    },
+    {
+      "jurisdiction": "United States",
+      "subjurisdiction": "Montana",
+      "program_name": "MEDIA Tax Credit",
+      "program_slug": null,
+      "program_type": "transferable_tax_credit",
+      "existing_in_cineglobe": false,
+      "CineGlobe_source": null,
+      "authoritative_source": [
+        "https://commerce.mt.gov/Business/Programs-and-Services/Montana-Film-Office/Incentives/MEDIA-Tax-Credit"
+      ],
+      "source_effective_date": "2026",
+      "validation_status": "CONFIRMED_MISSING",
+      "rate": {
+        "stored_base": null,
+        "stored_max": null,
+        "authoritative_rule": "20% base, additions up to 35%; intake paused and first available credit stated as 2031."
+      },
+      "uplifts": {
+        "stored": [],
+        "material_gap": true
+      },
+      "caps": {
+        "stored_annual_local": null,
+        "stored_project_usd": null,
+        "authoritative_rule": "20% base, additions up to 35%; intake paused and first available credit stated as 2031."
+      },
+      "thresholds": {
+        "stored_rules": [],
+        "status": "absent"
+      },
+      "hard_gates": {
+        "summary": "Pre-certification/registration/audit; currently unavailable."
+      },
+      "QPE_rule_summary": {
+        "general_rule": "Montana base investment and separately rated categories.",
+        "warning": "Implement the authority's general test before category defaults."
+      },
+      "territoriality": {
+        "structured_general_predicate": false,
+        "summary": "Montana expenditure/residence/withholding."
+      },
+      "stacking": {
+        "stored_edge_count": 0,
+        "summary": "Validate national/regional interaction."
+      },
+      "treaty_relationships": {
+        "summary": "Official status may affect eligibility but requires approval."
+      },
+      "CineGlobe_mismatch": "Material current pathway absent.",
+      "missing_data": [
+        "machine rule set",
+        "effective-dated source capture",
+        "stacking"
+      ],
+      "required_remediation": "Create a separately sourced canonical program after reconciliation.",
+      "unresolved_items": [
+        "Discretionary allocation, budget availability or project approval where applicable."
+      ],
+      "project_dependent": [
+        "format",
+        "budget/local spend",
+        "applicant",
+        "timing",
+        "co-production status"
+      ]
+    },
+    {
+      "jurisdiction": "Australia",
+      "subjurisdiction": null,
+      "program_name": "Producer Offset (separate statutory program)",
+      "program_slug": null,
+      "program_type": "refundable_tax_offset",
+      "existing_in_cineglobe": false,
+      "CineGlobe_source": null,
+      "authoritative_source": [
+        "https://www.screenaustralia.gov.au/funding-and-support/producer-offset"
+      ],
+      "source_effective_date": "current",
+      "validation_status": "CONFIRMED_MISSING",
+      "rate": {
+        "stored_base": null,
+        "stored_max": null,
+        "authoritative_rule": "Separate Producer Offset; rates differ by format from Location/PDV."
+      },
+      "uplifts": {
+        "stored": [],
+        "material_gap": true
+      },
+      "caps": {
+        "stored_annual_local": null,
+        "stored_project_usd": null,
+        "authoritative_rule": "Separate Producer Offset; rates differ by format from Location/PDV."
+      },
+      "thresholds": {
+        "stored_rules": [],
+        "status": "absent"
+      },
+      "hard_gates": {
+        "summary": "SAC or official co-production; QAPE thresholds; final certificate."
+      },
+      "QPE_rule_summary": {
+        "general_rule": "QAPE under ITAA.",
+        "warning": "Implement the authority's general test before category defaults."
+      },
+      "territoriality": {
+        "structured_general_predicate": false,
+        "summary": "Australian-incurred QAPE; payer alone insufficient."
+      },
+      "stacking": {
+        "stored_edge_count": 0,
+        "summary": "Validate national/regional interaction."
+      },
+      "treaty_relationships": {
+        "summary": "Official status may affect eligibility but requires approval."
+      },
+      "CineGlobe_mismatch": "Material current pathway absent.",
+      "missing_data": [
+        "machine rule set",
+        "effective-dated source capture",
+        "stacking"
+      ],
+      "required_remediation": "Create a separately sourced canonical program after reconciliation.",
+      "unresolved_items": [
+        "Discretionary allocation, budget availability or project approval where applicable."
+      ],
+      "project_dependent": [
+        "format",
+        "budget/local spend",
+        "applicant",
+        "timing",
+        "co-production status"
+      ]
+    },
+    {
+      "jurisdiction": "United Kingdom",
+      "subjurisdiction": null,
+      "program_name": "Enhanced AVEC / Independent Film Tax Credit (IFTC)",
+      "program_slug": null,
+      "program_type": "payable_expenditure_credit",
+      "existing_in_cineglobe": false,
+      "CineGlobe_source": null,
+      "authoritative_source": [
+        "https://www.gov.uk/hmrc-internal-manuals/creative-industries-expenditure-credit-manual/crec021110",
+        "https://www.gov.uk/guidance/claim-audio-visual-expenditure-credits-for-corporation-tax"
+      ],
+      "source_effective_date": "2025-04-01",
+      "validation_status": "CONFIRMED_MISSING",
+      "rate": {
+        "stored_base": null,
+        "stored_max": null,
+        "authoritative_rule": "53% rate; up to GBP15m relevant global expenditure counted."
+      },
+      "uplifts": {
+        "stored": [],
+        "material_gap": true
+      },
+      "caps": {
+        "stored_annual_local": null,
+        "stored_project_usd": null,
+        "authoritative_rule": "53% rate; up to GBP15m relevant global expenditure counted."
+      },
+      "thresholds": {
+        "stored_rules": [],
+        "status": "absent"
+      },
+      "hard_gates": {
+        "summary": "Photography on/after 1 Apr 2024; core budget <=GBP23.5m; BFI low-budget certificate; UK writer/director or co-production."
+      },
+      "QPE_rule_summary": {
+        "general_rule": "Applicable capped core-cost base; taxable credit.",
+        "warning": "Implement the authority's general test before category defaults."
+      },
+      "territoriality": {
+        "structured_general_predicate": false,
+        "summary": "UK goods/services used or consumed."
+      },
+      "stacking": {
+        "stored_edge_count": 0,
+        "summary": "Validate national/regional interaction."
+      },
+      "treaty_relationships": {
+        "summary": "Official status may affect eligibility but requires approval."
+      },
+      "CineGlobe_mismatch": "Material current pathway absent.",
+      "missing_data": [
+        "machine rule set",
+        "effective-dated source capture",
+        "stacking"
+      ],
+      "required_remediation": "Create a separately sourced canonical program after reconciliation.",
+      "unresolved_items": [
+        "Discretionary allocation, budget availability or project approval where applicable."
+      ],
+      "project_dependent": [
+        "format",
+        "budget/local spend",
+        "applicant",
+        "timing",
+        "co-production status"
+      ]
+    },
+    {
+      "jurisdiction": "United Kingdom",
+      "subjurisdiction": null,
+      "program_name": "UK Global Screen Fund \u2014 International Co-production",
+      "program_slug": null,
+      "program_type": "nonrecoupable_grant",
+      "existing_in_cineglobe": false,
+      "CineGlobe_source": null,
+      "authoritative_source": [
+        "https://www.bfi.org.uk/get-funding-support/create-films-tv-or-new-formats-storytelling/international-co-productions"
+      ],
+      "source_effective_date": "current",
+      "validation_status": "CONFIRMED_MISSING",
+      "rate": {
+        "stored_base": null,
+        "stored_max": null,
+        "authoritative_rule": "Competitive non-recoupable grants up to GBP300,000."
+      },
+      "uplifts": {
+        "stored": [],
+        "material_gap": true
+      },
+      "caps": {
+        "stored_annual_local": null,
+        "stored_project_usd": null,
+        "authoritative_rule": "Competitive non-recoupable grants up to GBP300,000."
+      },
+      "thresholds": {
+        "stored_rules": [],
+        "status": "absent"
+      },
+      "hard_gates": {
+        "summary": "UK independent applicant and strand/co-production criteria."
+      },
+      "QPE_rule_summary": {
+        "general_rule": "BFI-guideline eligible costs.",
+        "warning": "Implement the authority's general test before category defaults."
+      },
+      "territoriality": {
+        "structured_general_predicate": false,
+        "summary": "UK applicant and delivery obligations."
+      },
+      "stacking": {
+        "stored_edge_count": 0,
+        "summary": "Validate national/regional interaction."
+      },
+      "treaty_relationships": {
+        "summary": "Official status may affect eligibility but requires approval."
+      },
+      "CineGlobe_mismatch": "Material current pathway absent.",
+      "missing_data": [
+        "machine rule set",
+        "effective-dated source capture",
+        "stacking"
+      ],
+      "required_remediation": "Create a separately sourced canonical program after reconciliation.",
+      "unresolved_items": [
+        "Discretionary allocation, budget availability or project approval where applicable."
+      ],
+      "project_dependent": [
+        "format",
+        "budget/local spend",
+        "applicant",
+        "timing",
+        "co-production status"
+      ]
+    },
+    {
+      "jurisdiction": "Germany",
+      "subjurisdiction": null,
+      "program_name": "German Motion Picture Fund (GMPF)",
+      "program_slug": null,
+      "program_type": "grant",
+      "existing_in_cineglobe": false,
+      "CineGlobe_source": null,
+      "authoritative_source": [
+        "https://www.ffa.de/files/ffa/av-info-publikationen-downloads/26_DFFF_GMPF_At_A_Glance_2025_EN.pdf"
+      ],
+      "source_effective_date": "2025-01-01",
+      "validation_status": "CONFIRMED_MISSING",
+      "rate": {
+        "stored_base": null,
+        "stored_max": null,
+        "authoritative_rule": "30% recognized German expenditure with current caps."
+      },
+      "uplifts": {
+        "stored": [],
+        "material_gap": true
+      },
+      "caps": {
+        "stored_annual_local": null,
+        "stored_project_usd": null,
+        "authoritative_rule": "30% recognized German expenditure with current caps."
+      },
+      "thresholds": {
+        "stored_rules": [],
+        "status": "absent"
+      },
+      "hard_gates": {
+        "summary": "High-end eligibility, minimum German expenditure, application before production."
+      },
+      "QPE_rule_summary": {
+        "general_rule": "Recognized German production expenditure.",
+        "warning": "Implement the authority's general test before category defaults."
+      },
+      "territoriality": {
+        "structured_general_predicate": false,
+        "summary": "Official German expenditure test."
+      },
+      "stacking": {
+        "stored_edge_count": 0,
+        "summary": "Validate national/regional interaction."
+      },
+      "treaty_relationships": {
+        "summary": "Official status may affect eligibility but requires approval."
+      },
+      "CineGlobe_mismatch": "Material current pathway absent.",
+      "missing_data": [
+        "machine rule set",
+        "effective-dated source capture",
+        "stacking"
+      ],
+      "required_remediation": "Create a separately sourced canonical program after reconciliation.",
+      "unresolved_items": [
+        "Discretionary allocation, budget availability or project approval where applicable."
+      ],
+      "project_dependent": [
+        "format",
+        "budget/local spend",
+        "applicant",
+        "timing",
+        "co-production status"
+      ]
+    },
+    {
+      "jurisdiction": "United Arab Emirates",
+      "subjurisdiction": "Abu Dhabi",
+      "program_name": "Abu Dhabi 35++ Production Rebate",
+      "program_slug": null,
+      "program_type": "cash_rebate",
+      "existing_in_cineglobe": false,
+      "CineGlobe_source": null,
+      "authoritative_source": [
+        "https://www.film.gov.ae/35-rebate",
+        "https://www.film.gov.ae/storage/staticPage/ADFC%20Rebate%20Guidelines%20FINAL%20En.pdf"
+      ],
+      "source_effective_date": "2025-01-01",
+      "validation_status": "CONFIRMED_MISSING",
+      "rate": {
+        "stored_base": null,
+        "stored_max": null,
+        "authoritative_rule": "35% standard; enhanced 37.5%\u201350% by points."
+      },
+      "uplifts": {
+        "stored": [],
+        "material_gap": true
+      },
+      "caps": {
+        "stored_annual_local": null,
+        "stored_project_usd": null,
+        "authoritative_rule": "35% standard; enhanced 37.5%\u201350% by points."
+      },
+      "thresholds": {
+        "stored_rules": [],
+        "status": "absent"
+      },
+      "hard_gates": {
+        "summary": "Preapproval, registered local applicant, content/funding/audit."
+      },
+      "QPE_rule_summary": {
+        "general_rule": "Approved Abu Dhabi production/post expenditure.",
+        "warning": "Implement the authority's general test before category defaults."
+      },
+      "territoriality": {
+        "structured_general_predicate": false,
+        "summary": "Specified suppliers/services/activity."
+      },
+      "stacking": {
+        "stored_edge_count": 0,
+        "summary": "Validate national/regional interaction."
+      },
+      "treaty_relationships": {
+        "summary": "Official status may affect eligibility but requires approval."
+      },
+      "CineGlobe_mismatch": "Material current pathway absent.",
+      "missing_data": [
+        "machine rule set",
+        "effective-dated source capture",
+        "stacking"
+      ],
+      "required_remediation": "Create a separately sourced canonical program after reconciliation.",
+      "unresolved_items": [
+        "Discretionary allocation, budget availability or project approval where applicable."
+      ],
+      "project_dependent": [
+        "format",
+        "budget/local spend",
+        "applicant",
+        "timing",
+        "co-production status"
+      ]
+    },
+    {
+      "jurisdiction": "Colombia",
+      "subjurisdiction": null,
+      "program_name": "CINA Audiovisual Investment Certificate",
+      "program_slug": null,
+      "program_type": "transferable_tax_certificate",
+      "existing_in_cineglobe": false,
+      "CineGlobe_source": null,
+      "authoritative_source": [
+        "https://www.proimagenescolombia.com/secciones/pantalla_colombia/breves_plantilla.php?id_noticia=13599"
+      ],
+      "source_effective_date": "current",
+      "validation_status": "CONFIRMED_MISSING",
+      "rate": {
+        "stored_base": null,
+        "stored_max": null,
+        "authoritative_rule": "35% qualifying audiovisual/logistical services as marketable certificate."
+      },
+      "uplifts": {
+        "stored": [],
+        "material_gap": true
+      },
+      "caps": {
+        "stored_annual_local": null,
+        "stored_project_usd": null,
+        "authoritative_rule": "35% qualifying audiovisual/logistical services as marketable certificate."
+      },
+      "thresholds": {
+        "stored_rules": [],
+        "status": "absent"
+      },
+      "hard_gates": {
+        "summary": "Project approval and Colombian services structure; separate from FFC."
+      },
+      "QPE_rule_summary": {
+        "general_rule": "Approved Colombian audiovisual/logistical services.",
+        "warning": "Implement the authority's general test before category defaults."
+      },
+      "territoriality": {
+        "structured_general_predicate": false,
+        "summary": "Colombian services/expenditure."
+      },
+      "stacking": {
+        "stored_edge_count": 0,
+        "summary": "Validate national/regional interaction."
+      },
+      "treaty_relationships": {
+        "summary": "Official status may affect eligibility but requires approval."
+      },
+      "CineGlobe_mismatch": "Material current pathway absent.",
+      "missing_data": [
+        "machine rule set",
+        "effective-dated source capture",
+        "stacking"
+      ],
+      "required_remediation": "Create a separately sourced canonical program after reconciliation.",
+      "unresolved_items": [
+        "Discretionary allocation, budget availability or project approval where applicable."
+      ],
+      "project_dependent": [
+        "format",
+        "budget/local spend",
+        "applicant",
+        "timing",
+        "co-production status"
+      ]
+    },
+    {
+      "jurisdiction": "Spain",
+      "subjurisdiction": "Canary Islands",
+      "program_name": "Canary Islands Foreign Production Tax Deduction",
+      "program_slug": null,
+      "program_type": "tax_credit",
+      "existing_in_cineglobe": false,
+      "CineGlobe_source": null,
+      "authoritative_source": [
+        "https://www.investinspain.org/content/dam/icex-invest/documentos/publicaciones/sectores/industria-audiovisual/ICEX-Invest%20in%20Spain.%20Audiovisual.pdf"
+      ],
+      "source_effective_date": "2025",
+      "validation_status": "CONFIRMED_MISSING",
+      "rate": {
+        "stored_base": null,
+        "stored_max": null,
+        "authoritative_rule": "54% first EUR1m; 45% thereafter; caps EUR36m/EUR18m per episode."
+      },
+      "uplifts": {
+        "stored": [],
+        "material_gap": true
+      },
+      "caps": {
+        "stored_annual_local": null,
+        "stored_project_usd": null,
+        "authoritative_rule": "54% first EUR1m; 45% thereafter; caps EUR36m/EUR18m per episode."
+      },
+      "thresholds": {
+        "stored_rules": [],
+        "status": "absent"
+      },
+      "hard_gates": {
+        "summary": "Canary company/registration, cultural certificate, spend/format thresholds."
+      },
+      "QPE_rule_summary": {
+        "general_rule": "Eligible Canary expenditure.",
+        "warning": "Implement the authority's general test before category defaults."
+      },
+      "territoriality": {
+        "structured_general_predicate": false,
+        "summary": "Canary-incurred costs/activity."
+      },
+      "stacking": {
+        "stored_edge_count": 0,
+        "summary": "Validate national/regional interaction."
+      },
+      "treaty_relationships": {
+        "summary": "Official status may affect eligibility but requires approval."
+      },
+      "CineGlobe_mismatch": "Material current pathway absent.",
+      "missing_data": [
+        "machine rule set",
+        "effective-dated source capture",
+        "stacking"
+      ],
+      "required_remediation": "Create a separately sourced canonical program after reconciliation.",
+      "unresolved_items": [
+        "Discretionary allocation, budget availability or project approval where applicable."
+      ],
+      "project_dependent": [
+        "format",
+        "budget/local spend",
+        "applicant",
+        "timing",
+        "co-production status"
+      ]
+    },
+    {
+      "jurisdiction": "Spain",
+      "subjurisdiction": "Navarre",
+      "program_name": "Navarre Audiovisual Production Tax Credit",
+      "program_slug": null,
+      "program_type": "tax_credit",
+      "existing_in_cineglobe": false,
+      "CineGlobe_source": null,
+      "authoritative_source": [
+        "https://www.investinspain.org/content/dam/icex-invest/documentos/publicaciones/sectores/industria-audiovisual/ICEX-Invest%20in%20Spain.%20Audiovisual.pdf"
+      ],
+      "source_effective_date": "2025",
+      "validation_status": "CONFIRMED_MISSING",
+      "rate": {
+        "stored_base": null,
+        "stored_max": null,
+        "authoritative_rule": "Up to 50%, subject to current conditions."
+      },
+      "uplifts": {
+        "stored": [],
+        "material_gap": true
+      },
+      "caps": {
+        "stored_annual_local": null,
+        "stored_project_usd": null,
+        "authoritative_rule": "Up to 50%, subject to current conditions."
+      },
+      "thresholds": {
+        "stored_rules": [],
+        "status": "absent"
+      },
+      "hard_gates": {
+        "summary": "Navarre taxpayer, cultural/spend/intensity limits."
+      },
+      "QPE_rule_summary": {
+        "general_rule": "Qualified Navarre expenditure.",
+        "warning": "Implement the authority's general test before category defaults."
+      },
+      "territoriality": {
+        "structured_general_predicate": false,
+        "summary": "Navarre activity/expenditure."
+      },
+      "stacking": {
+        "stored_edge_count": 0,
+        "summary": "Validate national/regional interaction."
+      },
+      "treaty_relationships": {
+        "summary": "Official status may affect eligibility but requires approval."
+      },
+      "CineGlobe_mismatch": "Material current pathway absent.",
+      "missing_data": [
+        "machine rule set",
+        "effective-dated source capture",
+        "stacking"
+      ],
+      "required_remediation": "Create a separately sourced canonical program after reconciliation.",
+      "unresolved_items": [
+        "Discretionary allocation, budget availability or project approval where applicable."
+      ],
+      "project_dependent": [
+        "format",
+        "budget/local spend",
+        "applicant",
+        "timing",
+        "co-production status"
+      ]
+    },
+    {
+      "jurisdiction": "Spain",
+      "subjurisdiction": "Basque Country",
+      "program_name": "Basque Provincial Audiovisual Tax Credits",
+      "program_slug": null,
+      "program_type": "tax_credit",
+      "existing_in_cineglobe": false,
+      "CineGlobe_source": null,
+      "authoritative_source": [
+        "https://www.investinspain.org/content/dam/icex-invest/documentos/publicaciones/who-is-who-shooting/24/FEDERATION.pdf"
+      ],
+      "source_effective_date": "2025",
+      "validation_status": "CONFIRMED_MISSING",
+      "rate": {
+        "stored_base": null,
+        "stored_max": null,
+        "authoritative_rule": "Province-specific: Biscay up to 70%; Gipuzkoa/\u00c1lava differ."
+      },
+      "uplifts": {
+        "stored": [],
+        "material_gap": true
+      },
+      "caps": {
+        "stored_annual_local": null,
+        "stored_project_usd": null,
+        "authoritative_rule": "Province-specific: Biscay up to 70%; Gipuzkoa/\u00c1lava differ."
+      },
+      "thresholds": {
+        "stored_rules": [],
+        "status": "absent"
+      },
+      "hard_gates": {
+        "summary": "Applicable foral taxpayer and cultural/territorial/intensity tests."
+      },
+      "QPE_rule_summary": {
+        "general_rule": "Province-qualified expenditure.",
+        "warning": "Implement the authority's general test before category defaults."
+      },
+      "territoriality": {
+        "structured_general_predicate": false,
+        "summary": "Each foral territory has distinct tests."
+      },
+      "stacking": {
+        "stored_edge_count": 0,
+        "summary": "Validate national/regional interaction."
+      },
+      "treaty_relationships": {
+        "summary": "Official status may affect eligibility but requires approval."
+      },
+      "CineGlobe_mismatch": "Material current pathway absent.",
+      "missing_data": [
+        "machine rule set",
+        "effective-dated source capture",
+        "stacking"
+      ],
+      "required_remediation": "Create a separately sourced canonical program after reconciliation.",
+      "unresolved_items": [
+        "Discretionary allocation, budget availability or project approval where applicable."
+      ],
+      "project_dependent": [
+        "format",
+        "budget/local spend",
+        "applicant",
+        "timing",
+        "co-production status"
+      ]
+    },
+    {
+      "jurisdiction": "South Africa",
+      "subjurisdiction": null,
+      "program_name": "South African Film and Television Production / Co-production Incentive",
+      "program_slug": null,
+      "program_type": "cash_grant",
+      "existing_in_cineglobe": false,
+      "CineGlobe_source": null,
+      "authoritative_source": [
+        "https://www.thedtic.gov.za/south-african-film-and-television-production-incentive-2/"
+      ],
+      "source_effective_date": "current",
+      "validation_status": "DUPLICATE",
+      "rate": {
+        "stored_base": null,
+        "stored_max": null,
+        "authoritative_rule": "35% QSAPE plus conditioned 5%; cap R50m."
+      },
+      "uplifts": {
+        "stored": [],
+        "material_gap": true
+      },
+      "caps": {
+        "stored_annual_local": null,
+        "stored_project_usd": null,
+        "authoritative_rule": "35% QSAPE plus conditioned 5%; cap R50m."
+      },
+      "thresholds": {
+        "stored_rules": [],
+        "status": "absent"
+      },
+      "hard_gates": {
+        "summary": "SA ownership/creative/B-BBEE/SPCV, spend/shoot/finance/procurement/preapproval."
+      },
+      "QPE_rule_summary": {
+        "general_rule": "QSAPE under dtic guideline.",
+        "warning": "Implement the authority's general test before category defaults."
+      },
+      "territoriality": {
+        "structured_general_predicate": false,
+        "summary": "SA qualifying spend; direct-SPCV payment necessary not sufficient."
+      },
+      "stacking": {
+        "stored_edge_count": 0,
+        "summary": "Validate national/regional interaction."
+      },
+      "treaty_relationships": {
+        "summary": "Official status may affect eligibility but requires approval."
+      },
+      "CineGlobe_mismatch": "Material current pathway absent.",
+      "missing_data": [
+        "machine rule set",
+        "effective-dated source capture",
+        "stacking"
+      ],
+      "required_remediation": "Create a separately sourced canonical program after reconciliation.",
+      "unresolved_items": [
+        "Discretionary allocation, budget availability or project approval where applicable."
+      ],
+      "project_dependent": [
+        "format",
+        "budget/local spend",
+        "applicant",
+        "timing",
+        "co-production status"
+      ]
+    },
+    {
+      "jurisdiction": "Netherlands",
+      "subjurisdiction": null,
+      "program_name": "Netherlands Film Production Incentive \u2014 High-End Series",
+      "program_slug": null,
+      "program_type": "cash_rebate_grant",
+      "existing_in_cineglobe": false,
+      "CineGlobe_source": null,
+      "authoritative_source": [
+        "https://www.filmfonds.nl/en/rules-and-regulations"
+      ],
+      "source_effective_date": "2025",
+      "validation_status": "DUPLICATE",
+      "rate": {
+        "stored_base": null,
+        "stored_max": null,
+        "authoritative_rule": "35% qualifying Dutch costs under distinct series regulation."
+      },
+      "uplifts": {
+        "stored": [],
+        "material_gap": true
+      },
+      "caps": {
+        "stored_annual_local": null,
+        "stored_project_usd": null,
+        "authoritative_rule": "35% qualifying Dutch costs under distinct series regulation."
+      },
+      "thresholds": {
+        "stored_rules": [],
+        "status": "absent"
+      },
+      "hard_gates": {
+        "summary": "Dutch applicant, independence/points, format, financing/release thresholds."
+      },
+      "QPE_rule_summary": {
+        "general_rule": "Demonstrably spent qualifying Dutch costs.",
+        "warning": "Implement the authority's general test before category defaults."
+      },
+      "territoriality": {
+        "structured_general_predicate": false,
+        "summary": "Parties subject to Dutch taxation."
+      },
+      "stacking": {
+        "stored_edge_count": 0,
+        "summary": "Validate national/regional interaction."
+      },
+      "treaty_relationships": {
+        "summary": "Official status may affect eligibility but requires approval."
+      },
+      "CineGlobe_mismatch": "Material current pathway absent.",
+      "missing_data": [
+        "machine rule set",
+        "effective-dated source capture",
+        "stacking"
+      ],
+      "required_remediation": "Create a separately sourced canonical program after reconciliation.",
+      "unresolved_items": [
+        "Discretionary allocation, budget availability or project approval where applicable."
+      ],
+      "project_dependent": [
+        "format",
+        "budget/local spend",
+        "applicant",
+        "timing",
+        "co-production status"
+      ]
+    },
+    {
+      "jurisdiction": "Thailand",
+      "subjurisdiction": null,
+      "program_name": "Foreign Digital Content Production Incentive",
+      "program_slug": null,
+      "program_type": "cash_rebate",
+      "existing_in_cineglobe": false,
+      "CineGlobe_source": null,
+      "authoritative_source": [
+        "https://thailand.prd.go.th/en/content/category/detail/id/2078/iid/472682"
+      ],
+      "source_effective_date": "2026",
+      "validation_status": "DUPLICATE",
+      "rate": {
+        "stored_base": null,
+        "stored_max": null,
+        "authoritative_rule": "20% qualifying contract production fees."
+      },
+      "uplifts": {
+        "stored": [],
+        "material_gap": true
+      },
+      "caps": {
+        "stored_annual_local": null,
+        "stored_project_usd": null,
+        "authoritative_rule": "20% qualifying contract production fees."
+      },
+      "thresholds": {
+        "stored_rules": [],
+        "status": "absent"
+      },
+      "hard_gates": {
+        "summary": "Ministry of Culture program, contract minimum and content/Thai production requirements."
+      },
+      "QPE_rule_summary": {
+        "general_rule": "Approved Thai digital-content services.",
+        "warning": "Implement the authority's general test before category defaults."
+      },
+      "territoriality": {
+        "structured_general_predicate": false,
+        "summary": "Thai production services under approved contract."
+      },
+      "stacking": {
+        "stored_edge_count": 0,
+        "summary": "Validate national/regional interaction."
+      },
+      "treaty_relationships": {
+        "summary": "Official status may affect eligibility but requires approval."
+      },
+      "CineGlobe_mismatch": "Material current pathway absent.",
+      "missing_data": [
+        "machine rule set",
+        "effective-dated source capture",
+        "stacking"
+      ],
+      "required_remediation": "Create a separately sourced canonical program after reconciliation.",
+      "unresolved_items": [
+        "Discretionary allocation, budget availability or project approval where applicable."
+      ],
+      "project_dependent": [
+        "format",
+        "budget/local spend",
+        "applicant",
+        "timing",
+        "co-production status"
+      ]
+    }
+  ],
+  "gemini_discoveries": [
+    {
+      "jurisdiction": "Spain",
+      "subjurisdiction": "Canary Islands",
+      "program_name": "Canary Islands 54%",
+      "program_type": "Missing",
+      "existing_in_cineglobe": false,
+      "validation_status": "CONFIRMED_MISSING"
+    },
+    {
+      "jurisdiction": "Hungary",
+      "subjurisdiction": "Hungary",
+      "program_name": "Hungary Base Rebate",
+      "program_type": "Missing",
+      "existing_in_cineglobe": false,
+      "validation_status": "CONFIRMED_MISSING"
+    }
+  ]
+}
