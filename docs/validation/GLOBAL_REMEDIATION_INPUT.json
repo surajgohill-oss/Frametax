@@ -1,0 +1,852 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-09",
+  "status": "NOT_AUTHORIZED_FOR_EXECUTION_NO_GO",
+  "existing_program_actions": [
+    {
+      "program_slug": "au_location_offset",
+      "jurisdiction": "Australia",
+      "program_name": "Australia Location Offset / PDV Offset",
+      "action": "Split Producer, Location and PDV and preserve already-calibrated QAPE rules.",
+      "authority_sources": [
+        "https://www.screenaustralia.gov.au/funding-and-support/producer-offset",
+        "https://www.legislation.gov.au/C2004A04868/latest/text"
+      ],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "australian_content_standard_streamers",
+      "jurisdiction": "Australia",
+      "program_name": "Australian Content Standard (Streamers)",
+      "action": "Complete official-source capture before optimization.",
+      "authority_sources": [],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "tourism_australia_film_and_production_support",
+      "jurisdiction": "Australia",
+      "program_name": "Tourism Australia Film and Production Support",
+      "action": "Complete official-source capture before optimization.",
+      "authority_sources": [],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "bc_interactive_digital_media_tax_credit_idmtc",
+      "jurisdiction": "Canada",
+      "program_name": "BC Interactive Digital Media Tax Credit (IDMTC)",
+      "action": "Complete official-source capture before optimization.",
+      "authority_sources": [
+        "https://www2.gov.bc.ca/gov/content/taxes/income-taxes/corporate/credits/interactive-digital-media",
+        "https://www.bclaws.gov.bc.ca/civix/document/id/complete/statreg/187_2010"
+      ],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "bc_pstc",
+      "jurisdiction": "Canada",
+      "program_name": "BC Production Services Tax Credit",
+      "action": "Update the basic rate and all labour/regional/digital conditions from current BC authority.",
+      "authority_sources": [
+        "https://www2.gov.bc.ca/gov/content/taxes/income-taxes/corporate/credits/film-tv/production-services"
+      ],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "ca_federal_cptc",
+      "jurisdiction": "Canada",
+      "program_name": "Canadian Film or Video Production Tax Credit",
+      "action": "Remove false minimum and encode the ceiling and CAVCO gates.",
+      "authority_sources": [
+        "https://www.canada.ca/en/canadian-heritage/services/funding/cavco-tax-credits/canadian-film-video-production/application-guidelines.html"
+      ],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "crtc_online_streaming_act_local_content_obligation",
+      "jurisdiction": "Canada",
+      "program_name": "CRTC Online Streaming Act Local Content Obligation",
+      "action": "Complete official-source capture before optimization.",
+      "authority_sources": [],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "ontario_computer_animation_and_special_effects_tax_credit_ocase",
+      "jurisdiction": "Canada",
+      "program_name": "Ontario Computer Animation and Special Effects Tax Credit (OCASE)",
+      "action": "Complete official-source capture before optimization.",
+      "authority_sources": [
+        "https://www.ontariocreates.ca/tax-incentives/ocase",
+        "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/corporations/provincial-territorial-corporation-tax/ontario-provincial-corporation-tax/ontario-refundable-media-tax-credits/ontario-computer-animation-special-effects-tax-credit.html"
+      ],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "cz_film_incentive",
+      "jurisdiction": "Czech Republic",
+      "program_name": "Czech Film Incentive",
+      "action": "Replace rates, basis/project caps, cultural test, minimums and Czech expenditure rules.",
+      "authority_sources": [
+        "https://www.filmcommission.cz/en/production-incentives/",
+        "https://www.filmcommission.cz/en/update-on-the-czech-production-incentives-program/"
+      ],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "avmsd_streamer_local_content_obligation",
+      "jurisdiction": "European Union",
+      "program_name": "AVMSD Streamer Local Content Obligation",
+      "action": "Complete official-source capture before optimization.",
+      "authority_sources": [],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "svod_chronologie_des_médias_local_content_obligation",
+      "jurisdiction": "France",
+      "program_name": "SVOD Chronologie des Médias Local Content Obligation",
+      "action": "Complete official-source capture before optimization.",
+      "authority_sources": [],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "de_dfff",
+      "jurisdiction": "Germany",
+      "program_name": "German Federal Film Fund (DFFF/GFFF)",
+      "action": "Update DFFF and add distinct GMPF.",
+      "authority_sources": [
+        "https://www.ffa.de/dfff-home.html?newsdetail=20250203-52_dfff-und-gmpf-erhoehung-der-foerderintensitaet-auf-30-prozent-der-in-deutschland-getaetigten-produktionsausgaben-und-hoehere-kappungsgrenzen&zwischennachweis="
+      ],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "iceland_post_production_visual_effects_and_animation_incentive",
+      "jurisdiction": "Iceland",
+      "program_name": "Iceland Post-Production, Visual Effects and Animation Incentive",
+      "action": "Retire or link to the national scheme unless distinct primary authority is obtained.",
+      "authority_sources": [
+        "https://www.government.is/library/01-Ministries/Economic%20Impact%20Study%20of%20Iceland%27s%20Production%20Incentive%20-%20Final%20Report%202024-04-09%20v3%20CLEAN.pdf"
+      ],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "is_film_reimbursement",
+      "jurisdiction": "Iceland",
+      "program_name": "Icelandic Film Reimbursement Scheme",
+      "action": "Encode the 35% tier and consolidate any non-distinct post/VFX duplicate.",
+      "authority_sources": [
+        "https://www.government.is/library/01-Ministries/Economic%20Impact%20Study%20of%20Iceland%27s%20Production%20Incentive%20-%20Final%20Report%202024-04-09%20v3%20CLEAN.pdf"
+      ],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "in_national_film",
+      "jurisdiction": "India",
+      "program_name": "India NFDC and State Incentives",
+      "action": "Replace type/economics and encode applicant, approval, QPE and co-production gates.",
+      "authority_sources": [
+        "https://mib.gov.in/sites/default/files/2024-02/Revised%20incentive%20guidelines.pdf"
+      ],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "jp_film_incentive",
+      "jurisdiction": "Japan",
+      "program_name": "Japan Film Commission Location Incentive (JLOC)",
+      "action": "Replace with current fiscal-year grant and hard gates.",
+      "authority_sources": [
+        "https://www.meti.go.jp/policy/mono_info_service/contents/menu_contents.html"
+      ],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "ma_ccm_rebate",
+      "jurisdiction": "Morocco",
+      "program_name": "CCM Morocco — Production Rebate",
+      "action": "Set 30% current rate and encode minimum, days, formats, local incurrence and preapproval.",
+      "authority_sources": [
+        "https://www.ccm.ma/foreign_production/pe/fr.html",
+        "https://ccm.ma/foreign_production/pe/doc/guide_en.pdf"
+      ],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "nl_nfpi",
+      "jurisdiction": "Netherlands",
+      "program_name": "Netherlands Film Production Incentive (NFPI)",
+      "action": "Update to 35% and encode applicant, points, financing, release, thresholds and caps.",
+      "authority_sources": [
+        "https://www.filmfonds.nl/en/funding/fund/netherlands-film-production-incentive",
+        "https://assets.filmfonds.nl/Netherlands-Film-Fund-Regulations-for-the-Netherlands-Film-Production-Incentive-2025.pdf"
+      ],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "air_new_zealand_film_production_support",
+      "jurisdiction": "New Zealand",
+      "program_name": "Air New Zealand Film Production Support",
+      "action": "Complete official-source capture before optimization.",
+      "authority_sources": [],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "new_zealand_screen_production_grant_—_international_post_vfx",
+      "jurisdiction": "New Zealand",
+      "program_name": "New Zealand Screen Production Grant — International Post/VFX",
+      "action": "Complete official-source capture before optimization.",
+      "authority_sources": [
+        "https://www.nzfilm.co.nz/incentives/rebate-international-nzspr"
+      ],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "tourism_new_zealand_film_and_production_support",
+      "jurisdiction": "New Zealand",
+      "program_name": "Tourism New Zealand Film and Production Support",
+      "action": "Complete official-source capture before optimization.",
+      "authority_sources": [],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "ro_cnc_rebate",
+      "jurisdiction": "Romania",
+      "program_name": "Romanian Film Office Cash Rebate",
+      "action": "Complete official-source capture before optimization.",
+      "authority_sources": [
+        "https://www.cnc.ro/en"
+      ],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "za_nfvf_rebate",
+      "jurisdiction": "South Africa",
+      "program_name": "NFVF / DTI — South Africa Foreign Film & TV Production Rebate",
+      "action": "Rename to dtic program and encode production/post tiers, QSAPE/QSAPPE, SPCV, financing, B-BBEE and procurement.",
+      "authority_sources": [
+        "https://www.thedtic.gov.za/financial-and-non-financial-support/incentives/film-incentive/foreign-film-and-television-production-and-post-production-incentive-foreign-film/",
+        "https://www.thedtic.gov.za/wp-content/uploads/the-dtic-incentive-schemes-guide-2026.pdf"
+      ],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "es_tax_credit_foreign",
+      "jurisdiction": "Spain",
+      "program_name": "Spanish Tax Credit for Foreign Productions",
+      "action": "Correct mainland tiers/caps and create separate regional programs.",
+      "authority_sources": [
+        "https://www.investinspain.org/content/dam/icex-invest/documentos/publicaciones/guia_negocios/Guide-to-business-in-Spain-INVESTINSPAIN.pdf",
+        "https://www.investinspain.org/content/dam/icex-invest/documentos/publicaciones/sectores/industria-audiovisual/ICEX-Invest%20in%20Spain.%20Audiovisual.pdf"
+      ],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "th_film_incentive",
+      "jurisdiction": "Thailand",
+      "program_name": "Thailand BOI Film Production Incentive",
+      "action": "Update tiers, minimum spend, bonuses, no-cap treatment and preapproval.",
+      "authority_sources": [
+        "https://tfo.dot.go.th/wp-content/uploads/2025/03/Thailand-Incentive-Measures-Guidelines.pdf",
+        "https://tfo.dot.go.th/wp-content/uploads/2025/03/FINAL-%E0%B8%9B%E0%B8%A3%E0%B8%81%E0%B8%B2%E0%B8%A8-%E0%B8%AB%E0%B8%A5%E0%B8%B1%E0%B9%80%E0%B8%81%E0%B8%93%E0%B8%91%E0%B9%8C-2567-in-English-final-clean-pdf.pdf"
+      ],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "ae_dpip",
+      "jurisdiction": "United Arab Emirates",
+      "program_name": "Dubai Film Commission — Dubai Production Incentive (DPIP)",
+      "action": "Retire/hold Dubai unless primary authority obtained; add Abu Dhabi.",
+      "authority_sources": [
+        "https://www.film.gov.ae/35-rebate",
+        "https://www.film.gov.ae/storage/staticPage/ADFC%20Rebate%20Guidelines%20FINAL%20En.pdf"
+      ],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "emirates_airline_film_production_partnership",
+      "jurisdiction": "United Arab Emirates",
+      "program_name": "Emirates Airline Film Production Partnership",
+      "action": "Complete official-source capture before optimization.",
+      "authority_sources": [],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "ca_film_30",
+      "jurisdiction": "United States",
+      "program_name": "California Film & Television Tax Credit Program 3.0",
+      "action": "Replace Program 3.0 economics, gates, caps and uplifts with effective-dated Program 4.0.",
+      "authority_sources": [
+        "https://film.ca.gov/tax-credit/the-basics-4-0/",
+        "https://cdn.film.ca.gov/wp-content/uploads/2025/08/4.0-Program-Guidelines-1.pdf"
+      ],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "georgia_eiia",
+      "jurisdiction": "United States",
+      "program_name": "Georgia Entertainment Industry Investment Act",
+      "action": "Complete official-source capture before optimization.",
+      "authority_sources": [
+        "https://dor.georgia.gov/georgia-entertainment-industry-investment-act",
+        "https://law.justia.com/codes/georgia/title-48/chapter-7/article-2/section-48-7-40-26/"
+      ],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "la_film_production",
+      "jurisdiction": "United States",
+      "program_name": "Louisiana Motion Picture Production Tax Credit",
+      "action": "Complete official-source capture before optimization.",
+      "authority_sources": [
+        "https://www.lafilm.org/incentives",
+        "https://www.louisianaentertainment.gov/film"
+      ],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "nm_film_production",
+      "jurisdiction": "United States",
+      "program_name": "New Mexico Film Production Tax Credit",
+      "action": "Complete official-source capture before optimization.",
+      "authority_sources": [
+        "https://nmfilm.com/tax-incentives/"
+      ],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "ny_state_film",
+      "jurisdiction": "United States",
+      "program_name": "New York State Film Tax Credit",
+      "action": "Retire duplicate and retain one current production-credit record.",
+      "authority_sources": [
+        "https://www.tax.ny.gov/legal/2023/pit-corp-changes.htm"
+      ],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "us_ny_film_credit",
+      "jurisdiction": "United States",
+      "program_name": "New York State Film Tax Credit Program",
+      "action": "Update production rules, remove duplicate, add separate official post and independent-film programs.",
+      "authority_sources": [
+        "https://www.tax.ny.gov/legal/2023/pit-corp-changes.htm",
+        "https://esd.ny.gov/new-york-state-film-tax-credit-program-post-production"
+      ],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "or_opif",
+      "jurisdiction": "United States",
+      "program_name": "Oregon Production Investment Fund (OPIF)",
+      "action": "Complete official-source capture before optimization.",
+      "authority_sources": [
+        "https://oregonfilm.org/incentives/"
+      ],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    },
+    {
+      "program_slug": "us_tx_miip",
+      "jurisdiction": "United States",
+      "program_name": "Texas Moving Image Industry Incentive Program (MIIP)",
+      "action": "Update tiers, biennial funding, effective dates and resident-workforce gates.",
+      "authority_sources": [
+        "https://gov.texas.gov/film/page/additional_grant_award",
+        "https://www.sos.texas.gov/texreg/archive/July32026/Adopted%20Rules/13.CULTURAL%20RESOURCES.html"
+      ],
+      "precondition": "independent reconciliation only if interpretation conflict emerges; otherwise deterministic remediation after global NO-GO blockers close"
+    }
+  ],
+  "missing_program_additions": [
+    {
+      "jurisdiction": "Canada",
+      "subjurisdiction": null,
+      "program_name": "Film or Video Production Services Tax Credit (PSTC)",
+      "program_type": "refundable_tax_credit",
+      "authority_sources": [
+        "https://www.canada.ca/en/canadian-heritage/services/funding/cavco-tax-credits/film-video-production-services.html",
+        "https://www.canada.ca/en/revenue-agency/services/tax/international-non-residents/film-media-tax-credits/film-video-production-services-tax-credit-program/legislative-requirements.html"
+      ],
+      "canonical_summary": {
+        "rate": {
+          "stored_base": null,
+          "stored_max": null,
+          "authoritative_rule": "16% qualified Canadian labour; refundable; no credit cap."
+        },
+        "caps": {
+          "stored_annual_local": null,
+          "stored_project_usd": null,
+          "authoritative_rule": "16% qualified Canadian labour; refundable; no credit cap."
+        },
+        "hard_gates": {
+          "summary": "Canadian/foreign-owned taxable corporation with Canadian permanent establishment; accredited production; cost minimum; exclusive with CPTC."
+        },
+        "QPE": {
+          "general_rule": "Canadian-resident labour/services in Canada, net of assistance.",
+          "warning": "Implement the authority's general test before category defaults."
+        },
+        "territoriality": {
+          "structured_general_predicate": false,
+          "summary": "Residence and Canadian service performance; payer alone insufficient."
+        },
+        "stacking": {
+          "stored_edge_count": 0,
+          "summary": "Validate national/regional interaction."
+        }
+      },
+      "action": "Create a separately sourced canonical program after reconciliation."
+    },
+    {
+      "jurisdiction": "United States",
+      "subjurisdiction": "New Jersey",
+      "program_name": "Garden State Film and Digital Media Jobs Act — Film Credit",
+      "program_type": "transferable_refundable_tax_credit",
+      "authority_sources": [
+        "https://www.nj.gov/njfilm/incentives-credit.shtml",
+        "https://www.nj.gov/treasury/taxation/gardenstatefilm.shtml"
+      ],
+      "canonical_summary": {
+        "rate": {
+          "stored_base": null,
+          "stored_max": null,
+          "authoritative_rule": "35% generally; 30% within 30-mile NYC radius; diversity bonus up to 4%."
+        },
+        "caps": {
+          "stored_annual_local": null,
+          "stored_project_usd": null,
+          "authoritative_rule": "35% generally; 30% within 30-mile NYC radius; diversity bonus up to 4%."
+        },
+        "hard_gates": {
+          "summary": "Allocation, qualified-production/spend tests, audit and diversity rules."
+        },
+        "QPE": {
+          "general_rule": "Qualified NJ expenses and employees.",
+          "warning": "Implement the authority's general test before category defaults."
+        },
+        "territoriality": {
+          "structured_general_predicate": false,
+          "summary": "NJ goods/services/labour; geographic rate split."
+        },
+        "stacking": {
+          "stored_edge_count": 0,
+          "summary": "Validate national/regional interaction."
+        }
+      },
+      "action": "Create a separately sourced canonical program after reconciliation."
+    },
+    {
+      "jurisdiction": "United States",
+      "subjurisdiction": "New York",
+      "program_name": "Film Tax Credit — Post-Production",
+      "program_type": "refundable_tax_credit",
+      "authority_sources": [
+        "https://esd.ny.gov/new-york-state-film-tax-credit-program-post-production"
+      ],
+      "canonical_summary": {
+        "rate": {
+          "stored_base": null,
+          "stored_max": null,
+          "authoritative_rule": "30% qualified post; conditioned additional 5% upstate."
+        },
+        "caps": {
+          "stored_annual_local": null,
+          "stored_project_usd": null,
+          "authoritative_rule": "30% qualified post; conditioned additional 5% upstate."
+        },
+        "hard_gates": {
+          "summary": "Separate application, post/VFX thresholds, final certification."
+        },
+        "QPE": {
+          "general_rule": "Qualified NY post/VFX/animation.",
+          "warning": "Implement the authority's general test before category defaults."
+        },
+        "territoriality": {
+          "structured_general_predicate": false,
+          "summary": "Services/costs at qualifying NY facilities."
+        },
+        "stacking": {
+          "stored_edge_count": 0,
+          "summary": "Validate national/regional interaction."
+        }
+      },
+      "action": "Create a separately sourced canonical program after reconciliation."
+    },
+    {
+      "jurisdiction": "United States",
+      "subjurisdiction": "New York",
+      "program_name": "Empire State Independent Film Production Credit",
+      "program_type": "refundable_tax_credit",
+      "authority_sources": [
+        "https://www.tax.ny.gov/pit/credits/empire-state-independent-film-production-credit.htm",
+        "https://www.tax.ny.gov/legal/2025/pit-corp-changes.htm"
+      ],
+      "canonical_summary": {
+        "rate": {
+          "stored_base": null,
+          "stored_max": null,
+          "authoritative_rule": "30% qualified costs with separately conditioned 10% additions."
+        },
+        "caps": {
+          "stored_annual_local": null,
+          "stored_project_usd": null,
+          "authoritative_rule": "30% qualified costs with separately conditioned 10% additions."
+        },
+        "hard_gates": {
+          "summary": "Independent-film definition, facility/shooting/budget/location tests, MPTV certificate."
+        },
+        "QPE": {
+          "general_rule": "Statutory qualified production costs.",
+          "warning": "Implement the authority's general test before category defaults."
+        },
+        "territoriality": {
+          "structured_general_predicate": false,
+          "summary": "NY facility, performance and property-use tests."
+        },
+        "stacking": {
+          "stored_edge_count": 0,
+          "summary": "Validate national/regional interaction."
+        }
+      },
+      "action": "Create a separately sourced canonical program after reconciliation."
+    },
+    {
+      "jurisdiction": "United States",
+      "subjurisdiction": "Ohio",
+      "program_name": "Ohio Motion Picture Tax Credit",
+      "program_type": "refundable_tax_credit",
+      "authority_sources": [
+        "https://codes.ohio.gov/ohio-revised-code/section-122.85",
+        "https://dam.assets.ohio.gov/image/upload/development.ohio.gov/business/stateincentives/OMPTC_Instruction_FY2026_July.pdf"
+      ],
+      "canonical_summary": {
+        "rate": {
+          "stored_base": null,
+          "stored_max": null,
+          "authoritative_rule": "30% eligible expenditure."
+        },
+        "caps": {
+          "stored_annual_local": null,
+          "stored_project_usd": null,
+          "authoritative_rule": "30% eligible expenditure."
+        },
+        "hard_gates": {
+          "summary": "Ohio registration; pre-certification; USD300k minimum."
+        },
+        "QPE": {
+          "general_rule": "Goods/services purchased and consumed in Ohio.",
+          "warning": "Implement the authority's general test before category defaults."
+        },
+        "territoriality": {
+          "structured_general_predicate": false,
+          "summary": "Ohio purchase-and-consumption/services test."
+        },
+        "stacking": {
+          "stored_edge_count": 0,
+          "summary": "Validate national/regional interaction."
+        }
+      },
+      "action": "Create a separately sourced canonical program after reconciliation."
+    },
+    {
+      "jurisdiction": "United States",
+      "subjurisdiction": "Arkansas",
+      "program_name": "Digital Product and Motion Picture Industry Incentive",
+      "program_type": "rebate_or_transferable_tax_credit",
+      "authority_sources": [
+        "https://www.arkansasedc.com/why-arkansas/business-climate/incentives/pages/film-production-incentives",
+        "https://www.dfa.arkansas.gov/office/taxes/other-taxes/tax-credits-special-refunds/business-incentives-and-credits/"
+      ],
+      "canonical_summary": {
+        "rate": {
+          "stored_base": null,
+          "stored_max": null,
+          "authoritative_rule": "Current AEDC: 25% base plus 10% qualified resident/veteran payroll or veteran-owned vendors."
+        },
+        "caps": {
+          "stored_annual_local": null,
+          "stored_project_usd": null,
+          "authoritative_rule": "Current AEDC: 25% base plus 10% qualified resident/veteran payroll or veteran-owned vendors."
+        },
+        "hard_gates": {
+          "summary": "State certification and discretionary approval."
+        },
+        "QPE": {
+          "general_rule": "Qualified Arkansas production/post costs; wage cap/withholding.",
+          "warning": "Implement the authority's general test before category defaults."
+        },
+        "territoriality": {
+          "structured_general_predicate": false,
+          "summary": "Arkansas incurrence; bank payment recommended, not qualifying test."
+        },
+        "stacking": {
+          "stored_edge_count": 0,
+          "summary": "Validate national/regional interaction."
+        }
+      },
+      "action": "Create a separately sourced canonical program after reconciliation."
+    },
+    {
+      "jurisdiction": "United States",
+      "subjurisdiction": "West Virginia",
+      "program_name": "West Virginia Film Production Tax Credit",
+      "program_type": "transferable_tax_credit",
+      "authority_sources": [
+        "https://westvirginia.gov/filmincentives/"
+      ],
+      "canonical_summary": {
+        "rate": {
+          "stored_base": null,
+          "stored_max": null,
+          "authoritative_rule": "27% base plus 4% resident-hire gate; agency states no current project/fiscal cap."
+        },
+        "caps": {
+          "stored_annual_local": null,
+          "stored_project_usd": null,
+          "authoritative_rule": "27% base plus 4% resident-hire gate; agency states no current project/fiscal cap."
+        },
+        "hard_gates": {
+          "summary": "USD50k spend; WV registration; application."
+        },
+        "QPE": {
+          "general_rule": "Qualified in-state and specified vendor/withholding costs.",
+          "warning": "Implement the authority's general test before category defaults."
+        },
+        "territoriality": {
+          "structured_general_predicate": false,
+          "summary": "WV incurrence/vendor or WV-taxed services."
+        },
+        "stacking": {
+          "stored_edge_count": 0,
+          "summary": "Validate national/regional interaction."
+        }
+      },
+      "action": "Create a separately sourced canonical program after reconciliation."
+    },
+    {
+      "jurisdiction": "United States",
+      "subjurisdiction": "Montana",
+      "program_name": "MEDIA Tax Credit",
+      "program_type": "transferable_tax_credit",
+      "authority_sources": [
+        "https://commerce.mt.gov/Business/Programs-and-Services/Montana-Film-Office/Incentives/MEDIA-Tax-Credit"
+      ],
+      "canonical_summary": {
+        "rate": {
+          "stored_base": null,
+          "stored_max": null,
+          "authoritative_rule": "20% base, additions up to 35%; intake paused and first available credit stated as 2031."
+        },
+        "caps": {
+          "stored_annual_local": null,
+          "stored_project_usd": null,
+          "authoritative_rule": "20% base, additions up to 35%; intake paused and first available credit stated as 2031."
+        },
+        "hard_gates": {
+          "summary": "Pre-certification/registration/audit; currently unavailable."
+        },
+        "QPE": {
+          "general_rule": "Montana base investment and separately rated categories.",
+          "warning": "Implement the authority's general test before category defaults."
+        },
+        "territoriality": {
+          "structured_general_predicate": false,
+          "summary": "Montana expenditure/residence/withholding."
+        },
+        "stacking": {
+          "stored_edge_count": 0,
+          "summary": "Validate national/regional interaction."
+        }
+      },
+      "action": "Create a separately sourced canonical program after reconciliation."
+    },
+    {
+      "jurisdiction": "Australia",
+      "subjurisdiction": null,
+      "program_name": "Producer Offset (separate statutory program)",
+      "program_type": "refundable_tax_offset",
+      "authority_sources": [
+        "https://www.screenaustralia.gov.au/funding-and-support/producer-offset"
+      ],
+      "canonical_summary": {
+        "rate": {
+          "stored_base": null,
+          "stored_max": null,
+          "authoritative_rule": "Separate Producer Offset; rates differ by format from Location/PDV."
+        },
+        "caps": {
+          "stored_annual_local": null,
+          "stored_project_usd": null,
+          "authoritative_rule": "Separate Producer Offset; rates differ by format from Location/PDV."
+        },
+        "hard_gates": {
+          "summary": "SAC or official co-production; QAPE thresholds; final certificate."
+        },
+        "QPE": {
+          "general_rule": "QAPE under ITAA.",
+          "warning": "Implement the authority's general test before category defaults."
+        },
+        "territoriality": {
+          "structured_general_predicate": false,
+          "summary": "Australian-incurred QAPE; payer alone insufficient."
+        },
+        "stacking": {
+          "stored_edge_count": 0,
+          "summary": "Validate national/regional interaction."
+        }
+      },
+      "action": "Create a separately sourced canonical program after reconciliation."
+    },
+    {
+      "jurisdiction": "United Kingdom",
+      "subjurisdiction": null,
+      "program_name": "Enhanced AVEC / Independent Film Tax Credit (IFTC)",
+      "program_type": "payable_expenditure_credit",
+      "authority_sources": [
+        "https://www.gov.uk/hmrc-internal-manuals/creative-industries-expenditure-credit-manual/crec021110",
+        "https://www.gov.uk/guidance/claim-audio-visual-expenditure-credits-for-corporation-tax"
+      ],
+      "canonical_summary": {
+        "rate": {
+          "stored_base": null,
+          "stored_max": null,
+          "authoritative_rule": "53% rate; up to GBP15m relevant global expenditure counted."
+        },
+        "caps": {
+          "stored_annual_local": null,
+          "stored_project_usd": null,
+          "authoritative_rule": "53% rate; up to GBP15m relevant global expenditure counted."
+        },
+        "hard_gates": {
+          "summary": "Photography on/after 1 Apr 2024; core budget <=GBP23.5m; BFI low-budget certificate; UK writer/director or co-production."
+        },
+        "QPE": {
+          "general_rule": "Applicable capped core-cost base; taxable credit.",
+          "warning": "Implement the authority's general test before category defaults."
+        },
+        "territoriality": {
+          "structured_general_predicate": false,
+          "summary": "UK goods/services used or consumed."
+        },
+        "stacking": {
+          "stored_edge_count": 0,
+          "summary": "Validate national/regional interaction."
+        }
+      },
+      "action": "Create a separately sourced canonical program after reconciliation."
+    },
+    {
+      "jurisdiction": "United Arab Emirates",
+      "subjurisdiction": "Abu Dhabi",
+      "program_name": "Abu Dhabi 35++ Production Rebate",
+      "program_type": "cash_rebate",
+      "authority_sources": [
+        "https://www.film.gov.ae/35-rebate",
+        "https://www.film.gov.ae/storage/staticPage/ADFC%20Rebate%20Guidelines%20FINAL%20En.pdf"
+      ],
+      "canonical_summary": {
+        "rate": {
+          "stored_base": null,
+          "stored_max": null,
+          "authoritative_rule": "35% standard; enhanced 37.5%–50% by points."
+        },
+        "caps": {
+          "stored_annual_local": null,
+          "stored_project_usd": null,
+          "authoritative_rule": "35% standard; enhanced 37.5%–50% by points."
+        },
+        "hard_gates": {
+          "summary": "Preapproval, registered local applicant, content/funding/audit."
+        },
+        "QPE": {
+          "general_rule": "Approved Abu Dhabi production/post expenditure.",
+          "warning": "Implement the authority's general test before category defaults."
+        },
+        "territoriality": {
+          "structured_general_predicate": false,
+          "summary": "Specified suppliers/services/activity."
+        },
+        "stacking": {
+          "stored_edge_count": 0,
+          "summary": "Validate national/regional interaction."
+        }
+      },
+      "action": "Create a separately sourced canonical program after reconciliation."
+    },
+    {
+      "jurisdiction": "South Africa",
+      "subjurisdiction": null,
+      "program_name": "South African Film and Television Production / Co-production Incentive",
+      "program_type": "cash_grant",
+      "authority_sources": [
+        "https://www.thedtic.gov.za/south-african-film-and-television-production-incentive-2/"
+      ],
+      "canonical_summary": {
+        "rate": {
+          "stored_base": null,
+          "stored_max": null,
+          "authoritative_rule": "35% QSAPE plus conditioned 5%; cap R50m."
+        },
+        "caps": {
+          "stored_annual_local": null,
+          "stored_project_usd": null,
+          "authoritative_rule": "35% QSAPE plus conditioned 5%; cap R50m."
+        },
+        "hard_gates": {
+          "summary": "SA ownership/creative/B-BBEE/SPCV, spend/shoot/finance/procurement/preapproval."
+        },
+        "QPE": {
+          "general_rule": "QSAPE under dtic guideline.",
+          "warning": "Implement the authority's general test before category defaults."
+        },
+        "territoriality": {
+          "structured_general_predicate": false,
+          "summary": "SA qualifying spend; direct-SPCV payment necessary not sufficient."
+        },
+        "stacking": {
+          "stored_edge_count": 0,
+          "summary": "Validate national/regional interaction."
+        }
+      },
+      "action": "Create a separately sourced canonical program after reconciliation."
+    },
+    {
+      "jurisdiction": "Thailand",
+      "subjurisdiction": null,
+      "program_name": "Foreign Digital Content Production Incentive",
+      "program_type": "cash_rebate",
+      "authority_sources": [
+        "https://thailand.prd.go.th/en/content/category/detail/id/2078/iid/472682"
+      ],
+      "canonical_summary": {
+        "rate": {
+          "stored_base": null,
+          "stored_max": null,
+          "authoritative_rule": "20% qualifying contract production fees."
+        },
+        "caps": {
+          "stored_annual_local": null,
+          "stored_project_usd": null,
+          "authoritative_rule": "20% qualifying contract production fees."
+        },
+        "hard_gates": {
+          "summary": "Ministry of Culture program, contract minimum and content/Thai production requirements."
+        },
+        "QPE": {
+          "general_rule": "Approved Thai digital-content services.",
+          "warning": "Implement the authority's general test before category defaults."
+        },
+        "territoriality": {
+          "structured_general_predicate": false,
+          "summary": "Thai production services under approved contract."
+        },
+        "stacking": {
+          "stored_edge_count": 0,
+          "summary": "Validate national/regional interaction."
+        }
+      },
+      "action": "Create a separately sourced canonical program after reconciliation."
+    }
+  ],
+  "blocked_items": {
+    "P0_unresolved": 132,
+    "P1_unresolved": 25,
+    "missing_unresolved": 10,
+    "material_treaty_queues_unresolved": 7
+  }
+}

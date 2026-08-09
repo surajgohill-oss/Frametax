@@ -1,0 +1,3924 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-09",
+  "records": [
+    {
+      "program_slug": "acpfilms_fund",
+      "jurisdiction": "African, Caribbean and Pacific Group",
+      "subjurisdiction": "African, Caribbean and Pacific Group",
+      "program_name": "ACP Films — EU-ACP Cultural Film Co-production Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.acpfilms.eu/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "al_film_incentive",
+      "jurisdiction": "Albania",
+      "subjurisdiction": null,
+      "program_name": "Albanian National Cinema Agency (ANCA) Cash Rebate",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.nationalcinema.al/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "dz_film_incentive",
+      "jurisdiction": "Algeria",
+      "subjurisdiction": null,
+      "program_name": "Centre Algérien pour le Développement du Cinéma (CADC) Film Support",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.cadc.dz"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ao_film_incentive",
+      "jurisdiction": "Angola",
+      "subjurisdiction": null,
+      "program_name": "Angola Instituto do Cinema e Audiovisual (ICA) Production Support",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.mincult.gov.ao"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ar_incaa_incentive",
+      "jurisdiction": "Argentina",
+      "subjurisdiction": null,
+      "program_name": "INCAA — Argentine Film Institute Incentives",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.incaa.gov.ar"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "am_film_incentive",
+      "jurisdiction": "Armenia",
+      "subjurisdiction": null,
+      "program_name": "National Cinema Centre of Armenia Production Support",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.film.am/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "au_location_offset",
+      "jurisdiction": "Australia",
+      "subjurisdiction": null,
+      "program_name": "Australia Location Offset / PDV Offset",
+      "original_validation_status": "STALE",
+      "source_urls": [
+        "https://www.screenaustralia.gov.au/funding-and-support/producer-offset",
+        "https://www.legislation.gov.au/C2004A04868/latest/text"
+      ],
+      "source_effective_date": "2025-07-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "australian_content_standard_streamers",
+      "jurisdiction": "Australia",
+      "subjurisdiction": null,
+      "program_name": "Australian Content Standard (Streamers)",
+      "original_validation_status": "INCORRECT",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "post_digital_and_visual_effects_pdv_offset",
+      "jurisdiction": "Australia",
+      "subjurisdiction": null,
+      "program_name": "Post, Digital and Visual Effects (PDV) Offset",
+      "original_validation_status": "VERIFIED",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "OUTSIDE_QUEUE_VERIFIED"
+    },
+    {
+      "program_slug": "au_screen_production",
+      "jurisdiction": "Australia",
+      "subjurisdiction": null,
+      "program_name": "Screen Australia — Production Funding",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.screenaustralia.gov.au/funding-and-support"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "screen_australia_talent_fund",
+      "jurisdiction": "Australia",
+      "subjurisdiction": null,
+      "program_name": "Screen Australia Talent Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "tourism_australia_film_and_production_support",
+      "jurisdiction": "Australia",
+      "subjurisdiction": null,
+      "program_name": "Tourism Australia Film and Production Support",
+      "original_validation_status": "INCORRECT",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "au_nsw_screen",
+      "jurisdiction": "Australia",
+      "subjurisdiction": "Australia — New South Wales",
+      "program_name": "NSW Government Screen Incentive (Create NSW)",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.create.nsw.gov.au/funding-and-support/screen/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "au_qld_screen_qld",
+      "jurisdiction": "Australia",
+      "subjurisdiction": "Australia — Queensland",
+      "program_name": "Screen Queensland Production Attraction Strategy",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://screenqueensland.com.au/get-funding/production-attraction/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "au_vic_vicscreen",
+      "jurisdiction": "Australia",
+      "subjurisdiction": "Australia — Victoria",
+      "program_name": "VicScreen Production Investment",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://vicscreen.vic.gov.au/funding/production-investment"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "austrian_film_institute_(öfi)___production_support",
+      "jurisdiction": "Austria",
+      "subjurisdiction": null,
+      "program_name": "Austrian Film Institute (ÖFI) — Production Support",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "at_fisa_plus",
+      "jurisdiction": "Austria",
+      "subjurisdiction": null,
+      "program_name": "FISA+ Film Production Support Austria",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.fisa-plus.at/en/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "orf_film/fernseh_abkommen___co_production_fund",
+      "jurisdiction": "Austria",
+      "subjurisdiction": null,
+      "program_name": "ORF Film/Fernseh-Abkommen — Co-production Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "auvergne_rhône_alpes_cinema_regional_aid",
+      "jurisdiction": "Auvergne-Rhône-Alpes, France",
+      "subjurisdiction": "Auvergne-Rhône-Alpes, France",
+      "program_name": "Auvergne-Rhône-Alpes Cinema Regional Aid",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "az_film_incentive",
+      "jurisdiction": "Azerbaijan",
+      "subjurisdiction": null,
+      "program_name": "Azerbaijan Film Fund Production Support",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.azfilm.az"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "bs_film_incentive",
+      "jurisdiction": "Bahamas",
+      "subjurisdiction": null,
+      "program_name": "Bahamas Film Commission Production Support",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://www.bahamasfilm.com/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "bh_film_incentive",
+      "jurisdiction": "Bahrain",
+      "subjurisdiction": null,
+      "program_name": "Bahrain Film Commission Production Support",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://www.bahrainfilm.com/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "bd_film_incentive",
+      "jurisdiction": "Bangladesh",
+      "subjurisdiction": null,
+      "program_name": "Bangladesh Film Development Corporation (BFDC) Production Support",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://www.bfdc.gov.bd"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "bb_film_incentive",
+      "jurisdiction": "Barbados",
+      "subjurisdiction": null,
+      "program_name": "Barbados Film and Entertainment Production Incentives",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://bidc.com/incentives/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "by_film_incentive",
+      "jurisdiction": "Belarus",
+      "subjurisdiction": null,
+      "program_name": "Belarusfilm National Film Studio Production Support",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://www.belarusfilm.by"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "be_tax_shelter",
+      "jurisdiction": "Belgium",
+      "subjurisdiction": null,
+      "program_name": "Belgian Tax Shelter",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://taxshelter.be"
+      ],
+      "source_effective_date": "2003-01-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "bt_film_incentive",
+      "jurisdiction": "Bhutan",
+      "subjurisdiction": null,
+      "program_name": "Bhutan Film Commission / Tourism Council Production Facilitation",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://www.tourism.gov.bt"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ba_film_incentive",
+      "jurisdiction": "Bosnia and Herzegovina",
+      "subjurisdiction": null,
+      "program_name": "Film Centre Bosnia and Herzegovina Production Support",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://www.filmcenter.ba/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "bw_film_commission",
+      "jurisdiction": "Botswana",
+      "subjurisdiction": null,
+      "program_name": "Botswana Film Commission Production Support",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://www.botswanafilm.co.bw"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "br_ancine_incentive",
+      "jurisdiction": "Brazil",
+      "subjurisdiction": null,
+      "program_name": "ANCINE — Brazilian Film Commission Tax Incentives",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.ancine.gov.br"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "screen.brussels_production_support",
+      "jurisdiction": "Brussels-Capital, Belgium",
+      "subjurisdiction": "Brussels-Capital, Belgium",
+      "program_name": "Screen.Brussels Production Support",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "bg_film_incentive",
+      "jurisdiction": "Bulgaria",
+      "subjurisdiction": null,
+      "program_name": "Bulgarian Film Commission Cash Rebate",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.nfc.gov.bg"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "kh_film_incentive",
+      "jurisdiction": "Cambodia",
+      "subjurisdiction": null,
+      "program_name": "Cambodia Ministry of Culture Film Production Facilitation",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://www.mcc.gov.kh/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "cm_film_incentive",
+      "jurisdiction": "Cameroon",
+      "subjurisdiction": null,
+      "program_name": "Cameroon Centre National de la Cinématographie Film Support",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.minac.cm"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "bc_interactive_digital_media_tax_credit_idmtc",
+      "jurisdiction": "Canada",
+      "subjurisdiction": "British Columbia",
+      "program_name": "BC Interactive Digital Media Tax Credit (IDMTC)",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www2.gov.bc.ca/gov/content/taxes/income-taxes/corporate/credits/interactive-digital-media",
+        "https://www.bclaws.gov.bc.ca/civix/document/id/complete/statreg/187_2010"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "bc_pstc",
+      "jurisdiction": "Canada",
+      "subjurisdiction": "British Columbia",
+      "program_name": "BC Production Services Tax Credit",
+      "original_validation_status": "STALE",
+      "source_urls": [
+        "https://www2.gov.bc.ca/gov/content/taxes/income-taxes/corporate/credits/film-tv/production-services"
+      ],
+      "source_effective_date": "2025-01-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "ca_cmf",
+      "jurisdiction": "Canada",
+      "subjurisdiction": null,
+      "program_name": "Canada Media Fund (CMF) — Convergent Stream",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://cmf-fmc.ca/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ca_federal_cptc",
+      "jurisdiction": "Canada",
+      "subjurisdiction": null,
+      "program_name": "Canadian Film or Video Production Tax Credit",
+      "original_validation_status": "INCORRECT",
+      "source_urls": [
+        "https://www.canada.ca/en/canadian-heritage/services/funding/cavco-tax-credits/canadian-film-video-production/application-guidelines.html"
+      ],
+      "source_effective_date": "current",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "crtc_online_streaming_act_local_content_obligation",
+      "jurisdiction": "Canada",
+      "subjurisdiction": null,
+      "program_name": "CRTC Online Streaming Act Local Content Obligation",
+      "original_validation_status": "INCORRECT",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "ca_telefilm_dev",
+      "jurisdiction": "Canada",
+      "subjurisdiction": null,
+      "program_name": "Telefilm Canada — Canada Feature Film Fund (CFFF)",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://telefilm.ca/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "telefilm_canada_export_development_program",
+      "jurisdiction": "Canada",
+      "subjurisdiction": null,
+      "program_name": "Telefilm Canada Export Development Program",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ca_ab_fttc",
+      "jurisdiction": "Canada",
+      "subjurisdiction": "Canada — Alberta",
+      "program_name": "Alberta Film and Television Tax Credit (FTTC)",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.ampia.org/alberta-film-tv-tax-credit/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "manitoba_film_&_music_production_support_grants",
+      "jurisdiction": "Canada",
+      "subjurisdiction": "Canada — Manitoba",
+      "program_name": "Manitoba Film & Music Production Support Grants",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ca_mb_fvptc",
+      "jurisdiction": "Canada",
+      "subjurisdiction": "Canada — Manitoba",
+      "program_name": "Manitoba Film & Video Production Tax Credit",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.mbfilmmusic.ca/en/production-tax-credits"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ca_nb_film_credit",
+      "jurisdiction": "Canada",
+      "subjurisdiction": "Canada — New Brunswick",
+      "program_name": "New Brunswick Film Tax Credit",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://opportunitiesnb.com"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ca_nl_production_fund",
+      "jurisdiction": "Canada",
+      "subjurisdiction": "Canada — Newfoundland & Labrador",
+      "program_name": "Newfoundland & Labrador Film Development Corp Production Incentive",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://picturenl.ca/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ca_ns_pif",
+      "jurisdiction": "Canada",
+      "subjurisdiction": "Canada — Nova Scotia",
+      "program_name": "Nova Scotia Film & Television Production Incentive Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.novascotiabusiness.com/export/film"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ca_sk_production_grant",
+      "jurisdiction": "Canada",
+      "subjurisdiction": "Canada — Saskatchewan",
+      "program_name": "Creative Saskatchewan Film and TV Production Grant",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.creativesask.ca/funding/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "nohfc_production_fund",
+      "jurisdiction": "Canada",
+      "subjurisdiction": "Ontario",
+      "program_name": "Northern Ontario Heritage Fund — Production Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.nohfc.ca"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ontario_computer_animation_and_special_effects_tax_credit_ocase",
+      "jurisdiction": "Canada",
+      "subjurisdiction": "Ontario",
+      "program_name": "Ontario Computer Animation and Special Effects Tax Credit (OCASE)",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.ontariocreates.ca/tax-incentives/ocase",
+        "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/corporations/provincial-territorial-corporation-tax/ontario-provincial-corporation-tax/ontario-refundable-media-tax-credits/ontario-computer-animation-special-effects-tax-credit.html"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "on_ofttc",
+      "jurisdiction": "Canada",
+      "subjurisdiction": "Ontario",
+      "program_name": "Ontario Film and Television Tax Credit",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.ontariocreates.ca/production-funding/tax-credits/ontario-film-and-television-tax-credit",
+        "https://omdc.on.ca/film-and-television/tax-credits/ontario-film-and-television-tax-credit/"
+      ],
+      "source_effective_date": "1998-01-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "on_opstc",
+      "jurisdiction": "Canada",
+      "subjurisdiction": "Ontario",
+      "program_name": "Ontario Production Services Tax Credit",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.ontariocreates.ca/production-funding/tax-credits/ontario-production-services-tax-credit",
+        "https://omdc.on.ca/film-and-television/tax-credits/ontario-production-services-tax-credit/"
+      ],
+      "source_effective_date": "2009-01-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "qc_film_production",
+      "jurisdiction": "Canada",
+      "subjurisdiction": "Quebec",
+      "program_name": "Quebec Film and Television Production Tax Credit",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.sodec.gouv.qc.ca/en/aide/credits-impot/cinema-et-television/",
+        "https://sodec.gouv.qc.ca/en/programs/tv-film-production-tax-credits/"
+      ],
+      "source_effective_date": "1999-01-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "cl_corfo_incentive",
+      "jurisdiction": "Chile",
+      "subjurisdiction": null,
+      "program_name": "Chile Corfo Film Incentive",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.corfo.cl/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "cn_film_incentive",
+      "jurisdiction": "China",
+      "subjurisdiction": null,
+      "program_name": "China Film Administration Domestic Co-production Support",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://www.nrta.gov.cn"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "co_film_colombia",
+      "jurisdiction": "Colombia",
+      "subjurisdiction": null,
+      "program_name": "Colombia Film Commission — Film In Colombia",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://procolombia.co/en/opportunities-industries/film-sector"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "cr_film_incentive",
+      "jurisdiction": "Costa Rica",
+      "subjurisdiction": null,
+      "program_name": "Costa Rica Film Commission Production Facilitation",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://costaricafilm.com/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ci_film_incentive",
+      "jurisdiction": "Côte d'Ivoire",
+      "subjurisdiction": null,
+      "program_name": "Centre National de Cinéma de Côte d'Ivoire (CNCI) Film Support",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.culture.gouv.ci"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "hr_cash_rebate",
+      "jurisdiction": "Croatia",
+      "subjurisdiction": null,
+      "program_name": "Croatia Cash Rebate",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://havc.hr"
+      ],
+      "source_effective_date": "2012-01-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "cu_film_incentive",
+      "jurisdiction": "Cuba",
+      "subjurisdiction": null,
+      "program_name": "ICAIC Cuba Film Production Support",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.icaic.cu"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "cy_film_rebate",
+      "jurisdiction": "Cyprus",
+      "subjurisdiction": null,
+      "program_name": "Cyprus Film Production Rebate",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://cipa.org.cy"
+      ],
+      "source_effective_date": "2020-01-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "czech_film_fund___production_support",
+      "jurisdiction": "Czech Republic",
+      "subjurisdiction": null,
+      "program_name": "Czech Film Fund — Production Support",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "cz_film_incentive",
+      "jurisdiction": "Czech Republic",
+      "subjurisdiction": null,
+      "program_name": "Czech Film Incentive",
+      "original_validation_status": "STALE",
+      "source_urls": [
+        "https://www.filmcommission.cz/en/production-incentives/",
+        "https://www.filmcommission.cz/en/update-on-the-czech-production-incentives-program/"
+      ],
+      "source_effective_date": "2025-01-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "dk_film_incentive",
+      "jurisdiction": "Denmark",
+      "subjurisdiction": null,
+      "program_name": "Danish Film Institute Production Support",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.dfi.dk/en/english/funding"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "dr___danish_broadcasting_corporation_co_production_fund",
+      "jurisdiction": "Denmark",
+      "subjurisdiction": null,
+      "program_name": "DR — Danish Broadcasting Corporation Co-production Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "do_film_incentive",
+      "jurisdiction": "Dominican Republic",
+      "subjurisdiction": null,
+      "program_name": "Dominican Republic Film Commission Incentive",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.drfilmcommission.com"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ec_film_incentive",
+      "jurisdiction": "Ecuador",
+      "subjurisdiction": null,
+      "program_name": "Ecuador Film Commission Production Facilitation",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://www.ecuador.travel/filming-in-ecuador"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "eg_film_incentive",
+      "jurisdiction": "Egypt",
+      "subjurisdiction": null,
+      "program_name": "Egypt Film Commission Production Support",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://egyptfilm.gov.eg/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ee_film_incentive",
+      "jurisdiction": "Estonia",
+      "subjurisdiction": null,
+      "program_name": "Film Estonia Cash Rebate",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://filmestonia.eu/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "et_film_commission",
+      "jurisdiction": "Ethiopia",
+      "subjurisdiction": null,
+      "program_name": "Ethiopian Film Commission Production Support",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://www.moct.gov.et"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "avmsd_streamer_local_content_obligation",
+      "jurisdiction": "European Union",
+      "subjurisdiction": "European Union",
+      "program_name": "AVMSD Streamer Local Content Obligation",
+      "original_validation_status": "INCORRECT",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "eu_media_fund",
+      "jurisdiction": "European Union",
+      "subjurisdiction": "European Union",
+      "program_name": "Creative Europe MEDIA Programme",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://ec.europa.eu/info/funding-tenders/opportunities/portal/screen/programmes/crea"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "eu_eurimages",
+      "jurisdiction": "European Union",
+      "subjurisdiction": "European Union",
+      "program_name": "Eurimages — Council of Europe Co-production Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.coe.int/en/web/eurimages"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "fo_filmstoddin",
+      "jurisdiction": "Faroe Islands",
+      "subjurisdiction": null,
+      "program_name": "Faroese Film Fund (Filmstødín)",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "fj_film_incentive",
+      "jurisdiction": "Fiji",
+      "subjurisdiction": null,
+      "program_name": "Fiji Audio Visual Commission Production Incentive",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.favc.com.fj/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "fi_film_incentive",
+      "jurisdiction": "Finland",
+      "subjurisdiction": null,
+      "program_name": "Business Finland Film Incentive",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.businessfinland.fi/en/for-finnish-customers/services/funding/cash-rebate"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "yle___finnish_broadcasting_company_co_production_fund",
+      "jurisdiction": "Finland",
+      "subjurisdiction": null,
+      "program_name": "YLE — Finnish Broadcasting Company Co-production Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "vaf_flanders_audiovisual_fund",
+      "jurisdiction": "Flanders, Belgium",
+      "subjurisdiction": "Flanders, Belgium",
+      "program_name": "VAF Flanders Audiovisual Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "arte_france_cinéma___co_production_fund",
+      "jurisdiction": "France",
+      "subjurisdiction": null,
+      "program_name": "Arte France Cinéma — Co-production Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "canal+___obligation_de_contribution_à_la_production_française",
+      "jurisdiction": "France",
+      "subjurisdiction": null,
+      "program_name": "CANAL+ — Obligation de Contribution à la Production Française",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "cnc_animation_production_fund",
+      "jurisdiction": "France",
+      "subjurisdiction": null,
+      "program_name": "CNC Animation Production Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "fr_cnc_production",
+      "jurisdiction": "France",
+      "subjurisdiction": null,
+      "program_name": "CNC France — Avances sur Recettes (Cinema Production Aid)",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.cnc.fr/web/en"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "svod_chronologie_des_médias_local_content_obligation",
+      "jurisdiction": "France",
+      "subjurisdiction": null,
+      "program_name": "SVOD Chronologie des Médias Local Content Obligation",
+      "original_validation_status": "INCORRECT",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "fr_trip",
+      "jurisdiction": "France",
+      "subjurisdiction": null,
+      "program_name": "Tax Rebate for International Productions (TRIP)",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.cnc.fr/-/credit-d-impot-internation-1"
+      ],
+      "source_effective_date": "current",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "unifrance_international_export_support",
+      "jurisdiction": "France",
+      "subjurisdiction": null,
+      "program_name": "UniFrance International Export Support",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ga_film_incentive",
+      "jurisdiction": "Gabon",
+      "subjurisdiction": null,
+      "program_name": "Gabon Ministry of Culture Film Commission Support",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://www.agence-gabonaise-tourisme.com"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ge_film_incentive",
+      "jurisdiction": "Georgia",
+      "subjurisdiction": null,
+      "program_name": "Georgian National Film Centre Production Incentive",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://gnfc.ge/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "de_dfff",
+      "jurisdiction": "Germany",
+      "subjurisdiction": null,
+      "program_name": "German Federal Film Fund (DFFF/GFFF)",
+      "original_validation_status": "STALE",
+      "source_urls": [
+        "https://www.ffa.de/dfff-home.html?newsdetail=20250203-52_dfff-und-gmpf-erhoehung-der-foerderintensitaet-auf-30-prozent-der-in-deutschland-getaetigten-produktionsausgaben-und-hoehere-kappungsgrenzen&zwischennachweis="
+      ],
+      "source_effective_date": "2025-01-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "german_films_international_market_development",
+      "jurisdiction": "Germany",
+      "subjurisdiction": null,
+      "program_name": "German Films International Market Development",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "wdr_/_ard___film_and_co_production_fund",
+      "jurisdiction": "Germany",
+      "subjurisdiction": null,
+      "program_name": "WDR / ARD — Film and Co-production Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "zdf_/_das_kleine_fernsehspiel___co_production_fund",
+      "jurisdiction": "Germany",
+      "subjurisdiction": null,
+      "program_name": "ZDF / Das Kleine Fernsehspiel — Co-production Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "de_fff_bayern",
+      "jurisdiction": "Germany",
+      "subjurisdiction": "Germany — Bavaria",
+      "program_name": "FilmFernsehFonds Bayern (FFF Bayern)",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.fff-bayern.de/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "de_nrw_filmstiftung",
+      "jurisdiction": "Germany",
+      "subjurisdiction": "Germany — North Rhine-Westphalia",
+      "program_name": "Film und Medienstiftung NRW",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.filmstiftung.de/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "gh_film_incentive",
+      "jurisdiction": "Ghana",
+      "subjurisdiction": null,
+      "program_name": "Ghana National Film Authority Production Support",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://nfa.gov.gh/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "gr_cash_rebate",
+      "jurisdiction": "Greece",
+      "subjurisdiction": null,
+      "program_name": "Greece Cash Rebate for International Productions",
+      "original_validation_status": "VERIFIED",
+      "source_urls": [
+        "https://www.enterprisegreece.gov.gr/en/invest-in-greece/sectors-for-growth/audiovisual-productions"
+      ],
+      "source_effective_date": "2017-01-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "OUTSIDE_QUEUE_VERIFIED"
+    },
+    {
+      "program_slug": "greek_film_centre_—_national_production_grants",
+      "jurisdiction": "Greece",
+      "subjurisdiction": null,
+      "program_name": "Greek Film Centre — National Production Grants",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "gl_gfi",
+      "jurisdiction": "Greenland",
+      "subjurisdiction": null,
+      "program_name": "Greenland Film Institute (GFI) Production Support",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "gt_film_commission",
+      "jurisdiction": "Guatemala",
+      "subjurisdiction": null,
+      "program_name": "Guatemala Film Commission (INGUAT) Production Facilitation",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://www.inguat.net"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "gy_film_commission",
+      "jurisdiction": "Guyana",
+      "subjurisdiction": null,
+      "program_name": "Guyana Tourism Authority Film Production Support",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://www.guyanatourism.com"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "hk_film_incentive",
+      "jurisdiction": "Hong Kong SAR",
+      "subjurisdiction": null,
+      "program_name": "Create Hong Kong (CreateHK) Production Support",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://www.createhk.gov.hk/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "hk_film_dev_fund",
+      "jurisdiction": "Hong Kong SAR",
+      "subjurisdiction": null,
+      "program_name": "Hong Kong Film Development Fund (FDF)",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.fdc.gov.hk/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "hu_hipa_rebate",
+      "jurisdiction": "Hungary",
+      "subjurisdiction": null,
+      "program_name": "Hungarian Tax Rebate (HIPA)",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://hipa.hu"
+      ],
+      "source_effective_date": "2004-01-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "national_film_institute_(nfi_hungary)___production_grant",
+      "jurisdiction": "Hungary",
+      "subjurisdiction": null,
+      "program_name": "National Film Institute (NFI Hungary) — Production Grant",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ibermedia_programme",
+      "jurisdiction": "Ibero-American Region (SEGIB)",
+      "subjurisdiction": "Ibero-American Region (SEGIB)",
+      "program_name": "IBERMEDIA Programme for Ibero-American Co-productions",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://programaibermedia.com/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "iceland_post_production_visual_effects_and_animation_incentive",
+      "jurisdiction": "Iceland",
+      "subjurisdiction": null,
+      "program_name": "Iceland Post-Production, Visual Effects and Animation Incentive",
+      "original_validation_status": "STALE",
+      "source_urls": [
+        "https://www.government.is/library/01-Ministries/Economic%20Impact%20Study%20of%20Iceland%27s%20Production%20Incentive%20-%20Final%20Report%202024-04-09%20v3%20CLEAN.pdf"
+      ],
+      "source_effective_date": "2022",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "is_film_reimbursement",
+      "jurisdiction": "Iceland",
+      "subjurisdiction": null,
+      "program_name": "Icelandic Film Reimbursement Scheme",
+      "original_validation_status": "STALE",
+      "source_urls": [
+        "https://www.government.is/library/01-Ministries/Economic%20Impact%20Study%20of%20Iceland%27s%20Production%20Incentive%20-%20Final%20Report%202024-04-09%20v3%20CLEAN.pdf"
+      ],
+      "source_effective_date": "2022",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "île_de_france_cinema_regional_aid",
+      "jurisdiction": "Île-de-France, France",
+      "subjurisdiction": "Île-de-France, France",
+      "program_name": "Île-de-France Cinema Regional Aid",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "in_national_film",
+      "jurisdiction": "India",
+      "subjurisdiction": null,
+      "program_name": "India NFDC and State Incentives",
+      "original_validation_status": "STALE",
+      "source_urls": [
+        "https://mib.gov.in/sites/default/files/2024-02/Revised%20incentive%20guidelines.pdf"
+      ],
+      "source_effective_date": "2023-03-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "in_nfdc_coproduction",
+      "jurisdiction": "India",
+      "subjurisdiction": null,
+      "program_name": "NFDC International Co-production Development Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.nfdcindia.com/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "id_film_incentive",
+      "jurisdiction": "Indonesia",
+      "subjurisdiction": null,
+      "program_name": "Indonesian Film Commission Production Facilitation",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://filmcommission.or.id/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ir_film_incentive",
+      "jurisdiction": "Iran",
+      "subjurisdiction": null,
+      "program_name": "Farabi Cinema Foundation Film Production Support",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.farabicinema.com"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "rté___broadcasting_authority_of_ireland_co_production_fund",
+      "jurisdiction": "Ireland",
+      "subjurisdiction": null,
+      "program_name": "RTÉ — Broadcasting Authority of Ireland Co-production Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "screen_ireland_development_and_talent_fund",
+      "jurisdiction": "Ireland",
+      "subjurisdiction": null,
+      "program_name": "Screen Ireland Development and Talent Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ie_section_481",
+      "jurisdiction": "Ireland",
+      "subjurisdiction": null,
+      "program_name": "Section 481 Film Tax Credit",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.revenue.ie/en/companies-and-charities/reliefs-and-exemptions/film-relief/index.aspx"
+      ],
+      "source_effective_date": "1987-01-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "tourism_ireland___fáilte_ireland_production_support",
+      "jurisdiction": "Ireland",
+      "subjurisdiction": null,
+      "program_name": "Tourism Ireland / Fáilte Ireland Production Support",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "im_iom_film",
+      "jurisdiction": "Isle of Man",
+      "subjurisdiction": null,
+      "program_name": "Isle of Man Film Co-Production Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "il_film_incentive",
+      "jurisdiction": "Israel",
+      "subjurisdiction": null,
+      "program_name": "Israel Film Fund / Maslool Incentive",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://israel-trade.net/filmisrael/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "anica_mic_international_export_support",
+      "jurisdiction": "Italy",
+      "subjurisdiction": null,
+      "program_name": "ANICA/MiC International Export Support",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "it_tax_credit_foreign",
+      "jurisdiction": "Italy",
+      "subjurisdiction": null,
+      "program_name": "Italian Tax Credit for Foreign Productions",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.dgcinema.beniculturali.it/finanziamenti/tax-credit/tax-credit-per-i-film-stranieri/"
+      ],
+      "source_effective_date": "2016-01-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "rai_cinema___co_production_and_acquisition_fund",
+      "jurisdiction": "Italy",
+      "subjurisdiction": null,
+      "program_name": "RAI Cinema — Co-production and Acquisition Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "jm_film_incentive",
+      "jurisdiction": "Jamaica",
+      "subjurisdiction": null,
+      "program_name": "Jamaica Entertainment Industry Incentive Programme",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.filmjamaica.com/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "jp_film_incentive",
+      "jurisdiction": "Japan",
+      "subjurisdiction": null,
+      "program_name": "Japan Film Commission Location Incentive (JLOC)",
+      "original_validation_status": "STALE",
+      "source_urls": [
+        "https://www.meti.go.jp/policy/mono_info_service/contents/menu_contents.html"
+      ],
+      "source_effective_date": "2026",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "vipo_animation_and_content_support",
+      "jurisdiction": "Japan",
+      "subjurisdiction": null,
+      "program_name": "VIPO Animation and Content Support",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "jo_rfc_rebate",
+      "jurisdiction": "Jordan",
+      "subjurisdiction": null,
+      "program_name": "Royal Film Commission Jordan — Production Rebate",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.rfc.jo/en/incentives"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "royal_film_commission_tourism_film_support",
+      "jurisdiction": "Jordan",
+      "subjurisdiction": null,
+      "program_name": "Royal Film Commission Tourism Film Support",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "kz_film_incentive",
+      "jurisdiction": "Kazakhstan",
+      "subjurisdiction": null,
+      "program_name": "Kazakhfilm Studios Production Facilitation",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://kazakhfilm.kz/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ke_film_incentive",
+      "jurisdiction": "Kenya",
+      "subjurisdiction": null,
+      "program_name": "Kenya Film Commission (KFC) Production Incentive",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://kenyafilmcommission.go.ke/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "xk_qkk",
+      "jurisdiction": "Kosovo",
+      "subjurisdiction": null,
+      "program_name": "Kosovo Film Center QKK Production Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "kw_film_incentive",
+      "jurisdiction": "Kuwait",
+      "subjurisdiction": null,
+      "program_name": "Kuwait Film Committee Production Support",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://kuwaitfilmfund.com/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "lv_film_incentive",
+      "jurisdiction": "Latvia",
+      "subjurisdiction": null,
+      "program_name": "National Film Centre of Latvia Production Incentive",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.nkc.gov.lv/en"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "lb_film_incentive",
+      "jurisdiction": "Lebanon",
+      "subjurisdiction": null,
+      "program_name": "Centre du Cinéma Libanais (CCL) Production Support",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.culture.gov.lb"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "lt_film_incentive",
+      "jurisdiction": "Lithuania",
+      "subjurisdiction": null,
+      "program_name": "Lithuanian Film Centre Production Cash Rebate",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.lkc.lt/en/tax-incentives"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "nordmedia_film_und_mediengesellschaft",
+      "jurisdiction": "Lower Saxony / Bremen, Germany",
+      "subjurisdiction": "Lower Saxony / Bremen, Germany",
+      "program_name": "nordmedia Film und Mediengesellschaft",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "lu_film_incentive",
+      "jurisdiction": "Luxembourg",
+      "subjurisdiction": null,
+      "program_name": "Film Fund Luxembourg — Tax Shelter & Production Rebate",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://filmfund.lu/en/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "mo_film_fund",
+      "jurisdiction": "Macau SAR",
+      "subjurisdiction": null,
+      "program_name": "Macau Cultural Industries Fund Film Production Support",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.ic.gov.mo"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "my_film_incentive",
+      "jurisdiction": "Malaysia",
+      "subjurisdiction": null,
+      "program_name": "FINAS Malaysia Film Rebate",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://filminmalaysia.com/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "mv_film_incentive",
+      "jurisdiction": "Maldives",
+      "subjurisdiction": null,
+      "program_name": "Maldives Marketing and PR Corporation (MMPRC) Film Facilitation",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://www.visitmaldives.com"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "mt_mfc_rebate",
+      "jurisdiction": "Malta",
+      "subjurisdiction": null,
+      "program_name": "Malta Film Commission Cash Rebate",
+      "original_validation_status": "VERIFIED",
+      "source_urls": [
+        "https://maltafilmcommission.com/malta-cash-rebate-incentives-for-the-audiovisual-industry/"
+      ],
+      "source_effective_date": "2015-01-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "OUTSIDE_QUEUE_VERIFIED"
+    },
+    {
+      "program_slug": "mu_edb_incentive",
+      "jurisdiction": "Mauritius",
+      "subjurisdiction": null,
+      "program_name": "Mauritius EDB Production Incentive (Budget-Evidenced 35%)",
+      "original_validation_status": "VERIFIED",
+      "source_urls": [
+        "https://www.edbmauritius.org/schemes/film-rebate-scheme/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "OUTSIDE_QUEUE_VERIFIED"
+    },
+    {
+      "program_slug": "mx_eficine_incentive",
+      "jurisdiction": "Mexico",
+      "subjurisdiction": null,
+      "program_name": "Mexico EFICINE (Article 226) and PROCINE Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.imcine.gob.mx/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "md_film_incentive",
+      "jurisdiction": "Moldova",
+      "subjurisdiction": null,
+      "program_name": "National Centre for Cinematography Moldova (NCFM)",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://cnf.md"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "mn_film_commission",
+      "jurisdiction": "Mongolia",
+      "subjurisdiction": null,
+      "program_name": "Mongolian Film Commission Production Support",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://www.mcta.gov.mn"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "me_film_incentive",
+      "jurisdiction": "Montenegro",
+      "subjurisdiction": null,
+      "program_name": "Film Centre of Montenegro Production Incentive",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.filmcentre.me/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ma_ccm_rebate",
+      "jurisdiction": "Morocco",
+      "subjurisdiction": null,
+      "program_name": "CCM Morocco — Production Rebate",
+      "original_validation_status": "STALE",
+      "source_urls": [
+        "https://www.ccm.ma/foreign_production/pe/fr.html",
+        "https://ccm.ma/foreign_production/pe/doc/guide_en.pdf"
+      ],
+      "source_effective_date": "2022-03-28",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "ccm_tourism_film_facilitation",
+      "jurisdiction": "Morocco",
+      "subjurisdiction": null,
+      "program_name": "CCM Tourism Film Facilitation",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "mz_film_incentive",
+      "jurisdiction": "Mozambique",
+      "subjurisdiction": null,
+      "program_name": "Mozambique Instituto do Cinema Film Support",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://www.cultura.gov.mz"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "na_film_commission",
+      "jurisdiction": "Namibia",
+      "subjurisdiction": null,
+      "program_name": "Namibia Film Commission Production Incentive",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.namibiafilmcommission.com"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "nl_hbf",
+      "jurisdiction": "Netherlands",
+      "subjurisdiction": null,
+      "program_name": "Hubert Bals Fund (IFFR) — Development and Production Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://iffr.com/en/hubert-bals-fund"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "nl_nfpi",
+      "jurisdiction": "Netherlands",
+      "subjurisdiction": null,
+      "program_name": "Netherlands Film Production Incentive (NFPI)",
+      "original_validation_status": "STALE",
+      "source_urls": [
+        "https://www.filmfonds.nl/en/funding/fund/netherlands-film-production-incentive",
+        "https://assets.filmfonds.nl/Netherlands-Film-Fund-Regulations-for-the-Netherlands-Film-Production-Incentive-2025.pdf"
+      ],
+      "source_effective_date": "2025-01-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "npo_/_vpro___dutch_public_broadcaster_co_production_fund",
+      "jurisdiction": "Netherlands",
+      "subjurisdiction": null,
+      "program_name": "NPO / VPRO — Dutch Public Broadcaster Co-production Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "air_new_zealand_film_production_support",
+      "jurisdiction": "New Zealand",
+      "subjurisdiction": null,
+      "program_name": "Air New Zealand Film Production Support",
+      "original_validation_status": "INCORRECT",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "new_zealand_screen_production_grant_—_international_post_vfx",
+      "jurisdiction": "New Zealand",
+      "subjurisdiction": null,
+      "program_name": "New Zealand Screen Production Grant — International Post/VFX",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.nzfilm.co.nz/incentives/rebate-international-nzspr"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "nz_spg_international",
+      "jurisdiction": "New Zealand",
+      "subjurisdiction": null,
+      "program_name": "New Zealand Screen Production Grant (International)",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.nzfilm.co.nz/resources/nz-screen-production-grant"
+      ],
+      "source_effective_date": "2018-01-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "tourism_new_zealand_film_and_production_support",
+      "jurisdiction": "New Zealand",
+      "subjurisdiction": null,
+      "program_name": "Tourism New Zealand Film and Production Support",
+      "original_validation_status": "INCORRECT",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "ng_film_incentive",
+      "jurisdiction": "Nigeria",
+      "subjurisdiction": null,
+      "program_name": "Nigeria NFC / Creative Economy Incentive",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.nfvcb.gov.ng/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "nordic_ftvf",
+      "jurisdiction": "Nordic Region",
+      "subjurisdiction": "Nordic Region",
+      "program_name": "Nordisk Film & TV Fond",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://nordiskfilmogtvfond.com/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "mk_film_incentive",
+      "jurisdiction": "North Macedonia",
+      "subjurisdiction": null,
+      "program_name": "Macedonian Film Agency (MFA) Cash Rebate",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://mfa.gov.mk/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "no_film_incentive",
+      "jurisdiction": "Norway",
+      "subjurisdiction": null,
+      "program_name": "Norwegian Film Commission Production Incentive",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.norwegianfilm.com/25-incentive"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "nrk___norwegian_broadcasting_corporation_co_production_fund",
+      "jurisdiction": "Norway",
+      "subjurisdiction": null,
+      "program_name": "NRK — Norwegian Broadcasting Corporation Co-production Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "nouvelle_aquitaine_regional_cinema_aid",
+      "jurisdiction": "Nouvelle-Aquitaine, France",
+      "subjurisdiction": "Nouvelle-Aquitaine, France",
+      "program_name": "Nouvelle-Aquitaine Regional Cinema Aid",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "occitanie_cinema_regional_aid",
+      "jurisdiction": "Occitanie, France",
+      "subjurisdiction": "Occitanie, France",
+      "program_name": "Occitanie Cinema Regional Aid",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "om_film_commission",
+      "jurisdiction": "Oman",
+      "subjurisdiction": null,
+      "program_name": "Oman Film Commission Production Support",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://www.omanfilmcommission.com"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "pk_pfc_rebate",
+      "jurisdiction": "Pakistan",
+      "subjurisdiction": null,
+      "program_name": "Pakistan Film Commission Cash Rebate",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "pa_film_incentive",
+      "jurisdiction": "Panama",
+      "subjurisdiction": null,
+      "program_name": "Panama Film Commission Production Facilitation",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://www.panamafilmcommission.com/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "py_conacine",
+      "jurisdiction": "Paraguay",
+      "subjurisdiction": null,
+      "program_name": "CONACINE Paraguay Fondo de Fomento Cinematográfico",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "pe_film_incentive",
+      "jurisdiction": "Peru",
+      "subjurisdiction": null,
+      "program_name": "Peru DAFO Film Production Support",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://dafo.cultura.pe/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ph_film_incentive",
+      "jurisdiction": "Philippines",
+      "subjurisdiction": null,
+      "program_name": "Film Development Council of the Philippines (FDCP) Incentive",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://fdcp.ph/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "polish_film_institute_(pisf)___production_grant",
+      "jurisdiction": "Poland",
+      "subjurisdiction": null,
+      "program_name": "Polish Film Institute (PISF) — Production Grant",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "pl_film_incentive",
+      "jurisdiction": "Poland",
+      "subjurisdiction": null,
+      "program_name": "Polish Film Institute (PISF) Cash Rebate",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://polishfilmcommission.pl/incentives/30-cash-rebate-basics/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ica___instituto_do_cinema_e_audiovisual___production_grants",
+      "jurisdiction": "Portugal",
+      "subjurisdiction": null,
+      "program_name": "ICA — Instituto do Cinema e Audiovisual — Production Grants",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "pt_film_incentive",
+      "jurisdiction": "Portugal",
+      "subjurisdiction": null,
+      "program_name": "Portugal Film Commission Incentive / IAPMEI",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.filmportugal.com/incentives"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "qa_dfi_fund",
+      "jurisdiction": "Qatar",
+      "subjurisdiction": null,
+      "program_name": "Doha Film Institute — Grants for Filmmakers",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.dohafilm.com/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "qa_film_incentive",
+      "jurisdiction": "Qatar",
+      "subjurisdiction": null,
+      "program_name": "Qatar Film Commission Production Incentive",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.dohafilm.com/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ro_cnc_rebate",
+      "jurisdiction": "Romania",
+      "subjurisdiction": null,
+      "program_name": "Romanian Film Office Cash Rebate",
+      "original_validation_status": "STALE",
+      "source_urls": [
+        "https://www.cnc.ro/en"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "ru_film_incentive",
+      "jurisdiction": "Russia",
+      "subjurisdiction": null,
+      "program_name": "Russian Cinema Fund (Fond Kino) Production Support",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.fond-kino.ru"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "rw_film_incentive",
+      "jurisdiction": "Rwanda",
+      "subjurisdiction": null,
+      "program_name": "Rwanda Development Board Film Production Support",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://rdb.rw/filming/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "sa_sfc_rebate",
+      "jurisdiction": "Saudi Arabia",
+      "subjurisdiction": null,
+      "program_name": "Saudi Film Commission (SFC) — Production Rebate",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://saudifi.com"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "saudi_film_commission_development_grants",
+      "jurisdiction": "Saudi Arabia",
+      "subjurisdiction": null,
+      "program_name": "Saudi Film Commission Development Grants",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "sn_film_incentive",
+      "jurisdiction": "Senegal",
+      "subjurisdiction": null,
+      "program_name": "Senegal Bureau d'Accueil des Tournages Film Support",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://www.senegalfilm.sn/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "rs_film_rebate",
+      "jurisdiction": "Serbia",
+      "subjurisdiction": null,
+      "program_name": "Serbia Film Commission Cash Rebate",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.filmcentar.rs"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "sc_film_incentive",
+      "jurisdiction": "Seychelles",
+      "subjurisdiction": null,
+      "program_name": "Seychelles Tourism Board Film Production Support",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://www.seychelles.travel"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "sg_imda_film_fund",
+      "jurisdiction": "Singapore",
+      "subjurisdiction": null,
+      "program_name": "IMDA Singapore — Feature Film Production Grant",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.imda.gov.sg/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "sg_sfc_production",
+      "jurisdiction": "Singapore",
+      "subjurisdiction": null,
+      "program_name": "Singapore Film Commission (SFC) — Production Assistance",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.imda.gov.sg/regulations-and-licensing-listing/fia"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "singapore_imda_digital_media_development_fund",
+      "jurisdiction": "Singapore",
+      "subjurisdiction": null,
+      "program_name": "Singapore IMDA Digital Media Development Fund",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "sk_film_incentive",
+      "jurisdiction": "Slovakia",
+      "subjurisdiction": null,
+      "program_name": "Slovak Audiovisual Fund (AVF) Production Incentive",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.avf.sk/english.aspx"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "si_film_incentive",
+      "jurisdiction": "Slovenia",
+      "subjurisdiction": null,
+      "program_name": "Slovenian Film Centre (SFC) Cash Rebate and Production Support",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.film-center.si"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "za_nfvf_rebate",
+      "jurisdiction": "South Africa",
+      "subjurisdiction": null,
+      "program_name": "NFVF / DTI — South Africa Foreign Film & TV Production Rebate",
+      "original_validation_status": "STALE",
+      "source_urls": [
+        "https://www.thedtic.gov.za/financial-and-non-financial-support/incentives/film-incentive/foreign-film-and-television-production-and-post-production-incentive-foreign-film/",
+        "https://www.thedtic.gov.za/wp-content/uploads/the-dtic-incentive-schemes-guide-2026.pdf"
+      ],
+      "source_effective_date": "2025-06-30",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "za_dac_fund",
+      "jurisdiction": "South Africa",
+      "subjurisdiction": null,
+      "program_name": "NFVF South Africa — Development and Production Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.nfvf.co.za/funding/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "kofic_international_promotion_and_export",
+      "jurisdiction": "South Korea",
+      "subjurisdiction": null,
+      "program_name": "KOFIC International Promotion and Export",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "kr_film_incentive",
+      "jurisdiction": "South Korea",
+      "subjurisdiction": null,
+      "program_name": "Korea Film Council (KOFIC) Location Incentive",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.koreanfilm.or.kr/eng/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "korea_kocca_animation_production_support",
+      "jurisdiction": "South Korea",
+      "subjurisdiction": null,
+      "program_name": "Korea KOCCA Animation Production Support",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "rtve___radio_televisión_española_co_production_fund",
+      "jurisdiction": "Spain",
+      "subjurisdiction": null,
+      "program_name": "RTVE — Radio Televisión Española Co-production Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "es_tax_credit_foreign",
+      "jurisdiction": "Spain",
+      "subjurisdiction": null,
+      "program_name": "Spanish Tax Credit for Foreign Productions",
+      "original_validation_status": "INCORRECT",
+      "source_urls": [
+        "https://www.investinspain.org/content/dam/icex-invest/documentos/publicaciones/guia_negocios/Guide-to-business-in-Spain-INVESTINSPAIN.pdf",
+        "https://www.investinspain.org/content/dam/icex-invest/documentos/publicaciones/sectores/industria-audiovisual/ICEX-Invest%20in%20Spain.%20Audiovisual.pdf"
+      ],
+      "source_effective_date": "2025",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "lk_film_incentive",
+      "jurisdiction": "Sri Lanka",
+      "subjurisdiction": null,
+      "program_name": "Sri Lanka Film Commission Production Incentive",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://srilankafilmcommission.lk/incentives/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "svt___swedish_television_co_production_fund",
+      "jurisdiction": "Sweden",
+      "subjurisdiction": null,
+      "program_name": "SVT — Swedish Television Co-production Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "se_film_incentive",
+      "jurisdiction": "Sweden",
+      "subjurisdiction": null,
+      "program_name": "Sweden Film Commission Production Rebate",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.filminstitutet.se/en/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "film_i_vast",
+      "jurisdiction": "Sweden",
+      "subjurisdiction": "Sweden — Västra Götaland",
+      "program_name": "Film i Väst — Regional Co-production Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.filmivast.se/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "media_desk_switzerland_/_succès_cinéma___automatic_support",
+      "jurisdiction": "Switzerland",
+      "subjurisdiction": null,
+      "program_name": "MEDIA Desk Switzerland / Succès Cinéma — Automatic Support",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ch_film_support",
+      "jurisdiction": "Switzerland",
+      "subjurisdiction": null,
+      "program_name": "Swiss Federal Office of Culture (FOC) Film Support",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.bak.admin.ch/bak/en/home/film/films-in-switzerland.html"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "tw_taicca_fund",
+      "jurisdiction": "Taiwan",
+      "subjurisdiction": null,
+      "program_name": "Taiwan Creative Content Agency (TAICCA) International Co-production Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.taicca.tw/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "tw_film_incentive",
+      "jurisdiction": "Taiwan",
+      "subjurisdiction": null,
+      "program_name": "Taiwan Film and Audiovisual Institute (TFAI) Cash Rebate",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://bamid.gov.tw/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "tz_film_incentive",
+      "jurisdiction": "Tanzania",
+      "subjurisdiction": null,
+      "program_name": "Tanzania Film Board Production Facilitation",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://www.tanzaniafilmboard.go.tz/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "th_film_incentive",
+      "jurisdiction": "Thailand",
+      "subjurisdiction": null,
+      "program_name": "Thailand BOI Film Production Incentive",
+      "original_validation_status": "STALE",
+      "source_urls": [
+        "https://tfo.dot.go.th/wp-content/uploads/2025/03/Thailand-Incentive-Measures-Guidelines.pdf",
+        "https://tfo.dot.go.th/wp-content/uploads/2025/03/FINAL-%E0%B8%9B%E0%B8%A3%E0%B8%81%E0%B8%B2%E0%B8%A8-%E0%B8%AB%E0%B8%A5%E0%B8%B1%E0%B9%80%E0%B8%81%E0%B8%93%E0%B8%91%E0%B9%8C-2567-in-English-final-clean-pdf.pdf"
+      ],
+      "source_effective_date": "2025-01-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "tt_film_incentive",
+      "jurisdiction": "Trinidad & Tobago",
+      "subjurisdiction": null,
+      "program_name": "Trinidad & Tobago Creative Industries Production Incentive",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://filmtt.co.tt/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "tn_film_incentive",
+      "jurisdiction": "Tunisia",
+      "subjurisdiction": null,
+      "program_name": "Tunisia CNCI Cash Rebate",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://cnci.tn/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "tr_film_incentive",
+      "jurisdiction": "Turkey",
+      "subjurisdiction": null,
+      "program_name": "Turkey Cinema General Directorate Production Support",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.sinema.gov.tr/en"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "turkey_ministry_of_culture_cinema_support_fund",
+      "jurisdiction": "Turkey",
+      "subjurisdiction": null,
+      "program_name": "Turkey Ministry of Culture Cinema Support Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ug_film_commission",
+      "jurisdiction": "Uganda",
+      "subjurisdiction": null,
+      "program_name": "Uganda Film Commission Production Support",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://www.ugandafilmcommission.org"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ua_film_incentive",
+      "jurisdiction": "Ukraine",
+      "subjurisdiction": null,
+      "program_name": "Ukrainian State Film Agency Production Support",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.dergkino.gov.ua"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ae_dpip",
+      "jurisdiction": "United Arab Emirates",
+      "subjurisdiction": null,
+      "program_name": "Dubai Film Commission — Dubai Production Incentive (DPIP)",
+      "original_validation_status": "INCORRECT",
+      "source_urls": [
+        "https://www.film.gov.ae/35-rebate",
+        "https://www.film.gov.ae/storage/staticPage/ADFC%20Rebate%20Guidelines%20FINAL%20En.pdf"
+      ],
+      "source_effective_date": "2025-01-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "emirates_airline_film_production_partnership",
+      "jurisdiction": "United Arab Emirates",
+      "subjurisdiction": null,
+      "program_name": "Emirates Airline Film Production Partnership",
+      "original_validation_status": "INCORRECT",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "bbc_films___co_production_and_development_fund",
+      "jurisdiction": "United Kingdom",
+      "subjurisdiction": null,
+      "program_name": "BBC Films — Co-production and Development Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "gb_bfi_production",
+      "jurisdiction": "United Kingdom",
+      "subjurisdiction": null,
+      "program_name": "BFI Film Fund — Production Funding",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.bfi.org.uk/get-funding-support"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "bfi_international_export_fund",
+      "jurisdiction": "United Kingdom",
+      "subjurisdiction": null,
+      "program_name": "BFI International Export Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "channel_4_film_/_film4___co_production_fund",
+      "jurisdiction": "United Kingdom",
+      "subjurisdiction": null,
+      "program_name": "Channel 4 Film / Film4 — Co-production Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "screenskills_production_workforce_development",
+      "jurisdiction": "United Kingdom",
+      "subjurisdiction": null,
+      "program_name": "ScreenSkills Production Workforce Development",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "uk_avec",
+      "jurisdiction": "United Kingdom",
+      "subjurisdiction": null,
+      "program_name": "UK Audio Visual Expenditure Credit",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.gov.uk/guidance/corporation-tax-creative-industry-tax-reliefs"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "gb_sct_screen_fund",
+      "jurisdiction": "United Kingdom",
+      "subjurisdiction": "United Kingdom — Scotland",
+      "program_name": "Screen Scotland Production Growth Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.screen.scot/funding-and-support/screen-scotland-funding/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "gb_wls_screen_fund",
+      "jurisdiction": "United Kingdom",
+      "subjurisdiction": "United Kingdom — Wales",
+      "program_name": "Wales Screen Production Fund (Ffilm Cymru Wales)",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.creativewales.wales/en/screen/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ca_film_30",
+      "jurisdiction": "United States",
+      "subjurisdiction": "California",
+      "program_name": "California Film & Television Tax Credit Program 3.0",
+      "original_validation_status": "STALE",
+      "source_urls": [
+        "https://film.ca.gov/tax-credit/the-basics-4-0/",
+        "https://cdn.film.ca.gov/wp-content/uploads/2025/08/4.0-Program-Guidelines-1.pdf"
+      ],
+      "source_effective_date": "2025-07-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "georgia_eiia",
+      "jurisdiction": "United States",
+      "subjurisdiction": "Georgia",
+      "program_name": "Georgia Entertainment Industry Investment Act",
+      "original_validation_status": "INCORRECT",
+      "source_urls": [
+        "https://dor.georgia.gov/georgia-entertainment-industry-investment-act",
+        "https://law.justia.com/codes/georgia/title-48/chapter-7/article-2/section-48-7-40-26/"
+      ],
+      "source_effective_date": "2008-01-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "us_ga_film_credit",
+      "jurisdiction": "United States",
+      "subjurisdiction": "Georgia",
+      "program_name": "Georgia Entertainment Industry Investment Act",
+      "original_validation_status": "VERIFIED",
+      "source_urls": [
+        "https://www.georgia.org/industries/film-entertainment/georgia-film"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "OUTSIDE_QUEUE_VERIFIED"
+    },
+    {
+      "program_slug": "us_la_film_incentive",
+      "jurisdiction": "United States",
+      "subjurisdiction": "Louisiana",
+      "program_name": "Louisiana Motion Picture Production Program",
+      "original_validation_status": "VERIFIED",
+      "source_urls": [
+        "https://www.louisianaentertainment.gov/film"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "OUTSIDE_QUEUE_VERIFIED"
+    },
+    {
+      "program_slug": "la_film_production",
+      "jurisdiction": "United States",
+      "subjurisdiction": "Louisiana",
+      "program_name": "Louisiana Motion Picture Production Tax Credit",
+      "original_validation_status": "INCORRECT",
+      "source_urls": [
+        "https://www.lafilm.org/incentives",
+        "https://www.louisianaentertainment.gov/film"
+      ],
+      "source_effective_date": "2002-01-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "nm_film_production",
+      "jurisdiction": "United States",
+      "subjurisdiction": "New Mexico",
+      "program_name": "New Mexico Film Production Tax Credit",
+      "original_validation_status": "INCORRECT",
+      "source_urls": [
+        "https://nmfilm.com/tax-incentives/"
+      ],
+      "source_effective_date": "2002-01-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "us_nm_film_credit",
+      "jurisdiction": "United States",
+      "subjurisdiction": "New Mexico",
+      "program_name": "New Mexico Film Production Tax Credit",
+      "original_validation_status": "VERIFIED",
+      "source_urls": [
+        "https://nmfilm.com/incentives/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "OUTSIDE_QUEUE_VERIFIED"
+    },
+    {
+      "program_slug": "ny_state_film",
+      "jurisdiction": "United States",
+      "subjurisdiction": "New York",
+      "program_name": "New York State Film Tax Credit",
+      "original_validation_status": "STALE",
+      "source_urls": [
+        "https://www.tax.ny.gov/legal/2023/pit-corp-changes.htm"
+      ],
+      "source_effective_date": "2023-04-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "us_ny_film_credit",
+      "jurisdiction": "United States",
+      "subjurisdiction": "New York",
+      "program_name": "New York State Film Tax Credit Program",
+      "original_validation_status": "STALE",
+      "source_urls": [
+        "https://www.tax.ny.gov/legal/2023/pit-corp-changes.htm",
+        "https://esd.ny.gov/new-york-state-film-tax-credit-program-post-production"
+      ],
+      "source_effective_date": "2023-04-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "us_or_opif",
+      "jurisdiction": "United States",
+      "subjurisdiction": "Oregon",
+      "program_name": "Oregon Production Investment Fund (OPIF)",
+      "original_validation_status": "VERIFIED",
+      "source_urls": [
+        "https://oregonfilm.org/incentives/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "OUTSIDE_QUEUE_VERIFIED"
+    },
+    {
+      "program_slug": "or_opif",
+      "jurisdiction": "United States",
+      "subjurisdiction": "Oregon",
+      "program_name": "Oregon Production Investment Fund (OPIF)",
+      "original_validation_status": "INCORRECT",
+      "source_urls": [
+        "https://oregonfilm.org/incentives/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "us_itvs_fund",
+      "jurisdiction": "United States",
+      "subjurisdiction": null,
+      "program_name": "ITVS International Documentary Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://itvs.org/funding/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "us_sundance_doc",
+      "jurisdiction": "United States",
+      "subjurisdiction": null,
+      "program_name": "Sundance Institute — Documentary Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.sundance.org/documentary-fund/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "us_al_film_incentive",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Alabama",
+      "program_name": "Alabama Film Incentive",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.alabamafilm.org/incentives"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "us_az_film_credit",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Arizona",
+      "program_name": "Arizona Motion Picture Production Program",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.azcommerce.com/film-media/incentive/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "us_co_film_incentive",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Colorado",
+      "program_name": "Colorado Film Incentive",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://oedit.colorado.gov/colorado-office-of-film-tv-and-media"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "us_ct_film_credit",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Connecticut",
+      "program_name": "Connecticut Film Tax Credit",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://portal.ct.gov/DECD/Content/Film-television-Creative-Services"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "us_hi_film_tax_credit",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Hawaii",
+      "program_name": "Hawaii Film and Digital Media Income Tax Credit",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://filmoffice.hawaii.gov/incentives-tax-credits/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "us_il_film_credit",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Illinois",
+      "program_name": "Illinois Film Tax Credit",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.illinois.gov/business/film-production"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "us_ky_keiia",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Kentucky",
+      "program_name": "Kentucky Entertainment Industry Incentive Act (KEIIA)",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://kyfilmoffice.com/production-incentives/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "us_md_film_credit",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Maryland",
+      "program_name": "Maryland Film Production Activity Tax Credit",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.marylandfilm.org/resources/tax-incentives"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "us_ma_film_credit",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Massachusetts",
+      "program_name": "Massachusetts Film Tax Credit",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.mafilm.org/tax-incentives/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "us_mn_film_credit",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Minnesota",
+      "program_name": "Minnesota Film Production Tax Credit",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.revenue.state.mn.us/film-production-credit"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "us_ms_film_credit",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Mississippi",
+      "program_name": "Mississippi Advantage Film Program",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://filmmississippi.org/incentive/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "us_nv_film_incentive",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Nevada",
+      "program_name": "Nevada Film Incentive Program",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://nevadafilm.com/incentive/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "us_nc_film_grant",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — North Carolina",
+      "program_name": "North Carolina Film & Entertainment Grant",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.filmnc.com/incentives"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "us_ok_ofer",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Oklahoma",
+      "program_name": "Oklahoma Film Enhancement Rebate",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.oklahomafilm.org/incentives"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "us_pa_film_credit",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Pennsylvania",
+      "program_name": "Pennsylvania Film Production Tax Credit",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://dced.pa.gov/programs/pa-film-office/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "us_pr_film_incentive",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Puerto Rico",
+      "program_name": "Puerto Rico Film Industry Economic Incentives Act",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://puertoricofilm.ddec.pr.gov/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "us_ri_film_credit",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Rhode Island",
+      "program_name": "Rhode Island Motion Picture Production Tax Credit",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://commerceri.com/film-tv/ri-tax-incentive/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "us_sc_film_credit",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — South Carolina",
+      "program_name": "South Carolina Film Production Credit",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://sc.gov/government/agencies/film-commission"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "us_tn_film_incentive",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Tennessee",
+      "program_name": "Tennessee Film Entertainment Incentives",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.tnfilm.com/incentives"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "us_tx_miip",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Texas",
+      "program_name": "Texas Moving Image Industry Incentive Program (MIIP)",
+      "original_validation_status": "STALE",
+      "source_urls": [
+        "https://gov.texas.gov/film/page/additional_grant_award",
+        "https://www.sos.texas.gov/texreg/archive/July32026/Adopted%20Rules/13.CULTURAL%20RESOURCES.html"
+      ],
+      "source_effective_date": "2025-09-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "CLOSED_WITH_DETERMINISTIC_REMEDIATION"
+    },
+    {
+      "program_slug": "us_ut_film_incentive",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Utah",
+      "program_name": "Utah Motion Picture Incentive Program",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://film.utah.gov/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "us_va_film_credit",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Virginia",
+      "program_name": "Virginia Motion Picture Production Tax Credit",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.film.virginia.org/production/incentives"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "us_wa_mpcp",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Washington",
+      "program_name": "Washington State Motion Picture Competitiveness Program",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://washingtonfilmworks.com/funding/motion-picture-competitiveness-program/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "uy_xxi_incentive",
+      "jurisdiction": "Uruguay",
+      "subjurisdiction": null,
+      "program_name": "Uruguay XXI Film Incentive",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.uruguayxxi.gub.uy"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "uz_film_incentive",
+      "jurisdiction": "Uzbekistan",
+      "subjurisdiction": null,
+      "program_name": "Uzbekkino National Film Support Program",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://www.uzbekkino.uz"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "ve_cnac_fund",
+      "jurisdiction": "Venezuela",
+      "subjurisdiction": null,
+      "program_name": "CNAC Venezuela Film Production Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [
+        "https://www.cnac.gob.ve"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "vn_film_incentive",
+      "jurisdiction": "Vietnam",
+      "subjurisdiction": null,
+      "program_name": "Vietnam Cinema Department Production Facilitation",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://vfc.gov.vn/"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "wallimage_co_production_fund",
+      "jurisdiction": "Wallonia, Belgium",
+      "subjurisdiction": "Wallonia, Belgium",
+      "program_name": "Wallimage Co-production Fund",
+      "original_validation_status": "INCOMPLETE",
+      "source_urls": [],
+      "source_effective_date": null,
+      "source_tier": "none_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "zm_film_commission",
+      "jurisdiction": "Zambia",
+      "subjurisdiction": null,
+      "program_name": "Zambia Film Commission Production Support",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://www.zfc.gov.zm"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": "zw_film_commission",
+      "jurisdiction": "Zimbabwe",
+      "subjurisdiction": null,
+      "program_name": "Zimbabwe Film and Broadcasting Authority Production Support",
+      "original_validation_status": "UNRESOLVED",
+      "source_urls": [
+        "https://www.zbfta.co.zw"
+      ],
+      "source_effective_date": null,
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION"
+    },
+    {
+      "program_slug": null,
+      "jurisdiction": "Canada",
+      "subjurisdiction": null,
+      "program_name": "Film or Video Production Services Tax Credit (PSTC)",
+      "original_validation_status": "MISSING",
+      "source_urls": [
+        "https://www.canada.ca/en/canadian-heritage/services/funding/cavco-tax-credits/film-video-production-services.html",
+        "https://www.canada.ca/en/revenue-agency/services/tax/international-non-residents/film-media-tax-credits/film-video-production-services-tax-credit-program/legislative-requirements.html"
+      ],
+      "source_effective_date": "2026-07-14",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "MISSING_DISCOVERY"
+    },
+    {
+      "program_slug": null,
+      "jurisdiction": "Canada",
+      "subjurisdiction": "British Columbia",
+      "program_name": "Film Incentive BC (FIBC)",
+      "original_validation_status": "MISSING",
+      "source_urls": [
+        "https://www2.gov.bc.ca/gov/content/taxes/income-taxes/corporate/credits/film-tv/film-incentive"
+      ],
+      "source_effective_date": "current",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "MISSING_DISCOVERY"
+    },
+    {
+      "program_slug": null,
+      "jurisdiction": "Canada",
+      "subjurisdiction": "Quebec",
+      "program_name": "Refundable Tax Credit for Film Production Services",
+      "original_validation_status": "MISSING",
+      "source_urls": [
+        "https://sodec.gouv.qc.ca/en/program/tax-credit-for-film-production-services/"
+      ],
+      "source_effective_date": "current",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "MISSING_DISCOVERY"
+    },
+    {
+      "program_slug": null,
+      "jurisdiction": "United States",
+      "subjurisdiction": "New Jersey",
+      "program_name": "Garden State Film and Digital Media Jobs Act — Film Credit",
+      "original_validation_status": "MISSING",
+      "source_urls": [
+        "https://www.nj.gov/njfilm/incentives-credit.shtml",
+        "https://www.nj.gov/treasury/taxation/gardenstatefilm.shtml"
+      ],
+      "source_effective_date": "2026",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "MISSING_DISCOVERY"
+    },
+    {
+      "program_slug": null,
+      "jurisdiction": "United States",
+      "subjurisdiction": "New York",
+      "program_name": "Film Tax Credit — Post-Production",
+      "original_validation_status": "MISSING",
+      "source_urls": [
+        "https://esd.ny.gov/new-york-state-film-tax-credit-program-post-production"
+      ],
+      "source_effective_date": "current",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "MISSING_DISCOVERY"
+    },
+    {
+      "program_slug": null,
+      "jurisdiction": "United States",
+      "subjurisdiction": "New York",
+      "program_name": "Empire State Independent Film Production Credit",
+      "original_validation_status": "MISSING",
+      "source_urls": [
+        "https://www.tax.ny.gov/pit/credits/empire-state-independent-film-production-credit.htm",
+        "https://www.tax.ny.gov/legal/2025/pit-corp-changes.htm"
+      ],
+      "source_effective_date": "2025-01-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "MISSING_DISCOVERY"
+    },
+    {
+      "program_slug": null,
+      "jurisdiction": "United States",
+      "subjurisdiction": "Ohio",
+      "program_name": "Ohio Motion Picture Tax Credit",
+      "original_validation_status": "MISSING",
+      "source_urls": [
+        "https://codes.ohio.gov/ohio-revised-code/section-122.85",
+        "https://dam.assets.ohio.gov/image/upload/development.ohio.gov/business/stateincentives/OMPTC_Instruction_FY2026_July.pdf"
+      ],
+      "source_effective_date": "2025-09-30",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "MISSING_DISCOVERY"
+    },
+    {
+      "program_slug": null,
+      "jurisdiction": "United States",
+      "subjurisdiction": "Arkansas",
+      "program_name": "Digital Product and Motion Picture Industry Incentive",
+      "original_validation_status": "MISSING",
+      "source_urls": [
+        "https://www.arkansasedc.com/why-arkansas/business-climate/incentives/pages/film-production-incentives",
+        "https://www.dfa.arkansas.gov/office/taxes/other-taxes/tax-credits-special-refunds/business-incentives-and-credits/"
+      ],
+      "source_effective_date": "current",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "MISSING_DISCOVERY"
+    },
+    {
+      "program_slug": null,
+      "jurisdiction": "United States",
+      "subjurisdiction": "West Virginia",
+      "program_name": "West Virginia Film Production Tax Credit",
+      "original_validation_status": "MISSING",
+      "source_urls": [
+        "https://westvirginia.gov/filmincentives/"
+      ],
+      "source_effective_date": "current",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "MISSING_DISCOVERY"
+    },
+    {
+      "program_slug": null,
+      "jurisdiction": "United States",
+      "subjurisdiction": "Missouri",
+      "program_name": "Motion Media Production Tax Credit",
+      "original_validation_status": "MISSING",
+      "source_urls": [
+        "https://ded.mo.gov/programs/business-workforce/motion-media-production-tax-credit-program"
+      ],
+      "source_effective_date": "2023-10",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "MISSING_DISCOVERY"
+    },
+    {
+      "program_slug": null,
+      "jurisdiction": "United States",
+      "subjurisdiction": "Montana",
+      "program_name": "MEDIA Tax Credit",
+      "original_validation_status": "MISSING",
+      "source_urls": [
+        "https://commerce.mt.gov/Business/Programs-and-Services/Montana-Film-Office/Incentives/MEDIA-Tax-Credit"
+      ],
+      "source_effective_date": "2026",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "MISSING_DISCOVERY"
+    },
+    {
+      "program_slug": null,
+      "jurisdiction": "Australia",
+      "subjurisdiction": null,
+      "program_name": "Producer Offset (separate statutory program)",
+      "original_validation_status": "MISSING",
+      "source_urls": [
+        "https://www.screenaustralia.gov.au/funding-and-support/producer-offset"
+      ],
+      "source_effective_date": "current",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "MISSING_DISCOVERY"
+    },
+    {
+      "program_slug": null,
+      "jurisdiction": "United Kingdom",
+      "subjurisdiction": null,
+      "program_name": "Enhanced AVEC / Independent Film Tax Credit (IFTC)",
+      "original_validation_status": "MISSING",
+      "source_urls": [
+        "https://www.gov.uk/hmrc-internal-manuals/creative-industries-expenditure-credit-manual/crec021110",
+        "https://www.gov.uk/guidance/claim-audio-visual-expenditure-credits-for-corporation-tax"
+      ],
+      "source_effective_date": "2025-04-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "MISSING_DISCOVERY"
+    },
+    {
+      "program_slug": null,
+      "jurisdiction": "United Kingdom",
+      "subjurisdiction": null,
+      "program_name": "UK Global Screen Fund — International Co-production",
+      "original_validation_status": "MISSING",
+      "source_urls": [
+        "https://www.bfi.org.uk/get-funding-support/create-films-tv-or-new-formats-storytelling/international-co-productions"
+      ],
+      "source_effective_date": "current",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "MISSING_DISCOVERY"
+    },
+    {
+      "program_slug": null,
+      "jurisdiction": "Germany",
+      "subjurisdiction": null,
+      "program_name": "German Motion Picture Fund (GMPF)",
+      "original_validation_status": "MISSING",
+      "source_urls": [
+        "https://www.ffa.de/files/ffa/av-info-publikationen-downloads/26_DFFF_GMPF_At_A_Glance_2025_EN.pdf"
+      ],
+      "source_effective_date": "2025-01-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "MISSING_DISCOVERY"
+    },
+    {
+      "program_slug": null,
+      "jurisdiction": "United Arab Emirates",
+      "subjurisdiction": "Abu Dhabi",
+      "program_name": "Abu Dhabi 35++ Production Rebate",
+      "original_validation_status": "MISSING",
+      "source_urls": [
+        "https://www.film.gov.ae/35-rebate",
+        "https://www.film.gov.ae/storage/staticPage/ADFC%20Rebate%20Guidelines%20FINAL%20En.pdf"
+      ],
+      "source_effective_date": "2025-01-01",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "MISSING_DISCOVERY"
+    },
+    {
+      "program_slug": null,
+      "jurisdiction": "Colombia",
+      "subjurisdiction": null,
+      "program_name": "CINA Audiovisual Investment Certificate",
+      "original_validation_status": "MISSING",
+      "source_urls": [
+        "https://www.proimagenescolombia.com/secciones/pantalla_colombia/breves_plantilla.php?id_noticia=13599"
+      ],
+      "source_effective_date": "current",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "MISSING_DISCOVERY"
+    },
+    {
+      "program_slug": null,
+      "jurisdiction": "Spain",
+      "subjurisdiction": "Canary Islands",
+      "program_name": "Canary Islands Foreign Production Tax Deduction",
+      "original_validation_status": "MISSING",
+      "source_urls": [
+        "https://www.investinspain.org/content/dam/icex-invest/documentos/publicaciones/sectores/industria-audiovisual/ICEX-Invest%20in%20Spain.%20Audiovisual.pdf"
+      ],
+      "source_effective_date": "2025",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "MISSING_DISCOVERY"
+    },
+    {
+      "program_slug": null,
+      "jurisdiction": "Spain",
+      "subjurisdiction": "Navarre",
+      "program_name": "Navarre Audiovisual Production Tax Credit",
+      "original_validation_status": "MISSING",
+      "source_urls": [
+        "https://www.investinspain.org/content/dam/icex-invest/documentos/publicaciones/sectores/industria-audiovisual/ICEX-Invest%20in%20Spain.%20Audiovisual.pdf"
+      ],
+      "source_effective_date": "2025",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "MISSING_DISCOVERY"
+    },
+    {
+      "program_slug": null,
+      "jurisdiction": "Spain",
+      "subjurisdiction": "Basque Country",
+      "program_name": "Basque Provincial Audiovisual Tax Credits",
+      "original_validation_status": "MISSING",
+      "source_urls": [
+        "https://www.investinspain.org/content/dam/icex-invest/documentos/publicaciones/who-is-who-shooting/24/FEDERATION.pdf"
+      ],
+      "source_effective_date": "2025",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "MISSING_DISCOVERY"
+    },
+    {
+      "program_slug": null,
+      "jurisdiction": "South Africa",
+      "subjurisdiction": null,
+      "program_name": "South African Film and Television Production / Co-production Incentive",
+      "original_validation_status": "MISSING",
+      "source_urls": [
+        "https://www.thedtic.gov.za/south-african-film-and-television-production-incentive-2/"
+      ],
+      "source_effective_date": "current",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "MISSING_DISCOVERY"
+    },
+    {
+      "program_slug": null,
+      "jurisdiction": "Netherlands",
+      "subjurisdiction": null,
+      "program_name": "Netherlands Film Production Incentive — High-End Series",
+      "original_validation_status": "MISSING",
+      "source_urls": [
+        "https://www.filmfonds.nl/en/rules-and-regulations"
+      ],
+      "source_effective_date": "2025",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "MISSING_DISCOVERY"
+    },
+    {
+      "program_slug": null,
+      "jurisdiction": "Thailand",
+      "subjurisdiction": null,
+      "program_name": "Foreign Digital Content Production Incentive",
+      "original_validation_status": "MISSING",
+      "source_urls": [
+        "https://thailand.prd.go.th/en/content/category/detail/id/2078/iid/472682"
+      ],
+      "source_effective_date": "2026",
+      "source_tier": "primary_or_official_as_identified",
+      "provenance": "reused Codex completed validation; targeted current official research only for bounded material gaps",
+      "completion_status": "MISSING_DISCOVERY"
+    }
+  ],
+  "gemini_salvage": {
+    "Gemini_records_inspected": 415,
+    "specific_usable_evidence_items_salvaged": 0,
+    "placeholder_or_unusable_records_rejected": 415,
+    "inventory_claims_rejected": 1
+  },
+  "targeted_current_authority_additions": [
+    {
+      "program": "BC Interactive Digital Media Tax Credit (IDMTC)",
+      "sources": [
+        "https://www2.gov.bc.ca/gov/content/taxes/income-taxes/corporate/credits/interactive-digital-media",
+        "https://www.bclaws.gov.bc.ca/civix/document/id/complete/statreg/187_2010"
+      ],
+      "result": "Current 25% refundable eligible-salary credit for interactive products; not a general film incentive."
+    },
+    {
+      "program": "Ontario Computer Animation and Special Effects Tax Credit (OCASE)",
+      "sources": [
+        "https://www.ontariocreates.ca/tax-incentives/ocase",
+        "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/corporations/provincial-territorial-corporation-tax/ontario-provincial-corporation-tax/ontario-refundable-media-tax-credits/ontario-computer-animation-special-effects-tax-credit.html"
+      ],
+      "result": "18% refundable qualifying Ontario animation/VFX labour; Ontario activity, residence, applicant and minimum-labour tests apply."
+    },
+    {
+      "program": "New Zealand International Rebate — PDV",
+      "sources": [
+        "https://www.nzfilm.co.nz/incentives/rebate-international-nzspr"
+      ],
+      "result": "Distinct PDV route within the International Rebate; 20% base, NZD250,000 PDV threshold, registration timing, QNZPE territoriality and 2026 uplift pathway."
+    }
+  ]
+}

@@ -1,0 +1,160 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-09",
+  "stored_inventory": {
+    "treaties": 38,
+    "participant_rows": 109
+  },
+  "material_accounting": {
+    "stored_treaties": 38,
+    "stored_participant_rows": 109,
+    "material_treaty_queues_identified": 7,
+    "material_treaty_queues_closed": 0,
+    "material_treaty_queues_unresolved": 7,
+    "new_treaty_or_pathway_records_discovered": 13
+  },
+  "queues": [
+    {
+      "queue_id": "UK_BILATERAL_AND_CONVENTION_RECONCILIATION",
+      "priority": "P0",
+      "stored_records": 11,
+      "official_authority": "https://www.bfi.org.uk/apply-british-certification-expenditure-credits/co-production/",
+      "missing_or_misclassified_frameworks_already_evidenced": [
+        "UK–Brazil",
+        "UK–China film",
+        "UK–China television",
+        "UK–Israel",
+        "UK–Jamaica",
+        "UK–Morocco",
+        "UK–Palestine",
+        "Convention-only relationships stored as bilateral"
+      ],
+      "work_required": "Reconcile current bilateral list and both Convention versions; capture texts, formats, contributions, authorities and dates.",
+      "status": "UNRESOLVED_MATERIAL_TERMS",
+      "current_authority_findings": "BFI lists 14 active bilateral instruments (including separate China film/TV and South Africa film/TV) plus CETS 147 and 220; agreement must be in force for all parties; official status can qualify a work for AVEC/IFTC but does not make funding automatic.",
+      "sources": [
+        "https://www.bfi.org.uk/apply-british-certification-expenditure-credits/co-production/",
+        "https://www.coe.int/en/web/conventions/full-list/?module=signatures-by-treaty&treatynum=220"
+      ],
+      "effective_or_access_date": "2026-08-09"
+    },
+    {
+      "queue_id": "AUSTRALIA_PARTNER_LIST_RECONCILIATION",
+      "priority": "P0",
+      "stored_records": 8,
+      "official_authority": "https://www.screenaustralia.gov.au/co-production-program",
+      "missing_or_misclassified_frameworks_already_evidenced": [
+        "Australia–Canada",
+        "Australia–China",
+        "Australia–Israel",
+        "Australia–Singapore",
+        "Australia–South Africa"
+      ],
+      "work_required": "Reconcile current treaties/MOUs, formats, contribution tests, approval timing and national-treatment consequences.",
+      "status": "UNRESOLVED_MATERIAL_TERMS",
+      "current_authority_findings": "Screen Australia lists 12 treaties (Canada, China, Germany, India, Ireland, Israel, Italy, Korea, Malaysia, Singapore, South Africa, UK) and MOUs with France and New Zealand. Approval supplies national treatment and may bypass the significant Australian content test for Producer Offset; it does not guarantee funding.",
+      "sources": [
+        "https://www.screenaustralia.gov.au/co-production-program/co-production-partner-countries/",
+        "https://www.screenaustralia.gov.au/co-production-program/"
+      ],
+      "effective_or_access_date": "2026-08-09"
+    },
+    {
+      "queue_id": "CANADA_PARTNER_LIST_RECONCILIATION",
+      "priority": "P0",
+      "stored_records": 13,
+      "official_authority": "https://telefilm.ca/en/financing/coproduction",
+      "missing_or_misclassified_frameworks_already_evidenced": [
+        "Official Telefilm universe materially exceeds stored records"
+      ],
+      "work_required": "Diff complete current Telefilm treaty/MOU list; capture texts, authorities, contribution and nationality rules.",
+      "status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION",
+      "current_authority_findings": "The established Telefilm universe materially exceeds the 13 stored rows, but agreement-by-agreement contribution, format and effective-status capture remains incomplete.",
+      "sources": [
+        "https://telefilm.ca/en/financing/coproduction"
+      ],
+      "effective_or_access_date": "2026-08-09"
+    },
+    {
+      "queue_id": "FRANCE_BILATERAL_LIST_RECONCILIATION",
+      "priority": "P0",
+      "stored_records": 8,
+      "official_authority": "https://www.cnc.fr/professionnels/etudes-et-rapports/accords-internationaux/accords-de-coproduction-internationale_1115696",
+      "missing_or_misclassified_frameworks_already_evidenced": [
+        "CNC bilateral universe materially exceeds two stored France bilaterals"
+      ],
+      "work_required": "Diff CNC index; capture texts, versions, contributions, formats and national-treatment effects.",
+      "status": "UNRESOLVED_MATERIAL_TERMS",
+      "current_authority_findings": "CNC publishes a current agreements index dated 13 June 2025 and agreement texts; the bilateral universe materially exceeds the stored rows, but per-agreement contribution and format terms remain uncaptured.",
+      "sources": [
+        "https://www.cnc.fr/professionnels/etudes-et-rapports/accords-internationaux/accords-de-coproduction-internationale_1115696"
+      ],
+      "effective_or_access_date": "2025-06-13"
+    },
+    {
+      "queue_id": "EUROPEAN_CONVENTION_PARTICIPANTS_AND_VERSIONS",
+      "priority": "P1",
+      "stored_records": 1,
+      "official_authority": "https://www.coe.int/en/web/conventions/full-list/-/conventions/treaty/147",
+      "missing_or_misclassified_frameworks_already_evidenced": [
+        "Participant/version applicability incomplete"
+      ],
+      "work_required": "Capture signatories/ratifications for CETS 147/220, compatibility, dates and film-only scope.",
+      "status": "UNRESOLVED_PARTY_PAIR_APPLICABILITY",
+      "current_authority_findings": "CETS 220 entered into force 1 October 2017; CETS 147 and 220 coexist and the version must be in force for each party. Current ratification tables exist, but pairwise candidate generation remains uncaptured.",
+      "sources": [
+        "https://www.coe.int/en/web/conventions/full-list/?module=signatures-by-treaty&treatynum=220",
+        "https://www.coe.int/en/web/conventions/full-list/-/conventions/treaty/147"
+      ],
+      "effective_or_access_date": "2026-07-28"
+    },
+    {
+      "queue_id": "EURIMAGES_MEMBERSHIP_AND_ELIGIBILITY",
+      "priority": "P1",
+      "stored_records": 1,
+      "official_authority": "https://www.coe.int/en/web/eurimages",
+      "missing_or_misclassified_frameworks_already_evidenced": [
+        "Current membership/eligibility requires effective-dated capture"
+      ],
+      "work_required": "Reconcile membership, contribution/points, rounds, recoupment and national-incentive interaction.",
+      "status": "UNRESOLVED_FULL_CANONICAL_FIELDS",
+      "current_authority_findings": "2026 regulations are in force; support is a soft loan or subsidy, is competitive, uses three 2026 deadlines, and requires at least 50% confirmed financing in each co-producing country at application. Full membership, caps, contribution and national-incentive interaction remain to be encoded.",
+      "sources": [
+        "https://www.coe.int/en/web/eurimages/regulations-coproduction",
+        "https://eurimages-online.coe.int/Templates/CoprodRegulations_2026_EN.pdf",
+        "https://www.coe.int/en/web/eurimages/deadlines"
+      ],
+      "effective_or_access_date": "2026-01-01"
+    },
+    {
+      "queue_id": "IBERMEDIA_MEMBERSHIP_AND_FRAMEWORK",
+      "priority": "P1",
+      "stored_records": 1,
+      "official_authority": "https://www.programaibermedia.com",
+      "missing_or_misclassified_frameworks_already_evidenced": [
+        "Current member/call eligibility incomplete"
+      ],
+      "work_required": "Capture members, structures, contribution conditions, calls, caps, recoupment and interactions.",
+      "status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION",
+      "current_authority_findings": "Current member, call, cap, recoupment and interaction fields remain incomplete from primary authority.",
+      "sources": [
+        "https://www.programaibermedia.com"
+      ],
+      "effective_or_access_date": "2026-08-09"
+    },
+    {
+      "queue_id": "OTHER_STORED_BILATERAL_SOURCE_AND_TERM_REFRESH",
+      "priority": "P2",
+      "stored_records": 5,
+      "official_authority": "Use each competent authority in stored records.",
+      "missing_or_misclassified_frameworks_already_evidenced": [
+        "All PARSED records need current pinpoint support"
+      ],
+      "work_required": "Validate status, text, contributions, formats, nationality/creative tests, authority and timing.",
+      "status": "DEFERRED_P2",
+      "current_authority_findings": "No deterministic-impact evidence promoted this P2 batch.",
+      "sources": [],
+      "effective_or_access_date": null
+    }
+  ]
+}
