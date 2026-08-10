@@ -1608,10 +1608,10 @@
       "original_classification": "UNRESOLVED",
       "optimizer_relevance_class": "E",
       "research_priority": "P0",
-      "disposition": "REQUIRES_INTERPRETATION_RESOLUTION",
+      "disposition": "FUND_GRANT_CONDITIONAL",
       "remediation_layer": "DATA_ONLY",
-      "provenance": "Codex authority-completion pass did not close this record; no primary source yet located for one or more material canonical fields.",
-      "note": "NOT an interpretation conflict between engines \u2014 missing primary-authority research (priority P0). Layer is DATA_ONLY because the consuming schema (RateRule/DoctrineRecord/ProgramRequirementsProfile, QPE_CAP_RULES, min_qpe_usd gating) already exists and is proven (Incentive/Optimizer Core Closeout, commit 21af675); only the sourced data point is missing."
+      "provenance": "Final P0/P1 authority closure; sources: ['https://www.vipo.or.jp/en/location-project/', 'https://www.vipo.or.jp/project/ip360/']",
+      "note": "The stored generic row is not a deterministic rebate. Current VIPO support is fiscal-year, call-based JLOX+/location/content support selected by external review; availability, eligible period, ceilings and categories are call-specific."
     },
     {
       "canonical_id": "jo_rfc_rebate",
@@ -1895,10 +1895,10 @@
       "original_classification": "UNRESOLVED",
       "optimizer_relevance_class": "E",
       "research_priority": "P0",
-      "disposition": "REQUIRES_INTERPRETATION_RESOLUTION",
+      "disposition": "EXCLUDE_FROM_OPTIMIZER",
       "remediation_layer": "DATA_ONLY",
-      "provenance": "Codex authority-completion pass did not close this record; no primary source yet located for one or more material canonical fields.",
-      "note": "NOT an interpretation conflict between engines \u2014 missing primary-authority research (priority P0). Layer is DATA_ONLY because the consuming schema (RateRule/DoctrineRecord/ProgramRequirementsProfile, QPE_CAP_RULES, min_qpe_usd gating) already exists and is proven (Incentive/Optimizer Core Closeout, commit 21af675); only the sourced data point is missing."
+      "provenance": "Final P0/P1 authority closure; sources: ['https://ccm.ma/foreign_production/pe/index.html', 'https://www.ccm.ma/en/tournage-au-maroc']",
+      "note": "No separate economic tourism incentive is established. CCM tourism promotion/facilitation is part of the foreign-production support framework already represented by ma_ccm_rebate; merge references and exclude this duplicate row from pricing."
     },
     {
       "canonical_id": "mz_film_incentive",
@@ -2405,10 +2405,10 @@
       "original_classification": "UNRESOLVED",
       "optimizer_relevance_class": "E",
       "research_priority": "P0",
-      "disposition": "REQUIRES_INTERPRETATION_RESOLUTION",
+      "disposition": "FUND_GRANT_CONDITIONAL",
       "remediation_layer": "DATA_ONLY",
-      "provenance": "Codex authority-completion pass did not close this record; no primary source yet located for one or more material canonical fields.",
-      "note": "NOT an interpretation conflict between engines \u2014 missing primary-authority research (priority P0). Layer is DATA_ONLY because the consuming schema (RateRule/DoctrineRecord/ProgramRequirementsProfile, QPE_CAP_RULES, min_qpe_usd gating) already exists and is proven (Incentive/Optimizer Core Closeout, commit 21af675); only the sourced data point is missing."
+      "provenance": "Final P0/P1 authority closure; sources: ['https://www.imda.gov.sg/about-imda/research-and-statistics/support-for-industry-sectors/media/tap', 'https://www.imda.gov.sg/about-imda/research-and-statistics/support-for-industry-sectors/media/tap/tv']",
+      "note": "The generic Digital Media Development Fund label is not a current deterministic incentive. Current IMDA production support is through selective TAP content grants: selected Singapore productions/co-productions, up to 50% qualified spend for SMEs or 30% for non-SMEs, with project/episode caps and commissioner/platform evidence."
     },
     {
       "canonical_id": "sk_film_incentive",
@@ -2497,10 +2497,10 @@
       "original_classification": "UNRESOLVED",
       "optimizer_relevance_class": "E",
       "research_priority": "P0",
-      "disposition": "REQUIRES_INTERPRETATION_RESOLUTION",
+      "disposition": "FUND_GRANT_CONDITIONAL",
       "remediation_layer": "DATA_ONLY",
-      "provenance": "Codex authority-completion pass did not close this record; no primary source yet located for one or more material canonical fields.",
-      "note": "NOT an interpretation conflict between engines \u2014 missing primary-authority research (priority P0). Layer is DATA_ONLY because the consuming schema (RateRule/DoctrineRecord/ProgramRequirementsProfile, QPE_CAP_RULES, min_qpe_usd gating) already exists and is proven (Incentive/Optimizer Core Closeout, commit 21af675); only the sourced data point is missing."
+      "provenance": "Final P0/P1 authority closure; sources: ['https://www.kocca.kr/kocca/pims/list.do?category=4&menuNo=204104', 'https://www.kocca.kr/kocca/main.do']",
+      "note": "KOCCA animation/content production support is administered through dated competitive calls, not a standing deterministic rebate. Store as a conditional fund with zero guaranteed optimizer value unless a project-specific current award/call is supplied."
     },
     {
       "canonical_id": "rtve___radio_televisi\u00f3n_espa\u00f1ola_co_production_fund",
@@ -2825,10 +2825,10 @@
       "original_classification": "UNRESOLVED",
       "optimizer_relevance_class": "E",
       "research_priority": "P0",
-      "disposition": "REQUIRES_INTERPRETATION_RESOLUTION",
+      "disposition": "EXCLUDE_FROM_OPTIMIZER",
       "remediation_layer": "DATA_ONLY",
-      "provenance": "Codex authority-completion pass did not close this record; no primary source yet located for one or more material canonical fields.",
-      "note": "NOT an interpretation conflict between engines \u2014 missing primary-authority research (priority P0). Layer is DATA_ONLY because the consuming schema (RateRule/DoctrineRecord/ProgramRequirementsProfile, QPE_CAP_RULES, min_qpe_usd gating) already exists and is proven (Incentive/Optimizer Core Closeout, commit 21af675); only the sourced data point is missing."
+      "provenance": "Final P0/P1 authority closure; sources: ['https://www.screenskills.com/industry/film-skills-fund/contribute-to-the-film-skills-fund/']",
+      "note": "ScreenSkills Film Skills Fund is an industry-funded training mechanism, not a producer incentive. Productions are encouraged to contribute 0.5% of core UK expenditure subject to the published cap; the fund finances sector training and creates no deterministic production rebate."
     },
     {
       "canonical_id": "uk_avec",
@@ -3459,13 +3459,14 @@
       "subjurisdiction": "British Columbia",
       "program_name": "Film Incentive BC (FIBC)",
       "gemini_status": "CONFIRMED_MISSING",
-      "codex_completed_with_authority": false,
+      "codex_completed_with_authority": true,
       "authoritative_source": [
-        "https://www2.gov.bc.ca/gov/content/taxes/income-taxes/corporate/credits/film-tv/film-incentive"
+        "https://www2.gov.bc.ca/gov/content/taxes/income-taxes/corporate/credits/film-tv",
+        "https://www.bclaws.gov.bc.ca/civix/document/id/complete/statreg/4_99"
       ],
-      "disposition": "REQUIRES_INTERPRETATION_RESOLUTION",
+      "disposition": "ADD",
       "remediation_layer": "DATA_ONLY",
-      "resolution": "AGREED as CONFIRMED_MISSING (Gemini + Codex) but not yet source-complete enough to ADD \u2014 missing research, not a conflict."
+      "resolution": "Distinct refundable domestic Canadian-content labour credit. Basic 40% of qualified BC labour for productions starting principal photography on/after 2025-01-01; regional 12.5%, distant 6%, training lesser of 30% trainee payments or 3% qualified BC labour, DAVE 16%, scriptwriting 35%. Eligible BC production corporation, Canadian-content/certificate and filing gates apply."
     },
     {
       "canonical_id": "proposed_canada_quebec_refundable_tax_credit_for_film_production_services",
@@ -3473,13 +3474,14 @@
       "subjurisdiction": "Quebec",
       "program_name": "Refundable Tax Credit for Film Production Services",
       "gemini_status": "CONFIRMED_MISSING",
-      "codex_completed_with_authority": false,
+      "codex_completed_with_authority": true,
       "authoritative_source": [
-        "https://sodec.gouv.qc.ca/en/program/tax-credit-for-film-production-services/"
+        "https://www.revenuquebec.ca/fr/entreprises/impots/impot-des-societes/credits-dimpot-des-societes/credits-auxquels-une-societe-peut-avoir-droit/credit-dimpot-services-de-production-cinematographique/",
+        "https://sodec.gouv.qc.ca/wp-content/uploads/refundable-tax-credit-film-television-production-services-march-2024-4.pdf"
       ],
-      "disposition": "REQUIRES_INTERPRETATION_RESOLUTION",
+      "disposition": "ADD",
       "remediation_layer": "DATA_ONLY",
-      "resolution": "AGREED as CONFIRMED_MISSING (Gemini + Codex) but not yet source-complete enough to ADD \u2014 missing research, not a conflict."
+      "resolution": "Refundable services credit: 25% eligible production costs plus 16% eligible computer VFX/animation labour for qualifying post-2024 applications. Eligible Quebec establishment, SODEC favourable advance ruling/certificate and production eligibility apply. Service-contract VFX component is limited to 65% where specified."
     },
     {
       "canonical_id": "proposed_united_states_new_jersey_garden_state_film_and_digital_media_jobs_act_film_credit",
@@ -3575,13 +3577,14 @@
       "subjurisdiction": "Missouri",
       "program_name": "Motion Media Production Tax Credit",
       "gemini_status": "CONFIRMED_MISSING",
-      "codex_completed_with_authority": false,
+      "codex_completed_with_authority": true,
       "authoritative_source": [
-        "https://ded.mo.gov/programs/business-workforce/motion-media-production-tax-credit-program"
+        "https://ded.mo.gov/sites/g/files/zuston466/files/media/pdf/2023/10/Motion_Media_Tax_Credit_Guidelines_0.pdf",
+        "https://ded.mo.gov/sites/g/files/zuston466/files/media/pdf/2026/01/Final_Motion_Media_Tax_Credit_Application-updated-Jan-2026.pdf"
       ],
-      "disposition": "REQUIRES_INTERPRETATION_RESOLUTION",
+      "disposition": "ADD",
       "remediation_layer": "DATA_ONLY",
-      "resolution": "AGREED as CONFIRMED_MISSING (Gemini + Codex) but not yet source-complete enough to ADD \u2014 missing research, not a conflict."
+      "resolution": "Current transferable Missouri motion-media credit governed by the SHOW MO Act and DED guidelines. Eligibility, minimum spend, base credit and additions are project/workforce dependent; pre-authorization, qualified Missouri expenditure, final application and statutory annual allocation apply. Encode from the 2023 guidelines and 2026 final form, not a single guaranteed maximum rate."
     },
     {
       "canonical_id": "proposed_united_states_montana_media_tax_credit",
@@ -3632,13 +3635,14 @@
       "subjurisdiction": null,
       "program_name": "UK Global Screen Fund \u2014 International Co-production",
       "gemini_status": "CONFIRMED_MISSING",
-      "codex_completed_with_authority": false,
+      "codex_completed_with_authority": true,
       "authoritative_source": [
-        "https://www.bfi.org.uk/get-funding-support/create-films-tv-or-new-formats-storytelling/international-co-productions"
+        "https://www.bfi.org.uk/get-funding-support/funding-support-international-activity/uk-global-screen-fund/uk-global-screen-fund-uk-global-screen-fund-ukgsf-international-co-production",
+        "https://www.bfi.org.uk/get-funding-support/funding-support-international-activity/uk-global-screen-fund/uk-global-screen-fund-ukgsf-international-co-production/applying-uk-global-screen-fund-ukgsf-international-co-production"
       ],
-      "disposition": "REQUIRES_INTERPRETATION_RESOLUTION",
+      "disposition": "ADD",
       "remediation_layer": "DATA_ONLY",
-      "resolution": "AGREED as CONFIRMED_MISSING (Gemini + Codex) but not yet source-complete enough to ADD \u2014 missing research, not a conflict."
+      "resolution": "Competitive non-recoupable grant up to GBP300,000. UK independent producer; film minority co-production or eligible TV animation/documentary structure; at least 60% finance secured (80% fast track), other UK finance, British cultural/treaty qualification, UK contribution thresholds and eligible UK elements. Requested grant cannot exceed 50% of UK financial contribution."
     },
     {
       "canonical_id": "proposed_germany_german_motion_picture_fund_gmpf",
@@ -3646,13 +3650,14 @@
       "subjurisdiction": null,
       "program_name": "German Motion Picture Fund (GMPF)",
       "gemini_status": "CONFIRMED_MISSING",
-      "codex_completed_with_authority": false,
+      "codex_completed_with_authority": true,
       "authoritative_source": [
-        "https://www.ffa.de/files/ffa/av-info-publikationen-downloads/26_DFFF_GMPF_At_A_Glance_2025_EN.pdf"
+        "https://www.ffa.de/gmpf-guidelines",
+        "https://www.ffa.de/files/dfff/richtlinie/Richtlinien%20DFFF_GMPF_2026/GMPF_Guidelines_EN_2026.pdf"
       ],
-      "disposition": "REQUIRES_INTERPRETATION_RESOLUTION",
+      "disposition": "ADD",
       "remediation_layer": "DATA_ONLY",
-      "resolution": "AGREED as CONFIRMED_MISSING (Gemini + Codex) but not yet source-complete enough to ADD \u2014 missing research, not a conflict."
+      "resolution": "Distinct 2026 non-repayable grant for high-end series and non-theatrical films: up to 30% eligible German production costs, basis capped at 80% total production costs; film cap EUR5m, ordinary series cap EUR6m/season with separate high-cost series treatment. German applicant/branch, reference production, characteristic test, financing, German-cost minimums, pre-shoot application and ecological standards apply. General pre-costs and pre-existing rights/music are expressly excluded subject to stated exceptions."
     },
     {
       "canonical_id": "proposed_united_arab_emirates_abu_dhabi_abu_dhabi_35_production_rebate",
@@ -3675,13 +3680,14 @@
       "subjurisdiction": null,
       "program_name": "CINA Audiovisual Investment Certificate",
       "gemini_status": "CONFIRMED_MISSING",
-      "codex_completed_with_authority": false,
+      "codex_completed_with_authority": true,
       "authoritative_source": [
-        "https://www.proimagenescolombia.com/secciones/pantalla_colombia/breves_plantilla.php?id_noticia=13599"
+        "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=110937",
+        "https://normograma.mincultura.gov.co/compilacion/docs/resolucion_mincultura_0065_2021.htm"
       ],
-      "disposition": "REQUIRES_INTERPRETATION_RESOLUTION",
+      "disposition": "ADD",
       "remediation_layer": "DATA_ONLY",
-      "resolution": "AGREED as CONFIRMED_MISSING (Gemini + Codex) but not yet source-complete enough to ADD \u2014 missing research, not a conflict."
+      "resolution": "35% of approved investment in Colombia for non-national audiovisual works produced or post-produced wholly or partly in Colombia after prior CPFC approval. Investment must contract Colombian natural/legal persons supplying necessary audiovisual/cinematographic and qualifying logistical services. Contract, fiduciary, reporting and resource-manual requirements apply."
     },
     {
       "canonical_id": "proposed_spain_canary_islands_canary_islands_foreign_production_tax_deduction",
@@ -3703,13 +3709,14 @@
       "subjurisdiction": "Navarre",
       "program_name": "Navarre Audiovisual Production Tax Credit",
       "gemini_status": "CONFIRMED_MISSING",
-      "codex_completed_with_authority": false,
+      "codex_completed_with_authority": true,
       "authoritative_source": [
-        "https://www.investinspain.org/content/dam/icex-invest/documentos/publicaciones/sectores/industria-audiovisual/ICEX-Invest%20in%20Spain.%20Audiovisual.pdf"
+        "https://boe.es/buscar/doc.php?id=BOE-A-2026-3910",
+        "https://www.navarra.es/documents/48192/8347251/Gu%C3%ADa%2Bincentivo%2B%28EN%29.pdf/55013640-8406-5d98-aa42-9c87196e3d7c"
       ],
-      "disposition": "REQUIRES_INTERPRETATION_RESOLUTION",
+      "disposition": "ADD",
       "remediation_layer": "DATA_ONLY",
-      "resolution": "AGREED as CONFIRMED_MISSING (Gemini + Codex) but not yet source-complete enough to ADD \u2014 missing research, not a conflict."
+      "resolution": "Current Navarre producer deduction is generally 45%; 50% on the first EUR3m of basis for enumerated difficult works (Basque-only original, women-directed, documentary, animation, first feature/series director, shorts). EUR5m maximum. Basis is producer investment when Navarre spend reaches 40%; otherwise Navarre spend divided by 0.4. Basis may not exceed 80% of total audiovisual work cost; aid-intensity and certification rules apply."
     },
     {
       "canonical_id": "proposed_spain_basque_country_basque_provincial_audiovisual_tax_credits",
@@ -3745,13 +3752,14 @@
       "subjurisdiction": null,
       "program_name": "Netherlands Film Production Incentive \u2014 High-End Series",
       "gemini_status": "DUPLICATE",
-      "codex_completed_with_authority": false,
+      "codex_completed_with_authority": true,
       "authoritative_source": [
-        "https://www.filmfonds.nl/en/rules-and-regulations"
+        "https://www.filmfonds.nl/en/funding/fund/netherlands-film-production-incentive-high-end-series",
+        "https://assets.filmfonds.nl/Netherlands-Film-Fund-Regulationa-for-the-Netherlands-Film-Production-Incentive-High-End-Series-2025.pdf"
       ],
-      "disposition": "REQUIRES_INTERPRETATION_RESOLUTION",
+      "disposition": "ADD",
       "remediation_layer": "DATA_ONLY",
-      "resolution": "TRUE_INTERPRETATION_CONFLICT: Gemini calls this a duplicate of an existing Netherlands program; Codex's own missing-program record describes it as governed by a 'distinct series regulation' separate from the general NFPI. Available evidence does not clearly resolve administering-authority or legal-instrument identity either way (unlike the Thailand case). Genuinely unresolved \u2014 see GLOBAL_RECONCILIATION_EXCEPTIONS.json."
+      "resolution": "ADD as a distinct Filmfonds scheme, not a duplicate of the film-production scheme. Up to 35% demonstrably spent qualifying Dutch production costs, maximum EUR3m per project/year/applicant; drama, documentary and animation series/single episodes; independent eligible applicant; Dutch/foreign broadcast guarantees, minute-cost thresholds, 50% unconditional financing, 75-point test, financing within six months, pre-shoot timing and 36-month delivery."
     },
     {
       "canonical_id": "th_prd_foreign_digital_content_incentive",
@@ -3788,10 +3796,10 @@
   ],
   "accounting": {
     "existing_262_by_disposition": {
-      "REQUIRES_INTERPRETATION_RESOLUTION": 157,
-      "FUND_GRANT_CONDITIONAL": 62,
+      "REQUIRES_INTERPRETATION_RESOLUTION": 152,
+      "FUND_GRANT_CONDITIONAL": 65,
       "CORRECT": 24,
-      "EXCLUDE_FROM_OPTIMIZER": 8,
+      "EXCLUDE_FROM_OPTIMIZER": 10,
       "KEEP_AS_IS": 8,
       "COMPLETE": 3
     },
@@ -3801,11 +3809,25 @@
       "NO_CHANGE": 8
     },
     "missing_23_by_disposition": {
-      "ADD": 12,
-      "REQUIRES_INTERPRETATION_RESOLUTION": 10,
+      "ADD": 20,
+      "REQUIRES_INTERPRETATION_RESOLUTION": 2,
       "MERGE": 1
     },
     "final_canonical_program_universe": 284,
-    "final_canonical_program_universe_note": "262 existing + 22 net-new distinct programs from the 23 missing discoveries (South Africa's discovery MERGEs into the existing za_nfvf_rebate record rather than adding a new row). Gemini's 2 additional discoveries both resolve to duplicates of already-counted programs (Canary Islands duplicates one of the 22; Hungary Base Rebate duplicates an existing 262 record) and add 0 net-new rows."
+    "final_canonical_program_universe_note": "262 existing + 22 net-new distinct programs from the 23 missing discoveries (South Africa's discovery MERGEs into the existing za_nfvf_rebate record rather than adding a new row). Gemini's 2 additional discoveries both resolve to duplicates of already-counted programs (Canary Islands duplicates one of the 22; Hungary Base Rebate duplicates an existing 262 record) and add 0 net-new rows.",
+    "final_authority_closure": {
+      "STARTING_BLOCKERS": 174,
+      "existing_starting": 157,
+      "missing_starting": 10,
+      "treaty_starting": 7,
+      "existing_closed": 5,
+      "existing_remaining": 152,
+      "missing_closed": 8,
+      "missing_remaining": 2,
+      "treaty_closed": 0,
+      "treaty_remaining": 7,
+      "TOTAL_CLOSED": 13,
+      "TOTAL_REMAINING": 161
+    }
   }
 }

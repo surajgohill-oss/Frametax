@@ -1,0 +1,1481 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-10",
+  "accounting": {
+    "treaty_starting": 7,
+    "treaty_closed": 0,
+    "treaty_remaining": 7
+  },
+  "queues": [
+    {
+      "blocker_type": "treaty_queue",
+      "canonical_id": "UK_BILATERAL_AND_CONVENTION_RECONCILIATION",
+      "priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authority_sources": [
+        "https://www.bfi.org.uk/apply-british-certification-expenditure-credits/co-production/"
+      ],
+      "remaining_exact_question": "Reconcile current bilateral list and both Convention versions; capture texts, formats, contributions, authorities and dates.",
+      "reason_not_closed": "Current generic/list authority does not yet supply per-pathway version, format, contribution, nationality/creative, approval, national-treatment and domestic-incentive interaction fields for every affected pathway."
+    },
+    {
+      "blocker_type": "treaty_queue",
+      "canonical_id": "AUSTRALIA_PARTNER_LIST_RECONCILIATION",
+      "priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authority_sources": [
+        "https://www.screenaustralia.gov.au/co-production-program"
+      ],
+      "remaining_exact_question": "Reconcile current treaties/MOUs, formats, contribution tests, approval timing and national-treatment consequences.",
+      "reason_not_closed": "Current generic/list authority does not yet supply per-pathway version, format, contribution, nationality/creative, approval, national-treatment and domestic-incentive interaction fields for every affected pathway."
+    },
+    {
+      "blocker_type": "treaty_queue",
+      "canonical_id": "CANADA_PARTNER_LIST_RECONCILIATION",
+      "priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authority_sources": [
+        "https://telefilm.ca/en/financing/coproduction"
+      ],
+      "remaining_exact_question": "Diff complete current Telefilm treaty/MOU list; capture texts, authorities, contribution and nationality rules.",
+      "reason_not_closed": "Current generic/list authority does not yet supply per-pathway version, format, contribution, nationality/creative, approval, national-treatment and domestic-incentive interaction fields for every affected pathway."
+    },
+    {
+      "blocker_type": "treaty_queue",
+      "canonical_id": "FRANCE_BILATERAL_LIST_RECONCILIATION",
+      "priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authority_sources": [
+        "https://www.cnc.fr/professionnels/etudes-et-rapports/accords-internationaux/accords-de-coproduction-internationale_1115696"
+      ],
+      "remaining_exact_question": "Diff CNC index; capture texts, versions, contributions, formats and national-treatment effects.",
+      "reason_not_closed": "Current generic/list authority does not yet supply per-pathway version, format, contribution, nationality/creative, approval, national-treatment and domestic-incentive interaction fields for every affected pathway."
+    },
+    {
+      "blocker_type": "treaty_queue",
+      "canonical_id": "EUROPEAN_CONVENTION_PARTICIPANTS_AND_VERSIONS",
+      "priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authority_sources": [
+        "https://www.coe.int/en/web/conventions/full-list/-/conventions/treaty/147"
+      ],
+      "remaining_exact_question": "Capture signatories/ratifications for CETS 147/220, compatibility, dates and film-only scope.",
+      "reason_not_closed": "Current generic/list authority does not yet supply per-pathway version, format, contribution, nationality/creative, approval, national-treatment and domestic-incentive interaction fields for every affected pathway."
+    },
+    {
+      "blocker_type": "treaty_queue",
+      "canonical_id": "EURIMAGES_MEMBERSHIP_AND_ELIGIBILITY",
+      "priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authority_sources": [
+        "https://www.coe.int/en/web/eurimages"
+      ],
+      "remaining_exact_question": "Reconcile membership, contribution/points, rounds, recoupment and national-incentive interaction.",
+      "reason_not_closed": "Current generic/list authority does not yet supply per-pathway version, format, contribution, nationality/creative, approval, national-treatment and domestic-incentive interaction fields for every affected pathway."
+    },
+    {
+      "blocker_type": "treaty_queue",
+      "canonical_id": "IBERMEDIA_MEMBERSHIP_AND_FRAMEWORK",
+      "priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authority_sources": [
+        "https://www.programaibermedia.com"
+      ],
+      "remaining_exact_question": "Capture members, structures, contribution conditions, calls, caps, recoupment and interactions.",
+      "reason_not_closed": "Current generic/list authority does not yet supply per-pathway version, format, contribution, nationality/creative, approval, national-treatment and domestic-incentive interaction fields for every affected pathway."
+    }
+  ],
+  "stored_pathway_supporting_records": [
+    {
+      "a": "AU",
+      "b": "FR",
+      "slug": "au-fr-bilateral",
+      "type": "bilateral",
+      "spend": "Australian spend qualifies for Producer Offset; French spend for TRIP.",
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel from both countries.",
+      "treaty_name": "Australia–France Co-production Treaty",
+      "majority_min": 20,
+      "minority_max": 80,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://www.screenaustralia.gov.au/funding-and-support/co-productions",
+      "effective_from": "2010-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "AU",
+      "b": "DE",
+      "slug": "au-de-bilateral",
+      "type": "bilateral",
+      "spend": null,
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel from both countries.",
+      "treaty_name": "Australia–Germany Co-production Treaty",
+      "majority_min": 20,
+      "minority_max": 80,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://www.screenaustralia.gov.au/funding-and-support/co-productions",
+      "effective_from": "2001-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "AU",
+      "b": "IE",
+      "slug": "au-ie-bilateral",
+      "type": "bilateral",
+      "spend": null,
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel from both countries.",
+      "treaty_name": "Australia–Ireland Co-production Treaty",
+      "majority_min": 20,
+      "minority_max": 80,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://www.screenaustralia.gov.au/funding-and-support/co-productions",
+      "effective_from": "2008-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "AU",
+      "b": "IT",
+      "slug": "au-it-bilateral",
+      "type": "bilateral",
+      "spend": null,
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel from both countries.",
+      "treaty_name": "Australia–Italy Co-production Treaty",
+      "majority_min": 20,
+      "minority_max": 80,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://www.screenaustralia.gov.au/funding-and-support/co-productions",
+      "effective_from": "2009-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "AU",
+      "b": "NZ",
+      "slug": "au-nz-bilateral",
+      "type": "bilateral",
+      "spend": "Australian spend qualifies for Producer Offset; NZ spend for NZSPGR.",
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel from both countries.",
+      "treaty_name": "Australia–New Zealand Co-production Treaty",
+      "majority_min": 20,
+      "minority_max": 80,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://www.screenaustralia.gov.au/funding-and-support/co-productions",
+      "effective_from": "2010-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "AU",
+      "b": "KR",
+      "slug": "au-kr-bilateral",
+      "type": "bilateral",
+      "spend": null,
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel from both countries.",
+      "treaty_name": "Australia–South Korea Co-production Treaty",
+      "majority_min": 20,
+      "minority_max": 80,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://www.screenaustralia.gov.au/funding-and-support/co-productions",
+      "effective_from": "2006-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "CA",
+      "b": "AU",
+      "slug": "ca-au-bilateral",
+      "type": "bilateral",
+      "spend": null,
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel from both countries.",
+      "treaty_name": "Canada–Australia Co-production Treaty",
+      "majority_min": 20,
+      "minority_max": 80,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://telefilm.ca/en/co-production",
+      "effective_from": "1990-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "CA",
+      "b": "BE",
+      "slug": "ca-be-bilateral",
+      "type": "bilateral",
+      "spend": null,
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel from both countries.",
+      "treaty_name": "Canada–Belgium Co-production Treaty",
+      "majority_min": 30,
+      "minority_max": 70,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://telefilm.ca/en/co-production",
+      "effective_from": "1984-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "CA",
+      "b": "CN",
+      "slug": "ca-cn-bilateral",
+      "type": "bilateral",
+      "spend": null,
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel from both countries.",
+      "treaty_name": "Canada–China Co-production Treaty",
+      "majority_min": 30,
+      "minority_max": 70,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://telefilm.ca/en/co-production",
+      "effective_from": "1987-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "CA",
+      "b": "FR",
+      "slug": "ca-fr-bilateral",
+      "type": "bilateral",
+      "spend": "Canadian spend qualifies for CPTC and CMF; French spend for tax crédit cinéma.",
+      "status": "active",
+      "creative": "Both parties must provide substantive creative input. QPRDP (Québec) applies where French co-producer is involved.",
+      "confidence": "PARSED",
+      "nationality": "Director or writer must be Canadian or French. Francophone Canadian productions benefit from Québec co-production status.",
+      "treaty_name": "Canada–France Co-production Treaty",
+      "majority_min": 30,
+      "minority_max": 70,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://telefilm.ca/en/co-production",
+      "effective_from": "1983-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "CA",
+      "b": "DE",
+      "slug": "ca-de-bilateral",
+      "type": "bilateral",
+      "spend": null,
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel from both countries.",
+      "treaty_name": "Canada–Germany Co-production Treaty",
+      "majority_min": 30,
+      "minority_max": 70,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://telefilm.ca/en/co-production",
+      "effective_from": "1987-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "CA",
+      "b": "IE",
+      "slug": "ca-ie-bilateral",
+      "type": "bilateral",
+      "spend": "Canadian spend qualifies for CPTC; Irish spend qualifies for Section 481.",
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": null,
+      "treaty_name": "Canada–Ireland Co-production Treaty",
+      "majority_min": 20,
+      "minority_max": 80,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://telefilm.ca/en/co-production",
+      "effective_from": "1989-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "CA",
+      "b": "IT",
+      "slug": "ca-it-bilateral",
+      "type": "bilateral",
+      "spend": null,
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel from both countries.",
+      "treaty_name": "Canada–Italy Co-production Treaty",
+      "majority_min": 30,
+      "minority_max": 70,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://telefilm.ca/en/co-production",
+      "effective_from": "1989-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "CA",
+      "b": "MX",
+      "slug": "ca-mx-bilateral",
+      "type": "bilateral",
+      "spend": null,
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel from both countries.",
+      "treaty_name": "Canada–Mexico Co-production Treaty",
+      "majority_min": 20,
+      "minority_max": 80,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://telefilm.ca/en/co-production",
+      "effective_from": "1999-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "CA",
+      "b": "NZ",
+      "slug": "ca-nz-bilateral",
+      "type": "bilateral",
+      "spend": null,
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel from both countries.",
+      "treaty_name": "Canada–New Zealand Co-production Treaty",
+      "majority_min": 20,
+      "minority_max": 80,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://telefilm.ca/en/co-production",
+      "effective_from": "1994-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "CA",
+      "b": "ZA",
+      "slug": "ca-za-bilateral",
+      "type": "bilateral",
+      "spend": null,
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel from both countries.",
+      "treaty_name": "Canada–South Africa Co-production Treaty",
+      "majority_min": 20,
+      "minority_max": 80,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://telefilm.ca/en/co-production",
+      "effective_from": "1997-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "CA",
+      "b": "ES",
+      "slug": "ca-es-bilateral",
+      "type": "bilateral",
+      "spend": null,
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel from both countries.",
+      "treaty_name": "Canada–Spain Co-production Treaty",
+      "majority_min": 30,
+      "minority_max": 70,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://telefilm.ca/en/co-production",
+      "effective_from": "1985-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "CA",
+      "b": "CH",
+      "slug": "ca-ch-bilateral",
+      "type": "bilateral",
+      "spend": null,
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel from both countries.",
+      "treaty_name": "Canada–Switzerland Co-production Treaty",
+      "majority_min": 30,
+      "minority_max": 70,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://telefilm.ca/en/co-production",
+      "effective_from": "1988-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "EU",
+      "b": null,
+      "slug": "eurimages-multilateral",
+      "type": "eurimages",
+      "spend": "Each co-producing country must have a genuine financial and creative contribution. Minimum 10% of budget per co-producer required for Eurimages eligibility. At least one co-producer must be from a Council of Europe member state.",
+      "status": "active",
+      "creative": "Each co-producer must make genuine creative contribution. Project must reflect the cultural heritage of at least one Council of Europe member state.",
+      "confidence": "PARSED",
+      "nationality": "Director and majority of cast and crew must be from Council of Europe member states. No single country's nationals can exceed 80% of key creative personnel.",
+      "treaty_name": "Eurimages Co-production Support Fund",
+      "majority_min": 10,
+      "minority_max": null,
+      "minority_min": 10,
+      "participants": [
+        {
+          "code": "AL",
+          "name": "Albania",
+          "status": "active"
+        },
+        {
+          "code": "AM",
+          "name": "Armenia",
+          "status": "active"
+        },
+        {
+          "code": "AT",
+          "name": "Austria",
+          "status": "active"
+        },
+        {
+          "code": "AZ",
+          "name": "Azerbaijan",
+          "status": "active"
+        },
+        {
+          "code": "BE",
+          "name": "Belgium",
+          "status": "active"
+        },
+        {
+          "code": "BA",
+          "name": "Bosnia and Herzegovina",
+          "status": "active"
+        },
+        {
+          "code": "HR",
+          "name": "Croatia",
+          "status": "active"
+        },
+        {
+          "code": "CY",
+          "name": "Cyprus",
+          "status": "active"
+        },
+        {
+          "code": "CZ",
+          "name": "Czech Republic",
+          "status": "active"
+        },
+        {
+          "code": "DK",
+          "name": "Denmark",
+          "status": "active"
+        },
+        {
+          "code": "EE",
+          "name": "Estonia",
+          "status": "active"
+        },
+        {
+          "code": "FI",
+          "name": "Finland",
+          "status": "active"
+        },
+        {
+          "code": "FR",
+          "name": "France",
+          "status": "active"
+        },
+        {
+          "code": "GE",
+          "name": "Georgia",
+          "status": "active"
+        },
+        {
+          "code": "DE",
+          "name": "Germany",
+          "status": "active"
+        },
+        {
+          "code": "GR",
+          "name": "Greece",
+          "status": "active"
+        },
+        {
+          "code": "HU",
+          "name": "Hungary",
+          "status": "active"
+        },
+        {
+          "code": "IS",
+          "name": "Iceland",
+          "status": "active"
+        },
+        {
+          "code": "IE",
+          "name": "Ireland",
+          "status": "active"
+        },
+        {
+          "code": "IT",
+          "name": "Italy",
+          "status": "active"
+        },
+        {
+          "code": "LV",
+          "name": "Latvia",
+          "status": "active"
+        },
+        {
+          "code": "LI",
+          "name": "Liechtenstein",
+          "status": "active"
+        },
+        {
+          "code": "LT",
+          "name": "Lithuania",
+          "status": "active"
+        },
+        {
+          "code": "LU",
+          "name": "Luxembourg",
+          "status": "active"
+        },
+        {
+          "code": "MT",
+          "name": "Malta",
+          "status": "active"
+        },
+        {
+          "code": "MD",
+          "name": "Moldova",
+          "status": "active"
+        },
+        {
+          "code": "ME",
+          "name": "Montenegro",
+          "status": "active"
+        },
+        {
+          "code": "NL",
+          "name": "Netherlands",
+          "status": "active"
+        },
+        {
+          "code": "MK",
+          "name": "North Macedonia",
+          "status": "active"
+        },
+        {
+          "code": "NO",
+          "name": "Norway",
+          "status": "active"
+        },
+        {
+          "code": "PL",
+          "name": "Poland",
+          "status": "active"
+        },
+        {
+          "code": "PT",
+          "name": "Portugal",
+          "status": "active"
+        },
+        {
+          "code": "RO",
+          "name": "Romania",
+          "status": "active"
+        },
+        {
+          "code": "SM",
+          "name": "San Marino",
+          "status": "active"
+        },
+        {
+          "code": "RS",
+          "name": "Serbia",
+          "status": "active"
+        },
+        {
+          "code": "SK",
+          "name": "Slovakia",
+          "status": "active"
+        },
+        {
+          "code": "SI",
+          "name": "Slovenia",
+          "status": "active"
+        },
+        {
+          "code": "ES",
+          "name": "Spain",
+          "status": "active"
+        },
+        {
+          "code": "SE",
+          "name": "Sweden",
+          "status": "active"
+        },
+        {
+          "code": "CH",
+          "name": "Switzerland",
+          "status": "active"
+        },
+        {
+          "code": "TR",
+          "name": "Turkey",
+          "status": "active"
+        },
+        {
+          "code": "UA",
+          "name": "Ukraine",
+          "status": "active"
+        },
+        {
+          "code": "GB",
+          "name": "United Kingdom",
+          "status": "active"
+        },
+        {
+          "code": "VA",
+          "name": "Vatican City",
+          "status": "active"
+        }
+      ],
+      "authority_url": "https://www.coe.int/en/web/eurimages",
+      "effective_from": "1988-01-01",
+      "effective_until": null,
+      "cultural_test_required": true,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "EU",
+      "b": null,
+      "slug": "european-convention-coproduction",
+      "type": "european_convention",
+      "spend": "Budget allocation must reflect each co-producer's creative contribution. For bilateral co-productions under the Convention, majority party must hold 30–70% and minority party at least 10%.",
+      "status": "active",
+      "creative": "Both/all parties must make genuine creative contributions. Applies to Council of Europe member states. Provides a legal framework making the production 'European' for quota and certification purposes.",
+      "confidence": "PARSED",
+      "nationality": "Majority of creative personnel must be European. Director must be European. For bilateral co-productions, key creatives from both countries required.",
+      "treaty_name": "European Convention on Cinematographic Co-production",
+      "majority_min": 30,
+      "minority_max": 70,
+      "minority_min": 10,
+      "participants": [
+        {
+          "code": "AL",
+          "name": "Albania",
+          "status": "active"
+        },
+        {
+          "code": "AM",
+          "name": "Armenia",
+          "status": "active"
+        },
+        {
+          "code": "AT",
+          "name": "Austria",
+          "status": "active"
+        },
+        {
+          "code": "AZ",
+          "name": "Azerbaijan",
+          "status": "active"
+        },
+        {
+          "code": "BE",
+          "name": "Belgium",
+          "status": "active"
+        },
+        {
+          "code": "BA",
+          "name": "Bosnia and Herzegovina",
+          "status": "active"
+        },
+        {
+          "code": "HR",
+          "name": "Croatia",
+          "status": "active"
+        },
+        {
+          "code": "CY",
+          "name": "Cyprus",
+          "status": "active"
+        },
+        {
+          "code": "CZ",
+          "name": "Czech Republic",
+          "status": "active"
+        },
+        {
+          "code": "DK",
+          "name": "Denmark",
+          "status": "active"
+        },
+        {
+          "code": "EE",
+          "name": "Estonia",
+          "status": "active"
+        },
+        {
+          "code": "FI",
+          "name": "Finland",
+          "status": "active"
+        },
+        {
+          "code": "FR",
+          "name": "France",
+          "status": "active"
+        },
+        {
+          "code": "GE",
+          "name": "Georgia",
+          "status": "active"
+        },
+        {
+          "code": "DE",
+          "name": "Germany",
+          "status": "active"
+        },
+        {
+          "code": "GR",
+          "name": "Greece",
+          "status": "active"
+        },
+        {
+          "code": "HU",
+          "name": "Hungary",
+          "status": "active"
+        },
+        {
+          "code": "IS",
+          "name": "Iceland",
+          "status": "active"
+        },
+        {
+          "code": "IE",
+          "name": "Ireland",
+          "status": "active"
+        },
+        {
+          "code": "IT",
+          "name": "Italy",
+          "status": "active"
+        },
+        {
+          "code": "LV",
+          "name": "Latvia",
+          "status": "active"
+        },
+        {
+          "code": "LI",
+          "name": "Liechtenstein",
+          "status": "active"
+        },
+        {
+          "code": "LT",
+          "name": "Lithuania",
+          "status": "active"
+        },
+        {
+          "code": "LU",
+          "name": "Luxembourg",
+          "status": "active"
+        },
+        {
+          "code": "MT",
+          "name": "Malta",
+          "status": "active"
+        },
+        {
+          "code": "MD",
+          "name": "Moldova",
+          "status": "active"
+        },
+        {
+          "code": "ME",
+          "name": "Montenegro",
+          "status": "active"
+        },
+        {
+          "code": "NL",
+          "name": "Netherlands",
+          "status": "active"
+        },
+        {
+          "code": "MK",
+          "name": "North Macedonia",
+          "status": "active"
+        },
+        {
+          "code": "NO",
+          "name": "Norway",
+          "status": "active"
+        },
+        {
+          "code": "PL",
+          "name": "Poland",
+          "status": "active"
+        },
+        {
+          "code": "PT",
+          "name": "Portugal",
+          "status": "active"
+        },
+        {
+          "code": "RO",
+          "name": "Romania",
+          "status": "active"
+        },
+        {
+          "code": "SM",
+          "name": "San Marino",
+          "status": "active"
+        },
+        {
+          "code": "RS",
+          "name": "Serbia",
+          "status": "active"
+        },
+        {
+          "code": "SK",
+          "name": "Slovakia",
+          "status": "active"
+        },
+        {
+          "code": "SI",
+          "name": "Slovenia",
+          "status": "active"
+        },
+        {
+          "code": "ES",
+          "name": "Spain",
+          "status": "active"
+        },
+        {
+          "code": "SE",
+          "name": "Sweden",
+          "status": "active"
+        },
+        {
+          "code": "CH",
+          "name": "Switzerland",
+          "status": "active"
+        },
+        {
+          "code": "TR",
+          "name": "Turkey",
+          "status": "active"
+        },
+        {
+          "code": "UA",
+          "name": "Ukraine",
+          "status": "active"
+        },
+        {
+          "code": "GB",
+          "name": "United Kingdom",
+          "status": "active"
+        },
+        {
+          "code": "VA",
+          "name": "Vatican City",
+          "status": "active"
+        }
+      ],
+      "authority_url": "https://www.coe.int/en/web/conventions/full-list/-/conventions/treaty/147",
+      "effective_from": "1994-04-01",
+      "effective_until": null,
+      "cultural_test_required": true,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "FR",
+      "b": "BE",
+      "slug": "fr-be-bilateral",
+      "type": "bilateral",
+      "spend": "French spend qualifies for tax crédit cinéma; Belgian spend for tax shelter.",
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": null,
+      "treaty_name": "France–Belgium Co-production Treaty",
+      "majority_min": 30,
+      "minority_max": 70,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://www.cnc.fr/professionnels/aides/international",
+      "effective_from": "1965-01-01",
+      "effective_until": null,
+      "cultural_test_required": true,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "FR",
+      "b": "DE",
+      "slug": "fr-de-bilateral",
+      "type": "bilateral",
+      "spend": "French spend qualifies for tax crédit cinéma; German spend for DFFF and Länder funds.",
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel from both countries.",
+      "treaty_name": "France–Germany Co-production Treaty",
+      "majority_min": 30,
+      "minority_max": 70,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://www.cnc.fr/professionnels/aides/international",
+      "effective_from": "2001-01-01",
+      "effective_until": null,
+      "cultural_test_required": true,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "DE",
+      "b": "AT",
+      "slug": "de-at-bilateral",
+      "type": "bilateral",
+      "spend": "German spend for DFFF/FFA; Austrian spend for FISA+/ÖFI.",
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel from both countries.",
+      "treaty_name": "Germany–Austria Co-production Treaty",
+      "majority_min": 30,
+      "minority_max": 70,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://www.ffa.de/koprodukationsvertrag.html",
+      "effective_from": "1993-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "DE",
+      "b": "CZ",
+      "slug": "de-cz-bilateral",
+      "type": "bilateral",
+      "spend": "German spend for DFFF/FFA; Czech spend for Czech Film Fund.",
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel from both countries.",
+      "treaty_name": "Germany–Czech Republic Co-production Treaty",
+      "majority_min": 30,
+      "minority_max": 70,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://www.ffa.de/koprodukationsvertrag.html",
+      "effective_from": "1994-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "DE",
+      "b": "HU",
+      "slug": "de-hu-bilateral",
+      "type": "bilateral",
+      "spend": "German spend for DFFF/FFA; Hungarian spend for NFI grants.",
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel from both countries.",
+      "treaty_name": "Germany–Hungary Co-production Treaty",
+      "majority_min": 30,
+      "minority_max": 70,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://www.ffa.de/koprodukationsvertrag.html",
+      "effective_from": "1994-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "DE",
+      "b": "PL",
+      "slug": "de-pl-bilateral",
+      "type": "bilateral",
+      "spend": "German spend for DFFF/FFA; Polish spend for PISF grants.",
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel from both countries.",
+      "treaty_name": "Germany–Poland Co-production Treaty",
+      "majority_min": 30,
+      "minority_max": 70,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://www.ffa.de/koprodukationsvertrag.html",
+      "effective_from": "1994-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "ES",
+      "b": null,
+      "slug": "ibermedia-multilateral",
+      "type": "ibermedia",
+      "spend": "Projects must involve producers from at least 2 Ibermedia member states. Budget allocation proportional to creative contribution. Majority producer holds project lead role.",
+      "status": "active",
+      "creative": "All co-producers must contribute creatively to the project. Script must reflect Ibero-American cultural identity.",
+      "confidence": "PARSED",
+      "nationality": "Director must be a national of an Ibermedia member state. Majority of key creative personnel from Ibermedia member states.",
+      "treaty_name": "Ibermedia Co-production Programme",
+      "majority_min": 20,
+      "minority_max": null,
+      "minority_min": 10,
+      "participants": [
+        {
+          "code": "AR",
+          "name": "Argentina",
+          "status": "active"
+        },
+        {
+          "code": "BO",
+          "name": "Bolivia",
+          "status": "active"
+        },
+        {
+          "code": "BR",
+          "name": "Brazil",
+          "status": "active"
+        },
+        {
+          "code": "CL",
+          "name": "Chile",
+          "status": "active"
+        },
+        {
+          "code": "CO",
+          "name": "Colombia",
+          "status": "active"
+        },
+        {
+          "code": "CR",
+          "name": "Costa Rica",
+          "status": "active"
+        },
+        {
+          "code": "CU",
+          "name": "Cuba",
+          "status": "active"
+        },
+        {
+          "code": "DO",
+          "name": "Dominican Republic",
+          "status": "active"
+        },
+        {
+          "code": "EC",
+          "name": "Ecuador",
+          "status": "active"
+        },
+        {
+          "code": "SV",
+          "name": "El Salvador",
+          "status": "active"
+        },
+        {
+          "code": "GT",
+          "name": "Guatemala",
+          "status": "active"
+        },
+        {
+          "code": "HN",
+          "name": "Honduras",
+          "status": "active"
+        },
+        {
+          "code": "MX",
+          "name": "Mexico",
+          "status": "active"
+        },
+        {
+          "code": "NI",
+          "name": "Nicaragua",
+          "status": "active"
+        },
+        {
+          "code": "PA",
+          "name": "Panama",
+          "status": "active"
+        },
+        {
+          "code": "PY",
+          "name": "Paraguay",
+          "status": "active"
+        },
+        {
+          "code": "PE",
+          "name": "Peru",
+          "status": "active"
+        },
+        {
+          "code": "PT",
+          "name": "Portugal",
+          "status": "active"
+        },
+        {
+          "code": "ES",
+          "name": "Spain",
+          "status": "active"
+        },
+        {
+          "code": "UY",
+          "name": "Uruguay",
+          "status": "active"
+        },
+        {
+          "code": "VE",
+          "name": "Venezuela",
+          "status": "active"
+        }
+      ],
+      "authority_url": "https://www.programaibermedia.com",
+      "effective_from": "1997-01-01",
+      "effective_until": null,
+      "cultural_test_required": true,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "KR",
+      "b": "FR",
+      "slug": "kr-fr-bilateral",
+      "type": "bilateral",
+      "spend": "Korean spend for KOFIC; French spend for TRIP and CNC support.",
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel from both countries.",
+      "treaty_name": "Korea–France Co-production Treaty",
+      "majority_min": 30,
+      "minority_max": 70,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://www.kofic.or.kr/kofic/business/coproduction/findInternationalCoproductionList.do",
+      "effective_from": "2006-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "KR",
+      "b": "DE",
+      "slug": "kr-de-bilateral",
+      "type": "bilateral",
+      "spend": "Korean spend for KOFIC; German spend for DFFF and Länder.",
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel from both countries.",
+      "treaty_name": "Korea–Germany Co-production Treaty",
+      "majority_min": 30,
+      "minority_max": 70,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://www.kofic.or.kr/kofic/business/coproduction/findInternationalCoproductionList.do",
+      "effective_from": "2004-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "GB",
+      "b": "AU",
+      "slug": "uk-au-bilateral",
+      "type": "bilateral",
+      "spend": "Each co-producer responsible for spend in their own territory. Minimum 20% of budget must be spent in each party's territory.",
+      "status": "active",
+      "creative": "Both parties must make genuine creative contributions to the production.",
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel from both countries. Minimum two Australian key creatives; minimum two UK key creatives.",
+      "treaty_name": "UK–Australia Co-production Treaty",
+      "majority_min": 20,
+      "minority_max": 80,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://www.bfi.org.uk/supporting-uk-film/production-and-development-funding/co-production-treaties",
+      "effective_from": "1990-07-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "GB",
+      "b": "CA",
+      "slug": "uk-ca-bilateral",
+      "type": "bilateral",
+      "spend": "Budget allocation must reflect each party's creative contribution. UK spend qualifies for UK tax reliefs; Canadian spend qualifies for Canadian federal and provincial incentives.",
+      "status": "active",
+      "creative": "Each co-producer must contribute meaningful creative input including story, script, or principal creative elements.",
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel (director, writer, lead cast) must include nationals of both treaty countries proportionate to each party's contribution.",
+      "treaty_name": "UK–Canada Co-production Treaty",
+      "majority_min": 30,
+      "minority_max": 70,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://www.bfi.org.uk/supporting-uk-film/production-and-development-funding/co-production-treaties",
+      "effective_from": "1975-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "GB",
+      "b": "FR",
+      "slug": "uk-fr-bilateral",
+      "type": "bilateral",
+      "spend": "Budget allocation proportional to creative contribution. French spend qualifies for tax crédit cinéma; UK spend for AVEC.",
+      "status": "active",
+      "creative": "Both parties must provide substantive creative input. Director, writer, or lead performer nationality conditions apply.",
+      "confidence": "PARSED",
+      "nationality": "Director or writer must be UK or French national. Principal cast must include nationals from both countries.",
+      "treaty_name": "UK–France Co-production Treaty",
+      "majority_min": 30,
+      "minority_max": 70,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://www.bfi.org.uk/supporting-uk-film/production-and-development-funding/co-production-treaties",
+      "effective_from": "1994-01-01",
+      "effective_until": null,
+      "cultural_test_required": true,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "GB",
+      "b": "DE",
+      "slug": "uk-de-bilateral",
+      "type": "bilateral",
+      "spend": "German spend qualifies for DFFF and regional German funds; UK spend qualifies for AVEC.",
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel from both countries required. At minimum director or lead writer from each party.",
+      "treaty_name": "UK–Germany Co-production Treaty",
+      "majority_min": 30,
+      "minority_max": 70,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://www.bfi.org.uk/supporting-uk-film/production-and-development-funding/co-production-treaties",
+      "effective_from": "1975-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "GB",
+      "b": "IN",
+      "slug": "uk-in-bilateral",
+      "type": "bilateral",
+      "spend": null,
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel from both countries.",
+      "treaty_name": "UK–India Co-production Treaty",
+      "majority_min": 20,
+      "minority_max": 80,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://www.bfi.org.uk/supporting-uk-film/production-and-development-funding/co-production-treaties",
+      "effective_from": "2008-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "GB",
+      "b": "IE",
+      "slug": "uk-ie-bilateral",
+      "type": "bilateral",
+      "spend": "UK spend qualifies for AVEC; Irish spend qualifies for Section 481.",
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": null,
+      "treaty_name": "UK–Ireland Co-production Treaty",
+      "majority_min": 20,
+      "minority_max": 80,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://www.bfi.org.uk/supporting-uk-film/production-and-development-funding/co-production-treaties",
+      "effective_from": "1989-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "GB",
+      "b": "IT",
+      "slug": "uk-it-bilateral",
+      "type": "bilateral",
+      "spend": "UK spend qualifies for AVEC; Italian spend for MiC tax credit.",
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel from both countries.",
+      "treaty_name": "UK–Italy Co-production Treaty",
+      "majority_min": 20,
+      "minority_max": 80,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://www.bfi.org.uk/supporting-uk-film/production-and-development-funding/co-production-treaties",
+      "effective_from": "2007-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "GB",
+      "b": "NZ",
+      "slug": "uk-nz-bilateral",
+      "type": "bilateral",
+      "spend": null,
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel from both countries.",
+      "treaty_name": "UK–New Zealand Co-production Treaty",
+      "majority_min": 20,
+      "minority_max": 80,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://www.bfi.org.uk/supporting-uk-film/production-and-development-funding/co-production-treaties",
+      "effective_from": "1994-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    },
+    {
+      "a": "GB",
+      "b": "ZA",
+      "slug": "uk-za-bilateral",
+      "type": "bilateral",
+      "spend": null,
+      "status": "active",
+      "creative": null,
+      "confidence": "PARSED",
+      "nationality": "Key creative personnel from both countries.",
+      "treaty_name": "UK–South Africa Co-production Treaty",
+      "majority_min": 20,
+      "minority_max": 80,
+      "minority_min": 20,
+      "participants": [],
+      "authority_url": "https://www.bfi.org.uk/supporting-uk-film/production-and-development-funding/co-production-treaties",
+      "effective_from": "2007-01-01",
+      "effective_until": null,
+      "cultural_test_required": false,
+      "closure_status": "SUPPORTING_UNRECONCILED",
+      "note": "Gemini record retained only as supporting provenance; queue is not closed without current primary agreement-level verification."
+    }
+  ]
+}

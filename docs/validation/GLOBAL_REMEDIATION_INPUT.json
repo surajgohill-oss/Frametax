@@ -328,6 +328,61 @@
         "source_provenance": "Codex authority-completion pass; sources: ['https://gov.texas.gov/film/page/additional_grant_award', 'https://www.sos.texas.gov/texreg/archive/July32026/Adopted%20Rules/13.CULTURAL%20RESOURCES.html']",
         "dependencies": "None -- self-contained data correction to existing RateRule/DoctrineRecord/ProgramRequirementsProfile/SpendRule entries, same pattern as the MU/MT/GR/GB/AU pilot (commit 21af675).",
         "implementation_acceptance_condition": "Corrected rate/gate/cap/threshold field(s) match the cited authority_sources exactly; existing regression tests for the affected program_slug (if any) still pass; no other program's served output changes."
+      },
+      {
+        "canonical_id": "vipo_animation_and_content_support",
+        "jurisdiction": "Japan",
+        "program_name": "VIPO Animation and Content Support",
+        "current_cineglobe_state": "REQUIRES_INTERPRETATION_RESOLUTION",
+        "authoritative_corrected_state": "The stored generic row is not a deterministic rebate. Current VIPO support is fiscal-year, call-based JLOX+/location/content support selected by external review; availability, eligible period, ceilings and categories are call-specific.",
+        "remediation_layer": "DATA_ONLY",
+        "source_provenance": "Final P0/P1 authority closure; sources: ['https://www.vipo.or.jp/en/location-project/', 'https://www.vipo.or.jp/project/ip360/']",
+        "dependencies": "None; do not price discretionary funds as guaranteed value.",
+        "implementation_acceptance_condition": "Canonical disposition and cited primary authority are encoded exactly; no unrelated program output changes."
+      },
+      {
+        "canonical_id": "ccm_tourism_film_facilitation",
+        "jurisdiction": "Morocco",
+        "program_name": "CCM Tourism Film Facilitation",
+        "current_cineglobe_state": "REQUIRES_INTERPRETATION_RESOLUTION",
+        "authoritative_corrected_state": "No separate economic tourism incentive is established. CCM tourism promotion/facilitation is part of the foreign-production support framework already represented by ma_ccm_rebate; merge references and exclude this duplicate row from pricing.",
+        "remediation_layer": "EXCLUDE_FROM_OPTIMIZER",
+        "source_provenance": "Final P0/P1 authority closure; sources: ['https://ccm.ma/foreign_production/pe/index.html', 'https://www.ccm.ma/en/tournage-au-maroc']",
+        "dependencies": "None; do not price discretionary funds as guaranteed value.",
+        "implementation_acceptance_condition": "Canonical disposition and cited primary authority are encoded exactly; no unrelated program output changes."
+      },
+      {
+        "canonical_id": "singapore_imda_digital_media_development_fund",
+        "jurisdiction": "Singapore",
+        "program_name": "Singapore IMDA Digital Media Development Fund",
+        "current_cineglobe_state": "REQUIRES_INTERPRETATION_RESOLUTION",
+        "authoritative_corrected_state": "The generic Digital Media Development Fund label is not a current deterministic incentive. Current IMDA production support is through selective TAP content grants: selected Singapore productions/co-productions, up to 50% qualified spend for SMEs or 30% for non-SMEs, with project/episode caps and commissioner/platform evidence.",
+        "remediation_layer": "DATA_ONLY",
+        "source_provenance": "Final P0/P1 authority closure; sources: ['https://www.imda.gov.sg/about-imda/research-and-statistics/support-for-industry-sectors/media/tap', 'https://www.imda.gov.sg/about-imda/research-and-statistics/support-for-industry-sectors/media/tap/tv']",
+        "dependencies": "None; do not price discretionary funds as guaranteed value.",
+        "implementation_acceptance_condition": "Canonical disposition and cited primary authority are encoded exactly; no unrelated program output changes."
+      },
+      {
+        "canonical_id": "korea_kocca_animation_production_support",
+        "jurisdiction": "South Korea",
+        "program_name": "Korea KOCCA Animation Production Support",
+        "current_cineglobe_state": "REQUIRES_INTERPRETATION_RESOLUTION",
+        "authoritative_corrected_state": "KOCCA animation/content production support is administered through dated competitive calls, not a standing deterministic rebate. Store as a conditional fund with zero guaranteed optimizer value unless a project-specific current award/call is supplied.",
+        "remediation_layer": "DATA_ONLY",
+        "source_provenance": "Final P0/P1 authority closure; sources: ['https://www.kocca.kr/kocca/pims/list.do?category=4&menuNo=204104', 'https://www.kocca.kr/kocca/main.do']",
+        "dependencies": "None; do not price discretionary funds as guaranteed value.",
+        "implementation_acceptance_condition": "Canonical disposition and cited primary authority are encoded exactly; no unrelated program output changes."
+      },
+      {
+        "canonical_id": "screenskills_production_workforce_development",
+        "jurisdiction": "United Kingdom",
+        "program_name": "ScreenSkills Production Workforce Development",
+        "current_cineglobe_state": "REQUIRES_INTERPRETATION_RESOLUTION",
+        "authoritative_corrected_state": "ScreenSkills Film Skills Fund is an industry-funded training mechanism, not a producer incentive. Productions are encouraged to contribute 0.5% of core UK expenditure subject to the published cap; the fund finances sector training and creates no deterministic production rebate.",
+        "remediation_layer": "EXCLUDE_FROM_OPTIMIZER",
+        "source_provenance": "Final P0/P1 authority closure; sources: ['https://www.screenskills.com/industry/film-skills-fund/contribute-to-the-film-skills-fund/']",
+        "dependencies": "None; do not price discretionary funds as guaranteed value.",
+        "implementation_acceptance_condition": "Canonical disposition and cited primary authority are encoded exactly; no unrelated program output changes."
       }
     ],
     "missing_program_additions": [
@@ -474,6 +529,142 @@
         "source_provenance": "RESOLVED_BY_AUTHORITY, against Gemini's DUPLICATE call: Codex's own source (thailand.prd.go.th) shows this program is administered by Thailand's Public Relations Department, a DIFFERENT government body from the existing th_film_incentive record's administering authority (BOI \u2014 Board of Investment). Different competent authority is sufficient to treat these as two genuinely distinct programs, not a duplicate. Resolved from evidence already gathered by Codex, no new research performed.",
         "dependencies": "None for programs not requiring a new consuming mechanism (all 12 use rate/gate/cap shapes already handled by the existing RateRule/DoctrineRecord schema, per the GB IFTC precedent in commit 21af675).",
         "implementation_acceptance_condition": "New program_slug registered, not auto-selected over any existing program for the same jurisdiction unless explicitly the correct default; segment-level pricing test confirms the new program prices independently without altering any other jurisdiction's served result."
+      },
+      {
+        "canonical_id": "proposed_canada_british_columbia_film_incentive_bc_fibc",
+        "jurisdiction": "Canada",
+        "subjurisdiction": "British Columbia",
+        "program_name": "Film Incentive BC (FIBC)",
+        "disposition": "ADD",
+        "remediation_layer": "DATA_ONLY",
+        "authoritative_corrected_state": "Distinct refundable domestic Canadian-content labour credit. Basic 40% of qualified BC labour for productions starting principal photography on/after 2025-01-01; regional 12.5%, distant 6%, training lesser of 30% trainee payments or 3% qualified BC labour, DAVE 16%, scriptwriting 35%. Eligible BC production corporation, Canadian-content/certificate and filing gates apply.",
+        "territoriality": "Qualified BC labour; regional/physical-office rules for relevant uplifts. Local payment alone is insufficient.",
+        "monetization": "Refundable corporate tax credit claimed after Creative BC certification through the tax return.",
+        "authority_sources": [
+          "https://www2.gov.bc.ca/gov/content/taxes/income-taxes/corporate/credits/film-tv",
+          "https://www.bclaws.gov.bc.ca/civix/document/id/complete/statreg/4_99"
+        ],
+        "effective_or_version_date": "2025-01-01 rates; official page updated 2026-04-20",
+        "implementation_acceptance_condition": "Add as separately keyed canonical program; encode explicit limits and the default-inclusion QPE rule without treating local payment alone as territorial qualification."
+      },
+      {
+        "canonical_id": "proposed_canada_quebec_refundable_tax_credit_for_film_production_services",
+        "jurisdiction": "Canada",
+        "subjurisdiction": "Quebec",
+        "program_name": "Refundable Tax Credit for Film Production Services",
+        "disposition": "ADD",
+        "remediation_layer": "DATA_ONLY",
+        "authoritative_corrected_state": "Refundable services credit: 25% eligible production costs plus 16% eligible computer VFX/animation labour for qualifying post-2024 applications. Eligible Quebec establishment, SODEC favourable advance ruling/certificate and production eligibility apply. Service-contract VFX component is limited to 65% where specified.",
+        "territoriality": "Services rendered in Quebec or property used in Quebec; Quebec incurrence and SODEC certification. Payer alone is insufficient.",
+        "monetization": "Refundable Quebec corporate tax credit claimed with prescribed form and SODEC documents.",
+        "authority_sources": [
+          "https://www.revenuquebec.ca/fr/entreprises/impots/impot-des-societes/credits-dimpot-des-societes/credits-auxquels-une-societe-peut-avoir-droit/credit-dimpot-services-de-production-cinematographique/",
+          "https://sodec.gouv.qc.ca/wp-content/uploads/refundable-tax-credit-film-television-production-services-march-2024-4.pdf"
+        ],
+        "effective_or_version_date": "applications after 2024-05-31",
+        "implementation_acceptance_condition": "Add as separately keyed canonical program; encode explicit limits and the default-inclusion QPE rule without treating local payment alone as territorial qualification."
+      },
+      {
+        "canonical_id": "proposed_united_states_missouri_motion_media_production_tax_credit",
+        "jurisdiction": "United States",
+        "subjurisdiction": "Missouri",
+        "program_name": "Motion Media Production Tax Credit",
+        "disposition": "ADD",
+        "remediation_layer": "DATA_ONLY",
+        "authoritative_corrected_state": "Current transferable Missouri motion-media credit governed by the SHOW MO Act and DED guidelines. Eligibility, minimum spend, base credit and additions are project/workforce dependent; pre-authorization, qualified Missouri expenditure, final application and statutory annual allocation apply. Encode from the 2023 guidelines and 2026 final form, not a single guaranteed maximum rate.",
+        "territoriality": "Qualified Missouri production/post expenditure and qualifying Missouri workforce/vendor rules; payment channel alone is insufficient.",
+        "monetization": "Transferable state tax credit after final certification; allocation constrained by statutory program authorization.",
+        "authority_sources": [
+          "https://ded.mo.gov/sites/g/files/zuston466/files/media/pdf/2023/10/Motion_Media_Tax_Credit_Guidelines_0.pdf",
+          "https://ded.mo.gov/sites/g/files/zuston466/files/media/pdf/2026/01/Final_Motion_Media_Tax_Credit_Application-updated-Jan-2026.pdf"
+        ],
+        "effective_or_version_date": "2023-09-28 guidelines; 2026-01 final application",
+        "implementation_acceptance_condition": "Add as separately keyed canonical program; encode explicit limits and the default-inclusion QPE rule without treating local payment alone as territorial qualification."
+      },
+      {
+        "canonical_id": "proposed_united_kingdom_uk_global_screen_fund_international_co_production",
+        "jurisdiction": "United Kingdom",
+        "subjurisdiction": null,
+        "program_name": "UK Global Screen Fund \u2014 International Co-production",
+        "disposition": "ADD",
+        "remediation_layer": "DATA_ONLY",
+        "authoritative_corrected_state": "Competitive non-recoupable grant up to GBP300,000. UK independent producer; film minority co-production or eligible TV animation/documentary structure; at least 60% finance secured (80% fast track), other UK finance, British cultural/treaty qualification, UK contribution thresholds and eligible UK elements. Requested grant cannot exceed 50% of UK financial contribution.",
+        "territoriality": "Grant restricted to UK production elements and treaty/Convention qualifying expenditure or qualifying UK expenditure for unofficial co-productions.",
+        "monetization": "Discretionary non-recoupable grant; current round closed, next scheduled September 2026. Must carry zero guaranteed optimizer value until awarded.",
+        "authority_sources": [
+          "https://www.bfi.org.uk/get-funding-support/funding-support-international-activity/uk-global-screen-fund/uk-global-screen-fund-uk-global-screen-fund-ukgsf-international-co-production",
+          "https://www.bfi.org.uk/get-funding-support/funding-support-international-activity/uk-global-screen-fund/uk-global-screen-fund-ukgsf-international-co-production/applying-uk-global-screen-fund-ukgsf-international-co-production"
+        ],
+        "effective_or_version_date": "2026 round",
+        "implementation_acceptance_condition": "Add as separately keyed canonical program; encode explicit limits and the default-inclusion QPE rule without treating local payment alone as territorial qualification."
+      },
+      {
+        "canonical_id": "proposed_germany_german_motion_picture_fund_gmpf",
+        "jurisdiction": "Germany",
+        "subjurisdiction": null,
+        "program_name": "German Motion Picture Fund (GMPF)",
+        "disposition": "ADD",
+        "remediation_layer": "DATA_ONLY",
+        "authoritative_corrected_state": "Distinct 2026 non-repayable grant for high-end series and non-theatrical films: up to 30% eligible German production costs, basis capped at 80% total production costs; film cap EUR5m, ordinary series cap EUR6m/season with separate high-cost series treatment. German applicant/branch, reference production, characteristic test, financing, German-cost minimums, pre-shoot application and ecological standards apply. General pre-costs and pre-existing rights/music are expressly excluded subject to stated exceptions.",
+        "territoriality": "Eligible German production costs under the guideline schedule; actual German production activity/cost predicates, not payer alone.",
+        "monetization": "Non-repayable project grant paid through FFA verification; aid cumulation/intensity rules apply.",
+        "authority_sources": [
+          "https://www.ffa.de/gmpf-guidelines",
+          "https://www.ffa.de/files/dfff/richtlinie/Richtlinien%20DFFF_GMPF_2026/GMPF_Guidelines_EN_2026.pdf"
+        ],
+        "effective_or_version_date": "2026-01-01 through 2026-12-31",
+        "implementation_acceptance_condition": "Add as separately keyed canonical program; encode explicit limits and the default-inclusion QPE rule without treating local payment alone as territorial qualification."
+      },
+      {
+        "canonical_id": "proposed_colombia_cina_audiovisual_investment_certificate",
+        "jurisdiction": "Colombia",
+        "subjurisdiction": null,
+        "program_name": "CINA Audiovisual Investment Certificate",
+        "disposition": "ADD",
+        "remediation_layer": "DATA_ONLY",
+        "authoritative_corrected_state": "35% of approved investment in Colombia for non-national audiovisual works produced or post-produced wholly or partly in Colombia after prior CPFC approval. Investment must contract Colombian natural/legal persons supplying necessary audiovisual/cinematographic and qualifying logistical services. Contract, fiduciary, reporting and resource-manual requirements apply.",
+        "territoriality": "Investment in qualifying Colombian persons and services performed for production/post-production in Colombia; payer alone is insufficient.",
+        "monetization": "Negotiable security issued to the foreign producer; may be transferred to Colombian income-tax filers and used under the statutory market/tax mechanism.",
+        "authority_sources": [
+          "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=110937",
+          "https://normograma.mincultura.gov.co/compilacion/docs/resolucion_mincultura_0065_2021.htm"
+        ],
+        "effective_or_version_date": "Decree 474/2020; Resolution 65/2021, current framework",
+        "implementation_acceptance_condition": "Add as separately keyed canonical program; encode explicit limits and the default-inclusion QPE rule without treating local payment alone as territorial qualification."
+      },
+      {
+        "canonical_id": "proposed_spain_navarre_navarre_audiovisual_production_tax_credit",
+        "jurisdiction": "Spain",
+        "subjurisdiction": "Navarre",
+        "program_name": "Navarre Audiovisual Production Tax Credit",
+        "disposition": "ADD",
+        "remediation_layer": "DATA_ONLY",
+        "authoritative_corrected_state": "Current Navarre producer deduction is generally 45%; 50% on the first EUR3m of basis for enumerated difficult works (Basque-only original, women-directed, documentary, animation, first feature/series director, shorts). EUR5m maximum. Basis is producer investment when Navarre spend reaches 40%; otherwise Navarre spend divided by 0.4. Basis may not exceed 80% of total audiovisual work cost; aid-intensity and certification rules apply.",
+        "territoriality": "Expenses treated as incurred in Navarre under the statutory/Foral Order tests; 40% territorialization controls full-basis treatment.",
+        "monetization": "Corporate tax deduction subject to certification and statutory intensity limits.",
+        "authority_sources": [
+          "https://boe.es/buscar/doc.php?id=BOE-A-2026-3910",
+          "https://www.navarra.es/documents/48192/8347251/Gu%C3%ADa%2Bincentivo%2B%28EN%29.pdf/55013640-8406-5d98-aa42-9c87196e3d7c"
+        ],
+        "effective_or_version_date": "tax periods beginning 2025-01-01; amendments published 2026",
+        "implementation_acceptance_condition": "Add as separately keyed canonical program; encode explicit limits and the default-inclusion QPE rule without treating local payment alone as territorial qualification."
+      },
+      {
+        "canonical_id": "proposed_netherlands_netherlands_film_production_incentive_high_end_series",
+        "jurisdiction": "Netherlands",
+        "subjurisdiction": null,
+        "program_name": "Netherlands Film Production Incentive \u2014 High-End Series",
+        "disposition": "ADD",
+        "remediation_layer": "DATA_ONLY",
+        "authoritative_corrected_state": "ADD as a distinct Filmfonds scheme, not a duplicate of the film-production scheme. Up to 35% demonstrably spent qualifying Dutch production costs, maximum EUR3m per project/year/applicant; drama, documentary and animation series/single episodes; independent eligible applicant; Dutch/foreign broadcast guarantees, minute-cost thresholds, 50% unconditional financing, 75-point test, financing within six months, pre-shoot timing and 36-month delivery.",
+        "territoriality": "Demonstrably spent qualifying Dutch production costs; Annex 1 exclusions and point-linked Dutch activity apply. Payment alone is insufficient.",
+        "monetization": "Cash-rebate-form grant determined and paid after actual qualifying spend; annual EUR9.5m 2026 high-end-series budget and competitive round ranking apply.",
+        "authority_sources": [
+          "https://www.filmfonds.nl/en/funding/fund/netherlands-film-production-incentive-high-end-series",
+          "https://assets.filmfonds.nl/Netherlands-Film-Fund-Regulationa-for-the-Netherlands-Film-Production-Incentive-High-End-Series-2025.pdf"
+        ],
+        "effective_or_version_date": "2025 regulation; current 2026 rounds",
+        "implementation_acceptance_condition": "Add as separately keyed canonical program; encode explicit limits and the default-inclusion QPE rule without treating local payment alone as territorial qualification."
       }
     ],
     "existing_program_merges": [
@@ -489,17 +680,31 @@
     ]
   },
   "blocked_pending_further_research": {
-    "existing_programs_requires_interpretation_resolution": 157,
-    "existing_programs_fund_grant_conditional_excluded": 62,
-    "missing_programs_requires_interpretation_resolution": 10,
+    "existing_programs_requires_interpretation_resolution": 152,
+    "existing_programs_fund_grant_conditional_excluded": 65,
+    "missing_programs_requires_interpretation_resolution": 2,
     "treaty_queues_unresolved": 7,
-    "true_interpretation_conflicts": 1,
-    "note": "Full identities and per-item provenance for all blocked items are in GLOBAL_CANONICAL_PROGRAM_DISPOSITION.json, GLOBAL_CANONICAL_TREATY_DISPOSITION.json, and GLOBAL_RECONCILIATION_EXCEPTIONS.json. These items must NOT enter Step 3 consolidated remediation until sourced with primary authority (existing/missing programs) or reconciled (Netherlands HES conflict) or closed (treaty queues)."
+    "true_interpretation_conflicts": 0,
+    "note": "Exact remaining identities are in FINAL_P0_P1_AUTHORITY_CLOSURE.json. Missing research is not an interpretation conflict."
   },
   "counts": {
-    "ready_existing_corrections": 27,
-    "ready_missing_additions": 12,
+    "ready_existing_corrections": 32,
+    "ready_missing_additions": 20,
     "ready_merges": 1,
-    "total_ready": 40
+    "total_ready": 53
+  },
+  "final_authority_closure_accounting": {
+    "STARTING_BLOCKERS": 174,
+    "existing_starting": 157,
+    "missing_starting": 10,
+    "treaty_starting": 7,
+    "existing_closed": 5,
+    "existing_remaining": 152,
+    "missing_closed": 8,
+    "missing_remaining": 2,
+    "treaty_closed": 0,
+    "treaty_remaining": 7,
+    "TOTAL_CLOSED": 13,
+    "TOTAL_REMAINING": 161
   }
 }

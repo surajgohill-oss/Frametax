@@ -1,20 +1,10 @@
 {
   "schema_version": "1.0",
   "generated_at": "2026-08-10T05:41:20.472043+00:00",
-  "scope": "ONLY genuine unresolved interpretation conflicts or bounded authority gaps capable of blocking deterministic correctness. Does NOT restate the full 167-item pending-research queue (that list lives in GLOBAL_CANONICAL_PROGRAM_DISPOSITION.json as REQUIRES_INTERPRETATION_RESOLUTION / FUND_GRANT_CONDITIONAL entries).",
-  "true_interpretation_conflicts": [
-    {
-      "canonical_id": "proposed_netherlands__netherlands_film_production_incentive___high_end_series",
-      "jurisdiction": "Netherlands",
-      "program_name": "Netherlands Film Production Incentive \u2014 High-End Series",
-      "conflict": "Gemini classifies this as a DUPLICATE of an existing Netherlands program; Codex's own missing-program record describes it as governed by a 'distinct series regulation' separate from the general NFPI, and Codex's own scorecard independently expected exactly 1 new Netherlands discovery.",
-      "why_unresolved": "Neither engine's already-gathered evidence identifies the specific legal instrument or administering-authority distinction (unlike the Thailand BOI-vs-PRD case, which WAS resolvable from evidence already in hand). Genuinely insufficient evidence to call ADD vs MERGE without new primary-source retrieval.",
-      "blocks": "Whether CineGlobe's Netherlands worldwide candidate set has 3 or 4 distinct programs; immaterial to the 5-jurisdiction MU/MT/GR/GB/AU pilot.",
-      "resolution_path": "Retrieve the Dutch Filmfonds 'High-End Series' regulation text directly and compare its legal basis/administering body against the general NFPI regulation."
-    }
-  ],
+  "scope": "ONLY genuine unresolved interpretation conflicts or bounded authority gaps capable of blocking deterministic correctness. Does NOT restate the full 157-item pending-research queue (that list lives in GLOBAL_CANONICAL_PROGRAM_DISPOSITION.json as REQUIRES_INTERPRETATION_RESOLUTION / FUND_GRANT_CONDITIONAL entries).",
+  "true_interpretation_conflicts": [],
   "bounded_authority_gaps_blocking_gate": {
-    "note": "These are the material_gap_jurisdictions Codex's own inventory already isolated as its most severe, highest-confidence blockers -- a bounded 19-jurisdiction set, not the full 167-item queue.",
+    "note": "These are the material_gap_jurisdictions Codex's own inventory already isolated as its most severe, highest-confidence blockers -- a bounded 19-jurisdiction set, not the full 157-item queue.",
     "jurisdictions": [
       "Australia",
       "Canada",
@@ -43,5 +33,30 @@
       "FRANCE_BILATERAL_LIST_RECONCILIATION"
     ],
     "why_these_specifically": "Codex's own jurisdiction scorecard independently flags these 19 as 'MATERIAL GAPS' (as opposed to merely 'UNVERIFIED' for the long tail of single-program, low-volume jurisdictions); the 4 listed treaty queues are the P0 (highest-severity) treaty queues, together covering the large majority of the 38 stored treaty records."
+  },
+  "resolved_interpretation_conflicts": [
+    {
+      "canonical_id": "proposed_netherlands_netherlands_film_production_incentive_high_end_series",
+      "resolution": "ADD_DISTINCT_PROGRAM",
+      "authority": [
+        "https://www.filmfonds.nl/en/funding/fund/netherlands-film-production-incentive-high-end-series",
+        "https://assets.filmfonds.nl/Netherlands-Film-Fund-Regulationa-for-the-Netherlands-Film-Production-Incentive-High-End-Series-2025.pdf"
+      ],
+      "reason": "Filmfonds publishes a separate active funding page and distinct High-End Series & Single Episode regulation with different eligible formats, thresholds, points and cap."
+    }
+  ],
+  "corrected_accounting": {
+    "STARTING_BLOCKERS": 174,
+    "existing_starting": 157,
+    "missing_starting": 10,
+    "treaty_starting": 7,
+    "existing_closed": 5,
+    "existing_remaining": 152,
+    "missing_closed": 8,
+    "missing_remaining": 2,
+    "treaty_closed": 0,
+    "treaty_remaining": 7,
+    "TOTAL_CLOSED": 13,
+    "TOTAL_REMAINING": 161
   }
 }

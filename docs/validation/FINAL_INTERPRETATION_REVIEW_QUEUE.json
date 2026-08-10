@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-10",
+  "conflicts": [],
+  "resolved_conflicts": [
+    {
+      "canonical_id": "proposed_netherlands_netherlands_film_production_incentive_high_end_series",
+      "resolution": "ADD_DISTINCT_PROGRAM",
+      "authority": [
+        "https://www.filmfonds.nl/en/funding/fund/netherlands-film-production-incentive-high-end-series",
+        "https://assets.filmfonds.nl/Netherlands-Film-Fund-Regulationa-for-the-Netherlands-Film-Production-Incentive-High-End-Series-2025.pdf"
+      ],
+      "reason": "Filmfonds publishes a separate active funding page and distinct High-End Series & Single Episode regulation with different eligible formats, thresholds, points and cap."
+    }
+  ]
+}

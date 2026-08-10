@@ -109,5 +109,11 @@
       "work_required": "Validate status, text, contributions, formats, nationality/creative tests, authority and timing.",
       "gemini_cross_check": "Gemini's independent worldwide pass separately assessed all 38 stored treaties in aggregate (20 confirmed current / 18 incorrect-stale / 5 missing material pathways / 0 unresolved) but the underlying JSON does not carry a per-treaty status field, so per-record cross-validation against this queue's specific stored_records is not mechanically possible from what either engine produced. Not a conflict \u2014 a granularity gap."
     }
-  ]
+  ],
+  "final_authority_closure": {
+    "starting": 7,
+    "closed": 0,
+    "remaining": 7,
+    "artifact": "FINAL_TREATY_AUTHORITY_CLOSURE.json"
+  }
 }

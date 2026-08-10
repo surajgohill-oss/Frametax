@@ -1,0 +1,2800 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-10",
+  "scope": "Final bounded authority closure using the corrected keyed denominator. No global rediscovery and no implementation.",
+  "accounting_correction": "The prior prose count 167 existing was erroneous: 132 P0 + 25 P1 = 157. Keyed identities control. Correct total is 157 + 10 + 7 = 174.",
+  "accounting": {
+    "STARTING_BLOCKERS": 174,
+    "existing_starting": 157,
+    "missing_starting": 10,
+    "treaty_starting": 7,
+    "existing_closed": 5,
+    "existing_remaining": 152,
+    "missing_closed": 8,
+    "missing_remaining": 2,
+    "treaty_closed": 0,
+    "treaty_remaining": 7,
+    "TOTAL_CLOSED": 13,
+    "TOTAL_REMAINING": 161
+  },
+  "true_interpretation_conflicts_remaining": 0,
+  "additional_bounded_discoveries": [],
+  "final_gate": "NO_GO_VALIDATION_NOT_CLOSED",
+  "records": [
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "acpfilms_fund",
+      "jurisdiction": "African, Caribbean and Pacific Group",
+      "subjurisdiction": "African, Caribbean and Pacific Group",
+      "program_name": "ACP Films — EU-ACP Cultural Film Co-production Fund",
+      "starting_priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.acpfilms.eu/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current competent-authority treaty text/list and administering program rule on co-production eligibility."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "al_film_incentive",
+      "jurisdiction": "Albania",
+      "subjurisdiction": null,
+      "program_name": "Albanian National Cinema Agency (ANCA) Cash Rebate",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.nationalcinema.al/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "ao_film_incentive",
+      "jurisdiction": "Angola",
+      "subjurisdiction": null,
+      "program_name": "Angola Instituto do Cinema e Audiovisual (ICA) Production Support",
+      "starting_priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.mincult.gov.ao"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "ar_incaa_incentive",
+      "jurisdiction": "Argentina",
+      "subjurisdiction": null,
+      "program_name": "INCAA — Argentine Film Institute Incentives",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.incaa.gov.ar"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "au_screen_production",
+      "jurisdiction": "Australia",
+      "subjurisdiction": null,
+      "program_name": "Screen Australia — Production Funding",
+      "starting_priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.screenaustralia.gov.au/funding-and-support"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "au_nsw_screen",
+      "jurisdiction": "Australia",
+      "subjurisdiction": "Australia — New South Wales",
+      "program_name": "NSW Government Screen Incentive (Create NSW)",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.create.nsw.gov.au/funding-and-support/screen/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "au_qld_screen_qld",
+      "jurisdiction": "Australia",
+      "subjurisdiction": "Australia — Queensland",
+      "program_name": "Screen Queensland Production Attraction Strategy",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://screenqueensland.com.au/get-funding/production-attraction/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "au_vic_vicscreen",
+      "jurisdiction": "Australia",
+      "subjurisdiction": "Australia — Victoria",
+      "program_name": "VicScreen Production Investment",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://vicscreen.vic.gov.au/funding/production-investment"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "at_fisa_plus",
+      "jurisdiction": "Austria",
+      "subjurisdiction": null,
+      "program_name": "FISA+ Film Production Support Austria",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.fisa-plus.at/en/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "bs_film_incentive",
+      "jurisdiction": "Bahamas",
+      "subjurisdiction": null,
+      "program_name": "Bahamas Film Commission Production Support",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.bahamasfilm.com/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "bh_film_incentive",
+      "jurisdiction": "Bahrain",
+      "subjurisdiction": null,
+      "program_name": "Bahrain Film Commission Production Support",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.bahrainfilm.com/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "bd_film_incentive",
+      "jurisdiction": "Bangladesh",
+      "subjurisdiction": null,
+      "program_name": "Bangladesh Film Development Corporation (BFDC) Production Support",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.bfdc.gov.bd"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "bb_film_incentive",
+      "jurisdiction": "Barbados",
+      "subjurisdiction": null,
+      "program_name": "Barbados Film and Entertainment Production Incentives",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://bidc.com/incentives/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "by_film_incentive",
+      "jurisdiction": "Belarus",
+      "subjurisdiction": null,
+      "program_name": "Belarusfilm National Film Studio Production Support",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.belarusfilm.by"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "be_tax_shelter",
+      "jurisdiction": "Belgium",
+      "subjurisdiction": null,
+      "program_name": "Belgian Tax Shelter",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://taxshelter.be"
+      ],
+      "effective_or_version_date": "2003-01-01",
+      "remaining_exact_question": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "bt_film_incentive",
+      "jurisdiction": "Bhutan",
+      "subjurisdiction": null,
+      "program_name": "Bhutan Film Commission / Tourism Council Production Facilitation",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.tourism.gov.bt"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "ba_film_incentive",
+      "jurisdiction": "Bosnia and Herzegovina",
+      "subjurisdiction": null,
+      "program_name": "Film Centre Bosnia and Herzegovina Production Support",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.filmcenter.ba/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "bw_film_commission",
+      "jurisdiction": "Botswana",
+      "subjurisdiction": null,
+      "program_name": "Botswana Film Commission Production Support",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.botswanafilm.co.bw"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "br_ancine_incentive",
+      "jurisdiction": "Brazil",
+      "subjurisdiction": null,
+      "program_name": "ANCINE — Brazilian Film Commission Tax Incentives",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.ancine.gov.br"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "bg_film_incentive",
+      "jurisdiction": "Bulgaria",
+      "subjurisdiction": null,
+      "program_name": "Bulgarian Film Commission Cash Rebate",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.nfc.gov.bg"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "kh_film_incentive",
+      "jurisdiction": "Cambodia",
+      "subjurisdiction": null,
+      "program_name": "Cambodia Ministry of Culture Film Production Facilitation",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.mcc.gov.kh/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "cm_film_incentive",
+      "jurisdiction": "Cameroon",
+      "subjurisdiction": null,
+      "program_name": "Cameroon Centre National de la Cinématographie Film Support",
+      "starting_priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.minac.cm"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "ca_cmf",
+      "jurisdiction": "Canada",
+      "subjurisdiction": null,
+      "program_name": "Canada Media Fund (CMF) — Convergent Stream",
+      "starting_priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://cmf-fmc.ca/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "ca_ab_fttc",
+      "jurisdiction": "Canada",
+      "subjurisdiction": "Canada — Alberta",
+      "program_name": "Alberta Film and Television Tax Credit (FTTC)",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.ampia.org/alberta-film-tv-tax-credit/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "ca_mb_fvptc",
+      "jurisdiction": "Canada",
+      "subjurisdiction": "Canada — Manitoba",
+      "program_name": "Manitoba Film & Video Production Tax Credit",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.mbfilmmusic.ca/en/production-tax-credits"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "ca_nb_film_credit",
+      "jurisdiction": "Canada",
+      "subjurisdiction": "Canada — New Brunswick",
+      "program_name": "New Brunswick Film Tax Credit",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://opportunitiesnb.com"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "ca_nl_production_fund",
+      "jurisdiction": "Canada",
+      "subjurisdiction": "Canada — Newfoundland & Labrador",
+      "program_name": "Newfoundland & Labrador Film Development Corp Production Incentive",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://picturenl.ca/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "ca_ns_pif",
+      "jurisdiction": "Canada",
+      "subjurisdiction": "Canada — Nova Scotia",
+      "program_name": "Nova Scotia Film & Television Production Incentive Fund",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.novascotiabusiness.com/export/film"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "ca_sk_production_grant",
+      "jurisdiction": "Canada",
+      "subjurisdiction": "Canada — Saskatchewan",
+      "program_name": "Creative Saskatchewan Film and TV Production Grant",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.creativesask.ca/funding/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "nohfc_production_fund",
+      "jurisdiction": "Canada",
+      "subjurisdiction": "Ontario",
+      "program_name": "Northern Ontario Heritage Fund — Production Fund",
+      "starting_priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.nohfc.ca"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "on_ofttc",
+      "jurisdiction": "Canada",
+      "subjurisdiction": "Ontario",
+      "program_name": "Ontario Film and Television Tax Credit",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.ontariocreates.ca/production-funding/tax-credits/ontario-film-and-television-tax-credit",
+        "https://omdc.on.ca/film-and-television/tax-credits/ontario-film-and-television-tax-credit/"
+      ],
+      "effective_or_version_date": "1998-01-01",
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "on_opstc",
+      "jurisdiction": "Canada",
+      "subjurisdiction": "Ontario",
+      "program_name": "Ontario Production Services Tax Credit",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.ontariocreates.ca/production-funding/tax-credits/ontario-production-services-tax-credit",
+        "https://omdc.on.ca/film-and-television/tax-credits/ontario-production-services-tax-credit/"
+      ],
+      "effective_or_version_date": "2009-01-01",
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "qc_film_production",
+      "jurisdiction": "Canada",
+      "subjurisdiction": "Quebec",
+      "program_name": "Quebec Film and Television Production Tax Credit",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.sodec.gouv.qc.ca/en/aide/credits-impot/cinema-et-television/",
+        "https://sodec.gouv.qc.ca/en/programs/tv-film-production-tax-credits/"
+      ],
+      "effective_or_version_date": "1999-01-01",
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "cl_corfo_incentive",
+      "jurisdiction": "Chile",
+      "subjurisdiction": null,
+      "program_name": "Chile Corfo Film Incentive",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.corfo.cl/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "cn_film_incentive",
+      "jurisdiction": "China",
+      "subjurisdiction": null,
+      "program_name": "China Film Administration Domestic Co-production Support",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.nrta.gov.cn"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "co_film_colombia",
+      "jurisdiction": "Colombia",
+      "subjurisdiction": null,
+      "program_name": "Colombia Film Commission — Film In Colombia",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://procolombia.co/en/opportunities-industries/film-sector"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "cr_film_incentive",
+      "jurisdiction": "Costa Rica",
+      "subjurisdiction": null,
+      "program_name": "Costa Rica Film Commission Production Facilitation",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://costaricafilm.com/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "hr_cash_rebate",
+      "jurisdiction": "Croatia",
+      "subjurisdiction": null,
+      "program_name": "Croatia Cash Rebate",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://havc.hr"
+      ],
+      "effective_or_version_date": "2012-01-01",
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "cy_film_rebate",
+      "jurisdiction": "Cyprus",
+      "subjurisdiction": null,
+      "program_name": "Cyprus Film Production Rebate",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://cipa.org.cy"
+      ],
+      "effective_or_version_date": "2020-01-01",
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "dk_film_incentive",
+      "jurisdiction": "Denmark",
+      "subjurisdiction": null,
+      "program_name": "Danish Film Institute Production Support",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.dfi.dk/en/english/funding"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "do_film_incentive",
+      "jurisdiction": "Dominican Republic",
+      "subjurisdiction": null,
+      "program_name": "Dominican Republic Film Commission Incentive",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.drfilmcommission.com"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "ec_film_incentive",
+      "jurisdiction": "Ecuador",
+      "subjurisdiction": null,
+      "program_name": "Ecuador Film Commission Production Facilitation",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.ecuador.travel/filming-in-ecuador"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "eg_film_incentive",
+      "jurisdiction": "Egypt",
+      "subjurisdiction": null,
+      "program_name": "Egypt Film Commission Production Support",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://egyptfilm.gov.eg/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "ee_film_incentive",
+      "jurisdiction": "Estonia",
+      "subjurisdiction": null,
+      "program_name": "Film Estonia Cash Rebate",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://filmestonia.eu/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "et_film_commission",
+      "jurisdiction": "Ethiopia",
+      "subjurisdiction": null,
+      "program_name": "Ethiopian Film Commission Production Support",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.moct.gov.et"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "eu_media_fund",
+      "jurisdiction": "European Union",
+      "subjurisdiction": "European Union",
+      "program_name": "Creative Europe MEDIA Programme",
+      "starting_priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://ec.europa.eu/info/funding-tenders/opportunities/portal/screen/programmes/crea"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "fj_film_incentive",
+      "jurisdiction": "Fiji",
+      "subjurisdiction": null,
+      "program_name": "Fiji Audio Visual Commission Production Incentive",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.favc.com.fj/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "fi_film_incentive",
+      "jurisdiction": "Finland",
+      "subjurisdiction": null,
+      "program_name": "Business Finland Film Incentive",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.businessfinland.fi/en/for-finnish-customers/services/funding/cash-rebate"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "fr_cnc_production",
+      "jurisdiction": "France",
+      "subjurisdiction": null,
+      "program_name": "CNC France — Avances sur Recettes (Cinema Production Aid)",
+      "starting_priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.cnc.fr/web/en"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "fr_trip",
+      "jurisdiction": "France",
+      "subjurisdiction": null,
+      "program_name": "Tax Rebate for International Productions (TRIP)",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.cnc.fr/-/credit-d-impot-internation-1"
+      ],
+      "effective_or_version_date": "current",
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "ga_film_incentive",
+      "jurisdiction": "Gabon",
+      "subjurisdiction": null,
+      "program_name": "Gabon Ministry of Culture Film Commission Support",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.agence-gabonaise-tourisme.com"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "ge_film_incentive",
+      "jurisdiction": "Georgia",
+      "subjurisdiction": null,
+      "program_name": "Georgian National Film Centre Production Incentive",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://gnfc.ge/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "de_fff_bayern",
+      "jurisdiction": "Germany",
+      "subjurisdiction": "Germany — Bavaria",
+      "program_name": "FilmFernsehFonds Bayern (FFF Bayern)",
+      "starting_priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.fff-bayern.de/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "de_nrw_filmstiftung",
+      "jurisdiction": "Germany",
+      "subjurisdiction": "Germany — North Rhine-Westphalia",
+      "program_name": "Film und Medienstiftung NRW",
+      "starting_priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.filmstiftung.de/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "gh_film_incentive",
+      "jurisdiction": "Ghana",
+      "subjurisdiction": null,
+      "program_name": "Ghana National Film Authority Production Support",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://nfa.gov.gh/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "gt_film_commission",
+      "jurisdiction": "Guatemala",
+      "subjurisdiction": null,
+      "program_name": "Guatemala Film Commission (INGUAT) Production Facilitation",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.inguat.net"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "gy_film_commission",
+      "jurisdiction": "Guyana",
+      "subjurisdiction": null,
+      "program_name": "Guyana Tourism Authority Film Production Support",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.guyanatourism.com"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "hk_film_incentive",
+      "jurisdiction": "Hong Kong SAR",
+      "subjurisdiction": null,
+      "program_name": "Create Hong Kong (CreateHK) Production Support",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.createhk.gov.hk/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "hk_film_dev_fund",
+      "jurisdiction": "Hong Kong SAR",
+      "subjurisdiction": null,
+      "program_name": "Hong Kong Film Development Fund (FDF)",
+      "starting_priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.fdc.gov.hk/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "hu_hipa_rebate",
+      "jurisdiction": "Hungary",
+      "subjurisdiction": null,
+      "program_name": "Hungarian Tax Rebate (HIPA)",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://hipa.hu"
+      ],
+      "effective_or_version_date": "2004-01-01",
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "ibermedia_programme",
+      "jurisdiction": "Ibero-American Region (SEGIB)",
+      "subjurisdiction": "Ibero-American Region (SEGIB)",
+      "program_name": "IBERMEDIA Programme for Ibero-American Co-productions",
+      "starting_priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://programaibermedia.com/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current competent-authority treaty text/list and administering program rule on co-production eligibility."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "in_nfdc_coproduction",
+      "jurisdiction": "India",
+      "subjurisdiction": null,
+      "program_name": "NFDC International Co-production Development Fund",
+      "starting_priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.nfdcindia.com/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current competent-authority treaty text/list and administering program rule on co-production eligibility."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "id_film_incentive",
+      "jurisdiction": "Indonesia",
+      "subjurisdiction": null,
+      "program_name": "Indonesian Film Commission Production Facilitation",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://filmcommission.or.id/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "ie_section_481",
+      "jurisdiction": "Ireland",
+      "subjurisdiction": null,
+      "program_name": "Section 481 Film Tax Credit",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.revenue.ie/en/companies-and-charities/reliefs-and-exemptions/film-relief/index.aspx"
+      ],
+      "effective_or_version_date": "1987-01-01",
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "tourism_ireland___fáilte_ireland_production_support",
+      "jurisdiction": "Ireland",
+      "subjurisdiction": null,
+      "program_name": "Tourism Ireland / Fáilte Ireland Production Support",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "il_film_incentive",
+      "jurisdiction": "Israel",
+      "subjurisdiction": null,
+      "program_name": "Israel Film Fund / Maslool Incentive",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://israel-trade.net/filmisrael/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "it_tax_credit_foreign",
+      "jurisdiction": "Italy",
+      "subjurisdiction": null,
+      "program_name": "Italian Tax Credit for Foreign Productions",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.dgcinema.beniculturali.it/finanziamenti/tax-credit/tax-credit-per-i-film-stranieri/"
+      ],
+      "effective_or_version_date": "2016-01-01",
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "jm_film_incentive",
+      "jurisdiction": "Jamaica",
+      "subjurisdiction": null,
+      "program_name": "Jamaica Entertainment Industry Incentive Programme",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.filmjamaica.com/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "vipo_animation_and_content_support",
+      "jurisdiction": "Japan",
+      "subjurisdiction": null,
+      "program_name": "VIPO Animation and Content Support",
+      "starting_priority": "P0",
+      "closure_status": "CLOSED",
+      "final_disposition": "FUND_GRANT_CONDITIONAL",
+      "authoritative_rule": "The stored generic row is not a deterministic rebate. Current VIPO support is fiscal-year, call-based JLOX+/location/content support selected by external review; availability, eligible period, ceilings and categories are call-specific.",
+      "authority_sources": [
+        "https://www.vipo.or.jp/en/location-project/",
+        "https://www.vipo.or.jp/project/ip360/"
+      ],
+      "effective_or_version_date": "2025-2026 fiscal calls",
+      "remaining_exact_question": null
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "jo_rfc_rebate",
+      "jurisdiction": "Jordan",
+      "subjurisdiction": null,
+      "program_name": "Royal Film Commission Jordan — Production Rebate",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.rfc.jo/en/incentives"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "royal_film_commission_tourism_film_support",
+      "jurisdiction": "Jordan",
+      "subjurisdiction": null,
+      "program_name": "Royal Film Commission Tourism Film Support",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "kz_film_incentive",
+      "jurisdiction": "Kazakhstan",
+      "subjurisdiction": null,
+      "program_name": "Kazakhfilm Studios Production Facilitation",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://kazakhfilm.kz/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "ke_film_incentive",
+      "jurisdiction": "Kenya",
+      "subjurisdiction": null,
+      "program_name": "Kenya Film Commission (KFC) Production Incentive",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://kenyafilmcommission.go.ke/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "kw_film_incentive",
+      "jurisdiction": "Kuwait",
+      "subjurisdiction": null,
+      "program_name": "Kuwait Film Committee Production Support",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://kuwaitfilmfund.com/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "lv_film_incentive",
+      "jurisdiction": "Latvia",
+      "subjurisdiction": null,
+      "program_name": "National Film Centre of Latvia Production Incentive",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.nkc.gov.lv/en"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "lt_film_incentive",
+      "jurisdiction": "Lithuania",
+      "subjurisdiction": null,
+      "program_name": "Lithuanian Film Centre Production Cash Rebate",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.lkc.lt/en/tax-incentives"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "lu_film_incentive",
+      "jurisdiction": "Luxembourg",
+      "subjurisdiction": null,
+      "program_name": "Film Fund Luxembourg — Tax Shelter & Production Rebate",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://filmfund.lu/en/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "my_film_incentive",
+      "jurisdiction": "Malaysia",
+      "subjurisdiction": null,
+      "program_name": "FINAS Malaysia Film Rebate",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://filminmalaysia.com/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "mv_film_incentive",
+      "jurisdiction": "Maldives",
+      "subjurisdiction": null,
+      "program_name": "Maldives Marketing and PR Corporation (MMPRC) Film Facilitation",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.visitmaldives.com"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "mx_eficine_incentive",
+      "jurisdiction": "Mexico",
+      "subjurisdiction": null,
+      "program_name": "Mexico EFICINE (Article 226) and PROCINE Fund",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.imcine.gob.mx/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "mn_film_commission",
+      "jurisdiction": "Mongolia",
+      "subjurisdiction": null,
+      "program_name": "Mongolian Film Commission Production Support",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.mcta.gov.mn"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "me_film_incentive",
+      "jurisdiction": "Montenegro",
+      "subjurisdiction": null,
+      "program_name": "Film Centre of Montenegro Production Incentive",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.filmcentre.me/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "ccm_tourism_film_facilitation",
+      "jurisdiction": "Morocco",
+      "subjurisdiction": null,
+      "program_name": "CCM Tourism Film Facilitation",
+      "starting_priority": "P0",
+      "closure_status": "CLOSED",
+      "final_disposition": "EXCLUDE_FROM_OPTIMIZER",
+      "authoritative_rule": "No separate economic tourism incentive is established. CCM tourism promotion/facilitation is part of the foreign-production support framework already represented by ma_ccm_rebate; merge references and exclude this duplicate row from pricing.",
+      "authority_sources": [
+        "https://ccm.ma/foreign_production/pe/index.html",
+        "https://www.ccm.ma/en/tournage-au-maroc"
+      ],
+      "effective_or_version_date": "current access 2026-08-10",
+      "remaining_exact_question": null
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "mz_film_incentive",
+      "jurisdiction": "Mozambique",
+      "subjurisdiction": null,
+      "program_name": "Mozambique Instituto do Cinema Film Support",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.cultura.gov.mz"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "na_film_commission",
+      "jurisdiction": "Namibia",
+      "subjurisdiction": null,
+      "program_name": "Namibia Film Commission Production Incentive",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.namibiafilmcommission.com"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "nl_hbf",
+      "jurisdiction": "Netherlands",
+      "subjurisdiction": null,
+      "program_name": "Hubert Bals Fund (IFFR) — Development and Production Fund",
+      "starting_priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://iffr.com/en/hubert-bals-fund"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "nz_spg_international",
+      "jurisdiction": "New Zealand",
+      "subjurisdiction": null,
+      "program_name": "New Zealand Screen Production Grant (International)",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.nzfilm.co.nz/resources/nz-screen-production-grant"
+      ],
+      "effective_or_version_date": "2018-01-01",
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "ng_film_incentive",
+      "jurisdiction": "Nigeria",
+      "subjurisdiction": null,
+      "program_name": "Nigeria NFC / Creative Economy Incentive",
+      "starting_priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.nfvcb.gov.ng/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "nordic_ftvf",
+      "jurisdiction": "Nordic Region",
+      "subjurisdiction": "Nordic Region",
+      "program_name": "Nordisk Film & TV Fond",
+      "starting_priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://nordiskfilmogtvfond.com/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "mk_film_incentive",
+      "jurisdiction": "North Macedonia",
+      "subjurisdiction": null,
+      "program_name": "Macedonian Film Agency (MFA) Cash Rebate",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://mfa.gov.mk/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "no_film_incentive",
+      "jurisdiction": "Norway",
+      "subjurisdiction": null,
+      "program_name": "Norwegian Film Commission Production Incentive",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.norwegianfilm.com/25-incentive"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "om_film_commission",
+      "jurisdiction": "Oman",
+      "subjurisdiction": null,
+      "program_name": "Oman Film Commission Production Support",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.omanfilmcommission.com"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "pk_pfc_rebate",
+      "jurisdiction": "Pakistan",
+      "subjurisdiction": null,
+      "program_name": "Pakistan Film Commission Cash Rebate",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "pa_film_incentive",
+      "jurisdiction": "Panama",
+      "subjurisdiction": null,
+      "program_name": "Panama Film Commission Production Facilitation",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.panamafilmcommission.com/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "pe_film_incentive",
+      "jurisdiction": "Peru",
+      "subjurisdiction": null,
+      "program_name": "Peru DAFO Film Production Support",
+      "starting_priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://dafo.cultura.pe/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "ph_film_incentive",
+      "jurisdiction": "Philippines",
+      "subjurisdiction": null,
+      "program_name": "Film Development Council of the Philippines (FDCP) Incentive",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://fdcp.ph/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "pl_film_incentive",
+      "jurisdiction": "Poland",
+      "subjurisdiction": null,
+      "program_name": "Polish Film Institute (PISF) Cash Rebate",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://polishfilmcommission.pl/incentives/30-cash-rebate-basics/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "pt_film_incentive",
+      "jurisdiction": "Portugal",
+      "subjurisdiction": null,
+      "program_name": "Portugal Film Commission Incentive / IAPMEI",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.filmportugal.com/incentives"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "qa_dfi_fund",
+      "jurisdiction": "Qatar",
+      "subjurisdiction": null,
+      "program_name": "Doha Film Institute — Grants for Filmmakers",
+      "starting_priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.dohafilm.com/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "qa_film_incentive",
+      "jurisdiction": "Qatar",
+      "subjurisdiction": null,
+      "program_name": "Qatar Film Commission Production Incentive",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.dohafilm.com/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "ru_film_incentive",
+      "jurisdiction": "Russia",
+      "subjurisdiction": null,
+      "program_name": "Russian Cinema Fund (Fond Kino) Production Support",
+      "starting_priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.fond-kino.ru"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "rw_film_incentive",
+      "jurisdiction": "Rwanda",
+      "subjurisdiction": null,
+      "program_name": "Rwanda Development Board Film Production Support",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://rdb.rw/filming/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "sa_sfc_rebate",
+      "jurisdiction": "Saudi Arabia",
+      "subjurisdiction": null,
+      "program_name": "Saudi Film Commission (SFC) — Production Rebate",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://saudifi.com"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "sn_film_incentive",
+      "jurisdiction": "Senegal",
+      "subjurisdiction": null,
+      "program_name": "Senegal Bureau d'Accueil des Tournages Film Support",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.senegalfilm.sn/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "rs_film_rebate",
+      "jurisdiction": "Serbia",
+      "subjurisdiction": null,
+      "program_name": "Serbia Film Commission Cash Rebate",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.filmcentar.rs"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "sc_film_incentive",
+      "jurisdiction": "Seychelles",
+      "subjurisdiction": null,
+      "program_name": "Seychelles Tourism Board Film Production Support",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.seychelles.travel"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "sg_imda_film_fund",
+      "jurisdiction": "Singapore",
+      "subjurisdiction": null,
+      "program_name": "IMDA Singapore — Feature Film Production Grant",
+      "starting_priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.imda.gov.sg/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "sg_sfc_production",
+      "jurisdiction": "Singapore",
+      "subjurisdiction": null,
+      "program_name": "Singapore Film Commission (SFC) — Production Assistance",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.imda.gov.sg/regulations-and-licensing-listing/fia"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "singapore_imda_digital_media_development_fund",
+      "jurisdiction": "Singapore",
+      "subjurisdiction": null,
+      "program_name": "Singapore IMDA Digital Media Development Fund",
+      "starting_priority": "P0",
+      "closure_status": "CLOSED",
+      "final_disposition": "FUND_GRANT_CONDITIONAL",
+      "authoritative_rule": "The generic Digital Media Development Fund label is not a current deterministic incentive. Current IMDA production support is through selective TAP content grants: selected Singapore productions/co-productions, up to 50% qualified spend for SMEs or 30% for non-SMEs, with project/episode caps and commissioner/platform evidence.",
+      "authority_sources": [
+        "https://www.imda.gov.sg/about-imda/research-and-statistics/support-for-industry-sectors/media/tap",
+        "https://www.imda.gov.sg/about-imda/research-and-statistics/support-for-industry-sectors/media/tap/tv"
+      ],
+      "effective_or_version_date": "2026-04-29",
+      "remaining_exact_question": null
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "sk_film_incentive",
+      "jurisdiction": "Slovakia",
+      "subjurisdiction": null,
+      "program_name": "Slovak Audiovisual Fund (AVF) Production Incentive",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.avf.sk/english.aspx"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "si_film_incentive",
+      "jurisdiction": "Slovenia",
+      "subjurisdiction": null,
+      "program_name": "Slovenian Film Centre (SFC) Cash Rebate and Production Support",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.film-center.si"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "za_dac_fund",
+      "jurisdiction": "South Africa",
+      "subjurisdiction": null,
+      "program_name": "NFVF South Africa — Development and Production Fund",
+      "starting_priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.nfvf.co.za/funding/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "kr_film_incentive",
+      "jurisdiction": "South Korea",
+      "subjurisdiction": null,
+      "program_name": "Korea Film Council (KOFIC) Location Incentive",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.koreanfilm.or.kr/eng/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "korea_kocca_animation_production_support",
+      "jurisdiction": "South Korea",
+      "subjurisdiction": null,
+      "program_name": "Korea KOCCA Animation Production Support",
+      "starting_priority": "P0",
+      "closure_status": "CLOSED",
+      "final_disposition": "FUND_GRANT_CONDITIONAL",
+      "authoritative_rule": "KOCCA animation/content production support is administered through dated competitive calls, not a standing deterministic rebate. Store as a conditional fund with zero guaranteed optimizer value unless a project-specific current award/call is supplied.",
+      "authority_sources": [
+        "https://www.kocca.kr/kocca/pims/list.do?category=4&menuNo=204104",
+        "https://www.kocca.kr/kocca/main.do"
+      ],
+      "effective_or_version_date": "2026 calls",
+      "remaining_exact_question": null
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "lk_film_incentive",
+      "jurisdiction": "Sri Lanka",
+      "subjurisdiction": null,
+      "program_name": "Sri Lanka Film Commission Production Incentive",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://srilankafilmcommission.lk/incentives/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "se_film_incentive",
+      "jurisdiction": "Sweden",
+      "subjurisdiction": null,
+      "program_name": "Sweden Film Commission Production Rebate",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.filminstitutet.se/en/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "film_i_vast",
+      "jurisdiction": "Sweden",
+      "subjurisdiction": "Sweden — Västra Götaland",
+      "program_name": "Film i Väst — Regional Co-production Fund",
+      "starting_priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.filmivast.se/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current competent-authority treaty text/list and administering program rule on co-production eligibility."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "tw_film_incentive",
+      "jurisdiction": "Taiwan",
+      "subjurisdiction": null,
+      "program_name": "Taiwan Film and Audiovisual Institute (TFAI) Cash Rebate",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://bamid.gov.tw/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "tz_film_incentive",
+      "jurisdiction": "Tanzania",
+      "subjurisdiction": null,
+      "program_name": "Tanzania Film Board Production Facilitation",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.tanzaniafilmboard.go.tz/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "tt_film_incentive",
+      "jurisdiction": "Trinidad & Tobago",
+      "subjurisdiction": null,
+      "program_name": "Trinidad & Tobago Creative Industries Production Incentive",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://filmtt.co.tt/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "tn_film_incentive",
+      "jurisdiction": "Tunisia",
+      "subjurisdiction": null,
+      "program_name": "Tunisia CNCI Cash Rebate",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://cnci.tn/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "tr_film_incentive",
+      "jurisdiction": "Turkey",
+      "subjurisdiction": null,
+      "program_name": "Turkey Cinema General Directorate Production Support",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.sinema.gov.tr/en"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "ug_film_commission",
+      "jurisdiction": "Uganda",
+      "subjurisdiction": null,
+      "program_name": "Uganda Film Commission Production Support",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.ugandafilmcommission.org"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "gb_bfi_production",
+      "jurisdiction": "United Kingdom",
+      "subjurisdiction": null,
+      "program_name": "BFI Film Fund — Production Funding",
+      "starting_priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.bfi.org.uk/get-funding-support"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "screenskills_production_workforce_development",
+      "jurisdiction": "United Kingdom",
+      "subjurisdiction": null,
+      "program_name": "ScreenSkills Production Workforce Development",
+      "starting_priority": "P0",
+      "closure_status": "CLOSED",
+      "final_disposition": "EXCLUDE_FROM_OPTIMIZER",
+      "authoritative_rule": "ScreenSkills Film Skills Fund is an industry-funded training mechanism, not a producer incentive. Productions are encouraged to contribute 0.5% of core UK expenditure subject to the published cap; the fund finances sector training and creates no deterministic production rebate.",
+      "authority_sources": [
+        "https://www.screenskills.com/industry/film-skills-fund/contribute-to-the-film-skills-fund/"
+      ],
+      "effective_or_version_date": "current access 2026-08-10",
+      "remaining_exact_question": null
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "uk_avec",
+      "jurisdiction": "United Kingdom",
+      "subjurisdiction": null,
+      "program_name": "UK Audio Visual Expenditure Credit",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.gov.uk/guidance/corporation-tax-creative-industry-tax-reliefs"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "gb_sct_screen_fund",
+      "jurisdiction": "United Kingdom",
+      "subjurisdiction": "United Kingdom — Scotland",
+      "program_name": "Screen Scotland Production Growth Fund",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.screen.scot/funding-and-support/screen-scotland-funding/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "gb_wls_screen_fund",
+      "jurisdiction": "United Kingdom",
+      "subjurisdiction": "United Kingdom — Wales",
+      "program_name": "Wales Screen Production Fund (Ffilm Cymru Wales)",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.creativewales.wales/en/screen/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "us_itvs_fund",
+      "jurisdiction": "United States",
+      "subjurisdiction": null,
+      "program_name": "ITVS International Documentary Fund",
+      "starting_priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://itvs.org/funding/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "us_sundance_doc",
+      "jurisdiction": "United States",
+      "subjurisdiction": null,
+      "program_name": "Sundance Institute — Documentary Fund",
+      "starting_priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.sundance.org/documentary-fund/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "us_al_film_incentive",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Alabama",
+      "program_name": "Alabama Film Incentive",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.alabamafilm.org/incentives"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "us_az_film_credit",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Arizona",
+      "program_name": "Arizona Motion Picture Production Program",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.azcommerce.com/film-media/incentive/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "us_co_film_incentive",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Colorado",
+      "program_name": "Colorado Film Incentive",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://oedit.colorado.gov/colorado-office-of-film-tv-and-media"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "us_ct_film_credit",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Connecticut",
+      "program_name": "Connecticut Film Tax Credit",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://portal.ct.gov/DECD/Content/Film-television-Creative-Services"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "us_hi_film_tax_credit",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Hawaii",
+      "program_name": "Hawaii Film and Digital Media Income Tax Credit",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://filmoffice.hawaii.gov/incentives-tax-credits/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "us_il_film_credit",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Illinois",
+      "program_name": "Illinois Film Tax Credit",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.illinois.gov/business/film-production"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "us_ky_keiia",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Kentucky",
+      "program_name": "Kentucky Entertainment Industry Incentive Act (KEIIA)",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://kyfilmoffice.com/production-incentives/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "us_md_film_credit",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Maryland",
+      "program_name": "Maryland Film Production Activity Tax Credit",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.marylandfilm.org/resources/tax-incentives"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "us_ma_film_credit",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Massachusetts",
+      "program_name": "Massachusetts Film Tax Credit",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.mafilm.org/tax-incentives/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "us_mn_film_credit",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Minnesota",
+      "program_name": "Minnesota Film Production Tax Credit",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.revenue.state.mn.us/film-production-credit"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "us_ms_film_credit",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Mississippi",
+      "program_name": "Mississippi Advantage Film Program",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://filmmississippi.org/incentive/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "us_nv_film_incentive",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Nevada",
+      "program_name": "Nevada Film Incentive Program",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://nevadafilm.com/incentive/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "us_nc_film_grant",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — North Carolina",
+      "program_name": "North Carolina Film & Entertainment Grant",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.filmnc.com/incentives"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "us_ok_ofer",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Oklahoma",
+      "program_name": "Oklahoma Film Enhancement Rebate",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.oklahomafilm.org/incentives"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "us_pa_film_credit",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Pennsylvania",
+      "program_name": "Pennsylvania Film Production Tax Credit",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://dced.pa.gov/programs/pa-film-office/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "us_pr_film_incentive",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Puerto Rico",
+      "program_name": "Puerto Rico Film Industry Economic Incentives Act",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://puertoricofilm.ddec.pr.gov/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "us_ri_film_credit",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Rhode Island",
+      "program_name": "Rhode Island Motion Picture Production Tax Credit",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://commerceri.com/film-tv/ri-tax-incentive/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "us_sc_film_credit",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — South Carolina",
+      "program_name": "South Carolina Film Production Credit",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://sc.gov/government/agencies/film-commission"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "us_tn_film_incentive",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Tennessee",
+      "program_name": "Tennessee Film Entertainment Incentives",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.tnfilm.com/incentives"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "us_ut_film_incentive",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Utah",
+      "program_name": "Utah Motion Picture Incentive Program",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://film.utah.gov/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "us_va_film_credit",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Virginia",
+      "program_name": "Virginia Motion Picture Production Tax Credit",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.film.virginia.org/production/incentives"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "us_wa_mpcp",
+      "jurisdiction": "United States",
+      "subjurisdiction": "United States — Washington",
+      "program_name": "Washington State Motion Picture Competitiveness Program",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://washingtonfilmworks.com/funding/motion-picture-competitiveness-program/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "uy_xxi_incentive",
+      "jurisdiction": "Uruguay",
+      "subjurisdiction": null,
+      "program_name": "Uruguay XXI Film Incentive",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.uruguayxxi.gub.uy"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "uz_film_incentive",
+      "jurisdiction": "Uzbekistan",
+      "subjurisdiction": null,
+      "program_name": "Uzbekkino National Film Support Program",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.uzbekkino.uz"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "vn_film_incentive",
+      "jurisdiction": "Vietnam",
+      "subjurisdiction": null,
+      "program_name": "Vietnam Cinema Department Production Facilitation",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://vfc.gov.vn/"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "zm_film_commission",
+      "jurisdiction": "Zambia",
+      "subjurisdiction": null,
+      "program_name": "Zambia Film Commission Production Support",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.zfc.gov.zm"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "existing_program",
+      "canonical_id": "zw_film_commission",
+      "jurisdiction": "Zimbabwe",
+      "subjurisdiction": null,
+      "program_name": "Zimbabwe Film and Broadcasting Authority Production Support",
+      "starting_priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "authority_sources": [
+        "https://www.zbfta.co.zw"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "blocker_type": "missing_program",
+      "canonical_id": "proposed_canada_british_columbia_film_incentive_bc_fibc",
+      "jurisdiction": "Canada",
+      "subjurisdiction": "British Columbia",
+      "program_name": "Film Incentive BC (FIBC)",
+      "closure_status": "CLOSED",
+      "final_disposition": "ADD",
+      "authoritative_rule": "Distinct refundable domestic Canadian-content labour credit. Basic 40% of qualified BC labour for productions starting principal photography on/after 2025-01-01; regional 12.5%, distant 6%, training lesser of 30% trainee payments or 3% qualified BC labour, DAVE 16%, scriptwriting 35%. Eligible BC production corporation, Canadian-content/certificate and filing gates apply.",
+      "territoriality": "Qualified BC labour; regional/physical-office rules for relevant uplifts. Local payment alone is insufficient.",
+      "monetization": "Refundable corporate tax credit claimed after Creative BC certification through the tax return.",
+      "authority_sources": [
+        "https://www2.gov.bc.ca/gov/content/taxes/income-taxes/corporate/credits/film-tv",
+        "https://www.bclaws.gov.bc.ca/civix/document/id/complete/statreg/4_99"
+      ],
+      "effective_or_version_date": "2025-01-01 rates; official page updated 2026-04-20",
+      "remaining_exact_question": null
+    },
+    {
+      "blocker_type": "missing_program",
+      "canonical_id": "proposed_canada_quebec_refundable_tax_credit_for_film_production_services",
+      "jurisdiction": "Canada",
+      "subjurisdiction": "Quebec",
+      "program_name": "Refundable Tax Credit for Film Production Services",
+      "closure_status": "CLOSED",
+      "final_disposition": "ADD",
+      "authoritative_rule": "Refundable services credit: 25% eligible production costs plus 16% eligible computer VFX/animation labour for qualifying post-2024 applications. Eligible Quebec establishment, SODEC favourable advance ruling/certificate and production eligibility apply. Service-contract VFX component is limited to 65% where specified.",
+      "territoriality": "Services rendered in Quebec or property used in Quebec; Quebec incurrence and SODEC certification. Payer alone is insufficient.",
+      "monetization": "Refundable Quebec corporate tax credit claimed with prescribed form and SODEC documents.",
+      "authority_sources": [
+        "https://www.revenuquebec.ca/fr/entreprises/impots/impot-des-societes/credits-dimpot-des-societes/credits-auxquels-une-societe-peut-avoir-droit/credit-dimpot-services-de-production-cinematographique/",
+        "https://sodec.gouv.qc.ca/wp-content/uploads/refundable-tax-credit-film-television-production-services-march-2024-4.pdf"
+      ],
+      "effective_or_version_date": "applications after 2024-05-31",
+      "remaining_exact_question": null
+    },
+    {
+      "blocker_type": "missing_program",
+      "canonical_id": "proposed_united_states_missouri_motion_media_production_tax_credit",
+      "jurisdiction": "United States",
+      "subjurisdiction": "Missouri",
+      "program_name": "Motion Media Production Tax Credit",
+      "closure_status": "CLOSED",
+      "final_disposition": "ADD",
+      "authoritative_rule": "Current transferable Missouri motion-media credit governed by the SHOW MO Act and DED guidelines. Eligibility, minimum spend, base credit and additions are project/workforce dependent; pre-authorization, qualified Missouri expenditure, final application and statutory annual allocation apply. Encode from the 2023 guidelines and 2026 final form, not a single guaranteed maximum rate.",
+      "territoriality": "Qualified Missouri production/post expenditure and qualifying Missouri workforce/vendor rules; payment channel alone is insufficient.",
+      "monetization": "Transferable state tax credit after final certification; allocation constrained by statutory program authorization.",
+      "authority_sources": [
+        "https://ded.mo.gov/sites/g/files/zuston466/files/media/pdf/2023/10/Motion_Media_Tax_Credit_Guidelines_0.pdf",
+        "https://ded.mo.gov/sites/g/files/zuston466/files/media/pdf/2026/01/Final_Motion_Media_Tax_Credit_Application-updated-Jan-2026.pdf"
+      ],
+      "effective_or_version_date": "2023-09-28 guidelines; 2026-01 final application",
+      "remaining_exact_question": null
+    },
+    {
+      "blocker_type": "missing_program",
+      "canonical_id": "proposed_united_kingdom_uk_global_screen_fund_international_co_production",
+      "jurisdiction": "United Kingdom",
+      "subjurisdiction": null,
+      "program_name": "UK Global Screen Fund — International Co-production",
+      "closure_status": "CLOSED",
+      "final_disposition": "ADD",
+      "authoritative_rule": "Competitive non-recoupable grant up to GBP300,000. UK independent producer; film minority co-production or eligible TV animation/documentary structure; at least 60% finance secured (80% fast track), other UK finance, British cultural/treaty qualification, UK contribution thresholds and eligible UK elements. Requested grant cannot exceed 50% of UK financial contribution.",
+      "territoriality": "Grant restricted to UK production elements and treaty/Convention qualifying expenditure or qualifying UK expenditure for unofficial co-productions.",
+      "monetization": "Discretionary non-recoupable grant; current round closed, next scheduled September 2026. Must carry zero guaranteed optimizer value until awarded.",
+      "authority_sources": [
+        "https://www.bfi.org.uk/get-funding-support/funding-support-international-activity/uk-global-screen-fund/uk-global-screen-fund-uk-global-screen-fund-ukgsf-international-co-production",
+        "https://www.bfi.org.uk/get-funding-support/funding-support-international-activity/uk-global-screen-fund/uk-global-screen-fund-ukgsf-international-co-production/applying-uk-global-screen-fund-ukgsf-international-co-production"
+      ],
+      "effective_or_version_date": "2026 round",
+      "remaining_exact_question": null
+    },
+    {
+      "blocker_type": "missing_program",
+      "canonical_id": "proposed_germany_german_motion_picture_fund_gmpf",
+      "jurisdiction": "Germany",
+      "subjurisdiction": null,
+      "program_name": "German Motion Picture Fund (GMPF)",
+      "closure_status": "CLOSED",
+      "final_disposition": "ADD",
+      "authoritative_rule": "Distinct 2026 non-repayable grant for high-end series and non-theatrical films: up to 30% eligible German production costs, basis capped at 80% total production costs; film cap EUR5m, ordinary series cap EUR6m/season with separate high-cost series treatment. German applicant/branch, reference production, characteristic test, financing, German-cost minimums, pre-shoot application and ecological standards apply. General pre-costs and pre-existing rights/music are expressly excluded subject to stated exceptions.",
+      "territoriality": "Eligible German production costs under the guideline schedule; actual German production activity/cost predicates, not payer alone.",
+      "monetization": "Non-repayable project grant paid through FFA verification; aid cumulation/intensity rules apply.",
+      "authority_sources": [
+        "https://www.ffa.de/gmpf-guidelines",
+        "https://www.ffa.de/files/dfff/richtlinie/Richtlinien%20DFFF_GMPF_2026/GMPF_Guidelines_EN_2026.pdf"
+      ],
+      "effective_or_version_date": "2026-01-01 through 2026-12-31",
+      "remaining_exact_question": null
+    },
+    {
+      "blocker_type": "missing_program",
+      "canonical_id": "proposed_colombia_cina_audiovisual_investment_certificate",
+      "jurisdiction": "Colombia",
+      "subjurisdiction": null,
+      "program_name": "CINA Audiovisual Investment Certificate",
+      "closure_status": "CLOSED",
+      "final_disposition": "ADD",
+      "authoritative_rule": "35% of approved investment in Colombia for non-national audiovisual works produced or post-produced wholly or partly in Colombia after prior CPFC approval. Investment must contract Colombian natural/legal persons supplying necessary audiovisual/cinematographic and qualifying logistical services. Contract, fiduciary, reporting and resource-manual requirements apply.",
+      "territoriality": "Investment in qualifying Colombian persons and services performed for production/post-production in Colombia; payer alone is insufficient.",
+      "monetization": "Negotiable security issued to the foreign producer; may be transferred to Colombian income-tax filers and used under the statutory market/tax mechanism.",
+      "authority_sources": [
+        "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=110937",
+        "https://normograma.mincultura.gov.co/compilacion/docs/resolucion_mincultura_0065_2021.htm"
+      ],
+      "effective_or_version_date": "Decree 474/2020; Resolution 65/2021, current framework",
+      "remaining_exact_question": null
+    },
+    {
+      "blocker_type": "missing_program",
+      "canonical_id": "proposed_spain_canary_islands_canary_islands_foreign_production_tax_deduction",
+      "jurisdiction": "Spain",
+      "subjurisdiction": "Canary Islands",
+      "program_name": "Canary Islands Foreign Production Tax Deduction",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "territoriality": null,
+      "monetization": null,
+      "authority_sources": [
+        "https://www.investinspain.org/content/dam/icex-invest/documentos/publicaciones/sectores/industria-audiovisual/ICEX-Invest%20in%20Spain.%20Audiovisual.pdf"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current province/territory statute and administering guidance must resolve rate tiers, caps, eligible categories, territorial predicates, monetization and stacking at implementable granularity."
+    },
+    {
+      "blocker_type": "missing_program",
+      "canonical_id": "proposed_spain_navarre_navarre_audiovisual_production_tax_credit",
+      "jurisdiction": "Spain",
+      "subjurisdiction": "Navarre",
+      "program_name": "Navarre Audiovisual Production Tax Credit",
+      "closure_status": "CLOSED",
+      "final_disposition": "ADD",
+      "authoritative_rule": "Current Navarre producer deduction is generally 45%; 50% on the first EUR3m of basis for enumerated difficult works (Basque-only original, women-directed, documentary, animation, first feature/series director, shorts). EUR5m maximum. Basis is producer investment when Navarre spend reaches 40%; otherwise Navarre spend divided by 0.4. Basis may not exceed 80% of total audiovisual work cost; aid-intensity and certification rules apply.",
+      "territoriality": "Expenses treated as incurred in Navarre under the statutory/Foral Order tests; 40% territorialization controls full-basis treatment.",
+      "monetization": "Corporate tax deduction subject to certification and statutory intensity limits.",
+      "authority_sources": [
+        "https://boe.es/buscar/doc.php?id=BOE-A-2026-3910",
+        "https://www.navarra.es/documents/48192/8347251/Gu%C3%ADa%2Bincentivo%2B%28EN%29.pdf/55013640-8406-5d98-aa42-9c87196e3d7c"
+      ],
+      "effective_or_version_date": "tax periods beginning 2025-01-01; amendments published 2026",
+      "remaining_exact_question": null
+    },
+    {
+      "blocker_type": "missing_program",
+      "canonical_id": "proposed_spain_basque_country_basque_provincial_audiovisual_tax_credits",
+      "jurisdiction": "Spain",
+      "subjurisdiction": "Basque Country",
+      "program_name": "Basque Provincial Audiovisual Tax Credits",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authoritative_rule": null,
+      "territoriality": null,
+      "monetization": null,
+      "authority_sources": [
+        "https://www.investinspain.org/content/dam/icex-invest/documentos/publicaciones/who-is-who-shooting/24/FEDERATION.pdf"
+      ],
+      "effective_or_version_date": null,
+      "remaining_exact_question": "Current province/territory statute and administering guidance must resolve rate tiers, caps, eligible categories, territorial predicates, monetization and stacking at implementable granularity."
+    },
+    {
+      "blocker_type": "missing_program",
+      "canonical_id": "proposed_netherlands_netherlands_film_production_incentive_high_end_series",
+      "jurisdiction": "Netherlands",
+      "subjurisdiction": null,
+      "program_name": "Netherlands Film Production Incentive — High-End Series",
+      "closure_status": "CLOSED",
+      "final_disposition": "ADD",
+      "authoritative_rule": "ADD as a distinct Filmfonds scheme, not a duplicate of the film-production scheme. Up to 35% demonstrably spent qualifying Dutch production costs, maximum EUR3m per project/year/applicant; drama, documentary and animation series/single episodes; independent eligible applicant; Dutch/foreign broadcast guarantees, minute-cost thresholds, 50% unconditional financing, 75-point test, financing within six months, pre-shoot timing and 36-month delivery.",
+      "territoriality": "Demonstrably spent qualifying Dutch production costs; Annex 1 exclusions and point-linked Dutch activity apply. Payment alone is insufficient.",
+      "monetization": "Cash-rebate-form grant determined and paid after actual qualifying spend; annual EUR9.5m 2026 high-end-series budget and competitive round ranking apply.",
+      "authority_sources": [
+        "https://www.filmfonds.nl/en/funding/fund/netherlands-film-production-incentive-high-end-series",
+        "https://assets.filmfonds.nl/Netherlands-Film-Fund-Regulationa-for-the-Netherlands-Film-Production-Incentive-High-End-Series-2025.pdf"
+      ],
+      "effective_or_version_date": "2025 regulation; current 2026 rounds",
+      "remaining_exact_question": null
+    },
+    {
+      "blocker_type": "treaty_queue",
+      "canonical_id": "UK_BILATERAL_AND_CONVENTION_RECONCILIATION",
+      "priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authority_sources": [
+        "https://www.bfi.org.uk/apply-british-certification-expenditure-credits/co-production/"
+      ],
+      "remaining_exact_question": "Reconcile current bilateral list and both Convention versions; capture texts, formats, contributions, authorities and dates.",
+      "reason_not_closed": "Current generic/list authority does not yet supply per-pathway version, format, contribution, nationality/creative, approval, national-treatment and domestic-incentive interaction fields for every affected pathway."
+    },
+    {
+      "blocker_type": "treaty_queue",
+      "canonical_id": "AUSTRALIA_PARTNER_LIST_RECONCILIATION",
+      "priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authority_sources": [
+        "https://www.screenaustralia.gov.au/co-production-program"
+      ],
+      "remaining_exact_question": "Reconcile current treaties/MOUs, formats, contribution tests, approval timing and national-treatment consequences.",
+      "reason_not_closed": "Current generic/list authority does not yet supply per-pathway version, format, contribution, nationality/creative, approval, national-treatment and domestic-incentive interaction fields for every affected pathway."
+    },
+    {
+      "blocker_type": "treaty_queue",
+      "canonical_id": "CANADA_PARTNER_LIST_RECONCILIATION",
+      "priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authority_sources": [
+        "https://telefilm.ca/en/financing/coproduction"
+      ],
+      "remaining_exact_question": "Diff complete current Telefilm treaty/MOU list; capture texts, authorities, contribution and nationality rules.",
+      "reason_not_closed": "Current generic/list authority does not yet supply per-pathway version, format, contribution, nationality/creative, approval, national-treatment and domestic-incentive interaction fields for every affected pathway."
+    },
+    {
+      "blocker_type": "treaty_queue",
+      "canonical_id": "FRANCE_BILATERAL_LIST_RECONCILIATION",
+      "priority": "P0",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authority_sources": [
+        "https://www.cnc.fr/professionnels/etudes-et-rapports/accords-internationaux/accords-de-coproduction-internationale_1115696"
+      ],
+      "remaining_exact_question": "Diff CNC index; capture texts, versions, contributions, formats and national-treatment effects.",
+      "reason_not_closed": "Current generic/list authority does not yet supply per-pathway version, format, contribution, nationality/creative, approval, national-treatment and domestic-incentive interaction fields for every affected pathway."
+    },
+    {
+      "blocker_type": "treaty_queue",
+      "canonical_id": "EUROPEAN_CONVENTION_PARTICIPANTS_AND_VERSIONS",
+      "priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authority_sources": [
+        "https://www.coe.int/en/web/conventions/full-list/-/conventions/treaty/147"
+      ],
+      "remaining_exact_question": "Capture signatories/ratifications for CETS 147/220, compatibility, dates and film-only scope.",
+      "reason_not_closed": "Current generic/list authority does not yet supply per-pathway version, format, contribution, nationality/creative, approval, national-treatment and domestic-incentive interaction fields for every affected pathway."
+    },
+    {
+      "blocker_type": "treaty_queue",
+      "canonical_id": "EURIMAGES_MEMBERSHIP_AND_ELIGIBILITY",
+      "priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authority_sources": [
+        "https://www.coe.int/en/web/eurimages"
+      ],
+      "remaining_exact_question": "Reconcile membership, contribution/points, rounds, recoupment and national-incentive interaction.",
+      "reason_not_closed": "Current generic/list authority does not yet supply per-pathway version, format, contribution, nationality/creative, approval, national-treatment and domestic-incentive interaction fields for every affected pathway."
+    },
+    {
+      "blocker_type": "treaty_queue",
+      "canonical_id": "IBERMEDIA_MEMBERSHIP_AND_FRAMEWORK",
+      "priority": "P1",
+      "closure_status": "REMAINING",
+      "final_disposition": "REQUIRES_PRIMARY_AUTHORITY_COMPLETION",
+      "authority_sources": [
+        "https://www.programaibermedia.com"
+      ],
+      "remaining_exact_question": "Capture members, structures, contribution conditions, calls, caps, recoupment and interactions.",
+      "reason_not_closed": "Current generic/list authority does not yet supply per-pathway version, format, contribution, nationality/creative, approval, national-treatment and domestic-incentive interaction fields for every affected pathway."
+    }
+  ]
+}
