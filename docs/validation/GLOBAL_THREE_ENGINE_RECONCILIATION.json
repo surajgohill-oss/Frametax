@@ -1,0 +1,130 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-10T05:41:20.472043+00:00",
+  "scope": "Category-level three-engine reconciliation. Full per-field-per-program comparison across 262+23 records x ~28 material fields (~7,980 cells) was not performed as line items -- Codex's own completion pass already performed self-consistent per-program field triage (GLOBAL_AUTHORITY_COMPLETION.json, 254+23 records) and reported ZERO true interpretation conflicts within its own queue (GLOBAL_RECONCILIATION_QUEUE.json: conflicts=[]). This file reconciles at the level actual cross-engine disagreement was found: existing-program classification totals, the 23 missing-program dispositions, the 2 Gemini additional discoveries, treaty aggregate assessment, and named systemic/methodological findings. Per-program dispositions live in GLOBAL_CANONICAL_PROGRAM_DISPOSITION.json; per-treaty-queue dispositions in GLOBAL_CANONICAL_TREATY_DISPOSITION.json.",
+  "engine_provenance": {
+    "CODEX": {
+      "artifacts": [
+        "CODEX_GLOBAL_INCENTIVE_VALIDATION.json/.md",
+        "CODEX_GLOBAL_VALIDATION_COMPLETION_PLAN.md",
+        "CODEX_GLOBAL_VALIDATION_COMPLETION_QUEUE.json",
+        "GLOBAL_AUTHORITY_COMPLETION.json/.md (Codex's own follow-up authority-completion pass)",
+        "GLOBAL_AUTHORITY_RESEARCH_LEDGER.json",
+        "GLOBAL_RECONCILIATION_QUEUE.json (Codex's own empty self-conflict queue)",
+        "GLOBAL_REMEDIATION_INPUT.json (Codex's DRAFT remediation input, status NOT_AUTHORIZED_FOR_EXECUTION_NO_GO -- superseded by this reconciliation's final GLOBAL_REMEDIATION_INPUT.json)",
+        "GLOBAL_TREATY_COMPLETION.json",
+        "GLOBAL_VALIDATION_CLOSEOUT.md (Codex's own self-assessed gate: NO_GO_GLOBAL_VALIDATION_INCOMPLETE)"
+      ],
+      "identified_by": "commit history (4196c6b 'add Codex global database validation', 8060045/b86e89a 'publish/restore complete Codex global incentive validation', d6136b7 'normalize Codex validation paths', af1cc35 'complete global validation authority research') and in-file scope/methodology text naming Codex explicitly."
+    },
+    "GEMINI": {
+      "artifacts": [
+        "GEMINI_WORLDWIDE_AUTHORITY_VALIDATION.json/.md (Gemini's CORRECTED final worldwide pass, using the canonical 262/285 denominator)",
+        "GEMINI_MISSING_PROGRAM_VALIDATION.json",
+        "GEMINI_TREATY_VALIDATION.json",
+        "GEMINI_VALIDATION_CLOSEOUT.md"
+      ],
+      "identified_by": "commit history (47988e4/fc2b7b4 'add/complete Gemini global incentive validation', 018e0ce 'Gemini worldwide validation closeout') and in-file scope text.",
+      "superseded_artifact": {
+        "file": "GEMINI_GLOBAL_INCENTIVE_VALIDATION.json/.md",
+        "reason": "This EARLIER Gemini pass used an incorrect denominator (EXISTING_PROGRAM_COUNT=410, VERIFIED=395/INCORRECT=4/INCOMPLETE=11) that does not match the canonical 262-program inventory both Codex and Gemini's own LATER pass use. Codex's own authority-completion pass directly inspected and rejected all 415 records from this artifact as placeholder/unusable (0 salvaged; GLOBAL_AUTHORITY_RESEARCH_LEDGER.json gemini_salvage). Not treated as live evidence in this reconciliation; superseded by GEMINI_WORLDWIDE_AUTHORITY_VALIDATION.json/.md, which explicitly re-bases on the 262-program denominator and reproduces the exact 8/15/179/17/43 split."
+      }
+    },
+    "CLAUDE_CHAT": {
+      "artifacts": [
+        "CANONICAL_RULE_ADJUDICATION_MU_MT_GR_GB_AU.md (this session, prior turn -- deterministic-rule risk validation: QPE, territoriality, hard gates, rate/uplift for the MU/MT/GR/GB/AU pilot)",
+        "UNRESOLVED_JURISDICTION_RULES.md (companion ledger)",
+        "Commit 21af675 'Incentive/Optimizer Core Closeout: MU/MT/GR/GB/AU rule fixes, hard gating, Bridge export' (this session -- the actual IMPLEMENTATION and runtime verification of the deterministic-rule findings: AU hard-gate enforcement reusing the existing min_qpe_usd mechanism, the discretionary-ceiling-confirmation mechanism in allocation_pricing.py, the QPE_CAP_RULES mechanism, the Bridge package npc_usd/non_claiming_segments export fix, and the proven-zero treaty/co-production surfacing)"
+      ],
+      "identified_by": "This conversation's own prior turns -- no separate global-scope Claude artifact exists; the task's own framing (risk-focused validation of QPE/territoriality/hard gates/stacking/treaty-structure-generation-risk/schema-consumption-risk) matches this session's actual completed and implemented work exactly.",
+      "note": "Scoped to the 5-jurisdiction pilot (MU/MT/GR/GB/AU), not the full 262+23 worldwide universe -- Codex and Gemini are the sole sources for the broader 187-jurisdiction inventory."
+    }
+  },
+  "category_reconciliation": [
+    {
+      "category": "Existing-program classification (262 programs)",
+      "codex_finding": {
+        "VERIFIED": 8,
+        "INCORRECT": 15,
+        "INCOMPLETE": 179,
+        "STALE": 17,
+        "UNRESOLVED": 43
+      },
+      "gemini_finding": {
+        "VERIFIED": 8,
+        "INCORRECT": 15,
+        "INCOMPLETE": 179,
+        "STALE": 17,
+        "UNRESOLVED": 43
+      },
+      "claude_chat_finding": "Not independently re-derived at the 262-program scale (out of this session's scope); no contradicting evidence found for the 5 pilot jurisdictions' own records within this set.",
+      "classification": "AGREED",
+      "resolution": "Both engines independently produced byte-identical classification totals against the same 262-program inventory. No conflict."
+    },
+    {
+      "category": "23 Codex-discovered missing programs -- disposition",
+      "codex_finding": "23 discovered as missing; own later completion pass sourced 13 with real authority, left 10 unresolved (missing_completed=13, missing_unresolved=10 in GLOBAL_AUTHORITY_COMPLETION.json) -- this 13/10 split does not itself distinguish duplicate-vs-genuinely-new.",
+      "gemini_finding": "20 CONFIRMED_MISSING, 3 DUPLICATE (South Africa, Thailand, Netherlands-HES).",
+      "claude_chat_finding": "Cross-referenced Gemini's 3 DUPLICATE calls against Codex's own existing-program inventory and remediation text (this reconciliation pass): South Africa's duplicate call is corroborated by Codex's OWN remediation note on the existing za_nfvf_rebate record; Thailand's duplicate call is contradicted by a different administering authority (PRD vs BOI) visible in Codex's own already-gathered source; Netherlands-HES remains genuinely unresolved.",
+      "classification": "RESOLVED_BY_AUTHORITY for 2 of 3 (South Africa MERGE, Thailand ADD as distinct); TRUE_INTERPRETATION_CONFLICT for 1 (Netherlands High-End Series -- see GLOBAL_RECONCILIATION_EXCEPTIONS.json)",
+      "resolution": "Final: 12 ADD, 1 MERGE (South Africa, folds into existing za_nfvf_rebate), 10 REQUIRES_INTERPRETATION_RESOLUTION (9 confirmed-missing-but-not-yet-source-complete + 1 genuine conflict, Netherlands HES). Full per-record detail in GLOBAL_CANONICAL_PROGRAM_DISPOSITION.json missing_programs_23."
+    },
+    {
+      "category": "Gemini's 2 additional discoveries beyond the 285",
+      "codex_finding": "Not separately assessed (post-dates Codex's own missing-program pass).",
+      "gemini_finding": "2 additional material programs: Canary Islands 54% (Spain), Hungary Base Rebate.",
+      "claude_chat_finding": "Canary Islands 54% duplicates Codex's own 'Canary Islands Foreign Production Tax Deduction' missing-program discovery (same 54%/45% EUR1m-tiered figures) -- already counted within the 23. Hungary Base Rebate duplicates the EXISTING CineGlobe record 'Hungarian Tax Rebate (HIPA)' (hu_hipa_rebate, already one of the 262).",
+      "classification": "RESOLVED_BY_AUTHORITY",
+      "resolution": "Both of Gemini's 2 additional discoveries resolve to duplicates of already-counted programs. Net new rows from this source: 0."
+    },
+    {
+      "category": "Treaty dataset (38 stored, 109 participant rows)",
+      "codex_finding": "8 completion queues defined (4 x P0 major bilateral lists: UK/Australia/Canada/France; 3 x P1 multilateral frameworks; 1 x P2 residual). 0 of 8 closed. 13 new treaty/pathway records identified as needed.",
+      "gemini_finding": "Aggregate assessment of all 38 stored records: 20 confirmed current, 18 incorrect/stale, 5 missing material pathways beyond the 38, 0 unresolved.",
+      "claude_chat_finding": "Independently confirmed (via direct treaty_engine code inspection, this session's prior Incentive/Optimizer Core Closeout turn) that the deterministic engine's OWN treaty-eligibility evaluation mechanism is real, correctly wired, and already proven working for the Little Utopia pilot (Mauritius's zero treaty-partner result is a genuine PROVEN ZERO from the real registry, not a missing connection) -- the consuming mechanism is sound; the gap is treaty DATA breadth/currency for the broader (non-MU) jurisdiction set.",
+      "classification": "ONLY_ONE_ENGINE_REVIEWED at per-record granularity (Gemini reviewed all 38 individually in aggregate; Codex structured but did not close any); AGREED at the category level that the dataset is materially incomplete/stale.",
+      "resolution": "Cannot cross-validate Gemini's specific current/stale calls against Codex's specific queue records (no shared per-record key in either engine's output -- a genuine reconciliation-depth gap, not a disagreement). Canonical treaty disposition proceeds at queue level; see GLOBAL_CANONICAL_TREATY_DISPOSITION.json."
+    },
+    {
+      "category": "QPE default-inclusion rule",
+      "codex_finding": "No program-wide territoriality predicate exists; local-SPV payment cannot replace vendor/residence/performance/use-consumption/incurrence tests (systemic_findings.territoriality_finding).",
+      "gemini_finding": "Consistent -- payment through a local SPV is insufficient on its own in all five reviewed jurisdictions (GEMINI_FINAL_RULE_RESOLUTION.md \u00a75, from the prior MU/MT/GR/GB/AU phase).",
+      "claude_chat_finding": "Same rule already implemented and runtime-verified for the 5-pilot jurisdictions (commit 21af675): territoriality is enforced structurally via the allocation step, not vendor-verified -- a real, disclosed, not-yet-closed gap, consistent with both other engines' findings.",
+      "classification": "AGREED",
+      "resolution": "No local-SPV-alone qualification anywhere in the reconciled record set. Default-inclusion QPE rule (every budget line included unless authority explicitly excludes/limits it) is confirmed as CineGlobe's established rule by all three streams and is not reopened."
+    },
+    {
+      "category": "Contingency treatment architecture",
+      "codex_finding": "Not separately assessed at the worldwide scale in this pass.",
+      "gemini_finding": "Not separately assessed at the worldwide scale in this pass.",
+      "claude_chat_finding": "contingency_treatment.py's reserve -> deployment/draw -> destination-category -> destination-jurisdiction-qualification architecture is established and correct (verified this session, prior Incentive/Optimizer Core Closeout turn, via direct code inspection). Not rebuilt.",
+      "classification": "AGREED (by non-contradiction -- no other stream examined or disputed this)",
+      "resolution": "Preserved as-is per this task's explicit instruction. NO_CHANGE."
+    },
+    {
+      "category": "NPC/ranking logic and Bridge export",
+      "codex_finding": "Not assessed (outside Codex's worldwide-database scope).",
+      "gemini_finding": "Not assessed.",
+      "claude_chat_finding": "Verified via direct code inspection (this session): allocation_pricing.py's rank_allocated_structures() already correctly ranks on npc_with_adjustments_usd; the ONLY defect was the Bridge package export (package_builder.py) exposing the pre-adjustment npc_verified_usd under the single npc_usd field. Fixed in commit 21af675 -- both figures now exposed distinctly.",
+      "classification": "AGREED (by non-contradiction)",
+      "resolution": "NPC/ranking engine logic preserved as substantially correct; only the Bridge export layer was corrected. Not reopened here."
+    },
+    {
+      "category": "Treaty/co-production/hybrid candidate generation",
+      "codex_finding": "Treaty data is described as 'a seed, not a complete universe' with named broader current pathways (BFI/CNC/Screen Australia/Telefilm) not yet captured.",
+      "gemini_finding": "5 missing material treaty pathways found beyond the 38 stored.",
+      "claude_chat_finding": "Confirmed (this session, prior turn) that treaty/co-production/hybrid PRICING support already exists in allocation_pricing.py (_treaty_requirements), but candidate GENERATION never produces a treaty_coproduction/hybrid/majority_minority/multi_party StructureSpec for Little Utopia -- correctly proven zero for Mauritius specifically (no real treaty partner exists for MU), now surfaced as a visible entry rather than silently absent (commit 21af675). For OTHER anchor jurisdictions with real treaty partners, the SAME generation gap would need connecting once treaty data is current.",
+      "classification": "AGREED",
+      "resolution": "STRUCTURE_PATHWAY_ONLY / CANDIDATE_GENERATION_AND_DATA layer for future work connecting real (non-zero) treaty partners to candidate generation -- not reopened or built in this pass."
+    },
+    {
+      "category": "AU Location Offset hard gate",
+      "codex_finding": "AU Location Offset / PDV Offset classified STALE; 'Location Offset is 30% of QAPE; Producer and PDV Offsets are distinct statutory pathways' -- remediation is to split the three programs, not to add a minimum-QAPE gate specifically.",
+      "gemini_finding": "Not separately assessed in this pass (predates/outside the missing-program and treaty validations).",
+      "claude_chat_finding": "The A$20,000,000 minimum-QAPE hard gate for Location Offset specifically was root-caused, implemented, and runtime-verified this session (commit 21af675) -- reusing the existing min_qpe_usd gating mechanism already proven correct for ~25 other jurisdictions. Little Utopia's AU structure is now correctly excluded from ranking.",
+      "classification": "AGREED (Codex's remediation direction -- split Producer/Location/PDV -- and Claude/Chat's already-implemented gate are complementary, not conflicting: the gate applies within Location Offset; the split is a separate program-identity correction).",
+      "resolution": "Preserved as established per this task's explicit instruction. Codex's Producer/PDV split remains a DATA_ONLY item in the 262-program disposition (see za_location_offset-equivalent record, disposition CORRECT)."
+    }
+  ],
+  "conflicts_requiring_exceptions_file": 1
+}

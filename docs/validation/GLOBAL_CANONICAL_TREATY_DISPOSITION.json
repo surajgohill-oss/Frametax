@@ -1,0 +1,113 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-10T05:34:21.696174+00:00",
+  "scope": "Final canonical disposition for CineGlobe's treaty/co-production dataset (38 stored treaties, 109 participant rows), reconciled at queue level (the only granularity both engines' outputs support).",
+  "summary": {
+    "stored_treaties": 38,
+    "stored_participant_rows": 109,
+    "gemini_aggregate_assessment": {
+      "confirmed_current": 20,
+      "incorrect_or_stale": 18,
+      "missing_material_pathways": 5,
+      "unresolved": 0
+    },
+    "codex_queue_assessment": {
+      "material_queues_identified": 7,
+      "closed": 0,
+      "unresolved": 7,
+      "new_pathways_discovered": 13
+    },
+    "reconciliation_note": "Codex structured the 38 stored treaties (109 participant rows) into 8 completion queues (4 x P0 major bilateral-list reconciliations: UK/Australia/Canada/France; 3 x P1 multilateral framework queues: European Convention, Eurimages, Ibermedia; 1 x P2 residual bilateral refresh) and closed ZERO of them with primary authority. Gemini independently assessed all 38 stored records in aggregate and found the majority (18 of 38) incorrect/stale, plus 5 missing material pathways beyond the stored 38 -- broadly corroborating that the treaty dataset is materially incomplete, though the two engines' outputs cannot be cross-checked treaty-by-treaty because neither produced a jointly addressable per-record key linking Gemini's current/stale call to a specific stored treaty row. Claude/Chat's own risk validation (this session, prior turn) independently confirmed via direct code inspection that Little Utopia's own treaty-coproduction path (Mauritius as anchor) is correctly evaluated against the REAL treaty_engine registry and PROVEN zero (no MU bilateral treaty, not an ECS signatory) -- this is a working, correct example of the consuming mechanism, not a defect; the gap is treaty DATA breadth (mostly non-MU treaties), not the mechanism that reads it.",
+    "final_canonical_treaty_pathway_count_note": "38 stored treaty records remain the canonical starting inventory; 7 of 8 completion queues (covering the P0/P1 majority of those 38 plus multilateral frameworks) remain UNRESOLVED with zero closures, and Gemini's aggregate assessment independently found 18 of 38 stored records incorrect/stale plus 5 missing material pathways. A precise FINAL canonical treaty/pathway count cannot be stated with confidence until at minimum the 4 P0 bilateral-list queues (UK/AU/CA/FR) close -- this is one of the load-bearing reasons for the NO-GO gate result."
+  },
+  "queue_dispositions": [
+    {
+      "queue_id": "UK_BILATERAL_AND_CONVENTION_RECONCILIATION",
+      "priority": "P0",
+      "stored_records_in_scope": 11,
+      "codex_status": "UNRESOLVED_MATERIAL_TERMS",
+      "disposition": "REQUIRES_INTERPRETATION_RESOLUTION",
+      "remediation_layer": "TREATY_STRUCTURE_LOGIC_AND_DATA",
+      "official_authority": "https://www.bfi.org.uk/apply-british-certification-expenditure-credits/co-production/",
+      "work_required": "Reconcile current bilateral list and both Convention versions; capture texts, formats, contributions, authorities and dates.",
+      "gemini_cross_check": "Gemini's independent worldwide pass separately assessed all 38 stored treaties in aggregate (20 confirmed current / 18 incorrect-stale / 5 missing material pathways / 0 unresolved) but the underlying JSON does not carry a per-treaty status field, so per-record cross-validation against this queue's specific stored_records is not mechanically possible from what either engine produced. Not a conflict \u2014 a granularity gap."
+    },
+    {
+      "queue_id": "AUSTRALIA_PARTNER_LIST_RECONCILIATION",
+      "priority": "P0",
+      "stored_records_in_scope": 8,
+      "codex_status": "UNRESOLVED_MATERIAL_TERMS",
+      "disposition": "REQUIRES_INTERPRETATION_RESOLUTION",
+      "remediation_layer": "TREATY_STRUCTURE_LOGIC_AND_DATA",
+      "official_authority": "https://www.screenaustralia.gov.au/co-production-program",
+      "work_required": "Reconcile current treaties/MOUs, formats, contribution tests, approval timing and national-treatment consequences.",
+      "gemini_cross_check": "Gemini's independent worldwide pass separately assessed all 38 stored treaties in aggregate (20 confirmed current / 18 incorrect-stale / 5 missing material pathways / 0 unresolved) but the underlying JSON does not carry a per-treaty status field, so per-record cross-validation against this queue's specific stored_records is not mechanically possible from what either engine produced. Not a conflict \u2014 a granularity gap."
+    },
+    {
+      "queue_id": "CANADA_PARTNER_LIST_RECONCILIATION",
+      "priority": "P0",
+      "stored_records_in_scope": 13,
+      "codex_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION",
+      "disposition": "REQUIRES_INTERPRETATION_RESOLUTION",
+      "remediation_layer": "TREATY_STRUCTURE_LOGIC_AND_DATA",
+      "official_authority": "https://telefilm.ca/en/financing/coproduction",
+      "work_required": "Diff complete current Telefilm treaty/MOU list; capture texts, authorities, contribution and nationality rules.",
+      "gemini_cross_check": "Gemini's independent worldwide pass separately assessed all 38 stored treaties in aggregate (20 confirmed current / 18 incorrect-stale / 5 missing material pathways / 0 unresolved) but the underlying JSON does not carry a per-treaty status field, so per-record cross-validation against this queue's specific stored_records is not mechanically possible from what either engine produced. Not a conflict \u2014 a granularity gap."
+    },
+    {
+      "queue_id": "FRANCE_BILATERAL_LIST_RECONCILIATION",
+      "priority": "P0",
+      "stored_records_in_scope": 8,
+      "codex_status": "UNRESOLVED_MATERIAL_TERMS",
+      "disposition": "REQUIRES_INTERPRETATION_RESOLUTION",
+      "remediation_layer": "TREATY_STRUCTURE_LOGIC_AND_DATA",
+      "official_authority": "https://www.cnc.fr/professionnels/etudes-et-rapports/accords-internationaux/accords-de-coproduction-internationale_1115696",
+      "work_required": "Diff CNC index; capture texts, versions, contributions, formats and national-treatment effects.",
+      "gemini_cross_check": "Gemini's independent worldwide pass separately assessed all 38 stored treaties in aggregate (20 confirmed current / 18 incorrect-stale / 5 missing material pathways / 0 unresolved) but the underlying JSON does not carry a per-treaty status field, so per-record cross-validation against this queue's specific stored_records is not mechanically possible from what either engine produced. Not a conflict \u2014 a granularity gap."
+    },
+    {
+      "queue_id": "EUROPEAN_CONVENTION_PARTICIPANTS_AND_VERSIONS",
+      "priority": "P1",
+      "stored_records_in_scope": 1,
+      "codex_status": "UNRESOLVED_PARTY_PAIR_APPLICABILITY",
+      "disposition": "REQUIRES_INTERPRETATION_RESOLUTION",
+      "remediation_layer": "TREATY_STRUCTURE_LOGIC_AND_DATA",
+      "official_authority": "https://www.coe.int/en/web/conventions/full-list/-/conventions/treaty/147",
+      "work_required": "Capture signatories/ratifications for CETS 147/220, compatibility, dates and film-only scope.",
+      "gemini_cross_check": "Gemini's independent worldwide pass separately assessed all 38 stored treaties in aggregate (20 confirmed current / 18 incorrect-stale / 5 missing material pathways / 0 unresolved) but the underlying JSON does not carry a per-treaty status field, so per-record cross-validation against this queue's specific stored_records is not mechanically possible from what either engine produced. Not a conflict \u2014 a granularity gap."
+    },
+    {
+      "queue_id": "EURIMAGES_MEMBERSHIP_AND_ELIGIBILITY",
+      "priority": "P1",
+      "stored_records_in_scope": 1,
+      "codex_status": "UNRESOLVED_FULL_CANONICAL_FIELDS",
+      "disposition": "REQUIRES_INTERPRETATION_RESOLUTION",
+      "remediation_layer": "TREATY_STRUCTURE_LOGIC_AND_DATA",
+      "official_authority": "https://www.coe.int/en/web/eurimages",
+      "work_required": "Reconcile membership, contribution/points, rounds, recoupment and national-incentive interaction.",
+      "gemini_cross_check": "Gemini's independent worldwide pass separately assessed all 38 stored treaties in aggregate (20 confirmed current / 18 incorrect-stale / 5 missing material pathways / 0 unresolved) but the underlying JSON does not carry a per-treaty status field, so per-record cross-validation against this queue's specific stored_records is not mechanically possible from what either engine produced. Not a conflict \u2014 a granularity gap."
+    },
+    {
+      "queue_id": "IBERMEDIA_MEMBERSHIP_AND_FRAMEWORK",
+      "priority": "P1",
+      "stored_records_in_scope": 1,
+      "codex_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION",
+      "disposition": "REQUIRES_INTERPRETATION_RESOLUTION",
+      "remediation_layer": "TREATY_STRUCTURE_LOGIC_AND_DATA",
+      "official_authority": "https://www.programaibermedia.com",
+      "work_required": "Capture members, structures, contribution conditions, calls, caps, recoupment and interactions.",
+      "gemini_cross_check": "Gemini's independent worldwide pass separately assessed all 38 stored treaties in aggregate (20 confirmed current / 18 incorrect-stale / 5 missing material pathways / 0 unresolved) but the underlying JSON does not carry a per-treaty status field, so per-record cross-validation against this queue's specific stored_records is not mechanically possible from what either engine produced. Not a conflict \u2014 a granularity gap."
+    },
+    {
+      "queue_id": "OTHER_STORED_BILATERAL_SOURCE_AND_TERM_REFRESH",
+      "priority": "P2",
+      "stored_records_in_scope": 5,
+      "codex_status": "DEFERRED_P2",
+      "disposition": "FUND_GRANT_CONDITIONAL",
+      "remediation_layer": "DATA_ONLY",
+      "official_authority": "Use each competent authority in stored records.",
+      "work_required": "Validate status, text, contributions, formats, nationality/creative tests, authority and timing.",
+      "gemini_cross_check": "Gemini's independent worldwide pass separately assessed all 38 stored treaties in aggregate (20 confirmed current / 18 incorrect-stale / 5 missing material pathways / 0 unresolved) but the underlying JSON does not carry a per-treaty status field, so per-record cross-validation against this queue's specific stored_records is not mechanically possible from what either engine produced. Not a conflict \u2014 a granularity gap."
+    }
+  ]
+}
