@@ -1,390 +1,425 @@
 {
   "artifact": "DISTRIBUTED_CLOSURE_CHATGPT_LANE_C_OWNERSHIP",
   "canonical_baseline_commit": "8ddfaaf01a60f1d7597142ac8d5ce3aeffd1b22f",
-  "scope": "Asia, Africa, Middle East, residual Oceania excluding Australia/New Zealand, multinational/regional records, and broad residual treaty/co-production queues; excludes Lane A and Europe Lane B.",
-  "lane_existing_start": 51,
+  "scope": "Mechanical remainder after subtracting Lane A and Lane B from the canonical 161: Asia, Africa, Middle East, residual Oceania, multinational/regional records, and residual cross-regional treaty queues including Australia and Canada partner-list reconciliation.",
+  "lane_existing_start": 54,
   "lane_missing_start": 0,
-  "lane_treaty_start": 1,
+  "lane_treaty_start": 3,
   "lane_multinational_start": 2,
-  "lane_total_start": 54,
+  "lane_total_start": 59,
   "claimed_identities": [
     {
       "canonical_id": "acpfilms_fund",
       "jurisdiction": "African, Caribbean and Pacific Group",
       "program_or_pathway": "ACP Films — EU-ACP Cultural Film Co-production Fund",
       "record_type": "MULTINATIONAL_REGIONAL",
-      "starting_unresolved_reason": "Current competent-authority treaty text/list and administering program rule on co-production eligibility."
+      "starting_issue": "Current competent-authority treaty text/list and administering program rule on co-production eligibility."
     },
     {
       "canonical_id": "ao_film_incentive",
       "jurisdiction": "Angola",
       "program_or_pathway": "Angola Instituto do Cinema e Audiovisual (ICA) Production Support",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
     },
     {
       "canonical_id": "bh_film_incentive",
       "jurisdiction": "Bahrain",
       "program_or_pathway": "Bahrain Film Commission Production Support",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
     },
     {
       "canonical_id": "bd_film_incentive",
       "jurisdiction": "Bangladesh",
       "program_or_pathway": "Bangladesh Film Development Corporation (BFDC) Production Support",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
     },
     {
       "canonical_id": "bt_film_incentive",
       "jurisdiction": "Bhutan",
       "program_or_pathway": "Bhutan Film Commission / Tourism Council Production Facilitation",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
     },
     {
       "canonical_id": "bw_film_commission",
       "jurisdiction": "Botswana",
       "program_or_pathway": "Botswana Film Commission Production Support",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
     },
     {
       "canonical_id": "kh_film_incentive",
       "jurisdiction": "Cambodia",
       "program_or_pathway": "Cambodia Ministry of Culture Film Production Facilitation",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
     },
     {
       "canonical_id": "cm_film_incentive",
       "jurisdiction": "Cameroon",
       "program_or_pathway": "Cameroon Centre National de la Cinématographie Film Support",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
     },
     {
       "canonical_id": "cn_film_incentive",
       "jurisdiction": "China",
       "program_or_pathway": "China Film Administration Domestic Co-production Support",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
     },
     {
       "canonical_id": "eg_film_incentive",
       "jurisdiction": "Egypt",
       "program_or_pathway": "Egypt Film Commission Production Support",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
     },
     {
       "canonical_id": "et_film_commission",
       "jurisdiction": "Ethiopia",
       "program_or_pathway": "Ethiopian Film Commission Production Support",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
     },
     {
       "canonical_id": "fj_film_incentive",
       "jurisdiction": "Fiji",
       "program_or_pathway": "Fiji Audio Visual Commission Production Incentive",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
     },
     {
       "canonical_id": "ga_film_incentive",
       "jurisdiction": "Gabon",
       "program_or_pathway": "Gabon Ministry of Culture Film Commission Support",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
     },
     {
       "canonical_id": "gh_film_incentive",
       "jurisdiction": "Ghana",
       "program_or_pathway": "Ghana National Film Authority Production Support",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
     },
     {
       "canonical_id": "hk_film_incentive",
       "jurisdiction": "Hong Kong SAR",
       "program_or_pathway": "Create Hong Kong (CreateHK) Production Support",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
     },
     {
       "canonical_id": "hk_film_dev_fund",
       "jurisdiction": "Hong Kong SAR",
       "program_or_pathway": "Hong Kong Film Development Fund (FDF)",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
     },
     {
       "canonical_id": "ibermedia_programme",
       "jurisdiction": "Ibero-American Region (SEGIB)",
       "program_or_pathway": "IBERMEDIA Programme for Ibero-American Co-productions",
       "record_type": "MULTINATIONAL_REGIONAL",
-      "starting_unresolved_reason": "Current competent-authority treaty text/list and administering program rule on co-production eligibility."
+      "starting_issue": "Current competent-authority treaty text/list and administering program rule on co-production eligibility."
     },
     {
       "canonical_id": "in_nfdc_coproduction",
       "jurisdiction": "India",
       "program_or_pathway": "NFDC International Co-production Development Fund",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current competent-authority treaty text/list and administering program rule on co-production eligibility."
+      "starting_issue": "Current competent-authority treaty text/list and administering program rule on co-production eligibility."
     },
     {
       "canonical_id": "id_film_incentive",
       "jurisdiction": "Indonesia",
       "program_or_pathway": "Indonesian Film Commission Production Facilitation",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
     },
     {
       "canonical_id": "il_film_incentive",
       "jurisdiction": "Israel",
       "program_or_pathway": "Israel Film Fund / Maslool Incentive",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
     },
     {
       "canonical_id": "jo_rfc_rebate",
       "jurisdiction": "Jordan",
       "program_or_pathway": "Royal Film Commission Jordan — Production Rebate",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
     },
     {
       "canonical_id": "royal_film_commission_tourism_film_support",
       "jurisdiction": "Jordan",
       "program_or_pathway": "Royal Film Commission Tourism Film Support",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
     },
     {
       "canonical_id": "kz_film_incentive",
       "jurisdiction": "Kazakhstan",
       "program_or_pathway": "Kazakhfilm Studios Production Facilitation",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
     },
     {
       "canonical_id": "ke_film_incentive",
       "jurisdiction": "Kenya",
       "program_or_pathway": "Kenya Film Commission (KFC) Production Incentive",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
     },
     {
       "canonical_id": "kw_film_incentive",
       "jurisdiction": "Kuwait",
       "program_or_pathway": "Kuwait Film Committee Production Support",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
     },
     {
       "canonical_id": "my_film_incentive",
       "jurisdiction": "Malaysia",
       "program_or_pathway": "FINAS Malaysia Film Rebate",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
     },
     {
       "canonical_id": "mv_film_incentive",
       "jurisdiction": "Maldives",
       "program_or_pathway": "Maldives Marketing and PR Corporation (MMPRC) Film Facilitation",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
     },
     {
       "canonical_id": "mn_film_commission",
       "jurisdiction": "Mongolia",
       "program_or_pathway": "Mongolian Film Commission Production Support",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
     },
     {
       "canonical_id": "mz_film_incentive",
       "jurisdiction": "Mozambique",
       "program_or_pathway": "Mozambique Instituto do Cinema Film Support",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
     },
     {
       "canonical_id": "na_film_commission",
       "jurisdiction": "Namibia",
       "program_or_pathway": "Namibia Film Commission Production Incentive",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
     },
     {
       "canonical_id": "ng_film_incentive",
       "jurisdiction": "Nigeria",
       "program_or_pathway": "Nigeria NFC / Creative Economy Incentive",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
     },
     {
       "canonical_id": "om_film_commission",
       "jurisdiction": "Oman",
       "program_or_pathway": "Oman Film Commission Production Support",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
     },
     {
       "canonical_id": "pk_pfc_rebate",
       "jurisdiction": "Pakistan",
       "program_or_pathway": "Pakistan Film Commission Cash Rebate",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
     },
     {
       "canonical_id": "ph_film_incentive",
       "jurisdiction": "Philippines",
       "program_or_pathway": "Film Development Council of the Philippines (FDCP) Incentive",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
     },
     {
       "canonical_id": "qa_dfi_fund",
       "jurisdiction": "Qatar",
       "program_or_pathway": "Doha Film Institute — Grants for Filmmakers",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
     },
     {
       "canonical_id": "qa_film_incentive",
       "jurisdiction": "Qatar",
       "program_or_pathway": "Qatar Film Commission Production Incentive",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
     },
     {
       "canonical_id": "rw_film_incentive",
       "jurisdiction": "Rwanda",
       "program_or_pathway": "Rwanda Development Board Film Production Support",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
     },
     {
       "canonical_id": "sa_sfc_rebate",
       "jurisdiction": "Saudi Arabia",
       "program_or_pathway": "Saudi Film Commission (SFC) — Production Rebate",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
     },
     {
       "canonical_id": "sn_film_incentive",
       "jurisdiction": "Senegal",
       "program_or_pathway": "Senegal Bureau d'Accueil des Tournages Film Support",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
     },
     {
       "canonical_id": "sc_film_incentive",
       "jurisdiction": "Seychelles",
       "program_or_pathway": "Seychelles Tourism Board Film Production Support",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
     },
     {
       "canonical_id": "sg_imda_film_fund",
       "jurisdiction": "Singapore",
       "program_or_pathway": "IMDA Singapore — Feature Film Production Grant",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
     },
     {
       "canonical_id": "sg_sfc_production",
       "jurisdiction": "Singapore",
       "program_or_pathway": "Singapore Film Commission (SFC) — Production Assistance",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
     },
     {
       "canonical_id": "za_dac_fund",
       "jurisdiction": "South Africa",
       "program_or_pathway": "NFVF South Africa — Development and Production Fund",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
     },
     {
       "canonical_id": "kr_film_incentive",
       "jurisdiction": "South Korea",
       "program_or_pathway": "Korea Film Council (KOFIC) Location Incentive",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
     },
     {
       "canonical_id": "lk_film_incentive",
       "jurisdiction": "Sri Lanka",
       "program_or_pathway": "Sri Lanka Film Commission Production Incentive",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
     },
     {
       "canonical_id": "tw_film_incentive",
       "jurisdiction": "Taiwan",
       "program_or_pathway": "Taiwan Film and Audiovisual Institute (TFAI) Cash Rebate",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
     },
     {
       "canonical_id": "tz_film_incentive",
       "jurisdiction": "Tanzania",
       "program_or_pathway": "Tanzania Film Board Production Facilitation",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
     },
     {
       "canonical_id": "tn_film_incentive",
       "jurisdiction": "Tunisia",
       "program_or_pathway": "Tunisia CNCI Cash Rebate",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
     },
     {
       "canonical_id": "ug_film_commission",
       "jurisdiction": "Uganda",
       "program_or_pathway": "Uganda Film Commission Production Support",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
     },
     {
       "canonical_id": "uz_film_incentive",
       "jurisdiction": "Uzbekistan",
       "program_or_pathway": "Uzbekkino National Film Support Program",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
     },
     {
       "canonical_id": "vn_film_incentive",
       "jurisdiction": "Vietnam",
       "program_or_pathway": "Vietnam Cinema Department Production Facilitation",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
     },
     {
       "canonical_id": "zm_film_commission",
       "jurisdiction": "Zambia",
       "program_or_pathway": "Zambia Film Commission Production Support",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
     },
     {
       "canonical_id": "zw_film_commission",
       "jurisdiction": "Zimbabwe",
       "program_or_pathway": "Zimbabwe Film and Broadcasting Authority Production Support",
       "record_type": "EXISTING_PROGRAM",
-      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
     },
     {
       "canonical_id": "IBERMEDIA_MEMBERSHIP_AND_FRAMEWORK",
       "jurisdiction": "Multinational / cross-regional",
       "program_or_pathway": "IBERMEDIA membership and framework",
       "record_type": "TREATY_PATHWAY",
-      "starting_unresolved_reason": "Capture members, structures, contribution conditions, calls, caps, recoupment and interactions."
+      "starting_issue": "Capture members, structures, contribution conditions, calls, caps, recoupment and interactions."
+    },
+    {
+      "canonical_id": "ge_film_incentive",
+      "jurisdiction": "Georgia",
+      "program_or_pathway": "Georgian National Film Centre Production Incentive",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "ru_film_incentive",
+      "jurisdiction": "Russia",
+      "program_or_pathway": "Russian Cinema Fund (Fond Kino) Production Support",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "canonical_id": "tr_film_incentive",
+      "jurisdiction": "Turkey",
+      "program_or_pathway": "Turkey Cinema General Directorate Production Support",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "AUSTRALIA_PARTNER_LIST_RECONCILIATION",
+      "jurisdiction": "Australia / cross-border",
+      "program_or_pathway": "Australia official co-production partner-list reconciliation",
+      "record_type": "TREATY_PATHWAY",
+      "starting_issue": "Reconcile current treaties/MOUs, formats, contribution tests, approval timing and national-treatment consequences."
+    },
+    {
+      "canonical_id": "CANADA_PARTNER_LIST_RECONCILIATION",
+      "jurisdiction": "Canada / cross-border",
+      "program_or_pathway": "Canada audiovisual treaty/MOU partner-list reconciliation",
+      "record_type": "TREATY_PATHWAY",
+      "starting_issue": "Diff complete current Telefilm treaty/MOU list; capture texts, authorities, contribution and nationality rules."
     }
   ]
 }

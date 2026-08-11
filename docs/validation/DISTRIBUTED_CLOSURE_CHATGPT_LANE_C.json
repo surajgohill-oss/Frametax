@@ -3,27 +3,27 @@
   "research_cutoff": "2026-08-11",
   "canonical_baseline_commit": "8ddfaaf01a60f1d7597142ac8d5ce3aeffd1b22f",
   "authority_standard": "Primary current statute/regulation, government, administering film authority and official manuals only.",
-  "scope": "Asia, Africa, Middle East, residual Oceania excluding Australia/New Zealand, multinational/regional records, and broad residual treaty/co-production queues; excludes Lane A and Europe Lane B.",
+  "scope": "Mechanical remainder after subtracting Lane A and Lane B from the canonical 161: Asia, Africa, Middle East, residual Oceania, multinational/regional records, and residual cross-regional treaty queues including Australia and Canada partner-list reconciliation.",
   "accounting": {
-    "lane_existing_start": 51,
-    "lane_existing_closed": 26,
+    "lane_existing_start": 54,
+    "lane_existing_closed": 29,
     "lane_existing_remaining": 25,
     "lane_missing_start": 0,
     "lane_missing_closed": 0,
     "lane_missing_remaining": 0,
-    "lane_treaty_start": 1,
-    "lane_treaty_closed": 1,
+    "lane_treaty_start": 3,
+    "lane_treaty_closed": 3,
     "lane_treaty_remaining": 0,
     "lane_multinational_start": 2,
     "lane_multinational_closed": 2,
     "lane_multinational_remaining": 0,
-    "lane_total_start": 54,
-    "lane_total_closed": 29,
+    "lane_total_start": 59,
+    "lane_total_closed": 34,
     "lane_total_remaining": 25,
     "accounting_assertion": true
   },
   "status_counts": {
-    "AUTHORITY_CLOSED": 20,
+    "AUTHORITY_CLOSED": 25,
     "DUPLICATE": 2,
     "GENUINELY_UNRESOLVED": 25,
     "NON_ECONOMIC_CONFIRMED": 3,
@@ -1322,6 +1322,160 @@
       "national_treatment": "None automatically.",
       "competent_authorities": "Intergovernmental Council, Technical Unit and designated national cinematographic authorities.",
       "domestic_incentive_interaction": "Separate domestic certification and incentive rules always apply."
+    },
+    {
+      "canonical_id": "ge_film_incentive",
+      "jurisdiction": "Georgia",
+      "program_or_pathway": "Georgian National Film Centre Production Incentive",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Film in Georgia is a 20% cash rebate on qualified expenditure incurred in Georgia, with a further 2%-5% cultural uplift after the base certificate. A Georgia-registered production entity applies; at least 50% of the production budget must be mobilized at application; the applicant contracts with Enterprise Georgia, completes the production, and submits an independent qualified-cost audit within one year of certification. The official programme page sets five one-point uplift criteria covering release/making-of, specified Georgian key personnel, Georgian cultural content, at least GEL50,000 Georgian post-production, and qualifying international distribution or festival recognition. Local-entity payment alone does not qualify non-Georgian expenditure.",
+      "authority_sources": [
+        {
+          "title": "Enterprise Georgia — Film in Georgia",
+          "url": "https://www.enterprisegeorgia.gov.ge/en/business-development/filmingeorgia",
+          "pinpoint": "20% base, Georgia entity, 50% finance gate, audit/payment process and 2%-5% cultural uplift criteria"
+        },
+        {
+          "title": "Enterprise Georgia — Film in Georgia official brochure",
+          "url": "https://www.enterprisegeorgia.gov.ge/files/1/%28Brochure%29.pdf",
+          "pinpoint": "qualified expenditure guidance and programme process"
+        }
+      ],
+      "effective_date": "Current official programme checked 2026-08-11",
+      "remaining_issue": null,
+      "optimizer_consequence": "Model 20% base only after Georgian-incurrence and applicant/preapproval gates; treat the additional 2%-5% as separately earned cultural points, not an automatic 25%."
+    },
+    {
+      "canonical_id": "ru_film_incentive",
+      "jurisdiction": "Russia",
+      "program_or_pathway": "Russian Cinema Fund (Fond Kino) Production Support",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Fond Kino operates competitive, call-bound federal support for production of national films by Russian producers and cinematography organizations; it is not a territorial QPE rebate available merely because production spends in Russia. The 2026 official calls include non-repayable federal-subsidy support and separate categories/calls, with electronic application windows and selection under Fond Kino orders. Historical or project-specific award percentages must not be converted into a universal computable rate.",
+      "authority_sources": [
+        {
+          "title": "Fond Kino — 2026 non-repayable national-film production selection",
+          "url": "https://www.fond-kino.ru/projects/otbor-hudozestvennyh-nacionalnyh-filmov-v-celah-okazania-podderzki-proizvodstva-za-scet-sredstv-istocnikom-kotoryh-avlautsa-subsidii-podderzka-na-bezvozvratnoj-osnove-v-2026-godu/",
+          "pinpoint": "Orders 5, 27, 28, 30 and 40; eligible national-film calls, applicant classes and 2026 submission windows"
+        },
+        {
+          "title": "Fond Kino — 2026 children/family and auteur animation support",
+          "url": "https://fond-kino.ru/projects/otbor-nacionalnyh-filmov-dla-detskoj-i-semejnoj-auditorii-a-takze-unikalnyh-avtorskih-nacionalnyh-animacionnyh-filmov-vedusih-rossijskih-rezisserov-multiplikatorov-v-2026-godu/",
+          "pinpoint": "Orders 6, 31 and 39; current selective support rules and timing"
+        }
+      ],
+      "effective_date": "2026 calls and orders",
+      "remaining_issue": null,
+      "optimizer_consequence": "Keep as selective national-film funding outside deterministic location-incentive pricing; require the applicable live call and award decision."
+    },
+    {
+      "canonical_id": "tr_film_incentive",
+      "jurisdiction": "Turkey",
+      "program_or_pathway": "Turkey Cinema General Directorate Production Support",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Foreign Film Production Support is selective support of up to 30% of the accepted amount spent in Turkey. The foreign producer must contract with an eligible Turkish co-producer or service company, which applies; the Turkish applicant must satisfy the official recent-production/service track record. The project must score at least 50/100 on the qualification test, be commercially exhibited abroad, and meet current minimum Turkey expenditure of TRY30 million for a feature, TRY6 million for a documentary, or TRY10 million per series episode. For co-productions, eligible Turkey expenditure is apportioned by the foreign producer's ownership share. Payment is made once after completion on invoices and a sworn CPA report. The support cannot be combined with co-production support.",
+      "authority_sources": [
+        {
+          "title": "Republic of Türkiye Ministry of Culture and Tourism — Foreign Film Production Support",
+          "url": "https://sinema.ktb.gov.tr/TR-249001/yabanci-film-yapim-destegi.html",
+          "pinpoint": "applicant, 50-point test, up-to-30% rate, current minimum spends, apportionment, payment and mutual exclusivity"
+        },
+        {
+          "title": "Republic of Türkiye Ministry of Culture and Tourism — foreign productions filming permit",
+          "url": "https://sinema.ktb.gov.tr/TR-143934/yabanci-yapimlar-icin-cekim-izni-filming-permit.html",
+          "pinpoint": "foreign-production permit and Turkish host requirement"
+        }
+      ],
+      "effective_date": "Current official rules checked 2026-08-11",
+      "remaining_issue": null,
+      "optimizer_consequence": "Use a conditional maximum 30% on accepted Turkey expenditure with the current format threshold, local applicant, 50-point, approval/audit and non-stacking gates; do not treat payer location alone as qualification."
+    },
+    {
+      "canonical_id": "AUSTRALIA_PARTNER_LIST_RECONCILIATION",
+      "jurisdiction": "Australia / cross-border",
+      "program_or_pathway": "Australia official co-production partner-list reconciliation",
+      "record_type": "TREATY_PATHWAY",
+      "starting_issue": "Reconcile current treaties/MOUs, formats, contribution tests, approval timing and national-treatment consequences.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Screen Australia's current list contains 12 treaty partners and two MOU partners. Official status requires an applicable arrangement, independent co-producers, matching financial and creative participation, nationality/personnel and territorial compliance, provisional applications before pre-production, and joint competent-authority approval. Arrangement-specific format rules control. Official status treats the work as Australian and can bypass the Significant Australian Content test for Producer Offset eligibility, but neither certification nor funding is automatic.",
+      "authority_sources": [
+        {
+          "title": "Screen Australia — Co-production Partner Countries",
+          "url": "https://www.screenaustralia.gov.au/co-production-program/co-production-partner-countries/",
+          "pinpoint": "current 12 treaties and two MOUs"
+        },
+        {
+          "title": "Screen Australia — Co-production Guidelines 2023",
+          "url": "https://www.screenaustralia.gov.au/getmedia/6222d7f2-18ab-405c-b268-84beda650d3e/Co-production-Guidelines.pdf?ext=.pdf",
+          "pinpoint": "pp. 3-12: approval, national treatment, contribution, personnel, expenditure and multi-party rules"
+        },
+        {
+          "title": "Screen Australia — Guidelines step-by-step",
+          "url": "https://www.screenaustralia.gov.au/co-production-program/co-production-guidelines/guidelines-step-by-step/",
+          "pinpoint": "partner, independent-producer and pre-production provisional-approval gates"
+        }
+      ],
+      "effective_date": "Current partner list checked 2026-08-11; guidelines dated 2023",
+      "remaining_issue": null,
+      "optimizer_consequence": "Generate an official co-production pathway only for a listed arrangement and its format-specific terms; domestic Producer Offset/QAPE rules remain separate eligibility calculations.",
+      "parties": ["Canada", "China", "Germany", "India", "Ireland", "Israel", "Italy", "Korea", "Malaysia", "Singapore", "South Africa", "United Kingdom", "France", "New Zealand"],
+      "instrument": "Treaties with Canada, China, Germany, India, Ireland, Israel, Italy, Korea, Malaysia, Singapore, South Africa and the United Kingdom; MOUs with France and New Zealand.",
+      "version": "Current Screen Australia partner list and arrangement texts as at 2026-08-11",
+      "contribution_rules": "Minimum 30% for Canada, Italy and UK; 20% for China, India, Ireland, Israel, Korea, Malaysia, Singapore and South Africa; Germany 30%, reducible to 20% exceptionally or for multipartite projects; New Zealand has no stated treaty minimum but Screen Australia expects 20%; France requires at least 40% Australian and 20% French. Financial and creative participation must be reasonably proportional.",
+      "national_treatment": "Jointly approved productions are national productions in each party; in Australia they may access Producer Offset without the Significant Australian Content test and may apply for public funding, subject to every separate program rule.",
+      "competent_authorities": "Screen Australia for Australia and the competent authority named by each partner arrangement; all relevant authorities must jointly approve.",
+      "domestic_incentive_interaction": "Official status is a qualification route, not an incentive award. Producer Offset certification, QAPE, thresholds and other domestic funding requirements remain independently applicable."
+    },
+    {
+      "canonical_id": "CANADA_PARTNER_LIST_RECONCILIATION",
+      "jurisdiction": "Canada / cross-border",
+      "program_or_pathway": "Canada audiovisual treaty/MOU partner-list reconciliation",
+      "record_type": "TREATY_PATHWAY",
+      "starting_issue": "Diff complete current Telefilm treaty/MOU list; capture texts, authorities, contribution and nationality rules.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Telefilm's current official directory displays 57 country/territory headings, with the Belgium heading covering the Flemish, French and German-speaking Communities; Canadian Heritage reports 59 partner countries. Each pathway is governed by its own treaty/MOU. Telefilm requires a Canadian-controlled production company, preliminary recommendation normally at least 30 days before shooting (60 days for Hungary, Poland, Switzerland or Hong Kong), joint authority recognition, and arrangement-specific financial, creative, technical, nationality, format and territorial compliance. Contributions range from 15%-30% under the applicable treaty; participation and expenditure must be proportional. Treaty status gives national status, but CPTC and other incentives require separate applications and their remaining requirements.",
+      "authority_sources": [
+        {
+          "title": "Telefilm Canada — International treaties and memorandums of understanding",
+          "url": "https://telefilm.ca/en/we-finance-and-support/coproductions/international-treaties-and-memorandums-of-understanding",
+          "pinpoint": "complete current displayed partner directory and treaty/MOU links"
+        },
+        {
+          "title": "Telefilm Canada — Coproduction recommendation submission",
+          "url": "https://telefilm.ca/en/programmes/coproduction-submission-recommendations",
+          "pinpoint": "Canadian-controlled applicant, 15%-30% contribution range, proportionality, personnel, location and timing rules"
+        },
+        {
+          "title": "Telefilm Canada — post-2014 treaty guidelines",
+          "url": "https://telefilm.ca/wp-content/uploads/2026/06/PD_Copro-Post2014_Aug24_NEW_EN.pdf",
+          "pinpoint": "publication date 2026-02-05; national status, applicants, contribution/expenditure, nationality, locations and recommendations"
+        },
+        {
+          "title": "Canadian Heritage — Canada and Korea modernized treaty announcement",
+          "url": "https://www.canada.ca/en/canadian-heritage/news/2026/04/canada-and-republic-of-korea-sign-modernized-audiovisual-coproduction-treaty.html",
+          "pinpoint": "59 partner countries; signature and Canadian ratification status distinction"
+        },
+        {
+          "title": "CAVCO — CPTC application guidelines, treaty coproductions",
+          "url": "https://www.canada.ca/en/canadian-heritage/services/funding/cavco-tax-credits/canadian-film-video-production/application-guidelines.html",
+          "pinpoint": "national status, Telefilm recommendation, CAVCO certification and separate CPTC requirements"
+        }
+      ],
+      "effective_date": "Telefilm directory and guidelines current through 2026-08-11; post-2014 guidelines published 2026-02-05",
+      "remaining_issue": null,
+      "optimizer_consequence": "Treat each partner as arrangement-specific; never infer format, contribution percentage or domestic tax-credit eligibility from partner-list membership alone.",
+      "parties": ["Algeria", "Argentina", "Australia", "Austria", "Belgium — Flemish Community", "Belgium — French Community", "Belgium — German-speaking Community", "Bosnia and Herzegovina", "Brazil", "Bulgaria", "Chile", "China", "Colombia", "Croatia", "Cuba", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hong Kong", "Hungary", "Iceland", "India", "Ireland", "Israel", "Italy", "Japan", "Jordan", "Korea", "Latvia", "Luxembourg", "Malta", "Mexico", "Montenegro", "Morocco", "Netherlands", "New Zealand", "North Macedonia", "Norway", "Philippines", "Poland", "Romania", "Russian Federation", "Senegal", "Serbia", "Singapore", "Slovakia", "Slovenia", "South Africa", "Spain", "Sweden", "Switzerland", "Ukraine", "United Kingdom", "Uruguay", "Venezuela"],
+      "instrument": "Bilateral audiovisual coproduction treaties and MOUs listed by Telefilm; the current Belgium pathway is the 2018 MOU with three Communities and the 1984 Canada-Belgium treaty is suspended for new applications.",
+      "version": "Current Telefilm directory and applicable treaty/MOU text; arrangement-specific versions control",
+      "contribution_rules": "Applicable treaty minimums range from 15%-30%; financial, creative and technical contributions and expenditure must be proportional. Post-2014 guidelines generally require national participants, coproducing-state shooting/services, and authority consent for stated exceptions; older treaties retain their own terms.",
+      "national_treatment": "Recognition by all designated authorities grants national-production status. It permits access to Canadian benefits but does not itself award a tax credit or fund.",
+      "competent_authorities": "Telefilm Canada evaluates and recommends; the Minister of Canadian Heritage renders the Canadian recognition/certification decision through CAVCO processes, together with each foreign treaty authority.",
+      "domestic_incentive_interaction": "For CPTC, the Canadian producer must apply separately to Telefilm and CAVCO and satisfy all remaining Act/Regulations requirements. Other federal/provincial incentives and funds retain separate eligibility and expense rules."
     }
   ]
 }

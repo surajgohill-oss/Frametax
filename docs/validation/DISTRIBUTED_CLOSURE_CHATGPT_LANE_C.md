@@ -5,7 +5,7 @@ Canonical baseline: `8ddfaaf01a60f1d7597142ac8d5ce3aeffd1b22f`
 
 ## Scope
 
-Asia, Africa, Middle East, residual Oceania excluding Australia/New Zealand, multinational/regional records, and broad residual treaty/co-production queues; excludes Lane A and Europe Lane B.
+Mechanical remainder after subtracting Lane A and Lane B from the canonical 161: Asia, Africa, Middle East, residual Oceania, multinational/regional records, and residual cross-regional treaty queues including Australia and Canada partner-list reconciliation.
 
 Primary-authority standard: Primary current statute/regulation, government, administering film authority and official manuals only.
 
@@ -13,11 +13,11 @@ Primary-authority standard: Primary current statute/regulation, government, admi
 
 | Category | Start | Closed | Remaining |
 |---|---:|---:|---:|
-| Existing programs | 51 | 26 | 25 |
+| Existing programs | 54 | 29 | 25 |
 | Missing programs | 0 | 0 | 0 |
-| Treaty pathways | 1 | 1 | 0 |
+| Treaty pathways | 3 | 3 | 0 |
 | Multinational/regional | 2 | 2 | 0 |
-| **Total** | **54** | **29** | **25** |
+| **Total** | **59** | **34** | **25** |
 
 Accounting assertion: **PASS**.
 
@@ -79,6 +79,11 @@ Accounting assertion: **PASS**.
 | `zm_film_commission` | Zambia | GENUINELY_UNRESOLVED | Authority, policy, permit/facilitation function or general support mandate is identifiable, but no current complete producer incentive rule set was published at the checked primary-authority surface. | Disable pricing/ranking until the administering authority publishes the complete current rule set. |
 | `zw_film_commission` | Zimbabwe | GENUINELY_UNRESOLVED | Authority, policy, permit/facilitation function or general support mandate is identifiable, but no current complete producer incentive rule set was published at the checked primary-authority surface. | Disable pricing/ranking until the administering authority publishes the complete current rule set. |
 | `IBERMEDIA_MEMBERSHIP_AND_FRAMEWORK` | Multinational / cross-regional | AUTHORITY_CLOSED | IBERMEDIA is a 21-state intergovernmental fund, not a treaty and grants no national treatment. Annual awards are separate from domestic co-production certification and incentives. | Separate fund eligibility, official co-production status and domestic incentives. |
+| `ge_film_incentive` | Georgia | AUTHORITY_CLOSED | Film in Georgia pays 20% of qualified expenditure incurred in Georgia, with a separately earned 2%-5% cultural uplift; Georgia entity, 50%-financed-at-application, certification and independent-audit gates apply. | Use 20% base; test each uplift point and Georgian-incurrence gate separately. |
+| `ru_film_incentive` | Russia | AUTHORITY_CLOSED | Fond Kino's current 2026 production support is competitive, call-bound federal support for national films and Russian producer organizations, not an automatic territorial QPE rebate. | Keep outside deterministic location-incentive pricing; require a live call and award. |
+| `tr_film_incentive` | Turkey | AUTHORITY_CLOSED | Foreign Film Production Support is selective support up to 30% of accepted Turkey spend, subject to a qualifying Turkish applicant, 50/100 test, current format minimum spends, foreign release, audit and non-stacking rules. | Apply current thresholds/gates and accepted Turkey spend; local payer alone is insufficient. |
+| `AUSTRALIA_PARTNER_LIST_RECONCILIATION` | Australia / cross-border | AUTHORITY_CLOSED | Current list: 12 treaty partners and two MOU partners. Arrangement-specific format, contribution, nationality, creative/technical, territorial and joint-approval rules control. | Generate only valid arrangement-specific pathways; Producer Offset/QAPE remains separate. |
+| `CANADA_PARTNER_LIST_RECONCILIATION` | Canada / cross-border | AUTHORITY_CLOSED | Telefilm's current directory covers 59 partner-country relationships (57 displayed headings, with Belgium's three Communities); treaty-specific 15%-30% minimums and proportional financial/creative/technical/expenditure rules control. | Partner status is not sufficient; apply the exact treaty plus separate Telefilm/CAVCO and incentive gates. |
 
 ## Remaining primary-authority data gaps
 
@@ -559,7 +564,36 @@ IBERMEDIA is a 21-state intergovernmental fund, not a treaty and grants no natio
 - [IBERMEDIA programme](https://www.programaibermedia.com/el-programa/) — current rule
 - [2026 calls](https://www.programaibermedia.com/nuestras-convocatorias/) — current rule
 
+### `ge_film_incentive`
+
+- [Enterprise Georgia — Film in Georgia](https://www.enterprisegeorgia.gov.ge/en/business-development/filmingeorgia) — 20% base, Georgia entity, financing gate, audit/payment and 2%-5% cultural uplift
+- [Official Film in Georgia brochure](https://www.enterprisegeorgia.gov.ge/files/1/%28Brochure%29.pdf) — qualified expenditure and programme process
+
+### `ru_film_incentive`
+
+- [Fond Kino — 2026 non-repayable national-film production selection](https://www.fond-kino.ru/projects/otbor-hudozestvennyh-nacionalnyh-filmov-v-celah-okazania-podderzki-proizvodstva-za-scet-sredstv-istocnikom-kotoryh-avlautsa-subsidii-podderzka-na-bezvozvratnoj-osnove-v-2026-godu/) — current orders, applicant classes and application windows
+- [Fond Kino — 2026 children/family and auteur animation support](https://fond-kino.ru/projects/otbor-nacionalnyh-filmov-dla-detskoj-i-semejnoj-auditorii-a-takze-unikalnyh-avtorskih-nacionalnyh-animacionnyh-filmov-vedusih-rossijskih-rezisserov-multiplikatorov-v-2026-godu/) — current selective support rules
+
+### `tr_film_incentive`
+
+- [Türkiye Ministry of Culture and Tourism — Foreign Film Production Support](https://sinema.ktb.gov.tr/TR-249001/yabanci-film-yapim-destegi.html) — applicant, test, maximum rate, current minimum spends, payment and non-stacking rules
+- [Foreign productions filming permit](https://sinema.ktb.gov.tr/TR-143934/yabanci-yapimlar-icin-cekim-izni-filming-permit.html) — permit and Turkish host requirement
+
+### `AUSTRALIA_PARTNER_LIST_RECONCILIATION`
+
+- [Screen Australia — partner countries](https://www.screenaustralia.gov.au/co-production-program/co-production-partner-countries/) — current 12 treaties and two MOUs
+- [Screen Australia — Co-production Guidelines 2023](https://www.screenaustralia.gov.au/getmedia/6222d7f2-18ab-405c-b268-84beda650d3e/Co-production-Guidelines.pdf?ext=.pdf) — contribution, nationality, approval, national treatment and incentive interaction
+- [Screen Australia — step-by-step](https://www.screenaustralia.gov.au/co-production-program/co-production-guidelines/guidelines-step-by-step/) — independent-producer and provisional-approval gates
+
+### `CANADA_PARTNER_LIST_RECONCILIATION`
+
+- [Telefilm Canada — international treaties and MOUs](https://telefilm.ca/en/we-finance-and-support/coproductions/international-treaties-and-memorandums-of-understanding) — complete current directory and arrangement texts
+- [Telefilm Canada — recommendation submission](https://telefilm.ca/en/programmes/coproduction-submission-recommendations) — applicant, timing, 15%-30% range and proportionality
+- [Telefilm Canada — post-2014 treaty guidelines](https://telefilm.ca/wp-content/uploads/2026/06/PD_Copro-Post2014_Aug24_NEW_EN.pdf) — published 2026-02-05
+- [CAVCO — CPTC treaty-coproduction rules](https://www.canada.ca/en/canadian-heritage/services/funding/cavco-tax-credits/canadian-film-video-production/application-guidelines.html) — national status and separate CPTC certification
+
 ## Additional findings
 
 - Genuine interpretation conflicts: None.
 - Bounded additional discoveries: None.
+- Ownership reconciliation: Lane A 57 + Lane B 45 + Lane C 59 = canonical 161; all pairwise intersections are empty; no overlap or gap.
