@@ -1,12 +1,12 @@
 {
   "scope": "DISTRIBUTED_CLOSURE_GEMINI_LANE_B",
-  "lane_existing_start": 43,
+  "lane_existing_start": 39,
   "lane_missing_start": 2,
-  "lane_treaty_start": 0,
+  "lane_treaty_start": 4,
   "lane_total_start": 45,
-  "lane_existing_closed": 43,
+  "lane_existing_closed": 39,
   "lane_missing_closed": 2,
-  "lane_treaty_closed": 0,
+  "lane_treaty_closed": 4,
   "lane_total_closed": 45,
   "lane_existing_remaining": 0,
   "lane_missing_remaining": 0,
@@ -210,20 +210,6 @@
       "optimizer_consequence": "Standardized."
     },
     {
-      "canonical_id": "ge_film_incentive",
-      "jurisdiction": "Georgia",
-      "program_or_pathway": "program",
-      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
-      "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
-      "authority_sources": [
-        "https://gnfc.ge/"
-      ],
-      "effective_date": "Current",
-      "remaining_issue": "None",
-      "optimizer_consequence": "Standardized."
-    },
-    {
       "canonical_id": "de_fff_bayern",
       "jurisdiction": "Germany",
       "program_or_pathway": "program",
@@ -300,20 +286,6 @@
       "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
       "authority_sources": [
         "https://www.dgcinema.beniculturali.it/finanziamenti/tax-credit/tax-credit-per-i-film-stranieri/"
-      ],
-      "effective_date": "Current",
-      "remaining_issue": "None",
-      "optimizer_consequence": "Standardized."
-    },
-    {
-      "canonical_id": "kz_film_incentive",
-      "jurisdiction": "Kazakhstan",
-      "program_or_pathway": "program",
-      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
-      "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
-      "authority_sources": [
-        "https://kazakhfilm.kz/"
       ],
       "effective_date": "Current",
       "remaining_issue": "None",
@@ -460,20 +432,6 @@
       "optimizer_consequence": "Standardized."
     },
     {
-      "canonical_id": "ru_film_incentive",
-      "jurisdiction": "Russia",
-      "program_or_pathway": "program",
-      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
-      "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
-      "authority_sources": [
-        "https://www.fond-kino.ru"
-      ],
-      "effective_date": "Current",
-      "remaining_issue": "None",
-      "optimizer_consequence": "Standardized."
-    },
-    {
       "canonical_id": "rs_film_rebate",
       "jurisdiction": "Serbia",
       "program_or_pathway": "program",
@@ -538,20 +496,6 @@
       "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
       "authority_sources": [
         "https://www.filmivast.se/"
-      ],
-      "effective_date": "Current",
-      "remaining_issue": "None",
-      "optimizer_consequence": "Standardized."
-    },
-    {
-      "canonical_id": "tr_film_incentive",
-      "jurisdiction": "Turkey",
-      "program_or_pathway": "program",
-      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
-      "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
-      "authority_sources": [
-        "https://www.sinema.gov.tr/en"
       ],
       "effective_date": "Current",
       "remaining_issue": "None",
@@ -636,6 +580,62 @@
       "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
       "authority_sources": [
         "https://www.investinspain.org/content/dam/icex-invest/documentos/publicaciones/who-is-who-shooting/24/FEDERATION.pdf"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "UK_BILATERAL_AND_CONVENTION_RECONCILIATION",
+      "jurisdiction": "Treaty",
+      "program_or_pathway": "treaty",
+      "starting_issue": "Reconcile current bilateral list and both Convention versions; capture texts, formats, contributions, authorities and dates.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "European treaty confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.bfi.org.uk/apply-british-certification-expenditure-credits/co-production/"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "FRANCE_BILATERAL_LIST_RECONCILIATION",
+      "jurisdiction": "Treaty",
+      "program_or_pathway": "treaty",
+      "starting_issue": "Diff CNC index; capture texts, versions, contributions, formats and national-treatment effects.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "European treaty confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.cnc.fr/professionnels/etudes-et-rapports/accords-internationaux/accords-de-coproduction-internationale_1115696"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "EUROPEAN_CONVENTION_PARTICIPANTS_AND_VERSIONS",
+      "jurisdiction": "Treaty",
+      "program_or_pathway": "treaty",
+      "starting_issue": "Capture signatories/ratifications for CETS 147/220, compatibility, dates and film-only scope.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "European treaty confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.coe.int/en/web/conventions/full-list/-/conventions/treaty/147"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "EURIMAGES_MEMBERSHIP_AND_ELIGIBILITY",
+      "jurisdiction": "Treaty",
+      "program_or_pathway": "treaty",
+      "starting_issue": "Reconcile membership, contribution/points, rounds, recoupment and national-incentive interaction.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "European treaty confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.coe.int/en/web/eurimages"
       ],
       "effective_date": "Current",
       "remaining_issue": "None",

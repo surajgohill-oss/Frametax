@@ -1,8 +1,8 @@
 {
   "scope": "DISTRIBUTED_CLOSURE_GEMINI_LANE_B_OWNERSHIP",
-  "lane_existing_start": 43,
+  "lane_existing_start": 39,
   "lane_missing_start": 2,
-  "lane_treaty_start": 0,
+  "lane_treaty_start": 4,
   "lane_total_start": 45,
   "claimed_identities": [
     {
@@ -90,12 +90,6 @@
       "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
     },
     {
-      "canonical_id": "ge_film_incentive",
-      "jurisdiction": "Georgia",
-      "type": "existing_program",
-      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
-    },
-    {
       "canonical_id": "de_fff_bayern",
       "jurisdiction": "Germany",
       "type": "existing_program",
@@ -130,12 +124,6 @@
       "jurisdiction": "Italy",
       "type": "existing_program",
       "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
-    },
-    {
-      "canonical_id": "kz_film_incentive",
-      "jurisdiction": "Kazakhstan",
-      "type": "existing_program",
-      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
     },
     {
       "canonical_id": "lv_film_incentive",
@@ -198,12 +186,6 @@
       "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
     },
     {
-      "canonical_id": "ru_film_incentive",
-      "jurisdiction": "Russia",
-      "type": "existing_program",
-      "starting_unresolved_reason": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
-    },
-    {
       "canonical_id": "rs_film_rebate",
       "jurisdiction": "Serbia",
       "type": "existing_program",
@@ -232,12 +214,6 @@
       "jurisdiction": "Sweden",
       "type": "existing_program",
       "starting_unresolved_reason": "Current competent-authority treaty text/list and administering program rule on co-production eligibility."
-    },
-    {
-      "canonical_id": "tr_film_incentive",
-      "jurisdiction": "Turkey",
-      "type": "existing_program",
-      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
     },
     {
       "canonical_id": "gb_bfi_production",
@@ -274,6 +250,26 @@
       "jurisdiction": "Spain",
       "type": "missing_program",
       "starting_unresolved_reason": "Current province/territory statute and administering guidance must resolve rate tiers, caps, eligible categories, territorial predicates, monetization and stacking at implementable granularity."
+    },
+    {
+      "canonical_id": "UK_BILATERAL_AND_CONVENTION_RECONCILIATION",
+      "type": "treaty_queue",
+      "starting_unresolved_reason": "Reconcile current bilateral list and both Convention versions; capture texts, formats, contributions, authorities and dates."
+    },
+    {
+      "canonical_id": "FRANCE_BILATERAL_LIST_RECONCILIATION",
+      "type": "treaty_queue",
+      "starting_unresolved_reason": "Diff CNC index; capture texts, versions, contributions, formats and national-treatment effects."
+    },
+    {
+      "canonical_id": "EUROPEAN_CONVENTION_PARTICIPANTS_AND_VERSIONS",
+      "type": "treaty_queue",
+      "starting_unresolved_reason": "Capture signatories/ratifications for CETS 147/220, compatibility, dates and film-only scope."
+    },
+    {
+      "canonical_id": "EURIMAGES_MEMBERSHIP_AND_ELIGIBILITY",
+      "type": "treaty_queue",
+      "starting_unresolved_reason": "Reconcile membership, contribution/points, rounds, recoupment and national-incentive interaction."
     }
   ]
 }
