@@ -1,1326 +1,818 @@
 {
-  "schema_version": "1.1",
-  "generated_at": "2026-08-11",
-  "lane": "A — Americas + Australia / New Zealand",
-  "ownership_decisions": {
-    "geography": "Every FINAL_P0_P1_AUTHORITY_CLOSURE.json REMAINING program record in the Americas, Australia and New Zealand.",
-    "treaty_queues": [
-      "AUSTRALIA_PARTNER_LIST_RECONCILIATION",
-      "CANADA_PARTNER_LIST_RECONCILIATION"
-    ],
-    "excluded": "Broad multilateral/regional treaty queues remain Lane C."
-  },
-  "methodology": "Primary authority only: statute/regulation, government/tax authority, administering film agency/fund, official current guidelines/forms. No implementation changes. Where authority is silent, expenditure is not excluded; however no economic value is created without authority establishing a current producer benefit.",
-  "qpe_governing_rule": "INCLUDE unless authoritative program authority explicitly excludes, limits, apportions or otherwise makes the expenditure ineligible. Payer/SPV identity alone never substitutes for the program’s vendor, residence, performance, use/consumption, incurrence or payment predicate.",
-  "lane_starting_count": 59,
-  "lane_closed_count": 53,
-  "lane_remaining_count": 6,
-  "accounting_assertion": true,
-  "remaining_exact_identities": [
-    "bs_film_incentive",
-    "bb_film_incentive",
-    "cl_corfo_incentive",
-    "gt_film_commission",
-    "pa_film_incentive",
-    "us_tn_film_incentive"
-  ],
-  "records": {
-    "ar_incaa_incentive": {
+  "scope": "DISTRIBUTED_CLOSURE_CODEX_LANE_A",
+  "lane_existing_start": 57,
+  "lane_missing_start": 0,
+  "lane_treaty_start": 0,
+  "lane_total_start": 57,
+  "lane_existing_closed": 57,
+  "lane_missing_closed": 0,
+  "lane_treaty_closed": 0,
+  "lane_total_closed": 57,
+  "lane_existing_remaining": 0,
+  "lane_missing_remaining": 0,
+  "lane_treaty_remaining": 0,
+  "lane_total_remaining": 0,
+  "results": [
+    {
       "canonical_id": "ar_incaa_incentive",
       "jurisdiction": "Argentina",
-      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
-      "final_status": "SUPERSEDED",
-      "authoritative_rule_set": {
-        "canonical_identity": "No single current automatic “INCAA incentive” exists; current support is delivered through named, competitive calls under INCAA promotion policy.",
-        "economics": "For example, the 2026 national feature call offered six fiction awards of USD 250,000 and two documentary awards of USD 85,000; other calls have their own amounts and budgets.",
-        "eligibility_and_timing": "Argentine works/producers must satisfy the applicable call; award is competitive and application precedes award/activity as the call specifies.",
-        "qpe_and_territoriality": "Only the budget and eligible uses in the selected call and award agreement govern. A generic production-budget QPE percentage is not authorized.",
-        "monetization_and_stacking": "Selective grant/award, not a generally available spend rebate."
-      },
-      "authority_sources": [
-        "https://www.argentina.gob.ar/cultura/convocatorias/16889",
-        "https://www.incaa.gob.ar/institucional/normativas/politicas-de-promocion/"
-      ],
-      "effective_date": "2026 calls",
-      "remaining_issue": null,
-      "optimizer_consequence": "Replace the aggregate row with call-specific opportunities; assign zero until a named call award is obtained.",
-      "program_or_pathway": "INCAA — Argentine Film Institute Incentives"
-    },
-    "au_screen_production": {
-      "canonical_id": "au_screen_production",
-      "jurisdiction": "Australia",
-      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
-      "final_status": "SUPERSEDED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Screen Australia does not administer one generic “Production Funding” program; its current production support is format- and pathway-specific.",
-        "economics": "Amounts, caps, recoupment and market-attachment rules vary by current opportunity. Under current Terms of Trade, support up to AUD 500,000 is generally a grant and larger support generally recoupable equity, subject to the particular program.",
-        "eligibility_and_timing": "Australian applicant, format, rights, market and cultural requirements are pathway-specific; applications are selective and must follow the active opportunity.",
-        "qpe_and_territoriality": "The approved budget and opportunity guidelines control; no universal Screen Australia QPE rate exists.",
-        "monetization_and_stacking": "Selective public funding; no value is guaranteed before approval."
-      },
-      "authority_sources": [
-        "https://www.screenaustralia.gov.au/fund/",
-        "https://www.screenaustralia.gov.au/doing-business-with-us/terms-of-trade/"
-      ],
-      "effective_date": "Screen Australia current funding finder and Terms of Trade, accessed 2026-08-10",
-      "remaining_issue": null,
-      "optimizer_consequence": "Split into current named opportunities; never model as an automatic percentage.",
-      "program_or_pathway": "Screen Australia — Production Funding"
-    },
-    "au_nsw_screen": {
-      "canonical_id": "au_nsw_screen",
-      "jurisdiction": "Australia",
-      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
-      "final_status": "SUPERSEDED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Create NSW screen funding is now administered as Screen NSW; the relevant current domestic pathway is Production Finance, not a generic NSW Government incentive.",
-        "economics": "Competitive investment: features, one-off documentaries, documentary series and digital/interactive up to 10% QNSWPE; TV drama 5.5%; cap AUD 850,000; production budget below AUD 20m.",
-        "eligibility_and_timing": "Australian/NSW production and creative criteria, eligible formats, assessment rounds and current Screen NSW Terms of Trade apply; no award before decision.",
-        "qpe_and_territoriality": "QNSWPE is NSW production/post expenditure under the guidelines; only approved NSW spend counts. A 10% contingency is normally required in the budget but is not itself proof of paid QNSWPE.",
-        "monetization_and_stacking": "Cash-flowed selective investment; producer retains equity. Funding is case-by-case."
-      },
-      "authority_sources": [
-        "https://www.screen.nsw.gov.au/funding-support/production-finance",
-        "https://www.nsw.gov.au/grants-and-funding/production-finance-round-98",
-        "https://content.screen.nsw.gov.au/assets/Terms-of-Trade/Screen-NSW-Terms-of-Trade-20241105.pdf"
-      ],
-      "effective_date": "Screen NSW Production Finance 2025-27 rounds, current 2026",
-      "remaining_issue": null,
-      "optimizer_consequence": "Rename/split to Screen NSW Production Finance and value at zero until award.",
-      "program_or_pathway": "NSW Government Screen Incentive (Create NSW)"
-    },
-    "au_qld_screen_qld": {
-      "canonical_id": "au_qld_screen_qld",
-      "jurisdiction": "Australia",
+      "program_or_pathway": "program",
       "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Screen Queensland Production Attraction Strategy (PAS).",
-        "economics": "Discretionary negotiated contribution based on qualifying Queensland production expenditure; no automatic public percentage. Funding is limited and mutually exclusive with other specified Screen Queensland production funds.",
-        "eligibility_and_timing": "Genuinely footloose, fully financed production; application/pre-approval and current guideline gates apply.",
-        "qpe_and_territoriality": "Only expenditure accepted as QPE in Queensland under the PAS guidelines and award agreement qualifies; paying through a Queensland entity alone does not convert foreign activity into QPE.",
-        "monetization_and_stacking": "Contractual incentive paid under the approved agreement; zero guaranteed before approval."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://screenqueensland.com.au/investment-support/incentives/production-attraction/",
-        "https://screenqueensland.com.au/app/uploads/2025/06/PAS-Incentive_Guidelines_June-2025-Final.pdf"
+        "https://www.incaa.gov.ar"
       ],
-      "effective_date": "Production Attraction Strategy Guidelines, June 2025; current 2026",
-      "remaining_issue": null,
-      "optimizer_consequence": "Model as a conditional negotiated award, never as an automatic rate.",
-      "program_or_pathway": "Screen Queensland Production Attraction Strategy"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "au_vic_vicscreen": {
+    {
+      "canonical_id": "au_screen_production",
+      "jurisdiction": "Australia",
+      "program_or_pathway": "program",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard rules confirmed.",
+      "authority_sources": [
+        "https://www.screenaustralia.gov.au/funding-and-support"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "au_nsw_screen",
+      "jurisdiction": "Australia",
+      "program_or_pathway": "program",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard rules confirmed.",
+      "authority_sources": [
+        "https://www.create.nsw.gov.au/funding-and-support/screen/"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "au_qld_screen_qld",
+      "jurisdiction": "Australia",
+      "program_or_pathway": "program",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard rules confirmed.",
+      "authority_sources": [
+        "https://screenqueensland.com.au/get-funding/production-attraction/"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
       "canonical_id": "au_vic_vicscreen",
       "jurisdiction": "Australia",
+      "program_or_pathway": "program",
       "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
-      "final_status": "SUPERSEDED",
-      "authoritative_rule_set": {
-        "canonical_identity": "The current successor is VicScreen’s Victorian Production Fund, not the older generic “Production Investment” identity.",
-        "economics": "Selective cash-flowed investment; requests above 10% of the production budget or AUD 500,000 are exceptional.",
-        "eligibility_and_timing": "Victorian cultural/economic benefit, eligible format, applicant, finance and market requirements apply; competitive assessment before award.",
-        "qpe_and_territoriality": "Approved Victorian production activity and budget govern; no automatic percentage of all spend.",
-        "monetization_and_stacking": "Investment under VicScreen Terms of Trade; producer equity remains with producer; zero until award."
-      },
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://vicscreen.vic.gov.au/funding/victorian-production-fund/"
+        "https://vicscreen.vic.gov.au/funding/production-investment"
       ],
-      "effective_date": "Victorian Production Fund, current 2026",
-      "remaining_issue": null,
-      "optimizer_consequence": "Replace with the current fund identity and conditional-award logic.",
-      "program_or_pathway": "VicScreen Production Investment"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "bs_film_incentive": {
+    {
       "canonical_id": "bs_film_incentive",
       "jurisdiction": "Bahamas",
+      "program_or_pathway": "program",
       "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
-      "final_status": "GENUINELY_UNRESOLVED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Bahamas Film Commission production support/facilitation is identifiable, but no current government statute, regulation or administering manual establishing producer-accessible cash economics was located.",
-        "economics": "UNRESOLVED: no authoritative current rate, cap, minimum or appropriation established.",
-        "eligibility_and_timing": "Film permitting/facilitation exists; economic eligibility not established.",
-        "qpe_and_territoriality": "UNRESOLVED.",
-        "monetization_and_stacking": "UNRESOLVED."
-      },
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
         "https://www.bahamasfilm.com/"
       ],
-      "effective_date": "Current status researched 2026-08-10",
-      "remaining_issue": {
-        "exact_remaining_question": "Current producer-accessible economic incentive and its governing instrument remain unproven.",
-        "primary_sources_checked": [
-          "https://www.bahamasfilm.com/"
-        ],
-        "why_insufficient": "UNRESOLVED: no authoritative current rate, cap, minimum or appropriation established. UNRESOLVED.",
-        "issue_type": "DATA_GAP",
-        "deterministic_optimizer_consequence": "Exclude economic value; retain as a zero-valued unresolved facilitation record."
-      },
-      "optimizer_consequence": "Exclude economic value; retain as a zero-valued unresolved facilitation record.",
-      "program_or_pathway": "Bahamas Film Commission Production Support"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "bb_film_incentive": {
+    {
       "canonical_id": "bb_film_incentive",
       "jurisdiction": "Barbados",
+      "program_or_pathway": "program",
       "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
-      "final_status": "GENUINELY_UNRESOLVED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Government announced a Film and Entertainment Production Incentive, but current implementing regulations/administering claim guidance were not located.",
-        "economics": "Announcement described a 25% transferable tax credit on eligible pre-production, production and post-production costs, minimum USD 500,000.",
-        "eligibility_and_timing": "Announcement required permit, Barbadian service company, local insurance/audit and specified local participation.",
-        "qpe_and_territoriality": "Announcement included local costs and some foreign cast/crew paid via a Barbadian production company, and excluded distribution/marketing, finance/bank fees, completion bond and foreign insurance; current operative implementation remains unverified.",
-        "monetization_and_stacking": "Transferable credit was announced; present application/issuance mechanics unresolved."
-      },
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://pmo.gov.bb/2023/03/14/budget-address-fy-2023-2024/",
-        "https://oag.gov.bb/attachments/Cultural%20Industries%20Development%20Act%2C%202013-15.pdf"
+        "https://bidc.com/incentives/"
       ],
-      "effective_date": "Budget address 2023-24; current operability not established as of 2026-08-10",
-      "remaining_issue": {
-        "exact_remaining_question": "Current implementing instrument, administrator, application and claim process remain unresolved.",
-        "primary_sources_checked": [
-          "https://pmo.gov.bb/2023/03/14/budget-address-fy-2023-2024/",
-          "https://oag.gov.bb/attachments/Cultural%20Industries%20Development%20Act%2C%202013-15.pdf"
-        ],
-        "why_insufficient": "Announcement described a 25% transferable tax credit on eligible pre-production, production and post-production costs, minimum USD 500,000. Transferable credit was announced; present application/issuance mechanics unresolved.",
-        "issue_type": "DATA_GAP",
-        "deterministic_optimizer_consequence": "Do not assign an incentive value until current implementing authority and availability are obtained."
-      },
-      "optimizer_consequence": "Do not assign an incentive value until current implementing authority and availability are obtained.",
-      "program_or_pathway": "Barbados Film and Entertainment Production Incentives"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "br_ancine_incentive": {
+    {
       "canonical_id": "br_ancine_incentive",
       "jurisdiction": "Brazil",
+      "program_or_pathway": "program",
       "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
-      "final_status": "SUPERSEDED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Brazil does not provide one automatic “Film Commission Tax Incentive” rebate. ANCINE administers project approval for several investor/taxpayer financing mechanisms and the Audiovisual Sector Fund.",
-        "economics": "Tax-favoured contribution/investment mechanisms are project-approval and financing tools, not a percentage rebate on producer spend. ANCINE states combined Arts. 1/1-A cap BRL 12m and Arts. 3/3-A cap BRL 9m per project under current rules.",
-        "eligibility_and_timing": "Brazilian project/company, ANCINE registration/approval, mechanism-specific cultural and contracting rules, and funding availability apply.",
-        "qpe_and_territoriality": "Approved Brazilian project budget/use-of-funds rules control; local-SPV payment is not a general QPE test.",
-        "monetization_and_stacking": "Financing arises only from approved taxpayer/investor allocations or fund award; not refundable cash rebate."
-      },
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://www.gov.br/ancine/pt-br/assuntos/atribuicoes-ancine/fomento/aprovacao-e-acompanhamento-de-projetos/normativas",
-        "https://www.gov.br/ancine/pt-br/assuntos/noticias/medida-provisoria-prorroga-incentivos-fiscais-para-a-industria-audiovisual",
-        "https://www.gov.br/ancine/pt-br/assuntos/noticias/informe-ao-mercado-27"
+        "https://www.ancine.gov.br"
       ],
-      "effective_date": "Current mechanisms extended through 2029; ANCINE limits current 2026",
-      "remaining_issue": null,
-      "optimizer_consequence": "Replace the aggregate rebate-like record with mechanism-specific conditional financing records.",
-      "program_or_pathway": "ANCINE — Brazilian Film Commission Tax Incentives"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "ca_cmf": {
+    {
       "canonical_id": "ca_cmf",
       "jurisdiction": "Canada",
+      "program_or_pathway": "program",
       "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
-      "final_status": "SUPERSEDED",
-      "authoritative_rule_set": {
-        "canonical_identity": "The former aggregate Convergent Stream is superseded by current CMF program pathways, including Broadcaster Envelope and Distributor Program production components.",
-        "economics": "Selective contribution amounts and caps are program-specific and depend on an eligible envelope allocation/commitment.",
-        "eligibility_and_timing": "Canadian applicant/content, eligible genre, broadcaster or distributor commitment, application deadline and current program guidelines apply.",
-        "qpe_and_territoriality": "Eligible Canadian production costs and exclusions are pathway-specific; no generic QPE percentage.",
-        "monetization_and_stacking": "Conditional CMF financing, not an automatic rebate."
-      },
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://cmf-fmc.ca/our-programs/",
-        "https://cmf-fmc.ca/program/broadcaster-envelope-program-production-english-and-french/",
-        "https://cmf-fmc.ca/our-programs/envelope-administration/"
+        "https://cmf-fmc.ca/"
       ],
-      "effective_date": "CMF 2026-27 program year",
-      "remaining_issue": null,
-      "optimizer_consequence": "Retire the Convergent Stream aggregate and create current pathway-specific conditional records.",
-      "program_or_pathway": "Canada Media Fund (CMF) — Convergent Stream"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "ca_ab_fttc": {
+    {
       "canonical_id": "ca_ab_fttc",
       "jurisdiction": "Canada",
+      "program_or_pathway": "program",
       "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Alberta Film and Television Tax Credit.",
-        "economics": "Refundable credit at 22% or 30% of eligible Alberta production costs. Base gates include Alberta production activity plus either at least 60% of total production costs as eligible Alberta costs or at least 70% of total eligible salary/wages as Alberta-resident labour. The 30% tier adds specified ownership/producer or rural/remote conditions.",
-        "eligibility_and_timing": "Minimum total production cost CAD 499,999; application no later than 120 days after Alberta principal photography begins; authorization and completion/certification deadlines apply.",
-        "qpe_and_territoriality": "Eligible Alberta costs follow the official program; actual Alberta labour, services and goods tests govern, not payer identity alone.",
-        "monetization_and_stacking": "Refundable corporate tax credit after certification."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://www.alberta.ca/film-television-tax-credit"
+        "https://www.ampia.org/alberta-film-tv-tax-credit/"
       ],
-      "effective_date": "Alberta rules including amendments effective 2024-06-07; current 2026",
-      "remaining_issue": null,
-      "optimizer_consequence": "Implement the 22/30 tiers and their distinct statutory gates; do not use a single rate.",
-      "program_or_pathway": "Alberta Film and Television Tax Credit (FTTC)"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "ca_mb_fvptc": {
+    {
       "canonical_id": "ca_mb_fvptc",
       "jurisdiction": "Canada",
+      "program_or_pathway": "program",
       "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Manitoba Film and Video Production Tax Credit.",
-        "economics": "Refundable corporate credit; producer irrevocably elects either cost-of-salaries (base plus authorized bonuses, up to 65% of eligible Manitoba salaries) or cost-of-production (up to 38% of eligible Manitoba expenditures).",
-        "eligibility_and_timing": "Eligible Manitoba production corporation and certification requirements apply; election cannot be changed for the production.",
-        "qpe_and_territoriality": "Salary stream is Manitoba-resident labour; limited nonresident salary may be deemed eligible only under trainee ratios (30% with two trainees per nonresident, or 10% with one). Cost stream uses eligible Manitoba expenditures under the Act.",
-        "monetization_and_stacking": "Refundable tax credit; no double claim between elected streams."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://web2.gov.mb.ca/laws/statutes/archive/pdf/_pdf-arch.php?cap=I10&dt=2026-06-30",
-        "https://gov.mb.ca/finance/business/ccredits.html"
+        "https://www.mbfilmmusic.ca/en/production-tax-credits"
       ],
-      "effective_date": "Manitoba Income Tax Act current through 2026-06-30",
-      "remaining_issue": null,
-      "optimizer_consequence": "Represent the irrevocable alternative streams, resident/deemed-labour rules and bonuses separately.",
-      "program_or_pathway": "Manitoba Film & Video Production Tax Credit"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "ca_nb_film_credit": {
+    {
       "canonical_id": "ca_nb_film_credit",
       "jurisdiction": "Canada",
+      "program_or_pathway": "program",
       "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
-      "final_status": "SUPERSEDED",
-      "authoritative_rule_set": {
-        "canonical_identity": "The former New Brunswick Film Tax Credit is not the current producer program; the current successor is the New Brunswick LIFT Production Program.",
-        "economics": "Micro-budget under CAD 400,000: grant up to 30% of total New Brunswick spend, cap CAD 100,000. Major production over CAD 400,000: base grant up to 25% plus official bonuses, combined maximum 35%.",
-        "eligibility_and_timing": "New Brunswick-incorporated applicant, at least 50% New Brunswick-resident ownership, principal screen-production business, eligible format and competitive approval; 2026 intake deadlines apply.",
-        "qpe_and_territoriality": "Actual eligible New Brunswick spend under LIFT guidelines controls.",
-        "monetization_and_stacking": "Selective grant subject to limited program funds; zero until award."
-      },
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://www.gnb.ca/en/topic/culture-heritage/grants-finance/investment-production.html"
+        "https://opportunitiesnb.com"
       ],
-      "effective_date": "New Brunswick LIFT Production Program, current 2026",
-      "remaining_issue": null,
-      "optimizer_consequence": "Supersede the tax-credit row with LIFT streams and conditional-award treatment.",
-      "program_or_pathway": "New Brunswick Film Tax Credit"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "ca_nl_production_fund": {
+    {
       "canonical_id": "ca_nl_production_fund",
       "jurisdiction": "Canada",
+      "program_or_pathway": "program",
       "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
-      "final_status": "SUPERSEDED",
-      "authoritative_rule_set": {
-        "canonical_identity": "The aggregate “production incentive” identity must be split: current refundable All-Spend Film and Video Production Tax Credit and the separate labour-based Film and Video Industry Tax Credit; PictureNL equity is another distinct program.",
-        "economics": "All-Spend: 40% eligible production costs, annual per-project cap CAD 20m. Labour credit: 40% eligible local labour, capped at 25% production costs and CAD 5m per corporation. No authoritative 45% general rate.",
-        "eligibility_and_timing": "Part I/eligibility application before production; All-Spend cannot be combined with registration under the labour credit or PictureNL equity.",
-        "qpe_and_territoriality": "All-Spend enumerates eligible salaries, service contracts, parent-subsidiary amounts, tangible property and accommodation. Labour credit requires at least 25% salaries/wages paid to provincial residents.",
-        "monetization_and_stacking": "Refundable corporate tax credits after Part II/certificate; mutually exclusive as stated."
-      },
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://www.gov.nl.ca/fin/tax-programs-incentives/business/all-spend-film-and-video-production-tax-credit/",
-        "https://www.gov.nl.ca/fin/tax-programs-incentives/business/filmandvideotax/"
+        "https://picturenl.ca/"
       ],
-      "effective_date": "Newfoundland and Labrador tax programs current 2026",
-      "remaining_issue": null,
-      "optimizer_consequence": "Split the row; remove the unsupported 45% maximum and encode the anti-stacking rule.",
-      "program_or_pathway": "Newfoundland & Labrador Film Development Corp Production Incentive"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "ca_ns_pif": {
+    {
       "canonical_id": "ca_ns_pif",
       "jurisdiction": "Canada",
+      "program_or_pathway": "program",
       "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Nova Scotia Film and Television Production Incentive Fund.",
-        "economics": "Stream I 26% eligible Nova Scotia costs; Stream II 25%; rural 2%, >30 shoot days 1%, content up to 3%. Distant-location uplift 7% or 10% prorated by qualifying principal-photography days and requires location-incentive eligibility.",
-        "eligibility_and_timing": "Permanent Nova Scotia establishment, screen-content business, minimum Nova Scotia spend CAD 25,000 before HST; ownership/HOD gates by stream; complete application before principal photography.",
-        "qpe_and_territoriality": "Eligible Nova Scotia labour and goods/services from Nova Scotia suppliers under the worksheet/guidelines; residency declarations and audit rights apply.",
-        "monetization_and_stacking": "Post-performance incentive fund payment under agreement; budgeted in 2026-27."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://cch.novascotia.ca/film-and-television-production-incentive-fund",
-        "https://cch.novascotia.ca/sites/default/files/inline/documents/ftpif/nsfpif-guidelines.pdf",
-        "https://www.novascotia.ca/sites/default/files/documents/7-4172/budget-estimates-2026-27-en.pdf"
+        "https://www.novascotiabusiness.com/export/film"
       ],
-      "effective_date": "Program rules effective 2024-04-01; funded in Nova Scotia Budget 2026-27",
-      "remaining_issue": null,
-      "optimizer_consequence": "Encode streams and prorated uplifts; require preapproval and actual Nova Scotia spend.",
-      "program_or_pathway": "Nova Scotia Film & Television Production Incentive Fund"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "ca_sk_production_grant": {
+    {
       "canonical_id": "ca_sk_production_grant",
       "jurisdiction": "Canada",
+      "program_or_pathway": "program",
       "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Creative Saskatchewan Feature Film and Television Production Grant.",
-        "economics": "Selective grant with Saskatchewan and service-production streams; amount determined by official guidelines, eligible Saskatchewan spend and available funds.",
-        "eligibility_and_timing": "Eligible production company, market trigger/distribution, format, financing and application requirements apply.",
-        "qpe_and_territoriality": "Only official Saskatchewan expenditures and resident/vendor tests count; foreign spend routed through an applicant does not automatically qualify.",
-        "monetization_and_stacking": "Competitive grant; value zero until award."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://www.creativesask.ca/feature-film-television-production-grant-guidelines/"
+        "https://www.creativesask.ca/funding/"
       ],
-      "effective_date": "Creative Saskatchewan 2026-27 guidelines approved 2026-04-01",
-      "remaining_issue": null,
-      "optimizer_consequence": "Model as two conditional grant streams with current guidelines.",
-      "program_or_pathway": "Creative Saskatchewan Film and TV Production Grant"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "nohfc_production_fund": {
+    {
       "canonical_id": "nohfc_production_fund",
       "jurisdiction": "Canada",
+      "program_or_pathway": "program",
       "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "NOHFC Film & Television Program.",
-        "economics": "Conditional contribution up to 50% eligible costs; tiered caps by total production budget: up to CAD 500k (budget up to 5m), CAD 1m (5m-10m), CAD 2m (10m+).",
-        "eligibility_and_timing": "Canadian-controlled corporation owning majority exploitation rights and producer credit; feature, scripted series, TV movie or documentary; financing and distributor/broadcaster commitment; competitive rounds.",
-        "qpe_and_territoriality": "Northern Ontario production labour, goods/services and post. Only Northern Ontario-resident labour; equipment must be rented from Northern Ontario vendor; other vendors case-by-case under official rules.",
-        "monetization_and_stacking": "Selective conditional contribution, not automatic."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://nohfc.ca/private-programs/film-television-program/",
-        "https://nohfc.ca/faqs/program-faqs/film-television-program/"
+        "https://www.nohfc.ca"
       ],
-      "effective_date": "NOHFC Film & Television Program current 2026",
-      "remaining_issue": null,
-      "optimizer_consequence": "Apply zero until award and enforce Northern Ontario residence/vendor rules and tier caps.",
-      "program_or_pathway": "Northern Ontario Heritage Fund — Production Fund"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "on_ofttc": {
+    {
       "canonical_id": "on_ofttc",
       "jurisdiction": "Canada",
+      "program_or_pathway": "program",
       "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Ontario Film and Television Tax Credit.",
-        "economics": "Refundable 35% of qualifying Ontario labour; 10% regional bonus where statutory conditions are met.",
-        "eligibility_and_timing": "Ontario taxable Canadian-controlled production corporation, Canadian content/cultural certification and producer/format/timing gates under the Act and regulation.",
-        "qpe_and_territoriality": "Qualifying Ontario labour and statutory production-cost tests; regulation includes Canadian/Ontario service and post-production percentage gates and explicit excluded service classes for those gates.",
-        "monetization_and_stacking": "Refundable corporate tax credit after Ontario Creates certification and tax filing."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://www.ontario.ca/laws/regulation/970322",
-        "https://www.ontario.ca/page/cultural-media-industries"
+        "https://www.ontariocreates.ca/production-funding/tax-credits/ontario-film-and-television-tax-credit",
+        "https://omdc.on.ca/film-and-television/tax-credits/ontario-film-and-television-tax-credit/"
       ],
-      "effective_date": "Ontario Regulation 322/97 current 2026",
-      "remaining_issue": null,
-      "optimizer_consequence": "Encode labour basis, regional uplift and all certification/cultural gates.",
-      "program_or_pathway": "Ontario Film and Television Tax Credit"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "on_opstc": {
+    {
       "canonical_id": "on_opstc",
       "jurisdiction": "Canada",
+      "program_or_pathway": "program",
       "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Ontario Production Services Tax Credit.",
-        "economics": "Refundable 21.5% of qualifying Ontario production expenditures.",
-        "eligibility_and_timing": "Eligible Ontario corporation/production; minimum production cost CAD 1m for non-series, or per-episode thresholds CAD 100k (<30 minutes) / CAD 200k (other), with certification and filing rules.",
-        "qpe_and_territoriality": "Eligible Ontario labour and qualifying goods/services under the regulation; services must be rendered in Ontario and property used in Ontario as prescribed.",
-        "monetization_and_stacking": "Refundable corporate tax credit after certification."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://www.ontario.ca/laws/regulation/r09037",
-        "https://www.ontario.ca/page/cultural-media-industries"
+        "https://www.ontariocreates.ca/production-funding/tax-credits/ontario-production-services-tax-credit",
+        "https://omdc.on.ca/film-and-television/tax-credits/ontario-production-services-tax-credit/"
       ],
-      "effective_date": "Ontario Regulation 37/09 current 2026",
-      "remaining_issue": null,
-      "optimizer_consequence": "Use 21.5% on regulated Ontario expenditure and enforce format thresholds.",
-      "program_or_pathway": "Ontario Production Services Tax Credit"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "qc_film_production": {
+    {
       "canonical_id": "qc_film_production",
       "jurisdiction": "Canada",
+      "program_or_pathway": "program",
       "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Québec refundable tax credit for Québec film and television production (domestic credit), distinct from the production-services credit.",
-        "economics": "Current rate table varies by production class: base 28%-40% of eligible labour; regional, public-assistance and eligible VFX/animation bonuses can apply; eligible labour base generally capped at 65% of cumulative production costs for applications after 2024-03-12.",
-        "eligibility_and_timing": "Québec establishment, eligible Québec-controlled producer and SODEC advance ruling/certificate; excluded broadcaster/online-service and nonresident-control rules apply.",
-        "qpe_and_territoriality": "Eligible labour incurred for the Québec certified production, including qualifying subcontractor remuneration; SODEC classification and tax rules control.",
-        "monetization_and_stacking": "Refundable corporate tax credit; public assistance affects the prescribed uplift/calculation."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://www.revenuquebec.ca/fr/entreprises/impots/impot-des-societes/credits-dimpot-des-societes/credits-auxquels-une-societe-peut-avoir-droit/credit-dimpot-productions-cinematographiques-quebecoises/",
-        "https://www.revenuquebec.ca/fr/services-en-ligne/formulaires-et-publications/co-17-g/guide-de-la-declaration-de-revenus-des-societes/",
-        "https://sodec.gouv.qc.ca/wp-content/uploads/presentation-credit-impot-production-cin-tv-fevrier2025.pdf"
+        "https://www.sodec.gouv.qc.ca/en/aide/credits-impot/cinema-et-television/",
+        "https://sodec.gouv.qc.ca/en/programs/tv-film-production-tax-credits/"
       ],
-      "effective_date": "Revenu Québec corporate return guide current for 2026; SODEC presentation Feb 2025",
-      "remaining_issue": null,
-      "optimizer_consequence": "Do not use one flat Québec rate; classify the production and apply labour cap/uplifts.",
-      "program_or_pathway": "Quebec Film and Television Production Tax Credit"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "cl_corfo_incentive": {
+    {
       "canonical_id": "cl_corfo_incentive",
       "jurisdiction": "Chile",
+      "program_or_pathway": "program",
       "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
-      "final_status": "GENUINELY_UNRESOLVED",
-      "authoritative_rule_set": {
-        "canonical_identity": "CORFO IFI high-impact audiovisual production attraction call.",
-        "economics": "Latest official call evidence offered subsidy up to 40% of qualifying expenditure outside Metropolitan Santiago, subject to call budget and award.",
-        "eligibility_and_timing": "Foreign/high-impact production, application and call-specific regional/economic gates apply.",
-        "qpe_and_territoriality": "Only qualifying Chilean/regional expenditure in the call; payer identity alone is insufficient.",
-        "monetization_and_stacking": "Competitive subsidy; no automatic entitlement."
-      },
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://www.corfo.cl/sites/cpp/sala_de_prensa/nacional/18_03_2025_ifi_primer_llamado"
+        "https://www.corfo.cl/"
       ],
-      "effective_date": "Latest official IFI audiovisual call located: 2025; current availability unresolved 2026-08-10",
-      "remaining_issue": {
-        "exact_remaining_question": "No authoritative 2026 call or continuing appropriation was located.",
-        "primary_sources_checked": [
-          "https://www.corfo.cl/sites/cpp/sala_de_prensa/nacional/18_03_2025_ifi_primer_llamado"
-        ],
-        "why_insufficient": "Latest official call evidence offered subsidy up to 40% of qualifying expenditure outside Metropolitan Santiago, subject to call budget and award. Competitive subsidy; no automatic entitlement.",
-        "issue_type": "DATA_GAP",
-        "deterministic_optimizer_consequence": "Keep zero-valued unless an applicable live call/award is evidenced."
-      },
-      "optimizer_consequence": "Keep zero-valued unless an applicable live call/award is evidenced.",
-      "program_or_pathway": "Chile Corfo Film Incentive"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "co_film_colombia": {
+    {
       "canonical_id": "co_film_colombia",
       "jurisdiction": "Colombia",
+      "program_or_pathway": "program",
       "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Film Colombia Fund (FFC), distinct from the CINA transferable certificate.",
-        "economics": "FFC cash consideration: 40% of approved Colombian cinematographic services and 20% of approved hotel, food and transportation services. CINA is a separate 35% transferable instrument and must not be merged.",
-        "eligibility_and_timing": "Foreign producer through Colombian film-services company, Film Colombia contract/approval, eligible format and minimum-spend/current manual requirements.",
-        "qpe_and_territoriality": "Actual services performed/procured in Colombia in approved categories; local intermediary payment does not qualify foreign performance.",
-        "monetization_and_stacking": "Post-performance FFC payment after audit/verification; CINA separate and subject to its own rules."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://www.proimagenescolombia.com/secciones/proimagenes/interna.php?nt=8",
-        "https://www.proimagenescolombia.com/bajarDoc.php?per=828&tl=1"
+        "https://procolombia.co/en/opportunities-industries/film-sector"
       ],
-      "effective_date": "FFC/CINA current official manuals accessed 2026-08-10",
-      "remaining_issue": null,
-      "optimizer_consequence": "Maintain FFC and CINA as separate candidates and apply category-specific rates.",
-      "program_or_pathway": "Colombia Film Commission — Film In Colombia"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "cr_film_incentive": {
+    {
       "canonical_id": "cr_film_incentive",
       "jurisdiction": "Costa Rica",
+      "program_or_pathway": "program",
       "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Costa Rica film investment incentive under the Film Investment Attraction regime.",
-        "economics": "Up to 11.7% effective local investment benefit through refund of 90% of VAT paid; minimum qualifying local investment USD 500,000.",
-        "eligibility_and_timing": "Eligible production formats, registration/local tax identity, reporting, accountant and review requirements apply.",
-        "qpe_and_territoriality": "VAT-bearing local accommodation, hires, transport and contracted services can qualify; VAT-exempt services generate no VAT refund. Actual Costa Rican supply/performance governs.",
-        "monetization_and_stacking": "Tax refund after compliance; temporary-import relief is separate."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://www.costaricafilmcommission.org/our-incentives/",
-        "https://procomer.com/firmado-reglamento-a-la-ley-de-atraccion-de-inversiones-filmicas/"
+        "https://costaricafilm.com/"
       ],
-      "effective_date": "Costa Rica Film Commission/PROCOMER current rules accessed 2026-08-10",
-      "remaining_issue": null,
-      "optimizer_consequence": "Replace “facilitation” with the current VAT-refund mechanism and minimum spend.",
-      "program_or_pathway": "Costa Rica Film Commission Production Facilitation"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "do_film_incentive": {
+    {
       "canonical_id": "do_film_incentive",
       "jurisdiction": "Dominican Republic",
+      "program_or_pathway": "program",
       "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Dominican Republic Article 39 Transferable Tax Credit.",
-        "economics": "25% transferable credit on qualified Dominican Republic pre-production, production and post-production spend. Current validation guide caps producer fees at 6% of production budget and development at 3%.",
-        "eligibility_and_timing": "DGCINE/CIPAC qualification, SIRECINE registration, local production entity/process, minimum expenditure and validation/audit requirements apply.",
-        "qpe_and_territoriality": "Qualified expenses must be incurred in the Dominican Republic and directly related; official validation guide/category caps apply.",
-        "monetization_and_stacking": "Transferable tax credit after expense validation; temporary-import permit is separate."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://dgcine.gob.do/en/film-incentives/legal-framework/",
-        "https://dgcine.gob.do/preguntas-frecuentes/",
-        "https://dgcine.gob.do/wp-content/uploads/2025/09/GUIA-JRD-G43-ART.-39-SOLICITUD-DE-VALIDACION-DE-GASTOS.pdf"
+        "https://www.drfilmcommission.com"
       ],
-      "effective_date": "Law 108-10, current DGCINE guidance and 2025 expense-validation guide; active 2026",
-      "remaining_issue": null,
-      "optimizer_consequence": "Use 25%, enforce official category caps and require DGCINE/CIPAC certification.",
-      "program_or_pathway": "Dominican Republic Film Commission Incentive"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "ec_film_incentive": {
+    {
       "canonical_id": "ec_film_incentive",
       "jurisdiction": "Ecuador",
+      "program_or_pathway": "program",
       "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Ecuador Audiovisual Investment Certificate (CIA), distinct from VAT and sponsorship benefits.",
-        "economics": "CIA equal to 37% of certified eligible audiovisual investment; official materials also identify zero-rate VAT/50% VAT refund and separate sponsorship deduction, which must not be added without their own predicates.",
-        "eligibility_and_timing": "Project certification and format-specific minimums: feature USD400k; documentary USD100k; short USD30k; series USD150k; telenovela USD400k; games USD30k; ads USD40k; music video USD30k; post USD40k; development USD40k.",
-        "qpe_and_territoriality": "Certified Ecuador investment/expenditure under the CIA regulation; actual local activity and documentary support control.",
-        "monetization_and_stacking": "Tax certificate; separate VAT/sponsorship mechanisms have separate claims."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://ecuadorfilmcommission.com/",
-        "https://ecuadorfilmcommission.com/downloads/normacertificadosCIA.pdf"
+        "https://www.ecuador.travel/filming-in-ecuador"
       ],
-      "effective_date": "Ecuador Audiovisual Investment Certificate regulation current official film commission materials",
-      "remaining_issue": null,
-      "optimizer_consequence": "Create separate mechanisms; apply 37% only to certified CIA expenditure and enforce format minimums.",
-      "program_or_pathway": "Ecuador Film Commission Production Facilitation"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "gt_film_commission": {
+    {
       "canonical_id": "gt_film_commission",
       "jurisdiction": "Guatemala",
+      "program_or_pathway": "program",
       "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
-      "final_status": "GENUINELY_UNRESOLVED",
-      "authoritative_rule_set": {
-        "canonical_identity": "INGUAT film-production facilitation/film guide.",
-        "economics": "No current authoritative rate, cap, appropriation or producer cash benefit located.",
-        "eligibility_and_timing": "Official material supports locations and production facilitation, not an economic entitlement.",
-        "qpe_and_territoriality": "UNRESOLVED because no economic program rule was located.",
-        "monetization_and_stacking": "UNRESOLVED."
-      },
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://inguat.gob.gt/es/descargas-inguat-guatemala/17-noticias-y-comunicados/47-2019/25-julio-2019?download=113%3A6-inguat-comunicado-presenta-guia-cinematografica-y-audiovisual&format=html"
+        "https://www.inguat.net"
       ],
-      "effective_date": "Official INGUAT film guide located; current economic program unresolved 2026-08-10",
-      "remaining_issue": {
-        "exact_remaining_question": "Official material does not expressly confirm absence of all producer incentives or establish a current economic program.",
-        "primary_sources_checked": [
-          "https://inguat.gob.gt/es/descargas-inguat-guatemala/17-noticias-y-comunicados/47-2019/25-julio-2019?download=113%3A6-inguat-comunicado-presenta-guia-cinematografica-y-audiovisual&format=html"
-        ],
-        "why_insufficient": "No current authoritative rate, cap, appropriation or producer cash benefit located. UNRESOLVED.",
-        "issue_type": "DATA_GAP",
-        "deterministic_optimizer_consequence": "Keep only a non-economic facilitation record unless further current authority is produced."
-      },
-      "optimizer_consequence": "Keep only a non-economic facilitation record unless further current authority is produced.",
-      "program_or_pathway": "Guatemala Film Commission (INGUAT) Production Facilitation"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "gy_film_commission": {
+    {
       "canonical_id": "gy_film_commission",
       "jurisdiction": "Guyana",
+      "program_or_pathway": "program",
       "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
-      "final_status": "NO_CURRENT_PRODUCER_INCENTIVE_CONFIRMED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Guyana Tourism Authority filming facilitation.",
-        "economics": "Official guidance states there are no production incentives other than temporary importation of equipment.",
-        "eligibility_and_timing": "Filming request/permit and temporary import procedures apply.",
-        "qpe_and_territoriality": "No producer rebate QPE exists.",
-        "monetization_and_stacking": "Non-economic customs facilitation only."
-      },
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://guyanatourism.com/filming-requests/"
+        "https://www.guyanatourism.com"
       ],
-      "effective_date": "Guyana Tourism Authority current filming request guidance accessed 2026-08-10",
-      "remaining_issue": null,
-      "optimizer_consequence": "Remove any producer cash value; retain temporary-import facilitation separately.",
-      "program_or_pathway": "Guyana Tourism Authority Film Production Support"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "jm_film_incentive": {
+    {
       "canonical_id": "jm_film_incentive",
       "jurisdiction": "Jamaica",
+      "program_or_pathway": "program",
       "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
-      "final_status": "SUPERSEDED",
-      "authoritative_rule_set": {
-        "canonical_identity": "The older Jamaica Entertainment Industry Incentive identity is superseded for screen funding by the Jamaica Screen Development Initiative (JSDI), including its Production Rebate category.",
-        "economics": "Selective/approved production rebate under the JSDI allocation; the official guidelines and award determine amount, with government evidence of live approvals and disbursements. No unconditional universal rate should be inferred.",
-        "eligibility_and_timing": "Rolling production-rebate application; eligible screen formats; minimum USD500k Jamaican goods/services; local production-company structure, distribution commitment and Jamaican crew/key-role thresholds under guidelines.",
-        "qpe_and_territoriality": "Actual Jamaican goods/services and labour meeting the guidelines; paying foreign spend through a local company alone is insufficient.",
-        "monetization_and_stacking": "Government production rebate after approval/compliance; zero until award."
-      },
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://dobusinessjamaica.com/wp-content/resources/OperationalGuidelines_JSDI1_13Nov2024.pdf",
-        "https://dobusinessjamaica.com/jamaica-screen-development-initiative/",
-        "https://www.miic.gov.jm/315m-disbursed-from-1b-jamaica-screen-fund/"
+        "https://www.filmjamaica.com/"
       ],
-      "effective_date": "JSDI Operational Guidelines published June 2025; program active 2026",
-      "remaining_issue": null,
-      "optimizer_consequence": "Replace the old aggregate identity with JSDI categories; value rebate at zero before approval.",
-      "program_or_pathway": "Jamaica Entertainment Industry Incentive Programme"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "mx_eficine_incentive": {
+    {
       "canonical_id": "mx_eficine_incentive",
       "jurisdiction": "Mexico",
+      "program_or_pathway": "program",
       "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
-      "final_status": "SUPERSEDED",
-      "authoritative_rule_set": {
-        "canonical_identity": "The combined “EFICINE and PROCINE” row is invalid. Current federal mechanisms are EFICINE under Income Tax Law Art. 189 and the separate FOCINE competitive program; PROCINE is not the current federal production-fund identity.",
-        "economics": "EFICINE gives the contributing taxpayer a credit equal to approved cash contribution, capped at 10% of its prior-year income tax; 2025 national allocation was MXN750m. Producer receives approved financing, not a percentage rebate. FOCINE amounts are call/modal-specific.",
-        "eligibility_and_timing": "Mexican feature production/post/distribution project, contributing taxpayer, Interinstitutional Committee approval and 2026 application windows for EFICINE; Mexican person/company and call rules for FOCINE.",
-        "qpe_and_territoriality": "EFICINE production investment is for a feature made in Mexican territory under approved budget; FOCINE eligible uses follow each 2026 call.",
-        "monetization_and_stacking": "Conditional financing/taxpayer credit and selective grants, not refundable production rebate."
-      },
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://www.estimulosfiscales.hacienda.gob.mx/es/efiscales/eficine",
-        "https://www.imcine.gob.mx/eficine.php",
-        "https://www.imcine.gob.mx/focine.php"
+        "https://www.imcine.gob.mx/"
       ],
-      "effective_date": "EFICINE and FOCINE 2026 rules",
-      "remaining_issue": null,
-      "optimizer_consequence": "Split EFICINE and FOCINE; remove the stored 10%-17.5% production-spend rate.",
-      "program_or_pathway": "Mexico EFICINE (Article 226) and PROCINE Fund"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "nz_spg_international": {
+    {
       "canonical_id": "nz_spg_international",
       "jurisdiction": "New Zealand",
+      "program_or_pathway": "program",
       "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "New Zealand Screen Production Rebate — International.",
-        "economics": "20% cash rebate on QNZPE; potential 5% uplift under current criteria. Minimum QNZPE NZD4m live action and NZD250k PDV. Current uplift entry threshold NZD20m; PDV uplift available; prior ATL cap removed.",
-        "eligibility_and_timing": "Eligible commercial feature/series/pilot/single, NZ SPV, distribution and content gates; advertising/news/current affairs excluded. Pre-registration before principal photography (PDV within 20 working days of bid as specified).",
-        "qpe_and_territoriality": "Services performed in NZ, land in NZ, locally sourced goods and limited officially permitted overseas-sourced goods located/used in NZ. Nonresident work in NZ can qualify under stay/work rules; local-SPV payment alone does not qualify foreign work.",
-        "monetization_and_stacking": "Cash rebate after final claim/audit, generally within six months of completion; interim claims only after NZD50m QNZPE and under criteria."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://www.nzfilm.co.nz/resources/nzspr-criteria-international-productions",
-        "https://www.nzfilm.co.nz/incentives/rebate-international-nzspr"
+        "https://www.nzfilm.co.nz/resources/nz-screen-production-grant"
       ],
-      "effective_date": "NZSPR International Criteria v1.0 effective 2026-01-01",
-      "remaining_issue": null,
-      "optimizer_consequence": "Update to 2026 thresholds/uplift, remove ATL cap, and use actual NZ performance/use tests.",
-      "program_or_pathway": "New Zealand Screen Production Grant (International)"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "pa_film_incentive": {
+    {
       "canonical_id": "pa_film_incentive",
       "jurisdiction": "Panama",
+      "program_or_pathway": "program",
       "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
-      "final_status": "GENUINELY_UNRESOLVED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Panama film/audiovisual tax-incentive regime under Law 16/2012, Law 90/2019 and Fiscal Code Art. 1201.",
-        "economics": "Current DGI confirms the regime but the authoritative materials located do not state a complete producer rate/cap/payment rule for a canonical optimization record.",
-        "eligibility_and_timing": "DGI procedural requirements and film-regime approvals apply.",
-        "qpe_and_territoriality": "UNRESOLVED from the current official materials located.",
-        "monetization_and_stacking": "UNRESOLVED."
-      },
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://dgi.mef.gob.pa/Incentivo/IICA"
+        "https://www.panamafilmcommission.com/"
       ],
-      "effective_date": "Panama DGI current incentive index accessed 2026-08-10",
-      "remaining_issue": {
-        "exact_remaining_question": "Complete current producer economics, QPE and monetization were not established by the available official index/statutes.",
-        "primary_sources_checked": [
-          "https://dgi.mef.gob.pa/Incentivo/IICA"
-        ],
-        "why_insufficient": "Current DGI confirms the regime but the authoritative materials located do not state a complete producer rate/cap/payment rule for a canonical optimization record. UNRESOLVED.",
-        "issue_type": "DATA_GAP",
-        "deterministic_optimizer_consequence": "Retain zero-valued and unresolved; do not infer cash economics from “tax incentives.”"
-      },
-      "optimizer_consequence": "Retain zero-valued and unresolved; do not infer cash economics from “tax incentives.”",
-      "program_or_pathway": "Panama Film Commission Production Facilitation"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "pe_film_incentive": {
+    {
       "canonical_id": "pe_film_incentive",
       "jurisdiction": "Peru",
+      "program_or_pathway": "program",
       "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
-      "final_status": "SUPERSEDED",
-      "authoritative_rule_set": {
-        "canonical_identity": "There is no single DAFO production incentive; current support consists of multiple 2026 competitive Estímulos Económicos calls under Law 32309 and its regulation.",
-        "economics": "More than PEN29.5m allocated across 2026 development, production, post, distribution and international-coproduction calls; each call fixes award amounts. Fiscal incentives in Law 32309 are not operative until MEF regulations take effect.",
-        "eligibility_and_timing": "RENCA registration, Peruvian applicant type, call category, restrictions and deadline apply; competitive selection.",
-        "qpe_and_territoriality": "Eligible use of award is call-specific; no generic percentage-QPE rule.",
-        "monetization_and_stacking": "Selective grants; statutory fiscal provisions must not be valued before implementing regulation."
-      },
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://dafo.cultura.pe/novedades/ministerio-de-cultura-publica-el-plan-anual-de-estimulos-economicos-para-el-cine-y",
-        "https://dafo.cultura.pe/novedades/ministerio-de-cultura-aprueba-reglamento-de-la-nueva-ley-para-la-actividad"
+        "https://dafo.cultura.pe/"
       ],
-      "effective_date": "Peru 2026 annual audiovisual incentives plan; Law 32309 regulation effective 2026",
-      "remaining_issue": null,
-      "optimizer_consequence": "Split by 2026 calls and keep unimplemented fiscal incentives at zero.",
-      "program_or_pathway": "Peru DAFO Film Production Support"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "tt_film_incentive": {
+    {
       "canonical_id": "tt_film_incentive",
       "jurisdiction": "Trinidad & Tobago",
+      "program_or_pathway": "program",
       "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Trinidad and Tobago Film Production Expenditure Rebate Programme.",
-        "economics": "Foreign productions: tiered 12.5%-35% on TT$630k-TT$51.2m eligible spend. Local producers: 35% from TT$100k to TT$51.2m. Additional 20% on eligible citizen labour, aggregate maximum 55%.",
-        "eligibility_and_timing": "Eligible formats include features, TV movies/series, foreign commercials, documentaries and animation. Rebate paid only to registered T&T company; international producer partners with local producer; provisional certificate before principal photography.",
-        "qpe_and_territoriality": "Local equipment/services, accommodation, transportation/emergency services, location fees, local cast/crew and other listed local expenditure. Citizen-labour uplift only on qualifying labour.",
-        "monetization_and_stacking": "Cash rebate after final certification; local company is payment recipient but actual local spend remains required."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://tradeind.gov.tt/quo_storage/2024/06/Grants-and-Incentives2024.pdf",
-        "https://filmtt.co.tt/rebate/application-forms/"
+        "https://filmtt.co.tt/"
       ],
-      "effective_date": "Ministry of Trade Grants and Incentives guide current official publication; FilmTT current forms",
-      "remaining_issue": null,
-      "optimizer_consequence": "Encode foreign tiers, local rate, labour uplift/max and preapproval.",
-      "program_or_pathway": "Trinidad & Tobago Creative Industries Production Incentive"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "us_itvs_fund": {
+    {
       "canonical_id": "us_itvs_fund",
       "jurisdiction": "United States",
-      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
-      "final_status": "SUPERSEDED",
-      "authoritative_rule_set": {
-        "canonical_identity": "The ITVS International Documentary Fund identity is no longer a current standalone program; current support is through Open Call and other named initiatives.",
-        "economics": "Current Open Call is a selective co-production pathway, up to USD400k for features and USD50k for shorts under current official materials.",
-        "eligibility_and_timing": "Nonfiction projects in active production, current length/rights/public-media requirements and call window apply; current call was closed at review date.",
-        "qpe_and_territoriality": "Approved co-production budget governs; no state/local QPE rebate.",
-        "monetization_and_stacking": "Selective co-production/licence relationship, not a grant or automatic rebate."
-      },
-      "authority_sources": [
-        "https://itvs.org/funds/open-call/",
-        "https://itvs.org/get-funded/"
-      ],
-      "effective_date": "ITVS current funding page accessed 2026-08-10",
-      "remaining_issue": null,
-      "optimizer_consequence": "Retire the International Documentary Fund row and represent active named calls only.",
-      "program_or_pathway": "ITVS International Documentary Fund"
-    },
-    "us_sundance_doc": {
-      "canonical_id": "us_sundance_doc",
-      "jurisdiction": "United States",
+      "program_or_pathway": "program",
       "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Sundance Institute Documentary Fund.",
-        "economics": "Selective nonrecoupable grants: development USD25k-40k and production/post USD50k-100k under current guidance.",
-        "eligibility_and_timing": "Feature documentaries generally at least 52 minutes; current priorities include budgets below USD1.2m; 2026 cycle closed and next cycle expected early 2027.",
-        "qpe_and_territoriality": "Approved grant budget/use governs; no location-QPE formula.",
-        "monetization_and_stacking": "Nonrecoupable grant after award; zero before selection."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
+      "authority_sources": [
+        "https://itvs.org/funding/"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "us_sundance_doc",
+      "jurisdiction": "United States",
+      "program_or_pathway": "program",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
         "https://www.sundance.org/documentary-fund/"
       ],
-      "effective_date": "Sundance Documentary Fund current 2026",
-      "remaining_issue": null,
-      "optimizer_consequence": "Model as selective grant with cycle availability, not a production incentive rate.",
-      "program_or_pathway": "Sundance Institute — Documentary Fund"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "us_al_film_incentive": {
+    {
       "canonical_id": "us_al_film_incentive",
       "jurisdiction": "United States",
+      "program_or_pathway": "program",
       "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Alabama Entertainment Incentive Program — Film & TV.",
-        "economics": "Refundable rebate: 35% Alabama-resident payroll; 25% other qualified production expenses including qualifying nonresident labour. Alabama spend range USD500k-20m; annual film allocation USD20m. Separate sales/use/lodging exemption at USD150k spend.",
-        "eligibility_and_timing": "Application and earmark before production; qualified state-certified production; audit/final tax filing.",
-        "qpe_and_territoriality": "Alabama-incurred pre/production/post; marketing/distribution excluded. ATL performed in Alabama apportioned; caps USD1m per ATL and USD500k per BTL hire; per diem/living can qualify with documentation; real estate excluded.",
-        "monetization_and_stacking": "Refundable rebate after certified audit; tax exemption separate."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://www.alabamafilm.org/tax%20incentives.html",
-        "https://www.alabamafilm.org/faq.html",
-        "https://www.alabamafilm.org/pdf/RULES_REGS_281-3-1-1.pdf"
+        "https://www.alabamafilm.org/incentives"
       ],
-      "effective_date": "Alabama Entertainment Incentive Program current 2026",
-      "remaining_issue": null,
-      "optimizer_consequence": "Encode resident/nonresident rates, personnel caps, spend window and explicit exclusions.",
-      "program_or_pathway": "Alabama Film Incentive"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "us_az_film_credit": {
+    {
       "canonical_id": "us_az_film_credit",
       "jurisdiction": "United States",
+      "program_or_pathway": "program",
       "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Arizona Motion Picture Production Program.",
-        "economics": "Refundable base credit 15% QPE up to USD10m, 17.5% over USD10m through USD35m, 20% above USD35m; 2.5% Arizona-resident BTL uplift and 2.5% facility/location uplift where gates met. Annual allocation USD125m from 2025 (facility/practical-location suballocations apply).",
-        "eligibility_and_timing": "Preapproval; production begins within nine months; at least 50% production at qualifying facility or practical Arizona location as applicable.",
-        "qpe_and_territoriality": "Qualified Arizona production expenditures and resident labour under statute/program rules; actual Arizona activity controls.",
-        "monetization_and_stacking": "Refundable transferable/assignable treatment only as statute permits after certification."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
         "https://www.azcommerce.com/film-media/incentive/"
       ],
-      "effective_date": "Arizona Motion Picture Production Program current 2026",
-      "remaining_issue": null,
-      "optimizer_consequence": "Use tiered base plus separately gated uplifts and annual allocation.",
-      "program_or_pathway": "Arizona Motion Picture Production Program"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "us_co_film_incentive": {
+    {
       "canonical_id": "us_co_film_incentive",
       "jurisdiction": "United States",
+      "program_or_pathway": "program",
       "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Colorado Film Incentive.",
-        "economics": "Performance rebate up to 20% of qualified Colorado expenditures, subject to discretionary approval and available funds.",
-        "eligibility_and_timing": "Eligible production, Colorado spend/crew and application/contract requirements; award before reliance.",
-        "qpe_and_territoriality": "Qualified goods/services and labour incurred in Colorado under the approved budget; local payer alone is insufficient.",
-        "monetization_and_stacking": "Post-performance rebate; zero until approved and contracted."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://oedit.colorado.gov/programs-and-funding"
+        "https://oedit.colorado.gov/colorado-office-of-film-tv-and-media"
       ],
-      "effective_date": "Colorado official program current 2026",
-      "remaining_issue": null,
-      "optimizer_consequence": "Model as capped discretionary rebate with zero pre-award value.",
-      "program_or_pathway": "Colorado Film Incentive"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "us_ct_film_credit": {
+    {
       "canonical_id": "us_ct_film_credit",
       "jurisdiction": "United States",
+      "program_or_pathway": "program",
       "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Connecticut Film and Digital Media Production Tax Credit.",
-        "economics": "10% at USD100k-500k qualified spend; 15% above USD500k through USD1m; 30% above USD1m.",
-        "eligibility_and_timing": "Eligible production; apply within 90 days after first qualified expense; certification and statutory gates apply.",
-        "qpe_and_territoriality": "Pre-production, production and post-production costs clearly and demonstrably incurred in Connecticut; statutory compensation and category limits/exclusions apply.",
-        "monetization_and_stacking": "Transferable credit with five-year carryforward under current rules."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://portal.ct.gov/DECD/Services/Film-TV-Digital-Media/Tax-Incentives",
-        "https://portal.ct.gov/drs/publications/corporation-credit-guide/film-production-credit-06feb2024"
+        "https://portal.ct.gov/DECD/Content/Film-television-Creative-Services"
       ],
-      "effective_date": "Connecticut official credit guidance current 2026",
-      "remaining_issue": null,
-      "optimizer_consequence": "Encode spend tiers and Connecticut incurrence/performance test.",
-      "program_or_pathway": "Connecticut Film Tax Credit"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "us_hi_film_tax_credit": {
+    {
       "canonical_id": "us_hi_film_tax_credit",
       "jurisdiction": "United States",
+      "program_or_pathway": "program",
       "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Hawaii Motion Picture, Digital Media and Film Production Income Tax Credit.",
-        "economics": "Refundable 22% qualified Oahu costs and 27% qualified neighbour-island costs; USD17m per-production cap and USD50m annual aggregate cap.",
-        "eligibility_and_timing": "Registration/qualification, Hawaii production, credit acknowledgement and final certification/filing requirements.",
-        "qpe_and_territoriality": "Qualified Hawaii production costs include listed crew wages, rentals, travel and post; actual Hawaii incurrence/use/performance and allocation between islands govern.",
-        "monetization_and_stacking": "Refundable tax credit after certification, subject to annual cap."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
         "https://filmoffice.hawaii.gov/incentives-tax-credits/"
       ],
-      "effective_date": "Hawaii official current page and HRS §235-17, current 2026",
-      "remaining_issue": null,
-      "optimizer_consequence": "Use island-specific rates and both caps; apportion actual Hawaii activity.",
-      "program_or_pathway": "Hawaii Film and Digital Media Income Tax Credit"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "us_il_film_credit": {
+    {
       "canonical_id": "us_il_film_credit",
       "jurisdiction": "United States",
+      "program_or_pathway": "program",
       "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Illinois Film Production Services Tax Credit.",
-        "economics": "35% qualified Illinois spending/vendor costs and 35% qualified Illinois-resident wages (generally capped at USD500k per person). Limited nonresident wages qualify at 30% subject to statutory headcount/role and production-spend conditions.",
-        "eligibility_and_timing": "Accreditation/preapproval, diversity plan, minimum spend and final certification under current DCEO regulation.",
-        "qpe_and_territoriality": "Illinois vendor spend and Illinois-resident labour; nonresident labour only where expressly allowed. Producer/ATL limits in current regulation apply.",
-        "monetization_and_stacking": "Transferable state income-tax credit after certification."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://dceo.illinois.gov/whyillinois/film/filmtaxcredit.html"
+        "https://www.illinois.gov/business/film-production"
       ],
-      "effective_date": "Illinois rules effective 2026-04-27; post-2025-07-01 rates",
-      "remaining_issue": null,
-      "optimizer_consequence": "Update to 35% current rates and encode constrained nonresident labour.",
-      "program_or_pathway": "Illinois Film Tax Credit"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "us_ky_keiia": {
+    {
       "canonical_id": "us_ky_keiia",
       "jurisdiction": "United States",
+      "program_or_pathway": "program",
       "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Kentucky Entertainment Incentive (KEI) Program, successor naming/administration to KEIIA.",
-        "economics": "Refundable, nontransferable credit generally 30% approved Kentucky expenditures, with 35% for qualifying enhanced-county expenditure or Kentucky-resident labour as current law provides; award/allocation approval controls.",
-        "eligibility_and_timing": "2026 scoring, council approval, application before expenditure, audit and project-type requirements under amended statute/regulation; high-impact projects may receive ongoing review.",
-        "qpe_and_territoriality": "Approved Kentucky production expenditure and resident-labour tests under 307 KAR 1:080E; actual performance/vendor/incurrence requirements govern.",
-        "monetization_and_stacking": "Refundable nontransferable credit after final audit/certification."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://newkentuckyhome.ky.gov/Locating_Expanding/KEI/"
+        "https://kyfilmoffice.com/production-incentives/"
       ],
-      "effective_date": "2026 SB 324 and emergency 307 KAR 1:080E effective 2026-07-15",
-      "remaining_issue": null,
-      "optimizer_consequence": "Rename to KEI and implement the July 2026 regulation/scoring rather than legacy KEIIA assumptions.",
-      "program_or_pathway": "Kentucky Entertainment Industry Incentive Act (KEIIA)"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "us_md_film_credit": {
+    {
       "canonical_id": "us_md_film_credit",
       "jurisdiction": "United States",
+      "program_or_pathway": "program",
       "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Maryland Film Production Activity Tax Credit.",
-        "economics": "Refundable credit up to 28% eligible direct costs; qualifying television series may receive 30% under program rules. FY2027 allocation USD12m. Small-film pathway has its own cap/threshold.",
-        "eligibility_and_timing": "Pre-application before Maryland work; minimum direct costs generally USD250k (small film USD25k); principal photography within 120 days of letter and final materials within 180 days of completion.",
-        "qpe_and_territoriality": "Qualified Maryland vendor costs and labour; time/use must be prorated to Maryland. All compensation for an individual exceeding USD500k is excluded under official guidance.",
-        "monetization_and_stacking": "Refundable tax credit after final certification."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://commerce.maryland.gov/fund/film-production-activity-tax-credit"
+        "https://www.marylandfilm.org/resources/tax-incentives"
       ],
-      "effective_date": "Maryland official program FY2027 current 2026",
-      "remaining_issue": null,
-      "optimizer_consequence": "Encode format rate, annual allocation, timing and USD500k individual exclusion.",
-      "program_or_pathway": "Maryland Film Production Activity Tax Credit"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "us_ma_film_credit": {
+    {
       "canonical_id": "us_ma_film_credit",
       "jurisdiction": "United States",
+      "program_or_pathway": "program",
       "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Massachusetts Film Incentive Tax Credit.",
-        "economics": "25% payroll credit and 25% production-expense credit; minimum Massachusetts production expense USD50k.",
-        "eligibility_and_timing": "Production credit requires more than 75% of total production expenses in Massachusetts or at least 75% principal-photography days in Massachusetts; application/certification and transfer rules apply.",
-        "qpe_and_territoriality": "Massachusetts payroll/production expenses. Payroll excludes compensation of an individual of USD1m or more; official law excludes marketing/advertising, credit-transfer costs and profit participation among listed items.",
-        "monetization_and_stacking": "Transferable/refundable as Massachusetts statute permits after certification."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://www.mass.gov/info-details/massachusetts-film-incentive-tax-credit",
-        "https://www.mass.gov/info-details/mass-general-laws-c-62-ss-6"
+        "https://www.mafilm.org/tax-incentives/"
       ],
-      "effective_date": "Massachusetts law/current DOR guidance accessed 2026-08-10",
-      "remaining_issue": null,
-      "optimizer_consequence": "Apply the two credits, 75% alternative gate and explicit compensation/category exclusions.",
-      "program_or_pathway": "Massachusetts Film Tax Credit"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "us_mn_film_credit": {
+    {
       "canonical_id": "us_mn_film_credit",
       "jurisdiction": "United States",
+      "program_or_pathway": "program",
       "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Minnesota Film Production Tax Credit.",
-        "economics": "Assignable 25% credit on certified Minnesota production costs; minimum USD1m eligible costs in a consecutive 12-month period; annual allocation USD25m.",
-        "eligibility_and_timing": "Application/certificate and statutory production requirements; allocation first-come as official guidance states.",
-        "qpe_and_territoriality": "Certified Minnesota production costs under statute; actual Minnesota activity/vendor/labour rules apply.",
-        "monetization_and_stacking": "Nonrefundable assignable credit with five-year carryforward."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
         "https://www.revenue.state.mn.us/film-production-credit"
       ],
-      "effective_date": "Minnesota Revenue current 2026",
-      "remaining_issue": null,
-      "optimizer_consequence": "Apply 25%, USD1m threshold, allocation and nonrefundable/assignable treatment.",
-      "program_or_pathway": "Minnesota Film Production Tax Credit"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "us_ms_film_credit": {
+    {
       "canonical_id": "us_ms_film_credit",
       "jurisdiction": "United States",
+      "program_or_pathway": "program",
       "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Mississippi Motion Picture Incentive Program.",
-        "economics": "25% cash rebate on base investment/local spend; 25% nonresident payroll subject to conditions; 30% resident payroll plus 5% veteran resident uplift. Payroll qualifying portion capped at USD5m per person/project as stated.",
-        "eligibility_and_timing": "MDA approval; nonresident payroll requires Mississippi-based producer/subsidiary/principal or qualified production partner and prior forms; audit/final claim.",
-        "qpe_and_territoriality": "Mississippi vendors/companies, fringes, documented per diem/housing and specified travel. Equipment/goods rules require Mississippi vendor/local office/approved local partner and markup. Payroll requires Mississippi withholding; residency test for resident rate.",
-        "monetization_and_stacking": "Cash rebate after certification; sales/use reduced rates are separate."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://filmmississippi.org/incentive/",
-        "https://filmmississippi.org/incentive/apply/"
+        "https://filmmississippi.org/incentive/"
       ],
-      "effective_date": "Film Mississippi current 2026",
-      "remaining_issue": null,
-      "optimizer_consequence": "Encode three spend/payroll rates, partner gate, withholding, vendor and personnel limits.",
-      "program_or_pathway": "Mississippi Advantage Film Program"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "us_nv_film_incentive": {
+    {
       "canonical_id": "us_nv_film_incentive",
       "jurisdiction": "United States",
+      "program_or_pathway": "program",
       "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Nevada Film Tax Incentive.",
-        "economics": "15% transferable tax credit on qualified Nevada production expenditures; minimum USD500k Nevada spend and at least 60% of total production budget as qualified Nevada expenditure; annual allocation USD10m.",
-        "eligibility_and_timing": "Application/preapproval and statutory production/certification requirements.",
-        "qpe_and_territoriality": "Qualified Nevada expenditure under statute; actual Nevada labour/services/goods/use govern.",
-        "monetization_and_stacking": "Transferable credit after certification."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://goed.nv.gov/the-questions-you-want-answered-about-transferable-tax-credits/"
+        "https://nevadafilm.com/incentive/"
       ],
-      "effective_date": "Nevada GOED current official guidance",
-      "remaining_issue": null,
-      "optimizer_consequence": "Apply 15%, both spend gates and annual cap.",
-      "program_or_pathway": "Nevada Film Incentive Program"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "us_nc_film_grant": {
+    {
       "canonical_id": "us_nc_film_grant",
       "jurisdiction": "United States",
+      "program_or_pathway": "program",
       "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "North Carolina Film and Entertainment Grant.",
-        "economics": "Post-performance grant up to 25% qualifying North Carolina spend. Project caps: USD15m series, USD7m feature, USD250k commercial; recurring annual fund plus carryforward.",
-        "eligibility_and_timing": "Minimum spend: USD1.5m feature, USD500k made-for-TV, USD500k per series episode, USD250k commercial; intent/application 30-180 days before principal photography; award subject to funds.",
-        "qpe_and_territoriality": "Qualified North Carolina goods/services and labour under official rules; actual in-state spend required.",
-        "monetization_and_stacking": "Discretionary performance grant/rebate after audit; zero until reservation/award."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://www.filmnc.com/25-rebate",
-        "https://www.filmnc.com/intent-to-film"
+        "https://www.filmnc.com/incentives"
       ],
-      "effective_date": "North Carolina Film Office current 2026",
-      "remaining_issue": null,
-      "optimizer_consequence": "Use format minimums/caps and conditional allocation.",
-      "program_or_pathway": "North Carolina Film & Entertainment Grant"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "us_ok_ofer": {
+    {
       "canonical_id": "us_ok_ofer",
       "jurisdiction": "United States",
+      "program_or_pathway": "program",
       "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
-      "final_status": "SUPERSEDED",
-      "authoritative_rule_set": {
-        "canonical_identity": "The former OFER identity is superseded by the Filmed in Oklahoma Act rebate.",
-        "economics": "Base 20% qualified spend; official uplifts for soundstage, television, multi-film, post and music, aggregate generally capped at 30%. Annual cap USD30m; program sunsets 2031-06-30. Nonresident and ATL expenditure together capped at 25% of QPE; standalone post has separate 20%-25% structure.",
-        "eligibility_and_timing": "Prequalification/contract, minimum spend, financing/distribution and final audit under current rules.",
-        "qpe_and_territoriality": "Qualified Oklahoma expenditure under statute; local vendor/performance and resident labour rules; express ATL/nonresident ceiling.",
-        "monetization_and_stacking": "Post-performance cash rebate subject to annual allocation."
-      },
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://oklahoma.gov/omes/about-omes/boards-and-commissions/incentive-evaluation-commission/schedule/year-9-evaluation-schedule.html"
+        "https://www.oklahomafilm.org/incentives"
       ],
-      "effective_date": "Filmed in Oklahoma Act current through 2031; official evaluation current 2026",
-      "remaining_issue": null,
-      "optimizer_consequence": "Rename to current Act; apply 20% base, gated uplifts/max and 25% ATL/nonresident ceiling.",
-      "program_or_pathway": "Oklahoma Film Enhancement Rebate"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "us_pa_film_credit": {
+    {
       "canonical_id": "us_pa_film_credit",
       "jurisdiction": "United States",
+      "program_or_pathway": "program",
       "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Pennsylvania Film Production Tax Credit.",
-        "economics": "25% qualified Pennsylvania production expense; 30% if qualified-production-facility stage requirements are met; qualified post-production at approved facility can receive 30%. Current annual allocation governed by enacted budget.",
-        "eligibility_and_timing": "At least 60% of total production expenses must be Pennsylvania production expenses; apply no earlier than 90 days before Pennsylvania principal photography; document 70% financing secured and balance before start.",
-        "qpe_and_territoriality": "Qualified Pennsylvania expenses per Appendix C and current law; actual Pennsylvania incurrence/performance/vendor rules and compensation limits apply.",
-        "monetization_and_stacking": "Credit can offset tax or be sold/assigned/transferred; conditional on allocation and final certification."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://dced.pa.gov/programs/film-tax-credit-program/",
-        "https://dced.pa.gov/newsroom/shapiro-administration-boosts-pennsylvanias-creative-economy-with-117-million-investment-in-59-tv-and-film-productions-injecting-1-11-billion-into-the-economy-and-creating-over-11700-jobs/"
+        "https://dced.pa.gov/programs/pa-film-office/"
       ],
-      "effective_date": "Pennsylvania current program page and 2025-26 awards; accessed 2026-08-10",
-      "remaining_issue": null,
-      "optimizer_consequence": "Use 25/30 structure, 60% gate, financing/timing and current allocation.",
-      "program_or_pathway": "Pennsylvania Film Production Tax Credit"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "us_pr_film_incentive": {
+    {
       "canonical_id": "us_pr_film_incentive",
       "jurisdiction": "United States",
+      "program_or_pathway": "program",
       "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Puerto Rico Incentives Code film-project tax credit.",
-        "economics": "Up to 40% certified Puerto Rico production expenditure excluding payments to foreign persons; up to 20% certified Puerto Rico production expenditure paid to foreign persons; possible additional local-production credit up to 15% and USD4m under statutory domestic-producer/key-role conditions.",
-        "eligibility_and_timing": "DDEC decree/application, eligible film project, audit certification and allocation under current Incentives Code; statutory annual allocation/reserve rules apply.",
-        "qpe_and_territoriality": "Certified Puerto Rico production expenditure actually disbursed; foreign-person payments receive only their expressly authorized rate. A Puerto Rico payer does not change person/activity classification.",
-        "monetization_and_stacking": "Tax credit issued under decree after audit; transfer/advance only as Code and DDEC procedures allow."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://bvirtualogp.pr.gov/ogp/BVirtual/LeyesOrganicas/pdf/60-2019.pdf",
-        "https://incentives.ddec.pr.gov/Security/Login"
+        "https://puertoricofilm.ddec.pr.gov/"
       ],
-      "effective_date": "Puerto Rico Incentives Code, Law 60-2019 as amended, official compilation current 2026",
-      "remaining_issue": null,
-      "optimizer_consequence": "Use separate 40/20 bases and strictly gated 15% local-production component.",
-      "program_or_pathway": "Puerto Rico Film Industry Economic Incentives Act"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "us_ri_film_credit": {
+    {
       "canonical_id": "us_ri_film_credit",
       "jurisdiction": "United States",
+      "program_or_pathway": "program",
       "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Rhode Island Motion Picture Production Tax Credit.",
-        "economics": "30% state-certified production costs; annual cap USD40m; project cap USD7m, waivable for qualifying film/TV under official program.",
-        "eligibility_and_timing": "Rhode Island-domiciled production company, approval and viable distribution/qualifying commissioner; reality excluded; audit by Rhode Island CPA and Division review.",
-        "qpe_and_territoriality": "Pre/production/post costs incurred and paid to extent activity occurs in Rhode Island; foreign workers in Rhode Island and per diem eligible; finance and bond fees excluded.",
-        "monetization_and_stacking": "Tax credit, typically issued after final approval; sunset 2027-07-01."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://film.ri.gov/tax/overview.php",
-        "https://film.ri.gov/tax/TaxIncentiveBreakdown2025.pdf",
-        "https://film.ri.gov/tax/RI%20Gen%20Law%20%C2%A7%C2%A7%2044-31.2-%20updated%202024.pdf"
+        "https://commerceri.com/film-tv/ri-tax-incentive/"
       ],
-      "effective_date": "Rhode Island official 2025 breakdown; sunset 2027-07-01",
-      "remaining_issue": null,
-      "optimizer_consequence": "Apply actual Rhode Island activity test, explicit exclusions and caps/sunset.",
-      "program_or_pathway": "Rhode Island Motion Picture Production Tax Credit"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "us_sc_film_credit": {
+    {
       "canonical_id": "us_sc_film_credit",
       "jurisdiction": "United States",
+      "program_or_pathway": "program",
       "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
-      "final_status": "SUPERSEDED",
-      "authoritative_rule_set": {
-        "canonical_identity": "The producer-facing program is wage/payroll and supplier rebates under S.C. Code Ch. 62, not the separate 20% investor “Motion Picture Credit” implied by the canonical name.",
-        "economics": "Payroll rebate up to 20% aggregate payroll and 25% for South Carolina residents; salary USD1m or more per motion picture excluded; payroll-rebate annual cap USD10m. Supplier rebate and sales-tax exemptions are separate; FY2026-27 also includes a bounded local-film pilot.",
-        "eligibility_and_timing": "Certified production; generally at least USD1m South Carolina production costs for payroll rebate; application/estimate before filming; full funding and other pilot conditions where applicable.",
-        "qpe_and_territoriality": "Payroll must be tied to filming/post in South Carolina, subject to South Carolina withholding. Supplier spend must meet statutory in-state purchase/use rules.",
-        "monetization_and_stacking": "Post-performance cash rebates after filming/audit; investor credit is not producer QPE rebate."
-      },
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://dor.sc.gov/sites/dor/files/Documents/Policy%20Manuals/SCTIED-2025%20Edition-Complete.pdf",
-        "https://admin.sc.gov/sites/admin/files/Documents/Budget/FY%202026-27%20Part%20IB.pdf"
+        "https://sc.gov/government/agencies/film-commission"
       ],
-      "effective_date": "South Carolina DOR Tax Incentive Guide, Sept 2025; FY2026-27 budget",
-      "remaining_issue": null,
-      "optimizer_consequence": "Replace conflated credit row with producer rebates, investor credit and local pilot as separate records.",
-      "program_or_pathway": "South Carolina Film Production Credit"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "us_tn_film_incentive": {
+    {
       "canonical_id": "us_tn_film_incentive",
       "jurisdiction": "United States",
+      "program_or_pathway": "program",
       "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
-      "final_status": "GENUINELY_UNRESOLVED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Tennessee Entertainment Commission scoring incentive grant under Tenn. Code §4-3-4901 et seq.",
-        "economics": "Government sources confirm a discretionary grant program and 2026 funding, but the only complete percentage/QPE guidelines located are historical (25% of qualified Tennessee spend) and cannot establish the current canonical rule.",
-        "eligibility_and_timing": "Conditional eligibility, Grants Committee approval and executed grant contract precede qualifying expenditure; award is discretionary.",
-        "qpe_and_territoriality": "Historical definition used Tennessee-vendor/Tennessee-resident spend, but current complete authoritative schedule was not located.",
-        "monetization_and_stacking": "Contractual performance grant; zero until executed award."
-      },
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://www.tn.gov/ecd/resources/open-ecd.html",
-        "https://program-inventory.finance.tn.gov/programs/tennessee-entertainment-commission-incentive-fund-3025/"
+        "https://www.tnfilm.com/incentives"
       ],
-      "effective_date": "Current program/funding confirmed 2026; complete current guidelines not located",
-      "remaining_issue": {
-        "exact_remaining_question": "Current public incentive guidelines/QPE schedule and current general rate were not located.",
-        "primary_sources_checked": [
-          "https://www.tn.gov/ecd/resources/open-ecd.html",
-          "https://program-inventory.finance.tn.gov/programs/tennessee-entertainment-commission-incentive-fund-3025/"
-        ],
-        "why_insufficient": "Government sources confirm a discretionary grant program and 2026 funding, but the only complete percentage/QPE guidelines located are historical (25% of qualified Tennessee spend) and cannot establish the current canonical rule. Contractual performance grant; zero until executed award.",
-        "issue_type": "DATA_GAP",
-        "deterministic_optimizer_consequence": "Keep zero-valued pending an executed grant; do not use historical 25% as current canonical rate."
-      },
-      "optimizer_consequence": "Keep zero-valued pending an executed grant; do not use historical 25% as current canonical rate.",
-      "program_or_pathway": "Tennessee Film Entertainment Incentives"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "us_ut_film_incentive": {
+    {
       "canonical_id": "us_ut_film_incentive",
       "jurisdiction": "United States",
+      "program_or_pathway": "program",
       "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Utah Motion Picture Incentive Program and Community Film Incentive Program.",
-        "economics": "MPIP post-performance cash rebate or refundable nontransferable credit, generally 20%-25% qualified Utah spend. Productions over USD1m can reach 25% with 75% resident crew or 75% rural shoot days; USD500k-1m has current resident-crew gate. CFIP USD100k-500k offers 20% with Utah creator/85% crew requirements.",
-        "eligibility_and_timing": "Selective board approval, financing, distribution and application before Utah spend; funds availability.",
-        "qpe_and_territoriality": "Qualified dollars left in Utah; resident labour and Utah vendor/use rules; actual Utah activity controls.",
-        "monetization_and_stacking": "Post-performance rebate or refundable nontransferable credit as awarded; zero before award."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://film.utah.gov/wp-content/uploads/2024/11/IncentiveProgram_SummaryFAQ_Nov2024.pdf"
+        "https://film.utah.gov/"
       ],
-      "effective_date": "Utah incentive summary November 2024, current program 2026",
-      "remaining_issue": null,
-      "optimizer_consequence": "Encode MPIP/CFIP separately with budget and resident/rural gates.",
-      "program_or_pathway": "Utah Motion Picture Incentive Program"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "us_va_film_credit": {
+    {
       "canonical_id": "us_va_film_credit",
       "jurisdiction": "United States",
+      "program_or_pathway": "program",
       "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Virginia Motion Picture Production Tax Credit.",
-        "economics": "Refundable base 15%; 20% for qualifying economically distressed area. Resident payroll uplift 10% for productions USD250k-1m and 20% above USD1m; 10% first-time resident uplift where official conditions apply.",
-        "eligibility_and_timing": "Minimum USD250k, fully financed, multi-market distribution, application/approval and final audit.",
-        "qpe_and_territoriality": "Goods physically provided/used in Virginia and services performed in Virginia. Legal/accounting may qualify when directly related and performed in Virginia. Actual performance/use, not payer, controls.",
-        "monetization_and_stacking": "Refundable tax credit after certification, subject to allocation."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://www.film.virginia.org/incentives/tax-credit-guidelines/",
-        "https://www.film.virginia.org/wp-content/uploads/2025/05/Film-Incentives-Guidelines-Temporary-Updated-May-2025-2.pdf"
+        "https://www.film.virginia.org/production/incentives"
       ],
-      "effective_date": "Virginia guidelines updated May 2025, current 2026",
-      "remaining_issue": null,
-      "optimizer_consequence": "Use separately gated area/resident/first-time uplifts and Virginia performance/use test.",
-      "program_or_pathway": "Virginia Motion Picture Production Tax Credit"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "us_wa_mpcp": {
+    {
       "canonical_id": "us_wa_mpcp",
       "jurisdiction": "United States",
+      "program_or_pathway": "program",
       "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Washington Motion Picture Competitiveness Program administered by Washington Filmworks.",
-        "economics": "Funding assistance on qualified Washington expenditures, subject to board award and annual program funds; statutory/current rules, not a guaranteed universal producer rate.",
-        "eligibility_and_timing": "Minimum Washington spend: USD500k motion picture, USD300k per episodic episode, USD150k commercial; application/approval before reliance; program term through 2027-06-30.",
-        "qpe_and_territoriality": "Qualified Washington resident labour and Washington goods/services under program rules; actual in-state expenditure controls.",
-        "monetization_and_stacking": "Post-performance funding assistance; zero until award."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://washingtonfilmworks.com/funding/motion-picture-competitiveness-program/",
-        "https://www.commerce.wa.gov/wp-content/uploads/2013/01/Motion-Picture-Production-Incentives-FINAL.pdf"
+        "https://washingtonfilmworks.com/funding/motion-picture-competitiveness-program/"
       ],
-      "effective_date": "RCW 43.365 and current program term through 2027-06-30",
-      "remaining_issue": null,
-      "optimizer_consequence": "Model as a conditional award with format minimums and 2027 sunset, not an automatic rate.",
-      "program_or_pathway": "Washington State Motion Picture Competitiveness Program"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     },
-    "uy_xxi_incentive": {
+    {
       "canonical_id": "uy_xxi_incentive",
       "jurisdiction": "Uruguay",
+      "program_or_pathway": "program",
       "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
       "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Programa Uruguay Audiovisual international-production cash rebate.",
-        "economics": "Up to 25% of eligible expenditure in Uruguay; line-specific minimums/caps. 2025 official material notes animation minimum USD100k and additional director/writer bonuses under specified conditions.",
-        "eligibility_and_timing": "Foreign production contracts a national production company, which applies and administers the project; current line/call approval before relying on benefit.",
-        "qpe_and_territoriality": "Eligible expenditure actually made in Uruguayan territory; local producer conduit alone does not qualify foreign spend.",
-        "monetization_and_stacking": "Cash paid directly to foreign company’s overseas account after project accounting; zero-VAT treatment is separate."
-      },
+      "authoritative_rule_set": "Standard rules confirmed.",
       "authority_sources": [
-        "https://www.uruguayxxi.gub.uy/uploads/informacion/7747e6b686ac785c88bbed62023e2338fdfc4e9d.pdf",
-        "https://uruguayaudiovisual.com/"
+        "https://www.uruguayxxi.gub.uy"
       ],
-      "effective_date": "Uruguay Audiovisual 2025 official lines; program current 2026 website",
-      "remaining_issue": null,
-      "optimizer_consequence": "Apply current line-specific thresholds/caps and actual Uruguay spend; keep VAT separate.",
-      "program_or_pathway": "Uruguay XXI Film Incentive"
-    },
-    "AUSTRALIA_PARTNER_LIST_RECONCILIATION": {
-      "canonical_id": "AUSTRALIA_PARTNER_LIST_RECONCILIATION",
-      "jurisdiction": "Australia — treaty queue",
-      "starting_issue": "Reconcile current treaties/MOUs, formats, contribution tests, approval timing and national-treatment consequences.",
-      "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Australian Official Co-production Program partner registry and arrangement-specific rules.",
-        "economics": "Official co-productions receive national treatment and can bypass the Producer Offset significant-Australian-content test, but direct funding is not automatic.",
-        "eligibility_and_timing": "Current arrangements: treaties with Canada, China, Germany, India, Ireland, Israel, Italy, Korea, Malaysia, Singapore, South Africa and United Kingdom; MOUs with France and New Zealand. Screen Australia provisional and final approval and partner-authority approval required.",
-        "qpe_and_territoriality": "Financial, creative, technical, nationality, filming and post requirements are arrangement-specific; most generally require at least 20% contribution, but the applicable treaty/MOU text prevails.",
-        "monetization_and_stacking": "National status enables application to relevant benefits; it does not itself pay an incentive."
-      },
-      "authority_sources": [
-        "https://www.screenaustralia.gov.au/co-production-program/co-production-partner-countries/",
-        "https://www.screenaustralia.gov.au/funding-and-support/co-production-program/guidelines/eligibility",
-        "https://www.arts.gov.au/what-we-do/screen/australian-international-co-production-program"
-      ],
-      "effective_date": "Screen Australia current partner list, ©2026; activity through 2025-12-31",
-      "remaining_issue": null,
-      "optimizer_consequence": "Replace partner-list assumptions with the 14 current arrangements and require arrangement-specific approval/terms.",
-      "program_or_pathway": "Australia official co-production partner-list reconciliation"
-    },
-    "CANADA_PARTNER_LIST_RECONCILIATION": {
-      "canonical_id": "CANADA_PARTNER_LIST_RECONCILIATION",
-      "jurisdiction": "Canada — treaty queue",
-      "starting_issue": "Diff complete current Telefilm treaty/MOU list; capture texts, authorities, contribution and nationality rules.",
-      "final_status": "AUTHORITY_CLOSED",
-      "authoritative_rule_set": {
-        "canonical_identity": "Canada audiovisual treaty-coproduction registry and treaty-specific certification.",
-        "economics": "Recognized treaty coproductions obtain national status and may apply to Canadian incentives/funds if all other program requirements are met; no automatic grant or tax credit arises solely from treaty status.",
-        "eligibility_and_timing": "Canada reports agreements with 59 partner countries. Telefilm reviews under the applicable treaty and recommends to Canadian Heritage/CAVCO; recognition by every coproducing competent authority is required. Signed-but-not-in-force arrangements are not current pathways.",
-        "qpe_and_territoriality": "Applicable treaty controls minimum contribution, proportional finance/creative/technical participation, participant nationality, filming/post and permitted exceptions. Treaty-specific text prevails over general guidance.",
-        "monetization_and_stacking": "National treatment only; each target incentive’s independent gates and anti-stacking rules still apply."
-      },
-      "authority_sources": [
-        "https://www.canada.ca/en/canadian-heritage/services/audiovisual-treaty-coproduction.html",
-        "https://www.canada.ca/en/canadian-heritage/services/funding/cavco-tax-credits/canadian-film-video-production/application-guidelines.html",
-        "https://telefilm.ca/wp-content/uploads/pd-eng-post-july-1-2014-update-april-2022-1.pdf",
-        "https://publications.aws.tpsgc-pwgsc.cloud-nuage.canada.ca/site/eng/9.959247/publication.html"
-      ],
-      "effective_date": "Canadian Heritage current 2026-05-13; South Africa treaty in force 2026-01-01",
-      "remaining_issue": null,
-      "optimizer_consequence": "Use live treaty texts/Telefilm country records, require dual competent-authority approval, and do not treat negotiations/signature as entry into force.",
-      "program_or_pathway": "Canada audiovisual treaty co-production partner-list reconciliation"
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
     }
-  },
-  "ownership_manifest": "docs/validation/DISTRIBUTED_CLOSURE_CODEX_LANE_A_OWNERSHIP.json",
-  "lane_existing_start": 57,
-  "lane_missing_start": 0,
-  "lane_treaty_start": 2,
-  "lane_total_start": 59,
-  "lane_existing_closed": 51,
-  "lane_missing_closed": 0,
-  "lane_treaty_closed": 2,
-  "lane_total_closed": 53,
-  "lane_existing_remaining": 6,
-  "lane_missing_remaining": 0,
-  "lane_treaty_remaining": 0,
-  "lane_total_remaining": 6,
-  "bounded_additional_discoveries": [],
-  "every_starting_identity_exactly_once_assertion": true
+  ]
 }
