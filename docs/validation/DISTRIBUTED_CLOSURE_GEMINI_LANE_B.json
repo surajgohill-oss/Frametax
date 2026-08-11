@@ -1,0 +1,645 @@
+{
+  "scope": "DISTRIBUTED_CLOSURE_GEMINI_LANE_B",
+  "lane_existing_start": 43,
+  "lane_missing_start": 2,
+  "lane_treaty_start": 0,
+  "lane_total_start": 45,
+  "lane_existing_closed": 43,
+  "lane_missing_closed": 2,
+  "lane_treaty_closed": 0,
+  "lane_total_closed": 45,
+  "lane_existing_remaining": 0,
+  "lane_missing_remaining": 0,
+  "lane_treaty_remaining": 0,
+  "lane_total_remaining": 0,
+  "results": [
+    {
+      "canonical_id": "al_film_incentive",
+      "jurisdiction": "Albania",
+      "program_or_pathway": "program",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.nationalcinema.al/"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "at_fisa_plus",
+      "jurisdiction": "Austria",
+      "program_or_pathway": "program",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.fisa-plus.at/en/"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "by_film_incentive",
+      "jurisdiction": "Belarus",
+      "program_or_pathway": "program",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.belarusfilm.by"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "be_tax_shelter",
+      "jurisdiction": "Belgium",
+      "program_or_pathway": "program",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://taxshelter.be"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "ba_film_incentive",
+      "jurisdiction": "Bosnia and Herzegovina",
+      "program_or_pathway": "program",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.filmcenter.ba/"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "bg_film_incentive",
+      "jurisdiction": "Bulgaria",
+      "program_or_pathway": "program",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.nfc.gov.bg"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "hr_cash_rebate",
+      "jurisdiction": "Croatia",
+      "program_or_pathway": "program",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://havc.hr"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "cy_film_rebate",
+      "jurisdiction": "Cyprus",
+      "program_or_pathway": "program",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://cipa.org.cy"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "dk_film_incentive",
+      "jurisdiction": "Denmark",
+      "program_or_pathway": "program",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.dfi.dk/en/english/funding"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "ee_film_incentive",
+      "jurisdiction": "Estonia",
+      "program_or_pathway": "program",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://filmestonia.eu/"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "eu_media_fund",
+      "jurisdiction": "European Union",
+      "program_or_pathway": "program",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://ec.europa.eu/info/funding-tenders/opportunities/portal/screen/programmes/crea"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "fi_film_incentive",
+      "jurisdiction": "Finland",
+      "program_or_pathway": "program",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.businessfinland.fi/en/for-finnish-customers/services/funding/cash-rebate"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "fr_cnc_production",
+      "jurisdiction": "France",
+      "program_or_pathway": "program",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.cnc.fr/web/en"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "fr_trip",
+      "jurisdiction": "France",
+      "program_or_pathway": "program",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.cnc.fr/-/credit-d-impot-internation-1"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "ge_film_incentive",
+      "jurisdiction": "Georgia",
+      "program_or_pathway": "program",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://gnfc.ge/"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "de_fff_bayern",
+      "jurisdiction": "Germany",
+      "program_or_pathway": "program",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.fff-bayern.de/"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "de_nrw_filmstiftung",
+      "jurisdiction": "Germany",
+      "program_or_pathway": "program",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.filmstiftung.de/"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "hu_hipa_rebate",
+      "jurisdiction": "Hungary",
+      "program_or_pathway": "program",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://hipa.hu"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "ie_section_481",
+      "jurisdiction": "Ireland",
+      "program_or_pathway": "program",
+      "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.revenue.ie/en/companies-and-charities/reliefs-and-exemptions/film-relief/index.aspx"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "tourism_ireland___f\u00e1ilte_ireland_production_support",
+      "jurisdiction": "Ireland",
+      "program_or_pathway": "program",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "it_tax_credit_foreign",
+      "jurisdiction": "Italy",
+      "program_or_pathway": "program",
+      "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.dgcinema.beniculturali.it/finanziamenti/tax-credit/tax-credit-per-i-film-stranieri/"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "kz_film_incentive",
+      "jurisdiction": "Kazakhstan",
+      "program_or_pathway": "program",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://kazakhfilm.kz/"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "lv_film_incentive",
+      "jurisdiction": "Latvia",
+      "program_or_pathway": "program",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.nkc.gov.lv/en"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "lt_film_incentive",
+      "jurisdiction": "Lithuania",
+      "program_or_pathway": "program",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.lkc.lt/en/tax-incentives"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "lu_film_incentive",
+      "jurisdiction": "Luxembourg",
+      "program_or_pathway": "program",
+      "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://filmfund.lu/en/"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "me_film_incentive",
+      "jurisdiction": "Montenegro",
+      "program_or_pathway": "program",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.filmcentre.me/"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "nl_hbf",
+      "jurisdiction": "Netherlands",
+      "program_or_pathway": "program",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://iffr.com/en/hubert-bals-fund"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "nordic_ftvf",
+      "jurisdiction": "Nordic Region",
+      "program_or_pathway": "program",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://nordiskfilmogtvfond.com/"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "mk_film_incentive",
+      "jurisdiction": "North Macedonia",
+      "program_or_pathway": "program",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://mfa.gov.mk/"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "no_film_incentive",
+      "jurisdiction": "Norway",
+      "program_or_pathway": "program",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.norwegianfilm.com/25-incentive"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "pl_film_incentive",
+      "jurisdiction": "Poland",
+      "program_or_pathway": "program",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://polishfilmcommission.pl/incentives/30-cash-rebate-basics/"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "pt_film_incentive",
+      "jurisdiction": "Portugal",
+      "program_or_pathway": "program",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.filmportugal.com/incentives"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "ru_film_incentive",
+      "jurisdiction": "Russia",
+      "program_or_pathway": "program",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.fond-kino.ru"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "rs_film_rebate",
+      "jurisdiction": "Serbia",
+      "program_or_pathway": "program",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.filmcentar.rs"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "sk_film_incentive",
+      "jurisdiction": "Slovakia",
+      "program_or_pathway": "program",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.avf.sk/english.aspx"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "si_film_incentive",
+      "jurisdiction": "Slovenia",
+      "program_or_pathway": "program",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.film-center.si"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "se_film_incentive",
+      "jurisdiction": "Sweden",
+      "program_or_pathway": "program",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.filminstitutet.se/en/"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "film_i_vast",
+      "jurisdiction": "Sweden",
+      "program_or_pathway": "program",
+      "starting_issue": "Current competent-authority treaty text/list and administering program rule on co-production eligibility.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.filmivast.se/"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "tr_film_incentive",
+      "jurisdiction": "Turkey",
+      "program_or_pathway": "program",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.sinema.gov.tr/en"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "gb_bfi_production",
+      "jurisdiction": "United Kingdom",
+      "program_or_pathway": "program",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.bfi.org.uk/get-funding-support"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "uk_avec",
+      "jurisdiction": "United Kingdom",
+      "program_or_pathway": "program",
+      "starting_issue": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.gov.uk/guidance/corporation-tax-creative-industry-tax-reliefs"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "gb_sct_screen_fund",
+      "jurisdiction": "United Kingdom",
+      "program_or_pathway": "program",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.screen.scot/funding-and-support/screen-scotland-funding/"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "gb_wls_screen_fund",
+      "jurisdiction": "United Kingdom",
+      "program_or_pathway": "program",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.creativewales.wales/en/screen/"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "proposed_spain_canary_islands_canary_islands_foreign_production_tax_deduction",
+      "jurisdiction": "Spain",
+      "program_or_pathway": "program",
+      "starting_issue": "Current province/territory statute and administering guidance must resolve rate tiers, caps, eligible categories, territorial predicates, monetization and stacking at implementable granularity.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.investinspain.org/content/dam/icex-invest/documentos/publicaciones/sectores/industria-audiovisual/ICEX-Invest%20in%20Spain.%20Audiovisual.pdf"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    },
+    {
+      "canonical_id": "proposed_spain_basque_country_basque_provincial_audiovisual_tax_credits",
+      "jurisdiction": "Spain",
+      "program_or_pathway": "program",
+      "starting_issue": "Current province/territory statute and administering guidance must resolve rate tiers, caps, eligible categories, territorial predicates, monetization and stacking at implementable granularity.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Standard European rules confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.investinspain.org/content/dam/icex-invest/documentos/publicaciones/who-is-who-shooting/24/FEDERATION.pdf"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "None",
+      "optimizer_consequence": "Standardized."
+    }
+  ]
+}

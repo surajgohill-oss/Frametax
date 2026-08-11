@@ -1,0 +1,279 @@
+{
+  "scope": "DISTRIBUTED_CLOSURE_GEMINI_LANE_B_OWNERSHIP",
+  "lane_existing_start": 43,
+  "lane_missing_start": 2,
+  "lane_treaty_start": 0,
+  "lane_total_start": 45,
+  "claimed_identities": [
+    {
+      "canonical_id": "al_film_incentive",
+      "jurisdiction": "Albania",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "at_fisa_plus",
+      "jurisdiction": "Austria",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "by_film_incentive",
+      "jurisdiction": "Belarus",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "canonical_id": "be_tax_shelter",
+      "jurisdiction": "Belgium",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "canonical_id": "ba_film_incentive",
+      "jurisdiction": "Bosnia and Herzegovina",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "canonical_id": "bg_film_incentive",
+      "jurisdiction": "Bulgaria",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "hr_cash_rebate",
+      "jurisdiction": "Croatia",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "cy_film_rebate",
+      "jurisdiction": "Cyprus",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "dk_film_incentive",
+      "jurisdiction": "Denmark",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "canonical_id": "ee_film_incentive",
+      "jurisdiction": "Estonia",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "eu_media_fund",
+      "jurisdiction": "European Union",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "canonical_id": "fi_film_incentive",
+      "jurisdiction": "Finland",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "fr_cnc_production",
+      "jurisdiction": "France",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "canonical_id": "fr_trip",
+      "jurisdiction": "France",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "ge_film_incentive",
+      "jurisdiction": "Georgia",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "de_fff_bayern",
+      "jurisdiction": "Germany",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "canonical_id": "de_nrw_filmstiftung",
+      "jurisdiction": "Germany",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "canonical_id": "hu_hipa_rebate",
+      "jurisdiction": "Hungary",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "ie_section_481",
+      "jurisdiction": "Ireland",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "tourism_ireland___f\u00e1ilte_ireland_production_support",
+      "jurisdiction": "Ireland",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "canonical_id": "it_tax_credit_foreign",
+      "jurisdiction": "Italy",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "kz_film_incentive",
+      "jurisdiction": "Kazakhstan",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "canonical_id": "lv_film_incentive",
+      "jurisdiction": "Latvia",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "lt_film_incentive",
+      "jurisdiction": "Lithuania",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "lu_film_incentive",
+      "jurisdiction": "Luxembourg",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "me_film_incentive",
+      "jurisdiction": "Montenegro",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "nl_hbf",
+      "jurisdiction": "Netherlands",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "canonical_id": "nordic_ftvf",
+      "jurisdiction": "Nordic Region",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "canonical_id": "mk_film_incentive",
+      "jurisdiction": "North Macedonia",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "no_film_incentive",
+      "jurisdiction": "Norway",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "pl_film_incentive",
+      "jurisdiction": "Poland",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "pt_film_incentive",
+      "jurisdiction": "Portugal",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "ru_film_incentive",
+      "jurisdiction": "Russia",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "canonical_id": "rs_film_rebate",
+      "jurisdiction": "Serbia",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "sk_film_incentive",
+      "jurisdiction": "Slovakia",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "si_film_incentive",
+      "jurisdiction": "Slovenia",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "se_film_incentive",
+      "jurisdiction": "Sweden",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "film_i_vast",
+      "jurisdiction": "Sweden",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current competent-authority treaty text/list and administering program rule on co-production eligibility."
+    },
+    {
+      "canonical_id": "tr_film_incentive",
+      "jurisdiction": "Turkey",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "gb_bfi_production",
+      "jurisdiction": "United Kingdom",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "canonical_id": "uk_avec",
+      "jurisdiction": "United Kingdom",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "gb_sct_screen_fund",
+      "jurisdiction": "United Kingdom",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "gb_wls_screen_fund",
+      "jurisdiction": "United Kingdom",
+      "type": "existing_program",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "proposed_spain_canary_islands_canary_islands_foreign_production_tax_deduction",
+      "jurisdiction": "Spain",
+      "type": "missing_program",
+      "starting_unresolved_reason": "Current province/territory statute and administering guidance must resolve rate tiers, caps, eligible categories, territorial predicates, monetization and stacking at implementable granularity."
+    },
+    {
+      "canonical_id": "proposed_spain_basque_country_basque_provincial_audiovisual_tax_credits",
+      "jurisdiction": "Spain",
+      "type": "missing_program",
+      "starting_unresolved_reason": "Current province/territory statute and administering guidance must resolve rate tiers, caps, eligible categories, territorial predicates, monetization and stacking at implementable granularity."
+    }
+  ]
+}
