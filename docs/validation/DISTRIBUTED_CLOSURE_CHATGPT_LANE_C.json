@@ -1,0 +1,1327 @@
+{
+  "artifact": "DISTRIBUTED_CLOSURE_CHATGPT_LANE_C",
+  "research_cutoff": "2026-08-11",
+  "canonical_baseline_commit": "8ddfaaf01a60f1d7597142ac8d5ce3aeffd1b22f",
+  "authority_standard": "Primary current statute/regulation, government, administering film authority and official manuals only.",
+  "scope": "Asia, Africa, Middle East, residual Oceania excluding Australia/New Zealand, multinational/regional records, and broad residual treaty/co-production queues; excludes Lane A and Europe Lane B.",
+  "accounting": {
+    "lane_existing_start": 51,
+    "lane_existing_closed": 26,
+    "lane_existing_remaining": 25,
+    "lane_missing_start": 0,
+    "lane_missing_closed": 0,
+    "lane_missing_remaining": 0,
+    "lane_treaty_start": 1,
+    "lane_treaty_closed": 1,
+    "lane_treaty_remaining": 0,
+    "lane_multinational_start": 2,
+    "lane_multinational_closed": 2,
+    "lane_multinational_remaining": 0,
+    "lane_total_start": 54,
+    "lane_total_closed": 29,
+    "lane_total_remaining": 25,
+    "accounting_assertion": true
+  },
+  "status_counts": {
+    "AUTHORITY_CLOSED": 20,
+    "DUPLICATE": 2,
+    "GENUINELY_UNRESOLVED": 25,
+    "NON_ECONOMIC_CONFIRMED": 3,
+    "NO_CURRENT_PRODUCER_INCENTIVE_CONFIRMED": 1,
+    "SUPERSEDED": 3
+  },
+  "bounded_additional_discoveries": [],
+  "genuine_interpretation_conflicts": [],
+  "results": [
+    {
+      "canonical_id": "acpfilms_fund",
+      "jurisdiction": "African, Caribbean and Pacific Group",
+      "program_or_pathway": "ACP Films — EU-ACP Cultural Film Co-production Fund",
+      "record_type": "MULTINATIONAL_REGIONAL",
+      "starting_issue": "Current competent-authority treaty text/list and administering program rule on co-production eligibility.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Selective delegated ACP-EU grants, not a rebate. Example official Rwanda call requires a local company, ACP director, multi-country ACP co-producers, ACP ownership, confirmed finance, local/ACP expenditure and cumulative award caps.",
+      "authority_sources": [
+        {
+          "title": "ACP-EU CLAP-ACP2 call",
+          "url": "https://www.acp-ue-culture.eu/wp-content/uploads/2022/09/RFO_CALL-FOR-PROJECTS.pdf",
+          "pinpoint": "current rule"
+        }
+      ],
+      "effective_date": "2020-2026 cycle",
+      "remaining_issue": null,
+      "optimizer_consequence": "Store call-specific selective funding, never a universal ACP rate."
+    },
+    {
+      "canonical_id": "ao_film_incentive",
+      "jurisdiction": "Angola",
+      "program_or_pathway": "Angola Instituto do Cinema e Audiovisual (ICA) Production Support",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
+      "final_status": "SUPERSEDED",
+      "authoritative_rule_set": "The ICA identity is outdated. ANICC now administers selective national/CPLP calls including PAV III; no automatic location-spend rebate.",
+      "authority_sources": [
+        {
+          "title": "ANICC PAV III",
+          "url": "https://anicc.gov.ao/web/noticias/resultados-finais-do-programa-cplp-audiovisual-3.a-edicao-%28pav-iii%29",
+          "pinpoint": "current rule"
+        }
+      ],
+      "effective_date": "2025-2027 PAV III",
+      "remaining_issue": null,
+      "optimizer_consequence": "Retire ICA candidate; retain ANICC/PAV as selective funding metadata."
+    },
+    {
+      "canonical_id": "bh_film_incentive",
+      "jurisdiction": "Bahrain",
+      "program_or_pathway": "Bahrain Film Commission Production Support",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Authority, policy, permit/facilitation function or general support mandate is identifiable, but no current complete producer incentive rule set was published at the checked primary-authority surface.",
+      "authority_sources": [
+        {
+          "title": "Current official authority materials",
+          "url": "https://culture.gov.bh/en/",
+          "pinpoint": "No complete current operating rule set located"
+        }
+      ],
+      "effective_date": "Checked through 2026-08-11",
+      "remaining_issue": {
+        "exact_remaining_question": "Does a current open producer-accessible economic program exist for this exact identity and, if so, what instrument, rate/award, cap, minimum spend, applicant/local-entity gate, QPE/territorial predicates, preapproval, audit, payment and stacking rules govern it?",
+        "primary_sources_checked": [
+          "https://culture.gov.bh/en/"
+        ],
+        "why_authority_is_insufficient": "A mandate, announcement, policy or facilitation page does not provide an implementable current claim manual.",
+        "reason_type": "DATA_GAP"
+      },
+      "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set."
+    },
+    {
+      "canonical_id": "bd_film_incentive",
+      "jurisdiction": "Bangladesh",
+      "program_or_pathway": "Bangladesh Film Development Corporation (BFDC) Production Support",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Authority, policy, permit/facilitation function or general support mandate is identifiable, but no current complete producer incentive rule set was published at the checked primary-authority surface.",
+      "authority_sources": [
+        {
+          "title": "Current official authority materials",
+          "url": "https://moi.gov.bd/",
+          "pinpoint": "No complete current operating rule set located"
+        }
+      ],
+      "effective_date": "Checked through 2026-08-11",
+      "remaining_issue": {
+        "exact_remaining_question": "Does a current open producer-accessible economic program exist for this exact identity and, if so, what instrument, rate/award, cap, minimum spend, applicant/local-entity gate, QPE/territorial predicates, preapproval, audit, payment and stacking rules govern it?",
+        "primary_sources_checked": [
+          "https://moi.gov.bd/"
+        ],
+        "why_authority_is_insufficient": "A mandate, announcement, policy or facilitation page does not provide an implementable current claim manual.",
+        "reason_type": "DATA_GAP"
+      },
+      "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set."
+    },
+    {
+      "canonical_id": "bt_film_incentive",
+      "jurisdiction": "Bhutan",
+      "program_or_pathway": "Bhutan Film Commission / Tourism Council Production Facilitation",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "BICMA selectively funds Bhutanese art films/creative documentaries. Foreign shoots require permits, fees and refundable security deposit; no foreign rebate.",
+      "authority_sources": [
+        {
+          "title": "BICMA grant call",
+          "url": "https://www.bicma.gov.bt/?p=8927",
+          "pinpoint": "current rule"
+        },
+        {
+          "title": "Bhutan Filming Regulation 2025",
+          "url": "https://www.bicma.gov.bt/wp-content/uploads/2025/03/Bhutan-Filming-Regulation-2025.pdf",
+          "pinpoint": "current rule"
+        }
+      ],
+      "effective_date": "2025",
+      "remaining_issue": null,
+      "optimizer_consequence": "Domestic selective grant only; foreign pathway is facilitation."
+    },
+    {
+      "canonical_id": "bw_film_commission",
+      "jurisdiction": "Botswana",
+      "program_or_pathway": "Botswana Film Commission Production Support",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "NO_CURRENT_PRODUCER_INCENTIVE_CONFIRMED",
+      "authoritative_rule_set": "Official parliamentary records describe the Commission/Fund as proposed under a Cinematograph Bill, not an enacted operating incentive.",
+      "authority_sources": [
+        {
+          "title": "Botswana Parliament Hansard 1 April 2026",
+          "url": "https://www.parliament.gov.bw/documents/DAILY-HANSARD--1st-APRIL-2026---Budget-Meeting--2nd-meeting-of-the-2nd-session-of-the-13th-Parliament_01_33_48_08_04_2026.pdf",
+          "pinpoint": "current rule"
+        }
+      ],
+      "effective_date": "Official record through 2026-04",
+      "remaining_issue": null,
+      "optimizer_consequence": "Suppress pending enacted rules and open process."
+    },
+    {
+      "canonical_id": "kh_film_incentive",
+      "jurisdiction": "Cambodia",
+      "program_or_pathway": "Cambodia Ministry of Culture Film Production Facilitation",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "NON_ECONOMIC_CONFIRMED",
+      "authoritative_rule_set": "Official pathway provides permits, coordination and temporary duty-free equipment import/export, not producer cash support.",
+      "authority_sources": [
+        {
+          "title": "Cambodia Film Commission process",
+          "url": "https://cambodia-cfc.org/administrative-process/",
+          "pinpoint": "current rule"
+        }
+      ],
+      "effective_date": "Checked 2026-08-11",
+      "remaining_issue": null,
+      "optimizer_consequence": "Keep permit/facilitation metadata only."
+    },
+    {
+      "canonical_id": "cm_film_incentive",
+      "jurisdiction": "Cameroon",
+      "program_or_pathway": "Cameroon Centre National de la Cinématographie Film Support",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "MINAC provides call-bound selective writing/development/production grants to Cameroon-established producers with cultural criteria; not a QPE rebate.",
+      "authority_sources": [
+        {
+          "title": "MINAC cinema aid",
+          "url": "https://www.minac-gouv.com/cinema-audiovisuel/fonds-aide-cinema",
+          "pinpoint": "current rule"
+        }
+      ],
+      "effective_date": "2026 call",
+      "remaining_issue": null,
+      "optimizer_consequence": "Selective domestic grant only."
+    },
+    {
+      "canonical_id": "cn_film_incentive",
+      "jurisdiction": "China",
+      "program_or_pathway": "China Film Administration Domestic Co-production Support",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "NON_ECONOMIC_CONFIRMED",
+      "authoritative_rule_set": "Co-production is a licensing and market-access status. Joint productions share investment, work, benefits and risk; prior approval, content review and personnel rules apply. No automatic payment.",
+      "authority_sources": [
+        {
+          "title": "National Film Administration rules",
+          "url": "https://www.chinafilm.gov.cn/xxgk/zcfg/bmgz/202112/t20211214_441292.html",
+          "pinpoint": "current rule"
+        }
+      ],
+      "effective_date": "Rules amended through 2017",
+      "remaining_issue": null,
+      "optimizer_consequence": "Treat solely as structure/approval gate."
+    },
+    {
+      "canonical_id": "eg_film_incentive",
+      "jurisdiction": "Egypt",
+      "program_or_pathway": "Egypt Film Commission Production Support",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Authority, policy, permit/facilitation function or general support mandate is identifiable, but no current complete producer incentive rule set was published at the checked primary-authority surface.",
+      "authority_sources": [
+        {
+          "title": "Current official authority materials",
+          "url": "https://sis.gov.eg/",
+          "pinpoint": "No complete current operating rule set located"
+        }
+      ],
+      "effective_date": "Checked through 2026-08-11",
+      "remaining_issue": {
+        "exact_remaining_question": "Does a current open producer-accessible economic program exist for this exact identity and, if so, what instrument, rate/award, cap, minimum spend, applicant/local-entity gate, QPE/territorial predicates, preapproval, audit, payment and stacking rules govern it?",
+        "primary_sources_checked": [
+          "https://sis.gov.eg/"
+        ],
+        "why_authority_is_insufficient": "A mandate, announcement, policy or facilitation page does not provide an implementable current claim manual.",
+        "reason_type": "DATA_GAP"
+      },
+      "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set."
+    },
+    {
+      "canonical_id": "et_film_commission",
+      "jurisdiction": "Ethiopia",
+      "program_or_pathway": "Ethiopian Film Commission Production Support",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Authority, policy, permit/facilitation function or general support mandate is identifiable, but no current complete producer incentive rule set was published at the checked primary-authority surface.",
+      "authority_sources": [
+        {
+          "title": "Current official authority materials",
+          "url": "https://www.moc.gov.et/",
+          "pinpoint": "No complete current operating rule set located"
+        }
+      ],
+      "effective_date": "Checked through 2026-08-11",
+      "remaining_issue": {
+        "exact_remaining_question": "Does a current open producer-accessible economic program exist for this exact identity and, if so, what instrument, rate/award, cap, minimum spend, applicant/local-entity gate, QPE/territorial predicates, preapproval, audit, payment and stacking rules govern it?",
+        "primary_sources_checked": [
+          "https://www.moc.gov.et/"
+        ],
+        "why_authority_is_insufficient": "A mandate, announcement, policy or facilitation page does not provide an implementable current claim manual.",
+        "reason_type": "DATA_GAP"
+      },
+      "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set."
+    },
+    {
+      "canonical_id": "fj_film_incentive",
+      "jurisdiction": "Fiji",
+      "program_or_pathway": "Fiji Audio Visual Commission Production Incentive",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "20% cash rebate on Total Fiji Expenditure; FJD250,000 minimum and FJD4m cap. Fiji company, licensed AV agent, provisional approval, Fiji bank account, reporting, insurance, distribution evidence and audit required. TFE means goods/services used in Fiji and paid to a local registered company/individual. Mutually exclusive with F1/F2.",
+      "authority_sources": [
+        {
+          "title": "Film Fiji rebate",
+          "url": "https://film-fiji.com/20-film-tax-rebate/",
+          "pinpoint": "current rule"
+        },
+        {
+          "title": "Film Fiji FAQ",
+          "url": "https://film-fiji.com/faqs/",
+          "pinpoint": "TFE territoriality"
+        }
+      ],
+      "effective_date": "Current guidance checked 2026-08-11",
+      "remaining_issue": null,
+      "optimizer_consequence": "Use 20%, not historical rates; local bank payment alone is insufficient."
+    },
+    {
+      "canonical_id": "ga_film_incentive",
+      "jurisdiction": "Gabon",
+      "program_or_pathway": "Gabon Ministry of Culture Film Commission Support",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Authority, policy, permit/facilitation function or general support mandate is identifiable, but no current complete producer incentive rule set was published at the checked primary-authority surface.",
+      "authority_sources": [
+        {
+          "title": "Current official authority materials",
+          "url": "https://www.culture.gouv.ga/",
+          "pinpoint": "No complete current operating rule set located"
+        }
+      ],
+      "effective_date": "Checked through 2026-08-11",
+      "remaining_issue": {
+        "exact_remaining_question": "Does a current open producer-accessible economic program exist for this exact identity and, if so, what instrument, rate/award, cap, minimum spend, applicant/local-entity gate, QPE/territorial predicates, preapproval, audit, payment and stacking rules govern it?",
+        "primary_sources_checked": [
+          "https://www.culture.gouv.ga/"
+        ],
+        "why_authority_is_insufficient": "A mandate, announcement, policy or facilitation page does not provide an implementable current claim manual.",
+        "reason_type": "DATA_GAP"
+      },
+      "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set."
+    },
+    {
+      "canonical_id": "gh_film_incentive",
+      "jurisdiction": "Ghana",
+      "program_or_pathway": "Ghana National Film Authority Production Support",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Authority, policy, permit/facilitation function or general support mandate is identifiable, but no current complete producer incentive rule set was published at the checked primary-authority surface.",
+      "authority_sources": [
+        {
+          "title": "Current official authority materials",
+          "url": "https://nfa.gov.gh/",
+          "pinpoint": "No complete current operating rule set located"
+        }
+      ],
+      "effective_date": "Checked through 2026-08-11",
+      "remaining_issue": {
+        "exact_remaining_question": "Does a current open producer-accessible economic program exist for this exact identity and, if so, what instrument, rate/award, cap, minimum spend, applicant/local-entity gate, QPE/territorial predicates, preapproval, audit, payment and stacking rules govern it?",
+        "primary_sources_checked": [
+          "https://nfa.gov.gh/"
+        ],
+        "why_authority_is_insufficient": "A mandate, announcement, policy or facilitation page does not provide an implementable current claim manual.",
+        "reason_type": "DATA_GAP"
+      },
+      "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set."
+    },
+    {
+      "canonical_id": "hk_film_incentive",
+      "jurisdiction": "Hong Kong SAR",
+      "program_or_pathway": "Create Hong Kong (CreateHK) Production Support",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "DUPLICATE",
+      "authoritative_rule_set": "Generic CreateHK support is not distinct; CreateHK became CCIDA and actual film economics sit in keyed Film Development Fund schemes.",
+      "authority_sources": [
+        {
+          "title": "CCIDA schemes",
+          "url": "https://www.ccidahk.gov.hk/en/funding_n_support.php?industries=film",
+          "pinpoint": "current rule"
+        }
+      ],
+      "effective_date": "Current CCIDA index",
+      "remaining_issue": null,
+      "optimizer_consequence": "Merge or suppress generic identity."
+    },
+    {
+      "canonical_id": "hk_film_dev_fund",
+      "jurisdiction": "Hong Kong SAR",
+      "program_or_pathway": "Hong Kong Film Development Fund (FDF)",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "FPFS 2.0 is selective financing for approved production budgets up to HKD25m: 40% of approved budget capped at HKD10m; 70% disbursed at principal-photography start; investor recoupment priority applies.",
+      "authority_sources": [
+        {
+          "title": "CCIDA FPFS 2.0",
+          "url": "https://www.ccidahk.gov.hk/en/whatsnew_detail.php?id=2025011415221293999",
+          "pinpoint": "current rule"
+        }
+      ],
+      "effective_date": "FPFS 2.0 effective 2025-01-15",
+      "remaining_issue": null,
+      "optimizer_consequence": "Model selective/recoupable financing, not a QPE rebate."
+    },
+    {
+      "canonical_id": "ibermedia_programme",
+      "jurisdiction": "Ibero-American Region (SEGIB)",
+      "program_or_pathway": "IBERMEDIA Programme for Ibero-American Co-productions",
+      "record_type": "MULTINATIONAL_REGIONAL",
+      "starting_issue": "Current competent-authority treaty text/list and administering program rule on co-production eligibility.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Intergovernmental selective fund, not territorial rebate. Annual modes include co-production/development/distribution/training. Co-production request caps are USD150k fiction and USD100k documentary; independent member-state producers and Council selection apply.",
+      "authority_sources": [
+        {
+          "title": "IBERMEDIA 2026 calls",
+          "url": "https://www.programaibermedia.com/nuestras-convocatorias/",
+          "pinpoint": "current rule"
+        },
+        {
+          "title": "2026 co-production form",
+          "url": "https://www.programaibermedia.com/wp-content/uploads/2017/11/FORM_COP_1_2026_ESP.pdf",
+          "pinpoint": "current rule"
+        }
+      ],
+      "effective_date": "2026 call",
+      "remaining_issue": null,
+      "optimizer_consequence": "Selective overlay only; no domestic incentive inference."
+    },
+    {
+      "canonical_id": "in_nfdc_coproduction",
+      "jurisdiction": "India",
+      "program_or_pathway": "NFDC International Co-production Development Fund",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current competent-authority treaty text/list and administering program rule on co-production eligibility.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Official India Cine Hub co-production reimbursement is 30% of India QPE, capped INR300m, annual-budget and first-come limited; Indian co-producer applies after official status. Portal indicates up to 40% with applicable bonuses. Spend accrues after approval/status and claims are audited.",
+      "authority_sources": [
+        {
+          "title": "India Cine Hub guidelines",
+          "url": "https://indiacinehub.gov.in/sites/default/files/2025-03/india-cine-hub-film-incentive-guidelines-2023-ver-feb-2025_0.pdf",
+          "pinpoint": "current rule"
+        },
+        {
+          "title": "ICH current portal",
+          "url": "https://indiacinehub.gov.in/incentive-calcuator-page",
+          "pinpoint": "current rule"
+        }
+      ],
+      "effective_date": "Guidelines 19 February 2025; portal current 2026",
+      "remaining_issue": null,
+      "optimizer_consequence": "Rename and enforce base/bonus, India QPE, approval, cap and budget gates."
+    },
+    {
+      "canonical_id": "id_film_incentive",
+      "jurisdiction": "Indonesia",
+      "program_or_pathway": "Indonesian Film Commission Production Facilitation",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Authority, policy, permit/facilitation function or general support mandate is identifiable, but no current complete producer incentive rule set was published at the checked primary-authority surface.",
+      "authority_sources": [
+        {
+          "title": "Current official authority materials",
+          "url": "https://www.kemenparekraf.go.id/",
+          "pinpoint": "No complete current operating rule set located"
+        }
+      ],
+      "effective_date": "Checked through 2026-08-11",
+      "remaining_issue": {
+        "exact_remaining_question": "Does a current open producer-accessible economic program exist for this exact identity and, if so, what instrument, rate/award, cap, minimum spend, applicant/local-entity gate, QPE/territorial predicates, preapproval, audit, payment and stacking rules govern it?",
+        "primary_sources_checked": [
+          "https://www.kemenparekraf.go.id/"
+        ],
+        "why_authority_is_insufficient": "A mandate, announcement, policy or facilitation page does not provide an implementable current claim manual.",
+        "reason_type": "DATA_GAP"
+      },
+      "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set."
+    },
+    {
+      "canonical_id": "il_film_incentive",
+      "jurisdiction": "Israel",
+      "program_or_pathway": "Israel Film Fund / Maslool Incentive",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Competitive 30% support to an Israeli production company on qualified costs released in Israel; NIS500k minimum. Living/transport capped at 35%; war-zone insurance plus management/general at 12%; finance and fixed equipment excluded. 80%/20% payment milestones.",
+      "authority_sources": [
+        {
+          "title": "Israel investment guide",
+          "url": "https://www.gov.il/BlobFolder/reports/iia-investment-guide-en/en/pirsomim_iia-investment-guide-en.pdf",
+          "pinpoint": "current rule"
+        },
+        {
+          "title": "Directive 4.52 English",
+          "url": "https://embassies.gov.il/madrid/NewsAndEvents/Pages/Program%20for%20the%20encouragement%20of%20foreign%20films%20and%20series%20in%20Israel.pdf",
+          "pinpoint": "current rule"
+        }
+      ],
+      "effective_date": "Directive 4.52/current guide",
+      "remaining_issue": null,
+      "optimizer_consequence": "Encode selective 30% with caps, exclusions and Israeli applicant."
+    },
+    {
+      "canonical_id": "jo_rfc_rebate",
+      "jurisdiction": "Jordan",
+      "program_or_pathway": "Royal Film Commission Jordan — Production Rebate",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "25%-45% of expenditure within Jordan based on size and cultural points. Maximum tier requires over USD10m spend and Jordanian cultural content. Approval is selective.",
+      "authority_sources": [
+        {
+          "title": "Invest Jordan creative industries",
+          "url": "https://invest.jo/en/investment-sectors/creative-industries",
+          "pinpoint": "current rule"
+        }
+      ],
+      "effective_date": "Current government guidance",
+      "remaining_issue": null,
+      "optimizer_consequence": "Replace flat rate; tier only after authoritative points/threshold determination."
+    },
+    {
+      "canonical_id": "royal_film_commission_tourism_film_support",
+      "jurisdiction": "Jordan",
+      "program_or_pathway": "Royal Film Commission Tourism Film Support",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "DUPLICATE",
+      "authoritative_rule_set": "No distinct stackable tourism payment; current materials describe facilitation and the same RFC rebate package.",
+      "authority_sources": [
+        {
+          "title": "Invest Jordan creative industries",
+          "url": "https://invest.jo/en/investment-sectors/creative-industries",
+          "pinpoint": "current rule"
+        }
+      ],
+      "effective_date": "Checked 2026-08-11",
+      "remaining_issue": null,
+      "optimizer_consequence": "Suppress and prohibit stacking."
+    },
+    {
+      "canonical_id": "kz_film_incentive",
+      "jurisdiction": "Kazakhstan",
+      "program_or_pathway": "Kazakhfilm Studios Production Facilitation",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Authority, policy, permit/facilitation function or general support mandate is identifiable, but no current complete producer incentive rule set was published at the checked primary-authority surface.",
+      "authority_sources": [
+        {
+          "title": "Current official authority materials",
+          "url": "https://kazakhcinema.kz/",
+          "pinpoint": "No complete current operating rule set located"
+        }
+      ],
+      "effective_date": "Checked through 2026-08-11",
+      "remaining_issue": {
+        "exact_remaining_question": "Does a current open producer-accessible economic program exist for this exact identity and, if so, what instrument, rate/award, cap, minimum spend, applicant/local-entity gate, QPE/territorial predicates, preapproval, audit, payment and stacking rules govern it?",
+        "primary_sources_checked": [
+          "https://kazakhcinema.kz/"
+        ],
+        "why_authority_is_insufficient": "A mandate, announcement, policy or facilitation page does not provide an implementable current claim manual.",
+        "reason_type": "DATA_GAP"
+      },
+      "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set."
+    },
+    {
+      "canonical_id": "ke_film_incentive",
+      "jurisdiction": "Kenya",
+      "program_or_pathway": "Kenya Film Commission (KFC) Production Incentive",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Authority, policy, permit/facilitation function or general support mandate is identifiable, but no current complete producer incentive rule set was published at the checked primary-authority surface.",
+      "authority_sources": [
+        {
+          "title": "Current official authority materials",
+          "url": "https://kenyafilmcommission.go.ke/news/kenya-film-commission-awards-ksh-3-million-prize-money-to-the-winners-of-the-10th-edition-of-the-kalasha-international-film-and-tv-awards/",
+          "pinpoint": "No complete current operating rule set located"
+        }
+      ],
+      "effective_date": "Checked through 2026-08-11",
+      "remaining_issue": {
+        "exact_remaining_question": "Does a current open producer-accessible economic program exist for this exact identity and, if so, what instrument, rate/award, cap, minimum spend, applicant/local-entity gate, QPE/territorial predicates, preapproval, audit, payment and stacking rules govern it?",
+        "primary_sources_checked": [
+          "https://kenyafilmcommission.go.ke/news/kenya-film-commission-awards-ksh-3-million-prize-money-to-the-winners-of-the-10th-edition-of-the-kalasha-international-film-and-tv-awards/"
+        ],
+        "why_authority_is_insufficient": "A mandate, announcement, policy or facilitation page does not provide an implementable current claim manual.",
+        "reason_type": "DATA_GAP"
+      },
+      "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set."
+    },
+    {
+      "canonical_id": "kw_film_incentive",
+      "jurisdiction": "Kuwait",
+      "program_or_pathway": "Kuwait Film Committee Production Support",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Authority, policy, permit/facilitation function or general support mandate is identifiable, but no current complete producer incentive rule set was published at the checked primary-authority surface.",
+      "authority_sources": [
+        {
+          "title": "Current official authority materials",
+          "url": "https://www.nccal.gov.kw/",
+          "pinpoint": "No complete current operating rule set located"
+        }
+      ],
+      "effective_date": "Checked through 2026-08-11",
+      "remaining_issue": {
+        "exact_remaining_question": "Does a current open producer-accessible economic program exist for this exact identity and, if so, what instrument, rate/award, cap, minimum spend, applicant/local-entity gate, QPE/territorial predicates, preapproval, audit, payment and stacking rules govern it?",
+        "primary_sources_checked": [
+          "https://www.nccal.gov.kw/"
+        ],
+        "why_authority_is_insufficient": "A mandate, announcement, policy or facilitation page does not provide an implementable current claim manual.",
+        "reason_type": "DATA_GAP"
+      },
+      "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set."
+    },
+    {
+      "canonical_id": "my_film_incentive",
+      "jurisdiction": "Malaysia",
+      "program_or_pathway": "FINAS Malaysia Film Rebate",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "30% QMPE rebate. Foreign minimum MYR5m production or MYR1m post-only; FINAS local sponsor/producer and application at least three months before production. Points-based cultural uplift up to 5%, determined at final certificate, unavailable for post-only.",
+      "authority_sources": [
+        {
+          "title": "FINAS FIMI",
+          "url": "https://www.finas.gov.my/services/fimi",
+          "pinpoint": "current rule"
+        },
+        {
+          "title": "FIMI foreign application",
+          "url": "https://www.filminmalaysia.com/incentives/foreign-application/",
+          "pinpoint": "current rule"
+        }
+      ],
+      "effective_date": "Current FINAS/FIMI guidance",
+      "remaining_issue": null,
+      "optimizer_consequence": "30% base; conditional uplift; enforce thresholds, preapproval and Malaysia expenditure."
+    },
+    {
+      "canonical_id": "mv_film_incentive",
+      "jurisdiction": "Maldives",
+      "program_or_pathway": "Maldives Marketing and PR Corporation (MMPRC) Film Facilitation",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Authority, policy, permit/facilitation function or general support mandate is identifiable, but no current complete producer incentive rule set was published at the checked primary-authority surface.",
+      "authority_sources": [
+        {
+          "title": "Current official authority materials",
+          "url": "https://corporate.visitmaldives.com/",
+          "pinpoint": "No complete current operating rule set located"
+        }
+      ],
+      "effective_date": "Checked through 2026-08-11",
+      "remaining_issue": {
+        "exact_remaining_question": "Does a current open producer-accessible economic program exist for this exact identity and, if so, what instrument, rate/award, cap, minimum spend, applicant/local-entity gate, QPE/territorial predicates, preapproval, audit, payment and stacking rules govern it?",
+        "primary_sources_checked": [
+          "https://corporate.visitmaldives.com/"
+        ],
+        "why_authority_is_insufficient": "A mandate, announcement, policy or facilitation page does not provide an implementable current claim manual.",
+        "reason_type": "DATA_GAP"
+      },
+      "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set."
+    },
+    {
+      "canonical_id": "mn_film_commission",
+      "jurisdiction": "Mongolia",
+      "program_or_pathway": "Mongolian Film Commission Production Support",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Authority, policy, permit/facilitation function or general support mandate is identifiable, but no current complete producer incentive rule set was published at the checked primary-authority surface.",
+      "authority_sources": [
+        {
+          "title": "Current official authority materials",
+          "url": "https://filmmongolia.gov.mn/",
+          "pinpoint": "No complete current operating rule set located"
+        }
+      ],
+      "effective_date": "Checked through 2026-08-11",
+      "remaining_issue": {
+        "exact_remaining_question": "Does a current open producer-accessible economic program exist for this exact identity and, if so, what instrument, rate/award, cap, minimum spend, applicant/local-entity gate, QPE/territorial predicates, preapproval, audit, payment and stacking rules govern it?",
+        "primary_sources_checked": [
+          "https://filmmongolia.gov.mn/"
+        ],
+        "why_authority_is_insufficient": "A mandate, announcement, policy or facilitation page does not provide an implementable current claim manual.",
+        "reason_type": "DATA_GAP"
+      },
+      "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set."
+    },
+    {
+      "canonical_id": "mz_film_incentive",
+      "jurisdiction": "Mozambique",
+      "program_or_pathway": "Mozambique Instituto do Cinema Film Support",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Authority, policy, permit/facilitation function or general support mandate is identifiable, but no current complete producer incentive rule set was published at the checked primary-authority surface.",
+      "authority_sources": [
+        {
+          "title": "Current official authority materials",
+          "url": "https://micultur.gov.mz/",
+          "pinpoint": "No complete current operating rule set located"
+        }
+      ],
+      "effective_date": "Checked through 2026-08-11",
+      "remaining_issue": {
+        "exact_remaining_question": "Does a current open producer-accessible economic program exist for this exact identity and, if so, what instrument, rate/award, cap, minimum spend, applicant/local-entity gate, QPE/territorial predicates, preapproval, audit, payment and stacking rules govern it?",
+        "primary_sources_checked": [
+          "https://micultur.gov.mz/"
+        ],
+        "why_authority_is_insufficient": "A mandate, announcement, policy or facilitation page does not provide an implementable current claim manual.",
+        "reason_type": "DATA_GAP"
+      },
+      "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set."
+    },
+    {
+      "canonical_id": "na_film_commission",
+      "jurisdiction": "Namibia",
+      "program_or_pathway": "Namibia Film Commission Production Incentive",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Selective Film and Video Fund for Namibian-origin development/production/distribution plus separate African co-production calls; no general location rebate.",
+      "authority_sources": [
+        {
+          "title": "Namibia Film Commission funding",
+          "url": "https://nfc.na/funding",
+          "pinpoint": "current rule"
+        }
+      ],
+      "effective_date": "Current NFC portal",
+      "remaining_issue": null,
+      "optimizer_consequence": "Selective call metadata only."
+    },
+    {
+      "canonical_id": "ng_film_incentive",
+      "jurisdiction": "Nigeria",
+      "program_or_pathway": "Nigeria NFC / Creative Economy Incentive",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Authority, policy, permit/facilitation function or general support mandate is identifiable, but no current complete producer incentive rule set was published at the checked primary-authority surface.",
+      "authority_sources": [
+        {
+          "title": "Current official authority materials",
+          "url": "https://nfc.gov.ng/",
+          "pinpoint": "No complete current operating rule set located"
+        }
+      ],
+      "effective_date": "Checked through 2026-08-11",
+      "remaining_issue": {
+        "exact_remaining_question": "Does a current open producer-accessible economic program exist for this exact identity and, if so, what instrument, rate/award, cap, minimum spend, applicant/local-entity gate, QPE/territorial predicates, preapproval, audit, payment and stacking rules govern it?",
+        "primary_sources_checked": [
+          "https://nfc.gov.ng/"
+        ],
+        "why_authority_is_insufficient": "A mandate, announcement, policy or facilitation page does not provide an implementable current claim manual.",
+        "reason_type": "DATA_GAP"
+      },
+      "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set."
+    },
+    {
+      "canonical_id": "om_film_commission",
+      "jurisdiction": "Oman",
+      "program_or_pathway": "Oman Film Commission Production Support",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Authority, policy, permit/facilitation function or general support mandate is identifiable, but no current complete producer incentive rule set was published at the checked primary-authority surface.",
+      "authority_sources": [
+        {
+          "title": "Current official authority materials",
+          "url": "https://mht.gov.om/",
+          "pinpoint": "No complete current operating rule set located"
+        }
+      ],
+      "effective_date": "Checked through 2026-08-11",
+      "remaining_issue": {
+        "exact_remaining_question": "Does a current open producer-accessible economic program exist for this exact identity and, if so, what instrument, rate/award, cap, minimum spend, applicant/local-entity gate, QPE/territorial predicates, preapproval, audit, payment and stacking rules govern it?",
+        "primary_sources_checked": [
+          "https://mht.gov.om/"
+        ],
+        "why_authority_is_insufficient": "A mandate, announcement, policy or facilitation page does not provide an implementable current claim manual.",
+        "reason_type": "DATA_GAP"
+      },
+      "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set."
+    },
+    {
+      "canonical_id": "pk_pfc_rebate",
+      "jurisdiction": "Pakistan",
+      "program_or_pathway": "Pakistan Film Commission Cash Rebate",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Authority, policy, permit/facilitation function or general support mandate is identifiable, but no current complete producer incentive rule set was published at the checked primary-authority surface.",
+      "authority_sources": [
+        {
+          "title": "Current official authority materials",
+          "url": "https://www.moib.gov.pk/CinemaDrama/index.html",
+          "pinpoint": "No complete current operating rule set located"
+        }
+      ],
+      "effective_date": "Checked through 2026-08-11",
+      "remaining_issue": {
+        "exact_remaining_question": "Does a current open producer-accessible economic program exist for this exact identity and, if so, what instrument, rate/award, cap, minimum spend, applicant/local-entity gate, QPE/territorial predicates, preapproval, audit, payment and stacking rules govern it?",
+        "primary_sources_checked": [
+          "https://www.moib.gov.pk/CinemaDrama/index.html"
+        ],
+        "why_authority_is_insufficient": "A mandate, announcement, policy or facilitation page does not provide an implementable current claim manual.",
+        "reason_type": "DATA_GAP"
+      },
+      "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set."
+    },
+    {
+      "canonical_id": "ph_film_incentive",
+      "jurisdiction": "Philippines",
+      "program_or_pathway": "Film Development Council of the Philippines (FDCP) Incentive",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "FLIP is a selective 20% rebate on audited QPPE, PHP25m cap, with 5% cultural bonus and PHP30m total cap. Minimum spend: PHP20m feature/animation, PHP8m documentary, PHP24m TV/VOD. Registered Philippine service applicant and pre-work Notice of Grant required. QPPE expressly includes rights, payroll/social, technical services, overhead, post, lodging, meals, travel/transport and legal.",
+      "authority_sources": [
+        {
+          "title": "FDCP FLIP",
+          "url": "https://fdcp.ph/programs/film-incentives/film-location-incentive-program",
+          "pinpoint": "current rule"
+        }
+      ],
+      "effective_date": "Current 2026 cycle",
+      "remaining_issue": null,
+      "optimizer_consequence": "Implement rates, caps, thresholds, local applicant, approval and annual-budget gate."
+    },
+    {
+      "canonical_id": "qa_dfi_fund",
+      "jurisdiction": "Qatar",
+      "program_or_pathway": "Doha Film Institute — Grants for Filmmakers",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "DFI Grants Programme is selective, cycle/region/stage/format dependent cultural funding, not a Qatar-spend rebate.",
+      "authority_sources": [
+        {
+          "title": "DFI grants",
+          "url": "https://www.dohafilminstitute.com/financing/grants",
+          "pinpoint": "current rule"
+        }
+      ],
+      "effective_date": "Current DFI cycle",
+      "remaining_issue": null,
+      "optimizer_consequence": "Keep outside deterministic QPE pricing."
+    },
+    {
+      "canonical_id": "qa_film_incentive",
+      "jurisdiction": "Qatar",
+      "program_or_pathway": "Qatar Film Commission Production Incentive",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Authority, policy, permit/facilitation function or general support mandate is identifiable, but no current complete producer incentive rule set was published at the checked primary-authority surface.",
+      "authority_sources": [
+        {
+          "title": "Current official authority materials",
+          "url": "https://www.gco.gov.qa/",
+          "pinpoint": "No complete current operating rule set located"
+        }
+      ],
+      "effective_date": "Checked through 2026-08-11",
+      "remaining_issue": {
+        "exact_remaining_question": "Does a current open producer-accessible economic program exist for this exact identity and, if so, what instrument, rate/award, cap, minimum spend, applicant/local-entity gate, QPE/territorial predicates, preapproval, audit, payment and stacking rules govern it?",
+        "primary_sources_checked": [
+          "https://www.gco.gov.qa/"
+        ],
+        "why_authority_is_insufficient": "A mandate, announcement, policy or facilitation page does not provide an implementable current claim manual.",
+        "reason_type": "DATA_GAP"
+      },
+      "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set."
+    },
+    {
+      "canonical_id": "rw_film_incentive",
+      "jurisdiction": "Rwanda",
+      "program_or_pathway": "Rwanda Development Board Film Production Support",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Registered film investors receive 0% VAT for locally procured goods/services and 0% WHT for jointly approved foreign specialised services. RFO separately offers selective creative grants. No general cash rebate.",
+      "authority_sources": [
+        {
+          "title": "Rwanda Investment Code",
+          "url": "https://rdb.rw/wp-content/uploads/2021/04/New-Investment-code-2021.pdf",
+          "pinpoint": "current rule"
+        },
+        {
+          "title": "RFO grants",
+          "url": "https://rdb.rw/wp-content/uploads/2024/12/CREATIVE_GRANTS_INITIATIVE_FINAL.pdf",
+          "pinpoint": "current rule"
+        }
+      ],
+      "effective_date": "Investment Code 2021/current grants",
+      "remaining_issue": null,
+      "optimizer_consequence": "Separate tax treatment from selective grants."
+    },
+    {
+      "canonical_id": "sa_sfc_rebate",
+      "jurisdiction": "Saudi Arabia",
+      "program_or_pathway": "Saudi Film Commission (SFC) — Production Rebate",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Up to 60% eligible spend. Saudi licensed company or formal Saudi co-producer, NOC/preapproval and finance proof required. Minimum SAR750k feature or SAR187k documentary/animation and at least five main-unit shoot days. Listed Saudi ATL/BTL, locations/equipment, services, sets, travel/accommodation to Saudi and post qualify. Unlisted, outside-KSA or non-KSA supplier spend is excluded absent exception.",
+      "authority_sources": [
+        {
+          "title": "Film Saudi incentive",
+          "url": "https://film.sa/incentive-programs/?lang=en",
+          "pinpoint": "current rule"
+        },
+        {
+          "title": "Film Saudi FAQ",
+          "url": "https://film.sa/faq/",
+          "pinpoint": "current rule"
+        }
+      ],
+      "effective_date": "Current Film Saudi guidance",
+      "remaining_issue": null,
+      "optimizer_consequence": "Update old 40%; encode conditional up-to-60% with territorial/list gates."
+    },
+    {
+      "canonical_id": "sn_film_incentive",
+      "jurisdiction": "Senegal",
+      "program_or_pathway": "Senegal Bureau d'Accueil des Tournages Film Support",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Authority, policy, permit/facilitation function or general support mandate is identifiable, but no current complete producer incentive rule set was published at the checked primary-authority surface.",
+      "authority_sources": [
+        {
+          "title": "Current official authority materials",
+          "url": "https://www.culture.gouv.sn/",
+          "pinpoint": "No complete current operating rule set located"
+        }
+      ],
+      "effective_date": "Checked through 2026-08-11",
+      "remaining_issue": {
+        "exact_remaining_question": "Does a current open producer-accessible economic program exist for this exact identity and, if so, what instrument, rate/award, cap, minimum spend, applicant/local-entity gate, QPE/territorial predicates, preapproval, audit, payment and stacking rules govern it?",
+        "primary_sources_checked": [
+          "https://www.culture.gouv.sn/"
+        ],
+        "why_authority_is_insufficient": "A mandate, announcement, policy or facilitation page does not provide an implementable current claim manual.",
+        "reason_type": "DATA_GAP"
+      },
+      "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set."
+    },
+    {
+      "canonical_id": "sc_film_incentive",
+      "jurisdiction": "Seychelles",
+      "program_or_pathway": "Seychelles Tourism Board Film Production Support",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Authority, policy, permit/facilitation function or general support mandate is identifiable, but no current complete producer incentive rule set was published at the checked primary-authority surface.",
+      "authority_sources": [
+        {
+          "title": "Current official authority materials",
+          "url": "https://tourism.gov.sc/",
+          "pinpoint": "No complete current operating rule set located"
+        }
+      ],
+      "effective_date": "Checked through 2026-08-11",
+      "remaining_issue": {
+        "exact_remaining_question": "Does a current open producer-accessible economic program exist for this exact identity and, if so, what instrument, rate/award, cap, minimum spend, applicant/local-entity gate, QPE/territorial predicates, preapproval, audit, payment and stacking rules govern it?",
+        "primary_sources_checked": [
+          "https://tourism.gov.sc/"
+        ],
+        "why_authority_is_insufficient": "A mandate, announcement, policy or facilitation page does not provide an implementable current claim manual.",
+        "reason_type": "DATA_GAP"
+      },
+      "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set."
+    },
+    {
+      "canonical_id": "sg_imda_film_fund",
+      "jurisdiction": "Singapore",
+      "program_or_pathway": "IMDA Singapore — Feature Film Production Grant",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "TAP selective grant: first features up to SGD300k; Asia co-productions up to SGD600k or 50% SME/30% non-SME qualifying expense; global co-productions up to SGD1.2m or the same percentage ceiling. Singapore company, talent/co-pro credentials, market/finance evidence, call selection and no retrospective funding.",
+      "authority_sources": [
+        {
+          "title": "IMDA TAP film",
+          "url": "https://www.imda.gov.sg/about-imda/research-and-statistics/support-for-industry-sectors/media/tap/film",
+          "pinpoint": "current rule"
+        }
+      ],
+      "effective_date": "TAP page updated 2026-05-14",
+      "remaining_issue": null,
+      "optimizer_consequence": "Selective category/SME grant, not automatic rebate."
+    },
+    {
+      "canonical_id": "sg_sfc_production",
+      "jurisdiction": "Singapore",
+      "program_or_pathway": "Singapore Film Commission (SFC) — Production Assistance",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "SUPERSEDED",
+      "authoritative_rule_set": "Legacy SFC Production Assistance is replaced for current film calls by IMDA TAP; archived percentages are not current.",
+      "authority_sources": [
+        {
+          "title": "IMDA TAP launch",
+          "url": "https://www.imda.gov.sg/resources/press-releases-factsheets-and-speeches/press-releases/2025/talent-accelerator-programme",
+          "pinpoint": "current rule"
+        }
+      ],
+      "effective_date": "TAP launched 2025-12-03",
+      "remaining_issue": null,
+      "optimizer_consequence": "Retire legacy candidate and point to TAP."
+    },
+    {
+      "canonical_id": "za_dac_fund",
+      "jurisdiction": "South Africa",
+      "program_or_pathway": "NFVF South Africa — Development and Production Fund",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "NFVF is selective South African development/production funding under calls; distinct from dtic film incentives and not a fixed spend rebate.",
+      "authority_sources": [
+        {
+          "title": "NFVF strategy 2025-2030",
+          "url": "https://www.nfvf.co.za/wp-content/uploads/2025/07/NFVF-STRATEGIC-PLAN-FOR-2025-2030-FINAL-VERSION.pdf",
+          "pinpoint": "current rule"
+        },
+        {
+          "title": "dtic film incentives",
+          "url": "https://www.thedtic.gov.za/financial-and-non-financial-support/incentives/film-incentive/",
+          "pinpoint": "current rule"
+        }
+      ],
+      "effective_date": "NFVF strategy 2025-2030",
+      "remaining_issue": null,
+      "optimizer_consequence": "Keep separate selective fund; no automatic stacking with dtic."
+    },
+    {
+      "canonical_id": "kr_film_incentive",
+      "jurisdiction": "South Korea",
+      "program_or_pathway": "Korea Film Council (KOFIC) Location Incentive",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Selective annual-budget grant up to 30% of Korean QPE. Current route requires more than five Korean shoot days and over KRW400m QPE, Korean registered applicant and audited spend; annual QPE exclusions apply.",
+      "authority_sources": [
+        {
+          "title": "KOFIC 2025 call",
+          "url": "https://www.kofic.or.kr/kofic/business/prom/promotionBoardDetail.do?seqNo=16592&mode=I",
+          "pinpoint": "current rule"
+        },
+        {
+          "title": "KoBiz incentive",
+          "url": "https://www.koreanfilm.or.kr/eng/coProduction/locIncentive.jsp",
+          "pinpoint": "current rule"
+        }
+      ],
+      "effective_date": "2025 KOFIC call/current portal",
+      "remaining_issue": null,
+      "optimizer_consequence": "Use current gates, not archived 2014 thresholds."
+    },
+    {
+      "canonical_id": "lk_film_incentive",
+      "jurisdiction": "Sri Lanka",
+      "program_or_pathway": "Sri Lanka Film Commission Production Incentive",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Authority, policy, permit/facilitation function or general support mandate is identifiable, but no current complete producer incentive rule set was published at the checked primary-authority surface.",
+      "authority_sources": [
+        {
+          "title": "Current official authority materials",
+          "url": "https://nfc.gov.lk/",
+          "pinpoint": "No complete current operating rule set located"
+        }
+      ],
+      "effective_date": "Checked through 2026-08-11",
+      "remaining_issue": {
+        "exact_remaining_question": "Does a current open producer-accessible economic program exist for this exact identity and, if so, what instrument, rate/award, cap, minimum spend, applicant/local-entity gate, QPE/territorial predicates, preapproval, audit, payment and stacking rules govern it?",
+        "primary_sources_checked": [
+          "https://nfc.gov.lk/"
+        ],
+        "why_authority_is_insufficient": "A mandate, announcement, policy or facilitation page does not provide an implementable current claim manual.",
+        "reason_type": "DATA_GAP"
+      },
+      "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set."
+    },
+    {
+      "canonical_id": "tw_film_incentive",
+      "jurisdiction": "Taiwan",
+      "program_or_pathway": "Taiwan Film and Audiovisual Institute (TFAI) Cash Rebate",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "SUPERSEDED",
+      "authoritative_rule_set": "TFAI rebate identity is wrong. Current TAICCA TICP 2.0 is co-investment up to 49% of total budget, generally uncapped (option 2 USD600k), requiring Taiwan elements, international co-finance/production and distribution; committee discretion/profit sharing apply.",
+      "authority_sources": [
+        {
+          "title": "TAICCA TICP 2.0",
+          "url": "https://en.taicca.tw/grants_investment/detail/5?type_id=2",
+          "pinpoint": "current rule"
+        }
+      ],
+      "effective_date": "TICP 2.0; amendment from 2026-07-01",
+      "remaining_issue": null,
+      "optimizer_consequence": "Retire rebate identity; later model selective/recoupable TAICCA investment."
+    },
+    {
+      "canonical_id": "tz_film_incentive",
+      "jurisdiction": "Tanzania",
+      "program_or_pathway": "Tanzania Film Board Production Facilitation",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "NON_ECONOMIC_CONFIRMED",
+      "authoritative_rule_set": "TFB supplies permits/licensing/coordination. Foreign permit is due at least one month before work; USD1,000 normal/USD3,000 fast-track. No producer payment.",
+      "authority_sources": [
+        {
+          "title": "Tanzania Film Board",
+          "url": "https://www.filmboard.go.tz/pages/film-making",
+          "pinpoint": "current rule"
+        },
+        {
+          "title": "Foreign permit form",
+          "url": "https://filmboard.go.tz/uploads/publications/sw-1752840965-BLANK%20FILM%20PRODUCTION%20PERMIT%20APPLICATION%20FORM%20FOR%20FOREIGNERS.pdf",
+          "pinpoint": "current rule"
+        }
+      ],
+      "effective_date": "Current TFB forms",
+      "remaining_issue": null,
+      "optimizer_consequence": "Remove economic candidate; retain costs and lead time."
+    },
+    {
+      "canonical_id": "tn_film_incentive",
+      "jurisdiction": "Tunisia",
+      "program_or_pathway": "Tunisia CNCI Cash Rebate",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Annual selective encouragement grants for writing, production and finishing to legally constituted audiovisual producers; not a Tunisia-spend rebate.",
+      "authority_sources": [
+        {
+          "title": "CNCI 2025 grants",
+          "url": "https://cnci.tn/avis-les-candidatures-pour-les-bourses-dencouragement-a-la-production-cinematographique-2025-sont-desormais-ouvertes/",
+          "pinpoint": "current rule"
+        }
+      ],
+      "effective_date": "2025 call under Order 717/2001",
+      "remaining_issue": null,
+      "optimizer_consequence": "Selective cultural grant only."
+    },
+    {
+      "canonical_id": "ug_film_commission",
+      "jurisdiction": "Uganda",
+      "program_or_pathway": "Uganda Film Commission Production Support",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Authority, policy, permit/facilitation function or general support mandate is identifiable, but no current complete producer incentive rule set was published at the checked primary-authority surface.",
+      "authority_sources": [
+        {
+          "title": "Current official authority materials",
+          "url": "https://www.ucc.co.ug/",
+          "pinpoint": "No complete current operating rule set located"
+        }
+      ],
+      "effective_date": "Checked through 2026-08-11",
+      "remaining_issue": {
+        "exact_remaining_question": "Does a current open producer-accessible economic program exist for this exact identity and, if so, what instrument, rate/award, cap, minimum spend, applicant/local-entity gate, QPE/territorial predicates, preapproval, audit, payment and stacking rules govern it?",
+        "primary_sources_checked": [
+          "https://www.ucc.co.ug/"
+        ],
+        "why_authority_is_insufficient": "A mandate, announcement, policy or facilitation page does not provide an implementable current claim manual.",
+        "reason_type": "DATA_GAP"
+      },
+      "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set."
+    },
+    {
+      "canonical_id": "uz_film_incentive",
+      "jurisdiction": "Uzbekistan",
+      "program_or_pathway": "Uzbekkino National Film Support Program",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Authority, policy, permit/facilitation function or general support mandate is identifiable, but no current complete producer incentive rule set was published at the checked primary-authority surface.",
+      "authority_sources": [
+        {
+          "title": "Current official authority materials",
+          "url": "https://gov.uz/en/cinematography",
+          "pinpoint": "No complete current operating rule set located"
+        }
+      ],
+      "effective_date": "Checked through 2026-08-11",
+      "remaining_issue": {
+        "exact_remaining_question": "Does a current open producer-accessible economic program exist for this exact identity and, if so, what instrument, rate/award, cap, minimum spend, applicant/local-entity gate, QPE/territorial predicates, preapproval, audit, payment and stacking rules govern it?",
+        "primary_sources_checked": [
+          "https://gov.uz/en/cinematography"
+        ],
+        "why_authority_is_insufficient": "A mandate, announcement, policy or facilitation page does not provide an implementable current claim manual.",
+        "reason_type": "DATA_GAP"
+      },
+      "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set."
+    },
+    {
+      "canonical_id": "vn_film_incentive",
+      "jurisdiction": "Vietnam",
+      "program_or_pathway": "Vietnam Cinema Department Production Facilitation",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Authority, policy, permit/facilitation function or general support mandate is identifiable, but no current complete producer incentive rule set was published at the checked primary-authority surface.",
+      "authority_sources": [
+        {
+          "title": "Current official authority materials",
+          "url": "https://dichvucong.bvhttdl.gov.vn/",
+          "pinpoint": "No complete current operating rule set located"
+        }
+      ],
+      "effective_date": "Checked through 2026-08-11",
+      "remaining_issue": {
+        "exact_remaining_question": "Does a current open producer-accessible economic program exist for this exact identity and, if so, what instrument, rate/award, cap, minimum spend, applicant/local-entity gate, QPE/territorial predicates, preapproval, audit, payment and stacking rules govern it?",
+        "primary_sources_checked": [
+          "https://dichvucong.bvhttdl.gov.vn/"
+        ],
+        "why_authority_is_insufficient": "A mandate, announcement, policy or facilitation page does not provide an implementable current claim manual.",
+        "reason_type": "DATA_GAP"
+      },
+      "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set."
+    },
+    {
+      "canonical_id": "zm_film_commission",
+      "jurisdiction": "Zambia",
+      "program_or_pathway": "Zambia Film Commission Production Support",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Authority, policy, permit/facilitation function or general support mandate is identifiable, but no current complete producer incentive rule set was published at the checked primary-authority surface.",
+      "authority_sources": [
+        {
+          "title": "Current official authority materials",
+          "url": "https://www.motac.gov.zm/",
+          "pinpoint": "No complete current operating rule set located"
+        }
+      ],
+      "effective_date": "Checked through 2026-08-11",
+      "remaining_issue": {
+        "exact_remaining_question": "Does a current open producer-accessible economic program exist for this exact identity and, if so, what instrument, rate/award, cap, minimum spend, applicant/local-entity gate, QPE/territorial predicates, preapproval, audit, payment and stacking rules govern it?",
+        "primary_sources_checked": [
+          "https://www.motac.gov.zm/"
+        ],
+        "why_authority_is_insufficient": "A mandate, announcement, policy or facilitation page does not provide an implementable current claim manual.",
+        "reason_type": "DATA_GAP"
+      },
+      "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set."
+    },
+    {
+      "canonical_id": "zw_film_commission",
+      "jurisdiction": "Zimbabwe",
+      "program_or_pathway": "Zimbabwe Film and Broadcasting Authority Production Support",
+      "record_type": "EXISTING_PROGRAM",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Authority, policy, permit/facilitation function or general support mandate is identifiable, but no current complete producer incentive rule set was published at the checked primary-authority surface.",
+      "authority_sources": [
+        {
+          "title": "Current official authority materials",
+          "url": "https://www.mhcc.gov.zw/",
+          "pinpoint": "No complete current operating rule set located"
+        }
+      ],
+      "effective_date": "Checked through 2026-08-11",
+      "remaining_issue": {
+        "exact_remaining_question": "Does a current open producer-accessible economic program exist for this exact identity and, if so, what instrument, rate/award, cap, minimum spend, applicant/local-entity gate, QPE/territorial predicates, preapproval, audit, payment and stacking rules govern it?",
+        "primary_sources_checked": [
+          "https://www.mhcc.gov.zw/"
+        ],
+        "why_authority_is_insufficient": "A mandate, announcement, policy or facilitation page does not provide an implementable current claim manual.",
+        "reason_type": "DATA_GAP"
+      },
+      "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set."
+    },
+    {
+      "canonical_id": "IBERMEDIA_MEMBERSHIP_AND_FRAMEWORK",
+      "jurisdiction": "Multinational / cross-regional",
+      "program_or_pathway": "IBERMEDIA membership and framework",
+      "record_type": "TREATY_PATHWAY",
+      "starting_issue": "Capture members, structures, contribution conditions, calls, caps, recoupment and interactions.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "IBERMEDIA is a 21-state intergovernmental fund, not a treaty and grants no national treatment. Annual awards are separate from domestic co-production certification and incentives.",
+      "authority_sources": [
+        {
+          "title": "IBERMEDIA programme",
+          "url": "https://www.programaibermedia.com/el-programa/",
+          "pinpoint": "current rule"
+        },
+        {
+          "title": "2026 calls",
+          "url": "https://www.programaibermedia.com/nuestras-convocatorias/",
+          "pinpoint": "current rule"
+        }
+      ],
+      "effective_date": "2026 rules",
+      "remaining_issue": null,
+      "optimizer_consequence": "Separate fund eligibility, official co-production status and domestic incentives.",
+      "parties": [
+        "Argentina",
+        "Bolivia",
+        "Brazil",
+        "Colombia",
+        "Costa Rica",
+        "Cuba",
+        "Chile",
+        "Ecuador",
+        "El Salvador",
+        "Spain",
+        "Guatemala",
+        "Honduras",
+        "Mexico",
+        "Panama",
+        "Paraguay",
+        "Peru",
+        "Portugal",
+        "Puerto Rico",
+        "Dominican Republic",
+        "Uruguay",
+        "Venezuela"
+      ],
+      "instrument": "IBERMEDIA intergovernmental programme and annual rules (not a treaty)",
+      "version": "2026/current 21-member programme",
+      "contribution_rules": "Fund mainly from member contributions and loan repayments; selective awards; co-production request maximum USD150k fiction/USD100k documentary.",
+      "national_treatment": "None automatically.",
+      "competent_authorities": "Intergovernmental Council, Technical Unit and designated national cinematographic authorities.",
+      "domestic_incentive_interaction": "Separate domestic certification and incentive rules always apply."
+    }
+  ]
+}
