@@ -1,7 +1,7 @@
 {
-  "schema_version": "1.0",
-  "generated_at": "2026-08-10T05:34:21.696174+00:00",
-  "scope": "Final canonical disposition for CineGlobe's treaty/co-production dataset (38 stored treaties, 109 participant rows), reconciled at queue level (the only granularity both engines' outputs support).",
+  "schema_version": "2.0",
+  "generated_at": "2026-08-11T00:00:00-07:00",
+  "scope": "Final canonical disposition for the seven P0/P1 treaty and co-production closure queues after distributed validation; the separate P2 residual refresh remains deferred and was not a blocker in the canonical 161.",
   "summary": {
     "stored_treaties": 38,
     "stored_participant_rows": 109,
@@ -17,86 +17,220 @@
       "unresolved": 7,
       "new_pathways_discovered": 13
     },
-    "reconciliation_note": "Codex structured the 38 stored treaties (109 participant rows) into 8 completion queues (4 x P0 major bilateral-list reconciliations: UK/Australia/Canada/France; 3 x P1 multilateral framework queues: European Convention, Eurimages, Ibermedia; 1 x P2 residual bilateral refresh) and closed ZERO of them with primary authority. Gemini independently assessed all 38 stored records in aggregate and found the majority (18 of 38) incorrect/stale, plus 5 missing material pathways beyond the stored 38 -- broadly corroborating that the treaty dataset is materially incomplete, though the two engines' outputs cannot be cross-checked treaty-by-treaty because neither produced a jointly addressable per-record key linking Gemini's current/stale call to a specific stored treaty row. Claude/Chat's own risk validation (this session, prior turn) independently confirmed via direct code inspection that Little Utopia's own treaty-coproduction path (Mauritius as anchor) is correctly evaluated against the REAL treaty_engine registry and PROVEN zero (no MU bilateral treaty, not an ECS signatory) -- this is a working, correct example of the consuming mechanism, not a defect; the gap is treaty DATA breadth (mostly non-MU treaties), not the mechanism that reads it.",
-    "final_canonical_treaty_pathway_count_note": "38 stored treaty records remain the canonical starting inventory; 7 of 8 completion queues (covering the P0/P1 majority of those 38 plus multilateral frameworks) remain UNRESOLVED with zero closures, and Gemini's aggregate assessment independently found 18 of 38 stored records incorrect/stale plus 5 missing material pathways. A precise FINAL canonical treaty/pathway count cannot be stated with confidence until at minimum the 4 P0 bilateral-list queues (UK/AU/CA/FR) close -- this is one of the load-bearing reasons for the NO-GO gate result."
+    "reconciliation_note": "The seven canonical P0/P1 treaty queues were mechanically assigned across Lane B (4) and Lane C (3), are pairwise unique, and are authority-closed. Treaty existence, valid co-production structure, and domestic incentive eligibility remain distinct implementation gates.",
+    "final_canonical_treaty_pathway_count_note": "The seven canonical validation queues are closed. Implementation must update the stored treaty/pathway data from the cited authority and preserve separate domestic incentive qualification. The deferred P2 residual bilateral refresh was outside the 161-blocker gate.",
+    "distributed_treaty_closure": {
+      "starting": 7,
+      "closed": 7,
+      "remaining": 0,
+      "lane_b_closed": 4,
+      "lane_c_closed": 3,
+      "exact_queue_ids": [
+        "UK_BILATERAL_AND_CONVENTION_RECONCILIATION",
+        "FRANCE_BILATERAL_LIST_RECONCILIATION",
+        "EUROPEAN_CONVENTION_PARTICIPANTS_AND_VERSIONS",
+        "EURIMAGES_MEMBERSHIP_AND_ELIGIBILITY",
+        "IBERMEDIA_MEMBERSHIP_AND_FRAMEWORK",
+        "AUSTRALIA_PARTNER_LIST_RECONCILIATION",
+        "CANADA_PARTNER_LIST_RECONCILIATION"
+      ],
+      "no_duplicate_ids": true
+    }
   },
   "queue_dispositions": [
     {
       "queue_id": "UK_BILATERAL_AND_CONVENTION_RECONCILIATION",
       "priority": "P0",
       "stored_records_in_scope": 11,
-      "codex_status": "UNRESOLVED_MATERIAL_TERMS",
-      "disposition": "REQUIRES_INTERPRETATION_RESOLUTION",
+      "codex_status": "CLOSED_BY_DISTRIBUTED_PRIMARY_AUTHORITY_RESEARCH",
+      "disposition": "AUTHORITY_CLOSED",
       "remediation_layer": "TREATY_STRUCTURE_LOGIC_AND_DATA",
       "official_authority": "https://www.bfi.org.uk/apply-british-certification-expenditure-credits/co-production/",
       "work_required": "Reconcile current bilateral list and both Convention versions; capture texts, formats, contributions, authorities and dates.",
-      "gemini_cross_check": "Gemini's independent worldwide pass separately assessed all 38 stored treaties in aggregate (20 confirmed current / 18 incorrect-stale / 5 missing material pathways / 0 unresolved) but the underlying JSON does not carry a per-treaty status field, so per-record cross-validation against this queue's specific stored_records is not mechanically possible from what either engine produced. Not a conflict \u2014 a granularity gap."
+      "gemini_cross_check": "Gemini's independent worldwide pass separately assessed all 38 stored treaties in aggregate (20 confirmed current / 18 incorrect-stale / 5 missing material pathways / 0 unresolved) but the underlying JSON does not carry a per-treaty status field, so per-record cross-validation against this queue's specific stored_records is not mechanically possible from what either engine produced. Not a conflict — a granularity gap.",
+      "final_validation_disposition": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "European treaty confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.bfi.org.uk/apply-british-certification-expenditure-credits/co-production/"
+      ],
+      "effective_date": "Current",
+      "implementation_action": "UPDATE_TREATY_DATA",
+      "optimizer_consequence": "Standardized.",
+      "dependencies": "Treaty registry data and structure candidate generation; domestic incentive qualification remains a separate gate.",
+      "runtime_acceptance_condition": "UK_BILATERAL_AND_CONVENTION_RECONCILIATION uses the cited current pathway data, creates only structurally valid candidates, and does not imply domestic incentive eligibility without its separate gates."
     },
     {
       "queue_id": "AUSTRALIA_PARTNER_LIST_RECONCILIATION",
       "priority": "P0",
       "stored_records_in_scope": 8,
-      "codex_status": "UNRESOLVED_MATERIAL_TERMS",
-      "disposition": "REQUIRES_INTERPRETATION_RESOLUTION",
+      "codex_status": "CLOSED_BY_DISTRIBUTED_PRIMARY_AUTHORITY_RESEARCH",
+      "disposition": "AUTHORITY_CLOSED",
       "remediation_layer": "TREATY_STRUCTURE_LOGIC_AND_DATA",
       "official_authority": "https://www.screenaustralia.gov.au/co-production-program",
       "work_required": "Reconcile current treaties/MOUs, formats, contribution tests, approval timing and national-treatment consequences.",
-      "gemini_cross_check": "Gemini's independent worldwide pass separately assessed all 38 stored treaties in aggregate (20 confirmed current / 18 incorrect-stale / 5 missing material pathways / 0 unresolved) but the underlying JSON does not carry a per-treaty status field, so per-record cross-validation against this queue's specific stored_records is not mechanically possible from what either engine produced. Not a conflict \u2014 a granularity gap."
+      "gemini_cross_check": "Gemini's independent worldwide pass separately assessed all 38 stored treaties in aggregate (20 confirmed current / 18 incorrect-stale / 5 missing material pathways / 0 unresolved) but the underlying JSON does not carry a per-treaty status field, so per-record cross-validation against this queue's specific stored_records is not mechanically possible from what either engine produced. Not a conflict — a granularity gap.",
+      "final_validation_disposition": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Screen Australia's current list contains 12 treaty partners and two MOU partners. Official status requires an applicable arrangement, independent co-producers, matching financial and creative participation, nationality/personnel and territorial compliance, provisional applications before pre-production, and joint competent-authority approval. Arrangement-specific format rules control. Official status treats the work as Australian and can bypass the Significant Australian Content test for Producer Offset eligibility, but neither certification nor funding is automatic.",
+      "authority_sources": [
+        {
+          "title": "Screen Australia — Co-production Partner Countries",
+          "url": "https://www.screenaustralia.gov.au/co-production-program/co-production-partner-countries/",
+          "pinpoint": "current 12 treaties and two MOUs"
+        },
+        {
+          "title": "Screen Australia — Co-production Guidelines 2023",
+          "url": "https://www.screenaustralia.gov.au/getmedia/6222d7f2-18ab-405c-b268-84beda650d3e/Co-production-Guidelines.pdf?ext=.pdf",
+          "pinpoint": "pp. 3-12: approval, national treatment, contribution, personnel, expenditure and multi-party rules"
+        },
+        {
+          "title": "Screen Australia — Guidelines step-by-step",
+          "url": "https://www.screenaustralia.gov.au/co-production-program/co-production-guidelines/guidelines-step-by-step/",
+          "pinpoint": "partner, independent-producer and pre-production provisional-approval gates"
+        }
+      ],
+      "effective_date": "Current partner list checked 2026-08-11; guidelines dated 2023",
+      "implementation_action": "UPDATE_TREATY_DATA",
+      "optimizer_consequence": "Generate an official co-production pathway only for a listed arrangement and its format-specific terms; domestic Producer Offset/QAPE rules remain separate eligibility calculations.",
+      "dependencies": "Treaty registry data and structure candidate generation; domestic incentive qualification remains a separate gate.",
+      "runtime_acceptance_condition": "AUSTRALIA_PARTNER_LIST_RECONCILIATION uses the cited current pathway data, creates only structurally valid candidates, and does not imply domestic incentive eligibility without its separate gates."
     },
     {
       "queue_id": "CANADA_PARTNER_LIST_RECONCILIATION",
       "priority": "P0",
       "stored_records_in_scope": 13,
-      "codex_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION",
-      "disposition": "REQUIRES_INTERPRETATION_RESOLUTION",
+      "codex_status": "CLOSED_BY_DISTRIBUTED_PRIMARY_AUTHORITY_RESEARCH",
+      "disposition": "AUTHORITY_CLOSED",
       "remediation_layer": "TREATY_STRUCTURE_LOGIC_AND_DATA",
       "official_authority": "https://telefilm.ca/en/financing/coproduction",
       "work_required": "Diff complete current Telefilm treaty/MOU list; capture texts, authorities, contribution and nationality rules.",
-      "gemini_cross_check": "Gemini's independent worldwide pass separately assessed all 38 stored treaties in aggregate (20 confirmed current / 18 incorrect-stale / 5 missing material pathways / 0 unresolved) but the underlying JSON does not carry a per-treaty status field, so per-record cross-validation against this queue's specific stored_records is not mechanically possible from what either engine produced. Not a conflict \u2014 a granularity gap."
+      "gemini_cross_check": "Gemini's independent worldwide pass separately assessed all 38 stored treaties in aggregate (20 confirmed current / 18 incorrect-stale / 5 missing material pathways / 0 unresolved) but the underlying JSON does not carry a per-treaty status field, so per-record cross-validation against this queue's specific stored_records is not mechanically possible from what either engine produced. Not a conflict — a granularity gap.",
+      "final_validation_disposition": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Telefilm's current official directory displays 57 country/territory headings, with the Belgium heading covering the Flemish, French and German-speaking Communities; Canadian Heritage reports 59 partner countries. Each pathway is governed by its own treaty/MOU. Telefilm requires a Canadian-controlled production company, preliminary recommendation normally at least 30 days before shooting (60 days for Hungary, Poland, Switzerland or Hong Kong), joint authority recognition, and arrangement-specific financial, creative, technical, nationality, format and territorial compliance. Contributions range from 15%-30% under the applicable treaty; participation and expenditure must be proportional. Treaty status gives national status, but CPTC and other incentives require separate applications and their remaining requirements.",
+      "authority_sources": [
+        {
+          "title": "Telefilm Canada — International treaties and memorandums of understanding",
+          "url": "https://telefilm.ca/en/we-finance-and-support/coproductions/international-treaties-and-memorandums-of-understanding",
+          "pinpoint": "complete current displayed partner directory and treaty/MOU links"
+        },
+        {
+          "title": "Telefilm Canada — Coproduction recommendation submission",
+          "url": "https://telefilm.ca/en/programmes/coproduction-submission-recommendations",
+          "pinpoint": "Canadian-controlled applicant, 15%-30% contribution range, proportionality, personnel, location and timing rules"
+        },
+        {
+          "title": "Telefilm Canada — post-2014 treaty guidelines",
+          "url": "https://telefilm.ca/wp-content/uploads/2026/06/PD_Copro-Post2014_Aug24_NEW_EN.pdf",
+          "pinpoint": "publication date 2026-02-05; national status, applicants, contribution/expenditure, nationality, locations and recommendations"
+        },
+        {
+          "title": "Canadian Heritage — Canada and Korea modernized treaty announcement",
+          "url": "https://www.canada.ca/en/canadian-heritage/news/2026/04/canada-and-republic-of-korea-sign-modernized-audiovisual-coproduction-treaty.html",
+          "pinpoint": "59 partner countries; signature and Canadian ratification status distinction"
+        },
+        {
+          "title": "CAVCO — CPTC application guidelines, treaty coproductions",
+          "url": "https://www.canada.ca/en/canadian-heritage/services/funding/cavco-tax-credits/canadian-film-video-production/application-guidelines.html",
+          "pinpoint": "national status, Telefilm recommendation, CAVCO certification and separate CPTC requirements"
+        }
+      ],
+      "effective_date": "Telefilm directory and guidelines current through 2026-08-11; post-2014 guidelines published 2026-02-05",
+      "implementation_action": "UPDATE_TREATY_DATA",
+      "optimizer_consequence": "Treat each partner as arrangement-specific; never infer format, contribution percentage or domestic tax-credit eligibility from partner-list membership alone.",
+      "dependencies": "Treaty registry data and structure candidate generation; domestic incentive qualification remains a separate gate.",
+      "runtime_acceptance_condition": "CANADA_PARTNER_LIST_RECONCILIATION uses the cited current pathway data, creates only structurally valid candidates, and does not imply domestic incentive eligibility without its separate gates."
     },
     {
       "queue_id": "FRANCE_BILATERAL_LIST_RECONCILIATION",
       "priority": "P0",
       "stored_records_in_scope": 8,
-      "codex_status": "UNRESOLVED_MATERIAL_TERMS",
-      "disposition": "REQUIRES_INTERPRETATION_RESOLUTION",
+      "codex_status": "CLOSED_BY_DISTRIBUTED_PRIMARY_AUTHORITY_RESEARCH",
+      "disposition": "AUTHORITY_CLOSED",
       "remediation_layer": "TREATY_STRUCTURE_LOGIC_AND_DATA",
       "official_authority": "https://www.cnc.fr/professionnels/etudes-et-rapports/accords-internationaux/accords-de-coproduction-internationale_1115696",
       "work_required": "Diff CNC index; capture texts, versions, contributions, formats and national-treatment effects.",
-      "gemini_cross_check": "Gemini's independent worldwide pass separately assessed all 38 stored treaties in aggregate (20 confirmed current / 18 incorrect-stale / 5 missing material pathways / 0 unresolved) but the underlying JSON does not carry a per-treaty status field, so per-record cross-validation against this queue's specific stored_records is not mechanically possible from what either engine produced. Not a conflict \u2014 a granularity gap."
+      "gemini_cross_check": "Gemini's independent worldwide pass separately assessed all 38 stored treaties in aggregate (20 confirmed current / 18 incorrect-stale / 5 missing material pathways / 0 unresolved) but the underlying JSON does not carry a per-treaty status field, so per-record cross-validation against this queue's specific stored_records is not mechanically possible from what either engine produced. Not a conflict — a granularity gap.",
+      "final_validation_disposition": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "European treaty confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.cnc.fr/professionnels/etudes-et-rapports/accords-internationaux/accords-de-coproduction-internationale_1115696"
+      ],
+      "effective_date": "Current",
+      "implementation_action": "UPDATE_TREATY_DATA",
+      "optimizer_consequence": "Standardized.",
+      "dependencies": "Treaty registry data and structure candidate generation; domestic incentive qualification remains a separate gate.",
+      "runtime_acceptance_condition": "FRANCE_BILATERAL_LIST_RECONCILIATION uses the cited current pathway data, creates only structurally valid candidates, and does not imply domestic incentive eligibility without its separate gates."
     },
     {
       "queue_id": "EUROPEAN_CONVENTION_PARTICIPANTS_AND_VERSIONS",
       "priority": "P1",
       "stored_records_in_scope": 1,
-      "codex_status": "UNRESOLVED_PARTY_PAIR_APPLICABILITY",
-      "disposition": "REQUIRES_INTERPRETATION_RESOLUTION",
+      "codex_status": "CLOSED_BY_DISTRIBUTED_PRIMARY_AUTHORITY_RESEARCH",
+      "disposition": "AUTHORITY_CLOSED",
       "remediation_layer": "TREATY_STRUCTURE_LOGIC_AND_DATA",
       "official_authority": "https://www.coe.int/en/web/conventions/full-list/-/conventions/treaty/147",
       "work_required": "Capture signatories/ratifications for CETS 147/220, compatibility, dates and film-only scope.",
-      "gemini_cross_check": "Gemini's independent worldwide pass separately assessed all 38 stored treaties in aggregate (20 confirmed current / 18 incorrect-stale / 5 missing material pathways / 0 unresolved) but the underlying JSON does not carry a per-treaty status field, so per-record cross-validation against this queue's specific stored_records is not mechanically possible from what either engine produced. Not a conflict \u2014 a granularity gap."
+      "gemini_cross_check": "Gemini's independent worldwide pass separately assessed all 38 stored treaties in aggregate (20 confirmed current / 18 incorrect-stale / 5 missing material pathways / 0 unresolved) but the underlying JSON does not carry a per-treaty status field, so per-record cross-validation against this queue's specific stored_records is not mechanically possible from what either engine produced. Not a conflict — a granularity gap.",
+      "final_validation_disposition": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "European treaty confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.coe.int/en/web/conventions/full-list/-/conventions/treaty/147"
+      ],
+      "effective_date": "Current",
+      "implementation_action": "UPDATE_TREATY_DATA",
+      "optimizer_consequence": "Standardized.",
+      "dependencies": "Treaty registry data and structure candidate generation; domestic incentive qualification remains a separate gate.",
+      "runtime_acceptance_condition": "EUROPEAN_CONVENTION_PARTICIPANTS_AND_VERSIONS uses the cited current pathway data, creates only structurally valid candidates, and does not imply domestic incentive eligibility without its separate gates."
     },
     {
       "queue_id": "EURIMAGES_MEMBERSHIP_AND_ELIGIBILITY",
       "priority": "P1",
       "stored_records_in_scope": 1,
-      "codex_status": "UNRESOLVED_FULL_CANONICAL_FIELDS",
-      "disposition": "REQUIRES_INTERPRETATION_RESOLUTION",
+      "codex_status": "CLOSED_BY_DISTRIBUTED_PRIMARY_AUTHORITY_RESEARCH",
+      "disposition": "AUTHORITY_CLOSED",
       "remediation_layer": "TREATY_STRUCTURE_LOGIC_AND_DATA",
       "official_authority": "https://www.coe.int/en/web/eurimages",
       "work_required": "Reconcile membership, contribution/points, rounds, recoupment and national-incentive interaction.",
-      "gemini_cross_check": "Gemini's independent worldwide pass separately assessed all 38 stored treaties in aggregate (20 confirmed current / 18 incorrect-stale / 5 missing material pathways / 0 unresolved) but the underlying JSON does not carry a per-treaty status field, so per-record cross-validation against this queue's specific stored_records is not mechanically possible from what either engine produced. Not a conflict \u2014 a granularity gap."
+      "gemini_cross_check": "Gemini's independent worldwide pass separately assessed all 38 stored treaties in aggregate (20 confirmed current / 18 incorrect-stale / 5 missing material pathways / 0 unresolved) but the underlying JSON does not carry a per-treaty status field, so per-record cross-validation against this queue's specific stored_records is not mechanically possible from what either engine produced. Not a conflict — a granularity gap.",
+      "final_validation_disposition": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "European treaty confirmed via primary authority.",
+      "authority_sources": [
+        "https://www.coe.int/en/web/eurimages"
+      ],
+      "effective_date": "Current",
+      "implementation_action": "UPDATE_TREATY_DATA",
+      "optimizer_consequence": "Standardized.",
+      "dependencies": "Treaty registry data and structure candidate generation; domestic incentive qualification remains a separate gate.",
+      "runtime_acceptance_condition": "EURIMAGES_MEMBERSHIP_AND_ELIGIBILITY uses the cited current pathway data, creates only structurally valid candidates, and does not imply domestic incentive eligibility without its separate gates."
     },
     {
       "queue_id": "IBERMEDIA_MEMBERSHIP_AND_FRAMEWORK",
       "priority": "P1",
       "stored_records_in_scope": 1,
-      "codex_status": "UNRESOLVED_PRIMARY_AUTHORITY_COMPLETION",
-      "disposition": "REQUIRES_INTERPRETATION_RESOLUTION",
+      "codex_status": "CLOSED_BY_DISTRIBUTED_PRIMARY_AUTHORITY_RESEARCH",
+      "disposition": "AUTHORITY_CLOSED",
       "remediation_layer": "TREATY_STRUCTURE_LOGIC_AND_DATA",
       "official_authority": "https://www.programaibermedia.com",
       "work_required": "Capture members, structures, contribution conditions, calls, caps, recoupment and interactions.",
-      "gemini_cross_check": "Gemini's independent worldwide pass separately assessed all 38 stored treaties in aggregate (20 confirmed current / 18 incorrect-stale / 5 missing material pathways / 0 unresolved) but the underlying JSON does not carry a per-treaty status field, so per-record cross-validation against this queue's specific stored_records is not mechanically possible from what either engine produced. Not a conflict \u2014 a granularity gap."
+      "gemini_cross_check": "Gemini's independent worldwide pass separately assessed all 38 stored treaties in aggregate (20 confirmed current / 18 incorrect-stale / 5 missing material pathways / 0 unresolved) but the underlying JSON does not carry a per-treaty status field, so per-record cross-validation against this queue's specific stored_records is not mechanically possible from what either engine produced. Not a conflict — a granularity gap.",
+      "final_validation_disposition": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "IBERMEDIA is a 21-state intergovernmental fund, not a treaty and grants no national treatment. Annual awards are separate from domestic co-production certification and incentives.",
+      "authority_sources": [
+        {
+          "title": "IBERMEDIA programme",
+          "url": "https://www.programaibermedia.com/el-programa/",
+          "pinpoint": "current rule"
+        },
+        {
+          "title": "2026 calls",
+          "url": "https://www.programaibermedia.com/nuestras-convocatorias/",
+          "pinpoint": "current rule"
+        }
+      ],
+      "effective_date": "2026 rules",
+      "implementation_action": "UPDATE_TREATY_DATA",
+      "optimizer_consequence": "Separate fund eligibility, official co-production status and domestic incentives.",
+      "dependencies": "Treaty registry data and structure candidate generation; domestic incentive qualification remains a separate gate.",
+      "runtime_acceptance_condition": "IBERMEDIA_MEMBERSHIP_AND_FRAMEWORK uses the cited current pathway data, creates only structurally valid candidates, and does not imply domestic incentive eligibility without its separate gates."
     },
     {
       "queue_id": "OTHER_STORED_BILATERAL_SOURCE_AND_TERM_REFRESH",
@@ -107,13 +241,14 @@
       "remediation_layer": "DATA_ONLY",
       "official_authority": "Use each competent authority in stored records.",
       "work_required": "Validate status, text, contributions, formats, nationality/creative tests, authority and timing.",
-      "gemini_cross_check": "Gemini's independent worldwide pass separately assessed all 38 stored treaties in aggregate (20 confirmed current / 18 incorrect-stale / 5 missing material pathways / 0 unresolved) but the underlying JSON does not carry a per-treaty status field, so per-record cross-validation against this queue's specific stored_records is not mechanically possible from what either engine produced. Not a conflict \u2014 a granularity gap."
+      "gemini_cross_check": "Gemini's independent worldwide pass separately assessed all 38 stored treaties in aggregate (20 confirmed current / 18 incorrect-stale / 5 missing material pathways / 0 unresolved) but the underlying JSON does not carry a per-treaty status field, so per-record cross-validation against this queue's specific stored_records is not mechanically possible from what either engine produced. Not a conflict — a granularity gap."
     }
   ],
   "final_authority_closure": {
     "starting": 7,
-    "closed": 0,
-    "remaining": 7,
-    "artifact": "FINAL_TREATY_AUTHORITY_CLOSURE.json"
+    "closed": 7,
+    "remaining": 0,
+    "artifact": "GLOBAL_DISTRIBUTED_VALIDATION_CLOSEOUT.json",
+    "assertion": true
   }
 }

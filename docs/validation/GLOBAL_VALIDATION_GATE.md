@@ -1,49 +1,41 @@
-# Global Validation Gate — Final Authority Closure
+# Global Validation Gate — Distributed Authority Closure
 
-Date: 2026-08-10
+Date: 2026-08-11
 
-## Corrected starting accounting
+## Exact accounting
 
-STARTING_BLOCKERS = 174
+- distributed_start = 161
+- Lane A = 57
+- Lane B = 45
+- Lane C = 59
+- distributed_closed_by_research = 136
+- remaining_before_adjudication = 25
 
-existing_starting = 157
+Assertions: `57 + 45 + 59 = 161`; `136 + 25 = 161`. All lane intersections are empty and the merged keyed set exactly matches the canonical 161.
 
-missing_starting = 10
+## Final disposition of the remaining 25
 
-treaty_starting = 7
+- UNPRICEABLE_AUTHORITY_INSUFFICIENT = 25
+- NON_ECONOMIC_CONFIRMED = 0
+- NO_CURRENT_PRODUCER_INCENTIVE_CONFIRMED = 0
+- TRUE_BLOCKING_RULE_GAP = 0
 
-The superseded statement “167 existing-program items (132 P0 + 25 P1)” was an arithmetic defect. Canonical keyed identities control: 132 + 25 = 157, and 157 + 10 + 7 = 174. No unkeyed records exist.
+Assertion: `25 + 0 + 0 + 0 = 25`. Unpriceable authority-insufficient records retain metadata but must be excluded from deterministic pricing and ranking without synthetic economics.
 
-## Final closure accounting
+## Treaty closure
 
-existing_closed = 5
+- treaty queues = 7
+- closed = 7
+- remaining = 0
+- Lane B = 4
+- Lane C = 3
 
-existing_remaining = 152
+## Final true blockers
 
-missing_closed = 8
-
-missing_remaining = 2
-
-treaty_closed = 0
-
-treaty_remaining = 7
-
-TOTAL_CLOSED = 13
-
-TOTAL_REMAINING = 161
-
-Assertions: 157 + 10 + 7 = 174; 13 + 161 = 174.
-
-true interpretation conflicts remaining = 0
-
-additional bounded discoveries = 0
-
-remediation-ready program count = 53
-
-remediation-ready treaty/pathway count = 0
+0
 
 ## GLOBAL VALIDATION GATE
 
-# **NO_GO_VALIDATION_NOT_CLOSED**
+# **GO_FOR_CONSOLIDATED_REMEDIATION**
 
-There are 161 exact keyed blockers remaining: 152 existing programs, 2 missing programs, and 7 treaty queues. Their identities and exact unresolved questions are enumerated in `FINAL_P0_P1_AUTHORITY_CLOSURE.json` and `.md`. These gaps can still change deterministic eligibility, rate/value, QPE, territoriality, stacking, ranking or treaty candidate generation.
+The canonical remediation specification is `GLOBAL_REMEDIATION_INPUT.json`. This gate authorizes a later consolidated remediation phase; it does not itself modify production code, data, rules, schema, optimizer, candidate generation, treaty engine, Bridge, or frontend.

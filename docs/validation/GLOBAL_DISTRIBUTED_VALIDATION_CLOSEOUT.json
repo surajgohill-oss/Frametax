@@ -1,1101 +1,684 @@
 {
-  "schema_version": "2.0",
+  "schema_version": "1.0",
   "generated_at": "2026-08-11T00:00:00-07:00",
-  "status": "AUTHORIZED_FOR_CONSOLIDATED_REMEDIATION",
-  "final_validation_gate": "GO_FOR_CONSOLIDATED_REMEDIATION",
-  "supersedes": "docs/validation/GLOBAL_REMEDIATION_INPUT.json as it existed prior to this reconciliation (Codex's own draft, status NOT_AUTHORIZED_FOR_EXECUTION_NO_GO, 35 existing_program_actions + 13 missing_program_additions). That draft's 35+13=48 items are fully incorporated below (35 -> 24 CORRECT + 3 COMPLETE + 8 EXCLUDE_FROM_OPTIMIZER after removing the non-economic rows from the actionable set; 13 -> 12 ADD after South Africa was reclassified MERGE).",
-  "authority": "This file is the authoritative implementation input. No production changes are authorized by this artifact itself.",
-  "counts": {
-    "pre_distribution_ready_items": 52,
-    "distributed_items": 161,
-    "total_implementation_items": 213,
-    "unique_canonical_ids": 213,
-    "distributed_authority_closed": 136,
-    "distributed_unpriceable_authority_insufficient": 25,
-    "distributed_true_blockers": 0,
-    "by_implementation_action": {
-      "CORRECT_DATA": 149,
-      "MERGE_PROGRAM": 3,
-      "ADD_PROGRAM": 22,
-      "UPDATE_TREATY_DATA": 7,
-      "SUPERSEDE_PROGRAM": 3,
-      "DISABLE_UNPRICEABLE": 25,
-      "EXCLUDE_NON_ECONOMIC": 4
-    }
-  },
+  "scope": "Final merge of the 161 canonical distributed authority-closure blockers and adjudication of the 25 remaining Lane C records.",
+  "source_artifacts": [
+    "DISTRIBUTED_CLOSURE_CODEX_LANE_A.json",
+    "DISTRIBUTED_CLOSURE_GEMINI_LANE_B.json",
+    "DISTRIBUTED_CLOSURE_CHATGPT_LANE_C.json"
+  ],
   "distributed_accounting": {
     "distributed_start": 161,
-    "lane_a_start": 57,
-    "lane_b_start": 45,
-    "lane_c_start": 59,
+    "lane_a": {
+      "start": 57,
+      "closed_by_research": 57,
+      "remaining": 0
+    },
+    "lane_b": {
+      "start": 45,
+      "closed_by_research": 45,
+      "remaining": 0
+    },
+    "lane_c": {
+      "start": 59,
+      "closed_by_research": 34,
+      "remaining_before_adjudication": 25
+    },
     "distributed_closed_by_research": 136,
     "remaining_before_adjudication": 25,
+    "pairwise_intersections": {
+      "lane_a_lane_b": [],
+      "lane_a_lane_c": [],
+      "lane_b_lane_c": []
+    },
+    "canonical_set_match": true,
+    "duplicate_canonical_ids": [],
+    "missing_canonical_ids": [],
+    "assertions": [
+      "57 + 45 + 59 = 161",
+      "57 + 45 + 34 = 136",
+      "136 + 25 = 161"
+    ]
+  },
+  "final_disposition_counts": {
     "remaining_25_unpriceable_authority_insufficient": 25,
     "remaining_25_non_economic": 0,
     "remaining_25_no_current_incentive": 0,
     "remaining_25_true_blocking_rule_gap": 0,
     "final_true_blockers": 0,
-    "treaty_queues_start": 7,
-    "treaty_queues_closed": 7,
-    "assertions": {
-      "lane_sum": "57 + 45 + 59 = 161",
-      "closure_sum": "136 + 25 = 161",
-      "adjudication_sum": "25 + 0 + 0 + 0 = 25",
-      "treaty_sum": "4 + 3 = 7",
-      "no_duplicate_distributed_ids": true,
-      "no_duplicate_implementation_ids": true
-    }
+    "assertion": "25 + 0 + 0 + 0 = 25"
   },
-  "architecture_constraints": [
-    "Preserve the contingency engine.",
-    "Preserve substantially correct NPC and ranking logic.",
-    "Correct Bridge output to use the canonical post-adjustment value in the later implementation phase.",
-    "Preserve downstream treaty/co-production/hybrid pricing and close the structure candidate-generation gap.",
-    "Local-SPV payment alone does not establish qualifying territorial expenditure.",
-    "Preserve the canonical default-inclusion QPE rule.",
-    "Preserve the established Mauritius, Malta, Greece, United Kingdom and Australia calibration."
-  ],
-  "implementation_items": [
-    {
-      "canonical_id": "au_location_offset",
-      "jurisdiction": "Australia",
-      "program_or_pathway": "Australia Location Offset / PDV Offset",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "STALE",
-      "authoritative_corrected_state": "Split Producer, Location and PDV and preserve already-calibrated QAPE rules.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Codex authority-completion pass; sources: ['https://www.screenaustralia.gov.au/funding-and-support/producer-offset', 'https://www.legislation.gov.au/C2004A04868/latest/text']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None -- self-contained data correction to existing RateRule/DoctrineRecord/ProgramRequirementsProfile/SpendRule entries, same pattern as the MU/MT/GR/GB/AU pilot (commit 21af675).",
-      "runtime_acceptance_condition": "Corrected rate/gate/cap/threshold field(s) match the cited authority_sources exactly; existing regression tests for the affected program_slug (if any) still pass; no other program's served output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "bc_interactive_digital_media_tax_credit_idmtc",
-      "jurisdiction": "Canada",
-      "program_or_pathway": "BC Interactive Digital Media Tax Credit (IDMTC)",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "INCOMPLETE",
-      "authoritative_corrected_state": "Complete official-source capture before optimization.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Codex authority-completion pass; sources: ['https://www2.gov.bc.ca/gov/content/taxes/income-taxes/corporate/credits/interactive-digital-media', 'https://www.bclaws.gov.bc.ca/civix/document/id/complete/statreg/187_2010']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None -- self-contained data correction to existing RateRule/DoctrineRecord/ProgramRequirementsProfile/SpendRule entries, same pattern as the MU/MT/GR/GB/AU pilot (commit 21af675).",
-      "runtime_acceptance_condition": "Corrected rate/gate/cap/threshold field(s) match the cited authority_sources exactly; existing regression tests for the affected program_slug (if any) still pass; no other program's served output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "bc_pstc",
-      "jurisdiction": "Canada",
-      "program_or_pathway": "BC Production Services Tax Credit",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "STALE",
-      "authoritative_corrected_state": "Update the basic rate and all labour/regional/digital conditions from current BC authority.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Codex authority-completion pass; sources: ['https://www2.gov.bc.ca/gov/content/taxes/income-taxes/corporate/credits/film-tv/production-services']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None -- self-contained data correction to existing RateRule/DoctrineRecord/ProgramRequirementsProfile/SpendRule entries, same pattern as the MU/MT/GR/GB/AU pilot (commit 21af675).",
-      "runtime_acceptance_condition": "Corrected rate/gate/cap/threshold field(s) match the cited authority_sources exactly; existing regression tests for the affected program_slug (if any) still pass; no other program's served output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "ca_federal_cptc",
-      "jurisdiction": "Canada",
-      "program_or_pathway": "Canadian Film or Video Production Tax Credit",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "INCORRECT",
-      "authoritative_corrected_state": "Remove false minimum and encode the ceiling and CAVCO gates.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Codex authority-completion pass; sources: ['https://www.canada.ca/en/canadian-heritage/services/funding/cavco-tax-credits/canadian-film-video-production/application-guidelines.html']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None -- self-contained data correction to existing RateRule/DoctrineRecord/ProgramRequirementsProfile/SpendRule entries, same pattern as the MU/MT/GR/GB/AU pilot (commit 21af675).",
-      "runtime_acceptance_condition": "Corrected rate/gate/cap/threshold field(s) match the cited authority_sources exactly; existing regression tests for the affected program_slug (if any) still pass; no other program's served output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "ontario_computer_animation_and_special_effects_tax_credit_ocase",
-      "jurisdiction": "Canada",
-      "program_or_pathway": "Ontario Computer Animation and Special Effects Tax Credit (OCASE)",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "INCOMPLETE",
-      "authoritative_corrected_state": "Complete official-source capture before optimization.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Codex authority-completion pass; sources: ['https://www.ontariocreates.ca/tax-incentives/ocase', 'https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/corporations/provincial-territorial-corporation-tax/ontario-provincial-corporation-tax/ontario-refundable-media-tax-credits/ontario-computer-animation-special-effects-tax-credit.html']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None -- self-contained data correction to existing RateRule/DoctrineRecord/ProgramRequirementsProfile/SpendRule entries, same pattern as the MU/MT/GR/GB/AU pilot (commit 21af675).",
-      "runtime_acceptance_condition": "Corrected rate/gate/cap/threshold field(s) match the cited authority_sources exactly; existing regression tests for the affected program_slug (if any) still pass; no other program's served output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "cz_film_incentive",
-      "jurisdiction": "Czech Republic",
-      "program_or_pathway": "Czech Film Incentive",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "STALE",
-      "authoritative_corrected_state": "Replace rates, basis/project caps, cultural test, minimums and Czech expenditure rules.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Codex authority-completion pass; sources: ['https://www.filmcommission.cz/en/production-incentives/', 'https://www.filmcommission.cz/en/update-on-the-czech-production-incentives-program/']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None -- self-contained data correction to existing RateRule/DoctrineRecord/ProgramRequirementsProfile/SpendRule entries, same pattern as the MU/MT/GR/GB/AU pilot (commit 21af675).",
-      "runtime_acceptance_condition": "Corrected rate/gate/cap/threshold field(s) match the cited authority_sources exactly; existing regression tests for the affected program_slug (if any) still pass; no other program's served output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "de_dfff",
-      "jurisdiction": "Germany",
-      "program_or_pathway": "German Federal Film Fund (DFFF/GFFF)",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "STALE",
-      "authoritative_corrected_state": "Update DFFF and add distinct GMPF.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Codex authority-completion pass; sources: ['https://www.ffa.de/dfff-home.html?newsdetail=20250203-52_dfff-und-gmpf-erhoehung-der-foerderintensitaet-auf-30-prozent-der-in-deutschland-getaetigten-produktionsausgaben-und-hoehere-kappungsgrenzen&zwischennachweis=']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None -- self-contained data correction to existing RateRule/DoctrineRecord/ProgramRequirementsProfile/SpendRule entries, same pattern as the MU/MT/GR/GB/AU pilot (commit 21af675).",
-      "runtime_acceptance_condition": "Corrected rate/gate/cap/threshold field(s) match the cited authority_sources exactly; existing regression tests for the affected program_slug (if any) still pass; no other program's served output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "iceland_post_production_visual_effects_and_animation_incentive",
-      "jurisdiction": "Iceland",
-      "program_or_pathway": "Iceland Post-Production, Visual Effects and Animation Incentive",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "STALE",
-      "authoritative_corrected_state": "Retire or link to the national scheme unless distinct primary authority is obtained.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Codex authority-completion pass; sources: ['https://www.government.is/library/01-Ministries/Economic%20Impact%20Study%20of%20Iceland%27s%20Production%20Incentive%20-%20Final%20Report%202024-04-09%20v3%20CLEAN.pdf']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None -- self-contained data correction to existing RateRule/DoctrineRecord/ProgramRequirementsProfile/SpendRule entries, same pattern as the MU/MT/GR/GB/AU pilot (commit 21af675).",
-      "runtime_acceptance_condition": "Corrected rate/gate/cap/threshold field(s) match the cited authority_sources exactly; existing regression tests for the affected program_slug (if any) still pass; no other program's served output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "is_film_reimbursement",
-      "jurisdiction": "Iceland",
-      "program_or_pathway": "Icelandic Film Reimbursement Scheme",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "STALE",
-      "authoritative_corrected_state": "Encode the 35% tier and consolidate any non-distinct post/VFX duplicate.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Codex authority-completion pass; sources: ['https://www.government.is/library/01-Ministries/Economic%20Impact%20Study%20of%20Iceland%27s%20Production%20Incentive%20-%20Final%20Report%202024-04-09%20v3%20CLEAN.pdf']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None -- self-contained data correction to existing RateRule/DoctrineRecord/ProgramRequirementsProfile/SpendRule entries, same pattern as the MU/MT/GR/GB/AU pilot (commit 21af675).",
-      "runtime_acceptance_condition": "Corrected rate/gate/cap/threshold field(s) match the cited authority_sources exactly; existing regression tests for the affected program_slug (if any) still pass; no other program's served output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "in_national_film",
-      "jurisdiction": "India",
-      "program_or_pathway": "India NFDC and State Incentives",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "STALE",
-      "authoritative_corrected_state": "Replace type/economics and encode applicant, approval, QPE and co-production gates.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Codex authority-completion pass; sources: ['https://mib.gov.in/sites/default/files/2024-02/Revised%20incentive%20guidelines.pdf']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None -- self-contained data correction to existing RateRule/DoctrineRecord/ProgramRequirementsProfile/SpendRule entries, same pattern as the MU/MT/GR/GB/AU pilot (commit 21af675).",
-      "runtime_acceptance_condition": "Corrected rate/gate/cap/threshold field(s) match the cited authority_sources exactly; existing regression tests for the affected program_slug (if any) still pass; no other program's served output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "jp_film_incentive",
-      "jurisdiction": "Japan",
-      "program_or_pathway": "Japan Film Commission Location Incentive (JLOC)",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "STALE",
-      "authoritative_corrected_state": "Replace with current fiscal-year grant and hard gates.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Codex authority-completion pass; sources: ['https://www.meti.go.jp/policy/mono_info_service/contents/menu_contents.html']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None -- self-contained data correction to existing RateRule/DoctrineRecord/ProgramRequirementsProfile/SpendRule entries, same pattern as the MU/MT/GR/GB/AU pilot (commit 21af675).",
-      "runtime_acceptance_condition": "Corrected rate/gate/cap/threshold field(s) match the cited authority_sources exactly; existing regression tests for the affected program_slug (if any) still pass; no other program's served output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "ma_ccm_rebate",
-      "jurisdiction": "Morocco",
-      "program_or_pathway": "CCM Morocco — Production Rebate",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "STALE",
-      "authoritative_corrected_state": "Set 30% current rate and encode minimum, days, formats, local incurrence and preapproval.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Codex authority-completion pass; sources: ['https://www.ccm.ma/foreign_production/pe/fr.html', 'https://ccm.ma/foreign_production/pe/doc/guide_en.pdf']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None -- self-contained data correction to existing RateRule/DoctrineRecord/ProgramRequirementsProfile/SpendRule entries, same pattern as the MU/MT/GR/GB/AU pilot (commit 21af675).",
-      "runtime_acceptance_condition": "Corrected rate/gate/cap/threshold field(s) match the cited authority_sources exactly; existing regression tests for the affected program_slug (if any) still pass; no other program's served output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "nl_nfpi",
-      "jurisdiction": "Netherlands",
-      "program_or_pathway": "Netherlands Film Production Incentive (NFPI)",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "STALE",
-      "authoritative_corrected_state": "Update to 35% and encode applicant, points, financing, release, thresholds and caps.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Codex authority-completion pass; sources: ['https://www.filmfonds.nl/en/funding/fund/netherlands-film-production-incentive', 'https://assets.filmfonds.nl/Netherlands-Film-Fund-Regulations-for-the-Netherlands-Film-Production-Incentive-2025.pdf']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None -- self-contained data correction to existing RateRule/DoctrineRecord/ProgramRequirementsProfile/SpendRule entries, same pattern as the MU/MT/GR/GB/AU pilot (commit 21af675).",
-      "runtime_acceptance_condition": "Corrected rate/gate/cap/threshold field(s) match the cited authority_sources exactly; existing regression tests for the affected program_slug (if any) still pass; no other program's served output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "new_zealand_screen_production_grant_—_international_post_vfx",
-      "jurisdiction": "New Zealand",
-      "program_or_pathway": "New Zealand Screen Production Grant — International Post/VFX",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "INCOMPLETE",
-      "authoritative_corrected_state": "Complete official-source capture before optimization.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Codex authority-completion pass; sources: ['https://www.nzfilm.co.nz/incentives/rebate-international-nzspr']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None -- self-contained data correction to existing RateRule/DoctrineRecord/ProgramRequirementsProfile/SpendRule entries, same pattern as the MU/MT/GR/GB/AU pilot (commit 21af675).",
-      "runtime_acceptance_condition": "Corrected rate/gate/cap/threshold field(s) match the cited authority_sources exactly; existing regression tests for the affected program_slug (if any) still pass; no other program's served output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "ro_cnc_rebate",
-      "jurisdiction": "Romania",
-      "program_or_pathway": "Romanian Film Office Cash Rebate",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "STALE",
-      "authoritative_corrected_state": "Complete official-source capture before optimization.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Codex authority-completion pass; sources: ['https://www.cnc.ro/en']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None -- self-contained data correction to existing RateRule/DoctrineRecord/ProgramRequirementsProfile/SpendRule entries, same pattern as the MU/MT/GR/GB/AU pilot (commit 21af675).",
-      "runtime_acceptance_condition": "Corrected rate/gate/cap/threshold field(s) match the cited authority_sources exactly; existing regression tests for the affected program_slug (if any) still pass; no other program's served output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "za_nfvf_rebate",
-      "jurisdiction": "South Africa",
-      "program_or_pathway": "South African Film and Television Production / Co-production Incentive",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "implementation_action": "MERGE_PROGRAM",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "RESOLVED_BY_AUTHORITY: Codex's own remediation note on the EXISTING za_nfvf_rebate record ('Rename to dtic program and encode production/post tiers, QSAPE/QSAPPE...') describes the SAME production+post tiered program this 'missing' discovery restates at updated (35%+5%/R50m) rates. Gemini's DUPLICATE call is correct; Codex's own two documents were internally inconsistent (missing-programs list treated it as new; main validation MD's own remediation text already implied it is the same program under its current name). No new program row — rate/name update on the existing record."
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "runtime_acceptance_condition": "Existing za_nfvf_rebate record's rate/name updated in place; no duplicate program row created.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set.",
-      "current_cineglobe_state": "PRE_DISTRIBUTION_STATE_REQUIRES_REMEDIATION",
-      "authoritative_corrected_state": "Apply the preserved canonical pre-distribution remediation resolution for this identity.",
-      "dependencies": "Canonical program data model and candidate generation."
-    },
-    {
-      "canonical_id": "es_tax_credit_foreign",
-      "jurisdiction": "Spain",
-      "program_or_pathway": "Spanish Tax Credit for Foreign Productions",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "INCORRECT",
-      "authoritative_corrected_state": "Correct mainland tiers/caps and create separate regional programs.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Codex authority-completion pass; sources: ['https://www.investinspain.org/content/dam/icex-invest/documentos/publicaciones/guia_negocios/Guide-to-business-in-Spain-INVESTINSPAIN.pdf', 'https://www.investinspain.org/content/dam/icex-invest/documentos/publicaciones/sectores/industria-audiovisual/ICEX-Invest%20in%20Spain.%20Audiovisual.pdf']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None -- self-contained data correction to existing RateRule/DoctrineRecord/ProgramRequirementsProfile/SpendRule entries, same pattern as the MU/MT/GR/GB/AU pilot (commit 21af675).",
-      "runtime_acceptance_condition": "Corrected rate/gate/cap/threshold field(s) match the cited authority_sources exactly; existing regression tests for the affected program_slug (if any) still pass; no other program's served output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "th_film_incentive",
-      "jurisdiction": "Thailand",
-      "program_or_pathway": "Thailand BOI Film Production Incentive",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "STALE",
-      "authoritative_corrected_state": "Update tiers, minimum spend, bonuses, no-cap treatment and preapproval.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Codex authority-completion pass; sources: ['https://tfo.dot.go.th/wp-content/uploads/2025/03/Thailand-Incentive-Measures-Guidelines.pdf', 'https://tfo.dot.go.th/wp-content/uploads/2025/03/FINAL-%E0%B8%9B%E0%B8%A3%E0%B8%81%E0%B8%B2%E0%B8%A8-%E0%B8%AB%E0%B8%A5%E0%B8%B1%E0%B9%80%E0%B8%81%E0%B8%93%E0%B8%91%E0%B9%8C-2567-in-English-final-clean-pdf.pdf']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None -- self-contained data correction to existing RateRule/DoctrineRecord/ProgramRequirementsProfile/SpendRule entries, same pattern as the MU/MT/GR/GB/AU pilot (commit 21af675).",
-      "runtime_acceptance_condition": "Corrected rate/gate/cap/threshold field(s) match the cited authority_sources exactly; existing regression tests for the affected program_slug (if any) still pass; no other program's served output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "ae_dpip",
-      "jurisdiction": "United Arab Emirates",
-      "program_or_pathway": "Dubai Film Commission — Dubai Production Incentive (DPIP)",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "INCORRECT",
-      "authoritative_corrected_state": "Retire/hold Dubai unless primary authority obtained; add Abu Dhabi.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Codex authority-completion pass; sources: ['https://www.film.gov.ae/35-rebate', 'https://www.film.gov.ae/storage/staticPage/ADFC%20Rebate%20Guidelines%20FINAL%20En.pdf']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None -- self-contained data correction to existing RateRule/DoctrineRecord/ProgramRequirementsProfile/SpendRule entries, same pattern as the MU/MT/GR/GB/AU pilot (commit 21af675).",
-      "runtime_acceptance_condition": "Corrected rate/gate/cap/threshold field(s) match the cited authority_sources exactly; existing regression tests for the affected program_slug (if any) still pass; no other program's served output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "ca_film_30",
-      "jurisdiction": "United States",
-      "program_or_pathway": "California Film & Television Tax Credit Program 3.0",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "STALE",
-      "authoritative_corrected_state": "Replace Program 3.0 economics, gates, caps and uplifts with effective-dated Program 4.0.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Codex authority-completion pass; sources: ['https://film.ca.gov/tax-credit/the-basics-4-0/', 'https://cdn.film.ca.gov/wp-content/uploads/2025/08/4.0-Program-Guidelines-1.pdf']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None -- self-contained data correction to existing RateRule/DoctrineRecord/ProgramRequirementsProfile/SpendRule entries, same pattern as the MU/MT/GR/GB/AU pilot (commit 21af675).",
-      "runtime_acceptance_condition": "Corrected rate/gate/cap/threshold field(s) match the cited authority_sources exactly; existing regression tests for the affected program_slug (if any) still pass; no other program's served output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "georgia_eiia",
-      "jurisdiction": "United States",
-      "program_or_pathway": "Georgia Entertainment Industry Investment Act",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "INCORRECT",
-      "authoritative_corrected_state": "Complete official-source capture before optimization.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Codex authority-completion pass; sources: ['https://dor.georgia.gov/georgia-entertainment-industry-investment-act', 'https://law.justia.com/codes/georgia/title-48/chapter-7/article-2/section-48-7-40-26/']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None -- self-contained data correction to existing RateRule/DoctrineRecord/ProgramRequirementsProfile/SpendRule entries, same pattern as the MU/MT/GR/GB/AU pilot (commit 21af675).",
-      "runtime_acceptance_condition": "Corrected rate/gate/cap/threshold field(s) match the cited authority_sources exactly; existing regression tests for the affected program_slug (if any) still pass; no other program's served output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "la_film_production",
-      "jurisdiction": "United States",
-      "program_or_pathway": "Louisiana Motion Picture Production Tax Credit",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "INCORRECT",
-      "authoritative_corrected_state": "Complete official-source capture before optimization.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Codex authority-completion pass; sources: ['https://www.lafilm.org/incentives', 'https://www.louisianaentertainment.gov/film']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None -- self-contained data correction to existing RateRule/DoctrineRecord/ProgramRequirementsProfile/SpendRule entries, same pattern as the MU/MT/GR/GB/AU pilot (commit 21af675).",
-      "runtime_acceptance_condition": "Corrected rate/gate/cap/threshold field(s) match the cited authority_sources exactly; existing regression tests for the affected program_slug (if any) still pass; no other program's served output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "nm_film_production",
-      "jurisdiction": "United States",
-      "program_or_pathway": "New Mexico Film Production Tax Credit",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "INCORRECT",
-      "authoritative_corrected_state": "Complete official-source capture before optimization.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Codex authority-completion pass; sources: ['https://nmfilm.com/tax-incentives/']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None -- self-contained data correction to existing RateRule/DoctrineRecord/ProgramRequirementsProfile/SpendRule entries, same pattern as the MU/MT/GR/GB/AU pilot (commit 21af675).",
-      "runtime_acceptance_condition": "Corrected rate/gate/cap/threshold field(s) match the cited authority_sources exactly; existing regression tests for the affected program_slug (if any) still pass; no other program's served output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "ny_state_film",
-      "jurisdiction": "United States",
-      "program_or_pathway": "New York State Film Tax Credit",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "STALE",
-      "authoritative_corrected_state": "Retire duplicate and retain one current production-credit record.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Codex authority-completion pass; sources: ['https://www.tax.ny.gov/legal/2023/pit-corp-changes.htm']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None -- self-contained data correction to existing RateRule/DoctrineRecord/ProgramRequirementsProfile/SpendRule entries, same pattern as the MU/MT/GR/GB/AU pilot (commit 21af675).",
-      "runtime_acceptance_condition": "Corrected rate/gate/cap/threshold field(s) match the cited authority_sources exactly; existing regression tests for the affected program_slug (if any) still pass; no other program's served output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "us_ny_film_credit",
-      "jurisdiction": "United States",
-      "program_or_pathway": "New York State Film Tax Credit Program",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "STALE",
-      "authoritative_corrected_state": "Update production rules, remove duplicate, add separate official post and independent-film programs.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Codex authority-completion pass; sources: ['https://www.tax.ny.gov/legal/2023/pit-corp-changes.htm', 'https://esd.ny.gov/new-york-state-film-tax-credit-program-post-production']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None -- self-contained data correction to existing RateRule/DoctrineRecord/ProgramRequirementsProfile/SpendRule entries, same pattern as the MU/MT/GR/GB/AU pilot (commit 21af675).",
-      "runtime_acceptance_condition": "Corrected rate/gate/cap/threshold field(s) match the cited authority_sources exactly; existing regression tests for the affected program_slug (if any) still pass; no other program's served output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "or_opif",
-      "jurisdiction": "United States",
-      "program_or_pathway": "Oregon Production Investment Fund (OPIF)",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "INCORRECT",
-      "authoritative_corrected_state": "Complete official-source capture before optimization.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Codex authority-completion pass; sources: ['https://oregonfilm.org/incentives/']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None -- self-contained data correction to existing RateRule/DoctrineRecord/ProgramRequirementsProfile/SpendRule entries, same pattern as the MU/MT/GR/GB/AU pilot (commit 21af675).",
-      "runtime_acceptance_condition": "Corrected rate/gate/cap/threshold field(s) match the cited authority_sources exactly; existing regression tests for the affected program_slug (if any) still pass; no other program's served output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "us_tx_miip",
-      "jurisdiction": "United States",
-      "program_or_pathway": "Texas Moving Image Industry Incentive Program (MIIP)",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "STALE",
-      "authoritative_corrected_state": "Update tiers, biennial funding, effective dates and resident-workforce gates.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Codex authority-completion pass; sources: ['https://gov.texas.gov/film/page/additional_grant_award', 'https://www.sos.texas.gov/texreg/archive/July32026/Adopted%20Rules/13.CULTURAL%20RESOURCES.html']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None -- self-contained data correction to existing RateRule/DoctrineRecord/ProgramRequirementsProfile/SpendRule entries, same pattern as the MU/MT/GR/GB/AU pilot (commit 21af675).",
-      "runtime_acceptance_condition": "Corrected rate/gate/cap/threshold field(s) match the cited authority_sources exactly; existing regression tests for the affected program_slug (if any) still pass; no other program's served output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "vipo_animation_and_content_support",
-      "jurisdiction": "Japan",
-      "program_or_pathway": "VIPO Animation and Content Support",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "REQUIRES_INTERPRETATION_RESOLUTION",
-      "authoritative_corrected_state": "The stored generic row is not a deterministic rebate. Current VIPO support is fiscal-year, call-based JLOX+/location/content support selected by external review; availability, eligible period, ceilings and categories are call-specific.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Final P0/P1 authority closure; sources: ['https://www.vipo.or.jp/en/location-project/', 'https://www.vipo.or.jp/project/ip360/']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None; do not price discretionary funds as guaranteed value.",
-      "runtime_acceptance_condition": "Canonical disposition and cited primary authority are encoded exactly; no unrelated program output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "ccm_tourism_film_facilitation",
-      "jurisdiction": "Morocco",
-      "program_or_pathway": "CCM Tourism Film Facilitation",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "REQUIRES_INTERPRETATION_RESOLUTION",
-      "authoritative_corrected_state": "No separate economic tourism incentive is established. CCM tourism promotion/facilitation is part of the foreign-production support framework already represented by ma_ccm_rebate; merge references and exclude this duplicate row from pricing.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "EXCLUDE_FROM_OPTIMIZER",
-      "sources": [
-        "Final P0/P1 authority closure; sources: ['https://ccm.ma/foreign_production/pe/index.html', 'https://www.ccm.ma/en/tournage-au-maroc']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None; do not price discretionary funds as guaranteed value.",
-      "runtime_acceptance_condition": "Canonical disposition and cited primary authority are encoded exactly; no unrelated program output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "singapore_imda_digital_media_development_fund",
-      "jurisdiction": "Singapore",
-      "program_or_pathway": "Singapore IMDA Digital Media Development Fund",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "REQUIRES_INTERPRETATION_RESOLUTION",
-      "authoritative_corrected_state": "The generic Digital Media Development Fund label is not a current deterministic incentive. Current IMDA production support is through selective TAP content grants: selected Singapore productions/co-productions, up to 50% qualified spend for SMEs or 30% for non-SMEs, with project/episode caps and commissioner/platform evidence.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Final P0/P1 authority closure; sources: ['https://www.imda.gov.sg/about-imda/research-and-statistics/support-for-industry-sectors/media/tap', 'https://www.imda.gov.sg/about-imda/research-and-statistics/support-for-industry-sectors/media/tap/tv']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None; do not price discretionary funds as guaranteed value.",
-      "runtime_acceptance_condition": "Canonical disposition and cited primary authority are encoded exactly; no unrelated program output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "korea_kocca_animation_production_support",
-      "jurisdiction": "South Korea",
-      "program_or_pathway": "Korea KOCCA Animation Production Support",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "REQUIRES_INTERPRETATION_RESOLUTION",
-      "authoritative_corrected_state": "KOCCA animation/content production support is administered through dated competitive calls, not a standing deterministic rebate. Store as a conditional fund with zero guaranteed optimizer value unless a project-specific current award/call is supplied.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Final P0/P1 authority closure; sources: ['https://www.kocca.kr/kocca/pims/list.do?category=4&menuNo=204104', 'https://www.kocca.kr/kocca/main.do']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None; do not price discretionary funds as guaranteed value.",
-      "runtime_acceptance_condition": "Canonical disposition and cited primary authority are encoded exactly; no unrelated program output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "screenskills_production_workforce_development",
-      "jurisdiction": "United Kingdom",
-      "program_or_pathway": "ScreenSkills Production Workforce Development",
-      "record_type": "EXISTING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "REQUIRES_INTERPRETATION_RESOLUTION",
-      "authoritative_corrected_state": "ScreenSkills Film Skills Fund is an industry-funded training mechanism, not a producer incentive. Productions are encouraged to contribute 0.5% of core UK expenditure subject to the published cap; the fund finances sector training and creates no deterministic production rebate.",
-      "implementation_action": "CORRECT_DATA",
-      "remediation_layer": "EXCLUDE_FROM_OPTIMIZER",
-      "sources": [
-        "Final P0/P1 authority closure; sources: ['https://www.screenskills.com/industry/film-skills-fund/contribute-to-the-film-skills-fund/']"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None; do not price discretionary funds as guaranteed value.",
-      "runtime_acceptance_condition": "Canonical disposition and cited primary authority are encoded exactly; no unrelated program output changes.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "proposed_canada_film_or_video_production_services_tax_credit_pstc",
-      "jurisdiction": "Canada",
-      "program_or_pathway": "Film or Video Production Services Tax Credit (PSTC)",
-      "record_type": "MISSING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "Not represented in CineGlobe (confirmed absent).",
-      "authoritative_corrected_state": "New program record; sources: ['https://www.canada.ca/en/canadian-heritage/services/funding/cavco-tax-credits/film-video-production-services.html', 'https://www.canada.ca/en/revenue-agency/services/tax/international-non-residents/film-media-tax-credits/film-video-production-services-tax-credit-program/legislative-requirements.html']",
-      "implementation_action": "ADD_PROGRAM",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "AGREED: Gemini CONFIRMED_MISSING + Codex authority-completion pass produced a real, sourced canonical summary. Ready for a new RateRule/DoctrineRecord/ProgramRequirementsProfile entry using the existing schema — same pattern as GB IFTC in the Incentive/Optimizer Core Closeout (commit 21af675), which already proves a new, non-auto-selected program_slug can be added without any engine change."
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None for programs not requiring a new consuming mechanism (all 12 use rate/gate/cap shapes already handled by the existing RateRule/DoctrineRecord schema, per the GB IFTC precedent in commit 21af675).",
-      "runtime_acceptance_condition": "New program_slug registered, not auto-selected over any existing program for the same jurisdiction unless explicitly the correct default; segment-level pricing test confirms the new program prices independently without altering any other jurisdiction's served result.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "proposed_united_states_new_jersey_garden_state_film_and_digital_media_jobs_act_film_credit",
-      "jurisdiction": "United States",
-      "program_or_pathway": "Garden State Film and Digital Media Jobs Act — Film Credit",
-      "record_type": "MISSING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "Not represented in CineGlobe (confirmed absent).",
-      "authoritative_corrected_state": "New program record; sources: ['https://www.nj.gov/njfilm/incentives-credit.shtml', 'https://www.nj.gov/treasury/taxation/gardenstatefilm.shtml']",
-      "implementation_action": "ADD_PROGRAM",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "AGREED: Gemini CONFIRMED_MISSING + Codex authority-completion pass produced a real, sourced canonical summary. Ready for a new RateRule/DoctrineRecord/ProgramRequirementsProfile entry using the existing schema — same pattern as GB IFTC in the Incentive/Optimizer Core Closeout (commit 21af675), which already proves a new, non-auto-selected program_slug can be added without any engine change."
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None for programs not requiring a new consuming mechanism (all 12 use rate/gate/cap shapes already handled by the existing RateRule/DoctrineRecord schema, per the GB IFTC precedent in commit 21af675).",
-      "runtime_acceptance_condition": "New program_slug registered, not auto-selected over any existing program for the same jurisdiction unless explicitly the correct default; segment-level pricing test confirms the new program prices independently without altering any other jurisdiction's served result.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "proposed_united_states_new_york_film_tax_credit_post_production",
-      "jurisdiction": "United States",
-      "program_or_pathway": "Film Tax Credit — Post-Production",
-      "record_type": "MISSING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "Not represented in CineGlobe (confirmed absent).",
-      "authoritative_corrected_state": "New program record; sources: ['https://esd.ny.gov/new-york-state-film-tax-credit-program-post-production']",
-      "implementation_action": "ADD_PROGRAM",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "AGREED: Gemini CONFIRMED_MISSING + Codex authority-completion pass produced a real, sourced canonical summary. Ready for a new RateRule/DoctrineRecord/ProgramRequirementsProfile entry using the existing schema — same pattern as GB IFTC in the Incentive/Optimizer Core Closeout (commit 21af675), which already proves a new, non-auto-selected program_slug can be added without any engine change."
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None for programs not requiring a new consuming mechanism (all 12 use rate/gate/cap shapes already handled by the existing RateRule/DoctrineRecord schema, per the GB IFTC precedent in commit 21af675).",
-      "runtime_acceptance_condition": "New program_slug registered, not auto-selected over any existing program for the same jurisdiction unless explicitly the correct default; segment-level pricing test confirms the new program prices independently without altering any other jurisdiction's served result.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "proposed_united_states_new_york_empire_state_independent_film_production_credit",
-      "jurisdiction": "United States",
-      "program_or_pathway": "Empire State Independent Film Production Credit",
-      "record_type": "MISSING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "Not represented in CineGlobe (confirmed absent).",
-      "authoritative_corrected_state": "New program record; sources: ['https://www.tax.ny.gov/pit/credits/empire-state-independent-film-production-credit.htm', 'https://www.tax.ny.gov/legal/2025/pit-corp-changes.htm']",
-      "implementation_action": "ADD_PROGRAM",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "AGREED: Gemini CONFIRMED_MISSING + Codex authority-completion pass produced a real, sourced canonical summary. Ready for a new RateRule/DoctrineRecord/ProgramRequirementsProfile entry using the existing schema — same pattern as GB IFTC in the Incentive/Optimizer Core Closeout (commit 21af675), which already proves a new, non-auto-selected program_slug can be added without any engine change."
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None for programs not requiring a new consuming mechanism (all 12 use rate/gate/cap shapes already handled by the existing RateRule/DoctrineRecord schema, per the GB IFTC precedent in commit 21af675).",
-      "runtime_acceptance_condition": "New program_slug registered, not auto-selected over any existing program for the same jurisdiction unless explicitly the correct default; segment-level pricing test confirms the new program prices independently without altering any other jurisdiction's served result.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "proposed_united_states_ohio_ohio_motion_picture_tax_credit",
-      "jurisdiction": "United States",
-      "program_or_pathway": "Ohio Motion Picture Tax Credit",
-      "record_type": "MISSING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "Not represented in CineGlobe (confirmed absent).",
-      "authoritative_corrected_state": "New program record; sources: ['https://codes.ohio.gov/ohio-revised-code/section-122.85', 'https://dam.assets.ohio.gov/image/upload/development.ohio.gov/business/stateincentives/OMPTC_Instruction_FY2026_July.pdf']",
-      "implementation_action": "ADD_PROGRAM",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "AGREED: Gemini CONFIRMED_MISSING + Codex authority-completion pass produced a real, sourced canonical summary. Ready for a new RateRule/DoctrineRecord/ProgramRequirementsProfile entry using the existing schema — same pattern as GB IFTC in the Incentive/Optimizer Core Closeout (commit 21af675), which already proves a new, non-auto-selected program_slug can be added without any engine change."
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None for programs not requiring a new consuming mechanism (all 12 use rate/gate/cap shapes already handled by the existing RateRule/DoctrineRecord schema, per the GB IFTC precedent in commit 21af675).",
-      "runtime_acceptance_condition": "New program_slug registered, not auto-selected over any existing program for the same jurisdiction unless explicitly the correct default; segment-level pricing test confirms the new program prices independently without altering any other jurisdiction's served result.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "proposed_united_states_arkansas_digital_product_and_motion_picture_industry_incentive",
-      "jurisdiction": "United States",
-      "program_or_pathway": "Digital Product and Motion Picture Industry Incentive",
-      "record_type": "MISSING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "Not represented in CineGlobe (confirmed absent).",
-      "authoritative_corrected_state": "New program record; sources: ['https://www.arkansasedc.com/why-arkansas/business-climate/incentives/pages/film-production-incentives', 'https://www.dfa.arkansas.gov/office/taxes/other-taxes/tax-credits-special-refunds/business-incentives-and-credits/']",
-      "implementation_action": "ADD_PROGRAM",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "AGREED: Gemini CONFIRMED_MISSING + Codex authority-completion pass produced a real, sourced canonical summary. Ready for a new RateRule/DoctrineRecord/ProgramRequirementsProfile entry using the existing schema — same pattern as GB IFTC in the Incentive/Optimizer Core Closeout (commit 21af675), which already proves a new, non-auto-selected program_slug can be added without any engine change."
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None for programs not requiring a new consuming mechanism (all 12 use rate/gate/cap shapes already handled by the existing RateRule/DoctrineRecord schema, per the GB IFTC precedent in commit 21af675).",
-      "runtime_acceptance_condition": "New program_slug registered, not auto-selected over any existing program for the same jurisdiction unless explicitly the correct default; segment-level pricing test confirms the new program prices independently without altering any other jurisdiction's served result.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "proposed_united_states_west_virginia_west_virginia_film_production_tax_credit",
-      "jurisdiction": "United States",
-      "program_or_pathway": "West Virginia Film Production Tax Credit",
-      "record_type": "MISSING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "Not represented in CineGlobe (confirmed absent).",
-      "authoritative_corrected_state": "New program record; sources: ['https://westvirginia.gov/filmincentives/']",
-      "implementation_action": "ADD_PROGRAM",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "AGREED: Gemini CONFIRMED_MISSING + Codex authority-completion pass produced a real, sourced canonical summary. Ready for a new RateRule/DoctrineRecord/ProgramRequirementsProfile entry using the existing schema — same pattern as GB IFTC in the Incentive/Optimizer Core Closeout (commit 21af675), which already proves a new, non-auto-selected program_slug can be added without any engine change."
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None for programs not requiring a new consuming mechanism (all 12 use rate/gate/cap shapes already handled by the existing RateRule/DoctrineRecord schema, per the GB IFTC precedent in commit 21af675).",
-      "runtime_acceptance_condition": "New program_slug registered, not auto-selected over any existing program for the same jurisdiction unless explicitly the correct default; segment-level pricing test confirms the new program prices independently without altering any other jurisdiction's served result.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "proposed_united_states_montana_media_tax_credit",
-      "jurisdiction": "United States",
-      "program_or_pathway": "MEDIA Tax Credit",
-      "record_type": "MISSING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "Not represented in CineGlobe (confirmed absent).",
-      "authoritative_corrected_state": "New program record; sources: ['https://commerce.mt.gov/Business/Programs-and-Services/Montana-Film-Office/Incentives/MEDIA-Tax-Credit']",
-      "implementation_action": "ADD_PROGRAM",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "AGREED: Gemini CONFIRMED_MISSING + Codex authority-completion pass produced a real, sourced canonical summary. Ready for a new RateRule/DoctrineRecord/ProgramRequirementsProfile entry using the existing schema — same pattern as GB IFTC in the Incentive/Optimizer Core Closeout (commit 21af675), which already proves a new, non-auto-selected program_slug can be added without any engine change."
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None for programs not requiring a new consuming mechanism (all 12 use rate/gate/cap shapes already handled by the existing RateRule/DoctrineRecord schema, per the GB IFTC precedent in commit 21af675).",
-      "runtime_acceptance_condition": "New program_slug registered, not auto-selected over any existing program for the same jurisdiction unless explicitly the correct default; segment-level pricing test confirms the new program prices independently without altering any other jurisdiction's served result.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "proposed_australia_producer_offset_separate_statutory_program",
-      "jurisdiction": "Australia",
-      "program_or_pathway": "Producer Offset (separate statutory program)",
-      "record_type": "MISSING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "Not represented in CineGlobe (confirmed absent).",
-      "authoritative_corrected_state": "New program record; sources: ['https://www.screenaustralia.gov.au/funding-and-support/producer-offset']",
-      "implementation_action": "ADD_PROGRAM",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "AGREED: Gemini CONFIRMED_MISSING + Codex authority-completion pass produced a real, sourced canonical summary. Ready for a new RateRule/DoctrineRecord/ProgramRequirementsProfile entry using the existing schema — same pattern as GB IFTC in the Incentive/Optimizer Core Closeout (commit 21af675), which already proves a new, non-auto-selected program_slug can be added without any engine change."
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None for programs not requiring a new consuming mechanism (all 12 use rate/gate/cap shapes already handled by the existing RateRule/DoctrineRecord schema, per the GB IFTC precedent in commit 21af675).",
-      "runtime_acceptance_condition": "New program_slug registered, not auto-selected over any existing program for the same jurisdiction unless explicitly the correct default; segment-level pricing test confirms the new program prices independently without altering any other jurisdiction's served result.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "proposed_united_kingdom_enhanced_avec_independent_film_tax_credit_iftc",
-      "jurisdiction": "United Kingdom",
-      "program_or_pathway": "Enhanced AVEC / Independent Film Tax Credit (IFTC)",
-      "record_type": "MISSING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "Not represented in CineGlobe (confirmed absent).",
-      "authoritative_corrected_state": "New program record; sources: ['https://www.gov.uk/hmrc-internal-manuals/creative-industries-expenditure-credit-manual/crec021110', 'https://www.gov.uk/guidance/claim-audio-visual-expenditure-credits-for-corporation-tax']",
-      "implementation_action": "ADD_PROGRAM",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "AGREED: Gemini CONFIRMED_MISSING + Codex authority-completion pass produced a real, sourced canonical summary. Ready for a new RateRule/DoctrineRecord/ProgramRequirementsProfile entry using the existing schema — same pattern as GB IFTC in the Incentive/Optimizer Core Closeout (commit 21af675), which already proves a new, non-auto-selected program_slug can be added without any engine change."
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None for programs not requiring a new consuming mechanism (all 12 use rate/gate/cap shapes already handled by the existing RateRule/DoctrineRecord schema, per the GB IFTC precedent in commit 21af675).",
-      "runtime_acceptance_condition": "New program_slug registered, not auto-selected over any existing program for the same jurisdiction unless explicitly the correct default; segment-level pricing test confirms the new program prices independently without altering any other jurisdiction's served result.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "proposed_united_arab_emirates_abu_dhabi_abu_dhabi_35_production_rebate",
-      "jurisdiction": "United Arab Emirates",
-      "program_or_pathway": "Abu Dhabi 35++ Production Rebate",
-      "record_type": "MISSING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "Not represented in CineGlobe (confirmed absent).",
-      "authoritative_corrected_state": "New program record; sources: ['https://www.film.gov.ae/35-rebate', 'https://www.film.gov.ae/storage/staticPage/ADFC%20Rebate%20Guidelines%20FINAL%20En.pdf']",
-      "implementation_action": "ADD_PROGRAM",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "AGREED: Gemini CONFIRMED_MISSING + Codex authority-completion pass produced a real, sourced canonical summary. Ready for a new RateRule/DoctrineRecord/ProgramRequirementsProfile entry using the existing schema — same pattern as GB IFTC in the Incentive/Optimizer Core Closeout (commit 21af675), which already proves a new, non-auto-selected program_slug can be added without any engine change."
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None for programs not requiring a new consuming mechanism (all 12 use rate/gate/cap shapes already handled by the existing RateRule/DoctrineRecord schema, per the GB IFTC precedent in commit 21af675).",
-      "runtime_acceptance_condition": "New program_slug registered, not auto-selected over any existing program for the same jurisdiction unless explicitly the correct default; segment-level pricing test confirms the new program prices independently without altering any other jurisdiction's served result.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "th_prd_foreign_digital_content_incentive",
-      "jurisdiction": "Thailand",
-      "program_or_pathway": "Foreign Digital Content Production Incentive",
-      "record_type": "MISSING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "current_cineglobe_state": "Not represented in CineGlobe (confirmed absent).",
-      "authoritative_corrected_state": "New program record; sources: ['https://thailand.prd.go.th/en/content/category/detail/id/2078/iid/472682']",
-      "implementation_action": "ADD_PROGRAM",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "RESOLVED_BY_AUTHORITY, against Gemini's DUPLICATE call: Codex's own source (thailand.prd.go.th) shows this program is administered by Thailand's Public Relations Department, a DIFFERENT government body from the existing th_film_incentive record's administering authority (BOI — Board of Investment). Different competent authority is sufficient to treat these as two genuinely distinct programs, not a duplicate. Resolved from evidence already gathered by Codex, no new research performed."
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "dependencies": "None for programs not requiring a new consuming mechanism (all 12 use rate/gate/cap shapes already handled by the existing RateRule/DoctrineRecord schema, per the GB IFTC precedent in commit 21af675).",
-      "runtime_acceptance_condition": "New program_slug registered, not auto-selected over any existing program for the same jurisdiction unless explicitly the correct default; segment-level pricing test confirms the new program prices independently without altering any other jurisdiction's served result.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set."
-    },
-    {
-      "canonical_id": "proposed_canada_british_columbia_film_incentive_bc_fibc",
-      "jurisdiction": "Canada",
-      "program_or_pathway": "Film Incentive BC (FIBC)",
-      "record_type": "MISSING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "authoritative_corrected_state": "Distinct refundable domestic Canadian-content labour credit. Basic 40% of qualified BC labour for productions starting principal photography on/after 2025-01-01; regional 12.5%, distant 6%, training lesser of 30% trainee payments or 3% qualified BC labour, DAVE 16%, scriptwriting 35%. Eligible BC production corporation, Canadian-content/certificate and filing gates apply.",
-      "implementation_action": "ADD_PROGRAM",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Canonical pre-distribution remediation input"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "runtime_acceptance_condition": "Add as separately keyed canonical program; encode explicit limits and the default-inclusion QPE rule without treating local payment alone as territorial qualification.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set.",
-      "current_cineglobe_state": "MISSING_FROM_CINEGLOBE",
-      "dependencies": "Canonical program data model and candidate generation."
-    },
-    {
-      "canonical_id": "proposed_canada_quebec_refundable_tax_credit_for_film_production_services",
-      "jurisdiction": "Canada",
-      "program_or_pathway": "Refundable Tax Credit for Film Production Services",
-      "record_type": "MISSING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "authoritative_corrected_state": "Refundable services credit: 25% eligible production costs plus 16% eligible computer VFX/animation labour for qualifying post-2024 applications. Eligible Quebec establishment, SODEC favourable advance ruling/certificate and production eligibility apply. Service-contract VFX component is limited to 65% where specified.",
-      "implementation_action": "ADD_PROGRAM",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Canonical pre-distribution remediation input"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "runtime_acceptance_condition": "Add as separately keyed canonical program; encode explicit limits and the default-inclusion QPE rule without treating local payment alone as territorial qualification.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set.",
-      "current_cineglobe_state": "MISSING_FROM_CINEGLOBE",
-      "dependencies": "Canonical program data model and candidate generation."
-    },
-    {
-      "canonical_id": "proposed_united_states_missouri_motion_media_production_tax_credit",
-      "jurisdiction": "United States",
-      "program_or_pathway": "Motion Media Production Tax Credit",
-      "record_type": "MISSING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "authoritative_corrected_state": "Current transferable Missouri motion-media credit governed by the SHOW MO Act and DED guidelines. Eligibility, minimum spend, base credit and additions are project/workforce dependent; pre-authorization, qualified Missouri expenditure, final application and statutory annual allocation apply. Encode from the 2023 guidelines and 2026 final form, not a single guaranteed maximum rate.",
-      "implementation_action": "ADD_PROGRAM",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Canonical pre-distribution remediation input"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "runtime_acceptance_condition": "Add as separately keyed canonical program; encode explicit limits and the default-inclusion QPE rule without treating local payment alone as territorial qualification.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set.",
-      "current_cineglobe_state": "MISSING_FROM_CINEGLOBE",
-      "dependencies": "Canonical program data model and candidate generation."
-    },
-    {
-      "canonical_id": "proposed_united_kingdom_uk_global_screen_fund_international_co_production",
-      "jurisdiction": "United Kingdom",
-      "program_or_pathway": "UK Global Screen Fund — International Co-production",
-      "record_type": "MISSING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "authoritative_corrected_state": "Competitive non-recoupable grant up to GBP300,000. UK independent producer; film minority co-production or eligible TV animation/documentary structure; at least 60% finance secured (80% fast track), other UK finance, British cultural/treaty qualification, UK contribution thresholds and eligible UK elements. Requested grant cannot exceed 50% of UK financial contribution.",
-      "implementation_action": "ADD_PROGRAM",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Canonical pre-distribution remediation input"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "runtime_acceptance_condition": "Add as separately keyed canonical program; encode explicit limits and the default-inclusion QPE rule without treating local payment alone as territorial qualification.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set.",
-      "current_cineglobe_state": "MISSING_FROM_CINEGLOBE",
-      "dependencies": "Canonical program data model and candidate generation."
-    },
-    {
-      "canonical_id": "proposed_germany_german_motion_picture_fund_gmpf",
-      "jurisdiction": "Germany",
-      "program_or_pathway": "German Motion Picture Fund (GMPF)",
-      "record_type": "MISSING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "authoritative_corrected_state": "Distinct 2026 non-repayable grant for high-end series and non-theatrical films: up to 30% eligible German production costs, basis capped at 80% total production costs; film cap EUR5m, ordinary series cap EUR6m/season with separate high-cost series treatment. German applicant/branch, reference production, characteristic test, financing, German-cost minimums, pre-shoot application and ecological standards apply. General pre-costs and pre-existing rights/music are expressly excluded subject to stated exceptions.",
-      "implementation_action": "ADD_PROGRAM",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Canonical pre-distribution remediation input"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "runtime_acceptance_condition": "Add as separately keyed canonical program; encode explicit limits and the default-inclusion QPE rule without treating local payment alone as territorial qualification.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set.",
-      "current_cineglobe_state": "MISSING_FROM_CINEGLOBE",
-      "dependencies": "Canonical program data model and candidate generation."
-    },
-    {
-      "canonical_id": "proposed_colombia_cina_audiovisual_investment_certificate",
-      "jurisdiction": "Colombia",
-      "program_or_pathway": "CINA Audiovisual Investment Certificate",
-      "record_type": "MISSING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "authoritative_corrected_state": "35% of approved investment in Colombia for non-national audiovisual works produced or post-produced wholly or partly in Colombia after prior CPFC approval. Investment must contract Colombian natural/legal persons supplying necessary audiovisual/cinematographic and qualifying logistical services. Contract, fiduciary, reporting and resource-manual requirements apply.",
-      "implementation_action": "ADD_PROGRAM",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Canonical pre-distribution remediation input"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "runtime_acceptance_condition": "Add as separately keyed canonical program; encode explicit limits and the default-inclusion QPE rule without treating local payment alone as territorial qualification.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set.",
-      "current_cineglobe_state": "MISSING_FROM_CINEGLOBE",
-      "dependencies": "Canonical program data model and candidate generation."
-    },
-    {
-      "canonical_id": "proposed_spain_navarre_navarre_audiovisual_production_tax_credit",
-      "jurisdiction": "Spain",
-      "program_or_pathway": "Navarre Audiovisual Production Tax Credit",
-      "record_type": "MISSING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "authoritative_corrected_state": "Current Navarre producer deduction is generally 45%; 50% on the first EUR3m of basis for enumerated difficult works (Basque-only original, women-directed, documentary, animation, first feature/series director, shorts). EUR5m maximum. Basis is producer investment when Navarre spend reaches 40%; otherwise Navarre spend divided by 0.4. Basis may not exceed 80% of total audiovisual work cost; aid-intensity and certification rules apply.",
-      "implementation_action": "ADD_PROGRAM",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Canonical pre-distribution remediation input"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "runtime_acceptance_condition": "Add as separately keyed canonical program; encode explicit limits and the default-inclusion QPE rule without treating local payment alone as territorial qualification.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set.",
-      "current_cineglobe_state": "MISSING_FROM_CINEGLOBE",
-      "dependencies": "Canonical program data model and candidate generation."
-    },
-    {
-      "canonical_id": "proposed_netherlands_netherlands_film_production_incentive_high_end_series",
-      "jurisdiction": "Netherlands",
-      "program_or_pathway": "Netherlands Film Production Incentive — High-End Series",
-      "record_type": "MISSING_PROGRAM",
-      "lane": "PRE_DISTRIBUTION_READY",
-      "final_validation_disposition": "AUTHORITY_CLOSED",
-      "authoritative_corrected_state": "ADD as a distinct Filmfonds scheme, not a duplicate of the film-production scheme. Up to 35% demonstrably spent qualifying Dutch production costs, maximum EUR3m per project/year/applicant; drama, documentary and animation series/single episodes; independent eligible applicant; Dutch/foreign broadcast guarantees, minute-cost thresholds, 50% unconditional financing, 75-point test, financing within six months, pre-shoot timing and 36-month delivery.",
-      "implementation_action": "ADD_PROGRAM",
-      "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Canonical pre-distribution remediation input"
-      ],
-      "effective_date": "As recorded in the pre-distribution canonical input",
-      "runtime_acceptance_condition": "Add as separately keyed canonical program; encode explicit limits and the default-inclusion QPE rule without treating local payment alone as territorial qualification.",
-      "optimizer_consequence": null,
-      "evidence_note": "Preserved from the pre-distribution remediation-ready set.",
-      "current_cineglobe_state": "MISSING_FROM_CINEGLOBE",
-      "dependencies": "Canonical program data model and candidate generation."
-    },
+  "remaining_25_adjudication": {
+    "UNPRICEABLE_AUTHORITY_INSUFFICIENT": 25,
+    "NON_ECONOMIC_CONFIRMED": 0,
+    "NO_CURRENT_PRODUCER_INCENTIVE_CONFIRMED": 0,
+    "TRUE_BLOCKING_RULE_GAP": 0,
+    "total": 25,
+    "rationale": "The recorded Lane C evidence does not affirmatively establish a complete live producer-accessible computable incentive for any of these 25. It also does not prove non-existence. The defensible state is metadata-retained but non-priceable, with no synthetic economics.",
+    "records": [
+      {
+        "canonical_id": "bh_film_incentive",
+        "jurisdiction": "Bahrain",
+        "program_or_pathway": "Bahrain Film Commission Production Support",
+        "record_type": "EXISTING_PROGRAM",
+        "lane": "CHATGPT_LANE_C",
+        "final_validation_disposition": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "current_cineglobe_state": "UNRESOLVED",
+        "authoritative_corrected_state": "No complete current producer-accessible deterministic incentive rule set is substantiated by the checked primary-authority evidence. Preserve metadata but disable pricing and ranking until sufficient authority exists.",
+        "implementation_action": "DISABLE_UNPRICEABLE",
+        "remediation_layer": "PROGRAM_DATA_AND_CANDIDATE_GATING",
+        "sources": [
+          {
+            "title": "Current official authority materials",
+            "url": "https://culture.gov.bh/en/",
+            "pinpoint": "No complete current operating rule set located"
+          }
+        ],
+        "effective_date": "Checked through 2026-08-11",
+        "dependencies": "Candidate generation and ranking must honor a disabled/unpriceable state; preserve metadata and never synthesize economics.",
+        "runtime_acceptance_condition": "bh_film_incentive remains represented in metadata but is never priced, ranked, or assigned synthetic economics; reactivation requires new sufficient primary authority.",
+        "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set.",
+        "evidence_note": "Lane C found a mandate, authority, facilitation role, historical identity, or incomplete official surface, but did not establish a complete live computable producer incentive. Absence is not asserted; unsupported economics are disabled."
+      },
+      {
+        "canonical_id": "bd_film_incentive",
+        "jurisdiction": "Bangladesh",
+        "program_or_pathway": "Bangladesh Film Development Corporation (BFDC) Production Support",
+        "record_type": "EXISTING_PROGRAM",
+        "lane": "CHATGPT_LANE_C",
+        "final_validation_disposition": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "current_cineglobe_state": "UNRESOLVED",
+        "authoritative_corrected_state": "No complete current producer-accessible deterministic incentive rule set is substantiated by the checked primary-authority evidence. Preserve metadata but disable pricing and ranking until sufficient authority exists.",
+        "implementation_action": "DISABLE_UNPRICEABLE",
+        "remediation_layer": "PROGRAM_DATA_AND_CANDIDATE_GATING",
+        "sources": [
+          {
+            "title": "Current official authority materials",
+            "url": "https://moi.gov.bd/",
+            "pinpoint": "No complete current operating rule set located"
+          }
+        ],
+        "effective_date": "Checked through 2026-08-11",
+        "dependencies": "Candidate generation and ranking must honor a disabled/unpriceable state; preserve metadata and never synthesize economics.",
+        "runtime_acceptance_condition": "bd_film_incentive remains represented in metadata but is never priced, ranked, or assigned synthetic economics; reactivation requires new sufficient primary authority.",
+        "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set.",
+        "evidence_note": "Lane C found a mandate, authority, facilitation role, historical identity, or incomplete official surface, but did not establish a complete live computable producer incentive. Absence is not asserted; unsupported economics are disabled."
+      },
+      {
+        "canonical_id": "eg_film_incentive",
+        "jurisdiction": "Egypt",
+        "program_or_pathway": "Egypt Film Commission Production Support",
+        "record_type": "EXISTING_PROGRAM",
+        "lane": "CHATGPT_LANE_C",
+        "final_validation_disposition": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "current_cineglobe_state": "UNRESOLVED",
+        "authoritative_corrected_state": "No complete current producer-accessible deterministic incentive rule set is substantiated by the checked primary-authority evidence. Preserve metadata but disable pricing and ranking until sufficient authority exists.",
+        "implementation_action": "DISABLE_UNPRICEABLE",
+        "remediation_layer": "PROGRAM_DATA_AND_CANDIDATE_GATING",
+        "sources": [
+          {
+            "title": "Current official authority materials",
+            "url": "https://sis.gov.eg/",
+            "pinpoint": "No complete current operating rule set located"
+          }
+        ],
+        "effective_date": "Checked through 2026-08-11",
+        "dependencies": "Candidate generation and ranking must honor a disabled/unpriceable state; preserve metadata and never synthesize economics.",
+        "runtime_acceptance_condition": "eg_film_incentive remains represented in metadata but is never priced, ranked, or assigned synthetic economics; reactivation requires new sufficient primary authority.",
+        "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set.",
+        "evidence_note": "Lane C found a mandate, authority, facilitation role, historical identity, or incomplete official surface, but did not establish a complete live computable producer incentive. Absence is not asserted; unsupported economics are disabled."
+      },
+      {
+        "canonical_id": "et_film_commission",
+        "jurisdiction": "Ethiopia",
+        "program_or_pathway": "Ethiopian Film Commission Production Support",
+        "record_type": "EXISTING_PROGRAM",
+        "lane": "CHATGPT_LANE_C",
+        "final_validation_disposition": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "current_cineglobe_state": "UNRESOLVED",
+        "authoritative_corrected_state": "No complete current producer-accessible deterministic incentive rule set is substantiated by the checked primary-authority evidence. Preserve metadata but disable pricing and ranking until sufficient authority exists.",
+        "implementation_action": "DISABLE_UNPRICEABLE",
+        "remediation_layer": "PROGRAM_DATA_AND_CANDIDATE_GATING",
+        "sources": [
+          {
+            "title": "Current official authority materials",
+            "url": "https://www.moc.gov.et/",
+            "pinpoint": "No complete current operating rule set located"
+          }
+        ],
+        "effective_date": "Checked through 2026-08-11",
+        "dependencies": "Candidate generation and ranking must honor a disabled/unpriceable state; preserve metadata and never synthesize economics.",
+        "runtime_acceptance_condition": "et_film_commission remains represented in metadata but is never priced, ranked, or assigned synthetic economics; reactivation requires new sufficient primary authority.",
+        "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set.",
+        "evidence_note": "Lane C found a mandate, authority, facilitation role, historical identity, or incomplete official surface, but did not establish a complete live computable producer incentive. Absence is not asserted; unsupported economics are disabled."
+      },
+      {
+        "canonical_id": "ga_film_incentive",
+        "jurisdiction": "Gabon",
+        "program_or_pathway": "Gabon Ministry of Culture Film Commission Support",
+        "record_type": "EXISTING_PROGRAM",
+        "lane": "CHATGPT_LANE_C",
+        "final_validation_disposition": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "current_cineglobe_state": "UNRESOLVED",
+        "authoritative_corrected_state": "No complete current producer-accessible deterministic incentive rule set is substantiated by the checked primary-authority evidence. Preserve metadata but disable pricing and ranking until sufficient authority exists.",
+        "implementation_action": "DISABLE_UNPRICEABLE",
+        "remediation_layer": "PROGRAM_DATA_AND_CANDIDATE_GATING",
+        "sources": [
+          {
+            "title": "Current official authority materials",
+            "url": "https://www.culture.gouv.ga/",
+            "pinpoint": "No complete current operating rule set located"
+          }
+        ],
+        "effective_date": "Checked through 2026-08-11",
+        "dependencies": "Candidate generation and ranking must honor a disabled/unpriceable state; preserve metadata and never synthesize economics.",
+        "runtime_acceptance_condition": "ga_film_incentive remains represented in metadata but is never priced, ranked, or assigned synthetic economics; reactivation requires new sufficient primary authority.",
+        "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set.",
+        "evidence_note": "Lane C found a mandate, authority, facilitation role, historical identity, or incomplete official surface, but did not establish a complete live computable producer incentive. Absence is not asserted; unsupported economics are disabled."
+      },
+      {
+        "canonical_id": "gh_film_incentive",
+        "jurisdiction": "Ghana",
+        "program_or_pathway": "Ghana National Film Authority Production Support",
+        "record_type": "EXISTING_PROGRAM",
+        "lane": "CHATGPT_LANE_C",
+        "final_validation_disposition": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "current_cineglobe_state": "UNRESOLVED",
+        "authoritative_corrected_state": "No complete current producer-accessible deterministic incentive rule set is substantiated by the checked primary-authority evidence. Preserve metadata but disable pricing and ranking until sufficient authority exists.",
+        "implementation_action": "DISABLE_UNPRICEABLE",
+        "remediation_layer": "PROGRAM_DATA_AND_CANDIDATE_GATING",
+        "sources": [
+          {
+            "title": "Current official authority materials",
+            "url": "https://nfa.gov.gh/",
+            "pinpoint": "No complete current operating rule set located"
+          }
+        ],
+        "effective_date": "Checked through 2026-08-11",
+        "dependencies": "Candidate generation and ranking must honor a disabled/unpriceable state; preserve metadata and never synthesize economics.",
+        "runtime_acceptance_condition": "gh_film_incentive remains represented in metadata but is never priced, ranked, or assigned synthetic economics; reactivation requires new sufficient primary authority.",
+        "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set.",
+        "evidence_note": "Lane C found a mandate, authority, facilitation role, historical identity, or incomplete official surface, but did not establish a complete live computable producer incentive. Absence is not asserted; unsupported economics are disabled."
+      },
+      {
+        "canonical_id": "id_film_incentive",
+        "jurisdiction": "Indonesia",
+        "program_or_pathway": "Indonesian Film Commission Production Facilitation",
+        "record_type": "EXISTING_PROGRAM",
+        "lane": "CHATGPT_LANE_C",
+        "final_validation_disposition": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "current_cineglobe_state": "UNRESOLVED",
+        "authoritative_corrected_state": "No complete current producer-accessible deterministic incentive rule set is substantiated by the checked primary-authority evidence. Preserve metadata but disable pricing and ranking until sufficient authority exists.",
+        "implementation_action": "DISABLE_UNPRICEABLE",
+        "remediation_layer": "PROGRAM_DATA_AND_CANDIDATE_GATING",
+        "sources": [
+          {
+            "title": "Current official authority materials",
+            "url": "https://www.kemenparekraf.go.id/",
+            "pinpoint": "No complete current operating rule set located"
+          }
+        ],
+        "effective_date": "Checked through 2026-08-11",
+        "dependencies": "Candidate generation and ranking must honor a disabled/unpriceable state; preserve metadata and never synthesize economics.",
+        "runtime_acceptance_condition": "id_film_incentive remains represented in metadata but is never priced, ranked, or assigned synthetic economics; reactivation requires new sufficient primary authority.",
+        "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set.",
+        "evidence_note": "Lane C found a mandate, authority, facilitation role, historical identity, or incomplete official surface, but did not establish a complete live computable producer incentive. Absence is not asserted; unsupported economics are disabled."
+      },
+      {
+        "canonical_id": "kz_film_incentive",
+        "jurisdiction": "Kazakhstan",
+        "program_or_pathway": "Kazakhfilm Studios Production Facilitation",
+        "record_type": "EXISTING_PROGRAM",
+        "lane": "CHATGPT_LANE_C",
+        "final_validation_disposition": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "current_cineglobe_state": "UNRESOLVED",
+        "authoritative_corrected_state": "No complete current producer-accessible deterministic incentive rule set is substantiated by the checked primary-authority evidence. Preserve metadata but disable pricing and ranking until sufficient authority exists.",
+        "implementation_action": "DISABLE_UNPRICEABLE",
+        "remediation_layer": "PROGRAM_DATA_AND_CANDIDATE_GATING",
+        "sources": [
+          {
+            "title": "Current official authority materials",
+            "url": "https://kazakhcinema.kz/",
+            "pinpoint": "No complete current operating rule set located"
+          }
+        ],
+        "effective_date": "Checked through 2026-08-11",
+        "dependencies": "Candidate generation and ranking must honor a disabled/unpriceable state; preserve metadata and never synthesize economics.",
+        "runtime_acceptance_condition": "kz_film_incentive remains represented in metadata but is never priced, ranked, or assigned synthetic economics; reactivation requires new sufficient primary authority.",
+        "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set.",
+        "evidence_note": "Lane C found a mandate, authority, facilitation role, historical identity, or incomplete official surface, but did not establish a complete live computable producer incentive. Absence is not asserted; unsupported economics are disabled."
+      },
+      {
+        "canonical_id": "ke_film_incentive",
+        "jurisdiction": "Kenya",
+        "program_or_pathway": "Kenya Film Commission (KFC) Production Incentive",
+        "record_type": "EXISTING_PROGRAM",
+        "lane": "CHATGPT_LANE_C",
+        "final_validation_disposition": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "current_cineglobe_state": "INCOMPLETE",
+        "authoritative_corrected_state": "No complete current producer-accessible deterministic incentive rule set is substantiated by the checked primary-authority evidence. Preserve metadata but disable pricing and ranking until sufficient authority exists.",
+        "implementation_action": "DISABLE_UNPRICEABLE",
+        "remediation_layer": "PROGRAM_DATA_AND_CANDIDATE_GATING",
+        "sources": [
+          {
+            "title": "Current official authority materials",
+            "url": "https://kenyafilmcommission.go.ke/news/kenya-film-commission-awards-ksh-3-million-prize-money-to-the-winners-of-the-10th-edition-of-the-kalasha-international-film-and-tv-awards/",
+            "pinpoint": "No complete current operating rule set located"
+          }
+        ],
+        "effective_date": "Checked through 2026-08-11",
+        "dependencies": "Candidate generation and ranking must honor a disabled/unpriceable state; preserve metadata and never synthesize economics.",
+        "runtime_acceptance_condition": "ke_film_incentive remains represented in metadata but is never priced, ranked, or assigned synthetic economics; reactivation requires new sufficient primary authority.",
+        "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set.",
+        "evidence_note": "Lane C found a mandate, authority, facilitation role, historical identity, or incomplete official surface, but did not establish a complete live computable producer incentive. Absence is not asserted; unsupported economics are disabled."
+      },
+      {
+        "canonical_id": "kw_film_incentive",
+        "jurisdiction": "Kuwait",
+        "program_or_pathway": "Kuwait Film Committee Production Support",
+        "record_type": "EXISTING_PROGRAM",
+        "lane": "CHATGPT_LANE_C",
+        "final_validation_disposition": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "current_cineglobe_state": "UNRESOLVED",
+        "authoritative_corrected_state": "No complete current producer-accessible deterministic incentive rule set is substantiated by the checked primary-authority evidence. Preserve metadata but disable pricing and ranking until sufficient authority exists.",
+        "implementation_action": "DISABLE_UNPRICEABLE",
+        "remediation_layer": "PROGRAM_DATA_AND_CANDIDATE_GATING",
+        "sources": [
+          {
+            "title": "Current official authority materials",
+            "url": "https://www.nccal.gov.kw/",
+            "pinpoint": "No complete current operating rule set located"
+          }
+        ],
+        "effective_date": "Checked through 2026-08-11",
+        "dependencies": "Candidate generation and ranking must honor a disabled/unpriceable state; preserve metadata and never synthesize economics.",
+        "runtime_acceptance_condition": "kw_film_incentive remains represented in metadata but is never priced, ranked, or assigned synthetic economics; reactivation requires new sufficient primary authority.",
+        "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set.",
+        "evidence_note": "Lane C found a mandate, authority, facilitation role, historical identity, or incomplete official surface, but did not establish a complete live computable producer incentive. Absence is not asserted; unsupported economics are disabled."
+      },
+      {
+        "canonical_id": "mv_film_incentive",
+        "jurisdiction": "Maldives",
+        "program_or_pathway": "Maldives Marketing and PR Corporation (MMPRC) Film Facilitation",
+        "record_type": "EXISTING_PROGRAM",
+        "lane": "CHATGPT_LANE_C",
+        "final_validation_disposition": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "current_cineglobe_state": "UNRESOLVED",
+        "authoritative_corrected_state": "No complete current producer-accessible deterministic incentive rule set is substantiated by the checked primary-authority evidence. Preserve metadata but disable pricing and ranking until sufficient authority exists.",
+        "implementation_action": "DISABLE_UNPRICEABLE",
+        "remediation_layer": "PROGRAM_DATA_AND_CANDIDATE_GATING",
+        "sources": [
+          {
+            "title": "Current official authority materials",
+            "url": "https://corporate.visitmaldives.com/",
+            "pinpoint": "No complete current operating rule set located"
+          }
+        ],
+        "effective_date": "Checked through 2026-08-11",
+        "dependencies": "Candidate generation and ranking must honor a disabled/unpriceable state; preserve metadata and never synthesize economics.",
+        "runtime_acceptance_condition": "mv_film_incentive remains represented in metadata but is never priced, ranked, or assigned synthetic economics; reactivation requires new sufficient primary authority.",
+        "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set.",
+        "evidence_note": "Lane C found a mandate, authority, facilitation role, historical identity, or incomplete official surface, but did not establish a complete live computable producer incentive. Absence is not asserted; unsupported economics are disabled."
+      },
+      {
+        "canonical_id": "mn_film_commission",
+        "jurisdiction": "Mongolia",
+        "program_or_pathway": "Mongolian Film Commission Production Support",
+        "record_type": "EXISTING_PROGRAM",
+        "lane": "CHATGPT_LANE_C",
+        "final_validation_disposition": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "current_cineglobe_state": "UNRESOLVED",
+        "authoritative_corrected_state": "No complete current producer-accessible deterministic incentive rule set is substantiated by the checked primary-authority evidence. Preserve metadata but disable pricing and ranking until sufficient authority exists.",
+        "implementation_action": "DISABLE_UNPRICEABLE",
+        "remediation_layer": "PROGRAM_DATA_AND_CANDIDATE_GATING",
+        "sources": [
+          {
+            "title": "Current official authority materials",
+            "url": "https://filmmongolia.gov.mn/",
+            "pinpoint": "No complete current operating rule set located"
+          }
+        ],
+        "effective_date": "Checked through 2026-08-11",
+        "dependencies": "Candidate generation and ranking must honor a disabled/unpriceable state; preserve metadata and never synthesize economics.",
+        "runtime_acceptance_condition": "mn_film_commission remains represented in metadata but is never priced, ranked, or assigned synthetic economics; reactivation requires new sufficient primary authority.",
+        "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set.",
+        "evidence_note": "Lane C found a mandate, authority, facilitation role, historical identity, or incomplete official surface, but did not establish a complete live computable producer incentive. Absence is not asserted; unsupported economics are disabled."
+      },
+      {
+        "canonical_id": "mz_film_incentive",
+        "jurisdiction": "Mozambique",
+        "program_or_pathway": "Mozambique Instituto do Cinema Film Support",
+        "record_type": "EXISTING_PROGRAM",
+        "lane": "CHATGPT_LANE_C",
+        "final_validation_disposition": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "current_cineglobe_state": "UNRESOLVED",
+        "authoritative_corrected_state": "No complete current producer-accessible deterministic incentive rule set is substantiated by the checked primary-authority evidence. Preserve metadata but disable pricing and ranking until sufficient authority exists.",
+        "implementation_action": "DISABLE_UNPRICEABLE",
+        "remediation_layer": "PROGRAM_DATA_AND_CANDIDATE_GATING",
+        "sources": [
+          {
+            "title": "Current official authority materials",
+            "url": "https://micultur.gov.mz/",
+            "pinpoint": "No complete current operating rule set located"
+          }
+        ],
+        "effective_date": "Checked through 2026-08-11",
+        "dependencies": "Candidate generation and ranking must honor a disabled/unpriceable state; preserve metadata and never synthesize economics.",
+        "runtime_acceptance_condition": "mz_film_incentive remains represented in metadata but is never priced, ranked, or assigned synthetic economics; reactivation requires new sufficient primary authority.",
+        "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set.",
+        "evidence_note": "Lane C found a mandate, authority, facilitation role, historical identity, or incomplete official surface, but did not establish a complete live computable producer incentive. Absence is not asserted; unsupported economics are disabled."
+      },
+      {
+        "canonical_id": "ng_film_incentive",
+        "jurisdiction": "Nigeria",
+        "program_or_pathway": "Nigeria NFC / Creative Economy Incentive",
+        "record_type": "EXISTING_PROGRAM",
+        "lane": "CHATGPT_LANE_C",
+        "final_validation_disposition": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "current_cineglobe_state": "INCOMPLETE",
+        "authoritative_corrected_state": "No complete current producer-accessible deterministic incentive rule set is substantiated by the checked primary-authority evidence. Preserve metadata but disable pricing and ranking until sufficient authority exists.",
+        "implementation_action": "DISABLE_UNPRICEABLE",
+        "remediation_layer": "PROGRAM_DATA_AND_CANDIDATE_GATING",
+        "sources": [
+          {
+            "title": "Current official authority materials",
+            "url": "https://nfc.gov.ng/",
+            "pinpoint": "No complete current operating rule set located"
+          }
+        ],
+        "effective_date": "Checked through 2026-08-11",
+        "dependencies": "Candidate generation and ranking must honor a disabled/unpriceable state; preserve metadata and never synthesize economics.",
+        "runtime_acceptance_condition": "ng_film_incentive remains represented in metadata but is never priced, ranked, or assigned synthetic economics; reactivation requires new sufficient primary authority.",
+        "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set.",
+        "evidence_note": "Lane C found a mandate, authority, facilitation role, historical identity, or incomplete official surface, but did not establish a complete live computable producer incentive. Absence is not asserted; unsupported economics are disabled."
+      },
+      {
+        "canonical_id": "om_film_commission",
+        "jurisdiction": "Oman",
+        "program_or_pathway": "Oman Film Commission Production Support",
+        "record_type": "EXISTING_PROGRAM",
+        "lane": "CHATGPT_LANE_C",
+        "final_validation_disposition": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "current_cineglobe_state": "UNRESOLVED",
+        "authoritative_corrected_state": "No complete current producer-accessible deterministic incentive rule set is substantiated by the checked primary-authority evidence. Preserve metadata but disable pricing and ranking until sufficient authority exists.",
+        "implementation_action": "DISABLE_UNPRICEABLE",
+        "remediation_layer": "PROGRAM_DATA_AND_CANDIDATE_GATING",
+        "sources": [
+          {
+            "title": "Current official authority materials",
+            "url": "https://mht.gov.om/",
+            "pinpoint": "No complete current operating rule set located"
+          }
+        ],
+        "effective_date": "Checked through 2026-08-11",
+        "dependencies": "Candidate generation and ranking must honor a disabled/unpriceable state; preserve metadata and never synthesize economics.",
+        "runtime_acceptance_condition": "om_film_commission remains represented in metadata but is never priced, ranked, or assigned synthetic economics; reactivation requires new sufficient primary authority.",
+        "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set.",
+        "evidence_note": "Lane C found a mandate, authority, facilitation role, historical identity, or incomplete official surface, but did not establish a complete live computable producer incentive. Absence is not asserted; unsupported economics are disabled."
+      },
+      {
+        "canonical_id": "pk_pfc_rebate",
+        "jurisdiction": "Pakistan",
+        "program_or_pathway": "Pakistan Film Commission Cash Rebate",
+        "record_type": "EXISTING_PROGRAM",
+        "lane": "CHATGPT_LANE_C",
+        "final_validation_disposition": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "current_cineglobe_state": "INCOMPLETE",
+        "authoritative_corrected_state": "No complete current producer-accessible deterministic incentive rule set is substantiated by the checked primary-authority evidence. Preserve metadata but disable pricing and ranking until sufficient authority exists.",
+        "implementation_action": "DISABLE_UNPRICEABLE",
+        "remediation_layer": "PROGRAM_DATA_AND_CANDIDATE_GATING",
+        "sources": [
+          {
+            "title": "Current official authority materials",
+            "url": "https://www.moib.gov.pk/CinemaDrama/index.html",
+            "pinpoint": "No complete current operating rule set located"
+          }
+        ],
+        "effective_date": "Checked through 2026-08-11",
+        "dependencies": "Candidate generation and ranking must honor a disabled/unpriceable state; preserve metadata and never synthesize economics.",
+        "runtime_acceptance_condition": "pk_pfc_rebate remains represented in metadata but is never priced, ranked, or assigned synthetic economics; reactivation requires new sufficient primary authority.",
+        "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set.",
+        "evidence_note": "Lane C found a mandate, authority, facilitation role, historical identity, or incomplete official surface, but did not establish a complete live computable producer incentive. Absence is not asserted; unsupported economics are disabled."
+      },
+      {
+        "canonical_id": "qa_film_incentive",
+        "jurisdiction": "Qatar",
+        "program_or_pathway": "Qatar Film Commission Production Incentive",
+        "record_type": "EXISTING_PROGRAM",
+        "lane": "CHATGPT_LANE_C",
+        "final_validation_disposition": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "current_cineglobe_state": "INCOMPLETE",
+        "authoritative_corrected_state": "No complete current producer-accessible deterministic incentive rule set is substantiated by the checked primary-authority evidence. Preserve metadata but disable pricing and ranking until sufficient authority exists.",
+        "implementation_action": "DISABLE_UNPRICEABLE",
+        "remediation_layer": "PROGRAM_DATA_AND_CANDIDATE_GATING",
+        "sources": [
+          {
+            "title": "Current official authority materials",
+            "url": "https://www.gco.gov.qa/",
+            "pinpoint": "No complete current operating rule set located"
+          }
+        ],
+        "effective_date": "Checked through 2026-08-11",
+        "dependencies": "Candidate generation and ranking must honor a disabled/unpriceable state; preserve metadata and never synthesize economics.",
+        "runtime_acceptance_condition": "qa_film_incentive remains represented in metadata but is never priced, ranked, or assigned synthetic economics; reactivation requires new sufficient primary authority.",
+        "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set.",
+        "evidence_note": "Lane C found a mandate, authority, facilitation role, historical identity, or incomplete official surface, but did not establish a complete live computable producer incentive. Absence is not asserted; unsupported economics are disabled."
+      },
+      {
+        "canonical_id": "sn_film_incentive",
+        "jurisdiction": "Senegal",
+        "program_or_pathway": "Senegal Bureau d'Accueil des Tournages Film Support",
+        "record_type": "EXISTING_PROGRAM",
+        "lane": "CHATGPT_LANE_C",
+        "final_validation_disposition": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "current_cineglobe_state": "UNRESOLVED",
+        "authoritative_corrected_state": "No complete current producer-accessible deterministic incentive rule set is substantiated by the checked primary-authority evidence. Preserve metadata but disable pricing and ranking until sufficient authority exists.",
+        "implementation_action": "DISABLE_UNPRICEABLE",
+        "remediation_layer": "PROGRAM_DATA_AND_CANDIDATE_GATING",
+        "sources": [
+          {
+            "title": "Current official authority materials",
+            "url": "https://www.culture.gouv.sn/",
+            "pinpoint": "No complete current operating rule set located"
+          }
+        ],
+        "effective_date": "Checked through 2026-08-11",
+        "dependencies": "Candidate generation and ranking must honor a disabled/unpriceable state; preserve metadata and never synthesize economics.",
+        "runtime_acceptance_condition": "sn_film_incentive remains represented in metadata but is never priced, ranked, or assigned synthetic economics; reactivation requires new sufficient primary authority.",
+        "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set.",
+        "evidence_note": "Lane C found a mandate, authority, facilitation role, historical identity, or incomplete official surface, but did not establish a complete live computable producer incentive. Absence is not asserted; unsupported economics are disabled."
+      },
+      {
+        "canonical_id": "sc_film_incentive",
+        "jurisdiction": "Seychelles",
+        "program_or_pathway": "Seychelles Tourism Board Film Production Support",
+        "record_type": "EXISTING_PROGRAM",
+        "lane": "CHATGPT_LANE_C",
+        "final_validation_disposition": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "current_cineglobe_state": "UNRESOLVED",
+        "authoritative_corrected_state": "No complete current producer-accessible deterministic incentive rule set is substantiated by the checked primary-authority evidence. Preserve metadata but disable pricing and ranking until sufficient authority exists.",
+        "implementation_action": "DISABLE_UNPRICEABLE",
+        "remediation_layer": "PROGRAM_DATA_AND_CANDIDATE_GATING",
+        "sources": [
+          {
+            "title": "Current official authority materials",
+            "url": "https://tourism.gov.sc/",
+            "pinpoint": "No complete current operating rule set located"
+          }
+        ],
+        "effective_date": "Checked through 2026-08-11",
+        "dependencies": "Candidate generation and ranking must honor a disabled/unpriceable state; preserve metadata and never synthesize economics.",
+        "runtime_acceptance_condition": "sc_film_incentive remains represented in metadata but is never priced, ranked, or assigned synthetic economics; reactivation requires new sufficient primary authority.",
+        "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set.",
+        "evidence_note": "Lane C found a mandate, authority, facilitation role, historical identity, or incomplete official surface, but did not establish a complete live computable producer incentive. Absence is not asserted; unsupported economics are disabled."
+      },
+      {
+        "canonical_id": "lk_film_incentive",
+        "jurisdiction": "Sri Lanka",
+        "program_or_pathway": "Sri Lanka Film Commission Production Incentive",
+        "record_type": "EXISTING_PROGRAM",
+        "lane": "CHATGPT_LANE_C",
+        "final_validation_disposition": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "current_cineglobe_state": "INCOMPLETE",
+        "authoritative_corrected_state": "No complete current producer-accessible deterministic incentive rule set is substantiated by the checked primary-authority evidence. Preserve metadata but disable pricing and ranking until sufficient authority exists.",
+        "implementation_action": "DISABLE_UNPRICEABLE",
+        "remediation_layer": "PROGRAM_DATA_AND_CANDIDATE_GATING",
+        "sources": [
+          {
+            "title": "Current official authority materials",
+            "url": "https://nfc.gov.lk/",
+            "pinpoint": "No complete current operating rule set located"
+          }
+        ],
+        "effective_date": "Checked through 2026-08-11",
+        "dependencies": "Candidate generation and ranking must honor a disabled/unpriceable state; preserve metadata and never synthesize economics.",
+        "runtime_acceptance_condition": "lk_film_incentive remains represented in metadata but is never priced, ranked, or assigned synthetic economics; reactivation requires new sufficient primary authority.",
+        "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set.",
+        "evidence_note": "Lane C found a mandate, authority, facilitation role, historical identity, or incomplete official surface, but did not establish a complete live computable producer incentive. Absence is not asserted; unsupported economics are disabled."
+      },
+      {
+        "canonical_id": "ug_film_commission",
+        "jurisdiction": "Uganda",
+        "program_or_pathway": "Uganda Film Commission Production Support",
+        "record_type": "EXISTING_PROGRAM",
+        "lane": "CHATGPT_LANE_C",
+        "final_validation_disposition": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "current_cineglobe_state": "UNRESOLVED",
+        "authoritative_corrected_state": "No complete current producer-accessible deterministic incentive rule set is substantiated by the checked primary-authority evidence. Preserve metadata but disable pricing and ranking until sufficient authority exists.",
+        "implementation_action": "DISABLE_UNPRICEABLE",
+        "remediation_layer": "PROGRAM_DATA_AND_CANDIDATE_GATING",
+        "sources": [
+          {
+            "title": "Current official authority materials",
+            "url": "https://www.ucc.co.ug/",
+            "pinpoint": "No complete current operating rule set located"
+          }
+        ],
+        "effective_date": "Checked through 2026-08-11",
+        "dependencies": "Candidate generation and ranking must honor a disabled/unpriceable state; preserve metadata and never synthesize economics.",
+        "runtime_acceptance_condition": "ug_film_commission remains represented in metadata but is never priced, ranked, or assigned synthetic economics; reactivation requires new sufficient primary authority.",
+        "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set.",
+        "evidence_note": "Lane C found a mandate, authority, facilitation role, historical identity, or incomplete official surface, but did not establish a complete live computable producer incentive. Absence is not asserted; unsupported economics are disabled."
+      },
+      {
+        "canonical_id": "uz_film_incentive",
+        "jurisdiction": "Uzbekistan",
+        "program_or_pathway": "Uzbekkino National Film Support Program",
+        "record_type": "EXISTING_PROGRAM",
+        "lane": "CHATGPT_LANE_C",
+        "final_validation_disposition": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "current_cineglobe_state": "UNRESOLVED",
+        "authoritative_corrected_state": "No complete current producer-accessible deterministic incentive rule set is substantiated by the checked primary-authority evidence. Preserve metadata but disable pricing and ranking until sufficient authority exists.",
+        "implementation_action": "DISABLE_UNPRICEABLE",
+        "remediation_layer": "PROGRAM_DATA_AND_CANDIDATE_GATING",
+        "sources": [
+          {
+            "title": "Current official authority materials",
+            "url": "https://gov.uz/en/cinematography",
+            "pinpoint": "No complete current operating rule set located"
+          }
+        ],
+        "effective_date": "Checked through 2026-08-11",
+        "dependencies": "Candidate generation and ranking must honor a disabled/unpriceable state; preserve metadata and never synthesize economics.",
+        "runtime_acceptance_condition": "uz_film_incentive remains represented in metadata but is never priced, ranked, or assigned synthetic economics; reactivation requires new sufficient primary authority.",
+        "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set.",
+        "evidence_note": "Lane C found a mandate, authority, facilitation role, historical identity, or incomplete official surface, but did not establish a complete live computable producer incentive. Absence is not asserted; unsupported economics are disabled."
+      },
+      {
+        "canonical_id": "vn_film_incentive",
+        "jurisdiction": "Vietnam",
+        "program_or_pathway": "Vietnam Cinema Department Production Facilitation",
+        "record_type": "EXISTING_PROGRAM",
+        "lane": "CHATGPT_LANE_C",
+        "final_validation_disposition": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "current_cineglobe_state": "UNRESOLVED",
+        "authoritative_corrected_state": "No complete current producer-accessible deterministic incentive rule set is substantiated by the checked primary-authority evidence. Preserve metadata but disable pricing and ranking until sufficient authority exists.",
+        "implementation_action": "DISABLE_UNPRICEABLE",
+        "remediation_layer": "PROGRAM_DATA_AND_CANDIDATE_GATING",
+        "sources": [
+          {
+            "title": "Current official authority materials",
+            "url": "https://dichvucong.bvhttdl.gov.vn/",
+            "pinpoint": "No complete current operating rule set located"
+          }
+        ],
+        "effective_date": "Checked through 2026-08-11",
+        "dependencies": "Candidate generation and ranking must honor a disabled/unpriceable state; preserve metadata and never synthesize economics.",
+        "runtime_acceptance_condition": "vn_film_incentive remains represented in metadata but is never priced, ranked, or assigned synthetic economics; reactivation requires new sufficient primary authority.",
+        "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set.",
+        "evidence_note": "Lane C found a mandate, authority, facilitation role, historical identity, or incomplete official surface, but did not establish a complete live computable producer incentive. Absence is not asserted; unsupported economics are disabled."
+      },
+      {
+        "canonical_id": "zm_film_commission",
+        "jurisdiction": "Zambia",
+        "program_or_pathway": "Zambia Film Commission Production Support",
+        "record_type": "EXISTING_PROGRAM",
+        "lane": "CHATGPT_LANE_C",
+        "final_validation_disposition": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "current_cineglobe_state": "UNRESOLVED",
+        "authoritative_corrected_state": "No complete current producer-accessible deterministic incentive rule set is substantiated by the checked primary-authority evidence. Preserve metadata but disable pricing and ranking until sufficient authority exists.",
+        "implementation_action": "DISABLE_UNPRICEABLE",
+        "remediation_layer": "PROGRAM_DATA_AND_CANDIDATE_GATING",
+        "sources": [
+          {
+            "title": "Current official authority materials",
+            "url": "https://www.motac.gov.zm/",
+            "pinpoint": "No complete current operating rule set located"
+          }
+        ],
+        "effective_date": "Checked through 2026-08-11",
+        "dependencies": "Candidate generation and ranking must honor a disabled/unpriceable state; preserve metadata and never synthesize economics.",
+        "runtime_acceptance_condition": "zm_film_commission remains represented in metadata but is never priced, ranked, or assigned synthetic economics; reactivation requires new sufficient primary authority.",
+        "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set.",
+        "evidence_note": "Lane C found a mandate, authority, facilitation role, historical identity, or incomplete official surface, but did not establish a complete live computable producer incentive. Absence is not asserted; unsupported economics are disabled."
+      },
+      {
+        "canonical_id": "zw_film_commission",
+        "jurisdiction": "Zimbabwe",
+        "program_or_pathway": "Zimbabwe Film and Broadcasting Authority Production Support",
+        "record_type": "EXISTING_PROGRAM",
+        "lane": "CHATGPT_LANE_C",
+        "final_validation_disposition": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+        "current_cineglobe_state": "UNRESOLVED",
+        "authoritative_corrected_state": "No complete current producer-accessible deterministic incentive rule set is substantiated by the checked primary-authority evidence. Preserve metadata but disable pricing and ranking until sufficient authority exists.",
+        "implementation_action": "DISABLE_UNPRICEABLE",
+        "remediation_layer": "PROGRAM_DATA_AND_CANDIDATE_GATING",
+        "sources": [
+          {
+            "title": "Current official authority materials",
+            "url": "https://www.mhcc.gov.zw/",
+            "pinpoint": "No complete current operating rule set located"
+          }
+        ],
+        "effective_date": "Checked through 2026-08-11",
+        "dependencies": "Candidate generation and ranking must honor a disabled/unpriceable state; preserve metadata and never synthesize economics.",
+        "runtime_acceptance_condition": "zw_film_commission remains represented in metadata but is never priced, ranked, or assigned synthetic economics; reactivation requires new sufficient primary authority.",
+        "optimizer_consequence": "Disable pricing/ranking until the administering authority publishes the complete current rule set.",
+        "evidence_note": "Lane C found a mandate, authority, facilitation role, historical identity, or incomplete official surface, but did not establish a complete live computable producer incentive. Absence is not asserted; unsupported economics are disabled."
+      }
+    ]
+  },
+  "treaty_closure": {
+    "starting": 7,
+    "closed": 7,
+    "remaining": 0,
+    "lane_b": 4,
+    "lane_c": 3,
+    "canonical_ids": [
+      "UK_BILATERAL_AND_CONVENTION_RECONCILIATION",
+      "FRANCE_BILATERAL_LIST_RECONCILIATION",
+      "EUROPEAN_CONVENTION_PARTICIPANTS_AND_VERSIONS",
+      "EURIMAGES_MEMBERSHIP_AND_ELIGIBILITY",
+      "IBERMEDIA_MEMBERSHIP_AND_FRAMEWORK",
+      "AUSTRALIA_PARTNER_LIST_RECONCILIATION",
+      "CANADA_PARTNER_LIST_RECONCILIATION"
+    ],
+    "result": "CLOSED"
+  },
+  "final_true_blockers": [],
+  "final_true_blocker_count": 0,
+  "final_global_validation_gate": "GO_FOR_CONSOLIDATED_REMEDIATION",
+  "merged_distributed_records": [
     {
       "canonical_id": "ar_incaa_incentive",
       "jurisdiction": "Argentina",
@@ -2610,9 +2193,7 @@
       "authoritative_corrected_state": "Standard European rules confirmed via primary authority.",
       "implementation_action": "CORRECT_DATA",
       "remediation_layer": "DATA_ONLY",
-      "sources": [
-        "Canonical pre-distribution remediation input"
-      ],
+      "sources": [],
       "effective_date": "Current",
       "dependencies": "Existing canonical program data model, default-inclusion QPE doctrine, and authoritative territorial predicates.",
       "runtime_acceptance_condition": "tourism_ireland___fáilte_ireland_production_support serves the cited authoritative state and changes no unrelated program output.",
@@ -4660,39 +4241,5 @@
       "optimizer_consequence": "Treat each partner as arrangement-specific; never infer format, contribution percentage or domestic tax-credit eligibility from partner-list membership alone.",
       "evidence_note": null
     }
-  ],
-  "coverage_limitations": {
-    "disposition": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
-    "count": 25,
-    "canonical_ids": [
-      "bh_film_incentive",
-      "bd_film_incentive",
-      "eg_film_incentive",
-      "et_film_commission",
-      "ga_film_incentive",
-      "gh_film_incentive",
-      "id_film_incentive",
-      "kz_film_incentive",
-      "ke_film_incentive",
-      "kw_film_incentive",
-      "mv_film_incentive",
-      "mn_film_commission",
-      "mz_film_incentive",
-      "ng_film_incentive",
-      "om_film_commission",
-      "pk_pfc_rebate",
-      "qa_film_incentive",
-      "sn_film_incentive",
-      "sc_film_incentive",
-      "lk_film_incentive",
-      "ug_film_commission",
-      "uz_film_incentive",
-      "vn_film_incentive",
-      "zm_film_commission",
-      "zw_film_commission"
-    ],
-    "required_behavior": "Retain metadata, exclude from deterministic pricing/ranking, do not assign synthetic economics, and allow later reactivation only after sufficient current primary authority is captured."
-  },
-  "true_blockers": [],
-  "legacy_pre_distribution_note": "The prior ready set contained za_nfvf_rebate once as a correction and once as a merge. The authoritative implementation list resolves that duplicate to one MERGE_PROGRAM item, yielding 52 unique pre-distribution items."
+  ]
 }
