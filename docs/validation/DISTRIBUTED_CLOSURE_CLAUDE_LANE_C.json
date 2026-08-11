@@ -1,0 +1,889 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-11T20:09:14.057756+00:00",
+  "scope": "DISTRIBUTED_CLOSURE_CLAUDE_LANE_C -- final research results for every identity claimed in DISTRIBUTED_CLOSURE_CLAUDE_LANE_C_OWNERSHIP.json.",
+  "lane_existing_start": 55,
+  "lane_missing_start": 0,
+  "lane_treaty_start": 1,
+  "lane_total_start": 56,
+  "lane_existing_closed": 32,
+  "lane_existing_remaining": 23,
+  "lane_missing_closed": 0,
+  "lane_missing_remaining": 0,
+  "lane_treaty_closed": 1,
+  "lane_treaty_remaining": 0,
+  "lane_total_closed": 33,
+  "lane_total_remaining": 23,
+  "final_status_counts": {
+    "AUTHORITY_CLOSED": 25,
+    "GENUINELY_UNRESOLVED": 23,
+    "NO_CURRENT_PRODUCER_INCENTIVE_CONFIRMED": 6,
+    "DUPLICATE": 2
+  },
+  "assertion_check": "33 + 23 = 56 == lane_total_start (56): True",
+  "genuinely_unresolved_identities": [
+    "ao_film_incentive",
+    "bd_film_incentive",
+    "bw_film_commission",
+    "kh_film_incentive",
+    "cm_film_incentive",
+    "et_film_commission",
+    "ga_film_incentive",
+    "gh_film_incentive",
+    "kz_film_incentive",
+    "ke_film_incentive",
+    "mv_film_incentive",
+    "mz_film_incentive",
+    "na_film_commission",
+    "pk_pfc_rebate",
+    "ru_film_incentive",
+    "sn_film_incentive",
+    "sc_film_incentive",
+    "lk_film_incentive",
+    "tz_film_incentive",
+    "ug_film_commission",
+    "vn_film_incentive",
+    "zm_film_commission",
+    "zw_film_commission"
+  ],
+  "bounded_additional_discoveries": [
+    {
+      "type": "BOUNDED_ADDITIONAL_DISCOVERY",
+      "finding": "Qatar's incentive landscape actually comprises TWO distinct, currently-active programs, not one: the Doha Film Institute (DFI) Grants Program (competitive, non-recoupable, biannual -- qa_dfi_fund) and the NEW Qatar Screen Production Incentive (QSPI, launched Nov 2025, administered by a different body, the Qatar Film Committee at Media City Qatar -- qa_film_incentive). If CineGlobe's stored qa_film_incentive record reflects the OLD 30% DFI-administered rate, it is materially stale and superseded by QSPI's 40%+10% structure.",
+      "not_added_to_denominator": true
+    },
+    {
+      "type": "BOUNDED_ADDITIONAL_DISCOVERY",
+      "finding": "Two Lane C identities are DUPLICATES that should MERGE rather than remain separate canonical records: royal_film_commission_tourism_film_support merges into jo_rfc_rebate (Jordan -- no evidence of a separate tourism-film-support instrument distinct from the RFC cash rebate); sg_sfc_production merges into sg_imda_film_fund (Singapore -- the Singapore Film Commission is organizationally part of IMDA, not a separate incentive-granting body).",
+      "not_added_to_denominator": true
+    },
+    {
+      "type": "BOUNDED_ADDITIONAL_DISCOVERY",
+      "finding": "China's cn_film_incentive record, if it currently models a national rebate rate, is INCORRECT -- China has no national cash rebate/tax incentive for foreign productions; only city/regional-level rebates (e.g. Qingdao) and the CFCC official co-production pathway exist nationally.",
+      "not_added_to_denominator": true
+    }
+  ],
+  "results": {
+    "acpfilms_fund": {
+      "canonical_id": "acpfilms_fund",
+      "jurisdiction": "African, Caribbean and Pacific Group",
+      "program_or_pathway": "ACP Films \u2014 EU-ACP Cultural Film Co-production Fund",
+      "starting_issue": "Current competent-authority treaty text/list and administering program rule on co-production eligibility.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "ACP-EU Culture Programme audiovisual co-production support mechanism, financed by the EU's European Development Fund, managed by the ACP Secretariat. Grants allocated to existing co-production funds as additional funding. Applicants must be a consortium of >=2 organizations with equal/majority ACP representation. Grant range EUR 1,037,500-2,075,000, max 80% of total eligible costs. All formats/genres/lengths accepted (short, feature, TV series, web, documentary, VR, animation, video games).",
+      "authority_sources": [
+        "https://www.acp-ue-culture.eu/en/support-mechanisms-for-audiovisual-coproduction/",
+        "https://eeas.europa.eu/headquarters/headquarters-homepage/95058/acp-eu-culture-programme-launches-new-call-proposals-support-acp-audiovisual-co-productions-%E2%82%AC_pl"
+      ],
+      "effective_date": "Current (2026 call cycle active)",
+      "remaining_issue": null,
+      "optimizer_consequence": "STRUCTURE_PATHWAY_ONLY -- a competitive consortium grant, not a per-production deterministic rebate; not directly QPE/NPC-modeled the way a national rebate is.",
+      "issue_type": null
+    },
+    "ao_film_incentive": {
+      "canonical_id": "ao_film_incentive",
+      "jurisdiction": "Angola",
+      "program_or_pathway": "Angola Instituto do Cinema e Audiovisual (ICA) Production Support",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": null,
+      "authority_sources": [],
+      "effective_date": null,
+      "remaining_issue": "No primary-authority (ICA Angola) page or government gazette confirming a formal cash rebate/tax credit rate for foreign productions was located. Angola has bilateral co-production treaty relationships (e.g. with Portugal) but that is distinct from a domestic incentive rate.",
+      "optimizer_consequence": "Cannot confirm or deny a deterministic rate exists; if none exists this should become NO_CURRENT_PRODUCER_INCENTIVE_CONFIRMED once ICA's own site is directly checked.",
+      "issue_type": "DATA_GAP"
+    },
+    "bh_film_incentive": {
+      "canonical_id": "bh_film_incentive",
+      "jurisdiction": "Bahrain",
+      "program_or_pathway": "Bahrain Film Commission Production Support",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "NO_CURRENT_PRODUCER_INCENTIVE_CONFIRMED",
+      "authoritative_rule_set": "No cash rebate, tax credit, or grant program for foreign film production was found for Bahrain in any source, including comparative Gulf-incentive coverage that names Saudi Arabia, UAE/Abu Dhabi, and Qatar specifically but never Bahrain.",
+      "authority_sources": [],
+      "effective_date": null,
+      "remaining_issue": "Absence of evidence is not certainty for a government program that may exist without English-language secondary coverage; a direct check of Bahrain's Ministry of Information Affairs / Bahrain Film Commission's own site was not completed.",
+      "optimizer_consequence": "Should not be priced as a deterministic incentive candidate absent primary confirmation. Low residual risk given comparative Gulf coverage consistently omits Bahrain from every incentive list.",
+      "issue_type": "DATA_GAP"
+    },
+    "bd_film_incentive": {
+      "canonical_id": "bd_film_incentive",
+      "jurisdiction": "Bangladesh",
+      "program_or_pathway": "Bangladesh Film Development Corporation (BFDC) Production Support",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": null,
+      "authority_sources": [],
+      "effective_date": null,
+      "remaining_issue": "No primary BFDC (Bangladesh Film Development Corporation) rule text or rate located.",
+      "optimizer_consequence": "Cannot confirm or deny.",
+      "issue_type": "DATA_GAP"
+    },
+    "bt_film_incentive": {
+      "canonical_id": "bt_film_incentive",
+      "jurisdiction": "Bhutan",
+      "program_or_pathway": "Bhutan Film Commission / Tourism Council Production Facilitation",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "NO_CURRENT_PRODUCER_INCENTIVE_CONFIRMED",
+      "authoritative_rule_set": "Bhutan's film/tourism framework is permit-and-facilitation oriented (Tourism Council of Bhutan); no cash rebate or tax credit for foreign productions was found in any source.",
+      "authority_sources": [],
+      "effective_date": null,
+      "remaining_issue": "A direct check of the Tourism Council of Bhutan's own site was not completed.",
+      "optimizer_consequence": "Low-volume jurisdiction; low risk if this is later found incomplete.",
+      "issue_type": "DATA_GAP"
+    },
+    "bw_film_commission": {
+      "canonical_id": "bw_film_commission",
+      "jurisdiction": "Botswana",
+      "program_or_pathway": "Botswana Film Commission Production Support",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": null,
+      "authority_sources": [],
+      "effective_date": null,
+      "remaining_issue": "Botswana Film Commission's incentive structure could not be confirmed; discussed only as a competitor-destination reference in Namibia coverage.",
+      "optimizer_consequence": "Cannot confirm or deny.",
+      "issue_type": "DATA_GAP"
+    },
+    "kh_film_incentive": {
+      "canonical_id": "kh_film_incentive",
+      "jurisdiction": "Cambodia",
+      "program_or_pathway": "Cambodia Ministry of Culture Film Production Facilitation",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Cambodia Film Commission (est. 2009, under the Ministry of Culture and Fine Arts) confirmed as a real facilitation body offering import-duty exemption on production equipment; no cash rebate percentage located.",
+      "authority_sources": [
+        "http://www.afcnet.org/NcPageLink.do?link=afcnet/mem/khm/khm01&_menuNo=25"
+      ],
+      "effective_date": null,
+      "remaining_issue": "Whether Cambodia offers ANY cash-back incentive beyond equipment duty exemption (which is not a QPE-style rebate) is unconfirmed.",
+      "optimizer_consequence": "If only a duty exemption exists (not a % rebate), this is NO_CURRENT_PRODUCER_INCENTIVE_CONFIRMED for optimizer purposes; not yet fully verified either way.",
+      "issue_type": "DATA_GAP"
+    },
+    "cm_film_incentive": {
+      "canonical_id": "cm_film_incentive",
+      "jurisdiction": "Cameroon",
+      "program_or_pathway": "Cameroon Centre National de la Cin\u00e9matographie Film Support",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": null,
+      "authority_sources": [],
+      "effective_date": null,
+      "remaining_issue": "No primary Cameroon CNC (Centre National de la Cinematographie) rate or rule text located.",
+      "optimizer_consequence": "Cannot confirm or deny.",
+      "issue_type": "DATA_GAP"
+    },
+    "cn_film_incentive": {
+      "canonical_id": "cn_film_incentive",
+      "jurisdiction": "China",
+      "program_or_pathway": "China Film Administration Domestic Co-production Support",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "China has NO national cash rebate or tax incentive for foreign productions. International projects enter exclusively via the official co-production system administered by the China Film Co-Production Corporation (CFCC), or via location-only shoots under CFCC-facilitated permits. Sub-national incentives exist only at city/regional level (e.g. Qingdao: 40% cash rebate + 10% business-tax rebate, requiring >=50% of qualified spend at Dalian Wanda Studios, project cap RMB 120M) and are NOT a national program.",
+      "authority_sources": [
+        "https://mbrellafilms.com/incentives/china/"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": null,
+      "optimizer_consequence": "cn_film_incentive as a NATIONAL existing-program record should be corrected to reflect NO national rebate exists; only the co-production pathway and isolated sub-national (Qingdao-type) rebates are real. If CineGlobe's stored record represents a national rate, it is INCORRECT and should be superseded by 'no national program; co-production pathway + regional exceptions only.'",
+      "issue_type": null
+    },
+    "eg_film_incentive": {
+      "canonical_id": "eg_film_incentive",
+      "jurisdiction": "Egypt",
+      "program_or_pathway": "Egypt Film Commission Production Support",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Egypt Film Commission (EFC), a subsidiary of Egyptian Media Production City (EMPC), offers a rebate of up to 30% on qualifying spend when productions shoot within EMPC premises and use EMPC facilities/equipment, plus additional relief of up to 20% on certain off-site expenses. Paid as a cashback against audited spend (not a tax credit). No automatic nationwide nation-wide nationwide tax rebate exists outside this EMPC-anchored structure. EFC now holds sole regulatory authority over all foreign production activity via a Single Digital Window (SDW) online platform (Egyptian Cabinet decision, late 2025).",
+      "authority_sources": [
+        "https://egyptfilming.com/",
+        "https://egyptianstreets.com/2025/11/23/egypt-grants-film-commission-authority-for-foreign-productions/"
+      ],
+      "effective_date": "Current (SDW authority effective late 2025)",
+      "remaining_issue": null,
+      "optimizer_consequence": "Rate/territoriality confirmed; EMPC-premises condition is a real, material qualification gate that should be encoded (rebate materially lower/absent off-premises beyond the 20% off-site relief).",
+      "issue_type": null
+    },
+    "et_film_commission": {
+      "canonical_id": "et_film_commission",
+      "jurisdiction": "Ethiopia",
+      "program_or_pathway": "Ethiopian Film Commission Production Support",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": null,
+      "authority_sources": [],
+      "effective_date": null,
+      "remaining_issue": "No primary Ethiopian Film Commission rate or rule text located in any source consulted.",
+      "optimizer_consequence": "Cannot confirm or deny.",
+      "issue_type": "DATA_GAP"
+    },
+    "ga_film_incentive": {
+      "canonical_id": "ga_film_incentive",
+      "jurisdiction": "Gabon",
+      "program_or_pathway": "Gabon Ministry of Culture Film Commission Support",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": null,
+      "authority_sources": [],
+      "effective_date": null,
+      "remaining_issue": "No primary Gabon Ministry of Culture film-incentive rate or rule text located.",
+      "optimizer_consequence": "Cannot confirm or deny.",
+      "issue_type": "DATA_GAP"
+    },
+    "ge_film_incentive": {
+      "canonical_id": "ge_film_incentive",
+      "jurisdiction": "Georgia",
+      "program_or_pathway": "Georgian National Film Centre Production Incentive",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Georgia (country) offers a 20% base film tax credit, up to 30% with uplifts, structured as a transferable tax credit. Minimum spend $500,000. No annual program cap.",
+      "authority_sources": [
+        "https://georgia.org/industries/film/incentives"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "The specific uplift conditions (what qualifies for the 20%->30% increase) were not itemized in the source consulted -- worth a follow-up primary-source pull of the Georgian National Film Centre's own guidelines for exact uplift criteria.",
+      "optimizer_consequence": "Base rate/minimum spend usable now; uplift CONDITIONS remain a minor open item (does not block modeling the guaranteed 20% floor).",
+      "issue_type": "DATA_GAP"
+    },
+    "gh_film_incentive": {
+      "canonical_id": "gh_film_incentive",
+      "jurisdiction": "Ghana",
+      "program_or_pathway": "Ghana National Film Authority Production Support",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "A 20% tax rebate for film productions plus import-duty/port-tax exemptions was ANNOUNCED by Ghana's government in February 2024 (State of the Nation address).",
+      "authority_sources": [
+        "https://www.screendaily.com/news/ghana-outlines-20-tax-rebate-for-film-productions/5191101.article"
+      ],
+      "effective_date": "Announced February 2024; NOT confirmed as formally implemented as of 2026 per later sources, which state Ghana does not currently operate a formal national cash rebate programme comparable to European or island incentive models.",
+      "remaining_issue": "Whether the announced 20% rebate was ever formally enacted into law/regulation, or remains an unimplemented announcement, is genuinely unresolved from the sources available.",
+      "optimizer_consequence": "Should NOT be priced as a live 20% deterministic rebate given credible later sourcing that it is not operative; closer to NO_CURRENT_PRODUCER_INCENTIVE_CONFIRMED than AUTHORITY_CLOSED, but flagged unresolved rather than forced given the direct conflict between the 2024 announcement and later non-implementation reporting.",
+      "issue_type": "AUTHORITY_CONFLICT"
+    },
+    "hk_film_incentive": {
+      "canonical_id": "hk_film_incentive",
+      "jurisdiction": "Hong Kong SAR",
+      "program_or_pathway": "Create Hong Kong (CreateHK) Production Support",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Create Hong Kong (CreateHK) was superseded by the Cultural and Creative Industries Development Agency (CCIDA) in June 2024, under the Culture, Sports and Tourism Bureau. CCIDA's current production-support activity (2026) consists of targeted scheme sponsorships (e.g. the Future Animation AI-Assisted Animation Production Support Scheme, up to HK$850,000 per company; the Asian Short Film Fund, up to US$35,000 per project) rather than a general percentage-based cash rebate for feature productions. The general feature-film cash incentive is administered separately by the Hong Kong Film Development Fund (see hk_film_dev_fund), not CreateHK/CCIDA.",
+      "authority_sources": [
+        "https://www.fdc.gov.hk/",
+        "https://industry.hkiff.org.hk/asff"
+      ],
+      "effective_date": "Current (agency renamed June 2024)",
+      "remaining_issue": null,
+      "optimizer_consequence": "SUPERSEDED/CORRECT: CineGlobe's 'Create Hong Kong (CreateHK) Production Support' record should be renamed to CCIDA and re-scoped to targeted/scheme-based support, NOT confused with the general percentage rebate that belongs to hk_film_dev_fund.",
+      "issue_type": null
+    },
+    "hk_film_dev_fund": {
+      "canonical_id": "hk_film_dev_fund",
+      "jurisdiction": "Hong Kong SAR",
+      "program_or_pathway": "Hong Kong Film Development Fund (FDF)",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Hong Kong Film Development Fund's Film Production Financing Scheme 2.0 (launched 15 January 2025, not time-limited) provides maximum financing of 40% of the approved production budget, capped at HK$10,000,000 (~US$1.28M), for productions with a budget not exceeding HK$25,000,000. 2026 enhancement: government funding disbursement upon commencement of principal photography increased from 50% to 70% of the approved amount.",
+      "authority_sources": [
+        "https://www.info.gov.hk/gia/general/202501/14/P2025011400326.htm",
+        "https://www.fdc.gov.hk/"
+      ],
+      "effective_date": "15 January 2025 (Scheme 2.0); disbursement-timing enhancement effective 2026",
+      "remaining_issue": null,
+      "optimizer_consequence": "Rate/cap/threshold confirmed and usable.",
+      "issue_type": null
+    },
+    "ibermedia_programme": {
+      "canonical_id": "ibermedia_programme",
+      "jurisdiction": "Ibero-American Region (SEGIB)",
+      "program_or_pathway": "IBERMEDIA Programme for Ibero-American Co-productions",
+      "starting_issue": "Current competent-authority treaty text/list and administering program rule on co-production eligibility.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Programa IBERMEDIA, created November 1997 (Margarita, Venezuela Ibero-American Summit), operates under the Conference of Audiovisual and Cinematographic Authorities of Ibero-America (CAACI), coordinated via SEGIB. Currently ratified/financed by 18 member/observer states: Argentina, Bolivia, Brazil, Colombia, Costa Rica, Cuba, Chile, Ecuador, Spain, Guatemala, Mexico, Panama, Peru, Portugal, Puerto Rico, Dominican Republic, Uruguay, Venezuela. Funded by member-state contributions plus loan repayments; supports co-production, distribution, exhibition, training and development via open annual calls to independent producers from member countries.",
+      "authority_sources": [
+        "https://www.programaibermedia.com/el-programa/",
+        "https://segib.org/es/pipa-bueno/programa-de-desarrollo-en-apoyo-a-la-construccion-del-espacio-audiovisual-iberoamericano/"
+      ],
+      "effective_date": "Current (2026 call cycle published on programaibermedia.com)",
+      "remaining_issue": "Per-call contribution minimums/maximums and recoupment terms for the specific 2026 co-production call were not itemized (the PDF bases document exists but was not opened line-by-line).",
+      "optimizer_consequence": "STRUCTURE_PATHWAY_ONLY -- membership/eligibility now confirmed for structure/candidate-generation purposes (which countries can route through Ibermedia); exact per-call financial terms remain a minor open item for a future pass, not blocking basic pathway modeling.",
+      "issue_type": null
+    },
+    "in_nfdc_coproduction": {
+      "canonical_id": "in_nfdc_coproduction",
+      "jurisdiction": "India",
+      "program_or_pathway": "NFDC International Co-production Development Fund",
+      "starting_issue": "Current competent-authority treaty text/list and administering program rule on co-production eligibility.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "India's Film Facilitation Office (FFO, under NFDC) administers a reimbursement incentive for OFFICIAL co-productions (bilateral treaty required) of up to 30% of Qualifying Expenditure in India, capped at INR 2 crore (~$240,000). Applies to co-productions granted official status on/after 1 April 2022. Incentive granted on recommendation of a Special Incentive Evaluation Committee. Separately, NFDC holds bilateral co-production treaties with 15+ countries enabling split-budget productions.",
+      "authority_sources": [
+        "https://static.investindia.gov.in/s3fs-public/2022-07/final-Incentives-Guidelines-for-Foreign-film-shooting-sent-by-NFDC(1).pdf",
+        "https://www.pib.gov.in/PressReleasePage.aspx?PRID=1978313"
+      ],
+      "effective_date": "1 April 2022 (official-co-production eligibility date)",
+      "remaining_issue": null,
+      "optimizer_consequence": "This is a TREATY-CONDITIONAL incentive (requires official co-production status, not available to a purely foreign production without an Indian treaty partner) -- territoriality/eligibility gate should be encoded as treaty-dependent, not a blanket national rebate.",
+      "issue_type": null
+    },
+    "id_film_incentive": {
+      "canonical_id": "id_film_incentive",
+      "jurisdiction": "Indonesia",
+      "program_or_pathway": "Indonesian Film Commission Production Facilitation",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "NO_CURRENT_PRODUCER_INCENTIVE_CONFIRMED",
+      "authoritative_rule_set": "Indonesia offers NO national incentive for foreign productions as of 2026. A Jakarta-specific (city-level, not national) tax rebate of up to 50% on Jakarta-incurred costs for QUALIFYING NATIONAL (not foreign) film productions was set to launch ~26 June 2026. A 1:1 matching grant from the National Cultural Endowment Fund is open to international co-production projects (a grant/matching-fund mechanism, not a rebate). Foreign shoots otherwise enter via Ministry of Culture permits only, with five city-level film commissions (Siak, Bandung, Yogyakarta, Bojonegoro, Banyuwangi) providing facilitation only.",
+      "authority_sources": [
+        "https://variety.com/2026/film/news/jakarta-tax-rebate-film-incentives-netflix-apos-2026-1236784812/"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": null,
+      "optimizer_consequence": "No national deterministic rebate for foreign productions; only the co-production matching-grant mechanism and city-level (Jakarta, national-productions-only) rebate exist. Should NOT be priced as a national foreign-production rebate.",
+      "issue_type": null
+    },
+    "il_film_incentive": {
+      "canonical_id": "il_film_incentive",
+      "jurisdiction": "Israel",
+      "program_or_pathway": "Israel Film Fund / Maslool Incentive",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Israel's Fund for the Promotion of Foreign Productions (launched 2022) offers a rebate of up to 30% (capped at approximately NIS 16.6M / US$4.9M) on qualifying local spend, PLUS up to 10% for post-production and animation work. Competitive, round-based grant scheme with a fixed budget (not an open-ended statutory entitlement); applications made through an Israeli production company and assessed by an inter-ministerial committee.",
+      "authority_sources": [
+        "https://www.timesofisrael.com/seeking-to-lure-makers-of-tv-and-film-israel-offers-30-rebate-to-sweeten-the-deal/",
+        "https://israel-trade.net/filmisrael/funding/"
+      ],
+      "effective_date": "Program launched 2022; no confirmed sunset located",
+      "remaining_issue": "CineGlobe's stored program name references 'Maslool' specifically -- this term was not corroborated in any source as the formal name of this fund; may be an internal/informal designation requiring verification against the Ministry of Culture and Sport's own Hebrew-language guidelines.",
+      "optimizer_consequence": "Rate/cap usable; note the fund is COMPETITIVE/ROUND-BASED with a fixed budget, not a guaranteed entitlement -- this should be modeled as CONDITIONAL/discretionary, not an automatic rate.",
+      "issue_type": "DATA_GAP"
+    },
+    "jo_rfc_rebate": {
+      "canonical_id": "jo_rfc_rebate",
+      "jurisdiction": "Jordan",
+      "program_or_pathway": "Royal Film Commission Jordan \u2014 Production Rebate",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Jordan's Royal Film Commission (RFC) cash-rebate program returns 25%-45% of qualifying LOCAL spend on a points-based system (project size, Jordanian cultural content, artistic/cultural/economic value); productions exceeding $10M with strong Jordanian cultural integration qualify for the maximum 45%. Minimum spend $250,000; capped at $5.25M per project (higher caps case-by-case). Up to 15% of post-production expenses for RFC-territory-performed services also eligible. Automatic exemption from Jordan's 16% VAT and 10% withholding tax adds effective total savings up to 56% of eligible spend. Local productions separately raised from 10% to 30% for spend >$500,000.",
+      "authority_sources": [
+        "https://www.film.jo/cash-rebate",
+        "https://deadline.com/2025/05/jordan-bolsters-film-incentives-cash-rebate-45-percent-1236397012/"
+      ],
+      "effective_date": "Rate increase to 45% announced May 2025, current through 2026",
+      "remaining_issue": null,
+      "optimizer_consequence": "Rate is BAND-CEILING/discretionary (points-based, 25%-45%), not flat -- should be modeled as a floor(25%)/ceiling(45%) band with a discretionary uplift condition, matching the pattern already implemented for the MU/MT/GB pilot programs.",
+      "issue_type": null
+    },
+    "royal_film_commission_tourism_film_support": {
+      "canonical_id": "royal_film_commission_tourism_film_support",
+      "jurisdiction": "Jordan",
+      "program_or_pathway": "Royal Film Commission Tourism Film Support",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "DUPLICATE",
+      "authoritative_rule_set": "No distinct 'Tourism Film Support' program separate from the RFC cash-rebate scheme (jo_rfc_rebate) was found in any primary or secondary source; all located Jordan RFC coverage describes ONE unified cash-rebate/incentive structure administered by the Royal Film Commission, with tourism promotion as a stated POLICY GOAL of that same rebate, not a separate funding instrument.",
+      "authority_sources": [
+        "https://www.film.jo/cash-rebate"
+      ],
+      "effective_date": null,
+      "remaining_issue": null,
+      "optimizer_consequence": "Should MERGE into jo_rfc_rebate as a single Jordan program record, not remain a separate canonical_id.",
+      "issue_type": null
+    },
+    "kz_film_incentive": {
+      "canonical_id": "kz_film_incentive",
+      "jurisdiction": "Kazakhstan",
+      "program_or_pathway": "Kazakhfilm Studios Production Facilitation",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Conflicting evidence: one source states a 30% tax rebate decided case-by-case; another states there are no specific cash incentives for filming in Kazakhstan at the moment. Kazakhfilm Studios (state-owned) facilitates productions but a codified national rebate rate was not confirmed by primary authority.",
+      "authority_sources": [],
+      "effective_date": null,
+      "remaining_issue": "Direct conflict between secondary sources on whether ANY formal incentive exists; no primary Kazakhfilm or Ministry of Culture rule text located to resolve it.",
+      "optimizer_consequence": "Should not be priced at either claimed rate until the conflict is resolved against Kazakhfilm's own primary guidance.",
+      "issue_type": "AUTHORITY_CONFLICT"
+    },
+    "ke_film_incentive": {
+      "canonical_id": "ke_film_incentive",
+      "jurisdiction": "Kenya",
+      "program_or_pathway": "Kenya Film Commission (KFC) Production Incentive",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Kenyan government gave INITIAL APPROVAL for a 30% tax rebate on film productions plus import-duty removal, per 2020-era reporting. No 2026 confirmation of formal enactment/current operative rate was located.",
+      "authority_sources": [],
+      "effective_date": "2020 initial approval; current operative status unconfirmed",
+      "remaining_issue": "Whether the 2020 initial-approval 30% rebate was ever formally enacted and remains current, lapsed, or was superseded is unresolved from available sources.",
+      "optimizer_consequence": "Should not be priced as a live 30% rebate without confirming current enactment status directly against the Kenya Film Commission's own current guidelines.",
+      "issue_type": "AUTHORITY_CONFLICT"
+    },
+    "kw_film_incentive": {
+      "canonical_id": "kw_film_incentive",
+      "jurisdiction": "Kuwait",
+      "program_or_pathway": "Kuwait Film Committee Production Support",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "NO_CURRENT_PRODUCER_INCENTIVE_CONFIRMED",
+      "authoritative_rule_set": "No cash rebate, tax credit, or grant program for foreign film production was found for Kuwait in any source, including comparative Gulf-incentive coverage that names Saudi Arabia, UAE/Abu Dhabi, and Qatar specifically but never Kuwait.",
+      "authority_sources": [],
+      "effective_date": null,
+      "remaining_issue": "A direct check of Kuwait's own film-committee (National Council for Culture, Arts and Letters) site was not completed.",
+      "optimizer_consequence": "Low risk; consistently absent from every comparative Gulf incentive list consulted.",
+      "issue_type": "DATA_GAP"
+    },
+    "my_film_incentive": {
+      "canonical_id": "my_film_incentive",
+      "jurisdiction": "Malaysia",
+      "program_or_pathway": "FINAS Malaysia Film Rebate",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Malaysia's Film in Malaysia Incentive (FIMI), administered by FINAS (National Film Development Corporation), offers a 30% cash rebate on qualifying Malaysian production expenditure, plus an additional 5% subject to a cultural test (total up to 35%). Minimum spend for an international feature-film production company: RM5,000,000 (including post-production if applicable). Program renewed for a further five years with a RM300 million (~US$76M) budget, announced at Filmart (Hong Kong) March 2026.",
+      "authority_sources": [
+        "https://www.hollywoodreporter.com/movies/movie-news/malaysia-film-rebate-filmart-2026-1236535974/",
+        "http://filminmalaysia.com/incentives/incentives-overview/"
+      ],
+      "effective_date": "Renewed March 2026 for a further 5 years",
+      "remaining_issue": null,
+      "optimizer_consequence": "Rate/cultural-test uplift/minimum spend confirmed and usable.",
+      "issue_type": null
+    },
+    "mv_film_incentive": {
+      "canonical_id": "mv_film_incentive",
+      "jurisdiction": "Maldives",
+      "program_or_pathway": "Maldives Marketing and PR Corporation (MMPRC) Film Facilitation",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": null,
+      "authority_sources": [],
+      "effective_date": null,
+      "remaining_issue": "Maldives Marketing and PR Corporation (MMPRC)'s specific film-facilitation/incentive rate could not be confirmed; only general production-cost/tax-rebate commentary was found, not a primary MMPRC rule.",
+      "optimizer_consequence": "Cannot confirm or deny.",
+      "issue_type": "DATA_GAP"
+    },
+    "mn_film_commission": {
+      "canonical_id": "mn_film_commission",
+      "jurisdiction": "Mongolia",
+      "program_or_pathway": "Mongolian Film Commission Production Support",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Mongolia's National Film Commission (Mongolian National Film Council) offers a cash rebate up to 45% total: 30% base location incentive + 10% cultural incentive + 5% foreign-talent reimbursement. Minimum spend $500,000. No per-project cap; an initial government-allocated pool of $25,000,000. Timeline of ~2 years from application to final payout.",
+      "authority_sources": [
+        "https://www.hollywoodreporter.com/movies/movie-news/mongolia-45-percent-film-television-production-incentive-1235006304/",
+        "https://www.castandcrew.com/wp-content/uploads/2022/05/MONGOL1.pdf"
+      ],
+      "effective_date": "Program confirmed operational (originally announced 2021-2022)",
+      "remaining_issue": null,
+      "optimizer_consequence": "Rate structure (30%+10%+5%) and minimum spend confirmed and usable.",
+      "issue_type": null
+    },
+    "mz_film_incentive": {
+      "canonical_id": "mz_film_incentive",
+      "jurisdiction": "Mozambique",
+      "program_or_pathway": "Mozambique Instituto do Cinema Film Support",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Mozambique has a bilateral co-production treaty relationship with Portugal (confirmed), but a domestic cash-rebate/incentive rate was not located in any source.",
+      "authority_sources": [],
+      "effective_date": null,
+      "remaining_issue": "Whether Mozambique's Instituto do Cinema offers any deterministic rebate beyond treaty co-production access is unconfirmed.",
+      "optimizer_consequence": "Cannot confirm or deny.",
+      "issue_type": "DATA_GAP"
+    },
+    "na_film_commission": {
+      "canonical_id": "na_film_commission",
+      "jurisdiction": "Namibia",
+      "program_or_pathway": "Namibia Film Commission Production Incentive",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Namibia Film Commission (statutory body, Act No. 6 of 2000) confirmed real and active; was reported to be developing new tax-rebate incentives to compete with Botswana/South Africa, but a current confirmed rate was not located.",
+      "authority_sources": [
+        "https://nfc.na/",
+        "https://economist.com.na/8480/headlines/film-commission-tax-rebates-to-lure-foreign-investment/"
+      ],
+      "effective_date": null,
+      "remaining_issue": "Whether the reported tax-rebate development has been formally enacted with a specific rate is unresolved.",
+      "optimizer_consequence": "Should not be priced at any specific rate until nfc.na's own current guidelines are checked directly.",
+      "issue_type": "DATA_GAP"
+    },
+    "ng_film_incentive": {
+      "canonical_id": "ng_film_incentive",
+      "jurisdiction": "Nigeria",
+      "program_or_pathway": "Nigeria NFC / Creative Economy Incentive",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
+      "final_status": "NO_CURRENT_PRODUCER_INCENTIVE_CONFIRMED",
+      "authoritative_rule_set": "Nigeria's Federal Ministry of Arts, Culture and Creative Economy (FMACCE) has ANNOUNCED a production incentive scheme (targeting up to 30% rebates on local expenses) and co-production treaties with Brazil and India for 2026, alongside a Creative Economy Development Fund (grants/marketing support for LOCAL productions). Multiple sources explicitly confirm these are announced but NOT YET legislated/operational as of mid-2026 -- 'nothing operational is confirmed.'",
+      "authority_sources": [
+        "https://businessday.ng/news/legal-business/article/bridging-two-screens-the-2026-producers-guide-to-uk-nigeria-film-co-productions-finance-intellectual-property-and-risk/"
+      ],
+      "effective_date": "Announced for 2026, not yet operational per sources",
+      "remaining_issue": null,
+      "optimizer_consequence": "Should NOT be priced as a live deterministic incentive -- explicitly not-yet-operational per multiple corroborating sources, a cleaner call than Ghana's (where sources conflicted) or Kenya's (where enactment status was ambiguous).",
+      "issue_type": null
+    },
+    "om_film_commission": {
+      "canonical_id": "om_film_commission",
+      "jurisdiction": "Oman",
+      "program_or_pathway": "Oman Film Commission Production Support",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "NO_CURRENT_PRODUCER_INCENTIVE_CONFIRMED",
+      "authoritative_rule_set": "No cash rebate, tax credit, or grant program for foreign film production was found for Oman in any source, including comparative Gulf-incentive coverage that names Saudi Arabia, UAE/Abu Dhabi, and Qatar specifically but never Oman.",
+      "authority_sources": [],
+      "effective_date": null,
+      "remaining_issue": "A direct check of the Oman Film Commission's own site was not completed.",
+      "optimizer_consequence": "Low risk; consistently absent from every comparative Gulf incentive list consulted.",
+      "issue_type": "DATA_GAP"
+    },
+    "pk_pfc_rebate": {
+      "canonical_id": "pk_pfc_rebate",
+      "jurisdiction": "Pakistan",
+      "program_or_pathway": "Pakistan Film Commission Cash Rebate",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Pakistan's Film Policy 2018 (Ministry of Information, Broadcasting, National History & Literary Heritage) established: 10-year customs-duty/tariff exemption on imported film-production equipment (Finance Bill 2018 amendment to Customs Act 1969); a Film and Drama Finance Fund (FDFF) seeded with PKR 100 million (ECC-approved 15 Nov 2022) providing GRANTS (not a % rebate) to filmmakers; and a requirement that joint film/drama projects shoot 70% of the film in Pakistan to access these benefits.",
+      "authority_sources": [
+        "https://www.moib.gov.pk/CinemaDrama/incentives-for-film-industry.html",
+        "https://tribune.com.pk/story/2360937/govt-sets-up-rs1bn-binding-film-finance-fund-unveils-tax-breaks-for-film-industry"
+      ],
+      "effective_date": "Film Policy 2018; FDFF seeded November 2022",
+      "remaining_issue": "No PERCENTAGE cash-rebate rate was located -- Pakistan's incentives appear to be duty exemptions + a grant fund, not a QPE-style rebate. CineGlobe's stored program name 'Pakistan Film Commission Cash Rebate' implies a rebate rate that these primary-adjacent sources do not confirm exists in that form.",
+      "optimizer_consequence": "Likely a CORRECTION (not a rate confirmation): the program should probably be re-modeled as duty exemption + discretionary grant fund, not a percentage rebate -- but this reclassification itself needs one more direct check of moib.gov.pk before closing.",
+      "issue_type": "AUTHORITY_CONFLICT"
+    },
+    "ph_film_incentive": {
+      "canonical_id": "ph_film_incentive",
+      "jurisdiction": "Philippines",
+      "program_or_pathway": "Film Development Council of the Philippines (FDCP) Incentive",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Philippines' Film Development Council (FDCP), via its Film Philippines Office (FPO), operates THREE distinct programs: (1) Film Location Incentive Program (FLIP) -- 20% cash rebate up to PHP25,000,000 (~$450,000) for international projects engaging a Filipino company for line production/animation/post-production, with a 5% cultural bonus raising the total to PHP30,000,000 (~$540,000); (2) International Co-Production Fund (ICOF) -- up to PHP10,000,000 (~$180,000) for projects co-produced with the Philippines; (3) Film Location Engagement Desk (FLEX) -- facilitation only (permits/locations/logistics), not a monetary incentive.",
+      "authority_sources": [
+        "https://fdcp.ph/programs/film-incentives/film-location-incentive-program",
+        "https://www.fdcp.ph/updates/fpi2025-cycle1Call"
+      ],
+      "effective_date": "Current (2025 cycle 1 confirmed active, ongoing into 2026)",
+      "remaining_issue": null,
+      "optimizer_consequence": "Rate/cap/cultural-uplift confirmed and usable; FLIP and ICOF are distinct programs and should be modeled as two separate segments/pathways, not merged.",
+      "issue_type": null
+    },
+    "qa_dfi_fund": {
+      "canonical_id": "qa_dfi_fund",
+      "jurisdiction": "Qatar",
+      "program_or_pathway": "Doha Film Institute \u2014 Grants for Filmmakers",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Doha Film Institute (DFI) Grants Program is a biannual (Spring/Autumn) NON-RECOUPABLE grant program for development/production/post-production, supporting first- and second-time filmmakers worldwide and established MENA directors in post-production. Spring 2026 cycle: 48 projects funded across 39 countries (feature narratives, documentaries, shorts, TV/web series, experimental). This is a COMPETITIVE GRANT fund, administratively and financially DISTINCT from the Qatar Screen Production Incentive (QSPI) cash rebate -- see qa_film_incentive.",
+      "authority_sources": [
+        "https://www.dohafilm.com/en/press/press-releases/doha-film-institute-backs-48-bold-new-voices-2026-spring-grants-cycle"
+      ],
+      "effective_date": "Current (Spring 2026 cycle confirmed)",
+      "remaining_issue": null,
+      "optimizer_consequence": "STRUCTURE_PATHWAY_ONLY / FUND_GRANT_CONDITIONAL -- competitive, non-recoupable, not a deterministic QPE-style rebate; should not be priced as guaranteed incentive value.",
+      "issue_type": null
+    },
+    "qa_film_incentive": {
+      "canonical_id": "qa_film_incentive",
+      "jurisdiction": "Qatar",
+      "program_or_pathway": "Qatar Film Commission Production Incentive",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "SUPERSEDES the prior 30% Doha Film Institute-administered rebate. The Qatar Screen Production Incentive (QSPI), launched November 2025 (opening for applications Q2 2026) and administered by Qatar's Film Committee at Media City Qatar (a body distinct from DFI), offers up to 50% cash rebate on qualifying Qatari production expenditure: 40% base rebate + up to 10% uplift for hiring Qatari talent, local training investment, promoting Qatari culture, and other development criteria. Notably allows up to 25% of a project's total qualifying expenditure incurred in a SELECTED NEIGHBORING ARAB COUNTRY to also be rebated under the same programme.",
+      "authority_sources": [
+        "https://www.dohafilm.com/en/press/press-releases/qatar-launches-qatar-screen-production-incentive-qspi-programme-one-worlds",
+        "https://www.screendaily.com/news/qatar-launches-50-cash-rebate-programme-to-entice-international-productions/5211200.article"
+      ],
+      "effective_date": "Launched November 2025; applications opening Q2 2026",
+      "remaining_issue": null,
+      "optimizer_consequence": "MATERIAL CORRECTION: if CineGlobe's stored record reflects the old 30% DFI-administered rate, it is STALE and must be updated to the new 40%+10% QSPI structure administered by a different body (Qatar Film Committee, not DFI). The cross-border 25% neighboring-country provision is a genuinely unusual territoriality feature worth flagging for careful modeling (not a standard single-jurisdiction QPE rule).",
+      "issue_type": null
+    },
+    "ru_film_incentive": {
+      "canonical_id": "ru_film_incentive",
+      "jurisdiction": "Russia",
+      "program_or_pathway": "Russian Cinema Fund (Fond Kino) Production Support",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Russian Cinema Fund (Fond Kino) confirmed as the real administering body for state production support, but a specific foreign-production rebate rate/rule was not located in the sources consulted this pass.",
+      "authority_sources": [],
+      "effective_date": null,
+      "remaining_issue": "Fond Kino's support appears primarily domestic-industry-facing (Russian film support), not a foreign-production rebate scheme; whether any foreign-production-facing rate exists needs direct confirmation from kinofond.ru or Ministry of Culture guidance.",
+      "optimizer_consequence": "Should not be priced without confirming a foreign-production-facing rate specifically exists (as opposed to purely domestic industry support).",
+      "issue_type": "DATA_GAP"
+    },
+    "rw_film_incentive": {
+      "canonical_id": "rw_film_incentive",
+      "jurisdiction": "Rwanda",
+      "program_or_pathway": "Rwanda Development Board Film Production Support",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Rwanda's Creative Grants Initiative, led by the Rwanda Film Office (RFO, est. 2019) at the Rwanda Development Board (RDB), is a co-financed (RDB + Organisation Internationale de la Francophonie, with ACP-EU Culture Programme support) GRANT program, not a percentage rebate. 2024 cycle: 4 projects funded, total EUR 360,000. RFO is also developing a dedicated Film Fund (not yet operational per sources).",
+      "authority_sources": [
+        "https://rdb.rw/rwandas-film-industry-advances-with-support-for-four-film-projects-under-the-creative-grants-initiative2024/"
+      ],
+      "effective_date": "2024 cycle confirmed; ongoing status into 2026 not independently reconfirmed",
+      "remaining_issue": null,
+      "optimizer_consequence": "FUND_GRANT_CONDITIONAL -- small, competitive, co-financed grant, not a deterministic QPE-style incentive; CineGlobe's stored program (if modeled as a % rebate) should be corrected to a grant/fund structure.",
+      "issue_type": null
+    },
+    "sa_sfc_rebate": {
+      "canonical_id": "sa_sfc_rebate",
+      "jurisdiction": "Saudi Arabia",
+      "program_or_pathway": "Saudi Film Commission (SFC) \u2014 Production Rebate",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Saudi Film Commission's cash rebate was RAISED to up to 60% of eligible expenditure (from a prior 40%), announced at Cannes Film Festival May 2026. Minimum qualifying spend: SAR 750,000 (~$200,000) for features; SAR 187,000 (~$50,000) for documentaries/animation. Minimum 5 filming days with the main production unit. Requires a registered/licensed Saudi production company OR an official co-production agreement with a local licensed partner, plus a No-Objection Certificate (NOC) for filming and proof of financial backing. Government/state-owned entities excluded. Covers production and post-production expenses only (pre-production excluded). Administered by the Saudi Film Commission.",
+      "authority_sources": [
+        "https://film.sa/incentive-programs/",
+        "https://variety.com/2026/film/global/saudi-arabia-film-and-tv-production-rebate-60-1236749844/"
+      ],
+      "effective_date": "Increase to 60% announced May 2026",
+      "remaining_issue": null,
+      "optimizer_consequence": "Rate/minimum-spend/local-entity/QPE-scope (production+post only, pre-production excluded) all confirmed and directly usable.",
+      "issue_type": null
+    },
+    "sn_film_incentive": {
+      "canonical_id": "sn_film_incentive",
+      "jurisdiction": "Senegal",
+      "program_or_pathway": "Senegal Bureau d'Accueil des Tournages Film Support",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Senegal's Bureau d'Accueil des Tournages (BAT) confirmed as the facilitation/permitting body; PWC's Senegal corporate tax-credits summary was located but did not confirm a specific film-production cash rebate rate in the results reviewed.",
+      "authority_sources": [
+        "https://taxsummaries.pwc.com/senegal/corporate/tax-credits-and-incentives"
+      ],
+      "effective_date": null,
+      "remaining_issue": "Whether Senegal's general corporate tax-credit regime includes a film-specific rate, or BAT offers any cash-back mechanism beyond facilitation, needs direct confirmation against the PWC summary's full text or a Senegalese government source.",
+      "optimizer_consequence": "Should not be priced without confirming a film-specific rate exists.",
+      "issue_type": "DATA_GAP"
+    },
+    "sc_film_incentive": {
+      "canonical_id": "sc_film_incentive",
+      "jurisdiction": "Seychelles",
+      "program_or_pathway": "Seychelles Tourism Board Film Production Support",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Seychelles Film Commission (est. 2013) confirmed real, providing resources/funding/training for Seychellois filmmakers -- but no rebate percentage for FOREIGN productions was located.",
+      "authority_sources": [],
+      "effective_date": null,
+      "remaining_issue": "Whether the Commission's funding/resource support extends to a deterministic foreign-production rebate, or is purely a local-industry-development body, is unresolved.",
+      "optimizer_consequence": "Cannot confirm or deny.",
+      "issue_type": "DATA_GAP"
+    },
+    "sg_imda_film_fund": {
+      "canonical_id": "sg_imda_film_fund",
+      "jurisdiction": "Singapore",
+      "program_or_pathway": "IMDA Singapore \u2014 Feature Film Production Grant",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Singapore's IMDA (Infocomm Media Development Authority) operates a grant/fund ecosystem, not a classic flat-percentage rebate: Singapore On-Screen Fund (up to 30% of qualifying costs, capped at S$10,000,000); International Co-Production Fund (up to 50% of qualifying expenses, capped at S$30,000,000); Virtual Production Innovation Fund (capped at S$25,000,000).",
+      "authority_sources": [
+        "https://www.stb.gov.sg/licensing-support/grants/singapore-on-screen-fund/",
+        "https://www.imda.gov.sg/About-IMDA/Research-and-Statistics/Support-for-Industry-Sectors/Media/Film"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": null,
+      "optimizer_consequence": "Three distinct funds with different caps/rates should be modeled as separate pathways, not one blended rate.",
+      "issue_type": null
+    },
+    "sg_sfc_production": {
+      "canonical_id": "sg_sfc_production",
+      "jurisdiction": "Singapore",
+      "program_or_pathway": "Singapore Film Commission (SFC) \u2014 Production Assistance",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "DUPLICATE",
+      "authoritative_rule_set": "No evidence of a separate 'Singapore Film Commission (SFC) Production Assistance' program distinct from the IMDA fund ecosystem (sg_imda_film_fund) was found -- the Singapore Film Commission is organizationally part of IMDA, and all current production-support mechanisms located route through the same IMDA fund structure.",
+      "authority_sources": [
+        "https://www.imda.gov.sg/About-IMDA/Research-and-Statistics/Support-for-Industry-Sectors/Media/Film"
+      ],
+      "effective_date": null,
+      "remaining_issue": null,
+      "optimizer_consequence": "Should MERGE into sg_imda_film_fund as a single Singapore program family, not remain a separate canonical_id.",
+      "issue_type": null
+    },
+    "za_dac_fund": {
+      "canonical_id": "za_dac_fund",
+      "jurisdiction": "South Africa",
+      "program_or_pathway": "NFVF South Africa \u2014 Development and Production Fund",
+      "starting_issue": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "South Africa's National Film and Video Foundation (NFVF) Development and Production Funding is a competitive, cycle-based GRANT program (Cycle 1 2026/27 call confirmed active on nfvf.co.za): Development funding supports script/concept development; Production funding supports content creation for local/international audiences. Grant amounts vary by category and project cash-flow needs (not a fixed percentage rebate); full amounts specified only in the NFVF's own Funding Policy document per-cycle.",
+      "authority_sources": [
+        "https://www.nfvf.co.za/nfvf-call-for-funding-applications-production-development-2026-27/",
+        "https://www.nfvf.co.za/production-funding/"
+      ],
+      "effective_date": "Cycle 1 2026/27 confirmed active",
+      "remaining_issue": null,
+      "optimizer_consequence": "FUND_GRANT_CONDITIONAL -- competitive grant, not a deterministic QPE-style rebate (distinct from South Africa's separate dtic Foreign Film & TV Production Rebate, already reconciled in the earlier GLOBAL pass as za_nfvf_rebate).",
+      "issue_type": null
+    },
+    "kr_film_incentive": {
+      "canonical_id": "kr_film_incentive",
+      "jurisdiction": "South Korea",
+      "program_or_pathway": "Korea Film Council (KOFIC) Location Incentive",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "KOFIC (Korea Film Council) Location Incentive offers a 20% cash rebate on qualifying production expenditure for foreign productions, with an additional 5% uplift for projects shooting 10+ days AND spending over KRW 800,000,000 (~$613,500). Minimum: 3 shoot days and spend between KRW 50,000,000-800,000,000 (~$38,000-$613,500). Eligible: feature films, TV series, documentaries developed/produced by a foreign production company where foreign capital exceeds 80% of production cost. Now expanded to include Korea co-productions, not just wholly-foreign works. Refund processed within ~1.5 months of final settlement submission.",
+      "authority_sources": [
+        "https://en.wikipedia.org/wiki/KOFIC_Location_Incentive",
+        "https://mbrellafilms.com/incentives/south-korea/"
+      ],
+      "effective_date": "Current (expanded eligibility -- Korea co-productions -- effective from the cited program year)",
+      "remaining_issue": "A direct fetch of KOFIC's own official guidelines page (koreanfilm.or.kr) did not surface the specific rate figures directly (page structure limitation, not a content gap) -- rate figures are corroborated by two independent secondary sources (Wikipedia's KOFIC Location Incentive page, which itself cites KOFIC, and Mbrella Films) rather than a direct primary-source quote captured in this pass.",
+      "optimizer_consequence": "Rate/uplift/eligibility usable with high confidence given source convergence; primary-source direct quote is a minor remaining polish item.",
+      "issue_type": "DATA_GAP"
+    },
+    "lk_film_incentive": {
+      "canonical_id": "lk_film_incentive",
+      "jurisdiction": "Sri Lanka",
+      "program_or_pathway": "Sri Lanka Film Commission Production Incentive",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Directly conflicting evidence: one source states Sri Lanka currently has NO tax rebates or cash incentives for filming; another states an attractive tax rebate is offered together with other incentives for a minimum investment. Sri Lanka has no formal film commission (the National Film Corporation is the sole filming-permission authority, not an incentive-granting body per the sources reviewed).",
+      "authority_sources": [],
+      "effective_date": null,
+      "remaining_issue": "Direct conflict between sources on whether ANY incentive exists at all; no primary National Film Corporation of Sri Lanka rule text located to resolve it.",
+      "optimizer_consequence": "Should not be priced at any rate until the conflict is resolved against the National Film Corporation's own current guidance.",
+      "issue_type": "AUTHORITY_CONFLICT"
+    },
+    "tw_film_incentive": {
+      "canonical_id": "tw_film_incentive",
+      "jurisdiction": "Taiwan",
+      "program_or_pathway": "Taiwan Film and Audiovisual Institute (TFAI) Cash Rebate",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Taiwan offers a 30% tax rebate on qualified production expenses (with sub-caps: 45% personnel costs, 35% pre/post-production, 20% insurance/transportation/lodging), capped at $984,000 for films / $656,000 for TV dramas. Restricted to productions with internationally renowned directors, OR a foreign production company having spent at least $984,000. Separately, the Taiwan Creative Content Agency (TAICCA) offers the International Co-funding Program (TICP): up to 30% of total production budget, max US$300,000, for international co-productions.",
+      "authority_sources": [
+        "https://mbrellafilms.com/incentives/taiwan/"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "Administering-authority name in CineGlobe's stored record ('Taiwan Film and Audiovisual Institute (TFAI)') was not independently corroborated as the current administering body -- TAICCA appears to be the current primary body for the co-funding program specifically; whether TFAI still separately administers the 30% rebate needs one more direct check.",
+      "optimizer_consequence": "Rate/cap structure usable; administering-authority attribution needs a minor confirmation pass.",
+      "issue_type": "DATA_GAP"
+    },
+    "tz_film_incentive": {
+      "canonical_id": "tz_film_incentive",
+      "jurisdiction": "Tanzania",
+      "program_or_pathway": "Tanzania Film Board Production Facilitation",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": null,
+      "authority_sources": [],
+      "effective_date": null,
+      "remaining_issue": "No primary Tanzania Film Board rate or rule text located in any source consulted; search results returned only unrelated South African incentive coverage.",
+      "optimizer_consequence": "Cannot confirm or deny.",
+      "issue_type": "DATA_GAP"
+    },
+    "tn_film_incentive": {
+      "canonical_id": "tn_film_incentive",
+      "jurisdiction": "Tunisia",
+      "program_or_pathway": "Tunisia CNCI Cash Rebate",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Tunisia's rebate returns up to 30% of qualified expenditure to foreign producers, administered via CNCI (Centre National du Cinema et de l'Image), in exchange for local creative-industry investment. Foreign productions filming in Tunisia are also eligible for VAT exemption on all production costs.",
+      "authority_sources": [
+        "https://www.fixertunisia.com/filming-in-tunisia/"
+      ],
+      "effective_date": "Current",
+      "remaining_issue": "Source is a production-service/fixer site rather than a primary CNCI government page -- a direct CNCI primary-source citation was not captured in this pass.",
+      "optimizer_consequence": "Rate usable at moderate confidence pending primary-source confirmation.",
+      "issue_type": "DATA_GAP"
+    },
+    "tr_film_incentive": {
+      "canonical_id": "tr_film_incentive",
+      "jurisdiction": "Turkey",
+      "program_or_pathway": "Turkey Cinema General Directorate Production Support",
+      "starting_issue": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Turkey offers a cash rebate of up to 30% on eligible expenses under Law No. 5224 (Evaluation, Classification, and Support of Cinema Films). Only a Turkish co-producer/production-service provider may apply. Points-based cultural qualification test (cultural content, Turkish citizen involvement, local infrastructure use) requiring >=50 of 100 points. Minimum spend: TL6,000,000 for features; TL1,000,000 per episode for documentaries/TV series. Applications to the Ministry of Culture and Tourism's Incentive Commission. VAT refund also available on procurement/import of goods/services for the shoot.",
+      "authority_sources": [
+        "https://www.filminginturkiye.com.tr/en//incentives/?id=5111",
+        "https://en.wikipedia.org/wiki/Turkish_Film_Commission"
+      ],
+      "effective_date": "Current (originally launched 2020, still described as current structure)",
+      "remaining_issue": null,
+      "optimizer_consequence": "Rate/points-test/minimum-spend/local-entity requirement all confirmed and usable.",
+      "issue_type": null
+    },
+    "ug_film_commission": {
+      "canonical_id": "ug_film_commission",
+      "jurisdiction": "Uganda",
+      "program_or_pathway": "Uganda Film Commission Production Support",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Uganda offers customs-duty immunity on imported production equipment and 'a monetary rebate initiative' returning a portion of eligible in-country production expenses, plus a centralized permit-facilitation office -- but the specific rebate PERCENTAGE was not located in any source.",
+      "authority_sources": [
+        "https://quantumeastafrica.com/resources/cinematic-grants-uganda"
+      ],
+      "effective_date": null,
+      "remaining_issue": "A real rebate mechanism appears to exist (unlike several other African jurisdictions in this batch where no evidence was found at all), but its exact rate/cap/threshold was not located -- likely requires a direct check of the Uganda Communications Commission or Uganda Media Centre's own guidelines.",
+      "optimizer_consequence": "A likely-real, but unquantified, incentive -- should NOT be priced at a guessed rate; the gap is specifically the missing percentage, not whether a program exists at all.",
+      "issue_type": "DATA_GAP"
+    },
+    "uz_film_incentive": {
+      "canonical_id": "uz_film_incentive",
+      "jurisdiction": "Uzbekistan",
+      "program_or_pathway": "Uzbekkino National Film Support Program",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Uzbekistan's Cabinet of Ministers adopted a Resolution (8 July 2026) introducing a new film rebate programme for foreign productions, offering reimbursement of up to 4,000,000,000 UZS (~US$315,000) -- a CAPPED ABSOLUTE AMOUNT, not a percentage rate -- covering PARTIAL reimbursement of eligible production expenses incurred by foreign film companies shooting in Uzbekistan. Explicitly framed as a tourism-promotion initiative.",
+      "authority_sources": [
+        "https://mail.tashkenttimes.uz/national/18204-uzbekistan-introduces-new-film-cash-rebate-system-of-over-300k-for-foreign-productions"
+      ],
+      "effective_date": "8 July 2026 (Cabinet of Ministers Resolution)",
+      "remaining_issue": "The underlying percentage rate applied to eligible spend (if any) before the ~$315,000 cap was reached was not specified in the source -- only the absolute cap figure was confirmed.",
+      "optimizer_consequence": "A hard dollar CAP is confirmed and usable even without the underlying percentage; should be modeled as capped reimbursement, not a percentage-only rebate.",
+      "issue_type": "DATA_GAP"
+    },
+    "vn_film_incentive": {
+      "canonical_id": "vn_film_incentive",
+      "jurisdiction": "Vietnam",
+      "program_or_pathway": "Vietnam Cinema Department Production Facilitation",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Vietnam's Law on Cinematography (National Assembly, June 2022, effective 1 January 2023) establishes that foreign organizations producing films using Vietnamese locations/production services ARE entitled to tax incentives per Vietnamese tax law -- a real, legislated entitlement. However, sources explicitly describe the cash-rebate mechanism as still developing/complex, with an unclear annual budget cap and NO clarity on the specific rebate percentage achievable. Applications require joint clearance from the Ministry of Foreign Affairs and the Ministry of Culture, Sports and Tourism.",
+      "authority_sources": [
+        "https://vietnamlawmagazine.vn/law-on-cinematography-49083.html",
+        "https://the-shiv.com/vietnams-law-on-cinema/"
+      ],
+      "effective_date": "Law effective 1 January 2023; implementing rebate mechanics still unclear as of sources reviewed",
+      "remaining_issue": "The statutory ENTITLEMENT to a tax incentive is confirmed, but the specific rate/formula/cap implementing it was not locatable in any source -- genuinely unresolved at the level of exact numbers, not whether a program exists.",
+      "optimizer_consequence": "A real legislated incentive exists but cannot be priced at any specific rate without fabricating a number -- must remain unresolved rather than guessed.",
+      "issue_type": "DATA_GAP"
+    },
+    "zm_film_commission": {
+      "canonical_id": "zm_film_commission",
+      "jurisdiction": "Zambia",
+      "program_or_pathway": "Zambia Film Commission Production Support",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": null,
+      "authority_sources": [],
+      "effective_date": null,
+      "remaining_issue": "No primary Zambia Film Commission rate or rule text located in any source consulted.",
+      "optimizer_consequence": "Cannot confirm or deny.",
+      "issue_type": "DATA_GAP"
+    },
+    "zw_film_commission": {
+      "canonical_id": "zw_film_commission",
+      "jurisdiction": "Zimbabwe",
+      "program_or_pathway": "Zimbabwe Film and Broadcasting Authority Production Support",
+      "starting_issue": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation.",
+      "final_status": "GENUINELY_UNRESOLVED",
+      "authoritative_rule_set": "Zimbabwe Film and Broadcasting Authority referenced only generically (via a production-service-network directory entry describing access to 'cash and tax rebates') -- no specific rate or primary rule text located.",
+      "authority_sources": [],
+      "effective_date": null,
+      "remaining_issue": "Whether a specific, quantified rebate exists (as opposed to generic facilitation) is unresolved.",
+      "optimizer_consequence": "Cannot confirm or deny.",
+      "issue_type": "DATA_GAP"
+    },
+    "IBERMEDIA_MEMBERSHIP_AND_FRAMEWORK": {
+      "canonical_id": "IBERMEDIA_MEMBERSHIP_AND_FRAMEWORK",
+      "jurisdiction": "Ibero-American Region (multinational)",
+      "program_or_pathway": "IBERMEDIA Programme for Ibero-American Co-productions",
+      "starting_issue": "Reconcile membership, contribution/points, rounds, recoupment and national-incentive interaction.",
+      "final_status": "AUTHORITY_CLOSED",
+      "authoritative_rule_set": "Programa IBERMEDIA, created November 1997 (Margarita, Venezuela Ibero-American Summit), operates under the Conference of Audiovisual and Cinematographic Authorities of Ibero-America (CAACI), coordinated via SEGIB. Currently ratified/financed by 18 member/observer states: Argentina, Bolivia, Brazil, Colombia, Costa Rica, Cuba, Chile, Ecuador, Spain, Guatemala, Mexico, Panama, Peru, Portugal, Puerto Rico, Dominican Republic, Uruguay, Venezuela. Funded by member-state contributions plus loan repayments; supports co-production, distribution, exhibition, training and development via open annual calls to independent producers from member countries.",
+      "authority_sources": [
+        "https://www.programaibermedia.com/el-programa/",
+        "https://segib.org/es/pipa-bueno/programa-de-desarrollo-en-apoyo-a-la-construccion-del-espacio-audiovisual-iberoamericano/"
+      ],
+      "effective_date": "Current (2026 call cycle published on programaibermedia.com)",
+      "remaining_issue": "Per-call contribution minimums/maximums and recoupment terms for the specific 2026 co-production call were not itemized (the PDF bases document exists but was not opened line-by-line).",
+      "optimizer_consequence": "Treaty/pathway eligibility (which 18 member states can route through Ibermedia) is now confirmed for candidate-generation purposes -- treaty existence alone does not create an incentive benefit; per-production financial terms require the specific call's own published bases.",
+      "issue_type": null
+    }
+  }
+}
