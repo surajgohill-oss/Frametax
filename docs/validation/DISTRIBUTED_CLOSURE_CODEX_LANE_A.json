@@ -1,6 +1,6 @@
 {
-  "schema_version": "1.0",
-  "generated_at": "2026-08-10",
+  "schema_version": "1.1",
+  "generated_at": "2026-08-11",
   "lane": "A — Americas + Australia / New Zealand",
   "ownership_decisions": {
     "geography": "Every FINAL_P0_P1_AUTHORITY_CLOSURE.json REMAINING program record in the Americas, Australia and New Zealand.",
@@ -43,7 +43,8 @@
       ],
       "effective_date": "2026 calls",
       "remaining_issue": null,
-      "optimizer_consequence": "Replace the aggregate row with call-specific opportunities; assign zero until a named call award is obtained."
+      "optimizer_consequence": "Replace the aggregate row with call-specific opportunities; assign zero until a named call award is obtained.",
+      "program_or_pathway": "INCAA — Argentine Film Institute Incentives"
     },
     "au_screen_production": {
       "canonical_id": "au_screen_production",
@@ -63,7 +64,8 @@
       ],
       "effective_date": "Screen Australia current funding finder and Terms of Trade, accessed 2026-08-10",
       "remaining_issue": null,
-      "optimizer_consequence": "Split into current named opportunities; never model as an automatic percentage."
+      "optimizer_consequence": "Split into current named opportunities; never model as an automatic percentage.",
+      "program_or_pathway": "Screen Australia — Production Funding"
     },
     "au_nsw_screen": {
       "canonical_id": "au_nsw_screen",
@@ -84,7 +86,8 @@
       ],
       "effective_date": "Screen NSW Production Finance 2025-27 rounds, current 2026",
       "remaining_issue": null,
-      "optimizer_consequence": "Rename/split to Screen NSW Production Finance and value at zero until award."
+      "optimizer_consequence": "Rename/split to Screen NSW Production Finance and value at zero until award.",
+      "program_or_pathway": "NSW Government Screen Incentive (Create NSW)"
     },
     "au_qld_screen_qld": {
       "canonical_id": "au_qld_screen_qld",
@@ -104,7 +107,8 @@
       ],
       "effective_date": "Production Attraction Strategy Guidelines, June 2025; current 2026",
       "remaining_issue": null,
-      "optimizer_consequence": "Model as a conditional negotiated award, never as an automatic rate."
+      "optimizer_consequence": "Model as a conditional negotiated award, never as an automatic rate.",
+      "program_or_pathway": "Screen Queensland Production Attraction Strategy"
     },
     "au_vic_vicscreen": {
       "canonical_id": "au_vic_vicscreen",
@@ -123,7 +127,8 @@
       ],
       "effective_date": "Victorian Production Fund, current 2026",
       "remaining_issue": null,
-      "optimizer_consequence": "Replace with the current fund identity and conditional-award logic."
+      "optimizer_consequence": "Replace with the current fund identity and conditional-award logic.",
+      "program_or_pathway": "VicScreen Production Investment"
     },
     "bs_film_incentive": {
       "canonical_id": "bs_film_incentive",
@@ -141,8 +146,17 @@
         "https://www.bahamasfilm.com/"
       ],
       "effective_date": "Current status researched 2026-08-10",
-      "remaining_issue": "Current producer-accessible economic incentive and its governing instrument remain unproven.",
-      "optimizer_consequence": "Exclude economic value; retain as a zero-valued unresolved facilitation record."
+      "remaining_issue": {
+        "exact_remaining_question": "Current producer-accessible economic incentive and its governing instrument remain unproven.",
+        "primary_sources_checked": [
+          "https://www.bahamasfilm.com/"
+        ],
+        "why_insufficient": "UNRESOLVED: no authoritative current rate, cap, minimum or appropriation established. UNRESOLVED.",
+        "issue_type": "DATA_GAP",
+        "deterministic_optimizer_consequence": "Exclude economic value; retain as a zero-valued unresolved facilitation record."
+      },
+      "optimizer_consequence": "Exclude economic value; retain as a zero-valued unresolved facilitation record.",
+      "program_or_pathway": "Bahamas Film Commission Production Support"
     },
     "bb_film_incentive": {
       "canonical_id": "bb_film_incentive",
@@ -161,8 +175,18 @@
         "https://oag.gov.bb/attachments/Cultural%20Industries%20Development%20Act%2C%202013-15.pdf"
       ],
       "effective_date": "Budget address 2023-24; current operability not established as of 2026-08-10",
-      "remaining_issue": "Current implementing instrument, administrator, application and claim process remain unresolved.",
-      "optimizer_consequence": "Do not assign an incentive value until current implementing authority and availability are obtained."
+      "remaining_issue": {
+        "exact_remaining_question": "Current implementing instrument, administrator, application and claim process remain unresolved.",
+        "primary_sources_checked": [
+          "https://pmo.gov.bb/2023/03/14/budget-address-fy-2023-2024/",
+          "https://oag.gov.bb/attachments/Cultural%20Industries%20Development%20Act%2C%202013-15.pdf"
+        ],
+        "why_insufficient": "Announcement described a 25% transferable tax credit on eligible pre-production, production and post-production costs, minimum USD 500,000. Transferable credit was announced; present application/issuance mechanics unresolved.",
+        "issue_type": "DATA_GAP",
+        "deterministic_optimizer_consequence": "Do not assign an incentive value until current implementing authority and availability are obtained."
+      },
+      "optimizer_consequence": "Do not assign an incentive value until current implementing authority and availability are obtained.",
+      "program_or_pathway": "Barbados Film and Entertainment Production Incentives"
     },
     "br_ancine_incentive": {
       "canonical_id": "br_ancine_incentive",
@@ -183,7 +207,8 @@
       ],
       "effective_date": "Current mechanisms extended through 2029; ANCINE limits current 2026",
       "remaining_issue": null,
-      "optimizer_consequence": "Replace the aggregate rebate-like record with mechanism-specific conditional financing records."
+      "optimizer_consequence": "Replace the aggregate rebate-like record with mechanism-specific conditional financing records.",
+      "program_or_pathway": "ANCINE — Brazilian Film Commission Tax Incentives"
     },
     "ca_cmf": {
       "canonical_id": "ca_cmf",
@@ -204,7 +229,8 @@
       ],
       "effective_date": "CMF 2026-27 program year",
       "remaining_issue": null,
-      "optimizer_consequence": "Retire the Convergent Stream aggregate and create current pathway-specific conditional records."
+      "optimizer_consequence": "Retire the Convergent Stream aggregate and create current pathway-specific conditional records.",
+      "program_or_pathway": "Canada Media Fund (CMF) — Convergent Stream"
     },
     "ca_ab_fttc": {
       "canonical_id": "ca_ab_fttc",
@@ -223,7 +249,8 @@
       ],
       "effective_date": "Alberta rules including amendments effective 2024-06-07; current 2026",
       "remaining_issue": null,
-      "optimizer_consequence": "Implement the 22/30 tiers and their distinct statutory gates; do not use a single rate."
+      "optimizer_consequence": "Implement the 22/30 tiers and their distinct statutory gates; do not use a single rate.",
+      "program_or_pathway": "Alberta Film and Television Tax Credit (FTTC)"
     },
     "ca_mb_fvptc": {
       "canonical_id": "ca_mb_fvptc",
@@ -243,7 +270,8 @@
       ],
       "effective_date": "Manitoba Income Tax Act current through 2026-06-30",
       "remaining_issue": null,
-      "optimizer_consequence": "Represent the irrevocable alternative streams, resident/deemed-labour rules and bonuses separately."
+      "optimizer_consequence": "Represent the irrevocable alternative streams, resident/deemed-labour rules and bonuses separately.",
+      "program_or_pathway": "Manitoba Film & Video Production Tax Credit"
     },
     "ca_nb_film_credit": {
       "canonical_id": "ca_nb_film_credit",
@@ -262,7 +290,8 @@
       ],
       "effective_date": "New Brunswick LIFT Production Program, current 2026",
       "remaining_issue": null,
-      "optimizer_consequence": "Supersede the tax-credit row with LIFT streams and conditional-award treatment."
+      "optimizer_consequence": "Supersede the tax-credit row with LIFT streams and conditional-award treatment.",
+      "program_or_pathway": "New Brunswick Film Tax Credit"
     },
     "ca_nl_production_fund": {
       "canonical_id": "ca_nl_production_fund",
@@ -282,7 +311,8 @@
       ],
       "effective_date": "Newfoundland and Labrador tax programs current 2026",
       "remaining_issue": null,
-      "optimizer_consequence": "Split the row; remove the unsupported 45% maximum and encode the anti-stacking rule."
+      "optimizer_consequence": "Split the row; remove the unsupported 45% maximum and encode the anti-stacking rule.",
+      "program_or_pathway": "Newfoundland & Labrador Film Development Corp Production Incentive"
     },
     "ca_ns_pif": {
       "canonical_id": "ca_ns_pif",
@@ -303,7 +333,8 @@
       ],
       "effective_date": "Program rules effective 2024-04-01; funded in Nova Scotia Budget 2026-27",
       "remaining_issue": null,
-      "optimizer_consequence": "Encode streams and prorated uplifts; require preapproval and actual Nova Scotia spend."
+      "optimizer_consequence": "Encode streams and prorated uplifts; require preapproval and actual Nova Scotia spend.",
+      "program_or_pathway": "Nova Scotia Film & Television Production Incentive Fund"
     },
     "ca_sk_production_grant": {
       "canonical_id": "ca_sk_production_grant",
@@ -322,7 +353,8 @@
       ],
       "effective_date": "Creative Saskatchewan 2026-27 guidelines approved 2026-04-01",
       "remaining_issue": null,
-      "optimizer_consequence": "Model as two conditional grant streams with current guidelines."
+      "optimizer_consequence": "Model as two conditional grant streams with current guidelines.",
+      "program_or_pathway": "Creative Saskatchewan Film and TV Production Grant"
     },
     "nohfc_production_fund": {
       "canonical_id": "nohfc_production_fund",
@@ -342,7 +374,8 @@
       ],
       "effective_date": "NOHFC Film & Television Program current 2026",
       "remaining_issue": null,
-      "optimizer_consequence": "Apply zero until award and enforce Northern Ontario residence/vendor rules and tier caps."
+      "optimizer_consequence": "Apply zero until award and enforce Northern Ontario residence/vendor rules and tier caps.",
+      "program_or_pathway": "Northern Ontario Heritage Fund — Production Fund"
     },
     "on_ofttc": {
       "canonical_id": "on_ofttc",
@@ -362,7 +395,8 @@
       ],
       "effective_date": "Ontario Regulation 322/97 current 2026",
       "remaining_issue": null,
-      "optimizer_consequence": "Encode labour basis, regional uplift and all certification/cultural gates."
+      "optimizer_consequence": "Encode labour basis, regional uplift and all certification/cultural gates.",
+      "program_or_pathway": "Ontario Film and Television Tax Credit"
     },
     "on_opstc": {
       "canonical_id": "on_opstc",
@@ -382,7 +416,8 @@
       ],
       "effective_date": "Ontario Regulation 37/09 current 2026",
       "remaining_issue": null,
-      "optimizer_consequence": "Use 21.5% on regulated Ontario expenditure and enforce format thresholds."
+      "optimizer_consequence": "Use 21.5% on regulated Ontario expenditure and enforce format thresholds.",
+      "program_or_pathway": "Ontario Production Services Tax Credit"
     },
     "qc_film_production": {
       "canonical_id": "qc_film_production",
@@ -403,7 +438,8 @@
       ],
       "effective_date": "Revenu Québec corporate return guide current for 2026; SODEC presentation Feb 2025",
       "remaining_issue": null,
-      "optimizer_consequence": "Do not use one flat Québec rate; classify the production and apply labour cap/uplifts."
+      "optimizer_consequence": "Do not use one flat Québec rate; classify the production and apply labour cap/uplifts.",
+      "program_or_pathway": "Quebec Film and Television Production Tax Credit"
     },
     "cl_corfo_incentive": {
       "canonical_id": "cl_corfo_incentive",
@@ -421,8 +457,17 @@
         "https://www.corfo.cl/sites/cpp/sala_de_prensa/nacional/18_03_2025_ifi_primer_llamado"
       ],
       "effective_date": "Latest official IFI audiovisual call located: 2025; current availability unresolved 2026-08-10",
-      "remaining_issue": "No authoritative 2026 call or continuing appropriation was located.",
-      "optimizer_consequence": "Keep zero-valued unless an applicable live call/award is evidenced."
+      "remaining_issue": {
+        "exact_remaining_question": "No authoritative 2026 call or continuing appropriation was located.",
+        "primary_sources_checked": [
+          "https://www.corfo.cl/sites/cpp/sala_de_prensa/nacional/18_03_2025_ifi_primer_llamado"
+        ],
+        "why_insufficient": "Latest official call evidence offered subsidy up to 40% of qualifying expenditure outside Metropolitan Santiago, subject to call budget and award. Competitive subsidy; no automatic entitlement.",
+        "issue_type": "DATA_GAP",
+        "deterministic_optimizer_consequence": "Keep zero-valued unless an applicable live call/award is evidenced."
+      },
+      "optimizer_consequence": "Keep zero-valued unless an applicable live call/award is evidenced.",
+      "program_or_pathway": "Chile Corfo Film Incentive"
     },
     "co_film_colombia": {
       "canonical_id": "co_film_colombia",
@@ -442,7 +487,8 @@
       ],
       "effective_date": "FFC/CINA current official manuals accessed 2026-08-10",
       "remaining_issue": null,
-      "optimizer_consequence": "Maintain FFC and CINA as separate candidates and apply category-specific rates."
+      "optimizer_consequence": "Maintain FFC and CINA as separate candidates and apply category-specific rates.",
+      "program_or_pathway": "Colombia Film Commission — Film In Colombia"
     },
     "cr_film_incentive": {
       "canonical_id": "cr_film_incentive",
@@ -462,7 +508,8 @@
       ],
       "effective_date": "Costa Rica Film Commission/PROCOMER current rules accessed 2026-08-10",
       "remaining_issue": null,
-      "optimizer_consequence": "Replace “facilitation” with the current VAT-refund mechanism and minimum spend."
+      "optimizer_consequence": "Replace “facilitation” with the current VAT-refund mechanism and minimum spend.",
+      "program_or_pathway": "Costa Rica Film Commission Production Facilitation"
     },
     "do_film_incentive": {
       "canonical_id": "do_film_incentive",
@@ -483,7 +530,8 @@
       ],
       "effective_date": "Law 108-10, current DGCINE guidance and 2025 expense-validation guide; active 2026",
       "remaining_issue": null,
-      "optimizer_consequence": "Use 25%, enforce official category caps and require DGCINE/CIPAC certification."
+      "optimizer_consequence": "Use 25%, enforce official category caps and require DGCINE/CIPAC certification.",
+      "program_or_pathway": "Dominican Republic Film Commission Incentive"
     },
     "ec_film_incentive": {
       "canonical_id": "ec_film_incentive",
@@ -503,7 +551,8 @@
       ],
       "effective_date": "Ecuador Audiovisual Investment Certificate regulation current official film commission materials",
       "remaining_issue": null,
-      "optimizer_consequence": "Create separate mechanisms; apply 37% only to certified CIA expenditure and enforce format minimums."
+      "optimizer_consequence": "Create separate mechanisms; apply 37% only to certified CIA expenditure and enforce format minimums.",
+      "program_or_pathway": "Ecuador Film Commission Production Facilitation"
     },
     "gt_film_commission": {
       "canonical_id": "gt_film_commission",
@@ -521,8 +570,17 @@
         "https://inguat.gob.gt/es/descargas-inguat-guatemala/17-noticias-y-comunicados/47-2019/25-julio-2019?download=113%3A6-inguat-comunicado-presenta-guia-cinematografica-y-audiovisual&format=html"
       ],
       "effective_date": "Official INGUAT film guide located; current economic program unresolved 2026-08-10",
-      "remaining_issue": "Official material does not expressly confirm absence of all producer incentives or establish a current economic program.",
-      "optimizer_consequence": "Keep only a non-economic facilitation record unless further current authority is produced."
+      "remaining_issue": {
+        "exact_remaining_question": "Official material does not expressly confirm absence of all producer incentives or establish a current economic program.",
+        "primary_sources_checked": [
+          "https://inguat.gob.gt/es/descargas-inguat-guatemala/17-noticias-y-comunicados/47-2019/25-julio-2019?download=113%3A6-inguat-comunicado-presenta-guia-cinematografica-y-audiovisual&format=html"
+        ],
+        "why_insufficient": "No current authoritative rate, cap, appropriation or producer cash benefit located. UNRESOLVED.",
+        "issue_type": "DATA_GAP",
+        "deterministic_optimizer_consequence": "Keep only a non-economic facilitation record unless further current authority is produced."
+      },
+      "optimizer_consequence": "Keep only a non-economic facilitation record unless further current authority is produced.",
+      "program_or_pathway": "Guatemala Film Commission (INGUAT) Production Facilitation"
     },
     "gy_film_commission": {
       "canonical_id": "gy_film_commission",
@@ -541,7 +599,8 @@
       ],
       "effective_date": "Guyana Tourism Authority current filming request guidance accessed 2026-08-10",
       "remaining_issue": null,
-      "optimizer_consequence": "Remove any producer cash value; retain temporary-import facilitation separately."
+      "optimizer_consequence": "Remove any producer cash value; retain temporary-import facilitation separately.",
+      "program_or_pathway": "Guyana Tourism Authority Film Production Support"
     },
     "jm_film_incentive": {
       "canonical_id": "jm_film_incentive",
@@ -562,7 +621,8 @@
       ],
       "effective_date": "JSDI Operational Guidelines published June 2025; program active 2026",
       "remaining_issue": null,
-      "optimizer_consequence": "Replace the old aggregate identity with JSDI categories; value rebate at zero before approval."
+      "optimizer_consequence": "Replace the old aggregate identity with JSDI categories; value rebate at zero before approval.",
+      "program_or_pathway": "Jamaica Entertainment Industry Incentive Programme"
     },
     "mx_eficine_incentive": {
       "canonical_id": "mx_eficine_incentive",
@@ -583,7 +643,8 @@
       ],
       "effective_date": "EFICINE and FOCINE 2026 rules",
       "remaining_issue": null,
-      "optimizer_consequence": "Split EFICINE and FOCINE; remove the stored 10%-17.5% production-spend rate."
+      "optimizer_consequence": "Split EFICINE and FOCINE; remove the stored 10%-17.5% production-spend rate.",
+      "program_or_pathway": "Mexico EFICINE (Article 226) and PROCINE Fund"
     },
     "nz_spg_international": {
       "canonical_id": "nz_spg_international",
@@ -603,7 +664,8 @@
       ],
       "effective_date": "NZSPR International Criteria v1.0 effective 2026-01-01",
       "remaining_issue": null,
-      "optimizer_consequence": "Update to 2026 thresholds/uplift, remove ATL cap, and use actual NZ performance/use tests."
+      "optimizer_consequence": "Update to 2026 thresholds/uplift, remove ATL cap, and use actual NZ performance/use tests.",
+      "program_or_pathway": "New Zealand Screen Production Grant (International)"
     },
     "pa_film_incentive": {
       "canonical_id": "pa_film_incentive",
@@ -621,8 +683,17 @@
         "https://dgi.mef.gob.pa/Incentivo/IICA"
       ],
       "effective_date": "Panama DGI current incentive index accessed 2026-08-10",
-      "remaining_issue": "Complete current producer economics, QPE and monetization were not established by the available official index/statutes.",
-      "optimizer_consequence": "Retain zero-valued and unresolved; do not infer cash economics from “tax incentives.”"
+      "remaining_issue": {
+        "exact_remaining_question": "Complete current producer economics, QPE and monetization were not established by the available official index/statutes.",
+        "primary_sources_checked": [
+          "https://dgi.mef.gob.pa/Incentivo/IICA"
+        ],
+        "why_insufficient": "Current DGI confirms the regime but the authoritative materials located do not state a complete producer rate/cap/payment rule for a canonical optimization record. UNRESOLVED.",
+        "issue_type": "DATA_GAP",
+        "deterministic_optimizer_consequence": "Retain zero-valued and unresolved; do not infer cash economics from “tax incentives.”"
+      },
+      "optimizer_consequence": "Retain zero-valued and unresolved; do not infer cash economics from “tax incentives.”",
+      "program_or_pathway": "Panama Film Commission Production Facilitation"
     },
     "pe_film_incentive": {
       "canonical_id": "pe_film_incentive",
@@ -642,7 +713,8 @@
       ],
       "effective_date": "Peru 2026 annual audiovisual incentives plan; Law 32309 regulation effective 2026",
       "remaining_issue": null,
-      "optimizer_consequence": "Split by 2026 calls and keep unimplemented fiscal incentives at zero."
+      "optimizer_consequence": "Split by 2026 calls and keep unimplemented fiscal incentives at zero.",
+      "program_or_pathway": "Peru DAFO Film Production Support"
     },
     "tt_film_incentive": {
       "canonical_id": "tt_film_incentive",
@@ -662,7 +734,8 @@
       ],
       "effective_date": "Ministry of Trade Grants and Incentives guide current official publication; FilmTT current forms",
       "remaining_issue": null,
-      "optimizer_consequence": "Encode foreign tiers, local rate, labour uplift/max and preapproval."
+      "optimizer_consequence": "Encode foreign tiers, local rate, labour uplift/max and preapproval.",
+      "program_or_pathway": "Trinidad & Tobago Creative Industries Production Incentive"
     },
     "us_itvs_fund": {
       "canonical_id": "us_itvs_fund",
@@ -682,7 +755,8 @@
       ],
       "effective_date": "ITVS current funding page accessed 2026-08-10",
       "remaining_issue": null,
-      "optimizer_consequence": "Retire the International Documentary Fund row and represent active named calls only."
+      "optimizer_consequence": "Retire the International Documentary Fund row and represent active named calls only.",
+      "program_or_pathway": "ITVS International Documentary Fund"
     },
     "us_sundance_doc": {
       "canonical_id": "us_sundance_doc",
@@ -701,7 +775,8 @@
       ],
       "effective_date": "Sundance Documentary Fund current 2026",
       "remaining_issue": null,
-      "optimizer_consequence": "Model as selective grant with cycle availability, not a production incentive rate."
+      "optimizer_consequence": "Model as selective grant with cycle availability, not a production incentive rate.",
+      "program_or_pathway": "Sundance Institute — Documentary Fund"
     },
     "us_al_film_incentive": {
       "canonical_id": "us_al_film_incentive",
@@ -722,7 +797,8 @@
       ],
       "effective_date": "Alabama Entertainment Incentive Program current 2026",
       "remaining_issue": null,
-      "optimizer_consequence": "Encode resident/nonresident rates, personnel caps, spend window and explicit exclusions."
+      "optimizer_consequence": "Encode resident/nonresident rates, personnel caps, spend window and explicit exclusions.",
+      "program_or_pathway": "Alabama Film Incentive"
     },
     "us_az_film_credit": {
       "canonical_id": "us_az_film_credit",
@@ -741,7 +817,8 @@
       ],
       "effective_date": "Arizona Motion Picture Production Program current 2026",
       "remaining_issue": null,
-      "optimizer_consequence": "Use tiered base plus separately gated uplifts and annual allocation."
+      "optimizer_consequence": "Use tiered base plus separately gated uplifts and annual allocation.",
+      "program_or_pathway": "Arizona Motion Picture Production Program"
     },
     "us_co_film_incentive": {
       "canonical_id": "us_co_film_incentive",
@@ -760,7 +837,8 @@
       ],
       "effective_date": "Colorado official program current 2026",
       "remaining_issue": null,
-      "optimizer_consequence": "Model as capped discretionary rebate with zero pre-award value."
+      "optimizer_consequence": "Model as capped discretionary rebate with zero pre-award value.",
+      "program_or_pathway": "Colorado Film Incentive"
     },
     "us_ct_film_credit": {
       "canonical_id": "us_ct_film_credit",
@@ -780,7 +858,8 @@
       ],
       "effective_date": "Connecticut official credit guidance current 2026",
       "remaining_issue": null,
-      "optimizer_consequence": "Encode spend tiers and Connecticut incurrence/performance test."
+      "optimizer_consequence": "Encode spend tiers and Connecticut incurrence/performance test.",
+      "program_or_pathway": "Connecticut Film Tax Credit"
     },
     "us_hi_film_tax_credit": {
       "canonical_id": "us_hi_film_tax_credit",
@@ -799,7 +878,8 @@
       ],
       "effective_date": "Hawaii official current page and HRS §235-17, current 2026",
       "remaining_issue": null,
-      "optimizer_consequence": "Use island-specific rates and both caps; apportion actual Hawaii activity."
+      "optimizer_consequence": "Use island-specific rates and both caps; apportion actual Hawaii activity.",
+      "program_or_pathway": "Hawaii Film and Digital Media Income Tax Credit"
     },
     "us_il_film_credit": {
       "canonical_id": "us_il_film_credit",
@@ -818,7 +898,8 @@
       ],
       "effective_date": "Illinois rules effective 2026-04-27; post-2025-07-01 rates",
       "remaining_issue": null,
-      "optimizer_consequence": "Update to 35% current rates and encode constrained nonresident labour."
+      "optimizer_consequence": "Update to 35% current rates and encode constrained nonresident labour.",
+      "program_or_pathway": "Illinois Film Tax Credit"
     },
     "us_ky_keiia": {
       "canonical_id": "us_ky_keiia",
@@ -837,7 +918,8 @@
       ],
       "effective_date": "2026 SB 324 and emergency 307 KAR 1:080E effective 2026-07-15",
       "remaining_issue": null,
-      "optimizer_consequence": "Rename to KEI and implement the July 2026 regulation/scoring rather than legacy KEIIA assumptions."
+      "optimizer_consequence": "Rename to KEI and implement the July 2026 regulation/scoring rather than legacy KEIIA assumptions.",
+      "program_or_pathway": "Kentucky Entertainment Industry Incentive Act (KEIIA)"
     },
     "us_md_film_credit": {
       "canonical_id": "us_md_film_credit",
@@ -856,7 +938,8 @@
       ],
       "effective_date": "Maryland official program FY2027 current 2026",
       "remaining_issue": null,
-      "optimizer_consequence": "Encode format rate, annual allocation, timing and USD500k individual exclusion."
+      "optimizer_consequence": "Encode format rate, annual allocation, timing and USD500k individual exclusion.",
+      "program_or_pathway": "Maryland Film Production Activity Tax Credit"
     },
     "us_ma_film_credit": {
       "canonical_id": "us_ma_film_credit",
@@ -876,7 +959,8 @@
       ],
       "effective_date": "Massachusetts law/current DOR guidance accessed 2026-08-10",
       "remaining_issue": null,
-      "optimizer_consequence": "Apply the two credits, 75% alternative gate and explicit compensation/category exclusions."
+      "optimizer_consequence": "Apply the two credits, 75% alternative gate and explicit compensation/category exclusions.",
+      "program_or_pathway": "Massachusetts Film Tax Credit"
     },
     "us_mn_film_credit": {
       "canonical_id": "us_mn_film_credit",
@@ -895,7 +979,8 @@
       ],
       "effective_date": "Minnesota Revenue current 2026",
       "remaining_issue": null,
-      "optimizer_consequence": "Apply 25%, USD1m threshold, allocation and nonrefundable/assignable treatment."
+      "optimizer_consequence": "Apply 25%, USD1m threshold, allocation and nonrefundable/assignable treatment.",
+      "program_or_pathway": "Minnesota Film Production Tax Credit"
     },
     "us_ms_film_credit": {
       "canonical_id": "us_ms_film_credit",
@@ -915,7 +1000,8 @@
       ],
       "effective_date": "Film Mississippi current 2026",
       "remaining_issue": null,
-      "optimizer_consequence": "Encode three spend/payroll rates, partner gate, withholding, vendor and personnel limits."
+      "optimizer_consequence": "Encode three spend/payroll rates, partner gate, withholding, vendor and personnel limits.",
+      "program_or_pathway": "Mississippi Advantage Film Program"
     },
     "us_nv_film_incentive": {
       "canonical_id": "us_nv_film_incentive",
@@ -934,7 +1020,8 @@
       ],
       "effective_date": "Nevada GOED current official guidance",
       "remaining_issue": null,
-      "optimizer_consequence": "Apply 15%, both spend gates and annual cap."
+      "optimizer_consequence": "Apply 15%, both spend gates and annual cap.",
+      "program_or_pathway": "Nevada Film Incentive Program"
     },
     "us_nc_film_grant": {
       "canonical_id": "us_nc_film_grant",
@@ -954,7 +1041,8 @@
       ],
       "effective_date": "North Carolina Film Office current 2026",
       "remaining_issue": null,
-      "optimizer_consequence": "Use format minimums/caps and conditional allocation."
+      "optimizer_consequence": "Use format minimums/caps and conditional allocation.",
+      "program_or_pathway": "North Carolina Film & Entertainment Grant"
     },
     "us_ok_ofer": {
       "canonical_id": "us_ok_ofer",
@@ -973,7 +1061,8 @@
       ],
       "effective_date": "Filmed in Oklahoma Act current through 2031; official evaluation current 2026",
       "remaining_issue": null,
-      "optimizer_consequence": "Rename to current Act; apply 20% base, gated uplifts/max and 25% ATL/nonresident ceiling."
+      "optimizer_consequence": "Rename to current Act; apply 20% base, gated uplifts/max and 25% ATL/nonresident ceiling.",
+      "program_or_pathway": "Oklahoma Film Enhancement Rebate"
     },
     "us_pa_film_credit": {
       "canonical_id": "us_pa_film_credit",
@@ -993,7 +1082,8 @@
       ],
       "effective_date": "Pennsylvania current program page and 2025-26 awards; accessed 2026-08-10",
       "remaining_issue": null,
-      "optimizer_consequence": "Use 25/30 structure, 60% gate, financing/timing and current allocation."
+      "optimizer_consequence": "Use 25/30 structure, 60% gate, financing/timing and current allocation.",
+      "program_or_pathway": "Pennsylvania Film Production Tax Credit"
     },
     "us_pr_film_incentive": {
       "canonical_id": "us_pr_film_incentive",
@@ -1013,7 +1103,8 @@
       ],
       "effective_date": "Puerto Rico Incentives Code, Law 60-2019 as amended, official compilation current 2026",
       "remaining_issue": null,
-      "optimizer_consequence": "Use separate 40/20 bases and strictly gated 15% local-production component."
+      "optimizer_consequence": "Use separate 40/20 bases and strictly gated 15% local-production component.",
+      "program_or_pathway": "Puerto Rico Film Industry Economic Incentives Act"
     },
     "us_ri_film_credit": {
       "canonical_id": "us_ri_film_credit",
@@ -1034,7 +1125,8 @@
       ],
       "effective_date": "Rhode Island official 2025 breakdown; sunset 2027-07-01",
       "remaining_issue": null,
-      "optimizer_consequence": "Apply actual Rhode Island activity test, explicit exclusions and caps/sunset."
+      "optimizer_consequence": "Apply actual Rhode Island activity test, explicit exclusions and caps/sunset.",
+      "program_or_pathway": "Rhode Island Motion Picture Production Tax Credit"
     },
     "us_sc_film_credit": {
       "canonical_id": "us_sc_film_credit",
@@ -1054,7 +1146,8 @@
       ],
       "effective_date": "South Carolina DOR Tax Incentive Guide, Sept 2025; FY2026-27 budget",
       "remaining_issue": null,
-      "optimizer_consequence": "Replace conflated credit row with producer rebates, investor credit and local pilot as separate records."
+      "optimizer_consequence": "Replace conflated credit row with producer rebates, investor credit and local pilot as separate records.",
+      "program_or_pathway": "South Carolina Film Production Credit"
     },
     "us_tn_film_incentive": {
       "canonical_id": "us_tn_film_incentive",
@@ -1073,8 +1166,18 @@
         "https://program-inventory.finance.tn.gov/programs/tennessee-entertainment-commission-incentive-fund-3025/"
       ],
       "effective_date": "Current program/funding confirmed 2026; complete current guidelines not located",
-      "remaining_issue": "Current public incentive guidelines/QPE schedule and current general rate were not located.",
-      "optimizer_consequence": "Keep zero-valued pending an executed grant; do not use historical 25% as current canonical rate."
+      "remaining_issue": {
+        "exact_remaining_question": "Current public incentive guidelines/QPE schedule and current general rate were not located.",
+        "primary_sources_checked": [
+          "https://www.tn.gov/ecd/resources/open-ecd.html",
+          "https://program-inventory.finance.tn.gov/programs/tennessee-entertainment-commission-incentive-fund-3025/"
+        ],
+        "why_insufficient": "Government sources confirm a discretionary grant program and 2026 funding, but the only complete percentage/QPE guidelines located are historical (25% of qualified Tennessee spend) and cannot establish the current canonical rule. Contractual performance grant; zero until executed award.",
+        "issue_type": "DATA_GAP",
+        "deterministic_optimizer_consequence": "Keep zero-valued pending an executed grant; do not use historical 25% as current canonical rate."
+      },
+      "optimizer_consequence": "Keep zero-valued pending an executed grant; do not use historical 25% as current canonical rate.",
+      "program_or_pathway": "Tennessee Film Entertainment Incentives"
     },
     "us_ut_film_incentive": {
       "canonical_id": "us_ut_film_incentive",
@@ -1093,7 +1196,8 @@
       ],
       "effective_date": "Utah incentive summary November 2024, current program 2026",
       "remaining_issue": null,
-      "optimizer_consequence": "Encode MPIP/CFIP separately with budget and resident/rural gates."
+      "optimizer_consequence": "Encode MPIP/CFIP separately with budget and resident/rural gates.",
+      "program_or_pathway": "Utah Motion Picture Incentive Program"
     },
     "us_va_film_credit": {
       "canonical_id": "us_va_film_credit",
@@ -1113,7 +1217,8 @@
       ],
       "effective_date": "Virginia guidelines updated May 2025, current 2026",
       "remaining_issue": null,
-      "optimizer_consequence": "Use separately gated area/resident/first-time uplifts and Virginia performance/use test."
+      "optimizer_consequence": "Use separately gated area/resident/first-time uplifts and Virginia performance/use test.",
+      "program_or_pathway": "Virginia Motion Picture Production Tax Credit"
     },
     "us_wa_mpcp": {
       "canonical_id": "us_wa_mpcp",
@@ -1133,7 +1238,8 @@
       ],
       "effective_date": "RCW 43.365 and current program term through 2027-06-30",
       "remaining_issue": null,
-      "optimizer_consequence": "Model as a conditional award with format minimums and 2027 sunset, not an automatic rate."
+      "optimizer_consequence": "Model as a conditional award with format minimums and 2027 sunset, not an automatic rate.",
+      "program_or_pathway": "Washington State Motion Picture Competitiveness Program"
     },
     "uy_xxi_incentive": {
       "canonical_id": "uy_xxi_incentive",
@@ -1153,7 +1259,8 @@
       ],
       "effective_date": "Uruguay Audiovisual 2025 official lines; program current 2026 website",
       "remaining_issue": null,
-      "optimizer_consequence": "Apply current line-specific thresholds/caps and actual Uruguay spend; keep VAT separate."
+      "optimizer_consequence": "Apply current line-specific thresholds/caps and actual Uruguay spend; keep VAT separate.",
+      "program_or_pathway": "Uruguay XXI Film Incentive"
     },
     "AUSTRALIA_PARTNER_LIST_RECONCILIATION": {
       "canonical_id": "AUSTRALIA_PARTNER_LIST_RECONCILIATION",
@@ -1174,7 +1281,8 @@
       ],
       "effective_date": "Screen Australia current partner list, ©2026; activity through 2025-12-31",
       "remaining_issue": null,
-      "optimizer_consequence": "Replace partner-list assumptions with the 14 current arrangements and require arrangement-specific approval/terms."
+      "optimizer_consequence": "Replace partner-list assumptions with the 14 current arrangements and require arrangement-specific approval/terms.",
+      "program_or_pathway": "Australia official co-production partner-list reconciliation"
     },
     "CANADA_PARTNER_LIST_RECONCILIATION": {
       "canonical_id": "CANADA_PARTNER_LIST_RECONCILIATION",
@@ -1196,7 +1304,23 @@
       ],
       "effective_date": "Canadian Heritage current 2026-05-13; South Africa treaty in force 2026-01-01",
       "remaining_issue": null,
-      "optimizer_consequence": "Use live treaty texts/Telefilm country records, require dual competent-authority approval, and do not treat negotiations/signature as entry into force."
+      "optimizer_consequence": "Use live treaty texts/Telefilm country records, require dual competent-authority approval, and do not treat negotiations/signature as entry into force.",
+      "program_or_pathway": "Canada audiovisual treaty co-production partner-list reconciliation"
     }
-  }
+  },
+  "ownership_manifest": "docs/validation/DISTRIBUTED_CLOSURE_CODEX_LANE_A_OWNERSHIP.json",
+  "lane_existing_start": 57,
+  "lane_missing_start": 0,
+  "lane_treaty_start": 2,
+  "lane_total_start": 59,
+  "lane_existing_closed": 51,
+  "lane_missing_closed": 0,
+  "lane_treaty_closed": 2,
+  "lane_total_closed": 53,
+  "lane_existing_remaining": 6,
+  "lane_missing_remaining": 0,
+  "lane_treaty_remaining": 0,
+  "lane_total_remaining": 6,
+  "bounded_additional_discoveries": [],
+  "every_starting_identity_exactly_once_assertion": true
 }

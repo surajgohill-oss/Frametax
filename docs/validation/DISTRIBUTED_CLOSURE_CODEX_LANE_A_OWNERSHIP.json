@@ -1,0 +1,437 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-11",
+  "lane": "A — Americas + Australia / New Zealand",
+  "immutable_denominator_source": {
+    "artifact": "docs/validation/FINAL_P0_P1_AUTHORITY_CLOSURE.json",
+    "canonical_commit": "8ddfaaf01a60f1d7597142ac8d5ce3aeffd1b22f",
+    "selector": "closure_status == REMAINING; program jurisdiction in the Americas, Australia or New Zealand; Australia- and Canada-anchored treaty reconciliation queues"
+  },
+  "ownership_decisions": {
+    "program_rule": "Program ownership follows program jurisdiction.",
+    "treaty_rule": "Lane A owns the Australia and Canada partner-list reconciliation queues; broad multilateral and regional treaty queues remain Lane C.",
+    "bounded_additional_discoveries": []
+  },
+  "lane_existing_start": 57,
+  "lane_missing_start": 0,
+  "lane_treaty_start": 2,
+  "lane_total_start": 59,
+  "uniqueness_assertion": true,
+  "claimed_programs": [
+    {
+      "canonical_id": "ar_incaa_incentive",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Argentina",
+      "program_or_pathway": "INCAA — Argentine Film Institute Incentives",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "au_screen_production",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Australia",
+      "program_or_pathway": "Screen Australia — Production Funding",
+      "starting_unresolved_reason": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "canonical_id": "au_nsw_screen",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Australia",
+      "program_or_pathway": "NSW Government Screen Incentive (Create NSW)",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "au_qld_screen_qld",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Australia",
+      "program_or_pathway": "Screen Queensland Production Attraction Strategy",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "au_vic_vicscreen",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Australia",
+      "program_or_pathway": "VicScreen Production Investment",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "bs_film_incentive",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Bahamas",
+      "program_or_pathway": "Bahamas Film Commission Production Support",
+      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "canonical_id": "bb_film_incentive",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Barbados",
+      "program_or_pathway": "Barbados Film and Entertainment Production Incentives",
+      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "canonical_id": "br_ancine_incentive",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Brazil",
+      "program_or_pathway": "ANCINE — Brazilian Film Commission Tax Incentives",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "ca_cmf",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Canada",
+      "program_or_pathway": "Canada Media Fund (CMF) — Convergent Stream",
+      "starting_unresolved_reason": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "canonical_id": "ca_ab_fttc",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Canada",
+      "program_or_pathway": "Alberta Film and Television Tax Credit (FTTC)",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "ca_mb_fvptc",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Canada",
+      "program_or_pathway": "Manitoba Film & Video Production Tax Credit",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "ca_nb_film_credit",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Canada",
+      "program_or_pathway": "New Brunswick Film Tax Credit",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "ca_nl_production_fund",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Canada",
+      "program_or_pathway": "Newfoundland & Labrador Film Development Corp Production Incentive",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "ca_ns_pif",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Canada",
+      "program_or_pathway": "Nova Scotia Film & Television Production Incentive Fund",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "ca_sk_production_grant",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Canada",
+      "program_or_pathway": "Creative Saskatchewan Film and TV Production Grant",
+      "starting_unresolved_reason": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "canonical_id": "nohfc_production_fund",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Canada",
+      "program_or_pathway": "Northern Ontario Heritage Fund — Production Fund",
+      "starting_unresolved_reason": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "canonical_id": "on_ofttc",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Canada",
+      "program_or_pathway": "Ontario Film and Television Tax Credit",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "on_opstc",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Canada",
+      "program_or_pathway": "Ontario Production Services Tax Credit",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "qc_film_production",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Canada",
+      "program_or_pathway": "Quebec Film and Television Production Tax Credit",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "cl_corfo_incentive",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Chile",
+      "program_or_pathway": "Chile Corfo Film Incentive",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "co_film_colombia",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Colombia",
+      "program_or_pathway": "Colombia Film Commission — Film In Colombia",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "cr_film_incentive",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Costa Rica",
+      "program_or_pathway": "Costa Rica Film Commission Production Facilitation",
+      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "canonical_id": "do_film_incentive",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Dominican Republic",
+      "program_or_pathway": "Dominican Republic Film Commission Incentive",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "ec_film_incentive",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Ecuador",
+      "program_or_pathway": "Ecuador Film Commission Production Facilitation",
+      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "canonical_id": "gt_film_commission",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Guatemala",
+      "program_or_pathway": "Guatemala Film Commission (INGUAT) Production Facilitation",
+      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "canonical_id": "gy_film_commission",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Guyana",
+      "program_or_pathway": "Guyana Tourism Authority Film Production Support",
+      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "canonical_id": "jm_film_incentive",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Jamaica",
+      "program_or_pathway": "Jamaica Entertainment Industry Incentive Programme",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "mx_eficine_incentive",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Mexico",
+      "program_or_pathway": "Mexico EFICINE (Article 226) and PROCINE Fund",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "nz_spg_international",
+      "blocker_type": "existing_program",
+      "jurisdiction": "New Zealand",
+      "program_or_pathway": "New Zealand Screen Production Grant (International)",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "pa_film_incentive",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Panama",
+      "program_or_pathway": "Panama Film Commission Production Facilitation",
+      "starting_unresolved_reason": "Current administering government/film authority or enabling instrument proving whether producer-accessible economics exist; if yes, official guidelines and statute/regulation."
+    },
+    {
+      "canonical_id": "pe_film_incentive",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Peru",
+      "program_or_pathway": "Peru DAFO Film Production Support",
+      "starting_unresolved_reason": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "canonical_id": "tt_film_incentive",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Trinidad & Tobago",
+      "program_or_pathway": "Trinidad & Tobago Creative Industries Production Incentive",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "us_itvs_fund",
+      "blocker_type": "existing_program",
+      "jurisdiction": "United States",
+      "program_or_pathway": "ITVS International Documentary Fund",
+      "starting_unresolved_reason": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "canonical_id": "us_sundance_doc",
+      "blocker_type": "existing_program",
+      "jurisdiction": "United States",
+      "program_or_pathway": "Sundance Institute — Documentary Fund",
+      "starting_unresolved_reason": "Current agency/fund guidelines, application call, award/recoupment terms, eligible-cost schedule, effective dates and source archive."
+    },
+    {
+      "canonical_id": "us_al_film_incentive",
+      "blocker_type": "existing_program",
+      "jurisdiction": "United States",
+      "program_or_pathway": "Alabama Film Incentive",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "us_az_film_credit",
+      "blocker_type": "existing_program",
+      "jurisdiction": "United States",
+      "program_or_pathway": "Arizona Motion Picture Production Program",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "us_co_film_incentive",
+      "blocker_type": "existing_program",
+      "jurisdiction": "United States",
+      "program_or_pathway": "Colorado Film Incentive",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "us_ct_film_credit",
+      "blocker_type": "existing_program",
+      "jurisdiction": "United States",
+      "program_or_pathway": "Connecticut Film Tax Credit",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "us_hi_film_tax_credit",
+      "blocker_type": "existing_program",
+      "jurisdiction": "United States",
+      "program_or_pathway": "Hawaii Film and Digital Media Income Tax Credit",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "us_il_film_credit",
+      "blocker_type": "existing_program",
+      "jurisdiction": "United States",
+      "program_or_pathway": "Illinois Film Tax Credit",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "us_ky_keiia",
+      "blocker_type": "existing_program",
+      "jurisdiction": "United States",
+      "program_or_pathway": "Kentucky Entertainment Industry Incentive Act (KEIIA)",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "us_md_film_credit",
+      "blocker_type": "existing_program",
+      "jurisdiction": "United States",
+      "program_or_pathway": "Maryland Film Production Activity Tax Credit",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "us_ma_film_credit",
+      "blocker_type": "existing_program",
+      "jurisdiction": "United States",
+      "program_or_pathway": "Massachusetts Film Tax Credit",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "us_mn_film_credit",
+      "blocker_type": "existing_program",
+      "jurisdiction": "United States",
+      "program_or_pathway": "Minnesota Film Production Tax Credit",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "us_ms_film_credit",
+      "blocker_type": "existing_program",
+      "jurisdiction": "United States",
+      "program_or_pathway": "Mississippi Advantage Film Program",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "us_nv_film_incentive",
+      "blocker_type": "existing_program",
+      "jurisdiction": "United States",
+      "program_or_pathway": "Nevada Film Incentive Program",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "us_nc_film_grant",
+      "blocker_type": "existing_program",
+      "jurisdiction": "United States",
+      "program_or_pathway": "North Carolina Film & Entertainment Grant",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "us_ok_ofer",
+      "blocker_type": "existing_program",
+      "jurisdiction": "United States",
+      "program_or_pathway": "Oklahoma Film Enhancement Rebate",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "us_pa_film_credit",
+      "blocker_type": "existing_program",
+      "jurisdiction": "United States",
+      "program_or_pathway": "Pennsylvania Film Production Tax Credit",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "us_pr_film_incentive",
+      "blocker_type": "existing_program",
+      "jurisdiction": "United States",
+      "program_or_pathway": "Puerto Rico Film Industry Economic Incentives Act",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "us_ri_film_credit",
+      "blocker_type": "existing_program",
+      "jurisdiction": "United States",
+      "program_or_pathway": "Rhode Island Motion Picture Production Tax Credit",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "us_sc_film_credit",
+      "blocker_type": "existing_program",
+      "jurisdiction": "United States",
+      "program_or_pathway": "South Carolina Film Production Credit",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "us_tn_film_incentive",
+      "blocker_type": "existing_program",
+      "jurisdiction": "United States",
+      "program_or_pathway": "Tennessee Film Entertainment Incentives",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "us_ut_film_incentive",
+      "blocker_type": "existing_program",
+      "jurisdiction": "United States",
+      "program_or_pathway": "Utah Motion Picture Incentive Program",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "us_va_film_credit",
+      "blocker_type": "existing_program",
+      "jurisdiction": "United States",
+      "program_or_pathway": "Virginia Motion Picture Production Tax Credit",
+      "starting_unresolved_reason": "Current statute/regulation, tax-authority guidance, administering film-agency manual and official QPE/cultural-test materials."
+    },
+    {
+      "canonical_id": "us_wa_mpcp",
+      "blocker_type": "existing_program",
+      "jurisdiction": "United States",
+      "program_or_pathway": "Washington State Motion Picture Competitiveness Program",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    },
+    {
+      "canonical_id": "uy_xxi_incentive",
+      "blocker_type": "existing_program",
+      "jurisdiction": "Uruguay",
+      "program_or_pathway": "Uruguay XXI Film Incentive",
+      "starting_unresolved_reason": "Current enabling regulation/decision plus administering-agency guidelines, QPE schedule, forms and audit/final-claim manual."
+    }
+  ],
+  "claimed_treaty_or_pathways": [
+    {
+      "canonical_id": "AUSTRALIA_PARTNER_LIST_RECONCILIATION",
+      "blocker_type": "treaty_queue",
+      "jurisdiction": "Australia — treaty pathway",
+      "program_or_pathway": "Australia official co-production partner-list reconciliation",
+      "starting_unresolved_reason": "Reconcile current treaties/MOUs, formats, contribution tests, approval timing and national-treatment consequences."
+    },
+    {
+      "canonical_id": "CANADA_PARTNER_LIST_RECONCILIATION",
+      "blocker_type": "treaty_queue",
+      "jurisdiction": "Canada — treaty pathway",
+      "program_or_pathway": "Canada audiovisual treaty co-production partner-list reconciliation",
+      "starting_unresolved_reason": "Diff complete current Telefilm treaty/MOU list; capture texts, authorities, contribution and nationality rules."
+    }
+  ]
+}
