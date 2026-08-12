@@ -1277,9 +1277,54 @@ def build_allocated_structures(
                                     if target == route_target else "")),
         ))
 
+    # Treaty co-production: AUTO-ENUMERATED for every partner the real
+    # treaty registry actually proves eligible (a registered bilateral
+    # treaty, or shared European Convention membership) — the SAME
+    # auto-enumeration pattern already used for component_relocation
+    # above. Consolidated Global Remediation Phase H: before this fix, a
+    # treaty_coproduction StructureSpec was composed ONLY when a producer
+    # manually elected treaty_partner_code, so a jurisdiction pair with a
+    # real, registered treaty instrument could silently never surface a
+    # structure unless a user happened to elect it by hand — a candidate-
+    # generation gap, not a pricing or treaty-data gap (price_segment and
+    # treaty_engine were already correct; nothing downstream changes).
+    # For Mauritius specifically this auto-enumeration correctly yields
+    # ZERO structures (treaty_engine holds no MU bilateral treaty and MU
+    # is not a European Convention signatory — proven, not a gap; see
+    # `reachable_treaty_partners` in the coverage report below), so this
+    # fix has NO effect on Little Utopia's served candidate set. It fixes
+    # the general mechanism for any other jurisdiction that does have a
+    # real treaty partner. See tests/optimization/test_treaty_candidate_generation.py.
+    from app.calculators import treaty_engine as te
+
+    auto_treaty_partner_codes = sorted({
+        code for code in structure_partner_codes
+        if te.get_bilateral_treaty(JURISDICTION_CODE, code) is not None
+        or (te.is_european_convention_signatory(JURISDICTION_CODE)
+            and te.is_european_convention_signatory(code))
+    })
+    for target in auto_treaty_partner_codes:
+        programs = {JURISDICTION_CODE: "mu_edb_incentive"}
+        partner_slug = slug_by_code.get(target)
+        if partner_slug:
+            programs[target] = partner_slug
+        specs.append(StructureSpec(
+            structure_id=f"ALLOC-TREATY-MU-{target}",
+            structure_type="treaty_coproduction",
+            label=f"Treaty co-production MU + {target}",
+            primary_jurisdiction=JURISDICTION_CODE,
+            participants=(JURISDICTION_CODE, target),
+            incentive_programs=programs,
+            notes="Auto-evaluated: a real bilateral or European Convention "
+                  "treaty instrument is registered between MU and this "
+                  "partner in treaty_engine — no producer election required, "
+                  "mirroring the component_relocation auto-enumeration above.",
+        ))
+
     treaty_partner = fact_answers.get("treaty_partner_code")
     if treaty_partner:
         treaty_partner = str(treaty_partner).upper()
+    if treaty_partner and treaty_partner not in auto_treaty_partner_codes:
         programs = {JURISDICTION_CODE: "mu_edb_incentive"}
         partner_slug = slug_by_code.get(treaty_partner)
         if partner_slug:
@@ -1297,8 +1342,10 @@ def build_allocated_structures(
             primary_jurisdiction=JURISDICTION_CODE,
             participants=(JURISDICTION_CODE, treaty_partner),
             incentive_programs=programs,
-            notes="Elected via the treaty_partner_code fact; treaty status is "
-                  "evaluated against the real treaty registry, never assumed.",
+            notes="Elected via the treaty_partner_code fact (no matching real "
+                  "treaty instrument was found by auto-enumeration); treaty "
+                  "status is evaluated against the real treaty registry, "
+                  "never assumed.",
         ))
 
     # Split production: an explicit producer election of per-account

@@ -1,0 +1,150 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-12T00:00:00-07:00",
+  "repository": "surajgohill-oss/Frametax",
+  "branch": "claude/audit-frametax-features-NZcX5",
+  "served_runtime_path": "frontend -> app/api/v1/cineglobe.py -> app/demo/little_utopia_state.py::build_allocated_structures() -> discovery/capability/qualification/allocation/pricing/normalization/ranking calculators -> app/bridge/package_builder.py -> serialization -> UI. Synchronous, in-memory, zero DB dependency. app/models/incentive.py's DB-backed path (app/api/v1/structures.py, app/optimization/*) is a separate, confirmed-dormant path, never reachable from the frontend -- untouched by this pass.",
+  "remediation_input_accounting": {
+    "total_implementation_items": 213,
+    "by_implementation_action": {
+      "CORRECT_DATA": 149,
+      "MERGE_PROGRAM": 3,
+      "ADD_PROGRAM": 22,
+      "UPDATE_TREATY_DATA": 7,
+      "SUPERSEDE_PROGRAM": 3,
+      "DISABLE_UNPRICEABLE": 25,
+      "EXCLUDE_NON_ECONOMIC": 4
+    },
+    "every_item_has_exactly_one_canonical_id_and_action": true,
+    "artifact": "docs/validation/CONSOLIDATED_REMEDIATION_PHASE_A_INVENTORY.json"
+  },
+  "implementation_summary": {
+    "IMPLEMENTED_THIS_PASS": {
+      "count": 29,
+      "description": "25 UNPRICEABLE_AUTHORITY_INSUFFICIENT + 4 NON_ECONOMIC_CONFIRMED canonical identities now carry an explicit, deterministic coverage-status record (app/data/authority_coverage_registry.py) distinguishing not-yet-examined from confirmed-insufficient/non-economic, with metadata preserved for future reactivation. Locked in by tests/data/test_authority_coverage_registry.py (7 tests): none of the 29 have an executable DoctrineRecord or appear in ALL_PROFILES."
+    },
+    "ALREADY_CURRENT_VERIFIED_IN_CODE": {
+      "count": 1,
+      "description": "au_location_offset: confirmed already at the correct 30% rate with the AUD $20M QAPE hard gate and Producer/Location/PDV split, from the prior Incentive/Optimizer Core Closeout (commit 21af675). No change needed."
+    },
+    "NO_ACTIVE_PRICING_RISK_CATALOG_HYGIENE_ONLY": {
+      "count": 7,
+      "description": "3 MERGE_PROGRAM + 3 SUPERSEDE_PROGRAM canonical IDs plus ny_state_film (duplicate-of-us_ny_film_credit claim): every one confirmed either absent from the codebase entirely or DISCOVERY-tier with no DoctrineRecord/RateRule -- no live double-pricing or superseding-conflict risk exists in the served path today. Remaining action is catalog-row naming hygiene, not a pricing/ranking correctness fix."
+    },
+    "DEFERRED_REQUIRES_PRIMARY_SOURCE_CAPTURE": {
+      "count": 176,
+      "description": "Every other CORRECT_DATA/ADD_PROGRAM/UPDATE_TREATY_DATA item. The canonical remediation input records WHAT is wrong/incomplete and cites authority source URLs but does not embed a literal replacement rate/cap/threshold/party value for the large majority of these -- applying a field-level correction without re-deriving it from the cited sources would mean reopening primary-authority research, which this task's own instructions close. No value was fabricated, guessed, or silently applied. Full itemized list with per-item reasoning: docs/validation/GLOBAL_REMEDIATION_DATA_BACKLOG.json."
+    }
+  },
+  "architecture_constraints_from_remediation_input": {
+    "Preserve the contingency engine.": "PRESERVED \u2014 untouched, full suite green.",
+    "Preserve substantially correct NPC and ranking logic.": "PRESERVED \u2014 untouched calculation logic; only Bridge export representation and candidate generation touched.",
+    "Correct Bridge output to use the canonical post-adjustment value in the later implementation phase.": "VERIFIED GENERAL (was previously verified only for the MU/MT/GR/GB/AU pilot) \u2014 see runtime_verification item 11.",
+    "Preserve downstream treaty/co-production/hybrid pricing and close the structure candidate-generation gap.": "CLOSED \u2014 see runtime_verification item 9.",
+    "Local-SPV payment alone does not establish qualifying territorial expenditure.": "VERIFIED \u2014 see runtime_verification item 6.",
+    "Preserve the canonical default-inclusion QPE rule.": "VERIFIED \u2014 see runtime_verification item 5.",
+    "Preserve the established Mauritius, Malta, Greece, United Kingdom and Australia calibration.": "PRESERVED \u2014 MU baseline NPC byte-identical ($3,057,794.90), 177 structures, rank-1 unchanged throughout every change in this pass."
+  },
+  "files_changed": {
+    "modified": [
+      "frametax2/backend/app/demo/little_utopia_state.py"
+    ],
+    "created": [
+      "frametax2/backend/app/data/authority_coverage_registry.py",
+      "frametax2/backend/tests/data/test_authority_coverage_registry.py",
+      "frametax2/backend/tests/data/test_territoriality_and_qpe_default_inclusion.py",
+      "frametax2/backend/tests/optimization/test_treaty_candidate_generation.py",
+      "frametax2/backend/tests/bridge/test_npc_canonical_value_generalized.py",
+      "docs/validation/CONSOLIDATED_REMEDIATION_PHASE_A_INVENTORY.json",
+      "docs/validation/GLOBAL_REMEDIATION_DATA_BACKLOG.json",
+      "docs/validation/CONSOLIDATED_GLOBAL_REMEDIATION_CLOSEOUT.md",
+      "docs/validation/CONSOLIDATED_GLOBAL_REMEDIATION_VERIFICATION.json"
+    ],
+    "migrations": [],
+    "schema_changes": "None to SQLAlchemy models (the served path is DB-free). One new pure-Python module (authority_coverage_registry.py) additive to app/data/.",
+    "engine_changes": "None to any calculator's arithmetic. One candidate-generation addition in little_utopia_state.py (auto-enumerated treaty_coproduction specs).",
+    "candidate_generation_changes": "Treaty co-production StructureSpecs are now auto-enumerated from the real treaty_engine registry (bilateral treaty OR shared European Convention membership) for every executable partner, in addition to the pre-existing manual treaty_partner_code election (kept as a fallback for unregistered pairs).",
+    "bridge_changes": "None this pass (already correct from commit 21af675) \u2014 verified general."
+  },
+  "runtime_verification": [
+    {
+      "id": 1,
+      "check": "Canonical data loading",
+      "result": "RUNTIME VERIFIED",
+      "evidence": "build_allocated_structures(get_state()) returns 177 structures live; discovery/qualification/allocation/pricing/ranking all execute without error."
+    },
+    {
+      "id": 2,
+      "check": "Unpriceable exclusion (25 records)",
+      "result": "RUNTIME VERIFIED",
+      "evidence": "tests/data/test_authority_coverage_registry.py: all 25 UNPRICEABLE + 4 NON_ECONOMIC slugs absent from executable_jurisdiction_registry._REGISTRY and jurisdiction_comparison.ALL_PROFILES."
+    },
+    {
+      "id": 3,
+      "check": "Non-economic exclusion",
+      "result": "RUNTIME VERIFIED",
+      "evidence": "Same test file; is_covered_unpriceable('cn_film_incentive') is True, confirmed never a candidate."
+    },
+    {
+      "id": 4,
+      "check": "Hard gates (representative: Australia A$20M QAPE)",
+      "result": "RUNTIME VERIFIED",
+      "evidence": "AU_DOCTRINE min_qpe_usd=10,000,000.0 confirmed live in program_rate_rules_worldwide.py; AU national structures correctly absent from Little Utopia's priced set (pre-existing, re-confirmed, not touched this pass)."
+    },
+    {
+      "id": 5,
+      "check": "QPE default-inclusion rule",
+      "result": "RUNTIME VERIFIED",
+      "evidence": "tests/data/test_territoriality_and_qpe_default_inclusion.py::test_open_default_include_qualifies_a_line_with_no_explicit_rule \u2014 a line with no explicit rule row still QUALIFIES under OPEN_DEFAULT_INCLUDE doctrine."
+    },
+    {
+      "id": 6,
+      "check": "Territoriality (local-SPV payment alone does not qualify foreign spend)",
+      "result": "RUNTIME VERIFIED",
+      "evidence": "tests/data/test_territoriality_and_qpe_default_inclusion.py::test_local_spv_payment_alone_does_not_override_territorial_exclusion \u2014 a labor line physically outside the jurisdiction stays EXCLUDED on TERRITORIAL_NEXUS grounds even with payroll_routing_localized=True."
+    },
+    {
+      "id": 7,
+      "check": "Conditional uplifts do not price as guaranteed",
+      "result": "RUNTIME VERIFIED (pre-existing, re-confirmed)",
+      "evidence": "SegmentEconomics.ceiling_requires_confirmation mechanism (commit 21af675) untouched and still exercised by the full suite (allocation_pricing tests green)."
+    },
+    {
+      "id": 8,
+      "check": "Treaty data loads; valid national-treatment paths represented",
+      "result": "RUNTIME VERIFIED",
+      "evidence": "treaty_engine._BILATERAL and _MULTILATERAL registries load and are queried live by both the new auto-enumeration code and get_bilateral_treaty()/is_european_convention_signatory() in tests/optimization/test_treaty_candidate_generation.py."
+    },
+    {
+      "id": 9,
+      "check": "Candidate generation: a valid treaty/co-production/hybrid pathway generates when conditions are met",
+      "result": "RUNTIME VERIFIED",
+      "evidence": "tests/optimization/test_treaty_candidate_generation.py: real CA-FR / CA-DE bilateral treaties correctly selected by the new auto-enumeration predicate; CA-JP (no registered treaty) correctly excluded; Little Utopia's own MU auto-enumeration correctly yields zero (proven-zero, not a gap) with 177 structures and NPC byte-identical; manual treaty_partner_code election fallback confirmed still functional for an unregistered pair (produces ALLOC-TREATY-MU-JP)."
+    },
+    {
+      "id": 10,
+      "check": "NPC/ranking consumes post-adjustment canonical values",
+      "result": "RUNTIME VERIFIED",
+      "evidence": "tests/bridge/test_npc_canonical_value_generalized.py::test_ranking_primary_sort_key_is_the_same_canonical_adjusted_field \u2014 the full 149-structure priced ranking list is strictly ascending by npc_with_adjustments_usd."
+    },
+    {
+      "id": 11,
+      "check": "Bridge exports the same canonical value ranking uses",
+      "result": "RUNTIME VERIFIED",
+      "evidence": "tests/bridge/test_npc_canonical_value_generalized.py: 20 randomly-sampled non-pilot structures (e.g. ALLOC-RELOC-HR, ALLOC-RELOC-CH, ALLOC-COMPONENT-POST-US-PR) all show pkg.economics.npc_usd == served npc_with_adjustments_usd, 0 mismatches. Previously verified only for the MU/MT/GR/GB/AU pilot -- now confirmed general."
+    }
+  ],
+  "test_suite": {
+    "new_tests_added": 18,
+    "new_test_files": 5,
+    "full_backend_suite": "4008 passed, 1 skipped, 1 pre-existing unrelated failure (tests/test_global_discovery.py::TestRecommendationTitles::test_scenarios_and_workspace_both_use_the_canonical_title_formatter -- a frontend Workspace.jsx title-formatter guard; git-confirmed zero local diff on that file, and this exact failure is already documented as pre-existing and unrelated in CAPABILITY_LEDGER.md's Incentive/Optimizer Core Closeout entry).",
+    "little_utopia_regression": "177 structures (1 single_country, 88 full_relocation, 88 component_relocation, 0 treaty_coproduction), MU baseline npc_with_adjustments_usd = $3,057,794.90 byte-identical, rank-1 ALLOC-BASELINE-MU unchanged, before and after every change in this pass."
+  },
+  "remaining_blockers": {
+    "data_completion_backlog": "176 CORRECT_DATA/ADD_PROGRAM/UPDATE_TREATY_DATA items remain data-incomplete pending a dedicated primary-source data-entry pass (each item's cited sources are preserved in docs/validation/GLOBAL_REMEDIATION_DATA_BACKLOG.json). This is a DATA COMPLETENESS gap, not a runtime-correctness or architecture gap -- every P0 safety property (no synthetic economics for unpriceable/non-economic programs, correct territoriality, correct QPE default-inclusion, correct candidate generation, correct NPC/Bridge canonical values) is implemented and runtime-verified.",
+    "catalog_hygiene_backlog": "7 items (3 merge + 3 supersede + the ny_state_film naming duplicate) have zero live pricing risk today but still warrant a cosmetic catalog-row cleanup pass in app/data/global_inventory*.py and coverage_report.py's tracking sets.",
+    "true_blocking_rule_gaps": 0
+  },
+  "final_gate": "NO_GO_REMEDIATION_NOT_RUNTIME_VERIFIED",
+  "final_gate_clarification": "This NO_GO reflects incomplete DATA POPULATION (176 of 213 canonical items still need a dedicated primary-source data-entry pass), not an architecture or runtime-correctness failure. Every deterministic-chain repair explicitly required by this task (unpriceable/non-economic exclusion, QPE default-inclusion, territoriality, candidate-generation gap closure, NPC/ranking, Bridge canonical export) is implemented and passes targeted runtime verification (11/11) plus the full backend regression suite (4008/4009, 1 pre-existing unrelated failure). The master engineer may reasonably choose to authorize Little Utopia WORLDWIDE runtime acceptance on the strength of the architecture verification alone and treat the data backlog as a parallel, non-blocking track -- that judgment call belongs to the master engineer, not to this pass, per this task's own scope rule."
+}
