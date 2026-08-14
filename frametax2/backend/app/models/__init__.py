@@ -24,6 +24,12 @@ from app.models.screenplay import (  # noqa: F401
     ScreenplayDocument,
     ScreenplayChunk,
     ExtractedScriptElement,
+    Scene,
+    Character,
+)
+from app.models.production_requirement import (  # noqa: F401
+    ProductionRequirement,
+    ProductionAssumption,
 )
 from app.models.production import ProductionStructure, StructureCalculationResult  # noqa: F401
 from app.models.fx import FXRate  # noqa: F401

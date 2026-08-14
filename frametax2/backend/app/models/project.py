@@ -68,5 +68,8 @@ class Project(Base):
     facts: Mapped[list["ProjectFact"]] = relationship(back_populates="project")
     activity: Mapped[list["ProjectActivity"]] = relationship(back_populates="project")
     location_requirements: Mapped[list["ProjectLocationRequirement"]] = relationship(back_populates="project")
+    # Script Analyzer SA-1
+    production_requirements: Mapped[list["ProductionRequirement"]] = relationship(back_populates="project")
+    production_assumptions: Mapped[list["ProductionAssumption"]] = relationship(back_populates="project")
     people: Mapped[list["ProjectPerson"]] = relationship(back_populates="project")
     final_result: Mapped["FinalProductionResult | None"] = relationship(back_populates="project")

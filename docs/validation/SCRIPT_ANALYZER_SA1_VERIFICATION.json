@@ -1,0 +1,257 @@
+{
+  "schema_version": "1.0",
+  "phase": "SA-1",
+  "generated_at": "2026-08-14T00:00:00-07:00",
+  "architecture_commit_consumed": "04bb530 docs: define canonical script analyzer architecture",
+  "architecture_inputs": [
+    "docs/validation/SCRIPT_ANALYZER_CANONICAL_ARCHITECTURE.json (controls)",
+    "docs/validation/SCRIPT_ANALYZER_CANONICAL_ARCHITECTURE.md",
+    "docs/validation/SCRIPT_ANALYZER_EXISTING_CAPABILITY_RECONCILIATION.json/.md",
+    "docs/validation/GEMINI_SCRIPT_ANALYZER_BTL_ARCHITECTURE.json/.md"
+  ],
+  "repository": "surajgohill-oss/Frametax",
+  "branch": "claude/audit-frametax-features-NZcX5",
+  "base_commit": "04bb530591f03792c13fafcf078eb0d7e60ca7e2",
+  "files_changed": {
+    "new": [
+      "frametax2/backend/app/ingestion/screenplay_structural_parser.py",
+      "frametax2/backend/app/models/production_requirement.py",
+      "frametax2/backend/app/services/script_parse_status.py",
+      "frametax2/backend/app/services/script_analysis_service.py",
+      "frametax2/backend/app/services/canonical_production_state.py",
+      "frametax2/backend/app/services/optimizer_handoff.py",
+      "frametax2/backend/app/api/v1/script_analysis.py",
+      "frametax2/backend/alembic/versions/0067_script_analyzer_sa1.py",
+      "frametax2/backend/tests/test_script_analyzer_sa1.py",
+      "frametax2/backend/tests/fixtures/sa1_sample_screenplay.txt"
+    ],
+    "modified": [
+      "frametax2/backend/app/models/screenplay.py",
+      "frametax2/backend/app/models/project_location_requirement.py",
+      "frametax2/backend/app/models/project.py",
+      "frametax2/backend/app/models/__init__.py",
+      "frametax2/backend/app/main.py"
+    ]
+  },
+  "migrations": {
+    "revision": "0067",
+    "down_revision": "0066",
+    "new_tables": [
+      "scenes",
+      "characters",
+      "production_requirements",
+      "production_assumptions"
+    ],
+    "extended_tables": [
+      "screenplay_documents",
+      "extracted_script_elements",
+      "project_location_requirements"
+    ],
+    "additive_only": true,
+    "reversibility": "RUNTIME VERIFIED \u2014 downgrade 0067->0066 and re-upgrade both executed cleanly against the live database."
+  },
+  "reused_components": [
+    "universal Document/DocumentVersion ingestion (checksum is source identity)",
+    "app/ingestion/screenplay_parser.py (Gen-1 chunker left intact for existing callers)",
+    "app/models/screenplay.py::ScreenplayDocument / ExtractedScriptElement (extended, not replaced)",
+    "app/models/project_location_requirement.py::ProjectLocationRequirement (extended)",
+    "app/models/project_fact.py::ProjectFact (derived facts written with provenance)",
+    "existing budget taxonomy (ATLBTLCategory, SpendCategory) and BudgetLineItem",
+    "existing optimizer/discovery/pricing/NPC/ranking and Bridge \u2014 untouched"
+  ],
+  "new_components": [
+    "screenplay_structural_parser (deterministic SA-1 structure, no AI)",
+    "Scene, Character, ProductionRequirement, ProductionAssumption",
+    "script_parse_status (7-state deterministic enum)",
+    "script_analysis_service (dispatch, parse, persist, derive, requirements)",
+    "CanonicalProductionStateBuilder (generic, fingerprinted)",
+    "OptimizerHandoffAdapter -> ProductionOptimizerInput"
+  ],
+  "connected_components": [
+    "DocumentVersion -> ScreenplayDocument typed projection",
+    "deterministic parse -> Scene/Character/SceneElement persistence",
+    "parse -> derived ProjectFacts (provenance to screenplay version)",
+    "parse -> ProductionRequirements + scripted LocationRequirements",
+    "generic project -> CanonicalProductionState -> ProductionOptimizerInput"
+  ],
+  "script_parse_capabilities": {
+    "scene_boundaries": true,
+    "source_scene_numbers": true,
+    "int_ext_normalization": "INT | EXT | INT_EXT | UNKNOWN",
+    "day_night_normalization": "DAY | NIGHT | DAWN | DUSK | CONTINUOUS | LATER | UNKNOWN",
+    "page_layout": "form-feed and ascending page-marker layouts detected; word_count/200 used ONLY when no layout exists and then flagged APPROXIMATE_NO_LAYOUT",
+    "page_eighths": true,
+    "source_offsets": true,
+    "character_cues": true,
+    "dialogue_linkage": true,
+    "contd_alias_resolution": true,
+    "scripted_location_and_recurrence": true,
+    "sa1_taxonomy": [
+      "SCENE",
+      "INT_EXT",
+      "DAY_NIGHT",
+      "SCRIPTED_LOCATION",
+      "CHARACTER",
+      "DIALOGUE_ROLE",
+      "EXPLICIT_VEHICLE",
+      "EXPLICIT_ANIMAL",
+      "EXPLICIT_WEAPON",
+      "EXPLICIT_MINOR",
+      "EXPLICIT_PROP",
+      "PERIOD_REFERENCE"
+    ],
+    "ai_used": false,
+    "ambiguity_policy": "UNKNOWN is preserved; never guessed",
+    "scale_policy": "presence recorded, quantity/unit left NULL \u2014 'a horse appears' never becomes '2 horses for 5 days'"
+  },
+  "api_path": [
+    "POST /api/v1/script-analysis/projects/{project_id}/parse",
+    "GET  /api/v1/script-analysis/projects/{project_id}/script",
+    "GET  /api/v1/script-analysis/projects/{project_id}/state",
+    "GET  /api/v1/script-analysis/projects/{project_id}/optimizer-input"
+  ],
+  "runtime_test_project": {
+    "name": "SA1 Generic Test Project",
+    "project_id": "fc31e468-4dae-4ccb-b2a7-6da826702084",
+    "is_little_utopia": false,
+    "screenplay": "The Salt Road (text fixture)",
+    "versions": [
+      "the_salt_road_v1.txt (5 scenes)",
+      "the_salt_road_v2.txt (6 scenes, current)"
+    ]
+  },
+  "runtime_evidence": [
+    {
+      "step": "backend",
+      "result": "RUNTIME VERIFIED",
+      "detail": "uvicorn app.main:app on 127.0.0.1:8099; /health ok; all 4 script-analysis routes present in the live OpenAPI schema; zero errors in the server log."
+    },
+    {
+      "step": "upload -> DocumentVersion",
+      "result": "RUNTIME VERIFIED",
+      "detail": "DocumentVersion created with checksum f39ad34ade93e92f...; identity taken from the checksum, not the filename."
+    },
+    {
+      "step": "DocumentVersion -> ScreenplayDocument",
+      "result": "RUNTIME VERIFIED",
+      "detail": "Typed projection created for exactly that version, initial status SCRIPT_PARSE_READY."
+    },
+    {
+      "step": "deterministic parse",
+      "result": "RUNTIME VERIFIED",
+      "detail": "POST /parse returned SCRIPT_PARSED, parser sa1-structural-1.0.0, 5 scenes / 3 characters / 43 elements, page_basis APPROXIMATE_NO_LAYOUT with an explicit warning."
+    },
+    {
+      "step": "idempotency",
+      "result": "RUNTIME VERIFIED",
+      "detail": "Second POST against the unchanged version returned reparsed=false \u2014 no rewrite."
+    },
+    {
+      "step": "revised-version separation",
+      "result": "RUNTIME VERIFIED",
+      "detail": "A second DocumentVersion produced its OWN ScreenplayDocument (fingerprint 75ae884c3d66, 6 scenes); v1's projection retained its own 5 scenes and fingerprint f39ad34ade93. Nothing was overwritten."
+    },
+    {
+      "step": "scenes persisted",
+      "result": "RUNTIME VERIFIED",
+      "detail": "GET /script returned 6 scenes with INT/EXT/INT_EXT, DAY/NIGHT/DAWN/CONTINUOUS, locations and eighths."
+    },
+    {
+      "step": "characters persisted",
+      "result": "RUNTIME VERIFIED",
+      "detail": "MARA/DRIVER/WAITRESS with speaking-role state, scene counts, dialogue blocks and eighths burden. 'MARA (CONT'D)' resolved to MARA, not a second character."
+    },
+    {
+      "step": "elements persisted",
+      "result": "RUNTIME VERIFIED",
+      "detail": "43 SceneElements across the SA-1 taxonomy with source spans and evidence hashes; all quantity/unit NULL and is_interpretation false."
+    },
+    {
+      "step": "derived facts",
+      "result": "RUNTIME VERIFIED",
+      "detail": "20 ProjectFacts written with provenance to the screenplay DocumentVersion and parser version."
+    },
+    {
+      "step": "location requirements",
+      "result": "RUNTIME VERIFIED",
+      "detail": "4 scripted locations; COASTAL HIGHWAY correctly flagged is_recurring with 2 source scenes; production_approach UNKNOWN and production_location NULL on every row."
+    },
+    {
+      "step": "production requirements",
+      "result": "RUNTIME VERIFIED",
+      "detail": "15 evidence-backed requirements (characters, locations, explicit vehicle/animal/weapon/minor, period) with scene provenance and NULL quantities."
+    },
+    {
+      "step": "canonical production state",
+      "result": "RUNTIME VERIFIED",
+      "detail": "GET /state returned a fingerprinted CanonicalProductionState; fingerprint bce7bc332e88945cf46f056ccf676d6b..."
+    },
+    {
+      "step": "optimizer handoff \u2014 blocked path",
+      "result": "RUNTIME VERIFIED",
+      "detail": "With no budget: readiness BLOCKED_INCOMPLETE_INPUTS, accepted=false, optimizer_input null, BUDGET_MISSING blocker stated. The adapter refused rather than defaulting."
+    },
+    {
+      "step": "optimizer handoff \u2014 accepted path",
+      "result": "RUNTIME VERIFIED",
+      "detail": "After attaching a 6-line budget and USER_CONFIRMED assumptions: readiness READY_FOR_OPTIMIZER, accepted=true, ProductionOptimizerInput sa1-1.0.0 emitted with gross $1,720,000, 24 shoot days, base jurisdiction MT, provisional=true because unknowns remain."
+    },
+    {
+      "step": "territoriality guard",
+      "result": "RUNTIME VERIFIED",
+      "detail": "Every budget line carries territorial_basis UNKNOWN and service_location_jurisdiction null; a labor line with unstated residency is reported UNKNOWN, never assumed resident. Payer/SPV is never used as a proxy."
+    }
+  ],
+  "generic_project_state_result": {
+    "scene_count": 6,
+    "total_eighths": 8,
+    "scripted_locations": 4,
+    "production_requirements": 15,
+    "effective_facts": 20,
+    "budget_state": "BUDGET_PRESENT",
+    "gross_budget_usd": 1720000.0,
+    "readiness": "READY_FOR_OPTIMIZER",
+    "input_fingerprint": "bce7bc332e88945cf46f056ccf676d6b0376f896780bb34f5e7ac55f9b89a308",
+    "unknown_count": 6,
+    "blocker_count": 0
+  },
+  "optimizer_handoff_result": {
+    "accepted": true,
+    "contract": "ProductionOptimizerInput sa1-1.0.0",
+    "provisional": true,
+    "gross_production_cost_usd": 1720000.0,
+    "note": "Adapter only. No incentive rule, discovery, structure composition, pricing, NPC or ranking algorithm was modified."
+  },
+  "little_utopia_regression": {
+    "result": "CLEAN \u2014 RUNTIME VERIFIED",
+    "structures": 177,
+    "priced": 48,
+    "baseline_npc_usd": 3057794.9,
+    "rank1": "ALLOC-BASELINE-MU",
+    "detail": "Little Utopia used strictly as a regression fixture. Its upstream assembly was not modified and its served result is byte-identical."
+  },
+  "tests": {
+    "new_file": "frametax2/backend/tests/test_script_analyzer_sa1.py",
+    "new_tests": 23,
+    "focused_result": "23 passed",
+    "full_backend_suite": "4054 passed, 1 skipped, 1 pre-existing unrelated frontend failure (Workspace.jsx title-formatter guard, zero local diff)"
+  },
+  "blocked_or_deferred": [
+    "AI element extraction and multi-model Bridge script analysis \u2014 deferred by design",
+    "Full breakdown taxonomy and complexity/VFX/stunt interpretation \u2014 deferred",
+    "Schedule engine, estimated shoot-day engine \u2014 deferred (assumptions are explicit inputs only)",
+    "Level 1/2/3 budget estimation \u2014 deferred; a script-only project correctly reports BUDGET_MISSING",
+    "Local role-rate database, union/CBA dataset, rate refresh \u2014 deferred",
+    "UI workflows and confirmation UX \u2014 deferred; SA-1 is API only",
+    "Cross-draft scene lineage \u2014 left explicitly null rather than inferred"
+  ],
+  "next_phase_readiness": {
+    "ready": true,
+    "rationale": "The generic upstream path exists end to end and is proven on a non-Little-Utopia project. SA-2 can add AI extraction on top of a persisted, evidence-backed deterministic base without touching the optimizer.",
+    "carried_forward": [
+      "PDF text-layer extraction is not wired into ensure_screenplay_projection in SA-1 \u2014 raw_text is supplied by the caller; a scan-only source is correctly blocked rather than guessed.",
+      "ProductionOptimizerInput is emitted and fingerprinted but is not yet consumed by a generic end-to-end optimizer run; Little Utopia remains the only production-grade optimizer path."
+    ]
+  },
+  "final_gate": "GO_FOR_SCRIPT_ANALYZER_SA2"
+}
