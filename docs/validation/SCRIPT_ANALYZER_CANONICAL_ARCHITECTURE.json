@@ -1,0 +1,347 @@
+{
+  "artifact": {
+    "title": "CineGlobe Script Analyzer + Production Cost Engine Canonical Architecture",
+    "schema_version": "1.0.0",
+    "repository": "surajgohill-oss/Frametax",
+    "branch": "claude/audit-frametax-features-NZcX5",
+    "as_of_date": "2026-08-14",
+    "mode": "architecture synthesis only; no implementation",
+    "final_gate": "GO_FOR_SCRIPT_ANALYZER_IMPLEMENTATION_PLANNING",
+    "primary_inputs": [
+      "docs/validation/SCRIPT_ANALYZER_EXISTING_CAPABILITY_RECONCILIATION.json",
+      "docs/validation/SCRIPT_ANALYZER_EXISTING_CAPABILITY_RECONCILIATION.md",
+      "docs/validation/GEMINI_SCRIPT_ANALYZER_BTL_ARCHITECTURE.json",
+      "docs/validation/GEMINI_SCRIPT_ANALYZER_BTL_ARCHITECTURE.md"
+    ]
+  },
+  "canonical_decisions": [
+    "The Script Analyzer is a production-planning engine; it does not decide incentive qualification or replace the optimizer.",
+    "There is one evidence-progressive production model and one canonical budget lineage. L1, L2 and L3 are maturity states, not separate engines.",
+    "DocumentVersion is the immutable physical-source authority. ScreenplayDocument and BudgetDocument remain typed projections linked to it.",
+    "Actual and estimated budget inputs remain distinguishable. Parsed BudgetLineItem rows are immutable source observations; canonical BudgetLine rows select effective values and preserve lineage.",
+    "Deterministic facts cannot be silently overwritten by AI. AI assertions are staged evidence until precedence and confirmation rules select them.",
+    "AI never supplies rates, FX, fringes, arithmetic, or incentive economics.",
+    "The first implementation is a generic-project end-to-end vertical slice that reaches the existing optimizer without using LittleUtopiaState as its source builder.",
+    "Current static local-cost profiles remain usable only as explicitly labeled Tier C indexed/default estimates, never as production-grade actual rates."
+  ],
+  "canonical_entities": [
+    {"entity":"ProductionProject","decision":"EXTEND","existing_module":"frametax2/backend/app/models/project.py::Project","canonical_role":"Root aggregate for documents, facts, assumptions, planning scenarios, schedules, budgets, estimates, components and optimizer results.","required_change":"Add relationships/current-version pointers through new entities; retain Project identity, lifecycle and leading ProductionStructure semantics."},
+    {"entity":"ScriptDocument","decision":"EXTEND","existing_module":"frametax2/backend/app/models/screenplay.py::ScreenplayDocument","canonical_role":"Typed parse projection for exactly one DocumentVersion of a screenplay draft.","required_change":"Require a source DocumentVersion for active analysis; add parser/version metadata and current parse fingerprint. DocumentVersion, not filename, is authority."},
+    {"entity":"Scene","decision":"BUILD_NEW","existing_module":"none; extend output of frametax2/backend/app/ingestion/screenplay_parser.py","canonical_role":"Version-scoped deterministic screenplay unit with sequence, source scene number, page start/end/eighths, normalized slugline, INT/EXT, day/night, raw text span and parse confidence.","required_change":"ID is stable within a DocumentVersion using version checksum + sequence + normalized heading fingerprint. Cross-draft lineage is explicit and nullable; never infer identity silently."},
+    {"entity":"SceneElement","decision":"EXTEND","existing_module":"frametax2/backend/app/models/screenplay.py::ExtractedScriptElement","canonical_role":"Evidence-backed objective mention or interpretation attached to a Scene and controlled taxonomy.","required_change":"Add scene_id, taxonomy key, normalized value, quantity/range/unit, extraction method, evidence offsets/hash, evidence state, interpretation flag, review state and supersession/version fields."},
+    {"entity":"Character","decision":"BUILD_NEW","existing_module":"none; do not reuse ProjectPerson, which represents attached real people","canonical_role":"Fictional character identity per script version with aliases, dialogue/scene counts and derived cast burden.","required_change":"Link to Scene appearances/dialogue and optionally to a user-confirmed ProjectPerson casting decision without conflating character and performer."},
+    {"entity":"LocationRequirement","decision":"EXTEND","existing_module":"frametax2/backend/app/models/project_location_requirement.py::ProjectLocationRequirement","canonical_role":"Story/production location need, recurrence, flexibility, stage/practical decision and source scenes.","required_change":"Add normalized location key, scene links, recurrence, production approach state, jurisdiction/city when confirmed, mobility, effective evidence and scenario scope."},
+    {"entity":"ProductionRequirement","decision":"BUILD_NEW","existing_module":"ProductionPackage facts/questions in frametax2/backend/app/calculators/production_package_intelligence.py are reusable consumers","canonical_role":"Normalized requirement generated from script facts and producer decisions: quantity, unit, affected scenes/departments/components, cost/schedule driver keys, mobility and safety/logistics flags.","required_change":"Persist evidence lineage and effective state; connect to ProductionPackage rather than replacing it."},
+    {"entity":"ProjectFact","decision":"EXTEND","existing_module":"frametax2/backend/app/models/project_fact.py::ProjectFact","canonical_role":"Current effective project-wide simple fact selected by precedence.","required_change":"Retain existing source/review fields; connect selection to evidence/override records and ProjectActivity history. Do not make ProjectFact the scene, schedule or budget-line store."},
+    {"entity":"ProductionAssumption","decision":"BUILD_NEW","existing_module":"CrewManifest and ProductionBudgetParams in frametax2/backend/app/calculators/production_adjustment.py provide reusable field concepts only","canonical_role":"Versioned, scenario-scoped planning assumption such as pages/day, crew count, stage split, overtime pattern or prep/wrap duration.","required_change":"Store original/effective value, unit, evidence state, source, bounds, override and impacted cost drivers."},
+    {"entity":"Schedule","decision":"BUILD_NEW","existing_module":"none","canonical_role":"Versioned actual or estimated production calendar for a planning Scenario.","required_change":"Store source type, maturity, current version, assumptions, P10/P50/P90 shoot days, prep/wrap summaries and conflicts. An uploaded actual schedule outranks estimates."},
+    {"entity":"ShootDay","decision":"BUILD_NEW","existing_module":"none","canonical_role":"One scheduled or estimated workday containing scenes, unit, location/stage, day/night, company move, cast/special-element constraints and work quantity.","required_change":"Support ranges for estimated dates/durations; exact dates only for actual/confirmed schedules."},
+    {"entity":"ProductionUnit","decision":"BUILD_NEW","existing_module":"LocationRole and TravelIntelligence concepts in production_package_intelligence.py","canonical_role":"Principal, second, splinter, aerial, marine, VFX plate or other unit with crew profile, jurisdiction and date/day range.","required_change":"Map unit days into schedule, travel, labor, components and budget drivers."},
+    {"entity":"Budget","decision":"BUILD_NEW","existing_module":"connect frametax2/backend/app/models/budget.py::BudgetDocument; do not repurpose it","canonical_role":"Versioned canonical working budget for a Scenario with maturity L1/L2/L3/ACTUAL_MERGED and one continuous line lineage.","required_change":"Reference source BudgetDocuments, CostEstimate run, parent budget version and reconciliation state. BudgetDocument remains the uploaded artifact."},
+    {"entity":"BudgetLine","decision":"BUILD_NEW","existing_module":"connect BudgetLineItem and reuse ATLBTLCategory, SpendCategory and CompensationType from frametax2/backend/app/models/budget.py and enums.py","canonical_role":"Active leaf or inactive aggregate in the progressive budget: department/account, quantity, unit, rate, duration, prep/shoot/wrap, OT, fringe, currency, jurisdiction, component, localization policy, amount range and effective evidence.","required_change":"Reference source BudgetLineItem when actual, preserve stable line_key/parent/supersedes lineage, and prohibit active parent plus active children double counting."},
+    {"entity":"CostDriver","decision":"BUILD_NEW","existing_module":"quantity/rate concepts from production_adjustment.py are reused","canonical_role":"Deterministic mapping from requirement/schedule/assumption to one or more BudgetLines, including formula version and dependency keys.","required_change":"No rates inside AI output; rate lookup is a separate deterministic dependency."},
+    {"entity":"Rate","decision":"BUILD_NEW","existing_module":"connect/extend LocalCostBenchmark and UnionFringeRule in frametax2/backend/app/models/cost.py and FXRate in app/models/fx.py","canonical_role":"Normalized amount or range per role/category/unit/jurisdiction/region/union/vendor with currency, overtime/minimum rules, effective dates, source tier and staleness.","required_change":"Existing multipliers become INDEXED_ESTIMATE records; union rules and FX are adapted, not duplicated."},
+    {"entity":"RateSource","decision":"EXTEND","existing_module":"frametax2/backend/app/models/document.py::SourceDocument","canonical_role":"Authority/market/vendor source for a Rate, with URL/file, publisher, jurisdiction, effective period, review, license and retrieval/verification date.","required_change":"Add/standardize source kind, license/usage constraint, checksum/version and last-verified fields needed by rate maintenance."},
+    {"entity":"CostEstimate","decision":"BUILD_NEW","existing_module":"reuse deterministic calculation patterns from production_adjustment.py and immutable snapshot pattern from StructureCalculationResult","canonical_role":"Reproducible estimate run for one Budget version/jurisdiction/scenario with engine version, input fingerprint, seed, P10/P50/P90 and warnings/blockers.","required_change":"Store no opaque risk score; uncertainty traces back to specific rates, quantities and assumptions."},
+    {"entity":"EstimateEvidence","decision":"BUILD_NEW","existing_module":"reuse provenance concepts from ProjectFact, DocumentVersion and Bridge EvidenceRecordRef","canonical_role":"Observation/derivation record supporting a fact, assumption, schedule output, requirement or budget line.","required_change":"Store target, original value, source/document span, method, evidence state, confidence, model/parser version, effective interval and supersession."},
+    {"entity":"Override","decision":"BUILD_NEW","existing_module":"reuse ProjectActivity as append-only audit history","canonical_role":"Explicit user action changing the effective value without deleting the original observation.","required_change":"Store target, prior/effective value, reason, actor, timestamp, scope, source version and reversibility."},
+    {"entity":"Scenario","decision":"BUILD_NEW","existing_module":"connect downstream to production_scenario_engine.py::ProductionScenario; do not reuse it as the planning model","canonical_role":"Named production-planning alternative containing assumptions, schedule, budget, components and intended locations before optimizer structure composition.","required_change":"Separate planning choices from downstream incentive-routing scenarios; one planning Scenario may generate many ProductionStructures."},
+    {"entity":"ProductionComponent","decision":"BUILD_NEW","existing_module":"reuse LocationRole, movable-spend categories and production-structure allocation concepts","canonical_role":"Principal photography, second unit, post, VFX, sound, music, DI, animation or virtual-production work package with costs, location, dates, mobility and constraints.","required_change":"Canonical bridge between budget/schedule and optimizer allocation; never infer foreign/local territoriality from payer alone."},
+    {"entity":"CanonicalProductionState","decision":"BUILD_NEW","existing_module":"replace only the Little-Utopia-specific upstream state-builder role; reuse ProductionPackage and downstream optimizer modules","canonical_role":"Immutable, fingerprinted snapshot of controlling project facts, script, requirements, schedule, budget, components, allocations, travel and unknowns for any Project.","required_change":"Generic builder selects effective values by precedence and produces the optimizer handoff contract without changing optimizer calculations."},
+    {"entity":"OptimizerHandoff","decision":"CONNECT","existing_module":"ProductionPackage, production_structure_composer, production_allocation, production_normalization and existing optimizer/ranking pipeline","canonical_role":"Typed adapter payload containing production facts and costs, never AI prose.","required_change":"Map CanonicalProductionState into current calculator inputs and preserve input version/fingerprint in results."}
+  ],
+  "entity_relationships": [
+    "ProductionProject 1:N Document; Document 1:N DocumentVersion; current_version selects the active physical artifact.",
+    "DocumentVersion 1:0..1 ScriptDocument or BudgetDocument typed projection.",
+    "ScriptDocument 1:N Scene; Scene N:M Character through appearances/dialogue; Scene 1:N SceneElement.",
+    "Scene/SceneElement N:M ProductionRequirement; recurring LocationRequirement aggregates referenced scenes.",
+    "Scenario 1:N ProductionAssumption, Schedule, Budget and ProductionComponent.",
+    "Schedule 1:N ShootDay; ShootDay N:1 ProductionUnit and N:M Scene.",
+    "ProductionRequirement/Schedule/Assumption -> CostDriver -> BudgetLine.",
+    "Budget 1:N BudgetLine; active leaf lines alone roll up. BudgetLine may reference source BudgetLineItem, Rate and parent/superseded lines.",
+    "Rate N:1 RateSource; CostEstimate snapshots the exact Rate versions used.",
+    "EstimateEvidence may support any effective fact/requirement/assumption/schedule/budget-line value; Override selects a higher-precedence value while retaining evidence.",
+    "Scenario + effective facts + active script/schedule/budget versions -> CanonicalProductionState -> one or more ProductionStructures -> existing optimizer/ranking."
+  ],
+  "script_pipeline": {
+    "steps": [
+      {"order":1,"stage":"UPLOAD_AND_VERSION","owner":"DETERMINISTIC","action":"Use universal ingestion to create Document/DocumentVersion with checksum, source and confidentiality. Dispatch by semantic category rather than creating BudgetDocument for every file."},
+      {"order":2,"stage":"TEXT_LAYOUT_EXTRACTION","owner":"DETERMINISTIC","action":"Phase 1 supports text-based screenplay PDF and plain text. Preserve page boundaries, character offsets and raw text hash. Failed/scan-only PDF is blocked, not guessed."},
+      {"order":3,"stage":"STRUCTURAL_PARSE","owner":"DETERMINISTIC","action":"Extend screenplay_parser.py to normalize scene boundaries, page eighths, scene numbers, INT/EXT, day/night, headings, character cues and dialogue linkage."},
+      {"order":4,"stage":"PERSIST_OBJECTIVE_FACTS","owner":"DETERMINISTIC","action":"Write version-scoped Scene, Character and objective SceneElement records with source spans and parser version."},
+      {"order":5,"stage":"ELEMENT_EXTRACTION","owner":"AI_EXTRACTION","action":"Through the manual Bridge, propose evidence-backed elements not reliably available from format structure; responses are staged and cannot change deterministic facts."},
+      {"order":6,"stage":"COMPLEXITY_INTERPRETATION","owner":"AI_INTERPRETATION","action":"Interpret scale/complexity only where evidence exists; record alternatives, rationale and confidence, never rates or dollars."},
+      {"order":7,"stage":"RECONCILE","owner":"DETERMINISTIC","action":"Validate evidence spans against the source, merge identical assertions, expose conflicts and apply precedence. No model vote."},
+      {"order":8,"stage":"MATERIAL_CONFIRMATION","owner":"USER_DECISION","action":"Queue only material low-confidence non-deterministic decisions, grouped by production approach rather than scene-by-scene."},
+      {"order":9,"stage":"CANONICAL_FACTS","owner":"DETERMINISTIC","action":"Generate effective ProductionRequirements, ProjectFacts and LocationRequirements while preserving every original observation."}
+    ],
+    "ai_cannot": ["change scene text or boundaries without a separately reviewed parse exception", "supply rates or costs", "choose stage versus practical", "choose cast identity or salary", "silently convert absence of evidence into false", "promote its own output to ACTUAL or USER_CONFIRMED"]
+  },
+  "script_taxonomy": [
+    {"capability":"scenes","primary_classification":"OBJECTIVE_SCRIPT_FACT","rule":"Deterministic scene boundary and source span; malformed cases are parse exceptions."},
+    {"capability":"page_eighths","primary_classification":"DERIVED_DETERMINISTIC","rule":"Derived from preserved page layout; never word_count/200 when layout exists."},
+    {"capability":"INT_EXT","primary_classification":"OBJECTIVE_SCRIPT_FACT","rule":"Normalized from slugline; ambiguous variants remain UNKNOWN."},
+    {"capability":"day_night","primary_classification":"OBJECTIVE_SCRIPT_FACT","rule":"Normalized from slugline; CONTINUOUS/LATER and ambiguous values remain explicit."},
+    {"capability":"locations","primary_classification":"OBJECTIVE_SCRIPT_FACT","rule":"Raw scripted location is objective; real production location is a producer decision."},
+    {"capability":"recurring_locations","primary_classification":"DERIVED_DETERMINISTIC","rule":"Count normalized location keys across scenes; canonicalization conflicts remain reviewable."},
+    {"capability":"characters","primary_classification":"OBJECTIVE_SCRIPT_FACT","rule":"Cue/name/appearance evidence is objective; casting is not."},
+    {"capability":"dialogue_speaking_roles","primary_classification":"DERIVED_DETERMINISTIC","rule":"Link dialogue blocks to character cues and derive speaking-role counts."},
+    {"capability":"cast_burden","primary_classification":"DERIVED_DETERMINISTIC","rule":"Scene days, pages, dialogue and night/location burden; tier, performer and compensation remain producer decisions."},
+    {"capability":"extras","primary_classification":"OBJECTIVE_SCRIPT_FACT","rule":"Explicit mentions/counts are evidence; inferred quantity is AI_INTERPRETED and confirmable."},
+    {"capability":"crowds","primary_classification":"AI_INTERPRETED","rule":"Presence evidence is stored; expected size/logistics require interpretation and material confirmation."},
+    {"capability":"minors","primary_classification":"OBJECTIVE_SCRIPT_FACT","rule":"Explicit age/child role evidence; performer age and work-hour plan are producer decisions/external rules."},
+    {"capability":"animals","primary_classification":"OBJECTIVE_SCRIPT_FACT","rule":"Explicit animal presence; trained-animal approach and quantities may require interpretation/confirmation."},
+    {"capability":"vehicles","primary_classification":"OBJECTIVE_SCRIPT_FACT","rule":"Explicit vehicle presence; fleet quantity is interpreted/confirmed."},
+    {"capability":"picture_vehicles","primary_classification":"AI_INTERPRETED","rule":"Determine whether visible/specific vehicle treatment is required; producer confirms material fleet/period choices."},
+    {"capability":"weapons","primary_classification":"OBJECTIVE_SCRIPT_FACT","rule":"Explicit weapon/action evidence; armorer and practical/replica approach is producer decision."},
+    {"capability":"stunts","primary_classification":"AI_INTERPRETED","rule":"Action evidence is objective; stunt classification, performers, rehearsal and unit days require interpretation/confirmation."},
+    {"capability":"intimacy","primary_classification":"AI_INTERPRETED","rule":"Evidence-backed flag only; handling plan is confidential and producer-confirmed."},
+    {"capability":"VFX","primary_classification":"AI_INTERPRETED","rule":"Potential shot evidence and complexity range; final methodology/shot count is producer/VFX decision."},
+    {"capability":"practical_SFX","primary_classification":"AI_INTERPRETED","rule":"Potential practical effect, tests, reset burden and safety range; producer confirms execution approach."},
+    {"capability":"wardrobe","primary_classification":"AI_INTERPRETED","rule":"Explicit changes/period cues plus interpreted complexity; exact looks and multiples are producer decisions."},
+    {"capability":"hair_makeup","primary_classification":"AI_INTERPRETED","rule":"Requirement/complexity from evidence; staffing and turnaround assumptions are confirmed."},
+    {"capability":"prosthetics","primary_classification":"AI_INTERPRETED","rule":"Evidence-backed presence/complexity and application-time range; final design is producer decision."},
+    {"capability":"period","primary_classification":"OBJECTIVE_SCRIPT_FACT","rule":"Explicit story period; production execution complexity is AI_INTERPRETED and producer-confirmed."},
+    {"capability":"props","primary_classification":"OBJECTIVE_SCRIPT_FACT","rule":"Explicit hero/recurring prop evidence; fabrication/quantity is interpreted."},
+    {"capability":"construction","primary_classification":"AI_INTERPRETED","rule":"Potential construction need from scripted environment; scope is producer-confirmed."},
+    {"capability":"set_builds","primary_classification":"PRODUCER_DECISION","rule":"Stage/build versus practical is never selected by AI."},
+    {"capability":"specialty_equipment","primary_classification":"AI_INTERPRETED","rule":"Potential cranes, underwater, process, motion-control or specialty rigs; package choice is producer-confirmed."},
+    {"capability":"marine","primary_classification":"AI_INTERPRETED","rule":"Water/boat evidence is objective; marine unit, tank/open-water and safety approach are producer decisions."},
+    {"capability":"aerial","primary_classification":"AI_INTERPRETED","rule":"Potential aerial/drone requirement; aircraft/platform and unit plan are producer decisions."},
+    {"capability":"weather","primary_classification":"AI_INTERPRETED","rule":"Scripted weather is evidence; practical/VFX/weather-cover approach is producer-confirmed."},
+    {"capability":"music_performance","primary_classification":"AI_INTERPRETED","rule":"On-camera performance/playback evidence; recording, musicians and licensing plan are producer decisions."},
+    {"capability":"company_moves","primary_classification":"DERIVED_DETERMINISTIC","rule":"Derived from confirmed production locations and ordered ShootDays; producer may override grouping."},
+    {"capability":"travel","primary_classification":"DERIVED_DETERMINISTIC","rule":"Derived from confirmed people/unit bases and production locations; class/policy is producer-confirmed."},
+    {"capability":"additional_units","primary_classification":"PRODUCER_DECISION","rule":"AI may flag unit opportunities but cannot create the production plan."},
+    {"capability":"safety_logistics","primary_classification":"AI_INTERPRETED","rule":"Evidence-backed hazards/logistics; qualified human determines plan and cost assumption."}
+  ],
+  "schedule_architecture": {
+    "scope":"Minimum cost-driver schedule, not a Movie Magic Scheduling replacement.",
+    "inputs":["Scenes/page eighths","normalized location and stage/practical decisions","day/night","character appearances and confirmed availability constraints","material elements and complexity","production scale","unit decisions","pages/day assumptions with bounds","actual schedule when supplied"],
+    "deterministic_process":[
+      "Compute scene work units from page eighths and explicit complexity modifiers; preserve each modifier source.",
+      "Group by confirmed production location/stage, unit and day/night, then enforce cast/special-element constraints.",
+      "Apply pages/day ranges by scale and work type; do not hide the assumption behind a single default.",
+      "Pack scenes into estimated ShootDays with reproducible ordering rules; identify moves and split/special-unit days.",
+      "Derive department prep/wrap/rental/holding ranges from schedule drivers and confirmed assumptions.",
+      "If an actual schedule is uploaded, keep the estimate as comparison evidence and select actual days by precedence."
+    ],
+    "required_outputs_for_cost":["shoot days P10/P50/P90 and actual","unit days by unit/jurisdiction","scene-day assignments","stage occupancy days","practical-location days","company move count/days","night/exterior days","cast work/hold/travel days","crowd/extras/minor/animal days","stunt/SFX/VFX plate days","marine/aerial/special-unit days","prep/shoot/wrap weeks by department","crew weeks","equipment rental weeks","hotel nights/per-diem days/travel movements","schedule assumptions/conflicts"],
+    "explicit_non_goals":["call sheets","crew timesheets","daily production reports","transport dispatch","full cast day-out-of-days UI","resource-level optimization matching Movie Magic Scheduling"],
+    "underestimation_guard":"Total scene work units must fit scheduled capacity; omitted prep/wrap, move, night, restricted-child/animal, stunt/SFX and special-unit burdens produce blockers or explicit ranges, never silent zero."
+  },
+  "unified_L1_L2_L3_budget_architecture": {
+    "single_model_invariants":[
+      "Every budget version belongs to one Scenario and has a maturity state, not an engine type.",
+      "Stable line_key identifies the economic concept across maturity versions.",
+      "An aggregate line may be replaced by child lines; only active leaves count, preventing double counting.",
+      "Before new evidence, child P50 values reconcile to the parent's P50. Evidence-driven deltas are separately recorded, never hidden as discontinuity.",
+      "Every line carries amount and provenance state plus low/base/high inputs; no line can silently improve its authority level.",
+      "Actual imported lines can supersede matched estimate lines while unmatched estimates remain visibly residual, not silently added or discarded."
+    ],
+    "level_1": {
+      "name":"RAPID_GLOBAL_ESTIMATE","purpose":"Fast worldwide production comparison with limited inputs.",
+      "inputs":["text-based script parse","page/scene/location/cast/day-night counts","high-impact interpreted requirements or explicit UNKNOWN","format/genre","producer-selected broad production scale","baseline location/stage and unit assumptions","Tier B/C benchmarks and jurisdiction indices"],
+      "granularity":"department-level active lines with fixed/local/indexable/routable/travel localization policies",
+      "outputs":["department P10/P50/P90","total P10/P50/P90","coarse component/territorial spend","schedule range","unknown/material assumption list","optimizer P50 payload plus uncertainty warnings"],
+      "acceptable_assumptions":["explicit broad crew-size bands","pages/day bands","department-share templates","Tier C indices","global defaults when labeled and widened"],
+      "must_not_fake":["role-level crew rates","union applicability/fringes","exact overtime","actual location/stage/vendor quotes","exact shoot days","exact travel party","precise dollars in presentation","rates from AI"],
+      "readiness":"Useful for comparison, not greenlight or line-producer budgeting."
+    },
+    "level_2": {
+      "name":"PRODUCTION_INFORMED_ESTIMATE","purpose":"Actionable departmental/subdepartment budget from a structured breakdown and schedule.",
+      "inputs":["all L1 evidence","confirmed material elements","minimum cost-driver Schedule","crew/equipment/stage/location/travel assumptions","confirmed components","validated local benchmark/rate inputs where available"],
+      "granularity":"department, subdepartment and material account lines; quantities and durations derive from requirements/schedule",
+      "outputs":["subdepartment/account P10/P50/P90","prep/shoot/wrap costs","localized labor/nonlabor/travel/component spend","conflicts and confirmation queue","optimizer payload"],
+      "required_controls":["fringe state on labor","overtime assumption state","localization policy","rate tier/effective date","lineage to L1 parent"]
+    },
+    "level_3": {
+      "name":"DETAILED_LINE_BUDGET","purpose":"Near line-producer estimate and rigorous production comparison; not a Movie Magic replacement.",
+      "inputs":["all L2 evidence","detailed schedule","role/crew counts","prep/shoot/wrap","union/agreement assumptions","validated/quoted rates","equipment/stage/location packages","travel party and policies","insurance/bond/finance inputs"],
+      "granularity":"line item with quantity, unit, rate, duration, prep/shoot/wrap, overtime, fringe, rental period, allowance, currency, jurisdiction and component",
+      "outputs":["auditable active leaf lines","fully loaded labor","currency/FX trace","allowances/contingency","P10/P50/P90 where inputs remain estimated","actual-vs-estimate reconciliation","optimizer payload"],
+      "validity_gate":"Cannot claim L3-valid for a jurisdiction while material labor/rate/fringe inputs are Tier C/global default, stale beyond hard expiry, or UNKNOWN."
+    },
+    "uncertainty_method":"Each uncertain quantity/rate/duration stores low/base/high and distribution class. A deterministic seeded simulation uses shared correlation groups such as shoot days, crew scale, location count and FX so totals are not naive sums of independent percentiles. ACTUAL values collapse P10=P50=P90. The estimate stores seed, engine version and input fingerprint.",
+    "presentation_precision":"L1 totals are rounded to a material unit and shown as ranges; L2/L3 may display line arithmetic but must keep source state and range visible."
+  },
+  "input_precedence": {
+    "ordered_states":[
+      {"rank":1,"state":"ACTUAL_PROJECT_VALUE","examples":"accepted project quote, actual budget/schedule, signed deal or producer-supplied confirmed value"},
+      {"rank":2,"state":"USER_CONFIRMED","examples":"production approach, assumption or correction explicitly confirmed by authorized user"},
+      {"rank":3,"state":"VALIDATED_LOCAL_DATA","examples":"current union/agreement rate or reviewed market benchmark with source"},
+      {"rank":4,"state":"DETERMINISTIC_DERIVED","examples":"page eighths, recurrence, schedule arithmetic, quantity x rate x duration"},
+      {"rank":5,"state":"AI_INFERRED","examples":"evidence-backed complexity or likely production element; high/low confidence remains a separate attribute"},
+      {"rank":6,"state":"INDEXED_ESTIMATE","examples":"validated benchmark rebased by an explicit index"},
+      {"rank":7,"state":"GLOBAL_DEFAULT","examples":"fallback template/default with widened uncertainty"},
+      {"rank":8,"state":"UNKNOWN","examples":"no defensible effective value"}
+    ],
+    "selection_rules":["Higher authority wins only when it addresses the same scoped field and effective period.","An unaccepted quote is candidate evidence, not ACTUAL_PROJECT_VALUE.","A newer lower-authority observation does not silently replace an actual/confirmed value.","User override creates an Override record; it never deletes original evidence.","Conflicting same-rank values remain unresolved until scope/date/source or user confirmation selects one."],
+    "required_fields_per_effective_value":["effective_value","original_value_or_observation","unit/type","authority_state","confidence","source/reference and evidence span","effective_from/until","version/parser/model/formula","override_id if any","selection_reason","selected_at"]
+  },
+  "budget_integration": {
+    "phase_1_formats":["CSV with explicit description/amount columns","text-based Movie Magic/EP PDF through existing PDF extractor and account parser"],
+    "deferred_formats":["XLSX until a real workbook parser replaces XLSX-as-CSV","native MBD until a supported/export strategy exists"],
+    "path":["universal upload -> Document/DocumentVersion","semantic dispatch -> BudgetDocument projection","format-specific deterministic parse -> immutable BudgetLineItem source rows","classification using classify_budget_line_items with review queue for MISC/default classifications","normalization/reconciliation of top sheet, leaf sum, currency and duplicates","map into canonical Budget/BudgetLine actual observations","precedence/merge against active estimate while preserving superseded values","CanonicalProductionState rebuild","OptimizerHandoff -> existing structure/optimizer pipeline"],
+    "connection_decisions":["CONNECT parse_budget_csv to canonical budget import service","CONNECT parse_budget_from_text to mounted import for supported PDFs","REPLACE current XLSX path before accepting XLSX as structured","Do not make BudgetDocument itself the progressive budget","Store parser/version/source row/page and reconciliation variance on every import"],
+    "duplicate_guard":"A source checksum + document version + account/source row key can create at most one imported observation. Canonical matching activates either the actual line or estimated line for the same economic concept, never both without an explicit residual/split relationship."
+  },
+  "source_merge_rules": [
+    {"case":"script has 20 scripted locations; budget has 8 location accounts","resolution":"Keep both facts because they measure different things. Actual budget amounts control cost lines; scripted location count controls requirements. Produce a coverage discrepancy and material confirmation if the budget may omit/location-combine material needs."},
+    {"case":"actual/confirmed schedule says 35 days; estimate assumed 30","resolution":"Select 35 by precedence, preserve 30 as original assumption, recompute every duration-driven line and show the schedule/cost delta."},
+    {"case":"uploaded budget includes crew; model estimates larger crew","resolution":"Actual budget amount remains effective. Raise an undercoverage discrepancy and compute a non-counting shadow delta. Add/revise cost only after user confirmation; never silently stack estimate onto actual."},
+    {"case":"script extraction conflicts with deterministic slugline or dialogue parse","resolution":"Deterministic source parse controls. Store AI alternative as disputed evidence and queue only if malformed source makes it material."},
+    {"case":"two actual files claim to be current","resolution":"Document.current_version/user selection controls; keep both versions and block canonical rebuild until current version is unambiguous."},
+    {"case":"budget omits a script-derived department","resolution":"Do not auto-add when the budget is actual. Flag missing coverage; estimates may remain as inactive shadow lines until authorized."},
+    {"case":"actual budget contains unmatched lines","resolution":"Retain every line, classify or mark UNKNOWN/MISC for review, and include it exactly once in reconciliation."}
+  ],
+  "local_cost_architecture": {
+    "rate_classes":[
+      {"class":"PROJECT_QUOTE","authority":"ACTUAL_PROJECT_VALUE only after acceptance","examples":"named vendor/crew/stage/insurance/bond quote","behavior":"Exact scope, currency and validity; overrides generic data for its matched line only."},
+      {"class":"ACTUAL_LOCAL_RATE","authority":"ACTUAL_PROJECT_VALUE or VALIDATED_LOCAL_DATA","examples":"current published stage, permit, payroll or statutory fee","behavior":"Use exact unit and effective period."},
+      {"class":"VALIDATED_AGREEMENT_UNION_RATE","authority":"VALIDATED_LOCAL_DATA","examples":"union minimum, overtime and fringe agreement","behavior":"Apply only when applicability facts match."},
+      {"class":"VALIDATED_MARKET_BENCHMARK","authority":"VALIDATED_LOCAL_DATA","examples":"reviewed crew/vendor sample or film-commission benchmark","behavior":"Store range/sample basis and region."},
+      {"class":"INDEXED_ESTIMATE","authority":"INDEXED_ESTIMATE","examples":"validated baseline rebased by category/jurisdiction index","behavior":"Wider uncertainty; never promoted to L3-valid actual rate."},
+      {"class":"GLOBAL_DEFAULT_MULTIPLIER","authority":"GLOBAL_DEFAULT","examples":"current static profile/fallback","behavior":"Last numeric fallback; label and widen range, or UNKNOWN when category is not safely indexable."}
+    ],
+    "localization_policies":[
+      {"policy":"GLOBAL_FIXED","examples":"A-list cast, rights, fixed producer/writer/director deals","rule":"Never multiply by shoot-country index unless a project value explicitly changes."},
+      {"policy":"PROJECT_SPECIFIC","examples":"accepted quote, negotiated insurance/bond, specialty vendor","rule":"Use scoped quote/actual; no generic scaling."},
+      {"policy":"LOCAL_LABOR","examples":"crew wages, payroll/fringes","rule":"Role/agreement/region rates and schedule duration; generic crew index only as L1 fallback."},
+      {"policy":"LOCAL_GOODS_SERVICES","examples":"locations, local transport, catering, construction materials","rule":"Use local rate/benchmark or category-specific index."},
+      {"policy":"ROUTABLE_VENDOR","examples":"VFX, post, sound, music, specialty equipment","rule":"Rate follows selected vendor/work location, not principal-photography jurisdiction."},
+      {"policy":"TRAVEL_DEPENDENT","examples":"flights, lodging, per diem, freight","rule":"Origin/destination/people/days determine cost; do not apply broad country multiplier."},
+      {"policy":"FX_ONLY","examples":"fixed local-currency contract","rule":"Convert at explicit FX source without changing real local amount."},
+      {"policy":"NON_SCALABLE","examples":"contingency policy, finance structure","rule":"Use explicit formula/project terms, never a local cost index."}
+    ],
+    "current_profile_treatment":"location_cost_benchmarks.py becomes Tier C INDEXED_ESTIMATE/GLOBAL_DEFAULT input. Its HIGH/MEDIUM labels do not constitute validation because data_sources are empty.",
+    "schema_minimum":["category/role/item","jurisdiction/region/city","union/agreement/vendor","amount low/base/high","unit/minimum/overtime rules","currency","fringe/tax inclusion","source_id","effective dates","retrieved/verified dates","validation tier","license/usage","staleness status","fallback parent","notes"]
+  },
+  "rate_maintenance": {
+    "tier_A":{"scope":"Maximum 12-15 high-value/active producer jurisdictions selected by active-project use, optimizer recommendation frequency and material spend; initial candidate queue includes MU, MT, GR, GB, AU, US, CA, IE and NZ without implying data is already populated.","data":"real crew/agreement/fringe tables plus key stage/equipment/location/travel benchmarks","cadence":"agreement/statutory rates checked on publication and at least quarterly; volatile hotel/airfare/FX monthly or closer to estimate date; vendor benchmarks at least quarterly","hard_rule":"expired agreement or hard-stale material rate cannot support L3 validity"},
+    "tier_B":{"scope":"Next jurisdictions with recurring comparisons but insufficient full rate cards","data":"reviewed category-level market benchmarks and regional ranges","cadence":"semiannual, plus event-driven refresh","hard_rule":"supports L1/L2 with ranges; not represented as role-level actual"},
+    "tier_C":{"scope":"worldwide coverage","data":"category-specific indices and global defaults","cadence":"annual/semiannual model review","hard_rule":"L1 only by default; widened uncertainty and explicit fallback chain"},
+    "staleness_rules":["Every rate has effective_from/until and last_verified_at.","Soft stale downgrades evidence state and widens uncertainty.","Hard expired rate is excluded; fall back to the next permitted tier or UNKNOWN.","Fallback never changes the displayed authority label.","Estimate snapshots retain the exact historical rate version, so later refresh does not mutate prior results."],
+    "maintenance_strategy":"Prioritize data coverage by cost materiality and actual project demand, not by trying to hand-maintain every role in every country. Ingest structured agreement/rate-card versions and review deltas; do not overwrite historical versions."
+  },
+  "Bridge_extension": {
+    "decision":"REUSE core manual Bridge; EXTEND provider-neutral script contracts.",
+    "beta_mode":"Manual subscription workflow remains: export package -> independent provider response files -> import -> validation -> reconciliation -> human disposition. No paid API required.",
+    "package_schema":{"name":"ScriptAnalysisPackage","fields":["package/schema version","project_id","script DocumentVersion id/checksum","confidentiality/redaction policy","deterministic Scene/Character facts","chunks with stable IDs and page/offset hashes","requested taxonomy/interpretations","known producer facts","unknowns/materiality hints","required response schema"],"exclusions":["incentive conclusions","rate tables","cost targets that would bias extraction unless a bounded materiality re-review explicitly needs them"]},
+    "response_schema":{"name":"ScriptAnalysisResponse","fields":["provider/model/operation","script version and package hash","ElementAssertion list","scene_id/taxonomy/normalized value","assertion kind extraction or interpretation","quantity/range/unit","evidence spans with page/chunk/offset/excerpt hash","confidence state","rationale/alternatives","unresolved questions","no economic rate fields"]},
+    "reconciliation_key":"script_version_id + scene_id + taxonomy_key + normalized_value",
+    "persistence":"Validated responses create staged EstimateEvidence/SceneElement observations. Reconciliation or user action may select an effective value; raw/provider evidence remains immutable.",
+    "provider_independence":"Provider adapters transport the same package/response schema. No provider-specific taxonomy, rate logic or business decision is allowed."
+  },
+  "AI_responsibilities": {
+    "DETERMINISTIC":["file/version/hash handling","PDF text/page extraction","well-formed slugline/scene/character/dialogue parsing","page eighths and recurrence","source-span validation","schedule arithmetic","cost formulas","rate lookup","fringes/overtime/FX","rollups and optimizer handoff"],
+    "AI_EXTRACTION":["evidence-backed production elements not structurally encoded","aliases/canonicalization proposals","ambiguous element mentions"],
+    "AI_INTERPRETATION":["complexity bands","possible stunt/VFX/SFX/design/logistics implications","candidate questions, never controlling decisions"],
+    "USER_DECISION":["stage/practical","production locations","cast/crew plan","additional units","schedule compression","travel policy","union assumptions where not objectively fixed","material ambiguity resolution"],
+    "EXTERNAL_DATA":["rates","agreements/fringes","FX","stage/equipment/location/travel benchmarks","statutory work rules"],
+    "PROHIBITED_AI_OUTPUTS":["economic rates","cost totals","incentive/QPE decisions","actual/confirmed evidence state","silent replacement of deterministic facts"]
+  },
+  "multi_model_policy": {
+    "default":"One model at most after deterministic parsing; no model for facts already resolved deterministically.",
+    "second_model_triggers":["AI_LOW_CONFIDENCE and material","provider assertions conflict on a material element","evidence span fails or supports multiple material interpretations","material category remains UNKNOWN after first analysis"],
+    "materiality_default":"Potential P50 effect >= max(USD 25,000, 0.5% of current budget/L1 P50), or >=1 shoot day, or a change to component routing/production location.",
+    "reconciliation":"Compare assertions to primary text spans and deterministic facts. Stronger evidence/scope wins; models do not vote. If evidence cannot resolve, mark disputed/UNKNOWN and ask the user only when material.",
+    "cost_control":"Batch only triggered scenes/elements, not the full screenplay through every provider."
+  },
+  "confidence_model": {
+    "field_states":["ACTUAL","USER_CONFIRMED","VALIDATED_RATE","DETERMINISTIC_DERIVED","AI_HIGH_CONFIDENCE","AI_LOW_CONFIDENCE","INDEXED_ESTIMATE","GLOBAL_DEFAULT","UNKNOWN"],
+    "separation_rule":"Evidence state describes authority. Confidence describes extraction/estimate uncertainty. Neither is a project-risk score.",
+    "unknown_rule":"UNKNOWN has no numeric effective value unless a separately labeled fallback is selected; absence of evidence is not false or zero.",
+    "range_rule":"P10/P50/P90 describe estimate distribution, not success probability or legal risk. Actual values collapse the range; correlated drivers are simulated together using a reproducible seed.",
+    "rollup":"Department/total ranges derive from line inputs and shared drivers; confidence labels are not averaged into an opaque score."
+  },
+  "human_confirmation_model": {
+    "queue_condition":"Prompt only when all are true: potential cost/schedule/routing impact is material; effective evidence is insufficient or conflicting; deterministic/source resolution cannot answer it.",
+    "materiality_default":"max(USD 25,000, 0.5% of budget/L1 P50), one shoot day, or material component/location routing change",
+    "grouping":"Group by one production decision and all affected scenes, e.g. practical locations vs stage for 23 scenes, rather than one click per scene.",
+    "priority":"Sort by expected impact band, then number of downstream lines/components affected, then confidence. Never display a synthetic risk score.",
+    "answer_effect":"Creates USER_CONFIRMED evidence/Override, recomputes dependent schedule/budget/state, and retains prior AI/model values.",
+    "no_prompt_cases":["high-confidence deterministic fact","immaterial ambiguity","answer changes no active driver","a validated source resolves it"]
+  },
+  "generic_project_state": {
+    "builder":"New CanonicalProductionStateBuilder replaces only LittleUtopiaState's production-specific input assembly for generic projects; it reuses downstream calculators.",
+    "inputs":["Project/current DocumentVersions","effective ProjectFacts","active ScriptDocument/Scenes/Elements","ProductionRequirements/LocationRequirements","active planning Scenario/Assumptions","active Schedule","canonical Budget/CostEstimate","ProductionComponents","rate/FX versions","user overrides"],
+    "snapshot_fields":["state_id/version/fingerprint/as_of","project and scenario ids","source document/version ids","script/budget/schedule versions","effective facts with authority","gross budget and range","active budget leaf lines","component and territorial allocations","production/post/VFX/etc. locations","shoot/unit/prep/wrap/travel days","resident/nonresident labor","goods/services","travel movements","mobility","known constraints","unknowns/blockers","rate/engine versions"],
+    "build_rules":["Select values through canonical precedence.","Fail closed on ambiguous current versions or unreconciled totals.","Use active leaf budget lines once.","Snapshot inputs immutably and fingerprint them.","Expose provisional state when material low-authority assumptions remain; never label it actual."],
+    "handoff":"CanonicalProductionState -> OptimizerHandoffAdapter -> existing discovery, structure composition, allocation, production normalization, incentive evaluation and ranking."
+  },
+  "optimizer_handoff": {
+    "contract_name":"ProductionOptimizerInput",
+    "required_fields":[
+      "project_id, scenario_id, state_version, input_fingerprint and as_of",
+      "script_version_id, schedule_version_id, budget_version_id and cost_estimate_id",
+      "gross production cost USD effective/P50 and P10/P90 sensitivity",
+      "active budget lines: line/account/category/ATL-BTL/amount/cash-accounting/compensation",
+      "line labor flag, resident/nonresident/unknown state, service/goods territorial basis and jurisdiction",
+      "component id/type/jurisdiction/cost/mobility and source state",
+      "principal/second/special unit and post/VFX/music/sound locations",
+      "shoot days and unit days by jurisdiction; prep/wrap and travel quantities needed by existing normalizers",
+      "resident labor, nonresident labor, goods/services, post, VFX and travel totals by jurisdiction/component",
+      "fixed/global versus local/indexable/routable localization policy",
+      "known production constraints, unknowns, provisional blockers and user exclusions",
+      "provenance/authority state per material field"
+    ],
+    "adapter_behavior":["Create existing BudgetParseResult/ProductionPackage-compatible inputs where those contracts are reused.","Create account/component allocation inputs without AI prose.","Pass effective/P50 values to the existing point-estimate optimizer and retain P10/P90 for deterministic sensitivity runs/reporting.","Write input fingerprint/version into StructureCalculationResult snapshot fields.","Do not modify incentive rules, discovery, structure composition, pricing, NPC or ranking algorithms."],
+    "territoriality_guard":"Payer/SPV is never sufficient. Each line carries service-performed location, goods-use location, worker residency where relevant and selected territorial basis; unknown remains unknown."
+  },
+  "implementation_phases": [
+    {"phase":"SA-1","name":"Generic deterministic end-to-end vertical slice","reuse":["universal ingestion/versioning","screenplay_parser coarse logic","screenplay/budget schemas","CSV and Movie Magic PDF parsers","budget taxonomy","ProductionPackage","quantity-rate adjustment patterns","existing optimizer"],"build":["Scene/Character extensions","minimal objective SceneElement/ProductionRequirement","precedence/evidence/override spine","minimal Schedule/ShootDay estimator","progressive Budget/BudgetLine L1","CanonicalProductionState and optimizer adapter"],"dependencies":["text-based screenplay PDF/plain text","explicit broad scale and location/stage assumptions","Tier C rates labeled as defaults"],"runtime_acceptance":"Any Project, not only Little Utopia, can upload a supported script and optional supported budget, persist/reload the same analysis, produce a versioned L1 schedule/cost state and reach the existing optimizer with a traceable fingerprint.","stop_condition":"No LittleUtopiaState input dependency; no silent AI/rate invention; reload reproduces identical state and structures for unchanged inputs."},
+    {"phase":"SA-2","name":"Material production breakdown + manual Bridge","reuse":["manual Bridge core","Scene/Element/evidence spine","question engine"],"build":["full target taxonomy","ScriptAnalysisPackage/Response","evidence-span validation","single/second-model trigger logic","material confirmation queue"],"dependencies":["SA-1 stable scene IDs and provenance"],"runtime_acceptance":"Evidence-backed high-impact elements persist, reconcile and affect requirements only through precedence/confirmation.","stop_condition":"Zero unreferenced AI assertions enter canonical facts; grouped confirmation recomputes dependents."},
+    {"phase":"SA-3","name":"Minimum production-informed schedule","reuse":["SA-1 schedule skeleton","location/travel intelligence"],"build":["constraint grouping","unit/move/night/special-work days","prep/wrap by department","actual schedule import contract"],"dependencies":["SA-2 requirements and confirmed decisions"],"runtime_acceptance":"Schedule outputs all required L2 cost durations and actual schedule supersession works with a delta trace.","stop_condition":"Every duration-driven cost has a schedule source or explicit assumption; capacity/omission guards pass."},
+    {"phase":"SA-4","name":"Level 2 localized production estimate","reuse":["single Budget lineage","production adjustment formulas","travel/FX separation","cost schemas"],"build":["subdepartment drivers","Tier A/B rate ingestion","fringe/overtime applicability","localized component costs","correlated uncertainty"],"dependencies":["SA-3 schedule outputs","reviewed rate sources"],"runtime_acceptance":"L2 estimate rolls from the same L1 budget, uses rate tiers honestly and produces optimizer-ready component/territorial spend.","stop_condition":"No broad multiplier touches GLOBAL_FIXED/PROJECT_SPECIFIC costs; material labor lines have fringe/OT states."},
+    {"phase":"SA-5","name":"Level 3 detailed line budget","reuse":["same Budget/BudgetLine/Rate/Evidence model","union fringe calculator","actual-budget merge"],"build":["role/package/allowance lines","detailed prep/shoot/wrap","quotes/agreement terms","line overrides/freeze","L3 validity gate"],"dependencies":["adequate Tier A data for target jurisdiction"],"runtime_acceptance":"Near-line-budget output is auditable, actual budget can supersede matched lines, and L3 validity is blocked when material rates are defaults/stale.","stop_condition":"Quantity x rate x duration, OT, fringe, FX and reconciliation trace cover all active material lines."},
+    {"phase":"SA-6","name":"Format and data coverage expansion","reuse":["format dispatch","rate-source/version pipeline"],"build":["real XLSX parser","supported MBD/export strategy","additional schedule formats","Tier A/B jurisdiction expansion"],"dependencies":["measured user demand and legal/licensing feasibility"],"runtime_acceptance":"Each added format/data tier passes source-specific fixtures without weakening fallback labels.","stop_condition":"Only demanded, testable formats/rates are promoted; no extension-only claims without a parser."}
+  ],
+  "first_implementation_scope": {
+    "phase":"SA-1",
+    "included":["generic Project/current-version selection","text-based screenplay PDF and plain-text ingestion","deterministic scenes/page eighths/INT-EXT/day-night/character-dialogue/location parse","versioned persistence and reload","minimal objective requirements plus explicit producer scale/stage/location assumptions","minimum reproducible schedule range","single progressive L1 budget with department lines and P10/P50/P90","optional CSV and Movie Magic/EP text-PDF actual budget merge","generic CanonicalProductionState","adapter into existing optimizer and immutable input fingerprint","failure/status reporting"],
+    "deferred":["full AI taxonomy and multi-model workflow","full schedule optimizer/import formats","L2 subdepartment detail","L3 crew/rate-card line budget","XLSX","native MBD","production UI redesign","incentive/optimizer changes"],
+    "acceptance_chain":"supported script + explicit minimum producer inputs + optional supported budget -> persisted structured scenes -> minimum requirements -> schedule/cost ranges -> CanonicalProductionState -> existing production structures/NPC ranking",
+    "quality_bar":"Works for an arbitrary Project after reload, not just a fixture; every effective numeric input has authority state and every optimizer result fingerprints the source versions."
+  },
+  "Little_Utopia_acceptance": {
+    "fixture_truth":["44-line actual budget with $4,364,393 authoritative gross and documented $2 leaf variance","partial/manual script facts only","no actual schedule fixture; schedule accuracy cannot be claimed until one is supplied"],
+    "stages":[
+      {"stage":"SCRIPT_STRUCTURE","criteria":[">=98% sampled scene-boundary/slugline structural accuracy on extractable pages",">=95% sampled character-cue/dialogue-link precision and recall","all parsed facts carry valid source spans"]},
+      {"stage":"PRODUCTION_REQUIREMENTS","criteria":["100% of known material manual requirements such as marine, period, night and VFX are either found with evidence or placed in the confirmation queue","zero high-material unsupported positives entering effective state","no absence-of-evidence converted to false"]},
+      {"stage":"LEVEL_1_BLIND_ESTIMATE","criteria":["actual $4.364M lies within L1 P10-P90","L1 P50 total within +/-35% of actual","department P50 within +/-50% for departments representing at least 80% of actual spend, or explicit project-specific/unknown exception"]},
+      {"stage":"LEVEL_2_BLIND_ESTIMATE","criteria":["P50 total within +/-20%","top-spend department P50 within +/-25% or explained by actual project deal/quote","at least 90% of actual spend maps to a canonical line/category without duplicate counting"]},
+      {"stage":"LEVEL_3_BLIND_ESTIMATE","criteria":["P50 total within +/-10% excluding separately disclosed project-specific ATL/financing terms unavailable to the model","material department P50 within +/-15-20%","all labor lines carry rate/fringe/OT state and all material quotes/defaults are disclosed"]},
+      {"stage":"SCHEDULE","criteria":["DEFERRED until an actual Little Utopia schedule is supplied","when available: shoot days within max(3 days, 10%), no missed special-unit/night/marine burdens, and every variance traced"]},
+      {"stage":"OPTIMIZER_IMPACT","criteria":["Using the same existing optimizer, estimated-input top-five jurisdiction set overlaps actual-budget baseline by at least 4 of 5 at L2/L3","actual-budget leader appears in estimated top three","material ranking changes identify the responsible input/range rather than being attributed to optimizer redesign"]}
+    ],
+    "non_requirement":"Exact line equality is not required; the test is structural coverage, honest uncertainty, useful cost accuracy and stable downstream decisions."
+  },
+  "failure_prevention_controls": [
+    {"failure":"false AI extraction","control":"Evidence spans/hash validation, staged state, deterministic-fact lock, reconciliation and material confirmation."},
+    {"failure":"rate hallucination","control":"Budget formulas accept only persisted Rate IDs or explicit user project values; Bridge schema contains no economic-rate fields."},
+    {"failure":"cost-index misuse","control":"Mandatory localization_policy allowlist and category-specific index; GLOBAL_FIXED/PROJECT_SPECIFIC/NON_SCALABLE reject broad multipliers."},
+    {"failure":"fixed-cost localization","control":"Major cast/rights/fixed deals default GLOBAL_FIXED; change requires explicit scoped override."},
+    {"failure":"fake precision","control":"L1 range/rounding rules, authority labels and reproducible distributions; no dollar-and-cent presentation for default-driven totals."},
+    {"failure":"schedule underestimation","control":"Scene work-unit capacity reconciliation, pages/day bounds and explicit move/night/restricted/special-unit burden checks."},
+    {"failure":"missing prep_wrap","control":"L2/L3 material departments require prep/shoot/wrap duration source or blocker."},
+    {"failure":"fringe omission","control":"Labor line cannot be L2/L3 complete without fringe applicability/value/UNKNOWN state; L3 blocks on material UNKNOWN."},
+    {"failure":"overtime omission","control":"Schedule/work-pattern creates OT assumption; labor lines require OT rule or disclosed range."},
+    {"failure":"duplicate budget lines","control":"Immutable import key, stable line lineage and active-leaf-only rollup; reconciliation total must equal source plus explicit residuals."},
+    {"failure":"script_budget_disagreement","control":"Typed discrepancy records and shadow deltas; actual cost remains effective until authorized revision."},
+    {"failure":"stale local rates","control":"effective dates, verification timestamps, soft/hard staleness and immutable estimate snapshots."},
+    {"failure":"unreviewed low-confidence high-cost assumption","control":"Material queue and provisional-state blocker; P50 may be evaluated but final recommendation is visibly provisional."},
+    {"failure":"silent source replacement","control":"Precedence selector, Override record, ProjectActivity history and source-version fingerprint."},
+    {"failure":"territoriality by payer","control":"Separate service-performed, goods-used, worker-residency and payer fields; payer alone never sets jurisdiction."}
+  ],
+  "deferred_scope": [
+    "Full Movie Magic Scheduling replacement, call sheets, day-out-of-days UI and production-reporting operations.",
+    "Story/creative coverage, screenplay quality scoring or incentive qualification from AI prose.",
+    "Provider-specific AI business logic or paid-API requirement for beta.",
+    "XLSX and native MBD until real parsers/export contracts and fixtures exist.",
+    "Worldwide role-level rate cards before Tier A/B maintenance proves sustainable.",
+    "Production UI redesign.",
+    "Any change to incentive rules, optimizer discovery/composition/pricing/NPC/ranking, or closed global validation.",
+    "Claiming Little Utopia schedule accuracy before an actual schedule fixture exists."
+  ]
+}
