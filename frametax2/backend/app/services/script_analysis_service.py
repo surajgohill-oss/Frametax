@@ -94,14 +94,65 @@ async def resolve_active_screenplay(
         .where(ScreenplayDocument.project_id == project_id)
         .order_by(ScreenplayDocument.created_at.desc())
     )).scalars().all()
-    if not rows:
-        return None
+
     for r in rows:
         if r.document_version_id is not None:
+            from app.models.library_document import DocumentVersion
             dv = await session.get(DocumentVersion, r.document_version_id)
             if dv is not None and dv.is_current:
                 return r
-    return rows[0]
+
+    if rows:
+        return rows[0]
+
+    from app.models.library_document import Document, DocumentVersion
+    from app.ingestion.pdf_extractor import extract_text_from_pdf
+    from app.core.config import get_settings
+    from pathlib import Path
+
+    current_dv = (await session.execute(
+        select(DocumentVersion)
+        .join(Document, DocumentVersion.document_id == Document.id)
+        .where(
+            Document.project_id == project_id,
+            Document.category == "screenplay",
+            DocumentVersion.is_current == True
+        )
+        .order_by(DocumentVersion.ingested_at.desc())
+    )).scalars().first()
+
+    if not current_dv:
+        return None
+
+    settings = get_settings()
+    local_path = Path(settings.LOCAL_STORAGE_PATH) / current_dv.storage_path
+    
+    raw_text = None
+    if local_path.exists():
+        suffix = local_path.suffix.lower()
+        if suffix == ".pdf":
+            try:
+                extracted = extract_text_from_pdf(local_path, max_pages=300)
+                raw_text = extracted.raw_text
+            except Exception as e:
+                print(f"Failed to extract text from {local_path}: {e}")
+        elif suffix in [".txt", ".fdx", ".csv"]:
+            try:
+                raw_text = local_path.read_text(errors="replace")
+            except Exception as e:
+                print(f"Failed to read text from {local_path}: {e}")
+
+    doc = await ensure_screenplay_projection(
+        session,
+        project_id=project_id,
+        document_version=current_dv,
+        raw_text=raw_text,
+        filename=current_dv.original_filename
+    )
+    
+    session.add(doc)
+    await session.flush()
+    return doc
 
 
 async def ensure_screenplay_projection(

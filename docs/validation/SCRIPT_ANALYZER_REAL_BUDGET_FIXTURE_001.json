@@ -1,0 +1,4301 @@
+{
+  "parse_result": {
+    "status": "SCRIPT_PARSED",
+    "blocker": null,
+    "screenplay_id": "02858959-0858-4d01-bd9c-ff65c1ff8d67",
+    "document_version_id": "d25b035b-dc6f-471a-a611-6ed397444889",
+    "parser_version": "sa1-structural-1.0.0",
+    "input_fingerprint": "b145f9f1e26368c476f656737156744d4921cafecf1553baa72bdfa37d53b26b",
+    "page_basis": "LAYOUT_PAGE_MARKER",
+    "reparsed": true,
+    "scenes": 99,
+    "characters": 38,
+    "elements": 1703,
+    "derived_facts": 20,
+    "production_requirements": 127,
+    "location_requirements": 54,
+    "warnings": []
+  },
+  "script_state": {
+    "project_id": "6c6f1c13-2d49-4bbc-bafb-2a12efa93112",
+    "status": "SCRIPT_PARSED",
+    "blocker": null,
+    "screenplay": {
+      "id": "02858959-0858-4d01-bd9c-ff65c1ff8d67",
+      "filename": "F#K Valentine's Day- pdf.pdf",
+      "document_version_id": "d25b035b-dc6f-471a-a611-6ed397444889",
+      "parser_version": "sa1-structural-1.0.0",
+      "input_fingerprint": "b145f9f1e26368c476f656737156744d4921cafecf1553baa72bdfa37d53b26b",
+      "page_basis": "LAYOUT_PAGE_MARKER",
+      "page_count": 100,
+      "total_eighths": 796,
+      "parse_error": null,
+      "warnings": []
+    },
+    "scene_count": 99,
+    "character_count": 38,
+    "scenes": [
+      {
+        "sequence": 1,
+        "source_scene_number": null,
+        "heading": "EXT. HALLOWEEN HOUSE - NIGHT",
+        "int_ext": "EXT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "HALLOWEEN HOUSE",
+        "location_key": "HALLOWEEN HOUSE",
+        "page_start": 1,
+        "eighths": 4
+      },
+      {
+        "sequence": 2,
+        "source_scene_number": null,
+        "heading": "INT. CHRISTMAS HOUSE - MORNING",
+        "int_ext": "INT",
+        "time_of_day": "DAY",
+        "scripted_location": "CHRISTMAS HOUSE",
+        "location_key": "CHRISTMAS HOUSE",
+        "page_start": 1,
+        "eighths": 4
+      },
+      {
+        "sequence": 3,
+        "source_scene_number": null,
+        "heading": "EXT. OUTDOOR BISTRO - DAY",
+        "int_ext": "EXT",
+        "time_of_day": "DAY",
+        "scripted_location": "OUTDOOR BISTRO",
+        "location_key": "OUTDOOR BISTRO",
+        "page_start": 2,
+        "eighths": 5
+      },
+      {
+        "sequence": 4,
+        "source_scene_number": null,
+        "heading": "EXT. PARK - DAY",
+        "int_ext": "EXT",
+        "time_of_day": "DAY",
+        "scripted_location": "PARK",
+        "location_key": "PARK",
+        "page_start": 2,
+        "eighths": 3
+      },
+      {
+        "sequence": 5,
+        "source_scene_number": null,
+        "heading": "EXT. RESTAURANT - WAITING AREA - NIGHT",
+        "int_ext": "EXT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "RESTAURANT - WAITING AREA",
+        "location_key": "RESTAURANT WAITING AREA",
+        "page_start": 2,
+        "eighths": 12
+      },
+      {
+        "sequence": 6,
+        "source_scene_number": null,
+        "heading": "EXT. CITY STREET - MOMENTS LATER",
+        "int_ext": "EXT",
+        "time_of_day": "LATER",
+        "scripted_location": "CITY STREET",
+        "location_key": "CITY STREET",
+        "page_start": 4,
+        "eighths": 11
+      },
+      {
+        "sequence": 7,
+        "source_scene_number": null,
+        "heading": "INT. GINA\u2019S APARTMENT - NIGHT",
+        "int_ext": "INT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "GINA\u2019S APARTMENT",
+        "location_key": "GINA S APARTMENT",
+        "page_start": 5,
+        "eighths": 3
+      },
+      {
+        "sequence": 8,
+        "source_scene_number": null,
+        "heading": "EXT. WENDY\u2019S PATIO - DAY",
+        "int_ext": "EXT",
+        "time_of_day": "DAY",
+        "scripted_location": "WENDY\u2019S PATIO",
+        "location_key": "WENDY S PATIO",
+        "page_start": 5,
+        "eighths": 4
+      },
+      {
+        "sequence": 9,
+        "source_scene_number": null,
+        "heading": "INT. GINA\u2019S APARTMENT - NIGHT",
+        "int_ext": "INT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "GINA\u2019S APARTMENT",
+        "location_key": "GINA S APARTMENT",
+        "page_start": 6,
+        "eighths": 2
+      },
+      {
+        "sequence": 10,
+        "source_scene_number": null,
+        "heading": "EXT. WENDY\u2019S PATIO - DAY",
+        "int_ext": "EXT",
+        "time_of_day": "DAY",
+        "scripted_location": "WENDY\u2019S PATIO",
+        "location_key": "WENDY S PATIO",
+        "page_start": 6,
+        "eighths": 2
+      },
+      {
+        "sequence": 11,
+        "source_scene_number": null,
+        "heading": "INT. GINA\u2019S APARTMENT - NIGHT",
+        "int_ext": "INT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "GINA\u2019S APARTMENT",
+        "location_key": "GINA S APARTMENT",
+        "page_start": 6,
+        "eighths": 36
+      },
+      {
+        "sequence": 12,
+        "source_scene_number": null,
+        "heading": "INT. GINA\u2019S APARTMENT - LATER",
+        "int_ext": "INT",
+        "time_of_day": "LATER",
+        "scripted_location": "GINA\u2019S APARTMENT",
+        "location_key": "GINA S APARTMENT",
+        "page_start": 10,
+        "eighths": 2
+      },
+      {
+        "sequence": 13,
+        "source_scene_number": null,
+        "heading": "EXT. ALLEY - NIGHT",
+        "int_ext": "EXT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "ALLEY",
+        "location_key": "ALLEY",
+        "page_start": 10,
+        "eighths": 3
+      },
+      {
+        "sequence": 14,
+        "source_scene_number": null,
+        "heading": "INT. APARTMENT COMPLEX HALLWAY - JUST AFTER",
+        "int_ext": "INT",
+        "time_of_day": "UNKNOWN",
+        "scripted_location": "APARTMENT COMPLEX HALLWAY - JUST AFTER",
+        "location_key": "APARTMENT COMPLEX HALLWAY JUST AFTER",
+        "page_start": 11,
+        "eighths": 17
+      },
+      {
+        "sequence": 15,
+        "source_scene_number": null,
+        "heading": "INT. CAFE - MORNING",
+        "int_ext": "INT",
+        "time_of_day": "DAY",
+        "scripted_location": "CAFE",
+        "location_key": "CAFE",
+        "page_start": 13,
+        "eighths": 28
+      },
+      {
+        "sequence": 16,
+        "source_scene_number": null,
+        "heading": "INT. PORTABELLA\u2019S - LOBBY - NIGHT",
+        "int_ext": "INT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "PORTABELLA\u2019S - LOBBY",
+        "location_key": "PORTABELLA S LOBBY",
+        "page_start": 16,
+        "eighths": 4
+      },
+      {
+        "sequence": 17,
+        "source_scene_number": null,
+        "heading": "INT. PORTABELLA\u2019S - TABLE - LATER",
+        "int_ext": "INT",
+        "time_of_day": "LATER",
+        "scripted_location": "PORTABELLA\u2019S - TABLE",
+        "location_key": "PORTABELLA S TABLE",
+        "page_start": 17,
+        "eighths": 8
+      },
+      {
+        "sequence": 18,
+        "source_scene_number": null,
+        "heading": "EXT. PARKING LOT - LATER",
+        "int_ext": "EXT",
+        "time_of_day": "LATER",
+        "scripted_location": "PARKING LOT",
+        "location_key": "PARKING LOT",
+        "page_start": 18,
+        "eighths": 25
+      },
+      {
+        "sequence": 19,
+        "source_scene_number": null,
+        "heading": "EXT. PIER BOARDWALK - NIGHT",
+        "int_ext": "EXT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "PIER BOARDWALK",
+        "location_key": "PIER BOARDWALK",
+        "page_start": 21,
+        "eighths": 9
+      },
+      {
+        "sequence": 20,
+        "source_scene_number": null,
+        "heading": "INT. GINA\u2019S APARTMENT - MORNING",
+        "int_ext": "INT",
+        "time_of_day": "DAY",
+        "scripted_location": "GINA\u2019S APARTMENT",
+        "location_key": "GINA S APARTMENT",
+        "page_start": 23,
+        "eighths": 14
+      },
+      {
+        "sequence": 21,
+        "source_scene_number": null,
+        "heading": "INT. TRICIA AND STEVE'S APARTMENT - MORNING",
+        "int_ext": "INT",
+        "time_of_day": "DAY",
+        "scripted_location": "TRICIA AND STEVE'S APARTMENT",
+        "location_key": "TRICIA AND STEVE S APARTMENT",
+        "page_start": 24,
+        "eighths": 21
+      },
+      {
+        "sequence": 22,
+        "source_scene_number": null,
+        "heading": "EXT. RESORT - DAY",
+        "int_ext": "EXT",
+        "time_of_day": "DAY",
+        "scripted_location": "RESORT",
+        "location_key": "RESORT",
+        "page_start": 27,
+        "eighths": 1
+      },
+      {
+        "sequence": 23,
+        "source_scene_number": null,
+        "heading": "INT. RESORT - LOBBY - DAY",
+        "int_ext": "INT",
+        "time_of_day": "DAY",
+        "scripted_location": "RESORT - LOBBY",
+        "location_key": "RESORT LOBBY",
+        "page_start": 27,
+        "eighths": 11
+      },
+      {
+        "sequence": 24,
+        "source_scene_number": null,
+        "heading": "INT. RESORT - SUITE - JUST AFTER",
+        "int_ext": "INT",
+        "time_of_day": "UNKNOWN",
+        "scripted_location": "RESORT - SUITE - JUST AFTER",
+        "location_key": "RESORT SUITE JUST AFTER",
+        "page_start": 28,
+        "eighths": 10
+      },
+      {
+        "sequence": 25,
+        "source_scene_number": null,
+        "heading": "EXT. RESORT - POOLSIDE - DAY",
+        "int_ext": "EXT",
+        "time_of_day": "DAY",
+        "scripted_location": "RESORT - POOLSIDE",
+        "location_key": "RESORT POOLSIDE",
+        "page_start": 30,
+        "eighths": 37
+      },
+      {
+        "sequence": 26,
+        "source_scene_number": null,
+        "heading": "EXT. MOM\u2019S GARDEN - DUSK",
+        "int_ext": "EXT",
+        "time_of_day": "DUSK",
+        "scripted_location": "MOM\u2019S GARDEN",
+        "location_key": "MOM S GARDEN",
+        "page_start": 34,
+        "eighths": 11
+      },
+      {
+        "sequence": 27,
+        "source_scene_number": null,
+        "heading": "INT. MOM\u2019S BATHROOM - NIGHT",
+        "int_ext": "INT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "MOM\u2019S BATHROOM",
+        "location_key": "MOM S BATHROOM",
+        "page_start": 35,
+        "eighths": 3
+      },
+      {
+        "sequence": 28,
+        "source_scene_number": null,
+        "heading": "EXT. MOM\u2019S GARDEN - DUSK",
+        "int_ext": "EXT",
+        "time_of_day": "DUSK",
+        "scripted_location": "MOM\u2019S GARDEN",
+        "location_key": "MOM S GARDEN",
+        "page_start": 36,
+        "eighths": 12
+      },
+      {
+        "sequence": 29,
+        "source_scene_number": null,
+        "heading": "EXT. MEDITERRANEAN SEA SHORE - DAWN",
+        "int_ext": "EXT",
+        "time_of_day": "DAWN",
+        "scripted_location": "MEDITERRANEAN SEA SHORE",
+        "location_key": "MEDITERRANEAN SEA SHORE",
+        "page_start": 37,
+        "eighths": 2
+      },
+      {
+        "sequence": 30,
+        "source_scene_number": null,
+        "heading": "INT. RESORT - SUITE - BATHROOM - MORNING",
+        "int_ext": "INT",
+        "time_of_day": "DAY",
+        "scripted_location": "RESORT - SUITE - BATHROOM",
+        "location_key": "RESORT SUITE BATHROOM",
+        "page_start": 37,
+        "eighths": 2
+      },
+      {
+        "sequence": 31,
+        "source_scene_number": null,
+        "heading": "INT. TRICIA AND STEVE'S APARTMENT - NIGHT",
+        "int_ext": "INT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "TRICIA AND STEVE'S APARTMENT",
+        "location_key": "TRICIA AND STEVE S APARTMENT",
+        "page_start": 38,
+        "eighths": 4
+      },
+      {
+        "sequence": 32,
+        "source_scene_number": null,
+        "heading": "INT. RESORT - SUITE - BATHROOM - MORNING",
+        "int_ext": "INT",
+        "time_of_day": "DAY",
+        "scripted_location": "RESORT - SUITE - BATHROOM",
+        "location_key": "RESORT SUITE BATHROOM",
+        "page_start": 38,
+        "eighths": 3
+      },
+      {
+        "sequence": 33,
+        "source_scene_number": null,
+        "heading": "INT. TRICIA AND STEVE'S APARTMENT - NIGHT",
+        "int_ext": "INT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "TRICIA AND STEVE'S APARTMENT",
+        "location_key": "TRICIA AND STEVE S APARTMENT",
+        "page_start": 39,
+        "eighths": 7
+      },
+      {
+        "sequence": 34,
+        "source_scene_number": null,
+        "heading": "INT. RESORT - RESTAURANT - MORNING",
+        "int_ext": "INT",
+        "time_of_day": "DAY",
+        "scripted_location": "RESORT - RESTAURANT",
+        "location_key": "RESORT RESTAURANT",
+        "page_start": 39,
+        "eighths": 48
+      },
+      {
+        "sequence": 35,
+        "source_scene_number": null,
+        "heading": "EXT. RESORT - RESTAURANT - DAY",
+        "int_ext": "EXT",
+        "time_of_day": "DAY",
+        "scripted_location": "RESORT - RESTAURANT",
+        "location_key": "RESORT RESTAURANT",
+        "page_start": 46,
+        "eighths": 2
+      },
+      {
+        "sequence": 36,
+        "source_scene_number": null,
+        "heading": "INT. TRICIA AND STEVE'S APARTMENT - EARLY EVENING",
+        "int_ext": "INT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "TRICIA AND STEVE'S APARTMENT",
+        "location_key": "TRICIA AND STEVE S APARTMENT",
+        "page_start": 46,
+        "eighths": 3
+      },
+      {
+        "sequence": 37,
+        "source_scene_number": null,
+        "heading": "EXT. RESORT - RESTAURANT - MORNING",
+        "int_ext": "EXT",
+        "time_of_day": "DAY",
+        "scripted_location": "RESORT - RESTAURANT",
+        "location_key": "RESORT RESTAURANT",
+        "page_start": 47,
+        "eighths": 5
+      },
+      {
+        "sequence": 38,
+        "source_scene_number": null,
+        "heading": "INT. RESORT - RESTAURANT - MORNING",
+        "int_ext": "INT",
+        "time_of_day": "DAY",
+        "scripted_location": "RESORT - RESTAURANT",
+        "location_key": "RESORT RESTAURANT",
+        "page_start": 47,
+        "eighths": 16
+      },
+      {
+        "sequence": 39,
+        "source_scene_number": null,
+        "heading": "EXT. HARBOR - MORNING",
+        "int_ext": "EXT",
+        "time_of_day": "DAY",
+        "scripted_location": "HARBOR",
+        "location_key": "HARBOR",
+        "page_start": 49,
+        "eighths": 7
+      },
+      {
+        "sequence": 40,
+        "source_scene_number": null,
+        "heading": "INT. TRICIA AND STEVE'S APARTMENT - NIGHT",
+        "int_ext": "INT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "TRICIA AND STEVE'S APARTMENT",
+        "location_key": "TRICIA AND STEVE S APARTMENT",
+        "page_start": 50,
+        "eighths": 2
+      },
+      {
+        "sequence": 41,
+        "source_scene_number": null,
+        "heading": "EXT. RESORT - MORNING",
+        "int_ext": "EXT",
+        "time_of_day": "DAY",
+        "scripted_location": "RESORT",
+        "location_key": "RESORT",
+        "page_start": 50,
+        "eighths": 2
+      },
+      {
+        "sequence": 42,
+        "source_scene_number": null,
+        "heading": "INT. TRICIA AND STEVE'S APARTMENT - NIGHT",
+        "int_ext": "INT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "TRICIA AND STEVE'S APARTMENT",
+        "location_key": "TRICIA AND STEVE S APARTMENT",
+        "page_start": 51,
+        "eighths": 6
+      },
+      {
+        "sequence": 43,
+        "source_scene_number": null,
+        "heading": "INT. BOAT - MORNING",
+        "int_ext": "INT",
+        "time_of_day": "DAY",
+        "scripted_location": "BOAT",
+        "location_key": "BOAT",
+        "page_start": 52,
+        "eighths": 11
+      },
+      {
+        "sequence": 44,
+        "source_scene_number": null,
+        "heading": "INT. RESORT - SUITE - DAY",
+        "int_ext": "INT",
+        "time_of_day": "DAY",
+        "scripted_location": "RESORT - SUITE",
+        "location_key": "RESORT SUITE",
+        "page_start": 53,
+        "eighths": 14
+      },
+      {
+        "sequence": 45,
+        "source_scene_number": null,
+        "heading": "EXT. BOAT - DAY",
+        "int_ext": "EXT",
+        "time_of_day": "DAY",
+        "scripted_location": "BOAT",
+        "location_key": "BOAT",
+        "page_start": 55,
+        "eighths": 19
+      },
+      {
+        "sequence": 46,
+        "source_scene_number": null,
+        "heading": "INT. RESORT - GYM - DAY",
+        "int_ext": "INT",
+        "time_of_day": "DAY",
+        "scripted_location": "RESORT - GYM",
+        "location_key": "RESORT GYM",
+        "page_start": 57,
+        "eighths": 8
+      },
+      {
+        "sequence": 47,
+        "source_scene_number": null,
+        "heading": "EXT. SHADY PATH - DAY",
+        "int_ext": "EXT",
+        "time_of_day": "DAY",
+        "scripted_location": "SHADY PATH",
+        "location_key": "SHADY PATH",
+        "page_start": 58,
+        "eighths": 10
+      },
+      {
+        "sequence": 48,
+        "source_scene_number": null,
+        "heading": "INT. RESORT - SPA - DAY",
+        "int_ext": "INT",
+        "time_of_day": "DAY",
+        "scripted_location": "RESORT - SPA",
+        "location_key": "RESORT SPA",
+        "page_start": 60,
+        "eighths": 25
+      },
+      {
+        "sequence": 49,
+        "source_scene_number": null,
+        "heading": "EXT. CLIFF TRAIL - DAY",
+        "int_ext": "EXT",
+        "time_of_day": "DAY",
+        "scripted_location": "CLIFF TRAIL",
+        "location_key": "CLIFF TRAIL",
+        "page_start": 62,
+        "eighths": 7
+      },
+      {
+        "sequence": 50,
+        "source_scene_number": null,
+        "heading": "INT. CABLE CAR - DAY",
+        "int_ext": "INT",
+        "time_of_day": "DAY",
+        "scripted_location": "CABLE CAR",
+        "location_key": "CABLE CAR",
+        "page_start": 63,
+        "eighths": 4
+      },
+      {
+        "sequence": 51,
+        "source_scene_number": null,
+        "heading": "INT. SPA - DAY",
+        "int_ext": "INT",
+        "time_of_day": "DAY",
+        "scripted_location": "SPA",
+        "location_key": "SPA",
+        "page_start": 64,
+        "eighths": 4
+      },
+      {
+        "sequence": 52,
+        "source_scene_number": null,
+        "heading": "INT. HAMMAM BATHHOUSE - DAY",
+        "int_ext": "INT",
+        "time_of_day": "DAY",
+        "scripted_location": "HAMMAM BATHHOUSE",
+        "location_key": "HAMMAM BATHHOUSE",
+        "page_start": 64,
+        "eighths": 3
+      },
+      {
+        "sequence": 53,
+        "source_scene_number": null,
+        "heading": "EXT. TEMPLES OF APOLLO - DAY",
+        "int_ext": "EXT",
+        "time_of_day": "DAY",
+        "scripted_location": "TEMPLES OF APOLLO",
+        "location_key": "TEMPLES OF APOLLO",
+        "page_start": 65,
+        "eighths": 4
+      },
+      {
+        "sequence": 54,
+        "source_scene_number": null,
+        "heading": "INT. MUSEUM - CONTINUOUS",
+        "int_ext": "INT",
+        "time_of_day": "CONTINUOUS",
+        "scripted_location": "MUSEUM",
+        "location_key": "MUSEUM",
+        "page_start": 65,
+        "eighths": 7
+      },
+      {
+        "sequence": 55,
+        "source_scene_number": null,
+        "heading": "EXT. SECLUDED BEACH - CONTINUOUS",
+        "int_ext": "EXT",
+        "time_of_day": "CONTINUOUS",
+        "scripted_location": "SECLUDED BEACH",
+        "location_key": "SECLUDED BEACH",
+        "page_start": 66,
+        "eighths": 5
+      },
+      {
+        "sequence": 56,
+        "source_scene_number": null,
+        "heading": "EXT. FARMER\u2019S MARKET - DAY",
+        "int_ext": "EXT",
+        "time_of_day": "DAY",
+        "scripted_location": "FARMER\u2019S MARKET",
+        "location_key": "FARMER S MARKET",
+        "page_start": 67,
+        "eighths": 3
+      },
+      {
+        "sequence": 57,
+        "source_scene_number": null,
+        "heading": "EXT. SECLUDED BEACH - DAY",
+        "int_ext": "EXT",
+        "time_of_day": "DAY",
+        "scripted_location": "SECLUDED BEACH",
+        "location_key": "SECLUDED BEACH",
+        "page_start": 67,
+        "eighths": 4
+      },
+      {
+        "sequence": 58,
+        "source_scene_number": null,
+        "heading": "EXT. UNDERWATER - DAY",
+        "int_ext": "EXT",
+        "time_of_day": "DAY",
+        "scripted_location": "UNDERWATER",
+        "location_key": "UNDERWATER",
+        "page_start": 68,
+        "eighths": 2
+      },
+      {
+        "sequence": 59,
+        "source_scene_number": null,
+        "heading": "EXT. MELISSANI CAVE - SUNSET",
+        "int_ext": "EXT",
+        "time_of_day": "DUSK",
+        "scripted_location": "MELISSANI CAVE",
+        "location_key": "MELISSANI CAVE",
+        "page_start": 68,
+        "eighths": 22
+      },
+      {
+        "sequence": 60,
+        "source_scene_number": null,
+        "heading": "INT. RESORT - SUITE - NIGHT",
+        "int_ext": "INT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "RESORT - SUITE",
+        "location_key": "RESORT SUITE",
+        "page_start": 71,
+        "eighths": 8
+      },
+      {
+        "sequence": 61,
+        "source_scene_number": null,
+        "heading": "I/E. BOAT - NIGHT",
+        "int_ext": "INT_EXT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "BOAT",
+        "location_key": "BOAT",
+        "page_start": 72,
+        "eighths": 7
+      },
+      {
+        "sequence": 62,
+        "source_scene_number": null,
+        "heading": "INT. RESORT - SUITE - NIGHT",
+        "int_ext": "INT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "RESORT - SUITE",
+        "location_key": "RESORT SUITE",
+        "page_start": 73,
+        "eighths": 2
+      },
+      {
+        "sequence": 63,
+        "source_scene_number": null,
+        "heading": "I/E. BOAT - NIGHT",
+        "int_ext": "INT_EXT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "BOAT",
+        "location_key": "BOAT",
+        "page_start": 73,
+        "eighths": 7
+      },
+      {
+        "sequence": 64,
+        "source_scene_number": null,
+        "heading": "INT. BOAT - DINING HALL - JUST AFTER",
+        "int_ext": "INT",
+        "time_of_day": "UNKNOWN",
+        "scripted_location": "BOAT - DINING HALL - JUST AFTER",
+        "location_key": "BOAT DINING HALL JUST AFTER",
+        "page_start": 74,
+        "eighths": 12
+      },
+      {
+        "sequence": 65,
+        "source_scene_number": null,
+        "heading": "INT. BOAT - NIGHT",
+        "int_ext": "INT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "BOAT",
+        "location_key": "BOAT",
+        "page_start": 75,
+        "eighths": 2
+      },
+      {
+        "sequence": 66,
+        "source_scene_number": null,
+        "heading": "INT. TRICIA AND STEVE'S APARTMENT - DAY",
+        "int_ext": "INT",
+        "time_of_day": "DAY",
+        "scripted_location": "TRICIA AND STEVE'S APARTMENT",
+        "location_key": "TRICIA AND STEVE S APARTMENT",
+        "page_start": 76,
+        "eighths": 2
+      },
+      {
+        "sequence": 67,
+        "source_scene_number": null,
+        "heading": "INT. BOAT - NIGHT",
+        "int_ext": "INT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "BOAT",
+        "location_key": "BOAT",
+        "page_start": 76,
+        "eighths": 8
+      },
+      {
+        "sequence": 68,
+        "source_scene_number": null,
+        "heading": "EXT. PORT - BUS STOP - NIGHT",
+        "int_ext": "EXT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "PORT - BUS STOP",
+        "location_key": "PORT BUS STOP",
+        "page_start": 77,
+        "eighths": 5
+      },
+      {
+        "sequence": 69,
+        "source_scene_number": null,
+        "heading": "EXT. CITY STREET - NIGHT",
+        "int_ext": "EXT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "CITY STREET",
+        "location_key": "CITY STREET",
+        "page_start": 78,
+        "eighths": 2
+      },
+      {
+        "sequence": 70,
+        "source_scene_number": null,
+        "heading": "EXT. CITY STREET - JUST AFTER",
+        "int_ext": "EXT",
+        "time_of_day": "UNKNOWN",
+        "scripted_location": "CITY STREET - JUST AFTER",
+        "location_key": "CITY STREET JUST AFTER",
+        "page_start": 78,
+        "eighths": 5
+      },
+      {
+        "sequence": 71,
+        "source_scene_number": null,
+        "heading": "EXT. RESORT - NIGHT",
+        "int_ext": "EXT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "RESORT",
+        "location_key": "RESORT",
+        "page_start": 78,
+        "eighths": 3
+      },
+      {
+        "sequence": 72,
+        "source_scene_number": null,
+        "heading": "INT. RESORT - LOBBY - CONTINUOUS",
+        "int_ext": "INT",
+        "time_of_day": "CONTINUOUS",
+        "scripted_location": "RESORT - LOBBY",
+        "location_key": "RESORT LOBBY",
+        "page_start": 79,
+        "eighths": 2
+      },
+      {
+        "sequence": 73,
+        "source_scene_number": null,
+        "heading": "INT. RESORT - LOUNGE - CONTINUOUS",
+        "int_ext": "INT",
+        "time_of_day": "CONTINUOUS",
+        "scripted_location": "RESORT - LOUNGE",
+        "location_key": "RESORT LOUNGE",
+        "page_start": 79,
+        "eighths": 2
+      },
+      {
+        "sequence": 74,
+        "source_scene_number": null,
+        "heading": "INT. RESORT - HALLWAY - JUST AFTER",
+        "int_ext": "INT",
+        "time_of_day": "UNKNOWN",
+        "scripted_location": "RESORT - HALLWAY - JUST AFTER",
+        "location_key": "RESORT HALLWAY JUST AFTER",
+        "page_start": 79,
+        "eighths": 2
+      },
+      {
+        "sequence": 75,
+        "source_scene_number": null,
+        "heading": "INT. RESORT - SUITE - CONTINUOUS",
+        "int_ext": "INT",
+        "time_of_day": "CONTINUOUS",
+        "scripted_location": "RESORT - SUITE",
+        "location_key": "RESORT SUITE",
+        "page_start": 80,
+        "eighths": 9
+      },
+      {
+        "sequence": 76,
+        "source_scene_number": null,
+        "heading": "INT. RESORT - LOUNGE - NIGHT",
+        "int_ext": "INT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "RESORT - LOUNGE",
+        "location_key": "RESORT LOUNGE",
+        "page_start": 81,
+        "eighths": 3
+      },
+      {
+        "sequence": 77,
+        "source_scene_number": null,
+        "heading": "INT. RESORT - LOBBY - CONTINUOUS",
+        "int_ext": "INT",
+        "time_of_day": "CONTINUOUS",
+        "scripted_location": "RESORT - LOBBY",
+        "location_key": "RESORT LOBBY",
+        "page_start": 81,
+        "eighths": 29
+      },
+      {
+        "sequence": 78,
+        "source_scene_number": null,
+        "heading": "EXT. MEDITERRANEAN CLIFFTOP VILLAGE - MORNING",
+        "int_ext": "EXT",
+        "time_of_day": "DAY",
+        "scripted_location": "MEDITERRANEAN CLIFFTOP VILLAGE",
+        "location_key": "MEDITERRANEAN CLIFFTOP VILLAGE",
+        "page_start": 85,
+        "eighths": 1
+      },
+      {
+        "sequence": 79,
+        "source_scene_number": null,
+        "heading": "INT. WENDY'S BUNGALOW - MORNING",
+        "int_ext": "INT",
+        "time_of_day": "DAY",
+        "scripted_location": "WENDY'S BUNGALOW",
+        "location_key": "WENDY S BUNGALOW",
+        "page_start": 85,
+        "eighths": 14
+      },
+      {
+        "sequence": 80,
+        "source_scene_number": null,
+        "heading": "INT. APARTMENT - NIGHT",
+        "int_ext": "INT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "APARTMENT",
+        "location_key": "APARTMENT",
+        "page_start": 87,
+        "eighths": 1
+      },
+      {
+        "sequence": 81,
+        "source_scene_number": null,
+        "heading": "EXT. WENDY\u2019S PATIO - DAY",
+        "int_ext": "EXT",
+        "time_of_day": "DAY",
+        "scripted_location": "WENDY\u2019S PATIO",
+        "location_key": "WENDY S PATIO",
+        "page_start": 87,
+        "eighths": 2
+      },
+      {
+        "sequence": 82,
+        "source_scene_number": null,
+        "heading": "INT. APARTMENT - NIGHT",
+        "int_ext": "INT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "APARTMENT",
+        "location_key": "APARTMENT",
+        "page_start": 87,
+        "eighths": 15
+      },
+      {
+        "sequence": 83,
+        "source_scene_number": null,
+        "heading": "EXT. APARTMENT COMPLEX - MORNING",
+        "int_ext": "EXT",
+        "time_of_day": "DAY",
+        "scripted_location": "APARTMENT COMPLEX",
+        "location_key": "APARTMENT COMPLEX",
+        "page_start": 89,
+        "eighths": 2
+      },
+      {
+        "sequence": 84,
+        "source_scene_number": null,
+        "heading": "INT. APARTMENT - DAY",
+        "int_ext": "INT",
+        "time_of_day": "DAY",
+        "scripted_location": "APARTMENT",
+        "location_key": "APARTMENT",
+        "page_start": 89,
+        "eighths": 3
+      },
+      {
+        "sequence": 85,
+        "source_scene_number": null,
+        "heading": "EXT. CITY STREET - NIGHT",
+        "int_ext": "EXT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "CITY STREET",
+        "location_key": "CITY STREET",
+        "page_start": 90,
+        "eighths": 1
+      },
+      {
+        "sequence": 86,
+        "source_scene_number": null,
+        "heading": "INT. APARTMENT COMPLEX HALLWAY - NIGHT",
+        "int_ext": "INT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "APARTMENT COMPLEX HALLWAY",
+        "location_key": "APARTMENT COMPLEX HALLWAY",
+        "page_start": 90,
+        "eighths": 1
+      },
+      {
+        "sequence": 87,
+        "source_scene_number": null,
+        "heading": "INT. APARTMENT - DAY",
+        "int_ext": "INT",
+        "time_of_day": "DAY",
+        "scripted_location": "APARTMENT",
+        "location_key": "APARTMENT",
+        "page_start": 90,
+        "eighths": 2
+      },
+      {
+        "sequence": 88,
+        "source_scene_number": null,
+        "heading": "EXT. GIOVINAZZO\u2019S PIZZERIA - NIGHT",
+        "int_ext": "EXT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "GIOVINAZZO\u2019S PIZZERIA",
+        "location_key": "GIOVINAZZO S PIZZERIA",
+        "page_start": 90,
+        "eighths": 2
+      },
+      {
+        "sequence": 89,
+        "source_scene_number": null,
+        "heading": "EXT. APARTMENT COMPLEX - NIGHT",
+        "int_ext": "EXT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "APARTMENT COMPLEX",
+        "location_key": "APARTMENT COMPLEX",
+        "page_start": 90,
+        "eighths": 3
+      },
+      {
+        "sequence": 90,
+        "source_scene_number": null,
+        "heading": "EXT. RESTAURANT - WAITING AREA - NIGHT",
+        "int_ext": "EXT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "RESTAURANT - WAITING AREA",
+        "location_key": "RESTAURANT WAITING AREA",
+        "page_start": 91,
+        "eighths": 8
+      },
+      {
+        "sequence": 91,
+        "source_scene_number": null,
+        "heading": "EXT. APARTMENT COMPLEX - DUMPSTER - NIGHT",
+        "int_ext": "EXT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "APARTMENT COMPLEX - DUMPSTER",
+        "location_key": "APARTMENT COMPLEX DUMPSTER",
+        "page_start": 92,
+        "eighths": 5
+      },
+      {
+        "sequence": 92,
+        "source_scene_number": null,
+        "heading": "INT. APARTMENT COMPLEX HALLWAY - CONTINUOUS",
+        "int_ext": "INT",
+        "time_of_day": "CONTINUOUS",
+        "scripted_location": "APARTMENT COMPLEX HALLWAY",
+        "location_key": "APARTMENT COMPLEX HALLWAY",
+        "page_start": 92,
+        "eighths": 10
+      },
+      {
+        "sequence": 93,
+        "source_scene_number": null,
+        "heading": "INT. TRICIA AND STEVE'S APARTMENT - CONTINUOUS",
+        "int_ext": "INT",
+        "time_of_day": "CONTINUOUS",
+        "scripted_location": "TRICIA AND STEVE'S APARTMENT",
+        "location_key": "TRICIA AND STEVE S APARTMENT",
+        "page_start": 94,
+        "eighths": 3
+      },
+      {
+        "sequence": 94,
+        "source_scene_number": null,
+        "heading": "EXT. CITY STREET - NIGHT",
+        "int_ext": "EXT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "CITY STREET",
+        "location_key": "CITY STREET",
+        "page_start": 94,
+        "eighths": 2
+      },
+      {
+        "sequence": 95,
+        "source_scene_number": null,
+        "heading": "INT. GIOVINAZZO'S PIZZERIA - NIGHT",
+        "int_ext": "INT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "GIOVINAZZO'S PIZZERIA",
+        "location_key": "GIOVINAZZO S PIZZERIA",
+        "page_start": 94,
+        "eighths": 14
+      },
+      {
+        "sequence": 96,
+        "source_scene_number": null,
+        "heading": "EXT. CITY STREET - NIGHT",
+        "int_ext": "EXT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "CITY STREET",
+        "location_key": "CITY STREET",
+        "page_start": 97,
+        "eighths": 1
+      },
+      {
+        "sequence": 97,
+        "source_scene_number": null,
+        "heading": "EXT. APARTMENT COMPLEX HALLWAY - NIGHT",
+        "int_ext": "EXT",
+        "time_of_day": "NIGHT",
+        "scripted_location": "APARTMENT COMPLEX HALLWAY",
+        "location_key": "APARTMENT COMPLEX HALLWAY",
+        "page_start": 97,
+        "eighths": 2
+      },
+      {
+        "sequence": 98,
+        "source_scene_number": null,
+        "heading": "INT. APARTMENT - CONTINUOUS",
+        "int_ext": "INT",
+        "time_of_day": "CONTINUOUS",
+        "scripted_location": "APARTMENT",
+        "location_key": "APARTMENT",
+        "page_start": 97,
+        "eighths": 12
+      },
+      {
+        "sequence": 99,
+        "source_scene_number": null,
+        "heading": "EXT. CLIFFSIDE CEREMONY - DAY",
+        "int_ext": "EXT",
+        "time_of_day": "DAY",
+        "scripted_location": "CLIFFSIDE CEREMONY",
+        "location_key": "CLIFFSIDE CEREMONY",
+        "page_start": 98,
+        "eighths": 19
+      }
+    ],
+    "characters": [
+      {
+        "name": "A DOUBLE WEDDING",
+        "is_speaking_role": true,
+        "scene_count": 1,
+        "dialogue_blocks": 1,
+        "dialogue_words": 23,
+        "eighths_burden": 19
+      },
+      {
+        "name": "ANDREW",
+        "is_speaking_role": true,
+        "scene_count": 30,
+        "dialogue_blocks": 183,
+        "dialogue_words": 2660,
+        "eighths_burden": 390
+      },
+      {
+        "name": "ASIAN COUPLE",
+        "is_speaking_role": true,
+        "scene_count": 1,
+        "dialogue_blocks": 1,
+        "dialogue_words": 1,
+        "eighths_burden": 7
+      },
+      {
+        "name": "BELLBOY",
+        "is_speaking_role": true,
+        "scene_count": 1,
+        "dialogue_blocks": 1,
+        "dialogue_words": 2,
+        "eighths_burden": 8
+      },
+      {
+        "name": "CUT TO BLACK",
+        "is_speaking_role": true,
+        "scene_count": 2,
+        "dialogue_blocks": 2,
+        "dialogue_words": 11,
+        "eighths_burden": 23
+      },
+      {
+        "name": "ELDERLY TOURIST",
+        "is_speaking_role": true,
+        "scene_count": 3,
+        "dialogue_blocks": 10,
+        "dialogue_words": 71,
+        "eighths_burden": 31
+      },
+      {
+        "name": "END OF MONTAGE",
+        "is_speaking_role": true,
+        "scene_count": 1,
+        "dialogue_blocks": 1,
+        "dialogue_words": 3,
+        "eighths_burden": 3
+      },
+      {
+        "name": "END OF MONTAGES",
+        "is_speaking_role": true,
+        "scene_count": 1,
+        "dialogue_blocks": 1,
+        "dialogue_words": 2,
+        "eighths_burden": 3
+      },
+      {
+        "name": "EVERYONE",
+        "is_speaking_role": true,
+        "scene_count": 1,
+        "dialogue_blocks": 1,
+        "dialogue_words": 20,
+        "eighths_burden": 48
+      },
+      {
+        "name": "FEMALE LOVEBIRD",
+        "is_speaking_role": true,
+        "scene_count": 1,
+        "dialogue_blocks": 2,
+        "dialogue_words": 13,
+        "eighths_burden": 12
+      },
+      {
+        "name": "FIVE-YEAR-OLD",
+        "is_speaking_role": true,
+        "scene_count": 1,
+        "dialogue_blocks": 2,
+        "dialogue_words": 24,
+        "eighths_burden": 4
+      },
+      {
+        "name": "FRONT DESK CLERK",
+        "is_speaking_role": true,
+        "scene_count": 1,
+        "dialogue_blocks": 1,
+        "dialogue_words": 22,
+        "eighths_burden": 11
+      },
+      {
+        "name": "GINA",
+        "is_speaking_role": true,
+        "scene_count": 69,
+        "dialogue_blocks": 355,
+        "dialogue_words": 5167,
+        "eighths_burden": 703
+      },
+      {
+        "name": "HEART-WIPE TO BLACK",
+        "is_speaking_role": true,
+        "scene_count": 1,
+        "dialogue_blocks": 1,
+        "dialogue_words": 1,
+        "eighths_burden": 19
+      },
+      {
+        "name": "HOSTESS",
+        "is_speaking_role": true,
+        "scene_count": 3,
+        "dialogue_blocks": 4,
+        "dialogue_words": 38,
+        "eighths_burden": 24
+      },
+      {
+        "name": "INTERCOM",
+        "is_speaking_role": true,
+        "scene_count": 4,
+        "dialogue_blocks": 4,
+        "dialogue_words": 53,
+        "eighths_burden": 40
+      },
+      {
+        "name": "JOHNNY",
+        "is_speaking_role": true,
+        "scene_count": 30,
+        "dialogue_blocks": 170,
+        "dialogue_words": 2475,
+        "eighths_burden": 382
+      },
+      {
+        "name": "JOHNNY AND GINA",
+        "is_speaking_role": true,
+        "scene_count": 1,
+        "dialogue_blocks": 1,
+        "dialogue_words": 3,
+        "eighths_burden": 7
+      },
+      {
+        "name": "MALE LOVEBIRD",
+        "is_speaking_role": true,
+        "scene_count": 1,
+        "dialogue_blocks": 4,
+        "dialogue_words": 49,
+        "eighths_burden": 12
+      },
+      {
+        "name": "MICKEY",
+        "is_speaking_role": true,
+        "scene_count": 14,
+        "dialogue_blocks": 82,
+        "dialogue_words": 1010,
+        "eighths_burden": 202
+      },
+      {
+        "name": "MIKEY",
+        "is_speaking_role": true,
+        "scene_count": 1,
+        "dialogue_blocks": 1,
+        "dialogue_words": 2,
+        "eighths_burden": 48
+      },
+      {
+        "name": "MOM",
+        "is_speaking_role": true,
+        "scene_count": 1,
+        "dialogue_blocks": 1,
+        "dialogue_words": 11,
+        "eighths_burden": 4
+      },
+      {
+        "name": "MUGGER",
+        "is_speaking_role": true,
+        "scene_count": 1,
+        "dialogue_blocks": 12,
+        "dialogue_words": 96,
+        "eighths_burden": 25
+      },
+      {
+        "name": "POLICE OFFICER",
+        "is_speaking_role": true,
+        "scene_count": 1,
+        "dialogue_blocks": 2,
+        "dialogue_words": 6,
+        "eighths_burden": 5
+      },
+      {
+        "name": "PRETEEN GINA",
+        "is_speaking_role": true,
+        "scene_count": 1,
+        "dialogue_blocks": 1,
+        "dialogue_words": 8,
+        "eighths_burden": 5
+      },
+      {
+        "name": "PRIEST",
+        "is_speaking_role": true,
+        "scene_count": 1,
+        "dialogue_blocks": 2,
+        "dialogue_words": 82,
+        "eighths_burden": 19
+      },
+      {
+        "name": "ROBOT KID",
+        "is_speaking_role": true,
+        "scene_count": 1,
+        "dialogue_blocks": 1,
+        "dialogue_words": 19,
+        "eighths_burden": 4
+      },
+      {
+        "name": "SPOON",
+        "is_speaking_role": true,
+        "scene_count": 1,
+        "dialogue_blocks": 1,
+        "dialogue_words": 18,
+        "eighths_burden": 21
+      },
+      {
+        "name": "STEVE",
+        "is_speaking_role": true,
+        "scene_count": 8,
+        "dialogue_blocks": 17,
+        "dialogue_words": 252,
+        "eighths_burden": 73
+      },
+      {
+        "name": "TEENAGE GINA",
+        "is_speaking_role": true,
+        "scene_count": 1,
+        "dialogue_blocks": 1,
+        "dialogue_words": 8,
+        "eighths_burden": 3
+      },
+      {
+        "name": "TOUR GUIDE",
+        "is_speaking_role": true,
+        "scene_count": 1,
+        "dialogue_blocks": 2,
+        "dialogue_words": 84,
+        "eighths_burden": 12
+      },
+      {
+        "name": "TOURIST",
+        "is_speaking_role": true,
+        "scene_count": 1,
+        "dialogue_blocks": 1,
+        "dialogue_words": 30,
+        "eighths_burden": 12
+      },
+      {
+        "name": "TRICIA",
+        "is_speaking_role": true,
+        "scene_count": 16,
+        "dialogue_blocks": 65,
+        "dialogue_words": 988,
+        "eighths_burden": 135
+      },
+      {
+        "name": "TV ACTRESS",
+        "is_speaking_role": true,
+        "scene_count": 1,
+        "dialogue_blocks": 1,
+        "dialogue_words": 29,
+        "eighths_burden": 2
+      },
+      {
+        "name": "WAITER",
+        "is_speaking_role": true,
+        "scene_count": 1,
+        "dialogue_blocks": 3,
+        "dialogue_words": 41,
+        "eighths_burden": 11
+      },
+      {
+        "name": "WENDY",
+        "is_speaking_role": true,
+        "scene_count": 10,
+        "dialogue_blocks": 35,
+        "dialogue_words": 578,
+        "eighths_burden": 105
+      },
+      {
+        "name": "YOUNG MAN",
+        "is_speaking_role": true,
+        "scene_count": 1,
+        "dialogue_blocks": 3,
+        "dialogue_words": 12,
+        "eighths_burden": 8
+      },
+      {
+        "name": "YOUNG WOMAN",
+        "is_speaking_role": true,
+        "scene_count": 1,
+        "dialogue_blocks": 2,
+        "dialogue_words": 8,
+        "eighths_burden": 8
+      }
+    ]
+  },
+  "canonical_state": {
+    "state_version": "sa1-canonical-production-state-1.0.0",
+    "as_of": "2026-08-14T18:46:09.042393+00:00",
+    "project_id": "6c6f1c13-2d49-4bbc-bafb-2a12efa93112",
+    "project_name": "F#K Valentine's Day",
+    "script_document_version_id": "d25b035b-dc6f-471a-a611-6ed397444889",
+    "screenplay_id": "02858959-0858-4d01-bd9c-ff65c1ff8d67",
+    "parser_version": "sa1-structural-1.0.0",
+    "script_input_fingerprint": "b145f9f1e26368c476f656737156744d4921cafecf1553baa72bdfa37d53b26b",
+    "budget_document_ids": [],
+    "script_status": "SCRIPT_PARSED",
+    "scene_count": 99,
+    "total_eighths": 796,
+    "page_count": 100,
+    "page_basis": "LAYOUT_PAGE_MARKER",
+    "speaking_character_count": 38,
+    "effective_facts": [
+      {
+        "key": "script_day_scene_count",
+        "value": 41,
+        "authority": "DETERMINISTIC_DERIVED",
+        "source": "deterministic parse sa1-structural-1.0.0"
+      },
+      {
+        "key": "script_ext_scene_count",
+        "value": 44,
+        "authority": "DETERMINISTIC_DERIVED",
+        "source": "deterministic parse sa1-structural-1.0.0"
+      },
+      {
+        "key": "script_has_explicit_animal",
+        "value": true,
+        "authority": "DETERMINISTIC_DERIVED",
+        "source": "deterministic parse sa1-structural-1.0.0"
+      },
+      {
+        "key": "script_has_explicit_minor",
+        "value": true,
+        "authority": "DETERMINISTIC_DERIVED",
+        "source": "deterministic parse sa1-structural-1.0.0"
+      },
+      {
+        "key": "script_has_explicit_vehicle",
+        "value": true,
+        "authority": "DETERMINISTIC_DERIVED",
+        "source": "deterministic parse sa1-structural-1.0.0"
+      },
+      {
+        "key": "script_has_explicit_weapon",
+        "value": true,
+        "authority": "DETERMINISTIC_DERIVED",
+        "source": "deterministic parse sa1-structural-1.0.0"
+      },
+      {
+        "key": "script_has_period_reference",
+        "value": true,
+        "authority": "DETERMINISTIC_DERIVED",
+        "source": "deterministic parse sa1-structural-1.0.0"
+      },
+      {
+        "key": "script_int_ext_scene_count",
+        "value": 2,
+        "authority": "DETERMINISTIC_DERIVED",
+        "source": "deterministic parse sa1-structural-1.0.0"
+      },
+      {
+        "key": "script_int_scene_count",
+        "value": 53,
+        "authority": "DETERMINISTIC_DERIVED",
+        "source": "deterministic parse sa1-structural-1.0.0"
+      },
+      {
+        "key": "script_night_scene_count",
+        "value": 36,
+        "authority": "DETERMINISTIC_DERIVED",
+        "source": "deterministic parse sa1-structural-1.0.0"
+      },
+      {
+        "key": "script_page_basis",
+        "value": "LAYOUT_PAGE_MARKER",
+        "authority": "DETERMINISTIC_DERIVED",
+        "source": "deterministic parse sa1-structural-1.0.0"
+      },
+      {
+        "key": "script_page_count",
+        "value": 100,
+        "authority": "DETERMINISTIC_DERIVED",
+        "source": "deterministic parse sa1-structural-1.0.0"
+      },
+      {
+        "key": "script_recurring_scripted_locations",
+        "value": 18,
+        "authority": "DETERMINISTIC_DERIVED",
+        "source": "deterministic parse sa1-structural-1.0.0"
+      },
+      {
+        "key": "script_speaking_character_count",
+        "value": 38,
+        "authority": "DETERMINISTIC_DERIVED",
+        "source": "deterministic parse sa1-structural-1.0.0"
+      },
+      {
+        "key": "script_top_character_burden",
+        "value": [
+          {
+            "character": "GINA",
+            "dialogue_blocks": 355,
+            "dialogue_words": 5167,
+            "scenes": 69
+          },
+          {
+            "character": "ANDREW",
+            "dialogue_blocks": 183,
+            "dialogue_words": 2660,
+            "scenes": 30
+          },
+          {
+            "character": "JOHNNY",
+            "dialogue_blocks": 170,
+            "dialogue_words": 2475,
+            "scenes": 30
+          },
+          {
+            "character": "MICKEY",
+            "dialogue_blocks": 82,
+            "dialogue_words": 1010,
+            "scenes": 14
+          },
+          {
+            "character": "TRICIA",
+            "dialogue_blocks": 65,
+            "dialogue_words": 988,
+            "scenes": 16
+          },
+          {
+            "character": "WENDY",
+            "dialogue_blocks": 35,
+            "dialogue_words": 578,
+            "scenes": 10
+          },
+          {
+            "character": "STEVE",
+            "dialogue_blocks": 17,
+            "dialogue_words": 252,
+            "scenes": 8
+          },
+          {
+            "character": "MUGGER",
+            "dialogue_blocks": 12,
+            "dialogue_words": 96,
+            "scenes": 1
+          },
+          {
+            "character": "ELDERLY TOURIST",
+            "dialogue_blocks": 10,
+            "dialogue_words": 71,
+            "scenes": 3
+          },
+          {
+            "character": "INTERCOM",
+            "dialogue_blocks": 4,
+            "dialogue_words": 53,
+            "scenes": 4
+          }
+        ],
+        "authority": "DETERMINISTIC_DERIVED",
+        "source": "deterministic parse sa1-structural-1.0.0"
+      },
+      {
+        "key": "script_total_eighths",
+        "value": 796,
+        "authority": "DETERMINISTIC_DERIVED",
+        "source": "deterministic parse sa1-structural-1.0.0"
+      },
+      {
+        "key": "script_total_scenes",
+        "value": 99,
+        "authority": "DETERMINISTIC_DERIVED",
+        "source": "deterministic parse sa1-structural-1.0.0"
+      },
+      {
+        "key": "script_unique_scripted_locations",
+        "value": 54,
+        "authority": "DETERMINISTIC_DERIVED",
+        "source": "deterministic parse sa1-structural-1.0.0"
+      },
+      {
+        "key": "script_unknown_int_ext_count",
+        "value": 0,
+        "authority": "DETERMINISTIC_DERIVED",
+        "source": "deterministic parse sa1-structural-1.0.0"
+      },
+      {
+        "key": "script_unknown_time_of_day_count",
+        "value": 5,
+        "authority": "DETERMINISTIC_DERIVED",
+        "source": "deterministic parse sa1-structural-1.0.0"
+      }
+    ],
+    "assumptions": [],
+    "scripted_locations": [
+      {
+        "location_key": "ALLEY",
+        "description": "ALLEY",
+        "scene_count": 1,
+        "eighths_total": 3,
+        "int_count": 0,
+        "ext_count": 1,
+        "day_count": 0,
+        "night_count": 1,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "APARTMENT",
+        "description": "APARTMENT",
+        "scene_count": 5,
+        "eighths_total": 33,
+        "int_count": 5,
+        "ext_count": 0,
+        "day_count": 2,
+        "night_count": 2,
+        "is_recurring": true,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "APARTMENT COMPLEX",
+        "description": "APARTMENT COMPLEX",
+        "scene_count": 2,
+        "eighths_total": 5,
+        "int_count": 0,
+        "ext_count": 2,
+        "day_count": 1,
+        "night_count": 1,
+        "is_recurring": true,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "APARTMENT COMPLEX DUMPSTER",
+        "description": "APARTMENT COMPLEX - DUMPSTER",
+        "scene_count": 1,
+        "eighths_total": 5,
+        "int_count": 0,
+        "ext_count": 1,
+        "day_count": 0,
+        "night_count": 1,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "APARTMENT COMPLEX HALLWAY",
+        "description": "APARTMENT COMPLEX HALLWAY",
+        "scene_count": 3,
+        "eighths_total": 13,
+        "int_count": 2,
+        "ext_count": 1,
+        "day_count": 0,
+        "night_count": 2,
+        "is_recurring": true,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "APARTMENT COMPLEX HALLWAY JUST AFTER",
+        "description": "APARTMENT COMPLEX HALLWAY - JUST AFTER",
+        "scene_count": 1,
+        "eighths_total": 17,
+        "int_count": 1,
+        "ext_count": 0,
+        "day_count": 0,
+        "night_count": 0,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "BOAT",
+        "description": "BOAT",
+        "scene_count": 6,
+        "eighths_total": 54,
+        "int_count": 5,
+        "ext_count": 3,
+        "day_count": 2,
+        "night_count": 4,
+        "is_recurring": true,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "BOAT DINING HALL JUST AFTER",
+        "description": "BOAT - DINING HALL - JUST AFTER",
+        "scene_count": 1,
+        "eighths_total": 12,
+        "int_count": 1,
+        "ext_count": 0,
+        "day_count": 0,
+        "night_count": 0,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "CABLE CAR",
+        "description": "CABLE CAR",
+        "scene_count": 1,
+        "eighths_total": 4,
+        "int_count": 1,
+        "ext_count": 0,
+        "day_count": 1,
+        "night_count": 0,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "CAFE",
+        "description": "CAFE",
+        "scene_count": 1,
+        "eighths_total": 28,
+        "int_count": 1,
+        "ext_count": 0,
+        "day_count": 1,
+        "night_count": 0,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "CHRISTMAS HOUSE",
+        "description": "CHRISTMAS HOUSE",
+        "scene_count": 1,
+        "eighths_total": 4,
+        "int_count": 1,
+        "ext_count": 0,
+        "day_count": 1,
+        "night_count": 0,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "CITY STREET",
+        "description": "CITY STREET",
+        "scene_count": 5,
+        "eighths_total": 17,
+        "int_count": 0,
+        "ext_count": 5,
+        "day_count": 0,
+        "night_count": 4,
+        "is_recurring": true,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "CITY STREET JUST AFTER",
+        "description": "CITY STREET - JUST AFTER",
+        "scene_count": 1,
+        "eighths_total": 5,
+        "int_count": 0,
+        "ext_count": 1,
+        "day_count": 0,
+        "night_count": 0,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "CLIFF TRAIL",
+        "description": "CLIFF TRAIL",
+        "scene_count": 1,
+        "eighths_total": 7,
+        "int_count": 0,
+        "ext_count": 1,
+        "day_count": 1,
+        "night_count": 0,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "CLIFFSIDE CEREMONY",
+        "description": "CLIFFSIDE CEREMONY",
+        "scene_count": 1,
+        "eighths_total": 19,
+        "int_count": 0,
+        "ext_count": 1,
+        "day_count": 1,
+        "night_count": 0,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "FARMER S MARKET",
+        "description": "FARMER\u2019S MARKET",
+        "scene_count": 1,
+        "eighths_total": 3,
+        "int_count": 0,
+        "ext_count": 1,
+        "day_count": 1,
+        "night_count": 0,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "GINA S APARTMENT",
+        "description": "GINA\u2019S APARTMENT",
+        "scene_count": 5,
+        "eighths_total": 57,
+        "int_count": 5,
+        "ext_count": 0,
+        "day_count": 1,
+        "night_count": 3,
+        "is_recurring": true,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "GIOVINAZZO S PIZZERIA",
+        "description": "GIOVINAZZO\u2019S PIZZERIA",
+        "scene_count": 2,
+        "eighths_total": 16,
+        "int_count": 1,
+        "ext_count": 1,
+        "day_count": 0,
+        "night_count": 2,
+        "is_recurring": true,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "HALLOWEEN HOUSE",
+        "description": "HALLOWEEN HOUSE",
+        "scene_count": 1,
+        "eighths_total": 4,
+        "int_count": 0,
+        "ext_count": 1,
+        "day_count": 0,
+        "night_count": 1,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "HAMMAM BATHHOUSE",
+        "description": "HAMMAM BATHHOUSE",
+        "scene_count": 1,
+        "eighths_total": 3,
+        "int_count": 1,
+        "ext_count": 0,
+        "day_count": 1,
+        "night_count": 0,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "HARBOR",
+        "description": "HARBOR",
+        "scene_count": 1,
+        "eighths_total": 7,
+        "int_count": 0,
+        "ext_count": 1,
+        "day_count": 1,
+        "night_count": 0,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "MEDITERRANEAN CLIFFTOP VILLAGE",
+        "description": "MEDITERRANEAN CLIFFTOP VILLAGE",
+        "scene_count": 1,
+        "eighths_total": 1,
+        "int_count": 0,
+        "ext_count": 1,
+        "day_count": 1,
+        "night_count": 0,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "MEDITERRANEAN SEA SHORE",
+        "description": "MEDITERRANEAN SEA SHORE",
+        "scene_count": 1,
+        "eighths_total": 2,
+        "int_count": 0,
+        "ext_count": 1,
+        "day_count": 0,
+        "night_count": 0,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "MELISSANI CAVE",
+        "description": "MELISSANI CAVE",
+        "scene_count": 1,
+        "eighths_total": 22,
+        "int_count": 0,
+        "ext_count": 1,
+        "day_count": 0,
+        "night_count": 0,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "MOM S BATHROOM",
+        "description": "MOM\u2019S BATHROOM",
+        "scene_count": 1,
+        "eighths_total": 3,
+        "int_count": 1,
+        "ext_count": 0,
+        "day_count": 0,
+        "night_count": 1,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "MOM S GARDEN",
+        "description": "MOM\u2019S GARDEN",
+        "scene_count": 2,
+        "eighths_total": 23,
+        "int_count": 0,
+        "ext_count": 2,
+        "day_count": 0,
+        "night_count": 0,
+        "is_recurring": true,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "MUSEUM",
+        "description": "MUSEUM",
+        "scene_count": 1,
+        "eighths_total": 7,
+        "int_count": 1,
+        "ext_count": 0,
+        "day_count": 0,
+        "night_count": 0,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "OUTDOOR BISTRO",
+        "description": "OUTDOOR BISTRO",
+        "scene_count": 1,
+        "eighths_total": 5,
+        "int_count": 0,
+        "ext_count": 1,
+        "day_count": 1,
+        "night_count": 0,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "PARK",
+        "description": "PARK",
+        "scene_count": 1,
+        "eighths_total": 3,
+        "int_count": 0,
+        "ext_count": 1,
+        "day_count": 1,
+        "night_count": 0,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "PARKING LOT",
+        "description": "PARKING LOT",
+        "scene_count": 1,
+        "eighths_total": 25,
+        "int_count": 0,
+        "ext_count": 1,
+        "day_count": 0,
+        "night_count": 0,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "PIER BOARDWALK",
+        "description": "PIER BOARDWALK",
+        "scene_count": 1,
+        "eighths_total": 9,
+        "int_count": 0,
+        "ext_count": 1,
+        "day_count": 0,
+        "night_count": 1,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "PORT BUS STOP",
+        "description": "PORT - BUS STOP",
+        "scene_count": 1,
+        "eighths_total": 5,
+        "int_count": 0,
+        "ext_count": 1,
+        "day_count": 0,
+        "night_count": 1,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "PORTABELLA S LOBBY",
+        "description": "PORTABELLA\u2019S - LOBBY",
+        "scene_count": 1,
+        "eighths_total": 4,
+        "int_count": 1,
+        "ext_count": 0,
+        "day_count": 0,
+        "night_count": 1,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "PORTABELLA S TABLE",
+        "description": "PORTABELLA\u2019S - TABLE",
+        "scene_count": 1,
+        "eighths_total": 8,
+        "int_count": 1,
+        "ext_count": 0,
+        "day_count": 0,
+        "night_count": 0,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "RESORT",
+        "description": "RESORT",
+        "scene_count": 3,
+        "eighths_total": 6,
+        "int_count": 0,
+        "ext_count": 3,
+        "day_count": 2,
+        "night_count": 1,
+        "is_recurring": true,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "RESORT GYM",
+        "description": "RESORT - GYM",
+        "scene_count": 1,
+        "eighths_total": 8,
+        "int_count": 1,
+        "ext_count": 0,
+        "day_count": 1,
+        "night_count": 0,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "RESORT HALLWAY JUST AFTER",
+        "description": "RESORT - HALLWAY - JUST AFTER",
+        "scene_count": 1,
+        "eighths_total": 2,
+        "int_count": 1,
+        "ext_count": 0,
+        "day_count": 0,
+        "night_count": 0,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "RESORT LOBBY",
+        "description": "RESORT - LOBBY",
+        "scene_count": 3,
+        "eighths_total": 42,
+        "int_count": 3,
+        "ext_count": 0,
+        "day_count": 1,
+        "night_count": 0,
+        "is_recurring": true,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "RESORT LOUNGE",
+        "description": "RESORT - LOUNGE",
+        "scene_count": 2,
+        "eighths_total": 5,
+        "int_count": 2,
+        "ext_count": 0,
+        "day_count": 0,
+        "night_count": 1,
+        "is_recurring": true,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "RESORT POOLSIDE",
+        "description": "RESORT - POOLSIDE",
+        "scene_count": 1,
+        "eighths_total": 37,
+        "int_count": 0,
+        "ext_count": 1,
+        "day_count": 1,
+        "night_count": 0,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "RESORT RESTAURANT",
+        "description": "RESORT - RESTAURANT",
+        "scene_count": 4,
+        "eighths_total": 71,
+        "int_count": 2,
+        "ext_count": 2,
+        "day_count": 4,
+        "night_count": 0,
+        "is_recurring": true,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "RESORT SPA",
+        "description": "RESORT - SPA",
+        "scene_count": 1,
+        "eighths_total": 25,
+        "int_count": 1,
+        "ext_count": 0,
+        "day_count": 1,
+        "night_count": 0,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "RESORT SUITE",
+        "description": "RESORT - SUITE",
+        "scene_count": 4,
+        "eighths_total": 33,
+        "int_count": 4,
+        "ext_count": 0,
+        "day_count": 1,
+        "night_count": 2,
+        "is_recurring": true,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "RESORT SUITE BATHROOM",
+        "description": "RESORT - SUITE - BATHROOM",
+        "scene_count": 2,
+        "eighths_total": 5,
+        "int_count": 2,
+        "ext_count": 0,
+        "day_count": 2,
+        "night_count": 0,
+        "is_recurring": true,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "RESORT SUITE JUST AFTER",
+        "description": "RESORT - SUITE - JUST AFTER",
+        "scene_count": 1,
+        "eighths_total": 10,
+        "int_count": 1,
+        "ext_count": 0,
+        "day_count": 0,
+        "night_count": 0,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "RESTAURANT WAITING AREA",
+        "description": "RESTAURANT - WAITING AREA",
+        "scene_count": 2,
+        "eighths_total": 20,
+        "int_count": 0,
+        "ext_count": 2,
+        "day_count": 0,
+        "night_count": 2,
+        "is_recurring": true,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "SECLUDED BEACH",
+        "description": "SECLUDED BEACH",
+        "scene_count": 2,
+        "eighths_total": 9,
+        "int_count": 0,
+        "ext_count": 2,
+        "day_count": 1,
+        "night_count": 0,
+        "is_recurring": true,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "SHADY PATH",
+        "description": "SHADY PATH",
+        "scene_count": 1,
+        "eighths_total": 10,
+        "int_count": 0,
+        "ext_count": 1,
+        "day_count": 1,
+        "night_count": 0,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "SPA",
+        "description": "SPA",
+        "scene_count": 1,
+        "eighths_total": 4,
+        "int_count": 1,
+        "ext_count": 0,
+        "day_count": 1,
+        "night_count": 0,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "TEMPLES OF APOLLO",
+        "description": "TEMPLES OF APOLLO",
+        "scene_count": 1,
+        "eighths_total": 4,
+        "int_count": 0,
+        "ext_count": 1,
+        "day_count": 1,
+        "night_count": 0,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "TRICIA AND STEVE S APARTMENT",
+        "description": "TRICIA AND STEVE'S APARTMENT",
+        "scene_count": 8,
+        "eighths_total": 48,
+        "int_count": 8,
+        "ext_count": 0,
+        "day_count": 2,
+        "night_count": 5,
+        "is_recurring": true,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "UNDERWATER",
+        "description": "UNDERWATER",
+        "scene_count": 1,
+        "eighths_total": 2,
+        "int_count": 0,
+        "ext_count": 1,
+        "day_count": 1,
+        "night_count": 0,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "WENDY S BUNGALOW",
+        "description": "WENDY'S BUNGALOW",
+        "scene_count": 1,
+        "eighths_total": 14,
+        "int_count": 1,
+        "ext_count": 0,
+        "day_count": 1,
+        "night_count": 0,
+        "is_recurring": false,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      },
+      {
+        "location_key": "WENDY S PATIO",
+        "description": "WENDY\u2019S PATIO",
+        "scene_count": 3,
+        "eighths_total": 8,
+        "int_count": 0,
+        "ext_count": 3,
+        "day_count": 3,
+        "night_count": 0,
+        "is_recurring": true,
+        "production_approach": "UNKNOWN",
+        "production_location": null,
+        "authority": "DETERMINISTIC_DERIVED"
+      }
+    ],
+    "production_requirements": [
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "A DOUBLE WEDDING",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          99
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "ANDREW",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 183,
+        "scene_sequences": [
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          23,
+          24,
+          25,
+          26,
+          28,
+          32,
+          34,
+          35,
+          36,
+          37,
+          38,
+          41,
+          42,
+          44,
+          46,
+          48,
+          51,
+          52,
+          56,
+          60,
+          75,
+          77,
+          95,
+          99
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "ASIAN COUPLE",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          49
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "BELLBOY",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          60
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "CUT TO BLACK",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 2,
+        "scene_sequences": [
+          19,
+          79
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "ELDERLY TOURIST",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 10,
+        "scene_sequences": [
+          45,
+          61,
+          68
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "END OF MONTAGE",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          89
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "END OF MONTAGES",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          52
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "EVERYONE",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          34
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "FEMALE LOVEBIRD",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 2,
+        "scene_sequences": [
+          5
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "FIVE-YEAR-OLD",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 2,
+        "scene_sequences": [
+          2
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "FRONT DESK CLERK",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          23
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "GINA",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 355,
+        "scene_sequences": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          30,
+          32,
+          33,
+          34,
+          37,
+          38,
+          39,
+          43,
+          45,
+          47,
+          48,
+          49,
+          50,
+          53,
+          54,
+          55,
+          57,
+          59,
+          61,
+          63,
+          64,
+          65,
+          66,
+          67,
+          68,
+          70,
+          71,
+          72,
+          73,
+          75,
+          76,
+          77,
+          79,
+          80,
+          82,
+          90,
+          91,
+          92,
+          94,
+          95,
+          97,
+          98,
+          99
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "HEART-WIPE TO BLACK",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          99
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "HOSTESS",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 4,
+        "scene_sequences": [
+          5,
+          16,
+          90
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "INTERCOM",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 4,
+        "scene_sequences": [
+          45,
+          63,
+          64,
+          65
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "JOHNNY",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 170,
+        "scene_sequences": [
+          11,
+          23,
+          25,
+          34,
+          38,
+          39,
+          43,
+          45,
+          46,
+          47,
+          49,
+          50,
+          53,
+          54,
+          55,
+          57,
+          59,
+          61,
+          63,
+          64,
+          67,
+          68,
+          70,
+          72,
+          73,
+          76,
+          77,
+          82,
+          98,
+          99
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "JOHNNY AND GINA",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          61
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "MALE LOVEBIRD",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 4,
+        "scene_sequences": [
+          5
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "MICKEY",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 82,
+        "scene_sequences": [
+          34,
+          38,
+          44,
+          46,
+          48,
+          51,
+          52,
+          60,
+          62,
+          75,
+          76,
+          77,
+          95,
+          99
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "MIKEY",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          34
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "MOM",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          2
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "MUGGER",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 12,
+        "scene_sequences": [
+          18
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "POLICE OFFICER",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 2,
+        "scene_sequences": [
+          70
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "PRETEEN GINA",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          3
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "PRIEST",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 2,
+        "scene_sequences": [
+          99
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "ROBOT KID",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          1
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "SPOON",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          21
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "STEVE",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 17,
+        "scene_sequences": [
+          14,
+          21,
+          31,
+          33,
+          36,
+          42,
+          93,
+          98
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "TEENAGE GINA",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          4
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "TOUR GUIDE",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 2,
+        "scene_sequences": [
+          64
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "TOURIST",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          64
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "TRICIA",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 65,
+        "scene_sequences": [
+          14,
+          21,
+          31,
+          33,
+          36,
+          40,
+          41,
+          42,
+          44,
+          66,
+          67,
+          91,
+          92,
+          93,
+          98,
+          99
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "TV ACTRESS",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          12
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "WAITER",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 3,
+        "scene_sequences": [
+          43
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "WENDY",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 35,
+        "scene_sequences": [
+          8,
+          9,
+          10,
+          11,
+          26,
+          28,
+          71,
+          79,
+          81,
+          99
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "YOUNG MAN",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 3,
+        "scene_sequences": [
+          90
+        ]
+      },
+      {
+        "requirement_key": "CHARACTER",
+        "normalized_value": "YOUNG WOMAN",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 2,
+        "scene_sequences": [
+          90
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_ANIMAL",
+        "normalized_value": "CAT",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 1,
+        "scene_sequences": [
+          54
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_ANIMAL",
+        "normalized_value": "DOG",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 3,
+        "scene_sequences": [
+          54,
+          95,
+          98
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_ANIMAL",
+        "normalized_value": "DOGS",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 2,
+        "scene_sequences": [
+          6,
+          94
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_ANIMAL",
+        "normalized_value": "DONKEY",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 1,
+        "scene_sequences": [
+          49
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_ANIMAL",
+        "normalized_value": "GOAT",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 8,
+        "scene_sequences": [
+          17,
+          18,
+          59,
+          60,
+          64,
+          66,
+          79,
+          82
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_ANIMAL",
+        "normalized_value": "HORSE",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 2,
+        "scene_sequences": [
+          81,
+          82
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_ANIMAL",
+        "normalized_value": "PIG",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 1,
+        "scene_sequences": [
+          34
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_ANIMAL",
+        "normalized_value": "RAT",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 1,
+        "scene_sequences": [
+          34
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_MINOR",
+        "normalized_value": "BABIES",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 1,
+        "scene_sequences": [
+          79
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_MINOR",
+        "normalized_value": "BABY",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 12,
+        "scene_sequences": [
+          2,
+          11,
+          14,
+          21,
+          28,
+          31,
+          42,
+          45,
+          77,
+          81,
+          98,
+          99
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_MINOR",
+        "normalized_value": "BOY",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 9,
+        "scene_sequences": [
+          4,
+          11,
+          14,
+          16,
+          21,
+          23,
+          44,
+          54,
+          61
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_MINOR",
+        "normalized_value": "CHILD",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 4,
+        "scene_sequences": [
+          1,
+          15,
+          26,
+          40
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_MINOR",
+        "normalized_value": "CHILDREN",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 3,
+        "scene_sequences": [
+          1,
+          79,
+          86
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_MINOR",
+        "normalized_value": "GIRL",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 11,
+        "scene_sequences": [
+          3,
+          4,
+          14,
+          15,
+          18,
+          25,
+          26,
+          34,
+          38,
+          66,
+          82
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_MINOR",
+        "normalized_value": "KID",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 9,
+        "scene_sequences": [
+          1,
+          4,
+          33,
+          44,
+          54,
+          59,
+          68,
+          98,
+          99
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_MINOR",
+        "normalized_value": "KIDS",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 8,
+        "scene_sequences": [
+          25,
+          38,
+          45,
+          55,
+          79,
+          83,
+          90,
+          99
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_MINOR",
+        "normalized_value": "TEEN",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 1,
+        "scene_sequences": [
+          27
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_MINOR",
+        "normalized_value": "TODDLER",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 2,
+        "scene_sequences": [
+          33,
+          42
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_VEHICLE",
+        "normalized_value": "BICYCLE",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 1,
+        "scene_sequences": [
+          47
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_VEHICLE",
+        "normalized_value": "BOAT",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 11,
+        "scene_sequences": [
+          32,
+          37,
+          39,
+          43,
+          45,
+          59,
+          61,
+          63,
+          64,
+          65,
+          67
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_VEHICLE",
+        "normalized_value": "BOATS",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 1,
+        "scene_sequences": [
+          19
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_VEHICLE",
+        "normalized_value": "BUS",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 1,
+        "scene_sequences": [
+          68
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_VEHICLE",
+        "normalized_value": "CAR",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 2,
+        "scene_sequences": [
+          18,
+          50
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_VEHICLE",
+        "normalized_value": "CARS",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 1,
+        "scene_sequences": [
+          69
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_VEHICLE",
+        "normalized_value": "JET",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 1,
+        "scene_sequences": [
+          23
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_VEHICLE",
+        "normalized_value": "PICKUP",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 1,
+        "scene_sequences": [
+          68
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_VEHICLE",
+        "normalized_value": "SHIP",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 4,
+        "scene_sequences": [
+          39,
+          59,
+          61,
+          64
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_VEHICLE",
+        "normalized_value": "TRAIN",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 2,
+        "scene_sequences": [
+          43,
+          99
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_VEHICLE",
+        "normalized_value": "YACHT",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 1,
+        "scene_sequences": [
+          39
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_WEAPON",
+        "normalized_value": "BLADE",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 2,
+        "scene_sequences": [
+          18,
+          20
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_WEAPON",
+        "normalized_value": "BOW AND ARROW",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 1,
+        "scene_sequences": [
+          93
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_WEAPON",
+        "normalized_value": "GUN",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 1,
+        "scene_sequences": [
+          21
+        ]
+      },
+      {
+        "requirement_key": "EXPLICIT_WEAPON",
+        "normalized_value": "KNIFE",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 2,
+        "scene_sequences": [
+          6,
+          66
+        ]
+      },
+      {
+        "requirement_key": "PERIOD_REFERENCE",
+        "normalized_value": "1876",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 1,
+        "scene_sequences": [
+          45
+        ]
+      },
+      {
+        "requirement_key": "PERIOD_REFERENCE",
+        "normalized_value": "1980",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": true,
+        "evidence_count": 1,
+        "scene_sequences": [
+          46
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "ALLEY",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          13
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "APARTMENT",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 5,
+        "scene_sequences": [
+          80,
+          82,
+          84,
+          87,
+          98
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "APARTMENT COMPLEX",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 2,
+        "scene_sequences": [
+          83,
+          89
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "APARTMENT COMPLEX DUMPSTER",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          91
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "APARTMENT COMPLEX HALLWAY",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 3,
+        "scene_sequences": [
+          86,
+          92,
+          97
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "APARTMENT COMPLEX HALLWAY JUST AFTER",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          14
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "BOAT",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 6,
+        "scene_sequences": [
+          43,
+          45,
+          61,
+          63,
+          65,
+          67
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "BOAT DINING HALL JUST AFTER",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          64
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "CABLE CAR",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          50
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "CAFE",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          15
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "CHRISTMAS HOUSE",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          2
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "CITY STREET",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 5,
+        "scene_sequences": [
+          6,
+          69,
+          85,
+          94,
+          96
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "CITY STREET JUST AFTER",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          70
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "CLIFF TRAIL",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          49
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "CLIFFSIDE CEREMONY",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          99
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "FARMER S MARKET",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          56
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "GINA S APARTMENT",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 5,
+        "scene_sequences": [
+          7,
+          9,
+          11,
+          12,
+          20
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "GIOVINAZZO S PIZZERIA",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 2,
+        "scene_sequences": [
+          88,
+          95
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "HALLOWEEN HOUSE",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          1
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "HAMMAM BATHHOUSE",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          52
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "HARBOR",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          39
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "MEDITERRANEAN CLIFFTOP VILLAGE",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          78
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "MEDITERRANEAN SEA SHORE",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          29
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "MELISSANI CAVE",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          59
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "MOM S BATHROOM",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          27
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "MOM S GARDEN",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 2,
+        "scene_sequences": [
+          26,
+          28
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "MUSEUM",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          54
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "OUTDOOR BISTRO",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          3
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "PARK",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          4
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "PARKING LOT",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          18
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "PIER BOARDWALK",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          19
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "PORT BUS STOP",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          68
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "PORTABELLA S LOBBY",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          16
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "PORTABELLA S TABLE",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          17
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "RESORT",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 3,
+        "scene_sequences": [
+          22,
+          41,
+          71
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "RESORT GYM",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          46
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "RESORT HALLWAY JUST AFTER",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          74
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "RESORT LOBBY",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 3,
+        "scene_sequences": [
+          23,
+          72,
+          77
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "RESORT LOUNGE",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 2,
+        "scene_sequences": [
+          73,
+          76
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "RESORT POOLSIDE",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          25
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "RESORT RESTAURANT",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 4,
+        "scene_sequences": [
+          34,
+          35,
+          37,
+          38
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "RESORT SPA",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          48
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "RESORT SUITE",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 4,
+        "scene_sequences": [
+          44,
+          60,
+          62,
+          75
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "RESORT SUITE BATHROOM",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 2,
+        "scene_sequences": [
+          30,
+          32
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "RESORT SUITE JUST AFTER",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          24
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "RESTAURANT WAITING AREA",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 2,
+        "scene_sequences": [
+          5,
+          90
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "SECLUDED BEACH",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 2,
+        "scene_sequences": [
+          55,
+          57
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "SHADY PATH",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          47
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "SPA",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          51
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "TEMPLES OF APOLLO",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          53
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "TRICIA AND STEVE S APARTMENT",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 8,
+        "scene_sequences": [
+          21,
+          31,
+          33,
+          36,
+          40,
+          42,
+          66,
+          93
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "UNDERWATER",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          58
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "WENDY S BUNGALOW",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 1,
+        "scene_sequences": [
+          79
+        ]
+      },
+      {
+        "requirement_key": "SCRIPTED_LOCATION",
+        "normalized_value": "WENDY S PATIO",
+        "quantity": null,
+        "unit": null,
+        "authority": "DETERMINISTIC_DERIVED",
+        "requires_confirmation": false,
+        "evidence_count": 3,
+        "scene_sequences": [
+          8,
+          10,
+          81
+        ]
+      }
+    ],
+    "budget_state": "BUDGET_MISSING",
+    "gross_budget_usd": null,
+    "active_budget_line_count": 0,
+    "budget_lines": [],
+    "territorial_allocations": [],
+    "readiness": "BLOCKED_INCOMPLETE_INPUTS",
+    "unknowns": [
+      "assumption:intended_shoot_days is UNKNOWN \u2014 not defaulted; supply it explicitly to enable full downstream estimation.",
+      "assumption:base_jurisdiction is UNKNOWN \u2014 not defaulted; supply it explicitly to enable full downstream estimation.",
+      "location:ALLEY has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:APARTMENT has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:APARTMENT COMPLEX has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:APARTMENT COMPLEX DUMPSTER has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:APARTMENT COMPLEX HALLWAY has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:APARTMENT COMPLEX HALLWAY JUST AFTER has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:BOAT has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:BOAT DINING HALL JUST AFTER has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:CABLE CAR has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:CAFE has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:CHRISTMAS HOUSE has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:CITY STREET has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:CITY STREET JUST AFTER has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:CLIFF TRAIL has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:CLIFFSIDE CEREMONY has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:FARMER S MARKET has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:GINA S APARTMENT has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:GIOVINAZZO S PIZZERIA has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:HALLOWEEN HOUSE has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:HAMMAM BATHHOUSE has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:HARBOR has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:MEDITERRANEAN CLIFFTOP VILLAGE has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:MEDITERRANEAN SEA SHORE has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:MELISSANI CAVE has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:MOM S BATHROOM has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:MOM S GARDEN has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:MUSEUM has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:OUTDOOR BISTRO has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:PARK has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:PARKING LOT has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:PIER BOARDWALK has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:PORT BUS STOP has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:PORTABELLA S LOBBY has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:PORTABELLA S TABLE has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:RESORT has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:RESORT GYM has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:RESORT HALLWAY JUST AFTER has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:RESORT LOBBY has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:RESORT LOUNGE has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:RESORT POOLSIDE has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:RESORT RESTAURANT has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:RESORT SPA has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:RESORT SUITE has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:RESORT SUITE BATHROOM has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:RESORT SUITE JUST AFTER has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:RESTAURANT WAITING AREA has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:SECLUDED BEACH has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:SHADY PATH has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:SPA has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:TEMPLES OF APOLLO has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:TRICIA AND STEVE S APARTMENT has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:UNDERWATER has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:WENDY S BUNGALOW has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "location:WENDY S PATIO has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions."
+    ],
+    "blockers": [
+      "BUDGET_MISSING \u2014 no budget document is attached. SA-1 does not estimate a budget; optimizer pricing stays blocked until a budget exists or a later phase supplies a Level-1 estimate."
+    ],
+    "warnings": [],
+    "input_fingerprint": "7f179ef3032ad62b4a5f10cdcbded4dcee884b5f41e76da877118bb95595a0a2"
+  },
+  "optimizer_input": {
+    "project_id": "6c6f1c13-2d49-4bbc-bafb-2a12efa93112",
+    "readiness": "BLOCKED_INCOMPLETE_INPUTS",
+    "state_fingerprint": "7f179ef3032ad62b4a5f10cdcbded4dcee884b5f41e76da877118bb95595a0a2",
+    "accepted": false,
+    "reason": "CanonicalProductionState is not READY_FOR_OPTIMIZER. Required inputs are missing and are deliberately not defaulted \u2014 a partially-known production is not priced as though complete.",
+    "blockers": [
+      "BUDGET_MISSING \u2014 no budget document is attached. SA-1 does not estimate a budget; optimizer pricing stays blocked until a budget exists or a later phase supplies a Level-1 estimate."
+    ],
+    "optimizer_input": null
+  }
+}
