@@ -1,0 +1,12 @@
+{
+  "acceptance_criteria": "Project ingestion workflow correctly transitions raw files to typed Document/DocumentVersion resources with appropriate categories.",
+  "project_id": "6c6f1c13-2d49-4bbc-bafb-2a12efa93112",
+  "project_title": "F#K Valentine's Day",
+  "ingested_materials": {
+    "screenplay": "02858959-0858-4d01-bd9c-ff65c1ff8d67",
+    "budget": "c5cf635b-c2e7-44bc-b3a9-e0921ec566e1",
+    "deck": "57b32c66-8d19-487d-8153-61ce40bd6d81"
+  },
+  "parser_readiness": "READY_FOR_OPTIMIZER",
+  "result": "PASS"
+}

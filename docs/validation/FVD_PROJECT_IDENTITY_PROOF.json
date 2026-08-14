@@ -1,0 +1,9 @@
+{
+  "project_title": "F#K Valentine's Day",
+  "project_id": "6c6f1c13-2d49-4bbc-bafb-2a12efa93112",
+  "provenance_resolution": {
+    "base_jurisdiction": "GR",
+    "description": "Resolved geographic provenance to Greece (GR), explicitly supplying GR as base_jurisdiction instead of relying on Mauritius (MU) defaults. Fixed the Little Utopia contamination."
+  },
+  "runtime_result": "SUCCESS"
+}

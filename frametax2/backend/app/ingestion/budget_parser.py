@@ -175,7 +175,8 @@ _GRAND_TOTAL_RE = re.compile(r"^Grand Total\s*$", re.IGNORECASE)
 # rebate/credit/net-total rows are budget assumptions, not gross spend.
 _REBATE_EXCLUSION_RE = re.compile(
     r"edb\s+rebate|tax\s+credit|net\s+total|rebate\s+at\s+\d|incentive\s+rebate"
-    r"|credit\s+at\s+\d|tax\s+rebate\s+at|film\s+rebate|incentive\s+line",
+    r"|credit\s+at\s+\d|tax\s+rebate\s+at|film\s+rebate|incentive\s+line"
+    r"|cash\s+rebate|estimate\s+cash\s+rebate",
     re.IGNORECASE,
 )
 
@@ -193,9 +194,10 @@ def _is_film_budget_format(text: str) -> bool:
     """Return True if text looks like a film budget with account codes
     (either hyphenated "XX-00" or bare 4-digit "1000" convention)."""
     has_bare_4digit_topsheet = (
-        "Acct#" in text and "Category Description" in text
-        and bool(re.search(rf"^{_ACCT_CODE_BARE_RE}$", text, re.MULTILINE))
-    )
+        ("Acct#" in text and "Category Description" in text) or
+        ("Account\n" in text and "Description\n" in text)
+    ) and bool(re.search(rf"^{_ACCT_CODE_BARE_RE}$", text, re.MULTILINE))
+    
     return bool(
         re.search(rf"Account Total for ({_ACCT_CODE_HYPHEN_RE}|{_ACCT_CODE_BARE_RE})", text)
         or re.search(rf"({_ACCT_CODE_HYPHEN_RE})\s{{2,}}[A-Z]", text)
@@ -249,7 +251,7 @@ def _parse_film_budget(
     warnings: list[str] = []
 
     top_sheet_pages = [
-        p for p in pages if "Acct#" in p and "Category Description" in p
+        p for p in pages if ("Acct#" in p and "Category Description" in p) or ("Account\n" in p and "Description\n" in p)
     ]
     for top_sheet_page in top_sheet_pages:
         lines = [l.strip() for l in top_sheet_page.splitlines() if l.strip()]

@@ -3,18 +3,8 @@
     "status": "SCRIPT_PARSED",
     "blocker": null,
     "screenplay_id": "02858959-0858-4d01-bd9c-ff65c1ff8d67",
-    "document_version_id": "d25b035b-dc6f-471a-a611-6ed397444889",
-    "parser_version": "sa1-structural-1.0.0",
-    "input_fingerprint": "b145f9f1e26368c476f656737156744d4921cafecf1553baa72bdfa37d53b26b",
-    "page_basis": "LAYOUT_PAGE_MARKER",
-    "reparsed": true,
-    "scenes": 99,
-    "characters": 38,
-    "elements": 1703,
-    "derived_facts": 20,
-    "production_requirements": 127,
-    "location_requirements": 54,
-    "warnings": []
+    "parse_error": null,
+    "reparsed": false
   },
   "script_state": {
     "project_id": "6c6f1c13-2d49-4bbc-bafb-2a12efa93112",
@@ -1434,14 +1424,16 @@
   },
   "canonical_state": {
     "state_version": "sa1-canonical-production-state-1.0.0",
-    "as_of": "2026-08-14T18:46:09.042393+00:00",
+    "as_of": "2026-08-14T21:43:45.196509+00:00",
     "project_id": "6c6f1c13-2d49-4bbc-bafb-2a12efa93112",
     "project_name": "F#K Valentine's Day",
     "script_document_version_id": "d25b035b-dc6f-471a-a611-6ed397444889",
     "screenplay_id": "02858959-0858-4d01-bd9c-ff65c1ff8d67",
     "parser_version": "sa1-structural-1.0.0",
     "script_input_fingerprint": "b145f9f1e26368c476f656737156744d4921cafecf1553baa72bdfa37d53b26b",
-    "budget_document_ids": [],
+    "budget_document_ids": [
+      "29419055-9720-4e77-a673-020e3a87e3c8"
+    ],
     "script_status": "SCRIPT_PARSED",
     "scene_count": 99,
     "total_eighths": 796,
@@ -4217,12 +4209,455 @@
         ]
       }
     ],
-    "budget_state": "BUDGET_MISSING",
-    "gross_budget_usd": null,
-    "active_budget_line_count": 0,
-    "budget_lines": [],
+    "budget_state": "BUDGET_PRESENT",
+    "gross_budget_usd": 4517687.0,
+    "active_budget_line_count": 34,
+    "budget_lines": [
+      {
+        "line_id": "a60879c9-0dca-467b-ab29-74dcc1ed8820",
+        "description": "1100 STORY / RIGHTS / CONTINUITY",
+        "department": "Above The Line",
+        "atl_btl": "atl",
+        "spend_category": null,
+        "amount_usd": 252650.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "a02dc66c-ddd9-42e8-877f-c5df45730972",
+        "description": "1200 PRODUCERS",
+        "department": "Above The Line",
+        "atl_btl": "btl",
+        "spend_category": null,
+        "amount_usd": 401831.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "257097f2-e26e-4735-81e7-e75f534525b9",
+        "description": "1300 DIRECTOR",
+        "department": "Above The Line",
+        "atl_btl": "btl",
+        "spend_category": null,
+        "amount_usd": 75710.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "a140c9c3-7552-45d1-b21c-516da9fefc54",
+        "description": "1400 CAST",
+        "department": "Above The Line",
+        "atl_btl": "btl",
+        "spend_category": null,
+        "amount_usd": 1246288.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "7d28efdf-7a7f-472f-9628-63e3592660df",
+        "description": "1600 ATL TRAVEL / LIVING",
+        "department": "Above The Line",
+        "atl_btl": "btl",
+        "spend_category": null,
+        "amount_usd": 174546.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "40d28888-ca29-4072-a513-c37de9129280",
+        "description": "2000 PRODUCTION STAFF",
+        "department": "Production",
+        "atl_btl": "btl",
+        "spend_category": null,
+        "amount_usd": 168353.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "28ce7ac2-22c6-456e-aed3-2a36063606c8",
+        "description": "2100 EXTRA TALENT",
+        "department": "Production",
+        "atl_btl": "btl",
+        "spend_category": null,
+        "amount_usd": 31595.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "f78bf431-9ed5-4ca4-a14c-44c8c4b93669",
+        "description": "2200 SET DESIGN",
+        "department": "Production",
+        "atl_btl": "btl",
+        "spend_category": null,
+        "amount_usd": 32773.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "b526bd42-3eed-4f39-8cce-81ea3f03e978",
+        "description": "2400 SET DRESSING",
+        "department": "Production",
+        "atl_btl": "btl",
+        "spend_category": null,
+        "amount_usd": 46418.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "a2a9b2b5-3d7b-40ee-8b01-dcc7b53728fe",
+        "description": "2500 PROPERTY",
+        "department": "Production",
+        "atl_btl": "btl",
+        "spend_category": null,
+        "amount_usd": 41199.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "1e9e2289-dd01-4683-8a5d-1b0c14534c54",
+        "description": "2600 PICTURE VEHICLES / ANIMALS",
+        "department": "Production",
+        "atl_btl": "btl",
+        "spend_category": null,
+        "amount_usd": 5709.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "420db95c-3491-4ce1-a5c8-e7e2efff73a7",
+        "description": "2700 WARDROBE",
+        "department": "Production",
+        "atl_btl": "btl",
+        "spend_category": null,
+        "amount_usd": 67504.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "58580468-88a4-4b08-a27a-038c6a31d9ac",
+        "description": "2800 MAKEUP & HAIR",
+        "department": "Production",
+        "atl_btl": "btl",
+        "spend_category": null,
+        "amount_usd": 32830.0,
+        "is_labor": true,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "9d927f94-5cfe-461c-9e7f-40766cd3ee95",
+        "description": "2900 SET OPERATIONS",
+        "department": "Production",
+        "atl_btl": "btl",
+        "spend_category": null,
+        "amount_usd": 54691.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "6c3f3bf4-c4c6-4039-b273-5ea2995d6462",
+        "description": "3000 ELECTRIC",
+        "department": "Production",
+        "atl_btl": "btl",
+        "spend_category": null,
+        "amount_usd": 62009.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "fb38ecf6-cadf-4503-83de-bbd1dc9330ef",
+        "description": "3100 CAMERA",
+        "department": "Production",
+        "atl_btl": "btl",
+        "spend_category": null,
+        "amount_usd": 144422.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "cbcc3109-a16b-46f2-bc53-34558b38018b",
+        "description": "3200 PRODUCTION SOUND",
+        "department": "Production",
+        "atl_btl": "post",
+        "spend_category": null,
+        "amount_usd": 26458.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "e8837581-4f9c-4ef6-b5eb-3c18a72833ef",
+        "description": "3400 LOCATIONS",
+        "department": "Production",
+        "atl_btl": "btl",
+        "spend_category": null,
+        "amount_usd": 178356.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "2d217544-072e-49bd-86f3-454593d0f44d",
+        "description": "3600 TRANSPORTATION",
+        "department": "Production",
+        "atl_btl": "btl",
+        "spend_category": null,
+        "amount_usd": 81123.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "5179a25d-e06e-49fc-88d7-51bf4d604d79",
+        "description": "3700 OFFICE STUDIO RENTALS",
+        "department": "Production",
+        "atl_btl": "btl",
+        "spend_category": null,
+        "amount_usd": 17042.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "e5e74649-10f8-4a5e-bdf7-1bb860359686",
+        "description": "3800 PRODUCTION FILM & LAB",
+        "department": "Production",
+        "atl_btl": "btl",
+        "spend_category": null,
+        "amount_usd": 3114.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "83bdf5aa-77ac-4727-b41c-fab884c57ce6",
+        "description": "3900 BTL TRAVEL & LIVING",
+        "department": "Production",
+        "atl_btl": "btl",
+        "spend_category": null,
+        "amount_usd": 96534.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "c280c2de-d204-40bc-be8c-317681b5bcf0",
+        "description": "4600 VISUAL EFFECTS",
+        "department": "Production",
+        "atl_btl": "post",
+        "spend_category": null,
+        "amount_usd": 10000.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "2957fff9-8aa3-4991-801e-8ee9eb5c6b1a",
+        "description": "5000 EDITORIAL",
+        "department": "Post Production",
+        "atl_btl": "post",
+        "spend_category": null,
+        "amount_usd": 78475.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "00e00fb0-db31-4594-b4ef-849444eaa958",
+        "description": "5100 MUSIC",
+        "department": "Post Production",
+        "atl_btl": "post",
+        "spend_category": null,
+        "amount_usd": 10200.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "be3aa19e-7c63-446d-a458-5db09deee652",
+        "description": "5200 POST PRODUCTION SOUND",
+        "department": "Post Production",
+        "atl_btl": "post",
+        "spend_category": null,
+        "amount_usd": 46471.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "55a30803-f72d-4b3f-a134-dce37d8476e4",
+        "description": "5400 MAIN & END TITLES",
+        "department": "Post Production",
+        "atl_btl": "post",
+        "spend_category": null,
+        "amount_usd": 1500.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "c83d99ed-281b-42c6-aee0-d6db0558f154",
+        "description": "5600 DIGITAL INTERMEDIATE",
+        "department": "Post Production",
+        "atl_btl": "post",
+        "spend_category": null,
+        "amount_usd": 15000.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "14e6fbd3-93c0-41b6-9e9c-9ffe08acdcec",
+        "description": "5700 DELIVERABLES",
+        "department": "Post Production",
+        "atl_btl": "post",
+        "spend_category": null,
+        "amount_usd": 5000.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "12762a74-2799-4d25-933e-49cfb81bd2e3",
+        "description": "7000 ADMINISTRATIVE EXPENSES",
+        "department": "Other",
+        "atl_btl": "btl",
+        "spend_category": null,
+        "amount_usd": 170535.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "d2ac6f8c-04d4-4c8c-aaae-29a34120d663",
+        "description": "7200 INSURANCE",
+        "department": "Other",
+        "atl_btl": "other",
+        "spend_category": null,
+        "amount_usd": 50329.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "763c480b-e7e0-46b0-bf42-5a6973aaf4a3",
+        "description": "7901 FINANCE FEE  : 12.5%",
+        "department": "Other",
+        "atl_btl": "btl",
+        "spend_category": null,
+        "amount_usd": 453583.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "e1208759-51a3-4d69-870c-f6507e56619e",
+        "description": "7902 CONTINGENCY : 10%",
+        "department": "Other",
+        "atl_btl": "other",
+        "spend_category": null,
+        "amount_usd": 362866.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      },
+      {
+        "line_id": "5b23988c-37b0-4240-88c4-40d83274f80a",
+        "description": "7905 BOND : 2%",
+        "department": "Other",
+        "atl_btl": "btl",
+        "spend_category": null,
+        "amount_usd": 72573.0,
+        "is_labor": false,
+        "is_resident_labor": null,
+        "residency_state": "UNKNOWN",
+        "service_location_jurisdiction": null,
+        "territorial_basis": "UNKNOWN"
+      }
+    ],
     "territorial_allocations": [],
-    "readiness": "BLOCKED_INCOMPLETE_INPUTS",
+    "readiness": "READY_FOR_OPTIMIZER",
     "unknowns": [
       "assumption:intended_shoot_days is UNKNOWN \u2014 not defaulted; supply it explicitly to enable full downstream estimation.",
       "assumption:base_jurisdiction is UNKNOWN \u2014 not defaulted; supply it explicitly to enable full downstream estimation.",
@@ -4279,23 +4714,3128 @@
       "location:TRICIA AND STEVE S APARTMENT has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
       "location:UNDERWATER has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
       "location:WENDY S BUNGALOW has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
-      "location:WENDY S PATIO has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions."
+      "location:WENDY S PATIO has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+      "1 labor line(s) have UNKNOWN residency. Per the territoriality guard these are not assumed resident; qualifying spend cannot be claimed for them without a stated basis.",
+      "No line carries a confirmed service-performed jurisdiction. Territorial basis is UNKNOWN for all lines; payer/SPV is never sufficient to establish it."
     ],
-    "blockers": [
-      "BUDGET_MISSING \u2014 no budget document is attached. SA-1 does not estimate a budget; optimizer pricing stays blocked until a budget exists or a later phase supplies a Level-1 estimate."
-    ],
+    "blockers": [],
     "warnings": [],
-    "input_fingerprint": "7f179ef3032ad62b4a5f10cdcbded4dcee884b5f41e76da877118bb95595a0a2"
+    "input_fingerprint": "f4ba70752c0ee4962693d104884e2e0ef04b635345631abd87e7cb117a25b914"
   },
   "optimizer_input": {
     "project_id": "6c6f1c13-2d49-4bbc-bafb-2a12efa93112",
-    "readiness": "BLOCKED_INCOMPLETE_INPUTS",
-    "state_fingerprint": "7f179ef3032ad62b4a5f10cdcbded4dcee884b5f41e76da877118bb95595a0a2",
-    "accepted": false,
-    "reason": "CanonicalProductionState is not READY_FOR_OPTIMIZER. Required inputs are missing and are deliberately not defaulted \u2014 a partially-known production is not priced as though complete.",
-    "blockers": [
-      "BUDGET_MISSING \u2014 no budget document is attached. SA-1 does not estimate a budget; optimizer pricing stays blocked until a budget exists or a later phase supplies a Level-1 estimate."
-    ],
-    "optimizer_input": null
+    "readiness": "READY_FOR_OPTIMIZER",
+    "state_fingerprint": "f4ba70752c0ee4962693d104884e2e0ef04b635345631abd87e7cb117a25b914",
+    "accepted": true,
+    "reason": "Canonical state satisfies the minimum optimizer input contract.",
+    "blockers": [],
+    "optimizer_input": {
+      "contract_name": "ProductionOptimizerInput",
+      "contract_version": "sa1-1.0.0",
+      "project_id": "6c6f1c13-2d49-4bbc-bafb-2a12efa93112",
+      "state_version": "sa1-canonical-production-state-1.0.0",
+      "input_fingerprint": "f4ba70752c0ee4962693d104884e2e0ef04b635345631abd87e7cb117a25b914",
+      "as_of": "2026-08-14T21:43:45.274923+00:00",
+      "script_version_id": "d25b035b-dc6f-471a-a611-6ed397444889",
+      "screenplay_id": "02858959-0858-4d01-bd9c-ff65c1ff8d67",
+      "budget_document_ids": [
+        "29419055-9720-4e77-a673-020e3a87e3c8"
+      ],
+      "gross_production_cost_usd": 4517687.0,
+      "budget_lines": [
+        {
+          "line_id": "a60879c9-0dca-467b-ab29-74dcc1ed8820",
+          "description": "1100 STORY / RIGHTS / CONTINUITY",
+          "department": "Above The Line",
+          "atl_btl": "atl",
+          "spend_category": null,
+          "amount_usd": 252650.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "a02dc66c-ddd9-42e8-877f-c5df45730972",
+          "description": "1200 PRODUCERS",
+          "department": "Above The Line",
+          "atl_btl": "btl",
+          "spend_category": null,
+          "amount_usd": 401831.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "257097f2-e26e-4735-81e7-e75f534525b9",
+          "description": "1300 DIRECTOR",
+          "department": "Above The Line",
+          "atl_btl": "btl",
+          "spend_category": null,
+          "amount_usd": 75710.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "a140c9c3-7552-45d1-b21c-516da9fefc54",
+          "description": "1400 CAST",
+          "department": "Above The Line",
+          "atl_btl": "btl",
+          "spend_category": null,
+          "amount_usd": 1246288.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "7d28efdf-7a7f-472f-9628-63e3592660df",
+          "description": "1600 ATL TRAVEL / LIVING",
+          "department": "Above The Line",
+          "atl_btl": "btl",
+          "spend_category": null,
+          "amount_usd": 174546.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "40d28888-ca29-4072-a513-c37de9129280",
+          "description": "2000 PRODUCTION STAFF",
+          "department": "Production",
+          "atl_btl": "btl",
+          "spend_category": null,
+          "amount_usd": 168353.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "28ce7ac2-22c6-456e-aed3-2a36063606c8",
+          "description": "2100 EXTRA TALENT",
+          "department": "Production",
+          "atl_btl": "btl",
+          "spend_category": null,
+          "amount_usd": 31595.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "f78bf431-9ed5-4ca4-a14c-44c8c4b93669",
+          "description": "2200 SET DESIGN",
+          "department": "Production",
+          "atl_btl": "btl",
+          "spend_category": null,
+          "amount_usd": 32773.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "b526bd42-3eed-4f39-8cce-81ea3f03e978",
+          "description": "2400 SET DRESSING",
+          "department": "Production",
+          "atl_btl": "btl",
+          "spend_category": null,
+          "amount_usd": 46418.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "a2a9b2b5-3d7b-40ee-8b01-dcc7b53728fe",
+          "description": "2500 PROPERTY",
+          "department": "Production",
+          "atl_btl": "btl",
+          "spend_category": null,
+          "amount_usd": 41199.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "1e9e2289-dd01-4683-8a5d-1b0c14534c54",
+          "description": "2600 PICTURE VEHICLES / ANIMALS",
+          "department": "Production",
+          "atl_btl": "btl",
+          "spend_category": null,
+          "amount_usd": 5709.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "420db95c-3491-4ce1-a5c8-e7e2efff73a7",
+          "description": "2700 WARDROBE",
+          "department": "Production",
+          "atl_btl": "btl",
+          "spend_category": null,
+          "amount_usd": 67504.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "58580468-88a4-4b08-a27a-038c6a31d9ac",
+          "description": "2800 MAKEUP & HAIR",
+          "department": "Production",
+          "atl_btl": "btl",
+          "spend_category": null,
+          "amount_usd": 32830.0,
+          "is_labor": true,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "9d927f94-5cfe-461c-9e7f-40766cd3ee95",
+          "description": "2900 SET OPERATIONS",
+          "department": "Production",
+          "atl_btl": "btl",
+          "spend_category": null,
+          "amount_usd": 54691.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "6c3f3bf4-c4c6-4039-b273-5ea2995d6462",
+          "description": "3000 ELECTRIC",
+          "department": "Production",
+          "atl_btl": "btl",
+          "spend_category": null,
+          "amount_usd": 62009.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "fb38ecf6-cadf-4503-83de-bbd1dc9330ef",
+          "description": "3100 CAMERA",
+          "department": "Production",
+          "atl_btl": "btl",
+          "spend_category": null,
+          "amount_usd": 144422.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "cbcc3109-a16b-46f2-bc53-34558b38018b",
+          "description": "3200 PRODUCTION SOUND",
+          "department": "Production",
+          "atl_btl": "post",
+          "spend_category": null,
+          "amount_usd": 26458.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "e8837581-4f9c-4ef6-b5eb-3c18a72833ef",
+          "description": "3400 LOCATIONS",
+          "department": "Production",
+          "atl_btl": "btl",
+          "spend_category": null,
+          "amount_usd": 178356.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "2d217544-072e-49bd-86f3-454593d0f44d",
+          "description": "3600 TRANSPORTATION",
+          "department": "Production",
+          "atl_btl": "btl",
+          "spend_category": null,
+          "amount_usd": 81123.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "5179a25d-e06e-49fc-88d7-51bf4d604d79",
+          "description": "3700 OFFICE STUDIO RENTALS",
+          "department": "Production",
+          "atl_btl": "btl",
+          "spend_category": null,
+          "amount_usd": 17042.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "e5e74649-10f8-4a5e-bdf7-1bb860359686",
+          "description": "3800 PRODUCTION FILM & LAB",
+          "department": "Production",
+          "atl_btl": "btl",
+          "spend_category": null,
+          "amount_usd": 3114.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "83bdf5aa-77ac-4727-b41c-fab884c57ce6",
+          "description": "3900 BTL TRAVEL & LIVING",
+          "department": "Production",
+          "atl_btl": "btl",
+          "spend_category": null,
+          "amount_usd": 96534.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "c280c2de-d204-40bc-be8c-317681b5bcf0",
+          "description": "4600 VISUAL EFFECTS",
+          "department": "Production",
+          "atl_btl": "post",
+          "spend_category": null,
+          "amount_usd": 10000.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "2957fff9-8aa3-4991-801e-8ee9eb5c6b1a",
+          "description": "5000 EDITORIAL",
+          "department": "Post Production",
+          "atl_btl": "post",
+          "spend_category": null,
+          "amount_usd": 78475.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "00e00fb0-db31-4594-b4ef-849444eaa958",
+          "description": "5100 MUSIC",
+          "department": "Post Production",
+          "atl_btl": "post",
+          "spend_category": null,
+          "amount_usd": 10200.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "be3aa19e-7c63-446d-a458-5db09deee652",
+          "description": "5200 POST PRODUCTION SOUND",
+          "department": "Post Production",
+          "atl_btl": "post",
+          "spend_category": null,
+          "amount_usd": 46471.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "55a30803-f72d-4b3f-a134-dce37d8476e4",
+          "description": "5400 MAIN & END TITLES",
+          "department": "Post Production",
+          "atl_btl": "post",
+          "spend_category": null,
+          "amount_usd": 1500.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "c83d99ed-281b-42c6-aee0-d6db0558f154",
+          "description": "5600 DIGITAL INTERMEDIATE",
+          "department": "Post Production",
+          "atl_btl": "post",
+          "spend_category": null,
+          "amount_usd": 15000.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "14e6fbd3-93c0-41b6-9e9c-9ffe08acdcec",
+          "description": "5700 DELIVERABLES",
+          "department": "Post Production",
+          "atl_btl": "post",
+          "spend_category": null,
+          "amount_usd": 5000.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "12762a74-2799-4d25-933e-49cfb81bd2e3",
+          "description": "7000 ADMINISTRATIVE EXPENSES",
+          "department": "Other",
+          "atl_btl": "btl",
+          "spend_category": null,
+          "amount_usd": 170535.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "d2ac6f8c-04d4-4c8c-aaae-29a34120d663",
+          "description": "7200 INSURANCE",
+          "department": "Other",
+          "atl_btl": "other",
+          "spend_category": null,
+          "amount_usd": 50329.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "763c480b-e7e0-46b0-bf42-5a6973aaf4a3",
+          "description": "7901 FINANCE FEE  : 12.5%",
+          "department": "Other",
+          "atl_btl": "btl",
+          "spend_category": null,
+          "amount_usd": 453583.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "e1208759-51a3-4d69-870c-f6507e56619e",
+          "description": "7902 CONTINGENCY : 10%",
+          "department": "Other",
+          "atl_btl": "other",
+          "spend_category": null,
+          "amount_usd": 362866.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        },
+        {
+          "line_id": "5b23988c-37b0-4240-88c4-40d83274f80a",
+          "description": "7905 BOND : 2%",
+          "department": "Other",
+          "atl_btl": "btl",
+          "spend_category": null,
+          "amount_usd": 72573.0,
+          "is_labor": false,
+          "is_resident_labor": null,
+          "residency_state": "UNKNOWN",
+          "service_location_jurisdiction": null,
+          "territorial_basis": "UNKNOWN"
+        }
+      ],
+      "scripted_locations": [
+        {
+          "location_key": "ALLEY",
+          "description": "ALLEY",
+          "scene_count": 1,
+          "eighths_total": 3,
+          "int_count": 0,
+          "ext_count": 1,
+          "day_count": 0,
+          "night_count": 1,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "APARTMENT",
+          "description": "APARTMENT",
+          "scene_count": 5,
+          "eighths_total": 33,
+          "int_count": 5,
+          "ext_count": 0,
+          "day_count": 2,
+          "night_count": 2,
+          "is_recurring": true,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "APARTMENT COMPLEX",
+          "description": "APARTMENT COMPLEX",
+          "scene_count": 2,
+          "eighths_total": 5,
+          "int_count": 0,
+          "ext_count": 2,
+          "day_count": 1,
+          "night_count": 1,
+          "is_recurring": true,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "APARTMENT COMPLEX DUMPSTER",
+          "description": "APARTMENT COMPLEX - DUMPSTER",
+          "scene_count": 1,
+          "eighths_total": 5,
+          "int_count": 0,
+          "ext_count": 1,
+          "day_count": 0,
+          "night_count": 1,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "APARTMENT COMPLEX HALLWAY",
+          "description": "APARTMENT COMPLEX HALLWAY",
+          "scene_count": 3,
+          "eighths_total": 13,
+          "int_count": 2,
+          "ext_count": 1,
+          "day_count": 0,
+          "night_count": 2,
+          "is_recurring": true,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "APARTMENT COMPLEX HALLWAY JUST AFTER",
+          "description": "APARTMENT COMPLEX HALLWAY - JUST AFTER",
+          "scene_count": 1,
+          "eighths_total": 17,
+          "int_count": 1,
+          "ext_count": 0,
+          "day_count": 0,
+          "night_count": 0,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "BOAT",
+          "description": "BOAT",
+          "scene_count": 6,
+          "eighths_total": 54,
+          "int_count": 5,
+          "ext_count": 3,
+          "day_count": 2,
+          "night_count": 4,
+          "is_recurring": true,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "BOAT DINING HALL JUST AFTER",
+          "description": "BOAT - DINING HALL - JUST AFTER",
+          "scene_count": 1,
+          "eighths_total": 12,
+          "int_count": 1,
+          "ext_count": 0,
+          "day_count": 0,
+          "night_count": 0,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "CABLE CAR",
+          "description": "CABLE CAR",
+          "scene_count": 1,
+          "eighths_total": 4,
+          "int_count": 1,
+          "ext_count": 0,
+          "day_count": 1,
+          "night_count": 0,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "CAFE",
+          "description": "CAFE",
+          "scene_count": 1,
+          "eighths_total": 28,
+          "int_count": 1,
+          "ext_count": 0,
+          "day_count": 1,
+          "night_count": 0,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "CHRISTMAS HOUSE",
+          "description": "CHRISTMAS HOUSE",
+          "scene_count": 1,
+          "eighths_total": 4,
+          "int_count": 1,
+          "ext_count": 0,
+          "day_count": 1,
+          "night_count": 0,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "CITY STREET",
+          "description": "CITY STREET",
+          "scene_count": 5,
+          "eighths_total": 17,
+          "int_count": 0,
+          "ext_count": 5,
+          "day_count": 0,
+          "night_count": 4,
+          "is_recurring": true,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "CITY STREET JUST AFTER",
+          "description": "CITY STREET - JUST AFTER",
+          "scene_count": 1,
+          "eighths_total": 5,
+          "int_count": 0,
+          "ext_count": 1,
+          "day_count": 0,
+          "night_count": 0,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "CLIFF TRAIL",
+          "description": "CLIFF TRAIL",
+          "scene_count": 1,
+          "eighths_total": 7,
+          "int_count": 0,
+          "ext_count": 1,
+          "day_count": 1,
+          "night_count": 0,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "CLIFFSIDE CEREMONY",
+          "description": "CLIFFSIDE CEREMONY",
+          "scene_count": 1,
+          "eighths_total": 19,
+          "int_count": 0,
+          "ext_count": 1,
+          "day_count": 1,
+          "night_count": 0,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "FARMER S MARKET",
+          "description": "FARMER\u2019S MARKET",
+          "scene_count": 1,
+          "eighths_total": 3,
+          "int_count": 0,
+          "ext_count": 1,
+          "day_count": 1,
+          "night_count": 0,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "GINA S APARTMENT",
+          "description": "GINA\u2019S APARTMENT",
+          "scene_count": 5,
+          "eighths_total": 57,
+          "int_count": 5,
+          "ext_count": 0,
+          "day_count": 1,
+          "night_count": 3,
+          "is_recurring": true,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "GIOVINAZZO S PIZZERIA",
+          "description": "GIOVINAZZO\u2019S PIZZERIA",
+          "scene_count": 2,
+          "eighths_total": 16,
+          "int_count": 1,
+          "ext_count": 1,
+          "day_count": 0,
+          "night_count": 2,
+          "is_recurring": true,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "HALLOWEEN HOUSE",
+          "description": "HALLOWEEN HOUSE",
+          "scene_count": 1,
+          "eighths_total": 4,
+          "int_count": 0,
+          "ext_count": 1,
+          "day_count": 0,
+          "night_count": 1,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "HAMMAM BATHHOUSE",
+          "description": "HAMMAM BATHHOUSE",
+          "scene_count": 1,
+          "eighths_total": 3,
+          "int_count": 1,
+          "ext_count": 0,
+          "day_count": 1,
+          "night_count": 0,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "HARBOR",
+          "description": "HARBOR",
+          "scene_count": 1,
+          "eighths_total": 7,
+          "int_count": 0,
+          "ext_count": 1,
+          "day_count": 1,
+          "night_count": 0,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "MEDITERRANEAN CLIFFTOP VILLAGE",
+          "description": "MEDITERRANEAN CLIFFTOP VILLAGE",
+          "scene_count": 1,
+          "eighths_total": 1,
+          "int_count": 0,
+          "ext_count": 1,
+          "day_count": 1,
+          "night_count": 0,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "MEDITERRANEAN SEA SHORE",
+          "description": "MEDITERRANEAN SEA SHORE",
+          "scene_count": 1,
+          "eighths_total": 2,
+          "int_count": 0,
+          "ext_count": 1,
+          "day_count": 0,
+          "night_count": 0,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "MELISSANI CAVE",
+          "description": "MELISSANI CAVE",
+          "scene_count": 1,
+          "eighths_total": 22,
+          "int_count": 0,
+          "ext_count": 1,
+          "day_count": 0,
+          "night_count": 0,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "MOM S BATHROOM",
+          "description": "MOM\u2019S BATHROOM",
+          "scene_count": 1,
+          "eighths_total": 3,
+          "int_count": 1,
+          "ext_count": 0,
+          "day_count": 0,
+          "night_count": 1,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "MOM S GARDEN",
+          "description": "MOM\u2019S GARDEN",
+          "scene_count": 2,
+          "eighths_total": 23,
+          "int_count": 0,
+          "ext_count": 2,
+          "day_count": 0,
+          "night_count": 0,
+          "is_recurring": true,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "MUSEUM",
+          "description": "MUSEUM",
+          "scene_count": 1,
+          "eighths_total": 7,
+          "int_count": 1,
+          "ext_count": 0,
+          "day_count": 0,
+          "night_count": 0,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "OUTDOOR BISTRO",
+          "description": "OUTDOOR BISTRO",
+          "scene_count": 1,
+          "eighths_total": 5,
+          "int_count": 0,
+          "ext_count": 1,
+          "day_count": 1,
+          "night_count": 0,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "PARK",
+          "description": "PARK",
+          "scene_count": 1,
+          "eighths_total": 3,
+          "int_count": 0,
+          "ext_count": 1,
+          "day_count": 1,
+          "night_count": 0,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "PARKING LOT",
+          "description": "PARKING LOT",
+          "scene_count": 1,
+          "eighths_total": 25,
+          "int_count": 0,
+          "ext_count": 1,
+          "day_count": 0,
+          "night_count": 0,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "PIER BOARDWALK",
+          "description": "PIER BOARDWALK",
+          "scene_count": 1,
+          "eighths_total": 9,
+          "int_count": 0,
+          "ext_count": 1,
+          "day_count": 0,
+          "night_count": 1,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "PORT BUS STOP",
+          "description": "PORT - BUS STOP",
+          "scene_count": 1,
+          "eighths_total": 5,
+          "int_count": 0,
+          "ext_count": 1,
+          "day_count": 0,
+          "night_count": 1,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "PORTABELLA S LOBBY",
+          "description": "PORTABELLA\u2019S - LOBBY",
+          "scene_count": 1,
+          "eighths_total": 4,
+          "int_count": 1,
+          "ext_count": 0,
+          "day_count": 0,
+          "night_count": 1,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "PORTABELLA S TABLE",
+          "description": "PORTABELLA\u2019S - TABLE",
+          "scene_count": 1,
+          "eighths_total": 8,
+          "int_count": 1,
+          "ext_count": 0,
+          "day_count": 0,
+          "night_count": 0,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "RESORT",
+          "description": "RESORT",
+          "scene_count": 3,
+          "eighths_total": 6,
+          "int_count": 0,
+          "ext_count": 3,
+          "day_count": 2,
+          "night_count": 1,
+          "is_recurring": true,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "RESORT GYM",
+          "description": "RESORT - GYM",
+          "scene_count": 1,
+          "eighths_total": 8,
+          "int_count": 1,
+          "ext_count": 0,
+          "day_count": 1,
+          "night_count": 0,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "RESORT HALLWAY JUST AFTER",
+          "description": "RESORT - HALLWAY - JUST AFTER",
+          "scene_count": 1,
+          "eighths_total": 2,
+          "int_count": 1,
+          "ext_count": 0,
+          "day_count": 0,
+          "night_count": 0,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "RESORT LOBBY",
+          "description": "RESORT - LOBBY",
+          "scene_count": 3,
+          "eighths_total": 42,
+          "int_count": 3,
+          "ext_count": 0,
+          "day_count": 1,
+          "night_count": 0,
+          "is_recurring": true,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "RESORT LOUNGE",
+          "description": "RESORT - LOUNGE",
+          "scene_count": 2,
+          "eighths_total": 5,
+          "int_count": 2,
+          "ext_count": 0,
+          "day_count": 0,
+          "night_count": 1,
+          "is_recurring": true,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "RESORT POOLSIDE",
+          "description": "RESORT - POOLSIDE",
+          "scene_count": 1,
+          "eighths_total": 37,
+          "int_count": 0,
+          "ext_count": 1,
+          "day_count": 1,
+          "night_count": 0,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "RESORT RESTAURANT",
+          "description": "RESORT - RESTAURANT",
+          "scene_count": 4,
+          "eighths_total": 71,
+          "int_count": 2,
+          "ext_count": 2,
+          "day_count": 4,
+          "night_count": 0,
+          "is_recurring": true,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "RESORT SPA",
+          "description": "RESORT - SPA",
+          "scene_count": 1,
+          "eighths_total": 25,
+          "int_count": 1,
+          "ext_count": 0,
+          "day_count": 1,
+          "night_count": 0,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "RESORT SUITE",
+          "description": "RESORT - SUITE",
+          "scene_count": 4,
+          "eighths_total": 33,
+          "int_count": 4,
+          "ext_count": 0,
+          "day_count": 1,
+          "night_count": 2,
+          "is_recurring": true,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "RESORT SUITE BATHROOM",
+          "description": "RESORT - SUITE - BATHROOM",
+          "scene_count": 2,
+          "eighths_total": 5,
+          "int_count": 2,
+          "ext_count": 0,
+          "day_count": 2,
+          "night_count": 0,
+          "is_recurring": true,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "RESORT SUITE JUST AFTER",
+          "description": "RESORT - SUITE - JUST AFTER",
+          "scene_count": 1,
+          "eighths_total": 10,
+          "int_count": 1,
+          "ext_count": 0,
+          "day_count": 0,
+          "night_count": 0,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "RESTAURANT WAITING AREA",
+          "description": "RESTAURANT - WAITING AREA",
+          "scene_count": 2,
+          "eighths_total": 20,
+          "int_count": 0,
+          "ext_count": 2,
+          "day_count": 0,
+          "night_count": 2,
+          "is_recurring": true,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "SECLUDED BEACH",
+          "description": "SECLUDED BEACH",
+          "scene_count": 2,
+          "eighths_total": 9,
+          "int_count": 0,
+          "ext_count": 2,
+          "day_count": 1,
+          "night_count": 0,
+          "is_recurring": true,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "SHADY PATH",
+          "description": "SHADY PATH",
+          "scene_count": 1,
+          "eighths_total": 10,
+          "int_count": 0,
+          "ext_count": 1,
+          "day_count": 1,
+          "night_count": 0,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "SPA",
+          "description": "SPA",
+          "scene_count": 1,
+          "eighths_total": 4,
+          "int_count": 1,
+          "ext_count": 0,
+          "day_count": 1,
+          "night_count": 0,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "TEMPLES OF APOLLO",
+          "description": "TEMPLES OF APOLLO",
+          "scene_count": 1,
+          "eighths_total": 4,
+          "int_count": 0,
+          "ext_count": 1,
+          "day_count": 1,
+          "night_count": 0,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "TRICIA AND STEVE S APARTMENT",
+          "description": "TRICIA AND STEVE'S APARTMENT",
+          "scene_count": 8,
+          "eighths_total": 48,
+          "int_count": 8,
+          "ext_count": 0,
+          "day_count": 2,
+          "night_count": 5,
+          "is_recurring": true,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "UNDERWATER",
+          "description": "UNDERWATER",
+          "scene_count": 1,
+          "eighths_total": 2,
+          "int_count": 0,
+          "ext_count": 1,
+          "day_count": 1,
+          "night_count": 0,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "WENDY S BUNGALOW",
+          "description": "WENDY'S BUNGALOW",
+          "scene_count": 1,
+          "eighths_total": 14,
+          "int_count": 1,
+          "ext_count": 0,
+          "day_count": 1,
+          "night_count": 0,
+          "is_recurring": false,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        },
+        {
+          "location_key": "WENDY S PATIO",
+          "description": "WENDY\u2019S PATIO",
+          "scene_count": 3,
+          "eighths_total": 8,
+          "int_count": 0,
+          "ext_count": 3,
+          "day_count": 3,
+          "night_count": 0,
+          "is_recurring": true,
+          "production_approach": "UNKNOWN",
+          "production_location": null,
+          "authority": "DETERMINISTIC_DERIVED"
+        }
+      ],
+      "production_requirements": [
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "A DOUBLE WEDDING",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            99
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "ANDREW",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 183,
+          "scene_sequences": [
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            23,
+            24,
+            25,
+            26,
+            28,
+            32,
+            34,
+            35,
+            36,
+            37,
+            38,
+            41,
+            42,
+            44,
+            46,
+            48,
+            51,
+            52,
+            56,
+            60,
+            75,
+            77,
+            95,
+            99
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "ASIAN COUPLE",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            49
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "BELLBOY",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            60
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "CUT TO BLACK",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 2,
+          "scene_sequences": [
+            19,
+            79
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "ELDERLY TOURIST",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 10,
+          "scene_sequences": [
+            45,
+            61,
+            68
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "END OF MONTAGE",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            89
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "END OF MONTAGES",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            52
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "EVERYONE",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            34
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "FEMALE LOVEBIRD",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 2,
+          "scene_sequences": [
+            5
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "FIVE-YEAR-OLD",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 2,
+          "scene_sequences": [
+            2
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "FRONT DESK CLERK",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            23
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "GINA",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 355,
+          "scene_sequences": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            30,
+            32,
+            33,
+            34,
+            37,
+            38,
+            39,
+            43,
+            45,
+            47,
+            48,
+            49,
+            50,
+            53,
+            54,
+            55,
+            57,
+            59,
+            61,
+            63,
+            64,
+            65,
+            66,
+            67,
+            68,
+            70,
+            71,
+            72,
+            73,
+            75,
+            76,
+            77,
+            79,
+            80,
+            82,
+            90,
+            91,
+            92,
+            94,
+            95,
+            97,
+            98,
+            99
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "HEART-WIPE TO BLACK",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            99
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "HOSTESS",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 4,
+          "scene_sequences": [
+            5,
+            16,
+            90
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "INTERCOM",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 4,
+          "scene_sequences": [
+            45,
+            63,
+            64,
+            65
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "JOHNNY",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 170,
+          "scene_sequences": [
+            11,
+            23,
+            25,
+            34,
+            38,
+            39,
+            43,
+            45,
+            46,
+            47,
+            49,
+            50,
+            53,
+            54,
+            55,
+            57,
+            59,
+            61,
+            63,
+            64,
+            67,
+            68,
+            70,
+            72,
+            73,
+            76,
+            77,
+            82,
+            98,
+            99
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "JOHNNY AND GINA",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            61
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "MALE LOVEBIRD",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 4,
+          "scene_sequences": [
+            5
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "MICKEY",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 82,
+          "scene_sequences": [
+            34,
+            38,
+            44,
+            46,
+            48,
+            51,
+            52,
+            60,
+            62,
+            75,
+            76,
+            77,
+            95,
+            99
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "MIKEY",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            34
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "MOM",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            2
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "MUGGER",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 12,
+          "scene_sequences": [
+            18
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "POLICE OFFICER",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 2,
+          "scene_sequences": [
+            70
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "PRETEEN GINA",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            3
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "PRIEST",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 2,
+          "scene_sequences": [
+            99
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "ROBOT KID",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            1
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "SPOON",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            21
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "STEVE",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 17,
+          "scene_sequences": [
+            14,
+            21,
+            31,
+            33,
+            36,
+            42,
+            93,
+            98
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "TEENAGE GINA",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            4
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "TOUR GUIDE",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 2,
+          "scene_sequences": [
+            64
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "TOURIST",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            64
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "TRICIA",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 65,
+          "scene_sequences": [
+            14,
+            21,
+            31,
+            33,
+            36,
+            40,
+            41,
+            42,
+            44,
+            66,
+            67,
+            91,
+            92,
+            93,
+            98,
+            99
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "TV ACTRESS",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            12
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "WAITER",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 3,
+          "scene_sequences": [
+            43
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "WENDY",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 35,
+          "scene_sequences": [
+            8,
+            9,
+            10,
+            11,
+            26,
+            28,
+            71,
+            79,
+            81,
+            99
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "YOUNG MAN",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 3,
+          "scene_sequences": [
+            90
+          ]
+        },
+        {
+          "requirement_key": "CHARACTER",
+          "normalized_value": "YOUNG WOMAN",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 2,
+          "scene_sequences": [
+            90
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_ANIMAL",
+          "normalized_value": "CAT",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 1,
+          "scene_sequences": [
+            54
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_ANIMAL",
+          "normalized_value": "DOG",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 3,
+          "scene_sequences": [
+            54,
+            95,
+            98
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_ANIMAL",
+          "normalized_value": "DOGS",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 2,
+          "scene_sequences": [
+            6,
+            94
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_ANIMAL",
+          "normalized_value": "DONKEY",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 1,
+          "scene_sequences": [
+            49
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_ANIMAL",
+          "normalized_value": "GOAT",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 8,
+          "scene_sequences": [
+            17,
+            18,
+            59,
+            60,
+            64,
+            66,
+            79,
+            82
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_ANIMAL",
+          "normalized_value": "HORSE",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 2,
+          "scene_sequences": [
+            81,
+            82
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_ANIMAL",
+          "normalized_value": "PIG",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 1,
+          "scene_sequences": [
+            34
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_ANIMAL",
+          "normalized_value": "RAT",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 1,
+          "scene_sequences": [
+            34
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_MINOR",
+          "normalized_value": "BABIES",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 1,
+          "scene_sequences": [
+            79
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_MINOR",
+          "normalized_value": "BABY",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 12,
+          "scene_sequences": [
+            2,
+            11,
+            14,
+            21,
+            28,
+            31,
+            42,
+            45,
+            77,
+            81,
+            98,
+            99
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_MINOR",
+          "normalized_value": "BOY",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 9,
+          "scene_sequences": [
+            4,
+            11,
+            14,
+            16,
+            21,
+            23,
+            44,
+            54,
+            61
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_MINOR",
+          "normalized_value": "CHILD",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 4,
+          "scene_sequences": [
+            1,
+            15,
+            26,
+            40
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_MINOR",
+          "normalized_value": "CHILDREN",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 3,
+          "scene_sequences": [
+            1,
+            79,
+            86
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_MINOR",
+          "normalized_value": "GIRL",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 11,
+          "scene_sequences": [
+            3,
+            4,
+            14,
+            15,
+            18,
+            25,
+            26,
+            34,
+            38,
+            66,
+            82
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_MINOR",
+          "normalized_value": "KID",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 9,
+          "scene_sequences": [
+            1,
+            4,
+            33,
+            44,
+            54,
+            59,
+            68,
+            98,
+            99
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_MINOR",
+          "normalized_value": "KIDS",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 8,
+          "scene_sequences": [
+            25,
+            38,
+            45,
+            55,
+            79,
+            83,
+            90,
+            99
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_MINOR",
+          "normalized_value": "TEEN",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 1,
+          "scene_sequences": [
+            27
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_MINOR",
+          "normalized_value": "TODDLER",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 2,
+          "scene_sequences": [
+            33,
+            42
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_VEHICLE",
+          "normalized_value": "BICYCLE",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 1,
+          "scene_sequences": [
+            47
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_VEHICLE",
+          "normalized_value": "BOAT",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 11,
+          "scene_sequences": [
+            32,
+            37,
+            39,
+            43,
+            45,
+            59,
+            61,
+            63,
+            64,
+            65,
+            67
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_VEHICLE",
+          "normalized_value": "BOATS",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 1,
+          "scene_sequences": [
+            19
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_VEHICLE",
+          "normalized_value": "BUS",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 1,
+          "scene_sequences": [
+            68
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_VEHICLE",
+          "normalized_value": "CAR",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 2,
+          "scene_sequences": [
+            18,
+            50
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_VEHICLE",
+          "normalized_value": "CARS",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 1,
+          "scene_sequences": [
+            69
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_VEHICLE",
+          "normalized_value": "JET",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 1,
+          "scene_sequences": [
+            23
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_VEHICLE",
+          "normalized_value": "PICKUP",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 1,
+          "scene_sequences": [
+            68
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_VEHICLE",
+          "normalized_value": "SHIP",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 4,
+          "scene_sequences": [
+            39,
+            59,
+            61,
+            64
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_VEHICLE",
+          "normalized_value": "TRAIN",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 2,
+          "scene_sequences": [
+            43,
+            99
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_VEHICLE",
+          "normalized_value": "YACHT",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 1,
+          "scene_sequences": [
+            39
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_WEAPON",
+          "normalized_value": "BLADE",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 2,
+          "scene_sequences": [
+            18,
+            20
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_WEAPON",
+          "normalized_value": "BOW AND ARROW",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 1,
+          "scene_sequences": [
+            93
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_WEAPON",
+          "normalized_value": "GUN",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 1,
+          "scene_sequences": [
+            21
+          ]
+        },
+        {
+          "requirement_key": "EXPLICIT_WEAPON",
+          "normalized_value": "KNIFE",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 2,
+          "scene_sequences": [
+            6,
+            66
+          ]
+        },
+        {
+          "requirement_key": "PERIOD_REFERENCE",
+          "normalized_value": "1876",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 1,
+          "scene_sequences": [
+            45
+          ]
+        },
+        {
+          "requirement_key": "PERIOD_REFERENCE",
+          "normalized_value": "1980",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": true,
+          "evidence_count": 1,
+          "scene_sequences": [
+            46
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "ALLEY",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            13
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "APARTMENT",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 5,
+          "scene_sequences": [
+            80,
+            82,
+            84,
+            87,
+            98
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "APARTMENT COMPLEX",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 2,
+          "scene_sequences": [
+            83,
+            89
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "APARTMENT COMPLEX DUMPSTER",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            91
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "APARTMENT COMPLEX HALLWAY",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 3,
+          "scene_sequences": [
+            86,
+            92,
+            97
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "APARTMENT COMPLEX HALLWAY JUST AFTER",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            14
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "BOAT",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 6,
+          "scene_sequences": [
+            43,
+            45,
+            61,
+            63,
+            65,
+            67
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "BOAT DINING HALL JUST AFTER",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            64
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "CABLE CAR",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            50
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "CAFE",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            15
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "CHRISTMAS HOUSE",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            2
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "CITY STREET",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 5,
+          "scene_sequences": [
+            6,
+            69,
+            85,
+            94,
+            96
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "CITY STREET JUST AFTER",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            70
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "CLIFF TRAIL",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            49
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "CLIFFSIDE CEREMONY",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            99
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "FARMER S MARKET",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            56
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "GINA S APARTMENT",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 5,
+          "scene_sequences": [
+            7,
+            9,
+            11,
+            12,
+            20
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "GIOVINAZZO S PIZZERIA",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 2,
+          "scene_sequences": [
+            88,
+            95
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "HALLOWEEN HOUSE",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            1
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "HAMMAM BATHHOUSE",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            52
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "HARBOR",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            39
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "MEDITERRANEAN CLIFFTOP VILLAGE",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            78
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "MEDITERRANEAN SEA SHORE",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            29
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "MELISSANI CAVE",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            59
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "MOM S BATHROOM",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            27
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "MOM S GARDEN",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 2,
+          "scene_sequences": [
+            26,
+            28
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "MUSEUM",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            54
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "OUTDOOR BISTRO",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            3
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "PARK",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            4
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "PARKING LOT",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            18
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "PIER BOARDWALK",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            19
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "PORT BUS STOP",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            68
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "PORTABELLA S LOBBY",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            16
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "PORTABELLA S TABLE",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            17
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "RESORT",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 3,
+          "scene_sequences": [
+            22,
+            41,
+            71
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "RESORT GYM",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            46
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "RESORT HALLWAY JUST AFTER",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            74
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "RESORT LOBBY",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 3,
+          "scene_sequences": [
+            23,
+            72,
+            77
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "RESORT LOUNGE",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 2,
+          "scene_sequences": [
+            73,
+            76
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "RESORT POOLSIDE",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            25
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "RESORT RESTAURANT",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 4,
+          "scene_sequences": [
+            34,
+            35,
+            37,
+            38
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "RESORT SPA",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            48
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "RESORT SUITE",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 4,
+          "scene_sequences": [
+            44,
+            60,
+            62,
+            75
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "RESORT SUITE BATHROOM",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 2,
+          "scene_sequences": [
+            30,
+            32
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "RESORT SUITE JUST AFTER",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            24
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "RESTAURANT WAITING AREA",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 2,
+          "scene_sequences": [
+            5,
+            90
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "SECLUDED BEACH",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 2,
+          "scene_sequences": [
+            55,
+            57
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "SHADY PATH",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            47
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "SPA",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            51
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "TEMPLES OF APOLLO",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            53
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "TRICIA AND STEVE S APARTMENT",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 8,
+          "scene_sequences": [
+            21,
+            31,
+            33,
+            36,
+            40,
+            42,
+            66,
+            93
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "UNDERWATER",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            58
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "WENDY S BUNGALOW",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 1,
+          "scene_sequences": [
+            79
+          ]
+        },
+        {
+          "requirement_key": "SCRIPTED_LOCATION",
+          "normalized_value": "WENDY S PATIO",
+          "quantity": null,
+          "unit": null,
+          "authority": "DETERMINISTIC_DERIVED",
+          "requires_confirmation": false,
+          "evidence_count": 3,
+          "scene_sequences": [
+            8,
+            10,
+            81
+          ]
+        }
+      ],
+      "assumptions": [],
+      "shoot_days": null,
+      "base_jurisdiction": null,
+      "unknowns": [
+        "assumption:intended_shoot_days is UNKNOWN \u2014 not defaulted; supply it explicitly to enable full downstream estimation.",
+        "assumption:base_jurisdiction is UNKNOWN \u2014 not defaulted; supply it explicitly to enable full downstream estimation.",
+        "location:ALLEY has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:APARTMENT has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:APARTMENT COMPLEX has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:APARTMENT COMPLEX DUMPSTER has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:APARTMENT COMPLEX HALLWAY has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:APARTMENT COMPLEX HALLWAY JUST AFTER has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:BOAT has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:BOAT DINING HALL JUST AFTER has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:CABLE CAR has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:CAFE has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:CHRISTMAS HOUSE has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:CITY STREET has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:CITY STREET JUST AFTER has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:CLIFF TRAIL has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:CLIFFSIDE CEREMONY has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:FARMER S MARKET has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:GINA S APARTMENT has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:GIOVINAZZO S PIZZERIA has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:HALLOWEEN HOUSE has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:HAMMAM BATHHOUSE has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:HARBOR has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:MEDITERRANEAN CLIFFTOP VILLAGE has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:MEDITERRANEAN SEA SHORE has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:MELISSANI CAVE has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:MOM S BATHROOM has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:MOM S GARDEN has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:MUSEUM has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:OUTDOOR BISTRO has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:PARK has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:PARKING LOT has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:PIER BOARDWALK has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:PORT BUS STOP has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:PORTABELLA S LOBBY has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:PORTABELLA S TABLE has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:RESORT has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:RESORT GYM has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:RESORT HALLWAY JUST AFTER has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:RESORT LOBBY has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:RESORT LOUNGE has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:RESORT POOLSIDE has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:RESORT RESTAURANT has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:RESORT SPA has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:RESORT SUITE has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:RESORT SUITE BATHROOM has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:RESORT SUITE JUST AFTER has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:RESTAURANT WAITING AREA has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:SECLUDED BEACH has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:SHADY PATH has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:SPA has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:TEMPLES OF APOLLO has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:TRICIA AND STEVE S APARTMENT has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:UNDERWATER has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:WENDY S BUNGALOW has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "location:WENDY S PATIO has no confirmed production location \u2014 stage vs practical and jurisdiction are producer decisions.",
+        "1 labor line(s) have UNKNOWN residency. Per the territoriality guard these are not assumed resident; qualifying spend cannot be claimed for them without a stated basis.",
+        "No line carries a confirmed service-performed jurisdiction. Territorial basis is UNKNOWN for all lines; payer/SPV is never sufficient to establish it."
+      ],
+      "blockers": [],
+      "provisional": true
+    }
   }
 }

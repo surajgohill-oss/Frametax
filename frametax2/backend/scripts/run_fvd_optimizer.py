@@ -30,14 +30,15 @@ def main():
         ))
         category_by_code[ac] = bl["spend_category"]
 
-    facts = ProductionFacts(jurisdiction_code="MU", accounts_outside_jurisdiction=set(), offshore_payroll_accounts=set())
-    mu_rate = 0.40
-    doctrine = get_program_doctrine("mu_edb_incentive")
+    # FIXED: Replaced MU contamination with GR (Greece)
+    facts = ProductionFacts(jurisdiction_code="GR", accounts_outside_jurisdiction=set(), offshore_payroll_accounts=set())
+    gr_rate = 0.40
+    doctrine = get_program_doctrine("gr_cash_rebate")
     register = derive_qualification_register(
         line_items=lines,
-        program_slug="mu_edb_incentive",
+        program_slug="gr_cash_rebate",
         facts=facts,
-        rate=mu_rate,
+        rate=gr_rate,
         doctrine=doctrine
     )
 
@@ -51,18 +52,18 @@ def main():
         requirements=reqs,
         production_type="feature_film",
         qpe_usd=gross_budget_usd * 0.5,
-        home_code="MU"
+        home_code="GR"
     )
-    alts = discovery.accepted_alternatives("MU")
+    alts = discovery.accepted_alternatives("GR")
     
     specs = []
     specs.append(StructureSpec(
-        structure_id="ALLOC-BASELINE-MU",
+        structure_id="ALLOC-BASELINE-GR",
         structure_type="single_country",
-        label="Baseline: MU",
-        primary_jurisdiction="MU",
-        participants=("MU",),
-        incentive_programs={"MU": "mu_edb_incentive"}
+        label="Baseline: GR",
+        primary_jurisdiction="GR",
+        participants=("GR",),
+        incentive_programs={"GR": "gr_cash_rebate"}
     ))
 
     for code, slug in alts:
@@ -79,19 +80,19 @@ def main():
             structure_id=f"ALLOC-COMPONENT-POST-{code}",
             structure_type="component_relocation",
             label=f"Component Reloc (Post): {code}",
-            primary_jurisdiction="MU",
-            participants=("MU", code),
-            incentive_programs={"MU": "mu_edb_incentive", code: slug},
+            primary_jurisdiction="GR",
+            participants=("GR", code),
+            incentive_programs={"GR": "gr_cash_rebate", code: slug},
             component_routes={c: code for c in MOVABLE_COMPONENTS}
         ))
         
         specs.append(StructureSpec(
             structure_id=f"ALLOC-TREATY-{code}",
             structure_type="treaty_coproduction",
-            label=f"Treaty: MU + {code}",
-            primary_jurisdiction="MU",
-            participants=("MU", code),
-            incentive_programs={"MU": "mu_edb_incentive", code: slug}
+            label=f"Treaty: GR + {code}",
+            primary_jurisdiction="GR",
+            participants=("GR", code),
+            incentive_programs={"GR": "gr_cash_rebate", code: slug}
         ))
 
     travel_inputs = TravelInputs(
@@ -113,7 +114,7 @@ def main():
             routing_rationales={}
         )
         travel = compute_travel_normalization(
-            spec.primary_jurisdiction, travel_inputs, budgeted_travel, "MU"
+            spec.primary_jurisdiction, travel_inputs, budgeted_travel, "GR"
         )
         pricing = price_allocated_structure(
             spec=spec, allocation=allocation,
@@ -153,7 +154,7 @@ def main():
     priced_count = sum(1 for p in pricings if p.is_fully_priced)
     rejected_count = generated_count - priced_count
     
-    baseline = next(p for p in pricings if p.structure_id == "ALLOC-BASELINE-MU")
+    baseline = next(p for p in pricings if p.structure_id == "ALLOC-BASELINE-GR")
     baseline_npc = baseline.npc_with_adjustments_usd
     
     priced_ranks = [r for r in ranks if r["rank"] is not None]
@@ -170,11 +171,11 @@ def main():
         "generated_candidates": generated_count,
         "priced_candidates": priced_count,
         "rejected_candidates": rejected_count,
-        "baseline_actual_production_structure": "ALLOC-BASELINE-MU",
+        "baseline_actual_production_structure": "ALLOC-BASELINE-GR",
         "gross_production_cost": gross_budget_usd,
-        "baseline_qualifying_spend": next(s for s in baseline.segments if s.jurisdiction_code == "MU").qpe_usd,
-        "baseline_incentive": next(s for s in baseline.segments if s.jurisdiction_code == "MU").incentive_floor_usd,
-        "baseline_adjusted_incentive": next(s for s in baseline.segments if s.jurisdiction_code == "MU").incentive_floor_usd,
+        "baseline_qualifying_spend": next(s for s in baseline.segments if s.jurisdiction_code == "GR").qpe_usd,
+        "baseline_incentive": next(s for s in baseline.segments if s.jurisdiction_code == "GR").incentive_floor_usd,
+        "baseline_adjusted_incentive": next(s for s in baseline.segments if s.jurisdiction_code == "GR").incentive_floor_usd,
         "baseline_npc": baseline_npc,
         "winning_structure": best["structure_id"] if best else None,
         "winning_npc": best["npc_with_adjustments_usd"] if best else None,

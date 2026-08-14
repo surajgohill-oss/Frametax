@@ -315,6 +315,80 @@ class CanonicalProductionStateBuilder:
         docs = (await self.session.execute(
             select(BudgetDocument).where(BudgetDocument.project_id == project_id)
         )).scalars().all()
+        
+        if not docs:
+            # Fallback: check if the Company Library holds an unprojected budget document
+            from app.models.library_document import Document, DocumentVersion
+            current_dv = (await self.session.execute(
+                select(DocumentVersion)
+                .join(Document, DocumentVersion.document_id == Document.id)
+                .where(
+                    Document.project_id == project_id,
+                    Document.category == "budget",
+                    DocumentVersion.is_current == True
+                )
+                .order_by(DocumentVersion.created_at.desc())
+            )).scalars().first()
+            
+            if current_dv:
+                import uuid
+                from pathlib import Path
+                from app.core.config import get_settings
+                from app.ingestion.pdf_extractor import extract_text_from_pdf
+                from app.ingestion.budget_parser import parse_budget_from_text, classify_parsed_items
+                from app.models.enums import ATLBTLCategory, CompensationType
+                
+                settings = get_settings()
+                local_path = Path(settings.LOCAL_STORAGE_PATH) / (current_dv.storage_path or "")
+                
+                if local_path.exists() and local_path.suffix.lower() == ".pdf":
+                    res = extract_text_from_pdf(local_path)
+                    parse_result = parse_budget_from_text(
+                        res.raw_text, 
+                        filename=current_dv.original_filename or "budget.pdf", 
+                        currency_code="USD", 
+                        pages=res.pages
+                    )
+                    classified = classify_parsed_items(parse_result)
+                    
+                    doc = BudgetDocument(
+                        id=uuid.uuid4(),
+                        project_id=project_id,
+                        filename=current_dv.original_filename or "budget.pdf",
+                        file_type="pdf",
+                        currency_code="USD",
+                        total_budget_raw=classified.total_budget_raw,
+                        extraction_status="imported",
+                        is_active=True,
+                        document_version_id=current_dv.id
+                    )
+                    self.session.add(doc)
+                    
+                    for item in classified.line_items:
+                        li = BudgetLineItem(
+                            id=uuid.uuid4(),
+                            budget_document_id=doc.id,
+                            description=item.description,
+                            department=item.department,
+                            amount_raw=item.amount_usd,
+                            amount_normalized=item.amount_usd,
+                            currency_code=item.currency_code,
+                            amount_usd=item.amount_usd,
+                            cash_amount_usd=item.amount_usd,
+                            source_row=item.source_row,
+                            atl_btl=getattr(item, "atl_btl", ATLBTLCategory.BTL.value),
+                            spend_category=getattr(item, "spend_category", None),
+                            is_labor=getattr(item, "is_labor", False),
+                            is_fixed=getattr(item, "is_fixed", False),
+                            compensation_type=getattr(item, "compensation_type", CompensationType.CASH.value),
+                            extraction_confidence=item.extraction_confidence,
+                        )
+                        self.session.add(li)
+                    
+                    await self.session.commit()
+                    # Refresh logic
+                    docs = [doc]
+
         if not docs:
             state.budget_state = BUDGET_MISSING
             state.blockers.append(
