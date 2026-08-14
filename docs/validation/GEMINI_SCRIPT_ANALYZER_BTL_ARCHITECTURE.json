@@ -1,0 +1,187 @@
+{
+    "project": "CineGlobe Script Analyzer & BTL Estimation",
+    "phase": "Independent Production-Domain Design Review",
+    "reviewer": "Gemini 3 Pro",
+    "three_level_model_evaluation": {
+        "critique": "The three-level model is highly appropriate for progressive production planning. However, Level 2 and Level 3 should NOT be separate engines. They must be progressive representations of a single unified budget model to prevent 'budget discontinuity' when moving from L2 to L3.",
+        "level_1_rapid_global": {
+            "purpose": "Provide instantaneous, structurally sound cost distributions for global jurisdiction comparisons before any physical production planning occurs.",
+            "inputs": [
+                "Screenplay",
+                "Genre",
+                "Page Count",
+                "Broad Scale (Low/Med/High)",
+                "Approximate Location Mix"
+            ],
+            "output": "Department-level totals with explicit uncertainty bands.",
+            "mechanism": "Global standard template (e.g., US/LA benchmark) multiplied by deterministic jurisdiction cost indices."
+        },
+        "level_2_production_informed": {
+            "purpose": "Generate actionable departmental budgets based on explicit script breakdowns and key producer assumptions.",
+            "inputs": [
+                "Structured Scene Breakdown",
+                "Confirmed Shoot Days",
+                "Stage vs. Location Split",
+                "Known Major Cast/Crew",
+                "VFX/Stunt Intensity"
+            ],
+            "output": "Sub-department or key account level budgets.",
+            "mechanism": "Script-derived quantities * localized average rates."
+        },
+        "level_3_detailed_line_budget": {
+            "purpose": "Approximation of a line-producer budget suitable for rigorous greenlight comparisons or pre-production.",
+            "inputs": [
+                "Detailed Schedule",
+                "Crew Counts",
+                "Union Assumptions",
+                "Fringes",
+                "Equipment Packages",
+                "Travel Party"
+            ],
+            "output": "Line-item budget (Quantity x Rate x Duration).",
+            "mechanism": "Bottom-up arithmetic calculation with complete user override capabilities."
+        }
+    },
+    "script_breakdown_taxonomy": {
+        "objective_script_fact": [
+            "Scenes",
+            "Page Eighths",
+            "Sluglines",
+            "INT/EXT",
+            "Day/Night",
+            "Speaking Roles",
+            "Locations"
+        ],
+        "ai_interpreted_complexity": [
+            "Stunts",
+            "VFX Intensity",
+            "Practical Effects",
+            "Crowds",
+            "Period/Wardrobe Complexity"
+        ],
+        "producer_decision": [
+            "Stage vs Location",
+            "Cast Identity/Salary",
+            "Schedule Compression",
+            "Second Unit Days"
+        ]
+    },
+    "schedule_drivers": {
+        "deterministic": [
+            "Page Count",
+            "INT/EXT split",
+            "Day/Night split"
+        ],
+        "probabilistic": [
+            "VFX/Stunt days reducing pages/day",
+            "Crowd logistics",
+            "Animal/Minor limitations"
+        ],
+        "producer_confirmation": [
+            "Company moves",
+            "Split days",
+            "Weekend/Overtime assumptions"
+        ]
+    },
+    "department_cost_drivers": {
+        "mapping_examples": {
+            "CAST": "Speaking roles -> Cast quantity -> Shoot days duration",
+            "ART_DEPT": "Unique locations + Period elements -> Set build/prep duration -> Crew weeks",
+            "STUNTS": "Action scenes -> Stunt performer count -> Stunt days",
+            "TRAVEL": "Non-local locations -> Cast/Crew count -> Flights + Hotel nights + Per diem"
+        }
+    },
+    "rate_cost_data_architecture": {
+        "local_actual_rate": [
+            "Union labor minimums",
+            "Payroll fringes",
+            "Standard stage rentals",
+            "Permit fees"
+        ],
+        "indexed_estimate": [
+            "Catering",
+            "Fuel",
+            "Basic construction materials"
+        ],
+        "global_default_multiplier": [
+            "Specialty camera/grip packages",
+            "VFX labor"
+        ],
+        "project_specific_quote": [
+            "A-list cast",
+            "Completion bond",
+            "Insurance"
+        ]
+    },
+    "uncertainty_confidence_model": {
+        "synthetic_risk_score": "PROHIBITED. Do not use opaque 0-100 risk scores.",
+        "confidence_states": [
+            "ACTUAL_USER_BUDGET",
+            "USER_CONFIRMED",
+            "VALIDATED_LOCAL_RATE",
+            "SCRIPT_DERIVED",
+            "MODEL_ESTIMATE",
+            "GLOBAL_DEFAULT",
+            "UNKNOWN"
+        ],
+        "behavior": "Uncertainty is preserved at the line item and rolls up to department totals as probabilistic ranges (P10/P50/P90) rather than a single disguised point estimate."
+    },
+    "source_of_truth_hierarchy": [
+        "ACTUAL USER BUDGET / ACTUAL SCHEDULE",
+        "USER-CONFIRMED PRODUCTION ASSUMPTION",
+        "VALIDATED LOCAL RATE / COST DATA",
+        "STRUCTURED SCRIPT EXTRACTION",
+        "MODEL ESTIMATE",
+        "GLOBAL DEFAULT"
+    ],
+    "ai_responsibility_matrix": {
+        "deterministic": [
+            "Rate multiplication",
+            "Schedule arithmetic",
+            "Tax/fringe calculations",
+            "Currency conversion"
+        ],
+        "ai_extraction": [
+            "Slugline parsing",
+            "Character mention counting",
+            "Location extraction"
+        ],
+        "ai_interpretation": [
+            "VFX/Stunt identification",
+            "Period element tagging"
+        ],
+        "user_confirmation": [
+            "Ambiguous stage/location decisions",
+            "Major production scale assumptions"
+        ],
+        "external_cost_data": [
+            "Strictly deterministic API/DB lookup. AI must NEVER invent economic rate data."
+        ]
+    },
+    "human_in_the_loop": {
+        "strategy": "Prompt only for the top 20% of cost drivers: Stage/Location splits, VFX intensity, main cast locations, union status. Avoid asking the producer to confirm every background extra."
+    },
+    "budget_override_architecture": {
+        "behavior": "Any node (from total department cost down to individual line item) can be frozen or overridden. Provenance is strictly tracked."
+    },
+    "optimizer_integration": {
+        "handoff_payload": [
+            "jurisdiction_specific_local_spend",
+            "labor_categories",
+            "non_labor_categories",
+            "schedule_durations",
+            "territorial_spend",
+            "known_exclusions"
+        ]
+    },
+    "failure_modes": [
+        "False VFX assumptions leading to massive undercounting.",
+        "Applying local cost multipliers to global fixed costs (e.g., discounting A-list cast because shooting in a low-cost jurisdiction).",
+        "Ignoring local labor fringes and union penalties.",
+        "Double-counting travel and accommodation.",
+        "Fake precision: Presenting $1,234,567.89 based purely on L1 global defaults."
+    ],
+    "little_utopia_acceptance": {
+        "future_fixture": "Pass the LU script through the extraction pipeline. Compare L3 output to the known $4.3M LU budget. Evidence of success is matching the department ratios and recognizing the US-based post exclusion."
+    }
+}
