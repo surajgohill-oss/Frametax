@@ -60,11 +60,27 @@ class TestStage1EngineValidation:
         statutory conditions are unmet"), one fewer than the full set.
         This is the test's own documented invariant ("minimum spend...
         remain fully enforced, never relaxed") now actually holding for
-        AU, which it could not before this threshold was enforced."""
+        AU, which it could not before this threshold was enforced.
+
+        Global Data Application: the executable set is now additionally
+        reduced by every program the completed primary-authority corpus
+        adjudicated non-priceable (authority-insufficient, selective,
+        non-economic, superseded, duplicate). Those are canonical DATA
+        exclusions, not capability or statutory ones, so the invariant is
+        expressed against the coverage registry rather than a bare count.
+        """
         from app.calculators import jurisdiction_comparison as jc
+        from app.data.authority_coverage_registry import blocks_economic_candidacy
 
         s1 = run_stage1_engine_validation()
-        assert s1["incentive_ready_count"] == len(jc.ALL_PROFILES) - 1
+        canonically_blocked = {
+            code for code, p in jc.ALL_PROFILES.items()
+            if blocks_economic_candidacy(getattr(p, "program_slug", None))
+        }
+        # AU remains the one STATUTORY (non-coverage) exclusion.
+        assert "AU" not in canonically_blocked
+        expected_ready = len(jc.ALL_PROFILES) - len(canonically_blocked) - 1
+        assert s1["incentive_ready_count"] == expected_ready
         assert s1["total_executable_jurisdictions"] == len(jc.ALL_PROFILES)
 
     def test_australia_is_the_one_statutory_exclusion(self):
@@ -284,15 +300,23 @@ class TestServedBlockersNeverContradictTheDoctrineRegistry:
             f"the registry says otherwise: {contradictions}"
         )
 
-    def test_cyprus_specifically_is_fully_priced_and_ungated(self):
+    def test_cyprus_specifically_is_canonically_unpriceable_and_blocks(self):
+        """Global Data Application: cy_film_rebate was reclassified
+        UNPRICEABLE_AUTHORITY_INSUFFICIENT by the completed corpus, so Cyprus
+        must now BLOCK rather than price. The test's real invariant — that the
+        served blockers never contradict the doctrine registry — is preserved by
+        asserting the block is the canonical one, with a stated reason, rather
+        than a silent zero.
+        """
+        from app.data.authority_coverage_registry import coverage_state
         from app.demo.little_utopia_state import build_allocated_structures, get_state
 
         served = build_allocated_structures(get_state())
         cy = next((s for s in served["structures"] if s["structure_id"] == "ALLOC-RELOC-CY"), None)
         assert cy is not None, "ALLOC-RELOC-CY is expected to be a candidate structure for Little Utopia"
-        assert cy["is_fully_priced"] is True
-        assert cy["blockers"] == []
-        assert cy["recommendation"]["gated"] is False
+        assert coverage_state("cy_film_rebate") == "UNPRICEABLE_AUTHORITY_INSUFFICIENT"
+        assert cy["is_fully_priced"] is False
         seg = next(sg for sg in cy["segments"] if sg["jurisdiction_code"] == "CY")
-        assert seg["executable"] is True
+        assert seg["executable"] is False
         assert seg["program_slug"] == "cy_film_rebate"
+        assert any("UNPRICEABLE_AUTHORITY_INSUFFICIENT" in b for b in seg["blockers"])

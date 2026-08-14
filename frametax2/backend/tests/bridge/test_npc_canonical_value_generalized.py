@@ -20,7 +20,10 @@ from app.demo.little_utopia_state import build_allocated_structures, get_state
 def test_bridge_npc_usd_matches_canonical_adjusted_value_across_a_broad_sample():
     served = build_allocated_structures(get_state())
     priced = [s for s in served["structures"] if s.get("npc_with_adjustments_usd") is not None]
-    assert len(priced) >= 100  # sanity: this is the worldwide-priced set, not just the pilot
+    # Global Data Application reduced the priced set (149 -> 50) by disabling
+    # every canonically non-priceable program. Still far broader than the
+    # 5-jurisdiction pilot this test exists to generalise beyond.
+    assert len(priced) >= 40
 
     rng = random.Random(20260812)
     sample = rng.sample(priced, 20)

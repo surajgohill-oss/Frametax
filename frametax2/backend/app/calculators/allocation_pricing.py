@@ -70,6 +70,7 @@ from app.calculators.qualification_model import (
     QualificationState,
     _ALTERNATIVE_TERRITORIAL_TEXT,
 )
+from app.data.authority_coverage_registry import get_coverage_status
 from app.data.program_rate_rules import get_qpe_cap, get_rate_rules, resolve_program_rate
 from app.data.program_slug_aliases import canonical_slug
 from app.data.program_spend_rules import get_program_doctrine, resolve_program_doctrine
@@ -271,6 +272,27 @@ def price_segment(
         )
 
     slug = canonical_slug(program_slug)
+
+    # Global Data Application: the AUTHORITATIVE economic-candidacy gate.
+    # Checked before doctrine/rate resolution so that a program the completed
+    # primary-authority corpus adjudicated authority-insufficient, selective
+    # (non-guaranteed), non-economic, superseded, duplicate, or blocked on a
+    # canonical identity-handoff defect can NEVER price -- by any route,
+    # including a directly-specified StructureSpec that bypasses discovery.
+    # Absence from the registry means PRICEABLE_VALIDATED, so this can never
+    # suppress a program that was not explicitly adjudicated.
+    coverage = get_coverage_status(slug)
+    if coverage is not None and coverage.blocks_economic_candidacy:
+        return SegmentEconomics(
+            jurisdiction_code=jurisdiction_code, program_slug=slug,
+            claims_incentive=True, allocated_usd=allocated,
+            account_codes=codes, executable=False,
+            blockers=(
+                f"{jurisdiction_code}/{slug}: {coverage.state} — {coverage.reason} "
+                "Segment is allocated and disclosed but carries NO incentive value.",
+            ),
+        )
+
     # Doctrine is RESOLVED, never required to be pre-classified: under the
     # module's CANONICAL QPE RULE an absent classification is not a
     # prohibition (see program_spend_rules.resolve_program_doctrine). A

@@ -31,6 +31,32 @@ from __future__ import annotations
 PROGRAM_SLUG_ALIASES: dict[str, str] = {
     "mt_mfc_cash_rebate": "mt_mfc_rebate",
     "gr_ekome_rebate": "gr_cash_rebate",
+    # ── Global Data Application ────────────────────────────────────────────
+    # The completed canonical corpus (GLOBAL_REMEDIATION_EXECUTABLE_DATA.json)
+    # identifies programs by its OWN canonical_id, which for most records is a
+    # different spelling of an existing runtime slug. Each alias below was
+    # adjudicated individually against the canonical record's own
+    # `canonical_program_name` + jurisdiction, under this module's standing
+    # rule: an alias is added ONLY when both slugs demonstrably name the same
+    # statutory program. Three canonical records that could NOT be bound this
+    # way (BC FIBC, German GMPF, India NFDC) are deliberately absent and are
+    # recorded as CANONICAL_DATA_HANDOFF_DEFECT in
+    # authority_coverage_registry.py rather than bound to a different program.
+    #
+    # "Thailand BOI Film Production Incentive" — BOI in both spellings.
+    "th_film_incentive": "th_boi_incentive",
+    # "Fiji Audio Visual Commission Production Incentive" — the single FAVC
+    # production incentive.
+    "fj_film_incentive": "fj_film_rebate",
+    # "FINAS Malaysia Film Rebate" — FINAS in both spellings.
+    "my_film_incentive": "my_finas_rebate",
+    # "Georgian National Film Centre Production Incentive" (GE, the country —
+    # NOT US-GA, whose separate record is georgia_eiia).
+    "ge_film_incentive": "ge_film_rebate",
+    # "Refundable Tax Credit for Film Production Services" is the English name
+    # of Quebec's Production Services Tax Credit.
+    "proposed_canada_quebec_refundable_tax_credit_for_film_production_services":
+        "ca_qc_pstc",
 }
 
 

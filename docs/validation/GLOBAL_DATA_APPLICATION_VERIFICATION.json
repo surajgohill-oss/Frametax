@@ -1,0 +1,225 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-13T00:00:00-07:00",
+  "phase": "Global Data Application",
+  "starting_gate": "GO_FOR_GLOBAL_DATA_APPLICATION",
+  "repository": "surajgohill-oss/Frametax",
+  "branch": "claude/audit-frametax-features-NZcX5",
+  "starting_head": "fdd62d9",
+  "served_runtime_path": "frontend -> app/api/v1/cineglobe.py -> little_utopia_state.build_allocated_structures() -> production_discovery -> production_allocation -> allocation_pricing.price_segment -> rank_allocated_structures -> bridge/package_builder. In-memory, DB-free.",
+  "canonical_176_accounting": {
+    "total": 176,
+    "unique_canonical_ids": 176,
+    "IMPLEMENTATION_READY": 38,
+    "RECLASSIFIED_UNPRICEABLE_AUTHORITY_INSUFFICIENT": 134,
+    "RECLASSIFIED_NON_ECONOMIC": 1,
+    "RECLASSIFIED_DUPLICATE": 1,
+    "RECLASSIFIED_SUPERSEDED": 2,
+    "TRUE_DATA_BLOCKER": 0,
+    "arithmetic": "38 + 134 + 1 + 1 + 2 = 176",
+    "assertion_no_record_lost_or_double_counted": true
+  },
+  "implementation_ready_38": {
+    "by_canonical_action": {
+      "ENCODE_SELECTIVE_ZERO_GUARANTEED": 23,
+      "CORRECT_DATA": 6,
+      "ADD_PROGRAM": 3,
+      "UPDATE_TREATY_DATA": 6
+    },
+    "ENCODE_SELECTIVE_ZERO_GUARANTEED": {
+      "count": 23,
+      "applied_as": "NON_GUARANTEED_SELECTIVE",
+      "result": "APPLIED \u2014 23/23. Guaranteed optimizer value is zero, per the canonical rule that a selective/competitive award is not a guaranteed rate. Blocked from deterministic economics; retained with full metadata."
+    },
+    "UPDATE_TREATY_DATA": {
+      "count": 6,
+      "applied_as": "structural treaty records \u2014 no economics",
+      "result": "APPLIED \u2014 6/6 carry no rate literals and create no domestic incentive economics, preserving the treaty-exists / valid-structure / domestic-eligibility separation. treaty_engine registry unchanged and re-verified."
+    },
+    "CORRECT_DATA_and_ADD_PROGRAM": {
+      "count": 9,
+      "already_wired": [
+        "us_ny_film_credit"
+      ],
+      "applied_via_identity_binding": {
+        "th_film_incentive": "th_boi_incentive",
+        "fj_film_incentive": "fj_film_rebate",
+        "my_film_incentive": "my_finas_rebate",
+        "ge_film_incentive": "ge_film_rebate",
+        "proposed_canada_quebec_refundable_tax_credit_for_film_production_services": "ca_qc_pstc"
+      },
+      "canonical_data_handoff_defect": [
+        "proposed_canada_british_columbia_film_incentive_bc_fibc",
+        "proposed_germany_german_motion_picture_fund_gmpf",
+        "in_nfdc_coproduction"
+      ],
+      "result": "6 of 9 deterministic records reach the runtime (1 already wired at the canonical rate, 5 bound to an existing runtime slug whose canonical program NAME demonstrably matches). 3 are STOPPED as CANONICAL_DATA_HANDOFF_DEFECT: the payload supplies literal economics but no runtime identity binding, and the only same-jurisdiction runtime program is a demonstrably DIFFERENT statutory program (FIBC vs BC PSTC; GMPF vs DFFF; NFDC vs a CA/IN profile with program_slug=None). Binding the rate would be a correctness defect, so it was reported, not guessed."
+    }
+  },
+  "unpriceable_134": {
+    "applied": 134,
+    "remaining": 0,
+    "result": "APPLIED \u2014 every canonical id present in the coverage registry and blocked."
+  },
+  "non_economic_duplicate_superseded": {
+    "non_economic": {
+      "count": 1,
+      "id": "screenskills_production_workforce_development",
+      "applied": true
+    },
+    "duplicate": {
+      "count": 1,
+      "id": "ccm_tourism_film_facilitation",
+      "applied": true
+    },
+    "superseded": {
+      "count": 2,
+      "ids": [
+        "iceland_post_production_visual_effects_and_animation_incentive",
+        "ae_dpip"
+      ],
+      "applied": true
+    }
+  },
+  "coverage_registry": {
+    "rows_before": 29,
+    "rows_after": 247,
+    "blocked_slugs": 247,
+    "states": {
+      "CANONICAL_DATA_HANDOFF_DEFECT": 3,
+      "DUPLICATE": 1,
+      "NON_ECONOMIC": 5,
+      "NON_GUARANTEED_SELECTIVE": 24,
+      "SUPERSEDED": 3,
+      "UNPRICEABLE_AUTHORITY_INSUFFICIENT": 211
+    },
+    "canonical_runtime_slug_bindings": 54,
+    "final_unique_unpriceable_count": 211,
+    "deterministic_effect": "Consulted by production_discovery (STAGE 2 priceability gate) and by allocation_pricing.price_segment (authoritative hard block). NOT display metadata. Absence from the registry == PRICEABLE_VALIDATED, so it can never silently suppress a program that was not explicitly adjudicated."
+  },
+  "verified_defects_fixed": [
+    {
+      "id": "GDA-1",
+      "classification": "VERIFIED",
+      "defect": "Canonically non-priceable programs still priced: no coverage gate existed in the pricing kernel. 22 such programs were live at entry check.",
+      "chain_fixed": "data (coverage registry) -> candidacy (production_discovery STAGE 2) -> calculation (allocation_pricing.price_segment) -> NPC -> ranking -> Bridge",
+      "regression_test": "tests/optimization/test_global_data_application_runtime.py::test_price_segment_hard_blocks_a_covered_program_even_when_directly_specified"
+    },
+    {
+      "id": "GDA-2",
+      "classification": "VERIFIED",
+      "defect": "Blocked programs still entered optimization via discovery, because STAGE 2 asked only whether a rate resolved, never whether authority was sufficient.",
+      "chain_fixed": "production_discovery.discover_executable_jurisdictions STAGE 2",
+      "regression_test": "tests/data/test_authority_coverage_registry.py::test_no_blocked_slug_remains_an_accepted_executable_jurisdiction"
+    },
+    {
+      "id": "GDA-3",
+      "classification": "VERIFIED",
+      "defect": "SLUG-SPELLING ESCAPE \u2014 the canonical corpus identifies programs by its own canonical_id, which for 54 records is a different spelling of a live runtime slug. Blocking only exact canonical_ids left the SAME programs pricing under their runtime spelling: Saudi Arabia at rank 2 (sa_sfc_rebate vs sa_film_commission_rebate), Dubai DPIP at rank 8 (ae_dpip vs ae_dxb_dpip), BC PSTC at rank 10 (bc_pstc vs ca_bc_pstc). This is why the entry check's 22-program leak understated the true leak.",
+      "chain_fixed": "authority_coverage_registry.CANONICAL_RUNTIME_SLUG_BINDINGS \u2014 both spellings blocked. 43 bound by normalised program-name identity within the same jurisdiction, 11 by individual manual adjudication.",
+      "regression_test": "tests/optimization/test_global_data_application_runtime.py::test_the_three_slug_spelling_escapes_are_closed"
+    }
+  ],
+  "runtime_verification": [
+    {
+      "id": 1,
+      "check": "38 program availability",
+      "result": "RUNTIME VERIFIED",
+      "evidence": "6/9 deterministic records reach the served runtime; 23 selective and 6 treaty records applied with zero guaranteed economics per canonical action; 3 stopped as CANONICAL_DATA_HANDOFF_DEFECT and reported."
+    },
+    {
+      "id": 2,
+      "check": "134 new unpriceable excluded",
+      "result": "RUNTIME VERIFIED",
+      "evidence": "priced-structure segments INTERSECT blocked = 0 over the live served payload."
+    },
+    {
+      "id": 3,
+      "check": "prior 25 remain excluded",
+      "result": "RUNTIME VERIFIED",
+      "evidence": "tests/data/test_authority_coverage_registry.py::test_prior_pass_29_records_remain_blocked"
+    },
+    {
+      "id": 4,
+      "check": "verified 22 stale live/pricing leak",
+      "result": "RUNTIME VERIFIED",
+      "evidence": "All 22 blocked; the leak was additionally found to be larger (slug-spelling escape GDA-3) and closed to 247 blocked slugs."
+    },
+    {
+      "id": 5,
+      "check": "Little Utopia contamination smoke",
+      "result": "RUNTIME VERIFIED",
+      "evidence": "priced 149 -> 50; 0 priced structures contain a blocked program; ranks 6/7 are now ALLOC-COMPONENT-POST-QA / ALLOC-COMPONENT-POST-MX (previously BE / IT, both contaminated). MU baseline NPC byte-identical at $3,057,794.90, rank-1 unchanged, 177 structures. NO winner declared \u2014 formal acceptance is the next phase."
+    },
+    {
+      "id": 6,
+      "check": "QPE default-inclusion regression",
+      "result": "RUNTIME VERIFIED",
+      "evidence": "tests/data/test_territoriality_and_qpe_default_inclusion.py (3 passed)."
+    },
+    {
+      "id": 7,
+      "check": "territoriality regression",
+      "result": "RUNTIME VERIFIED",
+      "evidence": "Same file: local-SPV payment alone still cannot qualify foreign spend."
+    },
+    {
+      "id": 8,
+      "check": "treaty data consumed / candidate generation",
+      "result": "RUNTIME VERIFIED",
+      "evidence": "tests/optimization/test_treaty_candidate_generation.py (5 passed); CA-FR/CA-DE bilaterals still selected, CA-JP still excluded, MU proven-zero intact."
+    },
+    {
+      "id": 9,
+      "check": "NPC/ranking consumes canonical adjusted value",
+      "result": "RUNTIME VERIFIED",
+      "evidence": "Full 50-structure ranking strictly ascending by npc_with_adjustments_usd."
+    },
+    {
+      "id": 10,
+      "check": "Bridge exports canonical adjusted value",
+      "result": "RUNTIME VERIFIED",
+      "evidence": "0 mismatches over 12 sampled structures; tests/bridge/test_npc_canonical_value_generalized.py."
+    },
+    {
+      "id": 11,
+      "check": "stale fallback elimination",
+      "result": "RUNTIME VERIFIED",
+      "evidence": "price_segment is the single pricing entry point and blocks before doctrine/rate resolution, so a stale DoctrineRecord or RateRule that survives for provenance cannot re-enter pricing by any route, including a directly-specified StructureSpec."
+    }
+  ],
+  "forbidden_overlap_assertions": {
+    "accepted_for_optimization_INTERSECT_blocked": 0,
+    "priced_segments_INTERSECT_blocked": 0,
+    "ranked_economic_candidates_INTERSECT_blocked": 0
+  },
+  "runtime_universe": {
+    "executable_profiles_total": 110,
+    "still_priceable_after_application": 33,
+    "blocked_profiles": 77,
+    "little_utopia_structures": 177,
+    "little_utopia_priced_before": 149,
+    "little_utopia_priced_after": 50
+  },
+  "test_results": {
+    "full_backend_suite": "4019 passed, 1 skipped, 1 pre-existing unrelated failure (tests/test_global_discovery.py::TestRecommendationTitles::test_scenarios_and_workspace_both_use_the_canonical_title_formatter \u2014 a frontend Workspace.jsx guard, git-confirmed zero local diff).",
+    "new_tests_added": 19,
+    "tests_updated_for_canonical_behavior": 6
+  },
+  "remaining_blockers": [
+    {
+      "id": "GDA-B1",
+      "severity": "P1",
+      "blocker": "3 CANONICAL_DATA_HANDOFF_DEFECT records (BC FIBC, German GMPF, India NFDC). The canonical payload supplies literal economics but no runtime identity binding, and each would have to be bound to a demonstrably different statutory program. Requires a canonical identity binding (a new runtime program record), not new research.",
+      "impact": "3 validated priceable programs are unavailable to the optimizer. Fails safe (understates benefit); does not corrupt any served value."
+    },
+    {
+      "id": "GDA-B2",
+      "severity": "P2",
+      "blocker": "Residual canonical<->runtime identity ambiguity. 54 of the mismatched pairs were bound with demonstrable name identity; a small residual (e.g. Denmark DFI support vs production rebate, Portugal IAPMEI vs SCRI.PT, Panama/Costa Rica facilitation vs rebate, Mexico EFICINE vs the 2026 federal incentive, Thailand PRD digital-content vs BOI) could NOT be adjudicated from the payload without inventing an equivalence, which program_slug_aliases.py explicitly forbids. Those runtime programs remain PRICEABLE_VALIDATED.",
+      "impact": "If any of them is in fact the same program as a canonically-blocked record, it would still price. Bounded, named, and listed for the next phase; none is currently in Little Utopia's ranked set above rank 10."
+    }
+  ],
+  "final_gate": "GO_FOR_LITTLE_UTOPIA_WORLDWIDE",
+  "final_gate_basis": "All 176 canonical records accounted for with no loss or double-count; every executable implementation-ready record applied or explicitly stopped with a stated defect; all 134 new and all prior 25 authority-insufficient records safely disabled; the verified 22-program live-pricing leak eliminated (and a larger slug-spelling escape found and closed); non-economic / duplicate / superseded handled; no stale fallback route into pricing remains; QPE, territoriality, treaty candidate generation, NPC/ranking and Bridge all regression-verified unchanged; Little Utopia contamination smoke test passes with the calibrated Mauritius baseline byte-identical. The two remaining blockers are P1/P2, both fail-safe (they can only understate benefit, never corrupt a served value), and neither is a P0 deterministic correctness defect."
+}

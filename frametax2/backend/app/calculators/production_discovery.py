@@ -89,6 +89,10 @@ def discover_executable_jurisdictions(
         match_capability,
     )
     from app.data import global_inventory as gi
+    from app.data.authority_coverage_registry import (
+        blocks_economic_candidacy,
+        coverage_state,
+    )
     from app.data.program_rate_rules import get_rate_rules, resolve_program_rate
     from app.data.program_spend_rules import get_program_doctrine, resolve_program_doctrine
 
@@ -138,9 +142,17 @@ def discover_executable_jurisdictions(
         cap_reasons = cm.reasons
 
         # ── STAGE 2: can the incentive be priced? (knowledge + statutory) ──
+        # Global Data Application: the canonical coverage registry is consulted
+        # FIRST and is decisive. A program the completed primary-authority corpus
+        # adjudicated authority-insufficient / selective-non-guaranteed /
+        # non-economic / superseded / duplicate must never reach optimization,
+        # even while it still holds stale doctrine + rate rules. Absence from the
+        # registry means PRICEABLE_VALIDATED, so this can never suppress a new
+        # program by default. See app/data/authority_coverage_registry.py.
+        coverage_blocked = blocks_economic_candidacy(slug)
         resolves = False
         priceable = False
-        if slug is not None and has_doctrine and has_rate:
+        if not coverage_blocked and slug is not None and has_doctrine and has_rate:
             rr = resolve_program_rate(slug, production_type=production_type, qpe_usd=qpe_usd)
             resolves = rr is not None
             priceable = resolves
@@ -165,9 +177,13 @@ def discover_executable_jurisdictions(
             accepted.append((code, slug))
         elif cm.production_capable and not priceable:
             classification = "capability_only"
-            why_pending = ("no statutory rate rules" if not has_rate else
-                           "no classified qualification doctrine" if not has_doctrine else
-                           "the production's statutory conditions are unmet")
+            why_pending = (
+                coverage_state(slug).replace("_", " ").lower() +
+                " per the canonical authority-coverage registry"
+                if coverage_blocked else
+                "no statutory rate rules" if not has_rate else
+                "no classified qualification doctrine" if not has_doctrine else
+                "the production's statutory conditions are unmet")
             reason = ("Production-capable, incentive pending: the jurisdiction can "
                       f"physically support the production, but {why_pending}. Retained "
                       "for capability, not priced (never guessed).")

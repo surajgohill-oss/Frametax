@@ -132,14 +132,28 @@ def test_greece_flat_rate_has_no_discretionary_ceiling():
     assert pricing.selected_incentive_usd == gr.incentive_ceiling_usd == gr.incentive_floor_usd
 
 
-def test_uk_vfx_ceiling_requires_confirmation_and_serves_standard_avec_floor():
+def test_uk_avec_is_now_canonically_unpriceable_and_cannot_price():
+    """Global Data Application: the completed primary-authority corpus
+    reclassified uk_avec as UNPRICEABLE_AUTHORITY_INSUFFICIENT (its canonical
+    record carries rate_literals=[]), so it is disabled rather than allowed to
+    inherit its stale stored rate.
+
+    This test previously asserted uk_avec's VFX band-ceiling behavior. That
+    MECHANISM is unchanged and still covered by
+    test_mauritius_ceiling_requires_confirmation_and_serves_floor_by_default,
+    test_mauritius_ceiling_confirmed_by_explicit_project_override and
+    test_malta_ceiling_requires_confirmation_and_serves_floor_by_default -- only
+    the UK vehicle for it was retired by canonical data."""
+    from app.data.authority_coverage_registry import coverage_state
+
+    assert coverage_state("uk_avec") == "UNPRICEABLE_AUTHORITY_INSUFFICIENT"
     pricing = _price(_spec("P-GB", "full_relocation", ("GB",), {"GB": "uk_avec"}))
-    assert pricing.is_fully_priced
+    assert pricing.is_fully_priced is False
     gb = next(s for s in pricing.segments if s.jurisdiction_code == "GB")
-    assert gb.is_band_ceiling is True
-    assert gb.ceiling_requires_confirmation is True
-    assert pricing.selected_incentive_usd == gb.incentive_floor_usd
-    assert gb.rate_floor == 0.255
+    assert gb.executable is False
+    assert gb.incentive_floor_usd == 0.0
+    assert gb.incentive_ceiling_usd == 0.0
+    assert any("UNPRICEABLE_AUTHORITY_INSUFFICIENT" in b for b in gb.blockers)
 
 
 # ── QPE eligible-spend caps (UK / Greece 80%) ────────────────────────────────
@@ -159,12 +173,19 @@ def test_greece_qpe_capped_at_80pct_of_total_worldwide_budget():
     assert gr.qpe_cap_applied_usd > 0
 
 
-def test_uk_qpe_capped_at_80pct_of_segment_core_expenditure():
+def test_uk_qpe_cap_rule_is_retained_even_though_uk_avec_cannot_currently_price():
+    """The UK's 80%-of-core-expenditure QpeCapRule is preserved as data so the
+    program can be reactivated intact once authority is recaptured -- but with
+    uk_avec now canonically UNPRICEABLE_AUTHORITY_INSUFFICIENT the cap is never
+    reached, because the segment is blocked before QPE is computed.
+
+    The cap MECHANISM itself remains covered by
+    test_greece_qpe_capped_at_80pct_of_total_worldwide_budget."""
+    assert get_qpe_cap("uk_avec") is not None  # rule data preserved for reactivation
     pricing = _price(_spec("P-GB-CAP", "full_relocation", ("GB",), {"GB": "uk_avec"}))
     gb = next(s for s in pricing.segments if s.jurisdiction_code == "GB")
-    expected_cap = round(gb.allocated_usd * 0.80, 2)
-    assert gb.qpe_usd == expected_cap
-    assert gb.qpe_cap_applied_usd > 0
+    assert gb.executable is False
+    assert gb.qpe_usd in (None, 0, 0.0)
 
 
 # ── Bridge package export fixes ──────────────────────────────────────────────

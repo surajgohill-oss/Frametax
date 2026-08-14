@@ -1,67 +1,145 @@
 """
-Consolidated Global Remediation, Phase C verification.
+Authority coverage registry — Global Data Application verification.
 
-Locks in the safety invariant for the 25 UNPRICEABLE_AUTHORITY_INSUFFICIENT
-+ 4 NON_ECONOMIC_CONFIRMED canonical identities: they must never become
-priceable, must never enter the executable jurisdiction registry, and must
-never carry synthetic economics.
+Supersedes the Consolidated Global Remediation version of this file, which
+asserted the pre-application state (29 records, `disposition` field). The
+canonical corpus (GLOBAL_REMEDIATION_EXECUTABLE_DATA.json) has since been
+applied, so these tests assert the APPLIED state and, critically, that the
+registry deterministically blocks economic candidacy in the served runtime.
 """
+import json
+from pathlib import Path
+
 from app.calculators.jurisdiction_comparison import ALL_PROFILES
-from app.data.program_rate_rules import get_rate_rules  # noqa: F401 -- triggers registration import order
-from app.data.executable_jurisdiction_registry import _REGISTRY as DOCTRINE_REGISTRY
+from app.data.program_rate_rules import get_rate_rules  # noqa: F401 -- import-order guard
 from app.data.authority_coverage_registry import (
+    BLOCKED_SLUGS,
+    BLOCKING_STATES,
+    CANONICAL_RUNTIME_SLUG_BINDINGS,
     COVERAGE_REGISTRY,
+    blocks_economic_candidacy,
+    coverage_state,
     get_coverage_status,
     is_covered_unpriceable,
 )
 
-
-def test_registry_has_exactly_29_records():
-    assert len(COVERAGE_REGISTRY) == 29
-
-
-def test_registry_disposition_counts_match_the_validation_gate():
-    unpriceable = [r for r in COVERAGE_REGISTRY.values() if r.disposition == "UNPRICEABLE_AUTHORITY_INSUFFICIENT"]
-    non_economic = [r for r in COVERAGE_REGISTRY.values() if r.disposition == "NON_ECONOMIC_CONFIRMED"]
-    assert len(unpriceable) == 25
-    assert len(non_economic) == 4
+CANONICAL = (
+    Path(__file__).resolve().parents[4]
+    / "docs" / "validation" / "GLOBAL_REMEDIATION_EXECUTABLE_DATA.json"
+)
 
 
-def test_no_covered_slug_has_an_executable_doctrine_record():
-    """The actual pricing-safety guarantee: no RateRule/DoctrineRecord means
-    the executable path has nothing to join to and cannot price these."""
-    overlap = set(COVERAGE_REGISTRY.keys()) & set(DOCTRINE_REGISTRY.keys())
-    assert overlap == set(), f"unpriceable/non-economic slugs leaked into the doctrine registry: {overlap}"
+def _canonical_records():
+    return json.loads(CANONICAL.read_text())["records"]
 
 
-def test_no_covered_slug_is_an_executable_jurisdiction_profile():
-    """ALL_PROFILES is jurisdiction_comparison.py's authoritative
-    executable-jurisdiction list (resolved doctrine + non-empty RateRule)."""
-    profile_slugs = {
-        getattr(p, "program_slug", None) for p in ALL_PROFILES.values()
-    }
-    overlap = set(COVERAGE_REGISTRY.keys()) & profile_slugs
-    assert overlap == set(), f"unpriceable/non-economic slugs leaked into ALL_PROFILES: {overlap}"
+def test_canonical_payload_still_accounts_for_exactly_176_unique_records():
+    recs = _canonical_records()
+    assert len(recs) == 176
+    assert len({r["canonical_id"] for r in recs}) == 176
 
 
-def test_get_coverage_status_round_trips():
-    rec = get_coverage_status("qa_film_incentive")
-    assert rec is not None
-    assert rec.disposition == "UNPRICEABLE_AUTHORITY_INSUFFICIENT"
-    assert rec.jurisdiction_name == "Qatar"
+def test_every_canonical_non_ready_record_is_represented_in_the_registry():
+    """The 134 unpriceable + 2 superseded + 1 duplicate + 1 non-economic must
+    all be present. Nothing may silently disappear."""
+    recs = _canonical_records()
+    non_ready = [r for r in recs if r["final_disposition"] != "IMPLEMENTATION_READY"]
+    assert len(non_ready) == 138
+    missing = [r["canonical_id"] for r in non_ready if r["canonical_id"] not in COVERAGE_REGISTRY]
+    assert missing == [], f"canonical records absent from the registry: {missing}"
 
 
-def test_is_covered_unpriceable_true_for_registry_members_false_otherwise():
-    assert is_covered_unpriceable("cn_film_incentive") is True  # non-economic
-    assert is_covered_unpriceable("pk_pfc_rebate") is True       # unpriceable
-    assert is_covered_unpriceable("mu_edb_incentive") is False   # real priced program
-    assert is_covered_unpriceable("not_a_real_slug") is False
+def test_selective_records_are_present_and_carry_zero_guaranteed_value():
+    """ENCODE_SELECTIVE_ZERO_GUARANTEED must block deterministic economics --
+    a competitive award is never a guaranteed rate."""
+    recs = _canonical_records()
+    selective = [
+        r["canonical_id"] for r in recs
+        if r["implementation_action"] == "ENCODE_SELECTIVE_ZERO_GUARANTEED"
+    ]
+    assert len(selective) == 23
+    for cid in selective:
+        assert blocks_economic_candidacy(cid), f"{cid} must not price deterministically"
 
 
-def test_every_record_carries_reactivation_metadata_not_a_synthetic_rate():
+def test_prior_pass_29_records_remain_blocked():
+    """The Consolidated Global Remediation's original 25 authority-insufficient
+    + 4 non-economic records must not regress."""
+    prior = [
+        "bh_film_incentive", "bd_film_incentive", "eg_film_incentive", "et_film_commission",
+        "ga_film_incentive", "gh_film_incentive", "id_film_incentive", "kz_film_incentive",
+        "ke_film_incentive", "kw_film_incentive", "mv_film_incentive", "mn_film_commission",
+        "mz_film_incentive", "ng_film_incentive", "om_film_commission", "pk_pfc_rebate",
+        "qa_film_incentive", "sn_film_incentive", "sc_film_incentive", "lk_film_incentive",
+        "ug_film_commission", "uz_film_incentive", "vn_film_incentive", "zm_film_commission",
+        "zw_film_commission",
+        "bw_film_commission", "kh_film_incentive", "cn_film_incentive", "tz_film_incentive",
+    ]
+    assert len(prior) == 29
+    for slug in prior:
+        assert blocks_economic_candidacy(slug), f"prior-pass exclusion regressed: {slug}"
+
+
+def test_runtime_slug_bindings_block_both_spellings():
+    """The canonical corpus names programs under its own ids; where those are a
+    different spelling of a live runtime slug, BOTH must be blocked -- this is
+    the defect that left Saudi Arabia pricing at rank 2 and Dubai DPIP at rank 8."""
+    assert len(CANONICAL_RUNTIME_SLUG_BINDINGS) >= 43
+    for canonical_id, runtime_slug in CANONICAL_RUNTIME_SLUG_BINDINGS.items():
+        assert blocks_economic_candidacy(canonical_id)
+        assert blocks_economic_candidacy(runtime_slug), (
+            f"runtime spelling {runtime_slug} of blocked {canonical_id} can still price"
+        )
+    # the three specific escapes found during this pass
+    assert coverage_state("sa_film_commission_rebate") == "UNPRICEABLE_AUTHORITY_INSUFFICIENT"
+    assert coverage_state("ae_dxb_dpip") == "SUPERSEDED"
+    assert coverage_state("ca_bc_pstc") == "UNPRICEABLE_AUTHORITY_INSUFFICIENT"
+
+
+def test_absence_from_the_registry_means_priceable_never_a_default_exclusion():
+    assert coverage_state("mu_edb_incentive") == "PRICEABLE_VALIDATED"
+    assert blocks_economic_candidacy("mu_edb_incentive") is False
+    assert blocks_economic_candidacy("a_program_that_does_not_exist") is False
+    assert get_coverage_status(None) is None
+
+
+def test_calibration_anchors_mu_mt_gr_au_are_untouched():
+    """Only uk_avec of the five calibrated anchors was in the canonical 176."""
+    for slug in ("mu_edb_incentive", "mt_mfc_rebate", "gr_cash_rebate", "au_location_offset"):
+        assert blocks_economic_candidacy(slug) is False, f"{slug} must remain priceable"
+    assert blocks_economic_candidacy("uk_avec") is True
+
+
+def test_no_record_carries_a_synthetic_rate():
     for rec in COVERAGE_REGISTRY.values():
+        assert rec.state in BLOCKING_STATES
         assert rec.reason
-        assert rec.source_artifact
-        assert rec.reactivation_note
         assert not hasattr(rec, "base_rate")
         assert not hasattr(rec, "rate")
+
+
+def test_blocked_slugs_is_consistent_with_the_predicate():
+    assert BLOCKED_SLUGS == {s for s in COVERAGE_REGISTRY if blocks_economic_candidacy(s)}
+
+
+def test_back_compat_alias_still_works():
+    assert is_covered_unpriceable("cn_film_incentive") is True
+    assert is_covered_unpriceable("mu_edb_incentive") is False
+
+
+def test_no_blocked_slug_remains_an_accepted_executable_jurisdiction():
+    """The forbidden intersection the gate requires to be empty: a blocked
+    program may still HOLD a stale profile/doctrine row, but must never be
+    accepted for optimization. Proven end-to-end in
+    tests/optimization/test_global_data_application_runtime.py."""
+    from app.calculators.production_discovery import discover_executable_jurisdictions
+    from app.calculators.production_requirements import derive_production_requirements
+
+    reqs = derive_production_requirements([])
+    result = discover_executable_jurisdictions(
+        requirements=reqs, production_type="feature_film",
+        qpe_usd=5_000_000.0, home_code="MU",
+    )
+    accepted_slugs = {slug for _code, slug in result.accepted_alternatives("MU")}
+    overlap = accepted_slugs & BLOCKED_SLUGS
+    assert overlap == set(), f"blocked programs accepted for optimization: {overlap}"
