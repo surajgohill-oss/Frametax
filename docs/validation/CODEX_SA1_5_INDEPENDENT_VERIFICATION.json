@@ -1,0 +1,293 @@
+{
+  "artifact_type": "CODEX_SA1_5_INDEPENDENT_VERIFICATION",
+  "generated_at_utc": "2026-08-14T22:10:18Z",
+  "scope": "Bounded independent repository and runtime verification of SA-1.5 for F#K Valentine's Day; no implementation changes and no SA-2 work.",
+  "branch": "claude/audit-frametax-features-NZcX5",
+  "head_review": {
+    "remote_head_at_verification_start": "242226d350b1b931fbc1ff68c37cbe38750e3970",
+    "remote_head_subject": "Script Analyzer SA-1: generic script parse + CanonicalProductionState vertical slice",
+    "local_antigravity_tip_reviewed": "9d2fa9dd950d3f10c6a1b102f6d47c291b139bb5",
+    "antigravity_commits_reviewed": [
+      "fe59612 - feat: integrate Company Library document ingestion with SA-1 structural parser",
+      "174cd82 - chore(optimizer): add script and acceptance artifact for FVD real budget closeout",
+      "9d2fa9d - SA-1.5: Finalize Full Workflow Product Acceptance & FVD Base Jurisdiction Resolution"
+    ],
+    "handoff_observation": "At verification start the active remote branch stopped at 242226d; the three claimed SA-1.5 commits existed only on the local branch and were reviewed as the pending Antigravity diff."
+  },
+  "project": {
+    "id": "6c6f1c13-2d49-4bbc-bafb-2a12efa93112",
+    "title": "F#K Valentine's Day",
+    "project_total_budget_usd": null,
+    "project_home_jurisdiction_id": null,
+    "production_assumption_rows": 0
+  },
+  "final_gate": "CODEX_REJECTS_SA1_5",
+  "decision_basis": "The real FVD materials and deterministic script parse are genuine, but the canonical product path does not derive the evidenced Greece base, shoot duration, currency, travel, or territorial facts into optimizer-ready state and does not execute the worldwide optimizer. The FVD acceptance runner constructs those economics with project-specific constants. The UI and held-out-calibration claims are also unsupported.",
+  "gates": [
+    {
+      "number": 1,
+      "name": "real FVD budget",
+      "status": "PASS",
+      "evidence": "The persisted current budget is V-BRAT_V8_Greece_041224 TOPSHEET.pdf, linked to the FVD project and byte-identified by SHA-256 253e80e987a0aa3c06110dcbc5f6c99fd20042579603a94e29039c1e0a72eaa1. Its title/body identify F#*K VALENTINES DAY and a Greece preliminary budget."
+    },
+    {
+      "number": 2,
+      "name": "budget reconciliation",
+      "status": "PASS",
+      "evidence": "Authoritative PDF Grand Total USD 4,517,687.00 equals BudgetDocument.total_budget_raw, the sum of 34 parsed amount_raw rows, and the sum of 34 amount_usd rows exactly; variance USD 0.00."
+    },
+    {
+      "number": 3,
+      "name": "Greece provenance",
+      "status": "PASS",
+      "evidence": "SOURCE FACT: Greece. The actual budget states PRELIMINARY BUDGET - GREECE and Location: Greece, and names Greek Estimate Cash Rebate (40%). This is authoritative FVD production evidence, not a screenplay-setting inference. Canonical-state propagation is separately failed in gates 7 and 10."
+    },
+    {
+      "number": 4,
+      "name": "full project-material discovery",
+      "status": "PASS",
+      "evidence": "The filesystem source set and ingestion-candidate ledger reconcile: four top-level source files and three nested Underwater files were discovered. FVD screenplay, budget, and deck were committed; the unrelated MaggieMoores image remained unassociated; the nested Underwater screenplay, budget, and deck were routed to the separate Underwater project. No separate FVD schedule existed in the presented source set."
+    },
+    {
+      "number": 5,
+      "name": "semantic routing",
+      "status": "PASS",
+      "evidence": "FVD screenplay -> screenplay, Greece top sheet -> budget, FVD deck -> deck, and extracted deck cover -> artwork. Underwater materials were not persisted under FVD."
+    },
+    {
+      "number": 6,
+      "name": "UI runtime",
+      "status": "FAIL",
+      "evidence": "Classification: API_ONLY_VERIFIED. run_sa1_5_acceptance.py uses httpx ASGITransport directly against the FastAPI app. No frontend caller for the script-analysis/state/optimizer-input routes and no browser -> frontend -> network -> backend -> persistence trace were found. The route module explicitly says backend routes only."
+    },
+    {
+      "number": 7,
+      "name": "canonical project state",
+      "status": "FAIL",
+      "evidence": "The live state correctly carries the script and USD-normalized budget but has zero ProductionAssumption rows, no source-currency field, null base jurisdiction, null shoot days, 54 unconfirmed production locations, and unknown territoriality. Despite these missing material inputs it reports READY_FOR_OPTIMIZER and the handoff returns accepted=true, base_jurisdiction=null, shoot_days=null, provisional=true. The product path stops at a data contract and does not call the worldwide optimizer."
+    },
+    {
+      "number": 8,
+      "name": "no generic Little Utopia contamination",
+      "status": "PASS",
+      "evidence": "No executable Little Utopia, Mauritius, ALLOC-BASELINE-MU, home_code=MU, or jurisdiction_code=MU dependency exists in the inspected generic FVD state/handoff path. Remaining Little Utopia references are comments or separate regression/runtime fixtures."
+    },
+    {
+      "number": 9,
+      "name": "FVD runner is thin/generic",
+      "status": "FAIL",
+      "evidence": "Disposition: PROJECT_SPECIFIC_ORCHESTRATION (B). run_fvd_optimizer.py reads a validation fixture and directly constructs ProductionFacts, Greece doctrine/rate, discovery, baseline and alternative StructureSpecs, account allocation, travel normalization, FX normalization, pricing, and ranking. It hardcodes GR, gr_cash_rebate, ALLOC-BASELINE-GR, and travel inputs rather than invoking a generic canonical execution service."
+    },
+    {
+      "number": 10,
+      "name": "project facts provenance",
+      "status": "FAIL",
+      "evidence": "The persisted 20 ProjectFact rows and 127 ProductionRequirement rows are deterministic and version-linked to the screenplay. The actual budget evidences Greece and 18 shoot days, but neither is propagated into canonical assumptions. Runner travel values (LA origin, one business traveler, four rotations, 14 hotel nights, 14 per-diem days) have no FVD source or persisted provenance and are arbitrary runner inputs presented in the FVD economic run."
+    },
+    {
+      "number": 11,
+      "name": "actual-vs-modeled separation",
+      "status": "PASS",
+      "evidence": "The persisted Greece budget remains the actual project baseline. Alternative allocations operate on copied input values and do not rewrite BudgetDocument or BudgetLineItem historical records. The custom runner defect does not itself mutate the actual budget."
+    },
+    {
+      "number": 12,
+      "name": "held-out calibration fixture",
+      "status": "FAIL",
+      "evidence": "SCRIPT_ANALYZER_REAL_BUDGET_FIXTURE_001.json has only parse_result, script_state, canonical_state, and optimizer_input. It has no SCRIPT_DERIVED_STATE / HELD_OUT_ACTUAL_PRODUCTION_STATE partition, and embeds the actual USD 4,517,687 budget and all 34 lines in both canonical_state and optimizer_input. It cannot serve as a script-only prediction fixture without actual-budget leakage."
+    },
+    {
+      "number": 13,
+      "name": "script-only architecture preserved",
+      "status": "PASS",
+      "evidence": "The generic state explicitly represents BUDGET_MISSING as an honest blocker and documents that SA-1 does not estimate a budget while a later phase may supply a Level-1 estimate. The FVD actual-budget work did not encode FVD's budget as a universal Script Analyzer prerequisite or prediction feature."
+    },
+    {
+      "number": 14,
+      "name": "genericity probe",
+      "status": "FAIL",
+      "evidence": "A deterministic Canada probe passed CA, USD-normalized gross cost, and 22 shoot days through build_optimizer_input without editing source. However, the contract has no source-currency field and the canonical builder does not propagate BudgetDocument.currency_code; CAD could only be smuggled through an untyped assumption. More importantly, the generic handoff does not execute discovery/allocation/pricing/ranking, so a non-Greece project still requires orchestration equivalent to a new custom runner."
+    },
+    {
+      "number": 15,
+      "name": "Little Utopia regression",
+      "status": "PASS",
+      "evidence": "Targeted pytest test_mauritius_baseline_regression_including_the_non_claiming_us_segment passed: rank 1 ALLOC-BASELINE-MU, Mauritius, NPC USD 3,057,794.90. The full SA-1 targeted file also passed 23/23 tests."
+    }
+  ],
+  "fvd_budget_identity": {
+    "source_file": "/Users/Suraj/Documents/thesystem/roombelow/fuckvday/V-BRAT_V8_Greece_041224 TOPSHEET.pdf",
+    "document_id": "0d3cc6b3-5465-4140-a894-a3c6d85c8c38",
+    "document_version_id": "cf33eae1-aa4e-4e4e-80d2-ce737f5a373e",
+    "budget_document_id": "29419055-9720-4e77-a673-020e3a87e3c8",
+    "checksum_sha256": "253e80e987a0aa3c06110dcbc5f6c99fd20042579603a94e29039c1e0a72eaa1",
+    "file_size_bytes": 36353,
+    "currency": "USD",
+    "authoritative_gross_total": 4517687.0,
+    "parsed_gross_total": 4517687.0,
+    "parsed_line_count": 34,
+    "reconciliation_variance": 0.0,
+    "status": "VERIFIED",
+    "not_little_utopia": true,
+    "not_synthetic": true,
+    "not_manual_reconstruction": true
+  },
+  "greece_provenance": {
+    "classification": "SOURCE FACT: Greece",
+    "evidence": [
+      "Budget heading: PRELIMINARY BUDGET - GREECE",
+      "Budget field: Location: Greece",
+      "Budget line: Greek Estimate Cash Rebate (40%)",
+      "Budget filename: V-BRAT_V8_Greece_041224 TOPSHEET.pdf"
+    ],
+    "canonical_propagation": "FAIL: project.home_jurisdiction_id is null; there is no base_jurisdiction ProductionAssumption; the runner hardcodes GR."
+  },
+  "ingestion_manifest": [
+    {
+      "asset": "F#K Valentine's Day- pdf.pdf",
+      "classification": "DISCOVERED_AND_PROCESSED",
+      "routing": "screenplay",
+      "result": "99 scenes, 38 characters, 1703 elements, 127 production requirements, 54 locations"
+    },
+    {
+      "asset": "V-BRAT_V8_Greece_041224 TOPSHEET.pdf",
+      "classification": "DISCOVERED_AND_PROCESSED",
+      "routing": "budget",
+      "result": "34 reconciled budget lines"
+    },
+    {
+      "asset": "Fck Valentines Day - - 2.9.24 deck.pdf",
+      "classification": "DISCOVERED_AND_STORED",
+      "routing": "deck"
+    },
+    {
+      "asset": "Fck Valentines Day - - 2.9.24 deck (cover).jpeg",
+      "classification": "DISCOVERED_AND_STORED",
+      "routing": "artwork extracted from persisted deck; master FVD artwork"
+    },
+    {
+      "asset": "MaggieMoores_NowStreaming.jpg",
+      "classification": "DISCOVERED_REVIEW_REQUIRED",
+      "routing": "unassociated after review; filename is unrelated to FVD and no FVD asset/document was created"
+    },
+    {
+      "asset": "underwater/Underwater 3CC Draft 1.5.21 (319) (2).pdf",
+      "classification": "DISCOVERED_AND_STORED",
+      "routing": "separate Underwater project screenplay"
+    },
+    {
+      "asset": "underwater/Underwater Budget 9-3 (1).pdf",
+      "classification": "DISCOVERED_AND_STORED",
+      "routing": "separate Underwater project budget"
+    },
+    {
+      "asset": "underwater/Underwater Presentation.pptx (1) (1) (1).pdf",
+      "classification": "DISCOVERED_AND_STORED",
+      "routing": "separate Underwater project deck"
+    },
+    {
+      "asset": "FVD schedule",
+      "classification": "NOT_PRESENT_NOT_APPLICABLE",
+      "routing": "No separate schedule was present in the supplied filesystem set; the budget itself states Total Shoot: 18 Days | 3 Weeks."
+    }
+  ],
+  "ui_evidence_classification": "API_ONLY_VERIFIED",
+  "canonical_state_provenance": [
+    {
+      "field": "budget",
+      "classification": "ACTUAL_PROJECT_EVIDENCE",
+      "detail": "Persisted FVD BudgetDocument and 34 BudgetLineItems; exact USD reconciliation."
+    },
+    {
+      "field": "currency",
+      "classification": "UNKNOWN",
+      "detail": "BudgetDocument stores USD but CanonicalProductionState and ProductionOptimizerInput omit source currency."
+    },
+    {
+      "field": "base/home jurisdiction",
+      "classification": "HARDCODED_PROJECT_RUNNER",
+      "detail": "The source budget evidences Greece, but canonical project/assumption state is null and run_fvd_optimizer.py supplies GR directly."
+    },
+    {
+      "field": "script",
+      "classification": "DETERMINISTIC_DERIVED",
+      "detail": "Version-linked parser output: 99 scenes, 38 speaking characters, 1703 elements."
+    },
+    {
+      "field": "locations",
+      "classification": "DETERMINISTIC_DERIVED",
+      "detail": "54 scripted locations are version-linked; all production locations remain UNKNOWN."
+    },
+    {
+      "field": "schedule/shoot days",
+      "classification": "UNKNOWN",
+      "detail": "The budget states 18 days / 3 weeks, but canonical state has no intended_shoot_days assumption."
+    },
+    {
+      "field": "travel assumptions",
+      "classification": "HARDCODED_PROJECT_RUNNER",
+      "detail": "LA, 1 business traveler, 4 rotations, 14 hotel nights, and 14 per-diem days have no source provenance."
+    },
+    {
+      "field": "production requirements",
+      "classification": "DETERMINISTIC_DERIVED",
+      "detail": "127 rows, all version-linked to the FVD screenplay."
+    },
+    {
+      "field": "territorial assumptions",
+      "classification": "UNKNOWN",
+      "detail": "No line has confirmed service jurisdiction; labor residency is not assumed."
+    }
+  ],
+  "runtime_checks": {
+    "fvd_state_api": {
+      "http_status": 200,
+      "readiness": "READY_FOR_OPTIMIZER",
+      "gross_budget_usd": 4517687.0,
+      "base_jurisdiction": null,
+      "shoot_days": null,
+      "optimizer_handoff_accepted": true,
+      "provisional": true,
+      "material_observation": "Readiness does not enforce the state builder's own required base_jurisdiction and intended_shoot_days unknowns."
+    },
+    "genericity_probe": {
+      "probe_jurisdiction": "CA",
+      "probe_budget_usd": 1234567.89,
+      "probe_shoot_days": 22,
+      "handoff_accepted": true,
+      "source_currency_field_present": false,
+      "status": "FAIL"
+    },
+    "targeted_tests": [
+      {
+        "command": "PYTHONPATH=. .venv/bin/pytest -q tests/test_script_analyzer_sa1.py",
+        "result": "23 passed"
+      },
+      {
+        "command": "PYTHONPATH=. .venv/bin/pytest -q tests/optimization/test_little_utopia_worldwide_acceptance.py::test_mauritius_baseline_regression_including_the_non_claiming_us_segment",
+        "result": "1 passed"
+      }
+    ]
+  },
+  "defects": [
+    "The canonical state calls FVD optimizer-ready while base jurisdiction, shoot days, source currency, production locations, and territoriality are absent.",
+    "ProductionOptimizerInput is only a mapping contract; no generic product service consumes it to execute discovery, allocation, normalization, pricing, and ranking.",
+    "run_fvd_optimizer.py is a project-specific economic orchestrator with hardcoded Greece/program/baseline/travel values.",
+    "The evidenced Greece base and 18-day schedule are not persisted or propagated as provenance-bearing canonical facts/assumptions.",
+    "Arbitrary runner travel parameters have no FVD evidence or labeled canonical default authority.",
+    "The UI workflow claim is unsupported; only in-process API calls were exercised.",
+    "The real-budget fixture has no held-out boundary and leaks actual budget lines into the optimizer input.",
+    "The handoff contract drops source currency and therefore fails the complete genericity proof.",
+    "At verification start, the claimed SA-1.5 commits were not present on the current remote branch."
+  ],
+  "smallest_required_implementation_workload": [
+    "Persist and propagate the budget-evidenced base jurisdiction (GR), source currency (USD), and 18 shoot days with DocumentVersion-level provenance; leave unsupported values UNKNOWN.",
+    "Tighten canonical readiness so material optimizer inputs cannot be accepted as READY merely because script and budget exist.",
+    "Add one generic execution service that consumes ProductionOptimizerInput and invokes existing discovery, structure, allocation, travel/FX, pricing, and ranking calculators without project constants; reduce the FVD runner to an API/service invocation and assertions.",
+    "Replace runner travel constants with sourced/user-confirmed inputs or explicit provisional model defaults that cannot be presented as actual facts.",
+    "Add source currency as a first-class canonical/handoff value and prove a non-GR/non-MU project reaches the same generic executor without source edits.",
+    "Split the FVD calibration artifact into script-derived prediction input and a separately held-out actual-production/budget comparison payload.",
+    "Either implement and browser-verify the frontend path or remove the UI-verified claim until that work exists."
+  ],
+  "sa2": "HOLD"
+}
