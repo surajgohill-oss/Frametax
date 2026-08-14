@@ -2174,7 +2174,15 @@ register_rate_rules(rate_rules_for(JO_DOCTRINE))
 _TH_CITATION = (
     "thailand-business-news.com, overgrownproductions.com: 'rebate of up "
     "to 30% in cash,' 'must spend the equivalent of $1.4m US locally to "
-    "qualify.' Supersedes the prior 15-20% catalog figure."
+    "qualify.' Supersedes the prior 15-20% catalog figure. LITTLE UTOPIA "
+    "WORLDWIDE ACCEPTANCE: the canonical corpus "
+    "(GLOBAL_REMEDIATION_EXECUTABLE_DATA.json, th_film_incentive, "
+    "CORRECT_DATA) states base_rate=0.15 and maximum_effective_rate=0.30 "
+    "with the uplift condition 'do not sum unless expressly permitted'. "
+    "The prior flat 30% encoded the HEADLINE MAXIMUM as guaranteed - the "
+    "exact defect this project's rules forbid. Split into a guaranteed "
+    "15% floor plus a 30% band ceiling that requires confirmation, reusing "
+    "the same discretionary_band mechanism as Mauritius/Malta."
 )
 TH_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="TH", program_slug="th_boi_incentive",
@@ -2182,8 +2190,27 @@ TH_DOCTRINE = register(DoctrineRecord(
     incentive_type="cash_rebate", is_refundable=True, is_transferable=False,
     min_spend_usd=1_400_000.0, annual_cap_usd=None, requires_cultural_test=False,
     citation=_TH_CITATION, source_ref="thailand-business-news+overgrownproductions",
-    tiers=(DoctrineRateTier(tier_id="th-flat-30", rate=0.30, is_band_ceiling=False,
-                             min_qpe_usd=1_400_000.0),),
+    tiers=(
+        DoctrineRateTier(tier_id="th-base-15", rate=0.15, is_band_ceiling=False,
+                         min_qpe_usd=1_400_000.0),
+        DoctrineRateTier(
+            tier_id="th-uplift-ceiling-30", rate=0.30, is_band_ceiling=True,
+            min_qpe_usd=1_400_000.0,
+            conditions=(
+                RateCondition(
+                    condition_id="th-uplift-not-guaranteed",
+                    description="The 30% figure is an 'up to' maximum reached only "
+                                "via BOI uplift criteria; the canonical corpus "
+                                "expressly directs that uplifts are not to be summed "
+                                "unless expressly permitted, so the ceiling is not "
+                                "guaranteed for this production",
+                    quote="'rebate of up to 30% in cash' (thailand-business-news.com); "
+                          "canonical base_rate 0.15, maximum_effective_rate 0.30",
+                    kind="discretionary_band",
+                ),
+            ),
+        ),
+    ),
 ))
 register_rate_rules(rate_rules_for(TH_DOCTRINE))
 
