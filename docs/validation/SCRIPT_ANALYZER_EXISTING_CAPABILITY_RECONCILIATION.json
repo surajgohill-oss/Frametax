@@ -1,0 +1,317 @@
+{
+  "artifact": {
+    "title": "CineGlobe Script Analyzer / Production Cost Engine Existing-Capability Reconciliation",
+    "schema_version": "1.0.0",
+    "repository": "surajgohill-oss/Frametax",
+    "branch": "claude/audit-frametax-features-NZcX5",
+    "scope": "repository reconciliation and runtime evidence only; no implementation",
+    "as_of_date": "2026-08-14",
+    "final_gate": "SCRIPT_ANALYZER_RECONCILIATION_COMPLETE"
+  },
+  "classification_definitions": {
+    "ACTIVE_RUNTIME": "Demonstrably consumed by a mounted endpoint and/or the frontend-served CineGlobe production path.",
+    "IMPLEMENTED_NOT_ACTIVE": "Executable implementation exists but the served CineGlobe path does not consume it.",
+    "PARTIAL": "Useful behavior exists, but the stated capability or its end-to-end handoff is incomplete.",
+    "LEGACY": "Mounted or retained implementation superseded by, or disconnected from, the canonical served path.",
+    "TEST_ONLY": "Only exercised as a fixture, test, or demo and not by served runtime.",
+    "SCHEMA_ONLY": "Persistence or transport shape exists without an active producer/consumer path.",
+    "DOCUMENTATION_ONLY": "Described but not implemented.",
+    "UNKNOWN": "Repository evidence is insufficient to classify."
+  },
+  "executive_conclusion": {
+    "script": "CineGlobe can deterministically parse raw screenplay text into coarse headings, heading-derived locations, character cues, counts and chunks, but that parser is not called by upload, project, or served optimizer paths. The active ProductionPackage layer only reshapes supplied facts and keeps missing facts unknown. No production-breakdown engine exists beyond coarse parser fields and hand-curated Little Utopia facts.",
+    "schedule": "No schedule parser, schedule model, stripboard, shoot-day estimator, grouping engine, or schedule-to-cost handoff exists. Schedule is only a classified document/material-presence category plus unrelated eligibility and constraint fields.",
+    "budget_cost": "CSV budget import and strong deterministic Movie Magic/EP PDF-text parsing exist. The canonical served Little Utopia runtime uses a verified 44-account snapshot rather than the generic import pipeline. Jurisdiction cost normalization is active, but is based on unsourced static 2024-2025 indices and generic default crew/budget assumptions, not actual rate cards.",
+    "bridge": "The manual Bridge workflow, provider provenance, validation, persistence, reconciliation and human disposition are reusable. Script analysis and prebudget operation names are reserved but explicitly unsupported; script-specific packages, response schemas and element reconciliation must be extended.",
+    "reuse_decision_sufficiency": true
+  },
+  "runtime_verification": {
+    "served_frontend_base": "frametax2/frontend/src/api.js -> /api/v1/cineglobe",
+    "served_backend_state": "frametax2/backend/app/api/v1/cineglobe.py -> frametax2/backend/app/demo/little_utopia_state.py:get_state",
+    "direct_runtime_observation": {
+      "production": "The Little Utopia",
+      "budget_known": true,
+      "budget_line_items": 44,
+      "budget_total_usd": 4364393.0,
+      "script_known": false,
+      "script_filename": null,
+      "manually_supplied_script_attributes_known": 8,
+      "missing_inputs": 11,
+      "generated_structures": 177
+    },
+    "targeted_tests": {
+      "command_scope": [
+        "tests/test_budget_parser_text.py",
+        "tests/test_movie_magic_budget_parser.py",
+        "tests/test_production_package_intelligence.py",
+        "tests/test_production_adjustment.py",
+        "tests/bridge/test_manual_run.py",
+        "tests/bridge/test_reconciliation.py"
+      ],
+      "result": "183 passed, 5 deprecation warnings",
+      "broad_test_suite_run": false
+    }
+  },
+  "relevant_file_module_inventory": [
+    {"path":"frametax2/backend/app/ingestion/screenplay_parser.py","area":"script ingestion","classification":"IMPLEMENTED_NOT_ACTIVE","capability":"Raw-text chunking; approximate word/page counts; INT/EXT scene headings; ALL-CAPS character cues; heading-derived locations; confidence and AI-origin flags.","runtime_evidence":"Only callers are a demo script and a unit-test fixture; no API, ingestion commit, project state, or canonical runtime caller."},
+    {"path":"frametax2/backend/app/models/screenplay.py","area":"script persistence","classification":"SCHEMA_ONLY","capability":"ScreenplayDocument, ScreenplayChunk and ExtractedScriptElement tables with source context, confidence and confirmation fields.","runtime_evidence":"Typed Little Utopia document is migration-seeded pending; no active parser-to-table or table-to-optimizer path."},
+    {"path":"frametax2/backend/app/calculators/production_package_intelligence.py","area":"production intelligence","classification":"ACTIVE_RUNTIME","capability":"Honest translation of supplied budget/script/location/travel/people data into ProductionPackage, opportunity hints, missing questions, known/unknown facts and optimizer bridge inputs.","runtime_evidence":"Called by little_utopia_state.py and serialized by GET /api/v1/cineglobe/package; it explicitly extracts nothing new."},
+    {"path":"frametax2/backend/app/api/v1/ingestion.py","area":"document ingestion","classification":"PARTIAL","capability":"Discover, classify, deduplicate, review and commit universal documents, including screenplay/budget/schedule categories and provenance.","runtime_evidence":"Mounted and used by project/library surfaces; committed screenplay/schedule documents are not parsed into production facts."},
+    {"path":"frametax2/backend/app/services/ingestion_classifier.py","area":"document classification","classification":"ACTIVE_RUNTIME","capability":"Filename and PDF-geometry classification, including screenplay and schedule categories.","runtime_evidence":"Used by the mounted ingestion workflow; classification is not content analysis."},
+    {"path":"frametax2/backend/app/api/v1/documents.py","area":"budget upload","classification":"PARTIAL","capability":"Uploads PDF/CSV/XLSX/TXT/FDX and extracts PDF/text, but creates BudgetDocument records regardless of semantic file type.","runtime_evidence":"Mounted API; not connected to the canonical in-memory served production state."},
+    {"path":"frametax2/backend/app/ingestion/budget_parser.py","area":"budget ingestion","classification":"PARTIAL","capability":"CSV parsing, generic free-text rows, and robust Movie Magic/EP PDF-text account parsing with page provenance, rebate exclusion and top-sheet reconciliation.","runtime_evidence":"CSV path is used by mounted budget import; PDF-text parser is used by data-preparation/test code, not the mounted import endpoint."},
+    {"path":"frametax2/backend/app/calculators/classify_budget_line_items.py","area":"budget taxonomy","classification":"ACTIVE_RUNTIME","capability":"Deterministic ATL/BTL, department/spend-category, labor, fixed, compensation and QPE-candidate classification.","runtime_evidence":"Called by the budget parser and reflected in the Little Utopia parsed snapshot; unmatched rows default to BTL/MISC/nonlabor/cash."},
+    {"path":"frametax2/backend/app/api/v1/budgets.py","area":"budget API","classification":"PARTIAL","capability":"Persists parsed CSV line items for an uploaded BudgetDocument.","runtime_evidence":"Mounted; XLSX is accepted but passed to the CSV decoder, PDF is rejected, and results do not update the canonical served state."},
+    {"path":"frametax2/backend/app/models/budget.py","area":"budget persistence","classification":"ACTIVE_RUNTIME","capability":"BudgetDocument and BudgetLineItem with normalized amount, category, source page/row and review status.","runtime_evidence":"Used by mounted document/budget APIs and legacy DB structure calculation; canonical served optimizer uses the in-memory snapshot instead."},
+    {"path":"frametax2/backend/app/data/little_utopia_real_budget.py","area":"known project fixture","classification":"ACTIVE_RUNTIME","capability":"Verified 44-account Movie Magic PDF parse snapshot, account/spend mappings, territorial classifications and $2 reconciliation variance.","runtime_evidence":"Direct source for the canonical Little Utopia state and optimizer package on every served state build."},
+    {"path":"frametax2/backend/app/data/location_cost_benchmarks.py","area":"local cost data","classification":"ACTIVE_RUNTIME","capability":"44 static jurisdiction profiles and regional fallbacks covering travel, crew/equipment/stage/post/VFX indices, payroll, permits, transport, freight, legal and risk assumptions.","runtime_evidence":"Consumed by production_adjustment.py through production_normalization.py in canonical structure pricing."},
+    {"path":"frametax2/backend/app/calculators/production_adjustment.py","area":"cost adjustment","classification":"ACTIVE_RUNTIME","capability":"Deterministic GREENFIELD/EXISTING_BUDGET quantity-rate and indexed adjustments across 13 categories with toggles and trace line items.","runtime_evidence":"Called by compute_local_cost_normalization for each canonical structure, with generic default crew/budget parameters."},
+    {"path":"frametax2/backend/app/calculators/production_normalization.py","area":"production cost normalization","classification":"ACTIVE_RUNTIME","capability":"Travel, FX and non-travel local-cost deltas for candidate jurisdictions.","runtime_evidence":"Called by build_allocated_structures and included in NPC/ranking; airfare/hotel/per-diem/FX are separated from local cost to avoid double counting."},
+    {"path":"frametax2/backend/app/models/cost.py","area":"cost persistence","classification":"SCHEMA_ONLY","capability":"LocalCostBenchmark and UnionFringeRule tables with provenance/as-of/confidence fields.","runtime_evidence":"Canonical served path uses static Python profiles; no populated current DB dataset is evidenced."},
+    {"path":"frametax2/backend/app/calculators/apply_union_fringe_rules.py","area":"fringes","classification":"IMPLEMENTED_NOT_ACTIVE","capability":"Deterministic application of supplied union/fringe rules.","runtime_evidence":"Only the legacy DB full-analysis route can supply it, and that caller passes an empty rule list."},
+    {"path":"frametax2/backend/app/models/fx.py","area":"FX persistence","classification":"SCHEMA_ONLY","capability":"FX rate records with currency pair, rate, date and source.","runtime_evidence":"Canonical served path uses static FX snapshots in production_normalization.py."},
+    {"path":"frametax2/backend/app/api/v1/structures.py","area":"DB structure calculation","classification":"LEGACY","capability":"Loads a project's latest active BudgetDocument lines, invokes run_full_analysis and stores calculation results/snapshots.","runtime_evidence":"Mounted but not the frontend canonical /cineglobe/structures path; cost benchmark is None, fringe rules empty, FX absent, and stacking/qualification integrations remain TODO."},
+    {"path":"frametax2/backend/app/api/v1/optimization.py","area":"legacy optimizer API","classification":"LEGACY","capability":"Generic optimization endpoints with default budget request values.","runtime_evidence":"Mounted, but cineglobe.py explicitly states the served production path bypasses it."},
+    {"path":"frametax2/backend/app/demo/little_utopia_state.py","area":"canonical project state","classification":"ACTIVE_RUNTIME","capability":"Builds Little Utopia facts, real budget package, discovery, allocations, structures, travel/FX/local-cost normalization, incentive pricing and ranking.","runtime_evidence":"Single cached state consumed by all /api/v1/cineglobe routes; production-specific and Mauritius-anchored."},
+    {"path":"frametax2/backend/app/api/v1/cineglobe.py","area":"served API","classification":"ACTIVE_RUNTIME","capability":"Serializes production, package, structures, economics, known facts and evidence from LittleUtopiaState.","runtime_evidence":"Frontend's default API base points here."},
+    {"path":"frametax2/backend/app/models/library_document.py","area":"document provenance","classification":"ACTIVE_RUNTIME","capability":"Universal Document, DocumentVersion and DocumentVersionSource with checksum/current-version/source metadata.","runtime_evidence":"Used by ingestion/library and linked optionally from typed budget/screenplay records."},
+    {"path":"frametax2/backend/app/models/project_fact.py","area":"known variables","classification":"ACTIVE_RUNTIME","capability":"One current fact per project/key with source type, source document/version/location, extraction confidence and review status.","runtime_evidence":"Mounted facts endpoints and Little Utopia state hydration use these concepts; there is no generic precedence resolver."},
+    {"path":"frametax2/backend/app/models/project.py","area":"project persistence","classification":"ACTIVE_RUNTIME","capability":"Project identity and known project-level variables.","runtime_evidence":"Used by project/library APIs; canonical optimizer state remains Little Utopia-specific."},
+    {"path":"frametax2/backend/app/models/production.py","area":"production structures","classification":"PARTIAL","capability":"Persistent production structures, constraints, components, scenario and immutable calculation input snapshots.","runtime_evidence":"DB schema exists and one synchronization path persists generated structures; canonical optimizer primarily returns in-memory string-identified structures."},
+    {"path":"frametax2/backend/app/bridge/schema.py","area":"Bridge contract","classification":"PARTIAL","capability":"Audit packages/responses plus reserved script_production_analysis and prebudget_structure_generation operation names.","runtime_evidence":"Reserved operations are explicitly unsupported; existing response schema is economics/audit finding-oriented."},
+    {"path":"frametax2/backend/app/bridge/manual_run.py","area":"manual AI Bridge","classification":"ACTIVE_RUNTIME","capability":"Self-contained package export, provider response import, validation, response persistence, multi-provider reconciliation and human disposition without paid API calls.","runtime_evidence":"Used by manual Bridge runs and tested; current package builder is Little Utopia economics-specific."},
+    {"path":"frametax2/backend/app/bridge/package_builder.py","area":"Bridge packaging","classification":"ACTIVE_RUNTIME","capability":"Builds current economics/QPE/qualification/structure audit packages from Little Utopia state.","runtime_evidence":"Does not export screenplay text/chunks or production-breakdown inputs; generic schedule and script-treatment metadata fields are not populated for script analysis."},
+    {"path":"frametax2/backend/app/bridge/reconciliation.py","area":"AI reconciliation","classification":"ACTIVE_RUNTIME","capability":"Deterministic multi-provider finding reconciliation and agreement/disagreement recording.","runtime_evidence":"Active for supported audit operations; finding keys/schema require extension for scene/element reconciliation."},
+    {"path":"frametax2/backend/scripts/run_production_demo.py","area":"example integration","classification":"TEST_ONLY","capability":"Wires a synthetic script parse and CSV budget into ProductionPackage.","runtime_evidence":"Executable demo only; not mounted or called by the frontend."},
+    {"path":"frametax2/backend/alembic/versions/0063_migrate_little_utopia.py","area":"fixture migration","classification":"SCHEMA_ONLY","capability":"Seeds universal and typed Little Utopia budget/screenplay documents plus 44 budget lines and known facts.","runtime_evidence":"Screenplay extraction_status remains pending and no chunks/elements are seeded; budget rows are migrated from verified data, not parsed by runtime."},
+    {"path":"frametax2/frontend/src/api.js","area":"frontend data path","classification":"ACTIVE_RUNTIME","capability":"Loads /cineglobe production/package/structures and sibling project/document/ingestion APIs.","runtime_evidence":"Confirms the canonical optimizer path and the separate, disconnected ingestion path."},
+    {"path":"frametax2/frontend/src/lib/ingestion.js","area":"handoff disclosure","classification":"ACTIVE_RUNTIME","capability":"Declares upload persistence but explicitly blocks treating uploads as served-production inputs because the state is disconnected.","runtime_evidence":"Used by production intake UI; no hidden upload-to-optimizer handoff."},
+    {"path":"frametax2/docs/architecture/CAPABILITY_LEDGER.md","area":"architecture evidence","classification":"DOCUMENTATION_ONLY","capability":"Documents canonical path, local-cost runtime, script parser disconnection, absence of detailed breakdown and data limitations.","runtime_evidence":"Corroborating documentation; source/runtime inspection controls where inconsistent."}
+  ],
+  "active_runtime_paths": {
+    "script": {
+      "path": ["universal document discovery/classification/commit", "Document/DocumentVersion persistence", "STOP"],
+      "canonical_little_utopia_exception": ["one-time human read of screenplay opening/synopsis/look-book", "hardcoded SCRIPT_REQUIREMENTS and eight script_known_attributes", "build_production_package", "known/unknown cultural and production hints", "structure discovery/qualification inputs"],
+      "result": "Uploaded script content does not reach ScreenplayParseResult, typed chunks/elements, production breakdown, schedule, cost estimate, or optimizer. Little Utopia script.known remains false."
+    },
+    "budget": {
+      "generic_api_path": ["POST /documents/upload -> BudgetDocument", "POST /projects/{id}/budgets/import", "parse_budget_csv", "classify_parsed_items", "BudgetLineItem persistence", "STOP before canonical /cineglobe state"],
+      "canonical_little_utopia_path": ["little_utopia_real_budget verified 44-account snapshot", "ProductionPackage BudgetIntelligence", "account allocation and movable-spend hints", "production structures", "incentive/local-cost/travel/FX pricing", "NPC ranking"],
+      "legacy_db_path": ["BudgetDocument/lines", "POST /structures/{id}/calculate", "run_full_analysis with missing cost/fringe/FX/stacking inputs", "StructureCalculationResult"],
+      "result": "Budget intelligence is active for Little Utopia, but a newly uploaded project budget does not become the canonical served optimizer input."
+    },
+    "schedule": {
+      "path": ["universal document discovery/classification/commit", "project material-presence flag", "STOP"],
+      "result": "No parse, schedule facts, stripboard, day estimate, grouping, duration model or downstream cost/optimizer input."
+    },
+    "known_production_variables": {
+      "path": ["facts/people/location/economics endpoints or fixture/DB hydration", "LittleUtopiaState recomputation", "ProductionPackage known facts and questions", "discovery/qualification/allocation/structure pricing", "NPC ranking"],
+      "limitations": "Active write/hydration is production-specific in places and the precedence hierarchy is not centralized. Generic project facts do not automatically instantiate a generic optimizer state."
+    },
+    "project_to_optimizer": ["frontend /cineglobe loaders", "cineglobe.py get_state()", "LittleUtopiaState", "build_production_package", "global discovery", "production structure generation", "account allocation", "economic evaluation including travel/FX/local cost and incentives", "ranking/recommendation", "serialized frontend views"]
+  },
+  "disconnected_paths": [
+    {"from":"screenplay upload/DocumentVersion","to":"ScreenplayDocument raw text/chunks/elements","classification":"CONNECT","impact":"No typed script analysis begins."},
+    {"from":"parse_screenplay_text","to":"ingestion/API/project runtime","classification":"CONNECT","impact":"Implemented coarse parser is demo/test-only."},
+    {"from":"ScreenplayParseResult","to":"ProductionPackage in served runtime","classification":"CONNECT","impact":"ProductionPackage supports the input but receives none."},
+    {"from":"script elements","to":"production breakdown taxonomy","classification":"BUILD_NEW","impact":"Only headings, location strings and character cues exist."},
+    {"from":"production breakdown","to":"schedule","classification":"BUILD_NEW","impact":"No schedule engine exists."},
+    {"from":"schedule","to":"cost quantities/durations","classification":"BUILD_NEW","impact":"No schedule-sensitive estimate can be generated."},
+    {"from":"generic uploaded budget","to":"canonical CineGlobe state","classification":"CONNECT","impact":"New project budgets cannot drive served structures/optimizer."},
+    {"from":"PDF budget text parser","to":"mounted budget import API","classification":"CONNECT","impact":"Robust Movie Magic parser is not exposed by the import endpoint."},
+    {"from":"XLSX upload/import","to":"valid structured parsing","classification":"REPLACE","impact":"Endpoint accepts XLSX but sends binary content through the CSV decoder."},
+    {"from":"FDX upload","to":"screenplay parser","classification":"BUILD_NEW","impact":"FDX is stored but no Final Draft XML parser exists."},
+    {"from":"LocalCostBenchmark/UnionFringeRule/FXRate DB tables","to":"canonical pricing","classification":"CONNECT_AFTER_DATA","impact":"Served path uses static Python assumptions instead."},
+    {"from":"Bridge reserved script operation","to":"package/response/reconciliation/persistence","classification":"EXTEND","impact":"Protocol is reusable but script contracts are absent."},
+    {"from":"ProjectFact provenance","to":"global source-precedence resolver","classification":"EXTEND","impact":"Schema can store sources/overrides, but no universal hierarchy selects controlling values."}
+  ],
+  "script_capability_matrix": [
+    {"capability":"script upload","existing_component":"universal ingestion and documents APIs","status":"PARTIAL","runtime_path":"upload/classify/commit only","output_schema":"Document/DocumentVersion; documents.py also creates BudgetDocument","confidence_provenance":"checksum, source and version supported","gap":"no semantic screenplay dispatch","reuse_recommendation":"CONNECT"},
+    {"capability":"PDF text extraction","existing_component":"documents.py and PDF extraction utilities","status":"PARTIAL","runtime_path":"budget-document extraction only","output_schema":"BudgetDocument.raw_text","confidence_provenance":"document source retained","gap":"not routed to ScreenplayDocument/parser","reuse_recommendation":"CONNECT"},
+    {"capability":"FDX parsing","existing_component":"FDX extension accepted by upload","status":"MISSING","runtime_path":"storage only","output_schema":"none","confidence_provenance":"file provenance only","gap":"no XML parser or semantic extraction","reuse_recommendation":"BUILD_NEW"},
+    {"capability":"page count","existing_component":"screenplay_parser.py","status":"PARTIAL","runtime_path":"demo/test only","output_schema":"ScreenplayParseResult.page_count","confidence_provenance":"approximate word_count/200 unless supplied","gap":"not format/page-layout accurate or connected","reuse_recommendation":"EXTEND_AND_CONNECT"},
+    {"capability":"scenes and sluglines","existing_component":"screenplay_parser.py regex","status":"PARTIAL","runtime_path":"demo/test only","output_schema":"ExtractedElement(type=scene_heading)","confidence_provenance":"confidence and context fields","gap":"no stable scene IDs, page eighths or full scene body","reuse_recommendation":"EXTEND_AND_CONNECT"},
+    {"capability":"interior/exterior","existing_component":"scene heading value","status":"PARTIAL","runtime_path":"implicit in extracted heading","output_schema":"unparsed heading string","confidence_provenance":"deterministic","gap":"not normalized to a field","reuse_recommendation":"EXTEND"},
+    {"capability":"day/night","existing_component":"scene heading value","status":"PARTIAL","runtime_path":"implicit only","output_schema":"unparsed heading string","confidence_provenance":"deterministic","gap":"not normalized; variants unresolved","reuse_recommendation":"EXTEND"},
+    {"capability":"locations and recurrence","existing_component":"heading-derived location extraction","status":"PARTIAL","runtime_path":"demo/test only","output_schema":"ExtractedElement(type=location)","confidence_provenance":"confidence/context","gap":"no canonicalization, recurrence, practical/stage classification or location graph","reuse_recommendation":"EXTEND_AND_CONNECT"},
+    {"capability":"characters","existing_component":"ALL-CAPS cue heuristic","status":"PARTIAL","runtime_path":"demo/test only","output_schema":"ExtractedElement(type=character)","confidence_provenance":"confidence/context","gap":"false positives, no normalization or scene linkage","reuse_recommendation":"EXTEND_AND_CONNECT"},
+    {"capability":"dialogue and speaking roles","existing_component":"none","status":"MISSING","runtime_path":"none","output_schema":"none","confidence_provenance":"none","gap":"no dialogue blocks, speaking-role counts or burden","reuse_recommendation":"BUILD_NEW"},
+    {"capability":"cast tier/burden and availability","existing_component":"people facts and generic crew manifest","status":"PARTIAL","runtime_path":"manual facts only","output_schema":"people/role facts; CrewManifest counts","confidence_provenance":"ProjectFact supports source/review","gap":"not derived from scenes/dialogue and no availability model","reuse_recommendation":"EXTEND"},
+    {"capability":"background/extras and crowds","existing_component":"none","status":"MISSING","runtime_path":"none","output_schema":"none","confidence_provenance":"none","gap":"no extraction or quantity model","reuse_recommendation":"BUILD_NEW"},
+    {"capability":"props/wardrobe/makeup/prosthetics","existing_component":"budget category classifier only","status":"MISSING_FOR_SCRIPT","runtime_path":"budget lines only","output_schema":"spend categories","confidence_provenance":"source row/page","gap":"no scene-element extraction or complexity","reuse_recommendation":"BUILD_NEW; REUSE taxonomy names"},
+    {"capability":"vehicles/picture vehicles","existing_component":"budget category classifier","status":"MISSING_FOR_SCRIPT","runtime_path":"budget lines only","output_schema":"transport/equipment categories","confidence_provenance":"budget provenance","gap":"no script extraction or counts","reuse_recommendation":"BUILD_NEW"},
+    {"capability":"animals and minors","existing_component":"none","status":"MISSING","runtime_path":"none","output_schema":"none","confidence_provenance":"none","gap":"no detection, scene links, hours or compliance flags","reuse_recommendation":"BUILD_NEW"},
+    {"capability":"stunts/stunt performers/weapons/intimacy","existing_component":"ScriptIntelligence stunt_intensity placeholder only","status":"MISSING","runtime_path":"caller-supplied attribute may be represented","output_schema":"AttributeFact","confidence_provenance":"state/confidence","gap":"no extraction, per-scene elements, performers or safety requirements","reuse_recommendation":"EXTEND schema; BUILD extraction"},
+    {"capability":"practical effects/VFX","existing_component":"caller-supplied vfx_intensity and budget categories","status":"PARTIAL","runtime_path":"Little Utopia manual moderate VFX attribute and real VFX budget lines","output_schema":"AttributeFact and BudgetIntelligence","confidence_provenance":"manual medium confidence; budget source","gap":"no shot/scene counts or practical-vs-digital breakdown","reuse_recommendation":"EXTEND"},
+    {"capability":"period/production design/set builds","existing_component":"caller-supplied period attributes and budget categories","status":"PARTIAL","runtime_path":"Little Utopia manual facts plus budget-derived physical requirements","output_schema":"AttributeFact; physical_requirements","confidence_provenance":"manual source notes outside parser","gap":"no scene-based construction/design complexity","reuse_recommendation":"EXTEND"},
+    {"capability":"marine/water/aerial/weather","existing_component":"script attribute placeholders; manual marine fact","status":"PARTIAL","runtime_path":"Little Utopia manual marine/open-water fact only","output_schema":"AttributeFact and fixture requirements","confidence_provenance":"manual evidence note","gap":"underwater/aerial/weather and per-scene logistics absent","reuse_recommendation":"EXTEND"},
+    {"capability":"specialty equipment/construction","existing_component":"budget taxonomy and local cost indices","status":"PARTIAL","runtime_path":"budget-derived categories only","output_schema":"BudgetIntelligence/physical_requirements","confidence_provenance":"budget source","gap":"no script-to-quantity/requirement derivation","reuse_recommendation":"REUSE downstream categories; BUILD extraction"},
+    {"capability":"music/performance","existing_component":"music_heavy attribute placeholder and music budget category","status":"PARTIAL","runtime_path":"caller-supplied or budget only","output_schema":"AttributeFact/BudgetIntelligence","confidence_provenance":"supported","gap":"no on-camera performance, playback or licensing extraction","reuse_recommendation":"EXTEND"},
+    {"capability":"travel and units","existing_component":"LocationIntelligence/TravelIntelligence and travel normalization","status":"PARTIAL","runtime_path":"manual/caller inputs and real budget","output_schema":"location roles, movements, seats, hotel/per diem","confidence_provenance":"known/unknown and confidence","gap":"no script-derived company moves, units or travel quantities","reuse_recommendation":"REUSE_AND_CONNECT"},
+    {"capability":"unusual safety/logistics","existing_component":"free-form requirements and questions","status":"PARTIAL","runtime_path":"Little Utopia fixture facts only","output_schema":"requirements/missing inputs","confidence_provenance":"manual notes","gap":"no systematic taxonomy/extractor","reuse_recommendation":"EXTEND"},
+    {"capability":"chunking for AI","existing_component":"screenplay_parser.py","status":"IMPLEMENTED_NOT_ACTIVE","runtime_path":"demo/test only","output_schema":"ScreenplayChunk-like dataclass values","confidence_provenance":"chunk index/text","gap":"not persisted; no confidentiality/redaction or model workflow","reuse_recommendation":"REUSE_AND_EXTEND"}
+  ],
+  "scheduling_capability_matrix": [
+    {"capability":"schedule upload/classification","existing_component":"universal ingestion","status":"PARTIAL","runtime_path":"Document material-presence only","gap":"no semantic parser","reuse_recommendation":"REUSE document pipeline; BUILD parser"},
+    {"capability":"stripboard/scene schedule model","existing_component":"none","status":"MISSING","runtime_path":"none","gap":"no schedule entity or scene-day assignment","reuse_recommendation":"BUILD_NEW"},
+    {"capability":"shoot-day estimation/pages per day","existing_component":"CrewManifest.shoot_days default=30","status":"MISSING","runtime_path":"generic local-cost assumption only","gap":"not calculated from script or schedule","reuse_recommendation":"BUILD_NEW; do not treat default as schedule"},
+    {"capability":"location/day-night grouping","existing_component":"none","status":"MISSING","runtime_path":"none","gap":"no grouping or stripboard constraints","reuse_recommendation":"BUILD_NEW"},
+    {"capability":"company moves/unit splits","existing_component":"travel/location roles","status":"PARTIAL","runtime_path":"caller-supplied movement records only","gap":"no schedule derivation","reuse_recommendation":"REUSE schema concepts; BUILD scheduler"},
+    {"capability":"cast availability","existing_component":"people facts","status":"MISSING_FOR_SCHEDULE","runtime_path":"no scheduling consumer","gap":"no availability windows or constraint solver","reuse_recommendation":"EXTEND"},
+    {"capability":"prep/wrap/duration assumptions","existing_component":"hotel/per-diem default 35 days vs 30 shoot days","status":"PARTIAL","runtime_path":"production_adjustment defaults","gap":"fixed generic assumptions, not departmental or schedule-driven","reuse_recommendation":"REPLACE_WITH confirmed inputs/model"},
+    {"capability":"schedule-to-cost handoff","existing_component":"none","status":"MISSING","runtime_path":"none","gap":"no quantities/durations passed to budget estimate","reuse_recommendation":"BUILD_NEW"}
+  ],
+  "budget_cost_capability_matrix": [
+    {"capability":"CSV budget parsing","status":"ALREADY_SUPPORTED","component":"budget_parser.py + budgets.py","runtime":"mounted generic API; not canonical optimizer","data_quality":"source rows and deterministic classification"},
+    {"capability":"Movie Magic/EP PDF-text parsing","status":"ALREADY_SUPPORTED","component":"budget_parser.py","runtime":"data preparation/tests; not mounted import","data_quality":"account/page provenance and reconciliation"},
+    {"capability":"XLSX parsing","status":"MISSING","component":"budgets.py accepts extension only","runtime":"binary passed to CSV parser","data_quality":"invalid implementation path"},
+    {"capability":"native MBD parsing","status":"MISSING","component":"none","runtime":"none","data_quality":"unsupported proprietary format"},
+    {"capability":"budget-line taxonomy","status":"ALREADY_SUPPORTED","component":"classify_budget_line_items.py","runtime":"parser and Little Utopia snapshot","data_quality":"broad deterministic taxonomy; unmatched defaults are risky"},
+    {"capability":"department totals and ATL/BTL/post/other","status":"ALREADY_SUPPORTED","component":"ProductionPackage BudgetIntelligence","runtime":"canonical Little Utopia package","data_quality":"derived from supplied parsed lines"},
+    {"capability":"production scale assumptions","status":"PARTIALLY_SUPPORTED","component":"ProductionBudgetParams and CrewManifest defaults","runtime":"canonical local-cost normalization","data_quality":"hardcoded generic defaults, not project-derived"},
+    {"capability":"local labor costs","status":"PARTIALLY_SUPPORTED","component":"crew_rate_index/payroll_fringe_pct","runtime":"canonical local-cost normalization","data_quality":"index/percentage only; no job-specific actual rates or cited source"},
+    {"capability":"local crew rates","status":"MISSING","component":"none","runtime":"none","data_quality":"no roles, union scales, overtime or prep/wrap rates"},
+    {"capability":"fringes","status":"PARTIALLY_SUPPORTED","component":"static payroll_fringe_pct; dormant union rule calculator/schema","runtime":"generic percentage active; actual union rules inactive and unpopulated","data_quality":"not a validated fringe/CBA dataset"},
+    {"capability":"equipment costs","status":"PARTIALLY_SUPPORTED","component":"equipment_rental_index and LA baseline","runtime":"canonical local-cost normalization","data_quality":"generic multiplier, not packages/rate cards"},
+    {"capability":"stage costs","status":"PARTIALLY_SUPPORTED","component":"stage_facility_index and LA baseline","runtime":"canonical local-cost normalization","data_quality":"generic multiplier, not stage inventory/rates"},
+    {"capability":"location costs","status":"PARTIALLY_SUPPORTED","component":"permit/visa/local transport/legal indices","runtime":"canonical local-cost normalization","data_quality":"no location fees, permit matrix or site quantities"},
+    {"capability":"travel/lodging/per diem","status":"ALREADY_SUPPORTED_WITH_ASSUMPTIONS","component":"travel model and static profiles","runtime":"canonical normalization","data_quality":"quantity-rate trace exists; quantities/rates are generic unless supplied"},
+    {"capability":"vehicles/construction/materials","status":"PARTIALLY_SUPPORTED","component":"budget categories only","runtime":"actual budget reporting","data_quality":"no estimate rate/quantity datasets"},
+    {"capability":"insurance/bond/contingency/finance/post","status":"PARTIALLY_SUPPORTED","component":"budget classifier and actual-budget categories; contingency adjustment","runtime":"actual budget intelligence and some normalization","data_quality":"no generative estimate formulas for most categories"},
+    {"capability":"exchange rates","status":"PARTIALLY_SUPPORTED","component":"production_normalization static snapshots; FXRate DB schema","runtime":"static snapshot active, DB rates inactive","data_quality":"not live; provenance/as-of differs by path"},
+    {"capability":"jurisdiction multipliers","status":"ALREADY_SUPPORTED_WITH_LIMITATIONS","component":"44 profiles plus regional fallbacks","runtime":"canonical NPC ranking","data_quality":"static unsourced generic benchmarks"},
+    {"capability":"schedule-sensitive costs","status":"MISSING","component":"none beyond supplied shoot/hotel/per-diem day counts","runtime":"defaults only","data_quality":"no schedule engine or departmental durations"},
+    {"capability":"quantity x rate x duration","status":"PARTIALLY_SUPPORTED","component":"production_adjustment line items","runtime":"canonical local-cost normalization","data_quality":"calculation pattern exists, but actual quantities/rates/durations do not"},
+    {"capability":"uploaded-budget supersession","status":"PARTIALLY_SUPPORTED","component":"BudgetDocument plus legacy calculate path","runtime":"not canonical served state","data_quality":"schema supports actual values, global controlling precedence does not"}
+  ],
+  "cost_model_levels": {
+    "level_1": {
+      "readiness": "PARTIALLY_SUPPORTED",
+      "already_supported": ["44 jurisdiction cost profiles plus regional fallback", "travel/FX/local-cost delta calculators", "global production structure comparison and ranking", "actual budget category aggregation"],
+      "missing": ["script-to-production-scale inference", "schedule/day estimate", "validated cost-index provenance", "generic new-project state builder independent of Little Utopia", "estimate from screenplay when no budget exists"],
+      "decision": "EXTEND and CONNECT existing normalization/ranking; BUILD the upstream screenplay-scale/schedule estimate inputs."
+    },
+    "level_2": {
+      "readiness": "PARTIALLY_SUPPORTED",
+      "already_supported": ["department/spend taxonomy", "ProductionPackage known/unknown variables and questions", "location/travel roles", "CrewManifest and ProductionBudgetParams shapes", "quantity-rate adjustment trace"],
+      "missing": ["structured full production breakdown", "schedule-to-quantity conversion", "departmental crew/equipment/stage/location assumptions", "prep/shoot/wrap by department", "actual local datasets"],
+      "decision": "REUSE package/taxonomy/calculator contracts; EXTEND inputs; BUILD breakdown and scheduling logic."
+    },
+    "level_3": {
+      "readiness": "MISSING",
+      "already_supported": ["actual line-budget parsing/persistence", "generic line-item classification", "some quantity-rate line-item output shapes"],
+      "missing": ["detailed budget generator", "role/department crew counts", "rates/overtime/fringes/CBA", "prep/shoot/wrap durations", "equipment/stage/location/construction/material rate cards", "detailed travel/transport quantities", "insurance/bond/finance formulas", "source/override integration for every estimate line"],
+      "decision": "BUILD_NEW estimate engine while REUSING parser, taxonomy, provenance and actual-budget supersession concepts."
+    }
+  },
+  "local_cost_data_inventory": {
+    "primary_dataset": "frametax2/backend/app/data/location_cost_benchmarks.py",
+    "classification": "HARDCODED_ASSUMPTION_AND_GENERIC_MULTIPLIER",
+    "actual_rate_data_present": false,
+    "explicit_jurisdiction_count": 44,
+    "explicit_iso2": ["AE","AR","AT","AU","BE","BG","BR","CA","CH","CL","CO","CZ","DE","DK","ES","FI","FR","GB","GR","HR","HU","IE","IL","IN","IT","JP","KR","MA","MT","MU","MX","NL","NO","NZ","PL","PT","RO","RS","SE","SG","SI","TH","US","ZA"],
+    "fallback": "regional profile where available, otherwise US-shaped LOW-confidence placeholder",
+    "confidence_counts": {"HIGH":30,"MEDIUM":14,"LOW_explicit":0},
+    "categories": ["LAX/JFK airfare assumptions","hotel","apartment","ATL/BTL per diem","crew rate index","equipment rental index","stage index","post index","VFX index","work permit","visa","local transport","freight/carnet percent","payroll fringe percent","payroll overhead percent","legal/accounting index","local-hire minimum","catering","FX risk","contingency adjustment","schedule risk multiplier"],
+    "granularity": "one profile per country or named country hub; no city/region, occupation, union, seniority, overtime, package, facility, season or vendor dimensions",
+    "currency": "USD values and LA=1.0 indices",
+    "effective_date": "module-wide 2024-2025 reference-rate note only; no per-record as-of date",
+    "provenance": {"data_sources_populated":0,"records_with_data_sources":0,"citation_quality":"none in record data"},
+    "runtime_usage": "ACTIVE_RUNTIME through production_adjustment -> compute_local_cost_normalization -> Little Utopia structure pricing and NPC ranking",
+    "runtime_inputs": "EXISTING_BUDGET mode; gross budget supplied; generic CrewManifest and baseline sub-budget defaults retained; airfare/hotel/per-diem/FX toggled off because separate normalization handles them",
+    "missingness": ["validated source citations", "effective dates per field", "actual crew role rates", "union/CBA/fringe rules", "equipment packages", "stage/facility inventory and rates", "location fees", "construction/material rates", "regional/city variation", "project-specific quantities and schedule"]
+  },
+  "bridge_reuse_assessment": {
+    "status": "REUSE_CORE_EXTEND_CONTRACTS",
+    "supports_no_paid_api_workflow": true,
+    "reuse_unchanged": ["manual folder/package export", "provider identity and response records", "content hashes", "schema validation boundary", "import workflow", "multi-provider reconciliation framework", "human disposition", "provenance/persistence patterns"],
+    "extend": ["script-specific package builder", "screenplay/chunk confidentiality and redaction policy", "stable scene/chunk/element identifiers", "production-breakdown request taxonomy", "structured element/interpretation response schema", "element-level confidence and evidence spans", "reconciliation keys for extractions rather than audit findings", "persistence into staged then user-confirmed facts/elements"],
+    "not_reusable_as_is": ["current Little Utopia economics package builder", "audit-oriented ReviewResponse/Finding schema", "current finding agreement semantics for per-scene extractions"],
+    "reserved_but_not_implemented": ["script_production_analysis", "prebudget_structure_generation"],
+    "prohibited_role": "Bridge/model output must not invent local rates, schedule facts, or controlling budget economics; it may extract/interpret with evidence and await deterministic calculation/user confirmation."
+  },
+  "deterministic_ai_responsibility_matrix": [
+    {"task":"file type/format detection, checksums, versioning","owner":"DETERMINISTIC","secondary":"USER_CONFIRMED on ambiguous classification"},
+    {"task":"FDX structural parsing and PDF text/layout extraction","owner":"DETERMINISTIC","secondary":"USER_CONFIRMED for extraction failures"},
+    {"task":"page count/eighths, scene numbering, slugline tokenization","owner":"DETERMINISTIC","secondary":"AI_EXTRACTION only for malformed text"},
+    {"task":"character cue/dialogue linkage and recurrence counts","owner":"DETERMINISTIC","secondary":"AI_EXTRACTION for ambiguous formatting"},
+    {"task":"props, wardrobe, makeup, vehicles, animals, weapons, crowds and specialty element mentions","owner":"AI_EXTRACTION","secondary":"USER_CONFIRMED; deterministic evidence-span validation"},
+    {"task":"stunt/VFX/SFX/design/logistics complexity","owner":"AI_INTERPRETATION","secondary":"USER_CONFIRMED; store rationale/evidence/confidence"},
+    {"task":"scene grouping, company moves and schedule calculation","owner":"DETERMINISTIC","secondary":"USER_CONFIRMED production constraints"},
+    {"task":"cast availability, intended locations, crew plan, stage/practical decisions","owner":"USER_CONFIRMED","secondary":"structured assumptions with provenance"},
+    {"task":"local crew/equipment/stage/location/travel rate data","owner":"EXTERNAL_DATA","secondary":"USER_CONFIRMED negotiated quotes override"},
+    {"task":"quantity x rate x duration, fringes, currency conversion and estimate aggregation","owner":"DETERMINISTIC","secondary":"none"},
+    {"task":"actual uploaded budget and schedule","owner":"USER_CONFIRMED","secondary":"DETERMINISTIC parsing/reconciliation"},
+    {"task":"incentive QPE, structure economics and ranking","owner":"DETERMINISTIC","secondary":"existing optimizer remains authoritative"},
+    {"task":"source conflict and ambiguous creative inference","owner":"USER_CONFIRMED","secondary":"AI_INTERPRETATION may present alternatives, not decide authority"}
+  ],
+  "source_of_truth_compatibility": {
+    "target_hierarchy": ["ACTUAL_USER_BUDGET_SCHEDULE_KNOWN_VARIABLE", "CONFIRMED_PRODUCTION_ASSUMPTION", "STRUCTURED_SCRIPT_EXTRACTION", "ESTIMATED_MODEL_DEFAULT"],
+    "compatibility": "PARTIAL",
+    "supported_foundations": [
+      "Document/DocumentVersion/DocumentVersionSource preserve version and origin.",
+      "BudgetDocument/BudgetLineItem and ScreenplayDocument/Chunk/Element can link typed data to document versions.",
+      "ProjectFact stores source type, source version/location, extraction confidence and review status.",
+      "ExtractedScriptElement stores confidence and confirmed state.",
+      "StructureCalculationResult can retain input document version, fingerprint and immutable input snapshot.",
+      "Ingestion commit is human-gated and user override concepts exist for several Little Utopia inputs."
+    ],
+    "unsupported_or_disconnected": [
+      "No centralized precedence resolver implements the full hierarchy.",
+      "No Schedule model provides an authoritative user schedule layer.",
+      "No estimate-line provenance/override model exists for Level 1-3 outputs.",
+      "Generic project facts/budgets do not automatically rebuild the canonical served optimizer state.",
+      "Little Utopia uses mixed fixture, process-local override and DB hydration patterns rather than one generalized source service."
+    ],
+    "canonical_implication": "Reuse existing document/fact/version provenance; extend it with typed source tier and controlling-value resolution rather than creating a parallel authority system."
+  },
+  "little_utopia_available_fixtures": {
+    "script": {"availability":"PARTIAL","details":"Migration references The Little Utopia 1_30_26.pdf, but extraction is pending. Runtime has a source note from opening scenes plus synopsis/look-book and eight manually transcribed attributes; no full raw screenplay parse, chunks or extracted elements. script.known=false."},
+    "budget": {"availability":"STRONG","details":"Verified 44-account snapshot; authoritative gross $4,364,393, leaf sum $4,364,395, documented $2 variance; category, page, territorial and allocation mappings. The original file path is migration metadata, not a live runtime parse."},
+    "schedule": {"availability":"NONE","details":"No schedule document content, parsed schedule, shoot-day derivation or stripboard fixture found."},
+    "known_variables": {"availability":"PARTIAL_STRONG","details":"Verified writer/director/cast facts, production facts, location requirements, economics controls, territorial classifications and overrides exist; producer and multiple production questions remain unknown."},
+    "parsed_data": {"availability":"BUDGET_ONLY","details":"44 parsed budget accounts. No full screenplay parse and no schedule parse."},
+    "breakdown_data": {"availability":"WEAK_MANUAL","details":"Physical requirements are derived from actual budget account spend and manually sourced script requirements, explicitly not from screenplay text analysis."},
+    "estimated_data": {"availability":"COARSE","details":"Travel, FX and local-cost normalization use static profiles and generic crew/budget defaults; not a screenplay-derived estimate."},
+    "acceptance_fixture_reuse": ["real budget and reconciliation", "document/version provenance", "manual script facts as comparison labels, not ground truth extraction output", "known/unknown question behavior", "existing structures/ranking only as downstream compatibility target"]
+  },
+  "exact_gaps": {
+    "script_ingestion": ["semantic file dispatch", "FDX parser", "screenplay PDF layout/page/eighth parser", "active parser-to-schema persistence", "generic project-to-package connection"],
+    "production_breakdown": ["stable scene graph", "dialogue/speaking roles", "per-scene production element taxonomy", "element recurrence/quantity", "complexity interpretation with evidence", "user confirmation workflow"],
+    "scheduling": ["schedule schema/parser", "stripboard", "pages/day and shoot-day estimation", "location/day-night/cast grouping", "company moves and unit planning", "availability constraints", "prep/wrap calendars", "schedule-to-cost handoff"],
+    "cost_engine": ["script-to-scale Level 1 estimator", "departmental Level 2 generator", "Level 3 line-budget generator", "validated local datasets", "schedule-sensitive quantities", "actual role/equipment/stage/location/construction/material rates", "generalized actual-budget supersession"],
+    "runtime_architecture": ["multi-project canonical state builder", "uploaded inputs to served optimizer", "central source precedence", "Bridge script contracts"],
+    "testing": ["dedicated screenplay parser tests", "FDX/PDF screenplay fixtures", "schedule tests", "script-to-breakdown E2E", "breakdown-to-cost E2E", "actual-budget supersession tests", "script Bridge export/import/reconciliation tests"]
+  },
+  "reuse_candidates": [
+    {"component":"Document/DocumentVersion ingestion and provenance","action":"REUSE_AND_CONNECT"},
+    {"component":"screenplay_parser deterministic coarse pass","action":"EXTEND_AND_CONNECT"},
+    {"component":"ScreenplayDocument/Chunk/ExtractedScriptElement schemas","action":"EXTEND_AND_CONNECT"},
+    {"component":"ProductionPackage known/unknown/question and bridge-input model","action":"REUSE_AND_EXTEND"},
+    {"component":"budget parser and Movie Magic/EP logic","action":"REUSE_AND_CONNECT"},
+    {"component":"budget taxonomy and BudgetIntelligence","action":"REUSE_WITH default-classification hardening"},
+    {"component":"production adjustment quantity-rate trace and toggles","action":"REUSE_WITH validated inputs"},
+    {"component":"travel/FX/local cost separation","action":"REUSE"},
+    {"component":"ProjectFact and immutable calculation provenance","action":"REUSE_AND_EXTEND"},
+    {"component":"manual Bridge export/import/validation/reconciliation/persistence","action":"REUSE_CORE_EXTEND_SCRIPT_CONTRACTS"},
+    {"component":"canonical production structure and optimizer pipeline","action":"CONNECT_ONLY; DO_NOT_REBUILD"}
+  ],
+  "obsolete_legacy_components": [
+    {"component":"app/api/v1/optimization.py generic optimizer endpoints","reason":"Mounted but superseded for current CineGlobe UI by /api/v1/cineglobe Little Utopia state."},
+    {"component":"app/api/v1/structures.py DB full-analysis calculation path","reason":"Mounted but not canonical; critical production inputs are passed as empty/None/TODO."},
+    {"component":"scripts/run_production_demo.py synthetic integration","reason":"Useful example/test fixture, not a production path or authoritative architecture."}
+  ],
+  "unresolved_architecture_questions": [
+    "Which input formats are mandatory for the first active screenplay path: FDX, screenplay PDF, Fountain, Final Draft text, or a bounded subset?",
+    "Should ScreenplayDocument remain the typed canonical script root, or should typed extraction attach directly to universal DocumentVersion with ScreenplayDocument as a projection?",
+    "What stable identifier/versioning policy governs scenes and extracted elements across revised drafts?",
+    "Which extracted elements require explicit user confirmation before they can affect schedule/cost?",
+    "What schedule interchange formats and user-authored schedule source will be canonical?",
+    "Will Level 1-3 estimates share BudgetLineItem or use a distinct estimate-line model so actual and estimated lines cannot be confused?",
+    "What verified external datasets and licensing terms will replace the static local-cost assumptions?",
+    "How should city/region/union/season/vendor-specific rates resolve beneath country-level cost profiles?",
+    "Where should the universal source-precedence resolver live so ingestion, estimates and optimizer consume the same controlling values?",
+    "How should a generalized multi-project state builder replace the current Little Utopia-only in-memory state without reopening the optimizer itself?",
+    "What screenplay confidentiality, retention and redaction requirements govern Bridge package export?"
+  ]
+}
