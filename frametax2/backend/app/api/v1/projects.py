@@ -29,6 +29,7 @@ from app.models.project_fact import ProjectFact
 from app.models.project_location_requirement import ProjectLocationRequirement
 from app.models.project_activity import ProjectActivity
 from app.models.production import ProductionStructure
+from app.models.budget import BudgetDocument
 from app.demo.little_utopia_state import PRODUCTION_NAME
 from app.schemas.project import MaterialsCompleteness, ProjectCard, ProjectCreate, ProjectRead, ProjectUpdate
 
@@ -346,11 +347,29 @@ async def get_project_record(project_id: str, db: AsyncSession = Depends(get_db)
         .order_by(ProjectActivity.created_at.desc()).limit(20)
     )).scalars().all()
 
+    # Read-time fallback, not a mutation: a BudgetDocument can exist for a
+    # project whose Project.total_budget_usd was never set — either it
+    # predates the commit-time routing in material_routing.py, or it was
+    # imported via the standalone /budgets/import endpoint, which has never
+    # written Project.total_budget_usd. Rather than requiring a backfill or
+    # re-import, fall back to the most recently ingested budget document's
+    # own declared total. Computed on read only; the column itself is left
+    # untouched here.
+    effective_total_budget_usd = project.total_budget_usd
+    if effective_total_budget_usd is None:
+        fallback_budget_doc = (await db.execute(
+            select(BudgetDocument)
+            .where(BudgetDocument.project_id == project.id, BudgetDocument.total_budget_raw.is_not(None))
+            .order_by(BudgetDocument.created_at.desc())
+        )).scalars().first()
+        if fallback_budget_doc is not None:
+            effective_total_budget_usd = fallback_budget_doc.total_budget_raw
+
     return {
         "project": {
             "id": str(project.id), "title": project.title, "logline": project.logline,
             "genre": project.genre, "format": project.format, "lifecycle": project.lifecycle,
-            "total_budget_usd": project.total_budget_usd, "target_shoot_year": project.target_shoot_year,
+            "total_budget_usd": effective_total_budget_usd, "target_shoot_year": project.target_shoot_year,
             "notes": project.notes,
             # Whether /api/v1/cineglobe/* (Overview/Workspace/Scenarios —
             # the actual evaluation engine) currently serves THIS project.

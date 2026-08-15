@@ -286,7 +286,32 @@ def _slugify(title: str) -> str:
 
 @router.post("/candidates/{candidate_id}/commit")
 async def commit_candidate(candidate_id: str, db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
-    return await _commit_candidate_impl(candidate_id, db)
+    result = await _commit_candidate_impl(candidate_id, db)
+
+    # Material routing (New Project Ingestor closeout): _commit_candidate_impl
+    # deliberately never touches facts/optimizer state (see module docstring)
+    # — that's still true. This is a separate step, run only after a commit
+    # succeeds, that makes the existing budget parser / SA-1 screenplay
+    # pipeline aware a new DocumentVersion exists for them to process. A
+    # category with no processor, or a duplicate-source commit with no new
+    # version, is a no-op here.
+    document_version_id = result.get("document_version_id")
+    if document_version_id:
+        from app.services.material_routing import route_committed_material
+
+        candidate = (await db.execute(
+            select(IngestionCandidate).where(IngestionCandidate.id == candidate_id)
+        )).scalar_one_or_none()
+        if candidate is not None and candidate.proposed_project_id is not None:
+            routing_result = await route_committed_material(
+                db, project_id=candidate.proposed_project_id,
+                category=candidate.proposed_category,
+                document_version_id=document_version_id,
+            )
+            await db.commit()
+            result["material_routing"] = routing_result
+
+    return result
 
 
 async def _commit_candidate_impl(candidate_id: str, db: AsyncSession, auto_master: bool = True) -> dict[str, Any]:
