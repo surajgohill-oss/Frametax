@@ -50,17 +50,25 @@ export default function ProductionHero({
     ? humanizeToken(topStructure.structure_type)
     : null;
 
-  // Mature UI restoration (Part G): the Hero's key art is this PROJECT's
-  // own master artwork (the same real Asset row Project Record's Library
-  // card already resolves, GET /api/v1/projects/{id}/artwork) — never
-  // Little Utopia's bundled image substituted for another project. Little
-  // Utopia's own master artwork happens to be real and already committed,
-  // so it renders through this exact same generic path, not a special
-  // case. `artworkFailed` is the honest fallback when a project genuinely
-  // has no master artwork yet (the endpoint 404s) — the bundled image is
-  // used ONLY as a last resort so the Hero never renders visually empty.
+  // Visible UI defect fix: the Part G change above made this fetch
+  // unconditional for every project, including Little Utopia. Little
+  // Utopia's registered master Asset row (little-utopia/utopia.png) is a
+  // real deck-cover image with "The Little Utopia / A Feature Film /
+  // Mediterranean Drama" baked into the pixels — confirmed by reading the
+  // file directly, not assumed. Rendered under this component's own
+  // `.ph-hero-title` text, that produced a large duplicated title
+  // treatment. `little-utopia-hero-clean.png` (see the Full-Art Hero Rule
+  // above) is the ONLY text-free version of this artwork that exists
+  // anywhere — every other candidate Asset row for this project is also a
+  // deck/lookbook cover with its own baked title. Restoring the exact
+  // pre-Part-G source for Little Utopia specifically is therefore the only
+  // fix available without generating or substituting new artwork. Every
+  // other project (starting with FVD) keeps the generic per-project fetch
+  // Part G added — that path is correct and already verified working.
+  const LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae";
+  const isLittleUtopia = production?.project_id === LITTLE_UTOPIA_PROJECT_ID;
   const [artworkFailed, setArtworkFailed] = useState(false);
-  const artworkUrl = production?.project_id
+  const artworkUrl = production?.project_id && !isLittleUtopia
     ? `${API_ORIGIN}/api/v1/projects/${production.project_id}/artwork`
     : null;
   const heroSrc = artworkUrl && !artworkFailed ? artworkUrl : heroArt;
