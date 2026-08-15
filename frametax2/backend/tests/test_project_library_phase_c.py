@@ -9,6 +9,7 @@ to roll back, and nothing here may mutate it.
 """
 from __future__ import annotations
 
+import json
 import uuid
 
 import pytest
@@ -146,7 +147,13 @@ async def test_project_asset_artwork(db: AsyncSession, project: Project):
 
 async def test_project_facts_with_provenance(db: AsyncSession, project: Project):
     facts = (await db.execute(select(ProjectFact).where(ProjectFact.project_id == project.id))).scalars().all()
-    assert len(facts) == 11
+    # 11 from migration 0063, plus the 2 territorial-evidence facts migrated
+    # by the canonical evaluation runtime unification (see the assertions
+    # below and test_canonical_project_economics.py) — that phase moved this
+    # evidence out of a Little-Utopia-specific module constant and into
+    # generic persisted project state, which is what made the canonical
+    # engine drivable from any project's own rows.
+    assert len(facts) == 13
     by_key = {f.fact_key: f for f in facts}
 
     assert by_key["gross_budget_usd"].value == "4364393.0" or float(by_key["gross_budget_usd"].value) == pytest.approx(4364393.0, abs=0.01)
@@ -155,6 +162,14 @@ async def test_project_facts_with_provenance(db: AsyncSession, project: Project)
     # Genuinely unknown fact — never fabricated.
     assert by_key["lead_cast_nationality"].value is None
     assert by_key["lead_cast_nationality"].review_status == "pending"
+
+    # Territorial evidence: the accounts the budget's own cover page states
+    # are incurred outside the base jurisdiction (the LA post/editorial
+    # segment). Read from the document, never inferred from payer/SPV.
+    assert json.loads(by_key["budget_accounts_outside_base_jurisdiction"].value) == [
+        "5000", "5100", "5200", "5300", "5400", "5500", "6500"
+    ]
+    assert json.loads(by_key["budget_offshore_payroll_accounts"].value) == []
 
     for fact in facts:
         assert fact.source_type == "recovered_demo_state"
