@@ -158,15 +158,15 @@ export default function ProjectRecord() {
         </div>
         <div className="rec-idact">
           {isServedProduction ? (
-            <button className="hero-action primary" onClick={() => navigate("/production/overview")}>
-              Open Production →
+            <button className="hero-action primary" onClick={() => navigate(`/projects/${project.id}/workspace`)}>
+              Enter Workspace →
             </button>
           ) : (
             <button className="hero-action primary" onClick={runEvaluation} disabled={evalRunning}>
               {evalRunning ? "Evaluating…" : analysis.evaluation_begun ? "Re-run Evaluation" : "Begin Evaluation"}
             </button>
           )}
-          {analysis.evaluation_begun && (
+          {!isServedProduction && analysis.evaluation_begun && (
             <button className="hero-action" onClick={() => navigate(`/projects/${project.id}/workspace`)}>
               Enter Workspace →
             </button>

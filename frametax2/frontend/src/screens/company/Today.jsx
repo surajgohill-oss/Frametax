@@ -126,7 +126,7 @@ export default function Today() {
       headline,
       momentum,
       impactUsd,
-      route: "/production/overview",
+      route: `/projects/${production.project_id}/workspace`,
     },
   ];
 
@@ -227,7 +227,7 @@ export default function Today() {
         <section className="ovx-sec tdy-attn">
           <div className="oh">
             <b>Questions Requiring Your Attention</b><span className="n">{attentionItems.length}</span>
-            <button className="act" onClick={() => navigate("/production/workspace")}>View all questions →</button>
+            <button className="act" onClick={() => navigate(`/projects/${production.project_id}/workspace`)}>View all questions →</button>
           </div>
           {attentionItems.length ? (
             <div className="row-list">

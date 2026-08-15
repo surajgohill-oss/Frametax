@@ -31,7 +31,7 @@ export default function CompanyGlobe() {
           One production is currently active in this workspace. Hover the marker for a preview,
           click to focus, click again (or Open) to enter the production.
         </p>
-        <div className="portfolio-chip" onClick={() => navigate("/production/overview")}>
+        <div className="portfolio-chip" onClick={() => navigate(`/projects/${production.project_id}/workspace`)}>
           <span className="dot" style={{ background: STATUS_HEX.gold }} />
           <div>
             <div className="row-title">{production.production_name}</div>
@@ -50,7 +50,7 @@ export default function CompanyGlobe() {
           obscuredRightPx={focused ? 320 : 0}
           onPointHover={(pt) => setPreview(pt)}
           onPointClick={(pt) => {
-            if (focused) navigate("/production/overview");
+            if (focused) navigate(`/projects/${production.project_id}/workspace`);
             else setFocused(true);
           }}
         />
@@ -71,7 +71,7 @@ export default function CompanyGlobe() {
             <div><dt>Gross budget</dt><dd><Money value={production.gross_budget_usd} /></dd></div>
             <div><dt>Incentive rate</dt><dd className="mono">{(production.rate * 100).toFixed(0)}%</dd></div>
           </dl>
-          <button className="primary-action" onClick={() => navigate("/production/overview")}>Open production →</button>
+          <button className="primary-action" onClick={() => navigate(`/projects/${production.project_id}/workspace`)}>Open production →</button>
         </div>
       )}
     </div>

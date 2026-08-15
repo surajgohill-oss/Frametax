@@ -28,7 +28,8 @@ export default function Sidebar() {
     projectId: production?.project_id,
     backendLifecycle: production?.lifecycle,
   });
-  const onProduction = location.pathname.startsWith("/production");
+  const onProduction = location.pathname.startsWith("/production")
+    || (!!production?.project_id && location.pathname.startsWith(`/projects/${production.project_id}/workspace`));
 
   return (
     <nav className="cg-sidebar" aria-label="Application navigation">
@@ -60,7 +61,7 @@ export default function Sidebar() {
       <div className="cg-group">Productions</div>
       <button
         className={`cg-navlink cg-prodrow ${onProduction ? "on" : ""}`}
-        onClick={() => navigate("/production/overview")}
+        onClick={() => navigate(production?.project_id ? `/projects/${production.project_id}/workspace` : "/production/overview")}
       >
         <span className={`dot ${meta.tier}`} />
         <span className="cg-prodtext">
