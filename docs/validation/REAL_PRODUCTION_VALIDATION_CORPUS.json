@@ -1,0 +1,580 @@
+{
+  "schema_version": "1.0",
+  "phase": "SA-1.5",
+  "generated_at": "2026-08-14T00:00:00-07:00",
+  "scope": "Canonical REAL PRODUCTION VALIDATION CORPUS for the Script Analyzer and the future production-cost engine. Every fixture REFERENCES authoritative Company Library DocumentVersion records; no source document is copied and no actual budget is modified.",
+  "resolution_method": "Bounded named-project pass over the existing Company Library (52 projects). No broad repository reconciliation was performed.",
+  "oracle_policy": "Acceptance oracles were READ FROM each source document's own declared grand total and cross-checked against the document's own section hierarchy. No oracle was written into parser output to make a check pass.",
+  "counts": {
+    "named_projects": 6,
+    "resolved": 5,
+    "unresolved": 1,
+    "with_screenplay": 5,
+    "with_budget": 5,
+    "with_schedule": 1,
+    "with_dood": 1,
+    "holdout_eligible": 4,
+    "deep_fixtures": 1
+  },
+  "fixtures": [
+    {
+      "fixture_key": "little_utopia",
+      "display_name": "The Little Utopia",
+      "project_id": "fa5cade5-0669-4816-bfe6-72146f8d3bae",
+      "resolved": true,
+      "materials": [
+        {
+          "category": "screenplay",
+          "status": "AVAILABLE",
+          "document_version_id": "7a1b15ff-341b-441f-919a-f1e0afb59d6b",
+          "filename": "The Little Utopia 1_30_26.pdf",
+          "checksum_prefix": "c5213c9ced713e07",
+          "note": "A superseded earlier version also exists and is retained."
+        },
+        {
+          "category": "budget",
+          "status": "AVAILABLE",
+          "document_version_id": "ee810c4f-8af3-4bdd-ba00-c5989c104172",
+          "filename": "The Little Utopia Budget Mauritius 3rd June 2025 v1 (1).pdf",
+          "checksum_prefix": "4b98f8236a4a6029",
+          "note": "Parsed: 44 leaf line items."
+        },
+        {
+          "category": "schedule",
+          "status": "MISSING",
+          "document_version_id": null,
+          "filename": null,
+          "checksum_prefix": null,
+          "note": null
+        },
+        {
+          "category": "dood",
+          "status": "MISSING",
+          "document_version_id": null,
+          "filename": null,
+          "checksum_prefix": null,
+          "note": null
+        },
+        {
+          "category": "deck",
+          "status": "AVAILABLE",
+          "document_version_id": "a9349662-1d7e-4c83-81a8-623a54a4986f",
+          "filename": "TheLittleUtopia_Slide.pptx",
+          "checksum_prefix": "4f6d0d54d5323161",
+          "note": null
+        },
+        {
+          "category": "lookbook",
+          "status": "AVAILABLE",
+          "document_version_id": "2965f692-7db6-44bd-abdb-59e5fadfe198",
+          "filename": "THE LITTLE UTOPIA LOOK BOOK .pdf",
+          "checksum_prefix": "6a42245486712a01",
+          "note": null
+        },
+        {
+          "category": "artwork",
+          "status": "AVAILABLE",
+          "document_version_id": "b345b116-4f65-4d3d-a96b-d96ce7139e35",
+          "filename": "utopia.png",
+          "checksum_prefix": "a6df89962c92588f",
+          "note": null
+        }
+      ],
+      "script_side": {
+        "screenplay_document_version_id": "7a1b15ff-341b-441f-919a-f1e0afb59d6b",
+        "screenplay_available": true,
+        "parsed": false,
+        "scene_count": null,
+        "character_count": null,
+        "speaking_character_count": null,
+        "scripted_location_count": null,
+        "page_count": null
+      },
+      "held_out": {
+        "gross_budget_usd": 4364393.0,
+        "declared_total_source_usd": 4364393.0,
+        "atl_total_usd": null,
+        "btl_total_usd": null,
+        "fringes_usd": null,
+        "contingency_usd": null,
+        "completion_bond_usd": null,
+        "shoot_days": null,
+        "production_geography": "Mauritius",
+        "incentive_modeled_usd": null,
+        "net_after_incentive_usd": null,
+        "qpe_usd": null,
+        "cast_role_count": null,
+        "schedule_document_version_id": null,
+        "dood_document_version_id": null
+      },
+      "budget_reconciliation": {
+        "status": "RECONCILED_SOURCE_ROUNDING",
+        "acceptance_oracle_usd": 4364393.0,
+        "source_declared_total_usd": 4364393.0,
+        "parsed_leaf_sum_usd": 4364395.0,
+        "leaf_gap_usd": 2.0,
+        "basis": "Authoritative top-sheet grand total vs the sum of 44 parsed leaf accounts.",
+        "evidence": "The $2.00 variance is a pre-existing, already-disclosed source-document rounding artefact (two independent $1 discrepancies in the source), surfaced in-runtime by budget_reconciliation_variance_usd. Not a parser defect."
+      },
+      "validation_modes": [
+        "OPTIMIZER_REGRESSION",
+        "INGESTION_VALIDATION"
+      ],
+      "holdout_eligible": false,
+      "provenance": "Company Library import; canonical worldwide-optimizer regression fixture.",
+      "notes": "Reserved as the optimizer regression anchor (winner Mauritius, NPC $3,057,794.90). Deliberately NOT the primary Script Analyzer calibration fixture \u2014 its assumptions must not leak into other projects."
+    },
+    {
+      "fixture_key": "fvd",
+      "display_name": "F#K Valentine's Day",
+      "project_id": "6c6f1c13-2d49-4bbc-bafb-2a12efa93112",
+      "resolved": true,
+      "materials": [
+        {
+          "category": "screenplay",
+          "status": "AVAILABLE",
+          "document_version_id": "d25b035b-dc6f-471a-a611-6ed397444889",
+          "filename": "F#K Valentine's Day- pdf.pdf",
+          "checksum_prefix": "4caea6619bcadf93",
+          "note": "Parsed by the SA-1 structural parser: 99 scenes, 38 characters."
+        },
+        {
+          "category": "budget",
+          "status": "AVAILABLE",
+          "document_version_id": "cf33eae1-aa4e-4e4e-80d2-ce737f5a373e",
+          "filename": "V-BRAT_V8_Greece_041224 TOPSHEET.pdf",
+          "checksum_prefix": "253e80e987a0aa3c",
+          "note": "Parsed: 34 leaf line items."
+        },
+        {
+          "category": "schedule",
+          "status": "MISSING",
+          "document_version_id": null,
+          "filename": null,
+          "checksum_prefix": null,
+          "note": null
+        },
+        {
+          "category": "dood",
+          "status": "MISSING",
+          "document_version_id": null,
+          "filename": null,
+          "checksum_prefix": null,
+          "note": null
+        },
+        {
+          "category": "deck",
+          "status": "AVAILABLE",
+          "document_version_id": "cb0faa80-4a62-4e93-95e1-3f30cc6bda5b",
+          "filename": "Fck Valentines Day - - 2.9.24 deck.pdf",
+          "checksum_prefix": "09913b6899fd743b",
+          "note": null
+        },
+        {
+          "category": "artwork",
+          "status": "AVAILABLE",
+          "document_version_id": "8e13f3b1-3ec2-4696-8543-af93a0099e43",
+          "filename": "Fck Valentines Day - - 2.9.24 deck (cover).jpeg",
+          "checksum_prefix": "fa74b427c97cbd86",
+          "note": null
+        }
+      ],
+      "script_side": {
+        "screenplay_document_version_id": "d25b035b-dc6f-471a-a611-6ed397444889",
+        "screenplay_available": true,
+        "parsed": true,
+        "scene_count": 99,
+        "character_count": 38,
+        "speaking_character_count": null,
+        "scripted_location_count": null,
+        "page_count": null
+      },
+      "held_out": {
+        "gross_budget_usd": 4517687.0,
+        "declared_total_source_usd": 4517687.0,
+        "atl_total_usd": null,
+        "btl_total_usd": null,
+        "fringes_usd": null,
+        "contingency_usd": null,
+        "completion_bond_usd": null,
+        "shoot_days": 18,
+        "production_geography": "Greece",
+        "incentive_modeled_usd": 518804.0,
+        "net_after_incentive_usd": 3998883.0,
+        "qpe_usd": null,
+        "cast_role_count": null,
+        "schedule_document_version_id": null,
+        "dood_document_version_id": null
+      },
+      "budget_reconciliation": {
+        "status": "RECONCILED_EXACT",
+        "acceptance_oracle_usd": 4517687.0,
+        "source_declared_total_usd": 4517687.0,
+        "parsed_leaf_sum_usd": 4517687.0,
+        "leaf_gap_usd": 0.0,
+        "basis": "Top-sheet grand total vs the sum of 34 parsed leaf accounts.",
+        "evidence": "Exact. The source is a top-sheet, so leaf accounts and the declared grand total are the same population."
+      },
+      "validation_modes": [
+        "INGESTION_VALIDATION",
+        "SCRIPT_BREAKDOWN_VALIDATION"
+      ],
+      "holdout_eligible": true,
+      "provenance": "Company Library import. Greece is established by the source budget itself (filename and content: V-BRAT_V8_Greece), not inferred by the optimizer.",
+      "notes": "FVD_REAL_PROJECT_FIXTURE = VERIFIED. Greece appearing in a runtime result is supported by source evidence and is not a defect. BUDGET_ESTIMATION_VALIDATION becomes available once an estimator exists."
+    },
+    {
+      "fixture_key": "lips_like_sugar",
+      "display_name": "Lips Like Sugar",
+      "project_id": "ab10b319-978e-44d3-9331-af2a5f2cccc2",
+      "resolved": true,
+      "materials": [
+        {
+          "category": "screenplay",
+          "status": "AVAILABLE",
+          "document_version_id": "a55c5a35-1e55-4003-b68b-716be946cc01",
+          "filename": "LIPS OFFICIAL.pdf",
+          "checksum_prefix": "c6735c1a3826e6b4",
+          "note": "Not yet structurally parsed."
+        },
+        {
+          "category": "budget",
+          "status": "AVAILABLE",
+          "document_version_id": "f2333b72-fcf7-4437-943f-4765357fe20e",
+          "filename": "v7LLS_RevBudget_T1B_27days_022524.pdf",
+          "checksum_prefix": "37814d8b33358fd7",
+          "note": "52-page detailed budget (crew, prep/shoot/wrap, rates, fringes)."
+        },
+        {
+          "category": "schedule",
+          "status": "MISSING",
+          "document_version_id": null,
+          "filename": null,
+          "checksum_prefix": null,
+          "note": null
+        },
+        {
+          "category": "dood",
+          "status": "MISSING",
+          "document_version_id": null,
+          "filename": null,
+          "checksum_prefix": null,
+          "note": null
+        }
+      ],
+      "script_side": {
+        "screenplay_document_version_id": "a55c5a35-1e55-4003-b68b-716be946cc01",
+        "screenplay_available": true,
+        "parsed": false,
+        "scene_count": null,
+        "character_count": null,
+        "speaking_character_count": null,
+        "scripted_location_count": null,
+        "page_count": null
+      },
+      "held_out": {
+        "gross_budget_usd": 11983654.0,
+        "declared_total_source_usd": 11983654.0,
+        "atl_total_usd": 3174975.0,
+        "btl_total_usd": 8293679.0,
+        "fringes_usd": null,
+        "contingency_usd": null,
+        "completion_bond_usd": null,
+        "shoot_days": 27,
+        "production_geography": "Los Angeles and surrounding",
+        "incentive_modeled_usd": 1503074.0,
+        "net_after_incentive_usd": 10480580.0,
+        "qpe_usd": null,
+        "cast_role_count": null,
+        "schedule_document_version_id": null,
+        "dood_document_version_id": null
+      },
+      "budget_reconciliation": {
+        "status": "RECONCILED_DECLARED_TOTAL_LEAF_GAP",
+        "acceptance_oracle_usd": 11983654.0,
+        "source_declared_total_usd": 11983654.0,
+        "parsed_leaf_sum_usd": 9638143.0,
+        "leaf_gap_usd": 2345511.0,
+        "basis": "The source's own declared grand total, cross-checked against its own section hierarchy: Total Above-The-Line $3,174,975 + Total Below-The-Line $8,293,679 = Total Above and Below-The-Line $11,468,654, leaving a $515,000 contingency/bond block to the $11,983,654 grand total.",
+        "evidence": "The oracle was READ FROM the document, not written in. Flat leaf-line extraction under-covers by $2,345,511 on this 52-page detailed budget because the parser sums a mixed population of top-sheet category rows and detail rows and does not apply the budget's ATL/BTL/fringe/contingency hierarchy. A known parser-coverage limit belonging to the deferred L1/L2/L3 budget work \u2014 NOT a disagreement with the source."
+      },
+      "validation_modes": [
+        "INGESTION_VALIDATION",
+        "SCRIPT_BREAKDOWN_VALIDATION"
+      ],
+      "holdout_eligible": true,
+      "provenance": "Company Library import. 27-day shoot is corroborated by the budget filename and content. The Los Angeles basis is an externally declared production fact; this bounded pass found only a weak 'CA' token in the budget text and does not claim document confirmation.",
+      "notes": "High-value detailed budget: crew, prep/shoot/wrap, rates, equipment, transport, fringes."
+    },
+    {
+      "fixture_key": "underwater",
+      "display_name": "Underwater",
+      "project_id": "f1292c56-0288-4575-91ec-1f00081f07a0",
+      "resolved": true,
+      "materials": [
+        {
+          "category": "screenplay",
+          "status": "AVAILABLE",
+          "document_version_id": "fd10435d-8298-4143-97ca-1e381d2eb951",
+          "filename": "Underwater 3CC Draft 1.5.21 (319) (2).pdf",
+          "checksum_prefix": "2546fd9cf3a7560a",
+          "note": "Not yet structurally parsed."
+        },
+        {
+          "category": "budget",
+          "status": "AVAILABLE",
+          "document_version_id": "d2a9bbf7-5ea9-4dad-b97f-dfecf283600f",
+          "filename": "Underwater Budget 9-3 (1).pdf",
+          "checksum_prefix": "9edafd1b17db1766",
+          "note": "31-page detailed budget."
+        },
+        {
+          "category": "schedule",
+          "status": "MISSING",
+          "document_version_id": null,
+          "filename": null,
+          "checksum_prefix": null,
+          "note": null
+        },
+        {
+          "category": "dood",
+          "status": "MISSING",
+          "document_version_id": null,
+          "filename": null,
+          "checksum_prefix": null,
+          "note": null
+        },
+        {
+          "category": "deck",
+          "status": "AVAILABLE",
+          "document_version_id": "e295556d-0598-4d63-94ae-321413712ba3",
+          "filename": "Underwater Presentation.pptx (1) (1) (1).pdf",
+          "checksum_prefix": "b7c77f7fece30e0f",
+          "note": null
+        },
+        {
+          "category": "artwork",
+          "status": "AVAILABLE",
+          "document_version_id": "f292973c-0979-4496-995d-1a04c6522781",
+          "filename": "Underwater Presentation.pptx (1) (1) (1) (cover).jpeg",
+          "checksum_prefix": "1fb6ee925d5bade6",
+          "note": null
+        }
+      ],
+      "script_side": {
+        "screenplay_document_version_id": "fd10435d-8298-4143-97ca-1e381d2eb951",
+        "screenplay_available": true,
+        "parsed": false,
+        "scene_count": null,
+        "character_count": null,
+        "speaking_character_count": null,
+        "scripted_location_count": null,
+        "page_count": null
+      },
+      "held_out": {
+        "gross_budget_usd": 7998944.0,
+        "declared_total_source_usd": 7998944.0,
+        "atl_total_usd": 2731485.0,
+        "btl_total_usd": 3319416.0,
+        "fringes_usd": 1025143.0,
+        "contingency_usd": 727800.0,
+        "completion_bond_usd": 195100.0,
+        "shoot_days": 30,
+        "production_geography": null,
+        "incentive_modeled_usd": null,
+        "net_after_incentive_usd": null,
+        "qpe_usd": null,
+        "cast_role_count": null,
+        "schedule_document_version_id": null,
+        "dood_document_version_id": null
+      },
+      "budget_reconciliation": {
+        "status": "RECONCILED_DECLARED_TOTAL_LEAF_GAP",
+        "acceptance_oracle_usd": 7998944.0,
+        "source_declared_total_usd": 7998944.0,
+        "parsed_leaf_sum_usd": 7086368.0,
+        "leaf_gap_usd": 912576.0,
+        "basis": "FULLY reconciled from the document's own section totals: ATL $2,731,485 + BTL $3,319,416 = $6,050,901 (equals the document's own 'Total Above and Below-The-Line'); + Fringes $1,025,143 + contingency $727,800 + bond $195,100 = $7,998,944, exactly the acceptance oracle.",
+        "evidence": "The strongest reconciliation in the corpus: every component of the oracle is independently present in the source. The $912,576 leaf-sum gap is purely a flat-extraction coverage limit (the fringe/contingency/bond blocks are section totals in a column-extracted layout, not account-code rows)."
+      },
+      "validation_modes": [
+        "INGESTION_VALIDATION",
+        "SCRIPT_BREAKDOWN_VALIDATION"
+      ],
+      "holdout_eligible": true,
+      "provenance": "Company Library import. The budget's own top sheet states Shoot: 30 Days (6x 5-Day Weeks), Pre-Production 5 Weeks, Post 24 Weeks.",
+      "notes": "Independent actual-budget fixture with a fully component-reconcilable oracle."
+    },
+    {
+      "fixture_key": "the_system",
+      "display_name": "The System",
+      "project_id": "e1f2444d-4eac-410e-9c92-45637b8f2ae0",
+      "resolved": true,
+      "materials": [
+        {
+          "category": "screenplay",
+          "status": "AVAILABLE",
+          "document_version_id": "7eebb8f5-2296-43d3-a878-09c22b384191",
+          "filename": "The System - 2021 - production  draft black.pdf",
+          "checksum_prefix": "8987953664ea190e",
+          "note": "Not yet structurally parsed."
+        },
+        {
+          "category": "budget",
+          "status": "AVAILABLE",
+          "document_version_id": "37c6f745-616d-4b0e-8df4-6f666207566d",
+          "filename": "The System Budget v2.8.pdf",
+          "checksum_prefix": "6c0eb888cad40eba",
+          "note": "37-page detailed budget."
+        },
+        {
+          "category": "schedule",
+          "status": "AVAILABLE",
+          "document_version_id": "5e5faef7-a43b-4c80-8a48-e4397f124c2f",
+          "filename": "The System DOOD Schedule v1.0.pdf",
+          "checksum_prefix": "6c059dab801916c4",
+          "note": "Current. Two superseded versions retained: THE SYSTEM PROD SCHEDULE .xlsx and The System HorC_Schedule.pdf."
+        },
+        {
+          "category": "dood",
+          "status": "AVAILABLE",
+          "document_version_id": "5e5faef7-a43b-4c80-8a48-e4397f124c2f",
+          "filename": "The System DOOD Schedule v1.0.pdf",
+          "checksum_prefix": "6c059dab801916c4",
+          "note": "Genuine 'Day Out of Days Report for Cast Members', dated 06/21 onward. Same DocumentVersion as the schedule \u2014 one artefact, two roles."
+        },
+        {
+          "category": "finance_plan",
+          "status": "MISSING",
+          "document_version_id": null,
+          "filename": null,
+          "checksum_prefix": null,
+          "note": "No separate finance-plan document is present in the Company Library for this project in this bounded pass."
+        }
+      ],
+      "script_side": {
+        "screenplay_document_version_id": "7eebb8f5-2296-43d3-a878-09c22b384191",
+        "screenplay_available": true,
+        "parsed": false,
+        "scene_count": null,
+        "character_count": null,
+        "speaking_character_count": null,
+        "scripted_location_count": null,
+        "page_count": null
+      },
+      "held_out": {
+        "gross_budget_usd": 4324058.0,
+        "declared_total_source_usd": 4324058.0,
+        "atl_total_usd": 2370132.0,
+        "btl_total_usd": 1611855.0,
+        "fringes_usd": null,
+        "contingency_usd": null,
+        "completion_bond_usd": null,
+        "shoot_days": 20,
+        "production_geography": "Mississippi (Jackson)",
+        "incentive_modeled_usd": null,
+        "net_after_incentive_usd": null,
+        "qpe_usd": null,
+        "cast_role_count": null,
+        "schedule_document_version_id": "5e5faef7-a43b-4c80-8a48-e4397f124c2f",
+        "dood_document_version_id": "5e5faef7-a43b-4c80-8a48-e4397f124c2f"
+      },
+      "budget_reconciliation": {
+        "status": "RECONCILED_DECLARED_TOTAL_LEAF_GAP",
+        "acceptance_oracle_usd": 4324058.0,
+        "source_declared_total_usd": 4324058.0,
+        "parsed_leaf_sum_usd": 4079890.0,
+        "leaf_gap_usd": 244168.0,
+        "basis": "The source's own declared grand total, cross-checked against its own hierarchy: TOTAL ABOVE-THE-LINE $2,370,132 + Total Below-The-Line $1,611,855 = $3,981,987 (equals the document's own 'Total Above and Below-The-Line'), leaving $342,071 of fringes/contingency/bond to the $4,324,058 grand total.",
+        "evidence": "Oracle read from the document. The $244,168 leaf gap is the same flat-extraction coverage limit seen on the other detailed budgets."
+      },
+      "validation_modes": [
+        "INGESTION_VALIDATION",
+        "SCRIPT_BREAKDOWN_VALIDATION"
+      ],
+      "holdout_eligible": true,
+      "provenance": "Company Library import. Mississippi is evidenced by 'Jackson' in the budget; 20 shooting days is corroborated in the budget text; the DOOD is a genuine Day Out of Days cast report.",
+      "notes": "THE DEEP FIXTURE. The only project in the corpus carrying SCRIPT + SCHEDULE + DOOD + ACTUAL BUDGET together. This is the future held-out target for script -> requirements -> schedule prediction. SA-1.5 establishes the linkage ONLY; it does not attempt to reproduce the schedule from the screenplay."
+    },
+    {
+      "fixture_key": "tetrad",
+      "display_name": "Tetrad",
+      "project_id": null,
+      "resolved": false,
+      "materials": [
+        {
+          "category": "screenplay",
+          "status": "UNRESOLVED",
+          "document_version_id": null,
+          "filename": null,
+          "checksum_prefix": null,
+          "note": null
+        },
+        {
+          "category": "budget",
+          "status": "UNRESOLVED",
+          "document_version_id": null,
+          "filename": null,
+          "checksum_prefix": null,
+          "note": null
+        },
+        {
+          "category": "schedule",
+          "status": "UNRESOLVED",
+          "document_version_id": null,
+          "filename": null,
+          "checksum_prefix": null,
+          "note": null
+        },
+        {
+          "category": "dood",
+          "status": "UNRESOLVED",
+          "document_version_id": null,
+          "filename": null,
+          "checksum_prefix": null,
+          "note": null
+        }
+      ],
+      "script_side": {
+        "screenplay_document_version_id": null,
+        "screenplay_available": false,
+        "parsed": false,
+        "scene_count": null,
+        "character_count": null,
+        "speaking_character_count": null,
+        "scripted_location_count": null,
+        "page_count": null
+      },
+      "held_out": {
+        "gross_budget_usd": 3700593.0,
+        "declared_total_source_usd": null,
+        "atl_total_usd": null,
+        "btl_total_usd": null,
+        "fringes_usd": null,
+        "contingency_usd": null,
+        "completion_bond_usd": null,
+        "shoot_days": null,
+        "production_geography": "Sydney, Australia",
+        "incentive_modeled_usd": 1322457.0,
+        "net_after_incentive_usd": null,
+        "qpe_usd": 3306143.0,
+        "cast_role_count": null,
+        "schedule_document_version_id": null,
+        "dood_document_version_id": null
+      },
+      "budget_reconciliation": {
+        "status": "NO_BUDGET",
+        "acceptance_oracle_usd": 3700593.0,
+        "source_declared_total_usd": null,
+        "parsed_leaf_sum_usd": null,
+        "leaf_gap_usd": null,
+        "basis": "No source document available to reconcile against.",
+        "evidence": "Tetrad is NOT present in the Company Library. A bounded search across all 52 projects, all document titles and all DocumentVersion filenames returned zero matches. The known figures are recorded as externally-declared expectations so the fixture can be completed the moment its materials are imported; they are NOT treated as reconciled."
+      },
+      "validation_modes": [],
+      "holdout_eligible": false,
+      "provenance": "Externally declared by the master engineer; not yet imported.",
+      "notes": "UNRESOLVED \u2014 awaiting import. No data was manufactured to fill the gap."
+    }
+  ]
+}

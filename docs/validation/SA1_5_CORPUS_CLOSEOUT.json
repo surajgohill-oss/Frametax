@@ -1,0 +1,301 @@
+{
+  "schema_version": "1.0",
+  "phase": "SA-1.5",
+  "generated_at": "2026-08-14T00:00:00-07:00",
+  "repository": "surajgohill-oss/Frametax",
+  "branch": "claude/audit-frametax-features-NZcX5",
+  "base_commit_at_start": "c92877e5802025edfd2c5f2d6babb66b3e8c6815",
+  "objective": "Establish the real-production validation corpus and held-out validation harness before SA-2.",
+  "branch_reconciliation": {
+    "issue": "Branch had diverged: 4 local commits ahead, 1 on origin. Local and remote each carried a byte-identical CODEX_SA1_5_INDEPENDENT_VERIFICATION commit from concurrent sessions, but origin lacked the three SA-1.5 implementation commits (fe59612, 174cd82, 9d2fa9d).",
+    "verification": "Both divergent commits' files confirmed byte-identical by sha256 before acting.",
+    "resolution": "Merged origin into local so neither side's work was lost. No force-push, no discarded commits.",
+    "result": "RESOLVED"
+  },
+  "part_a_fixture_registry": {
+    "result": "IMPLEMENTED",
+    "module": "frametax2/backend/app/validation/real_production_corpus.py",
+    "representation": "Code registry + canonical JSON artifact \u2014 not a new DB table.",
+    "rationale": "Internal validation infrastructure with no user-facing surface (Part P), must be reviewable in version control, and a new table would be parallel architecture for no gain. Fixtures reference authoritative DocumentVersion ids; they never become a second source of the data.",
+    "no_source_duplication": true,
+    "no_actual_budget_modified": true
+  },
+  "part_b_project_resolution": {
+    "named": 6,
+    "resolved": 5,
+    "unresolved": 1,
+    "library_projects_scanned": 52,
+    "projects": {
+      "little_utopia": {
+        "project_id": "fa5cade5-0669-4816-bfe6-72146f8d3bae",
+        "status": "RESOLVED",
+        "materials": {
+          "screenplay": "AVAILABLE",
+          "budget": "AVAILABLE",
+          "schedule": "MISSING",
+          "dood": "MISSING",
+          "deck": "AVAILABLE",
+          "lookbook": "AVAILABLE",
+          "artwork": "AVAILABLE"
+        }
+      },
+      "fvd": {
+        "project_id": "6c6f1c13-2d49-4bbc-bafb-2a12efa93112",
+        "status": "RESOLVED",
+        "materials": {
+          "screenplay": "AVAILABLE (parsed: 99 scenes / 38 characters)",
+          "budget": "AVAILABLE",
+          "schedule": "MISSING",
+          "dood": "MISSING",
+          "deck": "AVAILABLE",
+          "artwork": "AVAILABLE"
+        }
+      },
+      "lips_like_sugar": {
+        "project_id": "ab10b319-978e-44d3-9331-af2a5f2cccc2",
+        "status": "RESOLVED",
+        "materials": {
+          "screenplay": "AVAILABLE",
+          "budget": "AVAILABLE (52pp detailed)",
+          "schedule": "MISSING",
+          "dood": "MISSING"
+        }
+      },
+      "underwater": {
+        "project_id": "f1292c56-0288-4575-91ec-1f00081f07a0",
+        "status": "RESOLVED",
+        "materials": {
+          "screenplay": "AVAILABLE",
+          "budget": "AVAILABLE (31pp detailed)",
+          "schedule": "MISSING",
+          "dood": "MISSING",
+          "deck": "AVAILABLE",
+          "artwork": "AVAILABLE"
+        }
+      },
+      "the_system": {
+        "project_id": "e1f2444d-4eac-410e-9c92-45637b8f2ae0",
+        "status": "RESOLVED",
+        "materials": {
+          "screenplay": "AVAILABLE",
+          "budget": "AVAILABLE (37pp detailed)",
+          "schedule": "AVAILABLE (+2 superseded versions)",
+          "dood": "AVAILABLE",
+          "finance_plan": "MISSING"
+        }
+      },
+      "tetrad": {
+        "project_id": null,
+        "status": "UNRESOLVED",
+        "evidence": "Zero matches across all 52 project titles, all document titles and all DocumentVersion filenames.",
+        "handling": "Externally declared figures recorded as expectations only; NOT treated as reconciled. No data manufactured."
+      }
+    }
+  },
+  "part_c_budget_reconciliation": {
+    "oracle_policy": "Every oracle was read from the source document's own declared grand total and cross-checked against the document's own section hierarchy. No oracle was written into parser output.",
+    "results": {
+      "fvd": {
+        "oracle": 4517687,
+        "source_declared": 4517687,
+        "leaf_sum": 4517687,
+        "gap": 0,
+        "status": "RECONCILED_EXACT"
+      },
+      "little_utopia": {
+        "oracle": 4364393,
+        "source_declared": 4364393,
+        "leaf_sum": 4364395,
+        "gap": 2,
+        "status": "RECONCILED_SOURCE_ROUNDING",
+        "note": "Pre-existing, already-disclosed $2 source-document rounding artefact."
+      },
+      "underwater": {
+        "oracle": 7998944,
+        "source_declared": 7998944,
+        "leaf_sum": 7086368,
+        "gap": -912576,
+        "status": "RECONCILED_DECLARED_TOTAL_LEAF_GAP",
+        "component_proof": "ATL 2,731,485 + BTL 3,319,416 = 6,050,901 (equals the document's own 'Total Above and Below-The-Line') + fringes 1,025,143 + contingency 727,800 + bond 195,100 = 7,998,944 = oracle EXACTLY."
+      },
+      "lips_like_sugar": {
+        "oracle": 11983654,
+        "source_declared": 11983654,
+        "leaf_sum": 9638143,
+        "gap": -2345511,
+        "status": "RECONCILED_DECLARED_TOTAL_LEAF_GAP",
+        "component_proof": "ATL 3,174,975 + BTL 8,293,679 = 11,468,654 (document's own Above+Below); residual 515,000 contingency/bond to the 11,983,654 grand total."
+      },
+      "the_system": {
+        "oracle": 4324058,
+        "source_declared": 4324058,
+        "leaf_sum": 4079890,
+        "gap": -244168,
+        "status": "RECONCILED_DECLARED_TOTAL_LEAF_GAP",
+        "component_proof": "ATL 2,370,132 + BTL 1,611,855 = 3,981,987 (document's own Above+Below); residual 342,071 fringes/contingency/bond to the 4,324,058 grand total."
+      },
+      "tetrad": {
+        "status": "NO_BUDGET",
+        "reason": "Project not in Company Library."
+      }
+    },
+    "leaf_gap_root_cause": {
+      "classification": "VERIFIED",
+      "cause": "The three detailed budgets are top-sheet-plus-detail PDFs that extract column-wise (label and amount on separate lines). The parser sums a mixed population of top-sheet category rows and detail rows without applying the budget's ATL/BTL/fringes/contingency/bond hierarchy; fringe, contingency and bond appear as SECTION TOTALS rather than account-code rows and are not captured.",
+      "ownership": "Deferred L1/L2/L3 budget work. NOT a disagreement with the source and NOT patched over.",
+      "guard": "Test asserts parsed_leaf_sum + gap == oracle per fixture so the number cannot drift silently."
+    }
+  },
+  "part_d_e_ingestion_and_routing": {
+    "result": "RUNTIME VERIFIED (existing corpus, no re-import)",
+    "categories_exercised_across_corpus": [
+      "screenplay",
+      "budget",
+      "schedule",
+      "deck",
+      "lookbook",
+      "artwork"
+    ],
+    "evidence": "All six categories are present across the five resolved projects and route to their correct semantic homes: screenplay -> ScreenplayDocument/SA parser (FVD parsed to 99 scenes/38 characters), budget -> BudgetDocument/BudgetLineItems (Little Utopia 44 lines, FVD 34 lines), schedule -> versioned schedule documents (The System, 3 versions), artwork/deck/lookbook -> project media/document records.",
+    "no_silent_file_loss": "Every DocumentVersion encountered is either linked to a semantic projection or retained as a versioned project source. Superseded versions are preserved, never deleted (Little Utopia screenplay x2 and deck x5; The System schedule x3).",
+    "no_reimport_performed": true
+  },
+  "part_f_g_holdout": {
+    "result": "IMPLEMENTED + TESTED",
+    "module": "frametax2/backend/app/validation/holdout_guard.py",
+    "separation": "ScriptSideInputs (predictor-visible, screenplay-derived only) vs HeldOutActuals (budget, department totals, fringes, contingency, bond, shoot days, geography, schedule/DOOD refs, incentive/QPE).",
+    "enforcement": [
+      "reveal_actuals() raises until close_prediction() is called \u2014 ordering is mechanical, not conventional.",
+      "Reading any held-out field raises unless that specific field was explicitly declared a producer-supplied input for that evaluation.",
+      "assert_no_leakage() scans payloads recursively BY VALUE, so a leak survives renaming or nesting.",
+      "Little Utopia and Tetrad are not holdout-eligible and raise if used for prediction evaluation."
+    ]
+  },
+  "part_h_validation_modes": {
+    "little_utopia": [
+      "OPTIMIZER_REGRESSION",
+      "INGESTION_VALIDATION"
+    ],
+    "fvd": [
+      "INGESTION_VALIDATION",
+      "SCRIPT_BREAKDOWN_VALIDATION"
+    ],
+    "lips_like_sugar": [
+      "INGESTION_VALIDATION",
+      "SCRIPT_BREAKDOWN_VALIDATION"
+    ],
+    "underwater": [
+      "INGESTION_VALIDATION",
+      "SCRIPT_BREAKDOWN_VALIDATION"
+    ],
+    "the_system": [
+      "INGESTION_VALIDATION",
+      "SCRIPT_BREAKDOWN_VALIDATION"
+    ],
+    "tetrad": [],
+    "future_modes_claimed_by_zero_fixtures": [
+      "SCHEDULE_VALIDATION",
+      "BUDGET_ESTIMATION_VALIDATION"
+    ],
+    "guard": "Test asserts both future-mode sets are empty so a later phase cannot quietly claim an unbuilt capability."
+  },
+  "part_i_the_system_deep_fixture": {
+    "result": "ESTABLISHED",
+    "materials_confirmed": {
+      "screenplay": true,
+      "budget": true,
+      "schedule": true,
+      "dood": true,
+      "finance_plan": false
+    },
+    "dood_evidence": "Current schedule version is a genuine 'Day Out of Days Report for Cast Members' dated 06/21 onward.",
+    "superseded_retained": [
+      "THE SYSTEM PROD SCHEDULE .xlsx",
+      "The System HorC_Schedule.pdf (cast list)"
+    ],
+    "geography_evidence": "'Jackson' present in the budget, corroborating the Mississippi basis.",
+    "shoot_days_evidence": "20 shooting days corroborated in the budget text.",
+    "linkage_note": "Schedule and DOOD are the SAME DocumentVersion serving two roles \u2014 recorded as such rather than duplicated.",
+    "finance_plan_note": "No separate finance-plan document exists in the library for this project; the known Mississippi QPE figure was therefore NOT written into the fixture.",
+    "scope_boundary": "Linkage only. No attempt to reproduce the schedule from the screenplay."
+  },
+  "part_k_fvd": {
+    "result": "FVD_REAL_PROJECT_FIXTURE = VERIFIED",
+    "budget_reconciles": true,
+    "greece_provenance": "Source budget filename and content (V-BRAT_V8_Greece_041224 TOPSHEET.pdf)",
+    "screenplay_linked": true,
+    "reopened": false
+  },
+  "part_l_lips_like_sugar": {
+    "result": "VERIFIED",
+    "gross": 11983654,
+    "shoot_days": 27,
+    "shoot_days_evidence": "Corroborated by budget filename and content (27days).",
+    "geography": "Los Angeles and surrounding \u2014 externally declared; this bounded pass found only a weak 'CA' token in the budget and does NOT claim document confirmation.",
+    "script_available": true,
+    "new_optimization_run": false
+  },
+  "part_n_underwater": {
+    "result": "VERIFIED",
+    "gross": 7998944,
+    "note": "Strongest reconciliation in the corpus \u2014 every oracle component independently present in the source.",
+    "shoot_days": 30,
+    "shoot_days_evidence": "Budget top sheet: 'Shoot: 30 Days (6x 5-Day Weeks)'.",
+    "script_available": true,
+    "schedule": "MISSING",
+    "dood": "MISSING",
+    "manufactured_data": false
+  },
+  "part_n_tetrad": {
+    "result": "UNRESOLVED",
+    "reason": "Not present in the Company Library.",
+    "manufactured_data": false
+  },
+  "part_o_little_utopia_regression": {
+    "result": "PASS",
+    "winner": "ALLOC-BASELINE-MU (Mauritius)",
+    "npc_usd": 3057794.9,
+    "global_validation_rerun": false
+  },
+  "part_p_ui": {
+    "result": "NO UI ADDED",
+    "note": "Fixture registry is internal validation infrastructure, per instruction."
+  },
+  "part_j_generic_execution": {
+    "result": "VERIFIED",
+    "assertion": "No project-specific orchestration is required. Fixtures are data consumed through generic accessors; a test greps the registry module to assert no per-project runner functions exist.",
+    "pre_existing_runners_noted": [
+      "frametax2/backend/scripts/run_fvd_optimizer.py",
+      "frametax2/backend/scripts/run_sa1_5_acceptance.py"
+    ],
+    "pre_existing_runner_disposition": "Left in place as diagnostic scripts from a prior session. They are NOT part of the corpus architecture and nothing in the registry or guard depends on them."
+  },
+  "tests": {
+    "new_file": "frametax2/backend/tests/test_real_production_corpus.py",
+    "new_tests": 26,
+    "focused_result": "26 passed",
+    "full_backend_suite": "4080 passed, 1 skipped, 1 pre-existing unrelated frontend failure (Workspace.jsx title-formatter guard, zero local diff)"
+  },
+  "sa2_leakage_check": {
+    "result": "NONE",
+    "detail": "No AI interpretation, no L1/L2/L3 budget generation, no learned cost coefficients, no schedule prediction. SA-1.5 registers and guards; it does not predict."
+  },
+  "remaining_blockers": [
+    {
+      "id": "SA15-B1",
+      "severity": "P2",
+      "blocker": "Tetrad is not in the Company Library. Fixture is registered UNRESOLVED with externally-declared expectations; completes on import."
+    },
+    {
+      "id": "SA15-B2",
+      "severity": "P2",
+      "blocker": "Flat leaf-line budget extraction under-covers on detailed multi-page budgets (quantified per fixture). Belongs to deferred L1/L2/L3 work; declared totals reconcile exactly, so no fixture is blocked by it."
+    },
+    {
+      "id": "SA15-B3",
+      "severity": "P3",
+      "blocker": "Lips Like Sugar, Underwater and The System screenplays are linked but not yet structurally parsed. SCRIPT_BREAKDOWN_VALIDATION is claimed on availability; parsing is an SA-2 activity."
+    }
+  ],
+  "final_gate": "GO_FOR_SCRIPT_ANALYZER_SA2"
+}
