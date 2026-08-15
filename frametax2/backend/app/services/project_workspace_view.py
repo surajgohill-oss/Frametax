@@ -70,6 +70,7 @@ async def build_project_workspace_view(session: AsyncSession, project_id) -> dic
     evaluation_status = "NOT_BEGUN"
     candidates: list[dict] = []
     fingerprint = None
+    engine_version = None
     jurisdiction_code_by_id: dict[str, str] = {}
     if project.leading_structure_id is not None:
         leading = await session.get(ProductionStructure, project.leading_structure_id)
@@ -83,6 +84,7 @@ async def build_project_workspace_view(session: AsyncSession, project_id) -> dic
         )
         if leading_result is not None:
             fingerprint = leading_result.input_fingerprint
+            engine_version = leading_result.engine_version
 
     if fingerprint:
         rows = (await session.execute(
@@ -91,6 +93,12 @@ async def build_project_workspace_view(session: AsyncSession, project_id) -> dic
             .where(
                 ProductionStructure.project_id == project.id,
                 StructureCalculationResult.input_fingerprint == fingerprint,
+                # A fingerprint alone doesn't distinguish engine versions —
+                # an older evaluation's rows can share the same fingerprint
+                # (identical budget/jurisdiction inputs) as a freshly
+                # regenerated set. Only the leading structure's OWN engine
+                # version is "the" current evaluation.
+                StructureCalculationResult.engine_version == engine_version,
             )
         )).all()
 

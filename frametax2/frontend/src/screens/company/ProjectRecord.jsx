@@ -158,7 +158,7 @@ export default function ProjectRecord() {
         </div>
         <div className="rec-idact">
           {isServedProduction ? (
-            <button className="hero-action primary" onClick={() => navigate(`/projects/${project.id}/workspace`)}>
+            <button className="hero-action primary" onClick={() => navigate(`/projects/${project.id}/overview`)}>
               Enter Workspace →
             </button>
           ) : (
@@ -167,7 +167,7 @@ export default function ProjectRecord() {
             </button>
           )}
           {!isServedProduction && analysis.evaluation_begun && (
-            <button className="hero-action" onClick={() => navigate(`/projects/${project.id}/workspace`)}>
+            <button className="hero-action" onClick={() => navigate(`/projects/${project.id}/overview`)}>
               Enter Workspace →
             </button>
           )}

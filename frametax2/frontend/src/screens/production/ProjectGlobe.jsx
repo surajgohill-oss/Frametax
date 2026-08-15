@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
 import Globe3D from "../../components/Globe3D";
@@ -23,7 +24,8 @@ import { loadCategorySnapshot, saveCategorySnapshot, diffCategories } from "../.
 // estimated NPC) — see buildHoverLines() below and globeData's
 // buildCountryHoverData, which is the sole source for every figure here.
 export default function ProjectGlobe() {
-  const { data, error, loading } = useCineGlobe();
+  const { projectId } = useParams();
+  const { data, error, loading } = useCineGlobe(projectId);
   const { inspector, openInspector, leadingStructureId, selectedJurisdiction, setSelectedJurisdiction } = useAppState();
   const [globeMode, setGlobeMode] = useState("jurisdictions");
   const [hover, setHover] = useState(null);

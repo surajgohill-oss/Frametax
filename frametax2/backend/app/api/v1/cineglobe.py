@@ -1014,3 +1014,101 @@ async def get_legal() -> dict[str, Any]:
             s.legal_rerun.optimization.cases[RiskCase.CONSERVATIVE].net_production_cost_usd
         ),
     }
+
+
+# ── Mature UI restoration: ONE project-parameterized combined state ────────
+#
+# The 8 routes above were built for exactly one production (get_state()'s
+# single in-memory LittleUtopiaState) — that architecture is correct and
+# unchanged for Little Utopia, whose curated register/legal/economics/
+# people intelligence genuinely has no generic equivalent for any other
+# project. This route lets ANY project's project_id drive the SAME mature
+# component tree (Overview/Workspace/Scenarios/ProjectGlobe/Reports/
+# Knowledge): for Little Utopia's own project_id, it returns byte-identical
+# data to the 8 routes above (same functions, called directly — zero
+# duplication, zero drift risk). For any other project, `production` and
+# `structures` come from canonical_production_view.py — the generic,
+# canonical-evaluation-backed adapter every project already has real data
+# for — and the remaining sections (package/recommendations/legal/
+# economics/people/facts), which were never migrated off Little Utopia's
+# own hand-curated demo state, return honest empty shapes rather than
+# Little Utopia's data or a fabricated substitute.
+EMPTY_PKG: dict[str, Any] = {
+    "production_id": None, "confidence": "unknown", "is_ready_for_downstream_engines": False,
+    "register": [],
+    "budget": {
+        "known": False, "filename": None, "currency_code": None, "total_budget_usd": None,
+        "line_item_count": 0, "atl_total_usd": None, "btl_total_usd": None, "post_total_usd": None,
+        "other_total_usd": None, "labor_usd": None, "non_labor_usd": None,
+        "totals_by_spend_category_usd": {}, "opportunity_hints": [],
+    },
+    "script": {
+        "known": False, "filename": None, "page_count": None, "word_count": None,
+        "locations_mentioned": [], "character_names": [], "attributes": {},
+    },
+    "package_people_count": 0, "package_entities_count": 0, "location_count": 0,
+    "missing_inputs": [],
+}
+EMPTY_RECOMMENDATIONS: dict[str, Any] = {
+    "total": 0,
+    "by_category": {"financial": [], "structural": [], "creative": [], "required_input": []},
+    "legal": [],
+}
+EMPTY_LEGAL: dict[str, Any] = {
+    "is_research_view": True, "grey_areas_current": [], "questions_detected": 0,
+    "questions_auto_executed": [], "questions_awaiting_verification": [],
+    "committed_rule_id": None, "authority_scores": {}, "evidence_trace": [],
+    "connector_source_label": None, "conservative_npc_before_usd": None, "conservative_npc_after_usd": None,
+}
+EMPTY_ECONOMICS: dict[str, Any] = {
+    "production_structure_default": None, "verified_cash_qpe_usd": None,
+    "verified_floor_case": None, "potential_ceiling_case": None, "inkind_post_options": {},
+    "financing_source": None, "controls": {}, "normalized_structures": [],
+    "fx_horizons": {}, "jurisdiction_currency": {}, "alternative_jurisdictions": [],
+    "available_funds": [], "structuring_advisory": None,
+}
+EMPTY_PEOPLE: dict[str, Any] = {
+    "writers": [], "directors": [], "cast": [], "producers": [],
+    "lead_cast_2": [], "lead_cast_3": [], "dop": [], "editor": [], "composer": [],
+    "overrides": {}, "missing_inputs": [],
+}
+EMPTY_FACTS: dict[str, Any] = {"answers": {}, "answerable": {}}
+
+
+@router.get("/projects/{project_id}/state")
+async def get_project_state(project_id: str, db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
+    from app.services.canonical_production_view import build_production_and_structures
+
+    project = (await db.execute(select(Project).where(Project.id == project_id))).scalar_one_or_none()
+    if project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    is_demo_project = project.title == PRODUCTION_NAME
+    if is_demo_project:
+        # Byte-identical to the 8 individual routes above — same functions,
+        # called directly. Never a second implementation of Little Utopia's
+        # own served data.
+        return {
+            "production": await get_production(db),
+            "pkg": await get_package(),
+            "recommendations": await get_recommendations(),
+            "structures": await get_structures(),
+            "legal": await get_legal(),
+            "economics": await get_economics(),
+            "people": await get_people(db),
+            "facts": await get_facts(),
+        }
+
+    view = await build_production_and_structures(db, project_id)
+    if view.get("status") != "OK":
+        raise HTTPException(status_code=404, detail=view.get("status", "PROJECT_NOT_FOUND"))
+    return {
+        "production": view["production"],
+        "pkg": EMPTY_PKG,
+        "recommendations": EMPTY_RECOMMENDATIONS,
+        "structures": view["structures"],
+        "legal": EMPTY_LEGAL,
+        "economics": EMPTY_ECONOMICS,
+        "people": EMPTY_PEOPLE,
+        "facts": EMPTY_FACTS,
+    }

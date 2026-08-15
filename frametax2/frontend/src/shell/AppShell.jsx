@@ -4,9 +4,17 @@ import ProjectHeader from "./ProjectHeader";
 import Inspector from "./Inspector";
 import GlobeFixtureBadge from "../components/GlobeFixtureBadge";
 
+// Matches the restored mature production pages (/projects/{id}/overview,
+// /workspace, /scenarios, /globe, /reports, /binder, /knowledge, /record,
+// /settings) — NOT /projects/{id}/summary (the stripped-down Workspace,
+// which renders its own header) and not any legacy /production path
+// (which now only exists as LegacyProductionRedirect's transient loading
+// state).
+const MATURE_PROJECT_ROUTE = /^\/projects\/[^/]+\/(overview|workspace|scenarios|globe|reports|binder|knowledge|record|settings)(\/|$)/;
+
 export default function AppShell({ children }) {
   const location = useLocation();
-  const onProduction = location.pathname.startsWith("/production");
+  const onProduction = location.pathname.startsWith("/production") || MATURE_PROJECT_ROUTE.test(location.pathname);
 
   return (
     <div className="app-shell">

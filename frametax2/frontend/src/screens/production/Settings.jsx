@@ -1,10 +1,12 @@
+import { useParams } from "react-router-dom";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
 import { Money } from "../../lib/format";
 import { useProjectStatus } from "../../lib/useProjectStatus";
 
 export default function Settings() {
-  const { data, error, loading } = useCineGlobe();
+  const { projectId } = useParams();
+  const { data, error, loading } = useCineGlobe(projectId);
   const { status, setStatus, statuses } = useProjectStatus(data?.production?.production_id, {
     projectId: data?.production?.project_id,
     backendLifecycle: data?.production?.lifecycle,
@@ -26,7 +28,7 @@ export default function Settings() {
           <div><dt>Production ID</dt><dd className="mono">{production.production_id}</dd></div>
           <div><dt>Baseline jurisdiction</dt><dd>{production.jurisdiction_code}</dd></div>
           <div><dt>Gross budget</dt><dd><Money value={production.gross_budget_usd} /></dd></div>
-          <div><dt>Incentive rate</dt><dd className="mono">{(production.rate * 100).toFixed(0)}%</dd></div>
+          <div><dt>Incentive rate</dt><dd className="mono">{production.rate != null ? `${(production.rate * 100).toFixed(0)}%` : "—"}</dd></div>
         </dl>
       </section>
 

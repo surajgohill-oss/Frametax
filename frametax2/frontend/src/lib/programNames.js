@@ -9,6 +9,7 @@
 // e.g. "production_recommendation_engine" -> "Production recommendation".
 // Pure string formatting, never invents which engines are affected.
 export function humanizeToken(token) {
+  if (!token) return "";
   const words = token.replace(/_/g, " ").replace(/\b(engine|model|discovery)\b/g, "").trim();
   return words.charAt(0).toUpperCase() + words.slice(1);
 }

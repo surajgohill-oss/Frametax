@@ -49,7 +49,9 @@ test("LegacyProductionRedirect resolves project_id from the API, never hard-code
   const src = stripComments(read("shell/LegacyProductionRedirect.jsx"));
   assert.match(src, /getProduction/, "must resolve the active production via the existing API call");
   assert.match(src, /production\.project_id/, "must read project_id from the resolved response");
-  assert.match(src, /\/projects\/\$\{.*\}\/workspace/, "must redirect into the generic project Workspace route");
+  // Mature UI restoration: redirects into the restored mature Overview
+  // (project_id-driven), not the earlier phase's stripped-down Workspace.
+  assert.match(src, /\/projects\/\$\{.*\}\/overview/, "must redirect into the restored mature Overview route");
   // Guard against ever hard-coding Little Utopia's real UUID directly in
   // this file — the whole point is that the redirect target is resolved,
   // not fixed, so it keeps working if the served production ever changes.
@@ -58,29 +60,29 @@ test("LegacyProductionRedirect resolves project_id from the API, never hard-code
 
 test("Sidebar's Productions row navigates by project_id, not a literal legacy path", () => {
   const src = stripComments(read("shell/Sidebar.jsx"));
-  assert.match(src, /\/projects\/\$\{production\.project_id\}\/workspace/, "Productions row must target the generic Workspace");
+  assert.match(src, /\/projects\/\$\{production\.project_id\}\/overview/, "Productions row must target the restored mature Overview");
 });
 
-test("CompanyGlobe's three navigation points target the generic Workspace", () => {
+test("CompanyGlobe's three navigation points target the restored mature UI", () => {
   const src = stripComments(read("screens/company/CompanyGlobe.jsx"));
-  const matches = src.match(/\/projects\/\$\{production\.project_id\}\/workspace/g) || [];
-  assert.ok(matches.length >= 3, `expected >=3 generic Workspace navigations in CompanyGlobe.jsx, found ${matches.length}`);
+  const matches = src.match(/\/projects\/\$\{production\.project_id\}\/overview/g) || [];
+  assert.ok(matches.length >= 3, `expected >=3 mature-UI navigations in CompanyGlobe.jsx, found ${matches.length}`);
   assert.doesNotMatch(src, /navigate\("\/production\/overview"\)/, "no literal legacy navigate target should remain");
 });
 
-test("Today.jsx's production slate route and question link target the generic Workspace", () => {
+test("Today.jsx's production slate route and question link target the restored mature UI", () => {
   const src = stripComments(read("screens/company/Today.jsx"));
-  assert.match(src, /route:\s*`\/projects\/\$\{production\.project_id\}\/workspace`/, "slate row route must be project-driven");
-  assert.match(src, /navigate\(`\/projects\/\$\{production\.project_id\}\/workspace`\)/, "'View all questions' must target the generic Workspace");
+  assert.match(src, /route:\s*`\/projects\/\$\{production\.project_id\}\/overview`/, "slate row route must be project-driven");
+  assert.match(src, /navigate\(`\/projects\/\$\{production\.project_id\}\/overview`\)/, "'View all questions' must target the restored mature UI");
   assert.doesNotMatch(src, /route:\s*"\/production\/overview"/, "no literal legacy slate route should remain");
   assert.doesNotMatch(src, /navigate\("\/production\/workspace"\)/, "no literal legacy questions link should remain");
 });
 
-test("ProjectRecord's served-production primary action opens the generic Workspace, not legacy /production/overview", () => {
+test("ProjectRecord's served-production primary action opens the restored mature UI, not legacy /production/overview", () => {
   const src = stripComments(read("screens/company/ProjectRecord.jsx"));
   assert.doesNotMatch(src, /navigate\("\/production\/overview"\)/, "'Open Production' must no longer target the legacy route");
   // Both the served (Little Utopia) and non-served (FVD) paths reach the
   // SAME generic route pattern — no separate literal per project identity.
-  const workspaceNavCount = (src.match(/navigate\(`\/projects\/\$\{project\.id\}\/workspace`\)/g) || []).length;
-  assert.ok(workspaceNavCount >= 1, "must navigate into /projects/{id}/workspace at least once");
+  const overviewNavCount = (src.match(/navigate\(`\/projects\/\$\{project\.id\}\/overview`\)/g) || []).length;
+  assert.ok(overviewNavCount >= 1, "must navigate into /projects/{id}/overview at least once");
 });

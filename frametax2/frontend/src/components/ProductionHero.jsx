@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { Money } from "../lib/format";
 import { humanizeToken, jurisdictionName } from "../lib/format";
+import { API_ORIGIN } from "../api";
 import heroArt from "../assets/production-art/little-utopia-hero-clean.png";
 
 // Shared production identity header — rendered by ProjectHeader.jsx on
@@ -48,12 +50,34 @@ export default function ProductionHero({
     ? humanizeToken(topStructure.structure_type)
     : null;
 
+  // Mature UI restoration (Part G): the Hero's key art is this PROJECT's
+  // own master artwork (the same real Asset row Project Record's Library
+  // card already resolves, GET /api/v1/projects/{id}/artwork) — never
+  // Little Utopia's bundled image substituted for another project. Little
+  // Utopia's own master artwork happens to be real and already committed,
+  // so it renders through this exact same generic path, not a special
+  // case. `artworkFailed` is the honest fallback when a project genuinely
+  // has no master artwork yet (the endpoint 404s) — the bundled image is
+  // used ONLY as a last resort so the Hero never renders visually empty.
+  const [artworkFailed, setArtworkFailed] = useState(false);
+  const artworkUrl = production?.project_id
+    ? `${API_ORIGIN}/api/v1/projects/${production.project_id}/artwork`
+    : null;
+  const heroSrc = artworkUrl && !artworkFailed ? artworkUrl : heroArt;
+
   return (
     <div className="ph-hero">
       {/* Artwork layer — the complete master image, stretched via
           object-fit:fill to exactly cover the Hero rectangle (see the
           Full-Art Hero Rule in the file header comment above). */}
-      <img className="ph-hero-art" src={heroArt} alt="" aria-hidden="true" />
+      <img
+        key={production?.project_id || "fallback"}
+        className="ph-hero-art"
+        src={heroSrc}
+        alt=""
+        aria-hidden="true"
+        onError={() => setArtworkFailed(true)}
+      />
       {/* Overlay: directional, not uniform — strongest behind the identity
           block (left) and in a shallow band at the bottom (grounding into
           the tabs), much lighter behind the metrics (right) and near-clear

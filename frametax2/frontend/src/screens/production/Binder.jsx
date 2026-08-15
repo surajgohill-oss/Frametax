@@ -1,10 +1,12 @@
 import { FileText, ExternalLink, ScanText, RefreshCw, Paperclip, Upload, FileUp, FolderSync } from "lucide-react";
+import { useParams } from "react-router-dom";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
 import { UPLOAD_BLOCKED_REASON } from "../../lib/ingestion";
 
 export default function Binder() {
-  const { data, error, loading } = useCineGlobe();
+  const { projectId } = useParams();
+  const { data, error, loading } = useCineGlobe(projectId);
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
 

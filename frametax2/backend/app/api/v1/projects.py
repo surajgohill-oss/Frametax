@@ -355,7 +355,10 @@ async def get_project_record(project_id: str, db: AsyncSession = Depends(get_db)
     if leading_result is not None and leading_result.input_fingerprint:
         structure_count = (await db.execute(
             select(func.count()).select_from(StructureCalculationResult).where(
-                StructureCalculationResult.input_fingerprint == leading_result.input_fingerprint
+                StructureCalculationResult.input_fingerprint == leading_result.input_fingerprint,
+                # A fingerprint alone doesn't distinguish engine versions —
+                # see project_workspace_view.py's identical filter for why.
+                StructureCalculationResult.engine_version == leading_result.engine_version,
             )
         )).scalar_one()
     else:

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { patchProject } from "../../api";
@@ -224,7 +224,8 @@ function GlobeChrome({ productionName, nScenarios, nArcs }) {
 }
 
 export default function Workspace() {
-  const { data, error, loading, refetch } = useCineGlobe();
+  const { projectId: routeProjectId } = useParams();
+  const { data, error, loading, refetch } = useCineGlobe(routeProjectId);
   const location = useLocation();
   const navTab = location.state?.tab;
 

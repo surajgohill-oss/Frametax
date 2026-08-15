@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { useAppState } from "../../state/AppState";
 import { Loading, ErrorBox } from "../../components/Async";
@@ -33,7 +33,8 @@ import IncentiveIntelligence from "../../components/IncentiveIntelligence";
 //            nothing recalculated here).
 
 export default function Overview() {
-  const { data, error, loading, refetch } = useCineGlobe();
+  const { projectId } = useParams();
+  const { data, error, loading, refetch } = useCineGlobe(projectId);
   const navigate = useNavigate();
   const {
     inspector, openInspector, leadingStructureId, setLeadingStructureId,
@@ -146,7 +147,7 @@ export default function Overview() {
                 <button className={globeMode === "jurisdictions" ? "active" : ""} onClick={() => setGlobeMode("jurisdictions")}>Jurisdictions</button>
                 <button className={globeMode === "optimizer" ? "active" : ""} onClick={() => setGlobeMode("optimizer")}>Optimizer Overlay</button>
               </div>
-              <button className="act" onClick={() => navigate("/production/globe")}>Full screen →</button>
+              <button className="act" onClick={() => navigate(`/projects/${projectId}/globe`)}>Full screen →</button>
             </div>
             <div className="ovxg-globe-wrap dark-panel" style={{ position: "relative" }}>
               <Globe3D

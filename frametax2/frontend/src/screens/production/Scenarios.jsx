@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
 import { Money, scenarioDisplay } from "../../lib/format";
@@ -20,7 +20,8 @@ const MAX_VISIBLE = 6;
 // which swaps a chosen structure into the last visible slot rather than
 // expanding the table.
 export default function Scenarios() {
-  const { data, error, loading } = useCineGlobe();
+  const { projectId } = useParams();
+  const { data, error, loading } = useCineGlobe(projectId);
   const { openInspector, leadingStructureId, setLeadingStructureId } = useAppState();
   const location = useLocation();
   const openedFromNav = useRef(false);
@@ -119,6 +120,10 @@ export default function Scenarios() {
         Alternative structures for <b>{production.production_name}</b> — the same lanes as the Workspace
         rack, aligned for a reading pass. Click any structure to trace its derivation.
         {overflow.length > 0 && ` Showing the ${MAX_VISIBLE} active working scenarios.`}
+        {" "}Regional production-cost normalization (MFNI) is not yet applied — every column's Gross budget
+        uses this production's own nominal source amounts, so the leading structure (its own base
+        jurisdiction, needing no relocation adjustment) is the only figure directly comparable today;
+        every other column's lower cost omits real relocation costs and is not yet a fair comparison.
       </p>
       {overflow.length > 0 && (
         <div className="sc-selector">

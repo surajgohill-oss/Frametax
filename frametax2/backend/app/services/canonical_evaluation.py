@@ -71,7 +71,7 @@ from app.services.canonical_project_economics import (
     production_facts_for,
 )
 
-ENGINE_VERSION = "canonical-1.0.0"
+ENGINE_VERSION = "canonical-1.1.0"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
@@ -175,6 +175,33 @@ def _price_candidate(
     return pricing, register, rr
 
 
+def _segment_dicts(pricing) -> list[dict]:
+    """Light, generic serialization of `pricing.segments` — the SAME
+    SegmentEconomics objects `little_utopia_state.build_allocated_structures`
+    already serializes via its own `_seg_dict`, reduced to the fields the
+    mature UI's Globe/Budget-Rail cross-referencing actually reads
+    (jurisdiction_code, qpe_usd, account_codes — see globeData.js and
+    BudgetRail.jsx). Exposes more of what price_allocated_structure already
+    computed for this call; adds no new economics."""
+    return [
+        {
+            "jurisdiction_code": s.jurisdiction_code,
+            "program_slug": s.program_slug,
+            "claims_incentive": s.claims_incentive,
+            "executable": s.executable,
+            "allocated_usd": s.allocated_usd,
+            "account_codes": list(s.account_codes),
+            "qpe_usd": s.qpe_usd,
+            "excluded_usd": s.excluded_usd,
+            "rate_floor": s.rate_floor,
+            "rate_ceiling": s.rate_ceiling,
+            "doctrine": s.doctrine,
+            "blockers": list(s.blockers),
+        }
+        for s in pricing.segments
+    ]
+
+
 async def evaluate_project(session: AsyncSession, project_id) -> dict:
     """The canonical served evaluation entry point for any project."""
     project = await session.get(Project, project_id)
@@ -198,18 +225,25 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         .where(
             ProductionStructure.project_id == project.id,
             StructureCalculationResult.input_fingerprint == fingerprint,
+            # ENGINE_VERSION is part of freshness, not just the fingerprint:
+            # a code change that enriches calculation_trace_json (e.g. the
+            # 1.1.0 segments addition) must regenerate rows even when the
+            # underlying budget/jurisdiction inputs are unchanged — the
+            # fingerprint alone can't detect that the SHAPE of what gets
+            # persisted changed, only that the ECONOMIC INPUTS didn't.
+            StructureCalculationResult.engine_version == ENGINE_VERSION,
         )
     )).scalars().first()
     if existing is not None:
         return await _summarize_evaluation(session, project, inputs, fingerprint, reused=True)
 
-    # Any prior evaluation for this project (a different fingerprint — a
-    # new budget version, or a stale legacy-engine result from before this
-    # phase) is superseded, never left to render as current. Its rows are
-    # not destroyed — they simply drop out of the "current" query above,
-    # exactly as an unchanged Document/DocumentVersion keeps prior
-    # versions rather than deleting them (see is_current elsewhere in
-    # this codebase for the same convention).
+    # Any prior evaluation for this project (a different fingerprint or an
+    # older engine_version — a new budget version, or a stale result from
+    # before this phase) is superseded, never left to render as current.
+    # Its rows are not destroyed — they simply drop out of the "current"
+    # query above, exactly as an unchanged Document/DocumentVersion keeps
+    # prior versions rather than deleting them (see is_current elsewhere
+    # in this codebase for the same convention).
 
     requirements = derive_production_requirements({})
     discovery = discover_executable_jurisdictions(
@@ -274,6 +308,8 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     "candidate_status": STATUS_UNPRICEABLE_AUTHORITY_INSUFFICIENT,
                     "discovery_classification": classification,
                     "reason": reason,
+                    "structure_type": "single_country" if code == inputs.jurisdiction_code else "full_relocation",
+                    "primary_jurisdiction": code,
                 },
                 input_fingerprint=fingerprint,
             ))
@@ -294,6 +330,8 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 calculation_trace_json={
                     "candidate_status": candidate_status,
                     "discovery_classification": classification, "reason": reason,
+                    "structure_type": "single_country" if code == inputs.jurisdiction_code else "full_relocation",
+                    "primary_jurisdiction": code,
                 },
                 input_fingerprint=fingerprint,
             ))
@@ -324,6 +362,13 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 # see RELOCATION_COMPARABILITY_NOTE. Baseline needs no such
                 # adjustment by construction (no relocation occurs).
                 "relocation_cost_normalized": is_baseline,
+                "structure_type": pricing.structure_type,
+                "primary_jurisdiction": pricing.primary_jurisdiction,
+                "selected_incentive_usd": pricing.selected_incentive_usd,
+                "npc_verified_usd": pricing.npc_verified_usd,
+                "npc_conservative_usd": pricing.npc_verified_usd,
+                "gross_budget_usd": pricing.gross_budget_usd,
+                "segments": _segment_dicts(pricing),
             },
             input_fingerprint=fingerprint,
         ))
@@ -348,6 +393,13 @@ async def _summarize_evaluation(
         .where(
             ProductionStructure.project_id == project.id,
             StructureCalculationResult.input_fingerprint == fingerprint,
+            # Same freshness rule as the "existing" check above: a
+            # fingerprint match alone isn't enough once an older
+            # engine_version's rows can coexist with a freshly regenerated
+            # set for the SAME inputs — only the current engine's rows are
+            # "the" evaluation; older ones are superseded history, still in
+            # the table, never queried as current.
+            StructureCalculationResult.engine_version == ENGINE_VERSION,
         )
     )).all()
 

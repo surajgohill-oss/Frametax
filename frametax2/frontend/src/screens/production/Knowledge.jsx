@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useParams } from "react-router-dom";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
 import { Money, questionStatusLabel } from "../../lib/format";
@@ -52,7 +53,8 @@ export function buildReferenceLibrary(pkg, allocatedStructures, recommendations)
 const KIND_TIER = { "Statute": "gold", "Program rule": "blue", "Authority reference": "silver" };
 
 export default function Knowledge() {
-  const { data, error, loading } = useCineGlobe();
+  const { projectId } = useParams();
+  const { data, error, loading } = useCineGlobe(projectId);
   const [scope, setScope] = useState("Production");
   const [view, setView] = useState("Grey Areas");
   const [selected, setSelected] = useState(null);

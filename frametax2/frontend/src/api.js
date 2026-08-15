@@ -35,6 +35,12 @@ export const getPackage = () => request("/package");
 export const getRecommendations = () => request("/recommendations");
 export const getStructures = () => request("/structures");
 export const getLegal = () => request("/legal");
+
+// Mature UI restoration — the one project-parameterized combined state
+// (app/api/v1/cineglobe.py::get_project_state) behind useCineGlobe(projectId).
+// Little Utopia's own project_id returns byte-identical data to the 8 calls
+// above; any other project returns the canonical, generic adapter's data.
+export const getProjectState = (projectId) => request(`/projects/${projectId}/state`);
 export const checkConstraints = () => request("/constraints/check");
 export const postScenario = (kind, targetJurisdiction) =>
   request("/scenarios", {

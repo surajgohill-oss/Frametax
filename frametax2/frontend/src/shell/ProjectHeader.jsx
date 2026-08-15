@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useCineGlobe } from "../lib/useCineGlobe";
 import { useProjectStatus } from "../lib/useProjectStatus";
 import { getTheme, toggleTheme } from "../lib/theme";
@@ -8,20 +8,35 @@ import ProductionHero from "../components/ProductionHero";
 
 // Production sections — the approved artifact tab set (SECTIONS in
 // reference/artifacts/prototype-v1-updated.html). Settings is a SYSTEM
-// destination in the sidebar, not a production section.
-const PRODUCTION_TABS = [
-  { to: "/production/overview", label: "Overview" },
-  { to: "/production/workspace", label: "Workspace" },
-  { to: "/production/scenarios", label: "Scenarios" },
-  { to: "/production/globe", label: "Project Globe" },
-  { to: "/production/binder", label: "Documents" },
-  { to: "/production/record", label: "Record" },
-  { to: "/production/knowledge", label: "Knowledge" },
-  { to: "/production/reports", label: "Reports" },
-];
+// destination in the sidebar, not a production section. Mature UI
+// restoration: every tab is now project_id-scoped (was a fixed legacy
+// production path reachable by only one production) — same tab set,
+// same order, same labels, just parameterized.
+function productionTabs(projectId) {
+  const base = `/projects/${projectId}`;
+  return [
+    { to: `${base}/overview`, label: "Overview" },
+    { to: `${base}/workspace`, label: "Workspace" },
+    { to: `${base}/scenarios`, label: "Scenarios" },
+    { to: `${base}/globe`, label: "Project Globe" },
+    { to: `${base}/binder`, label: "Documents" },
+    { to: `${base}/record`, label: "Record" },
+    { to: `${base}/knowledge`, label: "Knowledge" },
+    { to: `${base}/reports`, label: "Reports" },
+  ];
+}
 
 export default function ProjectHeader() {
   const navigate = useNavigate();
+  // ProjectHeader is rendered by AppShell as a SIBLING of the routed page
+  // (AppShell wraps <Routes>, ProjectHeader is not inside any <Route
+  // element>), so useParams() has no route context here and always
+  // returns {} — confirmed live (every tab href rendered
+  // "/projects/undefined/..."). Extracted from the URL directly instead,
+  // the same technique AppShell's own MATURE_PROJECT_ROUTE test already
+  // uses for exactly this reason.
+  const { pathname } = useLocation();
+  const projectId = pathname.match(/^\/projects\/([^/]+)\//)?.[1];
   // PHASE: Production Shell closeout. The cinematic hero is the production
   // identity header for every production route, not an Overview-specific
   // treatment — one ProductionHero instance, one shared `.project-tabs`
@@ -30,7 +45,7 @@ export default function ProjectHeader() {
   // has been retired; its markup/CSS classes are left in shell.css
   // unused rather than deleted, since removing CSS carries its own
   // regression risk and no other component references them.
-  const { data } = useCineGlobe();
+  const { data } = useCineGlobe(projectId);
   // Local mirror of the theme purely so the button's icon and aria-pressed
   // re-render. The authoritative state is the `data-theme` attribute on
   // <html> (see lib/theme.js) — deliberately NOT React state, so a theme
@@ -144,7 +159,7 @@ export default function ProjectHeader() {
   // completion, not by inspection.
   const headerActions = (
     <div className="ph-hactions">
-      <button className="ph-ico" title="Upload document" onClick={() => navigate("/production/binder")}>⇪</button>
+      <button className="ph-ico" title="Upload document" onClick={() => navigate(`/projects/${projectId}/binder`)}>⇪</button>
       <button className="ph-ico ghosted" title="AI analyst — engine pending" disabled>◈</button>
       <button
         className="ph-ico"
@@ -170,7 +185,7 @@ export default function ProjectHeader() {
         headerActions={headerActions}
       />
       <nav className="project-tabs" aria-label="Production sections">
-        {PRODUCTION_TABS.map((tab) => (
+        {productionTabs(projectId).map((tab) => (
           <NavLink key={tab.to} to={tab.to} className={({ isActive }) => (isActive ? "on" : "")}>
             {tab.label}
           </NavLink>

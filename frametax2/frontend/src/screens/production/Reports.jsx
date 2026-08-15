@@ -1,3 +1,4 @@
+import { useParams } from "react-router-dom";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
 import { Money } from "../../lib/format";
@@ -8,7 +9,8 @@ import { Money } from "../../lib/format";
 // and question queue. Export/Share are disabled until a generation engine
 // is wired — nothing here is fabricated.
 export default function Reports() {
-  const { data, error, loading } = useCineGlobe();
+  const { projectId } = useParams();
+  const { data, error, loading } = useCineGlobe(projectId);
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
 

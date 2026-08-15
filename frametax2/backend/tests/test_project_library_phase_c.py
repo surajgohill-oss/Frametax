@@ -29,6 +29,7 @@ from app.models.project_person import ProjectPerson
 from app.models.project_location_requirement import ProjectLocationRequirement
 from app.models.production import ProductionStructure, StructureCalculationResult
 from app.models.enums import ProjectLifecycle
+from app.services.canonical_evaluation import ENGINE_VERSION
 
 ORG_SLUG = "mind-the-story-media"
 PROJECT_TITLE = "The Little Utopia"
@@ -228,7 +229,7 @@ async def test_production_structure_and_leading_selection(db: AsyncSession, proj
         .order_by(StructureCalculationResult.created_at.desc())
     )).scalars().first()
     assert calc is not None
-    assert calc.engine_version == "canonical-1.0.0"
+    assert calc.engine_version == ENGINE_VERSION
     assert float(calc.total_budget_usd) == pytest.approx(4364393.00, abs=0.01)
     # The accepted regression truth (see test_canonical_evaluation.py) —
     # never recomputed differently here.

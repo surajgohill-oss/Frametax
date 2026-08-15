@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { useAppState } from "../state/AppState";
 import { Money, recommendationHeadline } from "../lib/format";
@@ -15,6 +15,7 @@ export default function RecommendationsList({ byCategory, legal, compact = false
   const [group, setGroup] = useState("financial");
   const { openInspector } = useAppState();
   const navigate = useNavigate();
+  const { projectId } = useParams();
   const items = group === "legal" ? legal : byCategory[group];
   const shown = compact ? items.slice(0, 5) : items;
 
@@ -58,7 +59,7 @@ export default function RecommendationsList({ byCategory, legal, compact = false
         </div>
       )}
       {compact && items.length > shown.length && (
-        <button className="link-more" onClick={() => navigate("/production/workspace")}>
+        <button className="link-more" onClick={() => navigate(`/projects/${projectId}/workspace`)}>
           View all {items.length} <ArrowRight size={12} />
         </button>
       )}
