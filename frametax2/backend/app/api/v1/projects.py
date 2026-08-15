@@ -333,9 +333,6 @@ async def get_project_record(project_id: str, db: AsyncSession = Depends(get_db)
         )
     )).scalars().all()
 
-    structure_count = (await db.execute(
-        select(func.count()).select_from(ProductionStructure).where(ProductionStructure.project_id == project.id)
-    )).scalar_one()
     leading_structure = None
     leading_result = None
     if project.leading_structure_id:
@@ -348,6 +345,23 @@ async def get_project_record(project_id: str, db: AsyncSession = Depends(get_db)
                 .where(StructureCalculationResult.structure_id == leading_structure.id)
                 .order_by(StructureCalculationResult.created_at.desc())
             )).scalars().first()
+
+    # Structures sharing the CURRENT evaluation's own input_fingerprint —
+    # never a raw count of every ProductionStructure row ever created for
+    # the project. A superseded run (a stale legacy-engine result, or an
+    # earlier budget version) leaves its rows in place for provenance but
+    # must not inflate what the UI reports as "generated" for the
+    # currently-displayed evaluation.
+    if leading_result is not None and leading_result.input_fingerprint:
+        structure_count = (await db.execute(
+            select(func.count()).select_from(StructureCalculationResult).where(
+                StructureCalculationResult.input_fingerprint == leading_result.input_fingerprint
+            )
+        )).scalar_one()
+    else:
+        structure_count = (await db.execute(
+            select(func.count()).select_from(ProductionStructure).where(ProductionStructure.project_id == project.id)
+        )).scalar_one()
 
     activity = (await db.execute(
         select(ProjectActivity).where(ProjectActivity.project_id == project.id)

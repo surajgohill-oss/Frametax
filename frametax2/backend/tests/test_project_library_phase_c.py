@@ -202,15 +202,34 @@ async def test_project_location_requirements(db: AsyncSession, project: Project)
 
 
 async def test_production_structure_and_leading_selection(db: AsyncSession, project: Project):
+    # Migration 0063 seeded exactly 1 structure (ALLOC-BASELINE-MU). The
+    # canonical evaluation runtime unification (see
+    # tests/test_canonical_evaluation.py) added ~110 more — every candidate
+    # discover_executable_jurisdictions finds, each accounted for with an
+    # explicit terminal status, never a silent drop (Part N). The migration
+    # row remains (historical provenance, never destroyed), but
+    # leading_structure_id now points at the CANONICAL result, per
+    # test_canonical_evaluation.py's own
+    # test_project_leading_structure_points_at_the_canonical_engine.
     structures = (await db.execute(
         select(ProductionStructure).where(ProductionStructure.project_id == project.id)
     )).scalars().all()
-    assert len(structures) == 1
-    structure = structures[0]
-    assert project.leading_structure_id == structure.id
+    assert len(structures) > 100
+
+    leading = (await db.execute(
+        select(ProductionStructure).where(ProductionStructure.id == project.leading_structure_id)
+    )).scalar_one_or_none()
+    assert leading is not None
+    assert leading.name == "MU — production's current base"
 
     calc = (await db.execute(
-        select(StructureCalculationResult).where(StructureCalculationResult.structure_id == structure.id)
-    )).scalar_one_or_none()
+        select(StructureCalculationResult)
+        .where(StructureCalculationResult.structure_id == leading.id)
+        .order_by(StructureCalculationResult.created_at.desc())
+    )).scalars().first()
     assert calc is not None
+    assert calc.engine_version == "canonical-1.0.0"
     assert float(calc.total_budget_usd) == pytest.approx(4364393.00, abs=0.01)
+    # The accepted regression truth (see test_canonical_evaluation.py) —
+    # never recomputed differently here.
+    assert float(calc.true_net_cost_usd) == pytest.approx(3057794.90, abs=0.01)
