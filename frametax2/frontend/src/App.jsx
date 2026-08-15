@@ -10,6 +10,8 @@ import CompanyGlobe from "./screens/company/CompanyGlobe";
 import CompanyKnowledge from "./screens/company/CompanyKnowledge";
 import OrgReports from "./screens/company/OrgReports";
 
+import ProjectWorkspace from "./screens/project/ProjectWorkspace";
+
 import Overview from "./screens/production/Overview";
 import Workspace from "./screens/production/Workspace";
 import Scenarios from "./screens/production/Scenarios";
@@ -31,6 +33,7 @@ export default function App() {
             <Route path="/company/today" element={<Today />} />
             <Route path="/company/library" element={<ProjectLibrary />} />
             <Route path="/company/library/:projectId" element={<ProjectRecord />} />
+            <Route path="/projects/:projectId/workspace" element={<ProjectWorkspace />} />
             <Route path="/company/globe" element={<CompanyGlobe />} />
             <Route path="/company/knowledge" element={<CompanyKnowledge />} />
             <Route path="/company/reports" element={<OrgReports />} />

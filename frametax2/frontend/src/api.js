@@ -169,12 +169,19 @@ export const deleteProject = (projectId) => verb("DELETE", `${PROJECTS_BASE}/${p
 export const setMasterArtwork = (projectId, assetId) =>
   verb("POST", `${PROJECTS_BASE}/${projectId}/artwork/${assetId}/set-master`);
 
-// Begin Evaluation — orchestrates CanonicalProductionState -> discovery ->
-// ProductionStructure/StructureCalculationResult for any project
-// (app/services/project_evaluation.py). Idempotent per input fingerprint;
-// safe to call again after a refresh.
+// Begin Evaluation — the canonical served evaluation runtime
+// (app/services/canonical_evaluation.py): discovery -> qualification ->
+// allocation -> pricing -> ProductionStructure/StructureCalculationResult,
+// for any project. Idempotent per input fingerprint; safe to call again
+// after a refresh.
 export const beginEvaluation = (projectId) =>
   verb("POST", `${PROJECTS_BASE}/${projectId}/evaluation/begin`);
+
+// Project Workspace — the view adapter (app/services/project_workspace_view.py)
+// behind the generic Overview/World/Script/Budget pages. Read-only: never
+// triggers evaluation, never computes economics — reshapes what
+// beginEvaluation already persisted.
+export const getProjectWorkspace = (projectId) => request2(`${PROJECTS_BASE}/${projectId}/workspace`);
 
 // Ingestion (Phase E) — DISCOVER -> CLASSIFY -> ASSOCIATE -> STAGE ->
 // REVIEW -> COMMIT. Nothing here is canonical until commitIngestionCandidate.

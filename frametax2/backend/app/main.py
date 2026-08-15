@@ -6,7 +6,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1 import budgets, cineglobe, documents, evaluation, incentive_programs, ingestion, jurisdictions, optimization, organizations, projects, script_analysis, structures
+from app.api.v1 import budgets, cineglobe, documents, evaluation, incentive_programs, ingestion, jurisdictions, optimization, organizations, projects, script_analysis, structures, workspace
 from app.bridge.api import router as bridge_router
 from app.core.config import settings
 
@@ -42,6 +42,7 @@ app.include_router(optimization.router, prefix="/api/v1")
 app.include_router(cineglobe.router, prefix="/api/v1")
 app.include_router(script_analysis.router, prefix="/api/v1")
 app.include_router(evaluation.router, prefix="/api/v1")
+app.include_router(workspace.router, prefix="/api/v1")
 # Cross-Model Bridge — internal development infrastructure. Namespaced
 # under /api/v1/bridge, NOT referenced by frontend/src/api.js, NOT
 # linked from any producer-facing screen. Same operations as

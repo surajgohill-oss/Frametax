@@ -166,6 +166,11 @@ export default function ProjectRecord() {
               {evalRunning ? "Evaluating…" : analysis.evaluation_begun ? "Re-run Evaluation" : "Begin Evaluation"}
             </button>
           )}
+          {analysis.evaluation_begun && (
+            <button className="hero-action" onClick={() => navigate(`/projects/${project.id}/workspace`)}>
+              Enter Workspace →
+            </button>
+          )}
           {!isServedProduction && (
             <div className="rec-actions-menu">
               <button
