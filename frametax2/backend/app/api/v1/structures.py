@@ -64,9 +64,35 @@ async def calculate_structure(
     structure_id: str,
     db: AsyncSession = Depends(get_db),
 ) -> StructureCalculationResult:
+    """Run the full deterministic engine against a production structure."""
+    return await calculate_structure_impl(project_id, structure_id, db)
+
+
+async def calculate_structure_impl(
+    project_id: str,
+    structure_id: str,
+    db: AsyncSession,
+    *,
+    extra_warnings: list[str] | None = None,
+    has_unverified_inputs_override: bool | None = None,
+    input_fingerprint: str | None = None,
+) -> StructureCalculationResult:
     """
     Run the full deterministic engine against a production structure.
     Assembles inputs from DB, calls run_full_analysis, persists result.
+
+    Importable so other orchestrators (e.g. the generic project evaluation
+    entry point behind "Begin Evaluation") can reuse this exact assembly
+    and persistence logic rather than duplicating it — the same pattern
+    used for `_commit_candidate_impl` in ingestion.py. The route handler
+    above is now a thin wrapper.
+
+    `extra_warnings` / `has_unverified_inputs_override` / `input_fingerprint`
+    are additive, optional hooks a caller can use to attach provenance
+    (e.g. an MFNI/regional-cost-normalization limitation notice, or the
+    CanonicalProductionState fingerprint that produced this run) without
+    this function or `run_full_analysis` itself knowing anything about
+    the caller's context.
     """
     from app.calculators.run_full_analysis import run_full_analysis
 
@@ -222,11 +248,14 @@ async def calculate_structure(
         effective_incentive_rate=effective_rate,
         program_results=analysis.incentive_results,
         calculation_trace_json=analysis.calculation_trace,
-        has_unverified_inputs=has_unverified,
+        has_unverified_inputs=(
+            has_unverified if has_unverified_inputs_override is None else has_unverified_inputs_override
+        ),
         legal_review_required=analysis.stacking_legal_review_required,
         stacking_violations=analysis.stacking_violations,
-        warnings=[],
+        warnings=list(extra_warnings or []),
         optimization_opportunities=[],
+        input_fingerprint=input_fingerprint,
     )
     db.add(calc_result)
     await db.commit()

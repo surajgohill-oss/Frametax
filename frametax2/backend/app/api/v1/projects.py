@@ -28,7 +28,7 @@ from app.models.talent import TalentProfile
 from app.models.project_fact import ProjectFact
 from app.models.project_location_requirement import ProjectLocationRequirement
 from app.models.project_activity import ProjectActivity
-from app.models.production import ProductionStructure
+from app.models.production import ProductionStructure, StructureCalculationResult
 from app.models.budget import BudgetDocument
 from app.demo.little_utopia_state import PRODUCTION_NAME
 from app.schemas.project import MaterialsCompleteness, ProjectCard, ProjectCreate, ProjectRead, ProjectUpdate
@@ -337,10 +337,17 @@ async def get_project_record(project_id: str, db: AsyncSession = Depends(get_db)
         select(func.count()).select_from(ProductionStructure).where(ProductionStructure.project_id == project.id)
     )).scalar_one()
     leading_structure = None
+    leading_result = None
     if project.leading_structure_id:
         leading_structure = (await db.execute(
             select(ProductionStructure).where(ProductionStructure.id == project.leading_structure_id)
         )).scalar_one_or_none()
+        if leading_structure is not None:
+            leading_result = (await db.execute(
+                select(StructureCalculationResult)
+                .where(StructureCalculationResult.structure_id == leading_structure.id)
+                .order_by(StructureCalculationResult.created_at.desc())
+            )).scalars().first()
 
     activity = (await db.execute(
         select(ProjectActivity).where(ProjectActivity.project_id == project.id)
@@ -417,6 +424,12 @@ async def get_project_record(project_id: str, db: AsyncSession = Depends(get_db)
             "evaluation_begun": structure_count > 0,
             "structures_available": structure_count,
             "leading_structure_name": leading_structure.name if leading_structure else None,
+            "leading_true_net_cost_usd": (
+                float(leading_result.true_net_cost_usd)
+                if leading_result is not None and leading_result.true_net_cost_usd is not None else None
+            ),
+            "has_unverified_inputs": leading_result.has_unverified_inputs if leading_result is not None else None,
+            "limitation_note": (leading_result.warnings or [None])[0] if leading_result is not None else None,
         },
         "activity": [
             {"action": a.action, "entity_type": a.entity_type, "actor": a.actor, "created_at": a.created_at.isoformat()}

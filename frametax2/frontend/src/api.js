@@ -169,6 +169,13 @@ export const deleteProject = (projectId) => verb("DELETE", `${PROJECTS_BASE}/${p
 export const setMasterArtwork = (projectId, assetId) =>
   verb("POST", `${PROJECTS_BASE}/${projectId}/artwork/${assetId}/set-master`);
 
+// Begin Evaluation — orchestrates CanonicalProductionState -> discovery ->
+// ProductionStructure/StructureCalculationResult for any project
+// (app/services/project_evaluation.py). Idempotent per input fingerprint;
+// safe to call again after a refresh.
+export const beginEvaluation = (projectId) =>
+  verb("POST", `${PROJECTS_BASE}/${projectId}/evaluation/begin`);
+
 // Ingestion (Phase E) — DISCOVER -> CLASSIFY -> ASSOCIATE -> STAGE ->
 // REVIEW -> COMMIT. Nothing here is canonical until commitIngestionCandidate.
 export const discoverIngestion = (sourcePointer, projectId) =>

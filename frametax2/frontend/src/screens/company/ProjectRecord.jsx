@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { API_ORIGIN, deleteProject, getProjectRecord, setMasterArtwork } from "../../api";
+import { API_ORIGIN, beginEvaluation, deleteProject, getProjectRecord, setMasterArtwork } from "../../api";
 import { Loading, ErrorBox } from "../../components/Async";
 import { Money } from "../../lib/format";
 import { PROJECT_STATUSES } from "../../lib/useProjectStatus";
@@ -48,10 +48,30 @@ export default function ProjectRecord() {
   const [artworkPickerOpen, setArtworkPickerOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
+  const [evalRunning, setEvalRunning] = useState(false);
+  const [evalMessage, setEvalMessage] = useState(null);
 
   function load() {
     setError(null);
     getProjectRecord(projectId).then(setRecord).catch((err) => setError(err.message || String(err)));
+  }
+
+  async function runEvaluation() {
+    setEvalRunning(true);
+    setEvalMessage(null);
+    try {
+      const result = await beginEvaluation(projectId);
+      if (result.status === "BUDGET_REQUIRED_FOR_CURRENT_EVALUATION" || result.status === "BLOCKED_INCOMPLETE_INPUTS") {
+        setEvalMessage((result.blockers && result.blockers[0]) || "Evaluation is blocked on incomplete inputs.");
+      } else {
+        setEvalMessage(null);
+        load();
+      }
+    } catch (err) {
+      setEvalMessage(err.message || String(err));
+    } finally {
+      setEvalRunning(false);
+    }
   }
 
   useEffect(() => {
@@ -142,8 +162,8 @@ export default function ProjectRecord() {
               Open Production →
             </button>
           ) : (
-            <button className="hero-action primary" disabled title="Evaluation is not yet wired to arbitrary Library projects — Little Utopia only">
-              Begin Evaluation
+            <button className="hero-action primary" onClick={runEvaluation} disabled={evalRunning}>
+              {evalRunning ? "Evaluating…" : analysis.evaluation_begun ? "Re-run Evaluation" : "Begin Evaluation"}
             </button>
           )}
           {!isServedProduction && (
@@ -175,6 +195,10 @@ export default function ProjectRecord() {
           )}
         </div>
       </div>
+
+      {evalMessage && (
+        <p className="rec-note" style={{ marginTop: -8, marginBottom: 16 }}>{evalMessage}</p>
+      )}
 
       <div className="rec-tabs">
         {TABS.map((t) => (
@@ -373,6 +397,14 @@ function AnalysisPanel({ analysis, full }) {
       <div className="stat"><span className="l">Leading structure</span>
         <span className="v">{analysis.leading_structure_name || <span className="text-tertiary">None yet</span>}</span>
       </div>
+      {analysis.leading_true_net_cost_usd != null && (
+        <div className="stat"><span className="l">Net production cost</span>
+          <span className="v"><Money value={analysis.leading_true_net_cost_usd} /></span>
+        </div>
+      )}
+      {analysis.limitation_note && (
+        <p className="text-tertiary small" style={{ marginTop: 10 }}>{analysis.limitation_note}</p>
+      )}
       {full && (
         <p className="text-tertiary small" style={{ marginTop: 10 }}>
           Structure count and leading structure are read directly from persisted Project Library state — never
