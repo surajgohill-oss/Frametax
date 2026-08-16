@@ -91,6 +91,22 @@ class ProjectEconomicInputs:
     budget_document_id: str | None = None
     unparsed_line_descriptions: list[str] = field(default_factory=list)
 
+    #: Provenance for the two territorial fact sets above (Codex Defect 1)
+    #: -- STATED means a ProjectFact row exists for this key; UNKNOWN means
+    #: none was ever recorded. Disclosure only; both states still resolve
+    #: to the same empty-set input for the territoriality guard.
+    accounts_outside_jurisdiction_state: str = "UNKNOWN"
+    offshore_payroll_accounts_state: str = "UNKNOWN"
+
+    #: Count of real, persisted SA-1 ProductionRequirement rows for this
+    #: project (Codex Defect 1) -- disclosed so the served trace never
+    #: implies "derive_production_requirements({}) found nothing" when
+    #: real script-derived requirements actually exist; they are not yet
+    #: mapped into the environment/infrastructure capability vocabulary
+    #: derive_production_requirements() consumes (a distinct, larger,
+    #: separately-scoped gap -- see CANONICAL_SERVED_WIRING_REPAIR.md).
+    production_requirements_on_file: int = 0
+
     @property
     def reconciliation_variance_usd(self) -> float:
         return round(self.leaf_account_sum_usd - self.gross_budget_usd, 2)
@@ -124,6 +140,25 @@ def _fact_account_set(rows: list[ProjectFact], key: str) -> frozenset[str]:
     if not isinstance(parsed, list):
         return frozenset()
     return frozenset(str(x).strip() for x in parsed if str(x).strip())
+
+
+#: Canonical served wiring repair (Codex Defect 1) — the territoriality
+#: guard itself must keep treating an absent fact as "no accounts stated
+#: outside the base jurisdiction" (an empty set is the only safe input a
+#: calculator that needs SOME set can be given without inventing evidence).
+#: What was missing downstream is HONESTY about that absence: nothing
+#: previously recorded whether a ProjectFact row was ever stated at all, so
+#: "no territorial facts exist yet" and "we checked and confirmed none
+#: apply" were indistinguishable in the persisted trace. This reports
+#: which one actually happened, for disclosure only — it changes no
+#: qualification/allocation outcome.
+FACT_STATE_STATED = "STATED"
+FACT_STATE_UNKNOWN = "UNKNOWN"
+
+
+def _fact_presence(rows: list[ProjectFact], key: str) -> str:
+    row = next((f for f in rows if f.fact_key == key), None)
+    return FACT_STATE_STATED if row is not None and row.value else FACT_STATE_UNKNOWN
 
 
 #: Generic project.format -> the production_type vocabulary the statutory
@@ -222,6 +257,11 @@ async def build_project_economic_inputs(
         select(ProjectFact).where(ProjectFact.project_id == project_id)
     )).scalars().all()
 
+    from app.models.production_requirement import ProductionRequirement
+    requirements_on_file = (await session.execute(
+        select(ProductionRequirement.id).where(ProductionRequirement.project_id == project_id)
+    )).scalars().all()
+
     return EconomicInputsResult(ProjectEconomicInputs(
         project_id=str(project_id),
         project_name=project.title,
@@ -239,6 +279,9 @@ async def build_project_economic_inputs(
         offshore_payroll_accounts=_fact_account_set(
             fact_rows, FACT_OFFSHORE_PAYROLL_ACCOUNTS
         ),
+        accounts_outside_jurisdiction_state=_fact_presence(fact_rows, FACT_ACCOUNTS_OUTSIDE_JURISDICTION),
+        offshore_payroll_accounts_state=_fact_presence(fact_rows, FACT_OFFSHORE_PAYROLL_ACCOUNTS),
+        production_requirements_on_file=len(requirements_on_file),
         budget_document_id=str(doc.id),
         unparsed_line_descriptions=unparsed,
     ))

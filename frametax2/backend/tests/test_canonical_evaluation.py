@@ -100,6 +100,18 @@ async def test_relocation_candidates_never_outrank_the_baseline(db: AsyncSession
     assert all(not r["is_baseline"] for r in cheaper_alternatives)
 
 
+#: Canonical served wiring repair (Codex Defect 4) — the real terminal
+#: causes an unpriceable candidate can reach, never flattened to one
+#: generic value. AU Location Offset (real statutory rules that don't
+#: resolve for this production/QPE) is RULE_REJECTED; a program the
+#: completed authority-coverage audit adjudicated selective/superseded is
+#: FEASIBILITY_REVIEW_REQUIRED; everything else with no classified
+#: doctrine/rate data at all is UNPRICEABLE_AUTHORITY_INSUFFICIENT.
+UNPRICEABLE_STATUSES = {
+    "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "RULE_REJECTED", "FEASIBILITY_REVIEW_REQUIRED",
+}
+
+
 async def test_unpriceable_candidates_are_accounted_for_not_dropped(db: AsyncSession):
     """Every candidate that reaches structure generation (Part N) ends in a
     terminal state — none are silently dropped. Capability-only
@@ -108,7 +120,7 @@ async def test_unpriceable_candidates_are_accounted_for_not_dropped(db: AsyncSes
     result = await evaluate_project(db, LITTLE_UTOPIA_PROJECT_ID)
     assert result["unpriceable_count"] > 0
     for entry in result["unpriceable"]:
-        assert entry["candidate_status"] == "UNPRICEABLE_AUTHORITY_INSUFFICIENT"
+        assert entry["candidate_status"] in UNPRICEABLE_STATUSES
         assert entry["true_net_cost_usd"] is None
         assert entry["reason"]  # never an unexplained drop
     for entry in result["ranked"]:

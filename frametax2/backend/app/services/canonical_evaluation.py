@@ -61,7 +61,12 @@ from app.calculators.production_discovery import discover_executable_jurisdictio
 from app.calculators.production_requirements import derive_production_requirements
 from app.calculators.qualification_derivation import derive_qualification_register
 from app.calculators.qualification_model import QualificationState
-from app.data.program_rate_rules import resolve_program_rate
+from app.data.authority_coverage_registry import coverage_state as _coverage_state
+from app.data.program_rate_rules import (
+    RATE_FAILURE_NO_RULES,
+    classify_rate_resolution_failure,
+    resolve_program_rate,
+)
 from app.models.jurisdiction import Jurisdiction
 from app.models.production import ProductionStructure, StructureCalculationResult
 from app.models.project import Project
@@ -71,7 +76,7 @@ from app.services.canonical_project_economics import (
     production_facts_for,
 )
 
-ENGINE_VERSION = "canonical-1.1.0"
+ENGINE_VERSION = "canonical-1.2.1"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
@@ -175,14 +180,58 @@ def _price_candidate(
     return pricing, register, rr
 
 
+def _capability_only_status(examination) -> tuple[str, str, str]:
+    """Real terminal status for a capability_only candidate (Codex Defect
+    4) — reads fields discover_executable_jurisdictions() already computed
+    (has_doctrine, has_rate_rules, resolves_for_production, program_slug)
+    plus the SAME authority-coverage-registry lookup discovery itself
+    already consulted for this program. Never re-evaluates a rule or a
+    coverage decision; only classifies the terminal state that was already
+    reached. Returns (candidate_status, rejection_reason_class, reason)."""
+    if examination is None:
+        return (
+            STATUS_UNPRICEABLE_AUTHORITY_INSUFFICIENT, "AUTHORITY_INSUFFICIENT",
+            "Incentive model not yet classified for this program.",
+        )
+    state = _coverage_state(examination.program_slug)
+    if state == "UNPRICEABLE_AUTHORITY_INSUFFICIENT":
+        # The registry's OWN explicit adjudication of "no defensible
+        # authority" for this program — even where discovery's has_doctrine/
+        # has_rate_rules still read True from stale classified data (the
+        # completed primary-authority audit overrides that staleness).
+        # Same terminal status as "no rules classified at all", never a
+        # different bucket for the same underlying cause.
+        return (STATUS_UNPRICEABLE_AUTHORITY_INSUFFICIENT, state, examination.reason)
+    if state not in ("PRICEABLE_VALIDATED",):
+        # NON_GUARANTEED_SELECTIVE / NON_ECONOMIC / SUPERSEDED / DUPLICATE —
+        # the completed primary-authority corpus already adjudicated this
+        # program as blocked for a reason OTHER than missing data; never
+        # flattened into "authority insufficient".
+        return (
+            STATUS_FEASIBILITY_REVIEW_REQUIRED, state,
+            f"{examination.reason} (authority_coverage_registry: {state})",
+        )
+    if examination.has_doctrine and examination.has_rate_rules and not examination.resolves_for_production:
+        # Real statutory rate rules exist for this program; they simply do
+        # not resolve for this production's type/QPE (a genuine threshold/
+        # rule rejection — e.g. a minimum-QPE gate) — never the same as
+        # "no authority data exists".
+        return (
+            STATUS_RULE_REJECTED, "STATUTORY_CONDITIONS_UNMET",
+            examination.reason,
+        )
+    return (STATUS_UNPRICEABLE_AUTHORITY_INSUFFICIENT, "AUTHORITY_INSUFFICIENT", examination.reason)
+
+
 def _segment_dicts(pricing) -> list[dict]:
-    """Light, generic serialization of `pricing.segments` — the SAME
+    """Full, generic serialization of `pricing.segments` — the SAME
     SegmentEconomics objects `little_utopia_state.build_allocated_structures`
-    already serializes via its own `_seg_dict`, reduced to the fields the
-    mature UI's Globe/Budget-Rail cross-referencing actually reads
-    (jurisdiction_code, qpe_usd, account_codes — see globeData.js and
-    BudgetRail.jsx). Exposes more of what price_allocated_structure already
-    computed for this call; adds no new economics."""
+    already serializes via its own `_seg_dict` (byte-identical field set and
+    naming, see qualification_trace below). Canonical served wiring repair
+    (Codex Defect 3): previously reduced to a handful of fields, silently
+    dropping cap/band/confirmation/floor-ceiling/register-trace data the
+    calculator already computed — this is serialization only, no new
+    economics, every value already existed on `pricing.segments`."""
     return [
         {
             "jurisdiction_code": s.jurisdiction_code,
@@ -193,10 +242,19 @@ def _segment_dicts(pricing) -> list[dict]:
             "account_codes": list(s.account_codes),
             "qpe_usd": s.qpe_usd,
             "excluded_usd": s.excluded_usd,
+            "unresolved_usd": s.unresolved_usd,
             "rate_floor": s.rate_floor,
             "rate_ceiling": s.rate_ceiling,
+            "is_band_ceiling": s.is_band_ceiling,
+            "statutory_basis": s.statutory_basis,
             "doctrine": s.doctrine,
+            "incentive_floor_usd": s.incentive_floor_usd,
+            "incentive_ceiling_usd": s.incentive_ceiling_usd,
+            "ceiling_requires_confirmation": s.ceiling_requires_confirmation,
+            "qpe_cap_applied_usd": s.qpe_cap_applied_usd,
             "blockers": list(s.blockers),
+            "qualification_trace": list(s.register_trace),
+            "notes": list(s.notes),
         }
         for s in pricing.segments
     ]
@@ -245,6 +303,20 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     # prior versions rather than deleting them (see is_current elsewhere
     # in this codebase for the same convention).
 
+    # Codex Defect 1: derive_production_requirements() expects a
+    # `physical_requirements` dict shaped around script_requirements/
+    # location_categories/marine_required signals -- a shape only
+    # app.demo.little_utopia_state's own hand-built fixture currently
+    # produces. Real SA-1 ProductionRequirement rows exist generically
+    # (requirement_key vocabulary: SCRIPTED_LOCATION/EXPLICIT_VEHICLE/etc.)
+    # but there is no existing, non-inventive mapping from that vocabulary
+    # into this one -- building it would be new interpretive work, not a
+    # serialization fix, so it is out of this repair's bounded scope (see
+    # CANONICAL_SERVED_WIRING_REPAIR.md). {} therefore remains an honest
+    # "no environment/infrastructure signals available in this shape yet"
+    # rather than a silent substitution; inputs.production_requirements_on_file
+    # discloses in the persisted trace when real (differently-shaped)
+    # requirements exist on file so this gap is visible, not hidden.
     requirements = derive_production_requirements({})
     discovery = discover_executable_jurisdictions(
         requirements=requirements,
@@ -292,21 +364,24 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         await session.flush()
 
         if classification == "capability_only":
-            # Discovery already knows this program has no classified
-            # doctrine/rate — re-attempting pricing would only rediscover
-            # the same fact via a failed derive_qualification_register
-            # call. Recorded directly with discovery's own stated reason,
-            # never silently dropped.
+            # Discovery already knows this program has no priceable route —
+            # re-attempting pricing would only rediscover the same fact via
+            # a failed derive_qualification_register call. Codex Defect 4:
+            # the terminal cause is classified from discovery's own already-
+            # computed fields (never re-evaluated), not flattened to a
+            # single generic status.
             examination = next((e for e in discovery.examinations if e.jurisdiction_code == code), None)
-            reason = examination.reason if examination else "Incentive model not yet classified for this program."
+            candidate_status, rejection_reason_class, reason = _capability_only_status(examination)
             session.add(StructureCalculationResult(
                 id=uuid.uuid4(), structure_id=structure.id, engine_version=ENGINE_VERSION,
                 total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
                 true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
                 has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
                 calculation_trace_json={
-                    "candidate_status": STATUS_UNPRICEABLE_AUTHORITY_INSUFFICIENT,
+                    "candidate_status": candidate_status,
+                    "rejection_reason_class": rejection_reason_class,
                     "discovery_classification": classification,
+                    "program_slug": examination.program_slug if examination else program_slug,
                     "reason": reason,
                     "structure_type": "single_country" if code == inputs.jurisdiction_code else "full_relocation",
                     "primary_jurisdiction": code,
@@ -317,11 +392,32 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
 
         pricing, register, rate_resolution = _price_candidate(inputs, code, program_slug)
         if pricing is None or not pricing.is_fully_priced:
-            candidate_status = STATUS_UNPRICEABLE_AUTHORITY_INSUFFICIENT
-            reason = (
-                "Statutory rate rules did not resolve for this production/QPE."
-                if pricing is None else "; ".join(pricing.blockers) or "Not fully priced."
-            )
+            if pricing is None:
+                # Codex Defect 4: resolve_program_rate() returned None for
+                # one of two materially different reasons — classify which,
+                # by mirroring its own eligibility gate read-only (no rule
+                # re-evaluation, no changed outcome).
+                qpe_for_probe = round(sum(
+                    a.amount_usd for a in register if a.state == QualificationState.QUALIFIES
+                ), 2)
+                failure = classify_rate_resolution_failure(
+                    program_slug, inputs.production_type, qpe_for_probe,
+                )
+                if failure == RATE_FAILURE_NO_RULES:
+                    candidate_status = STATUS_UNPRICEABLE_AUTHORITY_INSUFFICIENT
+                    rejection_reason_class = "AUTHORITY_INSUFFICIENT"
+                    reason = "No statutory rate rules exist for this program."
+                else:
+                    candidate_status = STATUS_RULE_REJECTED
+                    rejection_reason_class = "STATUTORY_CONDITIONS_UNMET"
+                    reason = (
+                        f"Statutory rate rules exist for this program but do not resolve "
+                        f"for this production's type/QPE (${qpe_for_probe:,.2f})."
+                    )
+            else:
+                candidate_status = STATUS_UNPRICEABLE_AUTHORITY_INSUFFICIENT
+                rejection_reason_class = "PRICING_BLOCKED"
+                reason = "; ".join(pricing.blockers) or "Not fully priced."
             session.add(StructureCalculationResult(
                 id=uuid.uuid4(), structure_id=structure.id, engine_version=ENGINE_VERSION,
                 total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
@@ -329,7 +425,10 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 has_unverified_inputs=True, warnings=[LIMITATION_NOTE],
                 calculation_trace_json={
                     "candidate_status": candidate_status,
-                    "discovery_classification": classification, "reason": reason,
+                    "rejection_reason_class": rejection_reason_class,
+                    "discovery_classification": classification,
+                    "program_slug": program_slug,
+                    "reason": reason,
                     "structure_type": "single_country" if code == inputs.jurisdiction_code else "full_relocation",
                     "primary_jurisdiction": code,
                 },
@@ -362,6 +461,15 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 # see RELOCATION_COMPARABILITY_NOTE. Baseline needs no such
                 # adjustment by construction (no relocation occurs).
                 "relocation_cost_normalized": is_baseline,
+                # Codex Defect 2 — economic priceability (candidate_status
+                # == PRICED, always true here) and regional comparability
+                # are two different states. is_directly_comparable is the
+                # SAME fact as relocation_cost_normalized under an
+                # unambiguous name, so a downstream reader never has to
+                # infer "comparable" from a field named for something else.
+                # is_fully_priced (this candidate priced successfully) must
+                # never be overwritten by this — see canonical_production_view.py.
+                "is_directly_comparable": is_baseline,
                 "structure_type": pricing.structure_type,
                 "primary_jurisdiction": pricing.primary_jurisdiction,
                 "selected_incentive_usd": pricing.selected_incentive_usd,
@@ -369,6 +477,17 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 "npc_conservative_usd": pricing.npc_verified_usd,
                 "gross_budget_usd": pricing.gross_budget_usd,
                 "segments": _segment_dicts(pricing),
+                # Codex Defect 1 disclosure (never changes the qualification
+                # outcome — the territoriality guard still receives the same
+                # empty-set input either way): whether the two territorial
+                # ProjectFact keys were ever actually stated for this
+                # project, and how many real SA-1 ProductionRequirement rows
+                # exist on file but are not yet mapped into jurisdiction
+                # capability matching (see production_requirements_on_file
+                # docstring in canonical_project_economics.py).
+                "accounts_outside_jurisdiction_state": inputs.accounts_outside_jurisdiction_state,
+                "offshore_payroll_accounts_state": inputs.offshore_payroll_accounts_state,
+                "production_requirements_on_file": inputs.production_requirements_on_file,
             },
             input_fingerprint=fingerprint,
         ))

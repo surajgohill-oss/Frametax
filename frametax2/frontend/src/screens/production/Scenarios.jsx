@@ -5,7 +5,7 @@ import { Loading, ErrorBox } from "../../components/Async";
 import { Money, scenarioDisplay } from "../../lib/format";
 import { useAppState } from "../../state/AppState";
 import { patchProject } from "../../api";
-import { classifyStructure, isBaselineStructure } from "../../lib/productionOptions";
+import { classifyStructure, isBaselineStructure, isDirectlyComparable } from "../../lib/productionOptions";
 
 const MAX_VISIBLE = 6;
 
@@ -18,11 +18,12 @@ const MAX_VISIBLE = 6;
 // Overview's Production Options cards use (lib/productionOptions.js) --
 // Current/Base, Full Relocation, Hybrid/Component, Official Treaty
 // Co-Production -- applied here as a per-column badge, and the SAME
-// comparable/review split (allocated.ranking's own is_fully_priced flag,
-// already the existing signal canonical_production_view.py and
-// little_utopia_state.py both compute) used to keep review/unavailable
+// comparable/review split (allocated.ranking's own is_directly_comparable
+// field -- canonical served wiring repair, Codex Defect 2 -- kept
+// distinct from is_fully_priced) used to keep review/unavailable
 // structures out of the main comparison table entirely, in their own
-// section below, rather than mixed into the same swappable column set.
+// section below (still showing their own real QPE/incentive/NPC when
+// priced), rather than mixed into the same swappable column set.
 //
 // Canonical behavior: only the MAX_VISIBLE (6) comparable structures are
 // shown as table columns at once — never an unbounded/scrolling wall.
@@ -65,17 +66,18 @@ export default function Scenarios() {
   const gross = production.gross_budget_usd;
   const qpe = (s) => s.segments?.reduce((sum, sg) => sum + (sg.qpe_usd || 0), 0) || 0;
 
-  // Comparable vs Review/Unavailable — the SAME is_fully_priced flag on
-  // the ranking entry (not the structure entry) that canonical_production_
-  // view.py deliberately sets false for priced-but-not-regionally-
-  // validated structures, and little_utopia_state.py's rank_allocated_
-  // structures sets false for genuinely unpriced ones. Never a new
-  // frontend calculation — this flag already existed and already drove
-  // Overview's Top Six selection.
+  // Comparable vs Review/Unavailable — canonical served wiring repair
+  // (Codex Defect 2): the ranking entry's is_directly_comparable field,
+  // NOT is_fully_priced. Priced-but-not-regionally-validated structures
+  // (29 of FVD's 30 priced candidates) keep is_fully_priced=true and
+  // their real QPE/incentive/NPC on their ranking entry — they are
+  // filtered OUT of the comparable/ranked table on comparability, not
+  // priceability, and still show their real numbers in the Review
+  // section below (never blank, never "not priced").
   const comparableOrdered = [...allocated.structures]
-    .filter((s) => rankById.get(s.structure_id)?.is_fully_priced)
+    .filter((s) => isDirectlyComparable(rankById.get(s.structure_id)))
     .sort((a, b) => (rankById.get(a.structure_id)?.rank ?? Infinity) - (rankById.get(b.structure_id)?.rank ?? Infinity));
-  const reviewOrdered = allocated.structures.filter((s) => !rankById.get(s.structure_id)?.is_fully_priced);
+  const reviewOrdered = allocated.structures.filter((s) => !isDirectlyComparable(rankById.get(s.structure_id)));
 
   const base = comparableOrdered.slice(0, MAX_VISIBLE);
   const overflow = comparableOrdered.slice(MAX_VISIBLE);
@@ -242,7 +244,18 @@ export default function Scenarios() {
                     <div className="row-title">
                       {title} <span className={`badge ${classification.accent}`} style={{ marginLeft: 6 }}>{classification.label}</span>
                     </div>
-                    <div className="row-sub">{reasons ? reasons.join(" · ") : "Not yet priced."}</div>
+                    {/* Codex Defect 2/4 — a priced-but-not-comparable structure
+                        keeps its own real QPE/incentive/NPC visible here
+                        (directional economics, not "unavailable"); only a
+                        genuinely unpriced structure shows reason text alone. */}
+                    {s.is_fully_priced ? (
+                      <div className="row-sub">
+                        QPE <Money value={qpe(s)} bare /> · Incentive <Money value={s.selected_incentive_usd} bare /> ·
+                        {" "}NPC <Money value={s.npc_with_adjustments_usd} bare /> — {reasons ? reasons.join(" · ") : "not yet regionally validated."}
+                      </div>
+                    ) : (
+                      <div className="row-sub">{reasons ? reasons.join(" · ") : "Not yet priced."}</div>
+                    )}
                   </div>
                 </div>
               );

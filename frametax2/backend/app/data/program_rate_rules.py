@@ -896,6 +896,39 @@ def _blended_effective_rate(tier: RateRule, qpe_usd: float | None) -> float:
     return total_credit / qpe_usd
 
 
+#: Canonical served wiring repair (Codex Defect 4) — resolve_program_rate()
+#: collapses two materially different reasons into the same `None`: a
+#: program with NO rate rules at all (authority-insufficient) vs. a program
+#: WITH rate rules that simply don't cover this production_type/QPE (a real
+#: statutory threshold/rule rejection — e.g. a minimum-QPE gate the
+#: production doesn't meet). Callers that need to distinguish these two
+#: honestly (never re-evaluating, never changing which rate wins) call this
+#: read-only classifier AFTER resolve_program_rate() has already returned
+#: None. It mirrors resolve_program_rate()'s own eligibility gate exactly
+#: (production_type + min_qpe_usd) and computes nothing new.
+RATE_FAILURE_NO_RULES = "NO_RATE_RULES"
+RATE_FAILURE_CONDITIONS_UNMET = "STATUTORY_CONDITIONS_UNMET"
+
+
+def classify_rate_resolution_failure(
+    program_slug: str, production_type: str, qpe_usd: float | None,
+) -> str:
+    """Read-only: why did resolve_program_rate() return None? Never called
+    unless it already did. Returns RATE_FAILURE_NO_RULES (no statutory rate
+    rules exist for this program) or RATE_FAILURE_CONDITIONS_UNMET (rate
+    rules exist, but none apply to this production_type/QPE)."""
+    rules = get_rate_rules(program_slug)
+    if not rules:
+        return RATE_FAILURE_NO_RULES
+    for rule in rules:
+        if production_type not in rule.production_types:
+            continue
+        if rule.min_qpe_usd is not None and (qpe_usd is None or qpe_usd < rule.min_qpe_usd):
+            continue
+        return RATE_FAILURE_CONDITIONS_UNMET  # defensive: resolve_program_rate should not have returned None here
+    return RATE_FAILURE_CONDITIONS_UNMET
+
+
 def resolve_program_rate(
     program_slug: str,
     production_type: str,

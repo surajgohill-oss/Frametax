@@ -28,6 +28,21 @@ export function isBaselineStructure(entry) {
   return !!(entry.is_baseline || entry.structure_type === "single_country");
 }
 
+// Canonical served wiring repair (Codex Defect 2) — is_directly_comparable
+// on a RANKING entry only exists on the generic canonical_production_view.py
+// path (added this batch). little_utopia_state.py's own rank_allocated_
+// structures() has no such field and never will need one: LU's rich
+// per-structure pricing already includes real travel/FX/in-kind deltas
+// (unlike the generic path's hard-set zeros), so every one of ITS ranked
+// candidates already IS directly comparable by construction -- which is
+// exactly what its existing is_fully_priced always meant. Falling back to
+// is_fully_priced when is_directly_comparable is absent therefore
+// preserves LU's existing, already-correct behavior unchanged, while the
+// generic path (which always sets the field explicitly) gets the real fix.
+export function isDirectlyComparable(rankingEntry) {
+  return rankingEntry?.is_directly_comparable ?? rankingEntry?.is_fully_priced ?? false;
+}
+
 // The UI must stop treating every multi-jurisdiction structure as a
 // "co-production." `treaty_slug` is the one EXPLICIT field the backend
 // already sets only when a real bilateral/multilateral treaty applies
@@ -46,15 +61,22 @@ export function classifyStructure(entry) {
 // 1. First five valid/comparable options from the EXISTING ranking order
 //    (allocated.ranking, already sorted by npc_with_adjustments_usd --
 //    canonical_production_view.py / little_utopia_state.py's own rule
-//    that only relocation_cost_normalized candidates rank numerically).
+//    that only is_directly_comparable candidates rank numerically).
 // 2. Sixth slot: the best not-yet-shown structure whose treaty_slug is
 //    explicitly set, if one exists; otherwise the next valid/comparable
 //    option in the same existing order.
 // Never manufactures a sixth option -- fewer than six is a valid result.
+//
+// Canonical served wiring repair (Codex Defect 2): filters on
+// is_directly_comparable, NOT is_fully_priced. Priced-but-not-regionally-
+// comparable structures (FVD has 29) are real, differentiated economics —
+// they belong in Scenarios' Review section (see selectReviewOptions
+// below), never silently promoted into "the six primary options" just
+// because they happen to be priced.
 export function selectTopOptions(allocated) {
   if (!allocated?.ranking || !allocated?.structures) return [];
   const structById = new Map(allocated.structures.map((s) => [s.structure_id, s]));
-  const pricedRanked = allocated.ranking.filter((r) => r.is_fully_priced);
+  const pricedRanked = allocated.ranking.filter(isDirectlyComparable);
 
   const firstFive = pricedRanked.slice(0, 5)
     .map((r) => structById.get(r.structure_id))

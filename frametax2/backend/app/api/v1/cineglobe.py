@@ -1077,7 +1077,10 @@ EMPTY_FACTS: dict[str, Any] = {"answers": {}, "answerable": {}}
 
 @router.get("/projects/{project_id}/state")
 async def get_project_state(project_id: str, db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
-    from app.services.canonical_production_view import build_production_and_structures
+    from app.services.canonical_production_view import (
+        build_generic_pkg_and_economics,
+        build_production_and_structures,
+    )
 
     project = (await db.execute(select(Project).where(Project.id == project_id))).scalar_one_or_none()
     if project is None:
@@ -1102,13 +1105,19 @@ async def get_project_state(project_id: str, db: AsyncSession = Depends(get_db))
     view = await build_production_and_structures(db, project_id)
     if view.get("status") != "OK":
         raise HTTPException(status_code=404, detail=view.get("status", "PROJECT_NOT_FOUND"))
+    # Codex Defect 5: pkg/economics/people/facts adapted from this
+    # project's own persisted budget/register/people/fact rows — never
+    # Little Utopia's, never a second calculation. legal/recommendations
+    # stay honest empty shapes; no generic evidence-graph/recommendation
+    # engine exists yet for any project outside the LU demo state.
+    sections = await build_generic_pkg_and_economics(db, project_id)
     return {
         "production": view["production"],
-        "pkg": EMPTY_PKG,
+        "pkg": sections.get("pkg", EMPTY_PKG),
         "recommendations": EMPTY_RECOMMENDATIONS,
         "structures": view["structures"],
         "legal": EMPTY_LEGAL,
-        "economics": EMPTY_ECONOMICS,
-        "people": EMPTY_PEOPLE,
-        "facts": EMPTY_FACTS,
+        "economics": sections.get("economics", EMPTY_ECONOMICS),
+        "people": sections.get("people", EMPTY_PEOPLE),
+        "facts": sections.get("facts", EMPTY_FACTS),
     }

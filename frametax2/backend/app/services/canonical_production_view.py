@@ -30,10 +30,14 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.budget import BudgetDocument
+from app.models.budget import BudgetDocument, BudgetLineItem
 from app.models.jurisdiction import Jurisdiction
 from app.models.production import ProductionStructure, StructureCalculationResult
+from app.models.production_requirement import ProductionRequirement
 from app.models.project import Project
+from app.models.project_fact import ProjectFact
+from app.models.project_person import ProjectPerson
+from app.models.talent import TalentProfile
 from app.services.canonical_evaluation import ENGINE_VERSION
 
 
@@ -78,6 +82,12 @@ def _empty_structure_entry(structure, result, jurisdiction_code_by_id: dict[str,
         "conditional_compatibility": {"pursuable_count": 0, "counts_by_verdict": {}, "gate_kinds": []},
         "is_fully_priced": is_priced,
         "candidate_status": trace.get("candidate_status"),
+        # Codex Defect 4 — the actual terminal cause (never flattened to a
+        # single generic reason) and the program identity, both already
+        # persisted verbatim by canonical_evaluation.py; None for priced
+        # rows and for pre-1.2.0 rows that predate this enrichment.
+        "rejection_reason_class": trace.get("rejection_reason_class"),
+        "program_slug": trace.get("program_slug"),
         "blockers": [] if is_priced else [trace.get("reason")] if trace.get("reason") else [],
         "gross_budget_usd": trace.get("gross_budget_usd"),
         "total_incentive_floor_usd": selected_incentive_usd,
@@ -109,32 +119,53 @@ def _empty_structure_entry(structure, result, jurisdiction_code_by_id: dict[str,
         "recommendation": None,
         "is_baseline": bool(trace.get("is_baseline")),
         "relocation_cost_normalized": bool(trace.get("relocation_cost_normalized")),
+        # Codex Defect 2 — the SAME fact under an explicit, unambiguous
+        # name (falls back to relocation_cost_normalized for rows
+        # persisted before this field existed). Comparability, not
+        # priceability; is_fully_priced above is never derived from this.
+        "is_directly_comparable": bool(trace.get("is_directly_comparable", trace.get("relocation_cost_normalized"))),
         "reason": trace.get("reason"),
         "warnings": result.warnings or [],
     }
 
 
-def _ranking_entry(structure, result, entry: dict) -> dict:
+def _ranking_entry(entry: dict) -> dict:
+    """Codex Defect 2 — is_fully_priced on a ranking entry must always mean
+    what it says (this candidate has a real, priced NPC/incentive), never
+    'and is also directly comparable'. Comparability is its OWN explicit
+    field. A priced-but-not-comparable candidate therefore keeps its real
+    numeric fields here AND is_fully_priced=True; it is excluded from the
+    numeric RANK (see caller) and from a savings claim, never from having
+    its own economics visible."""
+    base = {
+        "rank": None,  # filled in by caller only for the numerically-ranked (comparable) set
+        "structure_id": entry["structure_id"],
+        "label": entry["label"],
+        "is_fully_priced": entry["is_fully_priced"],
+        "is_directly_comparable": entry["is_directly_comparable"],
+        "candidate_status": entry.get("candidate_status"),
+        "rejection_reason_class": entry.get("rejection_reason_class"),
+        "program_slug": entry.get("program_slug"),
+    }
     if entry["is_fully_priced"]:
-        return {
-            "rank": None,  # filled in by caller after sorting
-            "structure_id": entry["structure_id"],
-            "label": entry["label"],
-            "is_fully_priced": True,
+        base.update({
             "selected_incentive_usd": entry["selected_incentive_usd"],
             "inkind_replacement_delta_usd": entry["inkind_replacement_delta_usd"],
             "npc_verified_usd": entry["npc_verified_usd"],
             "npc_with_adjustments_usd": entry["npc_with_adjustments_usd"],
             "npc_conservative_usd": entry["npc_conservative_usd"],
             "conditional_pursuable_count": 0,
-        }
-    return {
-        "rank": None,
-        "structure_id": entry["structure_id"],
-        "label": entry["label"],
-        "is_fully_priced": False,
-        "excluded_from_ranking_because": entry["blockers"] or [entry.get("reason") or "Not fully priced."],
-    }
+        })
+        if not entry["is_directly_comparable"]:
+            base["excluded_from_ranking_because"] = [
+                "Priced from a real statutory rate, but this candidate's relocation-specific "
+                "costs (travel, in-kind replacement) are not yet modeled generically — its NPC "
+                "is not a fair comparison against the base jurisdiction yet. Regional cost "
+                "normalization pending."
+            ]
+    else:
+        base["excluded_from_ranking_because"] = entry["blockers"] or [entry.get("reason") or "Not fully priced."]
+    return base
 
 
 async def build_production_and_structures(session: AsyncSession, project_id) -> dict:
@@ -189,39 +220,40 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
 
     # Ranking (Part K — never invent regional savings): only structures
     # whose cost is actually comparable on the SAME basis participate in
-    # numeric ranking. A relocation candidate's lower NPC omits real
+    # numeric RANK. A relocation candidate's lower NPC omits real
     # relocation costs (travel, in-kind replacement) no project has
     # generic data for yet — a lower number there is not a cheaper
-    # option, just an incomplete one. relocation_cost_normalized is False
+    # option, just an incomplete one. is_directly_comparable is False
     # for every candidate except the production's own base jurisdiction
     # (which needs no such adjustment by construction), so this mirrors
     # canonical_evaluation.py's own _summarize_evaluation top_pair rule:
     # the baseline is the winner whenever it is priced, never a relocation
     # candidate on a merely-lower raw number.
+    #
+    # Codex Defect 2 — comparability gates the RANK, never priceability
+    # itself: every priced candidate (comparable or review_required) keeps
+    # is_fully_priced=True and its real QPE/incentive/NPC on its ranking
+    # entry (see _ranking_entry). Only genuinely unpriced candidates get
+    # is_fully_priced=False. Overview/Scenarios/Workspace/Globe all read
+    # the same explicit is_directly_comparable field to decide what to
+    # rank vs. what to show as priced-but-review, never overloading
+    # is_fully_priced to mean both things.
     comparable = sorted(
-        (e for e in structure_entries if e["is_fully_priced"] and e["relocation_cost_normalized"]),
+        (e for e in structure_entries if e["is_fully_priced"] and e["is_directly_comparable"]),
         key=lambda e: e["npc_with_adjustments_usd"] if e["npc_with_adjustments_usd"] is not None else float("inf"),
     )
-    review_required = [e for e in structure_entries if e["is_fully_priced"] and not e["relocation_cost_normalized"]]
+    review_required = [e for e in structure_entries if e["is_fully_priced"] and not e["is_directly_comparable"]]
     unpriced = [e for e in structure_entries if not e["is_fully_priced"]]
 
     ranking: list[dict] = []
     for i, e in enumerate(comparable, start=1):
-        r = _ranking_entry(None, None, e)
+        r = _ranking_entry(e)
         r["rank"] = i
         ranking.append(r)
     for e in review_required:
-        r = _ranking_entry(None, None, e)
-        r["is_fully_priced"] = False  # priced, but not eligible to rank — see note above
-        r["excluded_from_ranking_because"] = [
-            "Priced from a real statutory rate, but this candidate's relocation-specific "
-            "costs (travel, in-kind replacement) are not yet modeled generically — its NPC "
-            "is not a fair comparison against the base jurisdiction yet. Regional cost "
-            "normalization pending."
-        ]
-        ranking.append(r)
+        ranking.append(_ranking_entry(e))
     for e in unpriced:
-        ranking.append(_ranking_entry(None, None, e))
+        ranking.append(_ranking_entry(e))
 
     base_code = jurisdiction_code_by_id.get(str(project.home_jurisdiction_id)) if project.home_jurisdiction_id else None
     if base_code is None:
@@ -310,3 +342,169 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
     }
 
     return {"status": "OK", "production": production, "structures": structures}
+
+
+# ─────────────────────────────────────────────────────────────────────────
+# Codex Defect 5 — generic project sections (pkg/economics/people/facts)
+# ─────────────────────────────────────────────────────────────────────────
+#
+# get_project_state()'s generic (non-Little-Utopia) branch previously
+# substituted EMPTY_PKG/EMPTY_ECONOMICS/EMPTY_PEOPLE/EMPTY_FACTS for every
+# project, even when real budget/requirement/people/fact data exists —
+# Overview's Budget Rail and Production Facts panel therefore rendered
+# empty even though the structure cards above them had real economics.
+# This adapts EXISTING persisted rows into the same shapes those two
+# components already read; it computes no economics and recreates no
+# calculation, reusing the leading structure's OWN already-persisted
+# register_trace (Codex Defect 3) for pkg.register.
+
+#: ProjectPerson.role -> the EMPTY_PEOPLE bucket key (mirrors
+#: frontend/src/lib/personRoles.js's PERSON_ROLES exactly, so the same
+#: role vocabulary UI edits write is the one this reads back).
+_PEOPLE_ROLE_TO_BUCKET = {
+    "writer": "writers", "director": "directors", "producer": "producers",
+    "lead_cast": "cast", "lead_cast_2": "lead_cast_2", "lead_cast_3": "lead_cast_3",
+    "dop": "dop", "editor": "editor", "composer": "composer",
+}
+
+
+async def build_generic_pkg_and_economics(session: AsyncSession, project_id) -> dict:
+    """Real pkg/economics/people/facts for a generic (non-demo) project,
+    from persisted data only. Honest empty values where nothing exists —
+    never fabricated, never Little Utopia's."""
+    project = await session.get(Project, project_id)
+    if project is None:
+        return {"status": "PROJECT_NOT_FOUND"}
+
+    # ── register + budget totals: the LEADING structure's own already-
+    # persisted segments (Codex Defect 3 restored qualification_trace) ──
+    register: list[dict] = []
+    line_item_count = 0
+    total_budget_usd = None
+    currency_code = None
+    filename = None
+    if project.leading_structure_id is not None:
+        leading_result = (await session.execute(
+            select(StructureCalculationResult)
+            .where(StructureCalculationResult.structure_id == project.leading_structure_id)
+            .order_by(StructureCalculationResult.created_at.desc())
+        )).scalars().first()
+        if leading_result is not None:
+            trace = leading_result.calculation_trace_json or {}
+            for seg in trace.get("segments") or []:
+                for a in seg.get("qualification_trace") or []:
+                    register.append({
+                        "account_code": a.get("account_code"),
+                        "description": a.get("description"),
+                        "amount_usd": a.get("amount_usd"),
+                        "state": a.get("state"),
+                        # LU's richer register carries confidence/grey_reason/
+                        # structuring_mechanism/incentive_upside — not yet
+                        # computed generically; honest nulls, not invented.
+                        "confidence": "unknown",
+                        "authority_basis": a.get("authority_basis"),
+                        "reason": a.get("reason"),
+                        "grey_reason": None,
+                        "financial_impact_usd": None,
+                        "structuring_mechanism": None,
+                        "resolving_evidence": None,
+                        "incentive_upside_usd": None,
+                    })
+            total_budget_usd = (
+                float(leading_result.total_budget_usd) if leading_result.total_budget_usd is not None else None
+            )
+
+    budget_doc = (await session.execute(
+        select(BudgetDocument).where(BudgetDocument.project_id == project.id)
+        .order_by(BudgetDocument.created_at.desc())
+    )).scalars().first()
+    if budget_doc is not None:
+        filename = budget_doc.filename
+        currency_code = budget_doc.currency_code
+        if total_budget_usd is None and budget_doc.total_budget_raw is not None:
+            total_budget_usd = float(budget_doc.total_budget_raw)
+        line_item_count = (await session.execute(
+            select(BudgetLineItem.id).where(BudgetLineItem.budget_document_id == budget_doc.id)
+        )).scalars().all()
+        line_item_count = len(line_item_count)
+
+    pkg = {
+        "production_id": str(project.id),
+        "confidence": "unknown",
+        "is_ready_for_downstream_engines": bool(register),
+        "register": register,
+        "budget": {
+            "known": budget_doc is not None, "filename": filename, "currency_code": currency_code,
+            "total_budget_usd": total_budget_usd,
+            "line_item_count": line_item_count,
+            "atl_total_usd": None, "btl_total_usd": None, "post_total_usd": None,
+            "other_total_usd": None, "labor_usd": None, "non_labor_usd": None,
+            "totals_by_spend_category_usd": {}, "opportunity_hints": [],
+        },
+        "script": {
+            "known": False, "filename": None, "page_count": None, "word_count": None,
+            "locations_mentioned": [], "character_names": [], "attributes": {},
+        },
+        "package_people_count": 0, "package_entities_count": 0, "location_count": 0,
+        "missing_inputs": [],
+    }
+
+    # ── people: real ProjectPerson + TalentProfile rows, bucketed by the
+    # same role vocabulary PERSON_ROLES/ProductionDetails.jsx already use ──
+    people_rows = (await session.execute(
+        select(ProjectPerson, TalentProfile)
+        .join(TalentProfile, ProjectPerson.talent_id == TalentProfile.id)
+        .where(ProjectPerson.project_id == project.id)
+    )).all()
+    people: dict = {
+        "writers": [], "directors": [], "cast": [], "producers": [],
+        "lead_cast_2": [], "lead_cast_3": [], "dop": [], "editor": [], "composer": [],
+        "overrides": {}, "missing_inputs": [],
+    }
+    for pp, tp in people_rows:
+        bucket = _PEOPLE_ROLE_TO_BUCKET.get(pp.role)
+        if bucket is None:
+            continue
+        people[bucket].append({
+            "person_id": str(tp.id), "name": tp.name,
+            "nationality": tp.primary_nationality,
+        })
+
+    # ── facts: real ProjectFact rows, verbatim ──
+    fact_rows = (await session.execute(
+        select(ProjectFact).where(ProjectFact.project_id == project.id).order_by(ProjectFact.fact_key)
+    )).scalars().all()
+    facts = {
+        "answers": {f.fact_key: f.value for f in fact_rows},
+        "answerable": {},
+    }
+
+    # ── production requirements: real SA-1 ProductionRequirement rows,
+    # disclosed as their own real requirement_key/normalized_value pairs
+    # (NOT mapped into the environment/infrastructure capability
+    # vocabulary derive_production_requirements() consumes — see the
+    # canonical_evaluation.py comment on that boundary; this is a
+    # DIFFERENT, honest shape, not a substitute for that mapping) ──
+    requirement_rows = (await session.execute(
+        select(ProductionRequirement).where(ProductionRequirement.project_id == project.id)
+    )).scalars().all()
+    requirements_disclosed = [
+        {
+            "requirement_key": r.requirement_key,
+            "normalized_value": r.normalized_value,
+            "authority": r.evidence_state,
+            "requires_confirmation": r.requires_confirmation,
+        }
+        for r in requirement_rows
+    ]
+
+    economics = {
+        "production_structure_default": None, "verified_cash_qpe_usd": None,
+        "verified_floor_case": None, "potential_ceiling_case": None, "inkind_post_options": {},
+        "financing_source": None, "controls": {}, "normalized_structures": [],
+        "fx_horizons": {}, "jurisdiction_currency": {}, "alternative_jurisdictions": [],
+        "available_funds": [], "structuring_advisory": None,
+        "production_requirements_disclosed": requirements_disclosed,
+    }
+
+    return {"status": "OK", "pkg": pkg, "economics": economics, "people": people, "facts": facts}
