@@ -1,21 +1,18 @@
-import { useEffect, useState } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import CompactSidebarGlobe from "../components/CompactSidebarGlobe";
 import ErrorBoundary from "./ErrorBoundary";
-import { getProjects } from "../api";
-import { PROJECT_STATUSES } from "../lib/useProjectStatus";
-
-const STATUS_BY_KEY = Object.fromEntries(PROJECT_STATUSES.map((s) => [s.key, s]));
-function statusMetaForLifecycle(lifecycle) {
-  const key = (lifecycle || "evaluation").toLowerCase();
-  return STATUS_BY_KEY[key] || PROJECT_STATUSES[0];
-}
 
 // Approved CineGlobe sidebar (migrated from the frozen design reference):
-// warm-graphite panel, serif wordmark, identity-globe boundary, then
-// COMPANY / PRODUCTIONS / SYSTEM sections. Replaces the previous
-// PrimaryRail + SecondaryNav pair; all navigation still goes through the
-// real react-router routes those components used.
+// warm-graphite panel, serif wordmark, identity-globe boundary, then a
+// COMPANY nav section. Replaces the previous PrimaryRail + SecondaryNav
+// pair; all navigation still goes through the real react-router routes
+// those components used.
+//
+// Overview UI contract: individual project/production rows were removed
+// from here entirely -- this panel is company-level navigation, not a
+// project selector. Project Library (already in COMPANY_NAV below) is the
+// one project selector; every project reaches its own mature Overview by
+// clicking its card there (see ProjectLibrary.jsx), not from this rail.
 const COMPANY_NAV = [
   { to: "/company/today", label: "Today" },
   { to: "/company/library", label: "Project Library" },
@@ -25,28 +22,6 @@ const COMPANY_NAV = [
 ];
 
 export default function Sidebar() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [productions, setProductions] = useState([]);
-
-  // Productions row: every real Project (existing Company Library source,
-  // getProjects() -- no second registry) that has actually entered the
-  // mature evaluated flow. leading_structure_id is set by
-  // canonical_evaluation.py once a top structure exists, so it's the
-  // existing signal that distinguishes an active production (Little
-  // Utopia, FVD) from the ~50 untouched Project Library intake records
-  // that have never been evaluated.
-  useEffect(() => {
-    let cancelled = false;
-    getProjects()
-      .then((projects) => {
-        if (cancelled) return;
-        setProductions(projects.filter((p) => p.leading_structure_id));
-      })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, []);
-
   return (
     <nav className="cg-sidebar" aria-label="Application navigation">
       <div className="cg-wordmark serif">Cine<i>Globe</i></div>
@@ -73,25 +48,6 @@ export default function Sidebar() {
           {item.label}
         </NavLink>
       ))}
-
-      <div className="cg-group">Productions</div>
-      {productions.map((p) => {
-        const meta = statusMetaForLifecycle(p.lifecycle);
-        const active = location.pathname.startsWith(`/projects/${p.id}/`) && !location.pathname.endsWith("/summary");
-        return (
-          <button
-            key={p.id}
-            className={`cg-navlink cg-prodrow ${active ? "on" : ""}`}
-            onClick={() => navigate(`/projects/${p.id}/overview`)}
-          >
-            <span className={`dot ${meta.tier}`} />
-            <span className="cg-prodtext">
-              <span className="cg-pname">{p.title}</span>
-              <span className="cg-stage">{meta.label}</span>
-            </span>
-          </button>
-        );
-      })}
 
       <div className="cg-group">System</div>
       <NavLink

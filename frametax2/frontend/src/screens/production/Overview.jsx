@@ -4,7 +4,7 @@ import { useCineGlobe } from "../../lib/useCineGlobe";
 import { useAppState } from "../../state/AppState";
 import { Loading, ErrorBox } from "../../components/Async";
 import Globe3D from "../../components/Globe3D";
-import { buildGlobeView, activeStructure, buildCountryStatuses, buildCountryHoverData } from "../../lib/globeData";
+import { buildGlobeView, activeStructure } from "../../lib/globeData";
 import ProductionDetails from "../../components/ProductionDetails";
 import BudgetRail from "../../components/BudgetRail";
 import IncentiveIntelligence from "../../components/IncentiveIntelligence";
@@ -22,9 +22,9 @@ import IncentiveIntelligence from "../../components/IncentiveIntelligence";
 //            /people, role-level nationality; no duplicate input model)
 //            + script-derived Production Requirements.
 //   CENTER — Project Globe (the production Globe3D engine, unmodified,
-//            graphite/obsidian direction) + the compact jurisdiction
-//            snapshot strip: exactly four cards, each only jurisdiction /
-//            incentive / net production cost; selecting one opens the
+//            graphite/obsidian direction) + Production Options: up to six
+//            classified structure cards (Overview UI contract batch —
+//            see IncentiveIntelligence.jsx), selecting one opens the
 //            detailed scenario view.
 //   RIGHT  — Budget Rail (BudgetRail: collapsed-by-default traceability
 //            view over the canonical pkg.register; each line opens the
@@ -60,57 +60,17 @@ export default function Overview() {
   );
   const structure = allocated ? activeStructure(allocated, leadingStructureId) : null;
 
-  // Incentive Intelligence — ONE representative jurisdiction per canonical
-  // category (Recommended/Alternatives/Co-Production Opportunities/
-  // Excluded), read from the SAME per-jurisdiction data the Globe itself
-  // renders (buildCountryStatuses + buildCountryHoverData — no second
-  // derivation). Selection is a pure display choice over real data:
-  //   gold   — the single rank-1 jurisdiction (there is always exactly one).
-  //   jade   — the Alternative with the highest own-segment incentive.
-  //   amber  — the first Co-Production Opportunity, if this production's
-  //            real optimizer output has one (currently it does not — see
-  //            IncentiveIntelligence.jsx's own comment for why).
-  //   silver — an Excluded jurisdiction that carries a REAL discovery
-  //            examination reason, so the card never shows an empty one.
-  // `amber`/`silver` may legitimately be null; IncentiveIntelligence.jsx
-  // renders an honest empty state rather than fabricating a card.
-  // Computed BEFORE the loading/error early-return below — every hook in
-  // this component must run unconditionally on every render (Rules of
-  // Hooks), so no useMemo can sit after a conditional return.
-  const countryStatuses = useMemo(
-    () => buildCountryStatuses(allocated, rankById),
-    [allocated, rankById],
-  );
-  const hoverData = useMemo(
-    () => buildCountryHoverData(countryStatuses, data?.production?.gross_budget_usd),
-    [countryStatuses, data],
-  );
-  const representatives = useMemo(() => {
-    const entries = [...hoverData.values()];
-    const byStatus = (s) => entries.filter((e) => e.status === s);
-    const gold = byStatus("gold")[0] || null;
-    const jade = byStatus("jade").sort(
-      (a, b) => (b.segmentIncentiveUsd || 0) - (a.segmentIncentiveUsd || 0),
-    )[0] || null;
-    const amberAll = byStatus("amber");
-    const amber = amberAll.find((e) => e.excludedReason || e.relatedCodes?.length) || amberAll[0] || null;
-    const silverAll = byStatus("silver");
-    const silver = silverAll.find((e) => e.excludedReason) || silverAll[0] || null;
-    return { gold, jade, amber, silver };
-  }, [hoverData]);
-
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
 
   const { production, pkg, people, economics } = data;
 
-  const structById = new Map((allocated?.structures || []).map((s) => [s.structure_id, s]));
-
-  function openIntelligenceCard(entry) {
-    setSelectedJurisdiction(entry.jurisdictionCode);
-    const s = structById.get(entry.structureId);
-    if (!s) return;
-    const seg = s.segments.find((sg) => sg.jurisdiction_code === entry.jurisdictionCode);
+  // Production Options card click — same inspect pattern Scenarios.jsx
+  // already uses (open the structure's first segment, or its
+  // recommendation if it has no segments yet).
+  function openIntelligenceCard(s) {
+    setSelectedJurisdiction(s.primary_jurisdiction || s.participants?.[0] || null);
+    const seg = s.segments?.[0];
     if (seg) openInspector("allocation-segment", { ...seg, structureLabel: s.label });
     else if (s.recommendation) openInspector("structure-recommendation", s.recommendation);
   }
@@ -182,7 +142,7 @@ export default function Overview() {
           </section>
 
           <IncentiveIntelligence
-            representatives={representatives}
+            allocated={allocated}
             onSelect={openIntelligenceCard}
           />
         </div>

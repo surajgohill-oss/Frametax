@@ -150,7 +150,16 @@ export default function ProjectLibrary() {
               <button
                 key={p.id}
                 className={`lib-card ${filter === "all" ? "compact" : ""} ${meta.key === "archived" ? "arch" : ""}`}
-                onClick={() => navigate(`/company/library/${p.id}`)}
+                onClick={() => navigate(
+                  // Overview UI contract: a project that already has a
+                  // mature production Overview (leading_structure_id set
+                  // by canonical_evaluation.py once a top structure
+                  // exists -- the same existing signal Sidebar's former
+                  // Productions row used) opens directly into it. Every
+                  // other project keeps the existing Project Record /
+                  // ingestion flow unchanged.
+                  p.leading_structure_id ? `/projects/${p.id}/overview` : `/company/library/${p.id}`
+                )}
               >
                 <div className="lib-art">
                   {p.artwork_url

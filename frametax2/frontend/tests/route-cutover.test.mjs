@@ -58,10 +58,11 @@ test("LegacyProductionRedirect resolves project_id from the API, never hard-code
   assert.doesNotMatch(src, /fa5cade5-0669-4816-bfe6-72146f8d3bae/, "must not hard-code Little Utopia's project_id");
 });
 
-test("Sidebar's Productions row navigates by project_id, not a literal legacy path", () => {
+test("Overview UI contract: Sidebar carries no individual project/production rows — Project Library is the one project selector", () => {
   const src = stripComments(read("shell/Sidebar.jsx"));
-  assert.match(src, /\/projects\/\$\{p\.id\}\/overview/, "Productions row must target the restored mature Overview");
-  assert.match(src, /getProjects\(/, "Productions list must come from the real project source, not a hard-coded row");
+  assert.doesNotMatch(src, /getProjects\(/, "Sidebar must not fetch or list individual projects");
+  assert.doesNotMatch(src, /cg-prodrow/, "the per-project row markup must be gone, not just hidden");
+  assert.match(src, /Project Library/, "Project Library must remain the company-nav project selector");
 });
 
 test("CompanyGlobe's three navigation points target the restored mature UI", () => {
@@ -86,4 +87,11 @@ test("ProjectRecord's served-production primary action opens the restored mature
   // SAME generic route pattern — no separate literal per project identity.
   const overviewNavCount = (src.match(/navigate\(`\/projects\/\$\{project\.id\}\/overview`\)/g) || []).length;
   assert.ok(overviewNavCount >= 1, "must navigate into /projects/{id}/overview at least once");
+});
+
+test("Overview UI contract: Project Library card click routes by the project's own leading_structure_id, never a hard-coded project", () => {
+  const src = stripComments(read("screens/company/ProjectLibrary.jsx"));
+  assert.match(src, /p\.leading_structure_id\s*\?\s*`\/projects\/\$\{p\.id\}\/overview`/, "a project with a mature Overview must be opened directly");
+  assert.match(src, /`\/company\/library\/\$\{p\.id\}`/, "a not-yet-evaluated project must keep the existing Project Record flow");
+  assert.doesNotMatch(src, /fa5cade5-0669-4816-bfe6-72146f8d3bae/, "must not hard-code Little Utopia's project_id");
 });
