@@ -126,6 +126,13 @@ def _empty_structure_entry(structure, result, jurisdiction_code_by_id: dict[str,
         "is_directly_comparable": bool(trace.get("is_directly_comparable", trace.get("relocation_cost_normalized"))),
         "reason": trace.get("reason"),
         "warnings": result.warnings or [],
+        # Canonical authority substrate + feasibility boundary repair,
+        # Task 1/2 — production feasibility, independent of is_fully_priced/
+        # candidate_status by design (a candidate can be PRICED and
+        # feasibility WEAK, or UNPRICEABLE and feasibility STRONG). None
+        # for pre-1.4.0 rows that predate this field.
+        "feasibility_status": trace.get("feasibility_status"),
+        "feasibility_reasons": trace.get("feasibility_reasons") or [],
     }
 
 

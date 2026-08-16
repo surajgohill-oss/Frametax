@@ -58,7 +58,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.calculators.allocation_pricing import price_allocated_structure, rank_allocated_structures
 from app.calculators.production_allocation import StructureSpec, derive_account_allocation
 from app.calculators.production_discovery import discover_executable_jurisdictions
-from app.calculators.production_requirements import derive_production_requirements
+from app.calculators.production_requirements import (
+    derive_production_requirements,
+    jurisdiction_capability_profile,
+)
 from app.calculators.qualification_derivation import derive_qualification_register
 from app.calculators.qualification_model import QualificationState
 from app.data.authority_coverage_registry import coverage_state as _coverage_state
@@ -78,7 +81,7 @@ from app.services.canonical_project_economics import (
     production_facts_for,
 )
 
-ENGINE_VERSION = "canonical-1.3.0"
+ENGINE_VERSION = "canonical-1.4.0"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
@@ -225,6 +228,65 @@ def _capability_only_status(examination) -> tuple[str, str, str]:
     return (STATUS_UNPRICEABLE_AUTHORITY_INSUFFICIENT, "AUTHORITY_INSUFFICIENT", examination.reason)
 
 
+#: Canonical authority substrate + feasibility boundary repair, Task 1/2 —
+#: PRODUCTION FEASIBILITY (how suitable a jurisdiction is for the creative/
+#: logistical requirements) is a permanently separate concept from ECONOMIC
+#: DISCOVERY/ELIGIBILITY (whether a defensible incentive can be priced).
+#: The prior FVD canonical input assembly repair correctly wired real SA-1
+#: script/location data into `derive_production_requirements()`, but then
+#: fed it into `discover_executable_jurisdictions()` AS THE gate that
+#: decides whether a jurisdiction even reaches structure generation --
+#: conflating a soft, informational production-fit signal (a landlocked
+#: jurisdiction cannot host a Mediterranean sea-shore scene) with a hard
+#: statutory/program eligibility failure. That is corrected here: a
+#: SEPARATE discovery pass with the real requirements supplies feasibility
+#: DISCLOSURE only (never used to reject a candidate); economic candidate
+#: GENERATION uses the same empty-requirements discovery pass used before
+#: SA-1 requirements existed, so nothing is removed from the economic
+#: universe on capability grounds alone. See evaluate_project() below.
+FEASIBILITY_STRONG = "STRONG"
+FEASIBILITY_WORKABLE = "WORKABLE"
+FEASIBILITY_WEAK = "WEAK"
+FEASIBILITY_UNKNOWN = "UNKNOWN"
+
+#: Capability token -> short feasibility reason code. Deterministic,
+#: mechanical labeling of the SAME capability vocabulary
+#: production_requirements.py already defines -- no new capability
+#: concept, no invented reason.
+_CAPABILITY_TO_FEASIBILITY_REASON = {
+    "open_water_filming": "MARINE_MISMATCH",
+    "marine_filming": "MARINE_MISMATCH",
+    "underwater_filming": "MARINE_MISMATCH",
+    "water_tanks": "MARINE_MISMATCH",
+    "desert_environments": "LOCATION_MISMATCH",
+    "snow_environments": "LOCATION_MISMATCH",
+}
+#: marine_suitability values (jurisdiction_comparison.py, unmodified) that
+#: read as a genuinely strong production fit when marine capability is
+#: actually required -- distinct from merely "workable."
+_STRONG_MARINE_SUITABILITY = {"strong", "excellent"}
+
+
+def _feasibility_status(examination, requirements) -> tuple[str, list[str]]:
+    """Classifies ONE jurisdiction's production feasibility from the
+    real-requirements discovery examination. Never used to reject a
+    candidate from economic discovery -- see the module note above."""
+    if examination is None or not examination.has_capability_data:
+        return FEASIBILITY_UNKNOWN, []
+    if not examination.production_capable:
+        reasons = [
+            _CAPABILITY_TO_FEASIBILITY_REASON.get(token, "LOCATION_MISMATCH")
+            for token in sorted(requirements.required_capabilities)
+        ] or ["CAPABILITY_MISMATCH"]
+        # Dedupe while preserving order.
+        return FEASIBILITY_WEAK, list(dict.fromkeys(reasons))
+    if "open_water_filming" in requirements.required_capabilities:
+        profile = jurisdiction_capability_profile(examination.jurisdiction_code)
+        if str(profile.marine_suitability or "").lower() in _STRONG_MARINE_SUITABILITY:
+            return FEASIBILITY_STRONG, []
+    return FEASIBILITY_WORKABLE, []
+
+
 def _segment_dicts(pricing) -> list[dict]:
     """Full, generic serialization of `pricing.segments` — the SAME
     SegmentEconomics objects `little_utopia_state.build_allocated_structures`
@@ -305,28 +367,54 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     # prior versions rather than deleting them (see is_current elsewhere
     # in this codebase for the same convention).
 
-    # FVD canonical input assembly repair, Task 1/3 (superseding the prior
+    # FVD canonical input assembly repair (superseding the prior
     # CANONICAL_SERVED_WIRING_REPAIR.md Defect 1 disclosure-only note
     # below): derive_production_requirements() previously always received
-    # {} regardless of real, persisted SA-1 script data -- every
-    # jurisdiction therefore appeared "production capable" for any
-    # requirement, hard or soft, even where the script's own scripted
-    # locations (e.g. a Mediterranean sea-shore scene) genuinely require a
-    # capability (open-water filming) a landlocked jurisdiction cannot
-    # provide. build_physical_requirements() reads SA-1's own persisted
-    # ProjectLocationRequirement/ProductionRequirement rows directly
-    # (read-only, no side effects) and runs scripted-location text through
-    # the existing, generic abstract_location() keyword ontology --
-    # ontology-defined but never wired to any consumer until this repair.
-    # No AI interpretation, no invented quantities; a location string with
-    # no ontology hit and a project with no SCRIPTED_LOCATION/
-    # PERIOD_REFERENCE rows on file both still resolve to the same honest
-    # empty signal as before.
+    # {} regardless of real, persisted SA-1 script data. build_physical_
+    # requirements() reads SA-1's own persisted ProjectLocationRequirement/
+    # ProductionRequirement rows directly (read-only, no side effects) and
+    # runs scripted-location text through the existing, generic
+    # abstract_location() keyword ontology -- ontology-defined but never
+    # wired to any consumer until this repair. No AI interpretation, no
+    # invented quantities; a location string with no ontology hit and a
+    # project with no SCRIPTED_LOCATION/PERIOD_REFERENCE rows on file both
+    # still resolve to the same honest empty signal as before.
+    #
+    # Canonical authority substrate + feasibility boundary repair, Task 1/2
+    # (this is now the ONLY consumer of `requirements` below): an earlier
+    # version of this repair fed `requirements` directly into the discovery
+    # pass that decides which jurisdictions become economic candidates --
+    # conflating a soft production-feasibility signal (a landlocked
+    # jurisdiction cannot host a Mediterranean sea-shore scene) with a hard
+    # statutory/program eligibility failure, and silently removing 21
+    # otherwise economically evaluable jurisdictions. `requirements` is now
+    # used ONLY for the separate feasibility_discovery pass below --
+    # disclosure, never rejection.
     requirements = derive_production_requirements(
         await build_physical_requirements(session, project_id)
     )
-    discovery = discover_executable_jurisdictions(
+    # Canonical authority substrate + feasibility boundary repair, Task 1/2:
+    # TWO discovery passes, deliberately. `feasibility_discovery` runs the
+    # real, SA-1-derived requirements through discover_executable_
+    # jurisdictions() to obtain each jurisdiction's genuine capability
+    # examination (production_capable, capability_reasons) -- disclosure
+    # only, NEVER consulted below to decide which jurisdictions become
+    # candidates. `discovery` (economic candidate generation) intentionally
+    # uses the SAME empty-requirements pass used before real requirements
+    # existed, so a soft production-feasibility mismatch can never remove a
+    # jurisdiction from the economic universe -- only an actual authority/
+    # rate/threshold failure can. discover_executable_jurisdictions() is a
+    # pure, side-effect-free function; calling it twice is inexpensive and
+    # keeps the two concerns from ever sharing one classification.
+    feasibility_discovery = discover_executable_jurisdictions(
         requirements=requirements,
+        production_type=inputs.production_type,
+        qpe_usd=inputs.gross_budget_usd,
+        home_code=inputs.jurisdiction_code,
+    )
+    feasibility_by_code = {e.jurisdiction_code: e for e in feasibility_discovery.examinations}
+    discovery = discover_executable_jurisdictions(
+        requirements=derive_production_requirements({}),
         production_type=inputs.production_type,
         qpe_usd=inputs.gross_budget_usd,
         home_code=inputs.jurisdiction_code,
@@ -370,6 +458,14 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         session.add(structure)
         await session.flush()
 
+        # Task 1/2 — feasibility disclosure computed once per candidate,
+        # from the real-requirements examination, attached to every terminal
+        # branch below. Never consulted for the classification/candidates
+        # decisions above — see the module note on _feasibility_status().
+        feasibility_status, feasibility_reasons = _feasibility_status(
+            feasibility_by_code.get(code), requirements,
+        )
+
         if classification == "capability_only":
             # Discovery already knows this program has no priceable route —
             # re-attempting pricing would only rediscover the same fact via
@@ -392,6 +488,8 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     "reason": reason,
                     "structure_type": "single_country" if code == inputs.jurisdiction_code else "full_relocation",
                     "primary_jurisdiction": code,
+                    "feasibility_status": feasibility_status,
+                    "feasibility_reasons": feasibility_reasons,
                 },
                 input_fingerprint=fingerprint,
             ))
@@ -438,6 +536,8 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     "reason": reason,
                     "structure_type": "single_country" if code == inputs.jurisdiction_code else "full_relocation",
                     "primary_jurisdiction": code,
+                    "feasibility_status": feasibility_status,
+                    "feasibility_reasons": feasibility_reasons,
                 },
                 input_fingerprint=fingerprint,
             ))
@@ -516,9 +616,11 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 # were ever actually stated for this project, and how many
                 # real SA-1 ProductionRequirement rows exist on file.
                 # SCRIPTED_LOCATION and PERIOD_REFERENCE rows ARE now
-                # consumed generically (build_physical_requirements(), Task
-                # 1/3) for capability MATCHING at discovery time (whether a
-                # jurisdiction can physically support the production) — this
+                # consumed generically (build_physical_requirements()) for
+                # the feasibility_status/feasibility_reasons disclosure
+                # below (never for economic discovery/eligibility — see the
+                # canonical authority substrate + feasibility boundary
+                # repair module note above _feasibility_status()) — this
                 # count still includes CHARACTER/EXPLICIT_VEHICLE/
                 # EXPLICIT_ANIMAL/EXPLICIT_WEAPON/EXPLICIT_MINOR rows, which
                 # have no corresponding capability vocabulary in
@@ -526,6 +628,14 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 "accounts_outside_jurisdiction_state": inputs.accounts_outside_jurisdiction_state,
                 "offshore_payroll_accounts_state": inputs.offshore_payroll_accounts_state,
                 "production_requirements_on_file": inputs.production_requirements_on_file,
+                # Task 1/2 — production feasibility, disclosed alongside a
+                # PRICED result, never used to have prevented it from being
+                # priced. A jurisdiction can be economically PRICED and
+                # feasibility WEAK at the same time (e.g. a landlocked
+                # jurisdiction for a marine-heavy screenplay) — the two
+                # concepts are independent by design.
+                "feasibility_status": feasibility_status,
+                "feasibility_reasons": feasibility_reasons,
             },
             input_fingerprint=fingerprint,
         ))

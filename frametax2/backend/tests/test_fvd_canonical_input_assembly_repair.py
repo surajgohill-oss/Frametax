@@ -103,18 +103,23 @@ async def test_build_physical_requirements_reads_real_fvd_scripted_locations(db:
     assert pr["location_categories"].get("beach_coast", {}).get("effective") is True
 
 
-async def test_landlocked_jurisdictions_are_capability_rejected_not_priced(db: AsyncSession):
-    """Task 3 acceptance: FVD's real script (Mediterranean sea-shore/beach/
-    harbor scenes) makes open-water filming a genuine hard capability
-    requirement. A landlocked jurisdiction (marine_suitability=NONE in the
-    existing, unmodified jurisdiction_comparison profiles) must be rejected
-    on capability -- independent of any incentive -- never silently priced
-    as though it could physically host the shoot."""
+async def test_landlocked_jurisdictions_remain_economically_discoverable(db: AsyncSession):
+    """Canonical authority substrate + feasibility boundary repair, Task 1/2
+    (supersedes this file's original, since-reverted premise): FVD's real
+    script (Mediterranean sea-shore/beach/harbor scenes) makes open-water
+    filming a genuine soft PRODUCTION FEASIBILITY signal, never a hard
+    ECONOMIC ELIGIBILITY gate. A landlocked jurisdiction (marine_suitability
+    =NONE in the existing, unmodified jurisdiction_comparison profiles) must
+    remain in the economic universe -- discoverable, and priced whenever
+    authority/rate rules independently permit it -- with its real marine
+    mismatch disclosed as feasibility metadata, never used to silently
+    remove it."""
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
-    served_codes = {
-        e["primary_jurisdiction"] for e in view["structures"]["allocated_structures"]["structures"]
-    }
+    entries = view["structures"]["allocated_structures"]["structures"]
+    served_codes = {e["primary_jurisdiction"] for e in entries}
+    by_code = {e["primary_jurisdiction"]: e for e in entries}
+
     from app.calculators import jurisdiction_comparison as jc
     for code in ("MN", "UZ", "AT", "CZ", "HU"):
         profile = jc.ALL_PROFILES.get(code)
@@ -122,7 +127,17 @@ async def test_landlocked_jurisdictions_are_capability_rejected_not_priced(db: A
         assert str(getattr(profile, "marine_suitability", "")).lower().endswith("none"), (
             f"test precondition: {code} must genuinely be marine_suitability=NONE"
         )
-        assert code not in served_codes, f"{code} is landlocked and must not appear as a priced/unpriceable structure"
+        assert code in served_codes, (
+            f"{code} is a soft marine mismatch, not a statutory eligibility failure -- "
+            "it must remain in the economic universe"
+        )
+
+    # MN and UZ specifically retain their pre-regression PRICED status
+    # (their program authority/rate rules independently resolve) --
+    # feasibility never overrides an economic outcome that authority/rate
+    # rules already determined.
+    assert by_code["MN"]["is_fully_priced"] is True
+    assert by_code["UZ"]["is_fully_priced"] is True
 
 
 async def test_marine_capable_jurisdictions_unaffected_by_capability_gate(db: AsyncSession):
