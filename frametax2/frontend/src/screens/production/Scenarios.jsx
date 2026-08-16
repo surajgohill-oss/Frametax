@@ -5,6 +5,7 @@ import { Loading, ErrorBox } from "../../components/Async";
 import { Money, scenarioDisplay } from "../../lib/format";
 import { useAppState } from "../../state/AppState";
 import { patchProject } from "../../api";
+import { classifyStructure, isBaselineStructure } from "../../lib/productionOptions";
 
 const MAX_VISIBLE = 6;
 
@@ -13,12 +14,23 @@ const MAX_VISIBLE = 6;
 // read verbatim from allocated_structures (Qualified spend = per-segment QPE
 // summed; Incentive = total_incentive_floor_usd; NPC = npc_with_adjustments).
 //
-// Canonical behavior: only the MAX_VISIBLE (6) active working scenarios are
-// shown as columns at once — never an unbounded/scrolling wall of every
-// composed structure. Ranked (priced) structures fill the visible slots
-// first; anything beyond that is reachable through the scenario selector,
-// which swaps a chosen structure into the last visible slot rather than
-// expanding the table.
+// Scenarios UI contract (this batch): the SAME classification taxonomy
+// Overview's Production Options cards use (lib/productionOptions.js) --
+// Current/Base, Full Relocation, Hybrid/Component, Official Treaty
+// Co-Production -- applied here as a per-column badge, and the SAME
+// comparable/review split (allocated.ranking's own is_fully_priced flag,
+// already the existing signal canonical_production_view.py and
+// little_utopia_state.py both compute) used to keep review/unavailable
+// structures out of the main comparison table entirely, in their own
+// section below, rather than mixed into the same swappable column set.
+//
+// Canonical behavior: only the MAX_VISIBLE (6) comparable structures are
+// shown as table columns at once — never an unbounded/scrolling wall.
+// Ranked (comparable) structures fill the visible slots first; any
+// additional COMPARABLE structures beyond that are reachable through the
+// scenario selector, which swaps one into the last visible slot rather
+// than expanding the table. Review/unavailable structures are never
+// swapped into this table — see the Review section instead.
 export default function Scenarios() {
   const { projectId } = useParams();
   const { data, error, loading } = useCineGlobe(projectId);
@@ -53,20 +65,28 @@ export default function Scenarios() {
   const gross = production.gross_budget_usd;
   const qpe = (s) => s.segments?.reduce((sum, sg) => sum + (sg.qpe_usd || 0), 0) || 0;
 
-  // Rank order first (fully-priced structures, best NPC first), then
-  // everything unranked (drafts/blocked) in the order the backend composed
-  // them — a stable, meaningful ordering for "the six active scenarios."
-  const ordered = [...allocated.structures].sort((a, b) => {
-    const ra = rankById.get(a.structure_id)?.rank ?? Infinity;
-    const rb = rankById.get(b.structure_id)?.rank ?? Infinity;
-    return ra - rb;
-  });
-  const base = ordered.slice(0, MAX_VISIBLE);
-  const overflow = ordered.slice(MAX_VISIBLE);
-  const swapped = swapId ? ordered.find((s) => s.structure_id === swapId) : null;
-  // The selector swaps a chosen overflow scenario into the last visible
-  // slot — the visible count never exceeds MAX_VISIBLE.
+  // Comparable vs Review/Unavailable — the SAME is_fully_priced flag on
+  // the ranking entry (not the structure entry) that canonical_production_
+  // view.py deliberately sets false for priced-but-not-regionally-
+  // validated structures, and little_utopia_state.py's rank_allocated_
+  // structures sets false for genuinely unpriced ones. Never a new
+  // frontend calculation — this flag already existed and already drove
+  // Overview's Top Six selection.
+  const comparableOrdered = [...allocated.structures]
+    .filter((s) => rankById.get(s.structure_id)?.is_fully_priced)
+    .sort((a, b) => (rankById.get(a.structure_id)?.rank ?? Infinity) - (rankById.get(b.structure_id)?.rank ?? Infinity));
+  const reviewOrdered = allocated.structures.filter((s) => !rankById.get(s.structure_id)?.is_fully_priced);
+
+  const base = comparableOrdered.slice(0, MAX_VISIBLE);
+  const overflow = comparableOrdered.slice(MAX_VISIBLE);
+  const swapped = swapId ? comparableOrdered.find((s) => s.structure_id === swapId) : null;
+  // The selector swaps a chosen COMPARABLE overflow scenario into the
+  // last visible slot — the visible count never exceeds MAX_VISIBLE, and
+  // a review/unavailable structure can never enter this table this way.
   const cols = swapped ? [...base.slice(0, MAX_VISIBLE - 1), swapped] : base;
+
+  const baseline = allocated.structures.find(isBaselineStructure);
+  const baseNpc = baseline?.npc_with_adjustments_usd ?? null;
 
   function inspect(s) {
     if (s.recommendation) openInspector("structure-recommendation", s.recommendation);
@@ -117,13 +137,14 @@ export default function Scenarios() {
   return (
     <div className="screen sc-screen">
       <p className="sc-note">
-        Alternative structures for <b>{production.production_name}</b> — the same lanes as the Workspace
+        Comparable Options for <b>{production.production_name}</b> — the same lanes as the Workspace
         rack, aligned for a reading pass. Click any structure to trace its derivation.
         {overflow.length > 0 && ` Showing the ${MAX_VISIBLE} active working scenarios.`}
-        {" "}Regional production-cost normalization (MFNI) is not yet applied — every column's Gross budget
-        uses this production's own nominal source amounts, so the leading structure (its own base
-        jurisdiction, needing no relocation adjustment) is the only figure directly comparable today;
-        every other column's lower cost omits real relocation costs and is not yet a fair comparison.
+        {" "}Regional production-cost normalization (MFNI) is not yet applied. Only structures whose
+        regional cost is validated for direct comparison appear as columns here — the current/base
+        structure needs no such adjustment by construction. Structures that are priced but not yet
+        regionally validated, or not priced at all, appear in Review / Needs Validation below; their
+        headline cost is not yet a fair comparison against the columns above.
       </p>
       {overflow.length > 0 && (
         <div className="sc-selector">
@@ -151,6 +172,7 @@ export default function Scenarios() {
                 const { title, subtitle } = scenarioDisplay(s);
                 const isLeading = s.structure_id === leadingStructureId
                   || (!leadingStructureId && rank?.rank === 1);
+                const classification = classifyStructure(s);
                 return (
                   <th
                     key={s.structure_id}
@@ -159,6 +181,7 @@ export default function Scenarios() {
                     onDoubleClick={() => selectAsLeading(s)}
                     title="Click to inspect · double-click to set as leading structure"
                   >
+                    <span className={`badge ${classification.accent}`}>{classification.label}</span>
                     <span className="nm serif">{title}</span>
                     <span className="sub">{subtitle}{rank?.rank ? ` · rank ${rank.rank}` : ""}{isLeading ? " · leading" : ""}</span>
                   </th>
@@ -184,9 +207,49 @@ export default function Scenarios() {
                 </td>
               ))}
             </tr>
+            <tr>
+              <td className="lbl">Vs. current / base</td>
+              {cols.map((s) => {
+                const npc = s.npc_with_adjustments_usd;
+                const diff = npc != null && baseNpc != null && !isBaselineStructure(s) ? npc - baseNpc : null;
+                return (
+                  <td key={s.structure_id} className="num">
+                    {diff == null ? "—" : <>{diff > 0 ? "+" : ""}<Money value={diff} /></>}
+                  </td>
+                );
+              })}
+            </tr>
           </tbody>
         </table>
       </div>
+
+      {reviewOrdered.length > 0 && (
+        <section className="region" style={{ marginTop: 20 }}>
+          <div className="region-title">
+            <span>Review / Needs Validation</span>
+            <span className="count">{reviewOrdered.length}</span>
+          </div>
+          <div className="row-list">
+            {reviewOrdered.map((s) => {
+              const rank = rankById.get(s.structure_id);
+              const { title } = scenarioDisplay(s);
+              const classification = classifyStructure(s);
+              const reasons = rank?.excluded_from_ranking_because || (s.blockers?.length ? s.blockers : null);
+              return (
+                <div key={s.structure_id} className="row-item" onClick={() => inspect(s)} style={{ cursor: "pointer" }}>
+                  <span className={`dot ${classification.accent}`} />
+                  <div className="row-main">
+                    <div className="row-title">
+                      {title} <span className={`badge ${classification.accent}`} style={{ marginLeft: 6 }}>{classification.label}</span>
+                    </div>
+                    <div className="row-sub">{reasons ? reasons.join(" · ") : "Not yet priced."}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
