@@ -1,12 +1,34 @@
+import { useEffect, useState } from "react";
 import { FileText, ExternalLink, ScanText, RefreshCw, Paperclip, Upload, FileUp, FolderSync } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { useCineGlobe } from "../../lib/useCineGlobe";
+import { getProjectRecord } from "../../api";
 import { Loading, ErrorBox } from "../../components/Async";
 import { UPLOAD_BLOCKED_REASON } from "../../lib/ingestion";
+import { DocumentRows } from "../company/ProjectRecord";
 
 export default function Binder() {
   const { projectId } = useParams();
   const { data, error, loading } = useCineGlobe(projectId);
+  // Documents regression fix: this page's "Committed documents" section
+  // below is Little Utopia's own evidence-trace/authority-citation system
+  // (legal.evidence_trace) -- for every other project the generic branch
+  // of get_project_state returns EMPTY_LEGAL, so it was always empty
+  // regardless of what the project actually has on file. The project's
+  // real registered materials (screenplay/budget/deck/artwork) already
+  // exist via the same endpoint Project Record's own Documents tab uses
+  // (GET /api/v1/projects/{id}/record) -- reusing that exact data source
+  // and its existing DocumentRows renderer, not a new document system.
+  const [materials, setMaterials] = useState(null);
+  useEffect(() => {
+    if (!projectId) return;
+    let cancelled = false;
+    getProjectRecord(projectId).then((rec) => {
+      if (!cancelled) setMaterials(rec.documents || []);
+    }).catch(() => { if (!cancelled) setMaterials([]); });
+    return () => { cancelled = true; };
+  }, [projectId]);
+
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
 
@@ -28,6 +50,19 @@ export default function Binder() {
           <button className="hero-action" disabled title={UPLOAD_BLOCKED_REASON}><FolderSync size={13} /> Connect Drive</button>
         </div>
       </header>
+
+      <section className="region region-cool">
+        <div className="region-title"><span>Project materials</span><span className="count">{materials?.length ?? 0}</span></div>
+        {materials === null ? (
+          <Loading />
+        ) : materials.length === 0 ? (
+          <p className="empty-state">No materials registered for this project yet.</p>
+        ) : (
+          <div className="rec-materials-list">
+            <DocumentRows documents={materials} full />
+          </div>
+        )}
+      </section>
 
       <section className="region region-cool">
         <div className="region-title"><span>Committed documents</span><span className="count">{documents.length}</span></div>

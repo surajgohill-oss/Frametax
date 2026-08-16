@@ -1,8 +1,15 @@
+import { useEffect, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import CompactSidebarGlobe from "../components/CompactSidebarGlobe";
 import ErrorBoundary from "./ErrorBoundary";
-import { useCineGlobe } from "../lib/useCineGlobe";
-import { useProjectStatus } from "../lib/useProjectStatus";
+import { getProjects } from "../api";
+import { PROJECT_STATUSES } from "../lib/useProjectStatus";
+
+const STATUS_BY_KEY = Object.fromEntries(PROJECT_STATUSES.map((s) => [s.key, s]));
+function statusMetaForLifecycle(lifecycle) {
+  const key = (lifecycle || "evaluation").toLowerCase();
+  return STATUS_BY_KEY[key] || PROJECT_STATUSES[0];
+}
 
 // Approved CineGlobe sidebar (migrated from the frozen design reference):
 // warm-graphite panel, serif wordmark, identity-globe boundary, then
@@ -20,17 +27,25 @@ const COMPANY_NAV = [
 export default function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { data } = useCineGlobe();
+  const [productions, setProductions] = useState([]);
 
-  const production = data?.production;
-  const productionId = production?.production_id;
-  const { meta } = useProjectStatus(productionId, {
-    projectId: production?.project_id,
-    backendLifecycle: production?.lifecycle,
-  });
-  const onProduction = location.pathname.startsWith("/production")
-    || (!!production?.project_id && location.pathname.startsWith(`/projects/${production.project_id}/`)
-        && !location.pathname.endsWith("/summary"));
+  // Productions row: every real Project (existing Company Library source,
+  // getProjects() -- no second registry) that has actually entered the
+  // mature evaluated flow. leading_structure_id is set by
+  // canonical_evaluation.py once a top structure exists, so it's the
+  // existing signal that distinguishes an active production (Little
+  // Utopia, FVD) from the ~50 untouched Project Library intake records
+  // that have never been evaluated.
+  useEffect(() => {
+    let cancelled = false;
+    getProjects()
+      .then((projects) => {
+        if (cancelled) return;
+        setProductions(projects.filter((p) => p.leading_structure_id));
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <nav className="cg-sidebar" aria-label="Application navigation">
@@ -60,16 +75,23 @@ export default function Sidebar() {
       ))}
 
       <div className="cg-group">Productions</div>
-      <button
-        className={`cg-navlink cg-prodrow ${onProduction ? "on" : ""}`}
-        onClick={() => navigate(production?.project_id ? `/projects/${production.project_id}/overview` : "/production/overview")}
-      >
-        <span className={`dot ${meta.tier}`} />
-        <span className="cg-prodtext">
-          <span className="cg-pname">{production?.production_name || "The Little Utopia"}</span>
-          <span className="cg-stage">{meta.label}</span>
-        </span>
-      </button>
+      {productions.map((p) => {
+        const meta = statusMetaForLifecycle(p.lifecycle);
+        const active = location.pathname.startsWith(`/projects/${p.id}/`) && !location.pathname.endsWith("/summary");
+        return (
+          <button
+            key={p.id}
+            className={`cg-navlink cg-prodrow ${active ? "on" : ""}`}
+            onClick={() => navigate(`/projects/${p.id}/overview`)}
+          >
+            <span className={`dot ${meta.tier}`} />
+            <span className="cg-prodtext">
+              <span className="cg-pname">{p.title}</span>
+              <span className="cg-stage">{meta.label}</span>
+            </span>
+          </button>
+        );
+      })}
 
       <div className="cg-group">System</div>
       <NavLink

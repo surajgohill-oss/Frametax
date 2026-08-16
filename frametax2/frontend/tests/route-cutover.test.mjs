@@ -60,7 +60,8 @@ test("LegacyProductionRedirect resolves project_id from the API, never hard-code
 
 test("Sidebar's Productions row navigates by project_id, not a literal legacy path", () => {
   const src = stripComments(read("shell/Sidebar.jsx"));
-  assert.match(src, /\/projects\/\$\{production\.project_id\}\/overview/, "Productions row must target the restored mature Overview");
+  assert.match(src, /\/projects\/\$\{p\.id\}\/overview/, "Productions row must target the restored mature Overview");
+  assert.match(src, /getProjects\(/, "Productions list must come from the real project source, not a hard-coded row");
 });
 
 test("CompanyGlobe's three navigation points target the restored mature UI", () => {

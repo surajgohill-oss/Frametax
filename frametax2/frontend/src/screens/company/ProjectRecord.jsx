@@ -19,7 +19,7 @@ import DeleteProjectDialog from "../../components/DeleteProjectDialog";
 
 const TABS = ["Overview", "Documents", "People", "Facts", "Locations", "Analysis", "History"];
 
-const CATEGORY_LABELS = {
+export const CATEGORY_LABELS = {
   screenplay: "Screenplay", budget: "Budget", schedule: "Schedule", deck: "Deck",
   lookbook: "Look Book", finance: "Finance Plan", cast: "Cast", crew: "Crew",
   incentive: "Incentive", legal: "Legal", artwork: "Artwork", other: "Other",
@@ -30,7 +30,7 @@ function lifecycleMeta(lifecycle) {
   return PROJECT_STATUSES.find((s) => s.key === key) || PROJECT_STATUSES[0];
 }
 
-function fmtBytes(n) {
+export function fmtBytes(n) {
   if (n == null) return "—";
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)} MB`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(0)} KB`;
@@ -214,7 +214,7 @@ export default function ProjectRecord() {
       {tab === "Overview" && (
         <div className="rec-cols">
           <div>
-            <MaterialsPanel documents={documents} isServedProduction={isServedProduction} navigate={navigate} />
+            <MaterialsPanel documents={documents} isServedProduction={isServedProduction} navigate={navigate} projectId={projectId} />
             <KnownInfoPanel people={people} locations={locations} onViewAll={() => setTab("People")} />
           </div>
           <div>
@@ -231,7 +231,7 @@ export default function ProjectRecord() {
           {isServedProduction && (
             <p className="rec-note">
               Full document management (upload, extraction, evidence trace) lives in{" "}
-              <button className="rec-inline-link" onClick={() => navigate("/production/binder")}>Documents →</button>
+              <button className="rec-inline-link" onClick={() => navigate(`/projects/${projectId}/binder`)}>Documents →</button>
             </p>
           )}
         </div>
@@ -312,7 +312,7 @@ export default function ProjectRecord() {
   );
 }
 
-function DocumentRows({ documents, full }) {
+export function DocumentRows({ documents, full }) {
   const core = ["screenplay", "budget", "deck", "schedule"];
   const rows = full ? documents : documents.filter((d) => core.includes(d.category));
   const missingCore = core.filter((c) => !documents.some((d) => d.category === c));
@@ -343,11 +343,11 @@ function DocumentRows({ documents, full }) {
   );
 }
 
-function MaterialsPanel({ documents, isServedProduction, navigate }) {
+function MaterialsPanel({ documents, isServedProduction, navigate, projectId }) {
   return (
     <div className="ovx-sec">
       <div className="oh"><b>Materials</b><span className="n">{documents.length}</span>
-        {isServedProduction && <span className="act" onClick={() => navigate("/production/binder")}>Documents →</span>}
+        {isServedProduction && <span className="act" onClick={() => navigate(`/projects/${projectId}/binder`)}>Documents →</span>}
       </div>
       <DocumentRows documents={documents} full />
     </div>

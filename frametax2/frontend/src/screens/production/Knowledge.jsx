@@ -75,7 +75,7 @@ export default function Knowledge() {
     <div className="screen">
       <header className="screen-header">
         <p className="screen-eyebrow">Knowledge</p>
-        <h1 className="screen-title">The Little Utopia</h1>
+        <h1 className="screen-title">{production?.production_name || "—"}</h1>
       </header>
 
       <div className="tag-row">
@@ -92,9 +92,9 @@ export default function Knowledge() {
             ))}
           </div>
           <p className="text-tertiary small" style={{ margin: "8px 0 20px" }}>
-            {scope === "Production" && "Knowledge attached directly to The Little Utopia."}
+            {scope === "Production" && `Knowledge attached directly to ${production?.production_name || "this production"}.`}
             {scope === "Jurisdiction" && `Knowledge scoped to ${production.jurisdiction_code} — currently identical to production scope, since this is the only jurisdiction with committed knowledge.`}
-            {scope === "Company" && "Knowledge visible across the whole portfolio — currently only The Little Utopia contributes."}
+            {scope === "Company" && `Knowledge visible across the whole portfolio — currently only ${production?.production_name || "this production"} contributes.`}
           </p>
 
           <div className="split-pane">
