@@ -59,10 +59,21 @@ def _single_segment_structures(structure_entries: list[dict], code: str) -> list
 
 
 async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
-    """30 priced / 1 directly comparable / 29 review-required / 80
-    unpriceable — the exact breakdown Codex's diagnosis reported, and the
-    one the four served surfaces (Overview/Scenarios/Workspace/World) must
-    all agree on (Defect 2)."""
+    """28 priced / 1 directly comparable / 27 review-required / 61
+    unpriceable — the breakdown AFTER the FVD canonical input assembly
+    repair (real SA-1 scripted-location capability matching wired in; see
+    FVD_CANONICAL_INPUT_ASSEMBLY_REPAIR.md). Down from the prior canonical
+    served wiring repair's 30/1/29/80: 21 landlocked jurisdictions
+    (marine_suitability=none in the existing, unmodified jurisdiction
+    profiles) no longer generate a structure at all, because FVD's real
+    script has evidence-backed Mediterranean sea-shore/beach/harbor scenes
+    (SA-1 ProjectLocationRequirement rows) that make open-water filming a
+    genuine hard capability requirement — a jurisdiction that cannot
+    physically support it is correctly rejected on capability, independent
+    of any incentive. Never a re-evaluated rate/rule/threshold. The one
+    thing this must still hold: whatever the current count is, all four
+    served surfaces (Overview/Scenarios/Workspace/World) agree on it
+    (Defect 2)."""
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     assert view["status"] == "OK"
@@ -72,11 +83,11 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     unpriced = [e for e in entries if not e["is_fully_priced"]]
     accounting = view["structures"]["allocated_structures"]["candidate_accounting"]
 
-    assert len(priced) == 30
-    assert len(unpriced) == 80
+    assert len(priced) == 28
+    assert len(unpriced) == 61
     assert accounting["comparable_count"] == 1
-    assert accounting["review_required_count"] == 29
-    assert accounting["unpriceable_count"] == 80
+    assert accounting["review_required_count"] == 27
+    assert accounting["unpriceable_count"] == 61
 
     # Cross-screen agreement: the ranking list (what Scenarios/Overview/
     # World all read via is_directly_comparable) must reproduce the exact
@@ -86,8 +97,19 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     review_ranked = [r for r in ranking if r["is_fully_priced"] and not r["is_directly_comparable"]]
     unpriceable_ranked = [r for r in ranking if not r["is_fully_priced"]]
     assert len(comparable_ranked) == 1
-    assert len(review_ranked) == 29
-    assert len(unpriceable_ranked) == 80
+    assert len(review_ranked) == 27
+    assert len(unpriceable_ranked) == 61
+
+    # A jurisdiction with no marine capability data at all must never
+    # appear as a structure post-repair (it was already excluded from
+    # generation pre-repair too — has_capability_data=False jurisdictions
+    # were always "rejected", never "capability_only"). What IS new: a
+    # jurisdiction WITH capability data but marine_suitability=NONE is now
+    # also absent, on the same capability-rejection path.
+    served_codes = {e["primary_jurisdiction"] for e in entries}
+    assert "MN" not in served_codes, "Mongolia (landlocked) must be capability-rejected, not priced"
+    assert "UZ" not in served_codes, "Uzbekistan (landlocked) must be capability-rejected, not priced"
+    assert "AT" not in served_codes, "Austria (landlocked) must be capability-rejected, not priced"
 
 
 async def test_greece_baseline_is_priced_and_directly_comparable(db: AsyncSession):
@@ -201,16 +223,17 @@ async def test_australia_location_offset_rule_rejected_with_program_identity(db:
 
 
 async def test_fvd_unpriceable_causes_are_differentiated_not_flattened(db: AsyncSession):
-    """Defect 4 — the 80 unpriceable FVD candidates must reach more than
-    one terminal cause; a single flattened
-    UNPRICEABLE_AUTHORITY_INSUFFICIENT bucket for all 80 would mean the
-    real cause differentiation was lost again."""
+    """Defect 4 — the unpriceable FVD candidates that still reach structure
+    generation (i.e. survive the FVD canonical input assembly repair's
+    capability gate, see the accounting test above) must reach more than
+    one terminal cause; a single flattened UNPRICEABLE_AUTHORITY_INSUFFICIENT
+    bucket would mean the real cause differentiation was lost again."""
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     ranking = view["structures"]["allocated_structures"]["ranking"]
     unpriceable = [r for r in ranking if not r["is_fully_priced"]]
 
-    assert len(unpriceable) == 80
+    assert len(unpriceable) == 61
     statuses = {r["candidate_status"] for r in unpriceable}
     assert statuses.issuperset({"UNPRICEABLE_AUTHORITY_INSUFFICIENT", "RULE_REJECTED"}), (
         f"expected at least AUTHORITY_INSUFFICIENT and RULE_REJECTED causes, got {statuses}"

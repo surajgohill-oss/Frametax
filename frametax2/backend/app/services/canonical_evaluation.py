@@ -71,12 +71,14 @@ from app.models.jurisdiction import Jurisdiction
 from app.models.production import ProductionStructure, StructureCalculationResult
 from app.models.project import Project
 from app.services.canonical_project_economics import (
+    FACT_STATE_UNKNOWN,
     ProjectEconomicInputs,
+    build_physical_requirements,
     build_project_economic_inputs,
     production_facts_for,
 )
 
-ENGINE_VERSION = "canonical-1.2.1"
+ENGINE_VERSION = "canonical-1.3.0"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
@@ -130,7 +132,7 @@ def _price_candidate(
     statutory rate for that QPE, then price at the resolved rate. Returns
     (pricing, register, rate_resolution) or (None, None, None) if the
     program has no rate rules that resolve for this production."""
-    facts = production_facts_for(inputs)
+    facts = production_facts_for(inputs, jurisdiction_code=jurisdiction_code)
     register_probe = derive_qualification_register(
         inputs.budget_lines, program_slug=program_slug, facts=facts,
         rate=0.0, program_territorial_text=None,
@@ -303,21 +305,26 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     # prior versions rather than deleting them (see is_current elsewhere
     # in this codebase for the same convention).
 
-    # Codex Defect 1: derive_production_requirements() expects a
-    # `physical_requirements` dict shaped around script_requirements/
-    # location_categories/marine_required signals -- a shape only
-    # app.demo.little_utopia_state's own hand-built fixture currently
-    # produces. Real SA-1 ProductionRequirement rows exist generically
-    # (requirement_key vocabulary: SCRIPTED_LOCATION/EXPLICIT_VEHICLE/etc.)
-    # but there is no existing, non-inventive mapping from that vocabulary
-    # into this one -- building it would be new interpretive work, not a
-    # serialization fix, so it is out of this repair's bounded scope (see
-    # CANONICAL_SERVED_WIRING_REPAIR.md). {} therefore remains an honest
-    # "no environment/infrastructure signals available in this shape yet"
-    # rather than a silent substitution; inputs.production_requirements_on_file
-    # discloses in the persisted trace when real (differently-shaped)
-    # requirements exist on file so this gap is visible, not hidden.
-    requirements = derive_production_requirements({})
+    # FVD canonical input assembly repair, Task 1/3 (superseding the prior
+    # CANONICAL_SERVED_WIRING_REPAIR.md Defect 1 disclosure-only note
+    # below): derive_production_requirements() previously always received
+    # {} regardless of real, persisted SA-1 script data -- every
+    # jurisdiction therefore appeared "production capable" for any
+    # requirement, hard or soft, even where the script's own scripted
+    # locations (e.g. a Mediterranean sea-shore scene) genuinely require a
+    # capability (open-water filming) a landlocked jurisdiction cannot
+    # provide. build_physical_requirements() reads SA-1's own persisted
+    # ProjectLocationRequirement/ProductionRequirement rows directly
+    # (read-only, no side effects) and runs scripted-location text through
+    # the existing, generic abstract_location() keyword ontology --
+    # ontology-defined but never wired to any consumer until this repair.
+    # No AI interpretation, no invented quantities; a location string with
+    # no ontology hit and a project with no SCRIPTED_LOCATION/
+    # PERIOD_REFERENCE rows on file both still resolve to the same honest
+    # empty signal as before.
+    requirements = derive_production_requirements(
+        await build_physical_requirements(session, project_id)
+    )
     discovery = discover_executable_jurisdictions(
         requirements=requirements,
         production_type=inputs.production_type,
@@ -438,13 +445,37 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
 
         is_baseline = code == inputs.jurisdiction_code
         warnings = [LIMITATION_NOTE] if is_baseline else [LIMITATION_NOTE, RELOCATION_COMPARABILITY_NOTE]
+        # FVD canonical input assembly repair, Task 2 — UNKNOWN territorial
+        # facts stay visibly provisional rather than being silently absorbed
+        # as though "confirmed none." An absent ProjectFact still resolves
+        # to an empty account set for the qualification ladder itself (the
+        # only safe input a set-membership check can be given without
+        # inventing evidence — see _fact_account_set), but the SERVED result
+        # must not read as equivalent to a project that actually confirmed
+        # no accounts are stated outside its base jurisdiction. When either
+        # territorial fact was never stated at all, this candidate's QPE is
+        # flagged has_unverified_inputs=True with an explicit warning —
+        # blocking in the sense of requiring confirmation before being
+        # treated as final, never blocking the evaluation itself.
+        territorial_state_unknown = (
+            inputs.accounts_outside_jurisdiction_state == FACT_STATE_UNKNOWN
+            or inputs.offshore_payroll_accounts_state == FACT_STATE_UNKNOWN
+        )
+        if territorial_state_unknown:
+            warnings = warnings + [
+                "UNKNOWN, not KNOWN EMPTY: no project fact has ever stated which "
+                "accounts (if any) are incurred outside the base jurisdiction or "
+                "routed through offshore payroll. This QPE assumes none are — the "
+                "only input a set-membership check can be given without inventing "
+                "evidence — but that assumption is unconfirmed, not verified."
+            ]
         session.add(StructureCalculationResult(
             id=uuid.uuid4(), structure_id=structure.id, engine_version=ENGINE_VERSION,
             total_budget_usd=inputs.gross_budget_usd,
             total_incentive_value_usd=pricing.selected_incentive_usd,
             true_net_cost_usd=pricing.npc_verified_usd,
             risk_adjusted_net_cost_usd=pricing.npc_with_adjustments_usd,
-            has_unverified_inputs=False, warnings=warnings,
+            has_unverified_inputs=territorial_state_unknown, warnings=warnings,
             calculation_trace_json={
                 "candidate_status": STATUS_PRICED,
                 "discovery_classification": classification,
@@ -477,14 +508,21 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 "npc_conservative_usd": pricing.npc_verified_usd,
                 "gross_budget_usd": pricing.gross_budget_usd,
                 "segments": _segment_dicts(pricing),
-                # Codex Defect 1 disclosure (never changes the qualification
-                # outcome — the territoriality guard still receives the same
-                # empty-set input either way): whether the two territorial
-                # ProjectFact keys were ever actually stated for this
-                # project, and how many real SA-1 ProductionRequirement rows
-                # exist on file but are not yet mapped into jurisdiction
-                # capability matching (see production_requirements_on_file
-                # docstring in canonical_project_economics.py).
+                # Disclosure (does not change this candidate's own
+                # qualification outcome — the ladder still receives the same
+                # empty-set input either way; see the has_unverified_inputs/
+                # warnings block above for how UNKNOWN is now surfaced as
+                # provisional): whether the two territorial ProjectFact keys
+                # were ever actually stated for this project, and how many
+                # real SA-1 ProductionRequirement rows exist on file.
+                # SCRIPTED_LOCATION and PERIOD_REFERENCE rows ARE now
+                # consumed generically (build_physical_requirements(), Task
+                # 1/3) for capability MATCHING at discovery time (whether a
+                # jurisdiction can physically support the production) — this
+                # count still includes CHARACTER/EXPLICIT_VEHICLE/
+                # EXPLICIT_ANIMAL/EXPLICIT_WEAPON/EXPLICIT_MINOR rows, which
+                # have no corresponding capability vocabulary in
+                # derive_production_requirements() and remain unmapped.
                 "accounts_outside_jurisdiction_state": inputs.accounts_outside_jurisdiction_state,
                 "offshore_payroll_accounts_state": inputs.offshore_payroll_accounts_state,
                 "production_requirements_on_file": inputs.production_requirements_on_file,

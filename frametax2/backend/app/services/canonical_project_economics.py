@@ -45,6 +45,7 @@ from dataclasses import dataclass, field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.calculators.production_requirements import abstract_location
 from app.calculators.qualification_derivation import BudgetLine, ProductionFacts
 from app.models.budget import BudgetDocument, BudgetLineItem
 from app.models.jurisdiction import Jurisdiction
@@ -287,10 +288,149 @@ async def build_project_economic_inputs(
     ))
 
 
-def production_facts_for(inputs: ProjectEconomicInputs) -> ProductionFacts:
-    """The canonical QPE ladder's own facts object, from project evidence."""
+def production_facts_for(
+    inputs: ProjectEconomicInputs, jurisdiction_code: str | None = None,
+) -> ProductionFacts:
+    """The canonical QPE ladder's own facts object, from project evidence.
+
+    FVD canonical input assembly repair, Task 1: `jurisdiction_code` is the
+    candidate being priced (the destination for a full-relocation candidate),
+    not always the project's home jurisdiction. Previously this always
+    reported `inputs.jurisdiction_code` (the home code) regardless of which
+    candidate `_price_candidate()` was pricing, so a Qatar candidate's
+    register reason text read "...outside GR" instead of "...outside QA".
+    `accounts_outside_jurisdiction`/`offshore_payroll_accounts` are UNCHANGED
+    by this — they remain the same project-level stated-account sets either
+    way (there is no per-candidate territorial fact to select between; see
+    the territoriality guard note on `_fact_account_set`). This only fixes
+    which jurisdiction the qualification ladder's own reason text names."""
     return ProductionFacts(
-        jurisdiction_code=inputs.jurisdiction_code,
+        jurisdiction_code=jurisdiction_code or inputs.jurisdiction_code,
         accounts_outside_jurisdiction=inputs.accounts_outside_jurisdiction,
         offshore_payroll_accounts=inputs.offshore_payroll_accounts,
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────
+# FVD canonical input assembly repair, Task 1/3 — reconnect
+# derive_production_requirements() to SA-1's real, persisted, evidence-
+# backed script data instead of the permanent {} that made every
+# jurisdiction "production capable" for any requirement, hard or soft.
+#
+# Bridges TWO vocabularies that already exist in
+# app.calculators.production_requirements but were never wired together:
+#   - abstract_location() -- a generic keyword ontology over literal
+#     location text, defined but never called anywhere in the codebase
+#     until this repair.
+#   - derive_production_requirements()'s own `location_categories` input
+#     shape, keyed on a DIFFERENT (LOCATION_TAXONOMY-derived) slug
+#     vocabulary via `_LOCATION_CATEGORY_TO_CAPABILITY`.
+# Several of abstract_location()'s outputs already equal
+# _LOCATION_CATEGORY_TO_CAPABILITY's KEYS verbatim (beach_coast,
+# marine_open_water, mediterranean, island); the rest equal its CAPABILITY
+# VALUES (e.g. "desert_environments") rather than its keys ("desert"). The
+# table below is the purely mechanical reverse-lookup connecting those --
+# no new category, no invented evidence, no AI interpretation. Real
+# ontology hits with no location_categories equivalent (harbor_marina,
+# village, agricultural, river, lake, town, industrial, residential,
+# suburban) are dropped, never fabricated one.
+# ─────────────────────────────────────────────────────────────────────────
+
+#: abstract_location() outputs that are already valid location_categories
+#: keys verbatim.
+_DIRECT_LOCATION_CATEGORY_KEYS = frozenset({
+    "beach_coast", "marine_open_water", "mediterranean", "island",
+})
+#: abstract_location() outputs that are location_categories CAPABILITY
+#: VALUES -> the KEY derive_production_requirements() actually reads.
+_LOCATION_CAPABILITY_TOKEN_TO_CATEGORY_KEY = {
+    "coastal_environments": "beach_coast",
+    "open_water_filming": "marine_open_water",
+    "tropical_environments": "island_tropical",
+    "island_environments": "island",
+    "historic_architecture": "historic_old_world",
+    "period_environments": "period_town",
+    "mountain_environments": "mountain",
+    "desert_environments": "desert",
+    "urban_environments": "urban",
+    "rural_environments": "rural_countryside",
+    "forest_environments": "forest",
+}
+
+
+def _location_categories_from_descriptions(descriptions: list[str]) -> dict[str, dict]:
+    """`location_categories` input for `derive_production_requirements()`,
+    built from real scripted-location description strings (SA-1's
+    persisted `ProjectLocationRequirement` rows) run through the existing,
+    generic `abstract_location()` keyword ontology. Deterministic keyword
+    matching only -- no inference, no LLM, no invented category."""
+    out: dict[str, dict] = {}
+    for desc in descriptions:
+        if not desc:
+            continue
+        for token in abstract_location(desc):
+            key = (
+                token if token in _DIRECT_LOCATION_CATEGORY_KEYS
+                else _LOCATION_CAPABILITY_TOKEN_TO_CATEGORY_KEY.get(token)
+            )
+            if key is None:
+                continue
+            entry = out.setdefault(key, {"effective": False, "evidence": []})
+            entry["effective"] = True
+            entry["evidence"].append(desc)
+    return out
+
+
+async def build_physical_requirements(session: AsyncSession, project_id) -> dict:
+    """Real `physical_requirements` input for `derive_production_requirements()`,
+    from SA-1's persisted `ProjectLocationRequirement` (scripted locations)
+    and `ProductionRequirement` (PERIOD_REFERENCE presence) rows -- never
+    the permanent `{}` that made every jurisdiction appear production-
+    capable for any requirement. Reads the same underlying tables
+    `CanonicalProductionStateBuilder` reads (SA-1's own persisted rows),
+    directly and read-only -- deliberately NOT via
+    `CanonicalProductionStateBuilder.build()` itself, which also performs
+    an unrelated write-side budget-import fallback and a strict
+    READY_FOR_OPTIMIZER gate that would block this project-agnostic
+    requirements read on unrelated inputs (shoot days, base-jurisdiction
+    assumption) this function does not need.
+
+    No AI interpretation, no invented quantities -- SCRIPTED_LOCATION rows
+    run through the existing keyword ontology, and PERIOD_REFERENCE
+    presence reported as a plain boolean fact, exactly as evidenced."""
+    from app.models.production_requirement import ProductionRequirement
+    from app.models.project_location_requirement import ProjectLocationRequirement
+
+    loc_rows = (await session.execute(
+        select(ProjectLocationRequirement.description).where(
+            ProjectLocationRequirement.project_id == project_id,
+            ProjectLocationRequirement.location_key.isnot(None),
+        )
+    )).scalars().all()
+    location_categories = _location_categories_from_descriptions(list(loc_rows))
+
+    period_rows = (await session.execute(
+        select(ProductionRequirement.normalized_value, ProductionRequirement.description)
+        .where(
+            ProductionRequirement.project_id == project_id,
+            ProductionRequirement.requirement_key == "PERIOD_REFERENCE",
+        )
+    )).all()
+    script_requirements: dict[str, dict] = {}
+    if period_rows:
+        normalized_value, description = period_rows[0]
+        script_requirements["period"] = {
+            "value": True,
+            "evidence": description or normalized_value or "PERIOD_REFERENCE (SA-1 script analysis)",
+        }
+
+    return {
+        "location_categories": location_categories,
+        "script_requirements": script_requirements,
+        # marine_required / marine_account / aerial_required / aerial_account
+        # intentionally left unset: FVD's real budget has no vessel_marine
+        # or aerial spend-category line, so there is no real-budget-account
+        # signal to report (never fabricated). Any real script marine
+        # evidence is already carried honestly via
+        # location_categories["marine_open_water"] above.
+    }
