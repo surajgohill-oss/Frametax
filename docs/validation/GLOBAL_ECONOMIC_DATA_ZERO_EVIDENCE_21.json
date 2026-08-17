@@ -1,0 +1,186 @@
+{
+  "title": "Global Economic Data + Base Pricing — the 21 zero-evidence programs",
+  "derivation": "94 originally blocked formulaic programs MINUS 73 with cited PARSED-tier historical RateRule/DoctrineRecord data = 21 programs with genuinely zero prior economic data of any kind.",
+  "verified_against_live_data": true,
+  "verification_method": "For each program_slug: get_rate_rules() (program_rate_rules.py), get_doctrine() (executable_jurisdiction_registry.py), ALL_PROFILES lookup (jurisdiction_comparison.py), and a bound-program_slug lookup against global_inventory.ALL_PROGRAMS. All four returned empty/None for all 21 entries below — confirmed 2026-08-17.",
+  "count": 21,
+  "programs": [
+    {
+      "canonical_program_id": "ar_incaa_incentive",
+      "program_name_jurisdiction": "INCAA co-production/service incentive — Argentina",
+      "reason_outside_the_73": "No RateRule, DoctrineRecord, jurisdiction_comparison profile, or global_inventory catalog entry exists for this slug at any confidence tier, including DISCOVERY. Never researched at all in this project's history, as opposed to the 73 which had at least a PARSED-tier prior pass.",
+      "existing_historical_evidence": "None found in any canonical data source.",
+      "indispensable_economic_proposition_needed": "Whether INCAA (Instituto Nacional de Cine y Artes Audiovisuales) currently operates a foreign-production cash rebate or tax incentive (as opposed to only domestic-production support funds), and if so its rate, minimum spend, and cap.",
+      "primary_source_research_required": true
+    },
+    {
+      "canonical_program_id": "au_nsw_screen",
+      "program_name_jurisdiction": "Screen NSW incentive — Australia / New South Wales",
+      "reason_outside_the_73": "No RateRule/DoctrineRecord/profile/catalog entry exists. Australia's federal Location Offset (au_location_offset) is separately canonical and priceable; this state-level NSW program was never separately encoded.",
+      "existing_historical_evidence": "None found in any canonical data source.",
+      "indispensable_economic_proposition_needed": "Screen NSW's current production incentive rate/structure and whether it stacks with the federal Location Offset or is a standalone state top-up.",
+      "primary_source_research_required": true
+    },
+    {
+      "canonical_program_id": "au_qld_screen_qld",
+      "program_name_jurisdiction": "Screen Queensland incentive — Australia / Queensland",
+      "reason_outside_the_73": "No RateRule/DoctrineRecord/profile/catalog entry exists. Same pattern as au_nsw_screen — a state-level program never separately encoded.",
+      "existing_historical_evidence": "None found in any canonical data source.",
+      "indispensable_economic_proposition_needed": "Screen Queensland's current production incentive rate/structure and its relationship to the federal Location Offset.",
+      "primary_source_research_required": true
+    },
+    {
+      "canonical_program_id": "au_vic_vicscreen",
+      "program_name_jurisdiction": "VicScreen incentive — Australia / Victoria",
+      "reason_outside_the_73": "No RateRule/DoctrineRecord/profile/catalog entry exists. Same pattern as the other Australian state programs.",
+      "existing_historical_evidence": "None found in any canonical data source.",
+      "indispensable_economic_proposition_needed": "VicScreen's current production incentive rate/structure and its relationship to the federal Location Offset.",
+      "primary_source_research_required": true
+    },
+    {
+      "canonical_program_id": "bc_interactive_digital_media_tax_credit_idmtc",
+      "program_name_jurisdiction": "Interactive Digital Media Tax Credit (IDMTC) — Canada / British Columbia",
+      "reason_outside_the_73": "No RateRule/DoctrineRecord/profile/catalog entry exists. This is a games/interactive-media credit, structurally distinct from ca_bc_pstc (BC's live-action/animation production services credit, already VERIFIED via batch 1) — never separately encoded.",
+      "existing_historical_evidence": "None found in any canonical data source.",
+      "indispensable_economic_proposition_needed": "IDMTC's current rate, eligible expenditure definition (BC labour on interactive digital media development), minimum spend, and whether it is even in scope for this engine's film/TV production_types.",
+      "primary_source_research_required": true
+    },
+    {
+      "canonical_program_id": "br_ancine_incentive",
+      "program_name_jurisdiction": "ANCINE incentive — Brazil",
+      "reason_outside_the_73": "No RateRule/DoctrineRecord/profile/catalog entry exists. Never researched.",
+      "existing_historical_evidence": "None found in any canonical data source.",
+      "indispensable_economic_proposition_needed": "Whether ANCINE (Agência Nacional do Cinema) currently operates a foreign-production cash rebate/incentive as opposed to only domestic co-production funding mechanisms (e.g. FSA), and if so its rate and terms.",
+      "primary_source_research_required": true
+    },
+    {
+      "canonical_program_id": "ca_federal_cptc",
+      "program_name_jurisdiction": "Canadian Film or Video Production Tax Credit (CPTC) — Canada / Federal",
+      "reason_outside_the_73": "No RateRule/DoctrineRecord/profile/catalog entry exists. Distinct from ca_federal_pstc (the Production Services Tax Credit, itself still blocked with only a PARSED rule) — CPTC is the Canadian-content-certified credit, never separately encoded.",
+      "existing_historical_evidence": "None found in any canonical data source.",
+      "indispensable_economic_proposition_needed": "CPTC's current rate (25% of Canadian labour expenditure per CRA/CAVCO's public guidance, not yet independently fetched and cited in this project), eligibility (Canadian-content points test), and cap.",
+      "primary_source_research_required": true
+    },
+    {
+      "canonical_program_id": "ca_nl_production_fund",
+      "program_name_jurisdiction": "Newfoundland and Labrador Film Development Corp Production Incentive — Canada / Newfoundland & Labrador",
+      "reason_outside_the_73": "No RateRule/DoctrineRecord/profile/catalog entry exists. Never researched.",
+      "existing_historical_evidence": "None found in any canonical data source.",
+      "indispensable_economic_proposition_needed": "The fund's current rate/structure, whether it is a guaranteed formulaic rebate or a discretionary/competitive equity investment fund (which would place it outside this engine's formulaic-only scope), minimum spend, and cap.",
+      "primary_source_research_required": true
+    },
+    {
+      "canonical_program_id": "dk_film_incentive",
+      "program_name_jurisdiction": "Danish Film Institute Production Support — Denmark",
+      "reason_outside_the_73": "No RateRule/DoctrineRecord/profile/catalog entry exists. Never researched.",
+      "existing_historical_evidence": "None found in any canonical data source.",
+      "indispensable_economic_proposition_needed": "Whether the Danish Film Institute's international/location incentive is a guaranteed rebate (formulaic) or a discretionary co-financing/selective fund, its rate if formulaic, minimum spend, and cap.",
+      "primary_source_research_required": true
+    },
+    {
+      "canonical_program_id": "gb_sct_screen_fund",
+      "program_name_jurisdiction": "Screen Scotland Production Growth Fund — United Kingdom / Scotland",
+      "reason_outside_the_73": "No RateRule/DoctrineRecord/profile/catalog entry exists. Distinct from uk_avec (the UK-wide Audio-Visual Expenditure Credit, VERIFIED via batch 3) — this is a separate, additional Scotland-specific fund never separately encoded.",
+      "existing_historical_evidence": "None found in any canonical data source.",
+      "indispensable_economic_proposition_needed": "Whether the Production Growth Fund is a guaranteed formulaic top-up to AVEC or a discretionary/competitive grant, its rate if formulaic, minimum spend, and cap, and whether it stacks with AVEC.",
+      "primary_source_research_required": true
+    },
+    {
+      "canonical_program_id": "gb_wls_screen_fund",
+      "program_name_jurisdiction": "Wales Screen Production Fund (Ffilm Cymru Wales) — United Kingdom / Wales",
+      "reason_outside_the_73": "No RateRule/DoctrineRecord/profile/catalog entry exists. Same pattern as gb_sct_screen_fund — a separate nation-specific UK fund never separately encoded.",
+      "existing_historical_evidence": "None found in any canonical data source.",
+      "indispensable_economic_proposition_needed": "Whether the fund is a guaranteed formulaic top-up to AVEC or a discretionary/competitive grant, its rate if formulaic, minimum spend, and cap, and whether it stacks with AVEC.",
+      "primary_source_research_required": true
+    },
+    {
+      "canonical_program_id": "in_national_film",
+      "program_name_jurisdiction": "India NFDC and State Incentives — India",
+      "reason_outside_the_73": "No RateRule/DoctrineRecord/profile/catalog entry exists. Flagged in an earlier session as one of 6 'disconnected identities' with no matching global_inventory entry even after the unique-exact-normalized-name fallback match was added — genuinely unbound, not merely unpriced.",
+      "existing_historical_evidence": "None found in any canonical data source.",
+      "indispensable_economic_proposition_needed": "India does not have one unified national formulaic incentive — NFDC support is largely selective/co-production, while individual states (e.g. Uttar Pradesh, Madhya Pradesh) run their own formulaic rebates. The indispensable proposition is which SPECIFIC state or national scheme this canonical identity is meant to represent, before any rate can be sourced.",
+      "primary_source_research_required": true
+    },
+    {
+      "canonical_program_id": "jm_film_incentive",
+      "program_name_jurisdiction": "Jamaica Entertainment Industry Incentive Programme — Jamaica",
+      "reason_outside_the_73": "No RateRule/DoctrineRecord/profile/catalog entry exists. Never researched.",
+      "existing_historical_evidence": "None found in any canonical data source.",
+      "indispensable_economic_proposition_needed": "The programme's current cash rebate/credit rate, minimum spend, and cap under JAMPRO's administration.",
+      "primary_source_research_required": true
+    },
+    {
+      "canonical_program_id": "mx_eficine_incentive",
+      "program_name_jurisdiction": "Mexico EFICINE (Article 226) and PROCINE Fund — Mexico",
+      "reason_outside_the_73": "No RateRule/DoctrineRecord/profile/catalog entry exists. Also one of the 6 confirmed-unbound 'disconnected identities' (no matching global_inventory entry).",
+      "existing_historical_evidence": "None found in any canonical data source.",
+      "indispensable_economic_proposition_needed": "EFICINE 226 is a tax-credit-for-investors mechanism (investors receive a credit against their own tax liability for funding a production), not a direct production rebate — the indispensable proposition is whether/how that investor-side credit converts into a modelable production-side incentive rate in this engine's schema at all, before any rate figure can be sourced.",
+      "primary_source_research_required": true
+    },
+    {
+      "canonical_program_id": "new_zealand_screen_production_grant_—_international_post_vfx",
+      "program_name_jurisdiction": "New Zealand Screen Production Grant — International Post/VFX — New Zealand",
+      "reason_outside_the_73": "No RateRule/DoctrineRecord/profile/catalog entry exists. Distinct from nz_spg_international (the general international production rebate, VERIFIED via batch 1) — this is the separate post-production/VFX-specific track of the same NZ Screen Production Grant, never separately encoded.",
+      "existing_historical_evidence": "nz_spg_international's own citation (mbie.govt.nz) may describe this VFX-specific track on the same page — not yet individually re-read for this specific sub-program's own rate/threshold.",
+      "indispensable_economic_proposition_needed": "The Post/VFX track's own rate (may differ from the general 20-25% international rate), its minimum NZ post/VFX spend threshold, and whether it is mutually exclusive with or additive to nz_spg_international.",
+      "primary_source_research_required": true
+    },
+    {
+      "canonical_program_id": "on_ofttc",
+      "program_name_jurisdiction": "Ontario Film and Television Tax Credit (OFTTC) — Canada / Ontario",
+      "reason_outside_the_73": "No RateRule/DoctrineRecord/profile/catalog entry exists. Distinct from ca_on_opstc (the Ontario Production Services Tax Credit, VERIFIED via batch 3) — OFTTC is the separate Ontario-content-certified credit (parallel to the CPTC/PSTC federal split), never separately encoded.",
+      "existing_historical_evidence": "None found in any canonical data source.",
+      "indispensable_economic_proposition_needed": "OFTTC's current rate (distinct from OPSTC's 21.5%), Ontario-content certification requirements, minimum spend, and cap, per Ontario Creates' official guidance.",
+      "primary_source_research_required": true
+    },
+    {
+      "canonical_program_id": "ontario_computer_animation_and_special_effects_tax_credit_ocase",
+      "program_name_jurisdiction": "Ontario Computer Animation and Special Effects Tax Credit (OCASE) — Canada / Ontario",
+      "reason_outside_the_73": "No RateRule/DoctrineRecord/profile/catalog entry exists. A third, separate Ontario credit (animation/VFX-labour-specific, stackable with OPSTC/OFTTC) never encoded.",
+      "existing_historical_evidence": "None found in any canonical data source.",
+      "indispensable_economic_proposition_needed": "OCASE's current rate, eligible Ontario animation/VFX labour definition, and whether/how it stacks with OPSTC in this engine's schema (a genuine multi-program-stacking mechanic, not just a new single rate).",
+      "primary_source_research_required": true
+    },
+    {
+      "canonical_program_id": "pe_film_incentive",
+      "program_name_jurisdiction": "Peru film incentive — Peru",
+      "reason_outside_the_73": "No RateRule/DoctrineRecord/profile/catalog entry exists. Never researched.",
+      "existing_historical_evidence": "None found in any canonical data source.",
+      "indispensable_economic_proposition_needed": "Whether Peru currently operates any production incentive at all (Ley del Cine / PROMPERU-administered schemes have historically been selective grants rather than formulaic rebates), and if a formulaic mechanism exists, its rate and terms.",
+      "primary_source_research_required": true
+    },
+    {
+      "canonical_program_id": "pt_film_incentive",
+      "program_name_jurisdiction": "Portugal film incentive — Portugal",
+      "reason_outside_the_73": "No RateRule/DoctrineRecord/profile/catalog entry exists. Never researched.",
+      "existing_historical_evidence": "None found in any canonical data source.",
+      "indispensable_economic_proposition_needed": "ICA (Instituto do Cinema e do Audiovisual)'s current incentive structure — Portugal has both a Madeira/regional tax-benefit regime and an ICA support mechanism; the indispensable proposition is which one (if either) is a guaranteed formulaic rebate this engine can model, and its rate/terms.",
+      "primary_source_research_required": true
+    },
+    {
+      "canonical_program_id": "qc_film_production",
+      "program_name_jurisdiction": "SODEC film production incentive — Canada / Quebec",
+      "reason_outside_the_73": "No RateRule/DoctrineRecord/profile/catalog entry exists. Also one of the 6 confirmed-unbound 'disconnected identities' (no matching global_inventory entry) despite Quebec's SODEC being referenced elsewhere in this codebase (global_inventory_db_sync.py cites sodec.gouv.qc.ca for a DIFFERENT, already-bound program).",
+      "existing_historical_evidence": "None directly bound to this canonical_program_id, though a sibling SODEC-administered program is already cited elsewhere in the codebase (global_inventory_db_sync.py, source_url=\"https://www.sodec.gouv.qc.ca/en/\") — not yet confirmed whether that is the same program under a different identity or a genuinely separate one.",
+      "indispensable_economic_proposition_needed": "Whether qc_film_production is a duplicate identity of an already-bound SODEC program (in which case this is an identity-merge, not a research gap) or a genuinely distinct Quebec production services credit needing its own primary-sourced rate.",
+      "primary_source_research_required": true
+    },
+    {
+      "canonical_program_id": "uy_xxi_incentive",
+      "program_name_jurisdiction": "Uruguay XXI incentive — Uruguay",
+      "reason_outside_the_73": "No RateRule/DoctrineRecord/profile/catalog entry exists. Never researched.",
+      "existing_historical_evidence": "None found in any canonical data source.",
+      "indispensable_economic_proposition_needed": "Whether Uruguay XXI (the investment-promotion agency) administers a direct film-production cash rebate or only broader investment-promotion tax exemptions not specific to film, and if the former, its rate and terms.",
+      "primary_source_research_required": true
+    }
+  ],
+  "summary": {
+    "with_zero_data_of_any_kind": 19,
+    "with_partial_adjacent_evidence_not_yet_individually_confirmed": 2,
+    "partial_evidence_program_ids": [
+      "new_zealand_screen_production_grant_—_international_post_vfx",
+      "qc_film_production"
+    ],
+    "note": "19 of the 21 have literally zero data in any canonical source this project maintains (RateRule, DoctrineRecord, jurisdiction_comparison profile, or global_inventory catalog). 2 have an adjacent citation or codebase reference that has not been individually confirmed to apply to this specific canonical_program_id — both still require primary-source research before either identity-merge or rate promotion. All 21 require primary-source research; none can be recovered via the recover-before-research method this task's batches 1-3 used."
+  }
+}
