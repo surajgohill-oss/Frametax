@@ -4,6 +4,22 @@ authority_coverage_registry.py
 The single deterministic source of truth for WHY a program is or is not
 available to CineGlobe's economic optimizer.
 
+CORRECTION (Global Priceability Optimizer Restoration, this task): the
+"georgia_eiia"/"us_ga_film_credit" rows were REMOVED. Codex's optimizer
+doctrine/priceability lineage trace (docs/validation/CODEX_OPTIMIZER_
+DOCTRINE_PRICEABILITY_LINEAGE.json) identified this as the single
+"artificial schema requirement" case in the entire 126-program formulaic
+universe: two VERIFIED-tier RateRules, an explicit doctrine classification,
+and a territorial SpendRule already exist for us_ga_film_credit (O.C.G.A.
+Section 48-7-40.26, recovered across the canonical-authority-substrate
+tasks), yet this static veto row still blocked it ahead of that executable
+substrate — the ONLY formulaic program where the veto contradicted
+already-accepted, already-cited runtime data rather than reflecting a
+genuine absence of authority. Every other UNPRICEABLE_AUTHORITY_INSUFFICIENT
+row in this file was cross-checked against verified_rate_rule_count in the
+same trace and found consistent (zero VERIFIED RateRules), so this is a
+one-row data correction, not a reopening of the veto list.
+
 Originally added by the Consolidated Global Remediation for 29 records
 (25 authority-insufficient + 4 non-economic). EXPANDED by the Global Data
 Application phase to carry every canonical disposition from
@@ -228,7 +244,6 @@ _ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("gb_bfi_production", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United Kingdom", "BFI Film Fund — Production Funding"),
     ("gb_sct_screen_fund", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United Kingdom / United Kingdom — Scotland", "Screen Scotland Production Growth Fund"),
     ("gb_wls_screen_fund", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United Kingdom / United Kingdom — Wales", "Wales Screen Production Fund (Ffilm Cymru Wales)"),
-    ("georgia_eiia", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / Georgia", "Georgia Entertainment Industry Investment Act"),
     ("gh_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Ghana", "gh_film_incentive"),
     ("gt_film_commission", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Guatemala", "Guatemala Film Commission (INGUAT) Production Facilitation"),
     ("gy_film_commission", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Guyana", "Guyana Tourism Authority Film Production Support"),
@@ -329,7 +344,6 @@ _ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("us_co_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Colorado", "Colorado Film Incentive"),
     ("us_ct_film_credit", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Connecticut", "Connecticut Film Tax Credit"),
     ("us_ct_film_tax_credit", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Connecticut", "Connecticut Film Tax Credit [runtime slug of us_ct_film_credit]"),
-    ("us_ga_film_credit", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / Georgia", "Georgia Entertainment Industry Investment Act [runtime slug of georgia_eiia]"),
     ("us_hi_film_digital_media_credit", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Hawaii", "Hawaii Film and Digital Media Income Tax Credit [runtime slug of us_hi_film_tax_credit]"),
     ("us_hi_film_tax_credit", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Hawaii", "Hawaii Film and Digital Media Income Tax Credit"),
     ("us_il_film_credit", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Illinois", "Illinois Film Tax Credit"),
@@ -404,7 +418,6 @@ CANONICAL_RUNTIME_SLUG_BINDINGS: dict[str, str] = {
     "do_film_incentive": "do_film_commission_incentive",
     "ee_film_incentive": "ee_film_estonia_rebate",
     "fi_film_incentive": "fi_business_finland_incentive",
-    "georgia_eiia": "us_ga_film_credit",
     "is_film_reimbursement": "is_film_reimbursement_scheme",
     "jp_film_incentive": "jp_vipo_location_incentive",
     "kr_film_incentive": "kr_kofic_location_incentive",

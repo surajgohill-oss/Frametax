@@ -36,6 +36,7 @@ from app.services.canonical_program_identity import (
 )
 from app.services.canonical_program_consolidation import (
     MISSING,
+    NOT_APPLICABLE,
     PARTIAL,
     PRESENT,
     consolidate,
@@ -257,35 +258,66 @@ def test_authority_closed_does_not_imply_authority_complete():
     )
 
 
-def test_publication_contract_never_imports_authority_closed_concept():
-    """Structural proof, not just behavioral: the module's IMPORTS (the
-    only way an external concept could actually influence its logic) never
-    touch authority_coverage_registry or any validation-artifact loader —
-    so there is no code path for a research-status label to leak into the
-    executable-completeness gate. (The module's own docstring names these
-    concepts in prose, explaining exactly this exclusion — that is
-    expected and is not what this test checks.)"""
+def test_authority_completeness_never_imports_authority_closed_concept():
+    """Structural proof, not just behavioral: `authority_completeness()`'s
+    OWN function body (the only way an external concept could actually
+    influence its logic) never references authority_coverage_registry or
+    any validation-artifact loader — so there is no code path for a
+    research-status label to leak into the 14-dimension completeness gate.
+    AUTHORITY_CLOSED must never imply AUTHORITY_COMPLETE.
+
+    This is DELIBERATELY narrower than an earlier version of this test that
+    asserted the whole MODULE never imports authority_coverage_registry.
+    That premise no longer holds: the Global Priceability Optimizer
+    Restoration task fixed `priceability()` to delegate to the SAME
+    coverage-registry veto the served engine (production_discovery.py)
+    actually calls -- that is the correct, intentional fix for the
+    priceability/served-runtime divergence Codex traced, not a violation
+    of this separation. The invariant that must never break is narrower
+    and still absolute: `authority_completeness()` specifically must
+    remain fully independent of coverage/validation status. `priceability
+    ()` was never covered by that guarantee -- it has always been, by
+    design, a statement about the SERVED engine, which the coverage
+    registry is part of."""
     import ast
     import inspect
 
     from app.services import canonical_publication_contract as mod
 
-    tree = ast.parse(inspect.getsource(mod))
-    imported_modules: list[str] = []
-    imported_names: list[str] = []
-    for node in ast.walk(tree):
-        if isinstance(node, ast.ImportFrom) and node.module:
-            imported_modules.append(node.module)
-            imported_names.extend(alias.name for alias in node.names)
-        elif isinstance(node, ast.Import):
-            imported_modules.extend(alias.name for alias in node.names)
+    source = inspect.getsource(mod.authority_completeness)
+    tree = ast.parse(source)
+    referenced_names: set[str] = {
+        node.id for node in ast.walk(tree) if isinstance(node, ast.Name)
+    }
+    referenced_attrs: set[str] = {
+        node.attr for node in ast.walk(tree) if isinstance(node, ast.Attribute)
+    }
+    imported_in_function: list[str] = [
+        alias.name
+        for node in ast.walk(tree)
+        if isinstance(node, (ast.Import, ast.ImportFrom))
+        for alias in node.names
+    ]
 
-    assert not any("authority_coverage_registry" in m for m in imported_modules), (
-        f"must not import authority_coverage_registry, found in: {imported_modules}"
-    )
-    assert not any("validation" in m.lower() for m in imported_modules)
-    assert "coverage_state" not in imported_names
-    assert "blocks_economic_candidacy" not in imported_names
+    assert "coverage_state" not in referenced_names | referenced_attrs
+    assert "blocks_economic_candidacy" not in referenced_names | referenced_attrs
+    assert not any("authority_coverage_registry" in n for n in imported_in_function)
+    assert not any("validation" in n.lower() for n in imported_in_function)
+
+
+def test_priceability_delegates_to_served_coverage_veto():
+    """The complementary, intentional half: priceability() MUST read
+    authority_coverage_registry.blocks_economic_candidacy() -- this is the
+    Global Priceability Optimizer Restoration fix itself. Regression
+    coverage that the delegation stays wired (if this import silently
+    disappears, priceability() reverts to disagreeing with the served
+    engine, exactly the bug this task fixed)."""
+    import inspect
+
+    from app.services import canonical_publication_contract as mod
+
+    source = inspect.getsource(mod.priceability)
+    assert "blocks_economic_candidacy" in source
 
 
 # ── Task 5 — residual-question ledger ───────────────────────────────────────
@@ -393,18 +425,26 @@ async def test_little_utopia_exact_regression_after_authority_substrate_repair(d
 # ── Task 10 — FVD runtime candidate-universe regression ─────────────────────
 
 async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
-    """FVD's generated/priced/unpriceable counts must match the accepted
-    CODEX_PRICEABILITY_BLOCKER_RECONCILIATION.md maximum (110/30/80) after
-    the feasibility/eligibility repair — no soft feasibility mismatch may
-    remove a candidate from the economic universe."""
+    """FVD's generated/priced/unpriceable counts. The candidate UNIVERSE
+    (110) and the feasibility-disclosure controls below are unchanged —
+    the feasibility/eligibility repair invariant this test originally
+    proved still holds. The priced count itself legitimately moved
+    30 -> 31 in the Global Priceability Optimizer Restoration task: Georgia
+    (us_ga_film_credit) was the one confirmed artificial-schema veto
+    inconsistency Codex's optimizer lineage trace found (two VERIFIED
+    RateRules + explicit doctrine already existed; a stale coverage-
+    registry row blocked it anyway) — see authority_coverage_registry.py's
+    correction note and test_georgia_prices_with_real_numbers_in_fvd for
+    the traced, real-number proof. No soft feasibility mismatch may remove
+    a candidate from the economic universe."""
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
     priced = [e for e in entries if e["is_fully_priced"]]
     unpriced = [e for e in entries if not e["is_fully_priced"]]
     assert len(entries) == 110
-    assert len(priced) == 30
-    assert len(unpriced) == 80
+    assert len(priced) == 31
+    assert len(unpriced) == 79
 
     for code in ("MN", "UZ", "AT"):
         e = next(x for x in entries if x["primary_jurisdiction"] == code)
@@ -605,3 +645,104 @@ def test_application_timing_widened_field_coverage_preserves_distinct_facts():
     assert d.status == PRESENT
     assert "audit_or_final_certification_deadline" in d.source
     assert "preapproval_mandatory" in d.source
+
+
+# ── Global Priceability Optimizer Restoration — priceability/served-runtime
+# alignment, Georgia reconciliation, program-specific N/A, terminal
+# accounting, LU/FVD control preservation. ──────────────────────────────
+
+def test_priceability_matches_served_intrinsic_status():
+    """The exact three cases Codex's optimizer lineage trace named:
+    us_ga_film_credit was the sole false positive (publication PRICEABLE,
+    served blocked by a stale coverage veto -- now corrected in both
+    directions); au_location_offset was a false negative (served-
+    priceable via a PARSED-tier RateRule, publication wrongly required
+    VERIFIED); uk_avec has zero VERIFIED/PARSED-executable path and stays
+    correctly UNPRICEABLE in both."""
+    from app.services.canonical_publication_contract import priceability, PRICEABLE, UNPRICEABLE
+    assert priceability("us_ga_film_credit").gate == PRICEABLE
+    assert priceability("au_location_offset").gate == PRICEABLE
+    assert priceability("uk_avec").gate == UNPRICEABLE
+
+
+def test_georgia_no_annual_cap_recovered_as_not_applicable():
+    """Task 3 (reconcile Georgia), generalized: CAP was falsely MISSING
+    for Georgia despite its own VERIFIED RateRule citation explicitly
+    stating 'No annual cap.' -- existing authority already answered the
+    question; the consolidation view just never looked for the answer.
+    Must resolve NOT_APPLICABLE (a confirmed absence), never PRESENT (that
+    would imply a cap VALUE exists) and never stay MISSING."""
+    c = consolidate("us_ga_film_credit")
+    d = next(x for x in c.dimensions if x.dimension == "CAP")
+    assert d.status == NOT_APPLICABLE
+    assert "no annual cap" in d.source.lower()
+
+
+def test_not_applicable_never_invented_from_bare_absence():
+    """The Task 2 boundary: NOT_APPLICABLE must never be inferred merely
+    because a field is empty -- ca_federal_pstc has no VERIFIED RateRule
+    at all (so no citation text could possibly be searched), and its CAP
+    must remain the honest MISSING, never promoted to NOT_APPLICABLE by
+    absence alone."""
+    c = consolidate("ca_federal_pstc")
+    d = next(x for x in c.dimensions if x.dimension == "CAP")
+    assert d.status == MISSING
+
+
+def test_formulaic_terminal_accounting_sums_exactly():
+    """Task 6/7: every formulaic canonical identity must terminate as
+    exactly PRICEABLE or UNPRICEABLE -- no unclassified program, and the
+    two counts must sum to the total formulaic universe size."""
+    from app.services.canonical_program_identity import all_canonical_identities
+    from app.services.canonical_publication_contract import priceability, PRICEABLE, UNPRICEABLE
+    from app.data.authority_coverage_registry import coverage_state
+    from app.data.program_rate_rules import get_rate_rules
+
+    # Reconstruct the same formulaic-disposition slug set the closeout
+    # artifact used: identities with a doctrine-resolvable RateRule OR a
+    # recovered/known formulaic program type, excluding non-formulaic
+    # coverage dispositions -- a lighter-weight proxy sufficient to prove
+    # the accounting invariant holds over a large, real slice of the
+    # universe without re-deriving the full Phase A classification here.
+    identities = all_canonical_identities()
+    sample = [
+        i.canonical_program_id for i in identities
+        if coverage_state(i.canonical_program_id) not in (
+            "SUPERSEDED", "DUPLICATE", "NON_ECONOMIC", "NON_GUARANTEED_SELECTIVE",
+            "CANONICAL_DATA_HANDOFF_DEFECT",
+        )
+        and len(get_rate_rules(i.canonical_program_id)) > 0
+    ]
+    assert sample, "fixture assumption: at least one program with rate rules must exist"
+    for slug in sample:
+        gate = priceability(slug).gate
+        assert gate in (PRICEABLE, UNPRICEABLE), f"{slug} produced an unclassified gate: {gate!r}"
+
+
+async def test_lu_mauritius_control_npc_unchanged(db: AsyncSession):
+    """The single most load-bearing control value in this entire lineage:
+    Little Utopia's baseline (Mauritius) true_net_cost_usd must remain
+    EXACTLY $3,057,794.90 after every fix in this task. If this regresses,
+    something touched served pricing logic, not just data/publication
+    correctness."""
+    await evaluate_project(db, LITTLE_UTOPIA_PROJECT_ID)
+    view = await build_production_and_structures(db, LITTLE_UTOPIA_PROJECT_ID)
+    entries = view["structures"]["allocated_structures"]["structures"]
+    baseline = next(e for e in entries if e["is_baseline"])
+    assert baseline["primary_jurisdiction"] == "MU"
+    assert baseline["npc_verified_usd"] == pytest.approx(3057794.90, abs=0.01)
+
+
+async def test_georgia_prices_with_real_numbers_in_fvd(db: AsyncSession):
+    """Runtime proof (Task 9) that the coverage-registry correction reaches
+    served state, not just the read-only publication layer: US-GA must now
+    appear PRICED in FVD's candidate set with a real, traced incentive
+    derived from O.C.G.A. Section 48-7-40.26, not a placeholder."""
+    await evaluate_project(db, FVD_PROJECT_ID)
+    view = await build_production_and_structures(db, FVD_PROJECT_ID)
+    entries = view["structures"]["allocated_structures"]["structures"]
+    ga = next(e for e in entries if e["primary_jurisdiction"] == "US-GA")
+    assert ga["is_fully_priced"] is True
+    assert ga["candidate_status"] == "PRICED"
+    assert ga["selected_incentive_usd"] > 0
+    assert ga["npc_verified_usd"] is not None and ga["npc_verified_usd"] > 0

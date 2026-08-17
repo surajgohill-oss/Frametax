@@ -81,7 +81,17 @@ from app.services.canonical_project_economics import (
     production_facts_for,
 )
 
-ENGINE_VERSION = "canonical-1.4.0"
+# Global Priceability Optimizer Restoration: bumped so every project's
+# persisted StructureCalculationResult rows are treated as stale and
+# regenerated. No candidate-generation/allocation/pricing LOGIC changed in
+# this file -- the version bump exists purely to invalidate cached results
+# from before the authority_coverage_registry.py Georgia veto correction
+# (georgia_eiia/us_ga_film_credit rows removed) and the canonical_program_
+# identity.py jurisdiction_code binding fix, both of which are read at
+# discovery time but are NOT part of `_compute_fingerprint(inputs)` (that
+# fingerprint covers project-specific economic inputs, not registry
+# contents) and would otherwise silently keep serving pre-fix results.
+ENGINE_VERSION = "canonical-1.5.0"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "

@@ -1,19 +1,54 @@
 """
 canonical_publication_contract.py
 
-Authority completeness contract correction (commit 770006b follow-up).
+Authority completeness contract correction (commit 770006b follow-up),
+CORRECTED by the Global Priceability Optimizer Restoration task per the
+Codex optimizer-doctrine/priceability lineage trace (docs/validation/
+CODEX_OPTIMIZER_DOCTRINE_PRICEABILITY_LINEAGE.json).
 
-This module now answers TWO permanently independent questions, never
+WHAT WAS WRONG (fixed in this pass): `priceability()` was a read-only
+classifier over `canonical_program_consolidation.consolidate()`'s
+VERIFIED-tier-gated dimensions — but that is NOT what actually determines
+whether the served engine (`production_discovery.discover_executable_
+jurisdictions()` / `canonical_evaluation._price_candidate()`) will price a
+program. The served engine never reads consolidation or confidence tiers
+at all; it checks, in order: (1) `authority_coverage_registry.
+blocks_economic_candidacy()`, (2) whether a doctrine resolves
+(`program_spend_rules.resolve_program_doctrine()`), (3) whether at least
+one `RateRule` exists (`program_rate_rules.get_rate_rules()`, ANY
+confidence tier — PARSED/DISCOVERY included), and (4) whether at least one
+of those rules carries an eligible production type. Across the 126
+formulaic programs this produced 27 false negatives (served-priceable
+programs the old classifier called UNPRICEABLE because their real,
+executable RateRules were PARSED/DISCOVERY tier, not VERIFIED) and one
+false positive (`us_ga_film_credit`, which the OLD classifier called
+PRICEABLE while the served coverage-registry veto — since corrected, see
+authority_coverage_registry.py — actually blocked it).
+
+THE FIX: `priceability()` now delegates to the SAME four predicates the
+served engine calls, not a separately-maintained approximation. This is
+the "one coherent semantic contract for PRICEABLE" the restoration task
+required — the publication label and the served runtime can no longer
+structurally disagree, because they read the same functions. `priceability
+()` intentionally does NOT call `resolve_program_rate()` itself (that
+needs a real project's production_type/QPE, which this program-level,
+project-independent function does not have) — it answers the
+project-independent question Codex calls "intrinsic priceability": would
+SOME real project stand a chance of pricing here, before any
+project-specific threshold/type mismatch is even evaluated. A specific
+project can still receive `RULE_REJECTED` downstream for real
+type/minimum-QPE conditions this function cannot see.
+
+This module still answers TWO permanently independent questions, never
 conflated:
 
     1. `priceability()`      — RUNTIME PRICEABILITY. Can the EXISTING
                                 pricing engine currently produce a
                                 defensible economic calculation for this
-                                program? Gated on exactly the two
-                                dimensions confirmed, by reading
-                                program_rate_rules.py's own
-                                resolve_program_rate(), to be true hard
-                                blockers for THIS implementation.
+                                program, independent of any one project?
+                                Gated on the same coverage/doctrine/rate/
+                                eligible-type predicates the served engine
+                                itself calls — see THE FIX above.
 
     2. `authority_completeness()` — AUTHORITY COMPLETENESS. Has the
                                 governing incentive authority actually been
@@ -65,7 +100,6 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 
 from app.services.canonical_program_consolidation import (
-    PRESENT,
     REQUIRED_DIMENSIONS,
     RESOLVED_FOR_AUTHORITY_COMPLETENESS,
     ProgramConsolidation,
@@ -107,10 +141,25 @@ UNPRICEABLE = "UNPRICEABLE"
 #: authority_completeness() below — separately, correctly,
 #: AUTHORITY_INCOMPLETE, because most of its 14 material dimensions were
 #: never actually resolved by primary-source review.
+#: Retained ONLY as PriceabilityResult.unresolved_required_dimensions'
+#: legacy shape for callers that still read that field name — the actual
+#: gating logic no longer consults canonical_program_consolidation at all
+#: (see THE FIX in the module docstring). Do not extend this tuple; it is
+#: a display label set, not a real requirement list any more.
 PRICEABILITY_REQUIRED_DIMENSIONS: tuple[str, ...] = (
     "RATE_OR_AWARD_BASIS",
     "ELIGIBLE_PRODUCTION_TYPE",
 )
+
+#: The exact first-blocker classification vocabulary Codex's optimizer
+#: lineage trace uses (formulaic_program_first_blocker in
+#: CODEX_OPTIMIZER_DOCTRINE_PRICEABILITY_LINEAGE.json) — surfaced here so
+#: a caller can distinguish WHY a program is UNPRICEABLE without a second
+#: lookup. `None` when PRICEABLE.
+COVERAGE_REGISTRY_VETO = "COVERAGE_REGISTRY_VETO"
+NO_DOCTRINE_RESOLVES = "NO_DOCTRINE_RESOLVES"
+NO_RATE_RULES = "NO_RATE_RULES"
+NO_ELIGIBLE_PRODUCTION_TYPE = "NO_ELIGIBLE_PRODUCTION_TYPE"
 
 
 @dataclass(frozen=True)
@@ -118,6 +167,7 @@ class PriceabilityResult:
     canonical_program_id: str
     gate: str
     unresolved_required_dimensions: tuple[str, ...]
+    blocker: str | None = None
 
     @property
     def is_priceable(self) -> bool:
@@ -128,26 +178,58 @@ class PriceabilityResult:
 
 
 def priceability(canonical_program_id: str) -> PriceabilityResult:
-    """Runtime priceability only: can the EXISTING engine currently price
-    this program? Never a statement about authority completeness — see
-    authority_completeness() below for that separate question."""
+    """Runtime priceability only: would the EXISTING served engine
+    (production_discovery.discover_executable_jurisdictions() /
+    canonical_evaluation._price_candidate()) stand a chance of pricing
+    this program for SOME project, before any project-specific type/
+    threshold condition is evaluated? Delegates to the exact same four
+    predicates the served engine itself calls — see THE FIX in this
+    module's docstring for why this replaced the old VERIFIED-tier
+    consolidation-based classifier. Never a statement about authority
+    completeness — see authority_completeness() below for that separate,
+    permanently independent question."""
+    from app.data.authority_coverage_registry import blocks_economic_candidacy
+    from app.data.program_rate_rules import get_rate_rules
+    from app.data.program_spend_rules import resolve_program_doctrine
+
     identity: CanonicalProgramIdentity | None = resolve_identity(canonical_program_id)
     if identity is None:
         return PriceabilityResult(
             canonical_program_id=canonical_program_id,
             gate=UNKNOWN_PROGRAM,
             unresolved_required_dimensions=tuple(PRICEABILITY_REQUIRED_DIMENSIONS),
+            blocker=None,
         )
-    consolidation: ProgramConsolidation = consolidate(identity.canonical_program_id)
-    unresolved = tuple(
-        dim for dim in PRICEABILITY_REQUIRED_DIMENSIONS
-        if consolidation.status_for(dim) != PRESENT
-    )
-    gate = PRICEABLE if not unresolved else UNPRICEABLE
+    slug = identity.canonical_program_id
+
+    if blocks_economic_candidacy(slug):
+        return PriceabilityResult(
+            canonical_program_id=slug, gate=UNPRICEABLE,
+            unresolved_required_dimensions=tuple(PRICEABILITY_REQUIRED_DIMENSIONS),
+            blocker=COVERAGE_REGISTRY_VETO,
+        )
+    if resolve_program_doctrine(slug) is None:
+        return PriceabilityResult(
+            canonical_program_id=slug, gate=UNPRICEABLE,
+            unresolved_required_dimensions=("RATE_OR_AWARD_BASIS",),
+            blocker=NO_DOCTRINE_RESOLVES,
+        )
+    rate_rules = get_rate_rules(slug)
+    if not rate_rules:
+        return PriceabilityResult(
+            canonical_program_id=slug, gate=UNPRICEABLE,
+            unresolved_required_dimensions=("RATE_OR_AWARD_BASIS",),
+            blocker=NO_RATE_RULES,
+        )
+    if not any(r.production_types for r in rate_rules):
+        return PriceabilityResult(
+            canonical_program_id=slug, gate=UNPRICEABLE,
+            unresolved_required_dimensions=("ELIGIBLE_PRODUCTION_TYPE",),
+            blocker=NO_ELIGIBLE_PRODUCTION_TYPE,
+        )
     return PriceabilityResult(
-        canonical_program_id=identity.canonical_program_id,
-        gate=gate,
-        unresolved_required_dimensions=unresolved,
+        canonical_program_id=slug, gate=PRICEABLE,
+        unresolved_required_dimensions=(), blocker=None,
     )
 
 

@@ -90,12 +90,37 @@ def _aliases_for(slug: str) -> tuple[str, ...]:
     return tuple(sorted(aliases))
 
 
+def _normalize_name(name: str) -> str:
+    return " ".join(name.lower().split())
+
+
+#: Global Priceability Optimizer Restoration — the "21 disconnected
+#: identities" repair. global_inventory.ALL_PROGRAMS carries real,
+#: sometimes rate-bearing GlobalProgramEntry rows (jurisdiction_code,
+#: base_rate at DISCOVERY/PARSED confidence) for programs whose
+#: `program_slug` field was left None — the entry was discovered but never
+#: bound to its canonical slug. The slug-keyed lookups above correctly miss
+#: these (program_slug=None never equals any real slug), which is exactly
+#: why these identities carry jurisdiction_code="" today. This is a
+#: read-only, name-based FALLBACK match — never a new registry, never a
+#: guessed value — built once at import time from the SAME global_inventory
+#: data the slug-keyed path already reads. Only reached when neither
+#: jurisdiction_comparison nor a slug-bound global_inventory entry answers
+#: the question, so it can only ever ADD a jurisdiction_code where one was
+#: previously blank; it cannot change or override an existing binding.
+_GI_BY_NORMALIZED_NAME: dict[str, list] = {}
+for _p in _gi.ALL_PROGRAMS:
+    _GI_BY_NORMALIZED_NAME.setdefault(_normalize_name(_p.program_name), []).append(_p)
+
+
 def _jurisdiction_name_type(slug: str) -> tuple[str | None, str | None, str | None]:
     """(jurisdiction_code, program_name, program_type), read from whichever
     existing registry knows this slug — jurisdiction_comparison first (the
-    richest profile), then global_inventory, then the coverage registry's
-    own bare jurisdiction/program_name fields. Never inferred, never
-    defaulted to a guess."""
+    richest profile), then global_inventory by slug, then the coverage
+    registry's own bare jurisdiction/program_name fields (which supplies
+    program_name here), then — only if still unbound — an exact
+    normalized-name match against global_inventory's unbound (program_
+    slug=None) entries. Never inferred, never defaulted to a guess."""
     for p in _jc.ALL_PROFILES.values():
         if p.program_slug == slug:
             return p.jurisdiction_code, p.program_name, p.incentive_type
@@ -103,9 +128,18 @@ def _jurisdiction_name_type(slug: str) -> tuple[str | None, str | None, str | No
         if p.program_slug == slug:
             return p.jurisdiction_code, p.program_name, p.program_type
     row = COVERAGE_REGISTRY.get(slug)
-    if row is not None:
-        return None, row.program_name, None
-    return None, None, None
+    program_name = row.program_name if row is not None else None
+    if program_name is not None:
+        candidates = _GI_BY_NORMALIZED_NAME.get(_normalize_name(program_name), [])
+        # Only trust a SINGLE unique match — an ambiguous name match (more
+        # than one global_inventory entry with the identical normalized
+        # name) is not a safe binding and is left unbound rather than
+        # guessed.
+        unbound_candidates = [c for c in candidates if c.program_slug is None]
+        if len(unbound_candidates) == 1:
+            match = unbound_candidates[0]
+            return match.jurisdiction_code, program_name, match.program_type
+    return None, program_name, None
 
 
 def _state_for(slug: str) -> str:

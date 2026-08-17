@@ -1,0 +1,118 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-17T00:00:00Z",
+  "final_gate": "GLOBAL_BASE_PRICEABILITY_RECOVERED",
+  "canonical_inventory": {
+    "canonical_identities": 224,
+    "formulaic_before": 126,
+    "formulaic_after_existing_data_classification": 126,
+    "unresolved_program_types": 65,
+    "orphan_current_programs_found": 0
+  },
+  "formulaic_program_accounting": {
+    "formulaic_total": 126,
+    "priced_before": 31,
+    "priced_after": 32,
+    "economic_input_genuinely_missing": 94,
+    "sum_check": 126,
+    "unexplained_unclassified": 0,
+    "blocker_counts": {
+      "COVERAGE_REGISTRY_VETO": 94
+    }
+  },
+  "repaired_disconnected_programs": {
+    "total_identified_by_codex": 21,
+    "jurisdiction_code_bound_via_global_inventory_name_match": 15,
+    "still_unbound_no_matching_source": 6,
+    "note": "None of the 21 have any RateRule (0 across all 21, before and after binding), so none flip to PRICED; binding them corrects canonical_program_identity.py jurisdiction_code from \"\" to a real code where a global_inventory entry exists, honestly exposing them as ECONOMIC_INPUT_GENUINELY_MISSING rather than leaving them structurally invisible. The 6 with no global_inventory match at all (au_nsw_screen, ca_federal_cptc, in_national_film, mx_eficine_incentive, on_ofttc, qc_film_production) remain unbound -- no fabricated code."
+  },
+  "repaired_false_blockers": {
+    "artificial_schema_blocker_repaired": 1,
+    "program": "us_ga_film_credit",
+    "fix": "Removed the georgia_eiia/us_ga_film_credit rows from authority_coverage_registry.py -- the only formulaic program (of 95) with a VERIFIED RateRule contradicting its own coverage veto.",
+    "priceability_false_negatives_repaired": "priceability() rewritten to delegate to the served coverage/doctrine/rate/eligible-type predicates directly, eliminating all 27 false negatives Codex traced (PARSED/DISCOVERY-tier RateRule programs the old VERIFIED-tier-gated classifier wrongly called UNPRICEABLE).",
+    "not_applicable_semantics_added": "CAP dimension: VERIFIED RateRule citation text scanned for confirmed no-cap language (e.g. Georgia's own \"No annual cap.\"); narrowly scoped, never inferred from a bare missing field."
+  },
+  "priced_programs": [
+    "au_location_offset",
+    "au_nsw_pdv_rebate",
+    "au_qld_pdv_rebate",
+    "au_sa_pdv_rebate",
+    "ca_nl_all_spend_credit",
+    "ca_qc_pstc",
+    "ch_pics_national_rebate",
+    "cr_tax_return_incentive",
+    "dk_production_rebate",
+    "eg_empc_cashback",
+    "fj_film_rebate",
+    "ge_film_rebate",
+    "gh_film_tax_incentive",
+    "gr_cash_rebate",
+    "il_foreign_production_fund",
+    "mn_production_incentive",
+    "mt_mfc_rebate",
+    "mu_edb_incentive",
+    "mx_federal_film_incentive_2026",
+    "my_finas_rebate",
+    "pa_film_rebate",
+    "ph_fdcp_flip",
+    "pt_scri_pt_cash_rebate",
+    "qa_screen_production_incentive",
+    "sg_made_with_singapore_rebate",
+    "th_boi_incentive",
+    "tw_bamid_rebate",
+    "ua_cash_rebate",
+    "us_ga_film_credit",
+    "us_ny_film_credit",
+    "uz_film_rebate",
+    "za_dtic_foreign_film"
+  ],
+  "genuinely_missing_economic_inputs": {
+    "count": 94,
+    "blocker": "COVERAGE_REGISTRY_VETO for all 94",
+    "meaning": "The accepted coverage corpus (authority_coverage_registry.py) reviewed these 94 programs and found no defensible deterministic authority basis sufficient to price -- confirmed, not merely asserted: zero of the 94 carry any VERIFIED-tier RateRule that would contradict that veto (the same check that isolated Georgia as the sole exception). Some carry PARSED/DISCOVERY-tier RateRule claims the original curatorial review considered insufficiently reliable to price from; upgrading any of those to VERIFIED (Georgia's precedent) is exactly the next targeted research workload, one program at a time, never a blanket reopening of the veto list.",
+    "requires_new_research": true
+  },
+  "unresolved_program_types": {
+    "count": 65,
+    "recovered_this_task": 0,
+    "note": "Re-checked per Task 8: no additional formulaic classification recoverable from existing evidence beyond the 23 already recovered in the prior Codex-delta-recovery task. The jurisdiction_code binding fix in this task additionally bound 22 of the 65 to a real jurisdiction_code, but their program TYPE remains genuinely ambiguous/conflicting (the same set already left CONFLICT/insufficient in the prior pass) -- a code binding does not resolve a type ambiguity."
+  },
+  "requirements_survival": {
+    "priced_scenarios_retain_requirements": true,
+    "requirements_incorrectly_suppressing_pricing": 0,
+    "evidence": "us_ga_film_credit's priced FVD structure retains its full qualification_trace (37 account-code-level qualify/exclude decisions with statutory reasons, e.g. Georgia DOR legal-fee exclusion, contingency-reserve exclusion) and warnings (MFNI/relocation-cost normalization not yet applied) alongside the numeric result -- nothing was stripped to make it price."
+  },
+  "LU_runtime": {
+    "total_candidates": 110,
+    "priced": 31,
+    "unpriced": 79,
+    "baseline_jurisdiction": "MU",
+    "baseline_npc_usd": 3057794.9,
+    "control_status": "UNCHANGED -- exact match to the value verified at every prior checkpoint in this lineage"
+  },
+  "FVD_runtime": {
+    "total_candidates": 110,
+    "priced": 31,
+    "unpriced": 79,
+    "us_ga_film_credit": {
+      "is_fully_priced": true,
+      "candidate_status": "PRICED",
+      "selected_incentive_usd": 810839.2,
+      "incentive_ceiling_usd": 1216258.8,
+      "npc_verified_usd": 3553553.8,
+      "statutory_basis": "O.C.G.A. Section 48-7-40.26 (Georgia Entertainment Industry Investment Act)"
+    }
+  },
+  "deferred_optimizer_ledger": {
+    "split_component": "LOST_OR_DISCONNECTED -- DEFERRED (Codex-confirmed, not touched this task)",
+    "grants_funds": "LOST_OR_DISCONNECTED -- DEFERRED",
+    "official_treaty_co_production": "LOST_OR_DISCONNECTED -- DEFERRED",
+    "hybrid_anchor": "LOST_OR_DISCONNECTED -- DEFERRED",
+    "in_kind_support": "LOST_OR_DISCONNECTED -- DEFERRED",
+    "reinvestment": "DEFERRED FOR RE-EVALUATION (per explicit user instruction, not merely Codex classification)"
+  },
+  "external_research_performed": false,
+  "optimizer_structure_restoration_performed": false,
+  "frontend_changed": false
+}

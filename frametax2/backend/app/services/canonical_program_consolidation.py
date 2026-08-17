@@ -130,7 +130,7 @@ from app.data.program_requirements import (
 )
 from app.calculators import jurisdiction_comparison as _jc
 
-CONSOLIDATION_VERSION = "authority-substrate-1.4.0"
+CONSOLIDATION_VERSION = "authority-substrate-1.5.0"
 
 #: Task: permanent prevention against a recognized authority-bearing
 #: source silently becoming orphaned from consolidation again (the exact
@@ -248,7 +248,28 @@ def _global_inventory_entry(slug: str):
     return next((p for p in _gi.ALL_PROGRAMS if p.program_slug == slug), None)
 
 
-_STATUS_RANK: dict[str, int] = {MISSING: 0, PARTIAL: 1, PRESENT: 2}
+_STATUS_RANK: dict[str, int] = {MISSING: 0, PARTIAL: 1, PRESENT: 2, NOT_APPLICABLE: 2}
+
+#: Global Priceability Optimizer Restoration, Task 2 (program-specific
+#: N/A) — a narrow, evidence-gated detector for CONFIRMED non-applicability
+#: already stated in a VERIFIED RateRule's own citation text, never a
+#: heuristic inferred from a bare missing field. Discovered from Georgia's
+#: own citation (program_rate_rules_worldwide.py): "...per_person_cap=
+#: $500,000 VERIFIED ATL cap (b)(3). Non-refundable, fully transferable
+#: (...). No annual cap. Sanity-checked current for 2026...". The
+#: researcher who wrote that citation already confirmed, by reading the
+#: statute, that no annual cap exists — this consolidation view simply
+#: never looked for that confirmation in citation text before. Deliberately
+#: narrow (VERIFIED tier only, exact phrase match only) to avoid promoting
+#: an editorial aside or an unrelated "no cap" fragment into a legal
+#: finding; any citation that doesn't contain one of these exact phrases
+#: stays MISSING/PARTIAL exactly as before — this can only ever ADD a
+#: NOT_APPLICABLE where nothing was found previously, never override a
+#: real CAP rule (NOT_APPLICABLE and PRESENT rank equally in _upgrade, so a
+#: QpeCapRule found elsewhere is never downgraded by this).
+_CAP_NOT_APPLICABLE_PHRASES: tuple[str, ...] = (
+    "no annual cap", "no cap", "uncapped", "no maximum cap", "not subject to an annual cap",
+)
 
 
 def _upgrade(dims: list[DimensionState], name: str, candidate: "DimensionState | None") -> None:
@@ -742,5 +763,15 @@ def consolidate(canonical_program_id: str) -> ProgramConsolidation:
                     _dim_name, _status,
                     f"{_tier_word} RateRule condition kind={_condition.kind!r}: {_condition.description} "
                     f"({_condition.quote[:120]})"))
+
+    # CAP NOT_APPLICABLE detection (Task 2) — see _CAP_NOT_APPLICABLE_PHRASES.
+    for _rule in verified_rate_rules:
+        _citation_lower = (_rule.citation or "").lower()
+        _matched_phrase = next((p for p in _CAP_NOT_APPLICABLE_PHRASES if p in _citation_lower), None)
+        if _matched_phrase is not None:
+            _upgrade(dims, "CAP", DimensionState(
+                "CAP", NOT_APPLICABLE,
+                f"VERIFIED RateRule citation confirms {_matched_phrase!r}: {_rule.citation}"))
+            break
 
     return ProgramConsolidation(canonical_program_id=slug, dimensions=tuple(dims))
