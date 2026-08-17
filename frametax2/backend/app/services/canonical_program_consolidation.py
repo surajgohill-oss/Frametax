@@ -130,7 +130,7 @@ from app.data.program_requirements import (
 )
 from app.calculators import jurisdiction_comparison as _jc
 
-CONSOLIDATION_VERSION = "authority-substrate-1.3.0"
+CONSOLIDATION_VERSION = "authority-substrate-1.4.0"
 
 #: Task: permanent prevention against a recognized authority-bearing
 #: source silently becoming orphaned from consolidation again (the exact
@@ -149,6 +149,34 @@ RECOGNIZED_AUTHORITY_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
     ("app.data.program_requirements", "program_slug-keyed eligibility/application-timing/compliance/monetization profiles with EvidenceRecord"),
     ("app.calculators.jurisdiction_comparison", "JurisdictionIncentiveProfile: confidence-tiered rate/cap/spend/refundable/transferable/cultural-test/uplift facts"),
 )
+
+#: RateCondition.kind -> the specific authority dimension(s) that exact
+#: condition kind proves, per docs/validation/CODEX_HISTORICAL_AUTHORITY_
+#: SOURCE_CROSS_REFERENCE.json's rate_condition_cross_reference (Codex's
+#: exact 15-kind enumeration). program_rate_rules.py's RateRule.conditions
+#: was already read for RATE_OR_AWARD_BASIS/MINIMUM_SPEND/CAP/ELIGIBLE_
+#: PRODUCTION_TYPE at the RULE level (min_qpe_usd, production_types), but
+#: the CONDITION-level propositions inside `conditions` were never mapped
+#: to a dimension — a RateRule could carry a `cultural_test_required`
+#: condition, for example, that CULTURAL_OR_CONTENT_TEST never saw. Only
+#: the condition kinds Codex explicitly enumerated are mapped; any other
+#: kind is left unmapped (never inferred). "material_funding_risk_not_
+#: modeled" and "discretionary_band"/"graduated_bracket_applied" are
+#: deliberately excluded from CAP/RATE_OR_AWARD_BASIS promotion below —
+#: they are advisory/risk annotations about the RATE's reliability, not an
+#: independent proposition proving a dimension resolved; promoting a
+#: dimension FROM a risk disclosure would invert its own meaning.
+RATE_CONDITION_KIND_TO_DIMENSIONS: dict[str, tuple[str, ...]] = {
+    "alternate_qualification_track": ("ELIGIBLE_PRODUCTION_TYPE",),
+    "cultural_test_required": ("CULTURAL_OR_CONTENT_TEST",),
+    "min_qpe_usd": ("MINIMUM_SPEND",),
+    "min_spend_currency_not_convertible": ("MINIMUM_SPEND",),
+    "min_spend_pct_of_total_budget": ("MINIMUM_SPEND",),
+    "no_sponsorship_in_qpe": ("QPE_DEFINITION",),
+    "production_type": ("ELIGIBLE_PRODUCTION_TYPE",),
+    "production_type_uplift": ("ELIGIBLE_PRODUCTION_TYPE", "UPLIFT_RULES"),
+    "sustainability_uplift": ("UPLIFT_RULES",),
+}
 
 PRESENT = "PRESENT"
 PARTIAL = "PARTIAL"
@@ -521,6 +549,46 @@ def consolidate(canonical_program_id: str) -> ProgramConsolidation:
         return None
 
     if req_registered or jc_profile is not None:
+        # RATE_OR_AWARD_BASIS — jurisdiction_comparison's base_rate/max_rate,
+        # gated the same way as every other jc-sourced dimension. Codex's
+        # cross-reference flagged this as one of two jc dimensions this
+        # module deliberately left unread in the prior pass (the other
+        # being QPE_DEFINITION below) to avoid conflating a discovery-tier
+        # rate with an executable one; both are now wired with the same
+        # VERIFIED/PARSED confidence gate already used for every other jc
+        # field, so a bare jc rate can promote MINIMUM_SPEND/CAP/etc but
+        # never silently overrides a real RateRule-sourced VERIFIED status
+        # (via _upgrade()'s never-downgrade rule).
+        if jc_profile is not None and (jc_profile.base_rate is not None or jc_profile.max_rate is not None):
+            _rate_val = jc_profile.base_rate if jc_profile.base_rate is not None else jc_profile.max_rate
+            if jc_verified:
+                _upgrade(dims, "RATE_OR_AWARD_BASIS", DimensionState(
+                    "RATE_OR_AWARD_BASIS", PRESENT,
+                    f"VERIFIED jurisdiction_comparison base_rate/max_rate={_rate_val}"))
+            elif jc_partial:
+                _upgrade(dims, "RATE_OR_AWARD_BASIS", DimensionState(
+                    "RATE_OR_AWARD_BASIS", PARTIAL,
+                    f"non-VERIFIED jurisdiction_comparison base_rate/max_rate={_rate_val}"))
+        # QPE_DEFINITION — jurisdiction_comparison's per-category
+        # qualification flags (atl_qualifies/btl_qualifies/vfx_qualifies/
+        # music_qualifies). Any one populated flag is real category-scope
+        # evidence but not the full QPE category schedule a SpendRule set
+        # would carry, so it is capped the same way a bare boolean is
+        # elsewhere in this module — VERIFIED profile -> PRESENT (a
+        # reviewed determination, true or false), PARSED/DISCOVERY ->
+        # PARTIAL.
+        _qpe_flags = [jc_profile.atl_qualifies, jc_profile.btl_qualifies,
+                      jc_profile.vfx_qualifies, jc_profile.music_qualifies] if jc_profile else []
+        if any(f is not None for f in _qpe_flags):
+            if jc_verified:
+                _upgrade(dims, "QPE_DEFINITION", DimensionState(
+                    "QPE_DEFINITION", PRESENT,
+                    f"VERIFIED jurisdiction_comparison atl/btl/vfx/music_qualifies={_qpe_flags}"))
+            elif jc_partial:
+                _upgrade(dims, "QPE_DEFINITION", DimensionState(
+                    "QPE_DEFINITION", PARTIAL,
+                    f"non-VERIFIED jurisdiction_comparison atl/btl/vfx/music_qualifies={_qpe_flags}"))
+
         _upgrade(dims, "MINIMUM_SPEND", _req_dim(
             "MINIMUM_SPEND",
             req.min_local_spend_usd if req else None,
@@ -582,47 +650,97 @@ def consolidate(canonical_program_id: str) -> ProgramConsolidation:
                     "UPLIFT_RULES", PARTIAL,
                     "jurisdiction_comparison states resident_labor_uplift_available=True "
                     "(a flag only, not the uplift's own rate/conditions)"))
-        # APPLICATION_TIMING — the one dimension no source touched before
-        # this pass. req.application_deadline is a TimingFact whose own
-        # `basis` further gates PRESENT: only STATUTORY_DEADLINE/
-        # OFFICIAL_TARGET (an actually confirmed date/window) count as the
-        # real fact resolved; REPORTED_PRACTICAL/ESTIMATE/UNKNOWN are real
-        # signal but explicitly disclosed as non-authoritative, so PARTIAL
-        # at most regardless of req_primary_current. req.preapproval_
-        # mandatory alone (no deadline fact) is a real but weaker signal —
-        # PARTIAL only.
-        if req is not None and req.application_deadline is not None:
-            fact = req.application_deadline
-            if fact.basis in (TimingBasis.STATUTORY_DEADLINE, TimingBasis.OFFICIAL_TARGET) and req_primary_current:
+        # APPLICATION_TIMING — Codex historical-authority cross-reference
+        # (docs/validation/CODEX_HISTORICAL_AUTHORITY_SOURCE_CROSS_
+        # REFERENCE.json, application_timing_recovery) found the prior
+        # pass's application_deadline/preapproval_mandatory-only read left
+        # four more program_requirements timing facts unconsumed:
+        # audit_or_final_certification_deadline, payment_timing (both
+        # TimingFact, same basis vocabulary as application_deadline),
+        # expenditure_before_approval_qualifies (bool), and sunset_date
+        # (ISO date string, no TimingBasis wrapper). Per Codex Task 5:
+        # "Do NOT collapse unrelated timing concepts into one boolean" —
+        # every distinct sub-fact found is named individually in the
+        # `source` string rather than reduced to a single flag, while the
+        # dimension's own PRESENT/PARTIAL/MISSING status still follows the
+        # single strongest sub-fact found (the 14-dimension contract is
+        # unchanged; only the survived provenance detail is widened).
+        _timing_facts: list[tuple[str, str]] = []  # (label, rank: "present"|"partial")
+        if req is not None:
+            for _field_name in ("application_deadline", "audit_or_final_certification_deadline", "payment_timing"):
+                _fact = getattr(req, _field_name)
+                if _fact is None:
+                    continue
+                if _fact.basis in (TimingBasis.STATUTORY_DEADLINE, TimingBasis.OFFICIAL_TARGET) and req_primary_current:
+                    _timing_facts.append((f"{_field_name}(basis={_fact.basis.value})", "present"))
+                else:
+                    _timing_facts.append((f"{_field_name}(basis={_fact.basis.value})", "partial"))
+            if req.preapproval_mandatory is not None:
+                _timing_facts.append((f"preapproval_mandatory={req.preapproval_mandatory}", "partial"))
+            if req.expenditure_before_approval_qualifies is not None:
+                _timing_facts.append((f"expenditure_before_approval_qualifies={req.expenditure_before_approval_qualifies}", "partial"))
+            if req.sunset_date is not None:
+                _timing_facts.append((f"sunset_date={req.sunset_date}", "partial"))
+        if _timing_facts:
+            _best_rank = "present" if any(r == "present" for _, r in _timing_facts) else "partial"
+            _facts_str = ", ".join(label for label, _ in _timing_facts)
+            if _best_rank == "present":
                 _upgrade(dims, "APPLICATION_TIMING", DimensionState(
                     "APPLICATION_TIMING", PRESENT,
-                    f"PRIMARY_VERIFIED, CURRENT program_requirements.application_deadline "
-                    f"basis={fact.basis.value} ({req.evidence.source_title})"))
+                    f"PRIMARY_VERIFIED, CURRENT program_requirements timing facts: {_facts_str} "
+                    f"({req.evidence.source_title})"))
             else:
                 _upgrade(dims, "APPLICATION_TIMING", DimensionState(
                     "APPLICATION_TIMING", PARTIAL,
-                    f"program_requirements.application_deadline basis={fact.basis.value} "
-                    "(disclosed as non-statutory/non-official, or record not PRIMARY_VERIFIED+CURRENT)"))
-        elif req is not None and req.preapproval_mandatory is not None:
-            _upgrade(dims, "APPLICATION_TIMING", DimensionState(
-                "APPLICATION_TIMING", PARTIAL,
-                f"program_requirements.preapproval_mandatory={req.preapproval_mandatory} "
-                "(a real application-process fact, not a deadline/window)"))
+                    f"program_requirements timing facts (non-statutory/non-official, or record not "
+                    f"PRIMARY_VERIFIED+CURRENT): {_facts_str}"))
 
         # MONETIZATION was originally derived from refund_dim/xfer_dim
         # BEFORE this recovery pass could upgrade REFUNDABILITY/
         # TRANSFERABILITY above — recompute it from the dims list's final
         # (post-upgrade) values so it never goes stale relative to its own
-        # two component dimensions.
+        # two component dimensions. Deliberately NOT routed through
+        # _upgrade(): this is a full recompute of a derived dimension from
+        # its own two authoritative inputs, not another candidate source —
+        # _upgrade()'s never-downgrade rule would (and, before this fix,
+        # did) leave a STALE MONETIZATION source string in place whenever
+        # the recomputed status happened to rank equal to the original
+        # pre-recovery status (e.g. PARTIAL-before vs PARTIAL-after, where
+        # only the underlying REFUNDABILITY/TRANSFERABILITY reasoning
+        # text, not the rank, had actually changed). Direct index
+        # replacement always reflects the true final component states.
         final_refund = next(d for d in dims if d.dimension == "REFUNDABILITY")
         final_xfer = next(d for d in dims if d.dimension == "TRANSFERABILITY")
+        _monetization_idx = next(i for i, d in enumerate(dims) if d.dimension == "MONETIZATION")
         if final_refund.status == PRESENT and final_xfer.status == PRESENT:
-            _upgrade(dims, "MONETIZATION", DimensionState(
+            dims[_monetization_idx] = DimensionState(
                 "MONETIZATION", PRESENT,
-                "REFUNDABILITY and TRANSFERABILITY both PRESENT after historical-source recovery"))
+                "REFUNDABILITY and TRANSFERABILITY both PRESENT after historical-source recovery")
         elif final_refund.status != MISSING or final_xfer.status != MISSING:
-            _upgrade(dims, "MONETIZATION", DimensionState(
+            dims[_monetization_idx] = DimensionState(
                 "MONETIZATION", PARTIAL,
-                f"refundability={final_refund.status}, transferability={final_xfer.status}"))
+                f"refundability={final_refund.status}, transferability={final_xfer.status}")
+
+    # RateRule.conditions[*].kind -> dimension mapping (Codex Task 2).
+    # rate_rules already exists from the top-of-function read used for
+    # RATE_OR_AWARD_BASIS/MINIMUM_SPEND/CAP/ELIGIBLE_PRODUCTION_TYPE — this
+    # walks the same rules a second time, but at the CONDITION level, only
+    # for the explicit kinds in RATE_CONDITION_KIND_TO_DIMENSIONS. A single
+    # RateRule's own confidence_tier still governs PRESENT-vs-PARTIAL for
+    # every condition it carries (RateCondition has no independent tier) —
+    # never a blanket promotion of the whole rule, only the dimension(s)
+    # that specific condition kind actually proves.
+    for _rule in rate_rules:
+        for _condition in _rule.conditions:
+            _target_dims = RATE_CONDITION_KIND_TO_DIMENSIONS.get(_condition.kind)
+            if not _target_dims:
+                continue
+            _status = PRESENT if _rule.confidence_tier == "VERIFIED" else PARTIAL
+            _tier_word = "VERIFIED" if _status == PRESENT else _rule.confidence_tier
+            for _dim_name in _target_dims:
+                _upgrade(dims, _dim_name, DimensionState(
+                    _dim_name, _status,
+                    f"{_tier_word} RateRule condition kind={_condition.kind!r}: {_condition.description} "
+                    f"({_condition.quote[:120]})"))
 
     return ProgramConsolidation(canonical_program_id=slug, dimensions=tuple(dims))

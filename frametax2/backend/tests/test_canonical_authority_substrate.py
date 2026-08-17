@@ -166,13 +166,13 @@ def test_consolidation_exposes_field_provenance():
 def test_missing_fields_remain_missing_not_defaulted():
     c = consolidate("uk_avec")
     assert c.status_for("TERRITORIALITY") == MISSING
-    # APPLICATION_TIMING is PARTIAL, not MISSING, as of the historical
-    # authority source recovery pass: program_requirements.py carries a
-    # real preapproval_mandatory=True fact for uk_avec (PRIMARY_VERIFIED,
-    # CURRENT record) -- a genuine application-process signal, just not a
-    # deadline/window, so it is correctly PARTIAL rather than either the
-    # old false MISSING or an overclaimed PRESENT.
-    assert c.status_for("APPLICATION_TIMING") == PARTIAL
+    # APPLICATION_TIMING is PRESENT, not MISSING, as of the Codex delta
+    # recovery pass: program_requirements.py carries a real
+    # audit_or_final_certification_deadline with basis=STATUTORY_DEADLINE
+    # for uk_avec (PRIMARY_VERIFIED, CURRENT record, CREC080200) -- a
+    # genuinely resolved statutory timing fact, correctly promoted rather
+    # than left at the old false MISSING.
+    assert c.status_for("APPLICATION_TIMING") == PRESENT
     # RESIDENT_NONRESIDENT_TREATMENT and PAYROLL_TREATMENT remain
     # genuinely MISSING for uk_avec -- no recovered source (program_
     # requirements, jurisdiction_comparison, doctrine) carries either fact
@@ -507,3 +507,101 @@ def test_no_recognized_authority_source_is_orphaned_from_consolidation():
             "from consolidation exactly like the doctrine-record and program_requirements "
             "bugs this test exists to prevent"
         )
+
+
+# ── Codex authority delta recovery — regression coverage for the specific
+# deltas consumed from docs/validation/CODEX_HISTORICAL_AUTHORITY_SOURCE_
+# CROSS_REFERENCE.json (condition-kind mapping, monetization-recompute
+# staleness fix, jurisdiction_comparison RATE_OR_AWARD_BASIS/QPE_DEFINITION,
+# widened APPLICATION_TIMING field coverage). ────────────────────────────
+
+def test_rate_condition_kind_maps_only_its_named_dimensions():
+    """cultural_test_required conditions must promote CULTURAL_OR_CONTENT_
+    TEST and never a dimension outside RATE_CONDITION_KIND_TO_DIMENSIONS'
+    own mapping for that kind -- confirms the condition-level wiring is
+    scoped to exactly what Codex's cross-reference proved, not a blanket
+    RateRule promotion."""
+    from app.services.canonical_program_consolidation import RATE_CONDITION_KIND_TO_DIMENSIONS
+    from app.data.program_rate_rules import get_rate_rules
+    assert RATE_CONDITION_KIND_TO_DIMENSIONS["cultural_test_required"] == ("CULTURAL_OR_CONTENT_TEST",)
+    assert "CAP" not in RATE_CONDITION_KIND_TO_DIMENSIONS.get("cultural_test_required", ())
+    # be_tax_shelter carries a cultural_test_required condition per the
+    # Codex rate_condition_cross_reference -- verify the underlying
+    # RateRule condition exists (the fact the wiring reads); a stronger
+    # program_requirements source may still win the final aggregate for
+    # this particular program via _upgrade()'s never-downgrade rule, so
+    # this test checks the mapping mechanism directly rather than the
+    # final precedence outcome.
+    rules = get_rate_rules("be_tax_shelter")
+    kinds = {cond.kind for rule in rules for cond in rule.conditions}
+    assert "cultural_test_required" in kinds
+    c = consolidate("be_tax_shelter")
+    d = next(x for x in c.dimensions if x.dimension == "CULTURAL_OR_CONTENT_TEST")
+    assert d.status in (PRESENT, PARTIAL)
+
+
+def test_rate_condition_never_promotes_from_advisory_risk_kinds():
+    """discretionary_band, material_funding_risk_not_modeled, atl_subcap_
+    not_enforced, graduated_bracket_applied, mutually_exclusive_alternative_
+    program and rate_base_narrower_than_qpe are deliberately excluded from
+    RATE_CONDITION_KIND_TO_DIMENSIONS -- they are advisory/risk
+    annotations about a rate's reliability, not an independent proposition
+    proving a dimension resolved. Converting one into a resolved fact
+    would invert its own meaning."""
+    from app.services.canonical_program_consolidation import RATE_CONDITION_KIND_TO_DIMENSIONS
+    for advisory_kind in (
+        "discretionary_band", "material_funding_risk_not_modeled",
+        "atl_subcap_not_enforced", "graduated_bracket_applied",
+        "mutually_exclusive_alternative_program", "rate_base_narrower_than_qpe",
+    ):
+        assert advisory_kind not in RATE_CONDITION_KIND_TO_DIMENSIONS
+
+
+def test_jurisdiction_comparison_rate_and_qpe_definition_confidence_gated():
+    """jurisdiction_comparison's base_rate/max_rate and atl/btl/vfx/music_
+    qualifies flags -- the two jc dimensions the prior recovery pass left
+    unread -- must still respect the VERIFIED/PARSED confidence gate, not
+    blanket-promote to PRESENT."""
+    from app.calculators import jurisdiction_comparison as jc
+    non_verified_with_rate = [
+        p for p in jc.ALL_PROFILES.values()
+        if p.confidence_tier != "VERIFIED" and (p.base_rate is not None or p.max_rate is not None)
+    ]
+    assert non_verified_with_rate
+    profile = non_verified_with_rate[0]
+    c = consolidate(profile.program_slug)
+    d = next(x for x in c.dimensions if x.dimension == "RATE_OR_AWARD_BASIS")
+    assert d.status != PRESENT or "jurisdiction_comparison" not in d.source
+
+
+def test_monetization_recompute_never_stale_when_status_rank_unchanged():
+    """Regression for the recompute-staleness bug found while wiring the
+    Codex delta: _upgrade()'s never-downgrade rule left MONETIZATION's
+    SOURCE STRING stale whenever the recomputed status happened to rank
+    EQUAL to the pre-recovery status (e.g. PARTIAL-before vs
+    PARTIAL-after) -- only the underlying REFUNDABILITY/TRANSFERABILITY
+    reasoning text had changed, not the rank, so _upgrade silently kept
+    the old text. ca_federal_pstc is the concrete case: REFUNDABILITY
+    recovers to PRESENT but TRANSFERABILITY stays MISSING, so MONETIZATION
+    stays PARTIAL either way -- the source string must still reflect the
+    CURRENT REFUNDABILITY status, not a stale pre-recovery one."""
+    c = consolidate("ca_federal_pstc")
+    refund = next(x for x in c.dimensions if x.dimension == "REFUNDABILITY")
+    monetization = next(x for x in c.dimensions if x.dimension == "MONETIZATION")
+    assert refund.status == PRESENT
+    assert monetization.status == PARTIAL
+    assert f"refundability={refund.status}" in monetization.source
+
+
+def test_application_timing_widened_field_coverage_preserves_distinct_facts():
+    """uk_avec's application_deadline is absent but audit_or_final_
+    certification_deadline (basis=STATUTORY_DEADLINE, PRIMARY_VERIFIED,
+    CURRENT) and preapproval_mandatory=True both exist -- Codex's Task 5
+    instruction was not to collapse unrelated timing concepts into one
+    boolean; both distinct facts must be named in the source string, and
+    the dimension must resolve PRESENT from the statutory-deadline fact."""
+    c = consolidate("uk_avec")
+    d = next(x for x in c.dimensions if x.dimension == "APPLICATION_TIMING")
+    assert d.status == PRESENT
+    assert "audit_or_final_certification_deadline" in d.source
+    assert "preapproval_mandatory" in d.source
