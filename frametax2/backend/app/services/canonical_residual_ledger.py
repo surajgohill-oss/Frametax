@@ -24,20 +24,24 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 
 from app.services.canonical_program_consolidation import (
-    MISSING,
-    PARTIAL,
     REQUIRED_DIMENSIONS,
+    UNRESOLVED_FOR_AUTHORITY_COMPLETENESS,
     ProgramConsolidation,
     consolidate,
 )
 from app.services.canonical_program_identity import CanonicalProgramIdentity, resolve_identity
 
-RESIDUAL_LEDGER_VERSION = "authority-substrate-1.0.0"
+RESIDUAL_LEDGER_VERSION = "authority-substrate-1.1.0"
 
-#: A dimension counts as a residual question whenever it is not fully
-#: resolved — MISSING (nothing captured) or PARTIAL (a real but
-#: non-executable signal exists). PRESENT is the only "closed" state.
-_UNRESOLVED_STATUSES = frozenset({MISSING, PARTIAL})
+#: A dimension counts as a residual question whenever authority
+#: completeness has not actually resolved it — PARTIAL (a real but
+#: non-executable signal exists), MISSING (nothing captured), or CONFLICT
+#: (two registries disagree). PRESENT, NOT_APPLICABLE, and
+#: AUTHORITATIVE_SILENCE_CONFIRMED are the only genuinely closed states.
+#: Reuses canonical_program_consolidation's own classification so the
+#: ledger and the authority_completeness() publication gate can never
+#: silently drift apart.
+_UNRESOLVED_STATUSES = UNRESOLVED_FOR_AUTHORITY_COMPLETENESS
 
 
 @dataclass(frozen=True)

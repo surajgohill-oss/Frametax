@@ -23,25 +23,59 @@ vocabulary):
 
 Each dimension reports one of:
 
-    PRESENT          a defensible executable value exists in a runtime
-                      registry the pricing pipeline actually reads
-    PARTIAL          a related signal exists (e.g. a stored discovery-only
-                      value, or a bare boolean flag) but not the full
-                      executable rule the pricing pipeline would consult
-    MISSING          no runtime registry carries anything for this
-                      dimension for this program
-    NOT_APPLICABLE   never asserted by this module — no dimension here is
-                      confirmed inapplicable without primary-source
-                      research, so this status is reserved for future,
-                      research-backed use and never produced automatically
-    CONFLICT         never asserted by this module in its current form —
-                      reserved for a future pass that cross-checks two
-                      registries disagreeing; today's registries do not
-                      overlap enough to detect this safely without
-                      research, so it is never produced automatically
+    PRESENT                       a defensible executable value exists in
+                                   a runtime registry the pricing pipeline
+                                   actually reads
+    PARTIAL                       a related signal exists (e.g. a stored
+                                   discovery-only value, or a bare boolean
+                                   flag) but not the full executable rule
+                                   the pricing pipeline would consult
+    MISSING                       no runtime registry carries anything for
+                                   this dimension for this program
+    NOT_APPLICABLE                never asserted by this module — a
+                                   dimension is confirmed inapplicable
+                                   (e.g. "primary authority establishes no
+                                   cap") only by primary-source research,
+                                   which this module performs none of.
+                                   Reserved for a future research pass to
+                                   set, with its own citation; never
+                                   produced automatically here
+    AUTHORITATIVE_SILENCE_CONFIRMED  never asserted by this module — a
+                                   deliberate, RESEARCHED confirmation that
+                                   the primary source is silent on this
+                                   dimension (distinct from NOT_APPLICABLE,
+                                   which confirms the dimension genuinely
+                                   does not apply; this confirms it applies
+                                   but the source doesn't address it, and a
+                                   researcher has verified that absence is
+                                   itself the finding, not an oversight).
+                                   Reserved for future research; never
+                                   produced automatically here
+    CONFLICT                       never asserted by this module in its
+                                   current form — reserved for a future
+                                   pass that cross-checks two registries
+                                   disagreeing; today's registries do not
+                                   overlap enough to detect this safely
+                                   without research, so it is never
+                                   produced automatically
 
 plus a `source` string naming the exact function/field the status came
 from, so a human can verify it in seconds.
+
+`RESOLVED_FOR_AUTHORITY_COMPLETENESS` / `UNRESOLVED_FOR_AUTHORITY_
+COMPLETENESS` classify these five statuses for the authority-completeness
+contract (canonical_publication_contract.py, Task 2 of the authority
+completeness contract correction): PRESENT, NOT_APPLICABLE, and
+AUTHORITATIVE_SILENCE_CONFIRMED all represent a dimension a human has
+actually resolved (with a defensible value, a confirmed non-applicability,
+or a confirmed deliberate silence); PARTIAL, MISSING, and CONFLICT all
+represent a dimension nobody has actually resolved yet, regardless of
+whether the CURRENT pricing engine can still produce a number by falling
+back to doctrine. Runtime priceability (whether the engine can currently
+price a program) and authority completeness (whether the record is
+actually resolved) are permanently independent questions — see
+canonical_publication_contract.py's `priceability()` vs
+`authority_completeness()`.
 
 This module deliberately does NOT read authority_coverage_registry's
 adjudication state, any AUTHORITY_CLOSED disposition, or any validation
@@ -56,13 +90,30 @@ from app.data import global_inventory as _gi
 from app.data.program_rate_rules import get_qpe_cap, get_rate_rules
 from app.data.program_spend_rules import get_program_doctrine, get_program_rules, resolve_program_doctrine
 
-CONSOLIDATION_VERSION = "authority-substrate-1.0.0"
+CONSOLIDATION_VERSION = "authority-substrate-1.1.0"
 
 PRESENT = "PRESENT"
 PARTIAL = "PARTIAL"
 MISSING = "MISSING"
 NOT_APPLICABLE = "NOT_APPLICABLE"
+AUTHORITATIVE_SILENCE_CONFIRMED = "AUTHORITATIVE_SILENCE_CONFIRMED"
 CONFLICT = "CONFLICT"
+
+#: A dimension counts as RESOLVED for authority completeness only when a
+#: human has actually closed the question — a real value, a confirmed
+#: non-applicability, or a confirmed deliberate silence. It does NOT
+#: include PARTIAL/MISSING, even though the current pricing engine may
+#: still produce a number via doctrine fallback for those — that fallback
+#: answers "can the engine price it today", never "is the record
+#: complete." See canonical_publication_contract.py.
+RESOLVED_FOR_AUTHORITY_COMPLETENESS: frozenset[str] = frozenset({
+    PRESENT, NOT_APPLICABLE, AUTHORITATIVE_SILENCE_CONFIRMED,
+})
+#: The complement — PARTIAL, MISSING, and CONFLICT all mean nobody has
+#: actually resolved this dimension yet.
+UNRESOLVED_FOR_AUTHORITY_COMPLETENESS: frozenset[str] = frozenset({
+    PARTIAL, MISSING, CONFLICT,
+})
 
 REQUIRED_DIMENSIONS: tuple[str, ...] = (
     "RATE_OR_AWARD_BASIS",

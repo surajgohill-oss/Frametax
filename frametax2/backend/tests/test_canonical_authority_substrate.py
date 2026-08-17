@@ -42,9 +42,12 @@ from app.services.canonical_program_consolidation import (
 )
 from app.services.canonical_residual_ledger import full_residual_ledger, ledger_entry_for
 from app.services.canonical_publication_contract import (
-    EXECUTABLE_COMPLETE,
-    NOT_EXECUTABLE_COMPLETE,
-    executable_completeness,
+    AUTHORITY_COMPLETE,
+    AUTHORITY_INCOMPLETE,
+    PRICEABLE,
+    UNPRICEABLE,
+    authority_completeness,
+    priceability,
 )
 
 FVD_PROJECT_ID = "6c6f1c13-2d49-4bbc-bafb-2a12efa93112"
@@ -166,22 +169,79 @@ def test_missing_fields_remain_missing_not_defaulted():
     assert c.status_for("APPLICATION_TIMING") == MISSING
 
 
-# ── Task 6 — AUTHORITY_CLOSED != EXECUTABLE_COMPLETE ───────────────────────
+# ── Authority completeness contract correction — dimension-state
+# resolution classification (items 3-8 of the task's focused test list) ────
 
-def test_authority_closed_does_not_imply_executable_complete():
+def test_present_resolves_for_authority_completeness():
+    from app.services.canonical_program_consolidation import RESOLVED_FOR_AUTHORITY_COMPLETENESS
+    assert PRESENT in RESOLVED_FOR_AUTHORITY_COMPLETENESS
+
+
+def test_not_applicable_resolves_for_authority_completeness():
+    from app.services.canonical_program_consolidation import (
+        NOT_APPLICABLE,
+        RESOLVED_FOR_AUTHORITY_COMPLETENESS,
+    )
+    assert NOT_APPLICABLE in RESOLVED_FOR_AUTHORITY_COMPLETENESS
+
+
+def test_authoritative_silence_confirmed_resolves_for_authority_completeness():
+    from app.services.canonical_program_consolidation import (
+        AUTHORITATIVE_SILENCE_CONFIRMED,
+        RESOLVED_FOR_AUTHORITY_COMPLETENESS,
+    )
+    assert AUTHORITATIVE_SILENCE_CONFIRMED in RESOLVED_FOR_AUTHORITY_COMPLETENESS
+
+
+def test_partial_remains_unresolved_for_authority_completeness():
+    from app.services.canonical_program_consolidation import UNRESOLVED_FOR_AUTHORITY_COMPLETENESS
+    assert PARTIAL in UNRESOLVED_FOR_AUTHORITY_COMPLETENESS
+
+
+def test_missing_remains_unresolved_for_authority_completeness():
+    from app.services.canonical_program_consolidation import UNRESOLVED_FOR_AUTHORITY_COMPLETENESS
+    assert MISSING in UNRESOLVED_FOR_AUTHORITY_COMPLETENESS
+
+
+def test_conflict_remains_unresolved_for_authority_completeness():
+    from app.services.canonical_program_consolidation import CONFLICT, UNRESOLVED_FOR_AUTHORITY_COMPLETENESS
+    assert CONFLICT in UNRESOLVED_FOR_AUTHORITY_COMPLETENESS
+
+
+def test_resolved_and_unresolved_sets_are_disjoint_and_exhaustive():
+    """No dimension status is ambiguous — every one of the five defined
+    statuses is classified exactly once."""
+    from app.services.canonical_program_consolidation import (
+        AUTHORITATIVE_SILENCE_CONFIRMED,
+        CONFLICT,
+        MISSING as _M,
+        NOT_APPLICABLE,
+        PARTIAL as _P,
+        PRESENT as _PR,
+        RESOLVED_FOR_AUTHORITY_COMPLETENESS,
+        UNRESOLVED_FOR_AUTHORITY_COMPLETENESS,
+    )
+    all_statuses = {_PR, _P, _M, NOT_APPLICABLE, AUTHORITATIVE_SILENCE_CONFIRMED, CONFLICT}
+    assert RESOLVED_FOR_AUTHORITY_COMPLETENESS & UNRESOLVED_FOR_AUTHORITY_COMPLETENESS == set()
+    assert RESOLVED_FOR_AUTHORITY_COMPLETENESS | UNRESOLVED_FOR_AUTHORITY_COMPLETENESS == all_statuses
+
+
+# ── Task 6 — AUTHORITY_CLOSED != AUTHORITY_COMPLETE ─────────────────────────
+
+def test_authority_closed_does_not_imply_authority_complete():
     """uk_avec is labeled AUTHORITY_CLOSED in the external validation
     artifact (research status) — this contract must not read that label at
-    all, and must independently report NOT_EXECUTABLE_COMPLETE from
-    runtime executable data alone."""
+    all, and must independently report AUTHORITY_INCOMPLETE from runtime
+    consolidation data alone."""
     assert VALIDATION_JSON.exists(), f"expected validation artifact at {VALIDATION_JSON}"
     data = json.loads(VALIDATION_JSON.read_text())
     uk_avec_record = next(p for p in data["programs"] if p["program_slug"] == "uk_avec")
     assert uk_avec_record["canonical_disposition"] == "AUTHORITY_CLOSED"
 
-    result = executable_completeness("uk_avec")
-    assert result.gate == NOT_EXECUTABLE_COMPLETE, (
+    result = authority_completeness("uk_avec")
+    assert result.gate == AUTHORITY_INCOMPLETE, (
         "AUTHORITY_CLOSED in the external validation artifact must not promote a program "
-        "to EXECUTABLE_COMPLETE"
+        "to AUTHORITY_COMPLETE"
     )
 
 
@@ -235,6 +295,20 @@ def test_residual_ledger_for_priceable_control_has_fewer_open_questions():
     assert len(priceable.residual_questions) < len(incomplete.residual_questions)
 
 
+def test_residual_ledger_is_exact_match_for_authority_incomplete_dimensions():
+    """The ledger's residual-question set must be EXACTLY the same set
+    authority_completeness() reports as unresolved -- no drift between the
+    two views of the same consolidation."""
+    for slug in (PRICEABLE_CONTROL, "uk_avec", "ca_federal_pstc", "us_ca_film_credit"):
+        ledger = ledger_entry_for(slug)
+        auth = authority_completeness(slug)
+        ledger_dims = {q.dimension for q in ledger.residual_questions}
+        assert ledger_dims == set(auth.unresolved_material_dimensions), (
+            f"{slug}: ledger {ledger_dims} != authority_completeness "
+            f"{set(auth.unresolved_material_dimensions)}"
+        )
+
+
 def test_full_residual_ledger_scoped_to_explicit_program_list():
     entries = full_residual_ledger(list(P0_CONTROLS) + [PRICEABLE_CONTROL])
     assert len(entries) == 4
@@ -245,23 +319,31 @@ def test_full_residual_ledger_scoped_to_explicit_program_list():
 
 # ── Task 6 — atomic publication contract ────────────────────────────────────
 
-def test_incomplete_deterministic_program_cannot_publish_executable_complete():
+def test_incomplete_deterministic_program_cannot_publish_authority_complete():
     for slug in P0_CONTROLS:
-        result = executable_completeness(slug)
-        assert result.gate == NOT_EXECUTABLE_COMPLETE, f"{slug} must not be EXECUTABLE_COMPLETE"
-        assert result.unresolved_required_dimensions, f"{slug} must report which dimensions are unresolved"
+        result = authority_completeness(slug)
+        assert result.gate == AUTHORITY_INCOMPLETE, f"{slug} must not be AUTHORITY_COMPLETE"
+        assert result.unresolved_material_dimensions, f"{slug} must report which dimensions are unresolved"
 
 
-def test_complete_control_program_satisfies_publication_contract():
-    result = executable_completeness(PRICEABLE_CONTROL)
-    assert result.gate == EXECUTABLE_COMPLETE
-    assert result.unresolved_required_dimensions == ()
+def test_priceable_control_is_priceable_but_authority_incomplete():
+    """The core proof this correction exists for: PRICEABLE +
+    AUTHORITY_INCOMPLETE is a valid, expected combination — Greece must
+    NOT be forced to AUTHORITY_COMPLETE merely because it currently
+    prices."""
+    price_result = priceability(PRICEABLE_CONTROL)
+    assert price_result.gate == PRICEABLE
+    assert price_result.unresolved_required_dimensions == ()
+
+    auth_result = authority_completeness(PRICEABLE_CONTROL)
+    assert auth_result.gate == AUTHORITY_INCOMPLETE
+    assert auth_result.unresolved_material_dimensions
 
 
 def test_publication_contract_unknown_program_reports_unknown_not_a_crash():
     from app.services.canonical_publication_contract import UNKNOWN_PROGRAM
-    result = executable_completeness("not_a_real_program_slug_xyz")
-    assert result.gate == UNKNOWN_PROGRAM
+    assert priceability("not_a_real_program_slug_xyz").gate == UNKNOWN_PROGRAM
+    assert authority_completeness("not_a_real_program_slug_xyz").gate == UNKNOWN_PROGRAM
 
 
 # ── Task 8 — control program full proof ─────────────────────────────────────
@@ -277,13 +359,13 @@ def test_control_programs_full_identity_consolidation_ledger_completeness(slug):
     ledger = ledger_entry_for(slug)
     assert ledger is not None, f"{slug}: RESIDUAL QUESTIONS"
 
-    completeness = executable_completeness(slug)
-    if slug == PRICEABLE_CONTROL:
-        assert completeness.gate == EXECUTABLE_COMPLETE
-        assert ledger.is_fully_resolved is False  # optional dims (e.g. UPLIFT_RULES) remain open
-    else:
-        assert completeness.gate == NOT_EXECUTABLE_COMPLETE
-        assert not ledger.is_fully_resolved
+    auth = authority_completeness(slug)
+    # Every one of the four controls is AUTHORITY_INCOMPLETE today
+    # (Greece included — priceable via doctrine fallback is not the same
+    # as authority-complete; see test_priceable_control_is_priceable_but_
+    # authority_incomplete for the explicit proof).
+    assert auth.gate == AUTHORITY_INCOMPLETE
+    assert not ledger.is_fully_resolved
 
 
 # ── Task 9 — Little Utopia exact regression ─────────────────────────────────
