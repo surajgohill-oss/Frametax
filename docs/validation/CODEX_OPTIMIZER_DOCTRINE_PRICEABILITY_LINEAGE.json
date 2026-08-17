@@ -1,0 +1,3639 @@
+{
+  "schema_version": "1.0.0",
+  "generated_at": "2026-08-16",
+  "reviewed_head": "19221eb",
+  "final_gate": "CODEX_OPTIMIZER_DOCTRINE_DIVERGED",
+  "scope": {
+    "external_research": false,
+    "production_code_changed": false,
+    "authority_data_changed": false,
+    "frontend_changed": false,
+    "tests_run": false
+  },
+  "historical_phases_found": 9,
+  "settled_decisions_recovered": 8,
+  "unsettled_questions": [
+    "Whether service production is a distinct canonical structure archetype rather than a program/segment treatment.",
+    "The program-by-program automatic-versus-selective grant classification and all aid/stack interactions.",
+    "Completion of the treaty instrument/member/pathway registry.",
+    "Generic project inputs and authority for reinvestment and in-kind/support economics.",
+    "A formal committee doctrine for movable/local crew and immutable attached personnel."
+  ],
+  "contradicted_or_reversed_historical_treatments": [
+    "Silent 8 percent / 39-week financing defaults were intentionally superseded by explicit inputs with zero default.",
+    "Automatic use of discretionary rate ceilings was intentionally superseded by floor selection unless project evidence confirms the ceiling.",
+    "Manual-election-only treaty generation was intentionally superseded by auto-enumeration/proven-zero behavior, although generic canonical generation remains absent."
+  ],
+  "committee_decisions": [
+    {
+      "id": 1,
+      "statement": "Production-structure optimizer, not only a tax-credit calculator",
+      "historical_classification": "HISTORICALLY_SETTLED",
+      "current_classification": "CURRENT_IMPLEMENTATION_DIVERGED",
+      "evidence": "Phase 7 composer/scenario/allocation plus three-engine reconciliation; generic canonical generation is relocation-only."
+    },
+    {
+      "id": 2,
+      "statement": "Generate economically relevant single/service/split/hybrid/fund/treaty/reinvestment/in-kind structures where supported",
+      "historical_classification": "HISTORICALLY_SUPPORTED_BUT_NOT_FORMALLY_SETTLED",
+      "current_classification": "CURRENT_IMPLEMENTATION_DIVERGED",
+      "evidence": "Single/split/hybrid/treaty/fund mechanics existed; reinvestment and in-kind were levers/adjustments rather than universally separate structure types."
+    },
+    {
+      "id": 3,
+      "statement": "PRICEABLE when applicable rules permit QPE to incentive to NPC",
+      "historical_classification": "HISTORICALLY_SETTLED",
+      "current_classification": "STILL_IMPLEMENTED_WITH_PUBLICATION_DIVERGENCE",
+      "evidence": "Served discovery/allocation/pricing follows this contract; read-only publication priceability does not."
+    },
+    {
+      "id": 4,
+      "statement": "AUTHORITY_COMPLETE does not automatically control PRICEABLE",
+      "historical_classification": "HISTORICALLY_SETTLED",
+      "current_classification": "STILL_IMPLEMENTED",
+      "evidence": "d3b893d separation; no served import or call path from completeness."
+    },
+    {
+      "id": 5,
+      "statement": "Authority dimensions are normalization buckets, not universal program requirements",
+      "historical_classification": "HISTORICALLY_SUPPORTED_BUT_NOT_FORMALLY_SETTLED",
+      "current_classification": "CURRENT_IMPLEMENTATION_DIVERGED_IN_COMPLETENESS_ONLY",
+      "evidence": "Runtime evaluates applicable rules; completeness universally asks all 14 and never emits N/A/silence."
+    },
+    {
+      "id": 6,
+      "statement": "Requirements travel with scenarios rather than suppressing them by default",
+      "historical_classification": "HISTORICALLY_SETTLED",
+      "current_classification": "STILL_IMPLEMENTED",
+      "evidence": "b99fec5 explanation requirement and 770006b feasibility/economic separation."
+    },
+    {
+      "id": 7,
+      "statement": "UNPRICEABLE only when a material obstacle prevents defensible economics",
+      "historical_classification": "HISTORICALLY_SETTLED",
+      "current_classification": "CURRENT_IMPLEMENTATION_DIVERGED",
+      "evidence": "Mostly enforced; GA is a coverage-veto inconsistency and 21 formulaic identities are not generated."
+    },
+    {
+      "id": 8,
+      "statement": "Structuring variables modeled rather than automatic rejection where appropriate",
+      "historical_classification": "HISTORICALLY_SUPPORTED_BUT_NOT_FORMALLY_SETTLED",
+      "current_classification": "LOST_OR_DISCONNECTED",
+      "evidence": "Allocation/scenario/SPV/component/treaty mechanics survive outside generic canonical generation."
+    },
+    {
+      "id": 9,
+      "statement": "Ordinary local SPV/service-company setup is generally a satisfiable assumption",
+      "historical_classification": "HISTORICALLY_SUPPORTED_BUT_NOT_FORMALLY_SETTLED",
+      "current_classification": "PARTIALLY_IMPLEMENTED",
+      "evidence": "Codex found zero entity-only terminal blockers; no universal engine switch was adopted."
+    },
+    {
+      "id": 10,
+      "statement": "Local hiring/movable crew is an optimization variable where permitted",
+      "historical_classification": "NOT_FOUND_IN_HISTORY",
+      "current_classification": "NO_SETTLED_DECISION_FOUND",
+      "evidence": "Component allocation exists but no committee-level general crew doctrine was found."
+    },
+    {
+      "id": 11,
+      "statement": "Attached personnel remain fixed production facts and are not silently localized",
+      "historical_classification": "NOT_FOUND_IN_HISTORY",
+      "current_classification": "NO_SETTLED_DECISION_FOUND",
+      "evidence": "Consistent with broader architecture but not a recovered optimizer committee decision."
+    },
+    {
+      "id": 12,
+      "statement": "Territorial/QPE rules determine local spend/components",
+      "historical_classification": "HISTORICALLY_SETTLED",
+      "current_classification": "STILL_IMPLEMENTED",
+      "evidence": "Three-engine agreement: local payer/SPV alone is insufficient; pilot foreign spend remained non-claiming."
+    },
+    {
+      "id": 13,
+      "statement": "Cultural qualification is program/structure-specific, not universal",
+      "historical_classification": "HISTORICALLY_SUPPORTED_BUT_NOT_FORMALLY_SETTLED",
+      "current_classification": "PARTIALLY_IMPLEMENTED",
+      "evidence": "Treaty/national/incentive/uplift/fund-specific models exist; no universal served cultural gate."
+    },
+    {
+      "id": 14,
+      "statement": "Administrative timing is disclosed and need not block a directional estimate",
+      "historical_classification": "HISTORICALLY_SUPPORTED_BUT_NOT_FORMALLY_SETTLED",
+      "current_classification": "STILL_IMPLEMENTED",
+      "evidence": "Schema timing alone is not a served price gate; program-specific preapproval applies only when encoded."
+    }
+  ],
+  "current_implementation_status": {
+    "served_entry_point": "app.services.canonical_evaluation.evaluate_project",
+    "served_engine_version": "canonical-1.4.0",
+    "served_priceability_chain": [
+      "jurisdiction_comparison profile selection",
+      "authority_coverage_registry economic-candidacy veto",
+      "resolved doctrine",
+      "RateRule existence",
+      "production type and minimum-QPE resolution",
+      "qualification register and account allocation",
+      "segment pricing and NPC"
+    ],
+    "authority_completeness_gates_served_priceability": false,
+    "canonical_publication_contract_is_served": false,
+    "formulaic_programs": 126,
+    "served_intrinsically_priceable": 31,
+    "served_unavailable": 95,
+    "publication_priceable": 5,
+    "publication_unpriceable": 121,
+    "publication_false_negative_vs_served": 27,
+    "publication_false_positive_vs_served": 1,
+    "publication_false_positive_program": "us_ga_film_credit",
+    "status_semantics": {
+      "PRICED": "coverage validated, applicable RateRule resolves, allocation/segment pricing completes",
+      "UNPRICEABLE_AUTHORITY_INSUFFICIENT": "coverage veto or no executable model",
+      "RULE_REJECTED": "real rules exist but project production-type/minimum-QPE conditions are unmet",
+      "FEASIBILITY_REVIEW_REQUIRED": "selective/non-economic/superseded/duplicate or other non-missing-authority coverage state",
+      "FEASIBILITY_STRONG_WORKABLE_WEAK_UNKNOWN": "separate disclosure, never economic suppression"
+    },
+    "historical_alignment_counts": {
+      "still_implemented": 6,
+      "lost_or_disconnected": 5,
+      "diverged": 3,
+      "intentionally_superseded": 3,
+      "no_settled_decision": 2
+    }
+  },
+  "structure_generation_status": [
+    {
+      "structure": "single_jurisdiction",
+      "historical_intent": "candidate",
+      "historical_implementation": true,
+      "generic_canonical_generation": true,
+      "status": "STILL_IMPLEMENTED"
+    },
+    {
+      "structure": "service_production",
+      "historical_intent": "program_or_segment_treatment_not_proven_distinct_archetype",
+      "historical_implementation": true,
+      "generic_canonical_generation": "one selected profile program only",
+      "status": "HISTORICALLY_SUPPORTED_BUT_NOT_FORMALLY_SETTLED"
+    },
+    {
+      "structure": "split_component",
+      "historical_intent": "candidate",
+      "historical_implementation": true,
+      "generic_canonical_generation": false,
+      "status": "LOST_OR_DISCONNECTED"
+    },
+    {
+      "structure": "hybrid_anchor",
+      "historical_intent": "candidate",
+      "historical_implementation": true,
+      "generic_canonical_generation": false,
+      "status": "LOST_OR_DISCONNECTED"
+    },
+    {
+      "structure": "grant_fund_stack",
+      "historical_intent": "formula awards deterministic; selective awards conditional; fund/treaty combinations can distinguish candidates",
+      "historical_implementation": true,
+      "generic_canonical_generation": false,
+      "status": "LOST_OR_DISCONNECTED"
+    },
+    {
+      "structure": "official_treaty_coproduction",
+      "historical_intent": "separate candidate unlocking instrument-specific national treatment/incentives/uplifts/funds",
+      "historical_implementation": true,
+      "generic_canonical_generation": false,
+      "status": "LOST_OR_DISCONNECTED"
+    },
+    {
+      "structure": "reinvestment",
+      "historical_intent": "evidence-gated structuring/financing lever; UNKNOWN zero",
+      "historical_implementation": true,
+      "generic_canonical_generation": false,
+      "status": "SUPPORTED_NOT_SETTLED_AS_DISTINCT_STRUCTURE_AND_DISCONNECTED"
+    },
+    {
+      "structure": "in_kind_support",
+      "historical_intent": "production-economic contribution/replacement adjustment, never silently cash budget or QPE",
+      "historical_implementation": "Little Utopia and calculator input",
+      "generic_canonical_generation": false,
+      "status": "LOST_OR_DISCONNECTED_GENERICALLY"
+    }
+  ],
+  "priceability_blockers": {
+    "formulaic_total": 126,
+    "served_intrinsically_priceable": 31,
+    "served_unavailable": 95,
+    "first_actual_blocker_counts": {
+      "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT": 73,
+      "COVERAGE_REGISTRY_VETO_CONTRADICTS_EXECUTABLE_SUBSTRATE": 1,
+      "NOT_BOUND_TO_SERVED_JURISDICTION_PROFILE": 21,
+      "ELIGIBILITY_ONLY": 0,
+      "ADMINISTRATIVE_ONLY": 0,
+      "PROJECT_OPTIMIZATION_VARIABLE": 0
+    },
+    "done_report_class_counts": {
+      "genuinely_economically_blocked": 73,
+      "eligibility_blocked": 0,
+      "administrative_only_blocked": 0,
+      "optimization_variable_blocked": 0,
+      "artificial_schema_blocked": 1,
+      "other": 21
+    },
+    "fourteen_dimension_contract": {
+      "completeness_currently_gates_priceability": false,
+      "universal_dimension_assumption_found": true,
+      "universal_assumption_scope": "authority_completeness only",
+      "not_applicable_currently_emitted": false,
+      "authoritative_silence_confirmed_currently_emitted": false,
+      "first_divergence_location": "770006b introduced VERIFIED-tier executable_completeness distinct from served coverage logic; d3b893d renamed the unchanged two-field result priceability while keeping all-14 completeness separate."
+    }
+  },
+  "formulaic_program_first_blocker": [
+    {
+      "canonical_program_id": "ae_ad_film_rebate",
+      "jurisdiction_code": "AE-AD",
+      "program_name": "Abu Dhabi 35%++ Cashback Rebate",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "AE-AD"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "al_cash_rebate",
+      "jurisdiction_code": "AL",
+      "program_name": "Albania Cash Rebate",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "AL"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "ar_incaa_incentive",
+      "jurisdiction_code": "",
+      "program_name": "INCAA \u2014 Argentine Film Institute Incentives",
+      "served_intrinsic_status": "UNAVAILABLE_NOT_GENERATED",
+      "first_actual_blocker": "NOT_BOUND_TO_SERVED_JURISDICTION_PROFILE",
+      "blocker_classifications": [
+        "OTHER",
+        "LOST_OR_DISCONNECTED"
+      ],
+      "blocker_detail": "Canonical formulaic identity is not the selected program of any jurisdiction_comparison profile, so discovery never creates a candidate; it also has no executable RateRule and is authority-insufficient.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [],
+      "rate_rule_count": 0,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "at_fisa_plus",
+      "jurisdiction_code": "AT",
+      "program_name": "FISA+ Film Production Support Austria",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "AT"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "au_location_offset",
+      "jurisdiction_code": "AU",
+      "program_name": "Australia Location Offset",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "AU"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": false
+    },
+    {
+      "canonical_program_id": "au_nsw_pdv_rebate",
+      "jurisdiction_code": "AU-NSW",
+      "program_name": "New South Wales PDV Rebate (Screen NSW)",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "AU-NSW"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": false
+    },
+    {
+      "canonical_program_id": "au_nsw_screen",
+      "jurisdiction_code": "",
+      "program_name": "NSW Government Screen Incentive (Create NSW)",
+      "served_intrinsic_status": "UNAVAILABLE_NOT_GENERATED",
+      "first_actual_blocker": "NOT_BOUND_TO_SERVED_JURISDICTION_PROFILE",
+      "blocker_classifications": [
+        "OTHER",
+        "LOST_OR_DISCONNECTED"
+      ],
+      "blocker_detail": "Canonical formulaic identity is not the selected program of any jurisdiction_comparison profile, so discovery never creates a candidate; it also has no executable RateRule and is authority-insufficient.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [],
+      "rate_rule_count": 0,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "au_qld_pdv_rebate",
+      "jurisdiction_code": "AU-QLD",
+      "program_name": "Queensland PDV Rebate (Screen Queensland)",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "AU-QLD"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": false
+    },
+    {
+      "canonical_program_id": "au_qld_screen_qld",
+      "jurisdiction_code": "",
+      "program_name": "Screen Queensland Production Attraction Strategy",
+      "served_intrinsic_status": "UNAVAILABLE_NOT_GENERATED",
+      "first_actual_blocker": "NOT_BOUND_TO_SERVED_JURISDICTION_PROFILE",
+      "blocker_classifications": [
+        "OTHER",
+        "LOST_OR_DISCONNECTED"
+      ],
+      "blocker_detail": "Canonical formulaic identity is not the selected program of any jurisdiction_comparison profile, so discovery never creates a candidate; it also has no executable RateRule and is authority-insufficient.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [],
+      "rate_rule_count": 0,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "au_sa_pdv_rebate",
+      "jurisdiction_code": "AU-SA",
+      "program_name": "South Australia PDV Rebate",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "AU-SA"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": false
+    },
+    {
+      "canonical_program_id": "au_vic_vicscreen",
+      "jurisdiction_code": "",
+      "program_name": "VicScreen Production Investment",
+      "served_intrinsic_status": "UNAVAILABLE_NOT_GENERATED",
+      "first_actual_blocker": "NOT_BOUND_TO_SERVED_JURISDICTION_PROFILE",
+      "blocker_classifications": [
+        "OTHER",
+        "LOST_OR_DISCONNECTED"
+      ],
+      "blocker_detail": "Canonical formulaic identity is not the selected program of any jurisdiction_comparison profile, so discovery never creates a candidate; it also has no executable RateRule and is authority-insufficient.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [],
+      "rate_rule_count": 0,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "bc_interactive_digital_media_tax_credit_idmtc",
+      "jurisdiction_code": "",
+      "program_name": "BC Interactive Digital Media Tax Credit (IDMTC)",
+      "served_intrinsic_status": "UNAVAILABLE_NOT_GENERATED",
+      "first_actual_blocker": "NOT_BOUND_TO_SERVED_JURISDICTION_PROFILE",
+      "blocker_classifications": [
+        "OTHER",
+        "LOST_OR_DISCONNECTED"
+      ],
+      "blocker_detail": "Canonical formulaic identity is not the selected program of any jurisdiction_comparison profile, so discovery never creates a candidate; it also has no executable RateRule and is authority-insufficient.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [],
+      "rate_rule_count": 0,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "be_tax_shelter",
+      "jurisdiction_code": "BE",
+      "program_name": "Belgian Tax Shelter (+ Regional Cash Rebates)",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "BE"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "explicit_classification",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "bg_film_encouragement_act_rebate",
+      "jurisdiction_code": "BG",
+      "program_name": "Bulgarian Film Industry Encouragement Act Cash Rebate",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "BG"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "br_ancine_incentive",
+      "jurisdiction_code": "",
+      "program_name": "ANCINE \u2014 Brazilian Film Commission Tax Incentives",
+      "served_intrinsic_status": "UNAVAILABLE_NOT_GENERATED",
+      "first_actual_blocker": "NOT_BOUND_TO_SERVED_JURISDICTION_PROFILE",
+      "blocker_classifications": [
+        "OTHER",
+        "LOST_OR_DISCONNECTED"
+      ],
+      "blocker_detail": "Canonical formulaic identity is not the selected program of any jurisdiction_comparison profile, so discovery never creates a candidate; it also has no executable RateRule and is authority-insufficient.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [],
+      "rate_rule_count": 0,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "ca_ab_fttc",
+      "jurisdiction_code": "CA-AB",
+      "program_name": "Alberta Film and Television Tax Credit (FTTC)",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "CA-AB"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "ca_bc_pstc",
+      "jurisdiction_code": "CA-BC",
+      "program_name": "British Columbia Production Services Tax Credit",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "CA-BC"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "ca_federal_cptc",
+      "jurisdiction_code": "",
+      "program_name": "Canadian Film or Video Production Tax Credit",
+      "served_intrinsic_status": "UNAVAILABLE_NOT_GENERATED",
+      "first_actual_blocker": "NOT_BOUND_TO_SERVED_JURISDICTION_PROFILE",
+      "blocker_classifications": [
+        "OTHER",
+        "LOST_OR_DISCONNECTED"
+      ],
+      "blocker_detail": "Canonical formulaic identity is not the selected program of any jurisdiction_comparison profile, so discovery never creates a candidate; it also has no executable RateRule and is authority-insufficient.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [],
+      "rate_rule_count": 0,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "ca_federal_pstc",
+      "jurisdiction_code": "CA",
+      "program_name": "Canada Federal Production Services Tax Credit (PSTC)",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "CA"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "ca_mb_film_video_credit",
+      "jurisdiction_code": "CA-MB",
+      "program_name": "Manitoba Film & Video Production Tax Credit",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "CA-MB"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "ca_nb_film_tax_credit",
+      "jurisdiction_code": "CA-NB",
+      "program_name": "New Brunswick Film Tax Credit",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "CA-NB"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "ca_nl_all_spend_credit",
+      "jurisdiction_code": "CA-NL",
+      "program_name": "Newfoundland & Labrador All-Spend Film and Video Production Tax Credit",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "CA-NL"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": false
+    },
+    {
+      "canonical_program_id": "ca_nl_production_fund",
+      "jurisdiction_code": "",
+      "program_name": "Newfoundland & Labrador Film Development Corp Production Incentive",
+      "served_intrinsic_status": "UNAVAILABLE_NOT_GENERATED",
+      "first_actual_blocker": "NOT_BOUND_TO_SERVED_JURISDICTION_PROFILE",
+      "blocker_classifications": [
+        "OTHER",
+        "LOST_OR_DISCONNECTED"
+      ],
+      "blocker_detail": "Canonical formulaic identity is not the selected program of any jurisdiction_comparison profile, so discovery never creates a candidate; it also has no executable RateRule and is authority-insufficient.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [],
+      "rate_rule_count": 0,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "ca_ns_production_incentive_fund",
+      "jurisdiction_code": "CA-NS",
+      "program_name": "Nova Scotia Film & Television Production Incentive Fund",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "CA-NS"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "ca_on_opstc",
+      "jurisdiction_code": "CA-ON",
+      "program_name": "Ontario Production Services Tax Credit (OPSTC)",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "CA-ON"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "ca_qc_pstc",
+      "jurisdiction_code": "CA-QC",
+      "program_name": "Quebec Tax Credit for Film Production Services",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "CA-QC"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": false
+    },
+    {
+      "canonical_program_id": "ca_sk_creative_saskatchewan_grant",
+      "jurisdiction_code": "CA-SK",
+      "program_name": "Creative Saskatchewan Film and TV Production Grant",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "CA-SK"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "ch_pics_national_rebate",
+      "jurisdiction_code": "CH",
+      "program_name": "Switzerland PICS National Location Incentive",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "CH"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": false
+    },
+    {
+      "canonical_program_id": "cl_corfo_incentive",
+      "jurisdiction_code": "CL",
+      "program_name": "Chile CORFO Film Incentive",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "CL"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "co_film_in_colombia",
+      "jurisdiction_code": "CO",
+      "program_name": "Colombia Film Commission \u2014 Film In Colombia",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "CO"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "cr_tax_return_incentive",
+      "jurisdiction_code": "CR",
+      "program_name": "Costa Rica Tax Return Cash Incentive",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "CR"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": false
+    },
+    {
+      "canonical_program_id": "cy_film_rebate",
+      "jurisdiction_code": "CY",
+      "program_name": "Cyprus Film Production Rebate",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "CY"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "explicit_classification",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "cz_film_incentive",
+      "jurisdiction_code": "CZ",
+      "program_name": "Czech Film Incentive",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "CZ"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "de_dfff",
+      "jurisdiction_code": "DE",
+      "program_name": "German Federal Film Fund (DFFF II \u2014 production service)",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "DE"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "explicit_classification",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "dk_film_incentive",
+      "jurisdiction_code": "",
+      "program_name": "Danish Film Institute Production Support",
+      "served_intrinsic_status": "UNAVAILABLE_NOT_GENERATED",
+      "first_actual_blocker": "NOT_BOUND_TO_SERVED_JURISDICTION_PROFILE",
+      "blocker_classifications": [
+        "OTHER",
+        "LOST_OR_DISCONNECTED"
+      ],
+      "blocker_detail": "Canonical formulaic identity is not the selected program of any jurisdiction_comparison profile, so discovery never creates a candidate; it also has no executable RateRule and is authority-insufficient.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [],
+      "rate_rule_count": 0,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "dk_production_rebate",
+      "jurisdiction_code": "DK",
+      "program_name": "Denmark Production Rebate",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "DK"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": false
+    },
+    {
+      "canonical_program_id": "do_film_commission_incentive",
+      "jurisdiction_code": "DO",
+      "program_name": "Dominican Republic Film Commission Incentive",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "DO"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "explicit_classification",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "ee_film_estonia_rebate",
+      "jurisdiction_code": "EE",
+      "program_name": "Film Estonia Cash Rebate",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "EE"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "eg_empc_cashback",
+      "jurisdiction_code": "EG",
+      "program_name": "Egypt EMPC (Media Production City) Cashback",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "EG"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": false
+    },
+    {
+      "canonical_program_id": "es_tax_credit_foreign",
+      "jurisdiction_code": "ES",
+      "program_name": "Spanish Tax Credit for Foreign Productions",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "ES"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "explicit_classification",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "fi_business_finland_incentive",
+      "jurisdiction_code": "FI",
+      "program_name": "Business Finland Film Incentive",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "FI"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "fj_film_rebate",
+      "jurisdiction_code": "FJ",
+      "program_name": "Fiji Film Rebate",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "FJ"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": false
+    },
+    {
+      "canonical_program_id": "fr_trip",
+      "jurisdiction_code": "FR",
+      "program_name": "Tax Rebate for International Productions (TRIP)",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "FR"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "gb_sct_screen_fund",
+      "jurisdiction_code": "",
+      "program_name": "Screen Scotland Production Growth Fund",
+      "served_intrinsic_status": "UNAVAILABLE_NOT_GENERATED",
+      "first_actual_blocker": "NOT_BOUND_TO_SERVED_JURISDICTION_PROFILE",
+      "blocker_classifications": [
+        "OTHER",
+        "LOST_OR_DISCONNECTED"
+      ],
+      "blocker_detail": "Canonical formulaic identity is not the selected program of any jurisdiction_comparison profile, so discovery never creates a candidate; it also has no executable RateRule and is authority-insufficient.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [],
+      "rate_rule_count": 0,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "gb_wls_screen_fund",
+      "jurisdiction_code": "",
+      "program_name": "Wales Screen Production Fund (Ffilm Cymru Wales)",
+      "served_intrinsic_status": "UNAVAILABLE_NOT_GENERATED",
+      "first_actual_blocker": "NOT_BOUND_TO_SERVED_JURISDICTION_PROFILE",
+      "blocker_classifications": [
+        "OTHER",
+        "LOST_OR_DISCONNECTED"
+      ],
+      "blocker_detail": "Canonical formulaic identity is not the selected program of any jurisdiction_comparison profile, so discovery never creates a candidate; it also has no executable RateRule and is authority-insufficient.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [],
+      "rate_rule_count": 0,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "ge_film_rebate",
+      "jurisdiction_code": "GE",
+      "program_name": "Georgia (country) Film Rebate",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "GE"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": false
+    },
+    {
+      "canonical_program_id": "gh_film_tax_incentive",
+      "jurisdiction_code": "GH",
+      "program_name": "Ghana Film Tax Incentive",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "GH"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": false
+    },
+    {
+      "canonical_program_id": "gr_cash_rebate",
+      "jurisdiction_code": "GR",
+      "program_name": "Greece Cash Rebate for International Productions",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "GR"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 1,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "explicit_classification",
+      "publication_priceability": "PRICEABLE",
+      "publication_unresolved_required_dimensions": [],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "hr_cash_rebate",
+      "jurisdiction_code": "HR",
+      "program_name": "Croatia Cash Rebate",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "HR"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "explicit_classification",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "hu_hipa_rebate",
+      "jurisdiction_code": "HU",
+      "program_name": "Hungarian Film Incentive (NFI)",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "HU"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "explicit_classification",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "ie_section_481",
+      "jurisdiction_code": "IE",
+      "program_name": "Section 481 Film Tax Credit",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "IE"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "explicit_classification",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "il_foreign_production_fund",
+      "jurisdiction_code": "IL",
+      "program_name": "Israel Fund for the Promotion of Foreign Productions",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "IL"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": false
+    },
+    {
+      "canonical_program_id": "in_national_film",
+      "jurisdiction_code": "",
+      "program_name": "India NFDC and State Incentives",
+      "served_intrinsic_status": "UNAVAILABLE_NOT_GENERATED",
+      "first_actual_blocker": "NOT_BOUND_TO_SERVED_JURISDICTION_PROFILE",
+      "blocker_classifications": [
+        "OTHER",
+        "LOST_OR_DISCONNECTED"
+      ],
+      "blocker_detail": "Canonical formulaic identity is not the selected program of any jurisdiction_comparison profile, so discovery never creates a candidate; it also has no executable RateRule and is authority-insufficient.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [],
+      "rate_rule_count": 0,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "is_film_reimbursement_scheme",
+      "jurisdiction_code": "IS",
+      "program_name": "Icelandic Film Reimbursement Scheme",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "IS"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "it_tax_credit_foreign",
+      "jurisdiction_code": "IT",
+      "program_name": "Italian Tax Credit for Foreign Productions",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "IT"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "explicit_classification",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "jm_film_incentive",
+      "jurisdiction_code": "",
+      "program_name": "Jamaica Entertainment Industry Incentive Programme",
+      "served_intrinsic_status": "UNAVAILABLE_NOT_GENERATED",
+      "first_actual_blocker": "NOT_BOUND_TO_SERVED_JURISDICTION_PROFILE",
+      "blocker_classifications": [
+        "OTHER",
+        "LOST_OR_DISCONNECTED"
+      ],
+      "blocker_detail": "Canonical formulaic identity is not the selected program of any jurisdiction_comparison profile, so discovery never creates a candidate; it also has no executable RateRule and is authority-insufficient.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [],
+      "rate_rule_count": 0,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "lt_film_centre_cash_rebate",
+      "jurisdiction_code": "LT",
+      "program_name": "Lithuanian Film Centre Production Cash Rebate",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "LT"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "lu_filmfund_tax_shelter_rebate",
+      "jurisdiction_code": "LU",
+      "program_name": "Film Fund Luxembourg (Filmfund) \u2014 Tax Shelter & Rebate",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "LU"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "lv_national_film_centre_incentive",
+      "jurisdiction_code": "LV",
+      "program_name": "National Film Centre of Latvia Production Incentive",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "LV"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "ma_ccm_rebate",
+      "jurisdiction_code": "MA",
+      "program_name": "Morocco CCM Foreign Production Cash Rebate",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "MA"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "me_cash_rebate",
+      "jurisdiction_code": "ME",
+      "program_name": "Montenegro Cash Rebate",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "ME"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "mk_cash_rebate",
+      "jurisdiction_code": "MK",
+      "program_name": "North Macedonia Cash Rebate",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "MK"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "mn_production_incentive",
+      "jurisdiction_code": "MN",
+      "program_name": "Mongolia Film & TV Production Incentive",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "MN"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": false
+    },
+    {
+      "canonical_program_id": "mt_mfc_rebate",
+      "jurisdiction_code": "MT",
+      "program_name": "Malta Film Commission Cash Rebate",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "MT"
+      ],
+      "rate_rule_count": 4,
+      "verified_rate_rule_count": 4,
+      "eligible_production_types": [
+        "animation",
+        "creative_documentary",
+        "digital_animated_film",
+        "feature_film",
+        "tv_series"
+      ],
+      "doctrine_basis": "explicit_classification",
+      "publication_priceability": "PRICEABLE",
+      "publication_unresolved_required_dimensions": [],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "mu_edb_incentive",
+      "jurisdiction_code": "MU",
+      "program_name": "Mauritius EDB Film Rebate Scheme (30% / up to 40%)",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "MU"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 2,
+      "eligible_production_types": [
+        "commercial",
+        "creative_documentary",
+        "digital_animated_film",
+        "dubbing",
+        "factual_television",
+        "feature_film",
+        "lifestyle_magazine",
+        "music_video",
+        "natural_history",
+        "television_serial",
+        "television_single_drama",
+        "tv_series"
+      ],
+      "doctrine_basis": "explicit_classification",
+      "publication_priceability": "PRICEABLE",
+      "publication_unresolved_required_dimensions": [],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "mx_eficine_incentive",
+      "jurisdiction_code": "",
+      "program_name": "Mexico EFICINE (Article 226) and PROCINE Fund",
+      "served_intrinsic_status": "UNAVAILABLE_NOT_GENERATED",
+      "first_actual_blocker": "NOT_BOUND_TO_SERVED_JURISDICTION_PROFILE",
+      "blocker_classifications": [
+        "OTHER",
+        "LOST_OR_DISCONNECTED"
+      ],
+      "blocker_detail": "Canonical formulaic identity is not the selected program of any jurisdiction_comparison profile, so discovery never creates a candidate; it also has no executable RateRule and is authority-insufficient.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [],
+      "rate_rule_count": 0,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "mx_federal_film_incentive_2026",
+      "jurisdiction_code": "MX",
+      "program_name": "Mexico Federal Film & Audiovisual Production Tax Incentive",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "MX"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 1,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "PRICEABLE",
+      "publication_unresolved_required_dimensions": [],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "my_finas_rebate",
+      "jurisdiction_code": "MY",
+      "program_name": "Malaysia FINAS Film Rebate",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "MY"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": false
+    },
+    {
+      "canonical_program_id": "new_zealand_screen_production_grant_\u2014_international_post_vfx",
+      "jurisdiction_code": "",
+      "program_name": "New Zealand Screen Production Grant \u2014 International Post/VFX",
+      "served_intrinsic_status": "UNAVAILABLE_NOT_GENERATED",
+      "first_actual_blocker": "NOT_BOUND_TO_SERVED_JURISDICTION_PROFILE",
+      "blocker_classifications": [
+        "OTHER",
+        "LOST_OR_DISCONNECTED"
+      ],
+      "blocker_detail": "Canonical formulaic identity is not the selected program of any jurisdiction_comparison profile, so discovery never creates a candidate; it also has no executable RateRule and is authority-insufficient.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [],
+      "rate_rule_count": 0,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "nl_film_production_incentive",
+      "jurisdiction_code": "NL",
+      "program_name": "Netherlands Film Production Incentive (NFPI)",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "NL"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "no_film_incentive",
+      "jurisdiction_code": "NO",
+      "program_name": "Norwegian Film Production Incentive",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "NO"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "nz_spg_international",
+      "jurisdiction_code": "NZ",
+      "program_name": "New Zealand Screen Production Rebate (International)",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "NZ"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "on_ofttc",
+      "jurisdiction_code": "",
+      "program_name": "Ontario Film and Television Tax Credit",
+      "served_intrinsic_status": "UNAVAILABLE_NOT_GENERATED",
+      "first_actual_blocker": "NOT_BOUND_TO_SERVED_JURISDICTION_PROFILE",
+      "blocker_classifications": [
+        "OTHER",
+        "LOST_OR_DISCONNECTED"
+      ],
+      "blocker_detail": "Canonical formulaic identity is not the selected program of any jurisdiction_comparison profile, so discovery never creates a candidate; it also has no executable RateRule and is authority-insufficient.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [],
+      "rate_rule_count": 0,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "ontario_computer_animation_and_special_effects_tax_credit_ocase",
+      "jurisdiction_code": "",
+      "program_name": "Ontario Computer Animation and Special Effects Tax Credit (OCASE)",
+      "served_intrinsic_status": "UNAVAILABLE_NOT_GENERATED",
+      "first_actual_blocker": "NOT_BOUND_TO_SERVED_JURISDICTION_PROFILE",
+      "blocker_classifications": [
+        "OTHER",
+        "LOST_OR_DISCONNECTED"
+      ],
+      "blocker_detail": "Canonical formulaic identity is not the selected program of any jurisdiction_comparison profile, so discovery never creates a candidate; it also has no executable RateRule and is authority-insufficient.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [],
+      "rate_rule_count": 0,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "pa_film_rebate",
+      "jurisdiction_code": "PA",
+      "program_name": "Panama Film Rebate",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "PA"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": false
+    },
+    {
+      "canonical_program_id": "pe_film_incentive",
+      "jurisdiction_code": "",
+      "program_name": "Peru DAFO Film Production Support",
+      "served_intrinsic_status": "UNAVAILABLE_NOT_GENERATED",
+      "first_actual_blocker": "NOT_BOUND_TO_SERVED_JURISDICTION_PROFILE",
+      "blocker_classifications": [
+        "OTHER",
+        "LOST_OR_DISCONNECTED"
+      ],
+      "blocker_detail": "Canonical formulaic identity is not the selected program of any jurisdiction_comparison profile, so discovery never creates a candidate; it also has no executable RateRule and is authority-insufficient.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [],
+      "rate_rule_count": 0,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "ph_fdcp_flip",
+      "jurisdiction_code": "PH",
+      "program_name": "Philippines FDCP Film Location Incentive Program (FLIP)",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "PH"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": false
+    },
+    {
+      "canonical_program_id": "pl_pisf_cash_rebate",
+      "jurisdiction_code": "PL",
+      "program_name": "Polish Film Institute (PISF) Cash Rebate",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "PL"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "pt_film_incentive",
+      "jurisdiction_code": "",
+      "program_name": "Portugal Film Commission Incentive / IAPMEI",
+      "served_intrinsic_status": "UNAVAILABLE_NOT_GENERATED",
+      "first_actual_blocker": "NOT_BOUND_TO_SERVED_JURISDICTION_PROFILE",
+      "blocker_classifications": [
+        "OTHER",
+        "LOST_OR_DISCONNECTED"
+      ],
+      "blocker_detail": "Canonical formulaic identity is not the selected program of any jurisdiction_comparison profile, so discovery never creates a candidate; it also has no executable RateRule and is authority-insufficient.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [],
+      "rate_rule_count": 0,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "pt_scri_pt_cash_rebate",
+      "jurisdiction_code": "PT",
+      "program_name": "Portugal SCRI.PT Cash Rebate Incentive",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "PT"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": false
+    },
+    {
+      "canonical_program_id": "qa_screen_production_incentive",
+      "jurisdiction_code": "QA",
+      "program_name": "Qatar Screen Production Incentive (QSPI)",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "QA"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": false
+    },
+    {
+      "canonical_program_id": "qc_film_production",
+      "jurisdiction_code": "",
+      "program_name": "Quebec Film and Television Production Tax Credit",
+      "served_intrinsic_status": "UNAVAILABLE_NOT_GENERATED",
+      "first_actual_blocker": "NOT_BOUND_TO_SERVED_JURISDICTION_PROFILE",
+      "blocker_classifications": [
+        "OTHER",
+        "LOST_OR_DISCONNECTED"
+      ],
+      "blocker_detail": "Canonical formulaic identity is not the selected program of any jurisdiction_comparison profile, so discovery never creates a candidate; it also has no executable RateRule and is authority-insufficient.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [],
+      "rate_rule_count": 0,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "ro_film_office_cash_rebate",
+      "jurisdiction_code": "RO",
+      "program_name": "Romanian Film Office Cash Rebate",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "RO"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "rs_film_commission_cash_rebate",
+      "jurisdiction_code": "RS",
+      "program_name": "Serbia Film Commission Cash Rebate",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "RS"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "sa_film_commission_rebate",
+      "jurisdiction_code": "SA",
+      "program_name": "Saudi Film Commission Production Rebate",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "SA"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "se_production_rebate",
+      "jurisdiction_code": "SE",
+      "program_name": "Sweden Production Incentive",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "SE"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "sg_made_with_singapore_rebate",
+      "jurisdiction_code": "SG",
+      "program_name": "Made-with-Singapore Cash Rebate",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "SG"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": false
+    },
+    {
+      "canonical_program_id": "si_cash_rebate",
+      "jurisdiction_code": "SI",
+      "program_name": "Slovenia Cash Rebate Scheme",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "SI"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "sk_avf_production_incentive",
+      "jurisdiction_code": "SK",
+      "program_name": "Slovak Audiovisual Fund (AVF) Production Incentive",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "SK"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "explicit_classification",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "th_boi_incentive",
+      "jurisdiction_code": "TH",
+      "program_name": "Thailand BOI Film Incentive",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "TH"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": false
+    },
+    {
+      "canonical_program_id": "tt_production_expenditure_rebate",
+      "jurisdiction_code": "TT",
+      "program_name": "Trinidad and Tobago Production Expenditure Rebate Programme",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "TT"
+      ],
+      "rate_rule_count": 3,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "tw_bamid_rebate",
+      "jurisdiction_code": "TW",
+      "program_name": "Taiwan TFAI/BAMID Cash Rebate",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "TW"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": false
+    },
+    {
+      "canonical_program_id": "ua_cash_rebate",
+      "jurisdiction_code": "UA",
+      "program_name": "Ukraine Cash Rebate for Foreign Film Producers",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "UA"
+      ],
+      "rate_rule_count": 3,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": false
+    },
+    {
+      "canonical_program_id": "uk_avec",
+      "jurisdiction_code": "GB",
+      "program_name": "Audio-Visual Expenditure Credit (AVEC)",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "GB"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "us_al_film_incentive",
+      "jurisdiction_code": "US-AL",
+      "program_name": "Alabama Film Incentive",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "US-AL"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "us_az_motion_picture_production",
+      "jurisdiction_code": "US-AZ",
+      "program_name": "Arizona Motion Picture Production Program",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "US-AZ"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "us_ca_film_credit",
+      "jurisdiction_code": "US-CA",
+      "program_name": "California Film & Television Tax Credit Program 4.0",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "US-CA"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "us_co_film_incentive",
+      "jurisdiction_code": "US-CO",
+      "program_name": "Colorado Film Incentive",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "US-CO"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "us_ct_film_tax_credit",
+      "jurisdiction_code": "US-CT",
+      "program_name": "Connecticut Film Tax Credit",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "US-CT"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "us_ga_film_credit",
+      "jurisdiction_code": "US-GA",
+      "program_name": "Georgia Entertainment Industry Investment Act (EIIA)",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_VETO_CONTRADICTS_EXECUTABLE_SUBSTRATE",
+      "blocker_classifications": [
+        "ARTIFICIAL_SCHEMA_REQUIREMENT",
+        "CURRENT_IMPLEMENTATION_DIVERGED"
+      ],
+      "blocker_detail": "Coverage veto is first, despite two VERIFIED typed RateRules, explicit doctrine, a territorial SpendRule and publication PRICEABLE; remaining completeness gaps do not prevent the current QPE-rate-NPC calculation.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "US-GA"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 2,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "explicit_classification",
+      "publication_priceability": "PRICEABLE",
+      "publication_unresolved_required_dimensions": [],
+      "publication_matches_served": false
+    },
+    {
+      "canonical_program_id": "us_hi_film_digital_media_credit",
+      "jurisdiction_code": "US-HI",
+      "program_name": "Hawaii Film and Digital Media Income Tax Credit",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "US-HI"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "us_il_film_production_services_credit",
+      "jurisdiction_code": "US-IL",
+      "program_name": "Illinois Film Production Services Tax Credit",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "US-IL"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "us_ky_keiia",
+      "jurisdiction_code": "US-KY",
+      "program_name": "Kentucky Entertainment Industry Incentive Act (KEIIA)",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "US-KY"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "us_la_film_incentive",
+      "jurisdiction_code": "US-LA",
+      "program_name": "Louisiana Motion Picture Production Tax Credit",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "US-LA"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "us_ma_film_tax_credit",
+      "jurisdiction_code": "US-MA",
+      "program_name": "Massachusetts Film Tax Credit",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "US-MA"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "us_md_film_production_activity_credit",
+      "jurisdiction_code": "US-MD",
+      "program_name": "Maryland Film Production Activity Tax Credit",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "US-MD"
+      ],
+      "rate_rule_count": 3,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film",
+        "tv_series"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "us_mn_film_production_credit",
+      "jurisdiction_code": "US-MN",
+      "program_name": "Minnesota Film Production Tax Credit",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "US-MN"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "us_ms_advantage_film_program",
+      "jurisdiction_code": "US-MS",
+      "program_name": "Mississippi Advantage Film Program",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "US-MS"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "us_nc_film_entertainment_grant",
+      "jurisdiction_code": "US-NC",
+      "program_name": "North Carolina Film & Entertainment Grant",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "US-NC"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "us_nm_film_credit",
+      "jurisdiction_code": "US-NM",
+      "program_name": "New Mexico Film Production Tax Credit",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "US-NM"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "explicit_classification",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "us_nv_film_credit",
+      "jurisdiction_code": "US-NV",
+      "program_name": "Nevada Film Tax Credit",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "US-NV"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "us_ny_film_credit",
+      "jurisdiction_code": "US-NY",
+      "program_name": "New York State Film Tax Credit Program (Production)",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "US-NY"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "explicit_classification",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": false
+    },
+    {
+      "canonical_program_id": "us_ok_film_enhancement_rebate",
+      "jurisdiction_code": "US-OK",
+      "program_name": "Oklahoma Film Enhancement Rebate",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "US-OK"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "us_or_opif",
+      "jurisdiction_code": "US-OR",
+      "program_name": "Oregon Production Investment Fund (OPIF)",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "US-OR"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "us_pa_film_production_credit",
+      "jurisdiction_code": "US-PA",
+      "program_name": "Pennsylvania Film Production Tax Credit",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "US-PA"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "us_pr_film_incentives_act",
+      "jurisdiction_code": "US-PR",
+      "program_name": "Puerto Rico Film Industry Economic Incentives Act",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "US-PR"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "us_ri_film_credit",
+      "jurisdiction_code": "US-RI",
+      "program_name": "Rhode Island Motion Picture Production Tax Credit",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "US-RI"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "us_sc_film_production_credit",
+      "jurisdiction_code": "US-SC",
+      "program_name": "South Carolina Film Production Credit",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "US-SC"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "us_tn_performance_grant",
+      "jurisdiction_code": "US-TN",
+      "program_name": "Tennessee Film, Entertainment & Music Commission Performance Grant",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "US-TN"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "us_tx_miip",
+      "jurisdiction_code": "US-TX",
+      "program_name": "Texas Moving Image Industry Incentive Program (MIIP)",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "US-TX"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "us_ut_motion_picture_incentive",
+      "jurisdiction_code": "US-UT",
+      "program_name": "Utah Motion Picture Incentive Program",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "US-UT"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "us_va_motion_picture_credit",
+      "jurisdiction_code": "US-VA",
+      "program_name": "Virginia Motion Picture Production Tax Credit",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "US-VA"
+      ],
+      "rate_rule_count": 1,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "us_wa_motion_picture_competitiveness",
+      "jurisdiction_code": "US-WA",
+      "program_name": "Washington State Motion Picture Competitiveness Program",
+      "served_intrinsic_status": "UNPRICEABLE",
+      "first_actual_blocker": "COVERAGE_REGISTRY_AUTHORITY_INSUFFICIENT",
+      "blocker_classifications": [
+        "ECONOMICALLY_REQUIRED",
+        "GENUINELY_MISSING_AUTHORITY"
+      ],
+      "blocker_detail": "The accepted coverage corpus vetoes deterministic economics before stale/non-verified runtime rules may resolve.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [
+        "US-WA"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "uy_xxi_incentive",
+      "jurisdiction_code": "",
+      "program_name": "Uruguay XXI Film Incentive",
+      "served_intrinsic_status": "UNAVAILABLE_NOT_GENERATED",
+      "first_actual_blocker": "NOT_BOUND_TO_SERVED_JURISDICTION_PROFILE",
+      "blocker_classifications": [
+        "OTHER",
+        "LOST_OR_DISCONNECTED"
+      ],
+      "blocker_detail": "Canonical formulaic identity is not the selected program of any jurisdiction_comparison profile, so discovery never creates a candidate; it also has no executable RateRule and is authority-insufficient.",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "served_profile_codes": [],
+      "rate_rule_count": 0,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": true
+    },
+    {
+      "canonical_program_id": "uz_film_rebate",
+      "jurisdiction_code": "UZ",
+      "program_name": "Uzbekistan Film Rebate Programme",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "UZ"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": false
+    },
+    {
+      "canonical_program_id": "za_dtic_foreign_film",
+      "jurisdiction_code": "ZA",
+      "program_name": "South Africa DTIC Foreign Film & TV Production Incentive",
+      "served_intrinsic_status": "PRICEABLE",
+      "first_actual_blocker": null,
+      "blocker_classifications": [],
+      "blocker_detail": "Profile, coverage, doctrine, RateRule and at least one eligible production type exist; a particular project can still receive RULE_REJECTED for real type/minimum-QPE conditions.",
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "served_profile_codes": [
+        "ZA"
+      ],
+      "rate_rule_count": 2,
+      "verified_rate_rule_count": 0,
+      "eligible_production_types": [
+        "feature_film"
+      ],
+      "doctrine_basis": "canonical_default_inclusion",
+      "publication_priceability": "UNPRICEABLE",
+      "publication_unresolved_required_dimensions": [
+        "RATE_OR_AWARD_BASIS",
+        "ELIGIBLE_PRODUCTION_TYPE"
+      ],
+      "publication_matches_served": false
+    }
+  ],
+  "repair_sequence": [
+    {
+      "order": 1,
+      "action": "Make publication priceability delegate to the served profile/coverage/rate-condition predicates, or rename it so it cannot claim runtime semantics. Keep authority completeness separate."
+    },
+    {
+      "order": 2,
+      "action": "Reconcile only the us_ga_film_credit coverage/publication contradiction from existing accepted runtime authority; do not bypass the global coverage veto."
+    },
+    {
+      "order": 3,
+      "action": "Publish program-specific NOT_APPLICABLE or AUTHORITATIVE_SILENCE_CONFIRMED states with provenance for completeness; do not alter economics."
+    },
+    {
+      "order": 4,
+      "action": "Bind the 21 formulaic identities into an explicit multi-program-per-jurisdiction candidate inventory, initially surfacing honest unavailable states."
+    },
+    {
+      "order": 5,
+      "action": "Extend canonical_evaluation to generate and persist account-conserving split/component and hybrid/anchor candidates; do not reactivate a parallel engine."
+    },
+    {
+      "order": 6,
+      "action": "Wire existing treaty eligibility into canonical generation while keeping treaty existence, structure qualification and domestic incentive eligibility separate."
+    },
+    {
+      "order": 7,
+      "action": "Wire selective funds as conditional zero-guaranteed-NPC nodes and deterministic formula/fixed awards only with explicit stacking/aid rules."
+    },
+    {
+      "order": 8,
+      "action": "Add generic project inputs for relocation normalization, in-kind replacement and researched reinvestment treatment; UNKNOWN remains zero plus disclosure."
+    }
+  ]
+}
