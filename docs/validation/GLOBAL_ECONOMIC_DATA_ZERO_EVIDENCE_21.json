@@ -131,7 +131,14 @@
       "reason_outside_the_73": "No RateRule/DoctrineRecord/profile/catalog entry exists. Distinct from ca_on_opstc (the Ontario Production Services Tax Credit, VERIFIED via batch 3) — OFTTC is the separate Ontario-content-certified credit (parallel to the CPTC/PSTC federal split), never separately encoded.",
       "existing_historical_evidence": "None found in any canonical data source.",
       "indispensable_economic_proposition_needed": "OFTTC's current rate (distinct from OPSTC's 21.5%), Ontario-content certification requirements, minimum spend, and cap, per Ontario Creates' official guidance.",
-      "primary_source_research_required": true
+      "primary_source_research_required": true,
+      "RESOLVED": {
+        "status": "Researched from scratch and canonicalized (Global Formulaic Economic Completion, Path B)",
+        "source": "ontariocreates.ca/tax-incentives/ofttc (Ontario Creates, official, fetched directly)",
+        "rate_confirmed": "35% of eligible Ontario labour expenditures; 40% enhanced rate on first $240,000 for first-time producers (not modeled); 10% regional bonus outside GTA (not modeled)",
+        "confidence_tier": "VERIFIED",
+        "known_limitation": "Shares jurisdiction_code CA-ON with ca_on_opstc; production_discovery.py's discover_executable_jurisdictions() maps one examination per jurisdiction_code, so on_ofttc does not yet reach its own independent priced candidate structure in served runtime — canonically correct and unblocked at the data layer, but a real discovery-layer limitation (deliberately deferred, see authority_coverage_registry.py's on_ofttc CORRECTION note) prevents it from being independently served alongside ca_on_opstc."
+      }
     },
     {
       "canonical_program_id": "ontario_computer_animation_and_special_effects_tax_credit_ocase",
@@ -181,6 +188,8 @@
       "new_zealand_screen_production_grant_—_international_post_vfx",
       "qc_film_production"
     ],
-    "note": "19 of the 21 have literally zero data in any canonical source this project maintains (RateRule, DoctrineRecord, jurisdiction_comparison profile, or global_inventory catalog). 2 have an adjacent citation or codebase reference that has not been individually confirmed to apply to this specific canonical_program_id — both still require primary-source research before either identity-merge or rate promotion. All 21 require primary-source research; none can be recovered via the recover-before-research method this task's batches 1-3 used."
+    "resolved_via_path_b_primary_research": 1,
+    "resolved_program_ids": ["on_ofttc"],
+    "note": "Of the original 21: 1 (on_ofttc) has since been researched from scratch and canonicalized (see its RESOLVED field above) -- VERIFIED tier, real DoctrineRecord/RateRule/SourceProvenance, coverage veto removed, though a disclosed discovery-layer limitation currently prevents it from being independently served alongside ca_on_opstc (same jurisdiction_code). Of the remaining 20: 18 have literally zero data in any canonical source this project maintains (RateRule, DoctrineRecord, jurisdiction_comparison profile, or global_inventory catalog). 2 have an adjacent citation or codebase reference that has not been individually confirmed to apply to this specific canonical_program_id — both still require primary-source research before either identity-merge or rate promotion."
   }
 }

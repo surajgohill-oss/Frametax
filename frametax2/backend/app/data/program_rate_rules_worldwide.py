@@ -994,6 +994,96 @@ CA_ON_DOCTRINE = register(DoctrineRecord(
 ))
 register_rate_rules(rate_rules_for(CA_ON_DOCTRINE))
 
+# ── Canada — Ontario: Ontario Film and Television Tax Credit (OFTTC) ───────
+#
+# NEW jurisdiction (Global Formulaic Economic Completion, Path B primary
+# research this task). Distinct from ca_on_opstc (Ontario Production
+# Services Tax Credit, a service credit with no Canadian-content
+# requirement) -- OFTTC is Ontario's Canadian-content-certified credit,
+# parallel to the federal CPTC/PSTC split. Confirmed directly from
+# ontariocreates.ca/tax-incentives/ofttc (Ontario Creates, official,
+# fetched directly): base rate "35% of the eligible Ontario labour
+# expenditures", enhanced "40% on the first $240,000 of qualifying labour
+# expenditure" for first-time producers (not modeled -- no first-time-
+# producer fact exists in this engine), and a "10% bonus on all Ontario
+# labour expenditures" for productions shot outside the Greater Toronto
+# Area (not modeled -- no shooting-location fact exists in this engine).
+# The fetched page did not state refundability/transferability, a general
+# minimum spend for standard productions (only a narrow "alternative
+# means"/streaming-specific threshold was found, not modeled as a general
+# gate), Canadian-content certification specifics, or a maximum cap --
+# all disclosed as unconfirmed rather than assumed.
+_ON_OFTTC_CITATION = (
+    "ontariocreates.ca/tax-incentives/ofttc (Ontario Creates, official, "
+    "fetched directly): '35% of the eligible Ontario labour expenditures "
+    "incurred by a qualifying production company.' Enhanced 40% rate on "
+    "the first $240,000 of qualifying labour expenditure for first-time "
+    "producers (not modeled). 10% regional bonus for productions shot "
+    "outside the Greater Toronto Area (not modeled -- no shooting-"
+    "location fact exists in this engine). Jointly administered by "
+    "Ontario Creates and CRA. Refundability, transferability, Canadian-"
+    "content certification specifics, general minimum spend, and a "
+    "maximum cap were not stated on the page fetched -- disclosed as "
+    "unconfirmed, not assumed."
+)
+ON_OFTTC_DOCTRINE = register(DoctrineRecord(
+    jurisdiction_code="CA-ON",
+    program_slug="on_ofttc",
+    program_name="Ontario Film and Television Tax Credit (OFTTC)",
+    confidence_tier="VERIFIED",
+    incentive_type="tax_credit",
+    is_refundable=None,
+    is_transferable=None,
+    min_spend_usd=None,
+    annual_cap_usd=None,
+    requires_cultural_test=True,   # OFTTC is Ontario's Canadian-content-
+                                    # certified credit by definition (the
+                                    # program's core distinguishing feature
+                                    # from ca_on_opstc) -- structural fact
+                                    # about the program type, not itself
+                                    # re-confirmed from the page fetched.
+    citation=_ON_OFTTC_CITATION,
+    source_ref="ontariocreates.ca-OFTTC",
+    provenance=SourceProvenance(
+        issuing_authority="Ontario Creates (jointly administered with "
+                           "the CRA)",
+        source_url="https://www.ontariocreates.ca/tax-incentives/ofttc",
+        citation_detail="'35% of the eligible Ontario labour "
+                         "expenditures incurred by a qualifying "
+                         "production company'",
+        verified_date="2026-08-17",
+        interpretation_note="First-time-producer enhanced rate (40% on "
+                             "first $240,000) and the 10% outside-GTA "
+                             "regional bonus are real but not modeled -- "
+                             "no first-time-producer or shooting-location "
+                             "fact exists in this engine. Refundability/"
+                             "transferability/cap were not stated on the "
+                             "page fetched.",
+    ),
+    tiers=(
+        DoctrineRateTier(
+            tier_id="on-ofttc-base-35",
+            rate=0.35,
+            is_band_ceiling=False,
+            conditions=(
+                RateCondition(
+                    condition_id="on-ofttc-cancon-cert",
+                    description="Requires Canadian-content certification "
+                                "(the distinguishing feature vs. "
+                                "ca_on_opstc) -- exact points-test "
+                                "criteria not confirmed from the page "
+                                "fetched",
+                    quote="qualifying production company with respect to "
+                          "an eligible Ontario production "
+                          "(ontariocreates.ca)",
+                    kind="cultural_test_required",
+                ),
+            ),
+        ),
+    ),
+))
+register_rate_rules(rate_rules_for(ON_OFTTC_DOCTRINE))
+
 # ── Canada — Quebec: Tax Credit for Film Production Services ───────────────
 #
 # NEW jurisdiction. Base rate confirmed (25% on "all-spend" costs —

@@ -56,6 +56,9 @@ DELIBERATELY_PROMOTED_CANONICAL_IDS = frozenset({
     # us_ca_film_credit itself was never a canonical-corpus id (the corpus
     # only named the alias "ca_film_30"), so it is not listed here.
     "cy_film_rebate", "ie_section_481", "ca_film_30",
+    # Path B primary research: on_ofttc (one of the original 21 zero-
+    # evidence programs, researched from scratch and canonicalized).
+    "on_ofttc",
 })
 
 

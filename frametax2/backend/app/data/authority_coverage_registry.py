@@ -99,6 +99,31 @@ than the one modeled (be_tax_shelter/finance.belgium.be describes the
 investor-side 310% exemption, not the producer-net 42-44% this engine
 models) -- held, not promoted on inconclusive or mismatched evidence.
 
+CORRECTION (Global Formulaic Economic Completion, Path B primary
+research): on_ofttc removed. This was one of the 21 genuinely-zero-
+evidence programs (see docs/validation/GLOBAL_ECONOMIC_DATA_ZERO_
+EVIDENCE_21.json) -- researched from scratch this task via a direct
+fetch of ontariocreates.ca/tax-incentives/ofttc (Ontario Creates,
+official): base rate "35% of the eligible Ontario labour expenditures".
+A new DoctrineRecord was canonicalized (program_rate_rules_worldwide.py)
+with structured SourceProvenance, VERIFIED tier. KNOWN LIMITATION,
+disclosed not silently worked around: on_ofttc shares jurisdiction_code
+CA-ON with the already-priced ca_on_opstc. production_discovery.py's
+discover_executable_jurisdictions() maps one examination per
+jurisdiction_code (feasibility_by_code = {e.jurisdiction_code: e for e
+in examinations}), so on_ofttc does not yet reach its own independent
+priced candidate structure in served runtime -- it is shadowed by
+ca_on_opstc's structure for the same code. Extending discovery to
+support multiple programs per jurisdiction_code was investigated and
+explicitly reverted in an earlier task (see CAPABILITY_LEDGER.md) because
+it silently corrupts feasibility_by_code and can create duplicate
+ProductionStructure rows -- a real fix requires solving both issues
+together, deliberately out of scope for this data-only task. on_ofttc is
+therefore canonically correct and unblocked at the data layer (removed
+from this registry, real VERIFIED RateRule, real provenance) but not yet
+independently served -- a genuine, disclosed discovery-layer residual,
+not a data/authority gap.
+
 Originally added by the Consolidated Global Remediation for 29 records
 (25 authority-insufficient + 4 non-economic). EXPANDED by the Global Data
 Application phase to carry every canonical disposition from
@@ -352,7 +377,6 @@ _ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("nohfc_production_fund", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Ontario", "Northern Ontario Heritage Fund — Production Fund"),
     ("nordic_ftvf", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Nordic Region / Nordic Region", "Nordisk Film & TV Fond"),
     ("om_film_commission", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Oman", "om_film_commission"),
-    ("on_ofttc", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Ontario", "Ontario Film and Television Tax Credit"),
     ("ontario_computer_animation_and_special_effects_tax_credit_ocase", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Ontario", "Ontario Computer Animation and Special Effects Tax Credit (OCASE)"),
     ("or_opif", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / Oregon", "Oregon Production Investment Fund (OPIF)"),
     ("pa_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Panama", "Panama Film Commission Production Facilitation"),

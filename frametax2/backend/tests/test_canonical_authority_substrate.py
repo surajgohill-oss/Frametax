@@ -965,6 +965,54 @@ def test_batch1_2_3_promoted_programs_carry_structured_provenance():
             assert rule.provenance.issuing_authority == prov.issuing_authority
 
 
+# ── Global Formulaic Economic Completion — Path B primary research:
+# on_ofttc (one of the original 21 zero-evidence programs). ─────────────
+
+def test_on_ofttc_researched_from_scratch_and_canonicalized():
+    """Path B: on_ofttc had zero data of any kind (see
+    docs/validation/GLOBAL_ECONOMIC_DATA_ZERO_EVIDENCE_21.json). Researched
+    directly from ontariocreates.ca/tax-incentives/ofttc (Ontario Creates,
+    official, fetched directly) this task: 35% base rate. A real
+    DoctrineRecord/RateRule with structured SourceProvenance now exists
+    and the coverage veto is removed."""
+    from app.data.executable_jurisdiction_registry import get_doctrine, get_provenance
+    from app.data.program_rate_rules import get_rate_rules
+    from app.data.authority_coverage_registry import blocks_economic_candidacy
+
+    assert blocks_economic_candidacy("on_ofttc") is False
+    doc = get_doctrine("on_ofttc")
+    assert doc is not None
+    assert doc.confidence_tier == "VERIFIED"
+    rules = get_rate_rules("on_ofttc")
+    assert rules and rules[0].rate == 0.35
+    prov = get_provenance("on_ofttc")
+    assert prov is not None and prov.issuing_authority == "Ontario Creates (jointly administered with the CRA)"
+
+
+async def test_on_ofttc_not_yet_independently_served_due_to_jurisdiction_code_collision(db: AsyncSession):
+    """Disclosed, not silently worked around: on_ofttc shares jurisdiction_
+    code CA-ON with the already-priced ca_on_opstc. discover_executable_
+    jurisdictions() maps one examination per jurisdiction_code, so CA-ON's
+    served structure is still ca_on_opstc's, not on_ofttc's. This test
+    documents the current, real behavior so a future discovery-layer
+    repair (extending to multiple programs per jurisdiction_code -- see
+    authority_coverage_registry.py's on_ofttc CORRECTION note for why that
+    repair was deliberately deferred) is verified against a real
+    assertion instead of silently changing behavior."""
+    await evaluate_project(db, FVD_PROJECT_ID)
+    view = await build_production_and_structures(db, FVD_PROJECT_ID)
+    entries = view["structures"]["allocated_structures"]["structures"]
+    ca_on_entries = [e for e in entries if e["primary_jurisdiction"] == "CA-ON"]
+    assert len(ca_on_entries) == 1, (
+        "if this now returns >1, on_ofttc has started reaching its own "
+        "candidate structure -- update this test to assert both, and "
+        "update the CORRECTION note's 'known limitation' framing"
+    )
+    segs = ca_on_entries[0]["segments"]
+    programs_used = {sg["program_slug"] for sg in segs if sg.get("program_slug")}
+    assert "ca_on_opstc" in programs_used
+
+
 # ── Global Formulaic Economic Completion — batch 4: fresh direct-WebFetch
 # primary-source verification (Cyprus, Ireland, California). ────────────
 
