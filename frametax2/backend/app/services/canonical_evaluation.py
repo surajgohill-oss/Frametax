@@ -94,7 +94,10 @@ from app.services.canonical_project_economics import (
 # Global Economic Data + Base Pricing, batch 1: 8 more programs promoted
 # PARSED -> VERIFIED and their coverage vetoes removed (see authority_
 # coverage_registry.py's correction note). Cache-invalidation bump only.
-ENGINE_VERSION = "canonical-1.6.0"
+# Global Economic Data + Base Pricing, batch 2: sa_film_commission_rebate
+# and si_cash_rebate promoted PARSED -> VERIFIED, coverage vetoes
+# removed. Cache-invalidation bump only.
+ENGINE_VERSION = "canonical-1.7.0"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "

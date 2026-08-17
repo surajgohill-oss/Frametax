@@ -42,6 +42,16 @@ side-detail), were deliberately left PARSED and still vetoed — promotion
 requires the SPECIFIC figure being relied on to be primary-sourced, not
 just some field on the same program.
 
+CORRECTION (Global Economic Data + Base Pricing, batch 2): 2 more rows
+removed (4 counting alias spellings) after fresh primary-source
+verification this task: sa_film_commission_rebate/sa_sfc_rebate (film.sa,
+official, independently re-fetched directly this task — 60% flat rebate,
+min spend SAR 750,000 feature/187,000 doc-animation, confirming a PRIOR
+session's own direct fetch of the same page exactly) and si_cash_rebate/
+si_film_incentive (filminslovenia.si, official — up to 25%, confirmed via
+a fresh search this task reproducing the same quoted figure the existing
+citation's own direct fetch had already recorded).
+
 Originally added by the Consolidated Global Remediation for 29 records
 (25 authority-insufficient + 4 non-economic). EXPANDED by the Global Data
 Application phase to carry every canonical disposition from
@@ -337,13 +347,9 @@ _ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("ro_film_office_cash_rebate", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Romania", "Romanian Film Office Cash Rebate [runtime slug of ro_cnc_rebate]"),
     ("rs_film_commission_cash_rebate", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Serbia", "Serbia Film Commission Cash Rebate [runtime slug of rs_film_rebate]"),
     ("rs_film_rebate", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Serbia", "Serbia Film Commission Cash Rebate"),
-    ("sa_film_commission_rebate", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Saudi Arabia", "Saudi Film Commission (SFC) — Production Rebate [runtime slug of sa_sfc_rebate]"),
-    ("sa_sfc_rebate", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Saudi Arabia", "Saudi Film Commission (SFC) — Production Rebate"),
     ("sc_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Seychelles", "sc_film_incentive"),
     ("se_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Sweden", "Sweden Film Commission Production Rebate"),
     ("se_production_rebate", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Sweden", "Sweden Film Commission Production Rebate [runtime slug of se_film_incentive]"),
-    ("si_cash_rebate", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Slovenia", "Slovenian Film Centre (SFC) Cash Rebate and Production Support [runtime slug of si_film_incentive]"),
-    ("si_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Slovenia", "Slovenian Film Centre (SFC) Cash Rebate and Production Support"),
     ("sk_avf_production_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Slovakia", "Slovak Audiovisual Fund (AVF) Production Incentive [runtime slug of sk_film_incentive]"),
     ("sk_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Slovakia", "Slovak Audiovisual Fund (AVF) Production Incentive"),
     ("sn_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Senegal", "sn_film_incentive"),

@@ -429,16 +429,15 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     (110) and the feasibility-disclosure controls below are unchanged —
     the feasibility/eligibility repair invariant this test originally
     proved still holds. The priced count legitimately moved 30 -> 31
-    (Georgia, Global Priceability Optimizer Restoration) -> 39 (Global
-    Economic Data + Base Pricing, this task: 8 more programs whose
-    existing PARSED-tier RateRule citations were individually
-    re-examined, found to already meet the primary-source bar this
-    project uses for VERIFIED -- fetched directly from the administering
-    government's own page, specific quoted rate language -- and promoted;
-    their coverage vetoes were the only remaining blocker, exactly like
-    Georgia). See authority_coverage_registry.py's correction notes and
-    test_batch1_programs_price_with_real_numbers_in_fvd for the traced,
-    real-number proof. No soft feasibility mismatch may remove a
+    (Georgia, Global Priceability Optimizer Restoration) -> 39 (batch 1:
+    8 programs whose existing PARSED-tier RateRule citations were
+    individually re-examined and found to already meet the primary-source
+    bar this project uses for VERIFIED) -> 41 (batch 2: sa_film_
+    commission_rebate and si_cash_rebate, freshly re-verified this task
+    against their official sources). See authority_coverage_registry.py's
+    correction notes and test_batch1_programs_price_with_real_numbers_in_
+    fvd / test_batch2_programs_price_with_real_numbers_in_fvd for the
+    traced, real-number proof. No soft feasibility mismatch may remove a
     candidate from the economic universe."""
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
@@ -446,8 +445,8 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     priced = [e for e in entries if e["is_fully_priced"]]
     unpriced = [e for e in entries if not e["is_fully_priced"]]
     assert len(entries) == 110
-    assert len(priced) == 39
-    assert len(unpriced) == 71
+    assert len(priced) == 41
+    assert len(unpriced) == 69
 
     for code in ("MN", "UZ", "AT"):
         e = next(x for x in entries if x["primary_jurisdiction"] == code)
@@ -806,3 +805,36 @@ async def test_batch1_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
         assert e["npc_verified_usd"] is not None and e["npc_verified_usd"] > 0
         seen_incentives.add(e["selected_incentive_usd"])
     assert len(seen_incentives) > 1, "all 8 programs priced identically -- suspicious, check for a copy-paste QPE bug"
+
+
+# ── Global Economic Data + Base Pricing — batch 2: fresh primary-source
+# re-verification (Saudi Arabia, Slovenia). ──────────────────────────────
+
+def test_batch2_doctrine_records_promoted_to_verified():
+    from app.data.executable_jurisdiction_registry import get_doctrine
+    for slug in ("sa_film_commission_rebate", "si_cash_rebate"):
+        doc = get_doctrine(slug)
+        assert doc is not None
+        assert doc.confidence_tier == "VERIFIED"
+
+
+def test_batch2_coverage_veto_removed_including_alias_spellings():
+    from app.data.authority_coverage_registry import blocks_economic_candidacy
+    for canonical, alias in (
+        ("sa_film_commission_rebate", "sa_sfc_rebate"),
+        ("si_cash_rebate", "si_film_incentive"),
+    ):
+        assert blocks_economic_candidacy(canonical) is False
+        assert blocks_economic_candidacy(alias) is False
+
+
+async def test_batch2_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
+    await evaluate_project(db, FVD_PROJECT_ID)
+    view = await build_production_and_structures(db, FVD_PROJECT_ID)
+    entries = view["structures"]["allocated_structures"]["structures"]
+    for code in ("SA", "SI"):
+        e = next(x for x in entries if x["primary_jurisdiction"] == code)
+        assert e["is_fully_priced"] is True, f"{code} did not price"
+        assert e["candidate_status"] == "PRICED"
+        assert e["selected_incentive_usd"] > 0
+        assert e["npc_verified_usd"] is not None and e["npc_verified_usd"] > 0

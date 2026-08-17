@@ -2080,7 +2080,15 @@ SA_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="SA",
     program_slug="sa_film_commission_rebate",
     program_name="Saudi Film Commission Production Rebate",
-    confidence_tier="PARSED",
+    # Global Economic Data + Base Pricing, batch 2: promoted PARSED ->
+    # VERIFIED. Independently re-fetched film.sa/incentive-programs/
+    # directly this task and confirmed the SAME figures the 2026-07-26
+    # reconciliation note below already recorded from its own direct
+    # fetch of the same official page: 60% flat rebate, min spend SAR
+    # 750,000 (feature)/187,000 (doc/animation), no stated cap, min 5
+    # filming days. Two independent direct fetches of the same primary
+    # source agreeing is the strongest confirmation this registry uses.
+    confidence_tier="VERIFIED",
     incentive_type="cash_rebate",
     is_refundable=True,
     is_transferable=False,
@@ -3162,7 +3170,13 @@ SI_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="SI",
     program_slug="si_cash_rebate",
     program_name="Slovenia Cash Rebate Scheme",
-    confidence_tier="PARSED",
+    # Global Economic Data + Base Pricing, batch 2: promoted PARSED ->
+    # VERIFIED. Independently re-confirmed this task: filminslovenia.si
+    # (official, linked to the Slovenian Film Centre) states "cash rebate
+    # amounts up to 25% of the total acknowledged expenses" -- the same
+    # figure and source the existing citation below already recorded from
+    # its own direct fetch.
+    confidence_tier="VERIFIED",
     incentive_type="cash_rebate",
     is_refundable=True,
     is_transferable=False,
