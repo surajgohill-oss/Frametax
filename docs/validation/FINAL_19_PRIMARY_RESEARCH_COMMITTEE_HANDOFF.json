@@ -1,0 +1,643 @@
+{
+  "title": "Final 19 zero-evidence programs — primary research committee handoff",
+  "generated_at": "2026-08-17",
+  "final_gate": "FINAL_19_PRIMARY_RESEARCH_READY_FOR_COMMITTEE",
+  "objective": "Fresh external primary-source research on the 19 genuine zero-evidence residual programs (docs/validation/GLOBAL_ECONOMIC_DATA_ZERO_EVIDENCE_21.json minus the 2 already resolved: on_ofttc, ocase). NO implementation performed -- this artifact is the handoff to independent Codex/Gemini committee review before any canonicalization.",
+  "denominator": {
+    "population_source": "docs/validation/GLOBAL_ECONOMIC_DATA_ZERO_EVIDENCE_21.json (21 named programs) minus 2 already RESOLVED (on_ofttc, ocase) = 19",
+    "expected": 19,
+    "researched": 19,
+    "unexplained": 0
+  },
+  "accounting_84_reconciliation": {
+    "summary": "Mechanically traced via git history and JSON artifact diffing. Conclusion: the exact missing 84th identity is NOT recoverable, and is very likely NOT a real missing program -- it is population drift from computing len(BLOCKED_SLUGS)-style counts against a live, continuously-edited coverage registry at different commits, filtered to a 'formulaic_total' classification that was never itself persisted as a literal name list anywhere in the repo.",
+    "trace": [
+      "docs/validation/GLOBAL_BASE_PRICEABILITY_CLOSEOUT.json (commit 8c31418): formulaic_total=126, priced_before=31, priced_after=32, economic_input_genuinely_missing=94 -- the ORIGIN of the '94' figure. Its own genuinely_missing_economic_inputs.count=94 is a bare integer with NO literal name list attached (meaning field only, no 'programs' array).",
+      "docs/validation/GLOBAL_ECONOMIC_DATA_BASE_PRICING_CLOSEOUT.json (commit 9f7c5cf): formulaic_total=126, priced_before=32 (matches prior priced_after), priced_after=42 (confirms 10 resolved in between -- 'already-Georgia-class-resolved', matching the denominator_reconciliation_note's '94 minus 10 = 84'), genuinely_missing_economic_input=84. This artifact DOES name 62 of the 84 explicitly (next_batch_candidates_with_existing_parsed_data) -- the remaining 22 were never individually listed here either, only implied by the count.",
+      "docs/validation/GLOBAL_ECONOMIC_DATA_ZERO_EVIDENCE_21.json (commit 34b4783): derives its 21 Path-B programs from a DIFFERENT stated basis ('94 originally blocked formulaic programs MINUS 73 with cited PARSED-tier historical data = 21'), using 94 and 73 directly rather than 84 and 62 -- a second, inconsistent accounting basis appears at this point (73 != 62), suggesting the Path-A/Path-B split was recomputed against the registry's THEN-current state rather than reconciled against the original 84-artifact's own 62-name list.",
+      "Attempted direct set-difference: extracted the literal BLOCKED_SLUGS at commit 8c31418 via `git show` + regex parse of authority_coverage_registry.py's _ROWS tuple. Result: 245 total blocked slugs at that commit (spanning ALL blocking states -- UNPRICEABLE_AUTHORITY_INSUFFICIENT, NON_GUARANTEED_SELECTIVE, NON_ECONOMIC, NO_CURRENT_INCENTIVE, SUPERSEDED, DUPLICATE, CANONICAL_DATA_HANDOFF_DEFECT), not 94 or 126. This confirms the 94/126 figures were filtered to a narrower 'formulaic classification' universe that has never existed as a standalone persisted list -- there is no artifact in this repository's history, at any commit, that names all 84 (or 94, or 126) programs literally. The count was always a live, point-in-time derived number."
+    ],
+    "conclusion": "The historical 84 count is very likely internally consistent at the moment it was computed but is not independently reconstructable to an exact named list with the tools available (no snapshot of the 'formulaic_total=126' classification exists as literal names at that commit). This is a genuine, disclosed pre-existing gap in this project's own record-keeping discipline -- not evidence of a hidden/lost program, and not something this task's own denominator depends on: the 19-program population for THIS task is independently and directly enumerable from GLOBAL_ECONOMIC_DATA_ZERO_EVIDENCE_21.json (21 minus 2 resolved = 19), verified by direct enumeration in Phase A below, with zero ambiguity.",
+    "denominator_correction_required": false
+  },
+  "programs": [
+    {
+      "canonical_program_id": "ar_incaa_incentive",
+      "jurisdiction": "Argentina",
+      "program_name": "INCAA (Instituto Nacional de Cine y Artes Audiovisuales) -- as originally scoped",
+      "current_status": "IDENTITY_MISMATCH -- INCAA itself operates no foreign-production cash rebate or tax incentive",
+      "program_type": "NON_ECONOMIC",
+      "economic_propositions": {
+        "rate_formula": null,
+        "qpe_basis": null,
+        "territoriality": null,
+        "minimum_spend": null,
+        "cap": null,
+        "uplift": null,
+        "monetization": null,
+        "other": "The REAL formulaic incentive in Argentina exists at the Buenos Aires CITY level -- BA Producción Internacional (BA Cash Rebate), administered by the Buenos Aires City Government / Buenos Aires Film Commission (BAFC), NOT by INCAA. Reported rate: up to 25% cash rebate on eligible local spend, cap ARS 440 million per project, minimum eligible spend ARS 200 million, minimum 4 filming days in the City. Rio Negro province separately launched its own ~15-25% rebate in 2026."
+      },
+      "requirements": ["4+ days filming in Buenos Aires City (for BA Producción Internacional)", "minimum eligible spend ARS 200 million"],
+      "source_provenance": {
+        "issuing_authority": "Buenos Aires City Government / Buenos Aires Film Commission (BAFC) -- NOT INCAA",
+        "official_url": "https://bafc.buenosaires.gob.ar/cash-rebate ; https://buenosaires.gob.ar/ba-produccion-internacional",
+        "citation_detail": "Official BAFC/City of Buenos Aires portals confirmed reachable; exact rate/cap figures corroborated by multiple secondary sources (Hollywood Reporter, Screen Daily, PRODU.com) but direct WebFetch of the BAFC cash-rebate subpage returned only general navigation text, not the rate table itself.",
+        "verified_date": "2026-08-17",
+        "date_verified": "2026-08-17"
+      },
+      "interpretation_notes": "The canonical_program_id name/scope (INCAA) does not match any real economic mechanism. INCAA is a regulatory/co-production body, not a rebate administrator. Argentina's real formulaic incentive is sub-national (city/province), administered by a completely different authority.",
+      "open_questions": ["Should this identity be reclassified/renamed to a Buenos Aires-specific canonical_program_id (e.g. ar_ba_produccion_internacional), or should ar_incaa_incentive be retired entirely as NON_ECONOMIC and the Buenos Aires program added as a genuinely new identity?", "Exact current rate table not confirmed via primary-source direct fetch (BAFC subpage did not surface figures on WebFetch) -- needs a follow-up fetch attempt or the official PDF bases document."],
+      "proposed_canonical_treatment": "MISCLASSIFIED_PROGRAM -- reclassify ar_incaa_incentive as NON_ECONOMIC (no INCAA-administered foreign rebate exists); optionally register a NEW, separate identity for BA Producción Internacional under Buenos Aires City / BAFC once rate figures are primary-confirmed.",
+      "proposed_priceability": "NON_ECONOMIC",
+      "committee_review_required": "YES"
+    },
+    {
+      "canonical_program_id": "au_nsw_screen",
+      "jurisdiction": "Australia / New South Wales",
+      "program_name": "Screen NSW Production Finance Fund (and related Made in NSW / Regional Filming Fund streams)",
+      "current_status": "RESEARCHED -- confirmed competitive/discretionary, not formulaic",
+      "program_type": "GRANT_FUND",
+      "economic_propositions": {
+        "rate_formula": "Calculated as a percentage of Qualifying NSW Production Expenditure (QNSWPE); Made in NSW TV Drama stream: up to 10% of Qualifying NSW Spend, capped at $1M. Documentary/Factual: up to 10% of QNSWPE. Regional Filming Fund: up to 10% of budgeted QRPE, capped at $200,000. Main Production Finance Fund: percentage of QNSWPE, capped at $850,000 per project.",
+        "qpe_basis": "Qualifying NSW Production Expenditure (QNSWPE) / Qualifying NSW Spend / Qualifying Regional Production Expenditure (QRPE), stream-dependent",
+        "territoriality": "NSW-incurred spend",
+        "minimum_spend": null,
+        "cap": "$850,000 (Production Finance Fund) / $1,000,000 (Made in NSW TV Drama) / $200,000 (Regional Filming Fund) -- stream-dependent",
+        "uplift": null,
+        "monetization": "grant (not a tax credit or rebate)",
+        "other": "Assessed against merit criteria including an explicit 'Contribution to diversity (10%)' scoring weight -- confirms competitive/discretionary assessment, not automatic entitlement."
+      },
+      "requirements": ["Merit-based application, assessed by Screen NSW against published criteria (including diversity contribution)"],
+      "source_provenance": {
+        "issuing_authority": "Screen NSW (NSW Government)",
+        "official_url": "https://www.screen.nsw.gov.au/funding-support/production-fund ; https://content.screen.nsw.gov.au/assets/Program-Documents/Production-Finance-Guidelines_20251210.pdf",
+        "citation_detail": "Official screen.nsw.gov.au and content.screen.nsw.gov.au URLs identified and confirmed to exist via search; direct WebFetch of both the HTML page (403) and the PDF guidelines (403) were blocked. Figures corroborated via search-engine snippets that directly quote the guidelines document (grants.com.au, Avant Group, Digby Law industry-update commentary).",
+        "verified_date": "2026-08-17",
+        "date_verified": "2026-08-17"
+      },
+      "interpretation_notes": "This is a competitive grant program with published assessment criteria, explicitly NOT a guaranteed formulaic rebate -- distinct in character from the federal Location Offset (au_location_offset), which IS a guaranteed statutory rebate. Do not conflate the two.",
+      "open_questions": ["Official screen.nsw.gov.au domain returned 403 on direct WebFetch both for the HTML page and the PDF guidelines -- primary-source text not directly quoted; figures are PARSED-tier via convergent secondary corroboration only."],
+      "proposed_canonical_treatment": "SELECTIVE_DISCRETIONARY / GRANT_FUND -- preserve for later optimizer/grants-fund restoration; do not model as a deterministic base-pricing rate.",
+      "proposed_priceability": "GRANT_FUND",
+      "committee_review_required": "YES"
+    },
+    {
+      "canonical_program_id": "au_qld_screen_qld",
+      "jurisdiction": "Australia / Queensland",
+      "program_name": "Screen Queensland Production Attraction Strategy (PAS) Incentive",
+      "current_status": "RESEARCHED -- confirmed explicitly discretionary",
+      "program_type": "GRANT_FUND",
+      "economic_propositions": {
+        "rate_formula": "Calculated as a percentage of Qualifying Queensland Production Expenditure (QPE); exact percentage explicitly NOT fixed -- 'at the discretion of the Screen Queensland Board and is subject to the availability of funding at the time of application.'",
+        "qpe_basis": "Qualifying Queensland Production Expenditure",
+        "territoriality": "Queensland-incurred spend",
+        "minimum_spend": "AU$3.5 million minimum production spend within Queensland (reported)",
+        "cap": null,
+        "uplift": null,
+        "monetization": "discretionary grant",
+        "other": "A separate 'Screen Finance Fund' product line was reported with a 12-15% QPE range, but this is described as distinct from the discretionary PAS incentive itself."
+      },
+      "requirements": ["Minimum AU$3.5M QLD spend", "Board discretion / funding availability at time of application"],
+      "source_provenance": {
+        "issuing_authority": "Screen Queensland (Queensland Government)",
+        "official_url": "https://screenqueensland.com.au/investment-support/incentives/production-attraction/ ; https://screenqueensland.com.au/app/uploads/2025/06/PAS-Incentive_Guidelines_June-2025-Final.pdf",
+        "citation_detail": "Official screenqueensland.com.au PDF guidelines URL identified via search (PAS-Incentive_Guidelines_June-2025-Final.pdf); page content and discretionary language ('at the discretion of the Screen Queensland Board') directly quoted from search-engine summary of the official guidelines. Direct WebFetch not separately attempted for this program given the explicit-discretion finding was already unambiguous from the search summary.",
+        "verified_date": "2026-08-17",
+        "date_verified": "2026-08-17"
+      },
+      "interpretation_notes": "The program's OWN guidelines state the incentive amount is discretionary and subject to funding availability -- this is a textbook non-formulaic program even though a QPE percentage basis is referenced. Do not force a flat rate.",
+      "open_questions": ["Exact rate range actually awarded historically not confirmed -- would require reading the full PAS guidelines PDF directly."],
+      "proposed_canonical_treatment": "SELECTIVE_DISCRETIONARY / GRANT_FUND",
+      "proposed_priceability": "SELECTIVE_DISCRETIONARY",
+      "committee_review_required": "NO"
+    },
+    {
+      "canonical_program_id": "au_vic_vicscreen",
+      "jurisdiction": "Australia / Victoria",
+      "program_name": "VicScreen Victorian Screen Incentive (VSI) / Victorian Production Fund",
+      "current_status": "RESEARCHED -- confirmed competitive grant",
+      "program_type": "GRANT_FUND",
+      "economic_propositions": {
+        "rate_formula": "Victorian Screen Incentive (VSI): up to 10% of Qualifying Victorian Expenditure (QVE), combinable with federal offsets (Location/PDV/Official Co-production/Producer Offset). Victorian Production Fund: 3-10% of qualifying Victorian spend, generally capped at $500,000.",
+        "qpe_basis": "Qualifying Victorian Expenditure (QVE) / qualifying Victorian spend",
+        "territoriality": "Victoria-incurred spend",
+        "minimum_spend": null,
+        "cap": "$500,000 (Victorian Production Fund, general)",
+        "uplift": null,
+        "monetization": "grant",
+        "other": "Confirmed as 'a rolling fund' with 'grants generally paid upon project completion'; explicitly competitive -- 'applications will be assessed among other applications by a judging panel.'"
+      },
+      "requirements": ["Competitive assessment by a judging panel", "eligible spend cannot include expenditure made prior to application date"],
+      "source_provenance": {
+        "issuing_authority": "VicScreen (Victorian Government)",
+        "official_url": "https://vicscreen.vic.gov.au/funding/incentives",
+        "citation_detail": "Direct WebFetch of vicscreen.vic.gov.au/funding/incentives succeeded and confirmed: rolling fund, grants paid on completion, combinable with federal offsets. Exact percentage figures (10% VSI, 3-10% Production Fund) sourced from secondary corroboration (Avant Group, Grant'd) referencing the 'Victorian Screen Incentive Guidelines 2026-27' PDF which the fetched page links to but does not itself display inline.",
+        "verified_date": "2026-08-17",
+        "date_verified": "2026-08-17"
+      },
+      "interpretation_notes": "Judging-panel competitive assessment confirmed directly by official source language pattern ('rolling fund', 'grants') even though the exact percentage table required secondary corroboration.",
+      "open_questions": ["The 'Victorian Screen Incentive Guidelines 2026-27' PDF itself was not directly fetched -- would confirm exact current-year rate/cap figures."],
+      "proposed_canonical_treatment": "SELECTIVE_DISCRETIONARY / GRANT_FUND",
+      "proposed_priceability": "SELECTIVE_DISCRETIONARY",
+      "committee_review_required": "NO"
+    },
+    {
+      "canonical_program_id": "bc_interactive_digital_media_tax_credit_idmtc",
+      "jurisdiction": "Canada / British Columbia",
+      "program_name": "Interactive Digital Media Tax Credit (IDMTC)",
+      "current_status": "RESEARCHED -- fully confirmed via direct official primary fetch; OUT OF SCOPE for feature film/TV production types",
+      "program_type": "FORMULAIC_DETERMINISTIC (for interactive digital media only, not film/TV)",
+      "economic_propositions": {
+        "rate_formula": "25% of eligible salary and wages incurred after August 31, 2025 (17.5% before that date -- superseded)",
+        "qpe_basis": "Eligible salary and wages of a registered corporation developing interactive digital media products",
+        "territoriality": "BC-incurred eligible salary/wages",
+        "minimum_spend": "None specified",
+        "cap": "None specified",
+        "uplift": null,
+        "payroll_treatment": "Credit base IS payroll/labour cost directly (salary and wages), not a general all-spend QPE.",
+        "monetization": "Fully refundable, first applied against total income tax payable",
+        "other": "Eligible products: video games, educational software, edutainment, simulators, AR/VR products. EXCLUDED: gambling products (effective Sept 1, 2024) and non-interactive content (blogs, videos, streaming apps). This is a GAMES/INTERACTIVE-MEDIA credit, structurally out of scope for this engine's feature_film/TV production_types."
+      },
+      "requirements": ["Registered corporation developing IDM products", "claim filed within 18 months of tax year end"],
+      "source_provenance": {
+        "issuing_authority": "Province of British Columbia",
+        "official_url": "https://www2.gov.bc.ca/gov/content/taxes/income-taxes/corporate/credits/interactive-digital-media",
+        "citation_detail": "'25% of eligible salary and wages incurred after August 31, 2025' -- direct WebFetch of the official gov.bc.ca page succeeded and returned this exact quote plus refundability language ('The credit is fully refundable, but it is first applied against total income tax payable') and the eligible-products/exclusions list verbatim.",
+        "verified_date": "2026-08-17",
+        "date_verified": "2026-08-17"
+      },
+      "interpretation_notes": "Genuinely deterministic and fully primary-verified, but structurally distinct from ca_bc_pstc (BC's live-action/animation production services credit, already canonical). This is a games/interactive-media-only credit. The task's own preflight question -- 'whether it is even in scope for this engine's film/TV production_types' -- resolves to NO for ordinary feature film/TV productions.",
+      "open_questions": ["Would this engine ever need to support interactive/game production_types? If yes, this is ready for immediate VERIFIED-tier canonicalization with zero remaining gaps."],
+      "proposed_canonical_treatment": "NON_ECONOMIC for this engine's current feature_film/TV scope; OTHER_SUPPORTED_TYPE if game/interactive production types are ever added.",
+      "proposed_priceability": "NON_ECONOMIC",
+      "committee_review_required": "NO"
+    },
+    {
+      "canonical_program_id": "br_ancine_incentive",
+      "jurisdiction": "Brazil",
+      "program_name": "ANCINE (Agência Nacional do Cinema) -- as originally scoped",
+      "current_status": "IDENTITY_MISMATCH -- ANCINE is a regulatory/approval body, not a rebate administrator",
+      "program_type": "NON_ECONOMIC",
+      "economic_propositions": {
+        "rate_formula": null,
+        "qpe_basis": null,
+        "territoriality": null,
+        "minimum_spend": null,
+        "cap": null,
+        "uplift": null,
+        "monetization": null,
+        "other": "No federal-level structured cash rebate exists. Real formulaic rebates exist at the MUNICIPAL level: Rio de Janeiro (RioFilme, City Hall-owned) -- 30% of eligible expenses (35% if Rio is the primary location); tiered minimum spend BRL 2M/4M/10M and cap BRL 1M/2M/5M by 'Action Line' category. São Paulo (SPcine) -- separately reported 20-30% rebate."
+      },
+      "requirements": ["ANCINE authorization to film in Brazil (regulatory, not economic gate)", "partnership with a local production company", "RioFilme tiered minimum spend by Action Line: BRL 10M / 4M / 2M"],
+      "source_provenance": {
+        "issuing_authority": "RIOFILME (DISTRIBUIDORA DE FILMES S/A), operating under Rio de Janeiro City Hall -- NOT ANCINE",
+        "official_url": "https://www.riofilmcommission.com/en/cash-rebate/",
+        "citation_detail": "Direct WebFetch succeeded and returned exact figures: '30% (thirty percent)' / '35% (thirty-five percent)' for Rio-primary productions; tiered minimum spend and caps by Action Line 1/2/3 quoted verbatim in BRL.",
+        "verified_date": "2026-08-17",
+        "date_verified": "2026-08-17"
+      },
+      "interpretation_notes": "Same identity-mismatch pattern as ar_incaa_incentive -- the named national film agency does not itself administer an economic incentive; the real mechanism is municipal.",
+      "open_questions": ["Should br_ancine_incentive be reclassified NON_ECONOMIC and a new br_rj_riofilme (or br_sp_spcine) identity registered separately?"],
+      "proposed_canonical_treatment": "MISCLASSIFIED_PROGRAM -- reclassify br_ancine_incentive as NON_ECONOMIC; register RioFilme (and optionally SPcine) as new, separate identities.",
+      "proposed_priceability": "NON_ECONOMIC",
+      "committee_review_required": "YES"
+    },
+    {
+      "canonical_program_id": "ca_federal_cptc",
+      "jurisdiction": "Canada / Federal",
+      "program_name": "Canadian Film or Video Production Tax Credit (CPTC)",
+      "current_status": "RESEARCHED -- well-established, high-confidence, direct primary fetch blocked but extremely well-corroborated",
+      "program_type": "FORMULAIC_DETERMINISTIC",
+      "economic_propositions": {
+        "rate_formula": "25% of qualified labour expenditure",
+        "qpe_basis": "Qualified labour expenditure, capped at not more than 60% of production costs net of assistance",
+        "territoriality": "Canadian labour expenditure (Canadian-content-certified production)",
+        "minimum_spend": null,
+        "cap": "No stated dollar cap on the credit amount itself (only the 60%-of-production-cost labour-expenditure ceiling)",
+        "uplift": null,
+        "payroll_treatment": "Credit base is qualified LABOUR expenditure specifically, not all-spend",
+        "residency_treatment": "Requires CAVCO Canadian-content certification (points-test based)",
+        "monetization": "Fully refundable tax credit",
+        "other": "Distinct from ca_federal_pstc (Production Services Tax Credit, already canonical, no Canadian-content requirement) -- CPTC is the Canadian-content-certified parallel credit, structurally analogous to the CA-ON OFTTC/OPSTC split already modeled."
+      },
+      "requirements": ["CAVCO Canadian-content certification (points test)", "eligible Canadian production company"],
+      "source_provenance": {
+        "issuing_authority": "Canadian Audio-Visual Certification Office (CAVCO), jointly with Canada Revenue Agency (CRA)",
+        "official_url": "https://www.canada.ca/en/canadian-heritage/services/funding/cavco-tax-credits/canadian-film-video-production.html",
+        "citation_detail": "Direct WebFetch of both canada.ca pages (Canadian Heritage and CRA) returned HTTP 403. Rate/mechanics confirmed via search-engine snippet that itself quotes canada.ca directly: '25 per cent of the qualified labour expenditure', 'jointly administered by CAVCO and the Canada Revenue Agency', '60% of production costs (net of assistance)', 'no limit on the amount of tax credit'. This is one of the most widely and consistently documented Canadian federal incentives; convergent corroboration across CAVCO's own program guide, GrantCompass, and hellodarwin.com.",
+        "verified_date": "2026-08-17",
+        "date_verified": "2026-08-17"
+      },
+      "interpretation_notes": "High confidence despite the direct-fetch block -- the 25%/60%-labour-cap structure has been stable and consistently reported since program inception (1995) across every source consulted.",
+      "open_questions": ["A follow-up direct primary fetch attempt (different canada.ca subpage, or CAVCO's own PDF program guide) would upgrade this from PARSED to VERIFIED."],
+      "proposed_canonical_treatment": "PRICEABLE_FORMULAIC once VERIFIED-tier primary quote is obtained; ready for the same treatment already applied to ca_federal_pstc.",
+      "proposed_priceability": "PRICEABLE_FORMULAIC",
+      "committee_review_required": "YES"
+    },
+    {
+      "canonical_program_id": "ca_nl_production_fund",
+      "jurisdiction": "Canada / Newfoundland & Labrador",
+      "program_name": "All-Spend Film and Video Production Tax Credit (NL)",
+      "current_status": "RESEARCHED -- fully confirmed via direct official primary fetch; NOT a discretionary fund as originally suspected",
+      "program_type": "FORMULAIC_DETERMINISTIC",
+      "economic_propositions": {
+        "rate_formula": "40% of eligible production costs",
+        "qpe_basis": "Eligible salaries, eligible service contract expenditures, parent-subsidiary amounts, eligible tangible property expenditures, eligible accommodation expenditures -- an 'all-spend' basis",
+        "territoriality": "NL-incurred eligible costs",
+        "minimum_spend": "Not specified on the fetched page",
+        "cap": "$20 million annually per project (per the official gov.nl.ca page; one secondary source cited an older $10 million figure -- likely a since-increased cap, flagged as an open question)",
+        "uplift": null,
+        "monetization": "Refundable corporate income tax credit",
+        "other": "Registration gate: Part I application must be submitted to the Newfoundland and Labrador Film Development Corporation (NLFDC) BEFORE production begins; Part II claim filed with Finance within 18 months of tax year end. This directly resolves the original canonical_program_id's NLFDC association -- NLFDC handles registration even though Finance administers the credit itself."
+      },
+      "requirements": ["Part I registration with NLFDC prior to commencement of production", "Part II claim within 18 months of tax year end"],
+      "source_provenance": {
+        "issuing_authority": "Department of Finance (Government of Newfoundland and Labrador), with mandatory registration via the Newfoundland and Labrador Film Development Corporation (NLFDC)",
+        "official_url": "https://www.gov.nl.ca/fin/tax-programs-incentives/business/all-spend-film-and-video-production-tax-credit/",
+        "citation_detail": "Direct WebFetch of the official gov.nl.ca page succeeded and returned the exact quote: '40% of eligible production costs, to a maximum tax credit of $20 million annually per project', plus the full itemized qualifying-expenditure list and the Part I/Part II registration/claim process verbatim.",
+        "verified_date": "2026-08-17",
+        "date_verified": "2026-08-17"
+      },
+      "interpretation_notes": "The original artifact speculated this might be 'a discretionary/competitive equity investment fund' -- primary research disproves that: this is a guaranteed, formulaic, all-spend refundable tax credit, ready for canonicalization.",
+      "open_questions": ["Cap discrepancy: gov.nl.ca states $20 million; one secondary source (Entertainment Partners) referenced $10 million (possibly describing the cap before a subsequent increase, or a per-corporation vs. per-project distinction). Should be reconciled against the official regulation text before committing a cap figure."],
+      "proposed_canonical_treatment": "PRICEABLE_FORMULAIC -- strong VERIFIED-tier candidate; genuinely deterministic with primary-quoted rate and cap.",
+      "proposed_priceability": "PRICEABLE_FORMULAIC",
+      "committee_review_required": "NO"
+    },
+    {
+      "canonical_program_id": "dk_film_incentive",
+      "jurisdiction": "Denmark",
+      "program_name": "Danish Production Rebate Scheme (2026 launch)",
+      "current_status": "RESEARCHED -- fully confirmed via direct official primary fetch; explicitly selective/competitive despite a stated headline rate",
+      "program_type": "SELECTIVE_DISCRETIONARY",
+      "economic_propositions": {
+        "rate_formula": "25% of production costs (for productions selected into the scheme)",
+        "qpe_basis": "Production costs in Denmark",
+        "territoriality": "Denmark-incurred production costs",
+        "minimum_spend": null,
+        "cap": "DKK 20 million (~EUR 2.68 million) per individual production",
+        "uplift": null,
+        "monetization": "Rebate, paid within a fixed annual funding pool (DKK 100M for series/films/documentaries; DKK 25M for animation)",
+        "other": "Two competitive application rounds per year. Selection based on 'objective criteria' including a production-and-culture test scored alongside other criteria (max 300 pts total, culture test up to 100 pts). NOT automatic entitlement even at the 25% headline rate -- this is exactly the 'do not classify as formulaic merely because it has a percentage' trap the task warned against."
+      },
+      "requirements": ["Application within one of two annual rounds", "scored against production/culture test and other criteria", "subject to annual funding pool exhaustion"],
+      "source_provenance": {
+        "issuing_authority": "Danish Agency for Culture and Palaces (administers); Danish Film Institute (promotes internationally)",
+        "official_url": "https://www.dfi.dk/en/english/news/political-agreement-has-been-reached-danish-production-rebate-films-and-series",
+        "citation_detail": "Direct WebFetch of the official dfi.dk announcement succeeded and returned exact figures: '25% of production costs', 'DKK 20 million... per individual production', 'two application rounds annually... based on objective criteria', 'a production and culture test', DKK 100M/25M annual pools, launch year 2026, administering authority named explicitly.",
+        "verified_date": "2026-08-17",
+        "date_verified": "2026-08-17"
+      },
+      "interpretation_notes": "A textbook case of the task's own warning: has a clean 25% headline figure but is genuinely competitive/scored, not automatic. Also carries an explicit cultural-test component -- adjacent to OFFICIAL_COPRO_CULTURAL territory, belongs with the later optimizer's cultural/co-pro mechanisms rather than base single-jurisdiction pricing.",
+      "open_questions": ["Program launches in 2026 -- confirm it is now genuinely operative (agreement was 'political agreement reached', may still be pre-launch as of the source date)."],
+      "proposed_canonical_treatment": "SELECTIVE_DISCRETIONARY -- preserve rate/cap/scoring data for later optimizer use, do not model as deterministic base pricing.",
+      "proposed_priceability": "SELECTIVE_DISCRETIONARY",
+      "committee_review_required": "NO"
+    },
+    {
+      "canonical_program_id": "gb_sct_screen_fund",
+      "jurisdiction": "United Kingdom / Scotland",
+      "program_name": "Screen Scotland Production Growth Fund",
+      "current_status": "RESEARCHED -- confirmed explicitly competitive",
+      "program_type": "GRANT_FUND",
+      "economic_propositions": {
+        "rate_formula": "Funding award range £200,000-£500,000 (flat award band, not a QPE percentage)",
+        "qpe_basis": null,
+        "territoriality": "Scotland-based shoot/post-production",
+        "minimum_spend": "£2,000,000 minimum Scottish spend",
+        "cap": "£500,000 (top of the stated award range)",
+        "uplift": null,
+        "monetization": "grant, additive to the UK-wide Audio-Visual Expenditure Credit (AVEC), not a substitute for it",
+        "other": "Explicitly described by the official page as 'highly competitive'. Rolling applications, no fixed deadline, but must apply at least 12 weeks before first day of principal photography."
+      },
+      "requirements": ["UK-registered film production company", "£2M minimum Scottish spend", "advanced stage of development/financing, able to commence prep within 12 weeks of a funding decision"],
+      "source_provenance": {
+        "issuing_authority": "Screen Scotland (part of the Creative Scotland partnership)",
+        "official_url": "https://www.screen.scot/funding-and-support/funding/production-growth-fund",
+        "citation_detail": "Direct WebFetch succeeded and returned: 'highly competitive' fund language, 'Applicants of this fund must have a minimum Scottish Spend of £2,000,000', the 12-week pre-photography application requirement, and UK-registration eligibility -- all quoted directly from the official page.",
+        "verified_date": "2026-08-17",
+        "date_verified": "2026-08-17"
+      },
+      "interpretation_notes": "Distinct from and additive to uk_avec (already canonical, VERIFIED) -- this is a genuine additional Scotland-specific fund, but a flat-award competitive grant, not a QPE-percentage rebate.",
+      "open_questions": ["Exact award-selection scoring criteria not directly fetched -- would need the full application guidance PDF."],
+      "proposed_canonical_treatment": "SELECTIVE_DISCRETIONARY / GRANT_FUND",
+      "proposed_priceability": "SELECTIVE_DISCRETIONARY",
+      "committee_review_required": "NO"
+    },
+    {
+      "canonical_program_id": "gb_wls_screen_fund",
+      "jurisdiction": "United Kingdom / Wales",
+      "program_name": "Ffilm Cymru Wales Feature Film Production Fund",
+      "current_status": "RESEARCHED -- confirmed discretionary co-investment grant with a Wales-talent eligibility gate materially different from a general international incentive",
+      "program_type": "GRANT_FUND",
+      "economic_propositions": {
+        "rate_formula": "Up to £600,000 (most awards £150,000-£400,000); investment not to exceed 50% of the project's budget",
+        "qpe_basis": null,
+        "territoriality": "Wales-based production",
+        "minimum_spend": null,
+        "cap": "£600,000 (absolute cap); 50% of budget (proportional cap)",
+        "uplift": null,
+        "monetization": "grant (National Lottery via Arts Council of Wales + Welsh Government funds via Creative Wales), not equity investment",
+        "other": "MATERIAL ELIGIBILITY GATE: requires 'Wales born or based talent in the lead writer, producer and/or director role' -- this is not a general international-production attraction incentive; it is a Wales-talent-development fund. A foreign production relocating to Wales without Wales-affiliated key creatives would likely not qualify at all."
+      },
+      "requirements": ["Wales-born or Wales-based lead writer, director, and/or producer", "Board review at scheduled meetings (not competitive rounds) for awards of £50,000+"],
+      "source_provenance": {
+        "issuing_authority": "Ffilm Cymru Wales, funded via Arts Council of Wales (National Lottery) and Creative Wales (Welsh Government)",
+        "official_url": "https://ffilmcymruwales.com/funding-and-training/feature-film-production",
+        "citation_detail": "Direct WebFetch succeeded and returned exact figures: 'up to a maximum of £600,000, but most awards will be in the £150,000 - £400,000 range', 'our investment not to exceed 50% of your budget', the Wales-talent eligibility requirement, and Board-review process, all quoted directly.",
+        "verified_date": "2026-08-17",
+        "date_verified": "2026-08-17"
+      },
+      "interpretation_notes": "The Wales-talent gate is the single most important finding here -- this program is materially DIFFERENT in character from what the original artifact scoped ('Wales Screen Production Fund... for international productions'). It is a homegrown-talent development fund, not a general relocation incentive. Flag for committee: does a canonical_program_id under this name even belong in the base-pricing worldwide catalog at all, or is it out of scope by design (similar to official co-production mechanisms)?",
+      "open_questions": ["Is there a SEPARATE, general Wales production incentive without the talent-nationality gate that better matches the original scoping intent? Not found in this research pass -- AVEC (UK-wide) is the closest general mechanism available to a Wales-based international shoot."],
+      "proposed_canonical_treatment": "OFFICIAL_COPRO_CULTURAL-adjacent / SELECTIVE_DISCRETIONARY -- the nationality/talent gate places this closer to a cultural-development mechanism than an ordinary base-pricing incentive; defer to later optimizer, do not model as general international relocation pricing.",
+      "proposed_priceability": "SELECTIVE_DISCRETIONARY",
+      "committee_review_required": "YES"
+    },
+    {
+      "canonical_program_id": "in_national_film",
+      "jurisdiction": "India",
+      "program_name": "Incentive Scheme for Production of Foreign Films in India (Ministry of Information & Broadcasting)",
+      "current_status": "RESEARCHED -- the original ambiguity (which state/national scheme) is definitively resolved: a real, unified national scheme exists and is genuinely formulaic",
+      "program_type": "FORMULAIC_DETERMINISTIC",
+      "economic_propositions": {
+        "rate_formula": "40% of Qualifying Production Expenditure (QPE) base rate, with a +5% bonus for significant Indian content and a further +5% bonus for employing 15%+ Indian manpower (up to 50% theoretical maximum with both bonuses)",
+        "qpe_basis": "Qualifying production expenditure incurred in India",
+        "territoriality": "India-incurred spend",
+        "minimum_spend": null,
+        "cap": "USD 3.6 million (~INR 300 million) per project",
+        "uplift": "+5% Indian content bonus; +5% Indian manpower (15%+) bonus",
+        "monetization": "Cash incentive, disbursed in two stages (Interim and Final, with final disbursement upon project completion in India)",
+        "other": "Eligibility requires shooting permission granted by the Ministry of Information & Broadcasting (and Ministry of External Affairs for documentaries) after 01.04.2022."
+      },
+      "requirements": ["Shooting permission from MI&B (and MEA for documentaries) granted after April 1, 2022", "Interim and Final disbursement stages"],
+      "source_provenance": {
+        "issuing_authority": "Ministry of Information & Broadcasting (Government of India), executed by the Film Facilitation Office (FFO) under the National Film Development Corporation (NFDC)",
+        "official_url": "https://mib.gov.in/sites/default/files/2024-02/Revised%20incentive%20guidelines.pdf",
+        "citation_detail": "Official mib.gov.in PDF guidelines URL confirmed to exist and downloadable (6MB binary retrieved) but could not be parsed to extract text (corrupted/heavily-compressed PDF stream from WebFetch's perspective). Rate/cap/bonus figures corroborated via convergent secondary sources directly citing the same PIB (Press Information Bureau, official GOI communications arm) press release and Ministry announcement: Screen Daily, Deadline, Vitrina, National Law Review, all independently reporting identical figures (40% base, up from 30%, $3.6M/Rs300M cap, +5%/+5% bonuses).",
+        "verified_date": "2026-08-17",
+        "date_verified": "2026-08-17"
+      },
+      "interpretation_notes": "This directly resolves the original 'indispensable proposition' -- there IS one unified national scheme (not a fragmented state-by-state situation as originally suspected), administered by a real government body (FFO/NFDC under MI&B) with real, converging figures across multiple independent trade-press sources reporting on the same official PIB announcement.",
+      "open_questions": ["Direct primary-source quote from the mib.gov.in PDF itself was not obtained (parsing failure, binary saved locally) -- a follow-up attempt with a PDF-text-extraction tool rather than WebFetch's AI-summarization pipeline would likely succeed and should be the first step toward VERIFIED tier."],
+      "proposed_canonical_treatment": "PRICEABLE_FORMULAIC -- strong candidate, held at PARSED tier pending a clean primary-source text extraction.",
+      "proposed_priceability": "PRICEABLE_FORMULAIC",
+      "committee_review_required": "YES"
+    },
+    {
+      "canonical_program_id": "jm_film_incentive",
+      "jurisdiction": "Jamaica",
+      "program_name": "Jamaica film industry incentives (JAMPRO-administered: Employment Tax Credit, bond waivers, duty relief, case-by-case Production Rebates)",
+      "current_status": "RESEARCHED -- confirmed to lack a fixed deterministic rate for foreign productions",
+      "program_type": "OTHER_SUPPORTED_TYPE",
+      "economic_propositions": {
+        "rate_formula": null,
+        "qpe_basis": null,
+        "territoriality": null,
+        "minimum_spend": null,
+        "cap": null,
+        "uplift": null,
+        "monetization": "Mixed: (1) Employment Tax Credit up to 30% of LOCAL companies' PAYE tax obligations (payroll-tax offset, not a direct production QPE rebate); (2) duty-free importation / bond waivers on production equipment (in-kind, not cash); (3) 'Production Rebates' explicitly evaluated case-by-case with rolling JAMPRO acceptance, 'funded where the decision is favourable' -- confirmed discretionary, not automatic.",
+        "other": "A local production partner is required for the Production Rebate track. Separate Jamaica Screen Development Initiative (JSDI) exists as a grant program (JMD ~$668 million awarded across ~90-91 applicants in the most recent round reported)."
+      },
+      "requirements": ["Registration with the Entertainment Registry (for duty relief)", "local production partner (for Production Rebates)", "Film Commission registration (for bond waivers)"],
+      "source_provenance": {
+        "issuing_authority": "JAMPRO (Jamaica Trade and Invest) / Jamaica Film Commission",
+        "official_url": "https://www.filmjamaica.com/film-financing-incentives-2/",
+        "citation_detail": "Direct WebFetch of the official filmjamaica.com (JAMPRO's own film-facing site) page succeeded and returned: 'maximum of 30 percent credit for local companies' Pay As You Earn (PAYE) obligations', bond-waiver and duty-free-importation mechanics, and the UK co-production agreement reference, all quoted directly.",
+        "verified_date": "2026-08-17",
+        "date_verified": "2026-08-17"
+      },
+      "interpretation_notes": "No single guaranteed cash-rebate rate exists for a foreign production's QPE. The closest cash mechanism (Production Rebates) is explicitly case-by-case/discretionary per the secondary search summary of JAMPRO's own FAQ. The Employment Tax Credit's 30% figure applies to LOCAL company payroll tax liability, not directly to a foreign production's total spend -- a materially different economic proposition than a QPE rebate.",
+      "open_questions": ["Exact discretionary Production Rebate rate range (if any typical range exists) not found -- would require JAMPRO's own incentives brochure/PDF, not located in this pass."],
+      "proposed_canonical_treatment": "OTHER_SUPPORTED_TYPE (mixed duty-relief + discretionary rebate + payroll tax credit) -- preserve all three mechanisms as disclosed, non-formulaic financing support; do not model a single deterministic rate.",
+      "proposed_priceability": "SELECTIVE_DISCRETIONARY",
+      "committee_review_required": "YES"
+    },
+    {
+      "canonical_program_id": "mx_eficine_incentive",
+      "jurisdiction": "Mexico",
+      "program_name": "EFICA (Estímulo Fiscal a la Inversión en Cine y Audiovisual) -- new 2026 scheme; distinct from the older EFICINE (Article 189 Income Tax Law)",
+      "current_status": "RESEARCHED -- the underlying economic proposition has fundamentally changed since the original artifact was written; a NEW, more modelable scheme launched in 2026",
+      "program_type": "FORMULAIC_DETERMINISTIC",
+      "economic_propositions": {
+        "rate_formula": "Up to 30% of total qualifying Mexico-incurred production cost (ceiling, not flat -- described as 'up to')",
+        "qpe_basis": "Total cost of the project/production process carried out within Mexico",
+        "territoriality": "Minimum 70% national supplier requirement (of total spend)",
+        "minimum_spend": "Tiered by production type: MXN 40 million (feature films, narrative series, animation); MXN 20 million (feature films or documentary series); MXN 5 million (animation, VFX, post-production only)",
+        "cap": "MXN 40 million per production/beneficiary; MXN 400 million total annual program cap",
+        "uplift": null,
+        "monetization": "Transferable income tax credit -- beneficiaries may assign up to 70% of the credit to national suppliers or other income-tax taxpayers, subject to amount/proportion limits",
+        "other": "Foreign residents without a Mexican permanent establishment ARE eligible, provided the production is carried out through a Mexico-resident entity. Program runs via Presidential Decree (16 Feb 2026) + implementing Guidelines (30 Mar 2026), through 30 September 2030. Mutually exclusive at the project level with the older EFICINE scheme (Income Tax Law Article 189, not 226 as originally named -- the original canonical_program_id's 'Article 226' reference does not match the confirmed statutory article number)."
+      },
+      "requirements": ["Submission to a Technical Committee for processing/compliance certificates", "70% national-supplier spend threshold", "tiered minimum spend by production type", "cannot combine with the older EFICINE (Art. 189) for the same project"],
+      "source_provenance": {
+        "issuing_authority": "Government of Mexico, via Presidential Decree; implementing Guidelines published by the relevant Technical Committee",
+        "official_url": "https://www.bakermckenzie.com/en/insight/publications/2026/04/mexico-tax-incentive-for-film-and-audiovisual-productions (secondary, summarizing the Diario Oficial de la Federación decree)",
+        "citation_detail": "Secondary legal-firm summary (Baker McKenzie, a major international law firm) directly fetched and quoted: 'Up to 30% of qualifying Mexico-incurred film/audiovisual costs', 'a transferable income tax credit', 'MXN 40 million' per-production cap, 'MXN 400 million' total annual cap, tiered minimum-spend table, 70% national-supplier requirement, transferability mechanics, and the 30 March 2026 effective date, all quoted directly. NOT a direct primary-government-source fetch (Diario Oficial de la Federación itself not attempted this pass).",
+        "verified_date": "2026-08-17",
+        "date_verified": "2026-08-17"
+      },
+      "interpretation_notes": "This is a NEWER and MORE modelable mechanism than the EFICINE 226 concept the original artifact scoped for. It directly resolves the original 'indispensable proposition' (whether an investor-side credit converts into a modelable production-side rate): YES, via the transferability mechanic, a production can effectively monetize the credit. The canonical_program_id's own reference to 'Article 226' appears to be a naming/citation error somewhere in this project's history -- the confirmed statutory basis for the OLDER program is Article 189 of the Income Tax Law, and the NEW 2026 EFICA scheme sits alongside it via separate Presidential Decree, not the Income Tax Law article numbering at all.",
+      "open_questions": ["Should the canonical identity be renamed mx_eficine_incentive -> mx_efica_incentive to reflect the actual 2026 scheme, with the older EFICINE (Art. 189) either retired as SUPERSEDED or kept as a separate, narrower identity for productions that prefer the older mechanism?", "Primary government-source (Diario Oficial de la Federación) text not yet directly quoted -- needed for VERIFIED tier."],
+      "proposed_canonical_treatment": "PRICEABLE_FORMULAIC once primary-sourced, likely under a renamed/corrected canonical identity (mx_efica_incentive) with mx_eficine_incentive (Art. 189) either retired or kept as a distinct sibling.",
+      "proposed_priceability": "PRICEABLE_FORMULAIC",
+      "committee_review_required": "YES"
+    },
+    {
+      "canonical_program_id": "new_zealand_screen_production_grant_—_international_post_vfx",
+      "jurisdiction": "New Zealand",
+      "program_name": "International Screen Production Rebate (ISPR) -- Post, Digital and Visual Effects (PDV) track",
+      "current_status": "RESEARCHED -- confirmed distinct, tiered, genuinely formulaic track",
+      "program_type": "FORMULAIC_DETERMINISTIC",
+      "economic_propositions": {
+        "rate_formula": "20% on Qualifying New Zealand Production Expenditure (QNZPE) up to NZD 25 million; 18% on QNZPE above NZD 25 million (graduated/tiered structure)",
+        "qpe_basis": "Qualifying New Zealand Production Expenditure (QNZPE) directly spent on or necessarily related to PDV Activity",
+        "territoriality": "NZ-incurred PDV spend",
+        "minimum_spend": "NZD 250,000 minimum QNZPE",
+        "cap": null,
+        "uplift": "An additional 5% is reported 'in certain circumstances' for the general international rebate component -- exact applicability to the PDV-specific track not yet confirmed as distinct from the general ISPR uplift.",
+        "monetization": "Rebate",
+        "other": "Eligible PDV Activity: visual effects production (including certain physical effects), VFX photography, data capture, CGI, 2D/3D and visualisation. Program was renamed/reorganized from 'NZSPG' (New Zealand Screen Production Grant) to 'ISPR' (International Screen Production Rebate) at some point -- the canonical_program_id's original 'Screen Production Grant' naming may now be outdated terminology."
+      },
+      "requirements": ["NZD 250,000 minimum QNZPE for PDV Activity"],
+      "source_provenance": {
+        "issuing_authority": "Ministry of Business, Innovation & Employment (MBIE), New Zealand Government",
+        "official_url": "https://www.mbie.govt.nz/business-and-employment/economic-growth/screen-sector/new-zealand-screen-production-rebate",
+        "citation_detail": "Official mbie.govt.nz URL identified and confirmed to exist; direct WebFetch returned an empty page (likely JavaScript-rendered content not captured by the fetch tool). Figures corroborated via search-engine summary explicitly attributing the tiered 20%/18% rate and NZD 250,000 minimum to MBIE and related official NZ government sources (mch.govt.nz, Wētā Workshop's incentive summary, Entertainment Partners' 2026 ISPR-update coverage).",
+        "verified_date": "2026-08-17",
+        "date_verified": "2026-08-17"
+      },
+      "interpretation_notes": "This directly resolves the original artifact's question ('the Post/VFX track's own rate may differ from the general 20-25% international rate') -- confirmed it DOES differ and has its own graduated structure (20%/18% by QNZPE tier) distinct from nz_spg_international's flat rate. Relationship (mutually exclusive vs. additive) to nz_spg_international not fully resolved this pass.",
+      "open_questions": ["Whether this PDV track is mutually exclusive with or additive to nz_spg_international for the same production remains unconfirmed -- needs the official MBIE guidelines document (JS-rendered page prevented full extraction this pass).", "Whether the general ISPR naming means the canonical_program_id itself should be renamed (NZSPG -> ISPR)."],
+      "proposed_canonical_treatment": "PRICEABLE_FORMULAIC -- graduated_brackets-compatible tiered rate structure, strong candidate once the mutual-exclusivity question is resolved and a primary-source quote obtained.",
+      "proposed_priceability": "PRICEABLE_FORMULAIC",
+      "committee_review_required": "YES"
+    },
+    {
+      "canonical_program_id": "pe_film_incentive",
+      "jurisdiction": "Peru",
+      "program_name": "CIPA (Certificado de Inversión en Producción Audiovisual) -- new law, NOT YET operative",
+      "current_status": "RESEARCHED -- confirmed no current formulaic mechanism exists; a new one is legislated but pending implementing regulations",
+      "program_type": "NON_ECONOMIC (currently)",
+      "economic_propositions": {
+        "rate_formula": "Reported as 'equivalent to the income tax rate applied to the investment amount' (i.e., tracks the investor's own corporate income tax rate rather than a fixed independent percentage) -- NOT a simple flat/ceiling percentage in the conventional sense.",
+        "qpe_basis": "Investment in audiovisual production assets/services",
+        "territoriality": null,
+        "minimum_spend": null,
+        "cap": "Usable to offset corporate income tax or VAT liability by up to 50% (reported); transferable/sellable if the full credit isn't needed",
+        "uplift": null,
+        "monetization": "Transferable tax credit certificate",
+        "other": "Peru currently has NO operative tax credit or cash rebate. PROMPERÚ is a promotion/facilitation body (FILM IN PERU initiative), not an incentive administrator -- same pattern as INCAA/ANCINE. The new CIPA law was approved by Congress (approx. June 2024 per one source) but as of the sources consulted remained pending executive/regulatory implementation -- exact current operative status not confirmed as of this research date."
+      },
+      "requirements": ["Pending: implementing regulations from Peru's Ministry of Economy and Finance not yet confirmed as issued"],
+      "source_provenance": {
+        "issuing_authority": "National Treasury Directorate, Ministry of Economy and Finance (Peru) -- to issue CIPA certificates once operative",
+        "official_url": "https://thelemabogados.pe/en/congress-approves-law-creating-economic-and-tax-incentives-for-the-promotion-of-film-and-audiovisual-activities-in-peru/ (secondary legal-firm summary)",
+        "citation_detail": "Secondary Peruvian law firm summary directly fetched and quoted: 'The audiovisual credit is equivalent to the income tax rate applied to the investment amount', 'The National Treasury Directorate of the Ministry of Economy and Finance will issue Audiovisual Production Investment Certificates (CIPA)', and confirmation the law was pending executive review as of its approval date. NOT a direct primary Peruvian government-gazette fetch.",
+        "verified_date": "2026-08-17",
+        "date_verified": "2026-08-17"
+      },
+      "interpretation_notes": "This directly resolves the original 'indispensable proposition' (whether Peru operates a formulaic mechanism at all): NO, not currently. The CIPA law exists on paper but its current operative status (in force vs. still pending regulations) needs a fresh check closer to any actual implementation date given this is evolving legislation.",
+      "open_questions": ["Is CIPA now in force? The source consulted is from the law's approval, not necessarily its current 2026 operative status -- a fresh, dated check is needed before any canonicalization decision.", "The 'rate = investor's own income tax rate' mechanic is unusual and may not map cleanly onto this engine's flat/ceiling RateRule schema at all -- may require a genuinely new modeling approach, similar to the EFICINE/EFICA investor-side-credit complexity."],
+      "proposed_canonical_treatment": "NON_ECONOMIC currently; re-research if/when CIPA's implementing regulations are confirmed issued.",
+      "proposed_priceability": "NON_ECONOMIC",
+      "committee_review_required": "YES"
+    },
+    {
+      "canonical_program_id": "pt_film_incentive",
+      "jurisdiction": "Portugal",
+      "program_name": "RIPAC (under the SCRI.PT programme) -- Portugal's consolidated film/audiovisual production incentive, administered by ICA",
+      "current_status": "RESEARCHED -- resolves the original ICA-vs-Madeira ambiguity; a newly consolidated 2026 regime found, with one internal source inconsistency flagged",
+      "program_type": "FORMULAIC_DETERMINISTIC",
+      "economic_propositions": {
+        "rate_formula": "Two partially conflicting descriptions found across sources: (A) per a 2026-dated industry summary: large-budget productions (>EUR 2.5M spend) get 30% on the first EUR 2M and up to 25% beyond, capped at EUR 6M; medium-budget projects get 30% (up to 40% in low-density regions, Azores, and Madeira), capped at EUR 1M. (B) per the ICA official page (possibly describing an earlier iteration not yet updated for the 2026 consolidation): 'Between 25% and 30% of eligible expenditure, depending on a Cultural Test and the characteristics of the project' -- i.e., scored/graduated by a cultural test rather than a flat budget-tier table.",
+        "qpe_basis": "Eligible expenditure in Portugal",
+        "territoriality": "Weighting/bonus for low-density-territory spend",
+        "minimum_spend": "EUR 500,000 (fiction/animation); EUR 250,000 (documentaries/post-production only) -- per the ICA official page",
+        "cap": "EUR 6 million (large-budget productions) or EUR 1 million (medium-budget) per the 2026 industry summary",
+        "uplift": "Up to 40% in low-density territories, Azores, and Madeira (medium-budget tier)",
+        "monetization": "Paid in installments: 20% on contract signature, 30% at start of shooting/animation/post, 30% at end of shooting, 20% after final audited calculation",
+        "other": "RIPAC (effective 20 Feb 2026) consolidates what were previously two SEPARATE mechanisms (cash rebate and cash refund) into one legal framework -- this directly resolves the original artifact's Madeira-vs-ICA ambiguity: as of 2026 there is ONE unified ICA-administered regime, not two competing tracks. Total program budget EUR 350 million across 2026-2029."
+      },
+      "requirements": ["Cultural Test scoring (per the ICA page's description) and/or budget-tier classification (per the 2026 consolidation summary) -- these two descriptions need reconciliation", "minimum spend thresholds by production category"],
+      "source_provenance": {
+        "issuing_authority": "Instituto do Cinema e do Audiovisual (ICA, I.P.)",
+        "official_url": "https://www.ica-ip.pt/en/incentives-and-coproduction/",
+        "citation_detail": "Direct WebFetch of the official ica-ip.pt page succeeded and returned: 'Between 25% and 30% of eligible expenditure, depending on a Cultural Test', minimum spend figures (EUR 500,000 / EUR 250,000), 'first come first served' allocation language, and a reference to Decree-Law No. 45/2018 and Ordinance Nr. 490/2018 -- all quoted directly. The 2026 RIPAC/SCRI.PT tiered-rate description (with EUR 2.5M/6M/1M figures) came from a secondary industry summary (Entertainment Partners' Spring 2026 roundup) that was NOT independently cross-verified against the ICA page in this pass -- the ICA page's own text may not yet reflect the 2026 consolidation.",
+        "verified_date": "2026-08-17",
+        "date_verified": "2026-08-17"
+      },
+      "interpretation_notes": "MATERIAL CONFLICT flagged for committee: the official ICA page describes a cultural-test-scored 25-30% rate referencing 2018-era legislation, while a 2026 trade-press summary describes a newer budget-tiered structure (RIPAC/SCRI.PT) with different cap figures. These may both be true at different points in the same transition, or the ICA page may simply be stale. Do not canonicalize a single rate figure until this is reconciled against the actual 2026 RIPAC regulation text.",
+      "open_questions": ["Is the ICA page's Cultural-Test-scored 25-30% description superseded by RIPAC's budget-tiered structure, or do both apply in combination (e.g., cultural test gates eligibility, budget tier sets the rate)?", "Exact RIPAC regulation text not yet directly fetched."],
+      "proposed_canonical_treatment": "PRICEABLE_FORMULAIC pending conflict resolution -- genuinely deterministic in structure (either version), but the two descriptions must be reconciled against the primary 2026 regulation before a single rate table is committed.",
+      "proposed_priceability": "PROJECT_FACT_DEPENDENT",
+      "committee_review_required": "YES"
+    },
+    {
+      "canonical_program_id": "qc_film_production",
+      "jurisdiction": "Canada / Quebec",
+      "program_name": "SODEC film production incentive -- CONFIRMED DUPLICATE of already-canonical ca_qc_pstc",
+      "current_status": "RESEARCHED -- resolved as an identity-merge, not a research gap, exactly as the original artifact anticipated",
+      "program_type": "DUPLICATE_ALIAS",
+      "economic_propositions": {
+        "rate_formula": "25% of qualified expenditures (base rate) + an additional 16% for qualified labour costs directly attributable to computer-aided animation/special effects activities",
+        "qpe_basis": "'The total of the qualified labour costs and the costs of qualified properties' -- an all-spend production-cost basis",
+        "territoriality": "Services provided in Quebec",
+        "minimum_spend": null,
+        "cap": null,
+        "uplift": "16% additional for qualified computer-animation/VFX labour costs",
+        "monetization": "Refundable tax credit",
+        "other": "This IS the same program already registered in this codebase as ca_qc_pstc (app/data/program_rate_rules_worldwide.py, jurisdiction_comparison.py) -- confirmed by direct code inspection: ca_qc_pstc's existing DoctrineRecord already carries a 25% base rate at DISCOVERY confidence tier, with its own citation noting 'a computer-aided-effects/animation uplift was reported but its exact mechanics were inconsistent across sources and NOT modeled' and 'the official primary PDF could not be read.' This research pass FOUND the exact +16% mechanics via search-engine corroboration of the same official SODEC PDF fact sheet the existing citation already references, though the PDF itself remains unparseable via WebFetch (binary/encoding issue, consistent with the existing citation's own note)."
+      },
+      "requirements": [],
+      "source_provenance": {
+        "issuing_authority": "Société de développement des entreprises culturelles (SODEC), jointly with Revenu Québec",
+        "official_url": "https://sodec.gouv.qc.ca/wp-content/uploads/fact-sheet-quebec-pstc-2026-march.pdf",
+        "citation_detail": "The official SODEC PDF fact sheet URL was located and directly attempted via WebFetch; the binary PDF could not be parsed (same failure mode already disclosed in ca_qc_pstc's existing citation in this codebase). The +16% animation/VFX bonus rate and its qualifying-labour-cost basis were obtained via a search-engine snippet that itself directly quotes the SODEC fact sheet's text ('this improvement represents an additional 16% for qualified labour costs directly attributable to qualified activities'), corroborating and extending the already-registered ca_qc_pstc citation's base-rate figure.",
+        "verified_date": "2026-08-17",
+        "date_verified": "2026-08-17"
+      },
+      "interpretation_notes": "CONFIRMED via direct code inspection (not just inference) that program_slug=\"ca_qc_pstc\" already exists in both program_rate_rules_worldwide.py and jurisdiction_comparison.py with the identical 25% base rate, held at DISCOVERY confidence tier specifically because the official PDF could not be read. This research pass did not upgrade that registry entry (implementation is out of scope for this phase) but surfaces a genuine promotion opportunity: the +16% animation uplift mechanics, previously flagged in ca_qc_pstc's own citation as 'inconsistent across sources and NOT modeled,' now have a corroborating direct quote from the same source the existing citation already points to.",
+      "open_questions": ["Should ca_qc_pstc be promoted from DISCOVERY toward PARSED/VERIFIED using the newly corroborated +16% animation-uplift quote? This is an implementation decision for the committee, not performed here.", "qc_film_production itself should be treated as a pure alias, never registered as a second candidate."],
+      "proposed_canonical_treatment": "DUPLICATE_ALIAS -- qc_film_production IS ca_qc_pstc under a different working name; no new canonical identity should ever be registered for it. Recommend CANONICAL_RUNTIME_SLUG_BINDINGS entry qc_film_production -> ca_qc_pstc if this identity string is ever encountered again in future research artifacts, to prevent redundant re-research.",
+      "proposed_priceability": "PRICEABLE_FORMULAIC (via the existing ca_qc_pstc identity, not a new one)",
+      "committee_review_required": "NO"
+    },
+    {
+      "canonical_program_id": "uy_xxi_incentive",
+      "jurisdiction": "Uruguay",
+      "program_name": "Uruguay Audiovisual cash rebate -- administered by ACAU, NOT Uruguay XXI as originally named",
+      "current_status": "RESEARCHED -- confirmed a real, tiered, formulaic mechanism exists, but the administering authority in the canonical_program_id's own name is wrong",
+      "program_type": "FORMULAIC_DETERMINISTIC",
+      "economic_propositions": {
+        "rate_formula": "Tiered by Uruguayan-spend band: 25% for spend USD 300,000-4,000,000 (cap USD 700,000); 17.5% for spend USD 4,000,000-8,000,000 (cap USD 850,000); 10.6% for spend above USD 8,000,000 (cap USD 1,000,000). The official ACAU-affiliated portal separately describes this as 'up to 25%' as the headline ceiling figure.",
+        "qpe_basis": "Eligible expenses incurred in Uruguay",
+        "territoriality": "Uruguay-incurred spend",
+        "minimum_spend": "USD 300,000 (bottom of the lowest tier)",
+        "cap": "USD 700,000 / 850,000 / 1,000,000 by tier (see rate_formula)",
+        "uplift": null,
+        "monetization": "Cash rebate",
+        "other": "Recipients must be foreign legal entities working WITH a local Uruguayan company. A separate, NOT-YET-implemented tax rebate (to complement the existing cash rebate) is under active negotiation between ACAU, local producers' association, and the Ministry of Economy as of the source consulted -- disclosed as a future/pending development, not yet operative."
+      },
+      "requirements": ["Foreign legal entity working with a local Uruguayan company", "minimum USD 300,000 Uruguayan spend"],
+      "source_provenance": {
+        "issuing_authority": "ACAU (Agencia del Cine y el Audiovisual del Uruguay / the Uruguayan Film & Audiovisual Agency) -- NOT Uruguay XXI (the general investment-promotion agency named in the canonical_program_id)",
+        "official_url": "https://uruguayaudiovisual.com/en/incentives/ (ACAU's own portal; application portal at portal.acau.gub.uy)",
+        "citation_detail": "Direct WebFetch of uruguayaudiovisual.com/en/incentives succeeded and confirmed 'up to 25% of eligible expenses incurred in Uruguay', the foreign-entity-plus-local-company eligibility requirement, and the portal.acau.gub.uy application portal, all quoted directly. The precise three-tier rate/cap table (25%/17.5%/10.6%) came from convergent secondary corroboration (search-engine summary of multiple incentive-guide sites), not independently re-confirmed against an ACAU PDF 'bases' document in this pass (the ACAU page references downloadable rules PDFs by category that were not individually fetched).",
+        "verified_date": "2026-08-17",
+        "date_verified": "2026-08-17"
+      },
+      "interpretation_notes": "Same identity-mismatch pattern as INCAA/ANCINE: the canonical_program_id's name references 'Uruguay XXI' (the general investment-promotion agency), but the real administering body for the audiovisual rebate is ACAU (Uruguay's dedicated film/audiovisual agency), a completely separate entity. This directly resolves the original 'indispensable proposition' (whether Uruguay XXI administers a direct rebate or only broader investment exemptions): NEITHER exactly -- Uruguay XXI does not administer this; ACAU does, and ACAU's mechanism IS a real formulaic tiered cash rebate.",
+      "open_questions": ["Should the canonical identity be renamed uy_xxi_incentive -> uy_acau_incentive to correctly reflect the administering authority?", "The three-tier rate/cap table needs direct primary confirmation against ACAU's own PDF 'bases' document (not yet fetched)."],
+      "proposed_canonical_treatment": "MISCLASSIFIED_PROGRAM (rename/re-attribute to ACAU) then PRICEABLE_FORMULAIC once the tiered table is primary-confirmed.",
+      "proposed_priceability": "PRICEABLE_FORMULAIC",
+      "committee_review_required": "YES"
+    }
+  ],
+  "summary_counts": {
+    "population": {"expected": 19, "researched": 19, "unexplained": 0},
+    "program_types": {
+      "FORMULAIC_DETERMINISTIC": 8,
+      "SELECTIVE_DISCRETIONARY": 0,
+      "OFFICIAL_COPRO_CULTURAL": 0,
+      "GRANT_FUND": 5,
+      "FINANCING_SUPPORT": 0,
+      "NON_ECONOMIC": 3,
+      "SUPERSEDED_INACTIVE": 0,
+      "DUPLICATE_ALIAS": 1,
+      "OTHER_SUPPORTED_TYPE": 2,
+      "note": "au_qld_screen_qld, au_vic_vicscreen, dk_film_incentive, gb_sct_screen_fund classified GRANT_FUND (5 total with au_nsw_screen); gb_wls_screen_fund classified as GRANT_FUND with OFFICIAL_COPRO_CULTURAL-adjacent characteristics (talent-nationality gate) -- counted once under GRANT_FUND above (au_nsw_screen, au_qld_screen_qld, au_vic_vicscreen, gb_sct_screen_fund, gb_wls_screen_fund = 5); jm_film_incentive and bc_interactive_digital_media_tax_credit_idmtc counted under OTHER_SUPPORTED_TYPE (2); ar_incaa_incentive, br_ancine_incentive, pe_film_incentive counted under NON_ECONOMIC (3); qc_film_production counted under DUPLICATE_ALIAS (1); ca_federal_cptc, ca_nl_production_fund, in_national_film, mx_eficine_incentive, new_zealand_screen_production_grant_—_international_post_vfx, pt_film_incentive, uy_xxi_incentive counted under FORMULAIC_DETERMINISTIC (7) plus bc_interactive_digital_media_tax_credit_idmtc is formulaic-but-out-of-scope (already counted in OTHER_SUPPORTED_TYPE) = 7 pure FORMULAIC_DETERMINISTIC entries with proposed_priceability PRICEABLE_FORMULAIC or PROJECT_FACT_DEPENDENT; count corrected to 7 formulaic + 1 formulaic-but-out-of-scope = 8 total programs with a genuine deterministic rate structure found."
+    },
+    "proposed_priceability": {
+      "PRICEABLE_FORMULAIC": 6,
+      "PROJECT_FACT_DEPENDENT": 1,
+      "SELECTIVE_DISCRETIONARY": 6,
+      "NON_ECONOMIC": 4,
+      "GRANT_FUND_deferred": 0,
+      "note": "PRICEABLE_FORMULAIC: ca_federal_cptc, ca_nl_production_fund, in_national_film, mx_eficine_incentive, new_zealand_screen_production_grant_—_international_post_vfx, uy_xxi_incentive, qc_film_production(via ca_qc_pstc identity-merge) = 7 total (6 new + 1 merge). PROJECT_FACT_DEPENDENT: pt_film_incentive (conflicting rate descriptions need reconciliation). SELECTIVE_DISCRETIONARY: au_nsw_screen, au_qld_screen_qld, au_vic_vicscreen, dk_film_incentive, gb_sct_screen_fund, gb_wls_screen_fund, jm_film_incentive = 7. NON_ECONOMIC: ar_incaa_incentive, br_ancine_incentive, bc_interactive_digital_media_tax_credit_idmtc (out of scope), pe_film_incentive = 4."
+    },
+    "committee_review_required_count": 12,
+    "committee_review_not_required_count": 7
+  },
+  "committee": {
+    "programs_requiring_codex_challenge": [
+      "ar_incaa_incentive", "br_ancine_incentive", "uy_xxi_incentive",
+      "note: these three all found the originally-named administering authority does NOT itself operate the incentive -- Codex should independently verify the identity-correction reasoning before any reclassification/rename is applied."
+    ],
+    "programs_with_interpretation_ambiguity": [
+      "pt_film_incentive (material conflict between the ICA official page's Cultural-Test-scored description and a 2026 trade-press summary's budget-tiered description)",
+      "mx_eficine_incentive (whether to rename to reflect the new EFICA scheme vs. retain the older EFICINE/Art.189 as the canonical identity, and whether both should coexist)",
+      "gb_wls_screen_fund (whether a talent-nationality-gated fund belongs in the base-pricing worldwide catalog at all)",
+      "new_zealand_screen_production_grant_—_international_post_vfx (mutual exclusivity with nz_spg_international not resolved)"
+    ],
+    "programs_recommended_for_gemini_tie_break": [
+      "pt_film_incentive",
+      "mx_eficine_incentive"
+    ]
+  },
+  "production_economics_changed": false,
+  "frontend_changed": false,
+  "optimizer_structures_changed": false,
+  "note_on_source_access": "Several official government domains (canada.ca, screen.nsw.gov.au, mib.gov.in, ffo.gov.in, pib.gov.in) blocked direct WebFetch with HTTP 403 or DNS failure. Per task instruction, alternate official/authoritative publications and convergent secondary corroboration were used instead of stopping; every such case is disclosed explicitly in that program's source_provenance.citation_detail field rather than silently treated as VERIFIED. No program in this artifact should be read as VERIFIED-tier without a follow-up direct primary-source confirmation pass."
+}
