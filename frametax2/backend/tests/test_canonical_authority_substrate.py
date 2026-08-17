@@ -428,23 +428,26 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     """FVD's generated/priced/unpriceable counts. The candidate UNIVERSE
     (110) and the feasibility-disclosure controls below are unchanged —
     the feasibility/eligibility repair invariant this test originally
-    proved still holds. The priced count itself legitimately moved
-    30 -> 31 in the Global Priceability Optimizer Restoration task: Georgia
-    (us_ga_film_credit) was the one confirmed artificial-schema veto
-    inconsistency Codex's optimizer lineage trace found (two VERIFIED
-    RateRules + explicit doctrine already existed; a stale coverage-
-    registry row blocked it anyway) — see authority_coverage_registry.py's
-    correction note and test_georgia_prices_with_real_numbers_in_fvd for
-    the traced, real-number proof. No soft feasibility mismatch may remove
-    a candidate from the economic universe."""
+    proved still holds. The priced count legitimately moved 30 -> 31
+    (Georgia, Global Priceability Optimizer Restoration) -> 39 (Global
+    Economic Data + Base Pricing, this task: 8 more programs whose
+    existing PARSED-tier RateRule citations were individually
+    re-examined, found to already meet the primary-source bar this
+    project uses for VERIFIED -- fetched directly from the administering
+    government's own page, specific quoted rate language -- and promoted;
+    their coverage vetoes were the only remaining blocker, exactly like
+    Georgia). See authority_coverage_registry.py's correction notes and
+    test_batch1_programs_price_with_real_numbers_in_fvd for the traced,
+    real-number proof. No soft feasibility mismatch may remove a
+    candidate from the economic universe."""
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
     priced = [e for e in entries if e["is_fully_priced"]]
     unpriced = [e for e in entries if not e["is_fully_priced"]]
     assert len(entries) == 110
-    assert len(priced) == 31
-    assert len(unpriced) == 79
+    assert len(priced) == 39
+    assert len(unpriced) == 71
 
     for code in ("MN", "UZ", "AT"):
         e = next(x for x in entries if x["primary_jurisdiction"] == code)
@@ -746,3 +749,60 @@ async def test_georgia_prices_with_real_numbers_in_fvd(db: AsyncSession):
     assert ga["candidate_status"] == "PRICED"
     assert ga["selected_incentive_usd"] > 0
     assert ga["npc_verified_usd"] is not None and ga["npc_verified_usd"] > 0
+
+
+# ── Global Economic Data + Base Pricing — batch 1: recovered historical
+# PARSED-tier data promoted to VERIFIED after individual re-examination,
+# coverage vetoes removed. ───────────────────────────────────────────────
+
+def test_batch1_doctrine_records_promoted_to_verified():
+    """The exact confidence-tier promotion this batch made: each program's
+    DoctrineRecord.confidence_tier must now read VERIFIED, not PARSED --
+    regression coverage for the specific field edited in program_rate_
+    rules_worldwide.py."""
+    from app.data.executable_jurisdiction_registry import get_doctrine
+    batch1 = (
+        "ca_bc_pstc", "hr_cash_rebate", "nz_spg_international",
+        "tt_production_expenditure_rebate", "us_la_film_incentive",
+        "us_md_film_production_activity_credit", "us_nm_film_credit",
+        "us_ri_film_credit",
+    )
+    for slug in batch1:
+        doc = get_doctrine(slug)
+        assert doc is not None, f"{slug} lost its DoctrineRecord"
+        assert doc.confidence_tier == "VERIFIED", f"{slug} was not promoted"
+
+
+def test_batch1_coverage_veto_removed_including_alias_spellings():
+    """Both the canonical slug AND its known alias spelling must be
+    unblocked -- the same defect class the alias rows exist to guard
+    against (see the module's own 'neither spelling can price' design)."""
+    from app.data.authority_coverage_registry import blocks_economic_candidacy
+    pairs = (
+        ("ca_bc_pstc", "bc_pstc"),
+        ("tt_production_expenditure_rebate", "tt_film_incentive"),
+        ("us_la_film_incentive", "la_film_production"),
+        ("us_md_film_production_activity_credit", "us_md_film_credit"),
+        ("us_nm_film_credit", "nm_film_production"),
+    )
+    for canonical, alias in pairs:
+        assert blocks_economic_candidacy(canonical) is False
+        assert blocks_economic_candidacy(alias) is False
+
+
+async def test_batch1_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
+    """Runtime proof (not just the read-only registries) that all 8 batch-1
+    programs reach served state with real, distinct, non-zero numbers."""
+    await evaluate_project(db, FVD_PROJECT_ID)
+    view = await build_production_and_structures(db, FVD_PROJECT_ID)
+    entries = view["structures"]["allocated_structures"]["structures"]
+    codes = ("CA-BC", "HR", "NZ", "TT", "US-LA", "US-MD", "US-NM", "US-RI")
+    seen_incentives = set()
+    for code in codes:
+        e = next(x for x in entries if x["primary_jurisdiction"] == code)
+        assert e["is_fully_priced"] is True, f"{code} did not price"
+        assert e["candidate_status"] == "PRICED"
+        assert e["selected_incentive_usd"] > 0
+        assert e["npc_verified_usd"] is not None and e["npc_verified_usd"] > 0
+        seen_incentives.add(e["selected_incentive_usd"])
+    assert len(seen_incentives) > 1, "all 8 programs priced identically -- suspicious, check for a copy-paste QPE bug"

@@ -91,7 +91,10 @@ from app.services.canonical_project_economics import (
 # discovery time but are NOT part of `_compute_fingerprint(inputs)` (that
 # fingerprint covers project-specific economic inputs, not registry
 # contents) and would otherwise silently keep serving pre-fix results.
-ENGINE_VERSION = "canonical-1.5.0"
+# Global Economic Data + Base Pricing, batch 1: 8 more programs promoted
+# PARSED -> VERIFIED and their coverage vetoes removed (see authority_
+# coverage_registry.py's correction note). Cache-invalidation bump only.
+ENGINE_VERSION = "canonical-1.6.0"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
