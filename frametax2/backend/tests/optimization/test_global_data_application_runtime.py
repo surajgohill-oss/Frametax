@@ -128,14 +128,24 @@ def test_the_three_slug_spelling_escapes_are_closed():
 
 def test_mauritius_calibration_is_byte_identical_after_application():
     """The canonical corpus did not touch mu/mt/gr/au, so the calibrated
-    baseline must not move."""
+    baseline must not move.
+
+    Structure count legitimately grew 177 -> 185: the CineGlobe canonical
+    pricing path + discovery repair fixed discover_executable_jurisdictions()
+    to examine every independently registered (jurisdiction_code,
+    program_slug) pair rather than collapsing to one program per code —
+    this shared discovery function backs BOTH Little Utopia's legacy
+    build_allocated_structures() and the generic canonical_evaluation.py
+    path, so both gained the same newly-discoverable candidates (e.g.
+    CA-ON's on_ofttc and OCASE, previously invisible alongside
+    ca_on_opstc). Mauritius itself is untouched — asserted below."""
     served = _served()
     baseline = next(
         s for s in served["structures"] if s["structure_id"] == "ALLOC-BASELINE-MU"
     )
     assert round(baseline["npc_with_adjustments_usd"], 2) == 3057794.90
     assert served["ranking"][0]["structure_id"] == "ALLOC-BASELINE-MU"
-    assert len(served["structures"]) == 177
+    assert len(served["structures"]) == 185
 
 
 def test_selective_programs_contribute_zero_guaranteed_value():

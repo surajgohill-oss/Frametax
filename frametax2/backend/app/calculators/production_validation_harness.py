@@ -165,20 +165,37 @@ def _jurisdiction_outcomes(discovery_out: dict, allocated_out: dict) -> list[Jur
         s["primary_jurisdiction"]: s for s in allocated_out["structures"]
         if s["structure_type"] in ("full_relocation", "single_country")
     }
+    # CineGlobe canonical pricing path + discovery repair: a jurisdiction_
+    # code can now carry MULTIPLE independent program examinations (e.g.
+    # CA-ON's ca_on_opstc/on_ofttc/OCASE). `structures_by_code` is still
+    # keyed by code alone (this legacy demo-engine structure dict carries
+    # no program_slug to disambiguate further -- restoring that is
+    # explicitly out of scope for this task). A code with more than one
+    # examination is therefore AMBIGUOUS here: the single `struct` this
+    # dict resolves to cannot be reliably attributed to any one of that
+    # code's several NOT-accepted examinations, so those must not borrow
+    # its is_fully_priced/NPC/incentive values (previously caused a real
+    # accepted/priced-count mismatch for codes with a mix of accepted and
+    # rejected/capability_only programs, e.g. CZ).
+    from collections import Counter
+    examinations_per_code = Counter(ex["jurisdiction_code"] for ex in discovery_out["examinations"])
+
     outcomes: list[JurisdictionOutcome] = []
     for ex in discovery_out["examinations"]:
         code = ex["jurisdiction_code"]
+        ambiguous_code = examinations_per_code[code] > 1
         # The MU baseline structure (ALLOC-BASELINE-MU) has
         # structure_type="single_country" and primary_jurisdiction="MU", so
         # it resolves here via the same lookup as every relocation structure.
         struct = structures_by_code.get(code)
         if not ex["accepted"]:
+            attributable_struct = None if ambiguous_code else struct
             outcomes.append(JurisdictionOutcome(
                 jurisdiction_code=code, incentive_ready=False,
-                has_structure=struct is not None,
-                is_fully_priced=bool(struct and struct["is_fully_priced"]),
-                npc_with_adjustments_usd=(struct or {}).get("npc_with_adjustments_usd"),
-                selected_incentive_usd=(struct or {}).get("selected_incentive_usd"),
+                has_structure=attributable_struct is not None,
+                is_fully_priced=bool(attributable_struct and attributable_struct["is_fully_priced"]),
+                npc_with_adjustments_usd=(attributable_struct or {}).get("npc_with_adjustments_usd"),
+                selected_incentive_usd=(attributable_struct or {}).get("selected_incentive_usd"),
                 classification=FailureClassification.EXPECTED_EXCLUSION,
                 reason=ex["reason"],
             ))

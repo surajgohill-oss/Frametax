@@ -93,12 +93,20 @@ def _empty_structure_entry(structure, result, jurisdiction_code_by_id: dict[str,
         "total_incentive_floor_usd": selected_incentive_usd,
         "total_incentive_ceiling_usd": selected_incentive_usd,
         "selected_incentive_usd": selected_incentive_usd,
-        "travel_incremental_delta_usd": None,
-        "fx_delta_usd": None,
-        "local_cost_delta_usd": 0.0,
-        "inkind_replacement_delta_usd": 0.0,
-        "financing_cost_usd": 0.0,
-        "implementation_cost_usd": 0.0,
+        # Task 3 (canonical pricing path + discovery repair) — read the
+        # REAL per-adjustment fields canonical_evaluation.py now persists
+        # (calculation_trace_json["adjustments"]) instead of hardcoding
+        # None/0.0. Falls back to the pre-1.15.0 static defaults for rows
+        # persisted before this enrichment existed, same established
+        # backward-compat pattern used throughout this file (e.g.
+        # selected_incentive_usd above).
+        "travel_incremental_delta_usd": (trace.get("adjustments") or {}).get("travel_incremental_delta_usd"),
+        "fx_delta_usd": (trace.get("adjustments") or {}).get("fx_delta_usd"),
+        "local_cost_delta_usd": (trace.get("adjustments") or {}).get("local_cost_delta_usd", 0.0),
+        "inkind_replacement_delta_usd": (trace.get("adjustments") or {}).get("inkind_replacement_delta_usd", 0.0),
+        "financing_cost_usd": (trace.get("adjustments") or {}).get("financing_cost_usd", 0.0),
+        "implementation_cost_usd": (trace.get("adjustments") or {}).get("implementation_cost_usd", 0.0),
+        "total_adjustments_usd": (trace.get("adjustments") or {}).get("total_adjustments_usd", 0.0),
         "npc_verified_usd": float(result.true_net_cost_usd) if result.true_net_cost_usd is not None else None,
         "npc_with_adjustments_usd": (
             float(result.risk_adjusted_net_cost_usd) if result.risk_adjusted_net_cost_usd is not None else None

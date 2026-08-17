@@ -459,15 +459,23 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     test_batch4_programs_price_with_real_numbers_in_fvd /
     test_batch5_programs_price_with_real_numbers_in_fvd for the traced,
     real-number proof. No soft feasibility mismatch may remove a
-    candidate from the economic universe."""
+    candidate from the economic universe.
+
+    CineGlobe canonical pricing path + discovery repair: the candidate
+    universe legitimately grew 110 -> 115. This is not a data change (no
+    program's rate/citation was touched) -- it is the jurisdiction-code-
+    collision discovery fix: on_ofttc and OCASE (CA-ON) now each reach
+    their own independent candidate structure alongside ca_on_opstc,
+    instead of being silently collapsed to one. See test_on_ofttc_and_
+    ocase_now_independently_served for the direct proof."""
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
     priced = [e for e in entries if e["is_fully_priced"]]
     unpriced = [e for e in entries if not e["is_fully_priced"]]
-    assert len(entries) == 110
-    assert len(priced) == 103
-    assert len(unpriced) == 7
+    assert len(entries) == 115
+    assert len(priced) == 107
+    assert len(unpriced) == 8
 
     for code in ("MN", "UZ", "AT"):
         e = next(x for x in entries if x["primary_jurisdiction"] == code)
@@ -1051,28 +1059,31 @@ def test_on_ofttc_researched_from_scratch_and_canonicalized():
     assert prov is not None and prov.issuing_authority == "Ontario Creates (jointly administered with the CRA)"
 
 
-async def test_on_ofttc_not_yet_independently_served_due_to_jurisdiction_code_collision(db: AsyncSession):
-    """Disclosed, not silently worked around: on_ofttc shares jurisdiction_
-    code CA-ON with the already-priced ca_on_opstc. discover_executable_
-    jurisdictions() maps one examination per jurisdiction_code, so CA-ON's
-    served structure is still ca_on_opstc's, not on_ofttc's. This test
-    documents the current, real behavior so a future discovery-layer
-    repair (extending to multiple programs per jurisdiction_code -- see
-    authority_coverage_registry.py's on_ofttc CORRECTION note for why that
-    repair was deliberately deferred) is verified against a real
-    assertion instead of silently changing behavior."""
+async def test_on_ofttc_and_ocase_now_independently_served(db: AsyncSession):
+    """CineGlobe canonical pricing path + discovery repair: the jurisdiction-
+    code-collision limitation this test used to document is fixed.
+    production_discovery.py now examines every independently registered
+    (jurisdiction_code, program_slug) pair (via executable_jurisdiction_
+    registry.all_doctrine_records()), not just the single slug
+    jurisdiction_comparison.ALL_PROFILES happened to carry per code. CA-ON's
+    three real, separately-cited programs -- ca_on_opstc, on_ofttc, and
+    OCASE -- each now reach their own independent candidate structure with
+    their own real NPC, never collapsed to one and never combined/stacked
+    (that remains a later, explicitly out-of-scope optimizer phase)."""
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
     ca_on_entries = [e for e in entries if e["primary_jurisdiction"] == "CA-ON"]
-    assert len(ca_on_entries) == 1, (
-        "if this now returns >1, on_ofttc has started reaching its own "
-        "candidate structure -- update this test to assert both, and "
-        "update the CORRECTION note's 'known limitation' framing"
+    assert len(ca_on_entries) == 3, (
+        "expected ca_on_opstc, on_ofttc, and OCASE each independently served"
     )
-    segs = ca_on_entries[0]["segments"]
-    programs_used = {sg["program_slug"] for sg in segs if sg.get("program_slug")}
-    assert "ca_on_opstc" in programs_used
+    programs_used = {e["program_slug"] for e in ca_on_entries if e.get("program_slug")}
+    assert programs_used == {
+        "ca_on_opstc", "on_ofttc",
+        "ontario_computer_animation_and_special_effects_tax_credit_ocase",
+    }
+    npc_values = {e["npc_with_adjustments_usd"] for e in ca_on_entries}
+    assert len(npc_values) == 3, "each Ontario program must price to its own distinct NPC"
 
 
 def test_on_ocase_researched_from_scratch_and_canonicalized():
@@ -1080,10 +1091,9 @@ def test_on_ocase_researched_from_scratch_and_canonicalized():
     ocase (OCASE) was also one of the 21 zero-evidence programs. Researched
     directly from ontariocreates.ca/tax-incentives/ocase (Ontario Creates,
     official, fetched directly) this task: 18% flat rate, refundable,
-    confirmed no cap. Same jurisdiction_code-collision limitation as
-    on_ofttc applies (see test_on_ofttc_not_yet_independently_served_due_
-    to_jurisdiction_code_collision) -- not re-asserted here to avoid
-    duplicating that runtime proof."""
+    confirmed no cap. The former jurisdiction_code-collision limitation is
+    fixed (see test_on_ofttc_and_ocase_now_independently_served) -- not
+    re-asserted here to avoid duplicating that runtime proof."""
     from app.data.executable_jurisdiction_registry import get_doctrine, get_provenance
     from app.data.program_rate_rules import get_rate_rules
     from app.data.authority_coverage_registry import blocks_economic_candidacy

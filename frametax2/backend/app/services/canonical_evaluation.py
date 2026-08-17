@@ -65,6 +65,7 @@ from app.calculators.production_requirements import (
 from app.calculators.qualification_derivation import derive_qualification_register
 from app.calculators.qualification_model import QualificationState
 from app.data.authority_coverage_registry import coverage_state as _coverage_state
+from app.data.executable_jurisdiction_registry import get_doctrine as _get_doctrine
 from app.data.program_rate_rules import (
     RATE_FAILURE_NO_RULES,
     classify_rate_resolution_failure,
@@ -97,7 +98,16 @@ from app.services.canonical_project_economics import (
 # Global Economic Data + Base Pricing, batch 2: sa_film_commission_rebate
 # and si_cash_rebate promoted PARSED -> VERIFIED, coverage vetoes
 # removed. Cache-invalidation bump only.
-ENGINE_VERSION = "canonical-1.14.0"
+# CineGlobe canonical pricing path + discovery repair: candidate generation
+# LOGIC changed (production_discovery.py now examines every independently
+# registered (jurisdiction_code, program_slug) pair instead of collapsing
+# to one program per code; this file's candidate loop consumes all of
+# them, and every PRICED result now also carries a structured
+# "adjustments" breakdown, plus a top-level "program_slug" trace field
+# previously only present on unpriced/capability_only rows). Bumped so
+# every project's persisted rows are regenerated under the corrected
+# discovery/candidate universe and enriched trace shape.
+ENGINE_VERSION = "canonical-1.16.0"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
@@ -170,7 +180,10 @@ def _price_candidate(
     )
 
     spec = StructureSpec(
-        structure_id=f"CANON-{jurisdiction_code}",
+        # Program identity, not jurisdiction_code alone, is the uniqueness
+        # key — two independent programs sharing one jurisdiction (Ontario's
+        # ca_on_opstc/on_ofttc/OCASE) must never collide on this id.
+        structure_id=f"CANON-{jurisdiction_code}-{program_slug}",
         structure_type=("single_country" if jurisdiction_code == inputs.jurisdiction_code else "full_relocation"),
         label=(
             f"{jurisdiction_code} — production's current base"
@@ -340,6 +353,18 @@ def _segment_dicts(pricing) -> list[dict]:
     ]
 
 
+def _program_display_name(program_slug: str) -> str:
+    """Human-readable program name for structure-label disambiguation only
+    (never used for economics) — reads the same DoctrineRecord.program_name
+    already carried by executable_jurisdiction_registry.py; falls back to a
+    humanized slug for the handful of programs defined as raw RateRule
+    tuples with no DoctrineRecord."""
+    record = _get_doctrine(program_slug)
+    if record is not None and record.program_name:
+        return record.program_name
+    return program_slug.replace("_", " ").upper()
+
+
 async def evaluate_project(session: AsyncSession, project_id) -> dict:
     """The canonical served evaluation entry point for any project."""
     project = await session.get(Project, project_id)
@@ -428,6 +453,18 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         qpe_usd=inputs.gross_budget_usd,
         home_code=inputs.jurisdiction_code,
     )
+    # Canonical program identity, not jurisdiction_code, is the uniqueness
+    # key here too — feasibility disclosure is keyed by (code, program_slug)
+    # so multiple independent programs sharing one jurisdiction (e.g.
+    # CA-ON's ca_on_opstc / on_ofttc / OCASE) each get their OWN feasibility
+    # examination rather than silently sharing whichever one a plain
+    # code-keyed dict happened to retain last. A code-only fallback is kept
+    # for any (code, slug) combination that, for whatever reason, isn't in
+    # the pair map (defensive only — every examination is itself keyed by
+    # exactly one (code, slug) already).
+    feasibility_by_pair = {
+        (e.jurisdiction_code, e.program_slug): e for e in feasibility_discovery.examinations
+    }
     feasibility_by_code = {e.jurisdiction_code: e for e in feasibility_discovery.examinations}
     discovery = discover_executable_jurisdictions(
         requirements=derive_production_requirements({}),
@@ -436,28 +473,48 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         home_code=inputs.jurisdiction_code,
     )
 
+    # CineGlobe canonical pricing path + discovery repair: candidate
+    # identity is (jurisdiction_code, program_slug), never jurisdiction_code
+    # alone. The previous `next(...)` lookups here took only the FIRST
+    # accepted/capability_only program for a given code, silently dropping
+    # every other independently-discovered program sharing that
+    # jurisdiction (Ontario's ca_on_opstc/on_ofttc/OCASE case). Discovery
+    # itself (production_discovery.py) already examines every (code, slug)
+    # pair independently; this loop must consume ALL of them, not collapse
+    # back to one per code.
     candidates: list[tuple[str, str, str]] = []  # (code, program_slug, discovery_classification)
-    home_program = next((s for c, s in discovery.accepted if c == inputs.jurisdiction_code), None)
-    if home_program:
-        candidates.append((inputs.jurisdiction_code, home_program, "incentive_ready"))
+    for code, slug in discovery.accepted:
+        if code == inputs.jurisdiction_code:
+            candidates.append((code, slug, "incentive_ready"))
     for code, slug in discovery.accepted_alternatives(inputs.jurisdiction_code):
         candidates.append((code, slug, "incentive_ready"))
-    for code in discovery.metrics.get("capability_only_jurisdictions", []):
-        examination = next((e for e in discovery.examinations if e.jurisdiction_code == code), None)
-        if examination and examination.program_slug:
-            candidates.append((code, examination.program_slug, "capability_only"))
+    for examination in discovery.examinations:
+        if examination.classification == "capability_only" and examination.program_slug:
+            candidates.append((examination.jurisdiction_code, examination.program_slug, "capability_only"))
 
     jurisdiction_rows = (await session.execute(select(Jurisdiction))).scalars().all()
     jurisdiction_by_code = {j.code: j for j in jurisdiction_rows}
 
+    # Multiple independent programs can share one jurisdiction_code (Ontario's
+    # ca_on_opstc/on_ofttc/OCASE). Every existing single-program jurisdiction's
+    # label/description is unchanged (this dict evaluates to 1 for them); only
+    # a genuinely multi-program code gets the program name appended, so each
+    # of that code's structures stays individually identifiable rather than
+    # rendering as N indistinguishable rows sharing one label.
+    candidates_per_code: dict[str, int] = {}
+    for code, _slug, _classification in candidates:
+        candidates_per_code[code] = candidates_per_code.get(code, 0) + 1
+
     for code, program_slug, classification in candidates:
         jurisdiction = jurisdiction_by_code.get(code)
+        disambiguate = candidates_per_code.get(code, 1) > 1
+        program_label = f" ({_program_display_name(program_slug)})" if disambiguate else ""
         structure = ProductionStructure(
             id=uuid.uuid4(),
             project_id=project.id,
             name=(
-                f"{code} — production's current base"
-                if code == inputs.jurisdiction_code else f"Full relocation to {code}"
+                f"{code} — production's current base{program_label}"
+                if code == inputs.jurisdiction_code else f"Full relocation to {code}{program_label}"
             ),
             description=(
                 "The production's own confirmed base jurisdiction, priced as-is."
@@ -479,7 +536,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         # branch below. Never consulted for the classification/candidates
         # decisions above — see the module note on _feasibility_status().
         feasibility_status, feasibility_reasons = _feasibility_status(
-            feasibility_by_code.get(code), requirements,
+            feasibility_by_pair.get((code, program_slug), feasibility_by_code.get(code)), requirements,
         )
 
         if classification == "capability_only":
@@ -619,11 +676,37 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 "is_directly_comparable": is_baseline,
                 "structure_type": pricing.structure_type,
                 "primary_jurisdiction": pricing.primary_jurisdiction,
+                # Same field already present on unpriced/capability_only
+                # trace rows (see below) -- was previously missing here, the
+                # one PRICED branch. Needed to disambiguate multiple
+                # independent programs sharing one jurisdiction_code (Task
+                # 6's Ontario control) at the served view layer.
+                "program_slug": program_slug,
                 "selected_incentive_usd": pricing.selected_incentive_usd,
                 "npc_verified_usd": pricing.npc_verified_usd,
                 "npc_conservative_usd": pricing.npc_verified_usd,
                 "gross_budget_usd": pricing.gross_budget_usd,
                 "segments": _segment_dicts(pricing),
+                # Task 3 (canonical pricing path + discovery repair) — ONE
+                # canonical served NPC representation. Every dollar between
+                # (npc_verified_usd, i.e. budget - incentive) and
+                # npc_with_adjustments_usd is a NAMED field here, never a
+                # hidden residual — even though every value is currently
+                # 0.0/None (no per-project travel/FX/in-kind/local-cost/
+                # financing/implementation input exists generically yet; see
+                # the module docstring's MFNI note). Reading straight off
+                # `pricing` — no new economics, serialization only.
+                "adjustments": {
+                    "travel_incremental_delta_usd": pricing.travel_incremental_delta_usd,
+                    "fx_delta_usd": pricing.fx_delta_usd,
+                    "inkind_replacement_delta_usd": pricing.inkind_replacement_delta_usd,
+                    "local_cost_delta_usd": pricing.local_cost_delta_usd,
+                    "financing_cost_usd": pricing.financing_cost_usd,
+                    "implementation_cost_usd": pricing.implementation_cost_usd,
+                    "total_adjustments_usd": round(
+                        (pricing.npc_with_adjustments_usd or 0.0) - (pricing.npc_verified_usd or 0.0), 2
+                    ),
+                },
                 # Disclosure (does not change this candidate's own
                 # qualification outcome — the ladder still receives the same
                 # empty-set input either way; see the has_unverified_inputs/

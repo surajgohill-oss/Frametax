@@ -4,6 +4,8 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useCineGlobe } from "../lib/useCineGlobe";
 import { useProjectStatus } from "../lib/useProjectStatus";
 import { getTheme, toggleTheme } from "../lib/theme";
+import { activeStructure } from "../lib/globeData";
+import { useAppState } from "../state/AppState";
 import ProductionHero from "../components/ProductionHero";
 
 // Production sections — the approved artifact tab set (SECTIONS in
@@ -104,15 +106,18 @@ export default function ProjectHeader() {
   const openQuestions = (data?.pkg?.missing_inputs?.length || 0) + openGrey.length;
   const swing = openGrey.reduce((s, g) => s + (g.amount_usd || 0), 0);
 
-  // Recommended Structure (hero only) — the SAME rank-1 resolution
-  // Overview.jsx's own `structure`/`snapshot` derivation uses
-  // (allocated.ranking, rank === 1), read here without importing Overview's
-  // internals so this component has no dependency on a screen file.
+  // Recommended Structure (hero) — the SAME shared selection every other
+  // screen uses (lib/globeData.js::activeStructure): the producer's own
+  // explicitly selected/leading structure (AppState.leadingStructureId,
+  // written by Scenarios.jsx's Scenario Manager and persisted to the
+  // project's leading_structure_id) when one is set, else the optimizer's
+  // own rank #1 — never rank #1 unconditionally. This is the SAME helper
+  // Overview.jsx/Workspace.jsx/ProjectGlobe.jsx already call, so the hero
+  // can never disagree with the scenario cards about which structure is
+  // "the" leading one (Task 4, canonical pricing path + discovery repair).
+  const { leadingStructureId } = useAppState();
   const allocated = data?.structures?.allocated_structures;
-  const topRank = allocated?.ranking?.find((r) => r.rank === 1);
-  const topStructure = topRank
-    ? allocated?.structures?.find((s) => s.structure_id === topRank.structure_id)
-    : null;
+  const topStructure = activeStructure(allocated, leadingStructureId);
 
   // Shared stage control. The menu itself is portaled to document.body
   // (see the effect above) so it always escapes the Hero's overflow clip,

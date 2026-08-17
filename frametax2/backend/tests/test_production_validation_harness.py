@@ -68,19 +68,58 @@ class TestStage1EngineValidation:
         non-economic, superseded, duplicate). Those are canonical DATA
         exclusions, not capability or statutory ones, so the invariant is
         expressed against the coverage registry rather than a bare count.
+
+        CineGlobe canonical pricing path + discovery repair: canonical
+        program identity, not jurisdiction_code, is the discovery
+        uniqueness key — `expected_ready` is therefore counted in
+        (jurisdiction_code, program_slug) PAIRS drawn from the union of
+        jc.ALL_PROFILES and executable_jurisdiction_registry.
+        all_doctrine_records() (the same two sources production_
+        discovery.py itself unions), not from ALL_PROFILES alone (which
+        can structurally hold only one program per code and would
+        silently miss e.g. CA-ON's on_ofttc/OCASE, registered only in the
+        doctrine registry).
         """
         from app.calculators import jurisdiction_comparison as jc
         from app.data.authority_coverage_registry import blocks_economic_candidacy
+        from app.data.executable_jurisdiction_registry import all_doctrine_records
+        from app.data.program_rate_rules import resolve_program_rate
+        from app.demo.little_utopia_state import MU_PRODUCTION_TYPE, get_state
+        from app.calculators.qualification_model import QualificationState
 
         s1 = run_stage1_engine_validation()
-        canonically_blocked = {
-            code for code, p in jc.ALL_PROFILES.items()
-            if blocks_economic_candidacy(getattr(p, "program_slug", None))
+        state = get_state()
+        # The exact QPE/production_type discovery itself resolves against
+        # (little_utopia_state.py's own `_verified_qpe` / MU_PRODUCTION_TYPE),
+        # not an approximation from gross_budget_usd.
+        verified_qpe = round(
+            sum(a.amount_usd for a in state.register if a.state == QualificationState.QUALIFIES), 2
+        )
+
+        all_pairs: set[tuple[str, str]] = {
+            (code, p.program_slug) for code, p in jc.ALL_PROFILES.items() if p.program_slug
         }
-        # AU remains the one STATUTORY (non-coverage) exclusion.
-        assert "AU" not in canonically_blocked
-        expected_ready = len(jc.ALL_PROFILES) - len(canonically_blocked) - 1
-        assert s1["incentive_ready_count"] == expected_ready
+        for record in all_doctrine_records():
+            all_pairs.add((record.jurisdiction_code, record.program_slug))
+
+        non_blocked_pairs = {
+            (code, slug) for code, slug in all_pairs if not blocks_economic_candidacy(slug)
+        }
+        # AU is a known STATUTORY (non-coverage) exclusion: its real A$20M
+        # minimum QAPE is not met by this production's real QPE.
+        assert not any(code == "AU" for code, slug in non_blocked_pairs if slug is None)
+        # Independently replicate discovery's OWN statutory-resolution gate
+        # (resolve_program_rate against this production's real type/QPE) —
+        # not a re-derivation of the served count, an independent oracle
+        # over the same two canonical program sources.
+        statutorily_ready_pairs = {
+            (code, slug) for code, slug in non_blocked_pairs
+            if resolve_program_rate(
+                slug, production_type=MU_PRODUCTION_TYPE, qpe_usd=verified_qpe,
+            ) is not None
+        }
+        assert ("AU", "au_location_offset") not in statutorily_ready_pairs
+        assert s1["incentive_ready_count"] == len(statutorily_ready_pairs)
         assert s1["total_executable_jurisdictions"] == len(jc.ALL_PROFILES)
 
     def test_australia_is_the_one_statutory_exclusion(self):

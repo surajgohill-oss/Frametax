@@ -111,12 +111,22 @@ class TestServedDiscoveryMetrics:
         # edit as doctrine resolution reaches more jurisdictions, while a
         # real wiring defect (accepting something that failed a gate) still
         # fails.
-        expected_accepted = {
-            e["jurisdiction_code"] for e in d["examinations"]
+        #
+        # CineGlobe canonical pricing path + discovery repair: canonical
+        # program identity (jurisdiction_code, program_slug), not
+        # jurisdiction_code alone, is the discovery uniqueness key — a
+        # jurisdiction can now contribute MULTIPLE accepted (code, slug)
+        # pairs (e.g. CA-ON's ca_on_opstc/on_ofttc/OCASE). `accepted_count`
+        # counts PAIRS; `expected_accepted_codes` is the deduped set of
+        # CODES those pairs span (>= expected_accepted_pairs when any code
+        # has more than one accepted program).
+        expected_accepted_pairs = {
+            (e["jurisdiction_code"], e["program_slug"]) for e in d["examinations"]
             if e["production_capable"] and e["resolves_for_production"]
         }
-        assert set(d["metrics"]["accepted_jurisdictions"]) == expected_accepted
-        assert d["metrics"]["accepted_count"] == len(expected_accepted)
+        expected_accepted_codes = {code for code, _slug in expected_accepted_pairs}
+        assert set(d["metrics"]["accepted_jurisdictions"]) == expected_accepted_codes
+        assert d["metrics"]["accepted_count"] == len(expected_accepted_pairs)
         # The statute-read jurisdictions this suite protects, plus the
         # baseline, must always be among them. Global Data Application
         # originally reclassified IE (ie_section_481)

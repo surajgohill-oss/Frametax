@@ -1,0 +1,103 @@
+{
+  "title": "Canonical pricing path + discovery cardinality repair",
+  "generated_at": "2026-08-17",
+  "final_gate": "CANONICAL_PRICING_PATH_AND_DISCOVERY_ACCEPTED",
+  "objective": "Establish one canonical base-pricing serving path for every production and every canonical program: remove Little Utopia's title-based routing bypass, and fix discovery so canonical program identity (not jurisdiction_code) is the uniqueness key.",
+  "canonical_path": {
+    "lu_title_based_routing_removed": true,
+    "removed_from": "app/api/v1/cineglobe.py::get_project_state",
+    "detail": "Removed the `project.title == PRODUCTION_NAME` branch that routed Little Utopia through the legacy little_utopia_state.get_state()/build_allocated_structures() path. Every project now traverses canonical_production_view.build_production_and_structures() + build_generic_pkg_and_economics() unconditionally.",
+    "lu_canonical_persisted_evaluation": true,
+    "fvd_canonical_persisted_evaluation": true,
+    "project_specific_economic_divergences_remaining": 0,
+    "engine_version": "canonical-1.16.0"
+  },
+  "discovery": {
+    "uniqueness_key": "(jurisdiction_code, program_slug)",
+    "root_cause": "production_discovery.py's discover_executable_jurisdictions() read program_slug from a single jurisdiction_comparison.ALL_PROFILES entry per code; canonical_evaluation.py's candidate loop additionally collapsed to the FIRST accepted/capability_only program per code via next(...) lookups.",
+    "fix": "discover_executable_jurisdictions() now unions ALL_PROFILES with executable_jurisdiction_registry.all_doctrine_records() and examines every distinct (code, slug) pair independently. canonical_evaluation.py's candidate loop consumes every accepted/capability_only pair, not just the first per code. Structure identity (structure_id, and the served name/label when a code has >1 program) now incorporates program_slug to avoid collisions.",
+    "multiple_programs_per_jurisdiction": true,
+    "ontario_control": {
+      "ca_on_opstc": "independently examined, accepted, priced",
+      "on_ofttc": "independently examined, accepted, priced",
+      "ocase": "independently examined, accepted, priced (slug: ontario_computer_animation_and_special_effects_tax_credit_ocase)",
+      "distinct_npc_values": true,
+      "distinct_structure_rows": true,
+      "combined_or_stacked": false
+    },
+    "alias_duplication": "none -- executable_jurisdiction_registry._REGISTRY is keyed by canonical program_slug; CANONICAL_RUNTIME_SLUG_BINDINGS aliases resolve to the same canonical slug before pricing, verified for ca_on_opstc specifically (appears in both ALL_PROFILES and the doctrine registry, examines as exactly one candidate)."
+  },
+  "npc_controls": {
+    "lu_mauritius": {
+      "budget_usd": 4364393.00,
+      "qpe_usd": 4355327.10,
+      "incentive_usd": 1306598.10,
+      "total_adjustments_usd": 0.0,
+      "final_npc_usd": 3057794.90,
+      "reconciles_exactly": true,
+      "unchanged_from_prior_accepted_value": true
+    },
+    "lu_representative_alternative_colombia": {
+      "budget_usd": 4364393.00,
+      "incentive_usd": 1418968.60,
+      "final_npc_usd": 2945424.40,
+      "reconciles_exactly": true
+    },
+    "fvd_greece_baseline": {
+      "budget_usd": 4517687.00,
+      "incentive_usd": 1445659.84,
+      "total_adjustments_usd": 0.0,
+      "final_npc_usd": 3072027.16,
+      "reconciles_exactly": true
+    },
+    "fvd_us_california": {
+      "budget_usd": 4517687.00,
+      "incentive_usd": 1454187.35,
+      "final_npc_usd": 3063499.65,
+      "reconciles_exactly": true
+    },
+    "fvd_ca_on_opstc": {"incentive_usd": 893286.52, "final_npc_usd": 3624400.48, "reconciles_exactly": true},
+    "fvd_ca_on_ofttc": {"incentive_usd": 1454187.35, "final_npc_usd": 3063499.65, "reconciles_exactly": true},
+    "fvd_ca_on_ocase": {"incentive_usd": 747867.78, "final_npc_usd": 3769819.22, "reconciles_exactly": true}
+  },
+  "npc_field_contract": {
+    "adjustments_breakdown_added_to_trace": [
+      "travel_incremental_delta_usd", "fx_delta_usd", "inkind_replacement_delta_usd",
+      "local_cost_delta_usd", "financing_cost_usd", "implementation_cost_usd", "total_adjustments_usd"
+    ],
+    "npc_verified_usd_vs_npc_with_adjustments_usd": "both fields distinct on every served structure; equal today because no per-project travel/FX/in-kind/local-cost/financing/implementation input exists generically yet -- disclosed, not hidden.",
+    "canonical_production_view_py_updated": true
+  },
+  "ui": {
+    "hero_and_scenario_card_same_field": true,
+    "fix": "ProjectHeader.jsx's hero now calls the SAME lib/globeData.js::activeStructure(allocated, leadingStructureId) helper Overview.jsx/Workspace.jsx/ProjectGlobe.jsx already use, instead of unconditionally reading ranking's rank===1 entry. Falls back to rank 1 only when no leading structure is explicitly selected.",
+    "frontend_recomputes_npc": false
+  },
+  "runtime_verification": {
+    "lu_overview": "loads, NPC $3,057,795, structure Mauritius -- browser-verified",
+    "lu_workspace": "loads, hero and scenario cards agree exactly -- browser-verified",
+    "lu_scenarios": "Mauritius leading, gross budget/incentive/NPC match hero exactly -- browser-verified",
+    "lu_project_globe": "loads, Mauritius baseline shown -- browser-verified",
+    "fvd_overview": "loads, NPC $3,072,027, structure Greece -- browser-verified",
+    "fvd_scenarios": "three independent Ontario Full Relocation rows with distinct QPE/incentive/NPC visible in Review section -- browser-verified via get_page_text",
+    "api_get_project_state": "confirmed 200 OK for both projects post-fix via server logs"
+  },
+  "deferred": {
+    "zero_evidence_19": "untouched",
+    "optimizer_restoration": "untouched -- discovery cardinality fix is deliberately NOT stacking (Task Important note); Ontario's 3 programs are served independently, never combined",
+    "little_utopia_legacy_demo_engine": "unchanged -- app/demo/little_utopia_state.py and its own build_allocated_structures() remain in place, backing only the non-project-scoped 8 legacy routes (company-level pages with no project_id, per useCineGlobe.js's own documented behavior). No longer reachable from get_project_state.",
+    "production_validation_harness_legacy_structure_dedup": "the legacy demo engine's own structure dicts still carry no program_slug field (restoring that is out of scope, 'DO NOT restore optimizer structures'); production_validation_harness.py's _jurisdiction_outcomes() was patched to stop attributing an ambiguous shared structure's is_fully_priced value to a NOT-accepted examination for a multi-program code -- a minimal, diagnostic-only fix, not a re-architecture of the legacy engine's structure generation."
+  },
+  "tests": {
+    "new_test_file": "tests/test_canonical_pricing_path_and_discovery.py (9 tests)",
+    "updated_test_files": [
+      "tests/optimization/test_global_data_application_runtime.py",
+      "tests/optimization/test_treaty_candidate_generation.py",
+      "tests/test_canonical_authority_substrate.py",
+      "tests/test_canonical_served_wiring_repair.py",
+      "tests/test_global_discovery.py",
+      "tests/test_production_validation_harness.py"
+    ],
+    "full_suite_result": "4210 passed, 1 pre-existing out-of-scope failure (test_scenarios_and_workspace_both_use_the_canonical_title_formatter -- unrelated frontend title-formatter regression, present before this task), 1 skipped"
+  }
+}

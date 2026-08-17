@@ -1086,22 +1086,23 @@ async def get_project_state(project_id: str, db: AsyncSession = Depends(get_db))
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
 
-    is_demo_project = project.title == PRODUCTION_NAME
-    if is_demo_project:
-        # Byte-identical to the 8 individual routes above — same functions,
-        # called directly. Never a second implementation of Little Utopia's
-        # own served data.
-        return {
-            "production": await get_production(db),
-            "pkg": await get_package(),
-            "recommendations": await get_recommendations(),
-            "structures": await get_structures(),
-            "legal": await get_legal(),
-            "economics": await get_economics(),
-            "people": await get_people(db),
-            "facts": await get_facts(),
-        }
-
+    # CineGlobe canonical pricing path + discovery repair, Task 1: this
+    # route previously special-cased Little Utopia by exact project TITLE
+    # (`project.title == PRODUCTION_NAME`), routing it through the legacy
+    # in-memory `get_state()` / `little_utopia_state.build_allocated_
+    # structures` path while every other project used the generic,
+    # persisted-StructureCalculationResult-backed canonical path below.
+    # No production title may select economic logic — every project,
+    # Little Utopia included, is now evaluated from its own persisted
+    # canonical production inputs through the SAME
+    # canonical_production_view.build_production_and_structures() /
+    # build_generic_pkg_and_economics() machinery FVD already used. Little
+    # Utopia's own real Project row already carries a persisted, current-
+    # engine-version leading structure (see canonical_evaluation.py's
+    # evaluate_project()) — no legacy-state fallback exists or is needed
+    # here; if a project has no persisted evaluation yet, it renders the
+    # same honest "not yet evaluated" shape every other unevaluated
+    # project does, never a different code path.
     view = await build_production_and_structures(db, project_id)
     if view.get("status") != "OK":
         raise HTTPException(status_code=404, detail=view.get("status", "PROJECT_NOT_FOUND"))

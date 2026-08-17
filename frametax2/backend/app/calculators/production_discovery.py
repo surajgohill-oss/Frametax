@@ -94,6 +94,7 @@ def discover_executable_jurisdictions(
         coverage_state,
     )
     from app.data.program_rate_rules import get_rate_rules, resolve_program_rate
+    from app.data.executable_jurisdiction_registry import all_doctrine_records
     from app.data.program_spend_rules import get_program_doctrine, resolve_program_doctrine
 
     # Every implemented jurisdiction: distinct codes across the full program
@@ -104,6 +105,30 @@ def discover_executable_jurisdictions(
         inventory_by_code.setdefault(p.jurisdiction_code, p)
     for code in jc.ALL_PROFILES:
         inventory_by_code.setdefault(code, None)
+
+    # Canonical program identity, not jurisdiction_code, is the uniqueness
+    # key for discovery (CineGlobe canonical pricing path + discovery
+    # repair). `jc.ALL_PROFILES` is a dict keyed by jurisdiction_code — it
+    # can structurally hold only ONE program_slug per code — and the old
+    # loop below read `slug` from that single profile alone, silently
+    # collapsing every jurisdiction to at most one examinable/priceable
+    # program even when `executable_jurisdiction_registry.py` holds
+    # several independently-cited DoctrineRecords for the same code (e.g.
+    # CA-ON: ca_on_opstc, on_ofttc, and the OCASE animation credit — three
+    # distinct, separately-sourced programs). Build the full per-code slug
+    # list here: the profile's own slug (kept first, unchanged ordering/
+    # behavior for every jurisdiction that only ever had one program) plus
+    # every DoctrineRecord registered for that code, deduplicated by slug
+    # so a program registered in both places is never examined twice.
+    slugs_by_code: dict[str, list[str]] = {}
+    for code, profile in jc.ALL_PROFILES.items():
+        if profile.program_slug:
+            slugs_by_code.setdefault(code, []).append(profile.program_slug)
+    for record in all_doctrine_records():
+        bucket = slugs_by_code.setdefault(record.jurisdiction_code, [])
+        if record.program_slug not in bucket:
+            bucket.append(record.program_slug)
+        inventory_by_code.setdefault(record.jurisdiction_code, None)
 
     examinations: list[JurisdictionExamination] = []
     accepted: list[tuple[str, str]] = []
@@ -120,95 +145,98 @@ def discover_executable_jurisdictions(
             or (getattr(profile, "jurisdiction_name", None) if profile else None)
             or code
         )
-        slug = profile.program_slug if profile is not None else None
-        # `has_doctrine` now reports whether an EXECUTABLE doctrine resolves —
-        # which, under the canonical QPE rule, it always does for a modeled
-        # program (explicitly classified, evidence-constrained, or the
-        # canonical default). `doctrine_basis` preserves the provenance
-        # distinction that `has_doctrine` used to carry, so a consumer can
-        # still tell statute-read treatment from canonically-defaulted
-        # treatment. See program_spend_rules.resolve_program_doctrine.
-        doctrine_resolution = resolve_program_doctrine(slug) if slug is not None else None
-        has_doctrine = doctrine_resolution is not None
-        doctrine_basis = doctrine_resolution.basis.value if doctrine_resolution else None
-        has_rate = slug is not None and len(get_rate_rules(slug)) > 0
-        stated_rate = getattr(inv, "base_rate", None) if inv is not None else None
-        req_cultural = getattr(inv, "requires_cultural_test", None) if inv is not None else None
-        req_entity = getattr(inv, "requires_local_entity", None) if inv is not None else None
-
-        # ── STAGE 1: can the PRODUCTION be made here? (capability, not tax) ──
+        # STAGE 1 (capability) is a property of the JURISDICTION, not of any
+        # one program — computed once per code and applied identically to
+        # every program examined for that code below.
         cap = jurisdiction_capability_profile(code)
         cm = match_capability(requirements, cap)
         cap_reasons = cm.reasons
 
-        # ── STAGE 2: can the incentive be priced? (knowledge + statutory) ──
-        # Global Data Application: the canonical coverage registry is consulted
-        # FIRST and is decisive. A program the completed primary-authority corpus
-        # adjudicated authority-insufficient / selective-non-guaranteed /
-        # non-economic / superseded / duplicate must never reach optimization,
-        # even while it still holds stale doctrine + rate rules. Absence from the
-        # registry means PRICEABLE_VALIDATED, so this can never suppress a new
-        # program by default. See app/data/authority_coverage_registry.py.
-        coverage_blocked = blocks_economic_candidacy(slug)
-        resolves = False
-        priceable = False
-        if not coverage_blocked and slug is not None and has_doctrine and has_rate:
-            rr = resolve_program_rate(slug, production_type=production_type, qpe_usd=qpe_usd)
-            resolves = rr is not None
-            priceable = resolves
+        code_slugs = slugs_by_code.get(code) or [None]
+        for slug in code_slugs:
+            # `has_doctrine` now reports whether an EXECUTABLE doctrine resolves —
+            # which, under the canonical QPE rule, it always does for a modeled
+            # program (explicitly classified, evidence-constrained, or the
+            # canonical default). `doctrine_basis` preserves the provenance
+            # distinction that `has_doctrine` used to carry, so a consumer can
+            # still tell statute-read treatment from canonically-defaulted
+            # treatment. See program_spend_rules.resolve_program_doctrine.
+            doctrine_resolution = resolve_program_doctrine(slug) if slug is not None else None
+            has_doctrine = doctrine_resolution is not None
+            doctrine_basis = doctrine_resolution.basis.value if doctrine_resolution else None
+            has_rate = slug is not None and len(get_rate_rules(slug)) > 0
+            stated_rate = getattr(inv, "base_rate", None) if inv is not None else None
+            req_cultural = getattr(inv, "requires_cultural_test", None) if inv is not None else None
+            req_entity = getattr(inv, "requires_local_entity", None) if inv is not None else None
 
-        # ── Classification (production-first) ──
-        if cap.has_capability_data and not cm.production_capable:
-            classification = "rejected"
-            missing = ", ".join(cm.incompatible) or "a required environment"
-            reason = (f"Not production-capable: the production requires {missing}, which "
-                      f"this jurisdiction cannot provide. Rejected on capability, "
-                      "independent of any incentive.")
-            _reject("capability_mismatch")
-            ok = False
-            capable = False
-        elif cm.production_capable and priceable:
-            classification = "incentive_ready"
-            reason = ("Production-capable AND incentive-ready: capabilities match the "
-                      "production's requirements and a statutory incentive resolves — "
-                      "enters optimization.")
-            ok = True
-            capable = True
-            accepted.append((code, slug))
-        elif cm.production_capable and not priceable:
-            classification = "capability_only"
-            why_pending = (
-                coverage_state(slug).replace("_", " ").lower() +
-                " per the canonical authority-coverage registry"
-                if coverage_blocked else
-                "no statutory rate rules" if not has_rate else
-                "no classified qualification doctrine" if not has_doctrine else
-                "the production's statutory conditions are unmet")
-            reason = ("Production-capable, incentive pending: the jurisdiction can "
-                      f"physically support the production, but {why_pending}. Retained "
-                      "for capability, not priced (never guessed).")
-            _reject("capability_only_incentive_pending")
-            ok = False
-            capable = True
-        else:
-            # No capability data AND not priceable → nothing to act on.
-            classification = "rejected"
-            reason = ("No structured capability profile and no priceable incentive "
-                      "model (catalog rate only, if any) — cannot assess production "
-                      "fit or price; excluded rather than guessed.")
-            _reject("no_capability_no_incentive")
-            ok = False
-            capable = False
+            # ── STAGE 2: can the incentive be priced? (knowledge + statutory) ──
+            # Global Data Application: the canonical coverage registry is consulted
+            # FIRST and is decisive. A program the completed primary-authority corpus
+            # adjudicated authority-insufficient / selective-non-guaranteed /
+            # non-economic / superseded / duplicate must never reach optimization,
+            # even while it still holds stale doctrine + rate rules. Absence from the
+            # registry means PRICEABLE_VALIDATED, so this can never suppress a new
+            # program by default. See app/data/authority_coverage_registry.py.
+            coverage_blocked = blocks_economic_candidacy(slug)
+            resolves = False
+            priceable = False
+            if not coverage_blocked and slug is not None and has_doctrine and has_rate:
+                rr = resolve_program_rate(slug, production_type=production_type, qpe_usd=qpe_usd)
+                resolves = rr is not None
+                priceable = resolves
 
-        examinations.append(JurisdictionExamination(
-            jurisdiction_code=code, jurisdiction_name=name, classification=classification,
-            accepted=ok, production_capable=capable, reason=reason,
-            capability_reasons=cap_reasons, program_slug=slug,
-            has_capability_data=cap.has_capability_data, has_doctrine=has_doctrine,
-            has_rate_rules=has_rate, resolves_for_production=resolves,
-            stated_base_rate=stated_rate, requires_cultural_test=req_cultural,
-            requires_local_entity=req_entity,
-        ))
+            # ── Classification (production-first) ──
+            if cap.has_capability_data and not cm.production_capable:
+                classification = "rejected"
+                missing = ", ".join(cm.incompatible) or "a required environment"
+                reason = (f"Not production-capable: the production requires {missing}, which "
+                          f"this jurisdiction cannot provide. Rejected on capability, "
+                          "independent of any incentive.")
+                _reject("capability_mismatch")
+                ok = False
+                capable = False
+            elif cm.production_capable and priceable:
+                classification = "incentive_ready"
+                reason = ("Production-capable AND incentive-ready: capabilities match the "
+                          "production's requirements and a statutory incentive resolves — "
+                          "enters optimization.")
+                ok = True
+                capable = True
+                accepted.append((code, slug))
+            elif cm.production_capable and not priceable:
+                classification = "capability_only"
+                why_pending = (
+                    coverage_state(slug).replace("_", " ").lower() +
+                    " per the canonical authority-coverage registry"
+                    if coverage_blocked else
+                    "no statutory rate rules" if not has_rate else
+                    "no classified qualification doctrine" if not has_doctrine else
+                    "the production's statutory conditions are unmet")
+                reason = ("Production-capable, incentive pending: the jurisdiction can "
+                          f"physically support the production, but {why_pending}. Retained "
+                          "for capability, not priced (never guessed).")
+                _reject("capability_only_incentive_pending")
+                ok = False
+                capable = True
+            else:
+                # No capability data AND not priceable → nothing to act on.
+                classification = "rejected"
+                reason = ("No structured capability profile and no priceable incentive "
+                          "model (catalog rate only, if any) — cannot assess production "
+                          "fit or price; excluded rather than guessed.")
+                _reject("no_capability_no_incentive")
+                ok = False
+                capable = False
+
+            examinations.append(JurisdictionExamination(
+                jurisdiction_code=code, jurisdiction_name=name, classification=classification,
+                accepted=ok, production_capable=capable, reason=reason,
+                capability_reasons=cap_reasons, program_slug=slug,
+                has_capability_data=cap.has_capability_data, has_doctrine=has_doctrine,
+                has_rate_rules=has_rate, resolves_for_production=resolves,
+                stated_base_rate=stated_rate, requires_cultural_test=req_cultural,
+                requires_local_entity=req_entity,
+            ))
 
     n_capable = sum(1 for e in examinations if e.production_capable)
     n_capability_only = sum(1 for e in examinations if e.classification == "capability_only")

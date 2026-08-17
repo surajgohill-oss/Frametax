@@ -79,7 +79,13 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     test_canonical_authority_substrate.py's
     test_fvd_runtime_candidate_universe_restored for the full batch-by-
     batch trace) as real, cited historical RateRule data was individually
-    re-verified and promoted rather than left unwired. The one thing this
+    re-verified and promoted rather than left unwired. Priced grew again,
+    103 -> 107 (unpriced 7 -> 8), from the CineGlobe canonical pricing path
+    + discovery repair: on_ofttc and OCASE (CA-ON) now each reach their own
+    independent candidate structure alongside ca_on_opstc, instead of being
+    silently collapsed to one by a jurisdiction_code-keyed discovery lookup
+    (see test_canonical_authority_substrate.py's
+    test_on_ofttc_and_ocase_now_independently_served). The one thing this
     must still hold, regardless of the count: all four served surfaces
     (Overview/Scenarios/Workspace/World) agree on it (Defect 2)."""
     await evaluate_project(db, FVD_PROJECT_ID)
@@ -91,11 +97,11 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     unpriced = [e for e in entries if not e["is_fully_priced"]]
     accounting = view["structures"]["allocated_structures"]["candidate_accounting"]
 
-    assert len(priced) == 103
-    assert len(unpriced) == 7
+    assert len(priced) == 107
+    assert len(unpriced) == 8
     assert accounting["comparable_count"] == 1
-    assert accounting["review_required_count"] == 102
-    assert accounting["unpriceable_count"] == 7
+    assert accounting["review_required_count"] == 106
+    assert accounting["unpriceable_count"] == 8
 
     # Cross-screen agreement: the ranking list (what Scenarios/Overview/
     # World all read via is_directly_comparable) must reproduce the exact
@@ -105,8 +111,8 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     review_ranked = [r for r in ranking if r["is_fully_priced"] and not r["is_directly_comparable"]]
     unpriceable_ranked = [r for r in ranking if not r["is_fully_priced"]]
     assert len(comparable_ranked) == 1
-    assert len(review_ranked) == 102
-    assert len(unpriceable_ranked) == 7
+    assert len(review_ranked) == 106
+    assert len(unpriceable_ranked) == 8
 
     # Feasibility ≠ eligibility (canonical authority substrate + feasibility
     # boundary repair): a landlocked jurisdiction with real marine-mismatch
@@ -245,7 +251,7 @@ async def test_fvd_unpriceable_causes_are_differentiated_not_flattened(db: Async
     ranking = view["structures"]["allocated_structures"]["ranking"]
     unpriceable = [r for r in ranking if not r["is_fully_priced"]]
 
-    assert len(unpriceable) == 7
+    assert len(unpriceable) == 8
     statuses = {r["candidate_status"] for r in unpriceable}
     assert statuses.issuperset({"UNPRICEABLE_AUTHORITY_INSUFFICIENT", "RULE_REJECTED"}), (
         f"expected at least AUTHORITY_INSUFFICIENT and RULE_REJECTED causes, got {statuses}"
