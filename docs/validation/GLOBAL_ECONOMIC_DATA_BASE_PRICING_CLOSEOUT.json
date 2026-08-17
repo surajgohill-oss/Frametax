@@ -1,0 +1,160 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-17T00:00:00Z",
+  "final_gate": "GLOBAL_ECONOMIC_DATA_BASE_PRICING_BLOCKED",
+  "canonical_inventory": {
+    "canonical_identities": 224,
+    "formulaic": 126,
+    "selective_or_discretionary": 23,
+    "non_economic_support": 7,
+    "superseded": 2,
+    "duplicate": 1,
+    "unresolved_type": 65
+  },
+  "formulaic_program_accounting": {
+    "formulaic_total": 126,
+    "priced_before_this_task": 32,
+    "priced_after_this_task": 42,
+    "genuinely_missing_economic_input": 84,
+    "unexplained_unclassified": 0,
+    "sum_check": 126
+  },
+  "batches_completed": [
+    {
+      "batch": 1,
+      "method": "recover_before_research",
+      "programs": [
+        "ca_bc_pstc",
+        "hr_cash_rebate",
+        "nz_spg_international",
+        "tt_production_expenditure_rebate",
+        "us_la_film_incentive",
+        "us_md_film_production_activity_credit",
+        "us_nm_film_credit",
+        "us_ri_film_credit"
+      ],
+      "action": "existing PARSED-tier RateRule citations individually re-examined; 8 of 13 candidates met the direct-primary-fetch bar and were promoted to VERIFIED, coverage veto removed"
+    },
+    {
+      "batch": 2,
+      "method": "fresh_primary_source_reverification",
+      "programs": [
+        "sa_film_commission_rebate",
+        "si_cash_rebate"
+      ],
+      "action": "fresh direct fetch/search independently reproduced the exact figures a prior session's own citation already recorded; promoted to VERIFIED, coverage veto removed"
+    }
+  ],
+  "genuinely_missing_economic_inputs": {
+    "count": 84,
+    "meaning": "All 84 remain blocked by COVERAGE_REGISTRY_VETO with zero VERIFIED RateRule contradicting the veto. Of these, roughly 60 already carry a real, cited PARSED-tier RateRule (source_ref points to a real source) that has NOT yet been individually re-verified against its primary source this session -- this is the exact, itemized next-batch research workload, not a generic failure. The remaining ~24 have zero RateRule of any tier and require research from first principles.",
+    "next_batch_candidates_with_existing_parsed_data": [
+      "ae_ad_film_rebate",
+      "al_cash_rebate",
+      "at_fisa_plus",
+      "be_tax_shelter",
+      "bg_film_encouragement_act_rebate",
+      "ca_ab_fttc",
+      "ca_federal_pstc",
+      "ca_mb_film_video_credit",
+      "ca_nb_film_tax_credit",
+      "ca_ns_production_incentive_fund",
+      "ca_on_opstc",
+      "ca_sk_creative_saskatchewan_grant",
+      "cl_corfo_incentive",
+      "co_film_in_colombia",
+      "cy_film_rebate",
+      "cz_film_incentive",
+      "de_dfff",
+      "do_film_commission_incentive",
+      "ee_film_estonia_rebate",
+      "es_tax_credit_foreign",
+      "fi_business_finland_incentive",
+      "fr_trip",
+      "hu_hipa_rebate",
+      "ie_section_481",
+      "is_film_reimbursement_scheme",
+      "it_tax_credit_foreign",
+      "lt_film_centre_cash_rebate",
+      "lu_filmfund_tax_shelter_rebate",
+      "lv_national_film_centre_incentive",
+      "ma_ccm_rebate",
+      "me_cash_rebate",
+      "mk_cash_rebate",
+      "nl_film_production_incentive",
+      "no_film_incentive",
+      "pl_pisf_cash_rebate",
+      "ro_film_office_cash_rebate",
+      "rs_film_commission_cash_rebate",
+      "se_production_rebate",
+      "sk_avf_production_incentive",
+      "uk_avec",
+      "us_al_film_incentive",
+      "us_az_motion_picture_production",
+      "us_ca_film_credit",
+      "us_co_film_incentive",
+      "us_ct_film_tax_credit",
+      "us_hi_film_digital_media_credit",
+      "us_il_film_production_services_credit",
+      "us_ky_keiia",
+      "us_ma_film_tax_credit",
+      "us_mn_film_production_credit",
+      "us_ms_advantage_film_program",
+      "us_nc_film_entertainment_grant",
+      "us_nv_film_credit",
+      "us_ok_film_enhancement_rebate",
+      "us_pa_film_production_credit",
+      "us_pr_film_incentives_act",
+      "us_sc_film_production_credit",
+      "us_tn_performance_grant",
+      "us_tx_miip",
+      "us_ut_motion_picture_incentive",
+      "us_va_motion_picture_credit",
+      "us_wa_motion_picture_competitiveness"
+    ]
+  },
+  "unresolved_program_types": {
+    "count": 65,
+    "recovered_this_task": 0,
+    "note": "Web-researched ~13 stub-name identities this task (Bangladesh, Bahrain, Egypt, Ethiopia, Gabon, Kenya, Kuwait, Sri Lanka, Mongolia, Maldives, Mozambique, Nigeria, Oman). One real, well-documented formulaic program found (Mongolia -- 30% location + 10% cultural + 5% foreign-talent + 30% post, up to 45% cumulative, Mongolian Film Council) but NOT YET encoded into program_rate_rules_worldwide.py before this session's time budget was reached -- flagged as the highest-priority item for the next type-resolution batch. Several others (Ethiopia, Sri Lanka, Maldives) were confirmed via multiple independent sources to have NO current operational incentive -- genuinely resolved as 'no program exists', which does not map cleanly to any of the 8 Workstream-A disposition categories (none of FORMULAIC/SELECTIVE/NEGOTIATED/NON_ECONOMIC/FINANCING/SUPERSEDED/DUPLICATE/OTHER_VERIFIED describes 'confirmed no program'), so these remain PROGRAM_TYPE_UNRESOLVED with the negative finding disclosed rather than force-fit into an inaccurate category. Egypt's eg_film_incentive stub is likely a DUPLICATE of the already-canonical eg_empc_cashback identity (both point to the EMPC 30% rebate) -- flagged, not yet merged."
+  },
+  "requirements_survival": {
+    "priced_scenarios_retain_requirements": true,
+    "requirements_incorrectly_suppressing_pricing": 0
+  },
+  "LU_runtime": {
+    "evaluated": 110,
+    "priced": 39,
+    "genuinely_missing": 71,
+    "baseline_npc_usd": 3057794.9,
+    "control_status": "UNCHANGED"
+  },
+  "FVD_runtime": {
+    "evaluated": 110,
+    "priced": 41,
+    "genuinely_missing": 69
+  },
+  "additional_project": {
+    "attempted": [
+      "Underwater",
+      "The Cure",
+      "One Night Stand",
+      "The Room Below",
+      "The System",
+      "Baron Samedi",
+      "5 LBS OF PRESSURE",
+      "SA1 Generic Test Project"
+    ],
+    "result": "none had complete evaluable canonical inputs -- most have no budget document attached at all; SA1 Generic Test Project has a budget (6 line items, $1.72M) but returns BLOCKED_INCOMPLETE_INPUTS (missing other required project fields). Only Little Utopia and FVD currently have complete inputs in this database. This is a genuine finding, not a limitation invented for this report."
+  },
+  "deferred_optimizer_ledger": {
+    "split_component": "LOST_OR_DISCONNECTED -- deferred",
+    "grants_funds": "LOST_OR_DISCONNECTED -- deferred",
+    "official_treaty_co_production": "LOST_OR_DISCONNECTED -- deferred",
+    "hybrid_anchor": "LOST_OR_DISCONNECTED -- deferred",
+    "in_kind_support": "LOST_OR_DISCONNECTED -- deferred",
+    "reinvestment": "deferred for later product/economic re-evaluation"
+  },
+  "frontend_changed": false,
+  "external_research_performed": true
+}
