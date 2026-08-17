@@ -89,8 +89,23 @@ from dataclasses import asdict, dataclass
 from app.data import global_inventory as _gi
 from app.data.program_rate_rules import get_qpe_cap, get_rate_rules
 from app.data.program_spend_rules import get_program_doctrine, get_program_rules, resolve_program_doctrine
+# Canonical global program universe completion: executable_jurisdiction_
+# registry.DoctrineRecord is the single canonical source for a program's
+# is_refundable/is_transferable/min_spend_usd/annual_cap_usd/requires_
+# cultural_test facts (see that module's own docstring) -- this
+# consolidation view previously read ONLY global_inventory for those
+# fields, missing real, cited, sometimes VERIFIED-tier data already
+# registered for 107+ programs via register(DoctrineRecord(...)) (e.g.
+# Georgia's O.C.G.A. Section 48-7-40.26-cited, VERIFIED-tier record).
+# Imported here, not at program_rate_rules.py's own top level, to match
+# that module's own documented bottom-of-file import discipline (avoids
+# the circular import between program_rate_rules.py and program_rate_
+# rules_worldwide.py); by the time this module is imported, program_rate_
+# rules.py has already fully executed its own bottom import and populated
+# executable_jurisdiction_registry._REGISTRY.
+from app.data.executable_jurisdiction_registry import get_doctrine
 
-CONSOLIDATION_VERSION = "authority-substrate-1.1.0"
+CONSOLIDATION_VERSION = "authority-substrate-1.2.0"
 
 PRESENT = "PRESENT"
 PARTIAL = "PARTIAL"
@@ -171,6 +186,9 @@ def consolidate(canonical_program_id: str) -> ProgramConsolidation:
     doctrine_resolution = resolve_program_doctrine(slug)
     qpe_cap = get_qpe_cap(slug)
     gi_entry = _global_inventory_entry(slug)
+    doctrine = get_doctrine(slug)
+    doctrine_verified = doctrine is not None and doctrine.confidence_tier == "VERIFIED"
+    doctrine_partial = doctrine is not None and doctrine.confidence_tier in ("PARSED", "DISCOVERY")
 
     dims: list[DimensionState] = []
 
@@ -232,21 +250,35 @@ def consolidate(canonical_program_id: str) -> ProgramConsolidation:
 
     # MINIMUM_SPEND — a VERIFIED rate rule's min_qpe_usd (the same
     # confidence-tier standard as RATE_OR_AWARD_BASIS above; a min_qpe_usd
-    # on a non-VERIFIED rule is real but not yet executable).
+    # on a non-VERIFIED rule is real but not yet executable), OR the same
+    # fact carried directly on a VERIFIED/PARSED DoctrineRecord.
     min_spend_rules = [r for r in verified_rate_rules if r.min_qpe_usd is not None]
     if min_spend_rules:
         dims.append(DimensionState("MINIMUM_SPEND", PRESENT,
                                     f"{len(min_spend_rules)} VERIFIED RateRule(s) carry an explicit min_qpe_usd"))
-    elif any(r.min_qpe_usd is not None for r in rate_rules):
+    elif doctrine_verified and doctrine.min_spend_usd is not None:
+        dims.append(DimensionState("MINIMUM_SPEND", PRESENT,
+                                    f"VERIFIED DoctrineRecord.min_spend_usd={doctrine.min_spend_usd} ({doctrine.source_ref})"))
+    elif any(r.min_qpe_usd is not None for r in rate_rules) or (doctrine_partial and doctrine.min_spend_usd is not None):
         dims.append(DimensionState("MINIMUM_SPEND", PARTIAL,
-                                    "a min_qpe_usd exists on a non-VERIFIED RateRule only"))
+                                    "a min_qpe_usd/min_spend_usd exists on a non-VERIFIED source only"))
     else:
         dims.append(DimensionState("MINIMUM_SPEND", MISSING,
-                                    "no RateRule carries min_qpe_usd"))
+                                    "no RateRule or DoctrineRecord carries a minimum-spend value"))
 
-    # CAP — the executable QPE-cap rule.
+    # CAP — the executable QPE-cap rule, or a VERIFIED/PARSED
+    # DoctrineRecord.annual_cap_usd. A DoctrineRecord field left None is
+    # NOT treated as a confirmed absence here (this dataclass cannot
+    # distinguish "confirmed no cap" from "not modeled") — that remains
+    # MISSING until a dedicated NOT_APPLICABLE citation is recorded, never
+    # inferred from a bare None.
     if qpe_cap is not None:
         dims.append(DimensionState("CAP", PRESENT, "program_rate_rules.get_qpe_cap() returned a QpeCapRule"))
+    elif doctrine_verified and doctrine.annual_cap_usd is not None:
+        dims.append(DimensionState("CAP", PRESENT,
+                                    f"VERIFIED DoctrineRecord.annual_cap_usd={doctrine.annual_cap_usd} ({doctrine.source_ref})"))
+    elif doctrine_partial and doctrine.annual_cap_usd is not None:
+        dims.append(DimensionState("CAP", PARTIAL, "a non-VERIFIED DoctrineRecord carries an annual_cap_usd value"))
     else:
         dims.append(DimensionState("CAP", MISSING, "program_rate_rules.get_qpe_cap() returned None"))
 
@@ -263,28 +295,48 @@ def consolidate(canonical_program_id: str) -> ProgramConsolidation:
         dims.append(DimensionState("ELIGIBLE_PRODUCTION_TYPE", MISSING,
                                     "no RateRule carries a production_types scope"))
 
-    # CULTURAL_OR_CONTENT_TEST — global_inventory's stated flag. A bare
-    # boolean, never the actual test criteria, so PRESENT is never claimed
-    # here — only whether even that much is on file.
-    if gi_entry is not None and gi_entry.requires_cultural_test is not None:
+    # CULTURAL_OR_CONTENT_TEST — a VERIFIED DoctrineRecord.requires_
+    # cultural_test is a real, reviewed determination (True OR False both
+    # count as PRESENT — "confirmed no test" is exactly as resolved as
+    # "confirmed a test exists"); a non-VERIFIED DoctrineRecord or a bare
+    # global_inventory flag is PARTIAL, never the test's own criteria.
+    if doctrine_verified:
+        dims.append(DimensionState("CULTURAL_OR_CONTENT_TEST", PRESENT,
+                                    f"VERIFIED DoctrineRecord.requires_cultural_test={doctrine.requires_cultural_test} "
+                                    f"({doctrine.source_ref})"))
+    elif doctrine_partial or (gi_entry is not None and gi_entry.requires_cultural_test is not None):
+        source = (f"non-VERIFIED DoctrineRecord.requires_cultural_test={doctrine.requires_cultural_test}"
+                  if doctrine_partial else
+                  f"global_inventory states requires_cultural_test={gi_entry.requires_cultural_test}")
         dims.append(DimensionState("CULTURAL_OR_CONTENT_TEST", PARTIAL,
-                                    f"global_inventory states requires_cultural_test={gi_entry.requires_cultural_test} "
-                                    "(a flag only, not the test's own criteria)"))
+                                    f"{source} (a flag only, not the test's own criteria)"))
     else:
         dims.append(DimensionState("CULTURAL_OR_CONTENT_TEST", MISSING,
-                                    "no global_inventory entry states requires_cultural_test"))
+                                    "no DoctrineRecord or global_inventory entry states requires_cultural_test"))
 
-    # UPLIFT_RULES — no executable uplift-rate structure exists anywhere in
-    # the current registries for any program; jurisdiction_comparison's
-    # resident_labor_uplift_available (when present) is a bare flag only.
-    from app.calculators import jurisdiction_comparison as _jc
-    jc_profile = next((p for p in _jc.ALL_PROFILES.values() if p.program_slug == slug), None)
-    if jc_profile is not None and jc_profile.resident_labor_uplift_available:
+    # UPLIFT_RULES — more than one RateRule tier for a program IS a real
+    # executable uplift/ceiling structure (the tier ABOVE the base rate,
+    # with its own conditions) — the same tiers RATE_OR_AWARD_BASIS above
+    # already reads, not a separate fabricated signal. A bare
+    # jurisdiction_comparison.resident_labor_uplift_available flag (no
+    # tier structure) is PARTIAL only.
+    if len(verified_rate_rules) > 1:
+        dims.append(DimensionState("UPLIFT_RULES", PRESENT,
+                                    f"{len(verified_rate_rules)} VERIFIED RateRule tiers registered "
+                                    "(base + uplift/ceiling structure)"))
+    elif len(rate_rules) > 1:
         dims.append(DimensionState("UPLIFT_RULES", PARTIAL,
-                                    "jurisdiction_comparison states resident_labor_uplift_available=True "
-                                    "(a flag only, not the uplift's own rate/conditions)"))
+                                    f"{len(rate_rules)} non-VERIFIED RateRule tiers registered "
+                                    "(a real tier structure, not yet accepted as executable)"))
     else:
-        dims.append(DimensionState("UPLIFT_RULES", MISSING, "no uplift flag or rule found in any registry"))
+        from app.calculators import jurisdiction_comparison as _jc
+        jc_profile = next((p for p in _jc.ALL_PROFILES.values() if p.program_slug == slug), None)
+        if jc_profile is not None and jc_profile.resident_labor_uplift_available:
+            dims.append(DimensionState("UPLIFT_RULES", PARTIAL,
+                                        "jurisdiction_comparison states resident_labor_uplift_available=True "
+                                        "(a flag only, not the uplift's own rate/conditions)"))
+        else:
+            dims.append(DimensionState("UPLIFT_RULES", MISSING, "no uplift flag or rule found in any registry"))
 
     # RESIDENT_NONRESIDENT_TREATMENT — whether the labor categories that
     # actually distinguish residency (btl_resident_labor/btl_nonresident_labor)
@@ -303,28 +355,42 @@ def consolidate(canonical_program_id: str) -> ProgramConsolidation:
     else:
         dims.append(DimensionState("PAYROLL_TREATMENT", MISSING, "no payroll_fringes category rule"))
 
-    # MONETIZATION / REFUNDABILITY / TRANSFERABILITY — global_inventory's
-    # stated flags (bare booleans, not fixed transfer-cost terms).
-    is_refundable = gi_entry.is_refundable if gi_entry is not None else None
-    is_transferable = gi_entry.is_transferable if gi_entry is not None else None
-    if is_refundable is not None or is_transferable is not None:
+    # MONETIZATION / REFUNDABILITY / TRANSFERABILITY — prefer a VERIFIED
+    # DoctrineRecord's is_refundable/is_transferable (a real, reviewed
+    # determination -- False is exactly as resolved as True) over a bare
+    # global_inventory flag; a non-VERIFIED DoctrineRecord or a bare
+    # global_inventory flag is PARTIAL, never fixed transfer-cost terms.
+    doctrine_refundable = doctrine.is_refundable if doctrine is not None else None
+    doctrine_transferable = doctrine.is_transferable if doctrine is not None else None
+    gi_refundable = gi_entry.is_refundable if gi_entry is not None else None
+    gi_transferable = gi_entry.is_transferable if gi_entry is not None else None
+
+    def _monetization_dim(name: str, doctrine_value, gi_value, gi_field: str) -> DimensionState:
+        if doctrine_verified and doctrine_value is not None:
+            return DimensionState(name, PRESENT,
+                                   f"VERIFIED DoctrineRecord.{gi_field.replace('gi_', 'is_')}={doctrine_value} "
+                                   f"({doctrine.source_ref})")
+        if doctrine_partial and doctrine_value is not None:
+            return DimensionState(name, PARTIAL, f"non-VERIFIED DoctrineRecord value={doctrine_value}")
+        if gi_value is not None:
+            return DimensionState(name, PARTIAL, f"global_inventory.{gi_field}={gi_value}")
+        return DimensionState(name, MISSING, f"no DoctrineRecord or global_inventory {gi_field} value")
+
+    refund_dim = _monetization_dim("REFUNDABILITY", doctrine_refundable, gi_refundable, "is_refundable")
+    xfer_dim = _monetization_dim("TRANSFERABILITY", doctrine_transferable, gi_transferable, "is_transferable")
+    dims.append(refund_dim)
+    dims.append(xfer_dim)
+    # MONETIZATION resolves only once BOTH its component facts do — a
+    # program refundable but of unknown transferability (or vice versa)
+    # has not actually had its monetization mechanism fully reviewed.
+    if refund_dim.status == PRESENT and xfer_dim.status == PRESENT:
+        dims.append(DimensionState("MONETIZATION", PRESENT,
+                                    f"REFUNDABILITY and TRANSFERABILITY both PRESENT ({doctrine.source_ref})"))
+    elif refund_dim.status != MISSING or xfer_dim.status != MISSING:
         dims.append(DimensionState("MONETIZATION", PARTIAL,
-                                    f"global_inventory states is_refundable={is_refundable}, "
-                                    f"is_transferable={is_transferable}"))
+                                    f"refundability={refund_dim.status}, transferability={xfer_dim.status}"))
     else:
-        dims.append(DimensionState("MONETIZATION", MISSING, "no global_inventory refundability/transferability flags"))
-    dims.append(DimensionState(
-        "REFUNDABILITY",
-        PARTIAL if is_refundable is not None else MISSING,
-        f"global_inventory.is_refundable={is_refundable}" if is_refundable is not None
-        else "no global_inventory is_refundable flag",
-    ))
-    dims.append(DimensionState(
-        "TRANSFERABILITY",
-        PARTIAL if is_transferable is not None else MISSING,
-        f"global_inventory.is_transferable={is_transferable}" if is_transferable is not None
-        else "no global_inventory is_transferable flag",
-    ))
+        dims.append(DimensionState("MONETIZATION", MISSING, "no refundability or transferability data on file"))
 
     # APPLICATION_TIMING — no runtime field exists anywhere in the current
     # registries (rate rules, spend rules, global_inventory, jurisdiction
