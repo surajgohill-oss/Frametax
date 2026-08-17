@@ -321,8 +321,11 @@ class TestCyprusProfile:
         # Corrected worldwide-population phase: confirmed directly from the
         # official Cyprus Film Commission page (film.investcyprus.org.cy),
         # "up to 45%" — a real 35%/45% cultural-test band, not the flat 35%
-        # DISCOVERY-tier figure this test previously asserted.
-        assert cy.confidence_tier == "PARSED"
+        # DISCOVERY-tier figure this test previously asserted. Promoted
+        # PARSED -> VERIFIED (Global Formulaic Economic Completion, batch
+        # 4) after an independent re-fetch of the same official page this
+        # task reproduced the identical "Up to 45% Tax Rebate" figure.
+        assert cy.confidence_tier == "VERIFIED"
 
     def test_base_rate_35_ceiling_45(self, cy):
         assert cy.base_rate == 0.35

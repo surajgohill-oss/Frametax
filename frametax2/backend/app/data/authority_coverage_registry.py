@@ -75,6 +75,30 @@ citation detail, effective/verification dates where stated, and any
 material interpretation — not just the free-text citation string this
 module's veto-removal decisions were originally based on.
 
+CORRECTION (Global Formulaic Economic Completion, batch 4): 3 more rows
+removed (4 counting the ca_film_30 alias spelling) after fresh, this-task
+primary-source verification via direct WebFetch of the actual
+administering authority: cy_film_rebate (film.investcyprus.org.cy,
+Cyprus Film Commission, official, independently re-fetched -- "Up to 45%
+Tax Rebate", matching the existing citation's figure exactly), ie_section_
+481 (revenue.ie, Revenue Commissioners Ireland, official, fetched
+directly -- "32% of whichever is the lowest of" eligible expenditure/80%
+of costs/an EUR cap, also correcting the cap figure from a flat EUR 70M
+to the real certification-date-dependent EUR 70M/125M split), and
+us_ca_film_credit/ca_film_30 (AB 1138, California's actual statute,
+fetched directly from leginfo.legislature.ca.gov -- "35 percent or 40
+percent, whichever is the applicable credit percentage" -- plus the CA
+Film Commission's own Program 4.0 page confirming program size/caps).
+Each DoctrineRecord/RateRule promoted PARSED -> VERIFIED with structured
+SourceProvenance recorded. Several other batch-4 candidates were
+web-searched/fetched this task and explicitly held at PARSED because the
+official source's page either did not surface the specific rate figure
+being relied upon (at_fisa_plus/fisaplus.com, ca_federal_pstc/canada.ca
+403, ae_ad_film_rebate/film.gov.ae 403) or confirmed a DIFFERENT figure
+than the one modeled (be_tax_shelter/finance.belgium.be describes the
+investor-side 310% exemption, not the producer-net 42-44% this engine
+models) -- held, not promoted on inconclusive or mismatched evidence.
+
 Originally added by the Consolidated Global Remediation for 29 records
 (25 authority-insufficient + 4 non-economic). EXPANDED by the Global Data
 Application phase to carry every canonical disposition from
@@ -258,7 +282,6 @@ _ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("ca_cmf", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada", "Canada Media Fund (CMF) — Convergent Stream"),
     ("ca_federal_cptc", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada", "Canadian Film or Video Production Tax Credit"),
     ("ca_federal_pstc", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada", "Film or Video Production Services Tax Credit (PSTC) [runtime slug of proposed_canada_film_or_video_production_services_tax_credit_pstc]"),
-    ("ca_film_30", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / California", "California Film & Television Tax Credit Program 3.0"),
     ("ca_mb_film_video_credit", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Canada — Manitoba", "Manitoba Film & Video Production Tax Credit [runtime slug of ca_mb_fvptc]"),
     ("ca_mb_fvptc", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Canada — Manitoba", "Manitoba Film & Video Production Tax Credit"),
     ("ca_nb_film_credit", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Canada — New Brunswick", "New Brunswick Film Tax Credit"),
@@ -272,7 +295,6 @@ _ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("co_film_colombia", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Colombia", "Colombia Film Commission — Film In Colombia"),
     ("co_film_in_colombia", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Colombia", "Colombia Film Commission — Film In Colombia [runtime slug of co_film_colombia]"),
     ("cr_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Costa Rica", "Costa Rica Film Commission Production Facilitation"),
-    ("cy_film_rebate", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Cyprus", "Cyprus Film Production Rebate"),
     ("cz_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Czech Republic", "Czech Film Incentive"),
     ("de_fff_bayern", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Germany / Germany — Bavaria", "FilmFernsehFonds Bayern (FFF Bayern)"),
     ("de_nrw_filmstiftung", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Germany / Germany — North Rhine-Westphalia", "Film und Medienstiftung NRW"),
@@ -297,7 +319,6 @@ _ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("gt_film_commission", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Guatemala", "Guatemala Film Commission (INGUAT) Production Facilitation"),
     ("gy_film_commission", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Guyana", "Guyana Tourism Authority Film Production Support"),
     ("id_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Indonesia", "id_film_incentive"),
-    ("ie_section_481", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Ireland", "Section 481 Film Tax Credit"),
     ("in_national_film", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "India", "India NFDC and State Incentives"),
     ("is_film_reimbursement", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Iceland", "Icelandic Film Reimbursement Scheme"),
     ("is_film_reimbursement_scheme", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Iceland", "Icelandic Film Reimbursement Scheme [runtime slug of is_film_reimbursement]"),
@@ -375,7 +396,6 @@ _ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("us_al_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Alabama", "Alabama Film Incentive"),
     ("us_az_film_credit", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Arizona", "Arizona Motion Picture Production Program"),
     ("us_az_motion_picture_production", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Arizona", "Arizona Motion Picture Production Program [runtime slug of us_az_film_credit]"),
-    ("us_ca_film_credit", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / California", "California Film & Television Tax Credit Program 3.0 [runtime slug of ca_film_30]"),
     ("us_co_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Colorado", "Colorado Film Incentive"),
     ("us_ct_film_credit", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Connecticut", "Connecticut Film Tax Credit"),
     ("us_ct_film_tax_credit", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Connecticut", "Connecticut Film Tax Credit [runtime slug of us_ct_film_credit]"),

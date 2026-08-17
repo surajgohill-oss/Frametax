@@ -300,13 +300,18 @@ class TestServedBlockersNeverContradictTheDoctrineRegistry:
             f"the registry says otherwise: {contradictions}"
         )
 
-    def test_cyprus_specifically_is_canonically_unpriceable_and_blocks(self):
-        """Global Data Application: cy_film_rebate was reclassified
-        UNPRICEABLE_AUTHORITY_INSUFFICIENT by the completed corpus, so Cyprus
-        must now BLOCK rather than price. The test's real invariant — that the
-        served blockers never contradict the doctrine registry — is preserved by
-        asserting the block is the canonical one, with a stated reason, rather
-        than a silent zero.
+    def test_cyprus_specifically_was_reactivated_and_now_prices(self):
+        """Global Data Application originally reclassified cy_film_rebate
+        UNPRICEABLE_AUTHORITY_INSUFFICIENT by the completed corpus. The
+        Global Formulaic Economic Completion batch 4 later independently
+        re-fetched film.investcyprus.org.cy (Cyprus Film Commission,
+        official) directly this task, reproduced the identical "Up to 45%
+        Tax Rebate" figure the existing citation had already recorded, and
+        removed the veto -- Cyprus is now correctly PRICEABLE again, a
+        deliberate, evidenced reversal, not a regression. The test's real
+        invariant -- that served blockers never contradict the doctrine
+        registry -- is preserved by asserting the served state agrees with
+        the registry in whichever direction the registry currently says.
         """
         from app.data.authority_coverage_registry import coverage_state
         from app.demo.little_utopia_state import build_allocated_structures, get_state
@@ -314,9 +319,9 @@ class TestServedBlockersNeverContradictTheDoctrineRegistry:
         served = build_allocated_structures(get_state())
         cy = next((s for s in served["structures"] if s["structure_id"] == "ALLOC-RELOC-CY"), None)
         assert cy is not None, "ALLOC-RELOC-CY is expected to be a candidate structure for Little Utopia"
-        assert coverage_state("cy_film_rebate") == "UNPRICEABLE_AUTHORITY_INSUFFICIENT"
-        assert cy["is_fully_priced"] is False
+        assert coverage_state("cy_film_rebate") == "PRICEABLE_VALIDATED"
+        assert cy["is_fully_priced"] is True
         seg = next(sg for sg in cy["segments"] if sg["jurisdiction_code"] == "CY")
-        assert seg["executable"] is False
+        assert seg["executable"] is True
         assert seg["program_slug"] == "cy_film_rebate"
-        assert any("UNPRICEABLE_AUTHORITY_INSUFFICIENT" in b for b in seg["blockers"])
+        assert list(seg["blockers"]) == []

@@ -146,7 +146,11 @@ CY_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="CY",
     program_slug="cy_film_rebate",
     program_name="Cyprus Film Scheme",
-    confidence_tier="PARSED",
+    # Global Formulaic Economic Completion, batch 4: independently
+    # re-fetched film.investcyprus.org.cy directly this task and confirmed
+    # "Up to 45% Tax Rebate" -- the same 45% ceiling figure the existing
+    # citation's own official-page quote had already recorded.
+    confidence_tier="VERIFIED",
     incentive_type="cash_rebate",
     is_refundable=True,
     is_transferable=None,
@@ -155,6 +159,18 @@ CY_DOCTRINE = register(DoctrineRecord(
     requires_cultural_test=True,
     citation=_CY_CITATION,
     source_ref="investcyprus.org.cy+meridian-trust+cxfinancia",
+    provenance=SourceProvenance(
+        issuing_authority="Cyprus Film Commission",
+        source_url="https://film.investcyprus.org.cy",
+        citation_detail="'Up to 45% Tax Rebate' / 'Up to 35% Tax Credit' "
+                         "(35% base + 10% cultural-test uplift to 45%)",
+        verified_date="2026-08-17",
+        interpretation_note="Exact cultural-test point-scoring thresholds "
+                             "for the +10% uplift are not published on the "
+                             "official page and remain a disclosed gap -- "
+                             "only the base/ceiling rate figures "
+                             "themselves are VERIFIED.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="cy-base-35",
@@ -1318,14 +1334,31 @@ _US_CA_CITATION = (
     "Per-production cap raised to $120,000,000 (was $100M). NEW: "
     "'All applications on or after July 1, 2025, have the option to "
     "elect refundability' — previously CA credits were non-refundable, "
-    "sold at a market discount only. Direct fetch of film.ca.gov itself "
-    "returned stale 2022 cached content, not used."
+    "sold at a market discount only. Direct fetch of film.ca.gov's "
+    "top-level tax-credit page in an earlier pass returned stale 2022 "
+    "cached content; superseded by a direct fetch of the ACTUAL statute "
+    "text this task (leginfo.legislature.ca.gov, AB 1138, verbatim): "
+    "'35 percent or 40 percent, whichever is the applicable credit "
+    "percentage' -- 35% for most qualified motion pictures and "
+    "independent films, 40% for TV series relocating to CA in their "
+    "first year; up to 5% additional for out-of-zone photography/VFX; "
+    "up to 4 percentage points additional for a diversity uplift (not "
+    "modeled -- disclosed only); cap raised from $100M to $120M. Also "
+    "independently re-fetched film.ca.gov/tax-credit/the-basics-4-0 "
+    "(California Film Commission, official) this task, confirming "
+    "program size '$3.75 billion... over 5 years' / '$750-million' "
+    "annually, sunset 2030-06-30, and the $120M feature / $20M "
+    "independent per-production caps."
 )
 US_CA_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="US-CA",
     program_slug="us_ca_film_credit",
     program_name="California Film & Television Tax Credit Program 4.0",
-    confidence_tier="PARSED",
+    # Global Formulaic Economic Completion, batch 4: promoted PARSED ->
+    # VERIFIED after independently fetching AB 1138's actual statute text
+    # (leginfo.legislature.ca.gov) and the CA Film Commission's own
+    # Program 4.0 page, both directly, this task.
+    confidence_tier="VERIFIED",
     incentive_type="tax_credit",
     is_refundable=True,   # CORRECTED: now electable, confirmed for
                            # applications on/after 1 July 2025
@@ -1337,6 +1370,19 @@ US_CA_DOCTRINE = register(DoctrineRecord(
     requires_cultural_test=False,
     citation=_US_CA_CITATION,
     source_ref="CA-AB132-AB1138-Program4.0",
+    provenance=SourceProvenance(
+        issuing_authority="California State Legislature (statute); "
+                           "California Film Commission (administering body)",
+        source_url="https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202520260AB1138",
+        citation_detail="AB 1138, verbatim: '35 percent or 40 percent, "
+                         "whichever is the applicable credit percentage'",
+        effective_date="Taxable years beginning on or after 2025-01-01",
+        verified_date="2026-08-17",
+        interpretation_note="A diversity-goals uplift of up to 4 "
+                             "percentage points exists in the statute but "
+                             "is not modeled as a tier (no diversity fact "
+                             "tracked by this engine) -- disclosed only.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="us-ca-base-35",

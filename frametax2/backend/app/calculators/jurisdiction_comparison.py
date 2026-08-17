@@ -422,7 +422,9 @@ _CYPRUS = JurisdictionIncentiveProfile(
     jurisdiction_name="Cyprus",
     program_slug="cy_film_rebate",
     program_name="Cyprus Film Production Rebate",
-    confidence_tier="PARSED",
+    # Global Formulaic Economic Completion, batch 4: promoted PARSED ->
+    # VERIFIED, kept in sync with cy_film_rebate's own RateRule tier.
+    confidence_tier="VERIFIED",
     incentive_type="cash_rebate",
     base_rate=0.35,
     max_rate=0.45,
@@ -498,7 +500,11 @@ _IRELAND = JurisdictionIncentiveProfile(
     jurisdiction_name="Ireland",
     program_slug="ie_section_481",
     program_name="Section 481 Film Tax Credit",
-    confidence_tier="PARSED",
+    # Global Formulaic Economic Completion, batch 4: promoted PARSED ->
+    # VERIFIED after an independent direct fetch of revenue.ie (Revenue
+    # Commissioners Ireland, official) confirmed the 32% rate verbatim --
+    # see program_rate_rules.py's IE_RATE_RULES for the full citation.
+    confidence_tier="VERIFIED",
     incentive_type="tax_credit",
     base_rate=0.32,
     max_rate=0.32,
@@ -1494,7 +1500,9 @@ _US_CALIFORNIA = JurisdictionIncentiveProfile(
     jurisdiction_name="United States — California",
     program_slug="us_ca_film_credit",
     program_name="California Film & Television Tax Credit Program 4.0",
-    confidence_tier="PARSED",
+    # Global Formulaic Economic Completion, batch 4: promoted PARSED ->
+    # VERIFIED, kept in sync with us_ca_film_credit's own RateRule tier.
+    confidence_tier="VERIFIED",
     incentive_type="tax_credit",
     base_rate=0.35,
     max_rate=0.40,

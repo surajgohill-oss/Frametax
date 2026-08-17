@@ -444,10 +444,15 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     against their official sources) -> 49 (batch 3: ca_on_opstc, de_dfff,
     es_tax_credit_foreign, fr_trip, hu_hipa_rebate, no_film_incentive,
     us_mn_film_production_credit, uk_avec, on the same recover-before-
-    research bar as batch 1). See authority_coverage_registry.py's
+    research bar as batch 1) -> 52 (batch 4: cy_film_rebate, ie_section_481,
+    us_ca_film_credit/ca_film_30, verified via fresh direct WebFetch of
+    each program's actual administering authority -- Cyprus Film
+    Commission, Revenue Commissioners Ireland, and California's own AB
+    1138 statute text respectively). See authority_coverage_registry.py's
     correction notes and test_batch1_programs_price_with_real_numbers_in_
     fvd / test_batch2_programs_price_with_real_numbers_in_fvd /
-    test_batch3_programs_price_with_real_numbers_in_fvd for the traced,
+    test_batch3_programs_price_with_real_numbers_in_fvd /
+    test_batch4_programs_price_with_real_numbers_in_fvd for the traced,
     real-number proof. No soft feasibility mismatch may remove a
     candidate from the economic universe."""
     await evaluate_project(db, FVD_PROJECT_ID)
@@ -456,8 +461,8 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     priced = [e for e in entries if e["is_fully_priced"]]
     unpriced = [e for e in entries if not e["is_fully_priced"]]
     assert len(entries) == 110
-    assert len(priced) == 49
-    assert len(unpriced) == 61
+    assert len(priced) == 52
+    assert len(unpriced) == 58
 
     for code in ("MN", "UZ", "AT"):
         e = next(x for x in entries if x["primary_jurisdiction"] == code)
@@ -956,5 +961,70 @@ def test_batch1_2_3_promoted_programs_carry_structured_provenance():
             assert rule.provenance is not None, (
                 f"{slug}/{rule.tier_id}: executable RateRule has no provenance -- "
                 "PROGRAM -> EXECUTABLE RULE -> SOURCE PROVENANCE trace is broken"
+            )
+            assert rule.provenance.issuing_authority == prov.issuing_authority
+
+
+# ── Global Formulaic Economic Completion — batch 4: fresh direct-WebFetch
+# primary-source verification (Cyprus, Ireland, California). ────────────
+
+BATCH4_SLUGS = ("cy_film_rebate", "ie_section_481", "us_ca_film_credit")
+
+
+def test_batch4_doctrine_records_promoted_to_verified():
+    from app.data.executable_jurisdiction_registry import get_doctrine
+    from app.data.program_rate_rules import get_rate_rules
+    for slug in BATCH4_SLUGS:
+        doc = get_doctrine(slug)
+        if doc is not None:
+            assert doc.confidence_tier == "VERIFIED", slug
+        else:
+            # ie_section_481 is a raw RateRule tuple with no DoctrineRecord.
+            rules = get_rate_rules(slug)
+            assert rules, f"{slug}: no RateRule found"
+            assert all(r.confidence_tier == "VERIFIED" for r in rules), slug
+
+
+def test_batch4_coverage_veto_removed_including_alias_spellings():
+    from app.data.authority_coverage_registry import blocks_economic_candidacy
+    for canonical, alias in (
+        ("cy_film_rebate", None),
+        ("ie_section_481", None),
+        ("us_ca_film_credit", "ca_film_30"),
+    ):
+        assert blocks_economic_candidacy(canonical) is False, canonical
+        if alias:
+            assert blocks_economic_candidacy(alias) is False, alias
+
+
+async def test_batch4_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
+    """Runtime proof (not just the read-only registries) that all 3 batch-4
+    programs reach served state with real, non-zero numbers."""
+    await evaluate_project(db, FVD_PROJECT_ID)
+    view = await build_production_and_structures(db, FVD_PROJECT_ID)
+    entries = view["structures"]["allocated_structures"]["structures"]
+    for code in ("CY", "IE", "US-CA"):
+        e = next(x for x in entries if x["primary_jurisdiction"] == code)
+        assert e["is_fully_priced"] is True, f"{code} did not price"
+        assert e["candidate_status"] == "PRICED"
+        assert e["selected_incentive_usd"] > 0
+        assert e["npc_verified_usd"] is not None and e["npc_verified_usd"] > 0
+
+
+def test_batch4_promoted_programs_carry_structured_provenance():
+    """Same durability requirement as batch 3's equivalent test, extended
+    to the 3 batch-4 programs."""
+    from app.data.executable_jurisdiction_registry import get_provenance
+    from app.data.program_rate_rules import get_rate_rules
+
+    for slug in BATCH4_SLUGS:
+        prov = get_provenance(slug)
+        assert prov is not None, f"{slug}: no structured SourceProvenance recorded"
+        assert prov.issuing_authority, f"{slug}: provenance missing issuing_authority"
+        rules = get_rate_rules(slug)
+        assert rules, f"{slug}: no executable RateRule found"
+        for rule in rules:
+            assert rule.provenance is not None, (
+                f"{slug}/{rule.tier_id}: executable RateRule has no provenance"
             )
             assert rule.provenance.issuing_authority == prov.issuing_authority

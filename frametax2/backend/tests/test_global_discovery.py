@@ -118,15 +118,18 @@ class TestServedDiscoveryMetrics:
         assert set(d["metrics"]["accepted_jurisdictions"]) == expected_accepted
         assert d["metrics"]["accepted_count"] == len(expected_accepted)
         # The statute-read jurisdictions this suite protects, plus the
-        # baseline, must always be among them. Global Data Application: IE
-        # (ie_section_481) was reclassified UNPRICEABLE_AUTHORITY_INSUFFICIENT
-        # by the completed primary-authority corpus and is therefore correctly
-        # no longer accepted — asserted explicitly below so the drop is a
-        # stated canonical consequence, never a silent regression.
-        assert {"MU", "MT", "GR"} <= set(d["metrics"]["accepted_jurisdictions"])
+        # baseline, must always be among them. Global Data Application
+        # originally reclassified IE (ie_section_481)
+        # UNPRICEABLE_AUTHORITY_INSUFFICIENT by the completed primary-
+        # authority corpus. The Global Formulaic Economic Completion batch
+        # 4 later individually re-verified it directly against revenue.ie
+        # (Revenue Commissioners Ireland, official, fetched directly --
+        # "32% of whichever is the lowest of" eligible expenditure/80% of
+        # costs/cap) and removed the veto -- IE is now correctly accepted
+        # again, a deliberate, evidenced reversal, not a regression.
+        assert {"MU", "MT", "GR", "IE"} <= set(d["metrics"]["accepted_jurisdictions"])
         from app.data.authority_coverage_registry import coverage_state
-        assert coverage_state("ie_section_481") == "UNPRICEABLE_AUTHORITY_INSUFFICIENT"
-        assert "IE" not in set(d["metrics"]["accepted_jurisdictions"])
+        assert coverage_state("ie_section_481") == "PRICEABLE_VALIDATED"
         assert d["generated_structures"] >= d["optimized_structures"] >= d["final_ranked_structures"]
         assert len(d["examinations"]) == d["metrics"]["jurisdictions_examined"]
 

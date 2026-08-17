@@ -52,6 +52,10 @@ DELIBERATELY_PROMOTED_CANONICAL_IDS = frozenset({
     # Batch 3 (8 programs, 2 alias-spelling duplicates)
     "on_opstc", "de_dfff", "es_tax_credit_foreign", "fr_trip",
     "hu_hipa_rebate", "no_film_incentive", "us_mn_film_credit", "uk_avec",
+    # Batch 4 (3 programs, 1 alias-spelling duplicate). Note:
+    # us_ca_film_credit itself was never a canonical-corpus id (the corpus
+    # only named the alias "ca_film_30"), so it is not listed here.
+    "cy_film_rebate", "ie_section_481", "ca_film_30",
 })
 
 

@@ -481,10 +481,18 @@ MT_RATE_RULES: tuple[RateRule, ...] = (
 )
 
 _IE_CITATION = (
-    "Section 481 Film Tax Credit (jurisdiction_comparison.py IRELAND "
-    "profile, confidence_tier=PARSED — 'rates and cap confirmed from "
-    "Finance Act; cultural test points system unverified'; authority: "
-    "Revenue Commissioners Ireland, revenue.ie)."
+    "Section 481 Film Tax Credit. Independently fetched revenue.ie "
+    "(Revenue Commissioners Ireland, official) directly this task, "
+    "verbatim: 'Credit Rate: 32% of whichever is the lowest of' "
+    "eligible expenditure, '80% of total qualifying film production "
+    "costs,' or a certification-date-dependent cap -- 'EUR 125 million "
+    "(for projects certified on or after 28 March 2024) or EUR 70 "
+    "million (for earlier certifications).' Confirms the pre-existing "
+    "jurisdiction_comparison.py IRELAND profile's 32% flat rate exactly "
+    "and CORRECTS the cap figure (previously recorded as a flat EUR "
+    "70,000,000 for all certifications -- now confirmed to be EUR 125M "
+    "for current-era certifications). Cultural test points system "
+    "remains unverified from this fetch (disclosed gap)."
 )
 IE_RATE_RULES: tuple[RateRule, ...] = (
     RateRule(
@@ -513,14 +521,30 @@ IE_RATE_RULES: tuple[RateRule, ...] = (
                 # explicitly dispatched ones) — satisfied=None, never silently assumed.
             ),
         ),
-        confidence_tier="PARSED",
+        confidence_tier="VERIFIED",
         citation=_IE_CITATION + " 32% flat refundable tax credit (not tiered — "
-                 "base_rate == max_rate in the source profile). Cap: 80% of budget "
-                 "or EUR 70,000,000 qualifying spend, whichever is lower — this cap "
-                 "is on QUALIFYING SPEND, not on the rate itself, and is NOT enforced "
-                 "by this rate-tier model (disclosed, not silently applied); see "
-                 "program's data_gaps.",
-        source_ref="jurisdiction_comparison.IRELAND",
+                 "base_rate == max_rate). Cap: 80% of budget or the "
+                 "certification-date-dependent EUR cap above, whichever is "
+                 "lower — this cap is on QUALIFYING SPEND, not on the rate "
+                 "itself, and is NOT enforced by this rate-tier model "
+                 "(disclosed, not silently applied); see program's "
+                 "data_gaps.",
+        source_ref="revenue.ie-official-direct-fetch",
+        provenance=SourceProvenance(
+            issuing_authority="Revenue Commissioners Ireland",
+            source_url="https://www.revenue.ie/en/companies-and-charities/reliefs-and-exemptions/film-relief/index.aspx",
+            citation_detail="'Credit Rate: 32% of whichever is the lowest "
+                             "of' eligible expenditure, 80% of qualifying "
+                             "costs, or the EUR cap",
+            effective_date="EUR 125M cap for projects certified on or "
+                            "after 2024-03-28; EUR 70M for earlier "
+                            "certifications",
+            verified_date="2026-08-17",
+            interpretation_note="Cultural test (Irish Qualifying Test) "
+                                 "points-scoring thresholds not published "
+                                 "on this page and remain unverified -- "
+                                 "only the rate/cap figures are VERIFIED.",
+        ),
     ),
 )
 
