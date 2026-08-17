@@ -104,8 +104,51 @@ from app.data.program_spend_rules import get_program_doctrine, get_program_rules
 # rules.py has already fully executed its own bottom import and populated
 # executable_jurisdiction_registry._REGISTRY.
 from app.data.executable_jurisdiction_registry import get_doctrine
+# Historical authority source recovery: two more program_slug-keyed
+# registries already exist in the repo and were never consulted here.
+# app.data.program_requirements — a 71-profile, program_slug-keyed
+# "requirements" database (eligibility/application-timing/compliance/
+# funding-availability/monetization facts) with its own per-profile
+# EvidenceRecord (SourceType PRIMARY/SECONDARY, RecordStatus CURRENT/
+# EXPIRED/PROPOSED/SUSPENDED/UNCERTAIN) and per-fact TimingBasis
+# (STATUTORY_DEADLINE/OFFICIAL_TARGET/REPORTED_PRACTICAL/ESTIMATE/UNKNOWN)
+# — this module's own docstring states it was built to sit "ALONGSIDE"
+# DoctrineRecord without duplicating it, but nothing ever read it here.
+# app.calculators.jurisdiction_comparison — a 110-profile
+# JurisdictionIncentiveProfile registry (its own confidence_tier per
+# profile) that this module previously read ONLY for one bare boolean
+# (resident_labor_uplift_available); it independently carries base_rate/
+# max_rate/is_refundable/is_transferable/annual_cap_local/min_spend_local/
+# requires_cultural_test for 105 of the 105 programs that were
+# FORMULAIC_AUTHORITY_INCOMPLETE before this recovery pass.
+from app.data.program_requirements import (
+    RecordStatus,
+    TimingBasis,
+    VerificationState,
+    get_program_requirements,
+    verification_state as requirements_verification_state,
+)
+from app.calculators import jurisdiction_comparison as _jc
 
-CONSOLIDATION_VERSION = "authority-substrate-1.2.0"
+CONSOLIDATION_VERSION = "authority-substrate-1.3.0"
+
+#: Task: permanent prevention against a recognized authority-bearing
+#: source silently becoming orphaned from consolidation again (the exact
+#: defect class this recovery pass fixed for executable_jurisdiction_
+#: registry, program_requirements, and jurisdiction_comparison). Each
+#: entry is (module dotted path, one-line reason it is authority-bearing).
+#: A focused test greps this file's own import lines for every module
+#: named here — see test_no_recognized_authority_source_is_orphaned in
+#: tests/test_canonical_authority_substrate.py. Add a new module here the
+#: same commit it is wired in; do not let this list drift ahead of imports.
+RECOGNIZED_AUTHORITY_SOURCE_MODULES: tuple[tuple[str, str], ...] = (
+    ("app.data.global_inventory", "discovery-tier base_rate/max_rate/cap/refundable/transferable/cultural-test flags"),
+    ("app.data.program_rate_rules", "executable RateRule tiers + QpeCapRule, confidence-tiered"),
+    ("app.data.program_spend_rules", "category SpendRule + program doctrine basis"),
+    ("app.data.executable_jurisdiction_registry", "DoctrineRecord: confidence-tiered refundable/transferable/min_spend/cap/cultural_test"),
+    ("app.data.program_requirements", "program_slug-keyed eligibility/application-timing/compliance/monetization profiles with EvidenceRecord"),
+    ("app.calculators.jurisdiction_comparison", "JurisdictionIncentiveProfile: confidence-tiered rate/cap/spend/refundable/transferable/cultural-test/uplift facts"),
+)
 
 PRESENT = "PRESENT"
 PARTIAL = "PARTIAL"
@@ -177,6 +220,27 @@ def _global_inventory_entry(slug: str):
     return next((p for p in _gi.ALL_PROGRAMS if p.program_slug == slug), None)
 
 
+_STATUS_RANK: dict[str, int] = {MISSING: 0, PARTIAL: 1, PRESENT: 2}
+
+
+def _upgrade(dims: list[DimensionState], name: str, candidate: "DimensionState | None") -> None:
+    """Replace the existing entry for `name` with `candidate` only if
+    `candidate` is strictly higher-ranked (PRESENT > PARTIAL > MISSING).
+    Never downgrades — a dimension already resolved by one source stays
+    resolved even if a later-checked source has nothing to add. Used by
+    the historical-authority-source-recovery pass below to fold
+    program_requirements.py / jurisdiction_comparison.py evidence into the
+    same 14 dimensions without duplicating each dimension's own primary
+    read logic above."""
+    if candidate is None:
+        return
+    for i, d in enumerate(dims):
+        if d.dimension == name:
+            if _STATUS_RANK[candidate.status] > _STATUS_RANK[d.status]:
+                dims[i] = candidate
+            return
+
+
 def consolidate(canonical_program_id: str) -> ProgramConsolidation:
     """The field-consolidation view for one canonical program. Pure read —
     calls only existing, already-served registry functions."""
@@ -189,6 +253,26 @@ def consolidate(canonical_program_id: str) -> ProgramConsolidation:
     doctrine = get_doctrine(slug)
     doctrine_verified = doctrine is not None and doctrine.confidence_tier == "VERIFIED"
     doctrine_partial = doctrine is not None and doctrine.confidence_tier in ("PARSED", "DISCOVERY")
+
+    # program_requirements.py — gated on BOTH the profile's evidence
+    # source_type (PRIMARY vs SECONDARY, via verification_state()) AND its
+    # RecordStatus (a stale/superseded/uncertain record must never promote
+    # a dimension to PRESENT, regardless of how the original research was
+    # sourced — Task 7 currentness). A field is only "req_primary_current"
+    # when both hold; anything else registered is at most PARTIAL evidence.
+    req = get_program_requirements(slug)
+    req_state = requirements_verification_state(slug)
+    req_record_current = (
+        req is not None and req.evidence is not None and req.evidence.status == RecordStatus.CURRENT
+    )
+    req_primary_current = req_state == VerificationState.PRIMARY_VERIFIED and req_record_current
+    req_registered = req is not None
+
+    # jurisdiction_comparison.py — same PARSED/DISCOVERY/VERIFIED tier
+    # vocabulary as DoctrineRecord, carried directly on the profile.
+    jc_profile = next((p for p in _jc.ALL_PROFILES.values() if p.program_slug == slug), None)
+    jc_verified = jc_profile is not None and jc_profile.confidence_tier == "VERIFIED"
+    jc_partial = jc_profile is not None and jc_profile.confidence_tier in ("PARSED", "DISCOVERY")
 
     dims: list[DimensionState] = []
 
@@ -328,15 +412,12 @@ def consolidate(canonical_program_id: str) -> ProgramConsolidation:
         dims.append(DimensionState("UPLIFT_RULES", PARTIAL,
                                     f"{len(rate_rules)} non-VERIFIED RateRule tiers registered "
                                     "(a real tier structure, not yet accepted as executable)"))
+    elif jc_profile is not None and jc_profile.resident_labor_uplift_available:
+        dims.append(DimensionState("UPLIFT_RULES", PARTIAL,
+                                    "jurisdiction_comparison states resident_labor_uplift_available=True "
+                                    "(a flag only, not the uplift's own rate/conditions)"))
     else:
-        from app.calculators import jurisdiction_comparison as _jc
-        jc_profile = next((p for p in _jc.ALL_PROFILES.values() if p.program_slug == slug), None)
-        if jc_profile is not None and jc_profile.resident_labor_uplift_available:
-            dims.append(DimensionState("UPLIFT_RULES", PARTIAL,
-                                        "jurisdiction_comparison states resident_labor_uplift_available=True "
-                                        "(a flag only, not the uplift's own rate/conditions)"))
-        else:
-            dims.append(DimensionState("UPLIFT_RULES", MISSING, "no uplift flag or rule found in any registry"))
+        dims.append(DimensionState("UPLIFT_RULES", MISSING, "no uplift flag or rule found in any registry"))
 
     # RESIDENT_NONRESIDENT_TREATMENT — whether the labor categories that
     # actually distinguish residency (btl_resident_labor/btl_nonresident_labor)
@@ -392,11 +473,156 @@ def consolidate(canonical_program_id: str) -> ProgramConsolidation:
     else:
         dims.append(DimensionState("MONETIZATION", MISSING, "no refundability or transferability data on file"))
 
-    # APPLICATION_TIMING — no runtime field exists anywhere in the current
-    # registries (rate rules, spend rules, global_inventory, jurisdiction
-    # profiles) for preapproval/application-window timing. Honestly MISSING
-    # for every program rather than reading a source that doesn't exist.
+    # APPLICATION_TIMING — no field existed anywhere for this dimension
+    # before this recovery pass; program_requirements.py's application_
+    # deadline/preapproval_mandatory fields are the first (and, as of this
+    # pass, only) source. Default MISSING; see recovery pass below.
     dims.append(DimensionState("APPLICATION_TIMING", MISSING,
                                 "no runtime registry field captures application/preapproval timing"))
+
+    # ─────────────────────────────────────────────────────────────────────
+    # Historical authority source recovery pass — folds program_
+    # requirements.py and jurisdiction_comparison.py evidence into the
+    # dimensions above via _upgrade() (never downgrades an existing
+    # PRESENT/PARTIAL from the primary read logic above). Both sources are
+    # gated on their OWN confidence signal, never silently promoted:
+    #   program_requirements: PRESENT only when verification_state() is
+    #     PRIMARY_VERIFIED AND the record's RecordStatus is CURRENT
+    #     (req_primary_current) — a stale/expired/proposed/uncertain
+    #     record, or a secondary-sourced one, is PARTIAL at most.
+    #   jurisdiction_comparison: PRESENT only when the profile's own
+    #     confidence_tier is VERIFIED; PARSED/DISCOVERY is PARTIAL.
+    # ─────────────────────────────────────────────────────────────────────
+
+    def _req_dim(name: str, req_value, jc_value=None, *, criteria_present: bool = False) -> DimensionState | None:
+        """One dimension's candidate from program_requirements + (optionally)
+        a jurisdiction_comparison fallback. `criteria_present=True` means the
+        req field is the rule's OWN criteria (e.g. cultural_test_points), not
+        just a bare flag — still gated by the same currentness/tier rules,
+        but documented distinctly since a bare flag is real evidence, just
+        weaker evidence, matching the existing PRESENT/PARTIAL vocabulary
+        used above for doctrine records."""
+        if req_value is not None:
+            kind = "criteria" if criteria_present else "flag"
+            if req_primary_current:
+                return DimensionState(name, PRESENT,
+                                       f"PRIMARY_VERIFIED, CURRENT program_requirements.{name.lower()}"
+                                       f" {kind}={req_value} ({req.evidence.source_title})")
+            return DimensionState(name, PARTIAL,
+                                   f"program_requirements {req_state.value} or non-CURRENT record, "
+                                   f"{kind}={req_value}")
+        if jc_value is not None:
+            if jc_verified:
+                return DimensionState(name, PRESENT,
+                                       f"VERIFIED jurisdiction_comparison profile value={jc_value}")
+            if jc_partial:
+                return DimensionState(name, PARTIAL,
+                                       f"non-VERIFIED jurisdiction_comparison profile value={jc_value}")
+        return None
+
+    if req_registered or jc_profile is not None:
+        _upgrade(dims, "MINIMUM_SPEND", _req_dim(
+            "MINIMUM_SPEND",
+            req.min_local_spend_usd if req else None,
+            jc_profile.min_spend_local if jc_profile else None,
+        ) or _req_dim(
+            "MINIMUM_SPEND",
+            req.min_total_budget_usd if req else None,
+        ))
+        _upgrade(dims, "CAP", _req_dim(
+            "CAP",
+            req.annual_program_cap_usd if req else None,
+            jc_profile.annual_cap_local if jc_profile else None,
+        ) or _req_dim(
+            "CAP",
+            req.per_project_cap_usd if req else None,
+        ))
+        _upgrade(dims, "CULTURAL_OR_CONTENT_TEST", _req_dim(
+            "CULTURAL_OR_CONTENT_TEST",
+            req.cultural_test_points if req and req.cultural_test_points is not None else None,
+            criteria_present=True,
+        ) or _req_dim(
+            "CULTURAL_OR_CONTENT_TEST",
+            req.cultural_test_required if req else None,
+            jc_profile.requires_cultural_test if jc_profile else None,
+        ))
+        _upgrade(dims, "REFUNDABILITY", _req_dim(
+            "REFUNDABILITY",
+            req.refundable if req else None,
+            jc_profile.is_refundable if jc_profile else None,
+        ))
+        _upgrade(dims, "TRANSFERABILITY", _req_dim(
+            "TRANSFERABILITY",
+            req.transferable if req else None,
+            jc_profile.is_transferable if jc_profile else None,
+        ))
+        # TERRITORIALITY — scoped strictly to the co-production/treaty
+        # territorial-nexus fact (req.treaty_or_official_coproduction_
+        # required). Deliberately does NOT read local_entity_required /
+        # local_coproducer_required: those are entity-structure facts
+        # (whether a local SPV must be formed), which the canonical local-
+        # SPV assumption already treats as a non-blocking given, not a
+        # territorial-spend predicate — reading them here would conflate
+        # two different dimensions.
+        _upgrade(dims, "TERRITORIALITY", _req_dim(
+            "TERRITORIALITY",
+            req.treaty_or_official_coproduction_required if req else None,
+        ))
+        # UPLIFT_RULES — jurisdiction_comparison's resident_labor_uplift_
+        # available flag, promoted to the same VERIFIED/PARSED tiering as
+        # every other jc-sourced dimension (previously read as an unconditional
+        # PARTIAL regardless of the profile's own confidence_tier).
+        if jc_profile is not None and jc_profile.resident_labor_uplift_available:
+            if jc_verified:
+                _upgrade(dims, "UPLIFT_RULES", DimensionState(
+                    "UPLIFT_RULES", PRESENT,
+                    "VERIFIED jurisdiction_comparison states resident_labor_uplift_available=True"))
+            else:
+                _upgrade(dims, "UPLIFT_RULES", DimensionState(
+                    "UPLIFT_RULES", PARTIAL,
+                    "jurisdiction_comparison states resident_labor_uplift_available=True "
+                    "(a flag only, not the uplift's own rate/conditions)"))
+        # APPLICATION_TIMING — the one dimension no source touched before
+        # this pass. req.application_deadline is a TimingFact whose own
+        # `basis` further gates PRESENT: only STATUTORY_DEADLINE/
+        # OFFICIAL_TARGET (an actually confirmed date/window) count as the
+        # real fact resolved; REPORTED_PRACTICAL/ESTIMATE/UNKNOWN are real
+        # signal but explicitly disclosed as non-authoritative, so PARTIAL
+        # at most regardless of req_primary_current. req.preapproval_
+        # mandatory alone (no deadline fact) is a real but weaker signal —
+        # PARTIAL only.
+        if req is not None and req.application_deadline is not None:
+            fact = req.application_deadline
+            if fact.basis in (TimingBasis.STATUTORY_DEADLINE, TimingBasis.OFFICIAL_TARGET) and req_primary_current:
+                _upgrade(dims, "APPLICATION_TIMING", DimensionState(
+                    "APPLICATION_TIMING", PRESENT,
+                    f"PRIMARY_VERIFIED, CURRENT program_requirements.application_deadline "
+                    f"basis={fact.basis.value} ({req.evidence.source_title})"))
+            else:
+                _upgrade(dims, "APPLICATION_TIMING", DimensionState(
+                    "APPLICATION_TIMING", PARTIAL,
+                    f"program_requirements.application_deadline basis={fact.basis.value} "
+                    "(disclosed as non-statutory/non-official, or record not PRIMARY_VERIFIED+CURRENT)"))
+        elif req is not None and req.preapproval_mandatory is not None:
+            _upgrade(dims, "APPLICATION_TIMING", DimensionState(
+                "APPLICATION_TIMING", PARTIAL,
+                f"program_requirements.preapproval_mandatory={req.preapproval_mandatory} "
+                "(a real application-process fact, not a deadline/window)"))
+
+        # MONETIZATION was originally derived from refund_dim/xfer_dim
+        # BEFORE this recovery pass could upgrade REFUNDABILITY/
+        # TRANSFERABILITY above — recompute it from the dims list's final
+        # (post-upgrade) values so it never goes stale relative to its own
+        # two component dimensions.
+        final_refund = next(d for d in dims if d.dimension == "REFUNDABILITY")
+        final_xfer = next(d for d in dims if d.dimension == "TRANSFERABILITY")
+        if final_refund.status == PRESENT and final_xfer.status == PRESENT:
+            _upgrade(dims, "MONETIZATION", DimensionState(
+                "MONETIZATION", PRESENT,
+                "REFUNDABILITY and TRANSFERABILITY both PRESENT after historical-source recovery"))
+        elif final_refund.status != MISSING or final_xfer.status != MISSING:
+            _upgrade(dims, "MONETIZATION", DimensionState(
+                "MONETIZATION", PARTIAL,
+                f"refundability={final_refund.status}, transferability={final_xfer.status}"))
 
     return ProgramConsolidation(canonical_program_id=slug, dimensions=tuple(dims))

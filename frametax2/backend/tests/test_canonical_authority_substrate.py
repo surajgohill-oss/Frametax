@@ -166,7 +166,19 @@ def test_consolidation_exposes_field_provenance():
 def test_missing_fields_remain_missing_not_defaulted():
     c = consolidate("uk_avec")
     assert c.status_for("TERRITORIALITY") == MISSING
-    assert c.status_for("APPLICATION_TIMING") == MISSING
+    # APPLICATION_TIMING is PARTIAL, not MISSING, as of the historical
+    # authority source recovery pass: program_requirements.py carries a
+    # real preapproval_mandatory=True fact for uk_avec (PRIMARY_VERIFIED,
+    # CURRENT record) -- a genuine application-process signal, just not a
+    # deadline/window, so it is correctly PARTIAL rather than either the
+    # old false MISSING or an overclaimed PRESENT.
+    assert c.status_for("APPLICATION_TIMING") == PARTIAL
+    # RESIDENT_NONRESIDENT_TREATMENT and PAYROLL_TREATMENT remain
+    # genuinely MISSING for uk_avec -- no recovered source (program_
+    # requirements, jurisdiction_comparison, doctrine) carries either fact
+    # for this program, confirming they are not simply unwired.
+    assert c.status_for("RESIDENT_NONRESIDENT_TREATMENT") == MISSING
+    assert c.status_for("PAYROLL_TREATMENT") == MISSING
 
 
 # ── Authority completeness contract correction — dimension-state
@@ -398,3 +410,100 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
         e = next(x for x in entries if x["primary_jurisdiction"] == code)
         assert e["feasibility_status"] == FEASIBILITY_WEAK
         assert "MARINE_MISMATCH" in e["feasibility_reasons"]
+
+
+# ── Historical authority source recovery — regression coverage for the
+# general defect class exposed by Georgia in the prior task: a registered,
+# program_slug-keyed authority source must not be silently invisible to
+# consolidate(). Covers program_requirements.py and jurisdiction_
+# comparison.py, the two additional sources wired in this pass. ──────────
+
+def test_program_requirements_primary_current_promotes_to_present():
+    """ca_federal_pstc has a real program_requirements.py profile:
+    refundable=True, evidence.source_type=PRIMARY, evidence.status=CURRENT.
+    consolidate() must read it and promote REFUNDABILITY to PRESENT --
+    before this recovery pass it was silently invisible (MISSING)."""
+    c = consolidate("ca_federal_pstc")
+    d = next(x for x in c.dimensions if x.dimension == "REFUNDABILITY")
+    assert d.status == PRESENT
+    assert "program_requirements" in d.source
+
+
+def test_program_requirements_secondary_or_stale_never_promotes_to_present():
+    """A program_requirements profile that is not PRIMARY_VERIFIED+CURRENT
+    must cap at PARTIAL, never PRESENT -- confidence tiers and record
+    currentness must survive the wiring, not get silently upgraded."""
+    from app.data.program_requirements import RecordStatus, VerificationState, all_program_requirements, verification_state
+    secondary_or_stale = [
+        slug for slug, profile in all_program_requirements().items()
+        if verification_state(slug) != VerificationState.PRIMARY_VERIFIED
+        or profile.evidence is None
+        or profile.evidence.status != RecordStatus.CURRENT
+    ]
+    assert secondary_or_stale, "fixture assumption: at least one non-primary-current profile must exist"
+    slug = secondary_or_stale[0]
+    c = consolidate(slug)
+    for dim_name in ("REFUNDABILITY", "TRANSFERABILITY", "CAP", "MINIMUM_SPEND", "APPLICATION_TIMING"):
+        d = next(x for x in c.dimensions if x.dimension == dim_name)
+        assert d.status != PRESENT or "program_requirements" not in d.source, (
+            f"{slug}.{dim_name} was promoted to PRESENT from a non-primary-current "
+            "program_requirements source"
+        )
+
+
+def test_jurisdiction_comparison_confidence_tier_gates_present_vs_partial():
+    """jurisdiction_comparison profiles carry their own confidence_tier;
+    only VERIFIED may promote a dimension to PRESENT via this source --
+    PARSED/DISCOVERY (the overwhelming majority of the 110 profiles) must
+    cap at PARTIAL."""
+    from app.calculators import jurisdiction_comparison as jc
+    non_verified_with_cultural_flag = [
+        p for p in jc.ALL_PROFILES.values()
+        if p.confidence_tier != "VERIFIED" and p.requires_cultural_test is not None
+    ]
+    assert non_verified_with_cultural_flag
+    profile = non_verified_with_cultural_flag[0]
+    c = consolidate(profile.program_slug)
+    d = next(x for x in c.dimensions if x.dimension == "CULTURAL_OR_CONTENT_TEST")
+    assert d.status != PRESENT or "jurisdiction_comparison" not in d.source
+
+
+def test_monetization_reflects_post_recovery_refundability_and_transferability():
+    """Regression for the MONETIZATION-staleness bug found while building
+    this recovery pass: MONETIZATION was originally derived once, before
+    the recovery pass could upgrade REFUNDABILITY/TRANSFERABILITY, and
+    never recomputed -- uk_avec showed REFUNDABILITY=PRESENT,
+    TRANSFERABILITY=PRESENT, but MONETIZATION stuck at MISSING. Must never
+    regress: MONETIZATION always reflects the FINAL post-recovery state of
+    its two component dimensions."""
+    c = consolidate("uk_avec")
+    refund = next(x for x in c.dimensions if x.dimension == "REFUNDABILITY")
+    xfer = next(x for x in c.dimensions if x.dimension == "TRANSFERABILITY")
+    monetization = next(x for x in c.dimensions if x.dimension == "MONETIZATION")
+    assert refund.status == PRESENT
+    assert xfer.status == PRESENT
+    assert monetization.status == PRESENT
+
+
+def test_no_recognized_authority_source_is_orphaned_from_consolidation():
+    """Permanent prevention: every module listed in RECOGNIZED_AUTHORITY_
+    SOURCE_MODULES must actually be imported by canonical_program_
+    consolidation.py. This is the exact defect class both the doctrine-
+    record bug (prior task) and the program_requirements/jurisdiction_
+    comparison orphaning (this task) had in common -- a real,
+    program-slug-keyed authority source existing in the repo while this
+    module never reads it. A future source added to the recognized list
+    without a corresponding import will fail this test immediately,
+    instead of silently producing false MISSING dimensions for years."""
+    import inspect
+    from app.services import canonical_program_consolidation as consolidation_module
+    from app.services.canonical_program_consolidation import RECOGNIZED_AUTHORITY_SOURCE_MODULES
+
+    source = inspect.getsource(consolidation_module)
+    for module_path, _reason in RECOGNIZED_AUTHORITY_SOURCE_MODULES:
+        assert module_path in source, (
+            f"{module_path} is listed as a recognized authority source but is not "
+            "imported anywhere in canonical_program_consolidation.py -- it is orphaned "
+            "from consolidation exactly like the doctrine-record and program_requirements "
+            "bugs this test exists to prevent"
+        )
