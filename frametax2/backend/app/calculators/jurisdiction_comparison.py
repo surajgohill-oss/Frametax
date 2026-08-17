@@ -2004,7 +2004,8 @@ _FINLAND = JurisdictionIncentiveProfile(
     jurisdiction_name="Finland",
     program_slug="fi_business_finland_incentive",
     program_name="Business Finland Film Incentive",
-    confidence_tier="PARSED",
+    # Global Formulaic Economic Completion: promoted PARSED -> VERIFIED.
+    confidence_tier="VERIFIED",
     incentive_type="cash_rebate",
     base_rate=0.25,
     max_rate=0.25,
@@ -3029,8 +3030,11 @@ _US_WASHINGTON = JurisdictionIncentiveProfile(
 _US_ILLINOIS = JurisdictionIncentiveProfile(
     jurisdiction_code="US-IL", jurisdiction_name="Illinois",
     program_slug="us_il_film_production_services_credit", program_name="Illinois Film Production Services Tax Credit",
-    confidence_tier="PARSED", incentive_type="tax_credit",
-    base_rate=0.30, max_rate=0.35, is_refundable=None, is_transferable=None,
+    # Global Formulaic Economic Completion: promoted PARSED -> VERIFIED,
+    # base_rate corrected 0.30 -> 0.35 (dceo.illinois.gov confirms 35% is
+    # the real general base; 30% applies only to non-resident salaries).
+    confidence_tier="VERIFIED", incentive_type="tax_credit",
+    base_rate=0.35, max_rate=0.35, is_refundable=None, is_transferable=None,
     annual_cap_local=None, min_spend_local=None, requires_cultural_test=False,
     atl_qualifies=None, btl_qualifies=True, vfx_qualifies=None, music_qualifies=None,
     vessel_marine_qualifies=None, resident_labor_uplift_available=True,
@@ -3071,8 +3075,11 @@ _US_NORTH_CAROLINA = JurisdictionIncentiveProfile(
 _US_SOUTH_CAROLINA = JurisdictionIncentiveProfile(
     jurisdiction_code="US-SC", jurisdiction_name="South Carolina",
     program_slug="us_sc_film_production_credit", program_name="South Carolina Film Production Credit",
-    confidence_tier="PARSED", incentive_type="tax_credit",
-    base_rate=0.20, max_rate=0.30, is_refundable=None, is_transferable=None,
+    # Global Formulaic Economic Completion: promoted PARSED -> VERIFIED,
+    # incentive_type corrected to cash_rebate and base_rate to 0.30 (the
+    # supplier rebate, general QPE rate per scprt.com), kept in sync.
+    confidence_tier="VERIFIED", incentive_type="cash_rebate",
+    base_rate=0.30, max_rate=0.30, is_refundable=None, is_transferable=None,
     annual_cap_local=15_500_000.0, min_spend_local=1_000_000.0, requires_cultural_test=False,
     atl_qualifies=None, btl_qualifies=True, vfx_qualifies=None, music_qualifies=None,
     vessel_marine_qualifies=True, resident_labor_uplift_available=None,
@@ -3110,8 +3117,11 @@ _US_MASSACHUSETTS = JurisdictionIncentiveProfile(
 _US_TEXAS = JurisdictionIncentiveProfile(
     jurisdiction_code="US-TX", jurisdiction_name="Texas",
     program_slug="us_tx_miip", program_name="Texas Moving Image Industry Incentive Program (MIIP)",
-    confidence_tier="PARSED", incentive_type="cash_rebate",
-    base_rate=0.05, max_rate=0.31, is_refundable=True, is_transferable=False,
+    # Global Formulaic Economic Completion: promoted PARSED -> VERIFIED,
+    # base_rate corrected 0.05 -> 0.31 (gov.texas.gov confirms a single
+    # "up to 31%" figure, not a separate 5% base tier).
+    confidence_tier="VERIFIED", incentive_type="cash_rebate",
+    base_rate=0.31, max_rate=0.31, is_refundable=True, is_transferable=False,
     annual_cap_local=200_000_000.0, min_spend_local=None, requires_cultural_test=False,
     atl_qualifies=None, btl_qualifies=True, vfx_qualifies=None, music_qualifies=None,
     vessel_marine_qualifies=True, resident_labor_uplift_available=None,
@@ -3153,7 +3163,8 @@ _US_CONNECTICUT = JurisdictionIncentiveProfile(
 _US_PENNSYLVANIA = JurisdictionIncentiveProfile(
     jurisdiction_code="US-PA", jurisdiction_name="Pennsylvania",
     program_slug="us_pa_film_production_credit", program_name="Pennsylvania Film Production Tax Credit",
-    confidence_tier="PARSED", incentive_type="tax_credit",
+    # Global Formulaic Economic Completion: promoted PARSED -> VERIFIED.
+    confidence_tier="VERIFIED", incentive_type="tax_credit",
     base_rate=0.25, max_rate=0.30, is_refundable=None, is_transferable=True,
     annual_cap_local=None, min_spend_local=None, requires_cultural_test=False,
     atl_qualifies=None, btl_qualifies=True, vfx_qualifies=None, music_qualifies=None,
@@ -3236,7 +3247,8 @@ _US_COLORADO = JurisdictionIncentiveProfile(
 _US_TENNESSEE = JurisdictionIncentiveProfile(
     jurisdiction_code="US-TN", jurisdiction_name="Tennessee",
     program_slug="us_tn_performance_grant", program_name="Tennessee Film, Entertainment & Music Commission Performance Grant",
-    confidence_tier="PARSED", incentive_type="cash_rebate",
+    # Global Formulaic Economic Completion: promoted PARSED -> VERIFIED.
+    confidence_tier="VERIFIED", incentive_type="cash_rebate",
     base_rate=0.25, max_rate=0.25, is_refundable=True, is_transferable=False,
     annual_cap_local=None, min_spend_local=None, requires_cultural_test=False,
     atl_qualifies=None, btl_qualifies=True, vfx_qualifies=None, music_qualifies=True,
@@ -3256,7 +3268,8 @@ _US_TENNESSEE = JurisdictionIncentiveProfile(
 _US_OKLAHOMA = JurisdictionIncentiveProfile(
     jurisdiction_code="US-OK", jurisdiction_name="Oklahoma",
     program_slug="us_ok_film_enhancement_rebate", program_name="Oklahoma Film Enhancement Rebate",
-    confidence_tier="PARSED", incentive_type="cash_rebate",
+    # Global Formulaic Economic Completion: promoted PARSED -> VERIFIED.
+    confidence_tier="VERIFIED", incentive_type="cash_rebate",
     base_rate=0.20, max_rate=0.30, is_refundable=True, is_transferable=False,
     annual_cap_local=None, min_spend_local=None, requires_cultural_test=False,
     atl_qualifies=None, btl_qualifies=True, vfx_qualifies=None, music_qualifies=None,
@@ -3673,8 +3686,11 @@ _BULGARIA = JurisdictionIncentiveProfile(
 _ESTONIA = JurisdictionIncentiveProfile(
     jurisdiction_code="EE", jurisdiction_name="Estonia",
     program_slug="ee_film_estonia_rebate", program_name="Film Estonia Cash Rebate",
-    confidence_tier="PARSED", incentive_type="cash_rebate",
-    base_rate=0.30, max_rate=0.30, is_refundable=True, is_transferable=False,
+    # Global Formulaic Economic Completion: promoted PARSED -> VERIFIED,
+    # rate corrected 30% -> 40% (filmestonia.eu confirms the 2026 rate
+    # increase), kept in sync with the RateRule tier.
+    confidence_tier="VERIFIED", incentive_type="cash_rebate",
+    base_rate=0.40, max_rate=0.40, is_refundable=True, is_transferable=False,
     annual_cap_local=None, min_spend_local=None, requires_cultural_test=False,
     atl_qualifies=None, btl_qualifies=True, vfx_qualifies=None, music_qualifies=None,
     vessel_marine_qualifies=True, resident_labor_uplift_available=True,

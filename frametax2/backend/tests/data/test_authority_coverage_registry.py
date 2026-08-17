@@ -64,6 +64,12 @@ DELIBERATELY_PROMOTED_CANONICAL_IDS = frozenset({
     # NC, NV -- see authority_coverage_registry.py's batch-5 CORRECTION.
     "us_al_film_incentive", "us_ct_film_credit", "us_ma_film_credit",
     "us_ms_film_credit", "us_nv_film_incentive", "us_nc_film_grant",
+    # Continuous closeout (IL, TX, PA, TN, OK, SC, EE, FI): fresh direct-
+    # WebFetch primary-source verification against the actual
+    # administering authority for each.
+    "us_tx_miip", "us_il_film_credit", "us_ok_ofer", "us_pa_film_credit",
+    "us_sc_film_credit", "us_tn_film_incentive", "ee_film_incentive",
+    "fi_film_incentive",
 })
 
 

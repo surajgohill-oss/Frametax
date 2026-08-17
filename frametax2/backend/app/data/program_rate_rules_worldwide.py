@@ -2246,28 +2246,41 @@ register_rate_rules(rate_rules_for(DK_DOCTRINE))
 # (25%, DISCOVERY) confirmed unchanged, corroborated by the same 2026
 # search pass covering all four Nordic countries together.
 _FI_CITATION = (
-    "Corroborated via the same 2026 search pass as Denmark: '25% cash "
-    "rebate for production costs in Finland,' 'budget for 2026 being "
-    "EUR 10 million' (a separate source's EUR 12M figure was close but "
-    "not identical — the discrepancy is minor and both confirm an "
-    "annual PROGRAM budget in the low tens of millions, not modeled as "
-    "a per-production cap either way)."
+    "businessfinland.fi/en/services/funding/funding-services/cash-rebate/ "
+    "(Business Finland, official, fetched directly): '25% cash rebate is "
+    "offered for production costs in Finland.' 'The budget for the "
+    "audiovisual production incentive for 2026 is 10 million euros' "
+    "(program-wide, not modeled as a per-production cap)."
 )
 FI_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="FI",
     program_slug="fi_business_finland_incentive",
     program_name="Business Finland Film Incentive",
-    confidence_tier="PARSED",
+    confidence_tier="VERIFIED",
     incentive_type="cash_rebate",
     is_refundable=True,
     is_transferable=False,
     min_spend_usd=500_000.0,  # from the pre-existing catalog lead,
-                               # unconfirmed further this pass — carried
-                               # forward as PARSED not VERIFIED
+                               # not restated on the official page fetched
+                               # -- retained, disclosed as not itself
+                               # independently re-confirmed
     annual_cap_usd=None,
     requires_cultural_test=True,
     citation=_FI_CITATION,
-    source_ref="2026-nordic-search-pass-finland",
+    source_ref="businessfinland.fi-official",
+    provenance=SourceProvenance(
+        issuing_authority="Business Finland",
+        source_url="https://www.businessfinland.fi/en/services/funding/funding-services/cash-rebate/",
+        citation_detail="'25% cash rebate is offered for production "
+                         "costs in Finland'",
+        effective_date="2026 budget cycle",
+        verified_date="2026-08-17",
+        interpretation_note="Minimum spend ($500,000) is a pre-existing "
+                             "catalog figure not restated on the "
+                             "official page fetched -- retained, "
+                             "disclosed as not independently "
+                             "re-confirmed this pass.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="fi-flat-25",
@@ -3929,27 +3942,41 @@ register_rate_rules(rate_rules_for(US_WA_DOCTRINE))
 US_IL_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="US-IL", program_slug="us_il_film_production_services_credit",
     program_name="Illinois Film Production Services Tax Credit",
-    confidence_tier="PARSED", incentive_type="tax_credit",
+    confidence_tier="VERIFIED", incentive_type="tax_credit",
     is_refundable=None, is_transferable=None, min_spend_usd=None,
     annual_cap_usd=None, requires_cultural_test=False,
-    citation="greenslate.com: 'Illinois Senate Bill 1911... 30% credit on "
-              "non-resident salaries up to $500K, and uplifts on salaries "
-              "paid to Illinois residents... extended through December 31, "
-              "2038... tax credit for in-state labor and vendor spending "
-              "up to 35%.' Confirms catalog's 30% base, adds a real 35% "
-              "ceiling not previously known.",
-    source_ref="greenslate.com-illinois-sb1911",
-    tiers=(DoctrineRateTier(tier_id="us-il-base-30", rate=0.30, is_band_ceiling=False),
-           DoctrineRateTier(tier_id="us-il-ceiling-35", rate=0.35, is_band_ceiling=True,
-                             conditions=(RateCondition(
-                                 condition_id="us-il-resident-labor-uplift",
-                                 description="Uplift to 35% for in-state "
-                                             "labor/vendor spending -- not "
-                                             "pre-evaluable without a "
-                                             "crew-residency/vendor breakdown",
-                                 quote="tax credit for in-state labor and "
-                                       "vendor spending up to 35% (greenslate.com)",
-                                 kind="discretionary_band"),)),),
+    citation="dceo.illinois.gov/whyillinois/film/filmtaxcredit.html "
+              "(Illinois Dept. of Commerce and Economic Opportunity, "
+              "official, fetched directly): '35% credit on Illinois "
+              "resident salaries up to $500,000 per worker' and '35% "
+              "credit for the use of tangible personal property or the "
+              "expenses to acquire services from vendors in Illinois' "
+              "(general spend). '30% credit on non-resident salaries up "
+              "to $500,000 per worker' -- a narrower payroll-specific "
+              "rate, not the general base. '5% additional credit' for "
+              "certified green productions (not modeled -- no "
+              "sustainability-certification fact exists). '15% "
+              "additional credit' for wages of workers in economically "
+              "disadvantaged areas (not modeled -- no worker-residence-"
+              "area fact exists). CORRECTS the prior modeled base from "
+              "30% to the real general base of 35%.",
+    source_ref="dceo.illinois.gov-official",
+    provenance=SourceProvenance(
+        issuing_authority="Illinois Department of Commerce and Economic "
+                           "Opportunity (DCEO)",
+        source_url="https://dceo.illinois.gov/whyillinois/film/filmtaxcredit.html",
+        citation_detail="'35% credit for the use of tangible personal "
+                         "property or the expenses to acquire services "
+                         "from vendors in Illinois'",
+        verified_date="2026-08-17",
+        interpretation_note="Corrects the prior modeled base rate from "
+                             "30% to the real general base of 35% -- 30% "
+                             "applies only to non-resident salaries "
+                             "specifically. Green (+5%) and economically-"
+                             "disadvantaged-area (+15%) uplifts are real "
+                             "but not modeled (no matching facts exist).",
+    ),
+    tiers=(DoctrineRateTier(tier_id="us-il-base-35", rate=0.35, is_band_ceiling=False),),
 ))
 register_rate_rules(rate_rules_for(US_IL_DOCTRINE))
 
@@ -4008,24 +4035,53 @@ register_rate_rules(rate_rules_for(US_NC_DOCTRINE))
 US_SC_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="US-SC", program_slug="us_sc_film_production_credit",
     program_name="South Carolina Film Production Credit",
-    confidence_tier="PARSED", incentive_type="tax_credit",
+    confidence_tier="VERIFIED", incentive_type="cash_rebate",
     is_refundable=None, is_transferable=None, min_spend_usd=1_000_000.0,
-    annual_cap_usd=15_500_000.0, requires_cultural_test=False,
-    citation="shamelstudio.com: '20% base, up to 30% with uplifts, cash "
-              "rebate, $1M minimum spend, $15.5M annual cap.' Confirms "
-              "catalog's 20% base, adds a real 30% ceiling not previously known.",
-    source_ref="shamelstudio.com-south-carolina",
-    tiers=(DoctrineRateTier(tier_id="us-sc-base-20", rate=0.20, is_band_ceiling=False,
-                             min_qpe_usd=1_000_000.0),
-           DoctrineRateTier(tier_id="us-sc-ceiling-30", rate=0.30, is_band_ceiling=True,
-                             min_qpe_usd=1_000_000.0,
+    annual_cap_usd=None, requires_cultural_test=False,
+    citation="scprt.com/film-commission/incentives/production-incentives "
+              "(SC Department of Parks, Recreation and Tourism, official, "
+              "fetched directly): Supplier Rebate 'up to thirty percent "
+              "(30%) of qualifying goods and services purchased, rented, "
+              "or leased by the production company from a South Carolina "
+              "supplier' -- modeled as the general QPE rate. Wage "
+              "Rebate: 'up to twenty-five percent (25%)' for SC-resident "
+              "personnel, '20% rebate' for non-resident performing "
+              "artists/crew -- narrower payroll-specific rates, not "
+              "separately modeled (no payroll-vs-total-QPE split fact). "
+              "Minimum spend '$1,000,000 in SC' for wage/supplier "
+              "rebates. No annual cap stated on this page -- the prior "
+              "catalog's $15.5M figure was not re-confirmed and is "
+              "disclosed as unconfirmed, not modeled.",
+    source_ref="scprt.com-official",
+    provenance=SourceProvenance(
+        issuing_authority="South Carolina Department of Parks, "
+                           "Recreation and Tourism",
+        source_url="https://www.scprt.com/film-commission/incentives/production-incentives",
+        citation_detail="Supplier Rebate 'up to thirty percent (30%) of "
+                         "qualifying goods and services'",
+        verified_date="2026-08-17",
+        interpretation_note="Modeled as a band ceiling (an 'up to' "
+                             "figure). Resident/non-resident wage rebates "
+                             "(25%/20%) are real but narrower payroll-"
+                             "specific rates not separately tracked by "
+                             "this engine. Annual cap not confirmed on "
+                             "this page -- prior $15.5M catalog figure "
+                             "held as unconfirmed, not modeled.",
+    ),
+    tiers=(DoctrineRateTier(tier_id="us-sc-supplier-ceiling-30", rate=0.30,
+                             is_band_ceiling=True, min_qpe_usd=1_000_000.0,
                              conditions=(RateCondition(
-                                 condition_id="us-sc-uplift-criteria-unconfirmed",
-                                 description="Uplift to 30% -- exact "
-                                             "criteria not disclosed by "
-                                             "the source checked",
-                                 quote="up to 30% with uplifts (shamelstudio.com)",
-                                 kind="discretionary_band"),)),),
+                                 condition_id="us-sc-wage-rebates-not-modeled",
+                                 description="Resident wage rebate 25% "
+                                             "and non-resident wage "
+                                             "rebate 20% apply to payroll "
+                                             "specifically, not general "
+                                             "QPE -- not separately "
+                                             "modeled",
+                                 quote="up to twenty-five percent (25%)... "
+                                       "20% rebate for non-resident "
+                                       "(scprt.com)",
+                                 kind="material_funding_risk_not_modeled"),)),),
 ))
 register_rate_rules(rate_rules_for(US_SC_DOCTRINE))
 
@@ -4086,30 +4142,33 @@ register_rate_rules(rate_rules_for(US_MA_DOCTRINE))
 US_TX_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="US-TX", program_slug="us_tx_miip",
     program_name="Texas Moving Image Industry Incentive Program (MIIP)",
-    confidence_tier="PARSED", incentive_type="cash_rebate",
+    confidence_tier="VERIFIED", incentive_type="cash_rebate",
     is_refundable=True, is_transferable=False, min_spend_usd=None,
     annual_cap_usd=200_000_000.0, requires_cultural_test=False,
-    citation="greenslate.com: '$200M annual cap... bonus \"stackable\" "
-              "incentives for in-state spend... could push effective "
-              "grant rates up to 31% for certain productions starting "
-              "September 1, 2026, if added eligibility criteria (including "
-              "post production and crew payrolls) are met.' Base 5% tier "
-              "carried forward from catalog, unchallenged.",
-    source_ref="greenslate.com-texas-miip",
-    tiers=(DoctrineRateTier(tier_id="us-tx-base-5", rate=0.05, is_band_ceiling=False),
-           DoctrineRateTier(tier_id="us-tx-ceiling-31", rate=0.31, is_band_ceiling=True,
-                             conditions=(RateCondition(
-                                 condition_id="us-tx-2026-stackable-criteria",
-                                 description="Stackable bonuses to 31% "
-                                             "require post-production/crew-"
-                                             "payroll criteria effective "
-                                             "2026-09-01 -- not "
-                                             "pre-evaluable; exact tier "
-                                             "schedule not disclosed",
-                                 quote="could push effective grant rates up "
-                                       "to 31%... starting September 1, "
-                                       "2026 (greenslate.com)",
-                                 kind="discretionary_band"),)),),
+    citation="gov.texas.gov/film/page/tmiiip_filmtv (Office of the Texas "
+              "Governor, Texas Film Commission, official, fetched "
+              "directly): 'Qualifying projects are eligible to receive a "
+              "cash grant up to 31% of eligible Texas spending.' Modeled "
+              "as a band ceiling (an 'up to' figure, not a flat "
+              "guaranteed rate) -- CORRECTS the prior placeholder 5% base "
+              "tier, which was a catalog carryover not confirmed by this "
+              "official source.",
+    source_ref="gov.texas.gov-official",
+    provenance=SourceProvenance(
+        issuing_authority="Office of the Texas Governor (Texas Film "
+                           "Commission)",
+        source_url="https://gov.texas.gov/film/page/tmiiip_filmtv",
+        citation_detail="'cash grant up to 31% of eligible Texas "
+                         "spending'",
+        verified_date="2026-08-17",
+        interpretation_note="The official page states a single 'up to "
+                             "31%' figure without a published tier "
+                             "schedule -- modeled as a band ceiling. A "
+                             "secondary source's '5%-25% base + 1%-2.5% "
+                             "bonus' tier claim was not independently "
+                             "confirmed and is not modeled.",
+    ),
+    tiers=(DoctrineRateTier(tier_id="us-tx-ceiling-31", rate=0.31, is_band_ceiling=True),),
 ))
 register_rate_rules(rate_rules_for(US_TX_DOCTRINE))
 
@@ -4162,22 +4221,44 @@ register_rate_rules(rate_rules_for(US_CT_DOCTRINE))
 US_PA_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="US-PA", program_slug="us_pa_film_production_credit",
     program_name="Pennsylvania Film Production Tax Credit",
-    confidence_tier="PARSED", incentive_type="tax_credit",
+    confidence_tier="VERIFIED", incentive_type="tax_credit",
     is_refundable=None, is_transferable=True, min_spend_usd=None,
     annual_cap_usd=None, requires_cultural_test=False,
-    citation="greenslate.com: '25% tax credit on qualified production "
-              "expenses, increasing to 30% when productions meet certain "
-              "criteria.' Confirms catalog's 25% base, adds a 30% ceiling.",
-    source_ref="greenslate.com-pennsylvania",
+    citation="dced.pa.gov/programs/film-tax-credit-program/ (PA "
+              "Department of Community & Economic Development, official, "
+              "fetched directly): '25% of the production's total "
+              "Qualified Pennsylvania Production Expenses.' 'An "
+              "additional 5% tax credit, for a total credit of 30%' for "
+              "use of a qualified production facility. Requirement: "
+              "'Pennsylvania production expenses comprise at least 60% "
+              "of the Film's total production expenses' (not modeled -- "
+              "no budget-ratio fact exists in this engine). "
+              "Post-production work at qualified facilities separately "
+              "earns 'a 30% tax credit' (not modeled -- distinct program "
+              "track).",
+    source_ref="dced.pa.gov-official",
+    provenance=SourceProvenance(
+        issuing_authority="Pennsylvania Department of Community & "
+                           "Economic Development (DCED)",
+        source_url="https://dced.pa.gov/programs/film-tax-credit-program/",
+        citation_detail="'25% of the production's total Qualified "
+                         "Pennsylvania Production Expenses'; '+5%' "
+                         "qualified production facility uplift",
+        verified_date="2026-08-17",
+        interpretation_note="60%-of-total-production-expenses PA "
+                             "requirement not pre-evaluable -- disclosed "
+                             "via condition, not enforced.",
+    ),
     tiers=(DoctrineRateTier(tier_id="us-pa-base-25", rate=0.25, is_band_ceiling=False),
            DoctrineRateTier(tier_id="us-pa-ceiling-30", rate=0.30, is_band_ceiling=True,
                              conditions=(RateCondition(
-                                 condition_id="us-pa-uplift-criteria-unconfirmed",
-                                 description="Uplift to 30% -- exact "
-                                             "criteria not disclosed by "
-                                             "the source checked",
-                                 quote="increasing to 30% when productions "
-                                       "meet certain criteria (greenslate.com)",
+                                 condition_id="us-pa-qualified-facility-uplift",
+                                 description="+5% for use of a qualified "
+                                             "production facility -- not "
+                                             "pre-evaluable without a "
+                                             "facility-use fact",
+                                 quote="An additional 5% tax credit, for a "
+                                       "total credit of 30% (dced.pa.gov)",
                                  kind="discretionary_band"),)),),
 ))
 register_rate_rules(rate_rules_for(US_PA_DOCTRINE))
@@ -4333,29 +4414,31 @@ register_rate_rules(rate_rules_for(US_CO_DOCTRINE))
 US_TN_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="US-TN", program_slug="us_tn_performance_grant",
     program_name="Tennessee Film, Entertainment & Music Commission Performance Grant",
-    confidence_tier="PARSED", incentive_type="cash_rebate",
-    is_refundable=True, is_transferable=False, min_spend_usd=None,
+    confidence_tier="VERIFIED", incentive_type="cash_rebate",
+    is_refundable=True, is_transferable=False, min_spend_usd=200_000.0,
     annual_cap_usd=None, requires_cultural_test=False,
-    citation="saturation.io: '25% performance grant plus F&E tax credit "
-              "on payroll... 25% of QPE for productions filming primarily "
-              "in the Nashville metro area or other Tennessee tier 1 "
-              "areas... Potential additional bonuses for productions "
-              "filming in tier 2 through tier 4 enhancement counties.' "
-              "First confirmed rate for this catalog entry (was "
-              "base_rate=None).",
-    source_ref="saturation.io-tennessee",
-    tiers=(DoctrineRateTier(tier_id="us-tn-tier1-25", rate=0.25, is_band_ceiling=False,
-                             conditions=(RateCondition(
-                                 condition_id="us-tn-tier2-4-bonus-unspecified",
-                                 description="Additional bonuses for "
-                                             "tier 2-4 rural/distressed "
-                                             "counties -- magnitude not "
-                                             "disclosed by the source checked",
-                                 quote="Potential additional bonuses for "
-                                       "productions filming in tier 2 "
-                                       "through tier 4 enhancement "
-                                       "counties (saturation.io)",
-                                 kind="discretionary_band"),)),),
+    citation="tn.gov (Tennessee state government, official, fetched "
+              "directly): 'projects with budgets over $200,000 will be "
+              "eligible to receive grants equal to 25 percent of their "
+              "qualified Tennessee expenditures,' effective 2012-07-01. "
+              "No tier structure found on this page (the tier 2-4 "
+              "county-bonus claim from a prior secondary source was not "
+              "independently re-confirmed and is not modeled).",
+    source_ref="tn.gov-official",
+    provenance=SourceProvenance(
+        issuing_authority="Tennessee Department of Economic and "
+                           "Community Development",
+        source_url="https://www.tn.gov/transparenttn/state-financial-overview/open-ecd/openecd/film-incentives.html",
+        citation_detail="'grants equal to 25 percent of their qualified "
+                         "Tennessee expenditures'",
+        effective_date="2012-07-01",
+        verified_date="2026-08-17",
+        interpretation_note="A secondary source's tier-2-through-4 "
+                             "county-bonus claim was not confirmed by "
+                             "this official page and is not modeled.",
+    ),
+    tiers=(DoctrineRateTier(tier_id="us-tn-flat-25", rate=0.25, is_band_ceiling=False,
+                             min_qpe_usd=200_000.0),),
 ))
 register_rate_rules(rate_rules_for(US_TN_DOCTRINE))
 
@@ -4368,26 +4451,50 @@ register_rate_rules(rate_rules_for(US_TN_DOCTRINE))
 US_OK_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="US-OK", program_slug="us_ok_film_enhancement_rebate",
     program_name="Oklahoma Film Enhancement Rebate",
-    confidence_tier="PARSED", incentive_type="cash_rebate",
+    confidence_tier="VERIFIED", incentive_type="cash_rebate",
     is_refundable=True, is_transferable=False, min_spend_usd=None,
-    annual_cap_usd=None, requires_cultural_test=False,
-    citation="greenslate.com: 'Oklahoma's film office offers 20-30% cash "
-              "rebates on qualified spending.' CONFLICTS with the "
-              "pre-existing catalog's 35% figure -- fresher/dedicated "
-              "source used, catalog figure flagged as an unresolved "
-              "prior claim, not dropped silently.",
-    source_ref="greenslate.com-oklahoma-conflicts-with-stale-catalog-35pct",
-    tiers=(DoctrineRateTier(tier_id="us-ok-floor-20", rate=0.20, is_band_ceiling=False),
+    annual_cap_usd=30_000_000.0, requires_cultural_test=False,
+    citation="okfilmmusic.org/incentives (Oklahoma Film and Music "
+              "Office, official, fetched directly): '20% Base Incentive.' "
+              "Stackable uplifts: '3% Rural County Uplift,' '2% Small "
+              "Municipality Uplift,' '5% Soundstage Uplift,' '3% Post-"
+              "Production Uplift,' '2% Music Uplift,' '2%/5% TV pilot/"
+              "season,' '5% Multi-Film Deal Uplift' (none individually "
+              "modeled -- not pre-evaluable without shoot-location/"
+              "facility/deal facts). Page states 'up to 30% total "
+              "rebate' as the maximum combined rate -- RESOLVES the "
+              "prior unresolved conflict between the catalog's 35% and a "
+              "secondary source's 20-30% range in favor of the official "
+              "page's explicit 30% ceiling; no annual cap was stated on "
+              "this specific page, but the $30M annual cap is confirmed "
+              "by the Filmed in Oklahoma Act 2021 program overview "
+              "(replacing the prior $8M cap).",
+    source_ref="okfilmmusic.org-official",
+    provenance=SourceProvenance(
+        issuing_authority="Oklahoma Film and Music Office",
+        source_url="https://www.okfilmmusic.org/incentives",
+        citation_detail="'20% Base Incentive'; 'up to 30% total rebate'",
+        verified_date="2026-08-17",
+        interpretation_note="Resolves the prior 35%-vs-20-30% conflict in "
+                             "favor of this official page's explicit 30% "
+                             "maximum combined rate. Individual uplifts "
+                             "(rural, soundstage, post, music, multi-"
+                             "film) are real but not separately modeled.",
+    ),
+    tiers=(DoctrineRateTier(tier_id="us-ok-base-20", rate=0.20, is_band_ceiling=False),
            DoctrineRateTier(tier_id="us-ok-ceiling-30", rate=0.30, is_band_ceiling=True,
                              conditions=(RateCondition(
-                                 condition_id="us-ok-catalog-conflict-35pct",
-                                 description="Pre-existing catalog claimed "
-                                             "35% -- unresolved conflict "
-                                             "with this pass's 20-30% "
-                                             "source; not reconciled, "
-                                             "disclosed not dropped",
-                                 quote="20-30% cash rebates on qualified "
-                                       "spending (greenslate.com)",
+                                 condition_id="us-ok-stackable-uplifts",
+                                 description="Multiple stackable uplifts "
+                                             "(rural county, small "
+                                             "municipality, soundstage, "
+                                             "post-production, music, "
+                                             "multi-film deal) combine to "
+                                             "reach the 30% ceiling -- "
+                                             "none individually "
+                                             "pre-evaluable",
+                                 quote="up to 30% total rebate "
+                                       "(okfilmmusic.org)",
                                  kind="discretionary_band"),)),),
 ))
 register_rate_rules(rate_rules_for(US_OK_DOCTRINE))
@@ -5107,16 +5214,36 @@ register_rate_rules(rate_rules_for(BG_DOCTRINE))
 EE_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="EE", program_slug="ee_film_estonia_rebate",
     program_name="Film Estonia Cash Rebate",
-    confidence_tier="PARSED", incentive_type="cash_rebate",
+    confidence_tier="VERIFIED", incentive_type="cash_rebate",
     is_refundable=True, is_transferable=False, min_spend_usd=None,
     annual_cap_usd=None, requires_cultural_test=False,
-    citation="innovires.com: 'Up to 30% discretionary cash rebate, with "
-              "the maximum (30%) grant applicable if the film production "
-              "uses Estonian-based filmmakers, actors and other "
-              "production crew, Estonian story and/or Estonian-set "
-              "storyline.' Confirms catalog's 30% as a discretionary ceiling.",
-    source_ref="innovires.com-estonia",
-    tiers=(DoctrineRateTier(tier_id="ee-ceiling-30", rate=0.30, is_band_ceiling=True,
+    citation="filmestonia.eu/estonia-increases-film-estonia-cash-rebate-"
+              "programme-to-40/ (Film Estonia, official program site "
+              "administered by the Estonian Film Institute, fetched "
+              "directly): 'Film Estonia moves forward with a 40% cash "
+              "rebate for film and TV production,' effective ~April "
+              "2026. SUPERSEDES the prior 30% ceiling figure (innovires."
+              "com, secondary) -- a genuine rate increase, not a "
+              "correction of a prior error. Prior local-content "
+              "conditions (Estonian-based crew/story) not re-confirmed "
+              "on this specific page but not contradicted either; "
+              "retained as a disclosed, not-independently-reconfirmed "
+              "condition.",
+    source_ref="filmestonia.eu-official",
+    provenance=SourceProvenance(
+        issuing_authority="Film Estonia (Estonian Film Institute)",
+        source_url="https://filmestonia.eu/estonia-increases-film-estonia-cash-rebate-programme-to-40/",
+        citation_detail="'Film Estonia moves forward with a 40% cash "
+                         "rebate for film and TV production'",
+        effective_date="~2026-04 (announced 2026-03-09)",
+        verified_date="2026-08-17",
+        interpretation_note="Genuine rate increase from a prior 30% "
+                             "figure, not a correction. Local-content "
+                             "conditions for reaching the max rate "
+                             "carried forward from the prior citation, "
+                             "not independently re-confirmed this pass.",
+    ),
+    tiers=(DoctrineRateTier(tier_id="ee-ceiling-40", rate=0.40, is_band_ceiling=True,
                              conditions=(RateCondition(
                                  condition_id="ee-local-content-criteria",
                                  description="Max 30% requires Estonian-"
