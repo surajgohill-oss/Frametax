@@ -91,11 +91,11 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     unpriced = [e for e in entries if not e["is_fully_priced"]]
     accounting = view["structures"]["allocated_structures"]["candidate_accounting"]
 
-    assert len(priced) == 66
-    assert len(unpriced) == 44
+    assert len(priced) == 103
+    assert len(unpriced) == 7
     assert accounting["comparable_count"] == 1
-    assert accounting["review_required_count"] == 65
-    assert accounting["unpriceable_count"] == 44
+    assert accounting["review_required_count"] == 102
+    assert accounting["unpriceable_count"] == 7
 
     # Cross-screen agreement: the ranking list (what Scenarios/Overview/
     # World all read via is_directly_comparable) must reproduce the exact
@@ -105,8 +105,8 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     review_ranked = [r for r in ranking if r["is_fully_priced"] and not r["is_directly_comparable"]]
     unpriceable_ranked = [r for r in ranking if not r["is_fully_priced"]]
     assert len(comparable_ranked) == 1
-    assert len(review_ranked) == 65
-    assert len(unpriceable_ranked) == 44
+    assert len(review_ranked) == 102
+    assert len(unpriceable_ranked) == 7
 
     # Feasibility ≠ eligibility (canonical authority substrate + feasibility
     # boundary repair): a landlocked jurisdiction with real marine-mismatch
@@ -245,7 +245,7 @@ async def test_fvd_unpriceable_causes_are_differentiated_not_flattened(db: Async
     ranking = view["structures"]["allocated_structures"]["ranking"]
     unpriceable = [r for r in ranking if not r["is_fully_priced"]]
 
-    assert len(unpriceable) == 44
+    assert len(unpriceable) == 7
     statuses = {r["candidate_status"] for r in unpriceable}
     assert statuses.issuperset({"UNPRICEABLE_AUTHORITY_INSUFFICIENT", "RULE_REJECTED"}), (
         f"expected at least AUTHORITY_INSUFFICIENT and RULE_REJECTED causes, got {statuses}"

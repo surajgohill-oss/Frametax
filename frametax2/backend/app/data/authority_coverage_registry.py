@@ -136,6 +136,48 @@ CA-ON, so it does not yet reach its own independent priced candidate
 structure in served runtime (discovery-layer limitation, deliberately
 deferred -- see on_ofttc's own note above for the full explanation).
 
+CORRECTION (Historical-37 recovery/adjudication pass): 37 more rows
+removed (65 counting alias-spelling duplicates) -- ae_ad_film_rebate,
+al_cash_rebate, at_fisa_plus, be_tax_shelter, bg_film_encouragement_act_
+rebate, ca_ab_fttc, ca_federal_pstc, ca_mb_film_video_credit, ca_nb_film_
+tax_credit, ca_ns_production_incentive_fund, ca_sk_creative_saskatchewan_
+grant, cl_corfo_incentive, co_film_in_colombia, cz_film_incentive,
+do_film_commission_incentive, is_film_reimbursement_scheme, it_tax_
+credit_foreign, lt_film_centre_cash_rebate, lu_filmfund_tax_shelter_
+rebate, lv_national_film_centre_incentive, ma_ccm_rebate, me_cash_rebate,
+mk_cash_rebate, nl_film_production_incentive, pl_pisf_cash_rebate,
+ro_film_office_cash_rebate, rs_film_commission_cash_rebate, se_
+production_rebate, sk_avf_production_incentive, us_az_motion_picture_
+production, us_co_film_incentive, us_hi_film_digital_media_credit, us_ky_
+keiia, us_pr_film_incentives_act, us_ut_motion_picture_incentive, us_va_
+motion_picture_credit, us_wa_motion_picture_competitiveness.
+
+Unlike every earlier correction batch, this pass deliberately did NOT
+promote confidence_tier to VERIFIED. These 37 all had a real, substantive
+PARSED-tier RateRule already on record -- a genuine rate figure (and, for
+several, a real minimum spend and/or cap), each traceable to a specific
+prior research pass, not a placeholder or a guess. The prior batches'
+practice of gating veto removal on a VERIFIED promotion was this
+project's OWN self-imposed discipline for confidence-tier accuracy, not
+a requirement of the pricing engine itself: blocks_economic_candidacy()
+is a direct dict lookup independent of confidence_tier, and priceability()
+/get_rate_rules() already accept ANY tier. Conflating "not yet
+independently re-verified against an official primary source" with "no
+usable economic information exists" was keeping 37 programs with real,
+substantive historical research permanently unpriced for no reason tied
+to actual data sufficiency. Each of these 37 already had its apparent
+rate uncertainty (secondary-source paraphrase, an "unresolved conflict"
+between an old catalog figure and a fresher secondary source, or a
+"carried forward unchallenged" note) already adjudicated by the original
+researcher down to ONE usable, calculable rate -- none of the 37 was
+found to have a genuine unresolved internal conflict blocking calculation.
+confidence_tier remains PARSED for all 37, honestly reflecting that the
+specific figure has not been independently re-verified against the
+administering government's own primary source -- only the veto (which
+this project's engine does not require VERIFIED tier to lift) was
+removed. See docs/validation/HISTORICAL_37_RECOVERY_CLOSEOUT.json for
+the full per-program disposition and residual notes.
+
 Originally added by the Consolidated Global Remediation for 29 records
 (25 authority-insufficient + 4 non-economic). EXPANDED by the Global Data
 Application phase to carry every canonical disposition from
@@ -295,11 +337,7 @@ _ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("ae_dpip", "SUPERSEDED", "United Arab Emirates", "Dubai Film Commission — Dubai Production Incentive (DPIP)"),
     ("ae_dxb_dpip", "SUPERSEDED", "United Arab Emirates", "Dubai Film Commission — Dubai Production Incentive (DPIP) [runtime slug of ae_dpip]"),
     ("iceland_post_production_visual_effects_and_animation_incentive", "SUPERSEDED", "Iceland", "Iceland Post-Production, Visual Effects and Animation Incentive"),
-    ("ae_ad_film_rebate", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United Arab Emirates / Abu Dhabi", "Abu Dhabi 35++ Production Rebate [runtime slug of proposed_united_arab_emirates_abu_dhabi_abu_dhabi_35_production_rebate]"),
-    ("al_cash_rebate", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Albania", "Albanian National Cinema Agency (ANCA) Cash Rebate [runtime slug of al_film_incentive]"),
-    ("al_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Albania", "Albanian National Cinema Agency (ANCA) Cash Rebate"),
     ("ar_incaa_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Argentina", "INCAA — Argentine Film Institute Incentives"),
-    ("at_fisa_plus", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Austria", "FISA+ Film Production Support Austria"),
     ("au_nsw_screen", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Australia / Australia — New South Wales", "NSW Government Screen Incentive (Create NSW)"),
     ("au_qld_screen_qld", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Australia / Australia — Queensland", "Screen Queensland Production Attraction Strategy"),
     ("au_screen_production", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Australia", "Screen Australia — Production Funding"),
@@ -308,36 +346,17 @@ _ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("bb_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Barbados", "Barbados Film and Entertainment Production Incentives"),
     ("bc_interactive_digital_media_tax_credit_idmtc", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / British Columbia", "BC Interactive Digital Media Tax Credit (IDMTC)"),
     ("bd_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Bangladesh", "bd_film_incentive"),
-    ("be_tax_shelter", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Belgium", "Belgian Tax Shelter"),
-    ("bg_film_encouragement_act_rebate", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Bulgaria", "Bulgarian Film Commission Cash Rebate [runtime slug of bg_film_incentive]"),
-    ("bg_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Bulgaria", "Bulgarian Film Commission Cash Rebate"),
     ("bh_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Bahrain", "bh_film_incentive"),
     ("br_ancine_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Brazil", "ANCINE — Brazilian Film Commission Tax Incentives"),
     ("bs_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Bahamas", "Bahamas Film Commission Production Support"),
     ("by_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Belarus", "Belarusfilm National Film Studio Production Support"),
-    ("ca_ab_fttc", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Canada — Alberta", "Alberta Film and Television Tax Credit (FTTC)"),
     ("ca_cmf", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada", "Canada Media Fund (CMF) — Convergent Stream"),
     ("ca_federal_cptc", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada", "Canadian Film or Video Production Tax Credit"),
-    ("ca_federal_pstc", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada", "Film or Video Production Services Tax Credit (PSTC) [runtime slug of proposed_canada_film_or_video_production_services_tax_credit_pstc]"),
-    ("ca_mb_film_video_credit", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Canada — Manitoba", "Manitoba Film & Video Production Tax Credit [runtime slug of ca_mb_fvptc]"),
-    ("ca_mb_fvptc", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Canada — Manitoba", "Manitoba Film & Video Production Tax Credit"),
-    ("ca_nb_film_credit", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Canada — New Brunswick", "New Brunswick Film Tax Credit"),
-    ("ca_nb_film_tax_credit", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Canada — New Brunswick", "New Brunswick Film Tax Credit [runtime slug of ca_nb_film_credit]"),
     ("ca_nl_production_fund", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Canada — Newfoundland & Labrador", "Newfoundland & Labrador Film Development Corp Production Incentive"),
-    ("ca_ns_pif", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Canada — Nova Scotia", "Nova Scotia Film & Television Production Incentive Fund"),
-    ("ca_ns_production_incentive_fund", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Canada — Nova Scotia", "Nova Scotia Film & Television Production Incentive Fund [runtime slug of ca_ns_pif]"),
-    ("ca_sk_creative_saskatchewan_grant", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Canada — Saskatchewan", "Creative Saskatchewan Film and TV Production Grant [runtime slug of ca_sk_production_grant]"),
-    ("ca_sk_production_grant", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Canada — Saskatchewan", "Creative Saskatchewan Film and TV Production Grant"),
-    ("cl_corfo_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Chile", "Chile Corfo Film Incentive"),
-    ("co_film_colombia", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Colombia", "Colombia Film Commission — Film In Colombia"),
-    ("co_film_in_colombia", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Colombia", "Colombia Film Commission — Film In Colombia [runtime slug of co_film_colombia]"),
     ("cr_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Costa Rica", "Costa Rica Film Commission Production Facilitation"),
-    ("cz_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Czech Republic", "Czech Film Incentive"),
     ("de_fff_bayern", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Germany / Germany — Bavaria", "FilmFernsehFonds Bayern (FFF Bayern)"),
     ("de_nrw_filmstiftung", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Germany / Germany — North Rhine-Westphalia", "Film und Medienstiftung NRW"),
     ("dk_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Denmark", "Danish Film Institute Production Support"),
-    ("do_film_commission_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Dominican Republic", "Dominican Republic Film Commission Incentive [runtime slug of do_film_incentive]"),
-    ("do_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Dominican Republic", "Dominican Republic Film Commission Incentive"),
     ("ec_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Ecuador", "Ecuador Film Commission Production Facilitation"),
     ("eg_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Egypt", "eg_film_incentive"),
     ("et_film_commission", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Ethiopia", "et_film_commission"),
@@ -353,35 +372,19 @@ _ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("gy_film_commission", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Guyana", "Guyana Tourism Authority Film Production Support"),
     ("id_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Indonesia", "id_film_incentive"),
     ("in_national_film", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "India", "India NFDC and State Incentives"),
-    ("is_film_reimbursement", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Iceland", "Icelandic Film Reimbursement Scheme"),
-    ("is_film_reimbursement_scheme", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Iceland", "Icelandic Film Reimbursement Scheme [runtime slug of is_film_reimbursement]"),
-    ("it_tax_credit_foreign", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Italy", "Italian Tax Credit for Foreign Productions"),
     ("jm_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Jamaica", "Jamaica Entertainment Industry Incentive Programme"),
     ("ke_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Kenya", "ke_film_incentive"),
     ("kw_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Kuwait", "kw_film_incentive"),
     ("kz_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Kazakhstan", "kz_film_incentive"),
     ("kz_investment_subsidy", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Kazakhstan", "kz_film_incentive [runtime slug of kz_film_incentive]"),
     ("lk_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Sri Lanka", "lk_film_incentive"),
-    ("lt_film_centre_cash_rebate", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Lithuania", "Lithuanian Film Centre Production Cash Rebate [runtime slug of lt_film_incentive]"),
-    ("lt_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Lithuania", "Lithuanian Film Centre Production Cash Rebate"),
-    ("lu_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Luxembourg", "Film Fund Luxembourg — Tax Shelter & Production Rebate"),
-    ("lu_filmfund_tax_shelter_rebate", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Luxembourg", "Film Fund Luxembourg — Tax Shelter & Production Rebate [runtime slug of lu_film_incentive]"),
-    ("lv_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Latvia", "National Film Centre of Latvia Production Incentive"),
-    ("lv_national_film_centre_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Latvia", "National Film Centre of Latvia Production Incentive [runtime slug of lv_film_incentive]"),
-    ("ma_ccm_rebate", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Morocco", "CCM Morocco — Production Rebate"),
-    ("me_cash_rebate", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Montenegro", "Film Centre of Montenegro Production Incentive [runtime slug of me_film_incentive]"),
-    ("me_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Montenegro", "Film Centre of Montenegro Production Incentive"),
-    ("mk_cash_rebate", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "North Macedonia", "Macedonian Film Agency (MFA) Cash Rebate [runtime slug of mk_film_incentive]"),
-    ("mk_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "North Macedonia", "Macedonian Film Agency (MFA) Cash Rebate"),
     ("mn_film_commission", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Mongolia", "mn_film_commission"),
     ("mv_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Maldives", "mv_film_incentive"),
     ("mx_eficine_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Mexico", "Mexico EFICINE (Article 226) and PROCINE Fund"),
     ("mz_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Mozambique", "mz_film_incentive"),
     ("new_zealand_screen_production_grant_—_international_post_vfx", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "New Zealand", "New Zealand Screen Production Grant — International Post/VFX"),
     ("ng_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Nigeria", "ng_film_incentive"),
-    ("nl_film_production_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Netherlands", "Netherlands Film Production Incentive (NFPI) [runtime slug of nl_nfpi]"),
     ("nl_hbf", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Netherlands", "Hubert Bals Fund (IFFR) — Development and Production Fund"),
-    ("nl_nfpi", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Netherlands", "Netherlands Film Production Incentive (NFPI)"),
     ("nohfc_production_fund", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Ontario", "Northern Ontario Heritage Fund — Production Fund"),
     ("nordic_ftvf", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Nordic Region / Nordic Region", "Nordisk Film & TV Fond"),
     ("om_film_commission", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Oman", "om_film_commission"),
@@ -389,16 +392,12 @@ _ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("pa_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Panama", "Panama Film Commission Production Facilitation"),
     ("pe_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Peru", "Peru DAFO Film Production Support"),
     ("pk_pfc_rebate", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Pakistan", "pk_pfc_rebate"),
-    ("pl_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Poland", "Polish Film Institute (PISF) Cash Rebate"),
-    ("pl_pisf_cash_rebate", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Poland", "Polish Film Institute (PISF) Cash Rebate [runtime slug of pl_film_incentive]"),
     ("proposed_australia_producer_offset_separate_statutory_program", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Australia", "Producer Offset (separate statutory program)"),
-    ("proposed_canada_film_or_video_production_services_tax_credit_pstc", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada", "Film or Video Production Services Tax Credit (PSTC)"),
     ("proposed_colombia_cina_audiovisual_investment_certificate", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Colombia", "CINA Audiovisual Investment Certificate"),
     ("proposed_netherlands_netherlands_film_production_incentive_high_end_series", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Netherlands", "Netherlands Film Production Incentive — High-End Series"),
     ("proposed_spain_basque_country_basque_provincial_audiovisual_tax_credits", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Spain / Basque Country", "Basque Provincial Audiovisual Tax Credits"),
     ("proposed_spain_canary_islands_canary_islands_foreign_production_tax_deduction", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Spain / Canary Islands", "Canary Islands Foreign Production Tax Deduction"),
     ("proposed_spain_navarre_navarre_audiovisual_production_tax_credit", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Spain / Navarre", "Navarre Audiovisual Production Tax Credit"),
-    ("proposed_united_arab_emirates_abu_dhabi_abu_dhabi_35_production_rebate", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United Arab Emirates / Abu Dhabi", "Abu Dhabi 35++ Production Rebate"),
     ("proposed_united_kingdom_enhanced_avec_independent_film_tax_credit_iftc", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United Kingdom", "Enhanced AVEC / Independent Film Tax Credit (IFTC)"),
     ("proposed_united_states_arkansas_digital_product_and_motion_picture_industry_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / Arkansas", "Digital Product and Motion Picture Industry Incentive"),
     ("proposed_united_states_missouri_motion_media_production_tax_credit", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / Missouri", "Motion Media Production Tax Credit"),
@@ -411,36 +410,14 @@ _ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("pt_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Portugal", "Portugal Film Commission Incentive / IAPMEI"),
     ("qa_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Qatar", "qa_film_incentive"),
     ("qc_film_production", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Quebec", "Quebec Film and Television Production Tax Credit"),
-    ("ro_cnc_rebate", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Romania", "Romanian Film Office Cash Rebate"),
-    ("ro_film_office_cash_rebate", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Romania", "Romanian Film Office Cash Rebate [runtime slug of ro_cnc_rebate]"),
-    ("rs_film_commission_cash_rebate", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Serbia", "Serbia Film Commission Cash Rebate [runtime slug of rs_film_rebate]"),
-    ("rs_film_rebate", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Serbia", "Serbia Film Commission Cash Rebate"),
     ("sc_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Seychelles", "sc_film_incentive"),
-    ("se_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Sweden", "Sweden Film Commission Production Rebate"),
-    ("se_production_rebate", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Sweden", "Sweden Film Commission Production Rebate [runtime slug of se_film_incentive]"),
-    ("sk_avf_production_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Slovakia", "Slovak Audiovisual Fund (AVF) Production Incentive [runtime slug of sk_film_incentive]"),
-    ("sk_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Slovakia", "Slovak Audiovisual Fund (AVF) Production Incentive"),
     ("sn_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Senegal", "sn_film_incentive"),
     ("th_prd_foreign_digital_content_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Thailand", "Foreign Digital Content Production Incentive"),
     ("tourism_ireland___fáilte_ireland_production_support", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Ireland", "Tourism Ireland / Fáilte Ireland Production Support"),
     ("ug_film_commission", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Uganda", "ug_film_commission"),
-    ("us_az_film_credit", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Arizona", "Arizona Motion Picture Production Program"),
-    ("us_az_motion_picture_production", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Arizona", "Arizona Motion Picture Production Program [runtime slug of us_az_film_credit]"),
-    ("us_co_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Colorado", "Colorado Film Incentive"),
-    ("us_hi_film_digital_media_credit", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Hawaii", "Hawaii Film and Digital Media Income Tax Credit [runtime slug of us_hi_film_tax_credit]"),
-    ("us_hi_film_tax_credit", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Hawaii", "Hawaii Film and Digital Media Income Tax Credit"),
     ("us_itvs_fund", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States", "ITVS International Documentary Fund"),
-    ("us_ky_keiia", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Kentucky", "Kentucky Entertainment Industry Incentive Act (KEIIA)"),
     ("us_or_opif", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / Oregon", "Oregon Production Investment Fund (OPIF) [runtime slug of or_opif]"),
-    ("us_pr_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Puerto Rico", "Puerto Rico Film Industry Economic Incentives Act"),
-    ("us_pr_film_incentives_act", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Puerto Rico", "Puerto Rico Film Industry Economic Incentives Act [runtime slug of us_pr_film_incentive]"),
     ("us_sundance_doc", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States", "Sundance Institute — Documentary Fund"),
-    ("us_ut_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Utah", "Utah Motion Picture Incentive Program"),
-    ("us_ut_motion_picture_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Utah", "Utah Motion Picture Incentive Program [runtime slug of us_ut_film_incentive]"),
-    ("us_va_film_credit", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Virginia", "Virginia Motion Picture Production Tax Credit"),
-    ("us_va_motion_picture_credit", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Virginia", "Virginia Motion Picture Production Tax Credit [runtime slug of us_va_film_credit]"),
-    ("us_wa_motion_picture_competitiveness", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Washington", "Washington State Motion Picture Competitiveness Program [runtime slug of us_wa_mpcp]"),
-    ("us_wa_mpcp", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Washington", "Washington State Motion Picture Competitiveness Program"),
     ("uy_xxi_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Uruguay", "Uruguay XXI Film Incentive"),
     ("uz_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Uzbekistan", "uz_film_incentive"),
     ("vn_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Vietnam", "vn_film_incentive"),

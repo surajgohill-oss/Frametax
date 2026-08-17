@@ -93,12 +93,18 @@ async def test_candidate_classification_is_generic_not_per_jurisdiction(db: Asyn
         for c in all_candidates:
             assert c["ui_status"] in (UI_COMPARABLE, UI_REVIEW_REQUIRED, UI_UNPRICEABLE)
 
-        # Abu Dhabi is production-capable but authority-insufficient on
-        # every project — it must render as UNPRICEABLE, never as an
-        # ordinary ranked/comparable opportunity.
-        abu_dhabi = next((c for c in all_candidates if c["jurisdiction_code"] == "AE-AD"), None)
-        assert abu_dhabi is not None, "AE-AD candidate missing from evaluation"
-        assert abu_dhabi["ui_status"] == UI_UNPRICEABLE
+        # Oregon (OPIF) is production-capable but authority-insufficient
+        # on every project -- it must render as UNPRICEABLE, never as an
+        # ordinary ranked/comparable opportunity. AE-AD (Abu Dhabi) was
+        # the original fixture here, but the Historical-37 recovery/
+        # adjudication pass found its existing PARSED-tier data already
+        # substantively sufficient to calculate and removed its coverage
+        # veto -- it is now genuinely priceable and no longer proves this
+        # regression guard. See DELIBERATELY_PROMOTED_CANONICAL_IDS in
+        # tests/data/test_authority_coverage_registry.py.
+        oregon = next((c for c in all_candidates if c["jurisdiction_code"] == "US-OR"), None)
+        assert oregon is not None, "US-OR candidate missing from evaluation"
+        assert oregon["ui_status"] == UI_UNPRICEABLE
 
         # Counts in the summary must match the classified lists exactly.
         assert evaluation["comparable_count"] == len(evaluation["comparable"])

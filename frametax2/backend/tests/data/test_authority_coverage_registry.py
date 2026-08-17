@@ -70,6 +70,24 @@ DELIBERATELY_PROMOTED_CANONICAL_IDS = frozenset({
     "us_tx_miip", "us_il_film_credit", "us_ok_ofer", "us_pa_film_credit",
     "us_sc_film_credit", "us_tn_film_incentive", "ee_film_incentive",
     "fi_film_incentive",
+    # Historical-37 recovery/adjudication pass: existing substantive
+    # PARSED-tier data recovered and unblocked WITHOUT a VERIFIED
+    # promotion -- see authority_coverage_registry.py's "Historical-37"
+    # CORRECTION note for the full rationale.
+    "cz_film_incentive", "is_film_reimbursement", "ma_ccm_rebate",
+    "nl_nfpi", "ro_cnc_rebate",
+    "proposed_canada_film_or_video_production_services_tax_credit_pstc",
+    "proposed_united_arab_emirates_abu_dhabi_abu_dhabi_35_production_rebate",
+    "ca_ab_fttc", "ca_mb_fvptc", "ca_nb_film_credit", "ca_ns_pif",
+    "ca_sk_production_grant", "cl_corfo_incentive", "co_film_colombia",
+    "do_film_incentive", "us_az_film_credit", "us_co_film_incentive",
+    "us_hi_film_tax_credit", "us_ky_keiia", "us_pr_film_incentive",
+    "us_ut_film_incentive", "us_va_film_credit", "us_wa_mpcp",
+    "al_film_incentive", "at_fisa_plus", "be_tax_shelter",
+    "bg_film_incentive", "it_tax_credit_foreign", "lv_film_incentive",
+    "lt_film_incentive", "lu_film_incentive", "me_film_incentive",
+    "mk_film_incentive", "pl_film_incentive", "rs_film_rebate",
+    "sk_film_incentive", "se_film_incentive",
 })
 
 

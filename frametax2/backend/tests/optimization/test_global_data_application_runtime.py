@@ -59,22 +59,28 @@ def test_no_blocked_program_is_ranked_as_an_economic_candidate():
 def test_price_segment_hard_blocks_a_covered_program_even_when_directly_specified():
     """The pricing kernel is the authoritative gate -- a StructureSpec that
     names a blocked program directly (bypassing discovery) must still not
-    price. ca_federal_pstc retains live doctrine AND a PARSED-tier rate
+    price. us_or_opif retains live doctrine AND a PARSED-tier rate
     rule, so this proves the block is the coverage registry, not an
     absence of data.
 
-    uk_avec was the original fixture here, but the Global Economic Data +
-    Base Pricing batch 3 individually verified it (bfi.org.uk, official,
-    fetched directly) and removed its coverage veto -- it is now
-    genuinely priceable and would no longer prove this gate. See
+    uk_avec, then ca_federal_pstc, were the original fixtures here, but
+    both were individually recovered/verified in later batches (batch 3
+    for uk_avec; the Historical-37 recovery/adjudication pass for
+    ca_federal_pstc, which found its existing PARSED-tier data already
+    substantively sufficient to calculate) and removed from the coverage
+    veto -- neither would still prove this gate. See
     DELIBERATELY_PROMOTED_CANONICAL_IDS in
-    tests/data/test_authority_coverage_registry.py."""
+    tests/data/test_authority_coverage_registry.py. us_or_opif (Oregon
+    Production Investment Fund) remains one of the few programs still
+    genuinely UNPRICEABLE_AUTHORITY_INSUFFICIENT while holding real
+    RateRule data, per a live check of COVERAGE_REGISTRY at the time this
+    fixture was chosen."""
     from app.data.program_rate_rules import get_rate_rules
 
-    assert len(get_rate_rules("ca_federal_pstc")) > 0, "fixture assumption: ca_federal_pstc still holds rate rules"
+    assert len(get_rate_rules("us_or_opif")) > 0, "fixture assumption: us_or_opif still holds rate rules"
     seg = price_segment(
-        jurisdiction_code="CA",
-        program_slug="ca_federal_pstc",
+        jurisdiction_code="US-OR",
+        program_slug="us_or_opif",
         allocations=[],
         spend_category_by_code={},
         offshore_payroll_accounts=frozenset(),

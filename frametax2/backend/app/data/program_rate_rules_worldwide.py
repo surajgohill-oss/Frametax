@@ -2779,8 +2779,20 @@ CL_DOCTRINE = register(DoctrineRecord(
     incentive_type="cash_rebate", is_refundable=True, is_transferable=False,
     min_spend_usd=1_000_000.0, annual_cap_usd=None, requires_cultural_test=False,
     citation=_CL_CITATION, source_ref="ep.com-spring-2026-roundup-chile",
-    tiers=(DoctrineRateTier(tier_id="cl-flat-40", rate=0.40, is_band_ceiling=False,
-                             min_qpe_usd=1_000_000.0),),
+    tiers=(DoctrineRateTier(tier_id="cl-ceiling-40", rate=0.40, is_band_ceiling=True,
+                             min_qpe_usd=1_000_000.0,
+                             conditions=(RateCondition(
+                                 condition_id="cl-up-to-not-guaranteed",
+                                 description="'Up to 40%' is a ceiling, "
+                                             "not a guaranteed flat rate "
+                                             "-- corrected during the "
+                                             "Historical-37 recovery/"
+                                             "adjudication pass, caught "
+                                             "by test_no_still_priceable_"
+                                             "program_encodes_an_up_to_"
+                                             "maximum_as_a_flat_rate",
+                                 quote="up to 40% (ep.com)",
+                                 kind="discretionary_band"),)),),
 ))
 register_rate_rules(rate_rules_for(CL_DOCTRINE))
 

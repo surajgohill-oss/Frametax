@@ -466,8 +466,8 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     priced = [e for e in entries if e["is_fully_priced"]]
     unpriced = [e for e in entries if not e["is_fully_priced"]]
     assert len(entries) == 110
-    assert len(priced) == 66
-    assert len(unpriced) == 44
+    assert len(priced) == 103
+    assert len(unpriced) == 7
 
     for code in ("MN", "UZ", "AT"):
         e = next(x for x in entries if x["primary_jurisdiction"] == code)

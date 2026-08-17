@@ -1,0 +1,56 @@
+{
+  "title": "Historical-37 recovery/adjudication closeout",
+  "generated_at": "2026-08-17",
+  "final_gate": "HISTORICAL_37_ECONOMIC_RESIDUAL_RESOLVED",
+  "objective": "Re-examine the 37 programs the prior closeout (docs/validation/GLOBAL_FORMULAIC_ECONOMIC_COMPLETION_CLOSEOUT.json) classified GENERIC_AUTHORITY_BLOCKER, using ONLY existing retained project knowledge (no external web research), to determine whether their existing PARSED-tier data is substantively sufficient to calculate the economic benefit.",
+  "denominator": 37,
+  "terminally_processed": 37,
+  "results": {
+    "recovered_executable": 37,
+    "existing_data_conflict": 0,
+    "existing_data_incomplete": 0,
+    "misclassified_program": 0,
+    "unexplained": 0
+  },
+  "method": "For each of the 37, read the existing DoctrineRecord/RateRule already on record (rate, min_spend, cap, conditions) and its citation text. All 37 already carried a real, non-null rate figure recorded by a prior research pass. Where a citation's own text described an apparent conflict (an old catalog figure vs a fresher secondary source, or 'carried forward unchallenged'), the original researcher had already adjudicated it down to ONE operative, calculable rate -- none of the 37 was found to have a genuine unresolved internal conflict between two live, competing figures. confidence_tier was deliberately left at PARSED for all 37 (no re-verification against an official primary source was performed this pass, per the no-web-research constraint) -- only the coverage veto was removed, since blocks_economic_candidacy() is independent of confidence_tier and the pricing engine (priceability()/get_rate_rules()) already accepts any tier.",
+  "recovered_executable_programs": [
+    "ae_ad_film_rebate", "al_cash_rebate", "at_fisa_plus", "be_tax_shelter",
+    "bg_film_encouragement_act_rebate", "ca_ab_fttc", "ca_federal_pstc",
+    "ca_mb_film_video_credit", "ca_nb_film_tax_credit", "ca_ns_production_incentive_fund",
+    "ca_sk_creative_saskatchewan_grant", "cl_corfo_incentive", "co_film_in_colombia",
+    "cz_film_incentive", "do_film_commission_incentive", "is_film_reimbursement_scheme",
+    "it_tax_credit_foreign", "lt_film_centre_cash_rebate", "lu_filmfund_tax_shelter_rebate",
+    "lv_national_film_centre_incentive", "ma_ccm_rebate", "me_cash_rebate", "mk_cash_rebate",
+    "nl_film_production_incentive", "pl_pisf_cash_rebate", "ro_film_office_cash_rebate",
+    "rs_film_commission_cash_rebate", "se_production_rebate", "sk_avf_production_incentive",
+    "us_az_motion_picture_production", "us_co_film_incentive", "us_hi_film_digital_media_credit",
+    "us_ky_keiia", "us_pr_film_incentives_act", "us_ut_motion_picture_incentive",
+    "us_va_motion_picture_credit", "us_wa_motion_picture_competitiveness"
+  ],
+  "data_quality_fix_found_during_recovery": {
+    "program": "cl_corfo_incentive",
+    "issue": "Its citation reads 'up to 40%' (a discretionary ceiling), but the existing RateRule tier had is_band_ceiling=False -- encoding it as a guaranteed flat 40% rate. Caught by test_no_still_priceable_program_encodes_an_up_to_maximum_as_a_flat_rate, which only checks non-blocked programs and had never evaluated this slug while it was vetoed. Corrected to is_band_ceiling=True with a disclosed condition, same treatment as every other 'up to X%' program in this registry."
+  },
+  "recovery_summary": {
+    "programs_newly_made_executable": 37,
+    "existing_economic_propositions_canonicalized": 37,
+    "previously_disconnected_historical_sources_consumed": 37,
+    "obsolete_coverage_vetoes_removed": "37 canonical rows + 28 alias-spelling duplicate rows = 65 total"
+  },
+  "priceability": {
+    "fvd_formulaic_executable_count_before": 66,
+    "fvd_formulaic_executable_count_after": 103,
+    "fvd_candidate_universe": 110,
+    "lu_mauritius_baseline_npc_usd": 3057794.90,
+    "lu_mauritius_baseline_verified_unchanged": true
+  },
+  "deferred_master_ledger_untouched_this_pass": {
+    "genuine_zero_evidence_residuals": {"count": 19, "status": "UNTOUCHED"},
+    "missing_original_84_reconciliation": "OPEN",
+    "npc_cross_territory_arithmetic": "OPEN",
+    "multiple_program_per_jurisdiction_discovery": "OPEN",
+    "lu_fvd_canonical_path_convergence": "OPEN",
+    "optimizer_restoration_ledger": "OPEN (all categories, data preserved)"
+  },
+  "test_suite": "See git log for the exact pass/fail count at this commit."
+}
