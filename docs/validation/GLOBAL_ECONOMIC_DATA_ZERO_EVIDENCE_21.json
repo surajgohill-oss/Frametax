@@ -146,7 +146,14 @@
       "reason_outside_the_73": "No RateRule/DoctrineRecord/profile/catalog entry exists. A third, separate Ontario credit (animation/VFX-labour-specific, stackable with OPSTC/OFTTC) never encoded.",
       "existing_historical_evidence": "None found in any canonical data source.",
       "indispensable_economic_proposition_needed": "OCASE's current rate, eligible Ontario animation/VFX labour definition, and whether/how it stacks with OPSTC in this engine's schema (a genuine multi-program-stacking mechanic, not just a new single rate).",
-      "primary_source_research_required": true
+      "primary_source_research_required": true,
+      "RESOLVED": {
+        "status": "Researched from scratch and canonicalized (Global Formulaic Economic Completion, Path B)",
+        "source": "ontariocreates.ca/tax-incentives/ocase (Ontario Creates, official, fetched directly)",
+        "rate_confirmed": "18% of eligible Ontario labour expenditures for computer animation/special effects activities; refundable in full; confirmed no cap",
+        "confidence_tier": "VERIFIED",
+        "known_limitation": "Shares jurisdiction_code CA-ON with ca_on_opstc and on_ofttc; same discovery-layer limitation as on_ofttc -- canonically correct and unblocked at the data layer, but not yet independently served. The stacking mechanic (OCASE + OFTTC/OPSTC simultaneously) is also not modeled -- disclosed, not fabricated."
+      }
     },
     {
       "canonical_program_id": "pe_film_incentive",
@@ -188,8 +195,8 @@
       "new_zealand_screen_production_grant_—_international_post_vfx",
       "qc_film_production"
     ],
-    "resolved_via_path_b_primary_research": 1,
-    "resolved_program_ids": ["on_ofttc"],
-    "note": "Of the original 21: 1 (on_ofttc) has since been researched from scratch and canonicalized (see its RESOLVED field above) -- VERIFIED tier, real DoctrineRecord/RateRule/SourceProvenance, coverage veto removed, though a disclosed discovery-layer limitation currently prevents it from being independently served alongside ca_on_opstc (same jurisdiction_code). Of the remaining 20: 18 have literally zero data in any canonical source this project maintains (RateRule, DoctrineRecord, jurisdiction_comparison profile, or global_inventory catalog). 2 have an adjacent citation or codebase reference that has not been individually confirmed to apply to this specific canonical_program_id — both still require primary-source research before either identity-merge or rate promotion."
+    "resolved_via_path_b_primary_research": 2,
+    "resolved_program_ids": ["on_ofttc", "ontario_computer_animation_and_special_effects_tax_credit_ocase"],
+    "note": "Of the original 21: 2 (on_ofttc, ocase) have since been researched from scratch and canonicalized (see their RESOLVED fields above) -- VERIFIED tier, real DoctrineRecord/RateRule/SourceProvenance, coverage vetoes removed, though a disclosed discovery-layer limitation currently prevents either from being independently served alongside ca_on_opstc (all three share jurisdiction_code CA-ON). Of the remaining 19: 17 have literally zero data in any canonical source this project maintains (RateRule, DoctrineRecord, jurisdiction_comparison profile, or global_inventory catalog). 2 have an adjacent citation or codebase reference that has not been individually confirmed to apply to this specific canonical_program_id — both still require primary-source research before either identity-merge or rate promotion."
   }
 }

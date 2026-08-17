@@ -1013,6 +1013,31 @@ async def test_on_ofttc_not_yet_independently_served_due_to_jurisdiction_code_co
     assert "ca_on_opstc" in programs_used
 
 
+def test_on_ocase_researched_from_scratch_and_canonicalized():
+    """Path B: ontario_computer_animation_and_special_effects_tax_credit_
+    ocase (OCASE) was also one of the 21 zero-evidence programs. Researched
+    directly from ontariocreates.ca/tax-incentives/ocase (Ontario Creates,
+    official, fetched directly) this task: 18% flat rate, refundable,
+    confirmed no cap. Same jurisdiction_code-collision limitation as
+    on_ofttc applies (see test_on_ofttc_not_yet_independently_served_due_
+    to_jurisdiction_code_collision) -- not re-asserted here to avoid
+    duplicating that runtime proof."""
+    from app.data.executable_jurisdiction_registry import get_doctrine, get_provenance
+    from app.data.program_rate_rules import get_rate_rules
+    from app.data.authority_coverage_registry import blocks_economic_candidacy
+
+    slug = "ontario_computer_animation_and_special_effects_tax_credit_ocase"
+    assert blocks_economic_candidacy(slug) is False
+    doc = get_doctrine(slug)
+    assert doc is not None
+    assert doc.confidence_tier == "VERIFIED"
+    assert doc.is_refundable is True
+    rules = get_rate_rules(slug)
+    assert rules and rules[0].rate == 0.18
+    prov = get_provenance(slug)
+    assert prov is not None and prov.issuing_authority == "Ontario Creates"
+
+
 # ── Global Formulaic Economic Completion — batch 4: fresh direct-WebFetch
 # primary-source verification (Cyprus, Ireland, California). ────────────
 

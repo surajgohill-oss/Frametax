@@ -1084,6 +1084,76 @@ ON_OFTTC_DOCTRINE = register(DoctrineRecord(
 ))
 register_rate_rules(rate_rules_for(ON_OFTTC_DOCTRINE))
 
+# ── Canada — Ontario: Computer Animation and Special Effects Tax Credit
+# (OCASE) ─────────────────────────────────────────────────────────────────
+#
+# NEW jurisdiction (Global Formulaic Economic Completion, Path B primary
+# research this task). A THIRD, separate Ontario credit -- animation/VFX-
+# labour-specific, explicitly stackable with OFTTC/OPSTC per the source
+# below. Confirmed directly from ontariocreates.ca/tax-incentives/ocase
+# (Ontario Creates, official, fetched directly): "18% of the eligible
+# Ontario labour expenditures incurred by a qualifying corporation with
+# respect to eligible computer animation and special effects activities."
+# Refundable: "net of any Ontario taxes owing will be paid to the
+# qualifying corporation... If the qualifying corporation does not owe
+# any taxes the full amount will be paid out." No cap: "There is no cap
+# on eligible Ontario labour expenditures" (a confirmed absence, not an
+# unknown). Explicitly stacks: "The OCASE Tax Credit may be claimed on
+# eligible expenditures in addition to the Ontario Film and Television
+# Tax Credit (OFTTC) or the Ontario Production Services Tax Credit
+# (OPSTC)" -- the stacking mechanic itself is not modeled by this engine
+# (no multi-program-per-jurisdiction pricing path exists yet; see
+# on_ofttc's own note above for the same underlying limitation).
+_ON_OCASE_CITATION = (
+    "ontariocreates.ca/tax-incentives/ocase (Ontario Creates, official, "
+    "fetched directly): '18% of the eligible Ontario labour expenditures "
+    "incurred by a qualifying corporation with respect to eligible "
+    "computer animation and special effects activities.' Refundable in "
+    "full. 'There is no cap on eligible Ontario labour expenditures' -- "
+    "confirmed absence, not unknown. Explicitly stackable with OFTTC and "
+    "OPSTC (stacking mechanic not modeled by this engine)."
+)
+ON_OCASE_DOCTRINE = register(DoctrineRecord(
+    jurisdiction_code="CA-ON",
+    program_slug="ontario_computer_animation_and_special_effects_tax_credit_ocase",
+    program_name="Ontario Computer Animation and Special Effects Tax "
+                  "Credit (OCASE)",
+    confidence_tier="VERIFIED",
+    incentive_type="tax_credit",
+    is_refundable=True,
+    is_transferable=None,
+    min_spend_usd=None,
+    annual_cap_usd=None,   # confirmed no cap, not merely unknown
+    requires_cultural_test=False,   # animation/VFX labour credit, not a
+                                     # Canadian-content-certified credit
+                                     # like OFTTC -- structural fact about
+                                     # the program, not itself explicitly
+                                     # re-confirmed by the page fetched
+    citation=_ON_OCASE_CITATION,
+    source_ref="ontariocreates.ca-OCASE",
+    provenance=SourceProvenance(
+        issuing_authority="Ontario Creates",
+        source_url="https://www.ontariocreates.ca/tax-incentives/ocase",
+        citation_detail="'18% of the eligible Ontario labour "
+                         "expenditures incurred by a qualifying "
+                         "corporation with respect to eligible computer "
+                         "animation and special effects activities'",
+        verified_date="2026-08-17",
+        interpretation_note="Explicitly stackable with OFTTC/OPSTC per "
+                             "the source, but this engine has no multi-"
+                             "program-per-jurisdiction pricing path yet "
+                             "-- same disclosed limitation as on_ofttc.",
+    ),
+    tiers=(
+        DoctrineRateTier(
+            tier_id="on-ocase-flat-18",
+            rate=0.18,
+            is_band_ceiling=False,
+        ),
+    ),
+))
+register_rate_rules(rate_rules_for(ON_OCASE_DOCTRINE))
+
 # ── Canada — Quebec: Tax Credit for Film Production Services ───────────────
 #
 # NEW jurisdiction. Base rate confirmed (25% on "all-spend" costs —

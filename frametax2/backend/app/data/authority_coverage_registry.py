@@ -124,6 +124,18 @@ from this registry, real VERIFIED RateRule, real provenance) but not yet
 independently served -- a genuine, disclosed discovery-layer residual,
 not a data/authority gap.
 
+CORRECTION (Global Formulaic Economic Completion, Path B primary
+research): ontario_computer_animation_and_special_effects_tax_credit_
+ocase removed. A THIRD Ontario credit alongside ca_on_opstc/on_ofttc --
+researched from scratch via a direct fetch of ontariocreates.ca/tax-
+incentives/ocase (Ontario Creates, official): "18% of the eligible
+Ontario labour expenditures... computer animation and special effects
+activities," refundable, confirmed no cap, explicitly stackable with
+OFTTC/OPSTC. Same known limitation as on_ofttc: shares jurisdiction_code
+CA-ON, so it does not yet reach its own independent priced candidate
+structure in served runtime (discovery-layer limitation, deliberately
+deferred -- see on_ofttc's own note above for the full explanation).
+
 Originally added by the Consolidated Global Remediation for 29 records
 (25 authority-insufficient + 4 non-economic). EXPANDED by the Global Data
 Application phase to carry every canonical disposition from
@@ -377,7 +389,6 @@ _ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("nohfc_production_fund", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Ontario", "Northern Ontario Heritage Fund — Production Fund"),
     ("nordic_ftvf", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Nordic Region / Nordic Region", "Nordisk Film & TV Fond"),
     ("om_film_commission", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Oman", "om_film_commission"),
-    ("ontario_computer_animation_and_special_effects_tax_credit_ocase", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Ontario", "Ontario Computer Animation and Special Effects Tax Credit (OCASE)"),
     ("or_opif", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / Oregon", "Oregon Production Investment Fund (OPIF)"),
     ("pa_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Panama", "Panama Film Commission Production Facilitation"),
     ("pe_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Peru", "Peru DAFO Film Production Support"),
