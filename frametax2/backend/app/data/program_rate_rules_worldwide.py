@@ -25,7 +25,7 @@ from app.data.executable_jurisdiction_registry import (
     rate_rules_for,
     register,
 )
-from app.data.program_rate_rules import RateCondition, register_rate_rules
+from app.data.program_rate_rules import RateCondition, SourceProvenance, register_rate_rules
 
 # ── Belgium: federal Tax Shelter ────────────────────────────────────────────
 #
@@ -230,7 +230,8 @@ DE_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="DE",
     program_slug="de_dfff",
     program_name="German Federal Film Fund (DFFF II — production service)",
-    confidence_tier="PARSED",
+    # Global Economic Data + Base Pricing, batch 3.
+    confidence_tier="VERIFIED",
     incentive_type="grant",
     is_refundable=True,
     is_transferable=None,
@@ -240,6 +241,24 @@ DE_DOCTRINE = register(DoctrineRecord(
     requires_cultural_test=True,
     citation=_DE_CITATION,
     source_ref="ffa.de+greenberg-traurig-BKM-2026",
+    provenance=SourceProvenance(
+        issuing_authority="Filmforderungsanstalt (FFA), under Federal "
+                           "Government Commissioner for Culture and the "
+                           "Media (BKM) oversight",
+        source_url="https://www.ffa.de/dfff-en",
+        citation_detail="30% uniform grant of approved German production "
+                         "costs (a 2025 increase from a lower prior rate)",
+        effective_date="2025 rate increase",
+        interpretation_note="The 30% rate itself is VERIFIED (fetched "
+                             "directly from ffa.de). The EUR 25,000,000 "
+                             "DFFF II cap and the 20%-of-budget minimum "
+                             "German spend are corroborated only by "
+                             "Greenberg Traurig's secondary reporting on "
+                             "the May 2026 BKM draft guidelines, not "
+                             "independently fetched from the primary "
+                             "guideline text — a narrower-scope "
+                             "verification than the rate itself.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="de-uniform-30",
@@ -301,6 +320,17 @@ HR_DOCTRINE = register(DoctrineRecord(
     requires_cultural_test=True,
     citation=_HR_CITATION,
     source_ref="investcroatia.gov.hr-film-rebate",
+    provenance=SourceProvenance(
+        issuing_authority="Invest Croatia (official government investment "
+                           "promotion agency); administered by the "
+                           "Croatian Audiovisual Centre (HAVC)",
+        source_url="https://investcroatia.gov.hr",
+        citation_detail="25% base rebate + 5% regional uplift; min spend "
+                         "HRK 2,000,000 (EUR 263,000) for feature films",
+        interpretation_note="Cultural test (12/34 points, 4+ per category) "
+                             "confirmed but the points-based scoring "
+                             "mechanics are not independently reproduced.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="hr-base-25",
@@ -378,7 +408,8 @@ HU_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="HU",
     program_slug="hu_hipa_rebate",
     program_name="Hungarian Film Incentive (NFI)",
-    confidence_tier="PARSED",
+    # Global Economic Data + Base Pricing, batch 3.
+    confidence_tier="VERIFIED",
     incentive_type="cash_rebate",
     is_refundable=True,
     is_transferable=None,
@@ -388,6 +419,18 @@ HU_DOCTRINE = register(DoctrineRecord(
     requires_cultural_test=True,
     citation=_HU_CITATION,
     source_ref="nfi.hu-hungarian-film-incentive",
+    provenance=SourceProvenance(
+        issuing_authority="National Film Institute Hungary (NFI)",
+        source_url="https://nfi.hu",
+        citation_detail="30% base rebate, extendable to 37.5% including "
+                         "non-Hungarian costs (capped at 25% of the "
+                         "rebate); post-financing cash refund",
+        interpretation_note="Cultural test requires 16 points on an "
+                             "EU-participation scoring system. Total "
+                             "state subsidies are capped at 50% of "
+                             "production budget — a %-of-budget cap, not "
+                             "modeled as an absolute annual_cap_usd.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="hu-base-30",
@@ -546,7 +589,10 @@ GB_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="GB",
     program_slug="uk_avec",
     program_name="Audio-Visual Expenditure Credit (AVEC)",
-    confidence_tier="PARSED",
+    # Global Economic Data + Base Pricing, batch 3: promoted PARSED ->
+    # VERIFIED. Citation is bfi.org.uk (British Film Institute), official
+    # page, fetched directly, rate quoted verbatim.
+    confidence_tier="VERIFIED",
     incentive_type="tax_credit",
     is_refundable=None,   # "payable credit" strongly implied by AVEC's general
                            # structure but not explicitly confirmed in the text
@@ -561,6 +607,23 @@ GB_DOCTRINE = register(DoctrineRecord(
     requires_cultural_test=True,
     citation=_GB_CITATION,
     source_ref="bfi.org.uk-AVEC",
+    provenance=SourceProvenance(
+        issuing_authority="HMRC (eligibility/claims administration); "
+                           "BFI (certification guidance, cultural test "
+                           "administration)",
+        source_url="https://www.bfi.org.uk",
+        citation_detail="Audio-Visual Expenditure Credit (AVEC); no cap "
+                         "on the amount claimable; VFX +3.75% uplift "
+                         "effective 1 Jan 2025 reaching 29.25% net",
+        effective_date="VFX uplift effective 2025-01-01",
+        interpretation_note="'There is no cap on the amount which can be "
+                             "claimed' confirmed directly from the BFI "
+                             "text (a verified absence, not an unknown). "
+                             "The VFX uplift figure is corroborated by a "
+                             "second source (Entertainment Partners) but "
+                             "not independently confirmed from the BFI "
+                             "text itself.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="gb-avec-net-2550",
@@ -786,6 +849,16 @@ CA_BC_DOCTRINE = register(DoctrineRecord(
     requires_cultural_test=False,
     citation=_CA_BC_CITATION,
     source_ref="gov.bc.ca-PSTC",
+    provenance=SourceProvenance(
+        issuing_authority="Creative BC (Government of British Columbia)",
+        source_url="https://www2.gov.bc.ca",
+        citation_detail="Production services tax credit (36%) on qualified "
+                         "B.C. labour expenditure",
+        interpretation_note="Regional (+6%) and distant-location (+6%) "
+                             "uplifts exist but their eligibility "
+                             "conditions are not modeled as separate "
+                             "tiers/conditions.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="ca-bc-pstc-base-36",
@@ -850,7 +923,8 @@ CA_ON_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="CA-ON",
     program_slug="ca_on_opstc",
     program_name="Ontario Production Services Tax Credit (OPSTC)",
-    confidence_tier="PARSED",
+    # Global Economic Data + Base Pricing, batch 3.
+    confidence_tier="VERIFIED",
     incentive_type="tax_credit",
     is_refundable=True,
     is_transferable=None,
@@ -859,6 +933,20 @@ CA_ON_DOCTRINE = register(DoctrineRecord(
     requires_cultural_test=False,
     citation=_CA_ON_CITATION,
     source_ref="ontariocreates.ca-OPSTC",
+    provenance=SourceProvenance(
+        issuing_authority="Ontario Creates (jointly administered with "
+                           "the CRA)",
+        source_url="https://ontariocreates.ca",
+        citation_detail="OPSTC = 21.5% of all qualifying Ontario "
+                         "production expenditures; Ontario labour must "
+                         "be at least 25% of QPE claimed; min spend "
+                         "CAD $1,000,000",
+        interpretation_note="'There are no per-project or annual "
+                             "corporate tax credit limits' confirmed "
+                             "directly — annual_cap_usd is correctly "
+                             "modeled as None (a verified absence, not "
+                             "an unknown).",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="ca-on-opstc-215",
@@ -1096,6 +1184,18 @@ NZ_DOCTRINE = register(DoctrineRecord(
     requires_cultural_test=False,
     citation=_NZ_CITATION,
     source_ref="mbie.govt.nz-screen-production-rebate",
+    provenance=SourceProvenance(
+        issuing_authority="Ministry of Business, Innovation and Employment "
+                           "(MBIE); administered by the New Zealand Film "
+                           "Commission (NZFC) on behalf of MBIE and MCH",
+        source_url="https://www.mbie.govt.nz",
+        citation_detail="20% base for international productions, +5% "
+                         "(25%) uplift for significant NZ economic benefit",
+        interpretation_note="Exact qualifying criteria for the +5% uplift "
+                             "not detailed in either source checked; "
+                             "corroborated (not independently confirmed) "
+                             "by griphq.nz.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="nz-international-base-20",
@@ -1473,6 +1573,20 @@ US_NM_DOCTRINE = register(DoctrineRecord(
     requires_cultural_test=False,
     citation=_US_NM_CITATION,
     source_ref="tax.newmexico.gov+3-corroborating-sources",
+    provenance=SourceProvenance(
+        issuing_authority="New Mexico Taxation and Revenue Department",
+        source_url="https://tax.newmexico.gov",
+        citation_detail="Allowable Fiscal Year 2026 Film Fund Cap "
+                         "$140,000,000; 25% base rate up to 40% with "
+                         "uplifts",
+        effective_date="FY 2026",
+        interpretation_note="Rate structure (base + uplift bands) "
+                             "corroborated by 3 independent secondary "
+                             "sources (shamelstudio.com, vensure.com, "
+                             "wrapbook.com), not independently confirmed "
+                             "from the primary statutory/regulatory text "
+                             "itself.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="us-nm-base-25",
@@ -1616,6 +1730,19 @@ US_LA_DOCTRINE = register(DoctrineRecord(
     requires_cultural_test=False,
     citation=_US_LA_CITATION,
     source_ref="opportunitylouisiana.gov-motion-picture-program",
+    provenance=SourceProvenance(
+        issuing_authority="Louisiana Economic Development (Opportunity "
+                           "Louisiana)",
+        source_url="https://opportunitylouisiana.gov",
+        citation_detail="25% base credit + uplifts (screenplay +10%, "
+                         "outside-NOLA +5%); cap $150,000,000/fiscal year "
+                         "issued",
+        interpretation_note="A secondary source's $125M cap claim (via "
+                             "'Act 44') was checked against the official "
+                             "source and NOT used. Transferable at 88% "
+                             "net (90% face value minus 2% transfer fee) "
+                             "— not simply refundable.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="us-la-base-25",
@@ -1970,7 +2097,8 @@ NO_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="NO",
     program_slug="no_film_incentive",
     program_name="Norwegian Film Production Incentive",
-    confidence_tier="PARSED",
+    # Global Economic Data + Base Pricing, batch 3.
+    confidence_tier="VERIFIED",
     incentive_type="cash_rebate",
     is_refundable=True,
     is_transferable=False,
@@ -1979,6 +2107,20 @@ NO_DOCTRINE = register(DoctrineRecord(
     requires_cultural_test=True,
     citation=_NO_CITATION,
     source_ref="nfi.no-25-incentive",
+    provenance=SourceProvenance(
+        issuing_authority="Norwegian Film Institute (NFI)",
+        source_url="https://www.norwegianfilm.com/25-incentive",
+        citation_detail="Reimbursement of up to 25% of eligible "
+                         "production costs; competitive, not a "
+                         "guaranteed per-production entitlement",
+        effective_date="2026 round",
+        interpretation_note="COMPETITIVE allocation: 5 projects shared a "
+                             "NOK 84,700,000 total pool in the cited 2026 "
+                             "round. Modeled as a rate ceiling; the "
+                             "competitive/discretionary nature is "
+                             "disclosed rather than treated as a "
+                             "guaranteed rate.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="no-flat-25",
@@ -2108,6 +2250,19 @@ SA_DOCTRINE = register(DoctrineRecord(
                                     # catalog's undifferentiated "content restrictions apply" note.
     citation=_SA_CITATION,
     source_ref="8-corroborating-sources-saudi-60pct+film.sa-official-2026-07-26",
+    provenance=SourceProvenance(
+        issuing_authority="Saudi Film Commission",
+        source_url="https://film.sa/incentive-programs/",
+        citation_detail="60% flat rebate (raised from a prior 40% cap); "
+                         "min spend SAR 750,000 feature / SAR 187,000 "
+                         "documentary-animation",
+        verified_date="2026-07-26",
+        interpretation_note="Independently re-fetched this task and "
+                             "reproduced the exact same figures a prior "
+                             "direct fetch of the same page had already "
+                             "recorded — two independent direct-fetch "
+                             "confirmations of the same primary source.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="sa-flat-60",
@@ -2841,6 +2996,21 @@ US_RI_DOCTRINE = register(DoctrineRecord(
     requires_cultural_test=False,
     citation=_US_RI_CITATION,
     source_ref="film.ri.gov-official+wrapbook-cap-conflict-flagged",
+    provenance=SourceProvenance(
+        issuing_authority="Rhode Island Division of Taxation / RI Film "
+                           "& TV Office",
+        source_url="https://film.ri.gov",
+        citation_detail="30% of state certified production costs; "
+                         "per-project cap $7,000,000; annual program cap "
+                         "$40,000,000",
+        effective_date="Sunset 2027-07-01",
+        interpretation_note="wrapbook.com (secondary) separately "
+                             "references a $30,000,000 annual cap "
+                             "conflicting with the official $40,000,000 "
+                             "figure — the official figure is used and "
+                             "the conflict is disclosed, not silently "
+                             "dropped.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="us-ri-flat-30",
@@ -2906,6 +3076,18 @@ TT_DOCTRINE = register(DoctrineRecord(
     requires_cultural_test=False,
     citation=_TT_CITATION,
     source_ref="ttbizlink.gov.tt-official+ep.com-sunset-conflict-flagged",
+    provenance=SourceProvenance(
+        issuing_authority="Trinidad and Tobago Government investment portal",
+        source_url="https://info.ttbizlink.gov.tt",
+        citation_detail="Tiered rebate 12.5%-35% based on spend "
+                         "USD 100,000-8,000,000; +20% Qualifying Local "
+                         "Labour rebate",
+        interpretation_note="ep.com (secondary) claims a 2024-12-31 "
+                             "sunset not present on the official page — "
+                             "flagged as an unresolved cross-source "
+                             "conflict, official page treated as "
+                             "authoritative.",
+    ),
     tiers=(
         DoctrineRateTier(tier_id="tt-tier-125", rate=0.125, is_band_ceiling=False,
                           min_qpe_usd=100_000.0),
@@ -3195,6 +3377,18 @@ SI_DOCTRINE = register(DoctrineRecord(
         "'shall guarantee payment.' No min spend or cap disclosed."
     ),
     source_ref="filminslovenia.si-official",
+    provenance=SourceProvenance(
+        issuing_authority="Slovenian Film Centre (film-center.si), via "
+                           "filminslovenia.si",
+        source_url="https://filminslovenia.si",
+        citation_detail="Up to 25% of total acknowledged (post)production "
+                         "expenses",
+        interpretation_note="Fresh search this task reproduced the exact "
+                             "quoted 'up to 25%' figure the existing "
+                             "citation's own direct fetch had already "
+                             "recorded — two independent confirmations "
+                             "of the same primary source.",
+    ),
     tiers=(
         DoctrineRateTier(tier_id="si-ceiling-25", rate=0.25, is_band_ceiling=True,
                           conditions=(RateCondition(
@@ -3727,6 +3921,22 @@ US_MD_DOCTRINE = register(DoctrineRecord(
               "additional tiers/conditions, not a replacement of the 28% "
               "standard-production figure.",
     source_ref="commerce.maryland.gov-official",
+    provenance=SourceProvenance(
+        issuing_authority="Maryland Department of Commerce",
+        source_url="https://commerce.maryland.gov",
+        citation_detail="Up to 28% of total authorized direct costs; "
+                         "FY 2026 certification cap $12,000,000",
+        effective_date="FY 2026",
+        verified_date="2026-07-26",
+        interpretation_note="Corrects the catalog's stale 25% figure. "
+                             "Same page also confirms TV series qualify "
+                             "for up to 30% (not 28%) and a separate "
+                             "'Maryland Small Film' category (min spend "
+                             "$25,000, capped at $125,000) — both modeled "
+                             "as additional tiers/conditions, not a "
+                             "replacement of the 28% standard-production "
+                             "figure.",
+    ),
     production_types=("feature_film", "tv_series"),
     tiers=(DoctrineRateTier(tier_id="us-md-ceiling-28", rate=0.28, is_band_ceiling=True,
                              min_qpe_usd=250_000.0,
@@ -4828,7 +5038,8 @@ register_rate_rules(rate_rules_for(US_UT_DOCTRINE))
 US_MN_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="US-MN", program_slug="us_mn_film_production_credit",
     program_name="Minnesota Film Production Tax Credit",
-    confidence_tier="PARSED", incentive_type="tax_credit",
+    # Global Economic Data + Base Pricing, batch 3.
+    confidence_tier="VERIFIED", incentive_type="tax_credit",
     is_refundable=None, is_transferable=True, min_spend_usd=1_000_000.0,
     annual_cap_usd=25_000_000.0, requires_cultural_test=False,
     citation="revenue.state.mn.us (official, direct fetch 2026-07-26): "
@@ -4847,6 +5058,20 @@ US_MN_DOCTRINE = register(DoctrineRecord(
               "Rebate, and Maple Lake Film Rebate' -- too granular/local "
               "to model individually, disclosed only.",
     source_ref="revenue.state.mn.us-official+greenslate.com-regional-addons-disclosed",
+    provenance=SourceProvenance(
+        issuing_authority="Minnesota Department of Revenue",
+        source_url="https://www.revenue.state.mn.us",
+        citation_detail="25% assignable income tax credit; min spend "
+                         "$1,000,000/12 consecutive months; $25,000,000 "
+                         "annual maximum",
+        verified_date="2026-07-26",
+        interpretation_note="Corrects transferability from None/False to "
+                             "True — Minnesota's credit is explicitly an "
+                             "'assignable income tax credit.' Regional "
+                             "add-ons (Iron Range, Duluth, Austin MN, "
+                             "Maple Lake) disclosed via greenslate.com "
+                             "(secondary) but not individually modeled.",
+    ),
     tiers=(DoctrineRateTier(tier_id="us-mn-flat-25", rate=0.25, is_band_ceiling=False,
                              conditions=(RateCondition(
                                  condition_id="us-mn-regional-addons-not-modeled",

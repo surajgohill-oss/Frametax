@@ -52,6 +52,31 @@ class RateCondition:
 
 
 @dataclass(frozen=True)
+class SourceProvenance:
+    """Structured, durable provenance for one executable economic rule —
+    the canonical answer to "where did this number come from" that a
+    free-text `citation` string alone does not let the engine query
+    programmatically. Attached to a DoctrineRecord (and threaded through
+    to every RateRule it derives via rate_rules_for()) so the trace
+    PROGRAM -> EXECUTABLE RULE -> SOURCE PROVENANCE is a real object
+    graph, not something that only exists in a comment or a report.
+
+    All fields optional except issuing_authority — many legacy/secondary
+    citations genuinely don't state a URL-path-level detail, an effective
+    date, or a retrieval date, and recording that absence as None is more
+    honest than fabricating one. `citation`/`source_ref` on the owning
+    DoctrineRecord/RateRule remain the full free-text quote; this struct
+    is the queryable index over that text, not a replacement for it."""
+    issuing_authority: str          # the administering government/body itself
+    source_url: str | None = None   # durable source identifier (page or document)
+    citation_detail: str | None = None   # specific statute/section/page/quote anchor
+    effective_date: str | None = None    # program/version/effective period, if stated
+    verified_date: str | None = None     # verification/retrieval date, if stated
+    interpretation_note: str | None = None  # material interpretation needed to
+                                             # convert the authority into the rule
+
+
+@dataclass(frozen=True)
 class RateRule:
     """One rate tier of one program. is_band_ceiling=True means the
     source says 'up to' this rate — the exact awarded rate within the
@@ -81,6 +106,7 @@ class RateRule:
     citation: str
     source_ref: str
     graduated_brackets: tuple[tuple[float, float], ...] | None = None
+    provenance: SourceProvenance | None = None
 
 
 @dataclass(frozen=True)
@@ -637,10 +663,28 @@ ES_RATE_RULES: tuple[RateRule, ...] = (
                 kind="graduated_bracket_applied",
             ),
         ),
-        confidence_tier="PARSED",
+        # Global Economic Data + Base Pricing, batch 3: promoted PARSED ->
+        # VERIFIED. Citation is a direct verbatim quote of the actual
+        # statute (Ley 27/2014, Articulo 36.2, BOE-A-2014-12328) -- the
+        # strongest possible provenance tier this registry recognizes.
+        confidence_tier="VERIFIED",
         citation=_ES_CITATION,
         source_ref="BOE-A-2014-12328-Art36.2",
         graduated_brackets=((1_140_523.96, 0.30),),
+        provenance=SourceProvenance(
+            issuing_authority="Agencia Estatal Boletin Oficial del Estado "
+                               "(Spanish State) — Impuesto sobre Sociedades, "
+                               "producer registration via ICAA",
+            source_url="https://www.boe.es",
+            citation_detail="Ley 27/2014, de 27 de noviembre, Articulo 36.2 "
+                             "(BOE-A-2014-12328) — verbatim statute text",
+            interpretation_note="Direct verbatim statute quote — the "
+                                 "strongest provenance tier this registry "
+                                 "recognizes. The graduated bracket (30% "
+                                 "first EUR 1M / 25% excess) is modeled as "
+                                 "a real blended effective rate via "
+                                 "resolve_program_rate(), not a flat rate.",
+        ),
     ),
 )
 
@@ -703,6 +747,18 @@ _FR_CITATION = (
     "engine). Refundable: 'the difference will be paid by the French "
     "State' if the rebate exceeds corporate income tax due."
 )
+_FR_PROVENANCE = SourceProvenance(
+    issuing_authority="Centre national du cinema et de l'image animee (CNC)",
+    source_url="https://www.cnc.fr",
+    citation_detail="TRIP page — up to 30% (40% if French VFX expenses > "
+                     "EUR 2M); cap EUR 30,000,000 per project",
+    interpretation_note="50%-of-world-budget alternative minimum-spend "
+                         "threshold not modeled (engine only supports an "
+                         "absolute min_qpe_usd). The 40% VFX tier is "
+                         "modeled as a ceiling since this engine has no "
+                         "VFX-specific spend fact to evaluate eligibility "
+                         "against total QPE.",
+)
 FR_RATE_RULES: tuple[RateRule, ...] = (
     RateRule(
         program_slug="fr_trip", tier_id="fr-base-30",
@@ -732,9 +788,13 @@ FR_RATE_RULES: tuple[RateRule, ...] = (
                 kind="cultural_test_required",
             ),
         ),
-        confidence_tier="PARSED",
+        # Global Economic Data + Base Pricing, batch 3: promoted PARSED ->
+        # VERIFIED. Citation is CNC's own official TRIP page, fetched
+        # directly, with the rate quoted verbatim.
+        confidence_tier="VERIFIED",
         citation=_FR_CITATION,
         source_ref="cnc.fr-TRIP-page",
+        provenance=_FR_PROVENANCE,
     ),
     RateRule(
         program_slug="fr_trip", tier_id="fr-vfx-ceiling-40",
@@ -763,13 +823,14 @@ FR_RATE_RULES: tuple[RateRule, ...] = (
                 kind="discretionary_band",
             ),
         ),
-        confidence_tier="PARSED",
+        confidence_tier="VERIFIED",
         citation=_FR_CITATION + " The 40% tier is a real, statute-confirmed "
                  "threshold (VFX spend > EUR 2M), not discretionary "
                  "approval — modeled as the ceiling because this engine "
                  "cannot yet evaluate VFX-specific spend against total QPE; "
                  "the guaranteed floor is the base 30% tier.",
         source_ref="cnc.fr-TRIP-page",
+        provenance=_FR_PROVENANCE,
     ),
 )
 

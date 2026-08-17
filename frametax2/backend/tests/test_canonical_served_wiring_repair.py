@@ -59,20 +59,28 @@ def _single_segment_structures(structure_entries: list[dict], code: str) -> list
 
 
 async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
-    """30 priced / 1 directly comparable / 29 review-required / 80
-    unpriceable — the accepted breakdown per CODEX_PRICEABILITY_BLOCKER_
+    """Originally 30 priced / 1 directly comparable / 29 review-required /
+    80 unpriceable — the accepted breakdown per CODEX_PRICEABILITY_BLOCKER_
     RECONCILIATION.md's "maximum defensibly priceable within current
-    generated universe" (30). An intermediate FVD canonical input assembly
-    repair briefly used marine_suitability=NONE to remove 21 landlocked
-    jurisdictions from structure generation entirely (110 -> 89, 30 -> 28)
-    -- the canonical authority substrate + feasibility boundary repair
-    reverted that: production FEASIBILITY (can this jurisdiction physically
-    host the shoot) and ECONOMIC ELIGIBILITY (can a defensible incentive be
-    priced) are permanently separate concepts, and a soft feasibility
-    mismatch must never suppress economic discovery. See
-    CANONICAL_AUTHORITY_SUBSTRATE_FEASIBILITY_CLOSEOUT.md. The one thing
-    this must still hold: whatever the current count is, all four served
-    surfaces (Overview/Scenarios/Workspace/World) agree on it (Defect 2)."""
+    generated universe" (30) at the time that document was written. An
+    intermediate FVD canonical input assembly repair briefly used
+    marine_suitability=NONE to remove 21 landlocked jurisdictions from
+    structure generation entirely (110 -> 89, 30 -> 28) -- the canonical
+    authority substrate + feasibility boundary repair reverted that:
+    production FEASIBILITY (can this jurisdiction physically host the
+    shoot) and ECONOMIC ELIGIBILITY (can a defensible incentive be priced)
+    are permanently separate concepts, and a soft feasibility mismatch
+    must never suppress economic discovery. See
+    CANONICAL_AUTHORITY_SUBSTRATE_FEASIBILITY_CLOSEOUT.md.
+
+    The priced count has since legitimately grown via the Global Economic
+    Data + Base Pricing recover-before-research batches (30 -> ... -> 49,
+    see test_canonical_authority_substrate.py's
+    test_fvd_runtime_candidate_universe_restored for the full batch-by-
+    batch trace) as real, cited historical RateRule data was individually
+    re-verified and promoted rather than left unwired. The one thing this
+    must still hold, regardless of the count: all four served surfaces
+    (Overview/Scenarios/Workspace/World) agree on it (Defect 2)."""
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     assert view["status"] == "OK"
@@ -82,11 +90,11 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     unpriced = [e for e in entries if not e["is_fully_priced"]]
     accounting = view["structures"]["allocated_structures"]["candidate_accounting"]
 
-    assert len(priced) == 30
-    assert len(unpriced) == 80
+    assert len(priced) == 49
+    assert len(unpriced) == 61
     assert accounting["comparable_count"] == 1
-    assert accounting["review_required_count"] == 29
-    assert accounting["unpriceable_count"] == 80
+    assert accounting["review_required_count"] == 48
+    assert accounting["unpriceable_count"] == 61
 
     # Cross-screen agreement: the ranking list (what Scenarios/Overview/
     # World all read via is_directly_comparable) must reproduce the exact
@@ -96,8 +104,8 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     review_ranked = [r for r in ranking if r["is_fully_priced"] and not r["is_directly_comparable"]]
     unpriceable_ranked = [r for r in ranking if not r["is_fully_priced"]]
     assert len(comparable_ranked) == 1
-    assert len(review_ranked) == 29
-    assert len(unpriceable_ranked) == 80
+    assert len(review_ranked) == 48
+    assert len(unpriceable_ranked) == 61
 
     # Feasibility ≠ eligibility (canonical authority substrate + feasibility
     # boundary repair): a landlocked jurisdiction with real marine-mismatch
@@ -222,16 +230,20 @@ async def test_australia_location_offset_rule_rejected_with_program_identity(db:
 
 
 async def test_fvd_unpriceable_causes_are_differentiated_not_flattened(db: AsyncSession):
-    """Defect 4 — the 80 unpriceable FVD candidates must reach more than
-    one terminal cause; a single flattened UNPRICEABLE_AUTHORITY_INSUFFICIENT
-    bucket for all 80 would mean the real cause differentiation was lost
-    again."""
+    """Defect 4 — the unpriceable FVD candidates must reach more than one
+    terminal cause; a single flattened UNPRICEABLE_AUTHORITY_INSUFFICIENT
+    bucket for all of them would mean the real cause differentiation was
+    lost again. The count was 80 when this test was written; it has since
+    legitimately shrunk to 61 as the Global Economic Data + Base Pricing
+    recover-before-research batches individually promoted 49 formerly-
+    blocked programs to priced (see test_fvd_accounting_matches_codex_
+    diagnosis) -- the count itself is not the invariant this test guards."""
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     ranking = view["structures"]["allocated_structures"]["ranking"]
     unpriceable = [r for r in ranking if not r["is_fully_priced"]]
 
-    assert len(unpriceable) == 80
+    assert len(unpriceable) == 61
     statuses = {r["candidate_status"] for r in unpriceable}
     assert statuses.issuperset({"UNPRICEABLE_AUTHORITY_INSUFFICIENT", "RULE_REJECTED"}), (
         f"expected at least AUTHORITY_INSUFFICIENT and RULE_REJECTED causes, got {statuses}"

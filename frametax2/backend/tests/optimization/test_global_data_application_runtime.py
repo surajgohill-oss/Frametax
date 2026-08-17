@@ -59,14 +59,22 @@ def test_no_blocked_program_is_ranked_as_an_economic_candidate():
 def test_price_segment_hard_blocks_a_covered_program_even_when_directly_specified():
     """The pricing kernel is the authoritative gate -- a StructureSpec that
     names a blocked program directly (bypassing discovery) must still not
-    price. uk_avec retains live doctrine AND rate rules, so this proves the
-    block is the coverage registry, not an absence of data."""
+    price. ca_federal_pstc retains live doctrine AND a PARSED-tier rate
+    rule, so this proves the block is the coverage registry, not an
+    absence of data.
+
+    uk_avec was the original fixture here, but the Global Economic Data +
+    Base Pricing batch 3 individually verified it (bfi.org.uk, official,
+    fetched directly) and removed its coverage veto -- it is now
+    genuinely priceable and would no longer prove this gate. See
+    DELIBERATELY_PROMOTED_CANONICAL_IDS in
+    tests/data/test_authority_coverage_registry.py."""
     from app.data.program_rate_rules import get_rate_rules
 
-    assert len(get_rate_rules("uk_avec")) > 0, "fixture assumption: uk_avec still holds rate rules"
+    assert len(get_rate_rules("ca_federal_pstc")) > 0, "fixture assumption: ca_federal_pstc still holds rate rules"
     seg = price_segment(
-        jurisdiction_code="GB",
-        program_slug="uk_avec",
+        jurisdiction_code="CA",
+        program_slug="ca_federal_pstc",
         allocations=[],
         spend_category_by_code={},
         offshore_payroll_accounts=frozenset(),
@@ -79,10 +87,20 @@ def test_price_segment_hard_blocks_a_covered_program_even_when_directly_specifie
 
 def test_the_three_slug_spelling_escapes_are_closed():
     """Saudi (rank 2), Dubai DPIP (rank 8) and BC PSTC (rank 10) priced under
-    a runtime slug spelling that differed from the canonical_id."""
-    assert coverage_state("sa_film_commission_rebate") == "UNPRICEABLE_AUTHORITY_INSUFFICIENT"
+    a runtime slug spelling that differed from the canonical_id.
+
+    Saudi (batch 2) and BC PSTC (batch 1) were later individually
+    re-verified and promoted -- they are now genuinely, correctly
+    priceable under their canonical slug (see
+    DELIBERATELY_PROMOTED_CANONICAL_IDS in
+    tests/data/test_authority_coverage_registry.py). Dubai DPIP is
+    unaffected and remains SUPERSEDED. The escape this test guards --
+    that a runtime slug spelling could bypass the veto that WAS in
+    force -- is still closed; it just no longer applies to these two
+    slugs since the veto itself was deliberately lifted."""
+    assert coverage_state("sa_film_commission_rebate") == "PRICEABLE_VALIDATED"
     assert coverage_state("ae_dxb_dpip") == "SUPERSEDED"
-    assert coverage_state("ca_bc_pstc") == "UNPRICEABLE_AUTHORITY_INSUFFICIENT"
+    assert coverage_state("ca_bc_pstc") == "PRICEABLE_VALIDATED"
 
     served = _served()
     ranked_ids = {

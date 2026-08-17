@@ -52,6 +52,29 @@ si_film_incentive (filminslovenia.si, official — up to 25%, confirmed via
 a fresh search this task reproducing the same quoted figure the existing
 citation's own direct fetch had already recorded).
 
+CORRECTION (Global Economic Data + Base Pricing, batch 3): 8 more rows
+removed (10 counting alias spellings) after individually re-examining each
+program's existing RateRule citation: ca_on_opstc/on_opstc (ontariocreates.ca,
+official, fetched directly — 21.5% of all qualifying Ontario QPE), de_dfff
+(ffa.de, official, fetched directly — 30% uniform grant), es_tax_credit_
+foreign (Ley 27/2014 Art. 36.2, BOE-A-2014-12328 — a direct verbatim
+statute quote, the strongest provenance tier this registry recognizes),
+fr_trip (cnc.fr, official TRIP page, fetched directly — up to 30%/40%),
+hu_hipa_rebate (nfi.hu, official, fetched directly — 30% base), no_film_
+incentive (norwegianfilm.com, official — up to 25%, competitive/
+discretionary), us_mn_film_production_credit/us_mn_film_credit
+(revenue.state.mn.us, official, direct fetch 2026-07-26 — 25% flat), and
+uk_avec (bfi.org.uk, official, fetched directly — AVEC, rate quoted
+verbatim). Each DoctrineRecord.confidence_tier promoted PARSED -> VERIFIED
+on the same bar as batches 1/2. Per the durability clarification received
+during this batch, each of these 18 promoted programs (batches 1-3
+combined) also now carries a structured SourceProvenance record on its
+DoctrineRecord (see program_rate_rules.SourceProvenance and executable_
+jurisdiction_registry.get_provenance()) — issuing authority, source URL,
+citation detail, effective/verification dates where stated, and any
+material interpretation — not just the free-text citation string this
+module's veto-removal decisions were originally based on.
+
 Originally added by the Consolidated Global Remediation for 29 records
 (25 authority-insufficient + 4 non-economic). EXPANDED by the Global Data
 Application phase to carry every canonical disposition from
@@ -243,7 +266,6 @@ _ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("ca_nl_production_fund", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Canada — Newfoundland & Labrador", "Newfoundland & Labrador Film Development Corp Production Incentive"),
     ("ca_ns_pif", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Canada — Nova Scotia", "Nova Scotia Film & Television Production Incentive Fund"),
     ("ca_ns_production_incentive_fund", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Canada — Nova Scotia", "Nova Scotia Film & Television Production Incentive Fund [runtime slug of ca_ns_pif]"),
-    ("ca_on_opstc", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Ontario", "Ontario Production Services Tax Credit [runtime slug of on_opstc]"),
     ("ca_sk_creative_saskatchewan_grant", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Canada — Saskatchewan", "Creative Saskatchewan Film and TV Production Grant [runtime slug of ca_sk_production_grant]"),
     ("ca_sk_production_grant", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Canada — Saskatchewan", "Creative Saskatchewan Film and TV Production Grant"),
     ("cl_corfo_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Chile", "Chile Corfo Film Incentive"),
@@ -252,7 +274,6 @@ _ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("cr_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Costa Rica", "Costa Rica Film Commission Production Facilitation"),
     ("cy_film_rebate", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Cyprus", "Cyprus Film Production Rebate"),
     ("cz_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Czech Republic", "Czech Film Incentive"),
-    ("de_dfff", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Germany", "German Federal Film Fund (DFFF/GFFF)"),
     ("de_fff_bayern", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Germany / Germany — Bavaria", "FilmFernsehFonds Bayern (FFF Bayern)"),
     ("de_nrw_filmstiftung", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Germany / Germany — North Rhine-Westphalia", "Film und Medienstiftung NRW"),
     ("dk_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Denmark", "Danish Film Institute Production Support"),
@@ -262,14 +283,12 @@ _ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("ee_film_estonia_rebate", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Estonia", "Film Estonia Cash Rebate [runtime slug of ee_film_incentive]"),
     ("ee_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Estonia", "Film Estonia Cash Rebate"),
     ("eg_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Egypt", "eg_film_incentive"),
-    ("es_tax_credit_foreign", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Spain", "Spanish Tax Credit for Foreign Productions"),
     ("et_film_commission", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Ethiopia", "et_film_commission"),
     ("eu_media_fund", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "European Union / European Union", "Creative Europe MEDIA Programme"),
     ("fi_business_finland_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Finland", "Business Finland Film Incentive [runtime slug of fi_film_incentive]"),
     ("fi_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Finland", "Business Finland Film Incentive"),
     ("film_i_vast", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Sweden / Sweden — Västra Götaland", "Film i Väst — Regional Co-production Fund"),
     ("fr_cnc_production", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "France", "CNC France — Avances sur Recettes (Cinema Production Aid)"),
-    ("fr_trip", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "France", "Tax Rebate for International Productions (TRIP)"),
     ("ga_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Gabon", "ga_film_incentive"),
     ("gb_bfi_production", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United Kingdom", "BFI Film Fund — Production Funding"),
     ("gb_sct_screen_fund", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United Kingdom / United Kingdom — Scotland", "Screen Scotland Production Growth Fund"),
@@ -277,7 +296,6 @@ _ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("gh_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Ghana", "gh_film_incentive"),
     ("gt_film_commission", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Guatemala", "Guatemala Film Commission (INGUAT) Production Facilitation"),
     ("gy_film_commission", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Guyana", "Guyana Tourism Authority Film Production Support"),
-    ("hu_hipa_rebate", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Hungary", "Hungarian Tax Rebate (HIPA)"),
     ("id_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Indonesia", "id_film_incentive"),
     ("ie_section_481", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Ireland", "Section 481 Film Tax Credit"),
     ("in_national_film", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "India", "India NFDC and State Incentives"),
@@ -310,12 +328,10 @@ _ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("nl_film_production_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Netherlands", "Netherlands Film Production Incentive (NFPI) [runtime slug of nl_nfpi]"),
     ("nl_hbf", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Netherlands", "Hubert Bals Fund (IFFR) — Development and Production Fund"),
     ("nl_nfpi", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Netherlands", "Netherlands Film Production Incentive (NFPI)"),
-    ("no_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Norway", "Norwegian Film Commission Production Incentive"),
     ("nohfc_production_fund", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Ontario", "Northern Ontario Heritage Fund — Production Fund"),
     ("nordic_ftvf", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Nordic Region / Nordic Region", "Nordisk Film & TV Fond"),
     ("om_film_commission", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Oman", "om_film_commission"),
     ("on_ofttc", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Ontario", "Ontario Film and Television Tax Credit"),
-    ("on_opstc", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Ontario", "Ontario Production Services Tax Credit"),
     ("ontario_computer_animation_and_special_effects_tax_credit_ocase", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Canada / Ontario", "Ontario Computer Animation and Special Effects Tax Credit (OCASE)"),
     ("or_opif", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / Oregon", "Oregon Production Investment Fund (OPIF)"),
     ("pa_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Panama", "Panama Film Commission Production Facilitation"),
@@ -356,7 +372,6 @@ _ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("th_prd_foreign_digital_content_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Thailand", "Foreign Digital Content Production Incentive"),
     ("tourism_ireland___fáilte_ireland_production_support", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Ireland", "Tourism Ireland / Fáilte Ireland Production Support"),
     ("ug_film_commission", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "Uganda", "ug_film_commission"),
-    ("uk_avec", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United Kingdom", "UK Audio Visual Expenditure Credit"),
     ("us_al_film_incentive", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Alabama", "Alabama Film Incentive"),
     ("us_az_film_credit", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Arizona", "Arizona Motion Picture Production Program"),
     ("us_az_motion_picture_production", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Arizona", "Arizona Motion Picture Production Program [runtime slug of us_az_film_credit]"),
@@ -372,8 +387,6 @@ _ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("us_ky_keiia", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Kentucky", "Kentucky Entertainment Industry Incentive Act (KEIIA)"),
     ("us_ma_film_credit", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Massachusetts", "Massachusetts Film Tax Credit"),
     ("us_ma_film_tax_credit", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Massachusetts", "Massachusetts Film Tax Credit [runtime slug of us_ma_film_credit]"),
-    ("us_mn_film_credit", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Minnesota", "Minnesota Film Production Tax Credit"),
-    ("us_mn_film_production_credit", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Minnesota", "Minnesota Film Production Tax Credit [runtime slug of us_mn_film_credit]"),
     ("us_ms_advantage_film_program", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Mississippi", "Mississippi Advantage Film Program [runtime slug of us_ms_film_credit]"),
     ("us_ms_film_credit", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — Mississippi", "Mississippi Advantage Film Program"),
     ("us_nc_film_entertainment_grant", "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "United States / United States — North Carolina", "North Carolina Film & Entertainment Grant [runtime slug of us_nc_film_grant]"),

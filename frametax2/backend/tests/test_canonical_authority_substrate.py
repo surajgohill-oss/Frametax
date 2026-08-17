@@ -323,7 +323,14 @@ def test_priceability_delegates_to_served_coverage_veto():
 # ── Task 5 — residual-question ledger ───────────────────────────────────────
 
 def test_residual_ledger_captures_incomplete_fields():
-    entry = ledger_entry_for("uk_avec")
+    """ca_federal_pstc replaces uk_avec as the "incomplete" control here.
+    uk_avec's own RATE_OR_AWARD_BASIS dimension resolved to PRESENT once
+    batch 3 promoted its DoctrineRecord to VERIFIED (a genuine, correct
+    consequence of that promotion, not a test-fudge) -- it no longer
+    demonstrates an unresolved RATE_OR_AWARD_BASIS. ca_federal_pstc is
+    still coverage-vetoed with only a PARSED RateRule and genuinely
+    carries both dimensions unresolved."""
+    entry = ledger_entry_for("ca_federal_pstc")
     assert entry is not None
     assert not entry.is_fully_resolved
     dims = {q.dimension for q in entry.residual_questions}
@@ -335,7 +342,7 @@ def test_residual_ledger_captures_incomplete_fields():
 
 def test_residual_ledger_for_priceable_control_has_fewer_open_questions():
     priceable = ledger_entry_for(PRICEABLE_CONTROL)
-    incomplete = ledger_entry_for("uk_avec")
+    incomplete = ledger_entry_for("ca_federal_pstc")
     assert len(priceable.residual_questions) < len(incomplete.residual_questions)
 
 
@@ -434,10 +441,14 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     individually re-examined and found to already meet the primary-source
     bar this project uses for VERIFIED) -> 41 (batch 2: sa_film_
     commission_rebate and si_cash_rebate, freshly re-verified this task
-    against their official sources). See authority_coverage_registry.py's
+    against their official sources) -> 49 (batch 3: ca_on_opstc, de_dfff,
+    es_tax_credit_foreign, fr_trip, hu_hipa_rebate, no_film_incentive,
+    us_mn_film_production_credit, uk_avec, on the same recover-before-
+    research bar as batch 1). See authority_coverage_registry.py's
     correction notes and test_batch1_programs_price_with_real_numbers_in_
-    fvd / test_batch2_programs_price_with_real_numbers_in_fvd for the
-    traced, real-number proof. No soft feasibility mismatch may remove a
+    fvd / test_batch2_programs_price_with_real_numbers_in_fvd /
+    test_batch3_programs_price_with_real_numbers_in_fvd for the traced,
+    real-number proof. No soft feasibility mismatch may remove a
     candidate from the economic universe."""
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
@@ -445,8 +456,8 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     priced = [e for e in entries if e["is_fully_priced"]]
     unpriced = [e for e in entries if not e["is_fully_priced"]]
     assert len(entries) == 110
-    assert len(priced) == 41
-    assert len(unpriced) == 69
+    assert len(priced) == 49
+    assert len(unpriced) == 61
 
     for code in ("MN", "UZ", "AT"):
         e = next(x for x in entries if x["primary_jurisdiction"] == code)
@@ -659,12 +670,21 @@ def test_priceability_matches_served_intrinsic_status():
     served blocked by a stale coverage veto -- now corrected in both
     directions); au_location_offset was a false negative (served-
     priceable via a PARSED-tier RateRule, publication wrongly required
-    VERIFIED); uk_avec has zero VERIFIED/PARSED-executable path and stays
-    correctly UNPRICEABLE in both."""
+    VERIFIED); ar_incaa_incentive has zero VERIFIED/PARSED-executable path
+    (zero RateRules of any tier) and stays correctly UNPRICEABLE in both.
+
+    uk_avec was the original third control here, but the Global Economic
+    Data + Base Pricing batch 3 promoted its DoctrineRecord PARSED ->
+    VERIFIED and removed its coverage veto (bfi.org.uk, official, fetched
+    directly) -- it is now genuinely PRICEABLE and would no longer prove
+    the "stays UNPRICEABLE" case this test exists to guard. See
+    test_batch3_programs_price_with_real_numbers_in_fvd for uk_avec's own
+    proof."""
     from app.services.canonical_publication_contract import priceability, PRICEABLE, UNPRICEABLE
     assert priceability("us_ga_film_credit").gate == PRICEABLE
     assert priceability("au_location_offset").gate == PRICEABLE
-    assert priceability("uk_avec").gate == UNPRICEABLE
+    assert priceability("uk_avec").gate == PRICEABLE
+    assert priceability("ar_incaa_incentive").gate == UNPRICEABLE
 
 
 def test_georgia_no_annual_cap_recovered_as_not_applicable():
@@ -838,3 +858,103 @@ async def test_batch2_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
         assert e["candidate_status"] == "PRICED"
         assert e["selected_incentive_usd"] > 0
         assert e["npc_verified_usd"] is not None and e["npc_verified_usd"] > 0
+
+
+# ── Global Economic Data + Base Pricing — batch 3: 8 more recover-before-
+# research promotions (Ontario, Germany, Spain, France, Hungary, Norway,
+# Minnesota, UK), plus the durability clarification requiring structured
+# SourceProvenance on every promoted DoctrineRecord. ─────────────────────
+
+BATCH3_SLUGS = (
+    "ca_on_opstc", "de_dfff", "es_tax_credit_foreign", "fr_trip",
+    "hu_hipa_rebate", "no_film_incentive", "us_mn_film_production_credit",
+    "uk_avec",
+)
+
+
+def test_batch3_doctrine_records_promoted_to_verified():
+    from app.data.executable_jurisdiction_registry import get_doctrine
+    from app.data.program_rate_rules import get_rate_rules
+    for slug in BATCH3_SLUGS:
+        doc = get_doctrine(slug)
+        if doc is not None:
+            assert doc.confidence_tier == "VERIFIED", slug
+        else:
+            # es_tax_credit_foreign and fr_trip are raw RateRule tuples
+            # with no DoctrineRecord (program_rate_rules.py pattern).
+            rules = get_rate_rules(slug)
+            assert rules, f"{slug}: no RateRule found"
+            assert all(r.confidence_tier == "VERIFIED" for r in rules), slug
+
+
+def test_batch3_coverage_veto_removed_including_alias_spellings():
+    from app.data.authority_coverage_registry import blocks_economic_candidacy
+    for canonical, alias in (
+        ("ca_on_opstc", "on_opstc"),
+        ("de_dfff", None),
+        ("es_tax_credit_foreign", None),
+        ("fr_trip", None),
+        ("hu_hipa_rebate", None),
+        ("no_film_incentive", None),
+        ("us_mn_film_production_credit", "us_mn_film_credit"),
+        ("uk_avec", None),
+    ):
+        assert blocks_economic_candidacy(canonical) is False, canonical
+        if alias:
+            assert blocks_economic_candidacy(alias) is False, alias
+
+
+async def test_batch3_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
+    """Runtime proof (not just the read-only registries) that all 8 batch-3
+    programs reach served state with real, distinct, non-zero numbers."""
+    await evaluate_project(db, FVD_PROJECT_ID)
+    view = await build_production_and_structures(db, FVD_PROJECT_ID)
+    entries = view["structures"]["allocated_structures"]["structures"]
+    codes = ("CA-ON", "DE", "ES", "FR", "HU", "NO", "US-MN", "GB")
+    seen_incentives = set()
+    for code in codes:
+        e = next(x for x in entries if x["primary_jurisdiction"] == code)
+        assert e["is_fully_priced"] is True, f"{code} did not price"
+        assert e["candidate_status"] == "PRICED"
+        assert e["selected_incentive_usd"] > 0
+        assert e["npc_verified_usd"] is not None and e["npc_verified_usd"] > 0
+        seen_incentives.add(e["selected_incentive_usd"])
+    assert len(seen_incentives) > 1, "all 8 programs priced identically -- suspicious, check for a copy-paste QPE bug"
+
+
+def test_batch1_2_3_promoted_programs_carry_structured_provenance():
+    """Durability clarification (received mid-batch-3): every historical
+    proposition promoted this session must carry PERMANENT STRUCTURED
+    provenance in the canonical authority/economic data layer, not just a
+    free-text citation string or a report. Checks the trace PROGRAM ->
+    EXECUTABLE RULE -> SOURCE PROVENANCE is real and populated for all 18
+    programs promoted across batches 1-3 (the batch-2 slugs are included
+    here rather than a separate test since the schema field itself is
+    what's new, not batch-2's own promotion)."""
+    from app.data.executable_jurisdiction_registry import get_provenance
+    from app.data.program_rate_rules import get_rate_rules
+
+    promoted_slugs = (
+        "ca_bc_pstc", "hr_cash_rebate", "nz_spg_international",
+        "tt_production_expenditure_rebate", "us_la_film_incentive",
+        "us_md_film_production_activity_credit", "us_nm_film_credit",
+        "us_ri_film_credit",
+        "sa_film_commission_rebate", "si_cash_rebate",
+    ) + BATCH3_SLUGS
+
+    for slug in promoted_slugs:
+        prov = get_provenance(slug)
+        assert prov is not None, f"{slug}: no structured SourceProvenance recorded"
+        assert prov.issuing_authority, f"{slug}: provenance missing issuing_authority"
+        # Every RateRule this program derives must carry the SAME
+        # provenance object (or an equivalent one) -- the executable rule
+        # itself must be traceable to its source, not only the doctrine
+        # record it was authored from.
+        rules = get_rate_rules(slug)
+        assert rules, f"{slug}: no executable RateRule found"
+        for rule in rules:
+            assert rule.provenance is not None, (
+                f"{slug}/{rule.tier_id}: executable RateRule has no provenance -- "
+                "PROGRAM -> EXECUTABLE RULE -> SOURCE PROVENANCE trace is broken"
+            )
+            assert rule.provenance.issuing_authority == prov.issuing_authority

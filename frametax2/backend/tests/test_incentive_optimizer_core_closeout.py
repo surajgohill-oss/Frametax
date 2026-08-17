@@ -132,28 +132,37 @@ def test_greece_flat_rate_has_no_discretionary_ceiling():
     assert pricing.selected_incentive_usd == gr.incentive_ceiling_usd == gr.incentive_floor_usd
 
 
-def test_uk_avec_is_now_canonically_unpriceable_and_cannot_price():
-    """Global Data Application: the completed primary-authority corpus
-    reclassified uk_avec as UNPRICEABLE_AUTHORITY_INSUFFICIENT (its canonical
-    record carries rate_literals=[]), so it is disabled rather than allowed to
-    inherit its stale stored rate.
+def test_uk_avec_was_reactivated_by_batch3_primary_source_verification():
+    """Global Data Application originally reclassified uk_avec as
+    UNPRICEABLE_AUTHORITY_INSUFFICIENT (its canonical record carried
+    rate_literals=[]). The Global Economic Data + Base Pricing batch 3
+    later individually re-examined its existing citation, confirmed it
+    was already a direct, fetched-verbatim quote from bfi.org.uk (the
+    British Film Institute, the official certifying/administering body —
+    not a secondary aggregator), and promoted its DoctrineRecord
+    PARSED -> VERIFIED, removing the coverage veto. uk_avec is now
+    correctly PRICEABLE again — this is a deliberate, evidenced reversal
+    of the original reclassification, not a regression. See
+    DELIBERATELY_PROMOTED_CANONICAL_IDS in
+    tests/data/test_authority_coverage_registry.py and
+    test_batch3_programs_price_with_real_numbers_in_fvd in
+    tests/test_canonical_authority_substrate.py for the runtime proof.
 
-    This test previously asserted uk_avec's VFX band-ceiling behavior. That
-    MECHANISM is unchanged and still covered by
+    The VFX band-ceiling MECHANISM this test previously exercised via
+    uk_avec's blocked state remains independently covered by
     test_mauritius_ceiling_requires_confirmation_and_serves_floor_by_default,
     test_mauritius_ceiling_confirmed_by_explicit_project_override and
-    test_malta_ceiling_requires_confirmation_and_serves_floor_by_default -- only
-    the UK vehicle for it was retired by canonical data."""
+    test_malta_ceiling_requires_confirmation_and_serves_floor_by_default."""
     from app.data.authority_coverage_registry import coverage_state
 
-    assert coverage_state("uk_avec") == "UNPRICEABLE_AUTHORITY_INSUFFICIENT"
+    assert coverage_state("uk_avec") == "PRICEABLE_VALIDATED"
     pricing = _price(_spec("P-GB", "full_relocation", ("GB",), {"GB": "uk_avec"}))
-    assert pricing.is_fully_priced is False
+    assert pricing.is_fully_priced is True
     gb = next(s for s in pricing.segments if s.jurisdiction_code == "GB")
-    assert gb.executable is False
-    assert gb.incentive_floor_usd == 0.0
-    assert gb.incentive_ceiling_usd == 0.0
-    assert any("UNPRICEABLE_AUTHORITY_INSUFFICIENT" in b for b in gb.blockers)
+    assert gb.executable is True
+    assert gb.incentive_floor_usd > 0.0
+    assert gb.incentive_ceiling_usd > 0.0
+    assert gb.blockers == ()
 
 
 # ── QPE eligible-spend caps (UK / Greece 80%) ────────────────────────────────
@@ -173,19 +182,21 @@ def test_greece_qpe_capped_at_80pct_of_total_worldwide_budget():
     assert gr.qpe_cap_applied_usd > 0
 
 
-def test_uk_qpe_cap_rule_is_retained_even_though_uk_avec_cannot_currently_price():
-    """The UK's 80%-of-core-expenditure QpeCapRule is preserved as data so the
-    program can be reactivated intact once authority is recaptured -- but with
-    uk_avec now canonically UNPRICEABLE_AUTHORITY_INSUFFICIENT the cap is never
-    reached, because the segment is blocked before QPE is computed.
-
-    The cap MECHANISM itself remains covered by
-    test_greece_qpe_capped_at_80pct_of_total_worldwide_budget."""
-    assert get_qpe_cap("uk_avec") is not None  # rule data preserved for reactivation
+def test_uk_qpe_cap_rule_applies_now_that_uk_avec_is_reactivated():
+    """The UK's 80%-of-core-expenditure QpeCapRule was preserved as data
+    through uk_avec's period as UNPRICEABLE_AUTHORITY_INSUFFICIENT so the
+    program could be reactivated intact once authority was recaptured --
+    batch 3 recaptured it (see
+    test_uk_avec_was_reactivated_by_batch3_primary_source_verification),
+    so the cap rule is now genuinely reachable and this test proves it
+    actually applies, mirroring test_greece_qpe_capped_at_80pct_of_total_
+    worldwide_budget for the UK's own program."""
+    assert get_qpe_cap("uk_avec") is not None
     pricing = _price(_spec("P-GB-CAP", "full_relocation", ("GB",), {"GB": "uk_avec"}))
     gb = next(s for s in pricing.segments if s.jurisdiction_code == "GB")
-    assert gb.executable is False
-    assert gb.qpe_usd in (None, 0, 0.0)
+    assert gb.executable is True
+    assert gb.qpe_usd is not None and gb.qpe_usd > 0
+    assert gb.qpe_cap_applied_usd > 0
 
 
 # ── Bridge package export fixes ──────────────────────────────────────────────

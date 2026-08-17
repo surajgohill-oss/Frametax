@@ -174,7 +174,16 @@ def test_bridge_matches_optimizer_and_ranking_for_the_top_ten():
 
 def test_no_priced_structure_shows_an_impossible_effective_rate():
     """Anomaly guard: effective rate must never exceed the highest rate any
-    single still-priceable program actually offers."""
+    single still-priceable program actually offers.
+
+    The ceiling was 0.45 before the Global Economic Data + Base Pricing
+    batch 2 individually re-verified sa_film_commission_rebate's real 60%
+    flat rebate directly against film.sa/incentive-programs/ (Saudi Film
+    Commission, official) and removed its coverage veto -- this is a
+    genuine, verified rate, not an anomaly, so the ceiling is raised to
+    match rather than the check being weakened structurally. If a future
+    program is verified above 60%, raise this again with the same kind of
+    citation-backed justification -- never silently."""
     served = _served()
     priced = [s for s in served["structures"] if s.get("npc_with_adjustments_usd") is not None]
     for s in priced:
@@ -182,5 +191,5 @@ def test_no_priced_structure_shows_an_impossible_effective_rate():
         if qpe <= 0:
             continue
         eff = (s["selected_incentive_usd"] or 0) / qpe
-        assert 0 <= eff <= 0.45, f"{s['structure_id']} effective rate {eff:.1%} is out of range"
+        assert 0 <= eff <= 0.60, f"{s['structure_id']} effective rate {eff:.1%} is out of range"
         assert (s["selected_incentive_usd"] or 0) <= qpe, "benefit exceeds eligible spend"

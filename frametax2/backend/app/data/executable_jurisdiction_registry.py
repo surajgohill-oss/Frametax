@@ -46,7 +46,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from app.data.program_rate_rules import RateCondition, RateRule
+from app.data.program_rate_rules import (
+    RateCondition,
+    RateRule,
+    SourceProvenance,
+    get_rate_rules,
+)
 
 
 @dataclass(frozen=True)
@@ -82,6 +87,11 @@ class DoctrineRecord:
     source_ref: str                 # short stable reference id
     production_types: tuple[str, ...] = ("feature_film",)
     tiers: tuple[DoctrineRateTier, ...] = ()
+    provenance: SourceProvenance | None = None   # structured provenance —
+                                                  # see program_rate_rules.
+                                                  # SourceProvenance. Threaded
+                                                  # onto every derived RateRule
+                                                  # by rate_rules_for() below.
 
     @property
     def base_rate(self) -> float | None:
@@ -110,6 +120,7 @@ def rate_rules_for(record: DoctrineRecord) -> tuple[RateRule, ...]:
             citation=record.citation,
             source_ref=record.source_ref,
             graduated_brackets=tier.graduated_brackets,
+            provenance=record.provenance,
         )
         for tier in record.tiers
     )
@@ -135,3 +146,22 @@ def get_doctrine(program_slug: str) -> DoctrineRecord | None:
 
 def all_doctrine_records() -> tuple[DoctrineRecord, ...]:
     return tuple(_REGISTRY.values())
+
+
+def get_provenance(program_slug: str) -> SourceProvenance | None:
+    """Programmatic trace PROGRAM -> EXECUTABLE RULE -> SOURCE PROVENANCE.
+
+    Most programs go through a DoctrineRecord (the single source of truth
+    rate_rules_for() derives every RateRule from), so the DoctrineRecord's
+    own provenance is checked first. A small number of programs
+    (es_tax_credit_foreign, fr_trip) are defined as raw RateRule tuples
+    directly in program_rate_rules.py with no DoctrineRecord — for those,
+    falls back to the first executable RateRule's own provenance field,
+    so the trace is complete regardless of which of the two authoring
+    patterns a program uses. Returns None only when neither path has a
+    recorded provenance — never fabricates a value."""
+    record = get_doctrine(program_slug)
+    if record is not None and record.provenance is not None:
+        return record.provenance
+    rules = get_rate_rules(program_slug)
+    return rules[0].provenance if rules else None

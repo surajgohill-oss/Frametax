@@ -404,8 +404,15 @@ class TestProfileIntegrity:
         # are both set to the conservative 25% marginal rate that governs
         # spend above the bracket break — see program_rate_rules.py
         # ES_RATE_RULES and ES_UNVERIFIED_CLAIMS for the full citation trail.
+        #
+        # confidence_tier promoted PARSED -> VERIFIED (Global Economic Data
+        # + Base Pricing, batch 3): the citation is a direct verbatim quote
+        # of the actual statute (Ley 27/2014, Articulo 36.2, BOE-A-2014-
+        # 12328), kept in sync with es_tax_credit_foreign's own RateRule
+        # confidence_tier by test_profile_and_rate_rule_confidence_tiers_
+        # do_not_diverge in tests/test_jurisdiction_doctrine_consistency.py.
         es = SECONDARY_PROFILES["ES"]
-        assert es.confidence_tier == "PARSED"
+        assert es.confidence_tier == "VERIFIED"
         assert es.base_rate == 0.25
         assert es.max_rate == 0.25
         assert es.annual_cap_local == 20_000_000.0
