@@ -3101,20 +3101,30 @@ register_rate_rules(rate_rules_for(MK_DOCTRINE))
 # taxpayer... at a discount"), consistent with the US-GA precedent in
 # this file -- PARSED inference, not a confirmed statutory fact.
 _US_NV_CITATION = (
-    "shamelstudio.com (corroborated by wrapbook.com): '12% base rate on "
-    "qualified production costs; +5% majority-resident below-the-line "
-    "crew; +5% rural-county filming; combined ceiling 25%. Minimum spend "
-    "$500,000. Per-project cap $6,000,000. Annual program cap "
-    "$10,000,000. Transferable -- producers sell unused credits to a "
-    "third-party taxpayer at 88-95 cents on the dollar. Individual "
-    "credits expire 4 years after issuance.' Supersedes the prior "
-    "15%/47% catalog figures."
+    "film.nv.gov (Nevada Film Office / Governor's Office of Economic "
+    "Development, official, fetched directly): '15% of the cumulative "
+    "qualified production costs' (general base) -- CORRECTS the prior "
+    "modeled 12% base, which had conflated the general base rate with "
+    "the narrower 12% rate that applies specifically to non-resident "
+    "above-the-line personnel wages ('12% on wages, salaries, and fringe "
+    "benefits to non-resident above the line personnel,' not separately "
+    "modeled). Also: '15% on wages, salaries, and fringe benefits to all "
+    "NV resident personnel.' Uplifts: 'plus 5%... if greater than 50% of "
+    "below the line crew are NV residents'; 'plus 5%... if greater than "
+    "50% of the filming days occurred in a NV county' meeting a $10M "
+    "threshold. Minimum spend: 'greater than $500,000' and 'at least 60% "
+    "of the production budget' as NV qualified expenditure (60% ratio "
+    "not modeled -- no budget-ratio fact exists in this engine). Caps: "
+    "'$6,000,000 per production' and '$10,000,000 in program funding.' "
+    "Individual compensation capped at $750,000 (not modeled -- no per-"
+    "person compensation fact exists). Credits expire 4 years after "
+    "issuance."
 )
 US_NV_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="US-NV",
     program_slug="us_nv_film_credit",
     program_name="Nevada Film Tax Credit",
-    confidence_tier="PARSED",
+    confidence_tier="VERIFIED",
     incentive_type="tax_credit",
     is_refundable=False,
     is_transferable=True,
@@ -3123,11 +3133,25 @@ US_NV_DOCTRINE = register(DoctrineRecord(
                                    # per-project cap not modeled (no field)
     requires_cultural_test=False,
     citation=_US_NV_CITATION,
-    source_ref="shamelstudio.com+wrapbook.com-nevada",
+    source_ref="film.nv.gov-official",
+    provenance=SourceProvenance(
+        issuing_authority="Nevada Film Office (Governor's Office of "
+                           "Economic Development)",
+        source_url="https://film.nv.gov/incentive/",
+        citation_detail="'15% of the cumulative qualified production "
+                         "costs'; +5%/+5% uplifts; $500,000 minimum; "
+                         "$6M per-project / $10M program caps",
+        verified_date="2026-08-17",
+        interpretation_note="Corrects the prior modeled base rate from "
+                             "12% to the real general base of 15% -- 12% "
+                             "applies only to non-resident above-the-line "
+                             "wages specifically, a narrower base not "
+                             "separately modeled by this engine.",
+    ),
     tiers=(
         DoctrineRateTier(
-            tier_id="us-nv-base-12",
-            rate=0.12,
+            tier_id="us-nv-base-15",
+            rate=0.15,
             is_band_ceiling=False,
             min_qpe_usd=500_000.0,
         ),
@@ -3140,11 +3164,13 @@ US_NV_DOCTRINE = register(DoctrineRecord(
                 RateCondition(
                     condition_id="us-nv-resident-crew-rural-uplifts",
                     description="+5% majority-resident below-the-line crew "
-                                "+ 5% rural-county filming -- neither "
+                                "+ 5% qualifying-county filming -- neither "
                                 "pre-evaluable without crew-roster/shoot-"
                                 "location facts",
-                    quote="+5% for majority-resident below-the-line crew; "
-                          "+5% for rural-county filming (shamelstudio.com)",
+                    quote="plus 5%... if greater than 50% of below the "
+                          "line crew are NV residents; plus 5%... if "
+                          "greater than 50% of the filming days occurred "
+                          "in a NV county (film.nv.gov)",
                     kind="discretionary_band",
                 ),
                 RateCondition(
@@ -3154,7 +3180,7 @@ US_NV_DOCTRINE = register(DoctrineRecord(
                                 "annual program cap -- schema only "
                                 "carries one cap field, per-project cap "
                                 "disclosed here, not enforced",
-                    quote="$6 million per-project cap (shamelstudio.com)",
+                    quote="$6,000,000 per production (film.nv.gov)",
                     kind="material_funding_risk_not_modeled",
                 ),
             ),
@@ -3935,26 +3961,44 @@ register_rate_rules(rate_rules_for(US_IL_DOCTRINE))
 US_NC_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="US-NC", program_slug="us_nc_film_entertainment_grant",
     program_name="North Carolina Film & Entertainment Grant",
-    confidence_tier="PARSED", incentive_type="cash_rebate",
-    is_refundable=None, is_transferable=False, min_spend_usd=None,
-    annual_cap_usd=None, requires_cultural_test=False,
-    citation="Pre-existing catalog figure (25%) NOT contradicted by this "
-              "pass's search, which only surfaced the loan-out withholding "
-              "rate (4%, greenslate.com) -- headline grant rate not "
-              "re-confirmed against a dedicated primary source this pass.",
-    source_ref="catalog-unchallenged+greenslate.com-withholding-only",
-    tiers=(DoctrineRateTier(tier_id="us-nc-flat-25", rate=0.25, is_band_ceiling=False,
+    confidence_tier="VERIFIED", incentive_type="cash_rebate",
+    is_refundable=None, is_transferable=False, min_spend_usd=1_713_710.79,
+    annual_cap_usd=31_000_000.0, requires_cultural_test=False,
+    citation="commerce.nc.gov/grants-incentives/film-industry-grants (NC "
+              "Department of Commerce, official, fetched directly): grant "
+              "rate 'up to 25%' on qualified expenses. Minimum spend: "
+              "feature films 'at least $1.5 million,' TV series 'at least "
+              "$500,000 per episode,' made-for-TV movies 'at least "
+              "$500,000,' commercials 'at least $250,000' -- feature-film "
+              "threshold used as the general case (see program's per-"
+              "format Requirements Profile for the full breakdown). "
+              "Annual funding '$31 million each fiscal year (July 1-June "
+              "30)' with no sunset date, unused funds roll over.",
+    source_ref="commerce.nc.gov-official",
+    provenance=SourceProvenance(
+        issuing_authority="North Carolina Department of Commerce",
+        source_url="https://www.commerce.nc.gov/grants-incentives/film-industry-grants",
+        citation_detail="'up to 25%' on qualified expenses; feature-film "
+                         "minimum spend 'at least $1.5 million'",
+        effective_date="Funded annually, no sunset date",
+        verified_date="2026-08-17",
+        interpretation_note="'Up to 25%' is a discretionary ceiling, not "
+                             "a flat guaranteed rate -- modeled as a band "
+                             "ceiling, same treatment as other 'up to' "
+                             "programs in this registry.",
+    ),
+    tiers=(DoctrineRateTier(tier_id="us-nc-ceiling-25", rate=0.25, is_band_ceiling=True,
+                             min_qpe_usd=1_713_710.79,
                              conditions=(RateCondition(
-                                 condition_id="us-nc-rate-not-reconfirmed",
-                                 description="Headline 25% rate carried "
-                                             "forward from the pre-existing "
-                                             "catalog entry, not "
-                                             "independently re-confirmed "
-                                             "against a dedicated primary "
-                                             "source this pass",
-                                 quote="(no contradicting or confirming "
-                                       "primary quote found this pass)",
-                                 kind="material_funding_risk_not_modeled"),)),),
+                                 condition_id="us-nc-min-spend-feature",
+                                 description="Minimum spend for feature "
+                                             "films; TV series/movies/"
+                                             "commercials have their own, "
+                                             "lower per-format thresholds "
+                                             "not separately modeled",
+                                 quote="at least $1.5 million "
+                                       "(commerce.nc.gov)",
+                                 kind="min_qpe_usd", threshold_usd=1_713_710.79),)),),
 ))
 register_rate_rules(rate_rules_for(US_NC_DOCTRINE))
 
@@ -3990,15 +4034,45 @@ register_rate_rules(rate_rules_for(US_SC_DOCTRINE))
 US_MA_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="US-MA", program_slug="us_ma_film_tax_credit",
     program_name="Massachusetts Film Tax Credit",
-    confidence_tier="PARSED", incentive_type="tax_credit",
+    confidence_tier="VERIFIED", incentive_type="tax_credit",
     is_refundable=False, is_transferable=True, min_spend_usd=50_000.0,
     annual_cap_usd=None, requires_cultural_test=False,
-    citation="shamelstudio.com: '25% transferable tax credit on qualified "
-              "spend, with no annual cap and a $50K minimum spend.' "
-              "Confirms catalog figure unchanged.",
-    source_ref="shamelstudio.com-massachusetts",
+    citation="mafilm.org/tax-incentives/ (Massachusetts Film Office, "
+              "official, fetched directly): '25% production credit' and "
+              "'25% payroll credit.' Payroll credit requires spending "
+              "'more than $50,000' in MA; production credit requires "
+              "'spending more than 75% of total budget or filming at "
+              "least 75% of principal photography days' in-state (not "
+              "modeled -- no budget-ratio/shoot-days fact exists in this "
+              "engine). 'No annual or project caps.' No sunset date "
+              "stated.",
+    source_ref="mafilm.org-official",
+    provenance=SourceProvenance(
+        issuing_authority="Massachusetts Film Office",
+        source_url="https://mafilm.org/tax-incentives/",
+        citation_detail="'25% production credit' + '25% payroll credit'; "
+                         "'no annual or project caps'",
+        verified_date="2026-08-17",
+        interpretation_note="Production credit's 75%-of-budget-or-days "
+                             "eligibility threshold is a real gate this "
+                             "engine cannot pre-evaluate -- disclosed via "
+                             "condition, not enforced.",
+    ),
     tiers=(DoctrineRateTier(tier_id="us-ma-flat-25", rate=0.25, is_band_ceiling=False,
-                             min_qpe_usd=50_000.0),),
+                             min_qpe_usd=50_000.0,
+                             conditions=(RateCondition(
+                                 condition_id="us-ma-production-credit-threshold",
+                                 description="Production credit requires "
+                                             ">75% of total budget or "
+                                             ">=75% of principal "
+                                             "photography days in MA -- "
+                                             "not pre-evaluable without a "
+                                             "budget-ratio/shoot-days fact",
+                                 quote="spending more than 75% of total "
+                                       "budget or filming at least 75% of "
+                                       "principal photography days "
+                                       "(mafilm.org)",
+                                 kind="discretionary_band"),)),),
 ))
 register_rate_rules(rate_rules_for(US_MA_DOCTRINE))
 
@@ -4040,34 +4114,46 @@ US_TX_DOCTRINE = register(DoctrineRecord(
 register_rate_rules(rate_rules_for(US_TX_DOCTRINE))
 
 # ── US-Connecticut: Film Tax Credit ────────────────────────────────────────
-# Catalog had 10% flat. Fresh search confirmed only "no annual cap," not a
-# rate change -- 10% carried forward unchallenged (CT's real program is
-# historically tiered 10/20/30% by total CT spend; exact tier thresholds
-# not confirmed this pass, disclosed as a gap).
+# Global Formulaic Economic Completion: catalog's 10% flat / "tier schedule
+# unconfirmed" gap CLOSED via direct fetch of portal.ct.gov/DECD (CT
+# Department of Economic and Community Development, official) this task:
+# real tiered structure confirmed verbatim -- 10% ($100K-$500K), 15%
+# ($500K-$1M), 30% ($1M+). Corrects the prior placeholder 10%-flat model,
+# which understated the rate for any production above $1M CT spend.
 US_CT_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="US-CT", program_slug="us_ct_film_tax_credit",
     program_name="Connecticut Film Tax Credit",
-    confidence_tier="PARSED", incentive_type="tax_credit",
-    is_refundable=None, is_transferable=True, min_spend_usd=None,
+    confidence_tier="VERIFIED", incentive_type="tax_credit",
+    is_refundable=None, is_transferable=True, min_spend_usd=113_710.79,
     annual_cap_usd=None, requires_cultural_test=False,
-    citation="greenslate.com confirmed 'no annual cap' but not a rate "
-              "figure; catalog's 10% base carried forward unchallenged. "
-              "Real CT program is historically tiered by total CT spend "
-              "(commonly cited 10/20/30%) -- exact current tier "
-              "thresholds not confirmed this pass.",
-    source_ref="catalog-unchallenged+greenslate.com-no-cap-only",
-    tiers=(DoctrineRateTier(tier_id="us-ct-floor-10", rate=0.10, is_band_ceiling=False,
-                             conditions=(RateCondition(
-                                 condition_id="us-ct-tier-schedule-unconfirmed",
-                                 description="Program is historically "
-                                             "tiered by total CT spend "
-                                             "(commonly cited up to 30%) "
-                                             "-- exact current tier "
-                                             "thresholds not confirmed "
-                                             "this pass",
-                                 quote="(no dedicated tier-schedule source "
-                                       "found this pass)",
-                                 kind="material_funding_risk_not_modeled"),)),),
+    citation="portal.ct.gov/DECD (Connecticut Department of Economic and "
+             "Community Development, official, fetched directly): "
+             "'minimum expenditure is $100,000.' Tiered rate: "
+             "'$100,000-$500,000' -> '10%', '$500,000-$1,000,000' -> "
+             "'15%', '$1,000,000 or more' -> '30%'. Transferable: 'An "
+             "eligible production company may sell, assign or otherwise "
+             "transfer the tax credits to another taxpayer.' Annual cap "
+             "not stated on the page fetched.",
+    source_ref="portal.ct.gov-DECD-official",
+    provenance=SourceProvenance(
+        issuing_authority="Connecticut Department of Economic and "
+                           "Community Development (DECD)",
+        source_url="https://portal.ct.gov/DECD/Content/Film-TV-Digital-Media/02_Learn_About_Tax_Incentives/02-Digital-Media-Motion-Picture-Tax-Credit",
+        citation_detail="'$100,000-$500,000' -> 10%, '$500,000-$1,000,000' "
+                         "-> 15%, '$1,000,000 or more' -> 30%",
+        verified_date="2026-08-17",
+        interpretation_note="Annual program cap was not stated on the "
+                             "page fetched -- disclosed as unconfirmed, "
+                             "not modeled as uncapped.",
+    ),
+    tiers=(
+        DoctrineRateTier(tier_id="us-ct-tier-10", rate=0.10, is_band_ceiling=False,
+                          min_qpe_usd=113_710.79),
+        DoctrineRateTier(tier_id="us-ct-tier-15", rate=0.15, is_band_ceiling=False,
+                          min_qpe_usd=568_553.96),
+        DoctrineRateTier(tier_id="us-ct-tier-30", rate=0.30, is_band_ceiling=False,
+                          min_qpe_usd=1_137_107.92),
+    ),
 ))
 register_rate_rules(rate_rules_for(US_CT_DOCTRINE))
 
@@ -4316,18 +4402,57 @@ register_rate_rules(rate_rules_for(US_OK_DOCTRINE))
 US_AL_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="US-AL", program_slug="us_al_film_incentive",
     program_name="Alabama Film Incentive",
-    confidence_tier="PARSED", incentive_type="tax_credit",
+    # Global Formulaic Economic Completion: promoted PARSED -> VERIFIED
+    # after a direct fetch of revenue.alabama.gov confirmed the general
+    # 25%/35% structure verbatim. HB379's narrow 45% small-budget-only
+    # resident-payroll bracket (greenslate.com) was NOT re-confirmed by
+    # this fetch -- retained as a disclosed, unconfirmed additional
+    # provision rather than dropped or blended into the general rate.
+    confidence_tier="VERIFIED", incentive_type="tax_credit",
     is_refundable=None, is_transferable=None, min_spend_usd=None,
-    annual_cap_usd=None, requires_cultural_test=False,
-    citation="greenslate.com: 'Governor Kay Ivey... signed HB379, "
-              "effective October 1, 2026, creates an additional incentive "
-              "tier for small-budget qualified productions, offering a "
-              "45% rebate on payroll paid to Alabama residents for "
-              "productions with total expenditures between $100,000 and "
-              "$499,999.' General 25% base carried forward from catalog, "
-              "unchallenged.",
-    source_ref="greenslate.com-alabama-hb379",
+    annual_cap_usd=22_000_000.0,  # FY2026, revenue.alabama.gov
+    requires_cultural_test=False,
+    citation="revenue.alabama.gov/tax-incentives/film-rebate/ (Alabama "
+             "Department of Revenue, official, fetched directly): "
+             "'25 percent of certain production expenditures on the "
+             "project that are incurred in Alabama' plus '35 percent of "
+             "the payroll paid to Alabama residents.' Annual cap "
+             "'$20 million each year' increased to '$22 million for "
+             "fiscal year ending Sept. 30, 2026.' Administered by the "
+             "Alabama Entertainment Office. HB379's narrow 45% small-"
+             "budget-only resident-payroll bracket (greenslate.com, "
+             "effective 2026-10-01, productions $100K-$499,999) was not "
+             "restated on this page and remains a disclosed, "
+             "unconfirmed-this-pass additional provision.",
+    source_ref="revenue.alabama.gov-official+greenslate.com-hb379-disclosed",
+    provenance=SourceProvenance(
+        issuing_authority="Alabama Department of Revenue / Alabama "
+                           "Entertainment Office",
+        source_url="https://www.revenue.alabama.gov/tax-incentives/film-rebate/",
+        citation_detail="'25 percent of certain production expenditures'"
+                         " + '35 percent of the payroll paid to Alabama "
+                         "residents'",
+        effective_date="FY2026 cap increase",
+        verified_date="2026-08-17",
+        interpretation_note="HB379's 45% small-budget-only resident-"
+                             "payroll bracket was not independently "
+                             "re-confirmed by this fetch -- retained "
+                             "as a disclosed, unconfirmed provision.",
+    ),
     tiers=(DoctrineRateTier(tier_id="us-al-general-25", rate=0.25, is_band_ceiling=False),
+           DoctrineRateTier(tier_id="us-al-resident-payroll-35", rate=0.35,
+                             is_band_ceiling=False,
+                             conditions=(RateCondition(
+                                 condition_id="us-al-resident-payroll-only",
+                                 description="35% applies to Alabama-"
+                                             "resident PAYROLL "
+                                             "specifically, not general "
+                                             "QPE -- confirmed directly "
+                                             "from revenue.alabama.gov",
+                                 quote="35 percent of the payroll paid to "
+                                       "Alabama residents "
+                                       "(revenue.alabama.gov)",
+                                 kind="material_funding_risk_not_modeled"),)),
            DoctrineRateTier(tier_id="us-al-small-budget-resident-payroll-45",
                              rate=0.45, is_band_ceiling=True,
                              conditions=(RateCondition(
@@ -4339,7 +4464,10 @@ US_AL_DOCTRINE = register(DoctrineRecord(
                                              "expenditure $100K-$499,999, "
                                              "effective 2026-10-01 -- a "
                                              "separate narrow bracket, not "
-                                             "the general program's ceiling",
+                                             "the general program's ceiling. "
+                                             "NOT independently re-"
+                                             "confirmed by the batch's "
+                                             "official-source fetch.",
                                  quote="45% rebate on payroll paid to "
                                        "Alabama residents for productions "
                                        "with total expenditures between "
@@ -5298,25 +5426,63 @@ register_rate_rules(rate_rules_for(US_MN_DOCTRINE))
 US_MS_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="US-MS", program_slug="us_ms_advantage_film_program",
     program_name="Mississippi Advantage Film Program",
-    confidence_tier="PARSED", incentive_type="tax_credit",
-    is_refundable=None, is_transferable=None, min_spend_usd=None,
-    annual_cap_usd=None, requires_cultural_test=False,
-    citation="greenslate.com: 'Productions are eligible for a 25% rebate "
-              "on production related expenditures in Mississippi.' "
-              "Confirms catalog's 25% base; the catalog's 35% ceiling is "
-              "not re-confirmed this pass, not contradicted either.",
-    source_ref="greenslate.com-mississippi",
-    tiers=(DoctrineRateTier(tier_id="us-ms-base-25", rate=0.25, is_band_ceiling=False),
-           DoctrineRateTier(tier_id="us-ms-ceiling-35-unconfirmed", rate=0.35, is_band_ceiling=True,
+    confidence_tier="VERIFIED", incentive_type="cash_rebate",
+    is_refundable=None, is_transferable=None, min_spend_usd=50_000.0,
+    annual_cap_usd=20_000_000.0, requires_cultural_test=False,
+    citation="filmmississippi.org/incentive/ (Film Mississippi, official "
+              "state film office under the Mississippi Development "
+              "Authority, fetched directly): '30% cash rebate on payroll "
+              "paid to resident cast and crew... up to and including "
+              "$5 million.' '25% cash rebate on payroll paid to non-"
+              "resident cast and crew... up to and including $5 million.' "
+              "'25% rebate of their base investment (local spend) on "
+              "production related expenditures.' '+5% cash rebate' for "
+              "honorably discharged veteran MS residents (not modeled -- "
+              "no veteran-status fact exists in this engine). '$50,000 "
+              "minimum Mississippi investment... per project.' Caps: "
+              "'$10 million per project rebate cap' and '$20 million "
+              "annual rebate cap.' Corrects/replaces the prior 25%-base/"
+              "35%-ceiling model (the 35% figure was an unconfirmed "
+              "catalog carryover that does not appear in this official "
+              "structure).",
+    source_ref="filmmississippi.org-official",
+    provenance=SourceProvenance(
+        issuing_authority="Film Mississippi (Mississippi Development "
+                           "Authority)",
+        source_url="https://filmmississippi.org/incentive/",
+        citation_detail="'25% rebate of their base investment' (non-"
+                         "payroll); '30%'/'25%' resident/non-resident "
+                         "payroll; '$50,000 minimum'; '$10 million per "
+                         "project' / '$20 million annual' caps",
+        verified_date="2026-08-17",
+        interpretation_note="Base investment (non-payroll spend) rebate "
+                             "is 25% -- modeled as the general QPE rate. "
+                             "The higher 30% resident-payroll rate and +5% "
+                             "veteran uplift apply to a narrower payroll-"
+                             "only base this engine does not separately "
+                             "track (no payroll-vs-total-QPE split fact) "
+                             "-- disclosed, not modeled as the general "
+                             "rate.",
+    ),
+    tiers=(DoctrineRateTier(tier_id="us-ms-base-investment-25", rate=0.25,
+                             is_band_ceiling=False, min_qpe_usd=50_000.0,
                              conditions=(RateCondition(
-                                 condition_id="us-ms-ceiling-not-reconfirmed",
-                                 description="35% ceiling carried forward "
-                                             "from the pre-existing "
-                                             "catalog entry, not "
-                                             "independently re-confirmed "
-                                             "this pass",
-                                 quote="(only the 25% base was confirmed "
-                                       "this pass, greenslate.com)",
+                                 condition_id="us-ms-payroll-rates-not-modeled",
+                                 description="Resident payroll rebate is "
+                                             "30% (+5% veteran uplift) and "
+                                             "non-resident payroll rebate "
+                                             "is 25%, each capped at $5M "
+                                             "of payroll per production -- "
+                                             "this engine has no payroll-"
+                                             "vs-total-QPE split fact, so "
+                                             "only the 25% base-investment "
+                                             "(non-payroll) rate is "
+                                             "modeled as the general rate",
+                                 quote="30% cash rebate on payroll paid to "
+                                       "resident cast and crew... 25% cash "
+                                       "rebate on payroll paid to non-"
+                                       "resident cast and crew "
+                                       "(filmmississippi.org)",
                                  kind="material_funding_risk_not_modeled"),)),),
 ))
 register_rate_rules(rate_rules_for(US_MS_DOCTRINE))

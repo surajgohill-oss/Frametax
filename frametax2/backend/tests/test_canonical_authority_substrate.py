@@ -448,11 +448,16 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     us_ca_film_credit/ca_film_30, verified via fresh direct WebFetch of
     each program's actual administering authority -- Cyprus Film
     Commission, Revenue Commissioners Ireland, and California's own AB
-    1138 statute text respectively). See authority_coverage_registry.py's
+    1138 statute text respectively) -> 58 (batch 5: us_al_film_incentive,
+    us_ct_film_tax_credit, us_ma_film_tax_credit, us_ms_advantage_film_
+    program, us_nc_film_entertainment_grant, us_nv_film_credit, each
+    fresh-verified via direct WebFetch of the actual state film
+    office/revenue department). See authority_coverage_registry.py's
     correction notes and test_batch1_programs_price_with_real_numbers_in_
     fvd / test_batch2_programs_price_with_real_numbers_in_fvd /
     test_batch3_programs_price_with_real_numbers_in_fvd /
-    test_batch4_programs_price_with_real_numbers_in_fvd for the traced,
+    test_batch4_programs_price_with_real_numbers_in_fvd /
+    test_batch5_programs_price_with_real_numbers_in_fvd for the traced,
     real-number proof. No soft feasibility mismatch may remove a
     candidate from the economic universe."""
     await evaluate_project(db, FVD_PROJECT_ID)
@@ -461,8 +466,8 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     priced = [e for e in entries if e["is_fully_priced"]]
     unpriced = [e for e in entries if not e["is_fully_priced"]]
     assert len(entries) == 110
-    assert len(priced) == 52
-    assert len(unpriced) == 58
+    assert len(priced) == 58
+    assert len(unpriced) == 52
 
     for code in ("MN", "UZ", "AT"):
         e = next(x for x in entries if x["primary_jurisdiction"] == code)
@@ -963,6 +968,63 @@ def test_batch1_2_3_promoted_programs_carry_structured_provenance():
                 "PROGRAM -> EXECUTABLE RULE -> SOURCE PROVENANCE trace is broken"
             )
             assert rule.provenance.issuing_authority == prov.issuing_authority
+
+
+BATCH5_SLUGS = (
+    "us_al_film_incentive", "us_ct_film_tax_credit", "us_ma_film_tax_credit",
+    "us_ms_advantage_film_program", "us_nc_film_entertainment_grant",
+    "us_nv_film_credit",
+)
+
+
+def test_batch5_doctrine_records_promoted_to_verified():
+    from app.data.executable_jurisdiction_registry import get_doctrine
+    for slug in BATCH5_SLUGS:
+        doc = get_doctrine(slug)
+        assert doc is not None
+        assert doc.confidence_tier == "VERIFIED", slug
+
+
+def test_batch5_coverage_veto_removed_including_alias_spellings():
+    from app.data.authority_coverage_registry import blocks_economic_candidacy
+    for canonical, alias in (
+        ("us_al_film_incentive", None),
+        ("us_ct_film_tax_credit", "us_ct_film_credit"),
+        ("us_ma_film_tax_credit", "us_ma_film_credit"),
+        ("us_ms_advantage_film_program", "us_ms_film_credit"),
+        ("us_nc_film_entertainment_grant", "us_nc_film_grant"),
+        ("us_nv_film_credit", "us_nv_film_incentive"),
+    ):
+        assert blocks_economic_candidacy(canonical) is False, canonical
+        if alias:
+            assert blocks_economic_candidacy(alias) is False, alias
+
+
+async def test_batch5_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
+    await evaluate_project(db, FVD_PROJECT_ID)
+    view = await build_production_and_structures(db, FVD_PROJECT_ID)
+    entries = view["structures"]["allocated_structures"]["structures"]
+    codes = ("US-AL", "US-CT", "US-NV", "US-NC", "US-MA", "US-MS")
+    for code in codes:
+        e = next(x for x in entries if x["primary_jurisdiction"] == code)
+        assert e["is_fully_priced"] is True, f"{code} did not price"
+        assert e["candidate_status"] == "PRICED"
+        assert e["selected_incentive_usd"] > 0
+        assert e["npc_verified_usd"] is not None and e["npc_verified_usd"] > 0
+
+
+def test_batch5_promoted_programs_carry_structured_provenance():
+    from app.data.executable_jurisdiction_registry import get_provenance
+    from app.data.program_rate_rules import get_rate_rules
+
+    for slug in BATCH5_SLUGS:
+        prov = get_provenance(slug)
+        assert prov is not None, f"{slug}: no structured SourceProvenance recorded"
+        assert prov.issuing_authority
+        rules = get_rate_rules(slug)
+        assert rules
+        for rule in rules:
+            assert rule.provenance is not None, f"{slug}/{rule.tier_id}: no provenance"
 
 
 # ── Global Formulaic Economic Completion — Path B primary research:

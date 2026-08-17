@@ -2753,8 +2753,12 @@ _NORTH_MACEDONIA = JurisdictionIncentiveProfile(
 _US_NEVADA = JurisdictionIncentiveProfile(
     jurisdiction_code="US-NV", jurisdiction_name="Nevada",
     program_slug="us_nv_film_credit", program_name="Nevada Film Tax Credit",
-    confidence_tier="PARSED", incentive_type="tax_credit",
-    base_rate=0.12, max_rate=0.25, is_refundable=False, is_transferable=True,
+    # Global Formulaic Economic Completion: promoted PARSED -> VERIFIED,
+    # base_rate corrected 0.12 -> 0.15 (film.nv.gov confirms 15% is the
+    # real general base; 12% applies only to non-resident above-the-line
+    # wages specifically), kept in sync with the RateRule tier.
+    confidence_tier="VERIFIED", incentive_type="tax_credit",
+    base_rate=0.15, max_rate=0.25, is_refundable=False, is_transferable=True,
     annual_cap_local=10_000_000.0, min_spend_local=500_000.0, requires_cultural_test=False,
     atl_qualifies=None, btl_qualifies=True, vfx_qualifies=None, music_qualifies=None,
     vessel_marine_qualifies=None, resident_labor_uplift_available=True,
@@ -3045,7 +3049,9 @@ _US_ILLINOIS = JurisdictionIncentiveProfile(
 _US_NORTH_CAROLINA = JurisdictionIncentiveProfile(
     jurisdiction_code="US-NC", jurisdiction_name="North Carolina",
     program_slug="us_nc_film_entertainment_grant", program_name="North Carolina Film & Entertainment Grant",
-    confidence_tier="PARSED", incentive_type="cash_rebate",
+    # Global Formulaic Economic Completion: promoted PARSED -> VERIFIED,
+    # kept in sync with the RateRule tier.
+    confidence_tier="VERIFIED", incentive_type="cash_rebate",
     base_rate=0.25, max_rate=0.25, is_refundable=None, is_transferable=False,
     annual_cap_local=None, min_spend_local=None, requires_cultural_test=False,
     atl_qualifies=None, btl_qualifies=True, vfx_qualifies=None, music_qualifies=None,
@@ -3084,7 +3090,8 @@ _US_SOUTH_CAROLINA = JurisdictionIncentiveProfile(
 _US_MASSACHUSETTS = JurisdictionIncentiveProfile(
     jurisdiction_code="US-MA", jurisdiction_name="Massachusetts",
     program_slug="us_ma_film_tax_credit", program_name="Massachusetts Film Tax Credit",
-    confidence_tier="PARSED", incentive_type="tax_credit",
+    # Global Formulaic Economic Completion: promoted PARSED -> VERIFIED.
+    confidence_tier="VERIFIED", incentive_type="tax_credit",
     base_rate=0.25, max_rate=0.25, is_refundable=False, is_transferable=True,
     annual_cap_local=None, min_spend_local=50_000.0, requires_cultural_test=False,
     atl_qualifies=None, btl_qualifies=True, vfx_qualifies=None, music_qualifies=None,
@@ -3123,9 +3130,12 @@ _US_TEXAS = JurisdictionIncentiveProfile(
 _US_CONNECTICUT = JurisdictionIncentiveProfile(
     jurisdiction_code="US-CT", jurisdiction_name="Connecticut",
     program_slug="us_ct_film_tax_credit", program_name="Connecticut Film Tax Credit",
-    confidence_tier="PARSED", incentive_type="tax_credit",
-    base_rate=0.10, max_rate=0.10, is_refundable=None, is_transferable=True,
-    annual_cap_local=None, min_spend_local=None, requires_cultural_test=False,
+    # Global Formulaic Economic Completion: promoted PARSED -> VERIFIED,
+    # base/max corrected 10%/10% -> 10%/30% per portal.ct.gov's real
+    # tiered structure, kept in sync with the RateRule tier.
+    confidence_tier="VERIFIED", incentive_type="tax_credit",
+    base_rate=0.10, max_rate=0.30, is_refundable=None, is_transferable=True,
+    annual_cap_local=None, min_spend_local=100_000.0, requires_cultural_test=False,
     atl_qualifies=None, btl_qualifies=True, vfx_qualifies=None, music_qualifies=None,
     vessel_marine_qualifies=True, resident_labor_uplift_available=None,
     cashflow_timing_weeks=None, marine_suitability=MarineSuitability.MODERATE,
@@ -3266,7 +3276,9 @@ _US_OKLAHOMA = JurisdictionIncentiveProfile(
 _US_ALABAMA = JurisdictionIncentiveProfile(
     jurisdiction_code="US-AL", jurisdiction_name="Alabama",
     program_slug="us_al_film_incentive", program_name="Alabama Film Incentive",
-    confidence_tier="PARSED", incentive_type="tax_credit",
+    # Global Formulaic Economic Completion: promoted PARSED -> VERIFIED,
+    # kept in sync with the RateRule tier.
+    confidence_tier="VERIFIED", incentive_type="tax_credit",
     base_rate=0.25, max_rate=0.45, is_refundable=None, is_transferable=None,
     annual_cap_local=None, min_spend_local=None, requires_cultural_test=False,
     atl_qualifies=None, btl_qualifies=True, vfx_qualifies=None, music_qualifies=None,
@@ -3845,8 +3857,13 @@ _US_MINNESOTA = JurisdictionIncentiveProfile(
 _US_MISSISSIPPI = JurisdictionIncentiveProfile(
     jurisdiction_code="US-MS", jurisdiction_name="Mississippi",
     program_slug="us_ms_advantage_film_program", program_name="Mississippi Advantage Film Program",
-    confidence_tier="PARSED", incentive_type="tax_credit",
-    base_rate=0.25, max_rate=0.35, is_refundable=None, is_transferable=None,
+    # Global Formulaic Economic Completion: promoted PARSED -> VERIFIED,
+    # max_rate corrected 0.35 -> 0.25 (the 35% figure was an unconfirmed
+    # catalog carryover not present in the real official structure --
+    # see filmmississippi.org's actual 25%/30%/25%/+5% breakdown), kept
+    # in sync with the RateRule tier.
+    confidence_tier="VERIFIED", incentive_type="cash_rebate",
+    base_rate=0.25, max_rate=0.25, is_refundable=None, is_transferable=None,
     annual_cap_local=None, min_spend_local=None, requires_cultural_test=False,
     atl_qualifies=None, btl_qualifies=True, vfx_qualifies=None, music_qualifies=None,
     vessel_marine_qualifies=True, resident_labor_uplift_available=None,

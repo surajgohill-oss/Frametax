@@ -60,6 +60,10 @@ DELIBERATELY_PROMOTED_CANONICAL_IDS = frozenset({
     # special_effects_tax_credit_ocase (2 of the original 21 zero-evidence
     # programs, researched from scratch and canonicalized).
     "on_ofttc", "ontario_computer_animation_and_special_effects_tax_credit_ocase",
+    # Batch 5 (6 programs, 6 alias-spelling duplicates): AL, CT, MA, MS,
+    # NC, NV -- see authority_coverage_registry.py's batch-5 CORRECTION.
+    "us_al_film_incentive", "us_ct_film_credit", "us_ma_film_credit",
+    "us_ms_film_credit", "us_nv_film_incentive", "us_nc_film_grant",
 })
 
 

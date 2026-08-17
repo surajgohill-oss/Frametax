@@ -97,7 +97,7 @@ from app.services.canonical_project_economics import (
 # Global Economic Data + Base Pricing, batch 2: sa_film_commission_rebate
 # and si_cash_rebate promoted PARSED -> VERIFIED, coverage vetoes
 # removed. Cache-invalidation bump only.
-ENGINE_VERSION = "canonical-1.11.0"
+ENGINE_VERSION = "canonical-1.12.0"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
