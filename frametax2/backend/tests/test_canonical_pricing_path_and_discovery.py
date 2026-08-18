@@ -249,10 +249,12 @@ async def test_fvd_evaluation_prices_all_three_ontario_programs_independently(db
     names = {s.name for s, _r in priced_on}
     assert len(names) == 3, "disambiguated structure names must not collide"
 
-    assert len(multi_program_on_rows) == 1, "expected exactly one additive combined CA-ON structure"
-    multi_structure, multi_result = multi_program_on_rows[0]
-    assert multi_result.true_net_cost_usd is not None
-    assert set(multi_result.calculation_trace_json["program_slugs"]) == {"ca_federal_cptc", "on_ofttc"}
+    # 4 additive combined CA-ON structures: 3 pairs + 1 N-way triple (see
+    # test_on_ofttc_and_ocase_now_independently_served for the itemized
+    # per-combination proof).
+    assert len(multi_program_on_rows) == 4, "expected 4 additive combined CA-ON structures"
+    for _s, r in multi_program_on_rows:
+        assert r.true_net_cost_usd is not None
 
 
 def test_canonical_evaluation_candidate_loop_never_collapses_to_first_per_code():

@@ -82,7 +82,7 @@ def apply_stacking_adjustments(
 
         if rule_type == "spend_reduction":
             _apply_spend_reduction(
-                a_id, b_id, results_by_id, program_values, adjustments,
+                a_id, b_id, results_by_id, program_values, adjustments, rule,
             )
         elif rule_type == "value_cap":
             _apply_value_cap(
@@ -115,23 +115,50 @@ def _apply_spend_reduction(
     results_by_id: dict[str, dict],
     program_values: dict[str, float],
     adjustments: list[StackingAdjustment],
+    rule: dict | None = None,
 ) -> None:
     """
-    spend_reduction: a grant/fund reduces the qualifying spend basis of a credit.
+    spend_reduction: a grant/fund — or a TAX CREDIT that is itself
+    government assistance under the applicable tax act (e.g. Ontario's
+    OFTTC/Quebec's SODEC credit reducing federal CPTC's qualified labour
+    expenditure) — reduces the qualifying spend basis of a credit.
 
-    credit_reduction = min(grant_amount, credit_qualifying_spend) × credit_effective_rate
+    credit_reduction = min(reducer_amount, credit_qualifying_spend) × credit_effective_rate
+
+    Direction (which program reduces which) is resolved two ways:
+    1. `rule["reduces"]`, when the caller supplies it — an explicit slug
+       naming the reducing program, sourced from that SPECIFIC rule's own
+       already-cited statutory condition_text (see
+       canonical_stack_bridge._SPEND_REDUCTION_DIRECTION). This is the
+       only way to correctly resolve a tax-credit-vs-tax-credit pair,
+       since program_type alone cannot distinguish "OFTTC, which happens
+       to also be government assistance to CPTC" from an ordinary credit.
+    2. Falling back to the `program_type in _GRANT_TYPES` heuristic below
+       — unchanged, still correct for every fund/grant-vs-credit pair
+       (CMF, Telefilm, Bell Fund, NOHFC, NSI, Screen Australia equity,
+       etc.), and still the ONLY signal available to any OTHER caller of
+       this module (e.g. run_full_analysis.py) that doesn't supply
+       `reduces`.
     """
     r_a = results_by_id[a_id]
     r_b = results_by_id[b_id]
 
-    if r_a.get("program_type", "") in _GRANT_TYPES:
+    reduces = (rule or {}).get("reduces")
+    if reduces == a_id:
+        grant_id, grant_r = a_id, r_a
+        credit_id, credit_r = b_id, r_b
+    elif reduces == b_id:
+        grant_id, grant_r = b_id, r_b
+        credit_id, credit_r = a_id, r_a
+    elif r_a.get("program_type", "") in _GRANT_TYPES:
         grant_id, grant_r = a_id, r_a
         credit_id, credit_r = b_id, r_b
     elif r_b.get("program_type", "") in _GRANT_TYPES:
         grant_id, grant_r = b_id, r_b
         credit_id, credit_r = a_id, r_a
     else:
-        # Both credits — cannot determine direction; no adjustment
+        # Both credits and no explicit direction supplied — cannot
+        # determine direction; no adjustment (unchanged legacy behavior).
         return
 
     grant_amount = float(grant_r["economic_value_usd"])

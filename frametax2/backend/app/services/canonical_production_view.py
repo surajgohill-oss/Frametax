@@ -102,8 +102,16 @@ def _empty_structure_entry(
         "label": structure.name,
         "primary_jurisdiction": code,
         "participants": [code] if code else [],
-        "conditional_programs": [],
-        "conditional_compatibility": {"pursuable_count": 0, "counts_by_verdict": {}, "gate_kinds": []},
+        # Existing Optimizer/Stacker Reconnection, Task 7 — read straight
+        # off calculation_trace_json's conditional_programs/
+        # conditional_compatibility (canonical_evaluation._conditional_
+        # data()); [] / the old empty default for any row persisted before
+        # this enrichment existed, same backward-compat pattern used
+        # throughout this file.
+        "conditional_programs": trace.get("conditional_programs") or [],
+        "conditional_compatibility": trace.get("conditional_compatibility") or {
+            "pursuable_count": 0, "counts_by_verdict": {}, "gate_kinds": [],
+        },
         "is_fully_priced": is_priced,
         "candidate_status": trace.get("candidate_status"),
         # Codex Defect 4 — the actual terminal cause (never flattened to a

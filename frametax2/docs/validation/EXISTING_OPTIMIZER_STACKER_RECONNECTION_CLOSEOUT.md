@@ -1,11 +1,14 @@
 # Existing Optimizer/Stacker Reconnection — Closeout
 
-**Generated:** 2026-08-18
+**Generated:** 2026-08-18 (superseded by the continuation below, same date)
 **Branch:** claude/audit-frametax-features-NZcX5
-**Final gate:** `EXISTING_OPTIMIZER_STACKER_RECONNECTED_PARTIAL_NORTH_AMERICA_PROVEN`
+**Final gate (original):** `EXISTING_OPTIMIZER_STACKER_RECONNECTED_PARTIAL_NORTH_AMERICA_PROVEN`
+**Final gate (continuation):** `EXISTING_OPTIMIZER_STACKER_RECONNECTED_EXTENDED_COMPONENT_TREATY_HYBRID_UNSTARTED`
 **Lineage source:** `docs/validation/CODEX_EXISTING_OPTIMIZER_LINEAGE_TRACE.md`
 
 This is a **partial, honestly-scoped** close of the reconnection task, not the full 15-item mandate. It reconnects the two highest-value, fully-tractable capabilities — multi-program same-jurisdiction stacking and federal+provincial/state stacking — through real code, with real runtime proof on both control projects. The remaining capabilities are traced, classified, and explicitly deferred below; none silently disappeared.
+
+**Continuation (same day, commit after `86f1547`):** see `docs/architecture/CAPABILITY_LEDGER.md`'s "Existing Optimizer/Stacker Reconnection, continuation" entry for the full account. Summary: N-way (3+) stacking connected and runtime-proven (a real CA-ON triple); alias reconciliation closes the `on_opstc`/`qc_film_production` gap named above, unlocking `ca_on_opstc` and `ca_qc_pstc` into 4 more combined structures; the Ontario `on_ofttc`+`ca_federal_cptc` interaction is now genuinely REPAIRED (a real $50,000 reduction computes, not just disclosed as unresolved); Task 7 (grants/funds) connected via `conditional_programs.py`/`structure_compatibility.py`, zero-guaranteed-NPC confirmed by construction; Task 11 (ranking admission) wired but not exercised by either control project (neither's home is Canada). Two genuine correctness defects Codex's separate correctness-classification pass found in the reused legacy engine were fixed and regression-tested: fail-closed publication (a `conditional`-type rule pair can no longer be silently published as resolved economics) and N-way order-independence (canonical candidate ordering guarantees permutation-invariant results). Component/split, treaty co-production, and hybrid/anchor generation remain genuinely unstarted — disclosed, not silently dropped.
 
 ## Single jurisdiction
 

@@ -97,17 +97,24 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     unpriced = [e for e in entries if not e["is_fully_priced"]]
     accounting = view["structures"]["allocated_structures"]["candidate_accounting"]
 
-    # Existing Optimizer/Stacker Reconnection: priced grew 113 -> 115 (two
-    # additive multi_program combined structures, CA-BC and CA-ON — see
-    # test_canonical_authority_substrate.py's
-    # test_fvd_runtime_candidate_universe_restored). Both are priced but
-    # not is_directly_comparable (same relocation-comparability caveat as
-    # any non-baseline candidate), so review_required grows by the same 2
-    # and comparable_count (the baseline alone) is unaffected.
-    assert len(priced) == 115
+    # Existing Optimizer/Stacker Reconnection: priced grew 113 -> 119 (6
+    # additive multi_program combined structures — CA-BC, CA-QC, and
+    # CA-ON's 4 — see test_canonical_authority_substrate.py's
+    # test_fvd_runtime_candidate_universe_restored). None of them are
+    # is_directly_comparable for FVD (Greece is the home jurisdiction, not
+    # Canada — same relocation-comparability caveat as any non-baseline
+    # candidate), so review_required grows by the same 6 and
+    # comparable_count (the baseline alone) is unaffected. Task 11's
+    # ranking-inclusion fix (is_directly_comparable now follows the same
+    # is_baseline rule a single-program candidate already uses) has no
+    # observable effect here specifically BECAUSE none of these combined
+    # structures are at FVD's own home jurisdiction — proven separately
+    # for a project whose home IS a multi-program jurisdiction is out of
+    # reach for these two control projects (neither's home is Canada).
+    assert len(priced) == 119
     assert len(unpriced) == 8
     assert accounting["comparable_count"] == 1
-    assert accounting["review_required_count"] == 114
+    assert accounting["review_required_count"] == 118
     assert accounting["unpriceable_count"] == 8
 
     # Cross-screen agreement: the ranking list (what Scenarios/Overview/
@@ -118,7 +125,7 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     review_ranked = [r for r in ranking if r["is_fully_priced"] and not r["is_directly_comparable"]]
     unpriceable_ranked = [r for r in ranking if not r["is_fully_priced"]]
     assert len(comparable_ranked) == 1
-    assert len(review_ranked) == 114
+    assert len(review_ranked) == 118
     assert len(unpriceable_ranked) == 8
 
     # Feasibility ≠ eligibility (canonical authority substrate + feasibility
