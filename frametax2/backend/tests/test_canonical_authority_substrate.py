@@ -467,14 +467,23 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     collision discovery fix: on_ofttc and OCASE (CA-ON) now each reach
     their own independent candidate structure alongside ca_on_opstc,
     instead of being silently collapsed to one. See test_on_ofttc_and_
-    ocase_now_independently_served for the direct proof."""
+    ocase_now_independently_served for the direct proof.
+
+    Existing Optimizer/Stacker Reconnection: entries grew 121 -> 123 and
+    priced 113 -> 115. canonical_stack_bridge.py additively generates one
+    combined structure for each jurisdiction pair with an explicit named
+    compatibility rule in app.optimization.stacking_rules._SLUG_PAIR_RULES
+    — CA-BC (federal CPTC + provincial PSTC, mutually_exclusive) and CA-ON
+    (federal CPTC + OFTTC, spend_reduction). No existing single-program
+    candidate is removed; unpriced count is unaffected (a combined
+    structure is only generated from two ALREADY-priced candidates)."""
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
     priced = [e for e in entries if e["is_fully_priced"]]
     unpriced = [e for e in entries if not e["is_fully_priced"]]
-    assert len(entries) == 121
-    assert len(priced) == 113
+    assert len(entries) == 123
+    assert len(priced) == 115
     assert len(unpriced) == 8
 
     for code in ("MN", "UZ", "AT"):
@@ -1068,22 +1077,38 @@ async def test_on_ofttc_and_ocase_now_independently_served(db: AsyncSession):
     jurisdiction_comparison.ALL_PROFILES happened to carry per code. CA-ON's
     three real, separately-cited programs -- ca_on_opstc, on_ofttc, and
     OCASE -- each now reach their own independent candidate structure with
-    their own real NPC, never collapsed to one and never combined/stacked
-    (that remains a later, explicitly out-of-scope optimizer phase)."""
+    their own real NPC, never collapsed to one.
+
+    Existing Optimizer/Stacker Reconnection: "never combined/stacked" is
+    no longer true by design -- that was always the explicitly deferred
+    next phase this exact task implements. CA-ON now ALSO gets a 4th,
+    additive multi_program structure (federal ca_federal_cptc + on_ofttc,
+    an explicit named spend_reduction rule in _SLUG_PAIR_RULES). The three
+    single-program structures this test originally proved are UNCHANGED --
+    still independently served, still their own distinct NPCs -- this
+    test now also proves the 4th, combined one coexists rather than
+    replacing them."""
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
-    ca_on_entries = [e for e in entries if e["primary_jurisdiction"] == "CA-ON"]
-    assert len(ca_on_entries) == 3, (
-        "expected ca_on_opstc, on_ofttc, and OCASE each independently served"
+    ca_on_entries = [e for e in entries if e["anchor_jurisdiction"] == "CA-ON"]
+    assert len(ca_on_entries) == 4, (
+        "expected ca_on_opstc, on_ofttc, OCASE each independently served, "
+        "plus one additive federal+OFTTC combined structure"
     )
-    programs_used = {e["program_slug"] for e in ca_on_entries if e.get("program_slug")}
+    single_program_entries = [e for e in ca_on_entries if e["structure_type"] != "multi_program"]
+    programs_used = {e["program_slug"] for e in single_program_entries if e.get("program_slug")}
     assert programs_used == {
         "ca_on_opstc", "on_ofttc",
         "ontario_computer_animation_and_special_effects_tax_credit_ocase",
     }
-    npc_values = {e["npc_with_adjustments_usd"] for e in ca_on_entries}
+    npc_values = {e["npc_with_adjustments_usd"] for e in single_program_entries}
     assert len(npc_values) == 3, "each Ontario program must price to its own distinct NPC"
+
+    multi = next(e for e in ca_on_entries if e["structure_type"] == "multi_program")
+    assert set(multi["program_slugs"]) == {"ca_federal_cptc", "on_ofttc"}
+    assert multi["stacking_rule_type"] == "spend_reduction"
+    assert multi["scenario_category"] == "PRICED_LOW_FIT"
 
 
 def test_on_ocase_researched_from_scratch_and_canonicalized():

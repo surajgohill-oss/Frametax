@@ -50,12 +50,18 @@ rather than silently assumed zero without comment.
 """
 from __future__ import annotations
 
+import itertools
 import uuid
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.calculators.allocation_pricing import price_allocated_structure, rank_allocated_structures
+from app.calculators.canonical_stack_bridge import (
+    StackCandidate,
+    eligible_for_combination,
+    price_program_pair_stack,
+)
 from app.calculators.production_allocation import StructureSpec, derive_account_allocation
 from app.calculators.production_discovery import discover_executable_jurisdictions
 from app.calculators.production_requirements import (
@@ -130,7 +136,24 @@ from app.services.canonical_project_economics import (
 # rejecting these three newly-doctrine-registered programs at the
 # capability gate before they ever reached the priceable/incentive_ready
 # classification -- discovery LOGIC unchanged, DATA gap closed).
-ENGINE_VERSION = "canonical-1.17.1"
+# Existing Optimizer/Stacker Reconnection: additive multi-program
+# candidate generation. Every jurisdiction with >=2 independently priced
+# programs now ALSO gets a pairwise combined structure for any pair with
+# an explicit named rule in app.optimization.stacking_rules.
+# _SLUG_PAIR_RULES (canonical_stack_bridge.py). No existing single-program
+# candidate is removed or altered. Bumped so every project regenerates
+# under the new candidate universe.
+# Same pass, corrected: grouping is by top-level COUNTRY prefix, not exact
+# jurisdiction_code — federal programs discover under the bare country
+# code (e.g. "CA") while provincial/state programs discover under a
+# hyphenated code (e.g. "CA-BC"), so the real federal+provincial control
+# case was silently generating zero combinations under exact-code
+# grouping alone. eligible_for_combination() still refuses two different
+# provinces/states. Bumped again so LU/FVD regenerate under the fix.
+# Same pass: multi-program structures now carry the same UNKNOWN-
+# territorial-fact disclosure their underlying single-program candidates
+# already carry (previously silently dropped on the combined row).
+ENGINE_VERSION = "canonical-1.18.2"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
@@ -528,6 +551,18 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     for code, _slug, _classification in candidates:
         candidates_per_code[code] = candidates_per_code.get(code, 0) + 1
 
+    # Existing Optimizer/Stacker Reconnection — "Multiple programs in one
+    # jurisdiction" / "Federal + provincial-state" capability. Each
+    # successfully-priced single-program candidate is recorded here as it
+    # is priced below; after the loop, every jurisdiction with >=2 priced
+    # programs is run through the canonical stack-pricing bridge
+    # (canonical_stack_bridge.py), which reuses the existing, engine-
+    # agnostic apply_stacking_adjustments/evaluate_legal_stacking
+    # calculators against this SAME pricing — never the superseded
+    # run_full_analysis path generate_structure_scenarios.py depends on.
+    # See docs/validation/CODEX_EXISTING_OPTIMIZER_LINEAGE_TRACE.md.
+    priced_by_code: dict[str, list[StackCandidate]] = {}
+
     for code, program_slug, classification in candidates:
         jurisdiction = jurisdiction_by_code.get(code)
         disambiguate = candidates_per_code.get(code, 1) > 1
@@ -665,6 +700,18 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 "only input a set-membership check can be given without inventing "
                 "evidence — but that assumption is unconfirmed, not verified."
             ]
+        _qpe_for_stack = round(sum(
+            a.amount_usd for a in register if a.state == QualificationState.QUALIFIES
+        ), 2)
+        doctrine_record = _get_doctrine(program_slug)
+        priced_by_code.setdefault(code, []).append(StackCandidate(
+            program_slug=program_slug,
+            jurisdiction_code=code,
+            selected_incentive_usd=pricing.selected_incentive_usd or 0.0,
+            effective_rate=rate_resolution.modeled_rate,
+            qualifying_spend_usd=_qpe_for_stack,
+            incentive_type=doctrine_record.incentive_type if doctrine_record else "",
+        ))
         session.add(StructureCalculationResult(
             id=uuid.uuid4(), structure_id=structure.id, engine_version=ENGINE_VERSION,
             total_budget_usd=inputs.gross_budget_usd,
@@ -761,6 +808,125 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             },
             input_fingerprint=fingerprint,
         ))
+
+    # Existing Optimizer/Stacker Reconnection — pairwise multi-program
+    # combinations. Additive only: every existing single-program candidate
+    # persisted above is untouched. Grouped by top-level COUNTRY prefix
+    # (not exact jurisdiction_code) because the highest-value real case —
+    # federal + provincial/state — pairs a national program (code == the
+    # bare country prefix, e.g. "CA") with a provincial/state program
+    # (e.g. "CA-BC") that discovery reports under a DIFFERENT exact code.
+    # eligible_for_combination() (canonical_stack_bridge.py) still refuses
+    # to combine two DIFFERENT provinces/states (e.g. "CA-BC" + "CA-ON") —
+    # only same-exact-code or federal+one-province/state pairs are ever
+    # considered. A structure is only generated for a pair with an
+    # EXPLICIT named rule in app.optimization.stacking_rules.
+    # _SLUG_PAIR_RULES — see canonical_stack_bridge.py's own module note
+    # on why unresolvable pairs are never default-allowed.
+    priced_by_country: dict[str, list[StackCandidate]] = {}
+    for code, stack_candidates in priced_by_code.items():
+        priced_by_country.setdefault(code.split("-")[0], []).extend(stack_candidates)
+
+    seen_pairs: set[frozenset] = set()
+    for country, stack_candidates in priced_by_country.items():
+        if len(stack_candidates) < 2:
+            continue
+        for cand_a, cand_b in itertools.combinations(stack_candidates, 2):
+            pair_key = frozenset({cand_a.program_slug, cand_b.program_slug})
+            if pair_key in seen_pairs:
+                continue
+            if not eligible_for_combination(cand_a.jurisdiction_code, cand_b.jurisdiction_code):
+                continue
+            seen_pairs.add(pair_key)
+            stack_result = price_program_pair_stack(cand_a, cand_b)
+            if stack_result is None:
+                continue
+            code = stack_result.jurisdiction_code
+            jurisdiction = jurisdiction_by_code.get(code)
+            is_baseline = code == inputs.jurisdiction_code
+            npc = round(inputs.gross_budget_usd - stack_result.adjusted_incentive_usd, 2)
+            feasibility_status, feasibility_reasons = _feasibility_status(
+                feasibility_by_code.get(code), requirements,
+            )
+            warnings = [LIMITATION_NOTE] if is_baseline else [LIMITATION_NOTE, RELOCATION_COMPARABILITY_NOTE]
+            # Same territorial-fact disclosure every underlying single-
+            # program candidate this combination is built from already
+            # carries (see the STATUS_PRICED branch above) — the combined
+            # QPE inherits the same unconfirmed assumption, so the combined
+            # structure must disclose it too, not silently drop it.
+            territorial_state_unknown = (
+                inputs.accounts_outside_jurisdiction_state == FACT_STATE_UNKNOWN
+                or inputs.offshore_payroll_accounts_state == FACT_STATE_UNKNOWN
+            )
+            if territorial_state_unknown:
+                warnings = warnings + [
+                    "UNKNOWN, not KNOWN EMPTY: no project fact has ever stated which "
+                    "accounts (if any) are incurred outside the base jurisdiction or "
+                    "routed through offshore payroll. This QPE assumes none are — the "
+                    "only input a set-membership check can be given without inventing "
+                    "evidence — but that assumption is unconfirmed, not verified."
+                ]
+            warnings = warnings + stack_result.disclosed_limitations
+            structure = ProductionStructure(
+                id=uuid.uuid4(),
+                project_id=project.id,
+                name=(
+                    f"{code} — {stack_result.program_slugs[0]} + {stack_result.program_slugs[1]} "
+                    f"(combined)"
+                ),
+                description=(
+                    f"Multi-program combination within {code}: "
+                    f"{_program_display_name(stack_result.program_slugs[0])} + "
+                    f"{_program_display_name(stack_result.program_slugs[1])}, "
+                    f"stacked per {stack_result.rule_type} rule."
+                ),
+                jurisdiction_allocations=(
+                    [{"jurisdiction_id": str(jurisdiction.id), "shoot_pct": 100, "budget_pct": 100}]
+                    if jurisdiction else []
+                ),
+                claimed_program_ids=list(stack_result.program_slugs),
+            )
+            session.add(structure)
+            await session.flush()
+            session.add(StructureCalculationResult(
+                id=uuid.uuid4(), structure_id=structure.id, engine_version=ENGINE_VERSION,
+                total_budget_usd=inputs.gross_budget_usd,
+                total_incentive_value_usd=stack_result.adjusted_incentive_usd,
+                true_net_cost_usd=npc,
+                risk_adjusted_net_cost_usd=npc,
+                has_unverified_inputs=territorial_state_unknown or bool(stack_result.disclosed_limitations),
+                warnings=warnings,
+                calculation_trace_json={
+                    "candidate_status": STATUS_PRICED,
+                    "discovery_classification": "multi_program_stack",
+                    "structure_type": "multi_program",
+                    "primary_jurisdiction": code,
+                    "program_slugs": stack_result.program_slugs,
+                    "is_baseline": is_baseline,
+                    "relocation_cost_normalized": is_baseline,
+                    "is_directly_comparable": False,  # combined economics never
+                    # compared 1:1 against single-program candidates in this
+                    # pass — see RELOCATION_COMPARABILITY_NOTE and the module
+                    # docstring's MFNI note; ranking excludes it accordingly.
+                    "stacking_rule_type": stack_result.rule_type,
+                    "stacking_condition_text": stack_result.condition_text,
+                    "raw_incentive_usd": stack_result.raw_incentive_usd,
+                    "selected_incentive_usd": stack_result.adjusted_incentive_usd,
+                    "npc_verified_usd": npc,
+                    "npc_conservative_usd": npc,
+                    "gross_budget_usd": inputs.gross_budget_usd,
+                    "stacking_reduction_usd": stack_result.stacking_reduction_usd,
+                    "per_program_adjusted_usd": stack_result.per_program_adjusted_usd,
+                    "stacking_adjustments": stack_result.adjustments,
+                    "legal_review_required": stack_result.legal_review_required,
+                    "stacking_violations": stack_result.violations,
+                    "stacking_conditionals": stack_result.conditionals,
+                    "disclosed_limitations": stack_result.disclosed_limitations,
+                    "feasibility_status": feasibility_status,
+                    "feasibility_reasons": feasibility_reasons,
+                },
+                input_fingerprint=fingerprint,
+            ))
 
     await session.commit()
     summary = await _summarize_evaluation(session, project, inputs, fingerprint, reused=False)

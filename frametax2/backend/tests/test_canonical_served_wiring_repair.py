@@ -97,10 +97,17 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     unpriced = [e for e in entries if not e["is_fully_priced"]]
     accounting = view["structures"]["allocated_structures"]["candidate_accounting"]
 
-    assert len(priced) == 113
+    # Existing Optimizer/Stacker Reconnection: priced grew 113 -> 115 (two
+    # additive multi_program combined structures, CA-BC and CA-ON — see
+    # test_canonical_authority_substrate.py's
+    # test_fvd_runtime_candidate_universe_restored). Both are priced but
+    # not is_directly_comparable (same relocation-comparability caveat as
+    # any non-baseline candidate), so review_required grows by the same 2
+    # and comparable_count (the baseline alone) is unaffected.
+    assert len(priced) == 115
     assert len(unpriced) == 8
     assert accounting["comparable_count"] == 1
-    assert accounting["review_required_count"] == 112
+    assert accounting["review_required_count"] == 114
     assert accounting["unpriceable_count"] == 8
 
     # Cross-screen agreement: the ranking list (what Scenarios/Overview/
@@ -111,7 +118,7 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     review_ranked = [r for r in ranking if r["is_fully_priced"] and not r["is_directly_comparable"]]
     unpriceable_ranked = [r for r in ranking if not r["is_fully_priced"]]
     assert len(comparable_ranked) == 1
-    assert len(review_ranked) == 112
+    assert len(review_ranked) == 114
     assert len(unpriceable_ranked) == 8
 
     # Feasibility ≠ eligibility (canonical authority substrate + feasibility

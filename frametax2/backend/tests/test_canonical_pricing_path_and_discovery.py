@@ -204,8 +204,15 @@ async def test_fvd_evaluation_prices_all_three_ontario_programs_independently(db
     just the discovery unit above): Ontario as a relocation destination for
     a real project yields three independent, independently-priced
     candidates with distinct structure rows and distinct NPCs — never
-    combined/stacked (that is explicitly a later optimizer phase) and never
-    collapsed to one."""
+    collapsed to one.
+
+    Existing Optimizer/Stacker Reconnection: a 4th, additive multi_program
+    row (federal ca_federal_cptc + on_ofttc combined under a named
+    spend_reduction rule) now also exists for CA-ON — that was always the
+    explicitly deferred next phase, not a permanent constraint. The three
+    single-program rows this test originally proved remain independently
+    priced and unchanged; the combined row is asserted separately below,
+    never conflated with them."""
     from sqlalchemy import select as sa_select
 
     from app.models.production import ProductionStructure, StructureCalculationResult
@@ -223,13 +230,17 @@ async def test_fvd_evaluation_prices_all_three_ontario_programs_independently(db
         (structure, result) for structure, result in rows
         if (result.calculation_trace_json or {}).get("primary_jurisdiction") == "CA-ON"
     ]
-    on_program_slugs = {
-        (result.calculation_trace_json or {}).get("program_slug")
-        for _structure, result in on_rows
-    }
+    single_program_on_rows = [
+        (s, r) for s, r in on_rows
+        if (r.calculation_trace_json or {}).get("structure_type") != "multi_program"
+    ]
+    multi_program_on_rows = [
+        (s, r) for s, r in on_rows
+        if (r.calculation_trace_json or {}).get("structure_type") == "multi_program"
+    ]
     # capability_only/unpriceable rows carry program_slug in trace too; only
     # assert the priced ones for the NPC-distinctness check below.
-    priced_on = [(s, r) for s, r in on_rows if r.true_net_cost_usd is not None]
+    priced_on = [(s, r) for s, r in single_program_on_rows if r.true_net_cost_usd is not None]
     assert len(priced_on) == 3, f"expected 3 independently priced Ontario candidates, got {len(priced_on)}"
     npc_values = {float(r.true_net_cost_usd) for _s, r in priced_on}
     assert len(npc_values) == 3, "each Ontario program must price to its own distinct NPC"
@@ -237,6 +248,11 @@ async def test_fvd_evaluation_prices_all_three_ontario_programs_independently(db
     assert len(structure_ids) == 3, "each Ontario program must be its own structure row"
     names = {s.name for s, _r in priced_on}
     assert len(names) == 3, "disambiguated structure names must not collide"
+
+    assert len(multi_program_on_rows) == 1, "expected exactly one additive combined CA-ON structure"
+    multi_structure, multi_result = multi_program_on_rows[0]
+    assert multi_result.true_net_cost_usd is not None
+    assert set(multi_result.calculation_trace_json["program_slugs"]) == {"ca_federal_cptc", "on_ofttc"}
 
 
 def test_canonical_evaluation_candidate_loop_never_collapses_to_first_per_code():

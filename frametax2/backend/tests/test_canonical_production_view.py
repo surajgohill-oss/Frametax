@@ -66,12 +66,18 @@ async def test_relocation_candidates_never_outrank_the_baseline(db: AsyncSession
 
 async def test_every_structure_has_a_non_null_type_and_jurisdiction(db: AsyncSession):
     """Regression guard: Scenarios.jsx crashed on humanizeToken(null) when
-    structure_type was missing from pre-1.1.0 trace_json rows."""
+    structure_type was missing from pre-1.1.0 trace_json rows.
+
+    "multi_program" added as a valid type by the Existing Optimizer/
+    Stacker Reconnection — canonical_stack_bridge.py generates a combined
+    structure for jurisdictions with >=2 independently priced programs
+    sharing an explicit named compatibility rule (e.g. CA-BC's federal
+    CPTC + provincial PSTC, CA-ON's federal CPTC + OFTTC)."""
     for project_id in (FVD_PROJECT_ID, LITTLE_UTOPIA_PROJECT_ID):
         view = await build_production_and_structures(db, project_id)
         for s in view["structures"]["allocated_structures"]["structures"]:
             assert s["structure_type"] is not None, f"{project_id}: {s['structure_id']} has null structure_type"
-            assert s["structure_type"] in ("single_country", "full_relocation")
+            assert s["structure_type"] in ("single_country", "full_relocation", "multi_program")
 
 
 async def test_unpriceable_candidates_never_ranked_as_opportunities(db: AsyncSession):

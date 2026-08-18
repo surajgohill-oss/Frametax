@@ -41,7 +41,31 @@ from app.models.talent import TalentProfile
 from app.services.canonical_evaluation import ENGINE_VERSION
 
 
-def _empty_structure_entry(structure, result, jurisdiction_code_by_id: dict[str, str]) -> dict:
+def _anchor_and_stacked(trace: dict) -> tuple[str | None, list[str]]:
+    """Rich structure semantics: which claimed program is the ANCHOR
+    (principal program for the structure) vs which are STACKED (compatible
+    additional programs combined with it) — never a flat, order-
+    ambiguous list. Single-program structures have one program and no
+    stack. For a canonical_stack_bridge combination, the anchor is
+    whichever program retained the greater post-stacking value
+    (per_program_adjusted_usd, already computed by apply_stacking_
+    adjustments — no new economics here); the other is the stacked
+    program. This is a display ordering only; both remain in
+    claimed_program_ids/program_slugs regardless of which is anchor."""
+    slugs = trace.get("program_slugs") or ([trace.get("program_slug")] if trace.get("program_slug") else [])
+    if not slugs:
+        return None, []
+    if len(slugs) == 1:
+        return slugs[0], []
+    per_program = trace.get("per_program_adjusted_usd") or {}
+    ranked = sorted(slugs, key=lambda s: per_program.get(s, 0.0), reverse=True)
+    return ranked[0], ranked[1:]
+
+
+def _empty_structure_entry(
+    structure, result, jurisdiction_code_by_id: dict[str, str],
+    jurisdiction_name_by_code: dict[str, str] | None = None,
+) -> dict:
     trace = result.calculation_trace_json or {}
     is_priced = trace.get("candidate_status") == "PRICED"
     allocs = structure.jurisdiction_allocations or []
@@ -114,7 +138,39 @@ def _empty_structure_entry(structure, result, jurisdiction_code_by_id: dict[str,
         "npc_conservative_usd": float(result.true_net_cost_usd) if result.true_net_cost_usd is not None else None,
         "treaty_slug": None,
         "ownership_shares": None,
-        "stacking_note": None,
+        # Existing Optimizer/Stacker Reconnection — rich multi-program pass-
+        # through. claimed_program_ids is [] for every pre-existing single-
+        # program structure (unchanged) and the two combined slugs for a
+        # canonical_stack_bridge-generated structure. stacking_note reads
+        # the SAME condition_text apply_stacking_adjustments/
+        # evaluate_legal_stacking already computed — never re-derived here.
+        "claimed_program_ids": list(structure.claimed_program_ids or []),
+        "program_slugs": trace.get("program_slugs") or ([trace.get("program_slug")] if trace.get("program_slug") else []),
+        # Rich structure semantics (explicit, never a flattened list of
+        # look-alike programs): anchor_jurisdiction/anchor_program identify
+        # the lead jurisdiction+program; stacked_programs are compatible
+        # additional programs combined under that SAME anchor by an
+        # explicit named compatibility rule (never invented). component_
+        # allocations/coproduction_partners are honest empty lists in this
+        # pass — component/treaty candidate generation is not reconnected
+        # yet (see the capability ledger); their presence here as named,
+        # typed fields (not absent keys) is itself the pass-through contract
+        # a later reconnection pass fills in, never a second shape.
+        "jurisdiction_display_name": (jurisdiction_name_by_code or {}).get(code) if code else None,
+        "anchor_jurisdiction": code,
+        "anchor_jurisdiction_display_name": (jurisdiction_name_by_code or {}).get(code) if code else None,
+        "anchor_program": _anchor_and_stacked(trace)[0],
+        "stacked_programs": _anchor_and_stacked(trace)[1],
+        "component_allocations": [],
+        "coproduction_partners": [],
+        "stacking_rule_type": trace.get("stacking_rule_type"),
+        "stacking_note": trace.get("stacking_condition_text"),
+        "stacking_reduction_usd": trace.get("stacking_reduction_usd"),
+        "per_program_adjusted_usd": trace.get("per_program_adjusted_usd") or {},
+        "legal_review_required": bool(trace.get("legal_review_required", False)),
+        "stacking_violations": trace.get("stacking_violations") or [],
+        "stacking_conditionals": trace.get("stacking_conditionals") or [],
+        "disclosed_limitations": trace.get("disclosed_limitations") or [],
         "inkind_note": None,
         "notes": [],
         "segments": trace.get("segments") or [],
@@ -142,6 +198,49 @@ def _empty_structure_entry(structure, result, jurisdiction_code_by_id: dict[str,
         "feasibility_status": trace.get("feasibility_status"),
         "feasibility_reasons": trace.get("feasibility_reasons") or [],
     }
+
+
+#: Existing Optimizer/Stacker Reconnection, Task 12 — thin scenario-
+#: category mapper. Maps EXISTING rank/priceability/comparability/treaty/
+#: feasibility signals (all already computed above, none new) onto the
+#: five intended categories. This is display-layer classification only —
+#: it never changes is_fully_priced, is_directly_comparable, rank, or any
+#: economics field; it only labels what those fields already mean.
+SCENARIO_RECOMMENDED = "RECOMMENDED"
+SCENARIO_ALTERNATIVE = "ALTERNATIVE"
+SCENARIO_CO_PRO_OPPORTUNITIES = "CO_PRO_OPPORTUNITIES"
+SCENARIO_PRICED_LOW_FIT = "PRICED_LOW_FIT"
+SCENARIO_NOT_AVAILABLE = "NOT_AVAILABLE"
+
+
+def _scenario_category(entry: dict, rank: int | None) -> str:
+    """Deterministic, single-signal-source category. Precedence:
+    1. Not fully priced (capability_only/rule_rejected/authority_
+       insufficient) -> NOT AVAILABLE, regardless of any other field.
+    2. A registered treaty co-production instrument is attached
+       (treaty_slug) -> CO-PRO OPPORTUNITIES, even if it also priced and
+       ranked — official co-production status is the more specific fact.
+       Always None today (treaty candidate attachment/execution is not
+       reconnected in this pass — see the capability ledger); this branch
+       is wired and ready for when it is.
+    3. rank == 1 -> RECOMMENDED (the served numeric winner).
+    4. Fully priced + directly comparable + not rank 1 -> ALTERNATIVE.
+    5. Everything else fully priced (not directly comparable, e.g. a
+       relocation candidate or a multi-program stack whose combined
+       economics are real but not yet regionally normalized; or
+       feasibility WEAK) -> PRICED-LOW-FIT: an economically valid figure
+       that is a weak production/logistical/comparability fit, not a
+       priceability failure.
+    """
+    if not entry["is_fully_priced"]:
+        return SCENARIO_NOT_AVAILABLE
+    if entry.get("treaty_slug"):
+        return SCENARIO_CO_PRO_OPPORTUNITIES
+    if rank == 1:
+        return SCENARIO_RECOMMENDED
+    if entry["is_directly_comparable"]:
+        return SCENARIO_ALTERNATIVE
+    return SCENARIO_PRICED_LOW_FIT
 
 
 def _ranking_entry(entry: dict) -> dict:
@@ -230,8 +329,11 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
         if jurisdiction_ids else []
     )
     jurisdiction_code_by_id = {str(j.id): j.code for j in jurisdictions}
+    jurisdiction_name_by_code = {j.code: j.name for j in jurisdictions}
 
-    structure_entries = [_empty_structure_entry(s, r, jurisdiction_code_by_id) for s, r in rows]
+    structure_entries = [
+        _empty_structure_entry(s, r, jurisdiction_code_by_id, jurisdiction_name_by_code) for s, r in rows
+    ]
 
     # Ranking (Part K — never invent regional savings): only structures
     # whose cost is actually comparable on the SAME basis participate in
@@ -262,13 +364,21 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
 
     ranking: list[dict] = []
     for i, e in enumerate(comparable, start=1):
+        e["scenario_category"] = _scenario_category(e, rank=i)
         r = _ranking_entry(e)
         r["rank"] = i
+        r["scenario_category"] = e["scenario_category"]
         ranking.append(r)
     for e in review_required:
-        ranking.append(_ranking_entry(e))
+        e["scenario_category"] = _scenario_category(e, rank=None)
+        r = _ranking_entry(e)
+        r["scenario_category"] = e["scenario_category"]
+        ranking.append(r)
     for e in unpriced:
-        ranking.append(_ranking_entry(e))
+        e["scenario_category"] = _scenario_category(e, rank=None)
+        r = _ranking_entry(e)
+        r["scenario_category"] = e["scenario_category"]
+        ranking.append(r)
 
     base_code = jurisdiction_code_by_id.get(str(project.home_jurisdiction_id)) if project.home_jurisdiction_id else None
     if base_code is None:
