@@ -206,9 +206,15 @@ async def test_no_fvd_candidate_is_blocked_on_local_entity_grounds(db: AsyncSess
 async def test_representative_fvd_jurisdiction_traces(db: AsyncSession):
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
+    # Existing Optimizer/Stacker Reconnection, Task A (component/split):
+    # multiple structures can now share one primary_jurisdiction (a
+    # single-program candidate plus N component_relocation candidates
+    # anchored there) -- restrict this per-country lookup to the original
+    # single-program structure types this test examines, never an
+    # arbitrary later structure that happens to collide on the same key.
     entries = {
         e["primary_jurisdiction"]: e for e in view["structures"]["allocated_structures"]["structures"]
-        if e["is_fully_priced"]
+        if e["is_fully_priced"] and e["structure_type"] in ("single_country", "full_relocation")
     }
 
     def seg(code):

@@ -61,8 +61,18 @@ from app.calculators.canonical_stack_bridge import (
     StackCandidate,
     price_program_group_stack,
 )
+from app.calculators.canonical_treaty_bridge import (
+    evaluate_bilateral_coproduction_opportunity,
+    find_eurimages_partners,
+    find_real_bilateral_partners,
+)
 from app.calculators.conditional_programs import conditional_nodes_for, node_to_dict
-from app.calculators.production_allocation import StructureSpec, derive_account_allocation
+from app.calculators.production_allocation import (
+    MOVABLE_COMPONENTS,
+    StructureSpec,
+    component_for,
+    derive_account_allocation,
+)
 from app.calculators.production_discovery import discover_executable_jurisdictions
 from app.calculators.production_requirements import (
     derive_production_requirements,
@@ -192,7 +202,27 @@ from app.services.canonical_project_economics import (
 # result is provably identical under any input permutation (see
 # canonical_stack_bridge.py and its permutation-invariance test). Bumped
 # so every project regenerates under the corrected gating.
-ENGINE_VERSION = "canonical-1.20.1"
+# Existing Optimizer/Stacker Reconnection, Task A — component/split.
+# Additive: for each movable component (post/vfx/music) with real spend
+# in the project's own budget, generates candidate structures that route
+# that component to the top alternative jurisdictions using the existing
+# production_allocation.StructureSpec "component_relocation" type and
+# price_allocated_structure kernel unchanged. Bumped so every project
+# regenerates with these new candidates.
+# Existing Optimizer/Stacker Reconnection, Task B — treaty/official
+# co-production opportunities. Additive: generates a real, registry-
+# backed (never fabricated) bilateral or Eurimages multilateral
+# CO_PRO_OPPORTUNITY structure for each real treaty/membership partner
+# among this project's own discovered candidates, via canonical_treaty_
+# bridge.py's fail-closed adapter over the existing treaty_engine.py.
+# Bumped so every project regenerates with these new candidates.
+# Existing Optimizer/Stacker Reconnection, Task C (hybrid/anchor) —
+# treaty_coproduction structures now ALSO carry conditional_programs/
+# conditional_compatibility (composing two independent relationship
+# types: co-production + conditional fund, both reusing the exact same
+# _conditional_data() every other structure type already uses). Bumped
+# so every project regenerates with this composition.
+ENGINE_VERSION = "canonical-1.22.1"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
@@ -217,6 +247,14 @@ STATUS_PRICED = "PRICED"
 STATUS_UNPRICEABLE_AUTHORITY_INSUFFICIENT = "UNPRICEABLE_AUTHORITY_INSUFFICIENT"
 STATUS_RULE_REJECTED = "RULE_REJECTED"
 STATUS_FEASIBILITY_REVIEW_REQUIRED = "FEASIBILITY_REVIEW_REQUIRED"
+#: Existing Optimizer/Stacker Reconnection, Task B — a real, registry-
+#: backed treaty/co-production pathway exists but cannot (yet) be priced
+#: as qualified economics: either real ownership/cultural-test project
+#: facts are missing (canonical_treaty_bridge.RESOLUTION_UNRESOLVED_FACTS)
+#: or a mandatory requirement failed (RESOLUTION_INELIGIBLE). NEVER
+#: STATUS_PRICED — a co-pro opportunity never enters NPC/ranking as
+#: resolved economics; see canonical_treaty_bridge.py's own module note.
+STATUS_CO_PRO_OPPORTUNITY = "CO_PRO_OPPORTUNITY"
 
 
 def _compute_fingerprint(inputs: ProjectEconomicInputs) -> str:
@@ -297,6 +335,63 @@ def _price_candidate(
         production_type=inputs.production_type,
     )
     return pricing, register, rr
+
+
+def _price_component_relocation_candidate(
+    inputs: ProjectEconomicInputs,
+    home_code: str,
+    home_program_slug: str | None,
+    target_code: str,
+    target_program_slug: str,
+    component: str,
+):
+    """Existing Optimizer/Stacker Reconnection, Task A (component/split).
+    Reuses the EXISTING production_allocation.StructureSpec
+    'component_relocation' type and price_allocated_structure kernel —
+    no new allocation or pricing logic. Routes ONE movable component
+    (post/vfx/music — production_allocation.MOVABLE_COMPONENTS) to
+    `target_code`; every other account stays exactly where
+    derive_account_allocation would otherwise place it (principal
+    photography/travel at the shoot location, overhead/administration at
+    the production's own domicile). This is why no territorial spend is
+    invented: the ONLY thing this candidate changes from the single-
+    program candidates already generated is WHERE one real, already-
+    budgeted component is incurred — the dollar amounts are the
+    project's own, never fabricated. price_segment resolves each
+    jurisdiction's own rate internally from its own allocated accounts —
+    no pre-resolved rate is threaded through here.
+    """
+    incentive_programs: dict[str, str] = {}
+    if home_program_slug:
+        incentive_programs[home_code] = home_program_slug
+    incentive_programs[target_code] = target_program_slug
+    spec = StructureSpec(
+        structure_id=f"CANON-COMPONENT-{home_code}-{component}-{target_code}-{target_program_slug}",
+        structure_type="component_relocation",
+        label=f"{home_code} anchor — {component} routed to {target_code}",
+        primary_jurisdiction=home_code,
+        participants=(home_code, target_code),
+        incentive_programs=incentive_programs,
+        component_routes={component: target_code},
+    )
+    allocation = derive_account_allocation(
+        lines=inputs.budget_lines,
+        spend_category_by_code=inputs.spend_category_by_code,
+        spec=spec,
+        stated_outside_accounts=inputs.accounts_outside_jurisdiction,
+    )
+    pricing = price_allocated_structure(
+        spec=spec, allocation=allocation,
+        spend_category_by_code=inputs.spend_category_by_code,
+        offshore_payroll_accounts=inputs.offshore_payroll_accounts,
+        gross_budget_usd=inputs.gross_budget_usd,
+        travel_incremental_delta_usd=0.0,
+        fx_delta_usd=None,
+        inkind_replacement_delta_usd=0.0,
+        local_cost_delta_usd=0.0,
+        production_type=inputs.production_type,
+    )
+    return spec, allocation, pricing
 
 
 def _capability_only_status(examination) -> tuple[str, str, str]:
@@ -1022,6 +1117,314 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 "feasibility_reasons": feasibility_reasons,
                 "conditional_programs": _conditional_program_dicts,
                 "conditional_compatibility": _conditional_compatibility_dict,
+            },
+            input_fingerprint=fingerprint,
+        ))
+
+    # Existing Optimizer/Stacker Reconnection, Task A — component/split.
+    # Reuses production_allocation.StructureSpec's existing
+    # "component_relocation" type + price_allocated_structure unchanged;
+    # the only new code is candidate SELECTION (which movable component,
+    # which target jurisdiction). No spend is invented: only components
+    # already present in the project's own real budget with real dollar
+    # amounts (MOVABLE_COMPONENTS — post/vfx/music) are ever routed, and
+    # every other account keeps its existing derive_account_allocation
+    # placement (principal photography/travel at the shoot location,
+    # overhead/administration at the production's own domicile) — see
+    # _price_component_relocation_candidate's own docstring.
+    home_code = inputs.jurisdiction_code
+    home_candidates = priced_by_code.get(home_code, [])
+    home_best = max(home_candidates, key=lambda c: c.selected_incentive_usd, default=None)
+    home_program_slug = home_best.program_slug if home_best else None
+
+    component_spend: dict[str, float] = {}
+    for line in inputs.budget_lines:
+        if line.is_memo:
+            continue
+        cat = inputs.spend_category_by_code.get(line.account_code, line.spend_category)
+        comp = component_for(cat)
+        if comp in MOVABLE_COMPONENTS:
+            component_spend[comp] = round(component_spend.get(comp, 0.0) + line.amount_usd, 2)
+
+    # Bounded to the most promising real alternative jurisdictions (by
+    # their own already-computed single-program incentive value) — a
+    # practical search-space bound, not a doctrine choice; every target
+    # considered is a genuinely discovered, independently-priceable
+    # candidate, never invented.
+    MAX_COMPONENT_TARGETS = 6
+    if component_spend:
+        target_best_by_code: dict[str, StackCandidate] = {}
+        for code, cands in priced_by_code.items():
+            if code == home_code:
+                continue
+            target_best_by_code[code] = max(cands, key=lambda c: c.selected_incentive_usd)
+        top_targets = sorted(
+            target_best_by_code.values(), key=lambda c: c.selected_incentive_usd, reverse=True,
+        )[:MAX_COMPONENT_TARGETS]
+
+        for component, spend_amount in sorted(component_spend.items()):
+            if spend_amount <= 0:
+                continue
+            for target in top_targets:
+                spec, allocation, pricing = _price_component_relocation_candidate(
+                    inputs, home_code, home_program_slug,
+                    target.jurisdiction_code, target.program_slug, component,
+                )
+                if not pricing.is_fully_priced:
+                    # Genuinely unresolvable (e.g. the routed component's
+                    # allocated QPE doesn't clear the target program's own
+                    # minimum-spend threshold) — fail closed, never
+                    # persisted as a misleading candidate. Not silently
+                    # dropped from the ledger: disclosed as a class in the
+                    # capability ledger, not per-instance (would be noise).
+                    continue
+
+                component_jur = jurisdiction_by_code.get(home_code)
+                target_jur_row = jurisdiction_by_code.get(target.jurisdiction_code)
+                npc = pricing.npc_with_adjustments_usd
+                feasibility_status, feasibility_reasons = _feasibility_status(
+                    feasibility_by_code.get(home_code), requirements,
+                )
+                target_component_seg = next(
+                    (s for s in pricing.segments if s.jurisdiction_code == target.jurisdiction_code), None,
+                )
+                structure = ProductionStructure(
+                    id=uuid.uuid4(),
+                    project_id=project.id,
+                    name=(
+                        f"{home_code} anchor — {component} routed to {target.jurisdiction_code} "
+                        f"(component/split)"
+                    ),
+                    description=(
+                        f"Anchor production stays in {home_code}; {component} work "
+                        f"(${spend_amount:,.0f} of real project budget) relocated to "
+                        f"{target.jurisdiction_code} to claim {_program_display_name(target.program_slug)}."
+                    ),
+                    jurisdiction_allocations=[
+                        {
+                            "jurisdiction_id": str(component_jur.id), "shoot_pct": 100,
+                            "budget_pct": round(100 * (1 - spend_amount / inputs.gross_budget_usd), 2),
+                        }
+                    ] + (
+                        [{
+                            "jurisdiction_id": str(target_jur_row.id), "shoot_pct": 0,
+                            "budget_pct": round(100 * spend_amount / inputs.gross_budget_usd, 2),
+                        }] if target_jur_row else []
+                    ),
+                    claimed_program_ids=[s for s in (home_program_slug, target.program_slug) if s],
+                )
+                session.add(structure)
+                await session.flush()
+                _conditional_program_dicts, _conditional_compatibility_dict = _conditional_data(
+                    str(structure.id), home_code,
+                    tuple(s for s in (home_program_slug, target.program_slug) if s),
+                )
+                _component_territorial_unknown = (
+                    inputs.accounts_outside_jurisdiction_state == FACT_STATE_UNKNOWN
+                    or inputs.offshore_payroll_accounts_state == FACT_STATE_UNKNOWN
+                )
+                _component_warnings = [
+                    LIMITATION_NOTE,
+                    "Component/split candidate: relocating real project spend "
+                    "between jurisdictions carries incremental coordination/travel "
+                    "costs not yet modeled generically — this NPC is not directly "
+                    "comparable to the base jurisdiction's own NPC.",
+                ]
+                if _component_territorial_unknown:
+                    _component_warnings.append(
+                        "UNKNOWN, not KNOWN EMPTY: no project fact has ever stated which "
+                        "accounts (if any) are incurred outside the base jurisdiction or "
+                        "routed through offshore payroll. This QPE assumes none are — the "
+                        "only input a set-membership check can be given without inventing "
+                        "evidence — but that assumption is unconfirmed, not verified."
+                    )
+                session.add(StructureCalculationResult(
+                    id=uuid.uuid4(), structure_id=structure.id, engine_version=ENGINE_VERSION,
+                    total_budget_usd=inputs.gross_budget_usd,
+                    total_incentive_value_usd=pricing.selected_incentive_usd,
+                    true_net_cost_usd=npc,
+                    risk_adjusted_net_cost_usd=npc,
+                    has_unverified_inputs=True,
+                    warnings=_component_warnings,
+                    calculation_trace_json={
+                        "candidate_status": STATUS_PRICED,
+                        "discovery_classification": "component_relocation",
+                        "structure_type": "component_relocation",
+                        "primary_jurisdiction": home_code,
+                        "program_slugs": [s for s in (home_program_slug, target.program_slug) if s],
+                        "is_baseline": False,
+                        "relocation_cost_normalized": False,
+                        "is_directly_comparable": False,
+                        "anchor_jurisdiction": home_code,
+                        "anchor_program": home_program_slug,
+                        "component_allocations": [{
+                            "component": component,
+                            "jurisdiction_code": target.jurisdiction_code,
+                            "jurisdiction_display_name": target_jur_row.name if target_jur_row else None,
+                            "program_slug": target.program_slug,
+                            "allocated_usd": target_component_seg.allocated_usd if target_component_seg else spend_amount,
+                            "incentive_floor_usd": target_component_seg.incentive_floor_usd if target_component_seg else None,
+                            "incentive_ceiling_usd": target_component_seg.incentive_ceiling_usd if target_component_seg else None,
+                        }],
+                        "selected_incentive_usd": pricing.selected_incentive_usd,
+                        "npc_verified_usd": pricing.npc_verified_usd,
+                        "npc_conservative_usd": pricing.npc_verified_usd,
+                        "gross_budget_usd": inputs.gross_budget_usd,
+                        "segments": _segment_dicts(pricing),
+                        "feasibility_status": feasibility_status,
+                        "feasibility_reasons": feasibility_reasons,
+                        "conditional_programs": _conditional_program_dicts,
+                        "conditional_compatibility": _conditional_compatibility_dict,
+                    },
+                    input_fingerprint=fingerprint,
+                ))
+
+    # Existing Optimizer/Stacker Reconnection, Task B — treaty/official
+    # co-production opportunities. Reuses the EXISTING treaty_engine.py
+    # registries/eligibility functions unchanged via canonical_treaty_
+    # bridge.py's fail-closed adapter (see that module's docstring for
+    # the exact defect it corrects: registry presence != eligibility, and
+    # an unresolved/failed cultural test can never resolve ELIGIBLE).
+    # Neither LU nor FVD has any real ownership-share/cultural-test
+    # project fact on file, so every generated opportunity here correctly
+    # resolves to UNRESOLVED_FACTS — a genuine, disclosed pathway, never
+    # priced or comparable economics.
+    candidate_codes = list(priced_by_code.keys())
+
+    MAX_TREATY_PARTNERS = 5
+    for partner_code in find_real_bilateral_partners(home_code, candidate_codes)[:MAX_TREATY_PARTNERS]:
+        opp = evaluate_bilateral_coproduction_opportunity(home_code, partner_code)
+        if opp is None:
+            continue
+        partner_jur = jurisdiction_by_code.get(partner_code)
+        structure = ProductionStructure(
+            id=uuid.uuid4(),
+            project_id=project.id,
+            name=f"{home_code} + {partner_code} — official co-production opportunity ({opp.treaty_slug})",
+            description=(
+                f"A registered bilateral co-production treaty ({opp.treaty_slug}) "
+                f"exists between {home_code} and {partner_code}. Real ownership/"
+                "spend-share and cultural-test facts are required to resolve "
+                "eligibility — not yet on file for this project."
+            ),
+            jurisdiction_allocations=[],
+            claimed_program_ids=[],
+        )
+        session.add(structure)
+        await session.flush()
+        # Hybrid/anchor composition (Task C): a co-production opportunity
+        # ALSO composes with the conditional grants/funds layer already
+        # built for Task 7 — "anchor + treaty + conditional fund" is one
+        # of the independent relationship combinations, reusing the exact
+        # same _conditional_data() call every other structure type uses,
+        # never a second conditional-funds implementation.
+        _conditional_program_dicts, _conditional_compatibility_dict = _conditional_data(
+            str(structure.id), home_code, (),
+        )
+        session.add(StructureCalculationResult(
+            id=uuid.uuid4(), structure_id=structure.id, engine_version=ENGINE_VERSION,
+            total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
+            true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
+            has_unverified_inputs=True,
+            warnings=[
+                LIMITATION_NOTE,
+                "Official co-production opportunity — real ownership/cultural-test "
+                "facts are not yet on file for this project; not priced as qualified "
+                "economics. Registry presence is real and disclosed; it is never "
+                "reported as resolved eligibility.",
+            ],
+            calculation_trace_json={
+                "candidate_status": STATUS_CO_PRO_OPPORTUNITY,
+                "discovery_classification": "treaty_coproduction",
+                "structure_type": "treaty_coproduction",
+                "primary_jurisdiction": home_code,
+                "is_baseline": False,
+                "relocation_cost_normalized": False,
+                "is_directly_comparable": False,
+                "treaty_slug": opp.treaty_slug,
+                "conditional_programs": _conditional_program_dicts,
+                "conditional_compatibility": _conditional_compatibility_dict,
+                "coproduction_partners": [{
+                    "jurisdiction_code": partner_code,
+                    "jurisdiction_display_name": partner_jur.name if partner_jur else partner_code,
+                }],
+                "treaty_resolution_state": opp.resolution_state,
+                "treaty_cultural_test_required": opp.cultural_test_required,
+                "treaty_cultural_test_resolved": opp.cultural_test_resolved,
+                "treaty_disqualification_reasons": list(opp.disqualification_reasons),
+                "reason": "; ".join(opp.notes) or "Real ownership/cultural facts required to resolve eligibility.",
+                "feasibility_status": FEASIBILITY_UNKNOWN,
+                "feasibility_reasons": [],
+            },
+            input_fingerprint=fingerprint,
+        ))
+
+    eurimages_partners = find_eurimages_partners(home_code, candidate_codes)
+    if eurimages_partners:
+        MAX_EURIMAGES_DISPLAY = 10
+        shown = sorted(eurimages_partners)[:MAX_EURIMAGES_DISPLAY]
+        structure = ProductionStructure(
+            id=uuid.uuid4(),
+            project_id=project.id,
+            name=f"{home_code} — Eurimages multilateral co-production opportunity",
+            description=(
+                f"{home_code} is a Eurimages member. {len(eurimages_partners)} of this "
+                "production's own discovered candidate jurisdictions are ALSO Eurimages "
+                "members (real membership, via treaty_engine's registry) — a genuine "
+                "multilateral co-production pathway. Real per-country budget-share and "
+                "cultural-test facts are required to resolve eligibility — not yet on "
+                "file for this project."
+            ),
+            jurisdiction_allocations=[],
+            claimed_program_ids=[],
+        )
+        session.add(structure)
+        await session.flush()
+        _conditional_program_dicts, _conditional_compatibility_dict = _conditional_data(
+            str(structure.id), home_code, (),
+        )
+        session.add(StructureCalculationResult(
+            id=uuid.uuid4(), structure_id=structure.id, engine_version=ENGINE_VERSION,
+            total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
+            true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
+            has_unverified_inputs=True,
+            warnings=[
+                LIMITATION_NOTE,
+                "Eurimages multilateral co-production opportunity — real per-country "
+                "budget-share and cultural-test facts are not yet on file; not priced "
+                "as qualified economics.",
+            ],
+            calculation_trace_json={
+                "candidate_status": STATUS_CO_PRO_OPPORTUNITY,
+                "discovery_classification": "treaty_coproduction",
+                "structure_type": "treaty_coproduction",
+                "primary_jurisdiction": home_code,
+                "is_baseline": False,
+                "relocation_cost_normalized": False,
+                "is_directly_comparable": False,
+                "treaty_slug": "eurimages",
+                "conditional_programs": _conditional_program_dicts,
+                "conditional_compatibility": _conditional_compatibility_dict,
+                "coproduction_partners": [
+                    {
+                        "jurisdiction_code": code,
+                        "jurisdiction_display_name": (
+                            jurisdiction_by_code[code].name if code in jurisdiction_by_code else code
+                        ),
+                    }
+                    for code in shown
+                ],
+                "treaty_resolution_state": "UNRESOLVED_FACTS",
+                "treaty_cultural_test_required": True,
+                "treaty_cultural_test_resolved": False,
+                "treaty_disqualification_reasons": [],
+                "reason": (
+                    f"{len(eurimages_partners)} real Eurimages member candidate(s) "
+                    "discovered; real budget-share and cultural-test facts required "
+                    "to resolve eligibility."
+                ),
+                "feasibility_status": FEASIBILITY_UNKNOWN,
+                "feasibility_reasons": [],
             },
             input_fingerprint=fingerprint,
         ))

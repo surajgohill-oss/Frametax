@@ -96,12 +96,32 @@ def _empty_structure_entry(
         float(result.total_incentive_value_usd) if result.total_incentive_value_usd is not None
         else trace.get("selected_incentive_usd")
     ) if is_priced else None
+    # Existing Optimizer/Stacker Reconnection, Task C (hybrid/anchor) —
+    # HYBRID does not inherently mean TREATY: every structure's real
+    # relationship composition is represented as independent flags,
+    # computed from data already present on this SAME trace (no new
+    # generation, no second taxonomy). A structure may carry more than
+    # one simultaneously (e.g. a treaty_coproduction opportunity that
+    # ALSO has conditional_programs attached is "coproduction" +
+    # "conditional_fund" at once) — the frontend never has to infer this
+    # from structure_type alone.
+    relationship_types: list[str] = []
+    if (trace.get("program_slugs") or []).__len__() > 1 and structure_type == "multi_program":
+        relationship_types.append("stack")
+    if trace.get("component_allocations"):
+        relationship_types.append("component")
+    if trace.get("treaty_slug"):
+        relationship_types.append("coproduction")
+    if trace.get("conditional_programs"):
+        relationship_types.append("conditional_fund")
+
     return {
         "structure_id": str(structure.id),
         "structure_type": structure_type,
         "label": structure.name,
         "primary_jurisdiction": code,
         "participants": [code] if code else [],
+        "relationship_types": relationship_types,
         # Existing Optimizer/Stacker Reconnection, Task 7 — read straight
         # off calculation_trace_json's conditional_programs/
         # conditional_compatibility (canonical_evaluation._conditional_
@@ -144,7 +164,17 @@ def _empty_structure_entry(
             float(result.risk_adjusted_net_cost_usd) if result.risk_adjusted_net_cost_usd is not None else None
         ),
         "npc_conservative_usd": float(result.true_net_cost_usd) if result.true_net_cost_usd is not None else None,
-        "treaty_slug": None,
+        # Existing Optimizer/Stacker Reconnection, Task B (treaty/co-pro):
+        # populated for a treaty_coproduction structure
+        # (canonical_treaty_bridge.CoproOpportunity, wired in
+        # canonical_evaluation.py); None for every other structure type,
+        # unchanged.
+        "treaty_slug": trace.get("treaty_slug"),
+        "coproduction_partners": trace.get("coproduction_partners") or [],
+        "treaty_resolution_state": trace.get("treaty_resolution_state"),
+        "treaty_cultural_test_required": trace.get("treaty_cultural_test_required"),
+        "treaty_cultural_test_resolved": trace.get("treaty_cultural_test_resolved"),
+        "treaty_disqualification_reasons": trace.get("treaty_disqualification_reasons") or [],
         "ownership_shares": None,
         # Existing Optimizer/Stacker Reconnection — rich multi-program pass-
         # through. claimed_program_ids is [] for every pre-existing single-
@@ -159,18 +189,25 @@ def _empty_structure_entry(
         # the lead jurisdiction+program; stacked_programs are compatible
         # additional programs combined under that SAME anchor by an
         # explicit named compatibility rule (never invented). component_
-        # allocations/coproduction_partners are honest empty lists in this
-        # pass — component/treaty candidate generation is not reconnected
-        # yet (see the capability ledger); their presence here as named,
-        # typed fields (not absent keys) is itself the pass-through contract
-        # a later reconnection pass fills in, never a second shape.
+        # allocations pass through directly from calculation_trace_json
+        # (canonical_evaluation._price_component_relocation_candidate)
+        # once component/split generation exists for a project.
+        # coproduction_partners stays an honest empty list until treaty
+        # candidate generation is reconnected — its presence here as a
+        # named, typed field (not an absent key) is itself the pass-
+        # through contract a later reconnection pass fills in.
         "jurisdiction_display_name": (jurisdiction_name_by_code or {}).get(code) if code else None,
         "anchor_jurisdiction": code,
         "anchor_jurisdiction_display_name": (jurisdiction_name_by_code or {}).get(code) if code else None,
-        "anchor_program": _anchor_and_stacked(trace)[0],
-        "stacked_programs": _anchor_and_stacked(trace)[1],
-        "component_allocations": [],
-        "coproduction_partners": [],
+        # component_relocation structures set anchor_program explicitly
+        # (the target program belongs under component_allocations, never
+        # flattened into stacked_programs); multi_program (stack)
+        # structures derive anchor/stacked from per_program_adjusted_usd.
+        "anchor_program": trace.get("anchor_program") or _anchor_and_stacked(trace)[0],
+        "stacked_programs": (
+            _anchor_and_stacked(trace)[1] if structure_type == "multi_program" else []
+        ),
+        "component_allocations": trace.get("component_allocations") or [],
         "stacking_rule_type": trace.get("stacking_rule_type"),
         "stacking_note": trace.get("stacking_condition_text"),
         "stacking_reduction_usd": trace.get("stacking_reduction_usd"),
@@ -223,27 +260,32 @@ SCENARIO_NOT_AVAILABLE = "NOT_AVAILABLE"
 
 def _scenario_category(entry: dict, rank: int | None) -> str:
     """Deterministic, single-signal-source category. Precedence:
-    1. Not fully priced (capability_only/rule_rejected/authority_
-       insufficient) -> NOT AVAILABLE, regardless of any other field.
-    2. A registered treaty co-production instrument is attached
-       (treaty_slug) -> CO-PRO OPPORTUNITIES, even if it also priced and
-       ranked — official co-production status is the more specific fact.
-       Always None today (treaty candidate attachment/execution is not
-       reconnected in this pass — see the capability ledger); this branch
-       is wired and ready for when it is.
+    1. A registered treaty co-production instrument is attached
+       (treaty_slug) -> CO-PRO OPPORTUNITIES, checked BEFORE the
+       is_fully_priced gate: a real treaty/multilateral opportunity
+       (canonical_treaty_bridge.CoproOpportunity) is disclosed as an
+       opportunity precisely BECAUSE it is not (yet) priced/qualified
+       economics — see Task B's fail-closed doctrine (registry presence
+       is real and worth surfacing; it is never conflated with qualified,
+       priced, or comparable economics, so it correctly has
+       is_fully_priced=False and would otherwise be flattened into
+       NOT AVAILABLE, losing exactly the distinction this category
+       exists to preserve).
+    2. Not fully priced (capability_only/rule_rejected/authority_
+       insufficient, and not a treaty opportunity) -> NOT AVAILABLE.
     3. rank == 1 -> RECOMMENDED (the served numeric winner).
     4. Fully priced + directly comparable + not rank 1 -> ALTERNATIVE.
     5. Everything else fully priced (not directly comparable, e.g. a
-       relocation candidate or a multi-program stack whose combined
-       economics are real but not yet regionally normalized; or
-       feasibility WEAK) -> PRICED-LOW-FIT: an economically valid figure
-       that is a weak production/logistical/comparability fit, not a
-       priceability failure.
+       relocation candidate, a component/split candidate, or a multi-
+       program stack whose combined economics are real but not yet
+       regionally normalized; or feasibility WEAK) -> PRICED-LOW-FIT: an
+       economically valid figure that is a weak production/logistical/
+       comparability fit, not a priceability failure.
     """
-    if not entry["is_fully_priced"]:
-        return SCENARIO_NOT_AVAILABLE
     if entry.get("treaty_slug"):
         return SCENARIO_CO_PRO_OPPORTUNITIES
+    if not entry["is_fully_priced"]:
+        return SCENARIO_NOT_AVAILABLE
     if rank == 1:
         return SCENARIO_RECOMMENDED
     if entry["is_directly_comparable"]:

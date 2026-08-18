@@ -117,7 +117,14 @@ async def test_sa1_requirements_remain_consumed(db: AsyncSession):
     economic discovery."""
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
-    entries = {e["primary_jurisdiction"]: e for e in view["structures"]["allocated_structures"]["structures"]}
+    # Existing Optimizer/Stacker Reconnection: multiple structures can now
+    # share one primary_jurisdiction (single-program plus component/split/
+    # treaty candidates anchored there) -- restrict this lookup to the
+    # original single-program structure types this test examines.
+    entries = {
+        e["primary_jurisdiction"]: e for e in view["structures"]["allocated_structures"]["structures"]
+        if e["structure_type"] in ("single_country", "full_relocation")
+    }
     assert entries["MN"]["feasibility_status"] == FEASIBILITY_WEAK
     assert "MARINE_MISMATCH" in entries["MN"]["feasibility_reasons"]
     assert entries["GR"]["feasibility_status"] == FEASIBILITY_STRONG
@@ -479,17 +486,38 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     and CA-ON, which alone contributes 4 combined structures once alias
     reconciliation unlocked ca_on_opstc (3 pairs + 1 fully-covered triple
     of federal CPTC + ca_on_opstc + on_ofttc — see test_on_ofttc_and_
-    ocase_now_independently_served for the itemized proof). No existing
-    single-program candidate is removed; unpriced count is unaffected (a
-    combined structure is only generated from ALREADY-priced candidates)."""
+    ocase_now_independently_served for the itemized proof).
+
+    Existing Optimizer/Stacker Reconnection, Task A (component/split):
+    entries grew again, 127 -> 142, priced 119 -> 134. For each movable
+    component (post/vfx/music) with real spend in FVD's own budget
+    (post $172,904, vfx $10,000, music $10,200), canonical_evaluation
+    generates a component_relocation candidate for each of the top 6
+    alternative jurisdictions by their own single-program incentive value
+    (3 components x 6 targets = up to 18 attempted, 15 actually price
+    fully — the rest fail closed on the target program's own minimum-
+    spend threshold given the small routed amount, never persisted). No
+    existing single-program or multi_program candidate is removed;
+    unpriced count is unaffected (a component candidate that fails to
+    price is never persisted, not counted as unpriced either).
+
+    Existing Optimizer/Stacker Reconnection, Task B (treaty/co-pro):
+    entries grew again, 142 -> 143. FVD's Greece is a real Eurimages
+    member (confirmed live treaty_engine registry) and 36 of FVD's own
+    discovered candidate jurisdictions are ALSO Eurimages members — one
+    additive, disclosed CO_PRO_OPPORTUNITY structure is generated (no
+    real bilateral treaty partner exists for Greece, so 0 bilateral
+    opportunities). It is never fully priced (real ownership/cultural-
+    test facts are not on file) so unpriced grows 8 -> 9, priced is
+    unaffected."""
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
     priced = [e for e in entries if e["is_fully_priced"]]
     unpriced = [e for e in entries if not e["is_fully_priced"]]
-    assert len(entries) == 127
-    assert len(priced) == 119
-    assert len(unpriced) == 8
+    assert len(entries) == 143
+    assert len(priced) == 134
+    assert len(unpriced) == 9
 
     for code in ("MN", "UZ", "AT"):
         e = next(x for x in entries if x["primary_jurisdiction"] == code)

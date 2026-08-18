@@ -111,11 +111,25 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # structures are at FVD's own home jurisdiction — proven separately
     # for a project whose home IS a multi-program jurisdiction is out of
     # reach for these two control projects (neither's home is Canada).
-    assert len(priced) == 119
-    assert len(unpriced) == 8
+    # Task A (component/split): priced grew again, 119 -> 134 (15 additive
+    # component_relocation structures — see test_canonical_authority_
+    # substrate.py's test_fvd_runtime_candidate_universe_restored). Also
+    # never is_directly_comparable (a routed component carries the same
+    # unmodeled coordination/travel-cost caveat), so review_required
+    # grows by the same 15.
+    # Task B (treaty/co-pro): unpriced grew 8 -> 9 (1 additive Eurimages
+    # CO_PRO_OPPORTUNITY structure -- real ownership/cultural-test facts
+    # are not on file, so it is never fully priced; see
+    # test_canonical_authority_substrate.py's
+    # test_fvd_runtime_candidate_universe_restored). unpriceable_count
+    # (the pre-existing authority-insufficient/rule-rejected causes)
+    # is unaffected -- a co-pro opportunity is a NEW distinct terminal
+    # state (STATUS_CO_PRO_OPPORTUNITY), never flattened into that bucket.
+    assert len(priced) == 134
+    assert len(unpriced) == 9
     assert accounting["comparable_count"] == 1
-    assert accounting["review_required_count"] == 118
-    assert accounting["unpriceable_count"] == 8
+    assert accounting["review_required_count"] == 133
+    assert accounting["unpriceable_count"] == 9
 
     # Cross-screen agreement: the ranking list (what Scenarios/Overview/
     # World all read via is_directly_comparable) must reproduce the exact
@@ -125,8 +139,8 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     review_ranked = [r for r in ranking if r["is_fully_priced"] and not r["is_directly_comparable"]]
     unpriceable_ranked = [r for r in ranking if not r["is_fully_priced"]]
     assert len(comparable_ranked) == 1
-    assert len(review_ranked) == 118
-    assert len(unpriceable_ranked) == 8
+    assert len(review_ranked) == 133
+    assert len(unpriceable_ranked) == 9
 
     # Feasibility ≠ eligibility (canonical authority substrate + feasibility
     # boundary repair): a landlocked jurisdiction with real marine-mismatch
@@ -259,13 +273,16 @@ async def test_fvd_unpriceable_causes_are_differentiated_not_flattened(db: Async
     Global Formulaic Economic Completion recover-before-research batches
     individually promoted 52 formerly-blocked programs to priced (see
     test_fvd_accounting_matches_codex_diagnosis) -- the count itself is
-    not the invariant this test guards."""
+    not the invariant this test guards. Grew again 8 -> 9 with Task B's
+    additive Eurimages CO_PRO_OPPORTUNITY structure (a genuinely distinct
+    terminal status, STATUS_CO_PRO_OPPORTUNITY -- never flattened into
+    UNPRICEABLE_AUTHORITY_INSUFFICIENT/RULE_REJECTED)."""
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     ranking = view["structures"]["allocated_structures"]["ranking"]
     unpriceable = [r for r in ranking if not r["is_fully_priced"]]
 
-    assert len(unpriceable) == 8
+    assert len(unpriceable) == 9
     statuses = {r["candidate_status"] for r in unpriceable}
     assert statuses.issuperset({"UNPRICEABLE_AUTHORITY_INSUFFICIENT", "RULE_REJECTED"}), (
         f"expected at least AUTHORITY_INSUFFICIENT and RULE_REJECTED causes, got {statuses}"

@@ -80,3 +80,16 @@ Both continue to use the exact same canonical `evaluate_project()`/`build_produc
 `app/calculators/canonical_stack_bridge.py` (new), `app/services/canonical_evaluation.py`, `app/services/canonical_production_view.py`, `tests/test_canonical_stack_bridge.py` (new), `tests/test_canonical_authority_substrate.py`, `tests/test_canonical_pricing_path_and_discovery.py`, `tests/test_canonical_served_wiring_repair.py`, `tests/test_canonical_production_view.py`, `docs/architecture/CAPABILITY_LEDGER.md`, this file.
 
 STOP.
+
+## Final completion (same day, commit after `c7593a7`)
+
+**Final gate: `EXISTING_OPTIMIZER_STACKER_FULLY_CANONICALLY_RECONNECTED`** — with one disclosed architectural limit (see below), not a silent gap.
+
+Component/split (Task A), treaty/official co-production (Task B), and hybrid/anchor (Task C) — previously reported `PROVEN_UNRECOVERABLE_WITH_EXACT_REASON "for this pass"` — are now all `CONNECTED_AND_RUNTIME_VERIFIED`, real project data, both LU and FVD. Full account in `docs/architecture/CAPABILITY_LEDGER.md`'s "Existing Optimizer/Stacker Reconnection, completion" entry.
+
+- **Component/split**: real movable-component spend (post/vfx/music) from each project's own budget routed to alternative jurisdictions via the existing `StructureSpec` `component_relocation` type — 15 candidates on FVD, 10 on LU, allocation-conservation and no-invented-spend proven.
+- **Treaty/co-pro**: new `canonical_treaty_bridge.py` fail-closed adapter over the unedited `treaty_engine.py` — corrects a confirmed defect (unassessed/failed cultural tests could resolve `is_eligible=True` in the underlying engine). FVD's Greece generates one real, registry-backed Eurimages `CO_PRO_OPPORTUNITY` (36 real member candidates); Mauritius proven-zero (no bilateral treaty, not a Eurimages member).
+- **Hybrid/anchor**: `relationship_types` (stack/component/coproduction/conditional_fund) exposed as independent flags on every structure; `treaty_coproduction` now composes with the conditional-funds layer, proving "hybrid != treaty" with real, mutually-exclusive-where-correct data.
+- **One disclosed limit**: a genuine "anchor+stack+component" triple in ONE structure is architecturally blocked by `StructureSpec.incentive_programs` being one-program-per-jurisdiction — extending that would be a real architecture change, not a narrow adapter, and is reported as such rather than worked around.
+
+23 new focused tests, 6 existing tests updated for the legitimately grown universe (127→143 FVD structures). Full suite: 4266 passed, 1 pre-existing unrelated failure, 1 skipped.

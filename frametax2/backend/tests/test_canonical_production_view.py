@@ -77,7 +77,10 @@ async def test_every_structure_has_a_non_null_type_and_jurisdiction(db: AsyncSes
         view = await build_production_and_structures(db, project_id)
         for s in view["structures"]["allocated_structures"]["structures"]:
             assert s["structure_type"] is not None, f"{project_id}: {s['structure_id']} has null structure_type"
-            assert s["structure_type"] in ("single_country", "full_relocation", "multi_program")
+            assert s["structure_type"] in (
+                "single_country", "full_relocation", "multi_program",
+                "component_relocation", "treaty_coproduction",
+            )
 
 
 async def test_unpriceable_candidates_never_ranked_as_opportunities(db: AsyncSession):
