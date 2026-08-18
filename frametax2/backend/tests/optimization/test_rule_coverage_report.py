@@ -11,7 +11,7 @@ class TestReportIntegrity:
 
     def test_every_executable_jurisdiction_prices(self):
         r = build_rule_coverage_report()
-        assert r["summary"]["executable_jurisdictions"] == 110
+        assert r["summary"]["executable_jurisdictions"] == 113
         assert r["pricing_rules"]["executable_jurisdictions_all_price"] is True
 
     def test_minimum_spend_is_the_sole_machine_enforced_gate(self):

@@ -88,6 +88,20 @@ DELIBERATELY_PROMOTED_CANONICAL_IDS = frozenset({
     "lt_film_incentive", "lu_film_incentive", "me_film_incentive",
     "mk_film_incentive", "pl_film_incentive", "rs_film_rebate",
     "sk_film_incentive", "se_film_incentive",
+    # Final-19 committee closeout (CineGlobe worldwide base program
+    # database): individually researched by Claude, reviewed by Codex
+    # (8 AGREE, 11 CORRECT), independently confirmed by Gemini
+    # (11/11 CODEX_CONFIRMED). Real DoctrineRecord/RateRule/
+    # SourceProvenance canonicalized for each; coverage vetoes removed
+    # with primary-source evidence, not schema completeness. Three
+    # (ca_nl_production_fund, qc_film_production, pt_film_incentive) are
+    # confirmed duplicate aliases of already-canonical programs
+    # (ca_nl_all_spend_credit, ca_qc_pstc, pt_scri_pt_cash_rebate) --
+    # see CANONICAL_RUNTIME_SLUG_BINDINGS.
+    "ca_federal_cptc", "in_national_film",
+    "new_zealand_screen_production_grant_—_international_post_vfx",
+    "ca_nl_production_fund", "qc_film_production", "pe_film_incentive",
+    "pt_film_incentive",
 })
 
 

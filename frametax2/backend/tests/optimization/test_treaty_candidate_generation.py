@@ -73,15 +73,16 @@ def test_little_utopia_mu_auto_enumeration_is_correctly_empty_not_a_regression()
     elsewhere in the ledger) -- the fix must not fabricate one, and the
     served structure count/baseline NPC must be byte-identical.
 
-    Structure count legitimately grew 177 -> 185 (CineGlobe canonical
-    pricing path + discovery repair — see the matching note in
+    Structure count legitimately grew 177 -> 185 -> 197 (CineGlobe canonical
+    pricing path + discovery repair, then the final-19 committee
+    closeout — see the matching note in
     test_global_data_application_runtime.py::
     test_mauritius_calibration_is_byte_identical_after_application).
     Mauritius's own baseline NPC and empty treaty-partner set are
     untouched — asserted below."""
     served = build_allocated_structures(get_state())
     structures = served["structures"]
-    assert len(structures) == 185
+    assert len(structures) == 197
     treaty_structures = [s for s in structures if s["structure_type"] == "treaty_coproduction"]
     assert treaty_structures == []
     assert served["coverage"]["reachable_treaty_partners"] == []

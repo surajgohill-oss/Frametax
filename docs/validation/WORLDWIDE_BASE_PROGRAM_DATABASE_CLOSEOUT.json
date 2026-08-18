@@ -1,0 +1,142 @@
+{
+  "title": "Worldwide base program database + pricing closeout",
+  "generated_at": "2026-08-17",
+  "final_gate": "WORLDWIDE_BASE_PROGRAM_DATABASE_AND_PRICING_ACCEPTED",
+  "objective": "Canonicalize the final-19 committee-settled program determinations (Claude research + Codex review [8 AGREE, 11 CORRECT] + Gemini delta confirmation [11/11 CODEX_CONFIRMED]) and close the worldwide base-program database/pricing phase.",
+  "committee_inputs": [
+    "docs/validation/FINAL_19_PRIMARY_RESEARCH_COMMITTEE_HANDOFF.json",
+    "docs/validation/FINAL_19_CODEX_COMMITTEE_REVIEW.json",
+    "docs/validation/FINAL_19_GEMINI_CODEX_DELTA_REVIEW.json"
+  ],
+  "final_19": {
+    "implemented": 19,
+    "unresolved": 0,
+    "dispositions": {
+      "canonicalized_new_or_updated_priceable_identity": 9,
+      "priceable_via_confirmed_duplicate_alias": 3,
+      "stays_non_priceable_selective_or_grant_fund_real_mechanism_preserved": 7,
+      "stays_non_priceable_non_economic_or_financing_support": 4,
+      "note": "Counts overlap by design where a program has both a canonicalized identity and an alias binding note (e.g. ca_qc_pstc itself was also promoted). Exact per-program disposition:"
+    },
+    "programs": {
+      "ar_incaa_incentive": {"disposition": "NON_ECONOMIC (retained, unchanged) -- Buenos Aires City's real BA Producción Internacional rebate is a SEPARATE, not-yet-primary-confirmed identity, deliberately not registered under this slug"},
+      "au_nsw_screen": {"disposition": "GRANT_FUND / NON_GUARANTEED_SELECTIVE (reclassified from generic UNPRICEABLE_AUTHORITY_INSUFFICIENT) -- multi-stream merit-assessed fund, real mechanism preserved for later optimizer, never priced deterministically"},
+      "au_qld_screen_qld": {"disposition": "GRANT_FUND / NON_GUARANTEED_SELECTIVE (reclassified) -- explicitly Board-discretionary per its own guidelines"},
+      "au_vic_vicscreen": {"disposition": "GRANT_FUND / NON_GUARANTEED_SELECTIVE (reclassified) -- VSI negotiated case-by-case, judging-panel-assessed"},
+      "bc_interactive_digital_media_tax_credit_idmtc": {"disposition": "NON_ECONOMIC for this engine's current feature_film/TV scope (reclassified) -- genuinely deterministic (25% of eligible salary/wages) but for interactive digital media, out of scope until game/interactive production types exist"},
+      "br_ancine_incentive": {"disposition": "FINANCING_SUPPORT / NON_GUARANTEED_SELECTIVE (reclassified from NON_ECONOMIC per Codex correction) -- ANCINE's real 70% withholding-tax-reduction investor mechanism preserved, never priced as a direct QPE rebate"},
+      "ca_federal_cptc": {"disposition": "CANONICALIZED -- new DoctrineRecord, 25% of qualified Canadian labour expenditure (60%-of-production-cost ceiling disclosed), VERIFIED tier, CAVCO Canadian-content certification requirement disclosed as a project-fact-dependent RateCondition. Coverage veto removed."},
+      "ca_nl_production_fund": {"disposition": "DUPLICATE_ALIAS of ca_nl_all_spend_credit (already-canonical program) -- bound via CANONICAL_RUNTIME_SLUG_BINDINGS. ca_nl_all_spend_credit itself corrected: cap $10M(stale)->CAD$20M, confidence PARSED->VERIFIED, structured SourceProvenance added."},
+      "dk_film_incentive": {"disposition": "SELECTIVE_DISCRETIONARY (unchanged classification, reclassified coverage state to NON_GUARANTEED_SELECTIVE) -- 25% headline rate but explicitly competitive/scored, real mechanism preserved"},
+      "gb_sct_screen_fund": {"disposition": "GRANT_FUND / NON_GUARANTEED_SELECTIVE (reclassified) -- explicitly 'highly competitive' per official source"},
+      "gb_wls_screen_fund": {"disposition": "GRANT_FUND / NON_GUARANTEED_SELECTIVE (reclassified) -- Wales-talent eligibility gate confirmed, discretionary co-investment fund"},
+      "in_national_film": {"disposition": "CANONICALIZED -- new DoctrineRecord, 30% base QPE (Codex-corrected from Claude's mistaken 40%-base-plus-two-5%-bonuses reading), two conditional +5% uplifts disclosed as project-fact-dependent RateConditions (never auto-applied, 40% documented maximum), cap $3.6M USD. VERIFIED tier. Coverage veto removed. Capability profile added (India previously had none)."},
+      "jm_film_incentive": {"disposition": "FINANCING_SUPPORT / NON_GUARANTEED_SELECTIVE (reclassified) -- no general production QPE rebate exists per Codex's direct check of the official Film Jamaica page; ETC (30% of local company PAYE, not production QPE), bond waivers and duty relief preserved as disclosed non-priced mechanisms"},
+      "mx_eficine_incentive": {"disposition": "UNCHANGED, correctly retained non-priceable -- genuinely distinct, older investor-side program (Art. 189 LISR) with no confirmed primary rate; NOT merged with EFICA per Codex's explicit instruction"},
+      "new_zealand_screen_production_grant_—_international_post_vfx": {"disposition": "CANONICALIZED -- new DoctrineRecord, 20% baseline PDV rate (Codex-corrected from Claude's stale 20%/18% QNZPE-tiered bracket), conditional +5% uplift disclosed as a project-fact-dependent RateCondition (25% maximum), min QNZPE $155K USD. VERIFIED tier. Coverage veto removed."},
+      "pe_film_incentive": {"disposition": "CANONICALIZED -- new DoctrineRecord (Codex-corrected from Claude's NON_ECONOMIC: CIPA is enacted via Law 32309 and regulated via Supreme Decree 099-2026-EF, not pending). Investor-side credit modeled via Peru's general 29.5% corporate income tax rate as a disclosed proxy, capped at 50% utilization. PARSED tier. Coverage veto removed. Capability profile added (Peru previously had none)."},
+      "pt_film_incentive": {"disposition": "DUPLICATE_ALIAS of pt_scri_pt_cash_rebate (the large-scale track) -- bound via CANONICAL_RUNTIME_SLUG_BINDINGS. Per Codex/Gemini, RIPAC's TWO mutually-exclusive tracks are now BOTH separately canonicalized (see pt_scri_pt_cash_rebate and pt_scri_pt_medium_budget below), never combined into one synthetic rate."},
+      "qc_film_production": {"disposition": "DUPLICATE_ALIAS of ca_qc_pstc (already-canonical program) -- bound via CANONICAL_RUNTIME_SLUG_BINDINGS. ca_qc_pstc itself corrected: confidence DISCOVERY->VERIFIED, min spend CAD250,000 added, structured SourceProvenance added, VFX/animation 16% enhancement disclosed (not modeled as an additive rate, narrower base than QPE)."},
+      "uy_xxi_incentive": {"disposition": "RETIRED (SUPERSEDED) -- Uruguay XXI never administered a rebate; reclassified per Codex correction. Real economic mechanisms registered under separate, correctly-attributed identities below."}
+    }
+  },
+  "new_or_updated_canonical_programs": {
+    "ca_federal_cptc": {"jurisdiction": "CA", "rate": "25% of qualified Canadian labour expenditure", "confidence_tier": "VERIFIED", "priceability": "PROJECT_FACT_DEPENDENT"},
+    "ca_nl_all_spend_credit": {"jurisdiction": "CA-NL", "rate": "40% all-spend, cap CAD$20M/project/year", "confidence_tier": "VERIFIED", "priceability": "PROJECT_FACT_DEPENDENT", "note": "cap corrected from stale $10M; qc_film_production alias notwithstanding this is actually ca_nl_production_fund's target"},
+    "ca_qc_pstc": {"jurisdiction": "CA-QC", "rate": "25% of qualified expenditures + disclosed 16% VFX/animation labour enhancement (not modeled)", "confidence_tier": "VERIFIED (was DISCOVERY)", "priceability": "PROJECT_FACT_DEPENDENT"},
+    "in_national_film": {"jurisdiction": "IN", "rate": "30% base QPE, two conditional +5% uplifts to a 40% maximum", "confidence_tier": "VERIFIED", "priceability": "PROJECT_FACT_DEPENDENT"},
+    "new_zealand_screen_production_grant_—_international_post_vfx": {"jurisdiction": "NZ", "rate": "20% baseline, conditional +5% uplift to 25% maximum", "confidence_tier": "VERIFIED", "priceability": "PROJECT_FACT_DEPENDENT"},
+    "pe_film_incentive": {"jurisdiction": "PE", "rate": "29.5% (Peru general corporate income tax rate, disclosed proxy for CIPA's investor-side rate), capped at 50% utilization", "confidence_tier": "PARSED", "priceability": "PROJECT_FACT_DEPENDENT"},
+    "pt_scri_pt_cash_rebate": {"jurisdiction": "PT", "rate": "30% first EUR2M, 25% excess (large-scale track)", "confidence_tier": "VERIFIED (was PARSED)", "priceability": "PROJECT_FACT_DEPENDENT", "note": "min spend/cap updated: EUR2.5M/EUR6M"},
+    "pt_scri_pt_medium_budget": {"jurisdiction": "PT", "rate": "30% base (medium-budget track, disclosed 40% enhanced on narrower base)", "confidence_tier": "VERIFIED", "priceability": "PROJECT_FACT_DEPENDENT", "note": "NEW sibling identity to pt_scri_pt_cash_rebate, mutually exclusive at project level"},
+    "uy_tax_credit_2026": {"jurisdiction": "UY", "rate": "30% of admitted Uruguay expenditure", "confidence_tier": "VERIFIED", "priceability": "PROJECT_FACT_DEPENDENT", "note": "NEW identity replacing the misnamed uy_xxi_incentive; mutually exclusive with the separate, non-priced uy_acau_cash_rebate"}
+  },
+  "new_disclosed_non_priced_identities": {
+    "uy_acau_cash_rebate": "NON_GUARANTEED_SELECTIVE -- real ACAU PUA cash-rebate calls exist but the original handoff's three-tier rate table was not primary-confirmed and was correctly discarded per Codex; preserved as a disclosed, non-priced identity for later optimizer/grants-fund restoration"
+  },
+  "capability_data_gaps_closed": {
+    "note": "discover_executable_jurisdictions()'s match_capability() returns production_capable=False unconditionally when a jurisdiction has no jurisdiction_comparison.py profile at all -- a genuine, pre-existing data gap (not a discovery-logic change) that was silently rejecting India/Peru/Uruguay at the capability gate even after their doctrines were canonicalized. Minimal capability profiles added for all three (general geographic/industry knowledge, disclosed as such, not primary-sourced production-infrastructure data) so their real, primary-sourced economic doctrine reaches production-capability assessment.",
+    "jurisdictions_added": ["IN", "PE", "UY"]
+  },
+  "engine_version": "canonical-1.17.1",
+  "lu_fvd_npc_controls": {
+    "lu_mauritius_baseline_npc_usd": 3057794.90,
+    "lu_mauritius_baseline_unchanged": true,
+    "fvd_greece_baseline_npc_usd": 3072027.16,
+    "fvd_greece_baseline_unchanged": true,
+    "new_program_reconciliation": {
+      "ca_federal_cptc": {"npc_usd": 3478981.75, "reconciles_exactly": true},
+      "in_national_film": {"npc_usd": 3271240.70, "reconciles_exactly": true},
+      "new_zealand_pdv": {"npc_usd": 3686722.80, "reconciles_exactly": true},
+      "pe_film_incentive": {"npc_usd": 3292014.81, "reconciles_exactly": true},
+      "pt_scri_pt_medium_budget": {"npc_usd": 3271240.70, "reconciles_exactly": true},
+      "uy_tax_credit_2026": {"npc_usd": 3271240.70, "reconciles_exactly": true}
+    }
+  },
+  "current_worldwide_database_accounting": {
+    "canonical_identities_total_doctrine_records": 115,
+    "total_executable_jurisdictions": 113,
+    "coverage_registry_rows_by_state": {
+      "UNPRICEABLE_AUTHORITY_INSUFFICIENT": 68,
+      "NON_GUARANTEED_SELECTIVE": 34,
+      "NON_ECONOMIC": 7,
+      "SUPERSEDED": 4,
+      "CANONICAL_DATA_HANDOFF_DEFECT": 3,
+      "DUPLICATE": 1,
+      "total_rows": 117
+    },
+    "unclassified_unexplained": 0
+  },
+  "base_pricing_closeout": {
+    "fvd_representative_evaluation": {
+      "total_candidate_structures": 121,
+      "priced": 113,
+      "unpriceable": 8
+    },
+    "generic_coverage_schema_wiring_blockers": 0,
+    "unexplained": 0,
+    "note": "Every remaining unpriceable candidate in the FVD representative evaluation carries an EXACT terminal reason (RULE_REJECTED/STATUTORY_CONDITIONS_UNMET, FEASIBILITY_REVIEW_REQUIRED for NON_GUARANTEED_SELECTIVE/NON_ECONOMIC-classified programs, or UNPRICEABLE_AUTHORITY_INSUFFICIENT for the remaining 68 genuinely zero-evidence programs) -- never a generic/unexplained bucket."
+  },
+  "runtime_verification": {
+    "backend": "started via preview_start, all evaluate_project() calls confirmed live against the real Postgres-backed session",
+    "frontend": "started via preview_start, browser-verified live",
+    "lu_scenarios_page": "loads, hero and scenario cards agree exactly ($3,057,795 NPC, Mauritius, rank 1/leading)",
+    "fvd_scenarios_page": "loads, hero and scenario cards agree exactly ($3,072,027 NPC, Greece); Review section browser-confirmed showing IN, PE, UY, two New Zealand entries (general + PDV), two Portugal entries (large + medium), two Canada entries (PSTC + CPTC) as independent, distinctly-priced candidates",
+    "api": "GET /api/v1/cineglobe/projects/{id}/state confirmed 200 for both projects with the new candidate universe"
+  },
+  "prevention": {
+    "structured_source_provenance": "every new/updated DoctrineRecord carries a SourceProvenance object (issuing_authority, source_url, citation_detail, verified_date, interpretation_note) -- no new provenance store created, existing architecture reused",
+    "committee_identities_protected": "DELIBERATELY_PROMOTED_CANONICAL_IDS (tests/data/test_authority_coverage_registry.py) extended with all 7 newly-canonicalized/aliased final-19 identities -- prevents a future audit from re-flagging them as unexplained coverage-registry absences",
+    "confidence_tier_consistency": "CA-QC and PT profile confidence_tier fields promoted alongside their DoctrineRecords (tests/test_jurisdiction_doctrine_consistency.py's divergence guard already existed and caught the initial omission)",
+    "capability_gate_data_gap": "documented in this artifact and in canonical_evaluation.py's ENGINE_VERSION changelog for future jurisdictions -- a new DoctrineRecord alone is insufficient if the jurisdiction has zero jurisdiction_comparison.py profile"
+  },
+  "optimizer_data_preserved": {
+    "grants_funds": "au_nsw_screen, au_qld_screen_qld, au_vic_vicscreen, gb_sct_screen_fund, gb_wls_screen_fund, uy_acau_cash_rebate -- real rate/cap/eligibility data disclosed in each DoctrineRecord's citation, never priced",
+    "financing_support": "br_ancine_incentive (70% withholding tax reduction investor mechanism), jm_film_incentive (30% PAYE tax credit + bond/duty relief) -- preserved, never converted to guaranteed NPC value",
+    "co_pro_cultural": "dk_film_incentive's cultural/production test, gb_wls_screen_fund's Wales-talent gate -- disclosed, not modeled as base pricing gates",
+    "split_component": "untouched this pass",
+    "hybrid_anchor": "untouched this pass",
+    "in_kind": "untouched this pass",
+    "reinvestment_ledger": "untouched this pass",
+    "stacking_mutual_exclusivity_facts_preserved": [
+      "pt_scri_pt_cash_rebate <-> pt_scri_pt_medium_budget (mutually exclusive at project level, disclosed)",
+      "uy_tax_credit_2026 <-> uy_acau_cash_rebate (Decree 153/026 expressly prevents both, disclosed)",
+      "new_zealand PDV track <-> nz_spg_international (mutual-exclusivity/stacking relationship left as an open question for the optimizer, explicitly not resolved this pass)"
+    ]
+  },
+  "tests": {
+    "new_regression_updates": [
+      "tests/test_jurisdiction_comparison.py (IN/PE/UY added to SECONDARY_CODES)",
+      "tests/test_canonical_executable_registry.py (110->113)",
+      "tests/bridge/test_provenance.py (110->113 executable jurisdictions)",
+      "tests/data/test_authority_coverage_registry.py (DELIBERATELY_PROMOTED_CANONICAL_IDS +7)",
+      "tests/optimization/test_global_data_application_runtime.py, test_rule_coverage_report.py, test_treaty_candidate_generation.py (structure/jurisdiction counts)",
+      "tests/test_canonical_authority_substrate.py, test_canonical_served_wiring_repair.py (FVD candidate universe counts)",
+      "tests/test_fvd_canonical_input_assembly_repair.py (CA-NL rate_ceiling corrected 0.45->0.40, matching the removed stale ceiling tier)"
+    ],
+    "full_suite_result": "4228 passed, 1 pre-existing out-of-scope failure (test_scenarios_and_workspace_both_use_the_canonical_title_formatter -- unrelated frontend title-formatter regression, present before this task), 1 skipped"
+  },
+  "production_economics_changed": true,
+  "frontend_changed": false,
+  "note_production_economics": "Base-pricing DATA changed as instructed (new/corrected DoctrineRecords, coverage-veto removal, capability-profile additions) -- LU and FVD baseline NPCs are BYTE-IDENTICAL to before this task; the change is additive (new candidates), not a modification of any existing served baseline."
+}

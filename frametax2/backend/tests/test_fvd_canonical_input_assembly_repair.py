@@ -222,10 +222,14 @@ async def test_representative_fvd_jurisdiction_traces(db: AsyncSession):
 
     ca_nl = seg("CA-NL")
     assert ca_nl["qpe_usd"] == pytest.approx(4_154_821.00, abs=0.01)
+    # Final-19 committee closeout: gov.nl.ca directly confirmed a flat 40%
+    # rate (no separate ceiling tier) -- the prior 45%-ceiling entry was
+    # carried forward unconfirmed from an older catalog figure and is now
+    # corrected/removed per the official source.
     assert ca_nl["rate_floor"] == pytest.approx(0.40)
-    assert ca_nl["rate_ceiling"] == pytest.approx(0.45)
-    assert ca_nl["is_band_ceiling"] is True
-    assert ca_nl["ceiling_requires_confirmation"] is True
+    assert ca_nl["rate_ceiling"] == pytest.approx(0.40)
+    assert ca_nl["is_band_ceiling"] is False
+    assert ca_nl["ceiling_requires_confirmation"] is False
 
     qa = seg("QA")
     assert qa["qpe_usd"] == pytest.approx(4_154_821.00, abs=0.01)

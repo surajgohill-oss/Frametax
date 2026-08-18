@@ -145,7 +145,7 @@ def test_mauritius_calibration_is_byte_identical_after_application():
     )
     assert round(baseline["npc_with_adjustments_usd"], 2) == 3057794.90
     assert served["ranking"][0]["structure_id"] == "ALLOC-BASELINE-MU"
-    assert len(served["structures"]) == 185
+    assert len(served["structures"]) == 197
 
 
 def test_selective_programs_contribute_zero_guaranteed_value():

@@ -473,8 +473,8 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     entries = view["structures"]["allocated_structures"]["structures"]
     priced = [e for e in entries if e["is_fully_priced"]]
     unpriced = [e for e in entries if not e["is_fully_priced"]]
-    assert len(entries) == 115
-    assert len(priced) == 107
+    assert len(entries) == 121
+    assert len(priced) == 113
     assert len(unpriced) == 8
 
     for code in ("MN", "UZ", "AT"):

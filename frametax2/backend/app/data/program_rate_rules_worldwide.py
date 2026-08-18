@@ -1179,23 +1179,63 @@ CA_QC_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="CA-QC",
     program_slug="ca_qc_pstc",
     program_name="Quebec Tax Credit for Film Production Services",
-    confidence_tier="DISCOVERY",  # base rate corroborated by 2 secondary
-                                   # sources but the official primary PDF
-                                   # could not be read — held at DISCOVERY,
-                                   # not promoted to PARSED, until it is
+    # Final-19 committee closeout: Codex source_assessment=VERIFIED, citing
+    # official SODEC fact sheets + Revenu Québec directly (min spend CAD
+    # 250,000 confirmed, 25% base + separate 16% VFX/animation labour
+    # enhancement confirmed). qc_film_production (the final-19
+    # canonical_program_id) is a DUPLICATE_ALIAS of this program -- see
+    # CANONICAL_RUNTIME_SLUG_BINDINGS.
+    confidence_tier="VERIFIED",
     incentive_type="tax_credit",
     is_refundable=True,
     is_transferable=None,
-    min_spend_usd=None,
+    min_spend_usd=250_000.0,  # CAD 250,000 production budget requirement (official fact sheet)
     annual_cap_usd=None,
     requires_cultural_test=False,
-    citation=_CA_QC_CITATION,
-    source_ref="sodec.gouv.qc.ca-via-secondary-sources",
+    citation=_CA_QC_CITATION + (
+        " Final-19 committee update: official SODEC fact sheet + Revenu "
+        "Québec confirm CAD 250,000 minimum production budget and a "
+        "SEPARATE 16% enhancement on qualified computer-animation/VFX "
+        "labour costs (only 65% of a VFX/animation service contract is "
+        "recognized for that enhancement) -- the 16% is NOT 16 additional "
+        "points on total QPE and is disclosed, not modeled as a second "
+        "additive tier, per the same 'not modeled' pattern used elsewhere "
+        "in this registry for uplifts on a narrower base than total QPE."
+    ),
+    source_ref="sodec.gouv.qc.ca+revenuquebec.ca-official",
+    provenance=SourceProvenance(
+        issuing_authority="Société de développement des entreprises "
+                           "culturelles (SODEC), jointly with Revenu Québec",
+        source_url="https://sodec.gouv.qc.ca/wp-content/uploads/fact-sheet-quebec-pstc-2024-april-2.pdf",
+        citation_detail="'the tax credit corresponds to 25% of the "
+                         "qualified expenditures incurred by an eligible "
+                         "corporation for services provided in Québec'; "
+                         "'CAD250,000 production budget requirement'",
+        verified_date="2026-08-17",
+        interpretation_note="Final-19 committee (Claude research + Codex "
+                             "AGREE + Gemini CODEX_CONFIRMED): priceability "
+                             "is PROJECT_FACT_DEPENDENT -- requires an "
+                             "eligible Québec corporation and SODEC "
+                             "approval; VFX labour-cost split not modeled.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="ca-qc-pstc-25",
             rate=0.25,
             is_band_ceiling=False,
+            conditions=(RateCondition(
+                condition_id="ca-qc-vfx-enhancement-not-modeled",
+                description="A separate 16% enhancement applies to "
+                            "qualified computer-animation/VFX LABOUR costs "
+                            "specifically (a narrower base than total QPE, "
+                            "with only 65% of a VFX/animation service "
+                            "contract recognized) -- not modeled as an "
+                            "additive rate; disclosed only.",
+                quote="this improvement represents an additional 16% for "
+                      "qualified labour costs directly attributable to "
+                      "qualified activities (sodec.gouv.qc.ca fact sheet)",
+                kind="uplift_on_narrower_base_not_modeled",
+            ),),
         ),
     ),
 ))
@@ -3791,16 +3831,50 @@ _PT_CITATION = (
 PT_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="PT",
     program_slug="pt_scri_pt_cash_rebate",
-    program_name="Portugal SCRI.PT Cash Rebate Incentive",
-    confidence_tier="PARSED",
+    program_name="Portugal RIPAC / SCRI.PT — Large-Scale Production Track",
+    # Final-19 committee closeout: Codex confirmed (VERIFIED, current
+    # Diário da República Portaria 265-A/2026, effective 18 June 2026,
+    # amended by Portaria 276-B/2026) that this IS the large-scale track,
+    # genuinely distinct from and mutually-modeled alongside a separate
+    # medium-budget track (pt_scri_pt_medium_budget, registered below).
+    # The prior "large-scale track relationship unconfirmed" disclosure is
+    # RESOLVED: min spend EUR2.5M, cap EUR6M/work (or EUR3M/episode up to
+    # EUR6M/project), first-come-first-served allocation.
+    confidence_tier="VERIFIED",
     incentive_type="cash_rebate",
     is_refundable=True,
     is_transferable=False,
-    min_spend_usd=None,
-    annual_cap_usd=None,
+    min_spend_usd=2_710_000.0,  # EUR 2.5M large-track threshold, ~EUR/USD 1.084 disclosed approx
+    annual_cap_usd=6_500_000.0,  # EUR 6M per work (or EUR3M/episode up to EUR6M/project)
     requires_cultural_test=False,
-    citation=_PT_CITATION,
-    source_ref="beyondfocus+saturation.io+ica-ip.pt-official+portugalfilmcommission-portugal",
+    citation=_PT_CITATION + (
+        " Final-19 committee update (Diário da República Portaria "
+        "265-A/2026, effective 18 June 2026): large track minimum "
+        "eligible spend EUR 2.5 million; cap EUR 6 million per work (or "
+        "EUR 3 million per episode up to EUR 6 million per project); "
+        "first-come-first-served allocation, distinct from the medium "
+        "track's scored application rounds. Supersedes the stale 2018 "
+        "ICA web description previously carried at PARSED tier."
+    ),
+    source_ref="beyondfocus+saturation.io+ica-ip.pt-official+portugalfilmcommission-portugal+diariodarepublica.pt-portaria-265-A-2026",
+    provenance=SourceProvenance(
+        issuing_authority="Instituto do Cinema e do Audiovisual (ICA, I.P.), "
+                           "with Turismo de Portugal",
+        source_url="https://diariodarepublica.pt/dr/detalhe/portaria/265-a-2026-1133905372",
+        citation_detail="'30% first EUR2m and up to 25% excess'; large "
+                         "track minimum EUR2.5M eligible spend, cap EUR6M "
+                         "per work",
+        verified_date="2026-08-17",
+        interpretation_note="Final-19 committee (Claude research + Codex "
+                             "CORRECT + Gemini CODEX_CONFIRMED): "
+                             "priceability is PROJECT_FACT_DEPENDENT -- "
+                             "requires cultural score, track selection, "
+                             "expense geography and FCFS allocation status "
+                             "to be known. Mutually exclusive with the "
+                             "medium-budget track (pt_scri_pt_medium_"
+                             "budget) at the project level -- stacking/"
+                             "exclusivity logic deferred to the optimizer.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="pt-graduated-30-25",
@@ -3849,6 +3923,511 @@ PT_DOCTRINE = register(DoctrineRecord(
     ),
 ))
 register_rate_rules(rate_rules_for(PT_DOCTRINE))
+
+# ── Portugal: RIPAC / SCRI.PT — Medium-Budget Production Track ────────────
+#
+# Final-19 committee closeout (CineGlobe worldwide base program database):
+# Codex/Gemini confirmed RIPAC contains TWO mutually exclusive tracks at
+# the project level. pt_scri_pt_cash_rebate (above) is the large-scale
+# track (>= EUR2.5M spend, FCFS allocation). This is the SEPARATE
+# medium-budget track — never combined into one synthetic rate, per the
+# committee's explicit instruction. Base 30%, with a 40% enhanced rate
+# for specified low-density-territory/Azores/Madeira/disability-related
+# expenditure (a narrower base than total eligible spend — disclosed,
+# not modeled as a blanket project uplift, same convention as the large
+# track's own outside-Lisbon/Porto flat-30% tier).
+PT_MEDIUM_DOCTRINE = register(DoctrineRecord(
+    jurisdiction_code="PT",
+    program_slug="pt_scri_pt_medium_budget",
+    program_name="Portugal RIPAC / SCRI.PT — Medium-Budget Production Track",
+    confidence_tier="VERIFIED",
+    incentive_type="cash_rebate",
+    is_refundable=True,
+    is_transferable=False,
+    min_spend_usd=542_000.0,  # EUR 500,000 (fiction/animation); EUR 200,000 for documentaries/no-Portugal-filming (disclosed, not separately gated)
+    annual_cap_usd=1_630_000.0,  # EUR 1.5 million
+    requires_cultural_test=True,  # scored application rounds distinguish this track from the large track's FCFS allocation
+    citation=(
+        "diariodarepublica.pt (Portaria 265-A/2026, effective 18 June "
+        "2026, amended by Portaria 276-B/2026): medium track base 30%, "
+        "enhanced 40% for specified low-density-territory/autonomous-"
+        "region/disability-related expenditure; minimum eligible spend "
+        "EUR 500,000 (fiction/animation) or EUR 200,000 (documentaries "
+        "or no filming in Portugal); cap EUR 1.5 million. Distinct "
+        "scored application rounds, not first-come-first-served."
+    ),
+    source_ref="diariodarepublica.pt-portaria-265-A-2026-medium-track",
+    provenance=SourceProvenance(
+        issuing_authority="Instituto do Cinema e do Audiovisual (ICA, I.P.), "
+                           "with Turismo de Portugal",
+        source_url="https://diariodarepublica.pt/dr/detalhe/portaria/265-a-2026-1133905372",
+        citation_detail="Medium track: 30% base, 'up to 40% in low-density "
+                         "regions, the Azores and Madeira', minimum spend "
+                         "EUR500,000/EUR200,000, cap EUR1.5 million",
+        verified_date="2026-08-17",
+        interpretation_note="Final-19 committee (Claude research + Codex "
+                             "CORRECT + Gemini CODEX_CONFIRMED): "
+                             "priceability is PROJECT_FACT_DEPENDENT -- "
+                             "requires track selection (vs. the large-"
+                             "scale track), cultural score, and expense "
+                             "geography. Mutually exclusive with "
+                             "pt_scri_pt_cash_rebate at the project level.",
+    ),
+    tiers=(
+        DoctrineRateTier(
+            tier_id="pt-medium-base-30",
+            rate=0.30,
+            is_band_ceiling=False,
+            conditions=(RateCondition(
+                condition_id="pt-medium-enhanced-40-not-modeled",
+                description="A 40% enhanced rate applies to specified "
+                            "low-density-territory/Azores/Madeira/"
+                            "disability-related expenditure only -- a "
+                            "narrower base than total eligible spend, "
+                            "not modeled as a blanket project uplift.",
+                quote="up to 40% in low-density regions, the Azores and "
+                      "Madeira (industry summary, corroborating "
+                      "diariodarepublica.pt)",
+                kind="uplift_on_narrower_base_not_modeled",
+            ),),
+        ),
+    ),
+))
+register_rate_rules(rate_rules_for(PT_MEDIUM_DOCTRINE))
+
+# ── India: Incentive Scheme for Production of Foreign Films in India ──────
+#
+# Final-19 committee closeout. Base rate 30% of Qualifying Production
+# Expenditure. Two CONDITIONAL 5-point uplifts (Indian crew 15%+;
+# significant Indian content) exist but are NOT auto-applied -- per the
+# committee's explicit correction (Codex CORRECT + Gemini
+# CODEX_CONFIRMED): "30% base + conditional 5% + conditional 5% = 40%
+# MAXIMUM, not 40% base + two 5% bonuses = 50%." Disclosed as
+# RateConditions, never auto-applied without the underlying project fact
+# (Indian-crew-percentage, SIC/content status) being known.
+IN_DOCTRINE = register(DoctrineRecord(
+    jurisdiction_code="IN",
+    program_slug="in_national_film",
+    program_name="Incentive Scheme for Production of Foreign Films in India",
+    confidence_tier="VERIFIED",
+    incentive_type="cash_rebate",
+    is_refundable=False,
+    is_transferable=False,
+    min_spend_usd=None,  # track-specific (INR10M live shoot / INR100M treaty co-production) -- not a single flat minimum, disclosed
+    annual_cap_usd=3_600_000.0,  # INR 300 million (~USD 3.6M) per project
+    requires_cultural_test=False,
+    citation=(
+        "Official Ministry of Information & Broadcasting guidelines "
+        "(mib.gov.in PDF confirmed to exist, binary retrieved but not "
+        "text-parseable this pass) + PIB (Press Information Bureau, "
+        "official GOI communications) press releases, corroborated by "
+        "Screen Daily, Deadline, Vitrina, National Law Review: 30% base "
+        "QPE rate; +5% for 15%+ Indian crew; +5% for significant Indian "
+        "content (SIC); 40% MAXIMUM total, not additive beyond that "
+        "ceiling. Cap INR 300 million (~USD 3.6 million) per project. "
+        "Executed by the Film Facilitation Office (FFO) under NFDC, "
+        "Ministry of Information & Broadcasting. Eligibility requires "
+        "shooting permission granted after 01.04.2022. Final-19 "
+        "committee correction (Codex, citing pib.gov.in PRID=1986454): "
+        "the 40% figure is the documented MAXIMUM under the specified "
+        "live-shoot foreign-film track, not a 40% base with two "
+        "additional 5% bonuses stacking to 50%."
+    ),
+    source_ref="mib.gov.in-official+pib.gov.in-official-final19-committee-corrected",
+    provenance=SourceProvenance(
+        issuing_authority="Ministry of Information & Broadcasting "
+                           "(Government of India), executed by the Film "
+                           "Facilitation Office (FFO) under NFDC",
+        source_url="https://mib.gov.in/sites/default/files/2024-02/Revised%20incentive%20guidelines.pdf",
+        citation_detail="30% base QPE; +5% Indian crew (15%+); +5% "
+                         "significant Indian content; 40% maximum total; "
+                         "cap INR 300 million",
+        verified_date="2026-08-17",
+        interpretation_note="Final-19 committee (Claude PRICEABLE_"
+                             "FORMULAIC -> Codex CORRECT: PROJECT_FACT_"
+                             "DEPENDENT, Gemini CODEX_CONFIRMED): the two "
+                             "5-point uplifts are conditional on project "
+                             "facts (Indian-crew-percentage, SIC status) "
+                             "not yet modeled in this engine's facts "
+                             "vocabulary -- disclosed as RateConditions, "
+                             "never auto-applied. Track-specific minimum "
+                             "spend (INR10M live shoot / INR100M treaty "
+                             "co-production) also requires a track fact "
+                             "not yet known generically.",
+    ),
+    tiers=(
+        DoctrineRateTier(
+            tier_id="in-base-30",
+            rate=0.30,
+            is_band_ceiling=False,
+            conditions=(
+                RateCondition(
+                    condition_id="in-crew-uplift-not-auto-applied",
+                    description="+5 points if 15%+ of crew is Indian -- "
+                                "a project fact not yet modeled generically; "
+                                "never auto-applied.",
+                    quote="a further 5% for employing 15% or more Indian "
+                          "manpower (PIB/trade press, corroborated)",
+                    kind="project_fact_dependent_uplift",
+                ),
+                RateCondition(
+                    condition_id="in-sic-uplift-not-auto-applied",
+                    description="+5 points for significant Indian content "
+                                "(SIC) -- a project fact not yet modeled "
+                                "generically; never auto-applied. The two "
+                                "conditional uplifts together are capped "
+                                "at a 40% TOTAL maximum, never 50%.",
+                    quote="A 5% bonus will be granted for films featuring "
+                          "significant Indian content (PIB/trade press, "
+                          "corroborated); 40% maximum per Final-19 "
+                          "committee correction",
+                    kind="project_fact_dependent_uplift",
+                ),
+            ),
+        ),
+    ),
+))
+register_rate_rules(rate_rules_for(IN_DOCTRINE))
+
+# ── New Zealand: ISPR — Post, Digital and Visual Effects (PDV) track ──────
+#
+# Final-19 committee closeout. For PDV activity starting on/after 1
+# January 2026: 20% baseline, 25% if the PDV uplift test is met (a
+# CONDITIONAL 5-point uplift, disclosed not auto-applied) -- replaces
+# the historical 20%/18% QNZPE-tiered bracket, which the committee
+# confirmed is superseded, not current. Registered under the exact
+# canonical_program_id the committee reviewed throughout, for identity
+# continuity with FINAL_19_CODEX_COMMITTEE_REVIEW.json /
+# FINAL_19_GEMINI_CODEX_DELTA_REVIEW.json.
+NZ_PDV_DOCTRINE = register(DoctrineRecord(
+    jurisdiction_code="NZ",
+    program_slug="new_zealand_screen_production_grant_—_international_post_vfx",
+    program_name="New Zealand ISPR — Post, Digital and Visual Effects (PDV) Track",
+    confidence_tier="VERIFIED",
+    incentive_type="cash_rebate",
+    is_refundable=False,
+    is_transferable=False,
+    min_spend_usd=155_000.0,  # NZD 250,000 minimum QNZPE for PDV Activity, USD-approx disclosed
+    annual_cap_usd=None,
+    requires_cultural_test=False,
+    citation=(
+        "nzfilm.co.nz (New Zealand Film Commission, official, via search "
+        "corroboration of NZFC_RebatesSummaries_Nov2025_PDV.pdf and the "
+        "current nzspr-criteria-international-productions resource; "
+        "direct WebFetch of the mbie.govt.nz HTML page returned an empty "
+        "JS-rendered shell this pass): 'For PDV activity starting on/"
+        "after 1 January 2026, the standalone rebate is 20% baseline and "
+        "25% if the PDV uplift test is met. The 20%/18% bracket is "
+        "historical.' Minimum QNZPE NZD 250,000 directly spent on or "
+        "necessarily related to PDV Activity (visual effects production, "
+        "certain physical effects, VFX photography, data capture, CGI, "
+        "2D/3D and visualisation). Final-19 committee correction (Codex, "
+        "citing NZFC_RebatesSummaries_Nov2025_PDV.pdf): the historical "
+        "20%/18% QNZPE-tiered bracket is NOT current doctrine; the "
+        "current structure is a flat 20% baseline with a conditional 5% "
+        "uplift."
+    ),
+    source_ref="nzfilm.co.nz-official-final19-committee-corrected",
+    provenance=SourceProvenance(
+        issuing_authority="New Zealand Film Commission (NZFC) / Ministry "
+                           "of Business, Innovation & Employment (MBIE)",
+        source_url="https://www.nzfilm.co.nz/resources/nzspr-criteria-international-productions",
+        citation_detail="'20% baseline and 25% if the PDV uplift test is "
+                         "met'; NZD 250,000 minimum QNZPE for PDV Activity",
+        verified_date="2026-08-17",
+        interpretation_note="Final-19 committee (Claude PRICEABLE_"
+                             "FORMULAIC -> Codex CORRECT: PROJECT_FACT_"
+                             "DEPENDENT, Gemini CODEX_CONFIRMED): the "
+                             "objective PDV uplift-test result is a "
+                             "project fact not yet modeled generically -- "
+                             "disclosed as a RateCondition, never "
+                             "auto-applied. Mutual-exclusivity/stacking "
+                             "with the general international ISPR rebate "
+                             "(nz_spg_international) is preserved as an "
+                             "open question for the later optimizer, not "
+                             "resolved here.",
+    ),
+    tiers=(
+        DoctrineRateTier(
+            tier_id="nz-pdv-baseline-20",
+            rate=0.20,
+            is_band_ceiling=False,
+            conditions=(RateCondition(
+                condition_id="nz-pdv-uplift-not-auto-applied",
+                description="+5 points (to 25% maximum) if the objective "
+                            "PDV uplift test is met -- a project fact not "
+                            "yet modeled generically; never auto-applied.",
+                quote="20% baseline and 25% if the PDV uplift test is met "
+                      "(nzfilm.co.nz, corroborated)",
+                kind="project_fact_dependent_uplift",
+            ),),
+        ),
+    ),
+))
+register_rate_rules(rate_rules_for(NZ_PDV_DOCTRINE))
+
+# ── Peru: CIPA (Certificado de Inversión en Producción Audiovisual) ───────
+#
+# Final-19 committee closeout. Codex/Gemini confirmed CIPA is enacted
+# (Law 32309) and regulated (Supreme Decree 099-2026-EF, published 11
+# June 2026, 90-day administrative implementation window) -- NOT merely
+# pending legislation as the original handoff concluded. The credit rate
+# tracks the investor's own general third-category (corporate) income
+# tax rate applied to accredited investment, rather than a fixed
+# independent percentage -- modeled here using Peru's standard general
+# corporate income tax rate as the best-available deterministic proxy,
+# disclosed as investor-side, not a direct producer QPE rebate.
+PE_DOCTRINE = register(DoctrineRecord(
+    jurisdiction_code="PE",
+    program_slug="pe_film_incentive",
+    program_name="Peru CIPA (Certificado de Inversión en Producción Audiovisual)",
+    confidence_tier="PARSED",
+    incentive_type="tax_credit",
+    is_refundable=False,
+    is_transferable=True,
+    min_spend_usd=None,
+    annual_cap_usd=None,
+    requires_cultural_test=False,
+    citation=(
+        "busquedas.elperuano.pe (El Peruano, Peru's official gazette, "
+        "Law 32309) + gob.pe (Ministerio de Economía y Finanzas, Supreme "
+        "Decree 099-2026-EF, published 11 June 2026): CIPA credit "
+        "'equivalent to the income tax rate applied to the investment "
+        "amount' -- an investor-side transferable tax credit, not a "
+        "direct producer QPE rebate. May offset no more than 50% of the "
+        "relevant income-tax or VAT obligation. Ten-year certificate "
+        "term with statutory annual revaluation. Administered by the "
+        "National Treasury Directorate, Ministry of Economy and Finance. "
+        "Final-19 committee correction (Codex, citing busquedas.elperuano."
+        "pe and gob.pe/mef directly): CIPA is enacted and regulated, not "
+        "pending -- the original handoff's NON_ECONOMIC classification "
+        "is superseded."
+    ),
+    source_ref="elperuano.pe-official+gob.pe-mef-official-final19-committee-corrected",
+    provenance=SourceProvenance(
+        issuing_authority="National Treasury Directorate, Ministry of "
+                           "Economy and Finance (Peru)",
+        source_url="https://busquedas.elperuano.pe/dispositivo/NL/2395122-1",
+        citation_detail="'The audiovisual credit is equivalent to the "
+                         "income tax rate applied to the investment "
+                         "amount'; CIPA may offset no more than 50% of "
+                         "the relevant income-tax or VAT obligation",
+        verified_date="2026-08-17",
+        interpretation_note="Final-19 committee (Claude NON_ECONOMIC -> "
+                             "Codex CORRECT: PROJECT_FACT_DEPENDENT, "
+                             "Gemini CODEX_CONFIRMED): this is an "
+                             "investor-side credit, not a direct producer "
+                             "rebate -- modeled here using Peru's general "
+                             "third-category corporate income tax rate "
+                             "(29.5%) as the best-available deterministic "
+                             "proxy for 'the income tax rate applied to "
+                             "the investment amount', disclosed as an "
+                             "approximation. Requires investor domiciled "
+                             "in Peru, an approved accredited-investment "
+                             "program, and export-production status -- "
+                             "all project facts not yet modeled "
+                             "generically. Administrative implementation "
+                             "window (90 days from 11 June 2026) may still "
+                             "be open; operational readiness is itself a "
+                             "project-timing fact.",
+    ),
+    tiers=(
+        DoctrineRateTier(
+            tier_id="pe-cipa-investor-rate-proxy",
+            rate=0.295,  # Peru's general third-category (corporate) income tax rate, used as a disclosed proxy for the investor's own rate
+            is_band_ceiling=True,
+            conditions=(RateCondition(
+                condition_id="pe-cipa-investor-side-not-producer-rebate",
+                description="CIPA's rate tracks the INVESTOR's own general "
+                            "income tax rate, not a fixed independent "
+                            "percentage of production QPE -- 29.5% (Peru's "
+                            "general third-category corporate rate) is "
+                            "used here as a disclosed proxy, capped at 50% "
+                            "utilization of the relevant tax/VAT "
+                            "liability. Requires investor regime, "
+                            "approved investment program, export-"
+                            "production status and transfer-value facts "
+                            "not yet modeled generically.",
+                quote="The audiovisual credit is equivalent to the income "
+                      "tax rate applied to the investment amount "
+                      "(busquedas.elperuano.pe, Law 32309)",
+                kind="investor_side_rate_proxy_not_producer_qpe",
+            ),),
+        ),
+    ),
+))
+register_rate_rules(rate_rules_for(PE_DOCTRINE))
+
+# ── Uruguay: 2026 Audiovisual Tax Credit (Decree 153/026) ─────────────────
+#
+# Final-19 committee closeout. Codex/Gemini confirmed "Uruguay XXI" is
+# promotional, not the administering authority -- ACAU (Agencia del Cine
+# y el Audiovisual del Uruguay) administers the real economic
+# mechanisms. TWO distinct current instruments exist: the ACAU cash-
+# rebate calls (Programa Uruguay Audiovisual, PUA) and this NEW July
+# 2026 tax credit (Decree 153/026). The committee found the original
+# handoff's three-tier cash-rebate table (25%/17.5%/10.6%) was NOT
+# primary-confirmed and must NOT be canonicalized -- only the tax credit,
+# which IS primary-confirmed, is registered here. The cash-rebate calls
+# remain preserved as a disclosed, non-priced selective mechanism (see
+# authority_coverage_registry.py's uy_acau_cash_rebate row) for later
+# optimizer/grants-fund restoration.
+UY_DOCTRINE = register(DoctrineRecord(
+    jurisdiction_code="UY",
+    program_slug="uy_tax_credit_2026",
+    program_name="Uruguay 2026 Audiovisual Tax Credit (Decree 153/026)",
+    confidence_tier="VERIFIED",
+    incentive_type="tax_credit",
+    is_refundable=False,
+    is_transferable=True,
+    min_spend_usd=None,  # UI 1,200,000 admitted spend (Unidad Indexada, no sourced UI/USD rate in this project -- disclosed, not converted)
+    annual_cap_usd=None,  # annual maximum set by MEF, not individually sourced this pass
+    requires_cultural_test=False,
+    citation=(
+        "impo.com.uy (IMPO, Uruguay's official legal-gazette portal, "
+        "Decree 153/026, published 17 July 2026): tax credit '30% of "
+        "admitted Uruguay expenditure', minimum UI 1,200,000 admitted "
+        "spend (Unidad Indexada), tax certificates valid 36 months, "
+        "assignable only as DGI (Dirección General Impositiva) "
+        "authorizes to specified institutions. Decree 153/026 expressly "
+        "prevents the same project from receiving BOTH the PUA cash "
+        "rebate and this tax credit -- mutually exclusive at the project "
+        "level. Final-19 committee correction (Codex, citing impo.com.uy "
+        "directly): the handoff's unsupported three-tier cash-rebate "
+        "table (25%/17.5%/10.6%) is discarded; only this primary-"
+        "confirmed tax credit is canonicalized."
+    ),
+    source_ref="impo.com.uy-official-decree-153-026-final19-committee-corrected",
+    provenance=SourceProvenance(
+        issuing_authority="Dirección General Impositiva (DGI) / Ministerio "
+                           "de Economía y Finanzas (MEF), Uruguay",
+        source_url="https://www.impo.com.uy/bases/decretos/153-2026",
+        citation_detail="'The tax credit is 30% of admitted Uruguay "
+                         "expenditure'; minimum UI 1,200,000 admitted "
+                         "spend; mutual exclusivity with the PUA cash "
+                         "rebate",
+        verified_date="2026-08-17",
+        interpretation_note="Final-19 committee (Claude PRICEABLE_"
+                             "FORMULAIC under the wrong 'uy_xxi_incentive' "
+                             "identity -> Codex CORRECT: rename/"
+                             "restructure, PROJECT_FACT_DEPENDENT, Gemini "
+                             "CODEX_CONFIRMED): requires instrument "
+                             "selection (vs. the ACAU cash rebate), "
+                             "eligible-Uruguay-spend, applicant/taxpayer "
+                             "status, committee approval, current-call "
+                             "availability and transfer-value assumptions "
+                             "-- all project facts not yet modeled "
+                             "generically. uy_xxi_incentive itself is "
+                             "retired (see authority_coverage_registry.py) "
+                             "-- Uruguay XXI never administered a rebate.",
+    ),
+    tiers=(
+        DoctrineRateTier(
+            tier_id="uy-tax-credit-30",
+            rate=0.30,
+            is_band_ceiling=False,
+            conditions=(RateCondition(
+                condition_id="uy-mutual-exclusivity-with-cash-rebate",
+                description="Mutually exclusive with the separate ACAU "
+                            "PUA cash-rebate calls at the project level -- "
+                            "a project fact (instrument selection) not "
+                            "yet modeled generically.",
+                quote="Decree 153/026 ... expressly prevents the same "
+                      "project receiving both PUA cash rebate and the new "
+                      "tax credit (impo.com.uy)",
+                kind="project_fact_dependent_eligibility",
+            ),),
+        ),
+    ),
+))
+register_rate_rules(rate_rules_for(UY_DOCTRINE))
+
+# ── Canada — Federal: Canadian Film or Video Production Tax Credit (CPTC) ─
+#
+# Final-19 committee closeout. Distinct from ca_federal_pstc (the
+# federal Production Services Tax Credit, 16% Canadian-labour, NO
+# Canadian-content requirement, already registered above) -- CPTC is
+# CAVCO's OTHER federal program, the Canadian-content-CERTIFIED credit
+# (points-test based), structurally analogous to the CA-ON OFTTC/OPSTC
+# split already modeled.
+CA_CPTC_DOCTRINE = register(DoctrineRecord(
+    jurisdiction_code="CA",
+    program_slug="ca_federal_cptc",
+    program_name="Canadian Film or Video Production Tax Credit (CPTC)",
+    confidence_tier="VERIFIED",
+    incentive_type="tax_credit",
+    is_refundable=True,
+    is_transferable=False,
+    min_spend_usd=None,
+    annual_cap_usd=None,  # no dollar cap; effective ceiling is the 60%-of-net-production-cost labour limit (disclosed below)
+    requires_cultural_test=True,  # CAVCO Canadian-content certification (points test) is the defining requirement distinguishing CPTC from PSTC
+    citation=(
+        "canada.ca (Canadian Heritage / CAVCO official program guidance, "
+        "direct WebFetch returned HTTP 403 both attempts; rate/mechanics "
+        "corroborated by the same canada.ca page via search-engine "
+        "snippet, plus CAVCO's own program guide, GrantCompass and "
+        "hellodarwin.com, all converging on identical figures): '25 per "
+        "cent of the qualified labour expenditure', 'jointly administered "
+        "by CAVCO and the Canada Revenue Agency', qualified labour "
+        "expenditure capped at not more than 60% of production costs net "
+        "of assistance, 'no limit on the amount of tax credit'. Requires "
+        "CAVCO Canadian-content certification (points test)."
+    ),
+    source_ref="canada.ca-cavco-official-final19-committee-agreed",
+    provenance=SourceProvenance(
+        issuing_authority="Canadian Audio-Visual Certification Office "
+                           "(CAVCO), jointly with Canada Revenue Agency (CRA)",
+        source_url="https://www.canada.ca/en/canadian-heritage/services/funding/cavco-tax-credits/canadian-film-video-production/application-guidelines.html",
+        citation_detail="'25 per cent of the qualified labour "
+                         "expenditure'; qualified labour expenditure "
+                         "capped at 60% of production cost net of "
+                         "assistance",
+        verified_date="2026-08-17",
+        interpretation_note="Final-19 committee (Claude PRICEABLE_"
+                             "FORMULAIC -> Codex AGREE: PROJECT_FACT_"
+                             "DEPENDENT, Gemini CODEX_CONFIRMED): requires "
+                             "an eligible Canadian corporation, CAVCO "
+                             "Canadian-content certification/treaty status, "
+                             "and resident-labour facts to be known before "
+                             "pricing.",
+    ),
+    tiers=(
+        DoctrineRateTier(
+            tier_id="ca-cptc-25",
+            rate=0.25,
+            is_band_ceiling=False,
+            conditions=(
+                RateCondition(
+                    condition_id="ca-cptc-labour-only-base",
+                    description="Rate applies to qualified CANADIAN LABOUR "
+                                "expenditure specifically (capped at 60% "
+                                "of net production cost), not total QPE -- "
+                                "this engine has no labour/non-labour QPE "
+                                "split, so 25% against total QPE is a "
+                                "conservative, disclosed approximation "
+                                "(understates for high non-labour spend, "
+                                "never overstates, same convention as "
+                                "ca_federal_pstc).",
+                    quote="25 per cent of the qualified labour expenditure "
+                          "... capped at not more than 60% of production "
+                          "costs (canada.ca)",
+                    kind="rate_base_narrower_than_qpe",
+                ),
+                RateCondition(
+                    condition_id="ca-cptc-content-certification-required",
+                    description="Requires CAVCO Canadian-content "
+                                "certification (points test) -- a project "
+                                "fact not yet modeled generically; never "
+                                "auto-applied.",
+                    quote="Requires CAVCO Canadian-content certification "
+                          "(points-test based) (canada.ca)",
+                    kind="project_fact_dependent_eligibility",
+                ),
+            ),
+        ),
+    ),
+))
+register_rate_rules(rate_rules_for(CA_CPTC_DOCTRINE))
 
 # ── Australia — South Australia: PDV Rebate ────────────────────────────────
 # Checked internal source first: no prior DoctrineRecord existed (catalog
@@ -5731,30 +6310,60 @@ register_rate_rules(rate_rules_for(CA_SK_DOCTRINE))
 CA_NL_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="CA-NL", program_slug="ca_nl_all_spend_credit",
     program_name="Newfoundland & Labrador All-Spend Film and Video Production Tax Credit",
-    confidence_tier="PARSED", incentive_type="tax_credit",
+    confidence_tier="VERIFIED", incentive_type="tax_credit",
     is_refundable=True, is_transferable=False, min_spend_usd=None,
-    annual_cap_usd=7_400_000.0,  # CAD $10M per-production cap, USD-converted
+    # Final-19 committee closeout (CineGlobe worldwide base program database):
+    # cap corrected 7.4M USD (CAD $10M, stale) -> CAD $20M, directly quoted
+    # from gov.nl.ca on re-fetch. ca_nl_production_fund (the final-19
+    # canonical_program_id under research/committee review) is a DUPLICATE_
+    # ALIAS of this exact program -- see CANONICAL_RUNTIME_SLUG_BINDINGS.
+    annual_cap_usd=20_000_000.0,  # CAD $20M per-production annually, USD~=CAD par disclosed below
     requires_cultural_test=False,
-    citation="gov.nl.ca (official) + canada.ca (official CRA program "
-              "listing): '40% tax credit on total eligible production "
-              "costs, with a maximum credit of $10 million for an "
-              "eligible production in a tax year.' Confirms catalog's "
-              "40% base exactly; the catalog's 45% ceiling is not "
-              "re-confirmed this pass, not contradicted either.",
-    source_ref="gov.nl.ca+canada.ca-official-newfoundland-labrador",
-    tiers=(DoctrineRateTier(tier_id="ca-nl-base-40", rate=0.40, is_band_ceiling=False),
-           DoctrineRateTier(tier_id="ca-nl-ceiling-45-unconfirmed", rate=0.45, is_band_ceiling=True,
-                             conditions=(RateCondition(
-                                 condition_id="ca-nl-ceiling-not-reconfirmed",
-                                 description="45% ceiling carried forward "
-                                             "from the pre-existing "
-                                             "catalog entry, not "
-                                             "independently re-confirmed "
-                                             "this pass (official sources "
-                                             "confirmed only the 40% flat rate)",
-                                 quote="(no 45%-ceiling source found this "
-                                       "pass; official sources state 40% "
-                                       "as the rate, not a floor)",
-                                 kind="material_funding_risk_not_modeled"),)),),
+    citation="gov.nl.ca (official, directly fetched): '40% of eligible "
+              "production costs, to a maximum tax credit of $20 million "
+              "annually per project.' Registration gate: Part I "
+              "application must be submitted to the Newfoundland and "
+              "Labrador Film Development Corporation (NLFDC) BEFORE "
+              "production begins; Part II claim within 18 months of tax "
+              "year end. Supersedes the prior $10M-cap entry (stale).",
+    source_ref="gov.nl.ca-official-all-spend-tax-credit",
+    provenance=SourceProvenance(
+        issuing_authority="Department of Finance (Government of Newfoundland "
+                           "and Labrador), with mandatory Part I registration "
+                           "via the Newfoundland and Labrador Film "
+                           "Development Corporation (NLFDC)",
+        source_url="https://www.gov.nl.ca/fin/tax-programs-incentives/business/all-spend-film-and-video-production-tax-credit/",
+        citation_detail="'40% of eligible production costs, to a maximum "
+                         "tax credit of $20 million annually per project'",
+        verified_date="2026-08-17",
+        interpretation_note="Final-19 committee (Claude research + Codex "
+                             "AGREE + Gemini CODEX_CONFIRMED): priceability "
+                             "is PROJECT_FACT_DEPENDENT -- requires an "
+                             "eligible NL corporation, Part I pre-production "
+                             "registration timing, and government-assistance/"
+                             "category facts to be known before this rate is "
+                             "applied. Amount converted to CAD par for "
+                             "annual_cap_usd (no live FX applied in this "
+                             "engine); qualifying expenditure basis is "
+                             "all-spend (salaries, service contracts, "
+                             "parent-subsidiary amounts, tangible property, "
+                             "accommodation).",
+    ),
+    tiers=(DoctrineRateTier(
+        tier_id="ca-nl-base-40",
+        rate=0.40,
+        is_band_ceiling=False,
+        conditions=(RateCondition(
+            condition_id="ca-nl-part1-registration-required",
+            description="Requires Part I registration with NLFDC BEFORE "
+                        "production commencement -- a project-fact "
+                        "eligibility gate, not a rate modifier.",
+            quote="a corporation must first submit a Part I application "
+                  "to the Newfoundland and Labrador Film Development "
+                  "Corporation prior to the commencement of the production "
+                  "(gov.nl.ca)",
+            kind="project_fact_dependent_eligibility",
+        ),),
+    ),),
 ))
 register_rate_rules(rate_rules_for(CA_NL_DOCTRINE))

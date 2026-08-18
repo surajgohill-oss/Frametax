@@ -149,6 +149,12 @@ SECONDARY_CODES = {
     "BG", "EE", "LV", "LT", "PL", "SK", "LU",
     "US-HI", "US-UT", "US-MN", "US-MS", "US-AZ", "US-PR",
     "CA-SK", "CA-NL",
+    # Final-19 committee closeout: capability profiles added so
+    # in_national_film/pe_film_incentive/uy_tax_credit_2026 (already
+    # canonicalized in program_rate_rules_worldwide.py) reach production-
+    # capability assessment instead of being rejected outright for having
+    # no structured profile at all.
+    "IN", "PE", "UY",
 }
 
 

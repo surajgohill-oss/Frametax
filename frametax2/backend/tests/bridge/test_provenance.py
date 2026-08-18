@@ -12,7 +12,9 @@ from app.bridge.schema import ProvenanceGapClassification
 class TestProvenanceMatrixIntegrity:
     def test_one_record_per_jurisdiction_per_rule_field(self):
         matrix = build_provenance_matrix()
-        assert len(matrix) == 110 * len(RULE_FIELDS)
+        # Final-19 committee closeout: 110 -> 113 executable jurisdictions
+        # (India, Peru, Uruguay capability profiles added).
+        assert len(matrix) == 113 * len(RULE_FIELDS)
 
     def test_every_record_has_a_valid_gap_classification(self):
         matrix = build_provenance_matrix()

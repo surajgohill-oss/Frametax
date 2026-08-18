@@ -1266,14 +1266,18 @@ _CANADA_QC = JurisdictionIncentiveProfile(
     jurisdiction_name="Canada — Quebec",
     program_slug="ca_qc_pstc",
     program_name="Quebec Tax Credit for Film Production Services",
-    confidence_tier="DISCOVERY",
+    # Final-19 committee closeout: promoted DISCOVERY -> VERIFIED alongside
+    # the DoctrineRecord (official SODEC fact sheet + Revenu Québec,
+    # min spend CAD250,000 confirmed) -- keeps the profile and RateRule
+    # confidence tiers from diverging.
+    confidence_tier="VERIFIED",
     incentive_type="tax_credit",
     base_rate=0.25,
     max_rate=0.25,
     is_refundable=True,
     is_transferable=None,
     annual_cap_local=None,
-    min_spend_local=None,
+    min_spend_local=250_000.0,
     requires_cultural_test=False,
     atl_qualifies=None,
     btl_qualifies=True,
@@ -2962,10 +2966,13 @@ _UKRAINE = JurisdictionIncentiveProfile(
 
 _PORTUGAL = JurisdictionIncentiveProfile(
     jurisdiction_code="PT", jurisdiction_name="Portugal",
-    program_slug="pt_scri_pt_cash_rebate", program_name="Portugal SCRI.PT Cash Rebate Incentive",
-    confidence_tier="PARSED", incentive_type="cash_rebate",
+    program_slug="pt_scri_pt_cash_rebate", program_name="Portugal RIPAC / SCRI.PT — Large-Scale Production Track",
+    # Final-19 committee closeout: promoted PARSED -> VERIFIED alongside
+    # the DoctrineRecord (Portaria 265-A/2026, effective 18 June 2026) --
+    # keeps the profile and RateRule confidence tiers from diverging.
+    confidence_tier="VERIFIED", incentive_type="cash_rebate",
     base_rate=0.25, max_rate=0.30, is_refundable=True, is_transferable=False,
-    annual_cap_local=None, min_spend_local=None, requires_cultural_test=False,
+    annual_cap_local=6_500_000.0, min_spend_local=2_710_000.0, requires_cultural_test=False,
     atl_qualifies=None, btl_qualifies=True, vfx_qualifies=None, music_qualifies=None,
     vessel_marine_qualifies=True, resident_labor_uplift_available=False,
     cashflow_timing_weeks=None, marine_suitability=MarineSuitability.STRONG,
@@ -3957,9 +3964,9 @@ _CA_SASKATCHEWAN = JurisdictionIncentiveProfile(
 _CA_NEWFOUNDLAND_LABRADOR = JurisdictionIncentiveProfile(
     jurisdiction_code="CA-NL", jurisdiction_name="Canada — Newfoundland & Labrador",
     program_slug="ca_nl_all_spend_credit", program_name="Newfoundland & Labrador All-Spend Film and Video Production Tax Credit",
-    confidence_tier="PARSED", incentive_type="tax_credit",
-    base_rate=0.40, max_rate=0.45, is_refundable=True, is_transferable=False,
-    annual_cap_local=7_400_000.0, min_spend_local=None, requires_cultural_test=False,
+    confidence_tier="VERIFIED", incentive_type="tax_credit",
+    base_rate=0.40, max_rate=0.40, is_refundable=True, is_transferable=False,
+    annual_cap_local=20_000_000.0, min_spend_local=None, requires_cultural_test=False,
     atl_qualifies=None, btl_qualifies=True, vfx_qualifies=None, music_qualifies=None,
     vessel_marine_qualifies=True, resident_labor_uplift_available=False,
     cashflow_timing_weeks=None, marine_suitability=MarineSuitability.STRONG,
@@ -3968,11 +3975,91 @@ _CA_NEWFOUNDLAND_LABRADOR = JurisdictionIncentiveProfile(
     vat_recoverable=None, vat_rate_pct=None, withholding_tax_pct=None, payroll_burden_pct=None,
     financing_friction=FinancingFriction.MEDIUM,
     authority_name="NL Film Development Corporation", authority_url_hint="gov.nl.ca",
-    notes=("Official (gov.nl.ca + canada.ca) confirmed 40% base exactly, "
-           "CAD $10M per-production cap. Catalog's 45% ceiling not "
-           "independently re-confirmed this pass. Atlantic coastline, "
+    notes=("Final-19 committee closeout: gov.nl.ca directly confirmed 40% "
+           "flat rate (no separate 45% ceiling), CAD $20M per-production "
+           "annual cap (corrected from stale $10M). Atlantic coastline, "
            "icebergs/rugged coast."),
-    data_gaps=["45% ceiling not independently re-confirmed this pass"],
+    data_gaps=[],
+)
+
+_INDIA = JurisdictionIncentiveProfile(
+    jurisdiction_code="IN", jurisdiction_name="India",
+    program_slug="in_national_film", program_name="Incentive Scheme for Production of Foreign Films in India",
+    confidence_tier="VERIFIED", incentive_type="cash_rebate",
+    base_rate=0.30, max_rate=0.40, is_refundable=False, is_transferable=False,
+    annual_cap_local=300_000_000.0, min_spend_local=None, requires_cultural_test=False,
+    atl_qualifies=None, btl_qualifies=None, vfx_qualifies=None, music_qualifies=None,
+    vessel_marine_qualifies=True, resident_labor_uplift_available=True,
+    cashflow_timing_weeks=None, marine_suitability=MarineSuitability.STRONG,
+    has_water_tanks=None, has_open_water_filming=True, crew_depth_rating=CrewDepth.DEEP,
+    studio_available=True, post_production_available=True,
+    vat_recoverable=None, vat_rate_pct=None, withholding_tax_pct=None, payroll_burden_pct=None,
+    financing_friction=FinancingFriction.MEDIUM,
+    authority_name="Film Facilitation Office (FFO) / NFDC, Ministry of "
+                    "Information & Broadcasting",
+    authority_url_hint="mib.gov.in",
+    notes=("Final-19 committee closeout: general capability entry (long "
+           "coastline, deep crew base, established studio/post "
+           "infrastructure -- Mumbai, Chennai, Hyderabad) added so the "
+           "Ministry of Information & Broadcasting's real, primary-"
+           "sourced 30% base / 40% maximum foreign-film incentive can "
+           "reach production-capability assessment; capability fields "
+           "are general geographic/industry knowledge, not per-region "
+           "primary-sourced."),
+    data_gaps=["Region-specific capability (specific studio complexes, "
+               "crew depth by state) not individually sourced"],
+)
+
+_PERU = JurisdictionIncentiveProfile(
+    jurisdiction_code="PE", jurisdiction_name="Peru",
+    program_slug="pe_film_incentive", program_name="Peru CIPA (Certificado de Inversión en Producción Audiovisual)",
+    confidence_tier="PARSED", incentive_type="tax_credit",
+    base_rate=0.295, max_rate=0.295, is_refundable=False, is_transferable=True,
+    annual_cap_local=None, min_spend_local=None, requires_cultural_test=False,
+    atl_qualifies=None, btl_qualifies=None, vfx_qualifies=None, music_qualifies=None,
+    vessel_marine_qualifies=True, resident_labor_uplift_available=None,
+    cashflow_timing_weeks=None, marine_suitability=MarineSuitability.MODERATE,
+    has_water_tanks=None, has_open_water_filming=True, crew_depth_rating=CrewDepth.SHALLOW,
+    studio_available=None, post_production_available=None,
+    vat_recoverable=None, vat_rate_pct=None, withholding_tax_pct=None, payroll_burden_pct=None,
+    financing_friction=FinancingFriction.MEDIUM,
+    authority_name="National Treasury Directorate, Ministry of Economy "
+                    "and Finance (Peru)",
+    authority_url_hint="gob.pe/mef",
+    notes=("Final-19 committee closeout: general capability entry "
+           "(Pacific coastline, Andes/Amazon diversity) added so CIPA's "
+           "primary-sourced investor-side credit can reach production-"
+           "capability assessment; capability fields are general "
+           "geographic knowledge, not primary-sourced production-"
+           "infrastructure data."),
+    data_gaps=["Crew depth, studio and post-production infrastructure "
+               "not individually sourced"],
+)
+
+_URUGUAY = JurisdictionIncentiveProfile(
+    jurisdiction_code="UY", jurisdiction_name="Uruguay",
+    program_slug="uy_tax_credit_2026", program_name="Uruguay 2026 Audiovisual Tax Credit (Decree 153/026)",
+    confidence_tier="VERIFIED", incentive_type="tax_credit",
+    base_rate=0.30, max_rate=0.30, is_refundable=False, is_transferable=True,
+    annual_cap_local=None, min_spend_local=None, requires_cultural_test=False,
+    atl_qualifies=None, btl_qualifies=None, vfx_qualifies=None, music_qualifies=None,
+    vessel_marine_qualifies=True, resident_labor_uplift_available=None,
+    cashflow_timing_weeks=None, marine_suitability=MarineSuitability.MODERATE,
+    has_water_tanks=None, has_open_water_filming=True, crew_depth_rating=CrewDepth.SHALLOW,
+    studio_available=None, post_production_available=None,
+    vat_recoverable=None, vat_rate_pct=None, withholding_tax_pct=None, payroll_burden_pct=None,
+    financing_friction=FinancingFriction.MEDIUM,
+    authority_name="Dirección General Impositiva (DGI) / Ministerio de "
+                    "Economía y Finanzas (MEF), Uruguay",
+    authority_url_hint="impo.com.uy",
+    notes=("Final-19 committee closeout: general capability entry "
+           "(Atlantic/Río de la Plata coastline) added so Decree "
+           "153/026's primary-sourced 30% tax credit can reach "
+           "production-capability assessment; capability fields are "
+           "general geographic knowledge, not primary-sourced "
+           "production-infrastructure data."),
+    data_gaps=["Crew depth, studio and post-production infrastructure "
+               "not individually sourced"],
 )
 
 SECONDARY_PROFILES: dict[str, JurisdictionIncentiveProfile] = {
@@ -4082,6 +4169,9 @@ SECONDARY_PROFILES: dict[str, JurisdictionIncentiveProfile] = {
     "US-PR": _US_PUERTO_RICO,
     "CA-SK": _CA_SASKATCHEWAN,
     "CA-NL": _CA_NEWFOUNDLAND_LABRADOR,
+    "IN": _INDIA,
+    "PE": _PERU,
+    "UY": _URUGUAY,
 }
 
 ALL_PROFILES: dict[str, JurisdictionIncentiveProfile] = {

@@ -39,10 +39,13 @@ class TestCanonicalRegistryMatchesKnownAuthoritativeSources:
         s1 = run_stage1_engine_validation()
         assert s1["total_executable_jurisdictions"] == total_executable_jurisdiction_count()
 
-    def test_total_is_110(self):
+    def test_total_is_113(self):
         """A hardcoded spot-check, not the source of truth (the two tests
-        above are) — protects against a SILENT drift going unnoticed."""
-        assert total_executable_jurisdiction_count() == 110
+        above are) — protects against a SILENT drift going unnoticed.
+        Final-19 committee closeout: 110 -> 113 (India, Peru, Uruguay
+        capability profiles added alongside their already-canonicalized
+        in_national_film/pe_film_incentive/uy_tax_credit_2026 programs)."""
+        assert total_executable_jurisdiction_count() == 113
 
 
 class TestEveryEntryReallyIsExecutable:

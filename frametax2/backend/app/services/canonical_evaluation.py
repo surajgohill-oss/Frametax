@@ -107,7 +107,30 @@ from app.services.canonical_project_economics import (
 # previously only present on unpriced/capability_only rows). Bumped so
 # every project's persisted rows are regenerated under the corrected
 # discovery/candidate universe and enriched trace shape.
-ENGINE_VERSION = "canonical-1.16.0"
+# CineGlobe final-19 committee adjudication implementation: canonicalized
+# the 19 final zero-evidence programs per the Claude research + Codex
+# review (8 AGREE, 11 CORRECT) + Gemini delta confirmation (11/11
+# CODEX_CONFIRMED) committee process. New/updated DoctrineRecords: India
+# (in_national_film), New Zealand PDV (new_zealand_screen_production_
+# grant_—_international_post_vfx), Peru CIPA (pe_film_incentive), Uruguay
+# 2026 tax credit (uy_tax_credit_2026), Canada federal CPTC
+# (ca_federal_cptc), Portugal RIPAC medium-budget track (pt_scri_pt_
+# medium_budget, new sibling to the existing large-scale track), plus cap/
+# tier corrections and confidence-tier promotions on ca_nl_all_spend_
+# credit, ca_qc_pstc, and pt_scri_pt_cash_rebate. Coverage-registry vetoes
+# removed for all of the above; qc_film_production/ca_nl_production_fund/
+# pt_film_incentive bound as duplicate aliases; uy_xxi_incentive retired
+# (SUPERSEDED); several stay non-guaranteed-selective/non-economic per the
+# settled committee classification. Bumped so every project's persisted
+# rows are regenerated under the corrected worldwide program universe.
+# Cache-invalidation bump only: added missing jurisdiction_comparison.py
+# capability profiles for India/Peru/Uruguay (jurisdiction_capability_
+# profile() returns has_capability_data=False -> production_capable=False
+# unconditionally when no profile exists at all, which was silently
+# rejecting these three newly-doctrine-registered programs at the
+# capability gate before they ever reached the priceable/incentive_ready
+# classification -- discovery LOGIC unchanged, DATA gap closed).
+ENGINE_VERSION = "canonical-1.17.1"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
