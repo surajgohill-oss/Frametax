@@ -1,0 +1,182 @@
+{
+  "title": "FINAL_19_GEMINI_CODEX_DELTA_REVIEW",
+  "programs_reviewed": 11,
+  "reviews": [
+    {
+      "canonical_program_id": "ar_incaa_incentive",
+      "disputed_proposition": "Remove all unverified Buenos Aires City numeric propositions from the INCAA record; add Buenos Aires only as a separately researched identity.",
+      "claude_treatment": {
+        "program_type": "NON_ECONOMIC",
+        "priceability": "NON_ECONOMIC"
+      },
+      "codex_treatment": {
+        "program_type": "NON_ECONOMIC",
+        "priceability": "NO"
+      },
+      "gemini_determination": "CODEX_CONFIRMED",
+      "primary_authority_relied_upon": "https://www.argentina.gob.ar/incaa",
+      "short_rationale": "INCAA does not offer a national cash rebate; Buenos Aires City operates its own BA Producci\u00f3n Internacional rebate via its Film Commission.",
+      "final_recommended_canonical_treatment": "Keep ar_incaa_incentive non-priceable. Do not copy BAFC economics into it."
+    },
+    {
+      "canonical_program_id": "au_nsw_screen",
+      "disputed_proposition": "Do not aggregate three Screen NSW streams into one rate/cap record.",
+      "claude_treatment": {
+        "program_type": "GRANT_FUND",
+        "priceability": "GRANT_FUND"
+      },
+      "codex_treatment": {
+        "program_type": "GRANT_FUND",
+        "priceability": "NO"
+      },
+      "gemini_determination": "CODEX_CONFIRMED",
+      "primary_authority_relied_upon": "https://www.screen.nsw.gov.au/funding-support/production-fund",
+      "short_rationale": "Screen NSW operates distinct streams (Production Fund, Made in NSW, etc.) which cannot be aggregated into a single formulaic rate/cap.",
+      "final_recommended_canonical_treatment": "Keep out of deterministic base pricing; split stream identities before any grant modeling."
+    },
+    {
+      "canonical_program_id": "au_vic_vicscreen",
+      "disputed_proposition": "Separate VSI from the Victorian Production Fund; add the current VSI QVE thresholds.",
+      "claude_treatment": {
+        "program_type": "GRANT_FUND",
+        "priceability": "SELECTIVE_DISCRETIONARY"
+      },
+      "codex_treatment": {
+        "program_type": "GRANT_FUND",
+        "priceability": "NO"
+      },
+      "gemini_determination": "CODEX_CONFIRMED",
+      "primary_authority_relied_upon": "https://vicscreen.vic.gov.au/funding/incentives",
+      "short_rationale": "VicScreen VSI is an attraction grant of up to 10%, while the Victorian Production Fund is a distinct stream. They must be modeled separately.",
+      "final_recommended_canonical_treatment": "No deterministic pricing; split the two program identities."
+    },
+    {
+      "canonical_program_id": "br_ancine_incentive",
+      "disputed_proposition": "Do not classify ANCINE as non-economic; classify the named mechanism as financing support and keep RioFilme separate.",
+      "claude_treatment": {
+        "program_type": "NON_ECONOMIC",
+        "priceability": "NON_ECONOMIC"
+      },
+      "codex_treatment": {
+        "program_type": "FINANCING_SUPPORT",
+        "priceability": "NO"
+      },
+      "gemini_determination": "CODEX_CONFIRMED",
+      "primary_authority_relied_upon": "https://www.gov.br/ancine/pt-br/acesso-a-informacao/legislacao/instrucoes-normativas/instrucao-normativa-no-76",
+      "short_rationale": "ANCINE has a 70% withholding tax reduction mechanism that acts as financing support, not a non-economic program or a traditional cash rebate.",
+      "final_recommended_canonical_treatment": "No deterministic QPE pricing. Preserve as financing support; create RioFilme only under a separate municipal identity."
+    },
+    {
+      "canonical_program_id": "in_national_film",
+      "disputed_proposition": "Replace 40%+5%+5%=50% with 30% base plus applicable 5-point conditions, capped at 40%; model track-specific thresholds and uplifts.",
+      "claude_treatment": {
+        "program_type": "FORMULAIC_DETERMINISTIC",
+        "priceability": "PRICEABLE_FORMULAIC"
+      },
+      "codex_treatment": {
+        "program_type": "FORMULAIC_DETERMINISTIC",
+        "priceability": "PROJECT_FACT_DEPENDENT"
+      },
+      "gemini_determination": "CODEX_CONFIRMED",
+      "primary_authority_relied_upon": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=1986454",
+      "short_rationale": "The Indian incentive is a 30% base with two conditional 5% uplifts (for Indian crew and SIC), capped at 40%, not a 50% total.",
+      "final_recommended_canonical_treatment": "Do not implement one 50% rule. Require project track, QPE, Indian-crew percentage, SIC status and approval."
+    },
+    {
+      "canonical_program_id": "jm_film_incentive",
+      "disputed_proposition": "Delete the unsupported case-by-case production-rebate claim and split ETC, bond and duty mechanisms.",
+      "claude_treatment": {
+        "program_type": "OTHER_SUPPORTED_TYPE",
+        "priceability": "SELECTIVE_DISCRETIONARY"
+      },
+      "codex_treatment": {
+        "program_type": "FINANCING_SUPPORT",
+        "priceability": "NO"
+      },
+      "gemini_determination": "CODEX_CONFIRMED",
+      "primary_authority_relied_upon": "https://filmjamaica.com/production/incentives/",
+      "short_rationale": "Jamaica's ETC is a 30% credit against PAYE tax obligations for local companies, not a direct production QPE cash rebate.",
+      "final_recommended_canonical_treatment": "Do not model a percentage-of-QPE incentive; preserve as financing/tax-relief support by mechanism."
+    },
+    {
+      "canonical_program_id": "mx_eficine_incentive",
+      "disputed_proposition": "Do not rename EFICINE in place. Add EFICA as a separate identity and retain EFICINE for its distinct statutory program.",
+      "claude_treatment": {
+        "program_type": "FORMULAIC_DETERMINISTIC",
+        "priceability": "PRICEABLE_FORMULAIC"
+      },
+      "codex_treatment": {
+        "program_type": "FORMULAIC_DETERMINISTIC",
+        "priceability": "PROJECT_FACT_DEPENDENT"
+      },
+      "gemini_determination": "CODEX_CONFIRMED",
+      "primary_authority_relied_upon": "https://www.estimulosfiscales.hacienda.gob.mx/es/efiscales_mediante_decreto/efica",
+      "short_rationale": "EFICA (2026) is a new 30% transferable tax credit for international productions, distinct from the older EFICINE tax shelter.",
+      "final_recommended_canonical_treatment": "Create a separate mx_efica identity; require project type, Mexico cost, supplier structure, approval and transfer assumptions."
+    },
+    {
+      "canonical_program_id": "new_zealand_screen_production_grant_\u2014_international_post_vfx",
+      "disputed_proposition": "Replace current 20%/18% brackets with 20% baseline/25% conditional uplift and apply effective-date rules.",
+      "claude_treatment": {
+        "program_type": "FORMULAIC_DETERMINISTIC",
+        "priceability": "PRICEABLE_FORMULAIC"
+      },
+      "codex_treatment": {
+        "program_type": "FORMULAIC_DETERMINISTIC",
+        "priceability": "PROJECT_FACT_DEPENDENT"
+      },
+      "gemini_determination": "CODEX_CONFIRMED",
+      "primary_authority_relied_upon": "https://www.nzfilm.co.nz/assets/resources/NZFC_RebatesSummaries_Nov2025_PDV.pdf",
+      "short_rationale": "As of 2026, the NZ PDV rebate is 20% base with a 5% uplift (total 25%) subject to an objective test, not the historical 20%/18% tiering.",
+      "final_recommended_canonical_treatment": "Version by PDV start date; require QNZPE and uplift-test result."
+    },
+    {
+      "canonical_program_id": "pe_film_incentive",
+      "disputed_proposition": "Reclassify CIPA as enacted and regulated; retain an operational-readiness gate during the regulation's implementation window.",
+      "claude_treatment": {
+        "program_type": "NON_ECONOMIC (currently)",
+        "priceability": "NON_ECONOMIC"
+      },
+      "codex_treatment": {
+        "program_type": "FORMULAIC_DETERMINISTIC",
+        "priceability": "PROJECT_FACT_DEPENDENT"
+      },
+      "gemini_determination": "CODEX_CONFIRMED",
+      "primary_authority_relied_upon": "https://busquedas.elperuano.pe/dispositivo/NL/2395122-1",
+      "short_rationale": "Peru's Law 32309 (CIPA) was enacted and regulated in June 2026 via Supreme Decree 099-2026-EF, making it an operative tax credit/certificate.",
+      "final_recommended_canonical_treatment": "Model only after investor regime, approved investment, export-production status, tax-liability utilization and transfer value are known."
+    },
+    {
+      "canonical_program_id": "pt_film_incentive",
+      "disputed_proposition": "Use current RIPAC regulation: medium documentary/no-filming minimum EUR200k and cap EUR1.5m; distinguish large FCFS track from medium scored rounds.",
+      "claude_treatment": {
+        "program_type": "FORMULAIC_DETERMINISTIC",
+        "priceability": "PROJECT_FACT_DEPENDENT"
+      },
+      "codex_treatment": {
+        "program_type": "OTHER",
+        "priceability": "PROJECT_FACT_DEPENDENT"
+      },
+      "gemini_determination": "CODEX_CONFIRMED",
+      "primary_authority_relied_upon": "https://diariodarepublica.pt/dr/detalhe/portaria/265-a-2026-1133905372",
+      "short_rationale": "Portugal's RIPAC under SCRI.PT (2026) is divided into two mutually exclusive tracks (Large-Scale and Medium-Budget) that must be modeled independently.",
+      "final_recommended_canonical_treatment": "Split or explicitly model large and medium RIPAC tracks; price only after cultural score, track, expense geography and allocation status."
+    },
+    {
+      "canonical_program_id": "uy_xxi_incentive",
+      "disputed_proposition": "Rename/restructure away from Uruguay XXI; separate ACAU cash-rebate calls from the July 2026 tax credit; discard the unsupported generic three-tier table.",
+      "claude_treatment": {
+        "program_type": "FORMULAIC_DETERMINISTIC",
+        "priceability": "PRICEABLE_FORMULAIC"
+      },
+      "codex_treatment": {
+        "program_type": "OTHER",
+        "priceability": "PROJECT_FACT_DEPENDENT"
+      },
+      "gemini_determination": "CODEX_CONFIRMED",
+      "primary_authority_relied_upon": "https://www.impo.com.uy/bases/decretos/153-2026",
+      "short_rationale": "Uruguay XXI is just a promotional agency. ACAU administers the actual incentives, which now include both a Cash Rebate and a new 2026 Audiovisual Tax Credit.",
+      "final_recommended_canonical_treatment": "Create separate ACAU program identities. Require instrument, eligible Uruguay spend, applicant/taxpayer, committee approval, current call availability and transfer assumptions."
+    }
+  ]
+}
