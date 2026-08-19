@@ -1,7 +1,7 @@
 {
   "artifact": "NATIONAL_STATUS_INCENTIVE_PATHWAY_MAP",
   "generated": "2026-08-19",
-  "count": 32,
+  "count": 33,
   "pathways": [
     {
       "jurisdiction_code": "AT",
@@ -225,6 +225,21 @@
         "consequence_detail": "ie_section_481's own cultural test IS the national/cultural status gate for this incentive -- confirmed via program_requirements.py's existing primary/secondary citation for this program (see WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION.md). No separate national program exists in the current canonical universe to unlock."
       },
       "note": "This program's own cultural test/gate IS the national/cultural pathway."
+    },
+    {
+      "jurisdiction_code": "IL",
+      "foreign_service_pathway": {
+        "program_slug": "il_foreign_production_fund"
+      },
+      "national_pathway": {
+        "program_slug": null,
+        "regime_name": "Israeli Film Law definition of an 'Israeli film' (Israel Film Fund domestic support)",
+        "pathway_type": "DOMESTIC_NATIONAL_PATHWAY",
+        "economic_consequence": "UNLOCKS_DOMESTIC_PROGRAM",
+        "consequence_detail": "Continuation pass 2026-08-19 (Worldwide Program Qualification Completion, Queue A): the Israel Film Fund's own eligibility criteria require a feature script (>=70 minutes, or >=60 for animation) that 'complies with the criteria for defining an Israeli film in the Film Law and the Regulations thereunder' -- a real, distinct national-content legal definition, separate from il_foreign_production_fund (the confirmed no-cultural-test foreign/international production incentive, a different, newer incentive-law framework). Same real structural pattern as Canada CPTC/PSTC and Spain Art. 36.1/36.2 -- a domestic national-content certification unlocking access to Israel's own domestic film funds (Israel Film Fund, Rabinovich Foundation/Israel Cinema Project, Gesher Multicultural Film Fund, Makor Foundation), materially distinct from the foreign-production service rebate."
+      },
+      "note": "Confirmed separate national pathway; not yet a program_requirements.py record in the current 71-program universe.",
+      "coproduction_relationship": "Israel's own confirmed bilateral co-production treaties (France 1970, Germany, Italy, UK, Australia, New Zealand, Sweden -- see CoproductionCoverageStatus for IL) separately confer national treatment for co-produced works."
     },
     {
       "jurisdiction_code": "IT",

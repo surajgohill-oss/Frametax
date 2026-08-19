@@ -307,7 +307,23 @@ from app.services.canonical_project_economics import (
 # previously-uncovered countries. Changes served national-status
 # opportunity trace text for these jurisdictions. Bumped so every
 # project regenerates.
-ENGINE_VERSION = "canonical-1.29.0"
+# Continuation from adc5cba (2026-08-19): Israel confirmed (Film Law
+# 'Israeli film' definition, a real domestic national-content pathway);
+# Taiwan-New Zealand co-production route confirmed via the ANZTEC treaty
+# (Chapter 18); AE/SG/TW national-status residuals upgraded with
+# additional real research; Queue D (KR/JP/PH bilateral route terms) now
+# carries a per-partner partner_contribution_terms disclosure -- real
+# terms found for Korea-Canada, explicit fail-closed markers for every
+# other route rather than silent omission. Queue B's 21 program-
+# qualification cultural-test residuals resolved: real, exact, primary-
+# sourced point tables encoded for Austria/Germany/France/Czech Republic/
+# Norway/Malaysia/Poland/Portugal; Belgium/Finland confirmed as genuinely
+# different (non-point-table) real mechanisms; Cyprus's hard blocker
+# upgraded to maximal diligence (the primary legal instrument itself read
+# in full, all 36 pages, not merely secondary commentary). Changes served
+# national-status and program-qualification trace text. Bumped so every
+# project regenerates.
+ENGINE_VERSION = "canonical-1.29.1"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "

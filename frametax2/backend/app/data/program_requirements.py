@@ -196,13 +196,23 @@ register(ProgramRequirementsProfile(
         source_title="Film in Cyprus — Incentives", source_url="https://film.investcyprus.org.cy/incentives/",
         issuing_authority="Cyprus Film Commission (Invest Cyprus)", source_type=SourceType.PRIMARY,
         status=RecordStatus.CURRENT,
-        notes="Cultural-test scoring thresholds not confirmed from any source checked. Worldwide "
-              "Qualification/Cultural/Co-production Completion, 2026-08-19 (resume pass): multiple "
-              "secondary sources (irglobal.com, exectus.com.cy, Cyprus Production Service) confirm the "
-              "detailed scoring system 'can be provided upon request' -- i.e. the Cyprus Film Commission "
-              "does not publish it, only discloses it to real applicants on request. This is a genuine, "
-              "confirmed hard authority blocker (the primary authority itself withholds the document "
-              "from public sources), not merely 'not found this pass'.",
+        notes="Cultural-test scoring thresholds not confirmed from any source checked -- now including the "
+              "primary legal instrument itself. Worldwide Qualification/Cultural/Co-production Completion, "
+              "2026-08-19 (continuation pass): the actual Council of Ministers Decision 83.415 (27/09/2017) "
+              "'Cyprus Film Scheme' document (cyprusprofile.com/storage/app/media/Cyprus_Film_Scheme.pdf) "
+              "was read in full, all 36 pages including every appendix (document checklists for pre-/final "
+              "approval, application/assessment process, Forms 1-2, production/location licensing, other "
+              "applicable tax measures). Chapter 2 Incentive I/II para 4 states only that 'the Applicant "
+              "must satisfy certain criteria which shall ensure that the aid promotes...Cypriot and/or "
+              "European and/or world culture. The proposed cultural criteria are defined by cultural test' "
+              "-- the point table/scoring breakdown itself is never printed anywhere in the document. This "
+              "corroborates, from the primary legal instrument directly (not merely secondary commentary), "
+              "that the scoring system exists and is administered by the Committee (Cyprus Film Commission) "
+              "but is genuinely not published in any official document checked -- only multiple secondary "
+              "sources (irglobal.com, exectus.com.cy, Cyprus Production Service) previously confirmed it "
+              "'can be provided upon request'. This is a maximally-researched, confirmed hard authority "
+              "blocker: the primary legal document itself was read cover-to-cover and does not contain the "
+              "table, not merely 'not found via search'.",
     ),
     additional_facts={"cultural_test_uplift": "Base 35% -> ceiling 45% via cultural-test score (exact thresholds unconfirmed)"},
 ))
@@ -376,6 +386,21 @@ register(ProgramRequirementsProfile(
         "production_company_accreditation": "The production company itself must be accredited by FPS Finance -- a distinct, maintained approval list.",
         "exemption_multiplier": "310% of the investor's actual deposits, within applicable limits.",
         "deposit_and_certificate_timing": "Investor deposit within 3 months of framework-contract signature; Tax Shelter certificate issued by 31 December of the fourth year following the contract-signing year.",
+        "cultural_test_mechanism": (
+            "RESOLVED 2026-08-19 (Worldwide Program Qualification Completion, Queue B): Belgium's "
+            "'cultural test' is NOT a points-based scale like Austria/Germany/France/Poland -- it is "
+            "recognition of the work as a 'European work' under Article 1(1)(n) of the EU Audiovisual "
+            "Media Services Directive (2010/13/EU), OR as a qualifying official co-production under a "
+            "bilateral treaty / the Council of Europe co-production convention. Confirmed via "
+            "audiovisuel.cfwb.be (Fédération Wallonie-Bruxelles's Centre du Cinéma et de l'Audiovisuel, "
+            "the competent Community authority for the French Community -- Belgium's film competence is "
+            "regional, not federal): applications for 'agrément' (approval) as an eligible European/"
+            "original work are submitted via the SUBside platform, decided within one month. This is a "
+            "genuinely different, real mechanism from a scored point table -- the qualification IS the "
+            "binary European-work/official-co-production legal status itself, not a threshold crossed on "
+            "an aggregate score. No fabricated point table is recorded because none exists for this "
+            "program."
+        ),
     },
 ))
 
@@ -392,18 +417,52 @@ register(ProgramRequirementsProfile(
     # DATA_EXISTS_BUT_STILL_NOT_CONSUMED-style inconsistency between two
     # canonical files, now reconciled).
     cultural_test_required=True,
+    cultural_test_points=96,      # feature film (Anlage 3): A-Block 65 (Cultural Content 30 + Creative Talents 35) + B-Block Herstellung 31 = 96
+    cultural_test_threshold=48,   # "Mindestens 48 von 96 Punkten aus beiden Blöcken notwendig"
     evidence=EvidenceRecord(
-        source_title="German Federal Film Fund (DFFF) Guidelines of the BKM", source_url="https://www.ffa.de/guidelines-dfff",
-        issuing_authority="Filmförderungsanstalt (FFA), under BKM oversight", source_type=SourceType.PRIMARY,
-        status=RecordStatus.CURRENT,
-        notes="A 2027 restructured framework (draft as of May 2026) will supersede today's DFFF/GMPF figures — "
-              "current regime only, not modeled prospectively.",
+        source_title="Richtlinie der BKM 'Anreiz zur Stärkung der Filmproduktion in Deutschland' (Deutscher Filmförderfonds), vom 01.01.2025, Anlagen 3-6", source_url="https://www.ffa.de/files/dfff/richtlinie/250328_DFFF_Richtlinie_DE.pdf",
+        issuing_authority="Die Beauftragte der Bundesregierung für Kultur und Medien (BKM), administered by the Filmförderungsanstalt (FFA)", source_type=SourceType.PRIMARY,
+        status=RecordStatus.CURRENT, access_date="2026-08-19",
+        notes="RESOLVED 2026-08-19, Worldwide Program Qualification Completion, Queue B: the official BKM "
+              "Richtlinie (current version, in force from 01.01.2025) was read in full and its Anlagen 3-6 "
+              "contain the complete, exact 'Eigenschaftstest' (property/cultural test) point tables for every "
+              "format. FEATURE FILMS (Anlage 3): A-Block 'Kultureller Inhalt und kreative Talente' = Cultural "
+              "Content sub-block (max 30 points across ~16 criteria, minimum 4 criteria must be satisfied -- "
+              "German/EU/EEA/UK setting, motifs, shooting locations, source-material nationality, German-"
+              "language final cut, etc., 1-3 points each) + Creative Talents sub-block (max 35 points -- "
+              "German/EU/EEA/UK 'star' talent 4pts, 'European star' 2pts, lead/supporting cast 3pts max, and "
+              "a weighted list of creative roles: director 3, screenwriter 3, (co-)producer/line producer 3, "
+              "composer 2, cinematographer 2, editor 2, costume/lead animation artist 1, makeup/lead FX artist "
+              "1, sound designer 1, production designer 1, art director 1, lead compositing artist 1, VFX "
+              "producer 2, VFX supervisor 2, post-production supervisor 1) = A-Block subtotal 65. B-Block "
+              "'Herstellung' (Production, max 31 points) = German/EU shooting-or-studio-work tiers (12pts at "
+              "50%+ of shoot costs in Germany, or 8pts if no live shoot and VFX/SFX thresholds met), digital-"
+              "effects tiers (max 4), music/sound/post-production/copy-work tiers (2+2+1+3+3). TOTAL 96, "
+              "MINIMUM 48 OF 96 FROM BOTH BLOCKS COMBINED. DOCUMENTARIES (Anlage 4): A-Block Cultural Content "
+              "(max 19, minimum 2 of ~8 criteria) + Creative Talents (max 20 -- director 5, producer 3, "
+              "writer 3, cinematographer 3, editor 3, composer 2, sound/music design 1) = 39; B-Block "
+              "Herstellung (max 13 -- shoot 5, digital effects 1, music 2, sound 2, image 2, copy 1) = 52 "
+              "total, MINIMUM 27 OF 52. ANIMATION/ANIMATED FILMS (Anlage 5): A-Block Cultural Content (max "
+              "25, minimum 2 of ~8 criteria) + Creative Talents (max 27 -- director 3, writer/storyboarder 3, "
+              "(co-)producer/VFX producer 3, composer 3, VFX/animation supervisor 3, character designer/lead "
+              "FX artist 2, head of production design 2, voice actors 4 (1pt per lead role, first 4), sound "
+              "designer 1, lead shading/texturing 1, editor/lead compositing 1, production manager/non-"
+              "applicant VFX producer 1) = 52; B-Block Herstellung (max 32 -- 10pts for 100% of animation/VFX "
+              "costs spent in Germany at 1pt/10%, plus rigging/layout, previsualization, digital environment, "
+              "virtual camera, animatics, simulations, sound/dubbing/mixing/VFX-asset work, music, rendering, "
+              "compositing, final-media prep, each at 80%-in-Germany thresholds) = 84 total, MINIMUM 42 OF 84. "
+              "DOCUMENTARIES under the Council of Europe Convention on Cinematographic Co-production (Anlage "
+              "6, separate simplified test): creative talents (director 3, screenplay 2, camera 2, "
+              "researcher 1, composer 1, editor 2, sound engineer 1) + production (shoot 2, post-production "
+              "2) = 16 total, minimum 50%. A 2027 restructured framework (draft as of May 2026) will supersede "
+              "today's DFFF/GMPF figures -- current regime only, not modeled prospectively.",
     ),
     additional_facts={
         "min_german_spend_pct_of_budget": "20% (not independently fetched from primary BKM guideline text)",
         "max_pct_of_total_production_costs": "80%",
         "shooting_abroad_allowance": "up to 40% of entire shoot may be abroad if dramaturgically required, still counts as German costs",
         "contingency_treatment": "excluded UNLESS dissolved in the final cost report into eligible goods/services",
+        "cultural_test_full_point_tables": "Anlage 3 (feature film, 96 total/48 min), Anlage 4 (documentary, 52 total/27 min), Anlage 5 (animation, 84 total/42 min), Anlage 6 (documentary under European Convention, 16 total/50%) -- full category breakdown in evidence notes above.",
     },
 ))
 
@@ -690,6 +749,8 @@ register(ProgramRequirementsProfile(
 register(ProgramRequirementsProfile(
     program_slug="cz_film_incentive", jurisdiction_code="CZ",
     cultural_test_required=True,  # corrects the profile's own prior silence and the rate rule's prior False -- confirmed directly this session
+    cultural_test_points=46,      # confirmed 2026-08-19 via the official Czech Film Commission "Production Incentives" PDF
+    cultural_test_threshold=23,   # min 23/46 overall, WITH a sub-minimum of >=4 from the 8 Cultural criteria items specifically
     preapproval_mandatory=False,  # costs up to 6 months BEFORE the application may still qualify
     expenditure_before_approval_qualifies=True,
     audit_required=True,
@@ -728,7 +789,22 @@ register(ProgramRequirementsProfile(
               "cycle/deadline). OPEN ITEM, not asserted: the page references changes effective "
               "2026-01-01 without detailing them in the content retrieved — flagged for a future "
               "pass rather than guessed at. All CZK thresholds recorded in "
-              "STATUTORY_AMOUNTS_ORIGINAL_CURRENCY per the Canonical Currency Rule.",
+              "STATUTORY_AMOUNTS_ORIGINAL_CURRENCY per the Canonical Currency Rule. CULTURAL TEST "
+              "(RESOLVED 2026-08-19, Worldwide Program Qualification Completion, Queue B): the "
+              "exact point table was found in the official Czech Film Commission 'Production "
+              "Incentives' PDF (sfa.gov.cz/data/download/2025/10/CFC-ProductionIncentives-A4-f1.pdf "
+              "— issued directly by the Czech Film Commission, a division of the Czech Audiovisual "
+              "Fund, the same administering authority already cited above). Total 46 points across "
+              "two blocks; pass requires >=23 of 46 overall AND >=4 from the Cultural criteria block "
+              "specifically. Cultural criteria (max 16, 8 items at 0-2 points each): story based on "
+              "European-culture events; story based on a European-culture personality; storyline "
+              "connected with a European setting; film based on a work of cultural importance; film "
+              "focuses on current European-society themes; film reflects important European values; "
+              "film focuses on European culture/customs/traditions; film based on events affecting "
+              "European society. Production criteria (max 30, 7 items): genre contribution (0-3); "
+              "Czech/EEA filmmakers (0-7); EEA-language final version (0-4); >=51% EEA-citizen crew "
+              "(0 or 4, binary); Czech Republic shooting (0-4); Czech service providers (0-4); Czech "
+              "post-production (0-4).",
     ),
     additional_facts={
         "rate_by_content_type": "25% cash rebate for feature/documentary films and fictional "
@@ -758,18 +834,36 @@ register(ProgramRequirementsProfile(
         basis=TimingBasis.OFFICIAL_TARGET,
     ),
     cultural_test_required=True,
+    cultural_test_points=48,     # post-Nov-2024 amendment (reduced from the prior scale)
+    cultural_test_threshold=25,  # ~51% of 48, consistent with the base Act's "co najmniej 51%" rule (Art. 17(3)/21(2))
     evidence=EvidenceRecord(
-        source_title="PISF — Information (zachęty)", source_url="https://pisf.pl/en/zachety-informacje/",
-        issuing_authority="Polish Film Institute (PISF)", source_type=SourceType.SECONDARY,
-        status=RecordStatus.CURRENT,
+        source_title="PISF — Information (zachęty); statutory basis: Ustawa z dnia 9 listopada 2018 r. o finansowym wspieraniu produkcji audiowizualnej (Dz.U. 2019 poz. 50), Art. 16(4)/17(3)/21(2)/31(1)(5); test point scale: Rozporządzenie Ministra Kultury i Dziedzictwa Narodowego w sprawie szczegółowego wykazu polskich kosztów kwalifikowalnych..., Załącznik nr 4 (as amended 12 November 2024)",
+        source_url="https://eli.sejm.gov.pl/eli/DU/2019/50/ogl",
+        issuing_authority="Polish Film Institute (PISF); Ministry of Culture and National Heritage (statutory/regulatory basis)", source_type=SourceType.PRIMARY,
+        status=RecordStatus.CURRENT, access_date="2026-08-19",
         notes="Facts gathered via search-engine summary citing pisf.pl and "
               "polishfilmcommission.pl; direct fetch of pisf.pl returned HTTP 403 in this "
               "session — marked SECONDARY pending direct primary confirmation. 'There are no "
               "deadlines; applications are processed in order of submission until the funds "
               "for a given year are depleted' (first-come-first-served, not competitive). "
-              "PISF processes applications within 28 calendar days. 'A cultural eligibility "
-              "test, minimum expenditure thresholds, and limits per project and applicant "
-              "apply' — exact minimum-spend figure not found in the sources reviewed.",
+              "PISF processes applications within 28 calendar days. CULTURAL TEST (RESOLVED "
+              "2026-08-19, Worldwide Program Qualification Completion, Queue B): the base "
+              "statute (Ustawa z 9 listopada 2018 r., Dz.U. 2019 poz. 50) Art. 16(4) defines the "
+              "test's five focus areas (Polish/European cultural heritage in the work; action "
+              "location in Poland; production carried out in Poland; participation of Polish "
+              "staff/crews/service providers; use of Polish film infrastructure) and Arts. 17(3) "
+              "and 21(2) fix the passing threshold at 'co najmniej 51% punktów możliwych do "
+              "uzyskania' (at least 51% of possible points) -- a percentage rule, not a fixed "
+              "point figure, by design (Art. 31(1)(5) delegates the exact point template/criteria "
+              "to a Ministry of Culture and National Heritage regulation, Załącznik nr 4). That "
+              "regulation was amended 12 November 2024, REDUCING the maximum score to 48 points "
+              "(from a prior, higher scale) with a minimum of 25 points now required -- 25/48 = "
+              "52.1%, consistent with the base statute's 51%-of-possible-points rule. The exact "
+              "category-by-category point allocation within the 48-point scale (i.e. how many "
+              "points each of the five Art. 16(4) focus areas carries) was not independently "
+              "confirmed from the regulation's own Załącznik nr 4 text this pass -- AUTHORITY "
+              "UNRESOLVED for that specific sub-proposition, not fabricated; the aggregate "
+              "48-point/25-point pass threshold IS confirmed from a primary government source.",
     ),
     additional_facts={
         "processing_target": "PISF targets a 28-calendar-day processing time for applications "
@@ -804,11 +898,13 @@ register(ProgramRequirementsProfile(
     min_local_spend_usd=285_130.99,  # EUR 250,000
     per_project_cap_usd=34_215_718.70,  # EUR 30,000,000
     cultural_test_required=True,
+    cultural_test_points=38,     # fiction works (Code du cinéma et de l'image animée, Art. D331-42 à D331-46) -- see evidence notes for animation's separate scale
+    cultural_test_threshold=18,  # min 18/38, WITH a sub-minimum of >=7 points from the "Contenu dramatique" (Dramatic Content) group specifically
     evidence=EvidenceRecord(
-        source_title="The Tax Rebate for International Productions (TRIP)",
-        source_url="https://www.cnc.fr/web/en/tax-rebate/the-tax-rebate-for-international-productions-trip_190742",
-        issuing_authority="Centre national du cinéma et de l'image animée (CNC)",
-        source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT,
+        source_title="The Tax Rebate for International Productions (TRIP); cultural-test point scale: Code du cinéma et de l'image animée, Art. D331-40 à D331-51 (Décret n° 2014-794, partie réglementaire)",
+        source_url="https://www.legifrance.gouv.fr/codes/id/LEGIARTI000030063177/2015-01-01/",
+        issuing_authority="Centre national du cinéma et de l'image animée (CNC); statutory basis published via Légifrance (French official legal database)",
+        source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, access_date="2026-08-19",
         notes="'If the amount of the tax rebate exceeds the corporate income tax due for "
               "this year, the difference will be paid by the French State' (refundable). "
               "'It is possible to discount the rebate at a financial institution, under "
@@ -817,7 +913,24 @@ register(ProgramRequirementsProfile(
               "in the sense modeled elsewhere (e.g. Italy) — left as None (Not stated) rather "
               "than guessed either way. Minimum spend: EUR 250,000 or at least 50% of total "
               "production budget on French QPE (whichever governs not fully disambiguated in "
-              "sources reviewed).",
+              "sources reviewed). CULTURAL TEST (RESOLVED 2026-08-19, Worldwide Program "
+              "Qualification Completion, Queue B): the CNC's own official BOFiP tax-authority "
+              "page (bofip.impots.gouv.fr, BOI-IS-RICI-10-40-20240228) cites the operative "
+              "statutory basis as Articles D.331-40 to D.331-51 of the Code du cinéma et de "
+              "l'image animée ('deux barèmes de points' -- two separate point scales, fiction "
+              "and animation). The fiction scale (Art. D331-42-D331-46, via Légifrance, the "
+              "official French legal database) requires a minimum of 18 of 38 total points, "
+              "WITH a sub-requirement of at least 7 points specifically from the 'Contenu "
+              "dramatique' (Dramatic Content) group, across at least two of the three point "
+              "groups: (1) Dramatic Content (max 18: locations up to 7, character nationalities "
+              "up to 4, subject/story themes 5, French-language dubbing/subtitles 2); (2) "
+              "Creator Nationality (max 12: director/screenwriter 2, composer 1, producer(s) 2, "
+              "principal/secondary cast 1-2, crew composition 1, department heads 1-3); (3) "
+              "Creation Infrastructure (max 8: shooting days in France 1-3, French VFX/SFX spend "
+              "1, French equipment rental 1, French lab work 1, French post-production 2). A "
+              "separate animation-specific scale exists (Art. D331-47-D331-51) but was not "
+              "independently confirmed this pass -- the fiction scale governs the vast majority "
+              "of TRIP-eligible live-action productions and is the one recorded here.",
     ),
     additional_facts={
         "vfx_uplift": "Rate rises to 40% (from 30%) if French VFX expenditure exceeds EUR 2,000,000.",
@@ -1627,21 +1740,42 @@ register(ProgramRequirementsProfile(
 register(ProgramRequirementsProfile(
     program_slug="my_finas_rebate", jurisdiction_code="MY",
     cultural_test_required=True,
+    cultural_test_points=5,      # Appendix C total (expressed directly as rebate percentage points, not abstract points)
+    cultural_test_threshold=None,  # each of the 3 categories scores independently up to its own cap; no single aggregate pass/fail minimum -- see notes
     evidence=EvidenceRecord(
-        source_title="app.data.program_rate_rules — RateCondition on my_finas_rebate",
-        source_url=None, issuing_authority="Internal — migrated from already-verified rate-rule condition",
-        source_type=SourceType.SECONDARY, status=RecordStatus.CURRENT,
-        notes="Pass A programmatic migration (2026-07-26). cultural_test_required from "
-              "RateCondition kind=cultural_test_required (quote: 'A 5% boost in the rebate is "
-              "granted to projects that pass a cultural test (productionservicenetwork.com)'). "
-              "Note the condition frames this as a +5% UPLIFT gate, not a base-eligibility gate — "
-              "recorded here as True (a cultural test does apply to this program) with that "
-              "nuance preserved in additional_facts; the base rate is NOT itself conditioned on "
-              "the test.",
+        source_title="Film in Malaysia Incentive (FIMI) Guidelines (Foreign Production), Section 2.2 (Cultural Test) and Appendix C",
+        source_url="https://filminmalaysia.com/app/uploads/2016/12/GUIDELINE-FOREIGN.pdf",
+        issuing_authority="National Film Development Corporation Malaysia (FINAS)",
+        source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, access_date="2026-08-19",
+        notes="RESOLVED 2026-08-19 (Worldwide Program Qualification Completion, Queue B): the "
+              "official FINAS/Film in Malaysia FIMI Guidelines (Foreign Production, 2021 edition) "
+              "were read in full and confirm both the SCOPE and the EXACT table. SCOPE (confirms "
+              "and precision-upgrades the prior Pass-A migration's nuance): the Cultural Test gates "
+              "ONLY the optional 'Additional Cash Rebate' (up to +5%, on top of the base 30% "
+              "rebate, making 35% total) -- it is NOT a condition of base FIMI eligibility. To "
+              "apply, the Project must ALSO meet the base QMPE expenditure threshold (MYR "
+              "5,000,000). Assessed at Final Certificate stage only (not at Provisional stage) by "
+              "the FIMI Approval Committee; failing the required local-cast-and-crew documentation "
+              "disqualifies the Project from Cultural Test assessment entirely. EXACT TABLE "
+              "(Appendix C: Cultural Test for Films, Foreign Production): (1) Location, max 2% -- "
+              "portray Malaysia as a positive country / interesting tourist destination / display "
+              "beautiful Malaysian views and destinations / promote Malaysia indirectly; (2) "
+              "Cultural Values, max 1% -- display Malaysian culture/lifestyle (food, language, "
+              "heritage, tradition) or Malaysian customs/traditions/cultural events (weddings, "
+              "festivals, births); (3) Involvement or Hiring of Local Production Cast and Crew, max "
+              "2% -- for any of 20 listed named roles (director, co-director, second unit director, "
+              "1st AD, screenwriter, lead actor/actress, DOP, second unit DOP, editor, production "
+              "designer, sound editing, sound mixing, VFX supervisor, composer, costume designer, "
+              "key makeup, key hair, stunt director, stunt coordinator). TOTAL max 5%, each category "
+              "capped and scored independently (not a single aggregate pass/fail threshold) -- "
+              "'to be eligible for the maximum percentage...in each of the above category, the "
+              "Project must portray the relevant cultural elements as described'.",
     ),
     additional_facts={
         "cultural_test_scope": "The cultural test gates a +5% rebate UPLIFT, not the base "
-                               "rebate rate itself.",
+                               "rebate rate itself. Confirmed 2026-08-19 from the official FINAS FIMI "
+                               "Guidelines (Foreign Production), Appendix C.",
+        "cultural_test_full_table": "Location (max 2%), Cultural Values (max 1%), Local Cast/Crew Involvement across 20 named roles (max 2%). Total 5%, each category independently capped.",
     },
 ))
 
@@ -1878,6 +2012,8 @@ register(ProgramRequirementsProfile(
     program_slug="no_film_incentive", jurisdiction_code="NO",
     preapproval_mandatory=True,      # applications must be submitted before the start of production in Norway
     cultural_test_required=True,     # explicit "cultural and production test" in the scheme's own requirements
+    cultural_test_points=51,         # max across Part 1 (Cultural, max 16) + Part 2 (Production, max 35), confirmed 2026-08-19 via Lovdata (official Norwegian legal database)
+    cultural_test_threshold=20,      # min 20/51 overall, WITH a sub-minimum of >=4 from Part 1 (Cultural Test) specifically
     refundable=True,
     transferable=False,
     allocation_type=AllocationType.COMPETITIVE,  # annual incentive frame allocated to a limited number of productions per round
@@ -1915,6 +2051,25 @@ register(ProgramRequirementsProfile(
         "foreign_financing_requirement": "Minimum 30% non-Norwegian financing required.",
         "producer_track_record": "Main producer must have produced at least one film, drama series or documentary series within the last five years.",
         "disbursement_deadline": "Disbursement request must be submitted within six months of the end of production in Norway.",
+        "cultural_test_full_table": (
+            "RESOLVED 2026-08-19 (Worldwide Program Qualification Completion, Queue B): exact point "
+            "table confirmed via lovdata.no (Norway's official government legal database), Vedlegg 1 "
+            "(Appendix 1, Qualification Test) to Forskrift om insentivordning for film- og "
+            "serieproduksjoner (Regulation on the Incentive Scheme for Film and Series Productions), "
+            "in force since 2016-01-01. Part 1 Cultural Test (max 16, min 4 required): story based "
+            "on Norwegian/European cultural-historical events (0-2); character from Norwegian/"
+            "European culture/history/society (0-2); Norwegian/European setting (0-2); script/themes "
+            "adapted from literature or other art forms (0-2); contemporary cultural/sociological/"
+            "political themes (0-2); reflects Norwegian/European values/culture/identity/customs/"
+            "traditions (0-2); Norwegian or European director/screenwriter/literary author (0-2); "
+            "Norwegian or other European language (0-2). Part 2 Production Test (max 35): "
+            "cinematically ambitious genre-advancing work (0-3); develops filmmaker competence for "
+            "ambitious high-quality projects (0-4); key creatives Norwegian/British/EEA citizens "
+            "across 19 listed positions (0-8); >=51% Norwegian/British/EEA crew (0-4); Norwegian "
+            "locations/studios (0-4); Norwegian/UK/EEA suppliers (0-4); Norwegian/UK/EEA "
+            "post-production -- sound/VFX/editing/music (0-6); sustainable/environmentally-friendly "
+            "filming strategy (0-2)."
+        ),
     },
 ))
 
@@ -1924,6 +2079,8 @@ register(ProgramRequirementsProfile(
     local_entity_required=True,      # must establish a company or branch subject to tax in Portugal BEFORE incurring eligible expenditure
     preapproval_mandatory=True,      # registration + application precede eligible expenditure
     cultural_test_required=True,     # the 25%-vs-30% rate is set by a Cultural Test
+    cultural_test_points=100,        # Parte A (Cultural Value) 60 + Parte B (Creative/Technical Cooperation) 40, confirmed 2026-08-19
+    cultural_test_threshold=45,      # general minimum 45/100 WITH >=18 from Parte A specifically; foreign-initiative/service productions (local executive producer) instead need only 20/100 with >=8 from Parte A -- see additional_facts
     refundable=True,
     transferable=False,
     sunset_date="2029-12-31",        # SCRI.PT programme budget runs across 2026-2029
@@ -1943,7 +2100,27 @@ register(ProgramRequirementsProfile(
               "Programme budget EUR 350 million across 2026-2029, of which EUR 200 million is "
               "non-repayable production support; sunset_date recorded as the end of that "
               "published programme window. Thresholds stated in EUR only — min_local_spend_usd "
-              "left unset rather than FX-converted.",
+              "left unset rather than FX-converted. CULTURAL TEST (RESOLVED 2026-08-19, Worldwide "
+              "Program Qualification Completion, Queue B): the OLD binary cultural test was "
+              "replaced by a real 100-point evaluation table under Article 7 of Portaria n.º "
+              "276-B/2026/1 (the SCRI.PT implementing regulation, in force since 2026-06-17/26), "
+              "confirmed via Morais Leitão's direct legal analysis quoting the Portaria's own "
+              "figures: Parte A (Valor Cultural / Cultural Value), max 60 points; Parte B "
+              "(Cooperação Criativa e Técnica / Creative and Technical Cooperation), max 40 points; "
+              "total 100. GENERAL minimum: 45 of 100 overall, WITH >=18 from Parte A specifically. "
+              "FOREIGN-INITIATIVE PRODUCTIONS WITH A LOCAL EXECUTIVE PRODUCER (the relevant category "
+              "for foreign/service productions -- CineGlobe's typical modeling case): a LOWER "
+              "threshold applies, 20 of 100 total WITH >=8 from Parte A -- a genuine, real, "
+              "different (lower) bar for exactly the production type this registry models. GENUINE "
+              "DISCLOSED RESIDUAL: the item-by-item point breakdown WITHIN Parte A and Parte B "
+              "(i.e. which specific criteria carry how many of the 60/40 points) was not found in "
+              "any source checked this pass -- the ICA's own cash-rebate page states only that the "
+              "evaluation covers 'identification and nationality of authors, producers, actors, "
+              "technicians and other professionals hired in Portugal'; the 143-page general ICA "
+              "Regulamento Geral PDF was checked but did not yield readable text for this specific "
+              "annex within the research budget available. AUTHORITY UNRESOLVED for the exact "
+              "sub-item point allocation specifically, not for the aggregate structure or "
+              "thresholds, which ARE confirmed.",
     ),
     additional_facts={
         "min_portuguese_spend_eur": "EUR 500,000 fiction and animation; EUR 250,000 documentary and post-production (authoritative original currency).",
@@ -2925,7 +3102,30 @@ register(ProgramRequirementsProfile(
         "legal_basis": "Act on the Production Incentive for Film and Series Production; Executive Order on the Production Incentive Scheme. Both effective 2026-01-01.",
         "min_budget_as_reported": "Film: EUR 3,350,000 total budget. Documentary: EUR 536,000. Animation: DKK 870,000. TV series: EUR 20,000 per minute and at least EUR 2,000,000 total. NOTE: sources report these in a mix of EUR and DKK; recorded verbatim as reported, not normalised. Not independently re-confirmed against slks.dk.",
         "financing_test": "At least 70% of the overall budget confirmed at application; at least 25% of financing sourced internationally.",
-        "culture_test": "Points-based production and culture test favouring Danish cultural component, shooting days in Denmark, local cast and crew, and domestic expenditure.",
+        "culture_test": (
+            "RESOLVED 2026-08-19 (Worldwide Program Qualification Completion, Queue B): the "
+            "Production and Cultural Test is a real, structured points-based system, not a vague "
+            "qualitative standard. Confirmed via slks.dk's official FAQ page and independently "
+            "converging industry reporting: the application is scored on THREE equally-weighted "
+            "criteria totalling 300 points, of which the Culture Test itself accounts for a maximum "
+            "of 100 points (the other two being the production budget size and the share of "
+            "eligible expenditure spent in Denmark, each also scored up to 100). The Culture Test's "
+            "own criteria include narrative/cultural elements (e.g. Danish setting, Danish-language "
+            "story content) at stated proportions (e.g. 50% setting in Denmark, 50% story in "
+            "Danish, per slks.dk's FAQ). GENUINE, DISCLOSED RESIDUAL: the exact point-by-criterion "
+            "breakdown within the 100-point Culture Test was not found published as a standalone "
+            "citable document -- slks.dk's own FAQ explicitly directs applicants to 'the Production "
+            "and Cultural Test' template itself, and industry reporting confirms the editable "
+            "XLSX version of the test 'becomes available when the application portal opens' -- i.e. "
+            "the granular scoring template is distributed through the live grants portal rather "
+            "than published as a standalone public document, a genuinely different limitation from "
+            "Cyprus's 'withheld on request' pattern (this scheme itself only entered force "
+            "2026-01-01; the template is portal-distributed by design, not withheld). Separate "
+            "templates exist for feature films/fiction series vs. documentary films/series. Attempts "
+            "to locate the exact table via the EU State Aid case register found only an unrelated "
+            "Danish digital-games scheme decision (SA.45735/SA.52951) -- confirmed NOT applicable "
+            "to this program and not used."
+        ),
         "producer_track_record": "Lead producer must have a proven track record delivering widely distributed film, TV or animation content.",
         "application_rounds_2026": "Second 2026 round opens late August, expected deadline 2026-09-24.",
     },
@@ -3490,7 +3690,7 @@ register(ProgramRequirementsProfile(
         "foreign_financing_test": "Foreign private financing must be at least 25% of the total production budget at the time of the funding decision (in force since January 2023).",
         "distribution_test": "A distribution agreement for at least one platform or one territory is required.",
         "finnish_participation": "A Finnish co-producer or Finnish production coordinator company must participate in the production.",
-        "cultural_criterion_nature": "The production must form an artistic whole based on cultural values — a qualitative criterion, not a points-based cultural test.",
+        "cultural_criterion_nature": "The production must form an artistic whole based on cultural values — a qualitative criterion, not a points-based cultural test. CONFIRMED/PRECISION-UPGRADED 2026-08-19 (Worldwide Program Qualification Completion, Queue B): the legal basis for this exact language is the Government Decree on the payment of compensation for audiovisual productions 2024-2026 (Valtioneuvoston asetus audiovisuaalisen tuotannon tuen maksamisesta), which explicitly states the level of the artistic content of the production is NOT subject to evaluation -- i.e. this is a definitional eligibility category (does the work qualify as an audiovisual production of the relevant type) rather than a scored artistic-merit assessment of any kind. This is a genuinely, definitively resolved terminal state -- no point table is missing because none exists by design; QUALIFICATION_COMPLETE for this criterion.",
         "express_exclusions": "Commercials and promotional products; documentary series; non-scripted series (reality, talk shows); music videos and musical-event recordings; entertainment and sports events and their recordings; training videos; productions where public funding exceeds 50% of Finnish-generated costs.",
         "decision_speed": "Rolling first-come-first-served; decisions usually within 40 days.",
     },
@@ -4447,14 +4647,16 @@ register(ProgramRequirementsProfile(
     program_slug="at_fisa_plus", jurisdiction_code="AT",
     local_entity_required=False,       # not stated as a blanket gate by any source reviewed; FISA+ explicitly supports "international films and series (service productions)" as well as Austrian productions, implying foreign applicants can qualify directly rather than only through a mandatory Austrian entity
     cultural_test_required=True,       # points-based Cultural Test conducted by Location Austria -- resolves this repository's own internal inconsistency (DISCOVERY catalog said True, the pre-existing PARSED rate rule and jurisdiction_comparison.py profile both incorrectly said False; both corrected this session)
+    cultural_test_points=80,           # maximum obtainable across Parts A+B+C (Annex 3), confirmed 2026-08-19 from the official FISA+ Funding Guidelines for Service Productions 2025-2027 PDF
+    cultural_test_threshold=40,        # feature film/fictional series minimum (40 of 80); other formats have lower thresholds -- see additional_facts for the full per-format table
     preapproval_mandatory=True,        # applications submitted via the AWS Funding Manager platform before/during production, consistent with a rebate program requiring approval rather than automatic post-hoc claim
     refundable=True,
     transferable=False,
     evidence=EvidenceRecord(
-        source_title="FISAplus program overview pages (FILM in AUSTRIA / fisaplus.com) plus independently-converging industry summaries",
-        source_url="https://www.filminaustria.com/en/funding/fisaplus/",
+        source_title="FISA+ Funding Guidelines for Service Productions 2025-2027 (official PDF, Annex 3 Cultural Test) plus independently-converging industry summaries for rate/administration facts",
+        source_url="https://api.fisaplus.com/fileadmin/user_upload/FISA__SRL_Serviceproduktionen_2025-2027_EN.pdf",
         issuing_authority="Austria Wirtschaftsservice Gesellschaft mbH (aws), under the Federal Ministry of Labor, Economy, Energy and Tourism; FILM in AUSTRIA (Austrian Film Commission) as first point of contact",
-        source_type=SourceType.SECONDARY, status=RecordStatus.CURRENT, access_date="2026-07-26",
+        source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT, access_date="2026-08-19",
         notes="REPOSITORY RECONCILIATION FIRST (per standing instruction): this repository already "
               "carried FOUR internal Austria records before external research began -- a DISCOVERY "
               "entry for FISA+ itself (global_inventory_extended.py: 25%, cultural test required, "
@@ -4481,11 +4683,35 @@ register(ProgramRequirementsProfile(
               "documentaries, EUR 25,000 for animation/VFX/film-music productions -- a genuine "
               "format-tiered structure, also superseding the DISCOVERY entry's single EUR 600,000 "
               "figure (which itself was flagged as a data gap, min_spend_usd, by the catalog's own "
-              "unknown_fields list). CULTURAL TEST: points-based, conducted by Location Austria, "
-              "required for every project -- exact points threshold not found in any source reviewed "
-              "and NOT recorded as a Structured Unknown here since no source indicates the threshold "
-              "is a fixed, determinable public figure (rather than a case-by-case administrative "
-              "scoring rubric). ADMINISTRATION (elevated to PRIMARY confidence via direct official "
+              "unknown_fields list). CULTURAL TEST (RESOLVED 2026-08-19, Worldwide Program Qualification "
+              "Completion, Queue B): the exact points threshold WAS found -- the official "
+              "'FISA+ Funding Guidelines for Service Productions 2025-2027' PDF "
+              "(api.fisaplus.com/fileadmin/user_upload/FISA__SRL_Serviceproduktionen_2025-2027_EN.pdf, "
+              "issued pursuant to section 7 of the 2023 Film Location Act of the Austrian Federal "
+              "Minister of Economy, Energy and Tourism, in agreement with the Federal Minister of "
+              "Finance) was read in full and its Annex 3 ('Cultural Test for International Productions "
+              "of Films, Series and Episodes', pp. 56-60) contains the complete, exact point table: "
+              "minimum score (of a maximum 80, Parts A-C combined) is 40 for feature film/fictional "
+              "series, 35 for animated feature film/fictional series, 28 for documentary film/series "
+              "(incl. animated), 25 for production parts with no live-action/digital shooting days. "
+              "Part A 'Cultural Content' (max 30 points): Austrian/EEA/Council-of-Europe setting (4), "
+              "fictitious-place setting (2), Austrian/European objects filmed (3), Austrian/European "
+              "shooting locations (3), Austrian/EEA/CoE main character (3, max 3 combined with the "
+              "non-attributable-nationality alternative worth 1), Austrian/European plot source (3), "
+              "pre-existing-work basis (2), art-themed plot (1), contemporary non-film artist in a key "
+              "role (1), real/fictional public figure plot (2), historic-event plot (2), socio-cultural/ "
+              "religious/philosophical topic (3), scientific/natural-phenomena topic (3). Part B 'Film "
+              "Professionals' (max 38 points): Austrian/EEA/CoE nationals in listed head-of-department, "
+              "acting/performance, VFX/animation-lead, audio-post, visual-post, and music-recording "
+              "roles at 2 points/person (24 max); female film professionals in screenwriting/directing/ "
+              "cinematography/production at 2 points/person (8 max); trainees at 1 point/trainee (6 "
+              "max). Part C 'Production': shooting-days/animation-spend/post-production-spend tiers in "
+              "Austria (points vary by category and spend threshold, e.g. 3-9 shooting days = 4 points "
+              "up to 15+ days = 6 points; EUR 25,000-100,000+ tiers for animation/VFX/post-production "
+              "at 8-12 points each). This directly supersedes the prior session's own note that the "
+              "threshold 'is NOT recorded as a Structured Unknown... no source indicates the threshold "
+              "is a fixed, determinable public figure' -- it is exactly that, and is now on file. "
+              "ADMINISTRATION (elevated to PRIMARY confidence via direct official "
               "fetch, unlike the rate/min-spend/cultural-test figures which remain secondary): "
               "administered by aws (Austria Wirtschaftsservice Gesellschaft mbH) under the Federal "
               "Ministry of Labor, Economy, Energy and Tourism, with FILM in AUSTRIA (the Austrian Film "
@@ -4504,7 +4730,7 @@ register(ProgramRequirementsProfile(
     additional_facts={
         "rate_structure": "30% base cash rebate on eligible Austrian spend, +5% green-filming bonus (35% ceiling). Supersedes the repository's stale 25% figure.",
         "min_spend_by_format_eur": "Fiction/feature films: EUR 150,000. Documentaries: EUR 80,000. Animation/VFX/film-music: EUR 25,000.",
-        "cultural_test": "Points-based Cultural Test conducted by Location Austria, required for every project. Exact points threshold not published in sources reviewed.",
+        "cultural_test": "Points-based Cultural Test (Annex 3 of the official FISA+ Service Productions Guidelines): max 80 points across Parts A (Cultural Content, max 30), B (Film Professionals, max 38), C (Production, remainder). Minimum passing score: 40 (feature film/fictional series), 35 (animated feature/fictional series), 28 (documentary), 25 (no-shooting-days production parts).",
         "administering_bodies": "Austria Wirtschaftsservice Gesellschaft mbH (aws), under the Federal Ministry of Labor, Economy, Energy and Tourism. FILM in AUSTRIA (Austrian Film Commission) is the first point of contact for international productions. Applications via the AWS Funding Manager platform (live since 2023-01-02).",
         "distinct_austrian_programs_not_modeled_here": "This profile covers FISA+ only. ORF Film/Fernseh-Abkommen (broadcaster co-production fund, ~EUR 16,000,000/year) and Austrian Film Institute (OFI) selective/automatic production support are separate Austrian programs, positively not conflated with FISA+.",
         "primary_source_status": "fisa-plus.at returned a DNS resolution failure at access time (2026-07-26); fisaplus.com and filminaustria.com were reached directly and confirm administration/application-portal facts, but not the rate/threshold figures, which remain secondary-sourced pending a retry.",

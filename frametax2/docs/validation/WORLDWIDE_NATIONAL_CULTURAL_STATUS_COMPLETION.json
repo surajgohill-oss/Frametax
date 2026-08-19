@@ -5,9 +5,9 @@
   "population_source": "Unique ISO2 country codes derived from program_requirements.all_program_requirements()",
   "summary": {
     "total_jurisdictions": 49,
-    "NATIONAL_STATUS_REGIME_CONFIRMED": 32,
+    "NATIONAL_STATUS_REGIME_CONFIRMED": 33,
     "NO_RELEVANT_NATIONAL_STATUS_REGIME_CONFIRMED": 2,
-    "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION": 15,
+    "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION": 14,
     "unexplained": 0
   },
   "jurisdictions": [
@@ -371,21 +371,24 @@
     },
     {
       "jurisdiction_code": "IL",
-      "status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
-      "regime_name": null,
-      "administering_authority": null,
-      "legal_basis": null,
+      "status": "NATIONAL_STATUS_REGIME_CONFIRMED",
+      "regime_name": "Israeli Film Law definition of an 'Israeli film' (Israel Film Fund domestic support)",
+      "administering_authority": "Israel Film Fund (Kranot HaKolnoa); Israel Ministry of Culture and Sport",
+      "legal_basis": "Israeli Film Law (Chok HaKolnoa) and its Regulations",
       "linked_program_slug": null,
-      "base_program_slug": null,
-      "pathway_type": null,
-      "economic_consequence": null,
-      "consequence_detail": null,
-      "coproduction_relationship": null,
-      "sources": [],
-      "exact_unresolved_propositions": [
-        "ISRAEL_SEPARATE_NATIONAL_CULTURAL_FUND_VS_IL_FOREIGN_PRODUCTION_FUND_UNCONFIRMED -- this pass confirmed real, cited official co-production treaties (France 1970, Germany, Italy, UK, Australia, New Zealand, Sweden -- see CoproductionCoverageStatus for IL) which DO confer national treatment for co-produced works, but could not confirm whether Israel ALSO operates a separate national/domestic cultural-content fund distinct from il_foreign_production_fund (the confirmed no-cultural-test program) for wholly-Israeli productions. Sources searched: Israel Film Fund (filmfund.org.il -- dedicated treaty page returned 404), Screen Daily, Cineuropa. Requires: Israel Ministry of Culture and Sport's own domestic-fund criteria (not located in English at the depth searched this pass)."
+      "base_program_slug": "il_foreign_production_fund",
+      "pathway_type": "DOMESTIC_NATIONAL_PATHWAY",
+      "economic_consequence": "UNLOCKS_DOMESTIC_PROGRAM",
+      "consequence_detail": "Continuation pass 2026-08-19 (Worldwide Program Qualification Completion, Queue A): the Israel Film Fund's own eligibility criteria require a feature script (>=70 minutes, or >=60 for animation) that 'complies with the criteria for defining an Israeli film in the Film Law and the Regulations thereunder' -- a real, distinct national-content legal definition, separate from il_foreign_production_fund (the confirmed no-cultural-test foreign/international production incentive, a different, newer incentive-law framework). Same real structural pattern as Canada CPTC/PSTC and Spain Art. 36.1/36.2 -- a domestic national-content certification unlocking access to Israel's own domestic film funds (Israel Film Fund, Rabinovich Foundation/Israel Cinema Project, Gesher Multicultural Film Fund, Makor Foundation), materially distinct from the foreign-production service rebate.",
+      "coproduction_relationship": "Israel's own confirmed bilateral co-production treaties (France 1970, Germany, Italy, UK, Australia, New Zealand, Sweden -- see CoproductionCoverageStatus for IL) separately confer national treatment for co-produced works.",
+      "sources": [
+        "https://www.filmfund.org.il/Upload/Media/Tinymce/Files/IFF%20en2024.pdf",
+        "https://izzy.streamisrael.tv/inside-the-6-film-funds-putting-israeli-entertainment-on-the-map/"
       ],
-      "retrieved_date": null
+      "exact_unresolved_propositions": [
+        "IL_DOMESTIC_FUND_POINT_STRUCTURE_UNCONFIRMED -- the Film Law's own definitional criteria for 'Israeli film' (personnel/language/subject-matter thresholds) were not independently read from the statute itself this pass; the domestic funds are also not yet program_requirements.py records, so no exact percentage/rate is asserted."
+      ],
+      "retrieved_date": "2026-08-19"
     },
     {
       "jurisdiction_code": "IS",
@@ -783,7 +786,7 @@
       "coproduction_relationship": null,
       "sources": [],
       "exact_unresolved_propositions": [
-        "SINGAPORE_IMDA_NATIONAL_CONTENT_CLASSIFICATION_VS_SG_MADE_WITH_SINGAPORE_RELATIONSHIP_UNCONFIRMED -- this pass confirmed a real Korea-Singapore FTA cultural-cooperation co-production route, but could not confirm whether Singapore's Infocomm Media Development Authority (IMDA) also operates a separate 'Singapore content' classification/fund distinct from sg_made_with_singapore_rebate (the confirmed no-cultural-test program). IMDA's own domestic-content criteria pages were not independently fetched this pass."
+        "SINGAPORE_IMDA_NATIONAL_CONTENT_CLASSIFICATION_VS_SG_MADE_WITH_SINGAPORE_RELATIONSHIP_UNCONFIRMED -- this pass confirmed a real Korea-Singapore FTA cultural-cooperation co-production route, but could not confirm whether Singapore's Infocomm Media Development Authority (IMDA) also operates a separate 'Singapore content' classification/fund distinct from sg_made_with_singapore_rebate (the confirmed no-cultural-test program). Continuation pass 2026-08-19: two real, distinct IMDA mechanisms were investigated and both RULED OUT as the match. (1) The New Talent Feature Grant (NTFG) is real and IMDA-administered, but is an INDIVIDUAL grant restricted to Singapore citizens/PRs directing their first or second feature (up to S$250,000), not a company-facing national-content certification comparable to CAVCO/SAC/ICAA -- too structurally different to encode as the same CONFIRMED_SEPARATE_PATHWAY pattern without overclaiming the match. (2) IMDA's 'Content Standards and Classification' system was also checked and confirmed to be a censorship/age-rating framework (Films Act, Broadcasting Act) for public exhibition, not a funding-eligibility cultural test. Neither is the right mechanism. IMDA's own domestic-content FUNDING criteria pages (as opposed to talent grants or classification) were still not independently located this pass."
       ],
       "retrieved_date": null
     },
@@ -819,7 +822,7 @@
       "coproduction_relationship": null,
       "sources": [],
       "exact_unresolved_propositions": [
-        "TAIWAN_TAICCA_OFFICIAL_COPRODUCTION_TREATY_VS_FUNDING_SCHEME_DISTINCTION_UNCONFIRMED -- this pass found TAICCA (Taiwan Creative Content Agency) operates co-FINANCING schemes (e.g. TICP 2.0) with international partners including Japan, but could not confirm whether these rise to the level of an OFFICIAL GOVERNMENT co-production TREATY (conferring national treatment) as opposed to a co-funding/investment program -- a real, disclosed ambiguity, not a confident finding either way. Sources checked: Screen Global Production, Deadline, TAICCA's own English-language press materials. Requires: TAICCA's own treaty/agreement register (not located in English at the depth searched)."
+        "TAIWAN_TAICCA_OFFICIAL_COPRODUCTION_TREATY_VS_FUNDING_SCHEME_DISTINCTION_UNCONFIRMED -- this pass found TAICCA (Taiwan Creative Content Agency) operates co-FINANCING schemes (e.g. TICP 2.0) with international partners including Japan, but could not confirm whether these rise to the level of an OFFICIAL GOVERNMENT co-production TREATY (conferring national treatment) as opposed to a co-funding/investment program -- a real, disclosed ambiguity, not a confident finding either way. Sources checked: Screen Global Production, Deadline, TAICCA's own English-language press materials. Requires: TAICCA's own treaty/agreement register (not located in English at the depth searched). Continuation pass 2026-08-19: the France relationship specifically was checked and CONFIRMED NOT to be a formal treaty -- Deadline and TAICCA's own site both directly quote/confirm the CNC-TAICCA agreement (signed November 2023, TCCF) as a 'memorandum of understanding designing joint priorities for...cooperation', explicitly NOT a co-production treaty with national-treatment or contribution-percentage terms. This corroborates, for one concrete named partner, the ambiguity already flagged for TAICCA's arrangements generally -- MOU-level industry cooperation, not confirmed treaty status, consistent with Taiwan's unusual formal-treaty-capacity constraints internationally."
       ],
       "retrieved_date": null
     },

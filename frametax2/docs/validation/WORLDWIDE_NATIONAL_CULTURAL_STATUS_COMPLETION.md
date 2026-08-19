@@ -1,14 +1,14 @@
 # Worldwide National/Cultural Status Completion
 
-**Generated:** 2026-08-19 (resume/finish continuation from checkpoint `763e766`) · **Population:** unique ISO2 country codes derived from the current canonical 71-program economic database.
+**Generated:** 2026-08-19, updated same-day (continuation from checkpoint `adc5cba`, itself continued from `763e766`) · **Population:** unique ISO2 country codes derived from the current canonical 71-program economic database.
 
 ## Checkpoint progress
 
-| State | 763e766 checkpoint | This continuation |
-|---|---:|---:|
-| NATIONAL_STATUS_REGIME_CONFIRMED | 26 | 32 |
-| NO_RELEVANT_NATIONAL_STATUS_REGIME_CONFIRMED | 2 | 2 |
-| AUTHORITY_UNRESOLVED_EXACT_PROPOSITION | 21 | 15 |
+| State | 763e766 | adc5cba | This continuation |
+|---|---:|---:|---:|
+| NATIONAL_STATUS_REGIME_CONFIRMED | 26 | 32 | 33 |
+| NO_RELEVANT_NATIONAL_STATUS_REGIME_CONFIRMED | 2 | 2 | 2 |
+| AUTHORITY_UNRESOLVED_EXACT_PROPOSITION | 21 | 15 | 14 |
 
 **Total: 49. Zero unexplained unknown.**
 
@@ -48,11 +48,15 @@
 - **Co-production relationship:** Official co-production status is an explicit ALTERNATIVE route to the points test for reaching the 35% uplifted rate.
 - **Sources:** https://www.nfvf.co.za/incentives/, https://filmcapetown.com/incentives/
 
-## Genuine authority residual, with hard-blocker documentation (15)
+### IL — Israeli Film Law definition of an 'Israeli film' (Israel Film Fund domestic support)
+
+**Newly confirmed this continuation.** Economic consequence: UNLOCKS_DOMESTIC_PROGRAM — the Israel Film Fund's own eligibility criteria require a feature script that "complies with the criteria for defining an Israeli film in the Film Law and the Regulations thereunder" — a real, distinct national-content legal definition separate from `il_foreign_production_fund` (the confirmed no-cultural-test foreign/international production incentive). Same real structural pattern as Canada CPTC/PSTC and Spain Art. 36.1/36.2. Sources: filmfund.org.il's own investment-scheme document; izzy.streamisrael.tv's 6-fund overview.
+
+## Genuine authority residual, with hard-blocker documentation (14)
 
 ### AE
 
-UAE_TWOFOUR54_OFFICIAL_GOVERNMENT_TREATY_VS_INDUSTRY_COOPERATION_UNCONFIRMED -- this pass found real evidence of INDUSTRY-LEVEL cooperation between twofour54 (Abu Dhabi), the Doha Film Institute, and Dubai International Film Festival (described as the 'Gulf industrial axis') and individual co-produced projects, but no evidence of a formal GOVERNMENT-TO-GOVERNMENT co-production treaty. Sources checked: Screen Daily, GCC Business News, twofour54's own site, UAE Embassy news page. Requires: UAE Ministry of Culture's own treaty register, not located in English at the depth searched this pass.
+UAE_TWOFOUR54_OFFICIAL_GOVERNMENT_TREATY_VS_INDUSTRY_COOPERATION_UNCONFIRMED -- this pass found real evidence of INDUSTRY-LEVEL cooperation between twofour54 (Abu Dhabi), the Doha Film Institute, and Dubai International Film Festival (described as the 'Gulf industrial axis') and individual co-produced projects, but no evidence of a formal GOVERNMENT-TO-GOVERNMENT co-production treaty. Sources checked: Screen Daily, GCC Business News, twofour54's own site, UAE Embassy news page, UAE's own Ministry of Finance International Treaties Dashboard (covers only DTAAs/BITs, no film category), UNESCO's Policy Monitoring Platform (film co-production agreements). Requires: UAE Ministry of Culture's own treaty register, not located in English at the depth searched.
 
 ### CL
 
@@ -61,10 +65,6 @@ CHILE_CORFO_NATIONAL_STATUS_VS_CL_CORFO_INCENTIVE_RELATIONSHIP_UNCONFIRMED -- Ch
 ### FJ
 
 FIJI_OFFICIAL_TREATY_AND_NATIONAL_FUND_UNCONFIRMED -- no evidence found this pass of either an official Fiji co-production treaty or a separate domestic-content fund distinct from fj_film_rebate (already AUTHORITY_UNRESOLVED at the program-qualification level for its own cultural-test applicability -- see WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION.md). Sources checked: film-fiji.com, Hoodlum, Entertainment Partners. Requires: Fiji Film Authority's own treaty register, not located this pass.
-
-### IL
-
-ISRAEL_SEPARATE_NATIONAL_CULTURAL_FUND_VS_IL_FOREIGN_PRODUCTION_FUND_UNCONFIRMED -- this pass confirmed real, cited official co-production treaties (France 1970, Germany, Italy, UK, Australia, New Zealand, Sweden -- see CoproductionCoverageStatus for IL) which DO confer national treatment for co-produced works, but could not confirm whether Israel ALSO operates a separate national/domestic cultural-content fund distinct from il_foreign_production_fund (the confirmed no-cultural-test program) for wholly-Israeli productions. Sources searched: Israel Film Fund (filmfund.org.il -- dedicated treaty page returned 404), Screen Daily, Cineuropa. Requires: Israel Ministry of Culture and Sport's own domestic-fund criteria (not located in English at the depth searched this pass).
 
 ### IS
 
@@ -100,7 +100,7 @@ SAUDI_ARABIA_OFFICIAL_TREATY_AND_NATIONAL_FUND_UNCONFIRMED -- Saudi Arabia appea
 
 ### SG
 
-SINGAPORE_IMDA_NATIONAL_CONTENT_CLASSIFICATION_VS_SG_MADE_WITH_SINGAPORE_RELATIONSHIP_UNCONFIRMED -- this pass confirmed a real Korea-Singapore FTA cultural-cooperation co-production route, but could not confirm whether Singapore's Infocomm Media Development Authority (IMDA) also operates a separate 'Singapore content' classification/fund distinct from sg_made_with_singapore_rebate (the confirmed no-cultural-test program). IMDA's own domestic-content criteria pages were not independently fetched this pass.
+SINGAPORE_IMDA_NATIONAL_CONTENT_CLASSIFICATION_VS_SG_MADE_WITH_SINGAPORE_RELATIONSHIP_UNCONFIRMED -- this pass confirmed a real Korea-Singapore FTA cultural-cooperation co-production route, but could not confirm whether Singapore's Infocomm Media Development Authority (IMDA) also operates a separate 'Singapore content' classification/fund distinct from sg_made_with_singapore_rebate (the confirmed no-cultural-test program). Continuation pass: two real IMDA mechanisms investigated and ruled OUT as the match -- the New Talent Feature Grant (an individual Singapore-citizen/PR grant, not a company-facing certification) and IMDA's Content Standards and Classification system (a censorship/age-rating framework, not a funding cultural test). IMDA's own domestic-content FUNDING criteria pages still not located.
 
 ### TH
 
@@ -108,6 +108,6 @@ THAILAND_SEPARATE_NATIONAL_FUND_VS_TH_BOI_INCENTIVE_RELATIONSHIP_UNCONFIRMED -- 
 
 ### TW
 
-TAIWAN_TAICCA_OFFICIAL_COPRODUCTION_TREATY_VS_FUNDING_SCHEME_DISTINCTION_UNCONFIRMED -- this pass found TAICCA (Taiwan Creative Content Agency) operates co-FINANCING schemes (e.g. TICP 2.0) with international partners including Japan, but could not confirm whether these rise to the level of an OFFICIAL GOVERNMENT co-production TREATY (conferring national treatment) as opposed to a co-funding/investment program -- a real, disclosed ambiguity, not a confident finding either way. Sources checked: Screen Global Production, Deadline, TAICCA's own English-language press materials. Requires: TAICCA's own treaty/agreement register (not located in English at the depth searched).
+TAIWAN_TAICCA_OFFICIAL_COPRODUCTION_TREATY_VS_FUNDING_SCHEME_DISTINCTION_UNCONFIRMED (national-status question) -- this pass found TAICCA (Taiwan Creative Content Agency) operates co-FINANCING schemes (e.g. TICP 2.0) with international partners including Japan, but could not confirm whether these rise to the level of an OFFICIAL GOVERNMENT co-production TREATY (conferring national treatment) as opposed to a co-funding/investment program. Continuation pass: TAICCA's France relationship specifically CONFIRMED to be an MOU, not a treaty (Deadline/TAICCA's own site). **However, Taiwan's CO-PRODUCTION COVERAGE question (a separate, distinct question -- see CoproductionCoverageStatus) IS now resolved**: a real, ratified bilateral economic treaty (ANZTEC, in force since 2013-12-01) contains a dedicated Film and Television Co-Production chapter with New Zealand -- see OFFICIAL_COPRODUCTION_DOCTRINE_COMPLETION.md. The NATIONAL-STATUS question (a separate domestic Taiwanese-content certification) remains genuinely unresolved.
 
 STOP.

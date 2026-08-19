@@ -132,19 +132,40 @@ Consistent with the prior passes' own finding (these are the same real programs 
 
 STOP.
 
-## Queue C — per-country coverage resolution (resume/finish continuation, 2026-08-19)
+## Queue C — per-country coverage resolution (continuation from checkpoint `adc5cba`, 2026-08-19)
 
 Distinct denominator from the route-level table above: per-COUNTRY coverage across the 49-country universe.
 
-| Metric | Count |
-|---|---:|
-| total_countries | 49 |
-| countries_with_bilateral_coverage | 20 |
-| countries_with_multilateral_coverage | 30 |
-| countries_with_both | 9 |
-| confirmed_no_official_route | 2 |
-| genuine_authority_residual | 6 |
-| unexplained | 0 |
+| Metric | adc5cba | This continuation |
+|---|---:|---:|
+| total_countries | 49 | 49 |
+| countries_with_bilateral_coverage | 20 | 21 |
+| countries_with_multilateral_coverage | 30 | 30 |
+| countries_with_both | 9 | 9 |
+| confirmed_no_official_route | 2 | 2 |
+| genuine_authority_residual | 6 | 5 |
+| unexplained | 0 | 0 |
+
+### Newly resolved this continuation
+
+- **TW** (OFFICIAL_COPRO_ROUTE_EXISTS): NZ. A REAL, RATIFIED bilateral economic treaty — the Agreement between New Zealand and the Separate Customs Territory of Taiwan, Penghu, Kinmen and Matsu on Economic Cooperation (ANZTEC), in force 1 December 2013 — contains a dedicated Chapter 18 (Film and Television Co-Production). The Implementing Arrangement to Chapter 18 was read in full: competent authorities are the New Zealand Film Commission (NZFC) and Taiwan's Bureau of Audiovisual and Music Industry Development (BAMID); a two-stage approval process; a required co-producer contract covering IP, cost liability, receipts division, contribution-completion dates, and festival-nationality designation. Materially stronger than the earlier-confirmed France relationship (an MOU) — this is a real, signed, in-force international agreement with a dedicated co-production chapter.
+
+### Queue D — per-route operational-term disclosure (new `partner_contribution_terms` field, additive, `CoproductionCoverageStatus`)
+
+Per the explicit instruction that a confirmed route must never be silently treated as though it doesn't exist merely because one contribution-percentage term is unknown: every route below is `ROUTE_EXISTS`; where the exact term was found it is recorded as a real fact, where it was not it fails closed with an explicit `TERM_UNRESOLVED` marker rather than silent omission.
+
+| Route | Term found this pass |
+|---|---|
+| KR ↔ CA | **Minimum participation 30% bipartite / 20% multipartite** (Telefilm Canada's official treaty summary; treaty signed 25 April 1995). Maximum not stated. |
+| KR ↔ GB | TERM_UNRESOLVED — existence confirmed (Korea-UK FTA Cultural Cooperation Protocol), contribution % not independently retrieved. |
+| KR ↔ SG | TERM_UNRESOLVED — existence confirmed (Korea-Singapore FTA), contribution % not independently retrieved. |
+| KR ↔ NZ | TERM_UNRESOLVED — existence confirmed (2 agreements), contribution % not independently retrieved. |
+| KR ↔ FR | TERM_UNRESOLVED — existence confirmed (2006 agreement), contribution % not independently retrieved. |
+| JP ↔ IT | TERM_UNRESOLVED — existence confirmed (signed June 2024, activated August 2024, MOFA-corroborated), contribution % not independently retrieved. |
+| PH ↔ FR | TERM_UNRESOLVED — existence confirmed (officially signed, FDCP/news-corroborated), contribution % not independently retrieved. |
+| TW ↔ NZ | TERM_UNRESOLVED — route confirmed via the real ANZTEC treaty text (see above); the exact contribution percentage (ANZTEC's own Chapter 18, Article 4) was not located as a separately fetchable document this pass. |
+
+None of these 8 routes were added to `treaty_engine.py`'s own `_BILATERAL` dict this pass (same disclosed connection gap as `adc5cba` — that schema requires numeric percentage fields this pass could not fully verify for most routes, and fabricating them would violate this arc's anti-fabrication discipline). They ARE fully represented, term-by-term, in the new `CoproductionCoverageStatus.partner_contribution_terms` field.
 
 ### Newly resolved this continuation (7 of the original 13 uncovered countries)
 
@@ -158,13 +179,14 @@ Distinct denominator from the route-level table above: per-COUNTRY coverage acro
 - **TH** (NO_RELEVANT_OFFICIAL_COPRO_ROUTE_CONFIRMED): (none -- confirmed no route). Film Thailand (Thailand's own official film office) directly states Thailand has not entered into any formal co-production treaties, and is currently EVALUATING the possibility -- a genuine, current, primary-sourced confirmed-absent finding, not merely 'not found'.
 - **US** (NO_RELEVANT_OFFICIAL_COPRO_ROUTE_CONFIRMED): (none -- confirmed no route). Confirmed (prior continuation, this same arc): the US has negotiated fewer co-production treaties than any other industrialized country and has none with Canada or Mexico; its only treaty (China) is not broad and is not in the current 49-country universe. A genuine, real, primary-adjacent confirmed-absent finding for the countries in our universe, not merely 'not found'.
 
-### Genuine authority residual (6), hard-blocker documented
+### Genuine authority residual (5), hard-blocker documented
 
-- **AE**: AE_OFFICIAL_COPRODUCTION_COVERAGE_UNCONFIRMED -- no bilateral or multilateral route found in treaty_engine.py's existing registry, and no primary/secondary research was performed for this country this pass.
+- **AE**: AE_OFFICIAL_COPRODUCTION_COVERAGE_UNCONFIRMED -- continuation pass performed real further research: the UAE's own MOF International Treaties Dashboard covers only DTAAs/BITs (no film category exists there), UNESCO's Policy Monitoring Platform did not surface UAE, and the one concrete UAE international film arrangement (Abu Dhabi Film Commission / Israel Film Fund, 2020) was confirmed via direct quote to be a goodwill/cultural-exchange cooperation agreement, NOT a formal treaty. Requires: UAE Ministry of Culture's own treaty register, not located in English.
 - **FJ**: FJ_OFFICIAL_COPRODUCTION_COVERAGE_UNCONFIRMED -- no bilateral or multilateral route found in treaty_engine.py's existing registry, and no primary/secondary research was performed for this country this pass.
 - **MU**: MU_COPRODUCTION_TREATY_CURRENT_STATUS_UNCONFIRMED -- last concrete evidence found is from 2013 (planned, not signed); EDB Mauritius's own 'Bilateral Agreements' page (edbmauritius.org/bilateral-agreements) was found in search results but not independently fetched for content this pass.
 - **QA**: QA_OFFICIAL_COPRODUCTION_COVERAGE_UNCONFIRMED -- no bilateral or multilateral route found in treaty_engine.py's existing registry, and no primary/secondary research was performed for this country this pass.
 - **SA**: SA_OFFICIAL_COPRODUCTION_COVERAGE_UNCONFIRMED -- no bilateral or multilateral route found in treaty_engine.py's existing registry, and no primary/secondary research was performed for this country this pass.
-- **TW**: TW_OFFICIAL_COPRODUCTION_COVERAGE_UNCONFIRMED -- no bilateral or multilateral route found in treaty_engine.py's existing registry, and no primary/secondary research was performed for this country this pass.
+
+**TW resolved this continuation** (see above — ANZTEC Chapter 18 with New Zealand).
 
 STOP.

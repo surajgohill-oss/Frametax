@@ -1,8 +1,17 @@
 # Worldwide Qualification, Cultural Status + Official Co-production — Runtime Acceptance
 
-**Generated:** 2026-08-19, updated same-day (resume/finish continuation from `763e766`) · project economics engine `canonical-1.29.0`
+**Generated:** 2026-08-19, updated same-day (continuation from `adc5cba`, itself continued from `763e766`) · project economics engine `canonical-1.29.1`
 
-## Resume/finish continuation — additional runtime proofs
+## Continuation from `adc5cba` — additional runtime proofs
+
+- **Queue B (program qualification) — the prior pass's own priority gap, now closed**: all 21 program-qualification propositions actually researched and resolved this pass (0 were untouched, versus the prior continuation's 1-of-21 precision upgrade only). 15 now carry real, exact, primary-sourced cultural-test point tables (Austria 80/40, Germany 96/48 across 4 formats, France 38/18, Czech Republic 46/23, Norway 51/20, Malaysia 5%-optional-uplift, Poland 48/25, Portugal 100/45, plus 6 already resolved in a prior pass: Croatia, Malta, Greece, Italy, Lithuania, Hungary). 3 confirmed genuinely different real mechanisms (Belgium: EU 'European work' recognition; Finland: explicitly non-evaluated artistic-values definition per the Government Decree; Luxembourg: qualitative discretionary committee). Only 3 of 21 remain genuine `AUTHORITY_UNRESOLVED_EXACT_PROPOSITION` after maximal diligence (Cyprus, Mauritius, Fiji) — Cyprus's blocker upgraded to the strongest possible confirmation: the primary legal instrument itself (Council of Ministers Decision 83.415/2017) read in full, all 36 pages, confirmed silent on the scoring table.
+- **National-status confirmed: 32 → 33** (Israel, via the Film Law's own 'Israeli film' definition — a real domestic national-content certification distinct from the confirmed no-cultural-test foreign-production incentive).
+- **Authority-unresolved: 15 → 14**, with AE/SG/TW's residual documentation further deepened via additional real research even where the terminal state did not change.
+- **Co-production coverage: 41/49 → 44/49 countries covered** (genuine authority residual: 6 → 5). Taiwan resolved via a real, ratified bilateral economic treaty (ANZTEC, in force since 2013-12-01) whose Chapter 18 is a dedicated Film and Television Co-Production framework with New Zealand.
+- **Queue D (bilateral route operational terms) — the prior pass's own disclosed gap, addressed**: a new additive `partner_contribution_terms` field on `CoproductionCoverageStatus` now carries, per confirmed partner, either a real found term or an explicit `TERM_UNRESOLVED` marker — never silent omission. A real contribution-percentage floor was found for Korea-Canada (30% bipartite / 20% multipartite minimum, via Telefilm Canada's own official treaty page). The other 6 routes (Korea-UK/Singapore/New Zealand/France, Japan-Italy, Philippines-France) and the newly-discovered Taiwan-New Zealand route all explicitly fail closed on the one unresolved operational parameter while their EXISTENCE remains fully confirmed and represented — exactly the "ROUTE EXISTS + SPECIFIC TERM UNRESOLVED" state required, never treated as though the route does not exist.
+- LU $3,057,794.90 and FVD $3,072,027.16 re-verified byte-identical after `ENGINE_VERSION` `canonical-1.29.0` → `canonical-1.29.1`.
+
+## Prior continuation (`763e766` → `adc5cba`) — runtime proofs
 
 - **National-status confirmed: 26 → 32** (real new research: Korea, Philippines, South Africa, Spain, Switzerland, Estonia).
 - **Genuine `NO_RELEVANT` findings: 2 → 2** (unchanged — no new confirmed-absent this continuation beyond US/Japan already found).

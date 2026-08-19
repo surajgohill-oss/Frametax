@@ -394,3 +394,116 @@ async def test_baselines_unchanged_after_national_status_completion(db: AsyncSes
     fvd_view = await build_production_and_structures(db, FVD_PROJECT_ID)
     fvd_baseline = next(e for e in fvd_view["structures"]["allocated_structures"]["structures"] if e["is_baseline"])
     assert round(fvd_baseline["npc_with_adjustments_usd"], 2) == 3072027.16
+
+
+def test_national_status_terminal_accounting_improved_past_adc5cba():
+    """Continuation from checkpoint adc5cba (32 confirmed / 15 unresolved)
+    must show real, measurable further improvement, never stagnant."""
+    from app.data.program_requirements import all_program_requirements
+    profiles = all_program_requirements()
+    countries = sorted(set(p.jurisdiction_code.split("-")[0] for p in profiles.values()))
+    confirmed = sum(1 for c in countries if get_jurisdiction_national_status(c).status == STATUS_REGIME_CONFIRMED)
+    unresolved = sum(1 for c in countries if get_jurisdiction_national_status(c).status == STATUS_AUTHORITY_UNRESOLVED)
+    assert confirmed > 32, f"expected real improvement over the 32-confirmed checkpoint, got {confirmed}"
+    assert unresolved < 15, f"expected real reduction from the 15-unresolved checkpoint, got {unresolved}"
+
+
+def test_israel_national_status_confirmed_via_film_law_definition():
+    """Continuation pass: Israel Film Fund's own eligibility criteria
+    require compliance with the Film Law's 'Israeli film' definition --
+    a real, distinct national-content certification from the confirmed
+    no-cultural-test foreign-production incentive."""
+    from app.data.national_cultural_status import CONSEQUENCE_UNLOCKS_DOMESTIC_PROGRAM
+    il = get_jurisdiction_national_status("IL")
+    assert il.status == STATUS_REGIME_CONFIRMED
+    assert il.economic_consequence == CONSEQUENCE_UNLOCKS_DOMESTIC_PROGRAM
+    assert il.base_program_slug == "il_foreign_production_fund"
+
+
+def test_taiwan_new_zealand_route_confirmed_via_anztec_treaty():
+    """Continuation pass, Queue D: ANZTEC (a real, ratified bilateral
+    economic treaty in force since 2013-12-01) contains a dedicated Film
+    and Television Co-Production chapter (Chapter 18) between Taiwan and
+    New Zealand -- upgrades Taiwan from no-confirmed-route to a real
+    confirmed route, with the one unresolved operational term (exact
+    contribution percentage) explicitly failing closed rather than being
+    silently omitted or fabricated."""
+    from app.data.national_cultural_status import COPRO_ROUTE_EXISTS
+    tw = get_coproduction_coverage_status("TW")
+    assert tw.status == COPRO_ROUTE_EXISTS
+    assert "NZ" in tw.confirmed_bilateral_partners
+    assert "NZ" in tw.partner_contribution_terms
+    assert "TERM_UNRESOLVED" in tw.partner_contribution_terms["NZ"]
+
+
+def test_queue_d_routes_fail_closed_not_silently_omitted():
+    """Queue D's explicit instruction: a confirmed route must never be
+    silently treated as though it doesn't exist just because one
+    contribution-percentage term is unknown. Every Queue D route must be
+    ROUTE_EXISTS with the specific unresolved term disclosed, and Korea's
+    real Canada contribution floor (found this pass) must be present."""
+    from app.data.national_cultural_status import COPRO_ROUTE_EXISTS
+    kr = get_coproduction_coverage_status("KR")
+    assert kr.status == COPRO_ROUTE_EXISTS
+    assert "30%" in kr.partner_contribution_terms["CA"]
+    for code in ("GB", "SG", "NZ", "FR"):
+        assert "TERM_UNRESOLVED" in kr.partner_contribution_terms[code]
+
+    jp = get_coproduction_coverage_status("JP")
+    assert jp.status == COPRO_ROUTE_EXISTS
+    assert "IT" in jp.confirmed_bilateral_partners
+    assert "TERM_UNRESOLVED" in jp.partner_contribution_terms["IT"]
+
+    ph = get_coproduction_coverage_status("PH")
+    assert ph.status == COPRO_ROUTE_EXISTS
+    assert "FR" in ph.confirmed_bilateral_partners
+    assert "TERM_UNRESOLVED" in ph.partner_contribution_terms["FR"]
+
+
+def test_queue_b_cultural_test_point_tables_wired_to_program_requirements():
+    """Queue B continuation: real, primary-sourced cultural-test point
+    tables for programs that previously had cultural_test_required=True
+    with no points/threshold data at all."""
+    from app.data.program_requirements import all_program_requirements
+    profiles = all_program_requirements()
+
+    at = profiles["at_fisa_plus"]
+    assert at.cultural_test_points == 80 and at.cultural_test_threshold == 40
+
+    de = profiles["de_dfff"]
+    assert de.cultural_test_points == 96 and de.cultural_test_threshold == 48
+
+    fr = profiles["fr_trip"]
+    assert fr.cultural_test_points == 38 and fr.cultural_test_threshold == 18
+
+    cz = profiles["cz_film_incentive"]
+    assert cz.cultural_test_points == 46 and cz.cultural_test_threshold == 23
+
+    no = profiles["no_film_incentive"]
+    assert no.cultural_test_points == 51 and no.cultural_test_threshold == 20
+
+    my = profiles["my_finas_rebate"]
+    assert my.cultural_test_points == 5  # optional +5% uplift, not a base-eligibility gate
+
+    pl = profiles["pl_pisf_cash_rebate"]
+    assert pl.cultural_test_points == 48 and pl.cultural_test_threshold == 25
+
+    pt = profiles["pt_scri_pt_cash_rebate"]
+    assert pt.cultural_test_points == 100 and pt.cultural_test_threshold == 45
+
+
+def test_queue_b_cyprus_upgraded_to_primary_legal_instrument_read_in_full():
+    """Cyprus's hard blocker must reflect that the primary legal
+    instrument itself (not just secondary commentary) was read in full
+    and confirmed silent on the scoring table -- the maximally diligent
+    standard, not a generic 'not found'. cultural_test_required=True
+    itself is confirmed (not the unconfirmed-applicability case), so
+    this does NOT belong in AUTHORITY_UNRESOLVED_PROGRAMS (that dict is
+    scoped to cultural_test_required=None specifically)."""
+    from app.calculators.canonical_role_qualification_bridge import AUTHORITY_UNRESOLVED_PROGRAMS
+    from app.data.program_requirements import all_program_requirements
+    assert "cy_film_rebate" not in AUTHORITY_UNRESOLVED_PROGRAMS
+    cy = all_program_requirements()["cy_film_rebate"]
+    assert cy.cultural_test_required is True
+    notes = cy.evidence.notes
+    assert "36 pages" in notes and "read in full" in notes

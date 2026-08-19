@@ -84,6 +84,18 @@ AUTHORITY_UNRESOLVED_PROGRAMS: dict[str, tuple[str, ...]] = {
         "test component.",
     ),
 }
+# NOTE: cy_film_rebate is deliberately NOT in this dict. Its
+# cultural_test_required=True is CONFIRMED (Council of Ministers Decision
+# 83.415/2017, read in full) -- only the exact scoring TABLE is withheld
+# by the primary authority (see its EvidenceRecord in program_
+# requirements.py for the full research trail). AUTHORITY_UNRESOLVED_
+# PROGRAMS here is scoped specifically to cultural_test_required=None
+# (whether a test applies AT ALL is unconfirmed) -- a materially
+# different, narrower claim than "a confirmed test's scoring table is
+# undisclosed". Cyprus correctly falls through to QUAL_RULE_DATA_
+# INCOMPLETE (no NationalityRequirement rows exist for it), which is the
+# accurate state: a real cultural test applies, but no role-level rule
+# data is available to evaluate it against.
 
 
 def _authority_unresolved_result(program_slug: str, jurisdiction_code: str | None) -> CanonicalQualificationResult:

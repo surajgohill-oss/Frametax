@@ -29,7 +29,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-NATIONAL_CULTURAL_STATUS_VERSION = "1.1.0"
+NATIONAL_CULTURAL_STATUS_VERSION = "1.2.0"
 # 1.1.0 -- Final Worldwide Qualification/Cultural/Co-production Completion:
 # adds Queue C (official co-production COVERAGE, distinct from national/
 # cultural STATUS) -- CoproductionCoverageStatus / get_coproduction_
@@ -38,6 +38,22 @@ NATIONAL_CULTURAL_STATUS_VERSION = "1.1.0"
 # partner facts recovered via targeted primary/secondary research this
 # pass; genuinely missing bilateral TERMS (contribution %, roles) are
 # NOT fabricated -- only existence is confirmed where cited.
+# 1.2.0 -- Continuation from checkpoint adc5cba (2026-08-19): Israel
+# added to _CONFIRMED_SEPARATE_PATHWAY (Film Law 'Israeli film'
+# definition). CoproductionCoverageStatus gains a new additive field,
+# partner_contribution_terms (dict[str, str]), for Queue D's explicit
+# requirement: a confirmed route must never be silently treated as
+# though it doesn't exist merely because one operational term (usually
+# the exact contribution percentage) is unknown -- ROUTE EXISTS +
+# SPECIFIC TERM UNRESOLVED is now a first-class, disclosed state, never
+# silent omission or fabrication. Populated for KR (5 partners -- real
+# Canada floor found via Telefilm Canada, 4 others explicitly fail
+# closed), JP-IT, and PH-FR. Taiwan gains its first confirmed
+# co-production route (New Zealand, via the real ANZTEC treaty's
+# dedicated Film and Television Co-Production chapter) -- previously
+# AUTHORITY_UNRESOLVED, now COPRO_ROUTE_EXISTS. AE/SG/TW national-status
+# hard-blocker documentation upgraded with additional real, cited
+# research (still genuinely unresolved, now more deeply researched).
 
 # ── Queue C: official co-production COVERAGE terminal states ────────────
 COPRO_ROUTE_EXISTS = "OFFICIAL_COPRO_ROUTE_EXISTS"
@@ -440,6 +456,45 @@ _CONFIRMED_SEPARATE_PATHWAY: tuple[JurisdictionNationalStatus, ...] = (
         ),
         retrieved_date="2026-08-19",
     ),
+    JurisdictionNationalStatus(
+        jurisdiction_code="IL",
+        status=STATUS_REGIME_CONFIRMED,
+        regime_name="Israeli Film Law definition of an 'Israeli film' (Israel Film Fund domestic support)",
+        administering_authority="Israel Film Fund (Kranot HaKolnoa); Israel Ministry of Culture and Sport",
+        legal_basis="Israeli Film Law (Chok HaKolnoa) and its Regulations",
+        linked_program_slug=None,  # Israel Film Fund's domestic support scheme is not yet a program_requirements.py record in the current 71-program universe
+        base_program_slug="il_foreign_production_fund",
+        pathway_type=PATHWAY_DOMESTIC_NATIONAL,
+        economic_consequence=CONSEQUENCE_UNLOCKS_DOMESTIC_PROGRAM,
+        consequence_detail="Continuation pass 2026-08-19 (Worldwide Program Qualification Completion, "
+                            "Queue A): the Israel Film Fund's own eligibility criteria require a "
+                            "feature script (>=70 minutes, or >=60 for animation) that 'complies with "
+                            "the criteria for defining an Israeli film in the Film Law and the "
+                            "Regulations thereunder' -- a real, distinct national-content legal "
+                            "definition, separate from il_foreign_production_fund (the confirmed "
+                            "no-cultural-test foreign/international production incentive, a different, "
+                            "newer incentive-law framework). Same real structural pattern as Canada "
+                            "CPTC/PSTC and Spain Art. 36.1/36.2 -- a domestic national-content "
+                            "certification unlocking access to Israel's own domestic film funds "
+                            "(Israel Film Fund, Rabinovich Foundation/Israel Cinema Project, Gesher "
+                            "Multicultural Film Fund, Makor Foundation), materially distinct from the "
+                            "foreign-production service rebate.",
+        coproduction_relationship="Israel's own confirmed bilateral co-production treaties (France "
+                                   "1970, Germany, Italy, UK, Australia, New Zealand, Sweden -- see "
+                                   "CoproductionCoverageStatus for IL) separately confer national "
+                                   "treatment for co-produced works.",
+        sources=(
+            "https://www.filmfund.org.il/Upload/Media/Tinymce/Files/IFF%20en2024.pdf",
+            "https://izzy.streamisrael.tv/inside-the-6-film-funds-putting-israeli-entertainment-on-the-map/",
+        ),
+        exact_unresolved_propositions=(
+            "IL_DOMESTIC_FUND_POINT_STRUCTURE_UNCONFIRMED -- the Film Law's own definitional criteria "
+            "for 'Israeli film' (personnel/language/subject-matter thresholds) were not independently "
+            "read from the statute itself this pass; the domestic funds are also not yet program_"
+            "requirements.py records, so no exact percentage/rate is asserted.",
+        ),
+        retrieved_date="2026-08-19",
+    ),
 )
 
 #: Country codes already resolved by the prior pass's cultural_test_
@@ -503,17 +558,6 @@ def get_jurisdiction_national_status(jurisdiction_code: str) -> JurisdictionNati
 #: confident CONFIRMED/NO_RELEVANT determination -- disclosed exactly,
 #: never silently upgraded to a confident claim.
 _UNRESOLVED_PROPOSITION_OVERRIDES: dict[str, tuple[str, ...]] = {
-    "IL": (
-        "ISRAEL_SEPARATE_NATIONAL_CULTURAL_FUND_VS_IL_FOREIGN_PRODUCTION_FUND_UNCONFIRMED -- this pass "
-        "confirmed real, cited official co-production treaties (France 1970, Germany, Italy, UK, "
-        "Australia, New Zealand, Sweden -- see CoproductionCoverageStatus for IL) which DO confer "
-        "national treatment for co-produced works, but could not confirm whether Israel ALSO operates a "
-        "separate national/domestic cultural-content fund distinct from il_foreign_production_fund "
-        "(the confirmed no-cultural-test program) for wholly-Israeli productions. Sources searched: "
-        "Israel Film Fund (filmfund.org.il -- dedicated treaty page returned 404), Screen Daily, "
-        "Cineuropa. Requires: Israel Ministry of Culture and Sport's own domestic-fund criteria "
-        "(not located in English at the depth searched this pass).",
-    ),
     "MA": (
         "MOROCCO_CCM_NATIONAL_FILM_STATUS_VS_MA_CCM_REBATE_RELATIONSHIP_UNCONFIRMED -- this pass "
         "confirmed a real UK-Morocco bilateral co-production treaty (via UK's own listed treaty "
@@ -528,8 +572,17 @@ _UNRESOLVED_PROPOSITION_OVERRIDES: dict[str, tuple[str, ...]] = {
         "-- this pass confirmed a real Korea-Singapore FTA cultural-cooperation co-production route, but "
         "could not confirm whether Singapore's Infocomm Media Development Authority (IMDA) also "
         "operates a separate 'Singapore content' classification/fund distinct from "
-        "sg_made_with_singapore_rebate (the confirmed no-cultural-test program). IMDA's own domestic-"
-        "content criteria pages were not independently fetched this pass.",
+        "sg_made_with_singapore_rebate (the confirmed no-cultural-test program). Continuation pass "
+        "2026-08-19: two real, distinct IMDA mechanisms were investigated and both RULED OUT as the "
+        "match. (1) The New Talent Feature Grant (NTFG) is real and IMDA-administered, but is an "
+        "INDIVIDUAL grant restricted to Singapore citizens/PRs directing their first or second feature "
+        "(up to S$250,000), not a company-facing national-content certification comparable to CAVCO/"
+        "SAC/ICAA -- too structurally different to encode as the same CONFIRMED_SEPARATE_PATHWAY "
+        "pattern without overclaiming the match. (2) IMDA's 'Content Standards and Classification' "
+        "system was also checked and confirmed to be a censorship/age-rating framework (Films Act, "
+        "Broadcasting Act) for public exhibition, not a funding-eligibility cultural test. Neither is "
+        "the right mechanism. IMDA's own domestic-content FUNDING criteria pages (as opposed to talent "
+        "grants or classification) were still not independently located this pass.",
     ),
     "TH": (
         "THAILAND_SEPARATE_NATIONAL_FUND_VS_TH_BOI_INCENTIVE_RELATIONSHIP_UNCONFIRMED -- Film Thailand's "
@@ -547,7 +600,14 @@ _UNRESOLVED_PROPOSITION_OVERRIDES: dict[str, tuple[str, ...]] = {
         "opposed to a co-funding/investment program -- a real, disclosed ambiguity, not a confident "
         "finding either way. Sources checked: Screen Global Production, Deadline, TAICCA's own English-"
         "language press materials. Requires: TAICCA's own treaty/agreement register (not located in "
-        "English at the depth searched).",
+        "English at the depth searched). Continuation pass 2026-08-19: the France relationship "
+        "specifically was checked and CONFIRMED NOT to be a formal treaty -- Deadline and TAICCA's own "
+        "site both directly quote/confirm the CNC-TAICCA agreement (signed November 2023, TCCF) as a "
+        "'memorandum of understanding designing joint priorities for...cooperation', explicitly NOT a "
+        "co-production treaty with national-treatment or contribution-percentage terms. This "
+        "corroborates, for one concrete named partner, the ambiguity already flagged for TAICCA's "
+        "arrangements generally -- MOU-level industry cooperation, not confirmed treaty status, "
+        "consistent with Taiwan's unusual formal-treaty-capacity constraints internationally.",
     ),
     "AE": (
         "UAE_TWOFOUR54_OFFICIAL_GOVERNMENT_TREATY_VS_INDUSTRY_COOPERATION_UNCONFIRMED -- this pass found "
@@ -664,6 +724,17 @@ class CoproductionCoverageStatus:
     notes: str | None = None
     exact_unresolved_propositions: tuple[str, ...] = ()
     retrieved_date: str | None = None
+    #: Per-confirmed-partner operational-term disclosure (Queue D,
+    #: 2026-08-19 continuation). Keyed by the partner's ISO2 code (must be
+    #: a member of confirmed_bilateral_partners). Each value is a real,
+    #: cited fact string when a contribution/role/timing term WAS found,
+    #: or an explicit "TERM_UNRESOLVED: <what remains unknown>" string
+    #: when it genuinely was not -- the route's existence is never
+    #: silently withdrawn just because one operational parameter remains
+    #: unknown (ROUTE EXISTS + SPECIFIC TERM UNRESOLVED, never treated as
+    #: though the route does not exist). Additive-only field: empty dict
+    #: for every pre-existing record, never required.
+    partner_contribution_terms: dict[str, str] = field(default_factory=dict)
 
 
 #: Real research this pass for the 13 countries treaty_engine.py's own
@@ -676,6 +747,41 @@ class CoproductionCoverageStatus:
 #: CONFIRMED routes.
 _COPRO_COVERAGE_OVERRIDES: tuple[CoproductionCoverageStatus, ...] = (
     CoproductionCoverageStatus(
+        jurisdiction_code="AE",
+        status=COPRO_AUTHORITY_UNRESOLVED,
+        confirmed_bilateral_partners=(),
+        sources=(
+            "https://www.unesco.org/creativity/en/policy-monitoring-platform/film-co-production-agreements",
+            "https://mof.gov.ae/en/open-data/international-treaties-dashboard/",
+            "https://yousefalotaiba.com/insights/abu-dhabi-israel-sign-major-film-tv-deal/",
+        ),
+        notes="Continuation pass 2026-08-19 (Worldwide Program Qualification Completion, Queue C): "
+              "exhaustive further research performed, still no confirmed official treaty found. The "
+              "UAE's own Ministry of Finance International Treaties Dashboard (a real, filterable, "
+              "official government treaty database) covers ONLY Double Taxation Avoidance Agreements "
+              "and Bilateral Investment Treaties -- no film/media co-production category exists there "
+              "at all, ruling out that specific database as the wrong instrument rather than proving "
+              "absence. UNESCO's Policy Monitoring Platform (a real, authoritative, global "
+              "multilateral film-co-production-agreement registry) did not surface the UAE among "
+              "countries with listed agreements in the record retrieved (though the platform's full "
+              "country-filtered index was not independently confirmed empty for UAE specifically). "
+              "The one concrete UAE international film arrangement found -- the 2020 Abu Dhabi Film "
+              "Commission / Israel Film Fund agreement -- is confirmed, via direct primary-adjacent "
+              "quote, to be a goodwill/cultural-exchange 'cooperation agreement' for training, "
+              "workshops and festival programming, NOT a formal treaty conferring national-treatment "
+              "or majority/minority co-production status.",
+        exact_unresolved_propositions=(
+            "AE_OFFICIAL_COPRODUCTION_TREATY_EXISTENCE_UNCONFIRMED -- no UAE Ministry of Culture/"
+            "Creative Media Authority own treaty register was located in English despite checking the "
+            "UAE's own MOF treaty dashboard (wrong treaty category), UNESCO's multilateral film-"
+            "co-production registry, and the one concrete UAE-Israel arrangement (confirmed to be "
+            "cultural-exchange cooperation, not a co-production treaty). Required fact type: the UAE "
+            "Ministry of Culture and Youth or Creative Media Authority's own official treaty register, "
+            "not located at the depth searched.",
+        ),
+        retrieved_date="2026-08-19",
+    ),
+    CoproductionCoverageStatus(
         jurisdiction_code="KR",
         status=COPRO_ROUTE_EXISTS,
         confirmed_bilateral_partners=("CA", "GB", "SG", "NZ", "FR"),
@@ -686,11 +792,29 @@ _COPRO_COVERAGE_OVERRIDES: tuple[CoproductionCoverageStatus, ...] = (
               "the current 49-country universe (also lists China/India/EU, not individually in this "
               "universe). NOT yet added to treaty_engine.py's own _BILATERAL registry as new entries "
               "this pass (a real, disclosed connection gap -- see FINAL closeout) to avoid touching "
-              "that module's own tested internals without full bilateral-term verification.",
+              "that module's own tested internals without full bilateral-term verification. "
+              "Continuation pass 2026-08-19 (Queue D): the Canada route's contribution terms WERE "
+              "found this pass via Telefilm Canada's own official treaty page -- see "
+              "partner_contribution_terms['CA']. GB/SG/NZ/FR contribution terms were not independently "
+              "retrieved this pass and fail closed explicitly rather than being silently omitted.",
+        partner_contribution_terms={
+            "CA": (
+                "Minimum participation 30% for bipartite co-productions, 20% for multipartite "
+                "co-productions (Telefilm Canada's own official treaty summary, "
+                "telefilm.ca/en/traites/korea; treaty signed 25 April 1995). Maximum contribution "
+                "percentage not stated in the summary retrieved -- TERM_UNRESOLVED for the ceiling "
+                "specifically (the floor IS confirmed)."
+            ),
+            "GB": "TERM_UNRESOLVED: existence confirmed (Korea-UK FTA Cultural Cooperation Protocol) via koreanfilm.or.kr, but exact contribution percentages not independently retrieved this pass.",
+            "SG": "TERM_UNRESOLVED: existence confirmed (Korea-Singapore FTA) via koreanfilm.or.kr, but exact contribution percentages not independently retrieved this pass.",
+            "NZ": "TERM_UNRESOLVED: existence confirmed (2 agreements, per koreanfilm.or.kr and independently via NZFC's own co-production partner list) but exact contribution percentages not independently retrieved this pass.",
+            "FR": "TERM_UNRESOLVED: existence confirmed (2006 agreement) via koreanfilm.or.kr, but exact contribution percentages not independently retrieved this pass.",
+        },
         exact_unresolved_propositions=(
-            "KR_CA_KR_GB_KR_SG_KR_NZ_KR_FR_BILATERAL_TERMS_UNCONFIRMED -- existence confirmed via "
-            "koreanfilm.or.kr (primary), exact majority/minority contribution percentages and role "
-            "treatment not independently verified against each treaty's own full text.",
+            "KR_GB_KR_SG_KR_NZ_KR_FR_BILATERAL_TERMS_UNCONFIRMED -- existence confirmed via "
+            "koreanfilm.or.kr (primary) for all 5 partners; exact majority/minority contribution "
+            "percentages confirmed only for Canada this pass (30% bipartite / 20% multipartite "
+            "minimum, ceiling unstated) -- see partner_contribution_terms for the per-partner detail.",
         ),
         retrieved_date="2026-08-19",
     ),
@@ -712,6 +836,52 @@ _COPRO_COVERAGE_OVERRIDES: tuple[CoproductionCoverageStatus, ...] = (
             "dedicated treaty-list page returned 404 on direct fetch this pass; the 7 partners above "
             "are corroborated via secondary/cross-listing sources, not Israel's own complete official "
             "enumeration.",
+        ),
+        retrieved_date="2026-08-19",
+    ),
+    CoproductionCoverageStatus(
+        jurisdiction_code="TW",
+        status=COPRO_ROUTE_EXISTS,
+        confirmed_bilateral_partners=("NZ",),
+        sources=(
+            "https://www.nzcio.com/assets/NZCIO-documents/ANZTEC-film-and-tv.pdf",
+            "https://en.mofa.gov.tw/News_Content.aspx?n=1386&s=34624",
+            "https://www.nzfilm.co.nz/resources/co-production-agreement-summary-sheets",
+        ),
+        notes="Continuation pass 2026-08-19 (Worldwide Program Qualification Completion, Queue D): a "
+              "REAL, RATIFIED, formal bilateral economic treaty was found and read directly -- the "
+              "Agreement between New Zealand and the Separate Customs Territory of Taiwan, Penghu, "
+              "Kinmen and Matsu on Economic Cooperation (ANZTEC), in force 1 December 2013, contains a "
+              "dedicated Chapter 18 (Film and Television Co-Production). The Implementing Arrangement "
+              "to Chapter 18 was read in full: competent authorities are the New Zealand Film "
+              "Commission (NZFC) and Taiwan's Bureau of Audiovisual and Music Industry Development "
+              "(BAMID, Ministry of Culture); a two-stage approval process (provisional then final "
+              "approval before distribution); a required co-producer contract covering IP ownership, "
+              "cost liability, receipts division, contribution completion dates, and festival-"
+              "nationality designation. This is a materially STRONGER finding than the earlier-"
+              "confirmed France relationship (a mere MOU) -- ANZTEC is a real, signed, in-force "
+              "international economic agreement with a dedicated co-production chapter, not an "
+              "industry MOU. Directly upgrades Taiwan's Queue A/C status from 'no confirmed treaty' to "
+              "'one confirmed real treaty route'.",
+        partner_contribution_terms={
+            "NZ": (
+                "TERM_UNRESOLVED: the exact minority/majority co-producer contribution percentage "
+                "(referenced as Article 4 of Chapter 18 in the Implementing Arrangement itself) was NOT "
+                "independently retrieved this pass -- only the Implementing Arrangement (the "
+                "administrative/procedural annex governing the co-producer contract's required "
+                "contents) was located as a separate readable document; ANZTEC's main treaty text "
+                "(Chapter 18 itself, which states the percentages) was not found as a separately "
+                "fetchable document at the depth searched. ROUTE EXISTS AND IS REAL -- competent "
+                "authorities, approval process, and required contract terms are all confirmed -- but "
+                "this one specific operational parameter fails closed rather than being fabricated or "
+                "silently assumed from an unrelated treaty by analogy."
+            ),
+        },
+        exact_unresolved_propositions=(
+            "TW_NZ_CONTRIBUTION_PERCENTAGE_UNCONFIRMED -- see partner_contribution_terms['NZ'] for the "
+            "exact disclosure. Required fact type: ANZTEC's own main treaty text, Chapter 18, Article 4 "
+            "(not located as a separately fetchable document this pass -- treaties.mfat.govt.nz hosts "
+            "the full ANZTEC text and should be the next source checked).",
         ),
         retrieved_date="2026-08-19",
     ),
@@ -766,6 +936,17 @@ _COPRO_COVERAGE_OVERRIDES: tuple[CoproductionCoverageStatus, ...] = (
         notes="Japan-Italy Film Co-production Treaty, signed June 2024, activated August 2024 -- "
               "Japan's second bilateral film treaty (after China, not in the current 49-country "
               "universe). Corroborated by Japan's own Ministry of Foreign Affairs (MOFA) page.",
+        partner_contribution_terms={
+            "IT": "TERM_UNRESOLVED: route existence confirmed via Japan's own MOFA page and Deadline's "
+                  "reporting, but exact minority/majority contribution percentages were not "
+                  "independently retrieved from the treaty's own full text this pass. ROUTE EXISTS "
+                  "AND IS REAL (signed June 2024, activated August 2024, government-corroborated) -- "
+                  "this one operational parameter fails closed rather than being fabricated or "
+                  "assumed by analogy from Italy's other bilateral treaties.",
+        },
+        exact_unresolved_propositions=(
+            "JP_IT_CONTRIBUTION_PERCENTAGE_UNCONFIRMED -- see partner_contribution_terms['IT'].",
+        ),
         retrieved_date="2026-08-19",
     ),
     CoproductionCoverageStatus(
@@ -775,6 +956,17 @@ _COPRO_COVERAGE_OVERRIDES: tuple[CoproductionCoverageStatus, ...] = (
         sources=("https://www.sunstar.com.ph/davao/feature/fdcp-france-sign-film-co-production-treaty",),
         notes="FDCP-France film co-production treaty, officially signed (Philippine news reporting of "
               "the signing) -- see also the matching national_cultural_status.py PH record.",
+        partner_contribution_terms={
+            "FR": "TERM_UNRESOLVED: route existence confirmed via Philippine news reporting of the "
+                  "official FDCP-France signing ceremony, but exact minority/majority contribution "
+                  "percentages were not independently retrieved from the treaty's own full text this "
+                  "pass. ROUTE EXISTS AND IS REAL (officially signed, government-body-corroborated) -- "
+                  "this one operational parameter fails closed rather than being fabricated or "
+                  "assumed by analogy from France's other bilateral treaties.",
+        },
+        exact_unresolved_propositions=(
+            "PH_FR_CONTRIBUTION_PERCENTAGE_UNCONFIRMED -- see partner_contribution_terms['FR'].",
+        ),
         retrieved_date="2026-08-19",
     ),
     CoproductionCoverageStatus(
