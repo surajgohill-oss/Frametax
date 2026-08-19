@@ -64,6 +64,7 @@ from app.calculators.canonical_stack_bridge import (
 from app.calculators.canonical_opportunity_bridge import (
     discover_cultural_test_gap_opportunity,
     discover_fee_cap_headroom_opportunity,
+    discover_national_status_opportunity,
     discover_potential_reinvestment_candidates,
     discover_qualification_gap_opportunity,
     discover_qualification_lever_opportunities,
@@ -283,7 +284,17 @@ from app.services.canonical_project_economics import (
 # QUAL_AUTHORITY_UNRESOLVED state with exact researched propositions,
 # distinct from generic RULE_DATA_INCOMPLETE. Bumped so every project
 # regenerates with these corrections.
-ENGINE_VERSION = "canonical-1.26.0"
+# Worldwide Jurisdiction National/Cultural Status + Incentive Pathway
+# Completion: fixed a genuine ca_federal_cptc defect (director/writer
+# were both independently mandatory; CAVCO's real 10-point rule requires
+# only ONE of the two -- alternative_group support added to cultural_
+# qualification_model.py). New national_cultural_status.py registry
+# (Canada/Australia/New Zealand confirmed separate national pathways,
+# US confirmed no relevant regime, 24 more real countries AUTHORITY_
+# UNRESOLVED with exact propositions) wired into canonical_opportunity_
+# bridge.py's discover_national_status_opportunity(), disclosure-only,
+# never fabricates economics. Bumped so every project regenerates.
+ENGINE_VERSION = "canonical-1.27.0"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
@@ -499,6 +510,16 @@ def _opportunities_for_candidate(
     cultural_opp = discover_cultural_test_gap_opportunity(code, program_slug)
     if cultural_opp is not None:
         opportunities.append(opportunity_to_dict(cultural_opp))
+
+    # Worldwide Jurisdiction National/Cultural Status Completion, Task 10
+    # — a real, primary-authority-confirmed SEPARATE national/cultural
+    # pathway (e.g. Canada's CPTC vs this candidate's PSTC) surfaced as a
+    # disclosure-only opportunity when this candidate is priced under the
+    # jurisdiction's confirmed foreign/service pathway. Never fabricates
+    # an economic figure; never gates this candidate's own real pricing.
+    national_status_opp = discover_national_status_opportunity(code, program_slug)
+    if national_status_opp is not None:
+        opportunities.append(opportunity_to_dict(national_status_opp))
 
     # Task 3 — proactive reinvestment/vendor-participation candidates,
     # triggered purely by real budget-category totals (no known deal

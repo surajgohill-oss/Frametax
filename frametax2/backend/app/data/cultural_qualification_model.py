@@ -19,6 +19,15 @@ class NationalityRequirement:
     weight: float | None   # contribution to cultural test score (0.0-1.0)
     min_pct: float | None  # minimum % of this role that must satisfy requirement
     notes: str
+    #: Worldwide Jurisdiction National/Cultural Status Completion,
+    #: 2026-08-19. When set, this "required" row is one of an ALTERNATIVE
+    #: group sharing the same key: the requirement is satisfied if ANY ONE
+    #: row in the group is satisfied, not all of them independently (e.g.
+    #: CAVCO's real CPTC rule: "at least one of director OR writer must be
+    #: Canadian" — never both independently mandatory). None (the
+    #: default) preserves the original all-independently-required
+    #: semantics for every existing row unchanged.
+    alternative_group: str | None = None
 
 
 _REQUIREMENTS: list[NationalityRequirement] = [
@@ -71,16 +80,32 @@ _REQUIREMENTS: list[NationalityRequirement] = [
                            "Producer (société de production) must be French-registered entity"),
 
     # -------------------------------------------------------------------------
-    # Canada Federal CPTC (Canadian Film or Video Production Tax Credit)
-    # -------------------------------------------------------------------------
-    NationalityRequirement("ca_federal_cptc", "director",        "CA", "required", None, None,
-                           "Canadian or treaty director; non-Canadian director kills CPTC eligibility unless treaty co-prod"),
-    NationalityRequirement("ca_federal_cptc", "writer",          "CA", "required", None, None,
-                           "Canadian or treaty writer required"),
+    # Canada Federal CPTC (Canadian Film or Video Production Tax Credit) —
+    # corrected 2026-08-19 (Worldwide Jurisdiction National/Cultural Status
+    # Completion). Confirmed via CAVCO's real 10-point Canadian-content
+    # scale (canada.ca CPTC application guidelines; corroborated by
+    # GrantCompass, Edwards Creative Law, hellodarwin.com): director=2pts,
+    # screenwriter=2pts, lead performer/DoP/composer/editor=1pt each;
+    # minimum 6/10 overall; AT LEAST ONE of director OR screenwriter must
+    # be Canadian (never both independently mandatory — the PRIOR encoding
+    # here was a real defect, requiring both unconditionally); separately,
+    # at least one of the (typically two) lead performers must be
+    # Canadian. 25% federal rate, vs. PSTC's 16% (ca_federal_pstc,
+    # already canonical, no content requirement) — the exact
+    # UNLOCKS_ENHANCED_RATE relationship this phase's Task 6 requires.
+    NationalityRequirement("ca_federal_cptc", "director",        "CA", "required", 0.2, None,
+                           "CAVCO 10-point test: director = 2/10 points; director OR writer must be "
+                           "Canadian (alternative_group, not independently mandatory)",
+                           alternative_group="ca_federal_cptc_director_or_writer"),
+    NationalityRequirement("ca_federal_cptc", "writer",          "CA", "required", 0.2, None,
+                           "CAVCO 10-point test: screenwriter = 2/10 points; director OR writer must be "
+                           "Canadian (alternative_group, not independently mandatory)",
+                           alternative_group="ca_federal_cptc_director_or_writer"),
     NationalityRequirement("ca_federal_cptc", "producer",        "CA", "required", None, None,
                            "Canadian producer (key creative control) required"),
     NationalityRequirement("ca_federal_cptc", "lead_cast",       "CA", "required", None, 1.0,
-                           "At minimum 1 Canadian lead performer required"),
+                           "CAVCO 10-point test: at least one of the (typically two) lead performers "
+                           "must be Canadian (1 point each)"),
     NationalityRequirement("ca_federal_cptc", "supporting_cast", "CA", "weighted", 0.1, None,
                            "Canadian supporting cast contributes to 6/10 content point minimum"),
 
@@ -398,11 +423,22 @@ def evaluate_program_eligibility(
 
     Returns an empty checks tuple (passes=True) for a program with no
     required gates — never fabricates a gate that isn't in the data.
+
+    ALTERNATIVE GROUPS (Worldwide Jurisdiction National/Cultural Status
+    Completion, 2026-08-19): rows sharing the same real
+    `alternative_group` key are satisfied as a group if ANY ONE member is
+    SATISFIED — never independently mandatory. A group is FAILED only
+    when every member is FAILED (none satisfied); it stays INDETERMINATE
+    if any member is INDETERMINATE and none is SATISFIED. Individual
+    GateCheck entries are preserved unchanged for transparency; only the
+    group's overall contribution to `passes`/`has_failure` is corrected.
     """
     checks: list[GateCheck] = []
+    check_groups: list[str | None] = []
     for req in get_requirements(program_slug):
         if req.status != "required":
             continue
+        check_groups.append(req.alternative_group)
         known = role_known_codes.get(req.role, ())
         if not known:
             checks.append(GateCheck(
@@ -446,4 +482,25 @@ def evaluate_program_eligibility(
                     notes=f"{req.role} is known to hold {known}, none of which is "
                           f"{req.jurisdiction_code} — required: {req.notes}",
                 ))
-    return EligibilityGateResult(program_slug=program_slug, checks=tuple(checks))
+    # Alternative-group correction: if any member of a real alternative
+    # group is SATISFIED, every member of that group is treated as
+    # SATISFIED for purposes of passes/has_failure/indeterminate_roles —
+    # never independently mandatory.
+    from collections import defaultdict
+    group_statuses: dict[str, set[str]] = defaultdict(set)
+    for group, check in zip(check_groups, checks):
+        if group is not None:
+            group_statuses[group].add(check.status)
+
+    corrected: list[GateCheck] = []
+    for group, check in zip(check_groups, checks):
+        if group is not None and GateStatus.SATISFIED in group_statuses[group] and check.status != GateStatus.SATISFIED:
+            corrected.append(GateCheck(
+                role=check.role, required_jurisdiction=check.required_jurisdiction,
+                status=GateStatus.SATISFIED, known_codes=check.known_codes,
+                notes=f"{check.notes} [alternative group '{group}' satisfied by a sibling role]",
+            ))
+        else:
+            corrected.append(check)
+
+    return EligibilityGateResult(program_slug=program_slug, checks=tuple(corrected))

@@ -2,6 +2,8 @@
 
 **Generated:** 2026-08-19 · **Population:** the current canonical 71-program served-pricing universe (`app.data.program_requirements.all_program_requirements()`), NOT the prior 181-regime denominator (per this phase's own explicit instruction).
 
+> **Ontology correction (added 2026-08-19, Worldwide Jurisdiction National/Cultural Status + Incentive Pathway Completion):** `QUALIFICATION_NOT_APPLICABLE` below answers ONE narrow question per PROGRAM — does *this specific incentive* require a cultural test? It is **not** a claim that the program's jurisdiction lacks any national/cultural status regime at all. Canada (`ca_federal_pstc`, N/A here) and Australia (`au_location_offset`, N/A here) both have real, separately-cited national/cultural pathways (`ca_federal_cptc`, `au_producer_offset`) that are simply different programs, outside this 71-program universe. See `WORLDWIDE_NATIONAL_CULTURAL_STATUS_COMPLETION.md` for the jurisdiction-level (not program-level) accounting — the 48 count below must never be read as "48 jurisdictions with no national/cultural regime."
+
 ## Terminal accounting
 
 | State | Count |

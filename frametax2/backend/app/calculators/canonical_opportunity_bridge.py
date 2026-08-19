@@ -41,6 +41,10 @@ from app.calculators.inkind_contribution import (
     analyse_inkind_contribution,
 )
 from app.calculators.screen_analyzer_fact_contract import required_fact_descriptions
+from app.data.national_cultural_status import (
+    STATUS_REGIME_CONFIRMED,
+    get_jurisdiction_national_status,
+)
 from app.data.program_requirements import get_program_requirements
 
 OPPORTUNITY_BRIDGE_VERSION = "1.1.0"
@@ -70,6 +74,7 @@ TYPE_MIN_LOCAL_SPEND_GAP = "MIN_LOCAL_SPEND_GAP"
 TYPE_MIN_TOTAL_BUDGET_GAP = "MIN_TOTAL_BUDGET_GAP"
 TYPE_CULTURAL_TEST_GAP = "CULTURAL_TEST_GAP"
 TYPE_QUALIFICATION_LEVER = "QUALIFICATION_LEVER"
+TYPE_NATIONAL_STATUS_PATHWAY = "NATIONAL_STATUS_PATHWAY"
 
 # ── Task 8 fact-classification vocabulary — never flattened ─────────────
 FACT_KNOWN_PROJECT_FACT = "KNOWN_PROJECT_FACT"
@@ -672,6 +677,81 @@ def discover_qualification_lever_opportunities(
                 fact_classification=FACT_PROPOSED_CHANGE,
             ))
     return levers
+
+
+def discover_national_status_opportunity(
+    jurisdiction_code: str,
+    program_slug: str,
+) -> CanonicalOpportunity | None:
+    """Worldwide Jurisdiction National/Cultural Status Completion, Task
+    10 -- surfaces a real, primary-authority-confirmed national/cultural
+    pathway even when the CURRENT candidate is priced under the
+    jurisdiction's foreign/service pathway (national_cultural_status.py).
+    Returns None when: no confirmed separate pathway exists for this
+    jurisdiction, OR the candidate's own program_slug already IS the
+    national pathway's program (nothing to surface -- it's already
+    priced as such), OR the confirmed regime has no separate
+    linked_program_slug to point to.
+
+    Never fabricates an economic figure: this candidate's own real
+    pricing is untouched; the opportunity discloses the REAL, cited rate/
+    program difference already researched (consequence_detail) as
+    context, but reports no incremental_incentive_usd unless a future
+    pass wires the linked program into canonical pricing -- Task 10's
+    explicit 'calculate ONLY when all necessary economic inputs are
+    deterministic' boundary."""
+    status = get_jurisdiction_national_status(jurisdiction_code)
+    if status.status != STATUS_REGIME_CONFIRMED:
+        return None
+    if not status.linked_program_slug or status.linked_program_slug == program_slug:
+        return None
+    if status.base_program_slug != program_slug:
+        # This candidate isn't priced under the confirmed foreign/service
+        # pathway this regime is paired against -- don't surface a
+        # mismatched opportunity.
+        return None
+
+    return CanonicalOpportunity(
+        opportunity_id=_opp_id("NATIONAL-STATUS", jurisdiction_code, program_slug, status.linked_program_slug),
+        opportunity_type=TYPE_NATIONAL_STATUS_PATHWAY,
+        status=STATUS_REQUIRES_USER_FACT,
+        jurisdiction_code=jurisdiction_code,
+        program_slug=program_slug,
+        title=f"National/cultural pathway available: {status.regime_name or status.linked_program_slug}",
+        description=(
+            f"This candidate is priced under {program_slug} (foreign/service pathway, no cultural "
+            f"status required). A separate, real national/cultural pathway exists in "
+            f"{jurisdiction_code} -- {status.regime_name}, administered by "
+            f"{status.administering_authority or 'the relevant authority'} -- unlocking "
+            f"{status.linked_program_slug}. {status.consequence_detail or ''}"
+        ),
+        source_component=None,
+        incremental_gross_cost_usd=0.0,
+        incremental_cash_usd=0.0,
+        incremental_qpe_usd=0.0,
+        incremental_incentive_usd=0.0,  # never fabricated -- linked program not wired into canonical pricing this pass
+        net_benefit_usd=None,
+        authority_basis="; ".join(status.sources) if status.sources else None,
+        required_facts=(
+            "Confirm the production's writer/director/producer/cast nationality and residency, "
+            "ownership/control structure, and actual work locations against "
+            f"{status.linked_program_slug}'s real qualification requirements before this pathway "
+            "can be priced.",
+        ),
+        reasoning_trace=(
+            f"Confirmed national/cultural status regime: {status.regime_name}.",
+            f"Economic consequence: {status.economic_consequence} -- {status.consequence_detail or 'no quantified detail on file'}.",
+            f"{status.linked_program_slug} is not yet wired into canonical pricing (outside the "
+            "current 71-program served universe) -- this opportunity is disclosure-only, never a "
+            "fabricated priced figure.",
+        ),
+        risk_notes=(
+            "Requires real personnel/ownership/entity facts this system does not yet have for this "
+            "project -- never assumed satisfied.",
+        ),
+        trigger=f"Candidate priced under confirmed foreign/service pathway {program_slug}; a real separate national pathway exists for {jurisdiction_code}.",
+        fact_classification=FACT_USER_CONFIRMATION_REQUIRED,
+    )
 
 
 def opportunity_to_dict(opp: CanonicalOpportunity) -> dict:

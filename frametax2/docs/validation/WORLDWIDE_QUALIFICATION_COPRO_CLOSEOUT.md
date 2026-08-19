@@ -8,6 +8,8 @@
 
 This pass used the CURRENT canonical 71-program served-pricing universe (`app.data.program_requirements.all_program_requirements()`) as the denominator — not the prior 181-regime audit population — per this phase's own explicit instruction. Official co-production/treaty research was explicitly out of scope this pass (a separate, later phase).
 
+> **Ontology correction (added 2026-08-19, Worldwide Jurisdiction National/Cultural Status + Incentive Pathway Completion):** this closeout's PROGRAM-level accounting (48 `QUALIFICATION_NOT_APPLICABLE`) must not be read as 48 jurisdictions lacking any national/cultural status regime. A separate, JURISDICTION-level pass confirmed real national/cultural pathways exist for Canada, Australia, and New Zealand despite their own served base incentives correctly showing no cultural test — see `WORLDWIDE_NATIONAL_CULTURAL_STATUS_COMPLETION.md`.
+
 **Every one of the 71 programs now has an exact terminal qualification state — zero unexplained unknown:**
 
 | State | Count |

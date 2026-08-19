@@ -2265,3 +2265,33 @@ Continues the same-day phase above, addressing its own disclosed limitation ("on
 **Guards untouched:** worldwide economic database, base pricing, NPC formula, ranking mathematics, all other existing engines. No new optimizer/cultural/treaty engine. Official co-production/treaty doctrine untouched (explicitly out of scope). Script Analyzer and Budget Estimator untouched.
 
 **WORLDWIDE_PROGRAM_QUALIFICATION_AND_CULTURAL_TEST_DATABASE_COMPLETED for the 71-program served universe — every program has an exact terminal state, zero unexplained unknown. Role-level/point-level completeness remains partial for 21 programs, each with an exact, non-generic missing proposition. Official co-production doctrine remains a separate, later phase.**
+
+---
+
+## Worldwide Jurisdiction National/Cultural Status + Incentive Pathway Completion (2026-08-19)
+
+Continues from `b80205e`. Corrects the ontology from the immediately preceding qualification pass: `cultural_test_required=False` on a specific PROGRAM (48/71 of them) answers "does this incentive require a cultural test" — it never established "does this jurisdiction lack any national/cultural status regime." Canada and Australia are the confirmed proof: both have real, separately-cited national/cultural pathways alongside their own no-cultural-test service incentives.
+
+**New canonical registry:** `app/data/national_cultural_status.py` — `JurisdictionNationalStatus`, country-level (sub-national jurisdictions inherit their federal country's regime, never a competing sub-national one), with 3 terminal states (`NATIONAL_STATUS_REGIME_CONFIRMED`/`NO_RELEVANT_NATIONAL_STATUS_REGIME_CONFIRMED`/`AUTHORITY_UNRESOLVED_EXACT_PROPOSITION`), 8 pathway types (Task 1.C), and 11 economic-consequence values (Task 6) — never a bare "national status exists."
+
+**Terminal accounting across the 49-country universe (unique ISO2 countries derived from the current 71-program database), zero unexplained:** `NATIONAL_STATUS_REGIME_CONFIRMED` 24 (21 mechanically resolved from the prior pass's own citations — the base incentive's cultural test IS the national gate — plus 3 newly researched separate pathways: Canada, Australia, New Zealand), `NO_RELEVANT_NATIONAL_STATUS_REGIME_CONFIRMED` 1 (United States, genuinely researched), `AUTHORITY_UNRESOLVED_EXACT_PROPOSITION` 24 (same real, precise proposition each: separate-regime existence not researched this pass).
+
+**Real research, primary/secondary-cited:**
+- **Canada** (mandatory control case) — CAVCO's real 10-point Canadian-content scale (director=2pts, writer=2pts, lead performer/DoP/composer/editor=1pt each, min 6/10); CPTC 25% vs PSTC 16% — a real, quantified `UNLOCKS_ENHANCED_RATE`. Confirmed via canada.ca (primary).
+- **Australia** — Significant Australian Content (SAC) test, explicitly HOLISTIC ("no single element determinative" — a materially different model from Canada's strict point table); Producer Offset (40%/30% QAPE) is a genuinely SEPARATE program from Location Offset, `UNLOCKS_SEPARATE_INCENTIVE`. Confirmed via screenaustralia.gov.au (primary), which also explicitly states official co-productions automatically satisfy the SAC test — a real, authority-stated co-production/national-status relationship, encoded without researching the treaty universe (Task 12).
+- **New Zealand** — recovered from this same multi-pass arc's own prior research (Task 4 discipline, not re-researched): points test OR official co-production as explicit alternatives for the 40% NZ-production grant.
+- **United States** — genuinely researched and confirmed NO current federal film tax credit, no federal "American content" certification, via 2 independent sources.
+
+**A real correctness fix, verified:** CAVCO's actual rule is "director OR writer must be Canadian," never both independently mandatory — the prior `cultural_qualification_model.py` encoding required both unconditionally, a genuine defect only surfaced by this pass's primary-source research. Fixed via a new, additive `alternative_group` field/mechanism on `NationalityRequirement` (only `ca_federal_cptc`'s director/writer rows use it; every other of the 24 covered programs is byte-identical in behavior). LU's real personnel (director AU, writer GB — both non-Canadian) still correctly `HARD_FAIL`s under the corrected rule.
+
+**Optimizer wiring (Task 10):** `canonical_opportunity_bridge.discover_national_status_opportunity()` — surfaces a `NATIONAL_STATUS_PATHWAY` opportunity (disclosure-only, `REQUIRES_USER_FACT`) when a candidate is priced under a jurisdiction's confirmed foreign/service pathway and a real separate national pathway exists. Never fabricates an economic figure (the linked program isn't wired into canonical pricing this pass); never gates the candidate's own real pricing; never contaminates ranking (`is_directly_comparable` unaffected, test-proven).
+
+**Runtime-proven:** LU $3,057,794.90 and FVD $3,072,027.16 both re-verified byte-identical after `ENGINE_VERSION` `canonical-1.26.0` → `canonical-1.27.0`. Both projects' real Canada candidates now genuinely surface the CPTC national-pathway opportunity at the served path.
+
+**Tests:** 15 new in `test_national_cultural_status.py` (ontology correctness, CAVCO alternative-group fix, opportunity wiring, ranking non-contamination, baseline regression). Full backend suite: 4314 passed, 1 pre-existing unrelated frontend failure, 1 skipped.
+
+**Prior artifact semantics corrected (not erased):** `WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION.md` and `WORLDWIDE_QUALIFICATION_COPRO_CLOSEOUT.md` both gained an explicit note that their 48-program `QUALIFICATION_NOT_APPLICABLE` count must never be misread as 48 jurisdictions lacking a national/cultural regime.
+
+**Guards untouched:** worldwide economic database, base pricing, NPC formula, ranking mathematics, all other existing engines. No new optimizer/pricing/ranking/cultural engine. Official co-production treaty-universe research: explicitly out of scope (a separate, later phase) — only existing, authority-established relationships (Australia, New Zealand) encoded, zero fabricated country-pair eligibility. Script Analyzer and Budget Estimator untouched.
+
+**JURISDICTION_NATIONAL_CULTURAL_STATUS_AND_INCENTIVE_PATHWAYS_CANONICALLY_COMPLETED for the 49-country universe — every jurisdiction has an exact terminal state, zero unexplained unknown; all confirmed national-status regimes are canonically represented with their real economic/structural consequence; completed doctrine is consumed by the served optimizer. Official co-production doctrine completion remains the next, separate phase.**

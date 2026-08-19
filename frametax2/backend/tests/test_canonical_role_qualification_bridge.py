@@ -43,15 +43,37 @@ def test_unknown_mandatory_role_fails_closed_to_user_fact_required():
 
 
 def test_known_mandatory_role_violation_hard_fails():
-    """A director known to be French (not Canadian/treaty) against
-    ca_federal_cptc's real director=CA required gate must HARD_FAIL --
-    a genuine, explicit rule violation, not a missing fact."""
+    """Both director AND writer known to be non-Canadian against
+    ca_federal_cptc's real CAVCO alternative-group rule ("director OR
+    writer must be Canadian" -- corrected 2026-08-19, see cultural_
+    qualification_model.py) must HARD_FAIL -- a genuine, explicit rule
+    violation, not a missing fact."""
     result = evaluate_role_qualification(
         "ca_federal_cptc", "CA",
-        {"director": ("FR",), "writer": ("CA",), "producer": ("CA",), "lead_cast": ("CA",)},
+        {"director": ("FR",), "writer": ("GB",), "producer": ("CA",), "lead_cast": ("CA",)},
     )
     assert result.state == QUAL_HARD_FAIL
     assert result.failed_requirements
+
+
+def test_cavco_alternative_group_director_or_writer_either_satisfies():
+    """CAVCO's real rule: EITHER director OR writer being Canadian
+    satisfies the requirement -- neither is independently mandatory.
+    Confirmed via canada.ca CPTC application guidelines (10-point scale,
+    director=2pts/writer=2pts, min 6/10) -- corrects a prior defect where
+    this codebase required both unconditionally."""
+    # writer Canadian, director foreign -> QUALIFIES (writer satisfies the group)
+    r1 = evaluate_role_qualification(
+        "ca_federal_cptc", "CA",
+        {"director": ("FR",), "writer": ("CA",), "producer": ("CA",), "lead_cast": ("CA",)},
+    )
+    assert r1.state == QUAL_QUALIFIES
+    # director Canadian, writer foreign -> QUALIFIES (director satisfies the group)
+    r2 = evaluate_role_qualification(
+        "ca_federal_cptc", "CA",
+        {"director": ("CA",), "writer": ("GB",), "producer": ("CA",), "lead_cast": ("CA",)},
+    )
+    assert r2.state == QUAL_QUALIFIES
 
 
 def test_all_known_and_satisfied_qualifies():
