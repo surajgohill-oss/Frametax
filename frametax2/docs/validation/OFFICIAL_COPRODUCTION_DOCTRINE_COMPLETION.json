@@ -1,0 +1,15 @@
+{
+  "artifact": "OFFICIAL_COPRODUCTION_DOCTRINE_COMPLETION",
+  "generated": "2026-08-19",
+  "new_bilateral_routes_researched": 0,
+  "new_multilateral_routes_researched": 0,
+  "new_role_or_contribution_propositions_encoded": 0,
+  "reason": "This pass's research budget was spent on program-level cultural-test completion (WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION.json). No fabricated treaty doctrine is reported here.",
+  "existing_unedited": [
+    "app/calculators/treaty_engine.py",
+    "app/calculators/canonical_treaty_bridge.py"
+  ],
+  "prior_pass_repair_unchanged": "5935225 -- bilateral/Eurimages call sites in canonical_evaluation.py thread real ProjectFact-sourced majority_pct/minority_pct/cultural_test_passed instead of hardcoded None. Plumbing only, no new rule data, unchanged this pass.",
+  "residual_reference": "docs/validation/COPRO_TRUE_AUTHORITY_RESIDUAL.json -- 37 bilateral/Eurimages entries remain Class C (DATA_PARTIAL), unchanged.",
+  "fabricated_routes": 0
+}

@@ -216,7 +216,14 @@ register(ProgramRequirementsProfile(
 
 register(ProgramRequirementsProfile(
     program_slug="hr_cash_rebate", jurisdiction_code="HR",
-    cultural_test_required=True, cultural_test_points=None, cultural_test_threshold=12,
+    # Worldwide Qualification/Cultural/Co-production Completion — 34 was
+    # already documented verbatim in this record's own evidence note
+    # ("minimum 12 of 34 points") but never set on cultural_test_points
+    # itself, a genuine EXISTING_DATA_BUT_NOT_CONSUMED defect (Codex's
+    # own vocabulary), now fixed. Re-confirmed 2026-08-19 against Zagreb
+    # Film Office (filmzagreb.hr) and Cineuropa, consistent with the
+    # existing Invest Croatia citation.
+    cultural_test_required=True, cultural_test_points=34, cultural_test_threshold=12,
     min_local_spend_usd=265_000.0,  # HRK 2M ≈ EUR 263,000
     evidence=EvidenceRecord(
         source_title="Rebate for Film and TV Production", source_url="https://investcroatia.gov.hr/en/investment-guide/incentives/rebate-for-film-and-tv-production/",
@@ -224,9 +231,22 @@ register(ProgramRequirementsProfile(
         source_type=SourceType.PRIMARY, status=RecordStatus.CURRENT,
         notes="Cultural test: minimum 12 of 34 points, with a floor of 4 points in each of three categories "
               "(European cultural content / creative collaboration with Croatian-European personnel / use of "
-              "Croatian production facilities). Administered by the Croatian Audiovisual Centre (HAVC).",
+              "Croatian production facilities). Administered by the Croatian Audiovisual Centre (HAVC). "
+              "Exact per-role (director/writer/producer/cast) point allocation within the 34-point scale "
+              "not confirmed from any source checked as of 2026-08-19 — AUTHORITY_UNRESOLVED for that "
+              "sub-proposition specifically, not fabricated.",
     ),
-    additional_facts={"regional_uplift": "+5% for filming in below-average-development regions", "administering_body": "HAVC"},
+    additional_facts={
+        "regional_uplift": "+5% for filming in below-average-development regions", "administering_body": "HAVC",
+        # New this pass, real, separately cited (Zagreb Film Office /
+        # Cineuropa) — distinct from the cultural-test point scale above.
+        "national_cast_crew_requirement": (
+            "At least 30% of cast and crew must be Croatian citizens for productions "
+            "filming partially in Croatia, or 50% for productions filming entirely in "
+            "Croatia (Zagreb Film Office, https://filmzagreb.hr/?page_id=321; "
+            "Cineuropa, https://cineuropa.org/en/newsdetail/203411; retrieved 2026-08-19)."
+        ),
+    },
 ))
 
 register(ProgramRequirementsProfile(

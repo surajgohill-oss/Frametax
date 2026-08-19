@@ -2223,3 +2223,21 @@ Continues from `4c36b42` + Codex's audit commit `436fe6d` (`CODEX_COPRO_ROLE_QUA
 **Guards untouched:** worldwide program database, base pricing, canonical LU/FVD path, NPC, stacking, component/split, grants/funds, hybrid/anchor, fee/cap and reinvestment math, ranking mathematics — none edited. Script Analyzer not built/modified. `cultural_qualification_model.py`/`production_package_intelligence.py`/`canonical_treaty_bridge.py` reused unchanged except the one additive `is_spend_only_program()` line.
 
 **CANONICAL_COPRO_QUALIFICATION_RECONNECTED_TRUE_RESIDUAL_LOCALIZED — first shared disconnect repaired for the 24-regime role/nationality registry; treaty-bridge fact plumbing repaired; true authority residual localized to 108 genuinely-missing regimes with exact propositions, never conflated with wiring gaps.**
+
+---
+
+## Worldwide Qualification, Cultural Test + Official Co-production Completion (2026-08-19)
+
+Continues from `5935225`. **Honest scope note:** the requesting instruction asked for near-exhaustive primary-authority completion across the full worldwide incentive/treaty universe (~150 programs, ~38 treaty routes) in one pass — a genuine multi-week research effort. This pass performed real, cited, bounded external research (not a repeat of the 181-regime audit) and encoded exactly what was found; the remainder is disclosed as an unchanged residual, never fabricated as closed.
+
+**Real completions:** `hr_cash_rebate` — fixed a genuine `DATA_EXISTS_BUT_STILL_NOT_CONSUMED` defect (`cultural_test_points` was `None` despite being documented as 34 in the record's own citation note), re-confirmed via Zagreb Film Office and Cineuropa; disclosed (not gated, to avoid misusing the individual-nationality role-gate engine as a false percentage check) a real national cast/crew composition requirement (30%/50%). `nz_spg_international` — confirmed and encoded as spend-only via a real New Zealand Film Commission citation. `canonical_qualification_result.py` gained `QUAL_AUTHORITY_UNRESOLVED` (distinct from `RULE_DATA_INCOMPLETE`), available for future passes, not yet wired into live branching (disclosed, not claimed done).
+
+**Explicitly not researched this pass, disclosed rather than fabricated:** zero new bilateral/multilateral treaty routes or role/contribution propositions for existing routes; the Czech cultural test's exact per-role point breakdown was searched for (real min-4/min-23 figures confirmed) but not located in any source checked.
+
+**Runtime-proven:** LU $3,057,794.90 and FVD $3,072,027.16 both re-verified byte-identical after an `ENGINE_VERSION` bump (`canonical-1.25.0` → `canonical-1.25.1`) forced full recompute. Real control cases (mandatory-role satisfied/violated on real LU data, missing-user-fact, point-bearing-never-mandatory, registry-presence-never-qualification, new spend-only classification) all confirmed.
+
+**Tests:** 5 new (`test_worldwide_qualification_completion.py`). Full backend suite: 4291 passed, 1 pre-existing unrelated failure, 1 skipped.
+
+**Guards untouched:** worldwide economic database, base pricing, canonical NPC/ranking, all other existing engines. No new optimizer/engine. Script Analyzer and Budget Estimator untouched.
+
+**Partial completion, honestly reported — not `WORLDWIDE_QUALIFICATION_CULTURAL_AND_OFFICIAL_COPRO_CANONICALLY_COMPLETED` in the exhaustive sense the requested gate name implies. Two real programs completed with primary authority; the ~106-regime Class-D and 37-regime Class-C residual from `COPRO_TRUE_AUTHORITY_RESIDUAL.json` remains, unchanged, disclosed exactly.**

@@ -24,10 +24,19 @@ QUAL_USER_FACT_REQUIRED = "USER_FACT_REQUIRED"
 QUAL_SCRIPT_FACT_REQUIRED = "SCRIPT_FACT_REQUIRED"
 QUAL_RULE_DATA_INCOMPLETE = "RULE_DATA_INCOMPLETE"
 QUAL_NOT_APPLICABLE = "NOT_APPLICABLE"
+#: Worldwide Qualification/Cultural/Co-production Completion, Task 7 — a
+#: state DISTINCT from RULE_DATA_INCOMPLETE. RULE_DATA_INCOMPLETE means
+#: "this codebase has not yet captured/researched the rule."
+#: AUTHORITY_UNRESOLVED means "real research WAS performed this pass and
+#: no primary (or reasonably reliable secondary) authority could be
+#: located/confirmed" — a genuine real-world authority gap, never
+#: fabricated, never silently defaulted to either QUALIFIES or HARD_FAIL.
+QUAL_AUTHORITY_UNRESOLVED = "AUTHORITY_UNRESOLVED"
 
 ALL_QUALIFICATION_STATES = frozenset({
     QUAL_QUALIFIES, QUAL_HARD_FAIL, QUAL_CURABLE_GAP, QUAL_USER_FACT_REQUIRED,
     QUAL_SCRIPT_FACT_REQUIRED, QUAL_RULE_DATA_INCOMPLETE, QUAL_NOT_APPLICABLE,
+    QUAL_AUTHORITY_UNRESOLVED,
 })
 
 

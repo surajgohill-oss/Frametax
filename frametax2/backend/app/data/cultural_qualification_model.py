@@ -291,6 +291,14 @@ _SPEND_ONLY_SLUGS: frozenset[str] = frozenset([
     "fr_trip",
     "au_location_offset",
     "it_tax_credit_foreign",
+    # Worldwide Qualification/Cultural/Co-production Completion, 2026-08-19.
+    # Confirmed via New Zealand Film Commission (nzfilm.co.nz/incentives/
+    # rebate-international-nzspr): the International rebate is spend-based
+    # only ("generous eligible spend definitions... where money is spent"),
+    # no content/cultural test. Distinct from the separate NZ-production
+    # (domestic) 40% grant, which DOES use a points-based content test or
+    # official co-production route — not covered by this program_slug.
+    "nz_spg_international",
 ])
 
 

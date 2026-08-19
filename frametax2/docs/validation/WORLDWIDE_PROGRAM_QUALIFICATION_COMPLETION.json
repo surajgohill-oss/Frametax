@@ -1,0 +1,61 @@
+{
+  "artifact": "WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION",
+  "generated": "2026-08-19",
+  "scope_note": "Bounded, real-authority research pass -- NOT exhaustive closure of the 181-regime population from CODEX_COPRO_ROLE_QUALIFICATION_COMPLETENESS.json. See COPRO_TRUE_AUTHORITY_RESIDUAL.json for the full residual, unchanged except where explicitly noted below.",
+  "programs_completed_this_pass": [
+    {
+      "program_slug": "hr_cash_rebate",
+      "jurisdiction_code": "HR",
+      "change_type": "DATA_EXISTS_BUT_STILL_NOT_CONSUMED_FIX",
+      "field": "cultural_test_points",
+      "old_value": null,
+      "new_value": 34,
+      "sources": [
+        "https://investcroatia.gov.hr/en/investment-guide/incentives/rebate-for-film-and-tv-production/",
+        "https://filmzagreb.hr/?page_id=321",
+        "https://cineuropa.org/en/newsdetail/203411"
+      ],
+      "retrieved": "2026-08-19",
+      "new_fact_disclosed": {
+        "field": "additional_facts.national_cast_crew_requirement",
+        "summary": ">=30% Croatian cast/crew for partial-Croatia shoots, >=50% for entirely-in-Croatia shoots",
+        "encoded_as_role_gate": false,
+        "reason_not_encoded_as_gate": "Existing role-gate engine checks individual-role nationality match, not percentage-of-headcount -- encoding as a NationalityRequirement row would produce a false HARD_FAIL for real productions with mixed-nationality cast."
+      },
+      "authority_unresolved_sub_propositions": [
+        "Exact per-role (director/writer/producer/cast) point allocation within the 34-point scale"
+      ]
+    },
+    {
+      "program_slug": "nz_spg_international",
+      "jurisdiction_code": "NZ",
+      "change_type": "NEW_CLASSIFICATION",
+      "field": "_SPEND_ONLY_SLUGS membership",
+      "old_value": "not classified",
+      "new_value": "spend_only=true",
+      "sources": ["https://www.nzfilm.co.nz/incentives/rebate-international-nzspr"],
+      "retrieved": "2026-08-19"
+    }
+  ],
+  "researched_but_authority_unresolved": [
+    {
+      "program_slug": "cz_czech_film_fund_or_cz_film_incentive",
+      "confirmed": "Minimum 4 points/cultural-category, minimum 23 points overall for the Czech cultural test",
+      "sources_checked": [
+        "https://www.czechangloproductions.cz/film-incentives-in-czech-republic/",
+        "https://www.filmcommission.cz/en/production-incentives/",
+        "https://sfa.gov.cz/data/download/2025/10/CFC-ProductionIncentives-A4-f1.pdf"
+      ],
+      "unresolved": "Exact per-role (director/writer/producer) point breakdown -- not extractable from any source checked this pass",
+      "action_taken": "Not encoded -- no existing_data_but_not_consumed defect found to fix (cz_film_incentive's existing requires_cultural_test=False citation was NOT overwritten given ambiguity about which Czech program the newly-found cultural-test figures actually describe)"
+    }
+  ],
+  "quality_bar": "Every field above traces to a real URL retrieved 2026-08-19. No point value, role requirement, or threshold was invented.",
+  "contract_extension": {
+    "file": "app/calculators/canonical_qualification_result.py",
+    "added": "QUAL_AUTHORITY_UNRESOLVED",
+    "wired_into_live_branching": false,
+    "note": "Available in the contract; evaluate_role_qualification() does not yet emit it (a genuine scope boundary this pass, not a defect -- distinguishing AUTHORITY_UNRESOLVED from RULE_DATA_INCOMPLETE at the per-regime level for all 108 Class-D regimes requires the same research this pass only performed for the 2 programs above)."
+  },
+  "residual_unchanged": "See docs/validation/COPRO_TRUE_AUTHORITY_RESIDUAL.json for the full 181-regime accounting -- not reproduced here."
+}

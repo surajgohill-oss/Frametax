@@ -265,7 +265,13 @@ from app.services.canonical_project_economics import (
 # passed ProjectFact values instead of always passing None -- output is
 # unchanged for LU/FVD (neither has these facts on file) but the
 # plumbing is now real. Bumped so every project regenerates with these.
-ENGINE_VERSION = "canonical-1.25.0"
+# Worldwide Qualification, Cultural Test + Official Co-production
+# Completion: hr_cash_rebate's cultural_test_points corrected 34 (was
+# None -- already documented in its own evidence note but never set);
+# nz_spg_international newly confirmed spend-only (real NZFC citation).
+# Both change downstream opportunity/qualification trace text for those
+# two programs. Bumped so every project regenerates with the correction.
+ENGINE_VERSION = "canonical-1.25.1"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
