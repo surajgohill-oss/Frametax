@@ -2295,3 +2295,29 @@ Continues from `b80205e`. Corrects the ontology from the immediately preceding q
 **Guards untouched:** worldwide economic database, base pricing, NPC formula, ranking mathematics, all other existing engines. No new optimizer/pricing/ranking/cultural engine. Official co-production treaty-universe research: explicitly out of scope (a separate, later phase) — only existing, authority-established relationships (Australia, New Zealand) encoded, zero fabricated country-pair eligibility. Script Analyzer and Budget Estimator untouched.
 
 **JURISDICTION_NATIONAL_CULTURAL_STATUS_AND_INCENTIVE_PATHWAYS_CANONICALLY_COMPLETED for the 49-country universe — every jurisdiction has an exact terminal state, zero unexplained unknown; all confirmed national-status regimes are canonically represented with their real economic/structural consequence; completed doctrine is consumed by the served optimizer. Official co-production doctrine completion remains the next, separate phase.**
+
+---
+
+## Final Worldwide Qualification + Cultural Status + Official Co-production Completion (2026-08-19)
+
+Continues from `4c052a6`. The single biggest finding: **`treaty_engine.py` already contains a real, substantial, pre-existing official co-production registry** — 26 bilateral treaties + 3 multilateral frameworks (Eurimages 44 members, European Convention 44, Ibermedia 21), mirroring migrations 0047-0049, covering 35 of the current 49 countries. Prior closeout artifacts in this arc incorrectly read as "zero treaty doctrine exists" — corrected. `OFFICIAL_COPRODUCTION_DOCTRINE_COMPLETION.json/md` and `OFFICIAL_COPRODUCTION_ROUTE_MATRIX.json/md` built directly from this real existing data (Task 1/4 recovery discipline).
+
+**3 more national-status jurisdictions resolved** (24→21 unresolved): Netherlands and Sweden via pure internal recovery (`nl_hbf`/`se_goteborg_fund` already had real role data from a prior pass, never cross-referenced against their own country's jurisdiction question); Japan genuinely researched and confirmed `NO_RELEVANT_NATIONAL_STATUS_REGIME_CONFIRMED`. Mexico researched with a real, specific lead (EFICINE/Article 226) disclosed as an exact unresolved proposition rather than a vague placeholder.
+
+**A real correctness fix (Task 5):** Canada's CPTC/PSTC relationship was `UNLOCKS_ENHANCED_RATE` (implying one program with a rate bump) — verified as legally two SEPARATE programs (Income Tax Act s.125.4 vs s.125.5, different certificates/applications/expenditure bases) and corrected to `UNLOCKS_SEPARATE_INCENTIVE`, matching Australia's real pattern. Re-verified live on both LU and FVD's real Canada candidates.
+
+**Task 8 (co-pro → national status → program) proven empirically**, not just conceptually: `treaty_engine.py`'s real `majority_unlocks`/`minority_unlocks` data and this pass's independently-built `national_cultural_status.py` genuinely agree for every checkable route (e.g. `uk-ca-bilateral` unlocking both `uk_avec` and `ca_federal_cptc`) — a real cross-validation between two separately-built registries.
+
+**Disclosed, not silently fixed:** `treaty_engine.py` references `nz_spgi`, a program slug that matches nothing real in the canonical universe (likely intended as the NZ national grant this pass's `national_cultural_status.py` confirms exists but has no `program_requirements.py` record yet) — flagged in the artifact rather than touched, to avoid risk to `treaty_engine.py`'s own dedicated, passing test suite.
+
+**Not substantially advanced this pass, honestly disclosed:** the 21 program-qualification role/point-level residuals from the prior pass — correctly deprioritized in favor of the two higher-leverage fronts above.
+
+**Runtime-proven:** LU $3,057,794.90 and FVD $3,072,027.16 both re-verified byte-identical after `ENGINE_VERSION` `canonical-1.27.0` → `canonical-1.28.0`.
+
+**Tests:** `test_national_cultural_status.py` extended to 21 tests (6 new). Full backend suite: 4320 passed, 1 pre-existing unrelated failure, 1 skipped.
+
+**Guards untouched:** worldwide economic database, base pricing, NPC formula, ranking mathematics, all other existing engines. `treaty_engine.py` read, not rewritten — its own migration-count/revision-chain tests (`test_treaty_coproduction.py`) still pass unedited. No new optimizer/pricing/ranking/cultural/treaty engine. Script Analyzer and Budget Estimator untouched.
+
+**Final honest accounting — country universe (49):** confirmed 26, no-relevant-regime 2, authority-unresolved 21, unexplained 0. **Program universe (71):** unchanged from the prior pass (complete 2, N/A 48, unresolved 21, unexplained 0). **Official co-production:** 26 bilateral routes + 3 multilateral frameworks, 35/49 countries covered, 0 fabricated routes.
+
+**Partial completion, precisely reported — the two highest-leverage fronts (national-status jurisdictions, and the major treaty-registry recovery) substantially advanced with real, cited, runtime-verified work; the program-qualification role-level residual remains, exactly where the prior pass left it, not silently claimed closed.**

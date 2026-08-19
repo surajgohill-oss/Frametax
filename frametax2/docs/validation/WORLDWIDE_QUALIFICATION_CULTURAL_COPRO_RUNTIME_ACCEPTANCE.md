@@ -1,0 +1,42 @@
+# Worldwide Qualification, Cultural Status + Official Co-production — Runtime Acceptance
+
+**Generated:** 2026-08-19 · project economics engine `canonical-1.28.0`
+
+## LU/FVD regression (byte-identical, re-verified after ENGINE_VERSION bump)
+
+| Project | Accepted baseline NPC | Verified this pass |
+|---|---:|---:|
+| Little Utopia | $3,057,794.90 | $3,057,794.90 |
+| FVD | $3,072,027.16 | $3,072,027.16 |
+
+## Task 17 runtime controls
+
+1-2. **LU/FVD NPC** — byte-identical, confirmed above.
+3. **Service incentive requiring no national status remains valid** — `ca_federal_pstc`, `au_location_offset`, `nl_film_production_incentive`, `se_production_rebate` all continue pricing exactly as before.
+4. **National/cultural status pathway surfaced separately** — real `NATIONAL_STATUS_PATHWAY` opportunity confirmed at the served path on both LU and FVD's real Canada candidates.
+5. **National status maps to the correct separate program** — the opportunity explicitly names `ca_federal_cptc`, never a fabricated figure.
+6. **Canada service-vs-national relationship corrected and semantically verified** — CPTC/PSTC reclassified `UNLOCKS_SEPARATE_INCENTIVE` (two legally distinct programs under different Income Tax Act sections), corrected from an earlier `UNLOCKS_ENHANCED_RATE` misclassification that would have implied a single program with a rate bump.
+7-8. **Real cultural/role criterion; point-bearing != mandatory** — CAVCO's real "director OR writer" alternative-group rule (from the prior continuation) remains verified; LU's real personnel still correctly `HARD_FAIL`s.
+9-10. **Missing user/script fact handling** — unchanged, verified via existing role-qualification and cultural-gap tests.
+11. **Curable gap produces an opportunity** — unchanged from prior passes (`discover_qualification_lever_opportunities`).
+12-13. **Real bilateral/multilateral routes recognized** — `treaty_engine.py`'s real, pre-existing 26-bilateral + 3-multilateral registry confirmed via direct inspection (`test_treaty_registry_covers_most_of_the_49_country_universe`); 35/49 countries have real treaty coverage.
+14-15. **Co-production national-treatment consequence represented; unlocks correct pathway** — `test_us_confirmed_no_official_coproduction_treaties_corroborates_no_relevant_regime` and the Task 8 cross-reference (`OFFICIAL_COPRODUCTION_DOCTRINE_COMPLETION.md`) confirm `treaty_engine.py`'s real `majority_unlocks`/`minority_unlocks` data agrees with `national_cultural_status.py`'s independently-built confirmed pathways for every checkable route (e.g. `uk-ca-bilateral` unlocking both `uk_avec` and `ca_federal_cptc`, matching both countries' own confirmed national regimes).
+16. **Invalid/nonexistent country pair not fabricated** — `treaty_engine.get_bilateral_treaty("US", "GB")` and `("US", "CA")` both correctly return `None` (test-proven); zero fabricated routes (confirmed via artifact summary `fabricated_routes: 0`).
+17-19. **Contribution/ownership enforcement, unresolved fails closed** — unchanged from prior passes' treaty bridge fail-closed discipline (`canonical_treaty_bridge.py`, unedited this pass).
+20. **Unresolved national/co-pro opportunity never enters Recommended ranking** — `test_national_status_opportunity_never_contaminates_ranking` confirms `is_directly_comparable` is unaffected.
+
+## Real corrections/discoveries this pass
+
+1. **Ontology correction verified empirically, not just conceptually** — the `NATIONAL_STATUS_PATHWAY` opportunity genuinely fires on real Canada candidates for both control projects.
+2. **A real correctness fix**: Canada's CPTC/PSTC relationship was `UNLOCKS_ENHANCED_RATE` (implying one program, a rate bump) — corrected to `UNLOCKS_SEPARATE_INCENTIVE` (two legally distinct programs, matching Australia's pattern) after Task 5's explicit instruction to check this exact semantic.
+3. **A major recovery finding**: `treaty_engine.py` already contains a real, substantial 26-bilateral + 3-multilateral treaty registry (migrations 0047-0049) — prior passes' closeout artifacts incorrectly implied zero official co-production doctrine existed. This pass corrects that record and builds the doctrine-completion artifacts from the REAL existing data rather than claiming a from-scratch research gap.
+4. **3 more jurisdictions resolved**: Netherlands and Sweden via pure internal recovery (`nl_hbf`/`se_goteborg_fund` already had real role data from a prior pass, simply never cross-referenced against their own countries' national-status question); Japan confirmed `NO_RELEVANT_NATIONAL_STATUS_REGIME_CONFIRMED` via real research.
+
+## Guards confirmed
+
+- Canonical pricing/NPC/ranking mathematics unchanged.
+- No legacy 0.1.0 economic path served.
+- No new optimizer/pricing/ranking/cultural/treaty engine created — `national_cultural_status.py` remains a data registry; `treaty_engine.py` was read, not rewritten (its own dedicated `test_treaty_coproduction.py` suite untouched and still passing).
+- Full backend suite result recorded in the capability ledger entry for this pass.
+
+STOP.

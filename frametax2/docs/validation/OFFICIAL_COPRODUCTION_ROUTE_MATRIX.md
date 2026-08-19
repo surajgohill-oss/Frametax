@@ -1,0 +1,94 @@
+# Official Co-production Route Matrix
+
+**Generated:** 2026-08-19 · 86 rows (26 bilateral pairs + multilateral membership rows for countries in the current 49-country universe).
+
+| Party A | Party B | Route type | Route ID | Cultural test |
+|---|---|---|---|---|
+| GB | CA | bilateral | `uk-ca-bilateral` | False |
+| GB | AU | bilateral | `uk-au-bilateral` | False |
+| GB | FR | bilateral | `uk-fr-bilateral` | True |
+| GB | DE | bilateral | `uk-de-bilateral` | False |
+| GB | NZ | bilateral | `uk-nz-bilateral` | False |
+| GB | ZA | bilateral | `uk-za-bilateral` | False |
+| GB | IN | bilateral | `uk-in-bilateral` | False |
+| GB | IE | bilateral | `uk-ie-bilateral` | False |
+| CA | FR | bilateral | `ca-fr-bilateral` | False |
+| CA | AU | bilateral | `ca-au-bilateral` | False |
+| CA | DE | bilateral | `ca-de-bilateral` | False |
+| CA | IT | bilateral | `ca-it-bilateral` | False |
+| CA | ES | bilateral | `ca-es-bilateral` | False |
+| CA | ZA | bilateral | `ca-za-bilateral` | False |
+| CA | IE | bilateral | `ca-ie-bilateral` | False |
+| CA | NZ | bilateral | `ca-nz-bilateral` | False |
+| CA | CN | bilateral | `ca-cn-bilateral` | False |
+| CA | CH | bilateral | `ca-ch-bilateral` | False |
+| CA | BE | bilateral | `ca-be-bilateral` | False |
+| CA | MX | bilateral | `ca-mx-bilateral` | False |
+| AU | DE | bilateral | `au-de-bilateral` | False |
+| AU | IE | bilateral | `au-ie-bilateral` | False |
+| AU | IT | bilateral | `au-it-bilateral` | False |
+| AU | KR | bilateral | `au-kr-bilateral` | False |
+| FR | DE | bilateral | `fr-de-bilateral` | True |
+| FR | BE | bilateral | `fr-be-bilateral` | True |
+| AT | (multilateral) | eurimages | `eurimages-multilateral` | True |
+| BE | (multilateral) | eurimages | `eurimages-multilateral` | True |
+| CH | (multilateral) | eurimages | `eurimages-multilateral` | True |
+| CY | (multilateral) | eurimages | `eurimages-multilateral` | True |
+| CZ | (multilateral) | eurimages | `eurimages-multilateral` | True |
+| DE | (multilateral) | eurimages | `eurimages-multilateral` | True |
+| DK | (multilateral) | eurimages | `eurimages-multilateral` | True |
+| EE | (multilateral) | eurimages | `eurimages-multilateral` | True |
+| ES | (multilateral) | eurimages | `eurimages-multilateral` | True |
+| FI | (multilateral) | eurimages | `eurimages-multilateral` | True |
+| FR | (multilateral) | eurimages | `eurimages-multilateral` | True |
+| GB | (multilateral) | eurimages | `eurimages-multilateral` | True |
+| GR | (multilateral) | eurimages | `eurimages-multilateral` | True |
+| HR | (multilateral) | eurimages | `eurimages-multilateral` | True |
+| HU | (multilateral) | eurimages | `eurimages-multilateral` | True |
+| IE | (multilateral) | eurimages | `eurimages-multilateral` | True |
+| IS | (multilateral) | eurimages | `eurimages-multilateral` | True |
+| IT | (multilateral) | eurimages | `eurimages-multilateral` | True |
+| LT | (multilateral) | eurimages | `eurimages-multilateral` | True |
+| LU | (multilateral) | eurimages | `eurimages-multilateral` | True |
+| MT | (multilateral) | eurimages | `eurimages-multilateral` | True |
+| NL | (multilateral) | eurimages | `eurimages-multilateral` | True |
+| NO | (multilateral) | eurimages | `eurimages-multilateral` | True |
+| PL | (multilateral) | eurimages | `eurimages-multilateral` | True |
+| PT | (multilateral) | eurimages | `eurimages-multilateral` | True |
+| RO | (multilateral) | eurimages | `eurimages-multilateral` | True |
+| RS | (multilateral) | eurimages | `eurimages-multilateral` | True |
+| SE | (multilateral) | eurimages | `eurimages-multilateral` | True |
+| AT | (multilateral) | european_convention | `european-convention-coproduction` | True |
+| BE | (multilateral) | european_convention | `european-convention-coproduction` | True |
+| CH | (multilateral) | european_convention | `european-convention-coproduction` | True |
+| CY | (multilateral) | european_convention | `european-convention-coproduction` | True |
+| CZ | (multilateral) | european_convention | `european-convention-coproduction` | True |
+| DE | (multilateral) | european_convention | `european-convention-coproduction` | True |
+| DK | (multilateral) | european_convention | `european-convention-coproduction` | True |
+| EE | (multilateral) | european_convention | `european-convention-coproduction` | True |
+| ES | (multilateral) | european_convention | `european-convention-coproduction` | True |
+| FI | (multilateral) | european_convention | `european-convention-coproduction` | True |
+| FR | (multilateral) | european_convention | `european-convention-coproduction` | True |
+| GB | (multilateral) | european_convention | `european-convention-coproduction` | True |
+| GR | (multilateral) | european_convention | `european-convention-coproduction` | True |
+| HR | (multilateral) | european_convention | `european-convention-coproduction` | True |
+| HU | (multilateral) | european_convention | `european-convention-coproduction` | True |
+| IE | (multilateral) | european_convention | `european-convention-coproduction` | True |
+| IS | (multilateral) | european_convention | `european-convention-coproduction` | True |
+| IT | (multilateral) | european_convention | `european-convention-coproduction` | True |
+| LT | (multilateral) | european_convention | `european-convention-coproduction` | True |
+| LU | (multilateral) | european_convention | `european-convention-coproduction` | True |
+| MT | (multilateral) | european_convention | `european-convention-coproduction` | True |
+| NL | (multilateral) | european_convention | `european-convention-coproduction` | True |
+| NO | (multilateral) | european_convention | `european-convention-coproduction` | True |
+| PL | (multilateral) | european_convention | `european-convention-coproduction` | True |
+| PT | (multilateral) | european_convention | `european-convention-coproduction` | True |
+| RO | (multilateral) | european_convention | `european-convention-coproduction` | True |
+| RS | (multilateral) | european_convention | `european-convention-coproduction` | True |
+| SE | (multilateral) | european_convention | `european-convention-coproduction` | True |
+| CL | (multilateral) | ibermedia | `ibermedia-multilateral` | True |
+| ES | (multilateral) | ibermedia | `ibermedia-multilateral` | True |
+| MX | (multilateral) | ibermedia | `ibermedia-multilateral` | True |
+| PT | (multilateral) | ibermedia | `ibermedia-multilateral` | True |
+
+STOP.

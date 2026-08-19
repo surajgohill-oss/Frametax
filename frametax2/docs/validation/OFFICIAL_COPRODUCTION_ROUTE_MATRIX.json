@@ -1,0 +1,609 @@
+{
+  "artifact": "OFFICIAL_COPRODUCTION_ROUTE_MATRIX",
+  "generated": "2026-08-19",
+  "row_count": 86,
+  "rows": [
+    {
+      "party_a": "GB",
+      "party_b": "CA",
+      "route_type": "bilateral",
+      "route_id": "uk-ca-bilateral",
+      "cultural_test_required": false
+    },
+    {
+      "party_a": "GB",
+      "party_b": "AU",
+      "route_type": "bilateral",
+      "route_id": "uk-au-bilateral",
+      "cultural_test_required": false
+    },
+    {
+      "party_a": "GB",
+      "party_b": "FR",
+      "route_type": "bilateral",
+      "route_id": "uk-fr-bilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "GB",
+      "party_b": "DE",
+      "route_type": "bilateral",
+      "route_id": "uk-de-bilateral",
+      "cultural_test_required": false
+    },
+    {
+      "party_a": "GB",
+      "party_b": "NZ",
+      "route_type": "bilateral",
+      "route_id": "uk-nz-bilateral",
+      "cultural_test_required": false
+    },
+    {
+      "party_a": "GB",
+      "party_b": "ZA",
+      "route_type": "bilateral",
+      "route_id": "uk-za-bilateral",
+      "cultural_test_required": false
+    },
+    {
+      "party_a": "GB",
+      "party_b": "IN",
+      "route_type": "bilateral",
+      "route_id": "uk-in-bilateral",
+      "cultural_test_required": false
+    },
+    {
+      "party_a": "GB",
+      "party_b": "IE",
+      "route_type": "bilateral",
+      "route_id": "uk-ie-bilateral",
+      "cultural_test_required": false
+    },
+    {
+      "party_a": "CA",
+      "party_b": "FR",
+      "route_type": "bilateral",
+      "route_id": "ca-fr-bilateral",
+      "cultural_test_required": false
+    },
+    {
+      "party_a": "CA",
+      "party_b": "AU",
+      "route_type": "bilateral",
+      "route_id": "ca-au-bilateral",
+      "cultural_test_required": false
+    },
+    {
+      "party_a": "CA",
+      "party_b": "DE",
+      "route_type": "bilateral",
+      "route_id": "ca-de-bilateral",
+      "cultural_test_required": false
+    },
+    {
+      "party_a": "CA",
+      "party_b": "IT",
+      "route_type": "bilateral",
+      "route_id": "ca-it-bilateral",
+      "cultural_test_required": false
+    },
+    {
+      "party_a": "CA",
+      "party_b": "ES",
+      "route_type": "bilateral",
+      "route_id": "ca-es-bilateral",
+      "cultural_test_required": false
+    },
+    {
+      "party_a": "CA",
+      "party_b": "ZA",
+      "route_type": "bilateral",
+      "route_id": "ca-za-bilateral",
+      "cultural_test_required": false
+    },
+    {
+      "party_a": "CA",
+      "party_b": "IE",
+      "route_type": "bilateral",
+      "route_id": "ca-ie-bilateral",
+      "cultural_test_required": false
+    },
+    {
+      "party_a": "CA",
+      "party_b": "NZ",
+      "route_type": "bilateral",
+      "route_id": "ca-nz-bilateral",
+      "cultural_test_required": false
+    },
+    {
+      "party_a": "CA",
+      "party_b": "CN",
+      "route_type": "bilateral",
+      "route_id": "ca-cn-bilateral",
+      "cultural_test_required": false
+    },
+    {
+      "party_a": "CA",
+      "party_b": "CH",
+      "route_type": "bilateral",
+      "route_id": "ca-ch-bilateral",
+      "cultural_test_required": false
+    },
+    {
+      "party_a": "CA",
+      "party_b": "BE",
+      "route_type": "bilateral",
+      "route_id": "ca-be-bilateral",
+      "cultural_test_required": false
+    },
+    {
+      "party_a": "CA",
+      "party_b": "MX",
+      "route_type": "bilateral",
+      "route_id": "ca-mx-bilateral",
+      "cultural_test_required": false
+    },
+    {
+      "party_a": "AU",
+      "party_b": "DE",
+      "route_type": "bilateral",
+      "route_id": "au-de-bilateral",
+      "cultural_test_required": false
+    },
+    {
+      "party_a": "AU",
+      "party_b": "IE",
+      "route_type": "bilateral",
+      "route_id": "au-ie-bilateral",
+      "cultural_test_required": false
+    },
+    {
+      "party_a": "AU",
+      "party_b": "IT",
+      "route_type": "bilateral",
+      "route_id": "au-it-bilateral",
+      "cultural_test_required": false
+    },
+    {
+      "party_a": "AU",
+      "party_b": "KR",
+      "route_type": "bilateral",
+      "route_id": "au-kr-bilateral",
+      "cultural_test_required": false
+    },
+    {
+      "party_a": "FR",
+      "party_b": "DE",
+      "route_type": "bilateral",
+      "route_id": "fr-de-bilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "FR",
+      "party_b": "BE",
+      "route_type": "bilateral",
+      "route_id": "fr-be-bilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "AT",
+      "party_b": null,
+      "route_type": "eurimages",
+      "route_id": "eurimages-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "BE",
+      "party_b": null,
+      "route_type": "eurimages",
+      "route_id": "eurimages-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "CH",
+      "party_b": null,
+      "route_type": "eurimages",
+      "route_id": "eurimages-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "CY",
+      "party_b": null,
+      "route_type": "eurimages",
+      "route_id": "eurimages-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "CZ",
+      "party_b": null,
+      "route_type": "eurimages",
+      "route_id": "eurimages-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "DE",
+      "party_b": null,
+      "route_type": "eurimages",
+      "route_id": "eurimages-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "DK",
+      "party_b": null,
+      "route_type": "eurimages",
+      "route_id": "eurimages-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "EE",
+      "party_b": null,
+      "route_type": "eurimages",
+      "route_id": "eurimages-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "ES",
+      "party_b": null,
+      "route_type": "eurimages",
+      "route_id": "eurimages-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "FI",
+      "party_b": null,
+      "route_type": "eurimages",
+      "route_id": "eurimages-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "FR",
+      "party_b": null,
+      "route_type": "eurimages",
+      "route_id": "eurimages-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "GB",
+      "party_b": null,
+      "route_type": "eurimages",
+      "route_id": "eurimages-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "GR",
+      "party_b": null,
+      "route_type": "eurimages",
+      "route_id": "eurimages-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "HR",
+      "party_b": null,
+      "route_type": "eurimages",
+      "route_id": "eurimages-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "HU",
+      "party_b": null,
+      "route_type": "eurimages",
+      "route_id": "eurimages-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "IE",
+      "party_b": null,
+      "route_type": "eurimages",
+      "route_id": "eurimages-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "IS",
+      "party_b": null,
+      "route_type": "eurimages",
+      "route_id": "eurimages-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "IT",
+      "party_b": null,
+      "route_type": "eurimages",
+      "route_id": "eurimages-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "LT",
+      "party_b": null,
+      "route_type": "eurimages",
+      "route_id": "eurimages-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "LU",
+      "party_b": null,
+      "route_type": "eurimages",
+      "route_id": "eurimages-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "MT",
+      "party_b": null,
+      "route_type": "eurimages",
+      "route_id": "eurimages-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "NL",
+      "party_b": null,
+      "route_type": "eurimages",
+      "route_id": "eurimages-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "NO",
+      "party_b": null,
+      "route_type": "eurimages",
+      "route_id": "eurimages-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "PL",
+      "party_b": null,
+      "route_type": "eurimages",
+      "route_id": "eurimages-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "PT",
+      "party_b": null,
+      "route_type": "eurimages",
+      "route_id": "eurimages-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "RO",
+      "party_b": null,
+      "route_type": "eurimages",
+      "route_id": "eurimages-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "RS",
+      "party_b": null,
+      "route_type": "eurimages",
+      "route_id": "eurimages-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "SE",
+      "party_b": null,
+      "route_type": "eurimages",
+      "route_id": "eurimages-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "AT",
+      "party_b": null,
+      "route_type": "european_convention",
+      "route_id": "european-convention-coproduction",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "BE",
+      "party_b": null,
+      "route_type": "european_convention",
+      "route_id": "european-convention-coproduction",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "CH",
+      "party_b": null,
+      "route_type": "european_convention",
+      "route_id": "european-convention-coproduction",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "CY",
+      "party_b": null,
+      "route_type": "european_convention",
+      "route_id": "european-convention-coproduction",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "CZ",
+      "party_b": null,
+      "route_type": "european_convention",
+      "route_id": "european-convention-coproduction",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "DE",
+      "party_b": null,
+      "route_type": "european_convention",
+      "route_id": "european-convention-coproduction",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "DK",
+      "party_b": null,
+      "route_type": "european_convention",
+      "route_id": "european-convention-coproduction",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "EE",
+      "party_b": null,
+      "route_type": "european_convention",
+      "route_id": "european-convention-coproduction",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "ES",
+      "party_b": null,
+      "route_type": "european_convention",
+      "route_id": "european-convention-coproduction",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "FI",
+      "party_b": null,
+      "route_type": "european_convention",
+      "route_id": "european-convention-coproduction",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "FR",
+      "party_b": null,
+      "route_type": "european_convention",
+      "route_id": "european-convention-coproduction",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "GB",
+      "party_b": null,
+      "route_type": "european_convention",
+      "route_id": "european-convention-coproduction",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "GR",
+      "party_b": null,
+      "route_type": "european_convention",
+      "route_id": "european-convention-coproduction",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "HR",
+      "party_b": null,
+      "route_type": "european_convention",
+      "route_id": "european-convention-coproduction",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "HU",
+      "party_b": null,
+      "route_type": "european_convention",
+      "route_id": "european-convention-coproduction",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "IE",
+      "party_b": null,
+      "route_type": "european_convention",
+      "route_id": "european-convention-coproduction",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "IS",
+      "party_b": null,
+      "route_type": "european_convention",
+      "route_id": "european-convention-coproduction",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "IT",
+      "party_b": null,
+      "route_type": "european_convention",
+      "route_id": "european-convention-coproduction",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "LT",
+      "party_b": null,
+      "route_type": "european_convention",
+      "route_id": "european-convention-coproduction",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "LU",
+      "party_b": null,
+      "route_type": "european_convention",
+      "route_id": "european-convention-coproduction",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "MT",
+      "party_b": null,
+      "route_type": "european_convention",
+      "route_id": "european-convention-coproduction",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "NL",
+      "party_b": null,
+      "route_type": "european_convention",
+      "route_id": "european-convention-coproduction",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "NO",
+      "party_b": null,
+      "route_type": "european_convention",
+      "route_id": "european-convention-coproduction",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "PL",
+      "party_b": null,
+      "route_type": "european_convention",
+      "route_id": "european-convention-coproduction",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "PT",
+      "party_b": null,
+      "route_type": "european_convention",
+      "route_id": "european-convention-coproduction",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "RO",
+      "party_b": null,
+      "route_type": "european_convention",
+      "route_id": "european-convention-coproduction",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "RS",
+      "party_b": null,
+      "route_type": "european_convention",
+      "route_id": "european-convention-coproduction",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "SE",
+      "party_b": null,
+      "route_type": "european_convention",
+      "route_id": "european-convention-coproduction",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "CL",
+      "party_b": null,
+      "route_type": "ibermedia",
+      "route_id": "ibermedia-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "ES",
+      "party_b": null,
+      "route_type": "ibermedia",
+      "route_id": "ibermedia-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "MX",
+      "party_b": null,
+      "route_type": "ibermedia",
+      "route_id": "ibermedia-multilateral",
+      "cultural_test_required": true
+    },
+    {
+      "party_a": "PT",
+      "party_b": null,
+      "route_type": "ibermedia",
+      "route_id": "ibermedia-multilateral",
+      "cultural_test_required": true
+    }
+  ]
+}

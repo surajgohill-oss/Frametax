@@ -94,7 +94,7 @@ def test_unresearched_country_is_authority_unresolved_never_fabricated():
     """A country this pass did not research must be AUTHORITY_UNRESOLVED
     with an exact proposition -- never silently defaulted to CONFIRMED or
     NO_RELEVANT_REGIME."""
-    status = get_jurisdiction_national_status("JP")
+    status = get_jurisdiction_national_status("TH")
     assert status.status == STATUS_AUTHORITY_UNRESOLVED
     assert status.exact_unresolved_propositions
     assert "UNCONFIRMED" in status.exact_unresolved_propositions[0]
@@ -208,6 +208,75 @@ async def test_national_status_opportunity_never_contaminates_ranking(db: AsyncS
         )
         if has_national_opp:
             assert r["is_directly_comparable"] == e["is_directly_comparable"]
+
+
+# ── Final pass additions (2026-08-19 continuation) ───────────────────────
+
+def test_canada_cptc_pstc_are_separate_programs_not_an_uplift():
+    """Task 5 correction: CPTC (s.125.4) and PSTC (s.125.5) are two
+    legally separate federal programs -- different certificates,
+    different applications, different eligible-expenditure bases -- never
+    'the same program with an enhanced rate'. Corrected from an earlier
+    UNLOCKS_ENHANCED_RATE misclassification."""
+    status = get_jurisdiction_national_status("CA")
+    assert status.economic_consequence == CONSEQUENCE_UNLOCKS_SEPARATE_INCENTIVE
+    assert "separate" in status.consequence_detail.lower()
+
+
+def test_netherlands_and_sweden_resolved_via_recovery_not_new_research():
+    """Task 4 discipline: nl_hbf and se_goteborg_fund already carried real
+    NationalityRequirement rows in cultural_qualification_model.py from a
+    prior pass -- resolved via internal recovery, not new web research."""
+    nl = get_jurisdiction_national_status("NL")
+    assert nl.status == STATUS_REGIME_CONFIRMED
+    assert nl.linked_program_slug == "nl_hbf"
+    assert nl.base_program_slug == "nl_film_production_incentive"
+
+    se = get_jurisdiction_national_status("SE")
+    assert se.status == STATUS_REGIME_CONFIRMED
+    assert se.linked_program_slug == "se_goteborg_fund"
+
+
+def test_japan_confirmed_no_relevant_regime():
+    status = get_jurisdiction_national_status("JP")
+    assert status.status == STATUS_NO_RELEVANT_REGIME_CONFIRMED
+    assert status.sources
+
+
+def test_mexico_unresolved_with_specific_lead_not_generic():
+    """A real, specific research lead (EFICINE/Article 226) that could not
+    be confirmed with enough rigor to reach CONFIRMED -- disclosed
+    exactly, never silently upgraded to a confident claim."""
+    status = get_jurisdiction_national_status("MX")
+    assert status.status == STATUS_AUTHORITY_UNRESOLVED
+    assert "EFICINE" in status.exact_unresolved_propositions[0]
+
+
+def test_treaty_registry_covers_most_of_the_49_country_universe():
+    """Task 6/7 recovery finding: treaty_engine.py already carries a real,
+    substantial 26-bilateral + 3-multilateral registry covering the
+    majority of the current canonical country universe -- confirmed by
+    direct inspection, not re-researched from scratch."""
+    from app.calculators import treaty_engine as te
+    from app.data.program_requirements import all_program_requirements
+
+    profiles = all_program_requirements()
+    countries = set(p.jurisdiction_code.split("-")[0] for p in profiles.values())
+    bilateral_countries = set()
+    for fs in te._BILATERAL.keys():
+        bilateral_countries |= set(fs)
+    covered = countries & (bilateral_countries | te._EURIMAGES_MEMBERS | te._IBERMEDIA_MEMBERS)
+    assert len(covered) >= 30, "treaty registry should cover a majority of the 49-country universe"
+
+
+def test_us_confirmed_no_official_coproduction_treaties_corroborates_no_relevant_regime():
+    """Independent corroboration this pass: the US has essentially no
+    official co-production treaties with countries in our universe --
+    consistent with its confirmed NO_RELEVANT national-status regime and
+    its absence from treaty_engine.py's real bilateral registry."""
+    from app.calculators import treaty_engine as te
+    assert te.get_bilateral_treaty("US", "GB") is None
+    assert te.get_bilateral_treaty("US", "CA") is None
 
 
 async def test_baselines_unchanged_after_national_status_completion(db: AsyncSession):

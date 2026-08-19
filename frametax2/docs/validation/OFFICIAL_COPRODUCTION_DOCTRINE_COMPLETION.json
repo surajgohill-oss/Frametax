@@ -1,15 +1,841 @@
 {
   "artifact": "OFFICIAL_COPRODUCTION_DOCTRINE_COMPLETION",
   "generated": "2026-08-19",
-  "new_bilateral_routes_researched": 0,
-  "new_multilateral_routes_researched": 0,
-  "new_role_or_contribution_propositions_encoded": 0,
-  "reason": "This pass's research budget was spent on program-level cultural-test completion (WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION.json). No fabricated treaty doctrine is reported here.",
-  "existing_unedited": [
-    "app/calculators/treaty_engine.py",
-    "app/calculators/canonical_treaty_bridge.py"
+  "forensic_finding": "treaty_engine.py already carries a real, substantial, pre-existing bilateral/multilateral treaty registry (26 bilateral treaties + 3 multilateral frameworks, mirroring migrations 0047-0049) -- this was NOT rebuilt or newly researched from scratch this pass. Prior passes' closeout artifacts incorrectly implied zero official co-production doctrine existed; this was a recovery-before-research failure now corrected (Task 1/4 discipline).",
+  "summary": {
+    "bilateral_routes_count": 26,
+    "multilateral_frameworks_count": 3,
+    "countries_in_current_universe": 49,
+    "countries_with_any_treaty_coverage": 35,
+    "countries_with_no_treaty_coverage": 14,
+    "no_coverage_list": [
+      "AE",
+      "FJ",
+      "IL",
+      "JP",
+      "MA",
+      "MU",
+      "MY",
+      "PH",
+      "QA",
+      "SA",
+      "SG",
+      "TH",
+      "TW",
+      "US"
+    ],
+    "fabricated_routes": 0,
+    "program_identities_referenced_outside_71_program_universe": [
+      "au_producer_offset",
+      "ca_cmf",
+      "ca_federal_cptc",
+      "eu_eurimages",
+      "fr_cnc_production",
+      "fr_tax_credit_cinema",
+      "ibermedia_programme",
+      "nz_spgi"
+    ]
+  },
+  "bilateral_routes": [
+    {
+      "route_id": "uk-ca-bilateral",
+      "route_type": "bilateral",
+      "parties": [
+        "GB",
+        "CA"
+      ],
+      "both_in_current_universe": true,
+      "majority_min_pct": 30,
+      "minority_min_pct": 20,
+      "minority_max_pct": 70,
+      "min_coproducer_countries": 2,
+      "cultural_test_required": false,
+      "majority_unlocks": [
+        "uk_avec"
+      ],
+      "minority_unlocks": [
+        "ca_federal_cptc",
+        "ca_cmf"
+      ],
+      "fund_unlocks": [],
+      "confidence_tier": "PARSED",
+      "notes": null,
+      "national_status_cross_reference": [
+        "GB: treaty unlock 'uk_avec' matches national_cultural_status.py's own confirmed national pathway.",
+        "CA: treaty unlock 'ca_federal_cptc' matches national_cultural_status.py's own confirmed national pathway."
+      ]
+    },
+    {
+      "route_id": "uk-au-bilateral",
+      "route_type": "bilateral",
+      "parties": [
+        "GB",
+        "AU"
+      ],
+      "both_in_current_universe": true,
+      "majority_min_pct": 20,
+      "minority_min_pct": 20,
+      "minority_max_pct": 80,
+      "min_coproducer_countries": 2,
+      "cultural_test_required": false,
+      "majority_unlocks": [
+        "uk_avec"
+      ],
+      "minority_unlocks": [
+        "au_producer_offset"
+      ],
+      "fund_unlocks": [],
+      "confidence_tier": "PARSED",
+      "notes": null,
+      "national_status_cross_reference": [
+        "GB: treaty unlock 'uk_avec' matches national_cultural_status.py's own confirmed national pathway.",
+        "AU: treaty unlock 'au_producer_offset' matches national_cultural_status.py's own confirmed national pathway."
+      ]
+    },
+    {
+      "route_id": "uk-fr-bilateral",
+      "route_type": "bilateral",
+      "parties": [
+        "GB",
+        "FR"
+      ],
+      "both_in_current_universe": true,
+      "majority_min_pct": 30,
+      "minority_min_pct": 20,
+      "minority_max_pct": 70,
+      "min_coproducer_countries": 2,
+      "cultural_test_required": true,
+      "majority_unlocks": [
+        "uk_avec"
+      ],
+      "minority_unlocks": [
+        "fr_tax_credit_cinema",
+        "fr_cnc_production"
+      ],
+      "fund_unlocks": [],
+      "confidence_tier": "PARSED",
+      "notes": null,
+      "national_status_cross_reference": [
+        "GB: treaty unlock 'uk_avec' matches national_cultural_status.py's own confirmed national pathway."
+      ]
+    },
+    {
+      "route_id": "uk-de-bilateral",
+      "route_type": "bilateral",
+      "parties": [
+        "GB",
+        "DE"
+      ],
+      "both_in_current_universe": true,
+      "majority_min_pct": 30,
+      "minority_min_pct": 20,
+      "minority_max_pct": 70,
+      "min_coproducer_countries": 2,
+      "cultural_test_required": false,
+      "majority_unlocks": [
+        "uk_avec"
+      ],
+      "minority_unlocks": [
+        "de_dfff"
+      ],
+      "fund_unlocks": [],
+      "confidence_tier": "PARSED",
+      "notes": null,
+      "national_status_cross_reference": [
+        "GB: treaty unlock 'uk_avec' matches national_cultural_status.py's own confirmed national pathway.",
+        "DE: treaty unlock 'de_dfff' matches national_cultural_status.py's own confirmed national pathway."
+      ]
+    },
+    {
+      "route_id": "uk-nz-bilateral",
+      "route_type": "bilateral",
+      "parties": [
+        "GB",
+        "NZ"
+      ],
+      "both_in_current_universe": true,
+      "majority_min_pct": 20,
+      "minority_min_pct": 20,
+      "minority_max_pct": 80,
+      "min_coproducer_countries": 2,
+      "cultural_test_required": false,
+      "majority_unlocks": [
+        "uk_avec"
+      ],
+      "minority_unlocks": [
+        "nz_spgi"
+      ],
+      "fund_unlocks": [],
+      "confidence_tier": "PARSED",
+      "notes": null,
+      "national_status_cross_reference": [
+        "GB: treaty unlock 'uk_avec' matches national_cultural_status.py's own confirmed national pathway."
+      ]
+    },
+    {
+      "route_id": "uk-za-bilateral",
+      "route_type": "bilateral",
+      "parties": [
+        "GB",
+        "ZA"
+      ],
+      "both_in_current_universe": true,
+      "majority_min_pct": 20,
+      "minority_min_pct": 20,
+      "minority_max_pct": 80,
+      "min_coproducer_countries": 2,
+      "cultural_test_required": false,
+      "majority_unlocks": [
+        "uk_avec"
+      ],
+      "minority_unlocks": [],
+      "fund_unlocks": [],
+      "confidence_tier": "PARSED",
+      "notes": null,
+      "national_status_cross_reference": [
+        "GB: treaty unlock 'uk_avec' matches national_cultural_status.py's own confirmed national pathway."
+      ]
+    },
+    {
+      "route_id": "uk-in-bilateral",
+      "route_type": "bilateral",
+      "parties": [
+        "GB",
+        "IN"
+      ],
+      "both_in_current_universe": false,
+      "majority_min_pct": 20,
+      "minority_min_pct": 20,
+      "minority_max_pct": 80,
+      "min_coproducer_countries": 2,
+      "cultural_test_required": false,
+      "majority_unlocks": [
+        "uk_avec"
+      ],
+      "minority_unlocks": [],
+      "fund_unlocks": [],
+      "confidence_tier": "PARSED",
+      "notes": null,
+      "national_status_cross_reference": [
+        "GB: treaty unlock 'uk_avec' matches national_cultural_status.py's own confirmed national pathway."
+      ]
+    },
+    {
+      "route_id": "uk-ie-bilateral",
+      "route_type": "bilateral",
+      "parties": [
+        "GB",
+        "IE"
+      ],
+      "both_in_current_universe": true,
+      "majority_min_pct": 20,
+      "minority_min_pct": 20,
+      "minority_max_pct": 80,
+      "min_coproducer_countries": 2,
+      "cultural_test_required": false,
+      "majority_unlocks": [
+        "uk_avec"
+      ],
+      "minority_unlocks": [
+        "ie_section_481"
+      ],
+      "fund_unlocks": [],
+      "confidence_tier": "PARSED",
+      "notes": null,
+      "national_status_cross_reference": [
+        "GB: treaty unlock 'uk_avec' matches national_cultural_status.py's own confirmed national pathway.",
+        "IE: treaty unlock 'ie_section_481' matches national_cultural_status.py's own confirmed national pathway."
+      ]
+    },
+    {
+      "route_id": "ca-fr-bilateral",
+      "route_type": "bilateral",
+      "parties": [
+        "CA",
+        "FR"
+      ],
+      "both_in_current_universe": true,
+      "majority_min_pct": 30,
+      "minority_min_pct": 20,
+      "minority_max_pct": 70,
+      "min_coproducer_countries": 2,
+      "cultural_test_required": false,
+      "majority_unlocks": [
+        "ca_federal_cptc",
+        "ca_cmf"
+      ],
+      "minority_unlocks": [
+        "fr_tax_credit_cinema",
+        "fr_cnc_production"
+      ],
+      "fund_unlocks": [],
+      "confidence_tier": "PARSED",
+      "notes": "QC majority can also access QPRDP",
+      "national_status_cross_reference": [
+        "CA: treaty unlock 'ca_federal_cptc' matches national_cultural_status.py's own confirmed national pathway."
+      ]
+    },
+    {
+      "route_id": "ca-au-bilateral",
+      "route_type": "bilateral",
+      "parties": [
+        "CA",
+        "AU"
+      ],
+      "both_in_current_universe": true,
+      "majority_min_pct": 20,
+      "minority_min_pct": 20,
+      "minority_max_pct": 80,
+      "min_coproducer_countries": 2,
+      "cultural_test_required": false,
+      "majority_unlocks": [
+        "ca_federal_cptc",
+        "ca_cmf"
+      ],
+      "minority_unlocks": [
+        "au_producer_offset"
+      ],
+      "fund_unlocks": [],
+      "confidence_tier": "PARSED",
+      "notes": null,
+      "national_status_cross_reference": [
+        "CA: treaty unlock 'ca_federal_cptc' matches national_cultural_status.py's own confirmed national pathway.",
+        "AU: treaty unlock 'au_producer_offset' matches national_cultural_status.py's own confirmed national pathway."
+      ]
+    },
+    {
+      "route_id": "ca-de-bilateral",
+      "route_type": "bilateral",
+      "parties": [
+        "CA",
+        "DE"
+      ],
+      "both_in_current_universe": true,
+      "majority_min_pct": 30,
+      "minority_min_pct": 20,
+      "minority_max_pct": 70,
+      "min_coproducer_countries": 2,
+      "cultural_test_required": false,
+      "majority_unlocks": [
+        "ca_federal_cptc",
+        "ca_cmf"
+      ],
+      "minority_unlocks": [
+        "de_dfff"
+      ],
+      "fund_unlocks": [],
+      "confidence_tier": "PARSED",
+      "notes": null,
+      "national_status_cross_reference": [
+        "CA: treaty unlock 'ca_federal_cptc' matches national_cultural_status.py's own confirmed national pathway.",
+        "DE: treaty unlock 'de_dfff' matches national_cultural_status.py's own confirmed national pathway."
+      ]
+    },
+    {
+      "route_id": "ca-it-bilateral",
+      "route_type": "bilateral",
+      "parties": [
+        "CA",
+        "IT"
+      ],
+      "both_in_current_universe": true,
+      "majority_min_pct": 30,
+      "minority_min_pct": 20,
+      "minority_max_pct": 70,
+      "min_coproducer_countries": 2,
+      "cultural_test_required": false,
+      "majority_unlocks": [
+        "ca_federal_cptc",
+        "ca_cmf"
+      ],
+      "minority_unlocks": [
+        "it_tax_credit_foreign"
+      ],
+      "fund_unlocks": [],
+      "confidence_tier": "PARSED",
+      "notes": null,
+      "national_status_cross_reference": [
+        "CA: treaty unlock 'ca_federal_cptc' matches national_cultural_status.py's own confirmed national pathway.",
+        "IT: treaty unlock 'it_tax_credit_foreign' matches national_cultural_status.py's own confirmed national pathway."
+      ]
+    },
+    {
+      "route_id": "ca-es-bilateral",
+      "route_type": "bilateral",
+      "parties": [
+        "CA",
+        "ES"
+      ],
+      "both_in_current_universe": true,
+      "majority_min_pct": 30,
+      "minority_min_pct": 20,
+      "minority_max_pct": 70,
+      "min_coproducer_countries": 2,
+      "cultural_test_required": false,
+      "majority_unlocks": [
+        "ca_federal_cptc",
+        "ca_cmf"
+      ],
+      "minority_unlocks": [],
+      "fund_unlocks": [],
+      "confidence_tier": "PARSED",
+      "notes": null,
+      "national_status_cross_reference": [
+        "CA: treaty unlock 'ca_federal_cptc' matches national_cultural_status.py's own confirmed national pathway."
+      ]
+    },
+    {
+      "route_id": "ca-za-bilateral",
+      "route_type": "bilateral",
+      "parties": [
+        "CA",
+        "ZA"
+      ],
+      "both_in_current_universe": true,
+      "majority_min_pct": 20,
+      "minority_min_pct": 20,
+      "minority_max_pct": 80,
+      "min_coproducer_countries": 2,
+      "cultural_test_required": false,
+      "majority_unlocks": [
+        "ca_federal_cptc",
+        "ca_cmf"
+      ],
+      "minority_unlocks": [],
+      "fund_unlocks": [],
+      "confidence_tier": "PARSED",
+      "notes": null,
+      "national_status_cross_reference": [
+        "CA: treaty unlock 'ca_federal_cptc' matches national_cultural_status.py's own confirmed national pathway."
+      ]
+    },
+    {
+      "route_id": "ca-ie-bilateral",
+      "route_type": "bilateral",
+      "parties": [
+        "CA",
+        "IE"
+      ],
+      "both_in_current_universe": true,
+      "majority_min_pct": 20,
+      "minority_min_pct": 20,
+      "minority_max_pct": 80,
+      "min_coproducer_countries": 2,
+      "cultural_test_required": false,
+      "majority_unlocks": [
+        "ca_federal_cptc",
+        "ca_cmf"
+      ],
+      "minority_unlocks": [
+        "ie_section_481"
+      ],
+      "fund_unlocks": [],
+      "confidence_tier": "PARSED",
+      "notes": null,
+      "national_status_cross_reference": [
+        "CA: treaty unlock 'ca_federal_cptc' matches national_cultural_status.py's own confirmed national pathway.",
+        "IE: treaty unlock 'ie_section_481' matches national_cultural_status.py's own confirmed national pathway."
+      ]
+    },
+    {
+      "route_id": "ca-nz-bilateral",
+      "route_type": "bilateral",
+      "parties": [
+        "CA",
+        "NZ"
+      ],
+      "both_in_current_universe": true,
+      "majority_min_pct": 20,
+      "minority_min_pct": 20,
+      "minority_max_pct": 80,
+      "min_coproducer_countries": 2,
+      "cultural_test_required": false,
+      "majority_unlocks": [
+        "ca_federal_cptc",
+        "ca_cmf"
+      ],
+      "minority_unlocks": [
+        "nz_spgi"
+      ],
+      "fund_unlocks": [],
+      "confidence_tier": "PARSED",
+      "notes": null,
+      "national_status_cross_reference": [
+        "CA: treaty unlock 'ca_federal_cptc' matches national_cultural_status.py's own confirmed national pathway."
+      ]
+    },
+    {
+      "route_id": "ca-cn-bilateral",
+      "route_type": "bilateral",
+      "parties": [
+        "CA",
+        "CN"
+      ],
+      "both_in_current_universe": false,
+      "majority_min_pct": 30,
+      "minority_min_pct": 20,
+      "minority_max_pct": 70,
+      "min_coproducer_countries": 2,
+      "cultural_test_required": false,
+      "majority_unlocks": [
+        "ca_federal_cptc",
+        "ca_cmf"
+      ],
+      "minority_unlocks": [],
+      "fund_unlocks": [],
+      "confidence_tier": "PARSED",
+      "notes": "Primary benefit for CN: quota exemption",
+      "national_status_cross_reference": [
+        "CA: treaty unlock 'ca_federal_cptc' matches national_cultural_status.py's own confirmed national pathway."
+      ]
+    },
+    {
+      "route_id": "ca-ch-bilateral",
+      "route_type": "bilateral",
+      "parties": [
+        "CA",
+        "CH"
+      ],
+      "both_in_current_universe": true,
+      "majority_min_pct": 30,
+      "minority_min_pct": 20,
+      "minority_max_pct": 70,
+      "min_coproducer_countries": 2,
+      "cultural_test_required": false,
+      "majority_unlocks": [
+        "ca_federal_cptc",
+        "ca_cmf"
+      ],
+      "minority_unlocks": [],
+      "fund_unlocks": [],
+      "confidence_tier": "PARSED",
+      "notes": null,
+      "national_status_cross_reference": [
+        "CA: treaty unlock 'ca_federal_cptc' matches national_cultural_status.py's own confirmed national pathway."
+      ]
+    },
+    {
+      "route_id": "ca-be-bilateral",
+      "route_type": "bilateral",
+      "parties": [
+        "CA",
+        "BE"
+      ],
+      "both_in_current_universe": true,
+      "majority_min_pct": 30,
+      "minority_min_pct": 20,
+      "minority_max_pct": 70,
+      "min_coproducer_countries": 2,
+      "cultural_test_required": false,
+      "majority_unlocks": [
+        "ca_federal_cptc",
+        "ca_cmf"
+      ],
+      "minority_unlocks": [
+        "be_tax_shelter"
+      ],
+      "fund_unlocks": [],
+      "confidence_tier": "PARSED",
+      "notes": null,
+      "national_status_cross_reference": [
+        "CA: treaty unlock 'ca_federal_cptc' matches national_cultural_status.py's own confirmed national pathway.",
+        "BE: treaty unlock 'be_tax_shelter' matches national_cultural_status.py's own confirmed national pathway."
+      ]
+    },
+    {
+      "route_id": "ca-mx-bilateral",
+      "route_type": "bilateral",
+      "parties": [
+        "CA",
+        "MX"
+      ],
+      "both_in_current_universe": true,
+      "majority_min_pct": 20,
+      "minority_min_pct": 20,
+      "minority_max_pct": 80,
+      "min_coproducer_countries": 2,
+      "cultural_test_required": false,
+      "majority_unlocks": [
+        "ca_federal_cptc",
+        "ca_cmf"
+      ],
+      "minority_unlocks": [],
+      "fund_unlocks": [],
+      "confidence_tier": "PARSED",
+      "notes": null,
+      "national_status_cross_reference": [
+        "CA: treaty unlock 'ca_federal_cptc' matches national_cultural_status.py's own confirmed national pathway."
+      ]
+    },
+    {
+      "route_id": "au-de-bilateral",
+      "route_type": "bilateral",
+      "parties": [
+        "AU",
+        "DE"
+      ],
+      "both_in_current_universe": true,
+      "majority_min_pct": 20,
+      "minority_min_pct": 20,
+      "minority_max_pct": 80,
+      "min_coproducer_countries": 2,
+      "cultural_test_required": false,
+      "majority_unlocks": [
+        "au_producer_offset"
+      ],
+      "minority_unlocks": [
+        "de_dfff"
+      ],
+      "fund_unlocks": [],
+      "confidence_tier": "PARSED",
+      "notes": null,
+      "national_status_cross_reference": [
+        "AU: treaty unlock 'au_producer_offset' matches national_cultural_status.py's own confirmed national pathway.",
+        "DE: treaty unlock 'de_dfff' matches national_cultural_status.py's own confirmed national pathway."
+      ]
+    },
+    {
+      "route_id": "au-ie-bilateral",
+      "route_type": "bilateral",
+      "parties": [
+        "AU",
+        "IE"
+      ],
+      "both_in_current_universe": true,
+      "majority_min_pct": 20,
+      "minority_min_pct": 20,
+      "minority_max_pct": 80,
+      "min_coproducer_countries": 2,
+      "cultural_test_required": false,
+      "majority_unlocks": [
+        "au_producer_offset"
+      ],
+      "minority_unlocks": [
+        "ie_section_481"
+      ],
+      "fund_unlocks": [],
+      "confidence_tier": "PARSED",
+      "notes": null,
+      "national_status_cross_reference": [
+        "AU: treaty unlock 'au_producer_offset' matches national_cultural_status.py's own confirmed national pathway.",
+        "IE: treaty unlock 'ie_section_481' matches national_cultural_status.py's own confirmed national pathway."
+      ]
+    },
+    {
+      "route_id": "au-it-bilateral",
+      "route_type": "bilateral",
+      "parties": [
+        "AU",
+        "IT"
+      ],
+      "both_in_current_universe": true,
+      "majority_min_pct": 20,
+      "minority_min_pct": 20,
+      "minority_max_pct": 80,
+      "min_coproducer_countries": 2,
+      "cultural_test_required": false,
+      "majority_unlocks": [
+        "au_producer_offset"
+      ],
+      "minority_unlocks": [
+        "it_tax_credit_foreign"
+      ],
+      "fund_unlocks": [],
+      "confidence_tier": "PARSED",
+      "notes": null,
+      "national_status_cross_reference": [
+        "AU: treaty unlock 'au_producer_offset' matches national_cultural_status.py's own confirmed national pathway.",
+        "IT: treaty unlock 'it_tax_credit_foreign' matches national_cultural_status.py's own confirmed national pathway."
+      ]
+    },
+    {
+      "route_id": "au-kr-bilateral",
+      "route_type": "bilateral",
+      "parties": [
+        "AU",
+        "KR"
+      ],
+      "both_in_current_universe": true,
+      "majority_min_pct": 20,
+      "minority_min_pct": 20,
+      "minority_max_pct": 80,
+      "min_coproducer_countries": 2,
+      "cultural_test_required": false,
+      "majority_unlocks": [
+        "au_producer_offset"
+      ],
+      "minority_unlocks": [],
+      "fund_unlocks": [],
+      "confidence_tier": "PARSED",
+      "notes": null,
+      "national_status_cross_reference": [
+        "AU: treaty unlock 'au_producer_offset' matches national_cultural_status.py's own confirmed national pathway."
+      ]
+    },
+    {
+      "route_id": "fr-de-bilateral",
+      "route_type": "bilateral",
+      "parties": [
+        "FR",
+        "DE"
+      ],
+      "both_in_current_universe": true,
+      "majority_min_pct": 30,
+      "minority_min_pct": 20,
+      "minority_max_pct": 70,
+      "min_coproducer_countries": 2,
+      "cultural_test_required": true,
+      "majority_unlocks": [
+        "fr_tax_credit_cinema",
+        "fr_cnc_production"
+      ],
+      "minority_unlocks": [
+        "de_dfff"
+      ],
+      "fund_unlocks": [],
+      "confidence_tier": "PARSED",
+      "notes": null,
+      "national_status_cross_reference": [
+        "DE: treaty unlock 'de_dfff' matches national_cultural_status.py's own confirmed national pathway."
+      ]
+    },
+    {
+      "route_id": "fr-be-bilateral",
+      "route_type": "bilateral",
+      "parties": [
+        "FR",
+        "BE"
+      ],
+      "both_in_current_universe": true,
+      "majority_min_pct": 30,
+      "minority_min_pct": 20,
+      "minority_max_pct": 70,
+      "min_coproducer_countries": 2,
+      "cultural_test_required": true,
+      "majority_unlocks": [
+        "fr_tax_credit_cinema",
+        "fr_cnc_production"
+      ],
+      "minority_unlocks": [
+        "be_tax_shelter"
+      ],
+      "fund_unlocks": [],
+      "confidence_tier": "PARSED",
+      "notes": null,
+      "national_status_cross_reference": [
+        "BE: treaty unlock 'be_tax_shelter' matches national_cultural_status.py's own confirmed national pathway."
+      ]
+    }
   ],
-  "prior_pass_repair_unchanged": "5935225 -- bilateral/Eurimages call sites in canonical_evaluation.py thread real ProjectFact-sourced majority_pct/minority_pct/cultural_test_passed instead of hardcoded None. Plumbing only, no new rule data, unchanged this pass.",
-  "residual_reference": "docs/validation/COPRO_TRUE_AUTHORITY_RESIDUAL.json -- 37 bilateral/Eurimages entries remain Class C (DATA_PARTIAL), unchanged.",
-  "fabricated_routes": 0
+  "multilateral_frameworks": [
+    {
+      "framework_id": "eurimages-multilateral",
+      "framework_type": "eurimages",
+      "member_count": 44,
+      "members_in_current_universe": [
+        "AT",
+        "BE",
+        "CH",
+        "CY",
+        "CZ",
+        "DE",
+        "DK",
+        "EE",
+        "ES",
+        "FI",
+        "FR",
+        "GB",
+        "GR",
+        "HR",
+        "HU",
+        "IE",
+        "IS",
+        "IT",
+        "LT",
+        "LU",
+        "MT",
+        "NL",
+        "NO",
+        "PL",
+        "PT",
+        "RO",
+        "RS",
+        "SE"
+      ],
+      "members_in_current_universe_count": 28,
+      "majority_min_pct": 10.0,
+      "minority_min_pct": 10.0,
+      "min_coproducer_countries": 3,
+      "cultural_test_required": true,
+      "fund_unlocks": [
+        "eu_eurimages"
+      ],
+      "confidence_tier": "PARSED",
+      "notes": "Each co-producer independently accesses national incentives on their own spend."
+    },
+    {
+      "framework_id": "european-convention-coproduction",
+      "framework_type": "european_convention",
+      "member_count": 44,
+      "members_in_current_universe": [
+        "AT",
+        "BE",
+        "CH",
+        "CY",
+        "CZ",
+        "DE",
+        "DK",
+        "EE",
+        "ES",
+        "FI",
+        "FR",
+        "GB",
+        "GR",
+        "HR",
+        "HU",
+        "IE",
+        "IS",
+        "IT",
+        "LT",
+        "LU",
+        "MT",
+        "NL",
+        "NO",
+        "PL",
+        "PT",
+        "RO",
+        "RS",
+        "SE"
+      ],
+      "members_in_current_universe_count": 28,
+      "majority_min_pct": 30.0,
+      "minority_min_pct": 10.0,
+      "min_coproducer_countries": 2,
+      "cultural_test_required": true,
+      "fund_unlocks": [],
+      "confidence_tier": "PARSED",
+      "notes": "Framework providing European certification enabling national incentive access."
+    },
+    {
+      "framework_id": "ibermedia-multilateral",
+      "framework_type": "ibermedia",
+      "member_count": 21,
+      "members_in_current_universe": [
+        "CL",
+        "ES",
+        "MX",
+        "PT"
+      ],
+      "members_in_current_universe_count": 4,
+      "majority_min_pct": 20.0,
+      "minority_min_pct": 10.0,
+      "min_coproducer_countries": 2,
+      "cultural_test_required": true,
+      "fund_unlocks": [
+        "ibermedia_programme"
+      ],
+      "confidence_tier": "PARSED",
+      "notes": null
+    }
+  ]
 }

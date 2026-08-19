@@ -118,14 +118,25 @@ _CONFIRMED_SEPARATE_PATHWAY: tuple[JurisdictionNationalStatus, ...] = (
         status=STATUS_REGIME_CONFIRMED,
         regime_name="Canadian Content Certification (CAVCO 10-point scale)",
         administering_authority="Canadian Audio-Visual Certification Office (CAVCO) / Canada Revenue Agency",
-        legal_basis="Income Tax Act (Canada) s. 125.4 (CPTC)",
+        legal_basis="Income Tax Act (Canada) s. 125.4 (CPTC) vs s. 125.5 (PSTC)",
         linked_program_slug="ca_federal_cptc",
         base_program_slug="ca_federal_pstc",
         pathway_type=PATHWAY_DOMESTIC_NATIONAL,
-        economic_consequence=CONSEQUENCE_UNLOCKS_ENHANCED_RATE,
-        consequence_detail="CPTC 25% of qualified Canadian labour vs PSTC 16% -- a real, quantified "
-                            "~9pp rate difference, confirmed via canada.ca (primary) and corroborated "
-                            "by hellodarwin.com/Saturation.io/truenorthtaxes.ca.",
+        # Task 5 correction (2026-08-19): CPTC and PSTC are legally TWO
+        # SEPARATE programs under different Income Tax Act sections --
+        # different certificates, different applications, different
+        # eligible-expenditure bases (CPTC: all Canadian labour; PSTC:
+        # Canadian labour on service productions) -- a production claims
+        # ONE OR THE OTHER, never a rate bump on one shared program.
+        # Previously misclassified UNLOCKS_ENHANCED_RATE (implying a
+        # single program with a floor/ceiling, like uk_avec's structure)
+        # -- corrected to UNLOCKS_SEPARATE_INCENTIVE, the same real
+        # relationship as Australia's Producer Offset vs Location Offset.
+        economic_consequence=CONSEQUENCE_UNLOCKS_SEPARATE_INCENTIVE,
+        consequence_detail="CPTC (s.125.4) and PSTC (s.125.5) are two separate federal programs, not one "
+                            "program with an uplifted rate -- CPTC 25% of qualified Canadian labour vs "
+                            "PSTC 16%, confirmed via canada.ca (primary) and corroborated by "
+                            "hellodarwin.com/Saturation.io/truenorthtaxes.ca.",
         coproduction_relationship="A production made under an official Canadian co-production treaty "
                                    "is certified without separately passing the 10-point test (existing "
                                    "treaty_engine.py bilateral registry already carries Canada's real "
@@ -203,7 +214,63 @@ _CONFIRMED_SEPARATE_PATHWAY: tuple[JurisdictionNationalStatus, ...] = (
         sources=(
             "https://www.wrapbook.com/production-incentives/us/federal",
             "https://reedcorp.tax/helpful-guides/film-production-tax-credits-state/",
+            "https://vitrina.ai/blog/official-co-production-treaties-guide/",
         ),
+        retrieved_date="2026-08-19",
+    ),
+    JurisdictionNationalStatus(
+        jurisdiction_code="JP",
+        status=STATUS_NO_RELEVANT_REGIME_CONFIRMED,
+        regime_name=None,
+        administering_authority=None,
+        legal_basis=None,
+        linked_program_slug=None,
+        base_program_slug="jp_vipo_location_incentive",
+        pathway_type=PATHWAY_NO_ECONOMIC_DIFFERENCE,
+        economic_consequence=CONSEQUENCE_NO_INCREMENTAL_BENEFIT,
+        consequence_detail="Japan's METI/VIPO/Japan Film Commission incentive (launched 2023, up to 50% "
+                            "rebate) is a single, unified scheme for international productions -- multiple "
+                            "independent trade sources (Deadline, Screen, Variety) describe only this one "
+                            "program, with no separate 'Japanese content' certification or domestic-status "
+                            "regime found.",
+        sources=(
+            "https://deadline.com/2023/09/japan-incentive-program-offshore-production-vipo-meti-1235542659/",
+            "https://www.vipo.or.jp/en/location-project/",
+        ),
+        retrieved_date="2026-08-19",
+    ),
+    JurisdictionNationalStatus(
+        jurisdiction_code="NL",
+        status=STATUS_REGIME_CONFIRMED,
+        regime_name="Dutch Film Fund / HBF (Holland Film Meeting) national creative-element requirement",
+        administering_authority="Nederlands Filmfonds (Dutch Film Fund)",
+        legal_basis=None,
+        linked_program_slug="nl_hbf",
+        base_program_slug="nl_film_production_incentive",
+        pathway_type=PATHWAY_DOMESTIC_NATIONAL,
+        economic_consequence=CONSEQUENCE_UNLOCKS_SEPARATE_INCENTIVE,
+        consequence_detail="Recovered from EXISTING internal data (cultural_qualification_model.py already "
+                            "carries real nl_hbf director/writer/producer NationalityRequirement rows -- "
+                            "Task 4 discipline, not re-researched this pass), distinct from "
+                            "nl_film_production_incentive's own confirmed no-cultural-test service pathway.",
+        sources=(),
+        retrieved_date="2026-08-19",
+    ),
+    JurisdictionNationalStatus(
+        jurisdiction_code="SE",
+        status=STATUS_REGIME_CONFIRMED,
+        regime_name="Sweden Göteborg Fund (regional/national creative-element requirement)",
+        administering_authority="Göteborg Film Fund",
+        legal_basis=None,
+        linked_program_slug="se_goteborg_fund",
+        base_program_slug="se_production_rebate",
+        pathway_type=PATHWAY_DOMESTIC_NATIONAL,
+        economic_consequence=CONSEQUENCE_UNLOCKS_SEPARATE_INCENTIVE,
+        consequence_detail="Recovered from EXISTING internal data (cultural_qualification_model.py already "
+                            "carries real se_goteborg_fund director/writer/producer NationalityRequirement "
+                            "rows -- Task 4 discipline, not re-researched this pass), distinct from "
+                            "se_production_rebate's own confirmed no-cultural-test service pathway.",
+        sources=(),
         retrieved_date="2026-08-19",
     ),
 )
@@ -251,13 +318,31 @@ def get_jurisdiction_national_status(jurisdiction_code: str) -> JurisdictionNati
                 ),
                 sources=(),
             )
+    default_proposition = (
+        "NATIONAL_CULTURAL_STATUS_REGIME_EXISTENCE_UNCONFIRMED_BEYOND_BASE_INCENTIVE_CULTURAL_TEST_FIELD "
+        f"-- {code}'s own served incentive(s) do not require a cultural test, but no primary-authority "
+        "research was performed this pass to confirm whether a SEPARATE national/domestic-content "
+        "certification regime exists (as it does for Canada, Australia, and New Zealand)."
+    )
     return JurisdictionNationalStatus(
         jurisdiction_code=code,
         status=STATUS_AUTHORITY_UNRESOLVED,
-        exact_unresolved_propositions=(
-            "NATIONAL_CULTURAL_STATUS_REGIME_EXISTENCE_UNCONFIRMED_BEYOND_BASE_INCENTIVE_CULTURAL_TEST_FIELD "
-            f"-- {code}'s own served incentive(s) do not require a cultural test, but no primary-authority "
-            "research was performed this pass to confirm whether a SEPARATE national/domestic-content "
-            "certification regime exists (as it does for Canada, Australia, and New Zealand).",
-        ),
+        exact_unresolved_propositions=_UNRESOLVED_PROPOSITION_OVERRIDES.get(code, (default_proposition,)),
     )
+
+
+#: Countries where this pass's research produced a real, more specific
+#: lead than the generic default proposition, but not enough to reach a
+#: confident CONFIRMED/NO_RELEVANT determination -- disclosed exactly,
+#: never silently upgraded to a confident claim.
+_UNRESOLVED_PROPOSITION_OVERRIDES: dict[str, tuple[str, ...]] = {
+    "MX": (
+        "MEXICO_EFICINE_ARTICLE_226_VS_MX_FEDERAL_FILM_INCENTIVE_RELATIONSHIP_UNCONFIRMED -- EFICINE/"
+        "Article 226 (Ley de Estimulo Fiscal, coordinated by IMCINE/SHCP) is a REAL, separate fiscal "
+        "incentive for Mexican film investment, structurally distinct from mx_federal_film_incentive_2026 "
+        "(the confirmed no-cultural-test service pathway) -- but this pass could not confirm EFICINE's "
+        "exact eligibility criteria (Mexican-content/personnel requirements) or its own program identity "
+        "with sufficient confidence to encode as CONFIRMED. Sources checked: unesco.org policy monitoring "
+        "platform, fisherbroyles.com, redsharknews.com.",
+    ),
+}

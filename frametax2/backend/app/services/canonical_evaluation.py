@@ -294,7 +294,13 @@ from app.services.canonical_project_economics import (
 # UNRESOLVED with exact propositions) wired into canonical_opportunity_
 # bridge.py's discover_national_status_opportunity(), disclosure-only,
 # never fabricates economics. Bumped so every project regenerates.
-ENGINE_VERSION = "canonical-1.27.0"
+# Final Worldwide Qualification + Cultural Status + Official Co-production
+# Completion: national_cultural_status.py gains 3 more real confirmed
+# jurisdictions (NL/SE via internal recovery, JP no-relevant) and a real
+# correctness fix (Canada's CPTC/PSTC reclassified UNLOCKS_SEPARATE_
+# INCENTIVE, was incorrectly UNLOCKS_ENHANCED_RATE) -- changes served
+# opportunity trace text. Bumped so every project regenerates.
+ENGINE_VERSION = "canonical-1.28.0"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
