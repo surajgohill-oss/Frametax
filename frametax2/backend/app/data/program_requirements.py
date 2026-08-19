@@ -290,6 +290,13 @@ register(ProgramRequirementsProfile(
 
 register(ProgramRequirementsProfile(
     program_slug="us_ny_post_production_credit", jurisdiction_code="US-NY",
+    # Worldwide Program Qualification + Cultural Test Completion, 2026-08-19.
+    # Confirmed via the official tax.ny.gov program page: no cultural/
+    # content test -- eligibility is spend/facility/diversity-plan based
+    # (a diversity-plan filing requirement, distinct from a cultural
+    # content test), consistent with every other US state incentive in
+    # this registry.
+    cultural_test_required=False,
     min_local_spend_usd=1_000_000.0,  # lesser of $1M or 75% of total post cost — dollar branch modeled
     refundable=None, transferable=None,
     evidence=EvidenceRecord(
@@ -369,7 +376,15 @@ register(ProgramRequirementsProfile(
     program_slug="de_dfff", jurisdiction_code="DE",
     min_local_spend_usd=None,  # 20%-of-total-budget minimum, not an absolute dollar figure
     per_project_cap_usd=28_513_098.92,  # EUR 25,000,000
-    cultural_test_required=None,
+    # Worldwide Program Qualification + Cultural Test Completion, 2026-08-19
+    # — internal consistency fix, no new research: cultural_qualification_
+    # model.py already carries real NationalityRequirement rows for
+    # de_dfff (director/producer, weighted, "must qualify under DFFF
+    # Fachgutachten cultural test") — this field was simply never set to
+    # match that already-existing real data (a genuine
+    # DATA_EXISTS_BUT_STILL_NOT_CONSUMED-style inconsistency between two
+    # canonical files, now reconciled).
+    cultural_test_required=True,
     evidence=EvidenceRecord(
         source_title="German Federal Film Fund (DFFF) Guidelines of the BKM", source_url="https://www.ffa.de/guidelines-dfff",
         issuing_authority="Filmförderungsanstalt (FFA), under BKM oversight", source_type=SourceType.PRIMARY,
@@ -533,6 +548,12 @@ register(ProgramRequirementsProfile(
 
 register(ProgramRequirementsProfile(
     program_slug="nz_spg_international", jurisdiction_code="NZ",
+    # Worldwide Program Qualification + Cultural Test Completion, 2026-08-19
+    # — internal consistency fix, no new research: cultural_qualification_
+    # model.py's _SPEND_ONLY_SLUGS already classifies this exact
+    # program_slug as spend-only (confirmed via NZFC, prior pass), but
+    # this field was never explicitly set to match. Now reconciled.
+    cultural_test_required=False,
     preapproval_mandatory=True,
     expenditure_before_approval_qualifies=None,  # not confirmed either way from sources reviewed
     application_deadline=TimingFact(
@@ -613,6 +634,14 @@ register(ProgramRequirementsProfile(
 
 register(ProgramRequirementsProfile(
     program_slug="ca_federal_pstc", jurisdiction_code="CA",
+    # Worldwide Program Qualification + Cultural Test Completion, 2026-08-19.
+    # Confirmed via canada.ca (official CAVCO/CRA program page, primary
+    # authority): "Unlike the CPTC, there is no Canadian content
+    # requirement — this credit is designed to attract foreign
+    # productions." PSTC is deliberately service/spend-based, distinct
+    # from the content-gated CPTC (ca_federal_cptc, already covered by
+    # cultural_qualification_model.py's role registry).
+    cultural_test_required=False,
     preapproval_mandatory=True,
     refundable=True,
     min_local_spend_usd=None,  # CAD figure not converted — see additional_facts (labour-spend threshold, not total budget)
@@ -1240,6 +1269,10 @@ register(ProgramRequirementsProfile(
     # conversion reuses this program's own existing 1.140524 ratio.
     min_local_spend_usd=228_104.80,   # EUR 200,000 — matches GR_RATE_RULES min_qpe_usd
     min_total_budget_usd=456_209.60,  # EUR 400,000
+    # Worldwide Program Qualification + Cultural Test Completion, 2026-08-19.
+    # Confirmed cultural test exists and is a real points structure — see
+    # additional_facts for the fiction/documentary vs animation split.
+    cultural_test_required=True, cultural_test_points=50, cultural_test_threshold=20,
     preapproval_mandatory=True,      # application must be submitted before production/post-production begins in Greece
     application_deadline=TimingFact(
         value="Application must be submitted no later than 10 days before the beginning of "
@@ -1290,11 +1323,33 @@ register(ProgramRequirementsProfile(
         "application_timing": "Must be submitted no later than 10 days before production/post-production begins in Greece.",
         "payment_timing_note": "Rebate available no later than 6 months after production completion, subject to statutory prerequisites.",
         "current_status": "Confirmed ACTIVE and operational as of 2026-07-26 direct fetch, under the current 2024 law -- an older report of an 'extended pause' does not describe the present state.",
+        # Worldwide Program Qualification + Cultural Test Completion,
+        # 2026-08-19. Confirmed via Saturation.io, fixersingreece.gr, and
+        # Lexology's Law 5105/2024 legal summary (secondary/legal-analysis
+        # sources corroborating each other, not the EKOME primary page
+        # itself, which does not expose the point table): projects must
+        # pass a cultural test scoring at least 20 of 50 points for
+        # fiction/documentary, or 16 of 40 for animation/digital games.
+        # Per-criterion (role/story/language) point breakdown within
+        # those totals not found in any source checked this pass —
+        # AUTHORITY_UNRESOLVED for that sub-proposition specifically.
+        "cultural_test_animation_points": "16 of 40 (distinct scale from the 20-of-50 fiction/documentary test above)",
+        "cultural_test_sources": "Saturation.io (https://saturation.io/tax-incentives/greece), "
+                                  "fixersingreece.gr (https://www.fixersingreece.gr/blog/posts/40-percent-cash-rebate-greece/), "
+                                  "Lexology Law 5105/2024 summary (https://www.lexology.com/library/detail.aspx?g=b2758448-e4b1-4ae0-b903-be46a264327a)",
     },
 ))
 
 register(ProgramRequirementsProfile(
     program_slug="us_or_opif", jurisdiction_code="US-OR",
+    # Worldwide Program Qualification + Cultural Test Completion, 2026-08-19.
+    # Confirmed via oregonfilm.org (the state's own designated film office)
+    # and Oregon Administrative Rules (regulations.justia.com) -- no
+    # cultural/content test found for the main OPIF program; requirements
+    # are spend/registration/policy-based only, consistent with every
+    # other US state incentive in this registry (0 of 45 examined require
+    # a cultural test).
+    cultural_test_required=False,
     min_local_spend_usd=1_000_000.0,  # min_qpe_usd condition, corroborated by 3 sources
     allocation_type=AllocationType.DISCRETIONARY,  # discretionary_band quote: fund-capped, "not guaranteed even if criteria are met"
     preapproval_mandatory=True,       # Letter of Intent + OPIF Rebate Application required; must apply before production begins
@@ -1408,6 +1463,19 @@ register(ProgramRequirementsProfile(
 
 register(ProgramRequirementsProfile(
     program_slug="kr_kofic_location_incentive", jurisdiction_code="KR",
+    # Worldwide Program Qualification + Cultural Test Completion, 2026-08-19.
+    # No NATIONALITY/PERSONNEL cultural-content test found (this
+    # registry's specific vocabulary). The program instead uses a
+    # discretionary Evaluation Committee scoring "Korean Infrastructure
+    # Utilisation", "Korean Participation", and "Quality of Project"
+    # (secondary/tertiary sourcing only -- Wikipedia/dbpedia mirrors of
+    # koreanfilm.or.kr content not independently re-confirmed on the
+    # primary page itself this pass) -- a discretionary evaluation
+    # dimension already partially captured by allocation_type, not a
+    # personnel-role cultural test. Recorded False for this field's
+    # specific meaning; the discretionary criteria are disclosed in
+    # additional_facts rather than silently dropped.
+    cultural_test_required=False,
     min_local_spend_usd=700_000.0,   # the higher, more complete of the two tiers (>10 shoot days AND >=0.8B KRW)
     min_shoot_days=10,               # from the SAME higher-tier condition
     evidence=EvidenceRecord(
@@ -1476,6 +1544,19 @@ register(ProgramRequirementsProfile(
             "remains SECONDARY_VERIFIED. A future session should prioritize locating KOFIC's "
             "actual current PDF guidelines document (not a news article or portal shell) before "
             "attempting another reconciliation pass."
+        ),
+        # Worldwide Program Qualification + Cultural Test Completion,
+        # 2026-08-19. Secondary/tertiary sourcing only (dbpedia/Wikipedia
+        # mirrors, not independently re-confirmed on the primary
+        # koreanfilm.or.kr page, which did not render usable content on
+        # direct fetch this pass either -- consistent with the material
+        # discrepancy already documented above).
+        "evaluation_committee_criteria_unconfirmed": (
+            "Secondary/tertiary sources describe a discretionary Evaluation Committee scoring "
+            "'Korean Infrastructure Utilisation', 'Korean Participation', and 'Quality of Project' "
+            "-- a discretionary evaluation dimension, not a personnel-nationality cultural test. "
+            "Not independently confirmed on the primary page; AUTHORITY_UNRESOLVED for the exact "
+            "weighting/threshold."
         ),
     },
 ))

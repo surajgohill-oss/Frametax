@@ -1,61 +1,1902 @@
 {
   "artifact": "WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION",
   "generated": "2026-08-19",
-  "scope_note": "Bounded, real-authority research pass -- NOT exhaustive closure of the 181-regime population from CODEX_COPRO_ROLE_QUALIFICATION_COMPLETENESS.json. See COPRO_TRUE_AUTHORITY_RESIDUAL.json for the full residual, unchanged except where explicitly noted below.",
-  "programs_completed_this_pass": [
+  "population_source": "app.data.program_requirements.all_program_requirements() -- the current canonical 71-program served-pricing universe (NOT the prior 181-regime denominator, per this phase's own instruction)",
+  "summary": {
+    "total_programs": 71,
+    "QUALIFICATION_COMPLETE": 2,
+    "QUALIFICATION_NOT_APPLICABLE": 48,
+    "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION": 21,
+    "unexplained": 0
+  },
+  "programs": [
     {
-      "program_slug": "hr_cash_rebate",
-      "jurisdiction_code": "HR",
-      "change_type": "DATA_EXISTS_BUT_STILL_NOT_CONSUMED_FIX",
-      "field": "cultural_test_points",
-      "old_value": null,
-      "new_value": 34,
-      "sources": [
-        "https://investcroatia.gov.hr/en/investment-guide/incentives/rebate-for-film-and-tv-production/",
-        "https://filmzagreb.hr/?page_id=321",
-        "https://cineuropa.org/en/newsdetail/203411"
-      ],
-      "retrieved": "2026-08-19",
-      "new_fact_disclosed": {
-        "field": "additional_facts.national_cast_crew_requirement",
-        "summary": ">=30% Croatian cast/crew for partial-Croatia shoots, >=50% for entirely-in-Croatia shoots",
-        "encoded_as_role_gate": false,
-        "reason_not_encoded_as_gate": "Existing role-gate engine checks individual-role nationality match, not percentage-of-headcount -- encoding as a NationalityRequirement row would produce a false HARD_FAIL for real productions with mixed-nationality cast."
+      "program_id": "ae_ad_film_rebate",
+      "jurisdiction": "AE-AD",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
       },
-      "authority_unresolved_sub_propositions": [
-        "Exact per-role (director/writer/producer/cast) point allocation within the 34-point scale"
-      ]
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://www.film.gov.ae/35-rebate"
     },
     {
-      "program_slug": "nz_spg_international",
-      "jurisdiction_code": "NZ",
-      "change_type": "NEW_CLASSIFICATION",
-      "field": "_SPEND_ONLY_SLUGS membership",
-      "old_value": "not classified",
-      "new_value": "spend_only=true",
-      "sources": ["https://www.nzfilm.co.nz/incentives/rebate-international-nzspr"],
-      "retrieved": "2026-08-19"
-    }
-  ],
-  "researched_but_authority_unresolved": [
+      "program_id": "ae_dxb_dpip",
+      "jurisdiction": "AE-DXB",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://www.dubaifilmcommission.gov.ae/"
+    },
     {
-      "program_slug": "cz_czech_film_fund_or_cz_film_incentive",
-      "confirmed": "Minimum 4 points/cultural-category, minimum 23 points overall for the Czech cultural test",
-      "sources_checked": [
-        "https://www.czechangloproductions.cz/film-incentives-in-czech-republic/",
-        "https://www.filmcommission.cz/en/production-incentives/",
-        "https://sfa.gov.cz/data/download/2025/10/CFC-ProductionIncentives-A4-f1.pdf"
+      "program_id": "at_fisa_plus",
+      "jurisdiction": "AT",
+      "direct_qualification_status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
+      "cultural_test_required": true,
+      "cultural_test_status": "REQUIRED_ROLE_DATA_PARTIAL_OR_MISSING",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "BASE_ELIGIBILITY",
+      "role_requirements": {
+        "writer": "UNKNOWN",
+        "director": "UNKNOWN",
+        "producer": "UNKNOWN",
+        "cast": "UNKNOWN",
+        "key_creatives": "UNKNOWN"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "PARTIAL_OR_UNRESOLVED",
+      "canonical_consumption": "DISCONNECTED",
+      "exact_unresolved_propositions": [
+        "CULTURAL_TEST_POINT_TABLE (points/threshold/role weights not captured)"
       ],
-      "unresolved": "Exact per-role (director/writer/producer) point breakdown -- not extractable from any source checked this pass",
-      "action_taken": "Not encoded -- no existing_data_but_not_consumed defect found to fix (cz_film_incentive's existing requires_cultural_test=False citation was NOT overwritten given ambiguity about which Czech program the newly-found cultural-test figures actually describe)"
+      "source_provenance": "https://www.filminaustria.com/en/funding/fisaplus/"
+    },
+    {
+      "program_id": "au_location_offset",
+      "jurisdiction": "AU",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://www.arts.gov.au/publications/location-offset-guidelines"
+    },
+    {
+      "program_id": "be_tax_shelter",
+      "jurisdiction": "BE",
+      "direct_qualification_status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
+      "cultural_test_required": true,
+      "cultural_test_status": "REQUIRED_ROLE_DATA_PARTIAL_OR_MISSING",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "BASE_ELIGIBILITY",
+      "role_requirements": {
+        "writer": "UNKNOWN",
+        "director": "UNKNOWN",
+        "producer": "UNKNOWN",
+        "cast": "UNKNOWN",
+        "key_creatives": "UNKNOWN"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "PARTIAL_OR_UNRESOLVED",
+      "canonical_consumption": "DISCONNECTED",
+      "exact_unresolved_propositions": [
+        "CULTURAL_TEST_POINT_TABLE"
+      ],
+      "source_provenance": "https://finance.belgium.be/en/enterprises/corporation-tax/tax-benefits/tax-shelter-audiovisual-production"
+    },
+    {
+      "program_id": "ca_ab_fttc",
+      "jurisdiction": "CA-AB",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://www.alberta.ca/film-television-tax-credit"
+    },
+    {
+      "program_id": "ca_bc_pstc",
+      "jurisdiction": "CA-BC",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://www2.gov.bc.ca/gov/content/taxes/income-taxes/corporate/credits/production-services"
+    },
+    {
+      "program_id": "ca_federal_pstc",
+      "jurisdiction": "CA",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://www.canada.ca/en/canadian-heritage/services/funding/cavco-tax-credits/film-video-production-services.html"
+    },
+    {
+      "program_id": "ca_on_opstc",
+      "jurisdiction": "CA-ON",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": 707463.74,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://www.ontariocreates.ca/tax-incentives/opstc"
+    },
+    {
+      "program_id": "ca_qc_pstc",
+      "jurisdiction": "CA-QC",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://sodec.gouv.qc.ca/english/credit-film-production-services/"
+    },
+    {
+      "program_id": "ch_pics_national_rebate",
+      "jurisdiction": "CH",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://www.bak.admin.ch/"
+    },
+    {
+      "program_id": "cl_corfo_incentive",
+      "jurisdiction": "CL",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://www.cultura.gob.cl/convocatorias/ministerios-de-las-culturas-de-economia-y-corfo-presentan-segunda-convocatoria-del-programa-ifi-audiovisual-2025/"
+    },
+    {
+      "program_id": "cy_film_rebate",
+      "jurisdiction": "CY",
+      "direct_qualification_status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
+      "cultural_test_required": true,
+      "cultural_test_status": "REQUIRED_ROLE_DATA_PARTIAL_OR_MISSING",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "BASE_ELIGIBILITY",
+      "role_requirements": {
+        "writer": "UNKNOWN",
+        "director": "UNKNOWN",
+        "producer": "UNKNOWN",
+        "cast": "UNKNOWN",
+        "key_creatives": "UNKNOWN"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": 200000.0,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": 0.3
+      },
+      "authority_completeness": "PARTIAL_OR_UNRESOLVED",
+      "canonical_consumption": "DISCONNECTED",
+      "exact_unresolved_propositions": [
+        "CULTURAL_TEST_POINT_TABLE (own citation: 'thresholds not confirmed from any source checked')"
+      ],
+      "source_provenance": "https://film.investcyprus.org.cy/incentives/"
+    },
+    {
+      "program_id": "cz_film_incentive",
+      "jurisdiction": "CZ",
+      "direct_qualification_status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
+      "cultural_test_required": true,
+      "cultural_test_status": "REQUIRED_ROLE_DATA_PARTIAL_OR_MISSING",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "BASE_ELIGIBILITY",
+      "role_requirements": {
+        "writer": "UNKNOWN",
+        "director": "UNKNOWN",
+        "producer": "UNKNOWN",
+        "cast": "UNKNOWN",
+        "key_creatives": "UNKNOWN"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "PARTIAL_OR_UNRESOLVED",
+      "canonical_consumption": "DISCONNECTED",
+      "exact_unresolved_propositions": [
+        "CULTURAL_TEST_POINT_TABLE (min 4/category, min 23 overall confirmed this pass; per-role breakdown not found)"
+      ],
+      "source_provenance": "https://sfa.gov.cz/production-incentives"
+    },
+    {
+      "program_id": "de_dfff",
+      "jurisdiction": "DE",
+      "direct_qualification_status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
+      "cultural_test_required": true,
+      "cultural_test_status": "REQUIRED_ROLE_DATA_PARTIAL",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "BASE_ELIGIBILITY",
+      "role_requirements": {
+        "writer": "UNKNOWN",
+        "director": "POINT_BEARING",
+        "producer": "POINT_BEARING",
+        "cast": "UNKNOWN",
+        "key_creatives": "UNKNOWN"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "PARTIAL_OR_UNRESOLVED",
+      "canonical_consumption": "FULLY_CONSUMED",
+      "exact_unresolved_propositions": [
+        "DE_DFFF_ROLE_WEIGHT_UNCONFIRMED (director/producer role direction known; exact Fachgutachten point weight not confirmed per the record's own citation)"
+      ],
+      "source_provenance": "https://www.ffa.de/guidelines-dfff"
+    },
+    {
+      "program_id": "dk_production_rebate",
+      "jurisdiction": "DK",
+      "direct_qualification_status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
+      "cultural_test_required": true,
+      "cultural_test_status": "REQUIRED_ROLE_DATA_PARTIAL_OR_MISSING",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "BASE_ELIGIBILITY",
+      "role_requirements": {
+        "writer": "UNKNOWN",
+        "director": "UNKNOWN",
+        "producer": "UNKNOWN",
+        "cast": "UNKNOWN",
+        "key_creatives": "UNKNOWN"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "PARTIAL_OR_UNRESOLVED",
+      "canonical_consumption": "DISCONNECTED",
+      "exact_unresolved_propositions": [
+        "CULTURAL_TEST_POINT_TABLE"
+      ],
+      "source_provenance": "https://slks.dk/english/work-areas/media/the-danish-production-incentive-scheme"
+    },
+    {
+      "program_id": "ee_film_estonia_rebate",
+      "jurisdiction": "EE",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://filmestonia.eu/film-estonia-funding/guidelines-and-how-to-apply/"
+    },
+    {
+      "program_id": "es_tax_credit_foreign",
+      "jurisdiction": "ES",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": 1140523.96,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://sede.agenciatributaria.gob.es/"
+    },
+    {
+      "program_id": "fi_business_finland_incentive",
+      "jurisdiction": "FI",
+      "direct_qualification_status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
+      "cultural_test_required": true,
+      "cultural_test_status": "REQUIRED_ROLE_DATA_PARTIAL_OR_MISSING",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "BASE_ELIGIBILITY",
+      "role_requirements": {
+        "writer": "UNKNOWN",
+        "director": "UNKNOWN",
+        "producer": "UNKNOWN",
+        "cast": "UNKNOWN",
+        "key_creatives": "UNKNOWN"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "PARTIAL_OR_UNRESOLVED",
+      "canonical_consumption": "DISCONNECTED",
+      "exact_unresolved_propositions": [
+        "CULTURAL_TEST_POINT_TABLE"
+      ],
+      "source_provenance": "https://www.businessfinland.fi/en/services/funding/funding-services/Audiovisual-production-incentive"
+    },
+    {
+      "program_id": "fj_film_rebate",
+      "jurisdiction": "FJ",
+      "direct_qualification_status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
+      "cultural_test_required": null,
+      "cultural_test_status": "AUTHORITY_UNRESOLVED",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "UNKNOWN_AUTHORITY",
+      "role_requirements": {
+        "writer": "UNKNOWN",
+        "director": "UNKNOWN",
+        "producer": "UNKNOWN",
+        "cast": "UNKNOWN",
+        "key_creatives": "UNKNOWN"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "PARTIAL_OR_UNRESOLVED",
+      "canonical_consumption": "PARTIALLY_CONSUMED",
+      "exact_unresolved_propositions": [
+        "CULTURAL_TEST_APPLICABILITY_UNCONFIRMED \u2014 Fiji Income Tax (Film-making and Audio-Visual Incentives) Regulations 2016, Regulation 6 is the real, cited statutory basis, but no source checked this pass (including Film Fiji's own site) confirms or denies a cultural/content test component."
+      ],
+      "source_provenance": "https://film-fiji.com/incentives-and-legislation/20-film-tax-rebate/"
+    },
+    {
+      "program_id": "fr_trip",
+      "jurisdiction": "FR",
+      "direct_qualification_status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
+      "cultural_test_required": true,
+      "cultural_test_status": "REQUIRED_ROLE_DATA_PARTIAL_OR_MISSING",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "BASE_ELIGIBILITY",
+      "role_requirements": {
+        "writer": "UNKNOWN",
+        "director": "UNKNOWN",
+        "producer": "UNKNOWN",
+        "cast": "UNKNOWN",
+        "key_creatives": "UNKNOWN"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": 285130.99,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "PARTIAL_OR_UNRESOLVED",
+      "canonical_consumption": "DISCONNECTED",
+      "exact_unresolved_propositions": [
+        "CULTURAL_TEST_POINT_TABLE (confirmed spend-based cultural/content dimension exists per own citation, role-level detail not captured)"
+      ],
+      "source_provenance": "https://www.cnc.fr/web/en/tax-rebate/the-tax-rebate-for-international-productions-trip_190742"
+    },
+    {
+      "program_id": "gr_cash_rebate",
+      "jurisdiction": "GR",
+      "direct_qualification_status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
+      "cultural_test_required": true,
+      "cultural_test_status": "REQUIRED_ROLE_DATA_PARTIAL_OR_MISSING",
+      "cultural_test_points": 50,
+      "cultural_test_threshold": 20,
+      "cultural_test_economic_consequence": "BASE_ELIGIBILITY",
+      "role_requirements": {
+        "writer": "UNKNOWN",
+        "director": "UNKNOWN",
+        "producer": "UNKNOWN",
+        "cast": "UNKNOWN",
+        "key_creatives": "UNKNOWN"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": 228104.8,
+        "min_total_budget_usd": 456209.6,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "PARTIAL_OR_UNRESOLVED",
+      "canonical_consumption": "PARTIALLY_CONSUMED",
+      "exact_unresolved_propositions": [
+        "CULTURAL_TEST_ROLE_LEVEL_POINT_BREAKDOWN (50/20 fiction, 40/16 animation confirmed this pass; per-role weights not found)"
+      ],
+      "source_provenance": "https://filmcommission.gr/cash-rebate/"
+    },
+    {
+      "program_id": "hr_cash_rebate",
+      "jurisdiction": "HR",
+      "direct_qualification_status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
+      "cultural_test_required": true,
+      "cultural_test_status": "REQUIRED_ROLE_DATA_PARTIAL_OR_MISSING",
+      "cultural_test_points": 34,
+      "cultural_test_threshold": 12,
+      "cultural_test_economic_consequence": "BASE_ELIGIBILITY",
+      "role_requirements": {
+        "writer": "UNKNOWN",
+        "director": "UNKNOWN",
+        "producer": "UNKNOWN",
+        "cast": "UNKNOWN",
+        "key_creatives": "UNKNOWN"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": 265000.0,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "PARTIAL_OR_UNRESOLVED",
+      "canonical_consumption": "PARTIALLY_CONSUMED",
+      "exact_unresolved_propositions": [
+        "CULTURAL_TEST_ROLE_LEVEL_POINT_BREAKDOWN (34/12 confirmed this pass; per-role weights within the 34-point scale not found)"
+      ],
+      "source_provenance": "https://investcroatia.gov.hr/en/investment-guide/incentives/rebate-for-film-and-tv-production/"
+    },
+    {
+      "program_id": "hu_hipa_rebate",
+      "jurisdiction": "HU",
+      "direct_qualification_status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
+      "cultural_test_required": true,
+      "cultural_test_status": "REQUIRED_ROLE_DATA_PARTIAL_OR_MISSING",
+      "cultural_test_points": null,
+      "cultural_test_threshold": 16,
+      "cultural_test_economic_consequence": "BASE_ELIGIBILITY",
+      "role_requirements": {
+        "writer": "UNKNOWN",
+        "director": "UNKNOWN",
+        "producer": "UNKNOWN",
+        "cast": "UNKNOWN",
+        "key_creatives": "UNKNOWN"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "PARTIAL_OR_UNRESOLVED",
+      "canonical_consumption": "PARTIALLY_CONSUMED",
+      "exact_unresolved_propositions": [
+        "CULTURAL_TEST_POINT_TABLE (threshold 16 on file, points-available and role weights not found)"
+      ],
+      "source_provenance": "https://nfi.hu/en/filming-in-hungary/hungarian-film-incentive"
+    },
+    {
+      "program_id": "ie_section_481",
+      "jurisdiction": "IE",
+      "direct_qualification_status": "QUALIFICATION_COMPLETE",
+      "cultural_test_required": true,
+      "cultural_test_status": "REQUIRED_WITH_ROLE_DATA",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "BASE_ELIGIBILITY",
+      "role_requirements": {
+        "writer": "UNKNOWN",
+        "director": "OPTIONAL",
+        "producer": "MANDATORY",
+        "cast": "UNKNOWN",
+        "key_creatives": "UNKNOWN"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "COMPLETE",
+      "canonical_consumption": "FULLY_CONSUMED",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://www.revenue.ie/en/companies-and-charities/reliefs-and-exemptions/film-relief/index.aspx"
+    },
+    {
+      "program_id": "il_foreign_production_fund",
+      "jurisdiction": "IL",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": 50000.0,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://nfct.org.il/en/information-for-foreign-producers/"
+    },
+    {
+      "program_id": "is_film_reimbursement_scheme",
+      "jurisdiction": "IS",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://filminiceland.com/incentives"
+    },
+    {
+      "program_id": "it_tax_credit_foreign",
+      "jurisdiction": "IT",
+      "direct_qualification_status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
+      "cultural_test_required": true,
+      "cultural_test_status": "REQUIRED_ROLE_DATA_PARTIAL_OR_MISSING",
+      "cultural_test_points": null,
+      "cultural_test_threshold": 50,
+      "cultural_test_economic_consequence": "BASE_ELIGIBILITY",
+      "role_requirements": {
+        "writer": "UNKNOWN",
+        "director": "UNKNOWN",
+        "producer": "UNKNOWN",
+        "cast": "UNKNOWN",
+        "key_creatives": "UNKNOWN"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "PARTIAL_OR_UNRESOLVED",
+      "canonical_consumption": "PARTIALLY_CONSUMED",
+      "exact_unresolved_propositions": [
+        "CULTURAL_TEST_POINT_TABLE (threshold 50 on file, points-available and role weights not found)"
+      ],
+      "source_provenance": "https://cinema.cultura.gov.it/cosa-facciamo/sostegni-economici/linee-di-sostegno/tax-credit/introduzione/"
+    },
+    {
+      "program_id": "jp_vipo_location_incentive",
+      "jurisdiction": "JP",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://www.vipo.or.jp/en/location-project/"
+    },
+    {
+      "program_id": "kr_kofic_location_incentive",
+      "jurisdiction": "KR",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": 700000.0,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": null
+    },
+    {
+      "program_id": "lt_film_centre_cash_rebate",
+      "jurisdiction": "LT",
+      "direct_qualification_status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
+      "cultural_test_required": true,
+      "cultural_test_status": "REQUIRED_ROLE_DATA_PARTIAL_OR_MISSING",
+      "cultural_test_points": 8,
+      "cultural_test_threshold": 2,
+      "cultural_test_economic_consequence": "BASE_ELIGIBILITY",
+      "role_requirements": {
+        "writer": "UNKNOWN",
+        "director": "UNKNOWN",
+        "producer": "UNKNOWN",
+        "cast": "UNKNOWN",
+        "key_creatives": "UNKNOWN"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "PARTIAL_OR_UNRESOLVED",
+      "canonical_consumption": "PARTIALLY_CONSUMED",
+      "exact_unresolved_propositions": [
+        "CULTURAL_TEST_ROLE_LEVEL_POINT_BREAKDOWN (8/2 on file, full role weighting not found)"
+      ],
+      "source_provenance": "https://www.lkc.lt/en/tax-incentives/how-it-works"
+    },
+    {
+      "program_id": "lu_filmfund_tax_shelter_rebate",
+      "jurisdiction": "LU",
+      "direct_qualification_status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
+      "cultural_test_required": true,
+      "cultural_test_status": "REQUIRED_ROLE_DATA_PARTIAL_OR_MISSING",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "BASE_ELIGIBILITY",
+      "role_requirements": {
+        "writer": "UNKNOWN",
+        "director": "UNKNOWN",
+        "producer": "UNKNOWN",
+        "cast": "UNKNOWN",
+        "key_creatives": "UNKNOWN"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "PARTIAL_OR_UNRESOLVED",
+      "canonical_consumption": "DISCONNECTED",
+      "exact_unresolved_propositions": [
+        "CULTURAL_TEST_POINT_TABLE"
+      ],
+      "source_provenance": "https://filmfund.lu/en/funding/afs-p/"
+    },
+    {
+      "program_id": "ma_ccm_rebate",
+      "jurisdiction": "MA",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": 1000000.0,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://www.ccm.ma/foreign_production/pe/index.html"
+    },
+    {
+      "program_id": "mt_mfc_rebate",
+      "jurisdiction": "MT",
+      "direct_qualification_status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
+      "cultural_test_required": true,
+      "cultural_test_status": "REQUIRED_ROLE_DATA_PARTIAL_OR_MISSING",
+      "cultural_test_points": 40,
+      "cultural_test_threshold": 40,
+      "cultural_test_economic_consequence": "BASE_ELIGIBILITY",
+      "role_requirements": {
+        "writer": "UNKNOWN",
+        "director": "UNKNOWN",
+        "producer": "UNKNOWN",
+        "cast": "UNKNOWN",
+        "key_creatives": "UNKNOWN"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": 113000.0,
+        "min_total_budget_usd": 226000.0,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "PARTIAL_OR_UNRESOLVED",
+      "canonical_consumption": "PARTIALLY_CONSUMED",
+      "exact_unresolved_propositions": [
+        "CULTURAL_TEST_ROLE_LEVEL_POINT_BREAKDOWN (40/40 on file, full role weighting not found)"
+      ],
+      "source_provenance": "https://stargatestudios.com.mt/wp-content/uploads/2019/06/Financial-Incentives-for-Audiovisual-Industry-Guidelines-Official-Do....pdf"
+    },
+    {
+      "program_id": "mu_edb_incentive",
+      "jurisdiction": "MU",
+      "direct_qualification_status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
+      "cultural_test_required": null,
+      "cultural_test_status": "AUTHORITY_UNRESOLVED",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "UNKNOWN_AUTHORITY",
+      "role_requirements": {
+        "writer": "UNKNOWN",
+        "director": "UNKNOWN",
+        "producer": "UNKNOWN",
+        "cast": "UNKNOWN",
+        "key_creatives": "UNKNOWN"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": 1000000.0,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "PARTIAL_OR_UNRESOLVED",
+      "canonical_consumption": "PARTIALLY_CONSUMED",
+      "exact_unresolved_propositions": [
+        "CULTURAL_TEST_APPLICABILITY_UNCONFIRMED \u2014 the only specific claim found (a 90%-Mauritius-filming condition for the 40% tier) was already investigated and REJECTED by a prior cross-verification (National Assembly Hansard, 14 May 2019) as belonging to a different government measure. Two further claims (dialogue mention of 'Mauritius', EDB/'Film In Mauritius' logo credit, video testimonial) found this pass are sourced only to non-government production-services sites, not corroborated by the VERIFIED-tier EDB Submission Procedures document already on file. No primary confirmation either way."
+      ],
+      "source_provenance": null
+    },
+    {
+      "program_id": "mx_federal_film_incentive_2026",
+      "jurisdiction": "MX",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://www.dof.gob.mx/nota_detalle.php?codigo=5780237&fecha=16/02/2026"
+    },
+    {
+      "program_id": "my_finas_rebate",
+      "jurisdiction": "MY",
+      "direct_qualification_status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
+      "cultural_test_required": true,
+      "cultural_test_status": "REQUIRED_ROLE_DATA_PARTIAL_OR_MISSING",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "BASE_ELIGIBILITY",
+      "role_requirements": {
+        "writer": "UNKNOWN",
+        "director": "UNKNOWN",
+        "producer": "UNKNOWN",
+        "cast": "UNKNOWN",
+        "key_creatives": "UNKNOWN"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "PARTIAL_OR_UNRESOLVED",
+      "canonical_consumption": "DISCONNECTED",
+      "exact_unresolved_propositions": [
+        "CULTURAL_TEST_POINT_TABLE"
+      ],
+      "source_provenance": null
+    },
+    {
+      "program_id": "nl_film_production_incentive",
+      "jurisdiction": "NL",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://www.filmfonds.nl/en/funding/fund/netherlands-film-production-incentive"
+    },
+    {
+      "program_id": "no_film_incentive",
+      "jurisdiction": "NO",
+      "direct_qualification_status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
+      "cultural_test_required": true,
+      "cultural_test_status": "REQUIRED_ROLE_DATA_PARTIAL_OR_MISSING",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "BASE_ELIGIBILITY",
+      "role_requirements": {
+        "writer": "UNKNOWN",
+        "director": "UNKNOWN",
+        "producer": "UNKNOWN",
+        "cast": "UNKNOWN",
+        "key_creatives": "UNKNOWN"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "PARTIAL_OR_UNRESOLVED",
+      "canonical_consumption": "DISCONNECTED",
+      "exact_unresolved_propositions": [
+        "CULTURAL_TEST_POINT_TABLE"
+      ],
+      "source_provenance": "https://www.nfi.no/en/funding-schemes/insentiv/the-norwegian-film-production-incentive"
+    },
+    {
+      "program_id": "nz_spg_international",
+      "jurisdiction": "NZ",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://www.nzfilm.co.nz/incentives-co-productions/nzspg-international"
+    },
+    {
+      "program_id": "ph_fdcp_flip",
+      "jurisdiction": "PH",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://fdcp.ph/programs/film-incentives/film-location-incentive-program"
+    },
+    {
+      "program_id": "pl_pisf_cash_rebate",
+      "jurisdiction": "PL",
+      "direct_qualification_status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
+      "cultural_test_required": true,
+      "cultural_test_status": "REQUIRED_ROLE_DATA_PARTIAL_OR_MISSING",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "BASE_ELIGIBILITY",
+      "role_requirements": {
+        "writer": "UNKNOWN",
+        "director": "UNKNOWN",
+        "producer": "UNKNOWN",
+        "cast": "UNKNOWN",
+        "key_creatives": "UNKNOWN"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "PARTIAL_OR_UNRESOLVED",
+      "canonical_consumption": "DISCONNECTED",
+      "exact_unresolved_propositions": [
+        "CULTURAL_TEST_POINT_TABLE"
+      ],
+      "source_provenance": "https://pisf.pl/en/zachety-informacje/"
+    },
+    {
+      "program_id": "pt_scri_pt_cash_rebate",
+      "jurisdiction": "PT",
+      "direct_qualification_status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
+      "cultural_test_required": true,
+      "cultural_test_status": "REQUIRED_ROLE_DATA_PARTIAL_OR_MISSING",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "BASE_ELIGIBILITY",
+      "role_requirements": {
+        "writer": "UNKNOWN",
+        "director": "UNKNOWN",
+        "producer": "UNKNOWN",
+        "cast": "UNKNOWN",
+        "key_creatives": "UNKNOWN"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "PARTIAL_OR_UNRESOLVED",
+      "canonical_consumption": "DISCONNECTED",
+      "exact_unresolved_propositions": [
+        "CULTURAL_TEST_POINT_TABLE"
+      ],
+      "source_provenance": "https://portugalfilmcommission.com/en/incentive-to-film-recording-and-production/"
+    },
+    {
+      "program_id": "qa_screen_production_incentive",
+      "jurisdiction": "QA",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://www.dohafilm.com/en/press/press-releases/qatar-launches-qatar-screen-production-incentive-qspi-programme-one-worlds"
+    },
+    {
+      "program_id": "ro_film_office_cash_rebate",
+      "jurisdiction": "RO",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://app.ofic.ro/"
+    },
+    {
+      "program_id": "rs_film_commission_cash_rebate",
+      "jurisdiction": "RS",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://www.fcs.rs/en/industry-guide/film-incentives/"
+    },
+    {
+      "program_id": "sa_film_commission_rebate",
+      "jurisdiction": "SA",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": 200000.0,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://film.sa/incentive-programs/"
+    },
+    {
+      "program_id": "se_production_rebate",
+      "jurisdiction": "SE",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://tillvaxtverket.se/"
+    },
+    {
+      "program_id": "sg_made_with_singapore_rebate",
+      "jurisdiction": "SG",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://www.imda.gov.sg/-/media/imda/files/industry-development/grants-and-schemes/guidelines-for-p-assist-film_aug-2020.pdf"
+    },
+    {
+      "program_id": "th_boi_incentive",
+      "jurisdiction": "TH",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://tfo.dot.go.th/incentive-measures/"
+    },
+    {
+      "program_id": "tw_bamid_rebate",
+      "jurisdiction": "TW",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://www.productionservicenetwork.com/film-incentives/"
+    },
+    {
+      "program_id": "uk_avec",
+      "jurisdiction": "GB",
+      "direct_qualification_status": "QUALIFICATION_COMPLETE",
+      "cultural_test_required": true,
+      "cultural_test_status": "REQUIRED_WITH_ROLE_DATA",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "BASE_ELIGIBILITY",
+      "role_requirements": {
+        "writer": "POINT_BEARING",
+        "director": "POINT_BEARING",
+        "producer": "POINT_BEARING",
+        "cast": "POINT_BEARING",
+        "key_creatives": "POINT_BEARING"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "COMPLETE",
+      "canonical_consumption": "FULLY_CONSUMED",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://www.gov.uk/hmrc-internal-manuals/creative-industries-expenditure-credit-manual/crec080200"
+    },
+    {
+      "program_id": "us_ca_film_credit",
+      "jurisdiction": "US-CA",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://film.ca.gov/tax-credit/"
+    },
+    {
+      "program_id": "us_ga_film_credit",
+      "jurisdiction": "US-GA",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": 500000.0,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": null
+    },
+    {
+      "program_id": "us_il_film_production_services_credit",
+      "jurisdiction": "US-IL",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": 100000.0,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://dceo.illinois.gov/whyillinois/film/filmtaxcredit/rulesandrequirements.html"
+    },
+    {
+      "program_id": "us_ky_keiia",
+      "jurisdiction": "US-KY",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://apps.legislature.ky.gov/law/kar/titles/307/001/080/"
+    },
+    {
+      "program_id": "us_la_film_incentive",
+      "jurisdiction": "US-LA",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": 300000.0,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://www.opportunitylouisiana.gov/incentive/motion-picture-production-program"
+    },
+    {
+      "program_id": "us_ma_film_tax_credit",
+      "jurisdiction": "US-MA",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": 50000.0,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://www.mass.gov/info-details/massachusetts-film-incentive-tax-credit"
+    },
+    {
+      "program_id": "us_md_film_production_activity_credit",
+      "jurisdiction": "US-MD",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://commerce.maryland.gov/fund/film-production-activity-tax-credit"
+    },
+    {
+      "program_id": "us_mn_film_production_credit",
+      "jurisdiction": "US-MN",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://www.revenue.state.mn.us/film-production-credit"
+    },
+    {
+      "program_id": "us_ms_advantage_film_program",
+      "jurisdiction": "US-MS",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": 50000.0,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://filmmississippi.org/incentive/"
+    },
+    {
+      "program_id": "us_nc_film_entertainment_grant",
+      "jurisdiction": "US-NC",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": 1500000.0,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://www.commerce.nc.gov/grants-incentives/film-industry-grants"
+    },
+    {
+      "program_id": "us_nm_film_credit",
+      "jurisdiction": "US-NM",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://www.tax.newmexico.gov/"
+    },
+    {
+      "program_id": "us_ny_film_credit",
+      "jurisdiction": "US-NY",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": 250000.0,
+        "atl_cap_pct_of_other_costs": 0.4
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://esd.ny.gov/sites/default/files/Film-Credit-Guidelines-wAppendix-06202023.pdf"
+    },
+    {
+      "program_id": "us_ny_post_production_credit",
+      "jurisdiction": "US-NY",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": 1000000.0,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://www.tax.ny.gov/pit/credits/film_post.htm"
+    },
+    {
+      "program_id": "us_or_opif",
+      "jurisdiction": "US-OR",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": 1000000.0,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://oregonfilm.org/article/oregon-production-investment-fund-opif/"
+    },
+    {
+      "program_id": "us_pa_film_production_credit",
+      "jurisdiction": "US-PA",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://dced.pa.gov/programs/film-tax-credit-program/"
+    },
+    {
+      "program_id": "us_pr_film_incentives_act",
+      "jurisdiction": "US-PR",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": 50000.0,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://puertoricofilm.ddec.pr.gov/incentives/"
+    },
+    {
+      "program_id": "us_tx_miip",
+      "jurisdiction": "US-TX",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": 250000.0,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://gov.texas.gov/film/page/incentives_overview"
+    },
+    {
+      "program_id": "us_wa_motion_picture_competitiveness",
+      "jurisdiction": "US-WA",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": 500000.0,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://www.washingtonfilmworks.org/wp-content/uploads/2025/06/2025.06.24_WF-Production-Incentive-Program-PIP_GC.pdf"
+    },
+    {
+      "program_id": "za_dtic_foreign_film",
+      "jurisdiction": "ZA",
+      "direct_qualification_status": "QUALIFICATION_NOT_APPLICABLE",
+      "cultural_test_required": false,
+      "cultural_test_status": "NOT_APPLICABLE",
+      "cultural_test_points": null,
+      "cultural_test_threshold": null,
+      "cultural_test_economic_consequence": "NONE_N_A",
+      "role_requirements": {
+        "writer": "NOT_APPLICABLE",
+        "director": "NOT_APPLICABLE",
+        "producer": "NOT_APPLICABLE",
+        "cast": "NOT_APPLICABLE",
+        "key_creatives": "NOT_APPLICABLE"
+      },
+      "other_mandatory_requirements": {
+        "min_local_spend_usd": null,
+        "min_total_budget_usd": null,
+        "atl_cap_pct_of_other_costs": null
+      },
+      "authority_completeness": "NOT_APPLICABLE",
+      "canonical_consumption": "NOT_APPLICABLE",
+      "exact_unresolved_propositions": [],
+      "source_provenance": "https://www.thedtic.gov.za/financial-and-non-financial-support/incentives/film-incentive/foreign-film-and-television-production-and-post-production-incentive-foreign-film/"
     }
-  ],
-  "quality_bar": "Every field above traces to a real URL retrieved 2026-08-19. No point value, role requirement, or threshold was invented.",
-  "contract_extension": {
-    "file": "app/calculators/canonical_qualification_result.py",
-    "added": "QUAL_AUTHORITY_UNRESOLVED",
-    "wired_into_live_branching": false,
-    "note": "Available in the contract; evaluate_role_qualification() does not yet emit it (a genuine scope boundary this pass, not a defect -- distinguishing AUTHORITY_UNRESOLVED from RULE_DATA_INCOMPLETE at the per-regime level for all 108 Class-D regimes requires the same research this pass only performed for the 2 programs above)."
-  },
-  "residual_unchanged": "See docs/validation/COPRO_TRUE_AUTHORITY_RESIDUAL.json for the full 181-regime accounting -- not reproduced here."
+  ]
 }

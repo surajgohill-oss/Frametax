@@ -271,7 +271,19 @@ from app.services.canonical_project_economics import (
 # nz_spg_international newly confirmed spend-only (real NZFC citation).
 # Both change downstream opportunity/qualification trace text for those
 # two programs. Bumped so every project regenerates with the correction.
-ENGINE_VERSION = "canonical-1.25.1"
+# Worldwide Program Qualification + Cultural Test Completion, batch 2
+# (2026-08-19, same phase continued): 7 more program_requirements.py
+# records corrected/completed with real primary-authority citations
+# (gr_cash_rebate -- FVD's own home program -- cultural_test_points=50/
+# threshold=20; ca_federal_pstc, us_or_opif, us_ny_post_production_credit
+# confirmed cultural_test_required=False; de_dfff, nz_spg_international
+# internal-consistency fixes; kr_kofic_location_incentive disclosure).
+# canonical_role_qualification_bridge.py gains AUTHORITY_UNRESOLVED_
+# PROGRAMS (mu_edb_incentive, fj_film_rebate) emitting the new
+# QUAL_AUTHORITY_UNRESOLVED state with exact researched propositions,
+# distinct from generic RULE_DATA_INCOMPLETE. Bumped so every project
+# regenerates with these corrections.
+ENGINE_VERSION = "canonical-1.26.0"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "

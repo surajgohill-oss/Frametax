@@ -23,6 +23,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.calculators.canonical_qualification_result import (
+    QUAL_AUTHORITY_UNRESOLVED,
     QUAL_HARD_FAIL,
     QUAL_NOT_APPLICABLE,
     QUAL_QUALIFIES,
@@ -41,7 +42,14 @@ from app.data.cultural_qualification_model import (
 from app.models.project_person import ProjectPerson
 from app.models.talent import TalentProfile
 
-CANONICAL_ROLE_QUALIFICATION_BRIDGE_VERSION = "1.0.0"
+CANONICAL_ROLE_QUALIFICATION_BRIDGE_VERSION = "1.1.0"
+# 1.1.0 — Worldwide Program Qualification + Cultural Test Completion:
+# adds AUTHORITY_UNRESOLVED_PROGRAMS, distinct from the generic
+# RULE_DATA_INCOMPLETE branch. RULE_DATA_INCOMPLETE means "never
+# researched"; AUTHORITY_UNRESOLVED means "real external primary-
+# authority research WAS performed this pass and no confirming (or
+# confirming-absence) source could be located" — a genuinely different,
+# stronger claim, never conflated with simple incompleteness.
 
 #: The exact set of program slugs cultural_qualification_model.py has
 #: real rule data for — computed once from the module's own registry,
@@ -49,6 +57,49 @@ CANONICAL_ROLE_QUALIFICATION_BRIDGE_VERSION = "1.0.0"
 ROLE_QUALIFICATION_COVERED_SLUGS: frozenset[str] = frozenset(
     r.program_slug for r in NATIONALITY_REQUIREMENTS
 )
+
+#: Programs where real external research WAS performed this pass and the
+#: cultural-test-applicability question genuinely could not be resolved
+#: from any primary or reasonably reliable secondary source checked —
+#: see program_requirements.py's own evidence notes for the exact
+#: research trail per slug (both remain cultural_test_required=None
+#: there, the honest "not yet determined" value).
+AUTHORITY_UNRESOLVED_PROGRAMS: dict[str, tuple[str, ...]] = {
+    "mu_edb_incentive": (
+        "CULTURAL_TEST_APPLICABILITY_UNCONFIRMED — the only specific claim found "
+        "(a 90%-Mauritius-filming condition for the 40% tier) was already "
+        "investigated and REJECTED by a prior cross-verification (National "
+        "Assembly Hansard, 14 May 2019) as belonging to a different government "
+        "measure. Two further claims (dialogue mention of 'Mauritius', EDB/"
+        "'Film In Mauritius' logo credit, video testimonial) found this pass are "
+        "sourced only to non-government production-services sites, not "
+        "corroborated by the VERIFIED-tier EDB Submission Procedures document "
+        "already on file. No primary confirmation either way.",
+    ),
+    "fj_film_rebate": (
+        "CULTURAL_TEST_APPLICABILITY_UNCONFIRMED — Fiji Income Tax "
+        "(Film-making and Audio-Visual Incentives) Regulations 2016, Regulation "
+        "6 is the real, cited statutory basis, but no source checked this pass "
+        "(including Film Fiji's own site) confirms or denies a cultural/content "
+        "test component.",
+    ),
+}
+
+
+def _authority_unresolved_result(program_slug: str, jurisdiction_code: str | None) -> CanonicalQualificationResult:
+    propositions = AUTHORITY_UNRESOLVED_PROGRAMS[program_slug]
+    return CanonicalQualificationResult(
+        regime_id=program_slug, jurisdiction_code=jurisdiction_code,
+        state=QUAL_AUTHORITY_UNRESOLVED, qualification_route="role_nationality_gate",
+        missing_facts=propositions,
+        reasoning_trace=(
+            f"Real external research was performed for {program_slug} this pass "
+            "(Worldwide Program Qualification + Cultural Test Completion, "
+            "2026-08-19) and did not resolve cultural-test applicability -- "
+            "see program_requirements.py's evidence notes for the full trail.",
+        ),
+        confidence_state="LOW",
+    )
 
 
 async def role_known_codes_from_project(session: AsyncSession, project_id: str) -> dict[str, tuple[str, ...]]:
@@ -105,6 +156,8 @@ def evaluate_role_qualification(
     findings (Task 5) rather than collapsing to one boolean."""
     requirements = get_requirements(program_slug)
     if not requirements:
+        if program_slug in AUTHORITY_UNRESOLVED_PROGRAMS:
+            return _authority_unresolved_result(program_slug, jurisdiction_code)
         # Codex's GENUINELY_MISSING_RULE_DATA / spend-only classification:
         # no role/nationality rule data exists for this slug at all in
         # cultural_qualification_model.py. is_spend_only_program() checks

@@ -302,6 +302,25 @@ MU_UNVERIFIED_CLAIMS: tuple[UnverifiedRateClaim, ...] = (
         verification_status="NOT FOUND in the primary documents reviewed. Requires "
                             "EDB written confirmation.",
     ),
+    # Worldwide Program Qualification + Cultural Test Completion, 2026-08-19.
+    # Same class of non-government "fixer"/production-services secondary
+    # source as the already-REJECTED 90% claim above -- not corroborated by
+    # any government/parliamentary source found this pass. Disclosed per
+    # the same discipline, never applied as a gate or cultural test.
+    UnverifiedRateClaim(
+        program_slug="mu_edb_incentive",
+        claim="Lead cast must verbally mention 'Mauritius' as part of scripted "
+              "dialogue; the production must credit the EDB and 'Film In "
+              "Mauritius' logo in end credits; and must submit a 3-minute video "
+              "testimonial from the producer/director/lead cast.",
+        claimed_by="identicalpictures.com and soph-oria.com (production-services/"
+                   "fixer sites); no EDB or government source cited for these "
+                   "specific conditions",
+        verification_status="NOT FOUND in the VERIFIED-tier EDB Submission "
+                            "Procedures document already on file in this repository. "
+                            "Requires EDB written confirmation before being treated as "
+                            "a real qualification gate or SCRIPT_FACT_REQUIRED trigger.",
+    ),
 )
 
 # Rates observed in production documents — Rule 1/2 data, never inputs.

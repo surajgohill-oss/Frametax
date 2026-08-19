@@ -2241,3 +2241,27 @@ Continues from `5935225`. **Honest scope note:** the requesting instruction aske
 **Guards untouched:** worldwide economic database, base pricing, canonical NPC/ranking, all other existing engines. No new optimizer/engine. Script Analyzer and Budget Estimator untouched.
 
 **Partial completion, honestly reported — not `WORLDWIDE_QUALIFICATION_CULTURAL_AND_OFFICIAL_COPRO_CANONICALLY_COMPLETED` in the exhaustive sense the requested gate name implies. Two real programs completed with primary authority; the ~106-regime Class-D and 37-regime Class-C residual from `COPRO_TRUE_AUTHORITY_RESIDUAL.json` remains, unchanged, disclosed exactly.**
+
+---
+
+## Worldwide Program Qualification + Cultural Test Completion (2026-08-19, continuation)
+
+Continues the same-day phase above, addressing its own disclosed limitation ("only 2 programs completed"). This continuation used the CURRENT canonical 71-program served-pricing universe (`app.data.program_requirements.all_program_requirements()`) as the exact denominator — not the prior 181-regime audit population — per this phase's own explicit instruction to derive the population from served pricing data, not reuse the audit's denominator. Official co-production/treaty research remained explicitly out of scope.
+
+**Terminal accounting achieved — every one of the 71 programs has an exact state, zero unexplained unknown:** `QUALIFICATION_COMPLETE` 2, `QUALIFICATION_NOT_APPLICABLE` 48, `AUTHORITY_UNRESOLVED_EXACT_PROPOSITION` 21. Full table: `docs/validation/WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION.md`/`.json`.
+
+**8 more real programs researched/corrected this continuation, all cited:** `gr_cash_rebate` (FVD's own home program — real cultural test confirmed: 20/50 points fiction, 16/40 animation); `ca_federal_pstc`, `us_or_opif`, `us_ny_post_production_credit` (confirmed no cultural test, real primary citations); `kr_kofic_location_incentive` (real discretionary Evaluation Committee criteria disclosed, distinguished from a personnel cultural test); `de_dfff`/`nz_spg_international` (internal consistency fixes reconciling two already-existing canonical data sources with each other, no new research); `mu_edb_incentive` and `fj_film_rebate` (real research performed, genuinely unresolved).
+
+**A real regression catch:** this continuation's Mauritius research surfaced a claim (90% Mauritius-filming condition) that a PRIOR Codex/Gemini cross-verification had already investigated and explicitly REJECTED (National Assembly Hansard, 14 May 2019 — the claim belongs to a different government measure). The new research correctly did NOT reintroduce it as confirmed, disclosed it instead as a further `UnverifiedRateClaim`, and a new regression test (`test_mauritius_prior_rejected_claim_not_reintroduced`) locks this in.
+
+**`QUAL_AUTHORITY_UNRESOLVED` is now LIVE**, not merely defined: `canonical_role_qualification_bridge.py` gained `AUTHORITY_UNRESOLVED_PROGRAMS` (`mu_edb_incentive`, `fj_film_rebate`, each with its exact researched proposition) and `evaluate_role_qualification()` emits the state at the served path — proven at runtime on real LU and FVD candidates, not just unit fixtures.
+
+**A real new opportunity unlocked:** `gr_cash_rebate`'s newly-confirmed cultural test now genuinely surfaces a `CULTURAL_TEST_GAP` opportunity (correctly `REQUIRES_SCREEN_ANALYZER_FACT`) on FVD's real served candidates — did not exist before this continuation's research.
+
+**Runtime-proven:** LU $3,057,794.90 and FVD $3,072,027.16 both re-verified byte-identical after `ENGINE_VERSION` `canonical-1.25.1` → `canonical-1.26.0` forced full recompute.
+
+**Tests:** `test_worldwide_qualification_completion.py` extended with 7 new tests (12 total in the file); `test_copro_qualification_wiring.py`'s `test_role_qualification_covers_only_real_registry_slugs` correctly updated to accept the newly-live `AUTHORITY_UNRESOLVED` state. Full backend suite: 4298 passed, 1 pre-existing unrelated frontend failure, 1 skipped.
+
+**Guards untouched:** worldwide economic database, base pricing, NPC formula, ranking mathematics, all other existing engines. No new optimizer/cultural/treaty engine. Official co-production/treaty doctrine untouched (explicitly out of scope). Script Analyzer and Budget Estimator untouched.
+
+**WORLDWIDE_PROGRAM_QUALIFICATION_AND_CULTURAL_TEST_DATABASE_COMPLETED for the 71-program served universe — every program has an exact terminal state, zero unexplained unknown. Role-level/point-level completeness remains partial for 21 programs, each with an exact, non-generic missing proposition. Official co-production doctrine remains a separate, later phase.**

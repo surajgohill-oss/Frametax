@@ -76,8 +76,11 @@ async def test_role_qualification_never_contaminates_ranking_or_npc(db: AsyncSes
 
 async def test_role_qualification_covers_only_real_registry_slugs(db: AsyncSession):
     """Every candidate whose program_slug is NOT in cultural_qualification_
-    model.py's real 24-slug registry must resolve RULE_DATA_INCOMPLETE or
-    NOT_APPLICABLE -- never QUALIFIES/HARD_FAIL fabricated from nothing."""
+    model.py's real 24-slug registry must resolve RULE_DATA_INCOMPLETE,
+    NOT_APPLICABLE, or (for the small, explicitly-researched set in
+    AUTHORITY_UNRESOLVED_PROGRAMS -- Worldwide Program Qualification +
+    Cultural Test Completion, 2026-08-19) AUTHORITY_UNRESOLVED -- never
+    QUALIFIES/HARD_FAIL fabricated from nothing."""
     from app.calculators.canonical_role_qualification_bridge import ROLE_QUALIFICATION_COVERED_SLUGS
 
     await evaluate_project(db, FVD_PROJECT_ID)
@@ -87,7 +90,7 @@ async def test_role_qualification_covers_only_real_registry_slugs(db: AsyncSessi
         if not rq:
             continue
         if rq["regime_id"] not in ROLE_QUALIFICATION_COVERED_SLUGS:
-            assert rq["state"] in ("RULE_DATA_INCOMPLETE", "NOT_APPLICABLE")
+            assert rq["state"] in ("RULE_DATA_INCOMPLETE", "NOT_APPLICABLE", "AUTHORITY_UNRESOLVED")
 
 
 async def test_role_qualification_survives_persistence_and_api(db: AsyncSession):
