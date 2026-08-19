@@ -1,7 +1,7 @@
 {
   "artifact": "NATIONAL_STATUS_INCENTIVE_PATHWAY_MAP",
   "generated": "2026-08-19",
-  "count": 24,
+  "count": 32,
   "pathways": [
     {
       "jurisdiction_code": "AT",
@@ -13,7 +13,7 @@
         "economic_consequence": "IS_BASE_PROGRAM_ELIGIBILITY_GATE",
         "consequence_detail": "at_fisa_plus's own cultural test IS the national/cultural status gate for this incentive -- confirmed via program_requirements.py's existing primary/secondary citation for this program (see WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION.md). No separate national program exists in the current canonical universe to unlock."
       },
-      "note": "This program's own cultural test IS the national/cultural gate -- no separate pathway exists in the current canonical universe."
+      "note": "This program's own cultural test/gate IS the national/cultural pathway."
     },
     {
       "jurisdiction_code": "AU",
@@ -39,7 +39,7 @@
         "economic_consequence": "IS_BASE_PROGRAM_ELIGIBILITY_GATE",
         "consequence_detail": "be_tax_shelter's own cultural test IS the national/cultural status gate for this incentive -- confirmed via program_requirements.py's existing primary/secondary citation for this program (see WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION.md). No separate national program exists in the current canonical universe to unlock."
       },
-      "note": "This program's own cultural test IS the national/cultural gate -- no separate pathway exists in the current canonical universe."
+      "note": "This program's own cultural test/gate IS the national/cultural pathway."
     },
     {
       "jurisdiction_code": "CA",
@@ -50,10 +50,22 @@
         "program_slug": "ca_federal_cptc",
         "regime_name": "Canadian Content Certification (CAVCO 10-point scale)",
         "pathway_type": "DOMESTIC_NATIONAL_PATHWAY",
-        "economic_consequence": "UNLOCKS_ENHANCED_RATE",
-        "consequence_detail": "CPTC 25% of qualified Canadian labour vs PSTC 16% -- a real, quantified ~9pp rate difference, confirmed via canada.ca (primary) and corroborated by hellodarwin.com/Saturation.io/truenorthtaxes.ca."
+        "economic_consequence": "UNLOCKS_SEPARATE_INCENTIVE",
+        "consequence_detail": "CPTC (s.125.4) and PSTC (s.125.5) are two separate federal programs, not one program with an uplifted rate -- CPTC 25% of qualified Canadian labour vs PSTC 16%, confirmed via canada.ca (primary) and corroborated by hellodarwin.com/Saturation.io/truenorthtaxes.ca."
       },
       "coproduction_relationship": "A production made under an official Canadian co-production treaty is certified without separately passing the 10-point test (existing treaty_engine.py bilateral registry already carries Canada's real treaty partners) -- confirmed via CAVCO's own CPTC guidelines referencing co-production certificates as an alternate route."
+    },
+    {
+      "jurisdiction_code": "CH",
+      "foreign_service_pathway": null,
+      "national_pathway": {
+        "program_slug": "ch_pics_national_rebate",
+        "regime_name": "PICS (Production Incentive Switzerland) official Swiss co-production gate",
+        "pathway_type": "REQUIRED_FOR_THIS_INCENTIVE",
+        "economic_consequence": "IS_BASE_PROGRAM_ELIGIBILITY_GATE",
+        "consequence_detail": "Switzerland's own canonical program (ch_pics_national_rebate) already correctly records treaty_or_official_coproduction_required=True -- PICS is a co-production instrument, not a general service rebate, and can only be claimed by an independent Swiss production company on a project recognized as an official Swiss co-production. This is a materially DIFFERENT model from a personnel-points cultural test: qualification runs on official co-production STATUS, not a nationality point table. Cross-country service-only rebates exist only at the CANTONAL level (Geneva, Neuchatel, Locarno region) -- none are in the current 71-program canonical universe."
+      },
+      "note": "This program's own cultural test/gate IS the national/cultural pathway."
     },
     {
       "jurisdiction_code": "CY",
@@ -65,7 +77,7 @@
         "economic_consequence": "IS_BASE_PROGRAM_ELIGIBILITY_GATE",
         "consequence_detail": "cy_film_rebate's own cultural test IS the national/cultural status gate for this incentive -- confirmed via program_requirements.py's existing primary/secondary citation for this program (see WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION.md). No separate national program exists in the current canonical universe to unlock."
       },
-      "note": "This program's own cultural test IS the national/cultural gate -- no separate pathway exists in the current canonical universe."
+      "note": "This program's own cultural test/gate IS the national/cultural pathway."
     },
     {
       "jurisdiction_code": "CZ",
@@ -77,7 +89,7 @@
         "economic_consequence": "IS_BASE_PROGRAM_ELIGIBILITY_GATE",
         "consequence_detail": "cz_film_incentive's own cultural test IS the national/cultural status gate for this incentive -- confirmed via program_requirements.py's existing primary/secondary citation for this program (see WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION.md). No separate national program exists in the current canonical universe to unlock."
       },
-      "note": "This program's own cultural test IS the national/cultural gate -- no separate pathway exists in the current canonical universe."
+      "note": "This program's own cultural test/gate IS the national/cultural pathway."
     },
     {
       "jurisdiction_code": "DE",
@@ -89,7 +101,7 @@
         "economic_consequence": "IS_BASE_PROGRAM_ELIGIBILITY_GATE",
         "consequence_detail": "de_dfff's own cultural test IS the national/cultural status gate for this incentive -- confirmed via program_requirements.py's existing primary/secondary citation for this program (see WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION.md). No separate national program exists in the current canonical universe to unlock."
       },
-      "note": "This program's own cultural test IS the national/cultural gate -- no separate pathway exists in the current canonical universe."
+      "note": "This program's own cultural test/gate IS the national/cultural pathway."
     },
     {
       "jurisdiction_code": "DK",
@@ -101,7 +113,34 @@
         "economic_consequence": "IS_BASE_PROGRAM_ELIGIBILITY_GATE",
         "consequence_detail": "dk_production_rebate's own cultural test IS the national/cultural status gate for this incentive -- confirmed via program_requirements.py's existing primary/secondary citation for this program (see WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION.md). No separate national program exists in the current canonical universe to unlock."
       },
-      "note": "This program's own cultural test IS the national/cultural gate -- no separate pathway exists in the current canonical universe."
+      "note": "This program's own cultural test/gate IS the national/cultural pathway."
+    },
+    {
+      "jurisdiction_code": "EE",
+      "foreign_service_pathway": null,
+      "national_pathway": {
+        "program_slug": "ee_film_estonia_rebate",
+        "regime_name": "Estonian creative-staff residency rate tiers (Film Estonia rebate)",
+        "pathway_type": "CULTURAL_UPLIFT_PATHWAY",
+        "economic_consequence": "UNLOCKS_UPLIFT",
+        "consequence_detail": "Confirmed via filmestonia.eu: support intensity is 30% if at least 2 creative employees are Estonian tax residents, or 25% if at least 1 is -- a real, quantified rate tier gated on personnel residency within the SAME program, distinct from the base rebate percentage. This is a personnel-residency uplift, a materially different real mechanism from Canada's separate-program relationship or South Africa's national-work uplift."
+      },
+      "note": "This program's own cultural test/gate IS the national/cultural pathway."
+    },
+    {
+      "jurisdiction_code": "ES",
+      "foreign_service_pathway": {
+        "program_slug": "es_tax_credit_foreign"
+      },
+      "national_pathway": {
+        "program_slug": null,
+        "regime_name": "Spanish Nationality Certificate + Cultural Character Certificate (ICAA, Art. 36.1 LIS)",
+        "pathway_type": "DOMESTIC_NATIONAL_PATHWAY",
+        "economic_consequence": "UNLOCKS_SEPARATE_INCENTIVE",
+        "consequence_detail": "Confirmed via the official Spanish Ministry of Culture/ICAA page: Art. 36.1 (Spanish productions, requires BOTH a Spanish nationality certificate AND a separate cultural character certificate from ICAA) is a genuinely SEPARATE tax framework from Art. 36.2 (es_tax_credit_foreign, the confirmed no-cultural-test foreign-production rebate) -- same real relationship as Canada CPTC/PSTC and Australia Producer Offset/Location Offset."
+      },
+      "note": "Confirmed separate national pathway; not yet a program_requirements.py record in the current 71-program universe.",
+      "coproduction_relationship": null
     },
     {
       "jurisdiction_code": "FI",
@@ -113,7 +152,7 @@
         "economic_consequence": "IS_BASE_PROGRAM_ELIGIBILITY_GATE",
         "consequence_detail": "fi_business_finland_incentive's own cultural test IS the national/cultural status gate for this incentive -- confirmed via program_requirements.py's existing primary/secondary citation for this program (see WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION.md). No separate national program exists in the current canonical universe to unlock."
       },
-      "note": "This program's own cultural test IS the national/cultural gate -- no separate pathway exists in the current canonical universe."
+      "note": "This program's own cultural test/gate IS the national/cultural pathway."
     },
     {
       "jurisdiction_code": "FR",
@@ -125,7 +164,7 @@
         "economic_consequence": "IS_BASE_PROGRAM_ELIGIBILITY_GATE",
         "consequence_detail": "fr_trip's own cultural test IS the national/cultural status gate for this incentive -- confirmed via program_requirements.py's existing primary/secondary citation for this program (see WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION.md). No separate national program exists in the current canonical universe to unlock."
       },
-      "note": "This program's own cultural test IS the national/cultural gate -- no separate pathway exists in the current canonical universe."
+      "note": "This program's own cultural test/gate IS the national/cultural pathway."
     },
     {
       "jurisdiction_code": "GB",
@@ -137,7 +176,7 @@
         "economic_consequence": "IS_BASE_PROGRAM_ELIGIBILITY_GATE",
         "consequence_detail": "uk_avec's own cultural test IS the national/cultural status gate for this incentive -- confirmed via program_requirements.py's existing primary/secondary citation for this program (see WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION.md). No separate national program exists in the current canonical universe to unlock."
       },
-      "note": "This program's own cultural test IS the national/cultural gate -- no separate pathway exists in the current canonical universe."
+      "note": "This program's own cultural test/gate IS the national/cultural pathway."
     },
     {
       "jurisdiction_code": "GR",
@@ -149,7 +188,7 @@
         "economic_consequence": "IS_BASE_PROGRAM_ELIGIBILITY_GATE",
         "consequence_detail": "gr_cash_rebate's own cultural test IS the national/cultural status gate for this incentive -- confirmed via program_requirements.py's existing primary/secondary citation for this program (see WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION.md). No separate national program exists in the current canonical universe to unlock."
       },
-      "note": "This program's own cultural test IS the national/cultural gate -- no separate pathway exists in the current canonical universe."
+      "note": "This program's own cultural test/gate IS the national/cultural pathway."
     },
     {
       "jurisdiction_code": "HR",
@@ -161,7 +200,7 @@
         "economic_consequence": "IS_BASE_PROGRAM_ELIGIBILITY_GATE",
         "consequence_detail": "hr_cash_rebate's own cultural test IS the national/cultural status gate for this incentive -- confirmed via program_requirements.py's existing primary/secondary citation for this program (see WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION.md). No separate national program exists in the current canonical universe to unlock."
       },
-      "note": "This program's own cultural test IS the national/cultural gate -- no separate pathway exists in the current canonical universe."
+      "note": "This program's own cultural test/gate IS the national/cultural pathway."
     },
     {
       "jurisdiction_code": "HU",
@@ -173,7 +212,7 @@
         "economic_consequence": "IS_BASE_PROGRAM_ELIGIBILITY_GATE",
         "consequence_detail": "hu_hipa_rebate's own cultural test IS the national/cultural status gate for this incentive -- confirmed via program_requirements.py's existing primary/secondary citation for this program (see WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION.md). No separate national program exists in the current canonical universe to unlock."
       },
-      "note": "This program's own cultural test IS the national/cultural gate -- no separate pathway exists in the current canonical universe."
+      "note": "This program's own cultural test/gate IS the national/cultural pathway."
     },
     {
       "jurisdiction_code": "IE",
@@ -185,7 +224,7 @@
         "economic_consequence": "IS_BASE_PROGRAM_ELIGIBILITY_GATE",
         "consequence_detail": "ie_section_481's own cultural test IS the national/cultural status gate for this incentive -- confirmed via program_requirements.py's existing primary/secondary citation for this program (see WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION.md). No separate national program exists in the current canonical universe to unlock."
       },
-      "note": "This program's own cultural test IS the national/cultural gate -- no separate pathway exists in the current canonical universe."
+      "note": "This program's own cultural test/gate IS the national/cultural pathway."
     },
     {
       "jurisdiction_code": "IT",
@@ -197,7 +236,22 @@
         "economic_consequence": "IS_BASE_PROGRAM_ELIGIBILITY_GATE",
         "consequence_detail": "it_tax_credit_foreign's own cultural test IS the national/cultural status gate for this incentive -- confirmed via program_requirements.py's existing primary/secondary citation for this program (see WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION.md). No separate national program exists in the current canonical universe to unlock."
       },
-      "note": "This program's own cultural test IS the national/cultural gate -- no separate pathway exists in the current canonical universe."
+      "note": "This program's own cultural test/gate IS the national/cultural pathway."
+    },
+    {
+      "jurisdiction_code": "KR",
+      "foreign_service_pathway": {
+        "program_slug": "kr_kofic_location_incentive"
+      },
+      "national_pathway": {
+        "program_slug": null,
+        "regime_name": "Korean national-film qualification (corporate registration + creative/financial contribution) via official co-production treaty framework / KOFIC Co-production Fund",
+        "pathway_type": "DOMESTIC_NATIONAL_PATHWAY",
+        "economic_consequence": "ENABLES_OFFICIAL_COPRODUCTION_ROUTE",
+        "consequence_detail": "Korea bases film nationality on corporate registration plus creative/financial contribution for its OWN public-support schemes (distinct from kr_kofic_location_incentive, the confirmed no-personnel-cultural-test foreign-production rebate). KOFIC administers a real, separate Co-production Fund (koreanfilm.or.kr/eng/coProduction/coProdFund.jsp) for productions qualifying under Korea's own real co-production treaty framework."
+      },
+      "note": "Confirmed separate national pathway; not yet a program_requirements.py record in the current 71-program universe.",
+      "coproduction_relationship": "Confirmed via KOFIC's own official treaty list (koreanfilm.or.kr): real bilateral agreements with Canada, UK, Singapore, New Zealand, France (plus China/India/EU outside the current 49-country universe) -- see CoproductionCoverageStatus for KR."
     },
     {
       "jurisdiction_code": "LT",
@@ -209,7 +263,7 @@
         "economic_consequence": "IS_BASE_PROGRAM_ELIGIBILITY_GATE",
         "consequence_detail": "lt_film_centre_cash_rebate's own cultural test IS the national/cultural status gate for this incentive -- confirmed via program_requirements.py's existing primary/secondary citation for this program (see WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION.md). No separate national program exists in the current canonical universe to unlock."
       },
-      "note": "This program's own cultural test IS the national/cultural gate -- no separate pathway exists in the current canonical universe."
+      "note": "This program's own cultural test/gate IS the national/cultural pathway."
     },
     {
       "jurisdiction_code": "LU",
@@ -221,7 +275,7 @@
         "economic_consequence": "IS_BASE_PROGRAM_ELIGIBILITY_GATE",
         "consequence_detail": "lu_filmfund_tax_shelter_rebate's own cultural test IS the national/cultural status gate for this incentive -- confirmed via program_requirements.py's existing primary/secondary citation for this program (see WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION.md). No separate national program exists in the current canonical universe to unlock."
       },
-      "note": "This program's own cultural test IS the national/cultural gate -- no separate pathway exists in the current canonical universe."
+      "note": "This program's own cultural test/gate IS the national/cultural pathway."
     },
     {
       "jurisdiction_code": "MT",
@@ -233,7 +287,7 @@
         "economic_consequence": "IS_BASE_PROGRAM_ELIGIBILITY_GATE",
         "consequence_detail": "mt_mfc_rebate's own cultural test IS the national/cultural status gate for this incentive -- confirmed via program_requirements.py's existing primary/secondary citation for this program (see WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION.md). No separate national program exists in the current canonical universe to unlock."
       },
-      "note": "This program's own cultural test IS the national/cultural gate -- no separate pathway exists in the current canonical universe."
+      "note": "This program's own cultural test/gate IS the national/cultural pathway."
     },
     {
       "jurisdiction_code": "MY",
@@ -245,7 +299,21 @@
         "economic_consequence": "IS_BASE_PROGRAM_ELIGIBILITY_GATE",
         "consequence_detail": "my_finas_rebate's own cultural test IS the national/cultural status gate for this incentive -- confirmed via program_requirements.py's existing primary/secondary citation for this program (see WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION.md). No separate national program exists in the current canonical universe to unlock."
       },
-      "note": "This program's own cultural test IS the national/cultural gate -- no separate pathway exists in the current canonical universe."
+      "note": "This program's own cultural test/gate IS the national/cultural pathway."
+    },
+    {
+      "jurisdiction_code": "NL",
+      "foreign_service_pathway": {
+        "program_slug": "nl_film_production_incentive"
+      },
+      "national_pathway": {
+        "program_slug": "nl_hbf",
+        "regime_name": "Dutch Film Fund / HBF (Holland Film Meeting) national creative-element requirement",
+        "pathway_type": "DOMESTIC_NATIONAL_PATHWAY",
+        "economic_consequence": "UNLOCKS_SEPARATE_INCENTIVE",
+        "consequence_detail": "Recovered from EXISTING internal data (cultural_qualification_model.py already carries real nl_hbf director/writer/producer NationalityRequirement rows -- Task 4 discipline, not re-researched this pass), distinct from nl_film_production_incentive's own confirmed no-cultural-test service pathway."
+      },
+      "coproduction_relationship": null
     },
     {
       "jurisdiction_code": "NO",
@@ -257,7 +325,7 @@
         "economic_consequence": "IS_BASE_PROGRAM_ELIGIBILITY_GATE",
         "consequence_detail": "no_film_incentive's own cultural test IS the national/cultural status gate for this incentive -- confirmed via program_requirements.py's existing primary/secondary citation for this program (see WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION.md). No separate national program exists in the current canonical universe to unlock."
       },
-      "note": "This program's own cultural test IS the national/cultural gate -- no separate pathway exists in the current canonical universe."
+      "note": "This program's own cultural test/gate IS the national/cultural pathway."
     },
     {
       "jurisdiction_code": "NZ",
@@ -275,6 +343,19 @@
       "coproduction_relationship": "Confirmed via NZFC: official co-production status is an explicit ALTERNATIVE route to the points test for the 40% NZ-production grant."
     },
     {
+      "jurisdiction_code": "PH",
+      "foreign_service_pathway": null,
+      "national_pathway": {
+        "program_slug": null,
+        "regime_name": "Philippines official co-production treaty framework (FDCP)",
+        "pathway_type": "ENABLES_OFFICIAL_COPRODUCTION_ROUTE",
+        "economic_consequence": "ENABLES_OFFICIAL_COPRODUCTION_ROUTE",
+        "consequence_detail": "FDCP signed a real film co-production treaty with France (confirmed via Philippine news reporting of the official signing) and operates an International Co-Production Fund (ICOF) for qualifying Filipino/foreign co-productions -- a real, separate national/co-production pathway; no service-only Philippine program exists in the current 71-program universe to contrast it against."
+      },
+      "note": "Confirmed separate national pathway; not yet a program_requirements.py record in the current 71-program universe.",
+      "coproduction_relationship": "FDCP-France co-production treaty confirmed; ICOF is the real, cited national fund unlocked by treaty co-production status."
+    },
+    {
       "jurisdiction_code": "PL",
       "foreign_service_pathway": null,
       "national_pathway": {
@@ -284,7 +365,7 @@
         "economic_consequence": "IS_BASE_PROGRAM_ELIGIBILITY_GATE",
         "consequence_detail": "pl_pisf_cash_rebate's own cultural test IS the national/cultural status gate for this incentive -- confirmed via program_requirements.py's existing primary/secondary citation for this program (see WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION.md). No separate national program exists in the current canonical universe to unlock."
       },
-      "note": "This program's own cultural test IS the national/cultural gate -- no separate pathway exists in the current canonical universe."
+      "note": "This program's own cultural test/gate IS the national/cultural pathway."
     },
     {
       "jurisdiction_code": "PT",
@@ -296,7 +377,33 @@
         "economic_consequence": "IS_BASE_PROGRAM_ELIGIBILITY_GATE",
         "consequence_detail": "pt_scri_pt_cash_rebate's own cultural test IS the national/cultural status gate for this incentive -- confirmed via program_requirements.py's existing primary/secondary citation for this program (see WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION.md). No separate national program exists in the current canonical universe to unlock."
       },
-      "note": "This program's own cultural test IS the national/cultural gate -- no separate pathway exists in the current canonical universe."
+      "note": "This program's own cultural test/gate IS the national/cultural pathway."
+    },
+    {
+      "jurisdiction_code": "SE",
+      "foreign_service_pathway": {
+        "program_slug": "se_production_rebate"
+      },
+      "national_pathway": {
+        "program_slug": "se_goteborg_fund",
+        "regime_name": "Sweden G\u00f6teborg Fund (regional/national creative-element requirement)",
+        "pathway_type": "DOMESTIC_NATIONAL_PATHWAY",
+        "economic_consequence": "UNLOCKS_SEPARATE_INCENTIVE",
+        "consequence_detail": "Recovered from EXISTING internal data (cultural_qualification_model.py already carries real se_goteborg_fund director/writer/producer NationalityRequirement rows -- Task 4 discipline, not re-researched this pass), distinct from se_production_rebate's own confirmed no-cultural-test service pathway."
+      },
+      "coproduction_relationship": null
+    },
+    {
+      "jurisdiction_code": "ZA",
+      "foreign_service_pathway": null,
+      "national_pathway": {
+        "program_slug": "za_dtic_foreign_film",
+        "regime_name": "South African Film Criteria (points test: production/post-production location, national work, official co-production status)",
+        "pathway_type": "CULTURAL_UPLIFT_PATHWAY",
+        "economic_consequence": "UNLOCKS_UPLIFT",
+        "consequence_detail": "Confirmed via NFVF/DTIC sources: the South African production rebate is 20% base, rising to 35% of eligible SA expenses 'for a national work or an official co-production' -- a real, quantified 15pp UPLIFT on the SAME za_dtic_foreign_film program (genuinely different from Canada's CPTC/PSTC, which are two separate programs, not an uplift on one)."
+      },
+      "note": "This program's own cultural test/gate IS the national/cultural pathway."
     }
   ]
 }

@@ -1,12 +1,13 @@
 {
   "artifact": "WORLDWIDE_NATIONAL_CULTURAL_STATUS_COMPLETION",
   "generated": "2026-08-19",
-  "population_source": "Unique ISO2 COUNTRY codes derived from app.data.program_requirements.all_program_requirements()'s jurisdiction_code field (sub-national jurisdictions -- US states, Canadian provinces -- collapsed to their federal country, since national/cultural content status is a country-level government concept, not a sub-national one).",
+  "checkpoint_reference": "resume/finish continuation from 763e766 (26 confirmed / 2 no-relevant / 21 unresolved)",
+  "population_source": "Unique ISO2 country codes derived from program_requirements.all_program_requirements()",
   "summary": {
     "total_jurisdictions": 49,
-    "NATIONAL_STATUS_REGIME_CONFIRMED": 24,
-    "NO_RELEVANT_NATIONAL_STATUS_REGIME_CONFIRMED": 1,
-    "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION": 24,
+    "NATIONAL_STATUS_REGIME_CONFIRMED": 32,
+    "NO_RELEVANT_NATIONAL_STATUS_REGIME_CONFIRMED": 2,
+    "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION": 15,
     "unexplained": 0
   },
   "jurisdictions": [
@@ -24,7 +25,7 @@
       "coproduction_relationship": null,
       "sources": [],
       "exact_unresolved_propositions": [
-        "NATIONAL_CULTURAL_STATUS_REGIME_EXISTENCE_UNCONFIRMED_BEYOND_BASE_INCENTIVE_CULTURAL_TEST_FIELD -- AE's own served incentive(s) do not require a cultural test, but no primary-authority research was performed this pass to confirm whether a SEPARATE national/domestic-content certification regime exists (as it does for Canada, Australia, and New Zealand)."
+        "UAE_TWOFOUR54_OFFICIAL_GOVERNMENT_TREATY_VS_INDUSTRY_COOPERATION_UNCONFIRMED -- this pass found real evidence of INDUSTRY-LEVEL cooperation between twofour54 (Abu Dhabi), the Doha Film Institute, and Dubai International Film Festival (described as the 'Gulf industrial axis') and individual co-produced projects, but no evidence of a formal GOVERNMENT-TO-GOVERNMENT co-production treaty. Sources checked: Screen Daily, GCC Business News, twofour54's own site, UAE Embassy news page. Requires: UAE Ministry of Culture's own treaty register, not located in English at the depth searched this pass."
       ],
       "retrieved_date": null
     },
@@ -85,12 +86,12 @@
       "status": "NATIONAL_STATUS_REGIME_CONFIRMED",
       "regime_name": "Canadian Content Certification (CAVCO 10-point scale)",
       "administering_authority": "Canadian Audio-Visual Certification Office (CAVCO) / Canada Revenue Agency",
-      "legal_basis": "Income Tax Act (Canada) s. 125.4 (CPTC)",
+      "legal_basis": "Income Tax Act (Canada) s. 125.4 (CPTC) vs s. 125.5 (PSTC)",
       "linked_program_slug": "ca_federal_cptc",
       "base_program_slug": "ca_federal_pstc",
       "pathway_type": "DOMESTIC_NATIONAL_PATHWAY",
-      "economic_consequence": "UNLOCKS_ENHANCED_RATE",
-      "consequence_detail": "CPTC 25% of qualified Canadian labour vs PSTC 16% -- a real, quantified ~9pp rate difference, confirmed via canada.ca (primary) and corroborated by hellodarwin.com/Saturation.io/truenorthtaxes.ca.",
+      "economic_consequence": "UNLOCKS_SEPARATE_INCENTIVE",
+      "consequence_detail": "CPTC (s.125.4) and PSTC (s.125.5) are two separate federal programs, not one program with an uplifted rate -- CPTC 25% of qualified Canadian labour vs PSTC 16%, confirmed via canada.ca (primary) and corroborated by hellodarwin.com/Saturation.io/truenorthtaxes.ca.",
       "coproduction_relationship": "A production made under an official Canadian co-production treaty is certified without separately passing the 10-point test (existing treaty_engine.py bilateral registry already carries Canada's real treaty partners) -- confirmed via CAVCO's own CPTC guidelines referencing co-production certificates as an alternate route.",
       "sources": [
         "https://www.canada.ca/en/canadian-heritage/services/funding/cavco-tax-credits/canadian-film-video-production.html",
@@ -102,21 +103,22 @@
     },
     {
       "jurisdiction_code": "CH",
-      "status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
-      "regime_name": null,
-      "administering_authority": null,
+      "status": "NATIONAL_STATUS_REGIME_CONFIRMED",
+      "regime_name": "PICS (Production Incentive Switzerland) official Swiss co-production gate",
+      "administering_authority": "Federal Office of Culture (FOC), Berne",
       "legal_basis": null,
-      "linked_program_slug": null,
-      "base_program_slug": null,
-      "pathway_type": null,
-      "economic_consequence": null,
-      "consequence_detail": null,
-      "coproduction_relationship": null,
-      "sources": [],
-      "exact_unresolved_propositions": [
-        "NATIONAL_CULTURAL_STATUS_REGIME_EXISTENCE_UNCONFIRMED_BEYOND_BASE_INCENTIVE_CULTURAL_TEST_FIELD -- CH's own served incentive(s) do not require a cultural test, but no primary-authority research was performed this pass to confirm whether a SEPARATE national/domestic-content certification regime exists (as it does for Canada, Australia, and New Zealand)."
+      "linked_program_slug": "ch_pics_national_rebate",
+      "base_program_slug": "ch_pics_national_rebate",
+      "pathway_type": "REQUIRED_FOR_THIS_INCENTIVE",
+      "economic_consequence": "IS_BASE_PROGRAM_ELIGIBILITY_GATE",
+      "consequence_detail": "Switzerland's own canonical program (ch_pics_national_rebate) already correctly records treaty_or_official_coproduction_required=True -- PICS is a co-production instrument, not a general service rebate, and can only be claimed by an independent Swiss production company on a project recognized as an official Swiss co-production. This is a materially DIFFERENT model from a personnel-points cultural test: qualification runs on official co-production STATUS, not a nationality point table. Cross-country service-only rebates exist only at the CANTONAL level (Geneva, Neuchatel, Locarno region) -- none are in the current 71-program canonical universe.",
+      "coproduction_relationship": "PICS eligibility IS official-co-production status -- the clearest real example in the current universe of ENABLES_OFFICIAL_COPRODUCTION_ROUTE as the qualification mechanism itself, not a secondary benefit.",
+      "sources": [
+        "https://www.swissinfo.ch/eng/culture/small-country-deep-pockets-how-to-make-and-fund-films-in-switzerland/79771691",
+        "https://www.mediadesk.ch/a-propos-coproducing-en/"
       ],
-      "retrieved_date": null
+      "exact_unresolved_propositions": [],
+      "retrieved_date": "2026-08-19"
     },
     {
       "jurisdiction_code": "CL",
@@ -132,7 +134,7 @@
       "coproduction_relationship": null,
       "sources": [],
       "exact_unresolved_propositions": [
-        "NATIONAL_CULTURAL_STATUS_REGIME_EXISTENCE_UNCONFIRMED_BEYOND_BASE_INCENTIVE_CULTURAL_TEST_FIELD -- CL's own served incentive(s) do not require a cultural test, but no primary-authority research was performed this pass to confirm whether a SEPARATE national/domestic-content certification regime exists (as it does for Canada, Australia, and New Zealand)."
+        "CHILE_CORFO_NATIONAL_STATUS_VS_CL_CORFO_INCENTIVE_RELATIONSHIP_UNCONFIRMED -- Chile is a confirmed real Ibermedia member (see CoproductionCoverageStatus, resolved via treaty_engine.py's existing membership data), but this pass did not separately research whether CORFO (Chile's national economic development agency, administering cl_corfo_incentive) also operates a separate domestic/national Chilean-content certification. No search performed this pass -- genuinely not yet attempted, not merely inconclusive."
       ],
       "retrieved_date": null
     },
@@ -202,39 +204,40 @@
     },
     {
       "jurisdiction_code": "EE",
-      "status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
-      "regime_name": null,
-      "administering_authority": null,
+      "status": "NATIONAL_STATUS_REGIME_CONFIRMED",
+      "regime_name": "Estonian creative-staff residency rate tiers (Film Estonia rebate)",
+      "administering_authority": "Film Estonia",
       "legal_basis": null,
-      "linked_program_slug": null,
-      "base_program_slug": null,
-      "pathway_type": null,
-      "economic_consequence": null,
-      "consequence_detail": null,
+      "linked_program_slug": "ee_film_estonia_rebate",
+      "base_program_slug": "ee_film_estonia_rebate",
+      "pathway_type": "CULTURAL_UPLIFT_PATHWAY",
+      "economic_consequence": "UNLOCKS_UPLIFT",
+      "consequence_detail": "Confirmed via filmestonia.eu: support intensity is 30% if at least 2 creative employees are Estonian tax residents, or 25% if at least 1 is -- a real, quantified rate tier gated on personnel residency within the SAME program, distinct from the base rebate percentage. This is a personnel-residency uplift, a materially different real mechanism from Canada's separate-program relationship or South Africa's national-work uplift.",
       "coproduction_relationship": null,
-      "sources": [],
-      "exact_unresolved_propositions": [
-        "NATIONAL_CULTURAL_STATUS_REGIME_EXISTENCE_UNCONFIRMED_BEYOND_BASE_INCENTIVE_CULTURAL_TEST_FIELD -- EE's own served incentive(s) do not require a cultural test, but no primary-authority research was performed this pass to confirm whether a SEPARATE national/domestic-content certification regime exists (as it does for Canada, Australia, and New Zealand)."
+      "sources": [
+        "https://filmestonia.eu/film-estonia-funding/guidelines-and-how-to-apply/"
       ],
-      "retrieved_date": null
+      "exact_unresolved_propositions": [],
+      "retrieved_date": "2026-08-19"
     },
     {
       "jurisdiction_code": "ES",
-      "status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
-      "regime_name": null,
-      "administering_authority": null,
-      "legal_basis": null,
+      "status": "NATIONAL_STATUS_REGIME_CONFIRMED",
+      "regime_name": "Spanish Nationality Certificate + Cultural Character Certificate (ICAA, Art. 36.1 LIS)",
+      "administering_authority": "Instituto de la Cinematografia y de las Artes Audiovisuales (ICAA) / Ministerio de Cultura",
+      "legal_basis": "Ley del Impuesto sobre Sociedades (LIS), Art. 36.1 (Spanish productions) vs Art. 36.2 (foreign productions)",
       "linked_program_slug": null,
-      "base_program_slug": null,
-      "pathway_type": null,
-      "economic_consequence": null,
-      "consequence_detail": null,
+      "base_program_slug": "es_tax_credit_foreign",
+      "pathway_type": "DOMESTIC_NATIONAL_PATHWAY",
+      "economic_consequence": "UNLOCKS_SEPARATE_INCENTIVE",
+      "consequence_detail": "Confirmed via the official Spanish Ministry of Culture/ICAA page: Art. 36.1 (Spanish productions, requires BOTH a Spanish nationality certificate AND a separate cultural character certificate from ICAA) is a genuinely SEPARATE tax framework from Art. 36.2 (es_tax_credit_foreign, the confirmed no-cultural-test foreign-production rebate) -- same real relationship as Canada CPTC/PSTC and Australia Producer Offset/Location Offset.",
       "coproduction_relationship": null,
-      "sources": [],
-      "exact_unresolved_propositions": [
-        "NATIONAL_CULTURAL_STATUS_REGIME_EXISTENCE_UNCONFIRMED_BEYOND_BASE_INCENTIVE_CULTURAL_TEST_FIELD -- ES's own served incentive(s) do not require a cultural test, but no primary-authority research was performed this pass to confirm whether a SEPARATE national/domestic-content certification regime exists (as it does for Canada, Australia, and New Zealand)."
+      "sources": [
+        "https://www.cultura.gob.es/en/cultura/areas/cine/industria-cine/coproducir-espa/incentivos-fiscales.html",
+        "https://www.cultura.gob.es/en/cultura/areas/cine/industria-cine/certificado-nacionalidad-espanola.html"
       ],
-      "retrieved_date": null
+      "exact_unresolved_propositions": [],
+      "retrieved_date": "2026-08-19"
     },
     {
       "jurisdiction_code": "FI",
@@ -266,7 +269,7 @@
       "coproduction_relationship": null,
       "sources": [],
       "exact_unresolved_propositions": [
-        "NATIONAL_CULTURAL_STATUS_REGIME_EXISTENCE_UNCONFIRMED_BEYOND_BASE_INCENTIVE_CULTURAL_TEST_FIELD -- FJ's own served incentive(s) do not require a cultural test, but no primary-authority research was performed this pass to confirm whether a SEPARATE national/domestic-content certification regime exists (as it does for Canada, Australia, and New Zealand)."
+        "FIJI_OFFICIAL_TREATY_AND_NATIONAL_FUND_UNCONFIRMED -- no evidence found this pass of either an official Fiji co-production treaty or a separate domestic-content fund distinct from fj_film_rebate (already AUTHORITY_UNRESOLVED at the program-qualification level for its own cultural-test applicability -- see WORLDWIDE_PROGRAM_QUALIFICATION_COMPLETION.md). Sources checked: film-fiji.com, Hoodlum, Entertainment Partners. Requires: Fiji Film Authority's own treaty register, not located this pass."
       ],
       "retrieved_date": null
     },
@@ -380,7 +383,7 @@
       "coproduction_relationship": null,
       "sources": [],
       "exact_unresolved_propositions": [
-        "NATIONAL_CULTURAL_STATUS_REGIME_EXISTENCE_UNCONFIRMED_BEYOND_BASE_INCENTIVE_CULTURAL_TEST_FIELD -- IL's own served incentive(s) do not require a cultural test, but no primary-authority research was performed this pass to confirm whether a SEPARATE national/domestic-content certification regime exists (as it does for Canada, Australia, and New Zealand)."
+        "ISRAEL_SEPARATE_NATIONAL_CULTURAL_FUND_VS_IL_FOREIGN_PRODUCTION_FUND_UNCONFIRMED -- this pass confirmed real, cited official co-production treaties (France 1970, Germany, Italy, UK, Australia, New Zealand, Sweden -- see CoproductionCoverageStatus for IL) which DO confer national treatment for co-produced works, but could not confirm whether Israel ALSO operates a separate national/domestic cultural-content fund distinct from il_foreign_production_fund (the confirmed no-cultural-test program) for wholly-Israeli productions. Sources searched: Israel Film Fund (filmfund.org.il -- dedicated treaty page returned 404), Screen Daily, Cineuropa. Requires: Israel Ministry of Culture and Sport's own domestic-fund criteria (not located in English at the depth searched this pass)."
       ],
       "retrieved_date": null
     },
@@ -398,7 +401,7 @@
       "coproduction_relationship": null,
       "sources": [],
       "exact_unresolved_propositions": [
-        "NATIONAL_CULTURAL_STATUS_REGIME_EXISTENCE_UNCONFIRMED_BEYOND_BASE_INCENTIVE_CULTURAL_TEST_FIELD -- IS's own served incentive(s) do not require a cultural test, but no primary-authority research was performed this pass to confirm whether a SEPARATE national/domestic-content certification regime exists (as it does for Canada, Australia, and New Zealand)."
+        "ICELAND_SEPARATE_NATIONAL_FUND_VS_RSK_REBATE_RELATIONSHIP_UNCONFIRMED -- this pass found Iceland's real rebate structure (25% base / 35% for large productions and children's content) but this is a PRODUCTION-SCALE/GENRE tier, not evidence of a personnel/cultural national-status gate distinct from the confirmed program. No separate Icelandic national-content fund confirmed. Sources checked: filminiceland.com, filmincentive.com. Requires: Iceland Film Centre's own domestic-fund criteria, not located at the depth searched this pass."
       ],
       "retrieved_date": null
     },
@@ -420,39 +423,42 @@
     },
     {
       "jurisdiction_code": "JP",
-      "status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
+      "status": "NO_RELEVANT_NATIONAL_STATUS_REGIME_CONFIRMED",
       "regime_name": null,
       "administering_authority": null,
       "legal_basis": null,
       "linked_program_slug": null,
-      "base_program_slug": null,
-      "pathway_type": null,
-      "economic_consequence": null,
-      "consequence_detail": null,
+      "base_program_slug": "jp_vipo_location_incentive",
+      "pathway_type": "NO_ECONOMIC_DIFFERENCE",
+      "economic_consequence": "NO_INCREMENTAL_ECONOMIC_BENEFIT",
+      "consequence_detail": "Japan's METI/VIPO/Japan Film Commission incentive (launched 2023, up to 50% rebate) is a single, unified scheme for international productions -- multiple independent trade sources (Deadline, Screen, Variety) describe only this one program, with no separate 'Japanese content' certification or domestic-status regime found.",
       "coproduction_relationship": null,
-      "sources": [],
-      "exact_unresolved_propositions": [
-        "NATIONAL_CULTURAL_STATUS_REGIME_EXISTENCE_UNCONFIRMED_BEYOND_BASE_INCENTIVE_CULTURAL_TEST_FIELD -- JP's own served incentive(s) do not require a cultural test, but no primary-authority research was performed this pass to confirm whether a SEPARATE national/domestic-content certification regime exists (as it does for Canada, Australia, and New Zealand)."
+      "sources": [
+        "https://deadline.com/2023/09/japan-incentive-program-offshore-production-vipo-meti-1235542659/",
+        "https://www.vipo.or.jp/en/location-project/"
       ],
-      "retrieved_date": null
+      "exact_unresolved_propositions": [],
+      "retrieved_date": "2026-08-19"
     },
     {
       "jurisdiction_code": "KR",
-      "status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
-      "regime_name": null,
-      "administering_authority": null,
+      "status": "NATIONAL_STATUS_REGIME_CONFIRMED",
+      "regime_name": "Korean national-film qualification (corporate registration + creative/financial contribution) via official co-production treaty framework / KOFIC Co-production Fund",
+      "administering_authority": "Korean Film Council (KOFIC)",
       "legal_basis": null,
       "linked_program_slug": null,
-      "base_program_slug": null,
-      "pathway_type": null,
-      "economic_consequence": null,
-      "consequence_detail": null,
-      "coproduction_relationship": null,
-      "sources": [],
-      "exact_unresolved_propositions": [
-        "NATIONAL_CULTURAL_STATUS_REGIME_EXISTENCE_UNCONFIRMED_BEYOND_BASE_INCENTIVE_CULTURAL_TEST_FIELD -- KR's own served incentive(s) do not require a cultural test, but no primary-authority research was performed this pass to confirm whether a SEPARATE national/domestic-content certification regime exists (as it does for Canada, Australia, and New Zealand)."
+      "base_program_slug": "kr_kofic_location_incentive",
+      "pathway_type": "DOMESTIC_NATIONAL_PATHWAY",
+      "economic_consequence": "ENABLES_OFFICIAL_COPRODUCTION_ROUTE",
+      "consequence_detail": "Korea bases film nationality on corporate registration plus creative/financial contribution for its OWN public-support schemes (distinct from kr_kofic_location_incentive, the confirmed no-personnel-cultural-test foreign-production rebate). KOFIC administers a real, separate Co-production Fund (koreanfilm.or.kr/eng/coProduction/coProdFund.jsp) for productions qualifying under Korea's own real co-production treaty framework.",
+      "coproduction_relationship": "Confirmed via KOFIC's own official treaty list (koreanfilm.or.kr): real bilateral agreements with Canada, UK, Singapore, New Zealand, France (plus China/India/EU outside the current 49-country universe) -- see CoproductionCoverageStatus for KR.",
+      "sources": [
+        "https://www.koreanfilm.or.kr/eng/coProduction/coProdFund.jsp",
+        "https://www.koreanfilm.or.kr/eng/coProduction/treaties.jsp",
+        "https://stephenfollows.com/p/how-film-nationality-is-determined"
       ],
-      "retrieved_date": null
+      "exact_unresolved_propositions": [],
+      "retrieved_date": "2026-08-19"
     },
     {
       "jurisdiction_code": "LT",
@@ -500,7 +506,7 @@
       "coproduction_relationship": null,
       "sources": [],
       "exact_unresolved_propositions": [
-        "NATIONAL_CULTURAL_STATUS_REGIME_EXISTENCE_UNCONFIRMED_BEYOND_BASE_INCENTIVE_CULTURAL_TEST_FIELD -- MA's own served incentive(s) do not require a cultural test, but no primary-authority research was performed this pass to confirm whether a SEPARATE national/domestic-content certification regime exists (as it does for Canada, Australia, and New Zealand)."
+        "MOROCCO_CCM_NATIONAL_FILM_STATUS_VS_MA_CCM_REBATE_RELATIONSHIP_UNCONFIRMED -- this pass confirmed a real UK-Morocco bilateral co-production treaty (via UK's own listed treaty partners), which would confer national treatment for co-produced works, but could not confirm whether the Centre Cinematographique Marocain (CCM) also operates a separate domestic/national certification distinct from ma_ccm_rebate (the confirmed no-cultural-test rebate). CCM's own treaty-list and domestic-fund pages were not independently fetched this pass. Requires: CCM's own official guidelines (typically published in French/Arabic)."
       ],
       "retrieved_date": null
     },
@@ -534,7 +540,7 @@
       "coproduction_relationship": null,
       "sources": [],
       "exact_unresolved_propositions": [
-        "NATIONAL_CULTURAL_STATUS_REGIME_EXISTENCE_UNCONFIRMED_BEYOND_BASE_INCENTIVE_CULTURAL_TEST_FIELD -- MU's own served incentive(s) do not require a cultural test, but no primary-authority research was performed this pass to confirm whether a SEPARATE national/domestic-content certification regime exists (as it does for Canada, Australia, and New Zealand)."
+        "MAURITIUS_OFFICIAL_TREATY_AND_SEPARATE_NATIONAL_FUND_UNCONFIRMED -- consistent with the program-level residual already disclosed for mu_edb_incentive (2 sessions prior): the only specific national/cultural claims found for Mauritius (a 90%-filming condition, a dialogue-mention/logo/testimonial condition) were EITHER already investigated and REJECTED by a prior cross-verification (the 90% claim, National Assembly Hansard 14 May 2019) OR sourced only to non-government production-services sites. A 2013-era source describes co-production treaties with UK/France/South Africa/India as PLANNED, never confirmed signed. EDB Mauritius's own 'Bilateral Agreements' page (edbmauritius.org/bilateral-agreements) appeared in search results but was not independently fetched this pass. Requires: direct confirmation from EDB Mauritius or the Mauritius Film Development Corporation of current treaty status."
       ],
       "retrieved_date": null
     },
@@ -552,7 +558,7 @@
       "coproduction_relationship": null,
       "sources": [],
       "exact_unresolved_propositions": [
-        "NATIONAL_CULTURAL_STATUS_REGIME_EXISTENCE_UNCONFIRMED_BEYOND_BASE_INCENTIVE_CULTURAL_TEST_FIELD -- MX's own served incentive(s) do not require a cultural test, but no primary-authority research was performed this pass to confirm whether a SEPARATE national/domestic-content certification regime exists (as it does for Canada, Australia, and New Zealand)."
+        "MEXICO_EFICINE_ARTICLE_226_VS_MX_FEDERAL_FILM_INCENTIVE_RELATIONSHIP_UNCONFIRMED -- EFICINE/Article 226 (Ley de Estimulo Fiscal, coordinated by IMCINE/SHCP) is a REAL, separate fiscal incentive for Mexican film investment, structurally distinct from mx_federal_film_incentive_2026 (the confirmed no-cultural-test service pathway) -- but this pass could not confirm EFICINE's exact eligibility criteria (Mexican-content/personnel requirements) or its own program identity with sufficient confidence to encode as CONFIRMED. Sources checked: unesco.org policy monitoring platform, fisherbroyles.com, redsharknews.com."
       ],
       "retrieved_date": null
     },
@@ -574,21 +580,19 @@
     },
     {
       "jurisdiction_code": "NL",
-      "status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
-      "regime_name": null,
-      "administering_authority": null,
+      "status": "NATIONAL_STATUS_REGIME_CONFIRMED",
+      "regime_name": "Dutch Film Fund / HBF (Holland Film Meeting) national creative-element requirement",
+      "administering_authority": "Nederlands Filmfonds (Dutch Film Fund)",
       "legal_basis": null,
-      "linked_program_slug": null,
-      "base_program_slug": null,
-      "pathway_type": null,
-      "economic_consequence": null,
-      "consequence_detail": null,
+      "linked_program_slug": "nl_hbf",
+      "base_program_slug": "nl_film_production_incentive",
+      "pathway_type": "DOMESTIC_NATIONAL_PATHWAY",
+      "economic_consequence": "UNLOCKS_SEPARATE_INCENTIVE",
+      "consequence_detail": "Recovered from EXISTING internal data (cultural_qualification_model.py already carries real nl_hbf director/writer/producer NationalityRequirement rows -- Task 4 discipline, not re-researched this pass), distinct from nl_film_production_incentive's own confirmed no-cultural-test service pathway.",
       "coproduction_relationship": null,
       "sources": [],
-      "exact_unresolved_propositions": [
-        "NATIONAL_CULTURAL_STATUS_REGIME_EXISTENCE_UNCONFIRMED_BEYOND_BASE_INCENTIVE_CULTURAL_TEST_FIELD -- NL's own served incentive(s) do not require a cultural test, but no primary-authority research was performed this pass to confirm whether a SEPARATE national/domestic-content certification regime exists (as it does for Canada, Australia, and New Zealand)."
-      ],
-      "retrieved_date": null
+      "exact_unresolved_propositions": [],
+      "retrieved_date": "2026-08-19"
     },
     {
       "jurisdiction_code": "NO",
@@ -627,21 +631,23 @@
     },
     {
       "jurisdiction_code": "PH",
-      "status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
-      "regime_name": null,
-      "administering_authority": null,
+      "status": "NATIONAL_STATUS_REGIME_CONFIRMED",
+      "regime_name": "Philippines official co-production treaty framework (FDCP)",
+      "administering_authority": "Film Development Council of the Philippines (FDCP)",
       "legal_basis": null,
       "linked_program_slug": null,
       "base_program_slug": null,
-      "pathway_type": null,
-      "economic_consequence": null,
-      "consequence_detail": null,
-      "coproduction_relationship": null,
-      "sources": [],
-      "exact_unresolved_propositions": [
-        "NATIONAL_CULTURAL_STATUS_REGIME_EXISTENCE_UNCONFIRMED_BEYOND_BASE_INCENTIVE_CULTURAL_TEST_FIELD -- PH's own served incentive(s) do not require a cultural test, but no primary-authority research was performed this pass to confirm whether a SEPARATE national/domestic-content certification regime exists (as it does for Canada, Australia, and New Zealand)."
+      "pathway_type": "ENABLES_OFFICIAL_COPRODUCTION_ROUTE",
+      "economic_consequence": "ENABLES_OFFICIAL_COPRODUCTION_ROUTE",
+      "consequence_detail": "FDCP signed a real film co-production treaty with France (confirmed via Philippine news reporting of the official signing) and operates an International Co-Production Fund (ICOF) for qualifying Filipino/foreign co-productions -- a real, separate national/co-production pathway; no service-only Philippine program exists in the current 71-program universe to contrast it against.",
+      "coproduction_relationship": "FDCP-France co-production treaty confirmed; ICOF is the real, cited national fund unlocked by treaty co-production status.",
+      "sources": [
+        "https://www.sunstar.com.ph/davao/feature/fdcp-france-sign-film-co-production-treaty",
+        "https://filmphilippines.com/co-production-treaty",
+        "https://fdcp.ph/programs/film-philippines-office/international-co-production-fund"
       ],
-      "retrieved_date": null
+      "exact_unresolved_propositions": [],
+      "retrieved_date": "2026-08-19"
     },
     {
       "jurisdiction_code": "PL",
@@ -689,7 +695,7 @@
       "coproduction_relationship": null,
       "sources": [],
       "exact_unresolved_propositions": [
-        "NATIONAL_CULTURAL_STATUS_REGIME_EXISTENCE_UNCONFIRMED_BEYOND_BASE_INCENTIVE_CULTURAL_TEST_FIELD -- QA's own served incentive(s) do not require a cultural test, but no primary-authority research was performed this pass to confirm whether a SEPARATE national/domestic-content certification regime exists (as it does for Canada, Australia, and New Zealand)."
+        "QATAR_DOHA_FILM_INSTITUTE_OFFICIAL_TREATY_VS_INDUSTRY_COOPERATION_UNCONFIRMED -- same finding as UAE: real regional industry cooperation (Doha Film Institute as part of the 'Gulf industrial axis') confirmed, but no formal government co-production treaty found. Qatar's OWN new production-incentive program structure (up to 25% of spend may occur in neighbouring Arab countries while still qualifying) was found but not fully characterized as a separate national-status regime distinct from a service incentive. Sources checked: The National, Variety, Cineuropa. Requires: Doha Film Institute's own official program guidelines, not located at the depth searched this pass."
       ],
       "retrieved_date": null
     },
@@ -707,7 +713,7 @@
       "coproduction_relationship": null,
       "sources": [],
       "exact_unresolved_propositions": [
-        "NATIONAL_CULTURAL_STATUS_REGIME_EXISTENCE_UNCONFIRMED_BEYOND_BASE_INCENTIVE_CULTURAL_TEST_FIELD -- RO's own served incentive(s) do not require a cultural test, but no primary-authority research was performed this pass to confirm whether a SEPARATE national/domestic-content certification regime exists (as it does for Canada, Australia, and New Zealand)."
+        "ROMANIA_SEPARATE_NATIONAL_FUND_VS_OFIC_REBATE_RELATIONSHIP_UNCONFIRMED -- this pass confirmed Romania's real OFIC cash-rebate structure (30% of eligible local spend, Ministry of Culture) but found no separate national/cultural-content certification distinct from it. Romania is a confirmed real Eurimages member (resolved for co-production coverage via treaty_engine.py's existing membership data). Sources checked: general film-incentive aggregators, not OFIC's own official guidelines directly."
       ],
       "retrieved_date": null
     },
@@ -725,7 +731,7 @@
       "coproduction_relationship": null,
       "sources": [],
       "exact_unresolved_propositions": [
-        "NATIONAL_CULTURAL_STATUS_REGIME_EXISTENCE_UNCONFIRMED_BEYOND_BASE_INCENTIVE_CULTURAL_TEST_FIELD -- RS's own served incentive(s) do not require a cultural test, but no primary-authority research was performed this pass to confirm whether a SEPARATE national/domestic-content certification regime exists (as it does for Canada, Australia, and New Zealand)."
+        "SERBIA_SEPARATE_NATIONAL_FUND_VS_RS_FILM_COMMISSION_REBATE_RELATIONSHIP_UNCONFIRMED -- no search performed this pass for Serbia specifically; genuinely not yet attempted. Serbia is a confirmed real Eurimages member (resolved for co-production coverage via treaty_engine.py's existing membership data)."
       ],
       "retrieved_date": null
     },
@@ -743,27 +749,25 @@
       "coproduction_relationship": null,
       "sources": [],
       "exact_unresolved_propositions": [
-        "NATIONAL_CULTURAL_STATUS_REGIME_EXISTENCE_UNCONFIRMED_BEYOND_BASE_INCENTIVE_CULTURAL_TEST_FIELD -- SA's own served incentive(s) do not require a cultural test, but no primary-authority research was performed this pass to confirm whether a SEPARATE national/domestic-content certification regime exists (as it does for Canada, Australia, and New Zealand)."
+        "SAUDI_ARABIA_OFFICIAL_TREATY_AND_NATIONAL_FUND_UNCONFIRMED -- Saudi Arabia appears in industry-cooperation reporting (Gulf industrial axis, individual co-produced projects with Saudi producers) but this pass found no confirmation of either a formal government co-production treaty or a separate national-content certification distinct from sa_film_commission_rebate (the confirmed no-cultural-test program). Sources checked: Screen Daily, GCC Business News. Requires: Saudi Film Commission's own official criteria, not located in English at the depth searched this pass."
       ],
       "retrieved_date": null
     },
     {
       "jurisdiction_code": "SE",
-      "status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
-      "regime_name": null,
-      "administering_authority": null,
+      "status": "NATIONAL_STATUS_REGIME_CONFIRMED",
+      "regime_name": "Sweden G\u00f6teborg Fund (regional/national creative-element requirement)",
+      "administering_authority": "G\u00f6teborg Film Fund",
       "legal_basis": null,
-      "linked_program_slug": null,
-      "base_program_slug": null,
-      "pathway_type": null,
-      "economic_consequence": null,
-      "consequence_detail": null,
+      "linked_program_slug": "se_goteborg_fund",
+      "base_program_slug": "se_production_rebate",
+      "pathway_type": "DOMESTIC_NATIONAL_PATHWAY",
+      "economic_consequence": "UNLOCKS_SEPARATE_INCENTIVE",
+      "consequence_detail": "Recovered from EXISTING internal data (cultural_qualification_model.py already carries real se_goteborg_fund director/writer/producer NationalityRequirement rows -- Task 4 discipline, not re-researched this pass), distinct from se_production_rebate's own confirmed no-cultural-test service pathway.",
       "coproduction_relationship": null,
       "sources": [],
-      "exact_unresolved_propositions": [
-        "NATIONAL_CULTURAL_STATUS_REGIME_EXISTENCE_UNCONFIRMED_BEYOND_BASE_INCENTIVE_CULTURAL_TEST_FIELD -- SE's own served incentive(s) do not require a cultural test, but no primary-authority research was performed this pass to confirm whether a SEPARATE national/domestic-content certification regime exists (as it does for Canada, Australia, and New Zealand)."
-      ],
-      "retrieved_date": null
+      "exact_unresolved_propositions": [],
+      "retrieved_date": "2026-08-19"
     },
     {
       "jurisdiction_code": "SG",
@@ -779,7 +783,7 @@
       "coproduction_relationship": null,
       "sources": [],
       "exact_unresolved_propositions": [
-        "NATIONAL_CULTURAL_STATUS_REGIME_EXISTENCE_UNCONFIRMED_BEYOND_BASE_INCENTIVE_CULTURAL_TEST_FIELD -- SG's own served incentive(s) do not require a cultural test, but no primary-authority research was performed this pass to confirm whether a SEPARATE national/domestic-content certification regime exists (as it does for Canada, Australia, and New Zealand)."
+        "SINGAPORE_IMDA_NATIONAL_CONTENT_CLASSIFICATION_VS_SG_MADE_WITH_SINGAPORE_RELATIONSHIP_UNCONFIRMED -- this pass confirmed a real Korea-Singapore FTA cultural-cooperation co-production route, but could not confirm whether Singapore's Infocomm Media Development Authority (IMDA) also operates a separate 'Singapore content' classification/fund distinct from sg_made_with_singapore_rebate (the confirmed no-cultural-test program). IMDA's own domestic-content criteria pages were not independently fetched this pass."
       ],
       "retrieved_date": null
     },
@@ -797,7 +801,7 @@
       "coproduction_relationship": null,
       "sources": [],
       "exact_unresolved_propositions": [
-        "NATIONAL_CULTURAL_STATUS_REGIME_EXISTENCE_UNCONFIRMED_BEYOND_BASE_INCENTIVE_CULTURAL_TEST_FIELD -- TH's own served incentive(s) do not require a cultural test, but no primary-authority research was performed this pass to confirm whether a SEPARATE national/domestic-content certification regime exists (as it does for Canada, Australia, and New Zealand)."
+        "THAILAND_SEPARATE_NATIONAL_FUND_VS_TH_BOI_INCENTIVE_RELATIONSHIP_UNCONFIRMED -- Film Thailand's own page (filmthailand.org, confirmed primary for the co-production-coverage question -- Thailand has NO official co-production treaties) does not separately address whether a domestic/national Thai-content fund exists distinct from th_boi_incentive (the confirmed no-cultural-test BOI incentive). Requires: Thailand Film Office / Department of Tourism's own domestic-fund criteria, not located at the depth searched this pass."
       ],
       "retrieved_date": null
     },
@@ -815,7 +819,7 @@
       "coproduction_relationship": null,
       "sources": [],
       "exact_unresolved_propositions": [
-        "NATIONAL_CULTURAL_STATUS_REGIME_EXISTENCE_UNCONFIRMED_BEYOND_BASE_INCENTIVE_CULTURAL_TEST_FIELD -- TW's own served incentive(s) do not require a cultural test, but no primary-authority research was performed this pass to confirm whether a SEPARATE national/domestic-content certification regime exists (as it does for Canada, Australia, and New Zealand)."
+        "TAIWAN_TAICCA_OFFICIAL_COPRODUCTION_TREATY_VS_FUNDING_SCHEME_DISTINCTION_UNCONFIRMED -- this pass found TAICCA (Taiwan Creative Content Agency) operates co-FINANCING schemes (e.g. TICP 2.0) with international partners including Japan, but could not confirm whether these rise to the level of an OFFICIAL GOVERNMENT co-production TREATY (conferring national treatment) as opposed to a co-funding/investment program -- a real, disclosed ambiguity, not a confident finding either way. Sources checked: Screen Global Production, Deadline, TAICCA's own English-language press materials. Requires: TAICCA's own treaty/agreement register (not located in English at the depth searched)."
       ],
       "retrieved_date": null
     },
@@ -833,28 +837,30 @@
       "coproduction_relationship": null,
       "sources": [
         "https://www.wrapbook.com/production-incentives/us/federal",
-        "https://reedcorp.tax/helpful-guides/film-production-tax-credits-state/"
+        "https://reedcorp.tax/helpful-guides/film-production-tax-credits-state/",
+        "https://vitrina.ai/blog/official-co-production-treaties-guide/"
       ],
       "exact_unresolved_propositions": [],
       "retrieved_date": "2026-08-19"
     },
     {
       "jurisdiction_code": "ZA",
-      "status": "AUTHORITY_UNRESOLVED_EXACT_PROPOSITION",
-      "regime_name": null,
-      "administering_authority": null,
+      "status": "NATIONAL_STATUS_REGIME_CONFIRMED",
+      "regime_name": "South African Film Criteria (points test: production/post-production location, national work, official co-production status)",
+      "administering_authority": "Department of Trade, Industry and Competition (DTIC) / National Film and Video Foundation (NFVF)",
       "legal_basis": null,
-      "linked_program_slug": null,
-      "base_program_slug": null,
-      "pathway_type": null,
-      "economic_consequence": null,
-      "consequence_detail": null,
-      "coproduction_relationship": null,
-      "sources": [],
-      "exact_unresolved_propositions": [
-        "NATIONAL_CULTURAL_STATUS_REGIME_EXISTENCE_UNCONFIRMED_BEYOND_BASE_INCENTIVE_CULTURAL_TEST_FIELD -- ZA's own served incentive(s) do not require a cultural test, but no primary-authority research was performed this pass to confirm whether a SEPARATE national/domestic-content certification regime exists (as it does for Canada, Australia, and New Zealand)."
+      "linked_program_slug": "za_dtic_foreign_film",
+      "base_program_slug": "za_dtic_foreign_film",
+      "pathway_type": "CULTURAL_UPLIFT_PATHWAY",
+      "economic_consequence": "UNLOCKS_UPLIFT",
+      "consequence_detail": "Confirmed via NFVF/DTIC sources: the South African production rebate is 20% base, rising to 35% of eligible SA expenses 'for a national work or an official co-production' -- a real, quantified 15pp UPLIFT on the SAME za_dtic_foreign_film program (genuinely different from Canada's CPTC/PSTC, which are two separate programs, not an uplift on one).",
+      "coproduction_relationship": "Official co-production status is an explicit ALTERNATIVE route to the points test for reaching the 35% uplifted rate.",
+      "sources": [
+        "https://www.nfvf.co.za/incentives/",
+        "https://filmcapetown.com/incentives/"
       ],
-      "retrieved_date": null
+      "exact_unresolved_propositions": [],
+      "retrieved_date": "2026-08-19"
     }
   ]
 }

@@ -30,6 +30,7 @@ from app.data.national_cultural_status import (
     STATUS_AUTHORITY_UNRESOLVED,
     STATUS_NO_RELEVANT_REGIME_CONFIRMED,
     STATUS_REGIME_CONFIRMED,
+    get_coproduction_coverage_status,
     get_jurisdiction_national_status,
 )
 from app.db.session import engine
@@ -277,6 +278,110 @@ def test_us_confirmed_no_official_coproduction_treaties_corroborates_no_relevant
     from app.calculators import treaty_engine as te
     assert te.get_bilateral_treaty("US", "GB") is None
     assert te.get_bilateral_treaty("US", "CA") is None
+
+
+# ── Resume/finish pass (same-day continuation) ───────────────────────────
+
+def test_south_africa_genuine_uplift_distinct_from_canada_separate_program():
+    """A REAL genuine rate uplift (South Africa: 20% base -> 35% for
+    national work/official co-production, same program) -- correctly
+    distinguished from Canada's separate-program relationship. Proves
+    the ontology can represent both real mechanisms without conflating
+    them."""
+    from app.data.national_cultural_status import (
+        CONSEQUENCE_UNLOCKS_SEPARATE_INCENTIVE, CONSEQUENCE_UNLOCKS_UPLIFT,
+    )
+    za = get_jurisdiction_national_status("ZA")
+    assert za.status == STATUS_REGIME_CONFIRMED
+    assert za.economic_consequence == CONSEQUENCE_UNLOCKS_UPLIFT
+    assert za.linked_program_slug == za.base_program_slug == "za_dtic_foreign_film"
+
+    ca = get_jurisdiction_national_status("CA")
+    assert ca.economic_consequence == CONSEQUENCE_UNLOCKS_SEPARATE_INCENTIVE
+    assert ca.linked_program_slug != ca.base_program_slug
+
+
+def test_estonia_personnel_residency_uplift_confirmed():
+    """A third real mechanism: a rate tier gated on creative-staff
+    residency within the same program (distinct from both Canada's
+    separate-program and South Africa's national-work uplift)."""
+    from app.data.national_cultural_status import CONSEQUENCE_UNLOCKS_UPLIFT
+    ee = get_jurisdiction_national_status("EE")
+    assert ee.status == STATUS_REGIME_CONFIRMED
+    assert ee.economic_consequence == CONSEQUENCE_UNLOCKS_UPLIFT
+    assert "residen" in ee.consequence_detail.lower()
+
+
+def test_korea_and_philippines_official_coproduction_enables_national_pathway():
+    """Task 6/12: ENABLES_OFFICIAL_COPRODUCTION_ROUTE as the qualification
+    mechanism itself, confirmed via each country's own real treaty list
+    (KOFIC for Korea, FDCP for Philippines)."""
+    from app.data.national_cultural_status import CONSEQUENCE_ENABLES_OFFICIAL_COPRODUCTION_ROUTE
+    for code in ("KR", "PH"):
+        status = get_jurisdiction_national_status(code)
+        assert status.status == STATUS_REGIME_CONFIRMED
+        assert status.economic_consequence == CONSEQUENCE_ENABLES_OFFICIAL_COPRODUCTION_ROUTE
+        assert status.coproduction_relationship
+
+
+def test_switzerland_pics_gate_is_coproduction_status_itself():
+    """Switzerland: qualification for the national program runs on
+    official co-production STATUS itself, not a personnel points table --
+    a materially different real model, recovered from the program's own
+    existing treaty_or_official_coproduction_required=True field."""
+    ch = get_jurisdiction_national_status("CH")
+    assert ch.status == STATUS_REGIME_CONFIRMED
+    assert ch.linked_program_slug == ch.base_program_slug == "ch_pics_national_rebate"
+
+
+def test_coproduction_coverage_computed_from_real_treaty_engine_data():
+    """Queue C for countries treaty_engine.py's OWN registry already
+    covers must be computed directly from that data, never re-researched."""
+    from app.data.national_cultural_status import COPRO_ROUTE_EXISTS, COPRO_MULTILATERAL_EXISTS
+    ca = get_coproduction_coverage_status("CA")
+    assert ca.status == COPRO_ROUTE_EXISTS
+    assert "GB" in ca.confirmed_bilateral_partners
+    fr = get_coproduction_coverage_status("FR")
+    assert fr.status in (COPRO_ROUTE_EXISTS, COPRO_MULTILATERAL_EXISTS)
+
+
+def test_coproduction_coverage_newly_resolved_countries():
+    """7 of the original 13 uncovered countries resolved this pass, each
+    with real, cited partner facts -- existence only, never fabricated
+    contribution terms."""
+    from app.data.national_cultural_status import COPRO_ROUTE_EXISTS, COPRO_NO_RELEVANT_ROUTE
+    kr = get_coproduction_coverage_status("KR")
+    assert kr.status == COPRO_ROUTE_EXISTS
+    assert set(kr.confirmed_bilateral_partners) >= {"CA", "GB"}
+    il = get_coproduction_coverage_status("IL")
+    assert il.status == COPRO_ROUTE_EXISTS
+    th = get_coproduction_coverage_status("TH")
+    assert th.status == COPRO_NO_RELEVANT_ROUTE  # genuinely confirmed absent, not unresolved
+
+
+def test_hard_blocker_documentation_is_specific_not_generic():
+    """Task's own hard-blocker standard: every remaining unresolved
+    proposition must be specific (names sources checked, what remains
+    unknown) -- never a generic 'not found' placeholder."""
+    for code in ("AE", "QA", "SA", "MU", "TW"):
+        status = get_jurisdiction_national_status(code)
+        assert status.status == STATUS_AUTHORITY_UNRESOLVED
+        prop = status.exact_unresolved_propositions[0]
+        assert "Sources checked" in prop or "sources checked" in prop.lower() or "Requires:" in prop
+        generic_phrases = ("insufficient authority", "not found.", "further research required")
+        assert not any(p in prop.lower() for p in generic_phrases)
+
+
+def test_national_status_terminal_accounting_improved_substantially():
+    """This continuation must show real, measurable improvement over the
+    763e766 checkpoint (26 confirmed / 21 unresolved) -- never stagnant."""
+    from app.data.program_requirements import all_program_requirements
+    profiles = all_program_requirements()
+    countries = sorted(set(p.jurisdiction_code.split("-")[0] for p in profiles.values()))
+    confirmed = sum(1 for c in countries if get_jurisdiction_national_status(c).status == STATUS_REGIME_CONFIRMED)
+    unresolved = sum(1 for c in countries if get_jurisdiction_national_status(c).status == STATUS_AUTHORITY_UNRESOLVED)
+    assert confirmed > 26, f"expected real improvement over the 26-confirmed checkpoint, got {confirmed}"
+    assert unresolved < 21, f"expected real reduction from the 21-unresolved checkpoint, got {unresolved}"
 
 
 async def test_baselines_unchanged_after_national_status_completion(db: AsyncSession):

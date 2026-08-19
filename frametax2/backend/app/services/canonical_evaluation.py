@@ -300,7 +300,14 @@ from app.services.canonical_project_economics import (
 # correctness fix (Canada's CPTC/PSTC reclassified UNLOCKS_SEPARATE_
 # INCENTIVE, was incorrectly UNLOCKS_ENHANCED_RATE) -- changes served
 # opportunity trace text. Bumped so every project regenerates.
-ENGINE_VERSION = "canonical-1.28.0"
+# Resume/finish Worldwide Qualification + Cultural + Official Co-pro:
+# national_cultural_status.py gains 6 more confirmed jurisdictions
+# (KR/PH/ZA/ES/CH/EE) with real economic-consequence detail, plus a new
+# CoproductionCoverageStatus registry (Queue C) resolving 7 of the 13
+# previously-uncovered countries. Changes served national-status
+# opportunity trace text for these jurisdictions. Bumped so every
+# project regenerates.
+ENGINE_VERSION = "canonical-1.29.0"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "

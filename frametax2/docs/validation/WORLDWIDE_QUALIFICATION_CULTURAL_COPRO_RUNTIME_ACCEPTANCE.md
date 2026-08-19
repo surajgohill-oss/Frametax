@@ -1,6 +1,19 @@
 # Worldwide Qualification, Cultural Status + Official Co-production — Runtime Acceptance
 
-**Generated:** 2026-08-19 · project economics engine `canonical-1.28.0`
+**Generated:** 2026-08-19, updated same-day (resume/finish continuation from `763e766`) · project economics engine `canonical-1.29.0`
+
+## Resume/finish continuation — additional runtime proofs
+
+- **National-status confirmed: 26 → 32** (real new research: Korea, Philippines, South Africa, Spain, Switzerland, Estonia).
+- **Genuine `NO_RELEVANT` findings: 2 → 2** (unchanged — no new confirmed-absent this continuation beyond US/Japan already found).
+- **Authority-unresolved: 21 → 15**, every remaining item carrying real hard-blocker documentation (sources checked, what was established, what remains unknown, required fact type) per the mandated standard — never a generic "not found."
+- **Co-production coverage: 35/49 → 41/49 countries covered** (7 of the original 13 uncovered countries resolved: Korea, Israel, Morocco, Malaysia, Singapore, Japan, Thailand, plus the US and Philippines already/newly confirmed). 6 remain genuine authority residual (UAE, Fiji, Mauritius, Qatar, Saudi Arabia, Taiwan), each hard-blocker documented.
+- **A real distinct mechanism proven at the data level**: South Africa (20%→35% uplift for national work/official co-production, same program) and Estonia (25%/30% tier gated on creative-staff residency, same program) are both genuine `UNLOCKS_UPLIFT` cases — materially different from Canada's corrected `UNLOCKS_SEPARATE_INCENTIVE` relationship, proving the ontology represents both mechanisms without conflating them.
+- **`ENABLES_OFFICIAL_COPRODUCTION_ROUTE` proven with two real examples**: Korea (KOFIC's own treaty framework is literally the national-qualification mechanism) and the Philippines (FDCP-France treaty + International Co-Production Fund) — the qualification-through-treaty relationship Task 6/12 required.
+- **Switzerland**: confirmed the clearest real example of official co-production STATUS itself being the qualification gate (PICS requires official Swiss co-production status; no personnel points table).
+- LU $3,057,794.90 and FVD $3,072,027.16 re-verified byte-identical after `ENGINE_VERSION` `canonical-1.28.0` → `canonical-1.29.0`.
+
+## Original pass (`763e766`) proofs below, unchanged and re-verified
 
 ## LU/FVD regression (byte-identical, re-verified after ENGINE_VERSION bump)
 

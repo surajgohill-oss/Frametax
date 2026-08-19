@@ -195,7 +195,14 @@ register(ProgramRequirementsProfile(
     evidence=EvidenceRecord(
         source_title="Film in Cyprus — Incentives", source_url="https://film.investcyprus.org.cy/incentives/",
         issuing_authority="Cyprus Film Commission (Invest Cyprus)", source_type=SourceType.PRIMARY,
-        status=RecordStatus.CURRENT, notes="Cultural-test scoring thresholds not confirmed from any source checked.",
+        status=RecordStatus.CURRENT,
+        notes="Cultural-test scoring thresholds not confirmed from any source checked. Worldwide "
+              "Qualification/Cultural/Co-production Completion, 2026-08-19 (resume pass): multiple "
+              "secondary sources (irglobal.com, exectus.com.cy, Cyprus Production Service) confirm the "
+              "detailed scoring system 'can be provided upon request' -- i.e. the Cyprus Film Commission "
+              "does not publish it, only discloses it to real applicants on request. This is a genuine, "
+              "confirmed hard authority blocker (the primary authority itself withholds the document "
+              "from public sources), not merely 'not found this pass'.",
     ),
     additional_facts={"cultural_test_uplift": "Base 35% -> ceiling 45% via cultural-test score (exact thresholds unconfirmed)"},
 ))
