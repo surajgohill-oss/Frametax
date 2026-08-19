@@ -69,8 +69,14 @@ from app.calculators.canonical_opportunity_bridge import (
     discover_qualification_lever_opportunities,
     opportunity_to_dict,
 )
+from app.calculators.canonical_qualification_result import qualification_result_to_dict
+from app.calculators.canonical_role_qualification_bridge import (
+    evaluate_role_qualification,
+    role_known_codes_from_project,
+)
 from app.calculators.canonical_treaty_bridge import (
     evaluate_bilateral_coproduction_opportunity,
+    evaluate_eurimages_coproduction_opportunity,
     find_eurimages_partners,
     find_real_bilateral_partners,
 )
@@ -99,6 +105,7 @@ from app.data.program_rate_rules import (
 from app.models.jurisdiction import Jurisdiction
 from app.models.production import ProductionStructure, StructureCalculationResult
 from app.models.project import Project
+from app.models.project_fact import ProjectFact
 from app.services.canonical_project_economics import (
     FACT_STATE_UNKNOWN,
     ProjectEconomicInputs,
@@ -247,7 +254,18 @@ from app.services.canonical_project_economics import (
 # opportunities). Both reuse only real, already-parsed budget-line data;
 # neither enters NPC/ranking. Bumped so every project regenerates with
 # these new candidates.
-ENGINE_VERSION = "canonical-1.24.1"
+# Canonical Co-production Qualification Reconnection: repairs the first
+# shared disconnect Codex's audit identified. Every priced single-program
+# candidate now carries `role_qualification` (canonical_role_
+# qualification_bridge.py, reusing cultural_qualification_model.py's real
+# 24-program-slug registry, driven by this project's own real, persisted
+# ProjectPerson/TalentProfile rows) -- disclosure only, never a pricing/
+# admission gate. The bilateral and Eurimages treaty-opportunity blocks
+# now read real coproduction_majority_pct/minority_pct/cultural_test_
+# passed ProjectFact values instead of always passing None -- output is
+# unchanged for LU/FVD (neither has these facts on file) but the
+# plumbing is now real. Bumped so every project regenerates with these.
+ENGINE_VERSION = "canonical-1.25.0"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
@@ -421,6 +439,7 @@ def _price_component_relocation_candidate(
 
 def _opportunities_for_candidate(
     inputs: ProjectEconomicInputs, code: str, program_slug: str, register, rate_resolution,
+    role_known_codes: dict[str, tuple[str, ...]] | None = None,
 ) -> list[dict]:
     """Reinvestment + Qualification Opportunity Optimization — attaches
     real, canonical-data-driven opportunities to a priced candidate.
@@ -489,6 +508,66 @@ def _opportunities_for_candidate(
             opportunities.append(opportunity_to_dict(lever_opp))
 
     return opportunities
+
+
+async def _coproduction_facts(session: AsyncSession, project_id) -> tuple[float | None, float | None, bool | None]:
+    """Canonical Co-production Qualification Reconnection — the treaty-
+    bridge disconnect Codex's audit named: canonical_evaluation never
+    supplied majority_pct/minority_pct/cultural_test_passed to
+    evaluate_bilateral_coproduction_opportunity() at all (always left at
+    their None defaults, regardless of what facts might exist). Reads
+    the three real fact_key values from the existing generic ProjectFact
+    model — the SAME model screen_analyzer_fact_contract.py's future
+    facts are expected to land in. Absent facts stay None (never
+    invented); neither LU nor FVD has these on file, so their output is
+    unchanged, but the plumbing is now real."""
+    rows = (await session.execute(
+        select(ProjectFact.fact_key, ProjectFact.value).where(
+            ProjectFact.project_id == project_id,
+            ProjectFact.fact_key.in_((
+                "coproduction_majority_pct", "coproduction_minority_pct",
+                "coproduction_cultural_test_passed",
+            )),
+        )
+    )).all()
+    facts = {k: v for k, v in rows}
+
+    def _float(key: str) -> float | None:
+        v = facts.get(key)
+        try:
+            return float(v) if v not in (None, "") else None
+        except (TypeError, ValueError):
+            return None
+
+    def _bool(key: str) -> bool | None:
+        v = facts.get(key)
+        if v is None or v == "":
+            return None
+        return str(v).strip().lower() in ("true", "1", "yes")
+
+    return (
+        _float("coproduction_majority_pct"),
+        _float("coproduction_minority_pct"),
+        _bool("coproduction_cultural_test_passed"),
+    )
+
+
+def _role_qualification_for_candidate(
+    code: str, program_slug: str, role_known_codes: dict[str, tuple[str, ...]] | None,
+) -> dict | None:
+    """Canonical Co-production Qualification Reconnection, Task 3 — the
+    repaired seam. Calls evaluate_role_qualification() (reusing cultural_
+    qualification_model.py's real 24-program registry UNCHANGED) with the
+    project's own real, persisted personnel facts. Returns None only when
+    role_known_codes itself is unavailable (never a fabricated result);
+    the bridge function itself always returns a real
+    CanonicalQualificationResult (QUALIFIES/HARD_FAIL/USER_FACT_REQUIRED/
+    RULE_DATA_INCOMPLETE/NOT_APPLICABLE) for every program_slug, including
+    the 157 slugs cultural_qualification_model.py has no data for."""
+    if role_known_codes is None:
+        return None
+    result = evaluate_role_qualification(program_slug, code, role_known_codes)
+    return qualification_result_to_dict(result)
 
 
 def _capability_only_status(examination) -> tuple[str, str, str]:
@@ -812,6 +891,14 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     # See docs/validation/CODEX_EXISTING_OPTIMIZER_LINEAGE_TRACE.md.
     priced_by_code: dict[str, list[StackCandidate]] = {}
 
+    # Canonical Co-production Qualification Reconnection — the first
+    # shared disconnect Codex's audit identified: this project's real,
+    # persisted personnel (ProjectPerson -> TalentProfile) were never
+    # read into the canonical evaluation path at all. One query per
+    # project (role-level facts don't vary per candidate), reused by
+    # every candidate's role-qualification check below.
+    role_known_codes = await role_known_codes_from_project(session, str(project_id))
+
     for code, program_slug, classification in candidates:
         jurisdiction = jurisdiction_by_code.get(code)
         disambiguate = candidates_per_code.get(code, 1) > 1
@@ -928,6 +1015,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             str(structure.id), code, (program_slug,),
         )
         _opportunities = _opportunities_for_candidate(inputs, code, program_slug, register, rate_resolution)
+        _role_qualification = _role_qualification_for_candidate(code, program_slug, role_known_codes)
         warnings = [LIMITATION_NOTE] if is_baseline else [LIMITATION_NOTE, RELOCATION_COMPARABILITY_NOTE]
         # FVD canonical input assembly repair, Task 2 — UNKNOWN territorial
         # facts stay visibly provisional rather than being silently absorbed
@@ -1069,6 +1157,12 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 # rate already computed above or to the project's own real
                 # budget lines.
                 "opportunities": _opportunities,
+                # Canonical Co-production Qualification Reconnection —
+                # disclosure only (Task 11), never a pricing/admission
+                # gate for this already-priced single-program candidate:
+                # canonical_role_qualification_bridge.py's real, 24-
+                # program-slug-covered role/nationality gate result.
+                "role_qualification": _role_qualification,
             },
             input_fingerprint=fingerprint,
         ))
@@ -1394,10 +1488,17 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     # resolves to UNRESOLVED_FACTS — a genuine, disclosed pathway, never
     # priced or comparable economics.
     candidate_codes = list(priced_by_code.keys())
+    _copro_majority_pct, _copro_minority_pct, _copro_cultural_test_passed = await _coproduction_facts(
+        session, project.id,
+    )
 
     MAX_TREATY_PARTNERS = 5
     for partner_code in find_real_bilateral_partners(home_code, candidate_codes)[:MAX_TREATY_PARTNERS]:
-        opp = evaluate_bilateral_coproduction_opportunity(home_code, partner_code)
+        opp = evaluate_bilateral_coproduction_opportunity(
+            home_code, partner_code,
+            majority_pct=_copro_majority_pct, minority_pct=_copro_minority_pct,
+            cultural_test_passed=_copro_cultural_test_passed,
+        )
         if opp is None:
             continue
         partner_jur = jurisdiction_by_code.get(partner_code)
@@ -1467,6 +1568,15 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     if eurimages_partners:
         MAX_EURIMAGES_DISPLAY = 10
         shown = sorted(eurimages_partners)[:MAX_EURIMAGES_DISPLAY]
+        # Canonical Co-production Qualification Reconnection — was
+        # previously hardcoded to UNRESOLVED_FACTS/cultural_test_resolved
+        # =False regardless of any real fact; now genuinely computed via
+        # evaluate_eurimages_coproduction_opportunity() (reused
+        # unchanged). With no country_pcts fact on file (true for LU/FVD)
+        # this still resolves UNRESOLVED_FACTS — same output, real path.
+        _eurimages_opp = evaluate_eurimages_coproduction_opportunity(
+            [home_code] + shown, cultural_test_passed=_copro_cultural_test_passed,
+        )
         structure = ProductionStructure(
             id=uuid.uuid4(),
             project_id=project.id,
@@ -1518,10 +1628,10 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                     }
                     for code in shown
                 ],
-                "treaty_resolution_state": "UNRESOLVED_FACTS",
-                "treaty_cultural_test_required": True,
-                "treaty_cultural_test_resolved": False,
-                "treaty_disqualification_reasons": [],
+                "treaty_resolution_state": _eurimages_opp.resolution_state if _eurimages_opp else "UNRESOLVED_FACTS",
+                "treaty_cultural_test_required": _eurimages_opp.cultural_test_required if _eurimages_opp else True,
+                "treaty_cultural_test_resolved": _eurimages_opp.cultural_test_resolved if _eurimages_opp else False,
+                "treaty_disqualification_reasons": list(_eurimages_opp.disqualification_reasons) if _eurimages_opp else [],
                 "reason": (
                     f"{len(eurimages_partners)} real Eurimages member candidate(s) "
                     "discovered; real budget-share and cultural-test facts required "

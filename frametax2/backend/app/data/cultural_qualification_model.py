@@ -294,6 +294,15 @@ _SPEND_ONLY_SLUGS: frozenset[str] = frozenset([
 ])
 
 
+def is_spend_only_program(program_slug: str) -> bool:
+    """True only for the explicit, real allowlist of programs KNOWN to
+    have no nationality/cultural gate at all (spend-based only) --
+    distinct from has_cultural_test()==False, which is also true for a
+    program this module simply has no data for yet (never conflate
+    'explicitly not required' with 'genuinely missing rule data')."""
+    return program_slug in _SPEND_ONLY_SLUGS
+
+
 def has_cultural_test(program_slug: str) -> bool:
     """
     Return True if the program has any nationality or cultural test requirements.

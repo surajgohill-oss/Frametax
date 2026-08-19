@@ -138,6 +138,13 @@ def _empty_structure_entry(
         # py's per-candidate loop). Never entered into NPC/ranking above;
         # [] for any row persisted before this enrichment existed.
         "opportunities": trace.get("opportunities") or [],
+        # Canonical Co-production Qualification Reconnection — read
+        # straight off calculation_trace_json's role_qualification
+        # (canonical_role_qualification_bridge.py). Disclosure only,
+        # never an admission/pricing gate for this already-priced
+        # candidate; None for any row persisted before this enrichment
+        # existed or for a program with no role/nationality rule data.
+        "role_qualification": trace.get("role_qualification"),
         "is_fully_priced": is_priced,
         "candidate_status": trace.get("candidate_status"),
         # Codex Defect 4 — the actual terminal cause (never flattened to a

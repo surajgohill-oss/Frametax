@@ -2193,3 +2193,33 @@ Continues from commit `b9b2e88`. Direct-read trace of the five legacy modules id
 **Guards untouched:** worldwide program database, base pricing, canonical LU/FVD path, NPC, stacking, component/split, grants/funds, treaty/co-pro, hybrid/anchor, and the already-connected fee/cap and reinvestment math — none edited. Screen Analyzer itself not built (only its input contract finalized). No new ranking engine; unresolved/speculative opportunities do not enter `is_directly_comparable`/ranking (same guard as the prior phase, unchanged).
 
 **PROACTIVE_OPPORTUNITY_DISCOVERY_CANONICALLY_RECONNECTED — proactive reinvestment-candidate scanning and qualification-lever discovery both connected and runtime-verified from real budget data; Screen Analyzer input contract finalized without building Screen Analyzer; larger legacy recommendation engine remains a disclosed, separate reconnection opportunity.**
+
+---
+
+## Canonical Co-production Qualification Reconnection (2026-08-19)
+
+Continues from `4c36b42` + Codex's audit commit `436fe6d` (`CODEX_COPRO_ROLE_QUALIFICATION_COMPLETENESS.md`/`.json`, 181-regime control population). Repairs the first shared disconnect Codex identified: `canonical_evaluation._opportunities_for_candidate()` never called any existing role/nationality qualification machinery, never read a project's real persisted personnel.
+
+**New adapters:**
+- `app/calculators/canonical_qualification_result.py` — the ONE canonical qualification-result contract (`QUALIFIES`/`HARD_FAIL`/`CURABLE_GAP`/`USER_FACT_REQUIRED`/`SCRIPT_FACT_REQUIRED`/`RULE_DATA_INCOMPLETE`/`NOT_APPLICABLE`, never collapsed).
+- `app/calculators/canonical_role_qualification_bridge.py` — reuses `cultural_qualification_model.py`'s real 24-program-slug `NationalityRequirement` registry unchanged, plus the real, persisted `ProjectPerson`→`TalentProfile` data (the SAME Personnel data the UI already lets users edit) via a new `role_known_codes_from_project()` DB query. `evaluate_role_qualification()` classifies the result into the canonical vocabulary — never generalizes one regime's rule to another (Task 5's explicit prohibition, confirmed by test).
+
+**Two real bugs found and fixed via this pass's own tests:**
+1. `evaluate_program_eligibility()` returning an empty `checks` tuple (a regime with real rows but none `status=="required"`, e.g. `uk_avec`) made `gate.passes` vacuously `True` — was being classified `QUALIFIES` instead of the correct `NOT_APPLICABLE` (no hard gate to enforce). Fixed with an explicit empty-checks branch.
+2. `has_cultural_test()`'s `False` return conflates "confirmed spend-only" with "simply no data recorded yet" — was causing zero-row, non-spend-only programs (e.g. `hr_cash_rebate`) to be misclassified `NOT_APPLICABLE` instead of `RULE_DATA_INCOMPLETE`. Added `cultural_qualification_model.is_spend_only_program()` (one additive line, reads the module's own existing `_SPEND_ONLY_SLUGS` allowlist) to disambiguate.
+
+**Treaty bridge disconnect also repaired:** `canonical_evaluation.py`'s bilateral and Eurimages call sites never threaded `majority_pct`/`minority_pct`/`cultural_test_passed` at all — always implicit `None`, and the Eurimages block never even called `evaluate_eurimages_coproduction_opportunity()` (hardcoded `UNRESOLVED_FACTS` directly). New `_coproduction_facts()` reads three real `ProjectFact` keys (`coproduction_majority_pct`/`coproduction_minority_pct`/`coproduction_cultural_test_passed`) and threads them through both call sites. Output unchanged for LU/FVD (neither has these facts on file) — the plumbing is now real, not a behavior change.
+
+**Wiring:** every priced single-program candidate now carries `role_qualification` in `calculation_trace_json`, passed through `canonical_production_view.py` — disclosure only, never a pricing/admission/ranking gate (Task 11 preserved; verified by test that ranking `is_directly_comparable` is unaffected).
+
+**Runtime-proven, both LU and FVD:** LU's real, persisted personnel (director AU, writer GB, producer US — `little_utopia_people.py`'s own real facts) genuinely `HARD_FAIL`s `ca_federal_cptc`'s real Canadian-role gate — discovered from real data, not fabricated. Baselines unchanged: LU $3,057,794.90, FVD $3,072,027.16.
+
+**True authority residual (`docs/validation/COPRO_TRUE_AUTHORITY_RESIDUAL.json`/`.md`, mechanical transform of Codex's audit, no new research):** 24 regimes now have their role dimension genuinely consumed (still Class C overall — other dimensions like points-scoring/contribution/ownership remain partial); 37 bilateral/Eurimages entries have real plumbing but genuinely missing role-level rule data (Codex's own finding: "no creative-role schema" — unchanged Class C); 108 regimes remain Class D (no role-level data anywhere in this codebase — genuine authority research required, exact propositions preserved verbatim from Codex's own `targeted_research_set`, zero new research performed).
+
+**Ingestion contract (`docs/validation/COPRO_INGESTION_FACT_CONTRACT.md`):** reuses Codex's own "Script Analyzer contract delta" section verbatim, reorganized into PROJECT/USER vs SCRIPT-DERIVED vs PROPOSED-STRUCTURE fact buckets, all UNKNOWN-tolerant. Flags (does not fix) the `screen_analyzer_fact_contract.py` naming drift against the canonical "Script Analyzer" product name — that module is already consumed by `canonical_opportunity_bridge.py`, so per this phase's explicit instruction it is not renamed.
+
+**Tests:** 14 new (`test_canonical_role_qualification_bridge.py` 9, `test_copro_qualification_wiring.py` 5). Full backend suite: 4286 passed, 1 pre-existing unrelated failure, 1 skipped.
+
+**Guards untouched:** worldwide program database, base pricing, canonical LU/FVD path, NPC, stacking, component/split, grants/funds, hybrid/anchor, fee/cap and reinvestment math, ranking mathematics — none edited. Script Analyzer not built/modified. `cultural_qualification_model.py`/`production_package_intelligence.py`/`canonical_treaty_bridge.py` reused unchanged except the one additive `is_spend_only_program()` line.
+
+**CANONICAL_COPRO_QUALIFICATION_RECONNECTED_TRUE_RESIDUAL_LOCALIZED — first shared disconnect repaired for the 24-regime role/nationality registry; treaty-bridge fact plumbing repaired; true authority residual localized to 108 genuinely-missing regimes with exact propositions, never conflated with wiring gaps.**
