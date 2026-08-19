@@ -64,7 +64,9 @@ from app.calculators.canonical_stack_bridge import (
 from app.calculators.canonical_opportunity_bridge import (
     discover_cultural_test_gap_opportunity,
     discover_fee_cap_headroom_opportunity,
+    discover_potential_reinvestment_candidates,
     discover_qualification_gap_opportunity,
+    discover_qualification_lever_opportunities,
     opportunity_to_dict,
 )
 from app.calculators.canonical_treaty_bridge import (
@@ -235,7 +237,17 @@ from app.services.canonical_project_economics import (
 # the existing ProgramRequirementsProfile registry and inkind_
 # contribution.py scenario model to the served path. Never entered into
 # NPC/ranking. Bumped so every project regenerates with this field.
-ENGINE_VERSION = "canonical-1.23.0"
+# Proactive Opportunity Discovery Reconciliation: `opportunities` now
+# also carries proactive POTENTIAL_REINVESTMENT_OPPORTUNITY candidates
+# (triggered by real budget-category totals, no known deal terms
+# required — canonical_opportunity_bridge.discover_potential_
+# reinvestment_candidates) and QUALIFICATION_LEVER opportunities (a real
+# movable post/vfx/music budget amount that could close a real
+# min-local-spend gap if relocated — discover_qualification_lever_
+# opportunities). Both reuse only real, already-parsed budget-line data;
+# neither enters NPC/ranking. Bumped so every project regenerates with
+# these new candidates.
+ENGINE_VERSION = "canonical-1.24.1"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
@@ -420,12 +432,18 @@ def _opportunities_for_candidate(
     contribution.py both EXISTED, engine-agnostic, disconnected)."""
     opportunities: list[dict] = []
 
-    current_atl_spend = round(sum(
-        l.amount_usd for l in inputs.budget_lines
-        if not l.is_memo and component_for(
-            inputs.spend_category_by_code.get(l.account_code, l.spend_category)
-        ) == "above_the_line"
-    ), 2)
+    # Real per-component spend totals (post/vfx/music/above_the_line —
+    # production_allocation.component_for()'s own vocabulary), computed
+    # once from the SAME real budget lines every other candidate branch
+    # reads — never invented, never re-derived per opportunity type.
+    component_spend: dict[str, float] = {}
+    for line in inputs.budget_lines:
+        if line.is_memo:
+            continue
+        comp = component_for(inputs.spend_category_by_code.get(line.account_code, line.spend_category))
+        component_spend[comp] = round(component_spend.get(comp, 0.0) + line.amount_usd, 2)
+
+    current_atl_spend = component_spend.get("above_the_line", 0.0)
     fee_opp = discover_fee_cap_headroom_opportunity(
         code, program_slug, current_atl_spend, inputs.gross_budget_usd, rate_resolution.modeled_rate,
     )
@@ -435,14 +453,40 @@ def _opportunities_for_candidate(
     actual_local_spend = round(sum(
         a.amount_usd for a in register if a.state == QualificationState.QUALIFIES
     ), 2)
-    for gap_opp in discover_qualification_gap_opportunity(
+    gap_opps = discover_qualification_gap_opportunity(
         code, program_slug, actual_local_spend, inputs.gross_budget_usd,
-    ):
+    )
+    for gap_opp in gap_opps:
         opportunities.append(opportunity_to_dict(gap_opp))
 
     cultural_opp = discover_cultural_test_gap_opportunity(code, program_slug)
     if cultural_opp is not None:
         opportunities.append(opportunity_to_dict(cultural_opp))
+
+    # Task 3 — proactive reinvestment/vendor-participation candidates,
+    # triggered purely by real budget-category totals (no known deal
+    # terms required, unlike discover_reinvestment_opportunity above).
+    # Gated to the production's own declared home jurisdiction only: the
+    # underlying vendor/service spend is a project-level fact, not a
+    # per-candidate one, so surfacing it identically on every one of a
+    # project's dozens of alternative-jurisdiction candidates would be
+    # pure duplication, not N distinct opportunities.
+    if code == inputs.jurisdiction_code:
+        for potential_opp in discover_potential_reinvestment_candidates(code, program_slug, component_spend):
+            opportunities.append(opportunity_to_dict(potential_opp))
+
+    # Task 5 — qualification levers: a real movable-component amount
+    # currently sitting at the production's declared home jurisdiction
+    # (never at THIS candidate — routing home spend to itself is a
+    # no-op) that could close a real local-spend gap if relocated here.
+    if code != inputs.jurisdiction_code and gap_opps:
+        movable_elsewhere = {
+            comp: amt for comp, amt in component_spend.items() if comp in MOVABLE_COMPONENTS
+        }
+        for lever_opp in discover_qualification_lever_opportunities(
+            code, program_slug, gap_opps, movable_elsewhere,
+        ):
+            opportunities.append(opportunity_to_dict(lever_opp))
 
     return opportunities
 

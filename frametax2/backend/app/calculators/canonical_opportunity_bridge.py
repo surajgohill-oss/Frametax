@@ -40,9 +40,17 @@ from app.calculators.inkind_contribution import (
     SourceConfidence,
     analyse_inkind_contribution,
 )
+from app.calculators.screen_analyzer_fact_contract import required_fact_descriptions
 from app.data.program_requirements import get_program_requirements
 
-OPPORTUNITY_BRIDGE_VERSION = "1.0.0"
+OPPORTUNITY_BRIDGE_VERSION = "1.1.0"
+# 1.1.0 — Proactive Opportunity Discovery Reconciliation: adds proactive
+# (budget-triggered, not just program-triggered) reinvestment-candidate
+# scanning and qualification-lever discovery (movable post/vfx/music
+# component relocation as a real, budget-backed lever for closing a real
+# min-local-spend gap), plus the Task 8 fact_classification vocabulary and
+# a `trigger` provenance field on every opportunity. Additive only — every
+# existing field/function signature is unchanged.
 
 # ── Opportunity status vocabulary (Task 9) ──────────────────────────────
 STATUS_RESOLVED_PRICEABLE = "RESOLVED_PRICEABLE"
@@ -57,9 +65,29 @@ STATUS_NOT_FEASIBLE = "NOT_FEASIBLE"
 TYPE_FEE_CAP_HEADROOM = "FEE_CAP_HEADROOM"
 TYPE_PER_PERSON_CAP_HEADROOM = "PER_PERSON_CAP_HEADROOM"
 TYPE_REINVESTMENT_VENDOR_PARTICIPATION = "REINVESTMENT_VENDOR_PARTICIPATION"
+TYPE_POTENTIAL_REINVESTMENT = "POTENTIAL_REINVESTMENT_OPPORTUNITY"
 TYPE_MIN_LOCAL_SPEND_GAP = "MIN_LOCAL_SPEND_GAP"
 TYPE_MIN_TOTAL_BUDGET_GAP = "MIN_TOTAL_BUDGET_GAP"
 TYPE_CULTURAL_TEST_GAP = "CULTURAL_TEST_GAP"
+TYPE_QUALIFICATION_LEVER = "QUALIFICATION_LEVER"
+
+# ── Task 8 fact-classification vocabulary — never flattened ─────────────
+FACT_KNOWN_PROJECT_FACT = "KNOWN_PROJECT_FACT"
+FACT_USER_CONFIRMATION_REQUIRED = "USER_CONFIRMATION_REQUIRED"
+FACT_SCREEN_ANALYZER_FACT_REQUIRED = "SCREEN_ANALYZER_FACT_REQUIRED"
+FACT_PROPOSED_CHANGE = "PROPOSED_CHANGE"
+FACT_AUTHORITY_FACT = "AUTHORITY_FACT"
+
+#: Real, primary-source-cited canonical spend categories the movable-
+#: component reinvestment/lever scan is allowed to look at — every entry
+#: maps to a real production_allocation.component_for() output. Never
+#: invents a category not already recognized by the canonical allocator.
+_PROACTIVE_REINVESTMENT_COMPONENTS = ("post", "vfx", "music", "above_the_line")
+
+#: Below this real dollar amount a component's spend is not material
+#: enough to surface as a proactive vendor-participation candidate — a
+#: policy threshold, not a per-project guess.
+_MATERIALITY_FLOOR_USD = 50_000.0
 
 
 @dataclass
@@ -100,6 +128,16 @@ class CanonicalOpportunity:
     required_facts: tuple[str, ...] = ()
     reasoning_trace: tuple[str, ...] = ()
     risk_notes: tuple[str, ...] = ()
+
+    #: Task 11 — the real, concrete fact/data point that caused this
+    #: opportunity to be discovered (e.g. "real ATL spend $200,000 < cap
+    #: $600,000" or "post-production budget line total $172,904 >=
+    #: materiality floor"). Never "the optimizer looked for opportunities".
+    trigger: str | None = None
+
+    #: Task 8 — distinguishes what KIND of fact this opportunity rests on.
+    #: Never flattened into a single status field.
+    fact_classification: str = "USER_CONFIRMATION_REQUIRED"
 
 
 def _opp_id(kind: str, jurisdiction_code: str, program_slug: str, suffix: str = "") -> str:
@@ -203,6 +241,12 @@ def discover_fee_cap_headroom_opportunity(
             "Reallocation scenario requires a real, identifiable non-qualifying "
             "account with sufficient headroom to reduce — not assumed to exist.",
         ),
+        trigger=(
+            f"Real ATL spend ${current_atl_spend_usd:,.0f} < real cap "
+            f"${max_eligible_atl:,.0f} ({profile.atl_cap_pct_of_other_costs:.0%} "
+            f"of ${total_budget_usd:,.0f})."
+        ),
+        fact_classification=FACT_USER_CONFIRMATION_REQUIRED,
     )
 
 
@@ -246,6 +290,8 @@ def discover_per_person_cap_headroom_opportunity(
             "This is disclosure, not an opportunity to pursue — increasing "
             "compensation further would not increase QPE.",
         ),
+        trigger=f"{len(at_cap)} real budgeted individual(s) at/near the per-person cap.",
+        fact_classification=FACT_KNOWN_PROJECT_FACT,
     )
 
 
@@ -305,6 +351,8 @@ def discover_qualification_gap_opportunity(
                     "cash cost is real (Task 8) and must be weighed against "
                     "the incentive this program's rate would then unlock.",
                 ),
+                trigger=f"Real local spend ${actual_local_spend_usd:,.0f} < real minimum ${profile.min_local_spend_usd:,.0f}.",
+                fact_classification=FACT_PROPOSED_CHANGE,
             ))
 
     if profile.min_total_budget_usd is not None and actual_total_budget_usd is not None:
@@ -338,6 +386,8 @@ def discover_qualification_gap_opportunity(
                     f"Required: ${profile.min_total_budget_usd:,.0f}. "
                     f"Actual: ${actual_total_budget_usd:,.0f}. Gap: ${gap:,.0f}.",
                 ),
+                trigger=f"Real total budget ${actual_total_budget_usd:,.0f} < real minimum ${profile.min_total_budget_usd:,.0f}.",
+                fact_classification=FACT_PROPOSED_CHANGE,
             ))
 
     return opportunities
@@ -375,14 +425,7 @@ def discover_cultural_test_gap_opportunity(
         ),
         gap_measure="cultural_test_threshold",
         authority_basis=(profile.evidence.source_title if profile.evidence else None),
-        required_facts=(
-            "Writer/director/producer/cast nationality or residency",
-            "Story setting and subject matter",
-            "Shooting location(s)",
-            "Language of production",
-            "Post-production activity location",
-            "Any other criteria this program's own cultural test scores",
-        ),
+        required_facts=required_fact_descriptions(consumer="discover_cultural_test_gap_opportunity"),
         reasoning_trace=(
             f"Threshold: {profile.cultural_test_threshold} points.",
             "No script-derived project facts exist yet to score actual "
@@ -394,6 +437,8 @@ def discover_cultural_test_gap_opportunity(
         risk_notes=(
             "Never automatically scored. Never assumed to pass or fail.",
         ),
+        trigger=f"Real cultural_test_threshold={profile.cultural_test_threshold} on file, no script facts on file.",
+        fact_classification=FACT_SCREEN_ANALYZER_FACT_REQUIRED,
     )
 
 
@@ -479,7 +524,154 @@ def discover_reinvestment_opportunity(
             f"{result.edb_ruling_required}.",
         ),
         risk_notes=tuple(result.international_precedents[:3]),
+        trigger=f"Real face value ${face_value_usd:,.0f} != real cash paid ${cash_paid_usd:,.0f}.",
+        fact_classification=FACT_AUTHORITY_FACT if result.edb_ruling_required else FACT_USER_CONFIRMATION_REQUIRED,
     )
+
+
+def discover_potential_reinvestment_candidates(
+    jurisdiction_code: str,
+    program_slug: str,
+    component_spend_usd: dict[str, float],
+) -> list[CanonicalOpportunity]:
+    """Task 3 — PROACTIVE reinvestment/vendor-participation discovery.
+    Unlike discover_reinvestment_opportunity (which requires an ALREADY
+    KNOWN face-value/cash-paid split), this scans real, already-summed
+    budget-line totals per movable component (post/vfx/music/above_the_line
+    — production_allocation.component_for()'s own vocabulary, nothing
+    invented) and flags any component whose real spend clears the
+    materiality floor as a CANDIDATE worth asking the production about.
+    No cash/deferred split is assumed — status is always REQUIRES_USER_FACT
+    and proposed_amount_usd/deferred_or_reinvested_usd stay None until a
+    real commercial term is supplied (which then flows through
+    discover_reinvestment_opportunity for the actual scenario math)."""
+    opportunities: list[CanonicalOpportunity] = []
+    for component in _PROACTIVE_REINVESTMENT_COMPONENTS:
+        amount = component_spend_usd.get(component)
+        if not amount or amount < _MATERIALITY_FLOOR_USD:
+            continue
+        opportunities.append(CanonicalOpportunity(
+            opportunity_id=_opp_id("POTENTIAL-REINVEST", jurisdiction_code, program_slug, component),
+            opportunity_type=TYPE_POTENTIAL_REINVESTMENT,
+            status=STATUS_REQUIRES_USER_FACT,
+            jurisdiction_code=jurisdiction_code,
+            program_slug=program_slug,
+            title=f"Potential vendor participation/reinvestment — {component} (${amount:,.0f} real spend)",
+            description=(
+                f"This budget's real {component} spend totals ${amount:,.0f} — "
+                "a substantial vendor/service category. Some vendors in this "
+                "category are willing to defer or reinvest part of their fee "
+                "for profit participation or other consideration, which can "
+                "change the qualifying/cash treatment of that portion. No "
+                "such arrangement is known to exist for this production — "
+                "this is a candidate to raise with the vendor, not a modeled "
+                "deal."
+            ),
+            source_component=component,
+            current_amount_usd=amount,
+            proposed_amount_usd=None,
+            deferred_or_reinvested_usd=None,
+            incremental_gross_cost_usd=0.0,
+            incremental_cash_usd=0.0,
+            incremental_qpe_usd=0.0,
+            incremental_incentive_usd=0.0,
+            net_benefit_usd=None,
+            authority_basis=None,
+            required_facts=(
+                f"Whether the {component} vendor(s) would accept any portion "
+                "of their fee as deferred consideration/profit participation "
+                "rather than cash, and on what commercial terms.",
+                "The production's own willingness to negotiate such terms — "
+                "never assumed here.",
+            ),
+            reasoning_trace=(
+                f"Real {component} budget-line total: ${amount:,.0f} "
+                f"(>= materiality floor ${_MATERIALITY_FLOOR_USD:,.0f}).",
+                "No cash/deferred split is known — this is a candidate for "
+                "the production to explore, not a priced opportunity. Once "
+                "real face-value/cash-paid terms exist, "
+                "discover_reinvestment_opportunity() prices the actual "
+                "scenario.",
+            ),
+            risk_notes=(
+                "Never assumes vendor willingness. Never fabricates a "
+                "cash/deferred split.",
+            ),
+            trigger=f"Real {component} spend ${amount:,.0f} >= materiality floor ${_MATERIALITY_FLOOR_USD:,.0f}.",
+            fact_classification=FACT_USER_CONFIRMATION_REQUIRED,
+        ))
+    return opportunities
+
+
+def discover_qualification_lever_opportunities(
+    jurisdiction_code: str,
+    program_slug: str,
+    gap_opportunities: list[CanonicalOpportunity],
+    movable_component_spend_elsewhere_usd: dict[str, float],
+) -> list[CanonicalOpportunity]:
+    """Task 5 — qualification levers. For a real MIN_LOCAL_SPEND_GAP
+    already discovered on this candidate, checks whether a real movable
+    component (post/vfx/music — production_allocation.MOVABLE_COMPONENTS)
+    currently spent OUTSIDE this jurisdiction has a real dollar total that
+    would close the gap if relocated here. Never invents a component or a
+    spend amount — both come from the SAME real budget lines the canonical
+    allocator already parsed. Always a PROPOSED_CHANGE requiring explicit
+    approval, never auto-applied."""
+    levers: list[CanonicalOpportunity] = []
+    local_spend_gaps = [g for g in gap_opportunities if g.gap_measure == "min_local_spend_usd" and g.gap_amount_usd]
+    for gap in local_spend_gaps:
+        for component, amount in sorted(movable_component_spend_elsewhere_usd.items()):
+            if not amount or amount < gap.gap_amount_usd:
+                continue
+            levers.append(CanonicalOpportunity(
+                opportunity_id=_opp_id("QUAL-LEVER", jurisdiction_code, program_slug, component),
+                opportunity_type=TYPE_QUALIFICATION_LEVER,
+                status=STATUS_CONDITIONAL,
+                jurisdiction_code=jurisdiction_code,
+                program_slug=program_slug,
+                title=f"Route {component} to {jurisdiction_code} to close local-spend gap",
+                description=(
+                    f"{program_slug} requires ${gap.gap_amount_usd:,.0f} more "
+                    f"local spend. The production's real {component} spend "
+                    f"(currently outside {jurisdiction_code}) totals "
+                    f"${amount:,.0f} — enough, if genuinely relocatable, to "
+                    "close this gap. This is a proposed change requiring "
+                    "explicit approval, not an automatic routing."
+                ),
+                source_component=component,
+                current_amount_usd=0.0,
+                proposed_amount_usd=gap.gap_amount_usd,
+                gap_amount_usd=gap.gap_amount_usd,
+                gap_measure="min_local_spend_usd",
+                incremental_gross_cost_usd=0.0,
+                incremental_cash_usd=0.0,
+                authority_basis=gap.authority_basis,
+                required_facts=(
+                    f"Confirm the {component} work can genuinely be performed "
+                    f"in {jurisdiction_code} without disrupting the production "
+                    "workflow — this is a real operational decision, not a "
+                    "cosmetic budget reallocation.",
+                    "Component-relocation pricing (existing canonical "
+                    "component/split pathway) must be run separately to "
+                    "confirm the net economic effect before this lever is "
+                    "acted on.",
+                ),
+                reasoning_trace=(
+                    f"Gap: ${gap.gap_amount_usd:,.0f} local spend required.",
+                    f"Real {component} spend elsewhere: ${amount:,.0f} — "
+                    "sufficient in principle to close the gap.",
+                    "Not automatically recommended: relocating a component "
+                    "has its own real cost/feasibility implications, priced "
+                    "separately by the existing component-relocation pathway.",
+                ),
+                risk_notes=(
+                    "Never invents a component or an amount not already on "
+                    "the production's real budget.",
+                ),
+                trigger=f"Real {component} spend ${amount:,.0f} >= real gap ${gap.gap_amount_usd:,.0f}.",
+                fact_classification=FACT_PROPOSED_CHANGE,
+            ))
+    return levers
 
 
 def opportunity_to_dict(opp: CanonicalOpportunity) -> dict:
@@ -507,4 +699,6 @@ def opportunity_to_dict(opp: CanonicalOpportunity) -> dict:
         "required_facts": list(opp.required_facts),
         "reasoning_trace": list(opp.reasoning_trace),
         "risk_notes": list(opp.risk_notes),
+        "trigger": opp.trigger,
+        "fact_classification": opp.fact_classification,
     }
