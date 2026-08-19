@@ -132,6 +132,12 @@ def _empty_structure_entry(
         "conditional_compatibility": trace.get("conditional_compatibility") or {
             "pursuable_count": 0, "counts_by_verdict": {}, "gate_kinds": [],
         },
+        # Reinvestment + Qualification Opportunity Optimization — read
+        # straight off calculation_trace_json's opportunities
+        # (canonical_opportunity_bridge.py, wired in canonical_evaluation.
+        # py's per-candidate loop). Never entered into NPC/ranking above;
+        # [] for any row persisted before this enrichment existed.
+        "opportunities": trace.get("opportunities") or [],
         "is_fully_priced": is_priced,
         "candidate_status": trace.get("candidate_status"),
         # Codex Defect 4 — the actual terminal cause (never flattened to a

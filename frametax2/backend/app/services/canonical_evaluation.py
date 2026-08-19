@@ -61,6 +61,12 @@ from app.calculators.canonical_stack_bridge import (
     StackCandidate,
     price_program_group_stack,
 )
+from app.calculators.canonical_opportunity_bridge import (
+    discover_cultural_test_gap_opportunity,
+    discover_fee_cap_headroom_opportunity,
+    discover_qualification_gap_opportunity,
+    opportunity_to_dict,
+)
 from app.calculators.canonical_treaty_bridge import (
     evaluate_bilateral_coproduction_opportunity,
     find_eurimages_partners,
@@ -222,7 +228,14 @@ from app.services.canonical_project_economics import (
 # types: co-production + conditional fund, both reusing the exact same
 # _conditional_data() every other structure type already uses). Bumped
 # so every project regenerates with this composition.
-ENGINE_VERSION = "canonical-1.22.1"
+# Reinvestment + Qualification Opportunity Optimization: every priced
+# single-program candidate now carries `opportunities` (canonical_
+# opportunity_bridge.py — fee/cap headroom, min-local-spend/min-total-
+# budget qualification gaps, cultural-test gap disclosure), reconnecting
+# the existing ProgramRequirementsProfile registry and inkind_
+# contribution.py scenario model to the served path. Never entered into
+# NPC/ranking. Bumped so every project regenerates with this field.
+ENGINE_VERSION = "canonical-1.23.0"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
@@ -392,6 +405,46 @@ def _price_component_relocation_candidate(
         production_type=inputs.production_type,
     )
     return spec, allocation, pricing
+
+
+def _opportunities_for_candidate(
+    inputs: ProjectEconomicInputs, code: str, program_slug: str, register, rate_resolution,
+) -> list[dict]:
+    """Reinvestment + Qualification Opportunity Optimization — attaches
+    real, canonical-data-driven opportunities to a priced candidate.
+    Every input here is already computed by the existing canonical
+    pricing pass (register, resolved rate) or read directly off the
+    project's own real budget lines — never invented. See
+    canonical_opportunity_bridge.py's own module docstring for the
+    forensic-recovery finding (ProgramRequirementsProfile + inkind_
+    contribution.py both EXISTED, engine-agnostic, disconnected)."""
+    opportunities: list[dict] = []
+
+    current_atl_spend = round(sum(
+        l.amount_usd for l in inputs.budget_lines
+        if not l.is_memo and component_for(
+            inputs.spend_category_by_code.get(l.account_code, l.spend_category)
+        ) == "above_the_line"
+    ), 2)
+    fee_opp = discover_fee_cap_headroom_opportunity(
+        code, program_slug, current_atl_spend, inputs.gross_budget_usd, rate_resolution.modeled_rate,
+    )
+    if fee_opp is not None:
+        opportunities.append(opportunity_to_dict(fee_opp))
+
+    actual_local_spend = round(sum(
+        a.amount_usd for a in register if a.state == QualificationState.QUALIFIES
+    ), 2)
+    for gap_opp in discover_qualification_gap_opportunity(
+        code, program_slug, actual_local_spend, inputs.gross_budget_usd,
+    ):
+        opportunities.append(opportunity_to_dict(gap_opp))
+
+    cultural_opp = discover_cultural_test_gap_opportunity(code, program_slug)
+    if cultural_opp is not None:
+        opportunities.append(opportunity_to_dict(cultural_opp))
+
+    return opportunities
 
 
 def _capability_only_status(examination) -> tuple[str, str, str]:
@@ -830,6 +883,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         _conditional_program_dicts, _conditional_compatibility_dict = _conditional_data(
             str(structure.id), code, (program_slug,),
         )
+        _opportunities = _opportunities_for_candidate(inputs, code, program_slug, register, rate_resolution)
         warnings = [LIMITATION_NOTE] if is_baseline else [LIMITATION_NOTE, RELOCATION_COMPARABILITY_NOTE]
         # FVD canonical input assembly repair, Task 2 — UNKNOWN territorial
         # facts stay visibly provisional rather than being silently absorbed
@@ -965,6 +1019,12 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 # only, never entered into NPC/economics above.
                 "conditional_programs": _conditional_program_dicts,
                 "conditional_compatibility": _conditional_compatibility_dict,
+                # Reinvestment + Qualification Opportunity Optimization —
+                # see canonical_opportunity_bridge.py. Never enters NPC/
+                # ranking; every dollar figure traces to the SAME register/
+                # rate already computed above or to the project's own real
+                # budget lines.
+                "opportunities": _opportunities,
             },
             input_fingerprint=fingerprint,
         ))
