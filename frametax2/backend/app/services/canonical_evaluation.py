@@ -117,7 +117,11 @@ from app.calculators.structure_compatibility import compatibility_to_dict, evalu
 from app.data.authority_coverage_registry import coverage_state as _coverage_state
 from app.data.executable_jurisdiction_registry import get_doctrine as _get_doctrine
 from app.data.program_rate_rules import (
+    CONDITION_STATE_AUTHORITY_UNRESOLVED,
+    CONDITION_STATE_EXECUTABLE,
+    CONDITION_STATE_USER_FACT_REQUIRED,
     RATE_FAILURE_NO_RULES,
+    RateResolution,
     classify_rate_resolution_failure,
     resolve_program_rate,
 )
@@ -884,6 +888,117 @@ def _role_qualification_for_candidate(
     return qualification_result_to_dict(result)
 
 
+#: CBA-002 continuation — TYPED RATE CONDITION -> QUALIFICATION propagation.
+#: Only these 3 RateCondition kinds gate program ELIGIBILITY itself (whether
+#: the program applies at all) rather than merely the RATE quantum (how much
+#: it's worth, or the exact ceiling within a discretionary band). Everything
+#: else in CONDITION_KIND_STATE (discretionary_band, cultural_test_required
+#: — already independently owned by evaluate_role_qualification() itself,
+#: never double-gated here — uplifts, rate-base/ATL/currency modeling gaps,
+#: disclosure-only kinds) is deliberately EXCLUDED: propagating those would
+#: incorrectly downgrade Recommended-admission for the ~60 programs with a
+#: mere discretionary band, or any uplift-only condition, none of which are
+#: real eligibility gates. This is a narrow, explicit, data-driven set —
+#: never a blanket "any unresolved rate condition blocks qualification" rule.
+_RATE_CONDITION_ELIGIBILITY_KINDS = frozenset({
+    "min_qpe_pct_of_total_budget",       # real QPE-vs-budget ratio: unmet -> curable gap
+    "project_fact_dependent_eligibility",  # pure entity/content-certification gate
+    "unmodeled_spend_split_ratio",        # a genuine, differently-shaped ratio gate this
+                                            # engine doesn't yet model (Ontario/NY/Mexico)
+})
+
+#: Severity order for merging the rate-condition-derived qualification signal
+#: with the role/cultural qualification state already computed — the WORSE
+#: (lower number) of the two always wins; a passing rate condition can never
+#: override a real cultural/role-level gap, and vice versa.
+_QUAL_STATE_SEVERITY = {
+    QUAL_HARD_FAIL: 0,
+    QUAL_CURABLE_GAP: 1,
+    QUAL_USER_FACT_REQUIRED: 1,
+    QUAL_SCRIPT_FACT_REQUIRED: 1,
+    QUAL_AUTHORITY_UNRESOLVED: 1,
+    QUAL_NOT_APPLICABLE: 2,
+    QUAL_QUALIFIES: 2,
+}
+
+
+def _rate_condition_qualification_impact(rate_resolution: RateResolution | None) -> tuple[str, tuple[str, ...]] | None:
+    """Returns (worst QUAL_* state implied by real eligibility-relevant rate
+    conditions, the condition_ids responsible) or None if no such condition
+    exists on this resolution, or all of them are satisfied/not-applicable.
+    Only ever reads conditions_evaluated -- never re-decides rate mechanics."""
+    if rate_resolution is None:
+        return None
+    worst_state: str | None = None
+    worst_severity = 99
+    culprits: list[str] = []
+    for cond in rate_resolution.conditions_evaluated:
+        if cond.kind not in _RATE_CONDITION_ELIGIBILITY_KINDS:
+            continue
+        if cond.condition_state == CONDITION_STATE_EXECUTABLE:
+            if cond.satisfied is False:
+                candidate_state = QUAL_CURABLE_GAP  # measurable, curable threshold gap
+            else:
+                continue  # satisfied or not yet evaluable -> no impact
+        elif cond.condition_state == CONDITION_STATE_USER_FACT_REQUIRED:
+            candidate_state = QUAL_USER_FACT_REQUIRED
+        elif cond.condition_state == CONDITION_STATE_AUTHORITY_UNRESOLVED:
+            candidate_state = QUAL_AUTHORITY_UNRESOLVED
+        else:
+            continue
+        sev = _QUAL_STATE_SEVERITY[candidate_state]
+        if sev < worst_severity:
+            worst_severity, worst_state = sev, candidate_state
+        culprits.append(cond.condition_id)
+    if worst_state is None:
+        return None
+    return worst_state, tuple(culprits)
+
+
+def _merge_rate_condition_into_qualification(
+    role_qualification: dict | None, rate_resolution: RateResolution | None,
+    regime_id: str, jurisdiction_code: str | None,
+) -> dict | None:
+    """Combines the role/cultural qualification state (evaluate_role_
+    qualification, unchanged) with the rate resolver's own eligibility-
+    relevant condition outcomes (CBA-002), taking whichever is WORSE by
+    _QUAL_STATE_SEVERITY. Never weakens an existing HARD_FAIL/gap state;
+    never invents QUALIFIES where none existed. Returns a dict in the same
+    shape qualification_result_to_dict() produces (or None, unchanged, if
+    neither source has anything to say)."""
+    impact = _rate_condition_qualification_impact(rate_resolution)
+    if impact is None:
+        return role_qualification
+    rate_state, culprit_ids = impact
+    if role_qualification is None:
+        return {
+            "regime_id": regime_id, "jurisdiction_code": jurisdiction_code,
+            "state": rate_state, "qualification_route": "rate_condition_eligibility_gate",
+            "role_findings": [], "current_points": None, "required_points": None,
+            "contribution_requirements": [], "ownership_control_requirements": [],
+            "resolved_facts": [], "missing_facts": list(culprit_ids) if rate_state != QUAL_CURABLE_GAP else [],
+            "failed_requirements": [], "curable_requirements": list(culprit_ids) if rate_state == QUAL_CURABLE_GAP else [],
+            "available_levers": [], "authority_basis": None, "confidence_state": "MEDIUM",
+            "reasoning_trace": [f"Rate condition(s) {', '.join(culprit_ids)} resolved to {rate_state}."],
+        }
+    existing_state = role_qualification.get("state")
+    existing_sev = _QUAL_STATE_SEVERITY.get(existing_state, 2)
+    rate_sev = _QUAL_STATE_SEVERITY[rate_state]
+    if rate_sev >= existing_sev:
+        return role_qualification  # existing role/cultural state is already as bad or worse
+    merged = dict(role_qualification)
+    merged["state"] = rate_state
+    merged["reasoning_trace"] = list(role_qualification.get("reasoning_trace") or []) + [
+        f"Rate condition(s) {', '.join(culprit_ids)} resolved to {rate_state}, "
+        f"downgrading from role/cultural state {existing_state}."
+    ]
+    if rate_state == QUAL_CURABLE_GAP:
+        merged["curable_requirements"] = list(role_qualification.get("curable_requirements") or []) + list(culprit_ids)
+    else:
+        merged["missing_facts"] = list(role_qualification.get("missing_facts") or []) + list(culprit_ids)
+    return merged
+
+
 def _capability_only_status(examination) -> tuple[str, str, str]:
     """Real terminal status for a capability_only candidate (Codex Defect
     4) — reads fields discover_executable_jurisdictions() already computed
@@ -1226,6 +1341,16 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     # run_full_analysis path generate_structure_scenarios.py depends on.
     # See docs/validation/CODEX_EXISTING_OPTIMIZER_LINEAGE_TRACE.md.
     priced_by_code: dict[str, list[StackCandidate]] = {}
+    # CBA-002 continuation, Section 3 — "a stack must inherit the unresolved/
+    # failed state of its members correctly." Combined multi-program
+    # structures below are built purely from StackCandidate (no
+    # qualification field), so without this, a combo's own trace never set
+    # role_qualification at all and the Recommended-admission gate's `state
+    # is None -> allowed` default let a combo bypass qualification entirely,
+    # even when one of its members individually carries a real gap. Recorded
+    # per (jurisdiction_code, program_slug) as each single-program candidate
+    # is resolved below; consulted when each combo's own trace is built.
+    _qual_state_by_code_program: dict[tuple[str, str], str | None] = {}
 
     # role_known_codes/script_facts (Canonical Co-production Qualification
     # Reconnection / Worldwide Qualification Consumption Closeout) are
@@ -1354,6 +1479,16 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             code, program_slug, role_known_codes, script_facts,
             typed_personnel_facts=typed_personnel_facts,
         )
+        # CBA-002 continuation: propagate real, eligibility-relevant rate
+        # condition outcomes (min_qpe_pct_of_total_budget / project_fact_
+        # dependent_eligibility / unmodeled_spend_split_ratio) into the same
+        # qualification state both the pricing-admission gate below and the
+        # Recommended-admission gate downstream already read — the worse of
+        # the role/cultural state and the rate-condition state always wins.
+        _role_qualification = _merge_rate_condition_into_qualification(
+            _role_qualification, rate_resolution, program_slug, code,
+        )
+        _qual_state_by_code_program[(code, program_slug)] = (_role_qualification or {}).get("state")
         warnings = [LIMITATION_NOTE] if is_baseline else [LIMITATION_NOTE, RELOCATION_COMPARABILITY_NOTE]
         # FVD canonical input assembly repair, Task 2 — UNKNOWN territorial
         # facts stay visibly provisional rather than being silently absorbed
@@ -1644,6 +1779,17 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 "evidence — but that assumption is unconfirmed, not verified."
             ]
         warnings = warnings + stack_result.disclosed_limitations
+        # CBA-002 continuation, Section 3 — the combo's own qualification
+        # state is the WORST (least admitted) of its members', never
+        # dropped/defaulted to None just because it's a combined structure.
+        _combo_member_states = [
+            _qual_state_by_code_program.get((code, slug)) for slug in stack_result.program_slugs
+        ]
+        _combo_qual_state = min(
+            (s for s in _combo_member_states if s is not None),
+            key=lambda s: _QUAL_STATE_SEVERITY.get(s, 2),
+            default=None,
+        )
         program_label = " + ".join(stack_result.program_slugs)
         structure = ProductionStructure(
             id=uuid.uuid4(),
@@ -1713,6 +1859,16 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 "feasibility_reasons": feasibility_reasons,
                 "conditional_programs": _conditional_program_dicts,
                 "conditional_compatibility": _conditional_compatibility_dict,
+                # CBA-002 continuation — a combined structure is never
+                # Recommended-eligible on its own if any member individually
+                # carries a real, unresolved qualification gap. Only the
+                # `state` key is populated (the Recommended-admission gate
+                # at _admits_recommended/canonical_production_view.py reads
+                # exactly and only this key); per-member detail remains on
+                # each single-program candidate's own trace.
+                "role_qualification": (
+                    {"state": _combo_qual_state} if _combo_qual_state is not None else None
+                ),
             },
             input_fingerprint=fingerprint,
         ))

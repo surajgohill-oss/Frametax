@@ -148,6 +148,9 @@ class ConditionEvaluation:
     satisfied: bool | None   # None = cannot be evaluated from known facts
     note: str
     condition_state: str = "AUTHORITY_UNRESOLVED"
+    kind: str = ""   # the source RateCondition.kind — lets downstream consumers
+                      # (e.g. canonical_evaluation.py's qualification propagation)
+                      # filter by real condition semantics without re-deriving them.
 
 
 # ── CBA-002: typed condition-kind terminal-state vocabulary ────────────────
@@ -1188,7 +1191,7 @@ def resolve_program_rate(
     for cond in tier.conditions:
         if cond.kind == "production_type":
             evaluations.append(ConditionEvaluation(
-                cond.condition_id, cond.description, cond.quote,
+                cond.condition_id, cond.description, cond.quote, kind=cond.kind,
                 satisfied=True,
                 note=f"Production type '{production_type}' is within the tier's scope.",
                 condition_state=CONDITION_STATE_EXECUTABLE,
@@ -1196,7 +1199,7 @@ def resolve_program_rate(
         elif cond.kind == "min_qpe_usd":
             met = qpe_usd is not None and cond.threshold_usd is not None and qpe_usd >= cond.threshold_usd
             evaluations.append(ConditionEvaluation(
-                cond.condition_id, cond.description, cond.quote,
+                cond.condition_id, cond.description, cond.quote, kind=cond.kind,
                 satisfied=met if cond.threshold_usd is not None else True,
                 note=(f"QPE ${qpe_usd:,.0f} vs threshold ${cond.threshold_usd:,.0f}"
                       if qpe_usd is not None and cond.threshold_usd is not None
@@ -1205,7 +1208,7 @@ def resolve_program_rate(
             ))
         elif cond.kind == "discretionary_band":
             evaluations.append(ConditionEvaluation(
-                cond.condition_id, cond.description, cond.quote,
+                cond.condition_id, cond.description, cond.quote, kind=cond.kind,
                 satisfied=None,
                 note="Cannot be pre-satisfied: the awarded rate within the 'up to' "
                      "band is set by the authority at approval. The engine models "
@@ -1214,7 +1217,7 @@ def resolve_program_rate(
             ))
         elif cond.kind == "graduated_bracket_applied":
             evaluations.append(ConditionEvaluation(
-                cond.condition_id, cond.description, cond.quote,
+                cond.condition_id, cond.description, cond.quote, kind=cond.kind,
                 satisfied=True,
                 note=(f"Statute-confirmed bracket, not discretionary — blended to "
                       f"a real effective rate of {effective_rate:.2%} for QPE "
@@ -1228,7 +1231,7 @@ def resolve_program_rate(
                 actual_pct = qpe_usd / gross_budget_usd
                 met = actual_pct >= cond.threshold_pct
                 evaluations.append(ConditionEvaluation(
-                    cond.condition_id, cond.description, cond.quote,
+                    cond.condition_id, cond.description, cond.quote, kind=cond.kind,
                     satisfied=met,
                     note=(f"QPE is {actual_pct:.1%} of total budget "
                           f"(${qpe_usd:,.0f} / ${gross_budget_usd:,.0f}) vs the "
@@ -1237,7 +1240,7 @@ def resolve_program_rate(
                 ))
             else:
                 evaluations.append(ConditionEvaluation(
-                    cond.condition_id, cond.description, cond.quote,
+                    cond.condition_id, cond.description, cond.quote, kind=cond.kind,
                     satisfied=None,
                     note="Executable in principle (QPE-to-total-budget ratio), but "
                          "the production's total budget was not supplied to this "
@@ -1259,7 +1262,7 @@ def resolve_program_rate(
                 satisfied = None
                 note = "No controlling authority currently on file resolves this condition deterministically."
             evaluations.append(ConditionEvaluation(
-                cond.condition_id, cond.description, cond.quote,
+                cond.condition_id, cond.description, cond.quote, kind=cond.kind,
                 satisfied=satisfied, note=note, condition_state=state,
             ))
 

@@ -34,6 +34,7 @@ _SERVED_PATH_MODULES = (
     "app.data.cultural_point_tables",
     "app.data.program_spend_rules",
     "app.data.program_rate_rules",
+    "app.data.program_authority_provenance",
     "app.data.national_cultural_status",
     "app.data.structuring_opportunity_patterns",
 )

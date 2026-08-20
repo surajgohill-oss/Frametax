@@ -140,3 +140,96 @@ def test_reclassified_egypt_fiji_conditions_are_project_fact_eligibility_gates()
                     assert cond.kind == "project_fact_dependent_eligibility"
                     assert CONDITION_KIND_STATE[cond.kind] == CONDITION_STATE_USER_FACT_REQUIRED
     assert found_any
+
+
+# ── CBA-002 continuation: TYPED RATE CONDITION -> QUALIFICATION propagation ──
+
+def test_condition_evaluation_carries_its_source_kind():
+    """The new ConditionEvaluation.kind field must reflect the real
+    RateCondition.kind so downstream qualification propagation can filter
+    by real semantics, never by re-deriving them from prose."""
+    r = resolve_program_rate(
+        "de_dfff", production_type="feature_film", qpe_usd=500_000, gross_budget_usd=4_000_000,
+    )
+    cond = next(c for c in r.conditions_evaluated if c.condition_id == "de-min-spend-pct-of-budget")
+    assert cond.kind == "min_qpe_pct_of_total_budget"
+
+
+def test_qualification_propagation_downgrades_on_unmet_executable_condition():
+    from app.services.canonical_evaluation import _merge_rate_condition_into_qualification
+    from app.calculators.canonical_qualification_result import QUAL_CURABLE_GAP, QUAL_QUALIFIES
+
+    r_fail = resolve_program_rate(
+        "de_dfff", production_type="feature_film", qpe_usd=500_000, gross_budget_usd=4_000_000,
+    )
+    merged = _merge_rate_condition_into_qualification(
+        {"state": QUAL_QUALIFIES, "reasoning_trace": [], "missing_facts": [], "curable_requirements": []},
+        r_fail, "de_dfff", "DE",
+    )
+    assert merged["state"] == QUAL_CURABLE_GAP
+    assert "de-min-spend-pct-of-budget" in merged["curable_requirements"]
+
+
+def test_qualification_propagation_no_impact_when_condition_satisfied():
+    from app.services.canonical_evaluation import _merge_rate_condition_into_qualification
+    from app.calculators.canonical_qualification_result import QUAL_QUALIFIES
+
+    r_pass = resolve_program_rate(
+        "de_dfff", production_type="feature_film", qpe_usd=1_000_000, gross_budget_usd=4_000_000,
+    )
+    original = {"state": QUAL_QUALIFIES, "reasoning_trace": [], "missing_facts": [], "curable_requirements": []}
+    merged = _merge_rate_condition_into_qualification(original, r_pass, "de_dfff", "DE")
+    assert merged["state"] == QUAL_QUALIFIES
+    assert merged is original  # byte-identical passthrough, never rebuilt when nothing changed
+
+
+def test_qualification_propagation_never_weakens_an_existing_hard_fail():
+    from app.services.canonical_evaluation import _merge_rate_condition_into_qualification
+    from app.calculators.canonical_qualification_result import QUAL_HARD_FAIL
+
+    r_fail = resolve_program_rate(
+        "de_dfff", production_type="feature_film", qpe_usd=500_000, gross_budget_usd=4_000_000,
+    )
+    original = {"state": QUAL_HARD_FAIL, "reasoning_trace": [], "missing_facts": [], "curable_requirements": []}
+    merged = _merge_rate_condition_into_qualification(original, r_fail, "de_dfff", "DE")
+    assert merged["state"] == QUAL_HARD_FAIL  # a curable rate gap never overrides a real hard fail
+    assert merged is original
+
+
+def test_qualification_propagation_ignores_discretionary_band_conditions():
+    """The ~60 discretionary_band conditions across the served universe
+    must NEVER downgrade qualification -- they're a rate-ceiling
+    disclosure, not an eligibility gate. Verified against a real program
+    that has one and no eligibility-relevant condition."""
+    from app.services.canonical_evaluation import _rate_condition_qualification_impact
+
+    r = resolve_program_rate("mu_edb_incentive", production_type="feature_film", qpe_usd=2_000_000)
+    if r is None:
+        import pytest
+        pytest.skip("mu_edb_incentive not eligible for this production_type/QPE in this environment")
+    kinds = {c.kind for c in r.conditions_evaluated}
+    assert "discretionary_band" in kinds or "no_sponsorship_in_qpe" in kinds
+    assert _rate_condition_qualification_impact(r) is None
+
+
+def test_qualification_propagation_ignores_unresolved_kinds_outside_the_eligibility_set():
+    """AUTHORITY_UNRESOLVED/USER_FACT_REQUIRED conditions of a kind NOT in
+    the deliberately narrow eligibility set (e.g. rate_base_narrower_than_
+    qpe, no_sponsorship_in_qpe) must not gate qualification -- only
+    min_qpe_pct_of_total_budget / project_fact_dependent_eligibility /
+    unmodeled_spend_split_ratio do."""
+    from app.services.canonical_evaluation import _rate_condition_qualification_impact
+    from app.data.program_rate_rules import ConditionEvaluation, RateResolution
+
+    fake = RateResolution(
+        program_slug="fake", modeled_rate=0.25, floor_rate=0.25, is_band_ceiling=False,
+        tier_id="fake-tier", basis="statute",
+        conditions_evaluated=(
+            ConditionEvaluation(
+                condition_id="fake-no-sponsorship", description="", quote="", kind="no_sponsorship_in_qpe",
+                satisfied=None, note="", condition_state="USER_FACT_REQUIRED",
+            ),
+        ),
+        unverified_claims=(), conflicts=(),
+    )
+    assert _rate_condition_qualification_impact(fake) is None
