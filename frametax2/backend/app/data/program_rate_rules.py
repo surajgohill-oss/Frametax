@@ -49,6 +49,7 @@ class RateCondition:
                          # "cultural_test_required") falls into the generic
                          # fact-dependent branch: satisfied=None, never assumed.
     threshold_usd: float | None = None
+    threshold_pct: float | None = None   # for min_qpe_pct_of_total_budget: fraction (0.20 = 20%)
 
 
 @dataclass(frozen=True)
@@ -146,6 +147,89 @@ class ConditionEvaluation:
     quote: str
     satisfied: bool | None   # None = cannot be evaluated from known facts
     note: str
+    condition_state: str = "AUTHORITY_UNRESOLVED"
+
+
+# ── CBA-002: typed condition-kind terminal-state vocabulary ────────────────
+# Every RateCondition.kind used anywhere in the canonical 71-program served
+# universe terminates in EXACTLY one of these six states (Final Consolidated
+# Backend Correction + Global Structuring Intelligence Acceptance, Section 2
+# of the governing spec). This is a CLOSED, upfront, data-driven mapping
+# decided once from each kind's real statutory meaning -- never a runtime
+# string-match/prose-dependent heuristic. Adding a new kind means adding one
+# row here (and, if EXECUTABLE, real evaluation logic in resolve_program_
+# rate()) -- not adding another special case to the dispatch loop.
+CONDITION_STATE_EXECUTABLE = "EXECUTABLE"
+CONDITION_STATE_DISCLOSURE_ONLY = "DISCLOSURE_ONLY"
+CONDITION_STATE_USER_FACT_REQUIRED = "USER_FACT_REQUIRED"
+CONDITION_STATE_SCRIPT_FACT_REQUIRED = "SCRIPT_FACT_REQUIRED"
+CONDITION_STATE_AUTHORITY_UNRESOLVED = "AUTHORITY_UNRESOLVED"
+CONDITION_STATE_NOT_APPLICABLE = "NOT_APPLICABLE"
+
+#: kind -> terminal state. Kinds not listed here fall back to
+#: AUTHORITY_UNRESOLVED (never silently NOT_APPLICABLE/EXECUTABLE) --
+#: see resolve_program_rate()'s dispatch default.
+CONDITION_KIND_STATE: dict[str, str] = {
+    # Already executed deterministically at tier-selection time (pre-CBA-002).
+    "production_type": CONDITION_STATE_EXECUTABLE,
+    "min_qpe_usd": CONDITION_STATE_EXECUTABLE,
+    "graduated_bracket_applied": CONDITION_STATE_EXECUTABLE,
+    # A ceiling, not an entitlement -- the awarded rate within the "up to"
+    # band is an authority discretion call at approval, never pre-satisfiable.
+    "discretionary_band": CONDITION_STATE_AUTHORITY_UNRESOLVED,
+    # Reclassified split of the former, over-broad, mis-tagged
+    # "min_spend_pct_of_total_budget": the 2 real QPE-vs-total-budget ratio
+    # conditions (Germany, UK) are genuinely EXECUTABLE once gross_budget_usd
+    # is known; the 3 conditions that are actually a different ratio
+    # (Ontario labour-vs-QPE, New York ATL-vs-other-QPE ceiling, Mexico
+    # national-supply-chain-origin) are not this ratio at all and stay
+    # unresolved; the 2 that are pure entity/fact gates (Egypt, Fiji) are
+    # reclassified onto the existing project_fact_dependent_eligibility kind.
+    "min_qpe_pct_of_total_budget": CONDITION_STATE_EXECUTABLE,
+    "unmodeled_spend_split_ratio": CONDITION_STATE_AUTHORITY_UNRESOLVED,
+    # Statutory content/points-test certification, ownership/entity facts,
+    # and similar eligibility gates the engine cannot pre-evaluate without a
+    # project-specific fact the user (not the statute) supplies.
+    "project_fact_dependent_eligibility": CONDITION_STATE_USER_FACT_REQUIRED,
+    "project_fact_dependent_uplift": CONDITION_STATE_USER_FACT_REQUIRED,
+    # Cultural point-table pass/fail is owned by the SEPARATE qualification
+    # bridge (canonical_role_qualification_bridge.py / cultural_point_
+    # tables.py), not the rate resolver -- disclosed here, never re-decided.
+    "cultural_test_required": CONDITION_STATE_DISCLOSURE_ONLY,
+    # The statute's real rate base is narrower than modeled QPE (e.g.
+    # "qualified Canadian labour expenditure" vs total QPE) but the cited
+    # source gives no cap percentage to apply (unlike CPTC, which does and
+    # is EXECUTABLE via QPE_CAP_RULES at price_segment() time, upstream of
+    # this per-condition evaluation) -- genuinely unresolved without a cap.
+    "rate_base_narrower_than_qpe": CONDITION_STATE_AUTHORITY_UNRESOLVED,
+    "uplift_on_narrower_base_not_modeled": CONDITION_STATE_AUTHORITY_UNRESOLVED,
+    # Whether QPE includes/excludes sponsorship/other financial assistance is
+    # a real production fact never evidenced from the budget alone.
+    "no_sponsorship_in_qpe": CONDITION_STATE_USER_FACT_REQUIRED,
+    # A production choosing this program forecloses a named alternative --
+    # informational; never blocks or auto-selects either program.
+    "mutually_exclusive_alternative_program": CONDITION_STATE_DISCLOSURE_ONLY,
+    "alternate_qualification_track": CONDITION_STATE_DISCLOSURE_ONLY,
+    # Format-specific tier already fully expressed by the tier's own
+    # production_types filter (e.g. Maryland TV-series uplift is its own
+    # DoctrineRateTier) -- the condition itself is purely informational
+    # once the tier has already been selected.
+    "production_type_uplift": CONDITION_STATE_DISCLOSURE_ONLY,
+    "sustainability_uplift": CONDITION_STATE_USER_FACT_REQUIRED,
+    # Currency convertibility / capital-control risk on the minimum-spend
+    # figure -- a genuine external fact, never modeled from statute alone.
+    "min_spend_currency_not_convertible": CONDITION_STATE_AUTHORITY_UNRESOLVED,
+    # Investor-side (not producer-QPE-side) rate proxy -- disclosed so it's
+    # never mistaken for the producer's own modeled rate.
+    "investor_side_rate_proxy_not_producer_qpe": CONDITION_STATE_DISCLOSURE_ONLY,
+    "atl_subcap_not_enforced": CONDITION_STATE_AUTHORITY_UNRESOLVED,
+    # Funding availability/appropriation risk is a real, material,
+    # non-statutory risk factor -- disclosed, never treated as a legal gate.
+    "material_funding_risk_not_modeled": CONDITION_STATE_DISCLOSURE_ONLY,
+    # A conflicting budget-document-derived rate claim, reported (never
+    # substituted) per permanent Rules 1/2/5 -- disclosure only.
+    "budget_document": CONDITION_STATE_DISCLOSURE_ONLY,
+}
 
 
 @dataclass(frozen=True)
@@ -934,6 +1018,12 @@ _GR_CAP_QUOTE = (
     "14.01.2026, arts. 4-5, as amended by JMD 140524)."
 )
 
+_CA_CPTC_CAP_QUOTE = (
+    "'25 per cent of the qualified labour expenditure' ... qualified labour "
+    "expenditure 'must not exceed 60% of the cost of production net of "
+    "assistance' (canada.ca / CAVCO official program guidance)."
+)
+
 QPE_CAP_RULES: dict[str, QpeCapRule] = {
     "uk_avec": QpeCapRule(
         program_slug="uk_avec", cap_pct=0.80, cap_base="segment_allocated",
@@ -947,6 +1037,29 @@ QPE_CAP_RULES: dict[str, QpeCapRule] = {
         description="Eligible Greek production expenditure is capped at 80% "
                      "of the production's total (worldwide) production cost.",
         quote=_GR_CAP_QUOTE, source_ref="JMD-607434-arts-4-5",
+    ),
+    # Final Consolidated Backend Correction + Global Structuring
+    # Intelligence Acceptance, CBA-002 -- reuses this EXISTING, already-
+    # tested QPE-cap mechanism (no new rate-base-transform engine) for
+    # CPTC's own real, cited 60%-of-production-cost cap. This is a
+    # deliberate, disclosed APPROXIMATION of the statute's real base
+    # (qualified CANADIAN LABOUR expenditure specifically, capped at 60%
+    # of net production cost) -- this engine has no labour/non-labour QPE
+    # split (a genuine, separately-scoped gap; see ca-cptc-labour-only-
+    # base's own RateCondition), so the achievable, real, statutorily-
+    # grounded correction is to cap TOTAL QPE at 60% of the production's
+    # total budget rather than apply the 25% rate to unbounded QPE. This
+    # can only ever REDUCE the credit relative to the prior unbounded
+    # calculation -- never invents additional eligible spend.
+    "ca_federal_cptc": QpeCapRule(
+        program_slug="ca_federal_cptc", cap_pct=0.60, cap_base="total_worldwide_budget",
+        description="Qualified Canadian labour expenditure (the CPTC rate "
+                     "base) is capped at 60% of the production's cost net of "
+                     "assistance. This engine applies the 60% cap to total "
+                     "QPE as a real, cited, conservative approximation of "
+                     "the labour-only base (no labour/non-labour QPE split "
+                     "modeled).",
+        quote=_CA_CPTC_CAP_QUOTE, source_ref="canada.ca-cavco-official-final19-committee-agreed",
     ),
 }
 
@@ -1037,6 +1150,7 @@ def resolve_program_rate(
     program_slug: str,
     production_type: str,
     qpe_usd: float | None,
+    gross_budget_usd: float | None = None,
 ) -> RateResolution | None:
     """
     Resolve the modeled rate for one production from database/statutory
@@ -1077,6 +1191,7 @@ def resolve_program_rate(
                 cond.condition_id, cond.description, cond.quote,
                 satisfied=True,
                 note=f"Production type '{production_type}' is within the tier's scope.",
+                condition_state=CONDITION_STATE_EXECUTABLE,
             ))
         elif cond.kind == "min_qpe_usd":
             met = qpe_usd is not None and cond.threshold_usd is not None and qpe_usd >= cond.threshold_usd
@@ -1086,6 +1201,7 @@ def resolve_program_rate(
                 note=(f"QPE ${qpe_usd:,.0f} vs threshold ${cond.threshold_usd:,.0f}"
                       if qpe_usd is not None and cond.threshold_usd is not None
                       else "Threshold condition evaluated at tier selection."),
+                condition_state=CONDITION_STATE_EXECUTABLE,
             ))
         elif cond.kind == "discretionary_band":
             evaluations.append(ConditionEvaluation(
@@ -1094,6 +1210,7 @@ def resolve_program_rate(
                 note="Cannot be pre-satisfied: the awarded rate within the 'up to' "
                      "band is set by the authority at approval. The engine models "
                      "the ceiling; the guaranteed floor is the non-band tier.",
+                condition_state=CONDITION_STATE_AUTHORITY_UNRESOLVED,
             ))
         elif cond.kind == "graduated_bracket_applied":
             evaluations.append(ConditionEvaluation(
@@ -1104,14 +1221,46 @@ def resolve_program_rate(
                       f"${qpe_usd:,.0f}." if qpe_usd is not None
                       else "Bracket structure confirmed; blended rate requires a "
                            "known QPE to compute."),
+                condition_state=CONDITION_STATE_EXECUTABLE,
             ))
-        else:  # no_sponsorship_in_qpe and any future fact-dependent kinds
+        elif cond.kind == "min_qpe_pct_of_total_budget":
+            if qpe_usd is not None and gross_budget_usd and gross_budget_usd > 0 and cond.threshold_pct is not None:
+                actual_pct = qpe_usd / gross_budget_usd
+                met = actual_pct >= cond.threshold_pct
+                evaluations.append(ConditionEvaluation(
+                    cond.condition_id, cond.description, cond.quote,
+                    satisfied=met,
+                    note=(f"QPE is {actual_pct:.1%} of total budget "
+                          f"(${qpe_usd:,.0f} / ${gross_budget_usd:,.0f}) vs the "
+                          f"statutory minimum of {cond.threshold_pct:.1%}."),
+                    condition_state=CONDITION_STATE_EXECUTABLE,
+                ))
+            else:
+                evaluations.append(ConditionEvaluation(
+                    cond.condition_id, cond.description, cond.quote,
+                    satisfied=None,
+                    note="Executable in principle (QPE-to-total-budget ratio), but "
+                         "the production's total budget was not supplied to this "
+                         "resolution — cannot compute the ratio.",
+                    condition_state=CONDITION_STATE_USER_FACT_REQUIRED,
+                ))
+        else:
+            state = CONDITION_KIND_STATE.get(cond.kind, CONDITION_STATE_AUTHORITY_UNRESOLVED)
+            if state == CONDITION_STATE_NOT_APPLICABLE:
+                satisfied: bool | None = True
+                note = "Not applicable to this production/program combination."
+            elif state == CONDITION_STATE_DISCLOSURE_ONLY:
+                satisfied = None
+                note = "Disclosure only — informational, never a pass/fail gate on the modeled rate."
+            elif state in (CONDITION_STATE_USER_FACT_REQUIRED, CONDITION_STATE_SCRIPT_FACT_REQUIRED):
+                satisfied = None
+                note = "Production fact not yet evidenced either way — absence of a record is not confirmation."
+            else:  # AUTHORITY_UNRESOLVED (includes discretionary-adjacent/unmodeled-ratio/no-cap-cited kinds)
+                satisfied = None
+                note = "No controlling authority currently on file resolves this condition deterministically."
             evaluations.append(ConditionEvaluation(
                 cond.condition_id, cond.description, cond.quote,
-                satisfied=None,
-                note="Production fact not yet evidenced either way — no sponsorship/"
-                     "financial assistance is recorded in the budget, but absence "
-                     "of a record is not confirmation.",
+                satisfied=satisfied, note=note, condition_state=state,
             ))
 
     conflicts: list[RateConflict] = []

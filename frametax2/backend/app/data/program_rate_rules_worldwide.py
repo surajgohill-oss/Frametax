@@ -284,15 +284,14 @@ DE_DOCTRINE = register(DoctrineRecord(
                 RateCondition(
                     condition_id="de-min-spend-pct-of-budget",
                     description="Minimum German spend must be at least 20% of "
-                                "TOTAL production budget (not an absolute "
-                                "threshold on German QPE alone) — this engine "
-                                "has no fact comparing German QPE to total "
-                                "worldwide budget as a ratio, so this condition "
-                                "cannot be pre-evaluated",
+                                "TOTAL production budget — a real QPE-vs-total-"
+                                "budget ratio, executable once the production's "
+                                "gross budget is supplied to the rate resolver.",
                     quote="The German financial contribution must be at least "
                           "20% of the total production costs (Greenberg "
                           "Traurig, reporting on May 2026 BKM draft guidelines)",
-                    kind="min_spend_pct_of_total_budget",
+                    kind="min_qpe_pct_of_total_budget",
+                    threshold_pct=0.20,
                 ),
             ),
         ),
@@ -649,13 +648,14 @@ GB_DOCTRINE = register(DoctrineRecord(
                 RateCondition(
                     condition_id="gb-min-uk-spend-pct",
                     description="At least 10% of total costs must be UK "
-                                "qualifying production expenditure — a ratio "
-                                "condition this engine has no fact to "
-                                "pre-evaluate (no total-worldwide-budget "
-                                "comparison fact available)",
+                                "qualifying production expenditure — a real "
+                                "QPE-vs-total-budget ratio, executable once "
+                                "the production's gross budget is supplied to "
+                                "the rate resolver.",
                     quote="at least 10% of costs spent on UK qualifying "
                           "production expenditure (bfi.org.uk)",
-                    kind="min_spend_pct_of_total_budget",
+                    kind="min_qpe_pct_of_total_budget",
+                    threshold_pct=0.10,
                 ),
                 RateCondition(
                     condition_id="gb-cultural-test",
@@ -980,13 +980,14 @@ CA_ON_DOCTRINE = register(DoctrineRecord(
                 RateCondition(
                     condition_id="ca-on-labour-ratio-gate",
                     description="Ontario labour must be at least 25% of "
-                                "QPE claimed — an eligibility gate this "
-                                "engine cannot pre-evaluate (no Ontario-"
-                                "labour-vs-total-QPE split fact)",
+                                "QPE claimed — this is a labour-vs-QPE split, "
+                                "NOT a QPE-vs-total-budget ratio; this engine "
+                                "has no labour/non-labour QPE split modeled, "
+                                "so it cannot pre-evaluate this condition.",
                     quote="Ontario labour expenditures ... must be at "
                           "least 25% of the qualifying production "
                           "expenditures claimed (ontariocreates.ca)",
-                    kind="min_spend_pct_of_total_budget",
+                    kind="unmodeled_spend_split_ratio",
                 ),
             ),
         ),
@@ -1661,12 +1662,14 @@ US_NY_DOCTRINE = register(DoctrineRecord(
                 RateCondition(
                     condition_id="us-ny-atl-cap",
                     description="ATL qualified salaries capped at 40% of "
-                                "all other qualified costs — a real cap "
-                                "this engine cannot pre-evaluate (no "
-                                "ATL-vs-other QPE split fact)",
+                                "all other qualified costs — an ATL-vs-other-"
+                                "QPE MAXIMUM (not a minimum, and not a QPE-"
+                                "vs-total-budget ratio); this engine has no "
+                                "ATL/other QPE split modeled, so it cannot "
+                                "pre-evaluate this condition.",
                     quote="ATL qualified salaries cannot exceed 40% of "
                           "all other qualified costs (esd.ny.gov)",
-                    kind="min_spend_pct_of_total_budget",
+                    kind="unmodeled_spend_split_ratio",
                 ),
             ),
         ),
@@ -2792,12 +2795,14 @@ MX_DOCTRINE = register(DoctrineRecord(
             conditions=(RateCondition(
                 condition_id="mx-national-supply-requirement",
                 description="Requires >=70% national supply and Technical "
-                            "Committee certification — not pre-evaluable, "
-                            "no supply-chain-origin fact exists",
+                            "Committee certification — a national-supply-"
+                            "chain-origin percentage, NOT a QPE-vs-total-"
+                            "budget ratio; not pre-evaluable, no supply-"
+                            "chain-origin fact modeled.",
                 quote="Minimum 70% national supply ... Technical Committee "
                       "certificates for submission and compliance "
                       "(bakermckenzie.com)",
-                kind="min_spend_pct_of_total_budget"),),
+                kind="unmodeled_spend_split_ratio"),),
         ),
     ),
 ))
@@ -2937,7 +2942,7 @@ EG_DOCTRINE = register(DoctrineRecord(
                               quote="Productions that operate fully on location "
                                     "without an EMPC anchor day cannot draw the "
                                     "rebate (celluloidpact.com)",
-                              kind="min_spend_pct_of_total_budget"),)),
+                              kind="project_fact_dependent_eligibility"),)),
     ),
 ))
 register_rate_rules(rate_rules_for(EG_DOCTRINE))
@@ -3033,7 +3038,7 @@ FJ_DOCTRINE = register(DoctrineRecord(
                                              "company -- not pre-evaluable",
                                  quote="so long as they work through a locally "
                                        "registered company (unctad.org)",
-                                 kind="min_spend_pct_of_total_budget"),)),),
+                                 kind="project_fact_dependent_eligibility"),)),),
 ))
 register_rate_rules(rate_rules_for(FJ_DOCTRINE))
 

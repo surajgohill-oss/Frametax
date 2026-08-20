@@ -374,7 +374,8 @@ def price_segment(
                 qpe_cap_applied = round(qpe - cap_ceiling, 2)
                 qpe = cap_ceiling
 
-    rr = resolve_program_rate(slug, production_type=production_type, qpe_usd=qpe)
+    rr = resolve_program_rate(slug, production_type=production_type, qpe_usd=qpe,
+                               gross_budget_usd=gross_budget_usd)
     if rr is None:
         cap_blocker = (
             (f"{jurisdiction_code}/{slug}: ${qpe_cap_applied:,.0f} of eligible "
