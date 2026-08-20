@@ -1475,6 +1475,17 @@ US_GA_DOCTRINE = register(DoctrineRecord(
     requires_cultural_test=False,
     citation=_US_GA_CITATION,
     source_ref="OCGA-48-7-40.26",
+    provenance=SourceProvenance(
+        issuing_authority="State of Georgia (O.C.G.A. § 48-7-40.26, Georgia "
+                           "Entertainment Industry Investment Act)",
+        citation_detail="O.C.G.A. § 48-7-40.26(b)(1)-(3), as cited in Alembic "
+                         "migration 0003_seed_georgia_eiia.py",
+        interpretation_note="Base 20% (b)(1) + 10% Georgia-logo uplift (b)(2), "
+                             "$500,000 minimum budget (a)(2), $500,000 per-person "
+                             "ATL cap (b)(3) — all VERIFIED against the statute text "
+                             "itself, the strongest provenance tier this registry "
+                             "recognizes.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="us-ga-base-20",
@@ -1652,6 +1663,14 @@ US_NY_DOCTRINE = register(DoctrineRecord(
     requires_cultural_test=False,
     citation=_US_NY_CITATION,
     source_ref="esd.ny.gov-film-tax-credit-production",
+    provenance=SourceProvenance(
+        issuing_authority="Empire State Development",
+        source_url="https://esd.ny.gov",
+        citation_detail="'30% percent of qualified production expenses' plus "
+                         "upstate (+10%) and scoring (+10%) uplifts.",
+        interpretation_note="is_refundable/is_transferable not stated on the "
+                             "page fetched — left UNKNOWN, not assumed.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="us-ny-base-30",
@@ -1751,6 +1770,17 @@ US_NY_POST_DOCTRINE = register(DoctrineRecord(
     requires_cultural_test=False,
     citation=_US_NY_POST_CITATION,
     source_ref="tax.ny.gov-official+secondary-rate-corroboration",
+    provenance=SourceProvenance(
+        issuing_authority="New York State Department of Taxation and Finance",
+        source_url="https://tax.ny.gov",
+        citation_detail="CONFIRMED mutually exclusive with the main Production "
+                         "Credit for the same costs ('no other income tax credit "
+                         "may be claimed for those costs').",
+        interpretation_note="Rate (35%) and minimum-spend structure figures are "
+                             "corroborated by a secondary aggregator, not read "
+                             "directly from the CT-261/IT-261 form instructions "
+                             "the official page defers to — PARSED tier, disclosed.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="us-ny-post-flat-35",
@@ -2081,6 +2111,16 @@ ZA_DOCTRINE = register(DoctrineRecord(
     requires_cultural_test=False,
     citation=_ZA_CITATION,
     source_ref="thedtic.gov.za-foreign-film-incentive",
+    provenance=SourceProvenance(
+        issuing_authority="Department of Trade, Industry and Competition (South Africa)",
+        source_url="https://thedtic.gov.za",
+        citation_detail="Base '25% of Qualifying South African Production "
+                         "Expenditure (QSAPE)' plus 'additional incentive of 5% "
+                         "of QSAPE' for black-owned-service-company use. "
+                         "'Maximum cap: R25 million.' Minimum spend 'R15 million.'",
+        interpretation_note="min_spend_usd left None — ZAR not convertible, no "
+                             "sourced ZAR/USD FX basis on file.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="za-base-25",
@@ -2789,6 +2829,22 @@ MX_DOCTRINE = register(DoctrineRecord(
     min_spend_usd=None, annual_cap_usd=None,  # MXN, not converted
     requires_cultural_test=False,
     citation=_MX_CITATION, source_ref="bakermckenzie.com-mexico-2026-incentive+dof.gob.mx-decreto-2026-02-16-official",
+    provenance=SourceProvenance(
+        issuing_authority="Diario Oficial de la Federación (Mexico) — Decreto, "
+                           "published 2026-02-16",
+        source_url="https://dof.gob.mx",
+        citation_detail="'Up to 30% of qualifying Mexico-incurred production and "
+                         "post-processing costs.' Individual cap 'MXN 40 million "
+                         "per beneficiary/production.' Annual program cap "
+                         "'MXN 400 million total distributed annually.'",
+        interpretation_note="Rate/cap figures corroborated by Baker McKenzie, "
+                             "KPMG, and FisherBroyles (major international law/"
+                             "advisory firms summarizing the decree), not read "
+                             "directly from the decree's own published text by "
+                             "this engine — the decree citation (dof.gob.mx) is "
+                             "the issuing authority; the firms are secondary "
+                             "corroboration.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="mx-flat-30", rate=0.30, is_band_ceiling=False,

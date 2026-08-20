@@ -294,6 +294,17 @@ MU_RATE_RULES: tuple[RateRule, ...] = (
         confidence_tier="VERIFIED",
         citation=_MU_CITATION,
         source_ref="EDB-2020-Submission-Procedures",
+        provenance=SourceProvenance(
+            issuing_authority="Economic Development Board (Mauritius)",
+            source_url="https://edbmauritius.org/wp-content/uploads/2022/10/Guideline-Online-Application-FRS.pdf",
+            citation_detail="Film Rebate Scheme — Submission Procedures, 31 Jan 2020, "
+                             "citing the Economic Development Board (Film Rebate Scheme) "
+                             "Regulation 2018.",
+            effective_date="2018",
+            interpretation_note="Corroborated (no additional conditions) by the Mauritius "
+                                 "Chamber of Commerce and Industry's Film Rebate Scheme page "
+                                 "(mcci.org).",
+        ),
     ),
     RateRule(
         program_slug="mu_edb_incentive",
@@ -347,6 +358,17 @@ MU_RATE_RULES: tuple[RateRule, ...] = (
         confidence_tier="VERIFIED",
         citation=_MU_CITATION,
         source_ref="EDB-2020-Submission-Procedures",
+        provenance=SourceProvenance(
+            issuing_authority="Economic Development Board (Mauritius)",
+            source_url="https://edbmauritius.org/wp-content/uploads/2022/10/Guideline-Online-Application-FRS.pdf",
+            citation_detail="Film Rebate Scheme — Submission Procedures, 31 Jan 2020, "
+                             "citing the Economic Development Board (Film Rebate Scheme) "
+                             "Regulation 2018.",
+            effective_date="2018",
+            interpretation_note="The 40% ceiling is a Film Rebate Committee/CEO "
+                                 "discretionary approval band, not a guaranteed rate — "
+                                 "see mu40-band-discretion's own condition.",
+        ),
     ),
 )
 
