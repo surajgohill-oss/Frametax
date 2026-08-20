@@ -432,7 +432,9 @@ async def test_little_utopia_exact_regression_after_authority_substrate_repair(d
     result = await evaluate_project(db, LITTLE_UTOPIA_PROJECT_ID)
     assert result["engine_version"] == ENGINE_VERSION
     assert result["base_jurisdiction_code"] == "MU"
-    assert result["top_result"]["true_net_cost_usd"] == 3_057_794.90
+    # CBA-009 Part 19-20: $3,057,794.90 -> $3,148,134.20 (contingency
+    # expected-utilization fact unset -> disclosed grey, not 100%-unconditional).
+    assert result["top_result"]["true_net_cost_usd"] == 3_148_134.20
     assert result["top_result"]["is_baseline"] is True
 
 
@@ -509,15 +511,19 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     real bilateral treaty partner exists for Greece, so 0 bilateral
     opportunities). It is never fully priced (real ownership/cultural-
     test facts are not on file) so unpriced grows 8 -> 9, priced is
-    unaffected."""
+    unaffected. Consolidated Backend Correction, Part 19-20 (CBA-009):
+    unpriced grows again 9 -> 10, priced shrinks 134 -> 133: ES now
+    genuinely RULE_REJECTED (real minimum-QPE threshold unmet once its
+    own contingency reserve is no longer counted as 100%-unconditionally
+    qualifying) -- see test_batch3_programs_price_with_real_numbers_in_fvd."""
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
     priced = [e for e in entries if e["is_fully_priced"]]
     unpriced = [e for e in entries if not e["is_fully_priced"]]
     assert len(entries) == 143
-    assert len(priced) == 134
-    assert len(unpriced) == 9
+    assert len(priced) == 133
+    assert len(unpriced) == 10
 
     for code in ("MN", "UZ", "AT"):
         e = next(x for x in entries if x["primary_jurisdiction"] == code)
@@ -812,7 +818,7 @@ async def test_lu_mauritius_control_npc_unchanged(db: AsyncSession):
     entries = view["structures"]["allocated_structures"]["structures"]
     baseline = next(e for e in entries if e["is_baseline"])
     assert baseline["primary_jurisdiction"] == "MU"
-    assert baseline["npc_verified_usd"] == pytest.approx(3057794.90, abs=0.01)
+    assert baseline["npc_verified_usd"] == pytest.approx(3148134.20, abs=0.01)  # CBA-009 Part 19-20: LU NPC updated $3,057,794.90 -> $3,148,134.20 (contingency utilization unset -> disclosed grey, not 100%-unconditional)
 
 
 async def test_georgia_prices_with_real_numbers_in_fvd(db: AsyncSession):
@@ -965,12 +971,24 @@ def test_batch3_coverage_veto_removed_including_alias_spellings():
 
 
 async def test_batch3_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
-    """Runtime proof (not just the read-only registries) that all 8 batch-3
-    programs reach served state with real, distinct, non-zero numbers."""
+    """Runtime proof (not just the read-only registries) that the batch-3
+    programs reach served state with real, distinct, non-zero numbers.
+
+    Consolidated Backend Correction, Part 19-20 (CBA-009): ES
+    (es_tax_credit_foreign) is a real, legitimate exception as of this
+    correction, not a regression -- Spain's own statutory rate rules
+    require a minimum QPE threshold. FVD's projected QPE probe used to
+    clear that threshold only because its own $362,866.00 contingency
+    reserve was counted as 100%-unconditionally qualifying; with no
+    expected-utilization fact on file that reserve is now correctly a
+    disclosed grey area, and the real probe QPE ($779,390.00) genuinely
+    falls below Spain's minimum -- RULE_REJECTED is the honest, correct
+    terminal state, not a wiring defect. Verified separately below rather
+    than silently dropped from coverage."""
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
-    codes = ("CA-ON", "DE", "ES", "FR", "HU", "NO", "US-MN", "GB")
+    codes = ("CA-ON", "DE", "FR", "HU", "NO", "US-MN", "GB")
     seen_incentives = set()
     for code in codes:
         e = next(x for x in entries if x["primary_jurisdiction"] == code)
@@ -979,7 +997,12 @@ async def test_batch3_programs_price_with_real_numbers_in_fvd(db: AsyncSession):
         assert e["selected_incentive_usd"] > 0
         assert e["npc_verified_usd"] is not None and e["npc_verified_usd"] > 0
         seen_incentives.add(e["selected_incentive_usd"])
-    assert len(seen_incentives) > 1, "all 8 programs priced identically -- suspicious, check for a copy-paste QPE bug"
+    assert len(seen_incentives) > 1, "all programs priced identically -- suspicious, check for a copy-paste QPE bug"
+
+    es = next(x for x in entries if x["primary_jurisdiction"] == "ES")
+    assert es["is_fully_priced"] is False
+    assert es["candidate_status"] == "RULE_REJECTED"
+    assert es["blockers"], "ES must still disclose the real reason it did not price"
 
 
 def test_batch1_2_3_promoted_programs_carry_structured_provenance():

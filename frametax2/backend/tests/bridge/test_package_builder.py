@@ -34,16 +34,22 @@ class TestPackageContent:
         ceiling contingent on Film Rebate Committee discretion
         (RateCondition kind="discretionary_band", mu40-band-discretion) —
         not automatically confirmed for Little Utopia, so the served rate
-        correctly falls back to the guaranteed 30% floor
-        (selected_incentive_usd=$1,306,598.10), giving
-        npc = $4,364,393.00 - $1,306,598.10 = $3,057,794.90. This also
-        fixes the pre-existing Bridge-export defect where npc_usd exposed
-        the pre-adjustment npc_verified_usd instead of the real,
-        ranking-driving npc_with_adjustments_usd — both now equal here
-        since MU (the anchor) has zero relocation/travel/FX deltas."""
+        correctly falls back to the guaranteed 30% floor. This also fixes
+        the pre-existing Bridge-export defect where npc_usd exposed the
+        pre-adjustment npc_verified_usd instead of the real, ranking-
+        driving npc_with_adjustments_usd — both now equal here since MU
+        (the anchor) has zero relocation/travel/FX deltas.
+
+        Consolidated Backend Correction, Part 19-20 (CBA-009): the
+        $301,131.00 contingency reserve is no longer projected as
+        100%-unconditionally qualifying — with no expected-utilization
+        fact on file, it is disclosed as a grey opportunity instead
+        (selected_incentive_usd=$1,216,258.80, was $1,306,598.10), giving
+        npc = $4,364,393.00 - $1,216,258.80 = $3,148,134.20 (was
+        $3,057,794.90)."""
         pkg = build_package(operation=OperationType.QUALIFICATION_AUDIT, structure_id="ALLOC-BASELINE-MU")
-        assert pkg.economics.npc_usd == 3_057_794.9
-        assert pkg.economics.npc_verified_usd == 3_057_794.9
+        assert pkg.economics.npc_usd == 3_148_134.20
+        assert pkg.economics.npc_verified_usd == 3_148_134.20
 
     def test_repository_commit_is_populated(self):
         pkg = build_package(operation=OperationType.QUALIFICATION_AUDIT)

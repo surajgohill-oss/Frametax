@@ -80,4 +80,4 @@ async def test_little_utopia_has_no_treaty_coproduction_opportunity_proven_zero(
     treaty = [e for e in entries if e["structure_type"] == "treaty_coproduction"]
     assert treaty == []
     baseline = next(e for e in entries if e["is_baseline"])
-    assert round(baseline["npc_with_adjustments_usd"], 2) == 3057794.90
+    assert round(baseline["npc_with_adjustments_usd"], 2) == 3148134.20  # CBA-009 Part 19-20: LU NPC updated $3,057,794.90 -> $3,148,134.20 (contingency utilization unset -> disclosed grey, not 100%-unconditional)

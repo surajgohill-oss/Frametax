@@ -190,26 +190,64 @@ class TestLadderIntegration:
 
 class TestMauritiusBaselineUnaffectedByMechanismAvailability:
     """Objective 4 / the project's own standing constraint: Mauritius's
-    baseline must not change merely because the contingency mechanism
+    baseline must not change merely because the ACTUAL/incurred
+    contingency-deployment mechanism (Task 91, contingency_treatment.py)
     NOW EXISTS — only an explicit deployment may change it, and even
     then only for the deployed dollars (the undeployed remainder keeps
-    MU's own verified unconditional-inclusion rule)."""
+    MU's own verified unconditional-eligibility rule).
 
-    def test_mu_contingency_still_qualifies_with_empty_allocations_dict(self):
+    Consolidated Backend Correction, Part 19-20 (CBA-009): this is a
+    DIFFERENT, later correction than Task 91 above — it closes Codex's
+    confirmed defect that the full undeployed reserve was projected as
+    100%-qualifying unconditionally. build_little_utopia_real_register's
+    default `facts=None` now means the PROJECTED expected-utilization
+    fact is genuinely unset, so the $301,131.00 contingency line
+    correctly becomes a disclosed GREY_AREA_REQUIRES_AUTHORITY line
+    (full amount still visible as potential upside) rather than a false
+    QUALIFIES. The Task 91 property this class exists to prove — that
+    the deployment MECHANISM's mere existence doesn't change the
+    baseline — is unaffected and still verified below via explicit
+    facts that pin expected utilization to 100% (the historical,
+    pre-correction assumption), which reproduces the OLD qualifies
+    behavior exactly."""
+
+    def test_mu_contingency_is_disclosed_grey_when_utilization_unset(self):
         from app.calculators.qualification_model import build_little_utopia_real_register
 
         reg = build_little_utopia_real_register(mu_rate=0.40, contingency_allocations={})
         c = next(a for a in reg if a.account_code == "8300")
-        assert c.state.value == "qualifies"
+        assert c.state.value == "grey_area_requires_authority"
         assert c.amount_usd == 301_131.0
+        # Full amount disclosed as potential upside, never silently priced in.
+        assert c.incentive_upside_usd == pytest.approx(301_131.0 * 0.40, abs=0.01)
 
-    def test_mu_contingency_still_qualifies_with_none_allocations(self):
+    def test_mu_contingency_qualifies_when_utilization_explicitly_100pct(self):
+        """The Task 91 property this class exists to prove — the
+        deployment-tracking mechanism's mere presence doesn't change the
+        baseline — reproduced under the new correction via an explicit
+        producer election of 100% expected utilization."""
+        from app.calculators.qualification_derivation import ProductionFacts
         from app.calculators.qualification_model import build_little_utopia_real_register
+        from app.data.little_utopia_real_budget import (
+            LITTLE_UTOPIA_REAL_ACCOUNTS_OUTSIDE_MU,
+            LITTLE_UTOPIA_REAL_OFFSHORE_PAYROLL,
+        )
 
-        reg = build_little_utopia_real_register(mu_rate=0.40, contingency_allocations=None)
+        facts = ProductionFacts(
+            jurisdiction_code="MU",
+            accounts_outside_jurisdiction=LITTLE_UTOPIA_REAL_ACCOUNTS_OUTSIDE_MU,
+            offshore_payroll_accounts=LITTLE_UTOPIA_REAL_OFFSHORE_PAYROLL,
+            contingency_expected_utilization_pct=100.0,
+        )
+        reg = build_little_utopia_real_register(mu_rate=0.40, facts=facts, contingency_allocations={})
         c = next(a for a in reg if a.account_code == "8300")
         assert c.state.value == "qualifies"
         assert c.amount_usd == 301_131.0
+
+        reg_none = build_little_utopia_real_register(mu_rate=0.40, facts=facts, contingency_allocations=None)
+        c_none = next(a for a in reg_none if a.account_code == "8300")
+        assert c_none.state.value == "qualifies"
+        assert c_none.amount_usd == 301_131.0
 
 
 class TestLiveStateMutators:
@@ -221,13 +259,39 @@ class TestLiveStateMutators:
         from app.demo.little_utopia_state import reset_contingency_allocations
         reset_contingency_allocations()
 
-    def test_no_op_by_default_mu_baseline_matches_pre_task_91_value(self):
+    def test_no_op_by_default_mu_baseline_is_disclosed_grey(self):
+        """Consolidated Backend Correction, Part 19-20 (CBA-009): the live
+        demo state has no `contingency_expected_utilization_pct` fact
+        answer by default, so the $301,131.00 reserve is now correctly a
+        disclosed GREY_AREA_REQUIRES_AUTHORITY line — not a silent
+        100%-unconditional QUALIFIES (the exact defect Codex's audit
+        confirmed). See test_mu_contingency_qualifies_when_utilization_
+        explicitly_100pct above for reachability of the old value."""
         from app.demo.little_utopia_state import get_state
 
         state = get_state()
         c = next(a for a in state.register if a.account_code == "8300")
-        assert c.state.value == "qualifies"
+        assert c.state.value == "grey_area_requires_authority"
         assert c.amount_usd == 301_131.0
+
+    def test_fact_answer_sets_utilization_and_restores_qualifies(self):
+        """The producer-facing facts API (apply_fact_answers/
+        reset_fact_answers) is the EXISTING, generic user-control surface
+        for this new fact — same pattern as every other production fact
+        this module already exposes (post_work_in_jurisdiction,
+        payroll_routing_localized, treaty_partner_code)."""
+        from app.demo.little_utopia_state import (
+            apply_fact_answers, get_state, reset_fact_answers,
+        )
+
+        try:
+            apply_fact_answers({"contingency_expected_utilization_pct": 100.0})
+            state = get_state()
+            c = next(a for a in state.register if a.account_code == "8300")
+            assert c.state.value == "qualifies"
+            assert c.amount_usd == 301_131.0
+        finally:
+            reset_fact_answers()
 
     def test_deploy_then_reset_round_trips_to_original_state(self):
         from app.demo.little_utopia_state import (

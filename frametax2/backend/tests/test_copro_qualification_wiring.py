@@ -33,7 +33,7 @@ async def test_baselines_unchanged_after_qualification_reconnection(db: AsyncSes
     await evaluate_project(db, LITTLE_UTOPIA_PROJECT_ID)
     lu_view = await build_production_and_structures(db, LITTLE_UTOPIA_PROJECT_ID)
     lu_baseline = next(e for e in _entries(lu_view) if e["is_baseline"])
-    assert round(lu_baseline["npc_with_adjustments_usd"], 2) == 3057794.90
+    assert round(lu_baseline["npc_with_adjustments_usd"], 2) == 3148134.20  # CBA-009 Part 19-20: LU NPC updated $3,057,794.90 -> $3,148,134.20 (contingency utilization unset -> disclosed grey, not 100%-unconditional)
 
     await evaluate_project(db, FVD_PROJECT_ID)
     fvd_view = await build_production_and_structures(db, FVD_PROJECT_ID)

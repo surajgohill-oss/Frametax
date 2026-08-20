@@ -25,7 +25,9 @@ from app.data.authority_coverage_registry import BLOCKED_SLUGS, blocks_economic_
 from app.data.program_rate_rules import get_rate_rules, resolve_program_rate
 from app.demo.little_utopia_state import build_allocated_structures, get_state
 
-BASELINE_NPC = 3057794.90
+#: CBA-009 Part 19-20: updated $3,057,794.90 -> $3,148,134.20 (contingency
+#: expected-utilization fact unset -> disclosed grey, not 100%-unconditional).
+BASELINE_NPC = 3148134.20
 
 
 def _served():

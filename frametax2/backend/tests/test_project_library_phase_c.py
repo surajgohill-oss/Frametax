@@ -233,4 +233,4 @@ async def test_production_structure_and_leading_selection(db: AsyncSession, proj
     assert float(calc.total_budget_usd) == pytest.approx(4364393.00, abs=0.01)
     # The accepted regression truth (see test_canonical_evaluation.py) —
     # never recomputed differently here.
-    assert float(calc.true_net_cost_usd) == pytest.approx(3057794.90, abs=0.01)
+    assert float(calc.true_net_cost_usd) == pytest.approx(3148134.20, abs=0.01)  # CBA-009 Part 19-20: LU NPC updated $3,057,794.90 -> $3,148,134.20 (contingency utilization unset -> disclosed grey, not 100%-unconditional)

@@ -40,7 +40,9 @@ from app.services.canonical_evaluation import ENGINE_VERSION, evaluate_project
 
 LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
 FVD_PROJECT_ID = "6c6f1c13-2d49-4bbc-bafb-2a12efa93112"
-ACCEPTED_LU_NPC_USD = 3_057_794.90
+#: CBA-009 Part 19-20: updated $3,057,794.90 -> $3,148,134.20 (contingency
+#: expected-utilization fact unset -> disclosed grey, not 100%-unconditional).
+ACCEPTED_LU_NPC_USD = 3_148_134.20
 
 #: The three known, independently-cited Ontario programs (Task 6's control
 #: case) — real program_slugs, not aliases.

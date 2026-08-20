@@ -70,7 +70,17 @@ from app.calculators.canonical_opportunity_bridge import (
     discover_qualification_lever_opportunities,
     opportunity_to_dict,
 )
-from app.calculators.canonical_qualification_result import qualification_result_to_dict
+from app.calculators.canonical_qualification_result import (
+    QUAL_AUTHORITY_UNRESOLVED,
+    QUAL_CURABLE_GAP,
+    QUAL_HARD_FAIL,
+    QUAL_NOT_APPLICABLE,
+    QUAL_QUALIFIES,
+    QUAL_RULE_DATA_INCOMPLETE,
+    QUAL_SCRIPT_FACT_REQUIRED,
+    QUAL_USER_FACT_REQUIRED,
+    qualification_result_to_dict,
+)
 from app.calculators.canonical_role_qualification_bridge import (
     evaluate_role_qualification,
     role_known_codes_from_project,
@@ -340,7 +350,28 @@ from app.services.canonical_project_economics import (
 # instead of RULE_DATA_INCOMPLETE. Disclosure-only, as this bridge always
 # has been -- LU/FVD NPC verified byte-identical. Bumped so every project
 # regenerates.
-ENGINE_VERSION = "canonical-1.29.2"
+#
+# Consolidated Backend Correction, Part 19-20/21 (CBA-009): the
+# contingency-category qualification ladder now scales projected QPE by
+# a real, typed contingency_expected_utilization_pct fact instead of
+# unconditionally including 100% of the reserve -- a genuine economic
+# change (LU's own incentive/NPC change; see
+# tests/test_contingency_expected_utilization.py and the updated LU
+# baseline in tests/test_canonical_project_economics.py). Every project
+# with a real contingency-qualifying category must re-evaluate rather
+# than serve a stale pre-correction persisted result -- bumped so every
+# project regenerates.
+#
+# 1.30.1: corrected the qualification-admission gate itself (see
+# _QUALIFICATION_ADMITS_PRICING's docstring) -- CURABLE_GAP/USER_FACT_
+# REQUIRED/SCRIPT_FACT_REQUIRED/AUTHORITY_UNRESOLVED/RULE_DATA_INCOMPLETE
+# are priced and disclosed again (only HARD_FAIL blocks pricing),
+# restoring LU's and FVD's own baselines to servable economics. Ranking
+# is untouched by qualification state (governed by the pre-existing
+# is_directly_comparable/is_fully_priced signals only). Bumped so every
+# project regenerates under the corrected gate rather than the brief,
+# over-broad 1.30.0 one.
+ENGINE_VERSION = "canonical-1.30.2"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
@@ -365,6 +396,44 @@ STATUS_PRICED = "PRICED"
 STATUS_UNPRICEABLE_AUTHORITY_INSUFFICIENT = "UNPRICEABLE_AUTHORITY_INSUFFICIENT"
 STATUS_RULE_REJECTED = "RULE_REJECTED"
 STATUS_FEASIBILITY_REVIEW_REQUIRED = "FEASIBILITY_REVIEW_REQUIRED"
+#: Consolidated Backend Correction (CBA-001), qualification admission gate
+#: — a genuine QUAL_HARD_FAIL never becomes STATUS_PRICED, never enters
+#: priced_by_code (so it can never be stacked, combined into a component
+#: candidate, or numerically ranked — every downstream consumer reads
+#: priced_by_code exclusively, so gating admission here is sufficient),
+#: and reports no total_incentive_value_usd/npc as though admitted; real,
+#: already-computed pricing is still disclosed as POTENTIAL economics
+#: ("what this would be worth"), never as admitted rankable economics.
+#:
+#: Every OTHER real qualification state (QUALIFIES, NOT_APPLICABLE,
+#: CURABLE_GAP, USER_FACT_REQUIRED, SCRIPT_FACT_REQUIRED,
+#: AUTHORITY_UNRESOLVED, RULE_DATA_INCOMPLETE) is admitted to full
+#: pricing/stacking — per the task's own Part 2 mapping, only HARD_FAIL
+#: is "unavailable"; every other unresolved state is "opportunity/
+#: disclosure", meaning priced with the gap disclosed, never blocked.
+#:
+#: An earlier version of this gate additionally excluded CURABLE_GAP/
+#: USER_FACT_REQUIRED/SCRIPT_FACT_REQUIRED/AUTHORITY_UNRESOLVED from
+#: pricing entirely. Once exercised against a real, uncached evaluation
+#: (previously masked by a stale persisted result under the prior
+#: ENGINE_VERSION) this was found to silently disqualify Little Utopia's
+#: and FVD's own baseline structures from ever being priced, because
+#: Mauritius's and Greece's own cultural-test-APPLICABILITY research is
+#: itself AUTHORITY_UNRESOLVED — a genuine authority gap about whether a
+#: test exists at all, never a reason to withhold a program's own
+#: statutory spend-based pricing. Corrected 2026-08-20 to the narrower
+#: gate below; ranking itself is untouched by qualification state — it
+#: is governed entirely by the pre-existing is_directly_comparable/
+#: is_fully_priced signals (canonical_production_view.py, Codex Defect 2)
+#: — the real role_qualification gap is still disclosed on every
+#: candidate's trace regardless of whether it wins comparable ranking.
+STATUS_QUALIFICATION_HARD_FAIL = "QUALIFICATION_HARD_FAIL"
+STATUS_QUALIFICATION_UNRESOLVED = "QUALIFICATION_UNRESOLVED"
+_QUALIFICATION_ADMITS_PRICING = frozenset({
+    QUAL_QUALIFIES, QUAL_NOT_APPLICABLE, QUAL_CURABLE_GAP,
+    QUAL_USER_FACT_REQUIRED, QUAL_SCRIPT_FACT_REQUIRED, QUAL_AUTHORITY_UNRESOLVED,
+    QUAL_RULE_DATA_INCOMPLETE,
+})
 #: Existing Optimizer/Stacker Reconnection, Task B — a real, registry-
 #: backed treaty/co-production pathway exists but cannot (yet) be priced
 #: as qualified economics: either real ownership/cultural-test project
@@ -389,6 +458,10 @@ def _compute_fingerprint(inputs: ProjectEconomicInputs) -> str:
         ),
         "accounts_outside_jurisdiction": sorted(inputs.accounts_outside_jurisdiction),
         "offshore_payroll_accounts": sorted(inputs.offshore_payroll_accounts),
+        # Part 21/CBA-008 — a material new PROJECTED fact that changes
+        # qualification outcomes (see qualification_derivation's
+        # contingency branch) must invalidate any stale cached result.
+        "contingency_expected_utilization_pct": inputs.contingency_expected_utilization_pct,
     }
     blob = json.dumps(payload, sort_keys=True, default=str)
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()
@@ -451,6 +524,7 @@ def _price_candidate(
         inkind_replacement_delta_usd=0.0,
         local_cost_delta_usd=0.0,
         production_type=inputs.production_type,
+        contingency_expected_utilization_pct=inputs.contingency_expected_utilization_pct,
     )
     return pricing, register, rr
 
@@ -508,6 +582,7 @@ def _price_component_relocation_candidate(
         inkind_replacement_delta_usd=0.0,
         local_cost_delta_usd=0.0,
         production_type=inputs.production_type,
+        contingency_expected_utilization_pct=inputs.contingency_expected_utilization_pct,
     )
     return spec, allocation, pricing
 
@@ -625,10 +700,22 @@ async def _coproduction_facts(session: AsyncSession, project_id) -> tuple[float 
             return None
 
     def _bool(key: str) -> bool | None:
+        # CBA-004 fix (Codex audit 4db2cea, finding 5): any non-empty
+        # value other than a recognized true/false token previously fell
+        # through to `False` — an invalid or "unknown" input became a
+        # CONFIRMED FAILED cultural test rather than unresolved input.
+        # Only a recognized token now resolves; anything else (including
+        # a genuinely invalid or "unknown" string) stays None, matching
+        # every other unresolved-fact convention in this module.
         v = facts.get(key)
         if v is None or v == "":
             return None
-        return str(v).strip().lower() in ("true", "1", "yes")
+        normalized = str(v).strip().lower()
+        if normalized in ("true", "1", "yes"):
+            return True
+        if normalized in ("false", "0", "no"):
+            return False
+        return None
 
     return (
         _float("coproduction_majority_pct"),
@@ -1136,6 +1223,66 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 "only input a set-membership check can be given without inventing "
                 "evidence — but that assumption is unconfirmed, not verified."
             ]
+        # Consolidated Backend Correction, CBA-001 (revised) — qualification
+        # is a PRE-ADMISSION gate only for HARD_FAIL. A candidate whose
+        # qualification is a genuine but UNRESOLVED gap (Curable Gap/User
+        # Fact Required/Script Fact Required/Authority Unresolved/Rule Data
+        # Incomplete) is still priced normally below (enters priced_by_code,
+        # can be stacked/combined/ranked) — Part 2's own "-> opportunity/
+        # disclosure" mapping means disclosed-with-real-economics, not
+        # blocked; the real gap is still visible on role_qualification.
+        # Only HARD_FAIL reaches this block now and is reported as truly
+        # unavailable — no total_incentive_value_usd/npc, no pricing at all.
+        _qual_state = (_role_qualification or {}).get("state")
+        if _qual_state is not None and _qual_state not in _QUALIFICATION_ADMITS_PRICING:
+            _blocked_candidate_status = (
+                STATUS_QUALIFICATION_HARD_FAIL if _qual_state == QUAL_HARD_FAIL
+                else STATUS_QUALIFICATION_UNRESOLVED
+            )
+            session.add(StructureCalculationResult(
+                id=uuid.uuid4(), structure_id=structure.id, engine_version=ENGINE_VERSION,
+                total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
+                true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
+                has_unverified_inputs=True,
+                warnings=[LIMITATION_NOTE, (
+                    f"Qualification state {_qual_state} blocks admission to pricing/stacking/"
+                    "ranking. The figures below are POTENTIAL economics only, disclosed as an "
+                    "opportunity — they are not a priced, comparable, or rankable result."
+                )],
+                calculation_trace_json={
+                    "candidate_status": _blocked_candidate_status,
+                    "discovery_classification": classification,
+                    "program_slug": program_slug,
+                    "reason": f"Qualification state {_qual_state} — see role_qualification for the exact gap.",
+                    "structure_type": "single_country" if code == inputs.jurisdiction_code else "full_relocation",
+                    "primary_jurisdiction": code,
+                    "is_baseline": is_baseline,
+                    "feasibility_status": feasibility_status,
+                    "feasibility_reasons": feasibility_reasons,
+                    "role_qualification": _role_qualification,
+                    "opportunities": _opportunities,
+                    "conditional_programs": _conditional_program_dicts,
+                    "conditional_compatibility": _conditional_compatibility_dict,
+                    # Real, already-computed pricing — disclosed as the
+                    # OPPORTUNITY value ("what this would be worth once
+                    # qualification resolves"), never as an admitted,
+                    # rankable NPC. Part 2's "CURABLE_GAP/USER_FACT_
+                    # REQUIRED/SCRIPT_FACT_REQUIRED/AUTHORITY_UNRESOLVED ->
+                    # opportunity/disclosure" requirement.
+                    "potential_economics": {
+                        "selected_incentive_usd": pricing.selected_incentive_usd,
+                        "npc_verified_usd": pricing.npc_verified_usd,
+                        "npc_with_adjustments_usd": pricing.npc_with_adjustments_usd,
+                        "modeled_rate": rate_resolution.modeled_rate,
+                        "qualifying_spend_usd": round(sum(
+                            a.amount_usd for a in register if a.state == QualificationState.QUALIFIES
+                        ), 2),
+                    },
+                },
+                input_fingerprint=fingerprint,
+            ))
+            continue
+
         _qpe_for_stack = round(sum(
             a.amount_usd for a in register if a.state == QualificationState.QUALIFIES
         ), 2)

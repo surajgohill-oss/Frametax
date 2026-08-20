@@ -397,8 +397,8 @@ class TestArchitecturalBoundaries:
         )
         from app.calculators.optimization_engine import RiskCase
         cons = result.cases[RiskCase.CONSERVATIVE]
-        assert cons.qpe_usd == pytest.approx(3_700_954.0, abs=1.0)
-        assert cons.incentive_usd == pytest.approx(1_480_381.6, abs=1.0)
+        assert cons.qpe_usd == pytest.approx(3_104_357.0, abs=1.0)
+        assert cons.incentive_usd == pytest.approx(1_241_742.8, abs=1.0)
 
     def test_no_jurisdiction_graph_mutation(self, graph):
         node_count_before = len(graph.nodes)

@@ -125,11 +125,20 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # (the pre-existing authority-insufficient/rule-rejected causes)
     # is unaffected -- a co-pro opportunity is a NEW distinct terminal
     # state (STATUS_CO_PRO_OPPORTUNITY), never flattened into that bucket.
-    assert len(priced) == 134
-    assert len(unpriced) == 9
+    #
+    # Consolidated Backend Correction, Part 19-20 (CBA-009): priced
+    # shrank 134 -> 133, unpriceable_count grew 9 -> 10 -- ES
+    # (es_tax_credit_foreign) now RULE_REJECTED (real minimum-QPE
+    # threshold genuinely unmet once FVD's own contingency reserve is no
+    # longer counted as 100%-unconditionally qualifying; see
+    # test_batch3_programs_price_with_real_numbers_in_fvd for the full
+    # explanation). review_required_count shrinks by the same one (ES
+    # was never is_directly_comparable for FVD either way).
+    assert len(priced) == 133
+    assert len(unpriced) == 10
     assert accounting["comparable_count"] == 1
-    assert accounting["review_required_count"] == 133
-    assert accounting["unpriceable_count"] == 9
+    assert accounting["review_required_count"] == 132
+    assert accounting["unpriceable_count"] == 10
 
     # Cross-screen agreement: the ranking list (what Scenarios/Overview/
     # World all read via is_directly_comparable) must reproduce the exact
@@ -139,8 +148,8 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     review_ranked = [r for r in ranking if r["is_fully_priced"] and not r["is_directly_comparable"]]
     unpriceable_ranked = [r for r in ranking if not r["is_fully_priced"]]
     assert len(comparable_ranked) == 1
-    assert len(review_ranked) == 133
-    assert len(unpriceable_ranked) == 9
+    assert len(review_ranked) == 132
+    assert len(unpriceable_ranked) == 10
 
     # Feasibility ≠ eligibility (canonical authority substrate + feasibility
     # boundary repair): a landlocked jurisdiction with real marine-mismatch
@@ -186,10 +195,20 @@ async def test_greece_baseline_is_priced_and_directly_comparable(db: AsyncSessio
 
 async def test_malta_and_mauritius_priced_but_not_comparable_with_real_economics(db: AsyncSession):
     """Defect 2 — Malta and Mauritius are real, differentiated, priced
-    candidates (band-ceiling incentives requiring confirmation) that are
-    NOT the production's own base jurisdiction, so they must be excluded
-    from the comparable ranking WITHOUT losing their real QPE/incentive
-    numbers or being shown as unpriced."""
+    candidates that are NOT the production's own base jurisdiction, so
+    they must be excluded from the comparable ranking WITHOUT losing
+    their real QPE/incentive numbers or being shown as unpriced.
+
+    Consolidated Backend Correction, Part 19-20 (CBA-009): Mauritius no
+    longer resolves as a band-ceiling incentive here. Its real QPE
+    dropped from $1,132,056.00 to $769,190.00 (its own $362,866.00
+    contingency reserve is now a disclosed grey area, not silently
+    100%-qualifying) — genuinely below the QPE tier the 40%-band
+    discretionary rate rule requires, so the statutory rate resolver
+    correctly falls back to a flat, non-band 30% rule instead. This is
+    real statutory rate-tier behavior responding honestly to a real,
+    lower QPE — not a wiring defect. Malta's own economics are
+    untouched (no contingency category in its own rules)."""
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
@@ -212,9 +231,13 @@ async def test_malta_and_mauritius_priced_but_not_comparable_with_real_economics
     assert len(mu) == 1
     mu_seg = mu[0]["segments"][0]
     assert mu_seg["program_slug"] == "mu_edb_incentive"
-    assert mu_seg["qpe_usd"] == pytest.approx(1_132_056.00, abs=0.01)
-    assert mu_seg["is_band_ceiling"] is True
-    assert mu_seg["ceiling_requires_confirmation"] is True
+    # CBA-009 Part 19-20: $1,132,056.00 -> $769,190.00 (FVD's own $362,866.00
+    # contingency reserve, priced against MU's real qualifies=True rule, is
+    # now a disclosed grey area by default, not silently 100%-qualifying).
+    assert mu_seg["qpe_usd"] == pytest.approx(769_190.00, abs=0.01)
+    assert mu_seg["is_band_ceiling"] is False
+    assert mu_seg["ceiling_requires_confirmation"] is False
+    assert mu_seg["rate_floor"] == mu_seg["rate_ceiling"] == pytest.approx(0.30)
     mu_rank = rank_by_id[mu[0]["structure_id"]]
     assert mu_rank["is_fully_priced"] is True
     assert mu_rank["is_directly_comparable"] is False
@@ -276,13 +299,17 @@ async def test_fvd_unpriceable_causes_are_differentiated_not_flattened(db: Async
     not the invariant this test guards. Grew again 8 -> 9 with Task B's
     additive Eurimages CO_PRO_OPPORTUNITY structure (a genuinely distinct
     terminal status, STATUS_CO_PRO_OPPORTUNITY -- never flattened into
-    UNPRICEABLE_AUTHORITY_INSUFFICIENT/RULE_REJECTED)."""
+    UNPRICEABLE_AUTHORITY_INSUFFICIENT/RULE_REJECTED). Grew again 9 -> 10
+    with Consolidated Backend Correction, Part 19-20 (CBA-009): ES now
+    genuinely RULE_REJECTED (real minimum-QPE threshold unmet once its
+    own contingency reserve is no longer counted as 100%-unconditionally
+    qualifying) -- see test_batch3_programs_price_with_real_numbers_in_fvd."""
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     ranking = view["structures"]["allocated_structures"]["ranking"]
     unpriceable = [r for r in ranking if not r["is_fully_priced"]]
 
-    assert len(unpriceable) == 9
+    assert len(unpriceable) == 10
     statuses = {r["candidate_status"] for r in unpriceable}
     assert statuses.issuperset({"UNPRICEABLE_AUTHORITY_INSUFFICIENT", "RULE_REJECTED"}), (
         f"expected at least AUTHORITY_INSUFFICIENT and RULE_REJECTED causes, got {statuses}"

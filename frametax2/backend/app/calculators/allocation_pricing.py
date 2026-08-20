@@ -234,6 +234,7 @@ def price_segment(
     contingency_allocations: dict | None = None,
     gross_budget_usd: float | None = None,
     confirmed_ceiling_programs: frozenset[str] | None = None,
+    contingency_expected_utilization_pct: float | None = None,
 ) -> SegmentEconomics:
     """Derive this segment's PARTIAL register and price it with the
     existing kernel. A non-incentive segment (program_slug None) is
@@ -242,6 +243,17 @@ def price_segment(
     contingency_allocations (Task 91): optional {account_code:
     ContingencyAllocation}, defaulting to None (byte-identical prior
     behavior) — see contingency_treatment.expand_contingency_lines.
+
+    contingency_expected_utilization_pct (Consolidated Backend
+    Correction, Part 19-20 / CBA-009): the producer's own stated expected
+    contingency-spend utilization (0-100), threaded through to this
+    segment's internal ProductionFacts so a program whose statutory rule
+    confirms the "contingency" category qualifies projects only the
+    expected-deployed fraction of the reserve as QPE, not the full
+    reserve unconditionally. None (the default) means genuinely unset —
+    qualification_derivation.derive_qualification_register surfaces this
+    as a disclosed GREY_AREA_REQUIRES_AUTHORITY line rather than silently
+    assuming either 0% or 100%.
 
     gross_budget_usd (Incentive/Optimizer Core Closeout): the STRUCTURE's
     total gross budget, needed only for a program-level QPE cap whose
@@ -328,6 +340,7 @@ def price_segment(
         offshore_payroll_accounts=frozenset(
             c for c in offshore_payroll_accounts if c in {l.account_code for l in lines}
         ),
+        contingency_expected_utilization_pct=contingency_expected_utilization_pct,
     )
     register = derive_qualification_register(
         lines, program_slug=slug, facts=facts, rate=0.0,
@@ -531,6 +544,7 @@ def price_allocated_structure(
     production_type: str = "feature_film",
     contingency_allocations: dict | None = None,
     confirmed_ceiling_programs: frozenset[str] | None = None,
+    contingency_expected_utilization_pct: float | None = None,
 ) -> AllocatedStructurePricing:
     """Price a complete structure from its allocation. Travel and FX
     deltas are structure-level, computed ONCE by the caller (for the
@@ -544,7 +558,12 @@ def price_allocated_structure(
 
     confirmed_ceiling_programs (Incentive/Optimizer Core Closeout):
     passed through to price_segment — see its docstring. Omitted (None)
-    = no discretionary ceiling is assumed confirmed for any segment."""
+    = no discretionary ceiling is assumed confirmed for any segment.
+
+    contingency_expected_utilization_pct (Consolidated Backend
+    Correction, Part 19-20 / CBA-009): passed through to every segment's
+    price_segment call — see its docstring. Omitted (None) = genuinely
+    unset, disclosed as a grey area rather than assumed."""
     blockers: list[str] = list()
     notes: list[str] = []
 
@@ -597,6 +616,7 @@ def price_allocated_structure(
             contingency_allocations=contingency_allocations,
             gross_budget_usd=gross_budget_usd,
             confirmed_ceiling_programs=confirmed_ceiling_programs,
+            contingency_expected_utilization_pct=contingency_expected_utilization_pct,
         )
         segments.append(seg)
         blockers.extend(seg.blockers)

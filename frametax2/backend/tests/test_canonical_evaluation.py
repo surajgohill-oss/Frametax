@@ -29,7 +29,16 @@ from app.services.canonical_evaluation import ENGINE_VERSION, evaluate_project
 LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
 FVD_PROJECT_ID = "6c6f1c13-2d49-4bbc-bafb-2a12efa93112"
 
-ACCEPTED_LU_NPC_USD = 3_057_794.90
+#: Consolidated Backend Correction, Part 19-20 (CBA-009) — see the
+#: matching, more fully documented constant in
+#: test_canonical_project_economics.py. Little Utopia has no
+#: contingency_expected_utilization_pct ProjectFact on file, so its
+#: correct served baseline is the honest, disclosed figure (the full
+#: $301,131.00 reserve surfaced as a GREY_AREA_REQUIRES_AUTHORITY
+#: opportunity, not silently counted as 100%-qualifying):
+#:   OLD (defective, 100%-unconditional): $3,057,794.90
+#:   NEW (unset -> disclosed grey):        $3,148,134.20
+ACCEPTED_LU_NPC_USD = 3_148_134.20
 FVD_GROSS_BUDGET_USD = 4_517_687.00
 
 
@@ -107,8 +116,19 @@ async def test_relocation_candidates_never_outrank_the_baseline(db: AsyncSession
 #: completed authority-coverage audit adjudicated selective/superseded is
 #: FEASIBILITY_REVIEW_REQUIRED; everything else with no classified
 #: doctrine/rate data at all is UNPRICEABLE_AUTHORITY_INSUFFICIENT.
+#:
+#: Consolidated Backend Correction, CBA-001 (Part 2) — QUALIFICATION_
+#: HARD_FAIL is a genuine terminal cause too: a candidate whose role_
+#: qualification bridge resolved a real HARD_FAIL (never CURABLE_GAP/
+#: USER_FACT_REQUIRED/SCRIPT_FACT_REQUIRED/AUTHORITY_UNRESOLVED/
+#: RULE_DATA_INCOMPLETE — those are priced and disclosed, not blocked;
+#: see _QUALIFICATION_ADMITS_PRICING) never enters pricing at all.
+#: QUALIFICATION_UNRESOLVED is listed for completeness (currently
+#: unreachable given the admitted set above, but a real, defined terminal
+#: status the same code path can still emit).
 UNPRICEABLE_STATUSES = {
     "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "RULE_REJECTED", "FEASIBILITY_REVIEW_REQUIRED",
+    "QUALIFICATION_HARD_FAIL", "QUALIFICATION_UNRESOLVED",
 }
 
 

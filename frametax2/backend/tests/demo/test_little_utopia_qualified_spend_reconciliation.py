@@ -51,12 +51,30 @@ class TestQualifiedSpendNeverExceedsGrossBudgetUnexplained:
     def test_at_least_one_real_structure_exhibits_the_full_variance(self):
         """Pins the exact reported symptom (Mauritius + SA / Mauritius + JP
         component-relocation cards): confirms the $2 case is real, reachable
-        served data, not just a theoretical bound."""
-        overages = [
-            sum((sg.get("qpe_usd") or 0) for sg in s.get("segments", [])) - s["gross_budget_usd"]
-            for s in _structures()
-        ]
-        assert any(abs(o - RECONCILIATION_VARIANCE_USD) < 1e-6 for o in overages)
+        served data, not just a theoretical bound.
+
+        Consolidated Backend Correction, Part 19-20 (CBA-009): by DEFAULT
+        (no contingency_expected_utilization_pct fact answered), every
+        structure's QPE is now $301,131.00 lower than before — the
+        contingency reserve is a disclosed grey area, not silently
+        100%-qualifying — so no structure hits exactly the $2 leaf-sum
+        variance by default any more. This is orthogonal to the $2 source-
+        document rounding case: an explicit producer election of 100%
+        expected contingency utilization removes the grey exclusion and
+        reproduces the original, unrelated $2 rounding variance exactly,
+        proving the mechanism this test exists to pin is still real and
+        reachable, not merely a historical artifact."""
+        from app.demo.little_utopia_state import apply_fact_answers, reset_fact_answers
+
+        try:
+            apply_fact_answers({"contingency_expected_utilization_pct": 100.0})
+            overages = [
+                sum((sg.get("qpe_usd") or 0) for sg in s.get("segments", [])) - s["gross_budget_usd"]
+                for s in _structures()
+            ]
+            assert any(abs(o - RECONCILIATION_VARIANCE_USD) < 1e-6 for o in overages)
+        finally:
+            reset_fact_answers()
 
     def test_mauritius_baseline_qualified_spend_stays_below_gross_budget(self):
         """The single-jurisdiction baseline has real, non-zero exclusions

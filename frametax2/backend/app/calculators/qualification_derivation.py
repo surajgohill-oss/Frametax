@@ -134,6 +134,19 @@ class ProductionFacts:
     post_work_in_jurisdiction: bool | None = None
     payroll_routing_localized: bool | None = None
     treaty_partner_code: str | None = None
+    #: Consolidated Backend Correction, CBA-009/Part 19-20 — a real, typed,
+    #: user-controlled PROJECTED fact, distinct from actual/incurred
+    #: contingency deployment (app.calculators.contingency_treatment,
+    #: unchanged, still the authority for real, dated deployments). 0-100
+    #: (percent). None means the user has not yet stated an expectation —
+    #: this is a genuine missing PROJECT FACT, never silently defaulted to
+    #: either 0 or 100. Applies GENERICALLY to every program whose own
+    #: statutory rule says the contingency CATEGORY qualifies (e.g.
+    #: Mauritius's real EDB-2020-QPE-List finding) — it does not change
+    #: what the LAW says qualifies, only what fraction of the reserve a
+    #: PROJECTION should treat as likely to actually be deployed and
+    #: therefore incurred.
+    contingency_expected_utilization_pct: float | None = None
 
     def work_outside(self, account_code: str, category: str) -> bool:
         if category in POST_CATEGORIES and self.post_work_in_jurisdiction is not None:
@@ -242,6 +255,61 @@ def derive_qualification_register(
         if qualifies is False:
             _acct(QualificationState.EXCLUDED, QualificationConfidence.HIGH,
                   AuthorityBasis.EXPLICIT_STATUTE, rule.notes)
+            continue
+
+        # CBA-009/Part 19-20 fix — a program-specific rule confirming the
+        # contingency CATEGORY qualifies (e.g. Mauritius's real, cited
+        # EDB-2020-QPE-List finding) is a real statutory fact and stays
+        # unchanged; what changes is that the FULL reserve is no longer
+        # projected as 100% deployed automatically. A real, typed, user-
+        # controlled expected-utilization fact scales what fraction of
+        # the reserve a PROJECTION treats as likely-incurred, GENERICALLY
+        # for any program whose rule says this category qualifies — never
+        # hard-coded to Mauritius, never hard-coded to any other program.
+        if category == "contingency" and qualifies is True:
+            pct = facts.contingency_expected_utilization_pct
+            if pct is None:
+                # Genuine missing PROJECT FACT — never silently assumed as
+                # either 0% (would incorrectly exclude a category the
+                # statute confirms qualifies) or 100% (the exact defect
+                # this closes). Full amount disclosed as potential upside.
+                _acct(QualificationState.GREY_AREA_REQUIRES_AUTHORITY,
+                      QualificationConfidence.LOW, AuthorityBasis.FACT_DEPENDENT,
+                      f"{rule.notes} Statute confirms the contingency category qualifies, but no "
+                      "expected-utilization percentage has been set for this scenario — the fraction "
+                      "of this reserve a producer actually expects to deploy into real production "
+                      "spend is a project fact, not a legal question, and is not assumed either 0% or "
+                      "100% (Consolidated Backend Correction, Part 19-20).",
+                      evidence="A project/scenario expected contingency-spend utilization percentage.",
+                      upside=round(amt * rate, 2),
+                      grey_reason=GreyReason.MISSING_PRODUCTION_FACT)
+                continue
+            pct_fraction = max(0.0, min(100.0, pct)) / 100.0
+            expected_deployed_usd = round(amt * pct_fraction, 2)
+            expected_undeployed_usd = round(amt - expected_deployed_usd, 2)
+            if expected_deployed_usd > 0:
+                register.append(AccountQualification(
+                    account_code=line.account_code,
+                    description=f"{line.description} (expected deployed, {pct:.0f}% utilization)",
+                    amount_usd=expected_deployed_usd, state=QualificationState.QUALIFIES,
+                    confidence=QualificationConfidence.MEDIUM, authority_basis=AuthorityBasis.EXPLICIT_STATUTE,
+                    reason=f"{rule.notes} Projected expected-deployed amount at the scenario's own "
+                           f"{pct:.0f}% expected contingency utilization — priced as qualifying "
+                           "category spend, not the full undeployed reserve.",
+                    financial_impact_usd=expected_deployed_usd,
+                ))
+            if expected_undeployed_usd > 0:
+                register.append(AccountQualification(
+                    account_code=line.account_code,
+                    description=f"{line.description} (expected undeployed, {100 - pct:.0f}% headroom)",
+                    amount_usd=expected_undeployed_usd, state=QualificationState.EXCLUDED,
+                    confidence=QualificationConfidence.MEDIUM, authority_basis=AuthorityBasis.STRUCTURAL_DEFINITION,
+                    reason=f"The scenario's own expected utilization ({pct:.0f}%) leaves "
+                           f"${expected_undeployed_usd:,.2f} of this reserve not expected to be deployed — "
+                           "an undeployed reserve is not incurred production spend regardless of the "
+                           "category's own statutory eligibility.",
+                    financial_impact_usd=expected_undeployed_usd,
+                ))
             continue
 
         if qualifies is True:

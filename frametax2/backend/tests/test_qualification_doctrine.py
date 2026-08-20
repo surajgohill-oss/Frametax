@@ -181,10 +181,20 @@ class TestMauritiusDoctrineAssignment:
 
     def test_real_register_has_no_invalid_greys(self):
         """Every grey in the real Little Utopia register carries a genuine
-        A-F reason; none is an implementation artifact, and no MATERIAL
-        on-budget grey remains (only $0 legal-interpretation lines)."""
+        A-F reason; none is an implementation artifact. Only $0 legal-
+        interpretation lines plus ONE real, disclosed, intentional
+        material grey remain: the $301,131.00 contingency reserve
+        (account 8300), grey because Consolidated Backend Correction,
+        Part 19-20 (CBA-009) closed Codex's confirmed defect that the
+        full reserve was projected as 100%-qualifying unconditionally —
+        it is now correctly disclosed as MISSING_PRODUCTION_FACT
+        (the producer's expected-utilization percentage is unset) rather
+        than a false QUALIFIES. See test_contingency_treatment.py and
+        test_contingency_expected_utilization.py for full coverage of
+        this specific, intentional grey."""
         reg = build_little_utopia_real_register()
         greys = [a for a in reg if a.state == QualificationState.GREY_AREA_REQUIRES_AUTHORITY]
         assert all(a.grey_reason is not None for a in greys)
         material_greys = [a for a in greys if a.amount_usd >= 1.0]
-        assert material_greys == []  # 7000/7100 now qualify; only $0 music/marketing remain grey
+        assert [a.account_code for a in material_greys] == ["8300"]
+        assert material_greys[0].grey_reason == GreyReason.MISSING_PRODUCTION_FACT

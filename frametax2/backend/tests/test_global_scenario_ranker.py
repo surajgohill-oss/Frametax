@@ -307,8 +307,8 @@ class TestFourCasePricing:
     def test_existing_little_utopia_conservative_result_unchanged(self, structures):
         baseline = next(s for s in structures if s.structure_id == "STRUCT-BASELINE-MU")
         cons = baseline.cases[RiskCase.CONSERVATIVE]
-        assert cons.qpe_usd == pytest.approx(3_700_954.0, abs=1.0)
-        assert cons.incentive_usd == pytest.approx(1_480_381.6, abs=1.0)
+        assert cons.qpe_usd == pytest.approx(3_104_357.0, abs=1.0)
+        assert cons.incentive_usd == pytest.approx(1_241_742.8, abs=1.0)
 
     def test_non_priceable_structure_has_no_cases(self, structures):
         for s in structures:
@@ -426,7 +426,7 @@ class TestNonMutation:
             structuring_paths=paths, grey_areas=grey_areas,
         )
         cons = result.cases[RiskCase.CONSERVATIVE]
-        assert cons.qpe_usd == pytest.approx(3_700_954.0, abs=1.0)
+        assert cons.qpe_usd == pytest.approx(3_104_357.0, abs=1.0)
 
     def test_module_does_not_modify_optimization_engine_source_import(self):
         import ast

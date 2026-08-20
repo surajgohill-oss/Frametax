@@ -75,7 +75,9 @@ async def test_little_utopia_workspace_view_uses_the_same_adapter(db: AsyncSessi
     evaluation = result["evaluation"]
     assert evaluation["status"] == "EVALUATION_COMPLETE"
     assert evaluation["top_result"]["jurisdiction_code"] == "MU"
-    assert evaluation["top_result"]["true_net_cost_usd"] == pytest.approx(3_057_794.90, abs=1.0)
+    # CBA-009 Part 19-20: $3,057,794.90 -> $3,148,134.20 (contingency
+    # expected-utilization fact unset -> disclosed grey, not 100%-unconditional).
+    assert evaluation["top_result"]["true_net_cost_usd"] == pytest.approx(3_148_134.20, abs=1.0)
 
     # LU's screenplay has not been SA-1 parsed — the adapter must report
     # that honestly (0 scenes) rather than fabricate structure (Part D).

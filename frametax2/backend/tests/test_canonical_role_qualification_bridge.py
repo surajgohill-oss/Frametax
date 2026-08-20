@@ -255,18 +255,136 @@ def test_no_researched_completed_doctrine_remains_disconnected():
     ROLE_QUALIFICATION_COVERED_SLUGS (pre-existing, unaffected) and
     AUTHORITY_UNRESOLVED_PROGRAMS (genuine applicability residuals,
     unaffected), this proves DISCONNECTED == 0 for the full 71-program
-    universe."""
+    universe.
+
+    CBA-005 fix (Codex audit 4db2cea): this test previously skipped
+    every profile with cultural_test_required=False — exactly the
+    programs whose served state the audit found was actually wrong
+    (RULE_DATA_INCOMPLETE despite a confirmed no-cultural-test profile).
+    The skip is removed now that the underlying defect is fixed: the
+    served bridge derives NOT_APPLICABLE directly from cultural_test_
+    required=False, so this test can honestly check the REAL state for
+    all 71 programs, not a filtered subset."""
     from app.data.program_requirements import all_program_requirements
     from app.data.cultural_qualification_model import is_spend_only_program
 
     profiles = all_program_requirements()
     disconnected = []
     for slug, p in profiles.items():
-        if p.cultural_test_required is False:
-            continue
         if slug in ROLE_QUALIFICATION_COVERED_SLUGS:
             continue
         result = evaluate_role_qualification(slug, p.jurisdiction_code, {}, script_facts={})
         if result.state == QUAL_RULE_DATA_INCOMPLETE and not is_spend_only_program(slug):
             disconnected.append(slug)
     assert disconnected == [], f"researched-but-disconnected programs found: {disconnected}"
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# Consolidated Backend Correction (2026-08-20), Codex audit 4db2cea —
+# focused prevention tests for CBA-003/004/005.
+# ═══════════════════════════════════════════════════════════════════════
+
+def test_pstc_confirmed_not_applicable_not_rule_data_incomplete():
+    """Codex acceptance proof #3 — Canada PSTC is NOT_APPLICABLE for
+    cultural qualification (it has no cultural test by real statute),
+    never RULE_DATA_INCOMPLETE."""
+    result = evaluate_role_qualification("ca_federal_pstc", "CA", {})
+    assert result.state == QUAL_NOT_APPLICABLE
+
+
+def test_all_confirmed_no_cultural_test_programs_are_not_applicable():
+    """CBA-005 — every one of the 48 programs with program_requirements.
+    py's own cultural_test_required=False must resolve NOT_APPLICABLE,
+    derived directly from that field, never RULE_DATA_INCOMPLETE
+    (Codex's demonstrated defect: 46 of 48 previously fell through)."""
+    from app.data.program_requirements import all_program_requirements
+    profiles = all_program_requirements()
+    no_cultural_test = [s for s, p in profiles.items() if p.cultural_test_required is False]
+    assert len(no_cultural_test) >= 40  # real, not a coincidentally-small sample
+    for slug in no_cultural_test:
+        p = profiles[slug]
+        result = evaluate_role_qualification(slug, p.jurisdiction_code, {})
+        assert result.state == QUAL_NOT_APPLICABLE, f"{slug} incorrectly reports {result.state}"
+
+
+def test_script_fact_semantic_match_closes_false_qualifies_defect():
+    """CBA-003 — Codex's exact demonstrated false-positive: a Tokyo
+    location / US character nationality / English language fact set must
+    NEVER satisfy fr_trip's France-specific criteria merely because a
+    fact of the right element_type exists. A genuinely matching fact set
+    (Paris/French) must still be able to QUALIFY."""
+    codes = {"director": ("FR",), "writer": ("FR",), "producer": ("FR",),
+             "composer": ("FR",), "lead_cast": ("FR",), "editor": ("FR",)}
+    wrong = evaluate_role_qualification(
+        "fr_trip", "FR", codes,
+        script_facts={"location": ("Tokyo",), "character_nationality": ("US",), "language": ("English",)},
+    )
+    assert wrong.state != QUAL_QUALIFIES
+
+    right = evaluate_role_qualification(
+        "fr_trip", "FR", codes,
+        script_facts={"location": ("Paris",), "language": ("French",), "cultural_reference": ("French painter",)},
+    )
+    assert right.state == QUAL_QUALIFIES
+
+
+def test_authority_incomplete_table_never_emits_false_qualifies():
+    """CBA-003 — an AUTHORITY_INCOMPLETE (aggregate/approximate) cultural
+    point table must be quarantined from deterministic QUALIFIES even
+    when its own arithmetic crosses the threshold: the aggregate cannot
+    verify the real official item-level breakdown would also pass."""
+    from app.data.cultural_point_tables import TABLE_AUTHORITY_INCOMPLETE, CULTURAL_POINT_TABLES
+    incomplete_slugs = [s for s, t in CULTURAL_POINT_TABLES.items() if t.completeness == TABLE_AUTHORITY_INCOMPLETE]
+    assert "hr_cash_rebate" in incomplete_slugs
+    assert "pl_pisf_cash_rebate" in incomplete_slugs
+    # pl_pisf_cash_rebate has a real CATEGORY_ROLE criterion its own
+    # arithmetic can cross the threshold through — the quarantine must
+    # still intercept it before QUALIFIES.
+    result = evaluate_role_qualification(
+        "pl_pisf_cash_rebate", "PL", {"entity": ("PL",)},
+        script_facts={"location": ("Warsaw",), "cultural_reference": ("Polish",)},
+    )
+    assert result.state == QUAL_AUTHORITY_UNRESOLVED
+    assert result.state != QUAL_QUALIFIES
+
+
+def test_table_completeness_classification_matches_codex_audit():
+    """CBA-003 — completeness must be an explicit, per-table classification
+    (never inferred from modeled_max == total_points alone, which would
+    incorrectly treat mt_mfc_rebate's single-aggregate 40/40 as COMPLETE)."""
+    from app.data.cultural_point_tables import (
+        CULTURAL_POINT_TABLES, TABLE_COMPLETE, TABLE_PARTIAL_WITH_KNOWN_HEADROOM, TABLE_AUTHORITY_INCOMPLETE,
+    )
+    assert CULTURAL_POINT_TABLES["no_film_incentive"].completeness == TABLE_COMPLETE
+    assert CULTURAL_POINT_TABLES["at_fisa_plus"].completeness == TABLE_PARTIAL_WITH_KNOWN_HEADROOM
+    # mt_mfc_rebate's modeled sum EQUALS total_points (40==40) despite being
+    # a single all-or-nothing aggregate, not a real itemised table -- proves
+    # completeness is a real, independent classification, not a derived one.
+    mt = CULTURAL_POINT_TABLES["mt_mfc_rebate"]
+    assert sum(c.max_points for c in mt.criteria) == mt.total_points
+    assert mt.completeness == TABLE_AUTHORITY_INCOMPLETE
+
+
+def test_invalid_coproduction_cultural_test_text_stays_unresolved_not_false():
+    """CBA-004 — an invalid/unrecognized coproduction_cultural_test_passed
+    value must resolve None (unresolved), never a silently-confirmed
+    False (which the pre-fix code produced for anything other than an
+    exact true/1/yes token)."""
+    import asyncio
+    from app.services.canonical_evaluation import _coproduction_facts
+
+    class _FakeResult:
+        def __init__(self, rows):
+            self._rows = rows
+        def all(self):
+            return self._rows
+
+    class _FakeSession:
+        def __init__(self, rows):
+            self._rows = rows
+        async def execute(self, *_a, **_kw):
+            return _FakeResult(self._rows)
+
+    session = _FakeSession([("coproduction_cultural_test_passed", "unknown")])
+    _maj, _min, cultural = asyncio.run(_coproduction_facts(session, "fake-project-id"))
+    assert cultural is None

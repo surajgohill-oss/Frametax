@@ -59,6 +59,16 @@ from app.models.project_fact import ProjectFact
 FACT_ACCOUNTS_OUTSIDE_JURISDICTION = "budget_accounts_outside_base_jurisdiction"
 FACT_OFFSHORE_PAYROLL_ACCOUNTS = "budget_offshore_payroll_accounts"
 
+#: Consolidated Backend Correction, Part 19-20 (CBA-009) — the EXISTING
+#: generic ProjectFact model is the real project setting for a producer's
+#: stated expected contingency-spend utilization (0-100, percent). A real,
+#: PROJECTED, user-controlled fact, distinct from app.calculators.
+#: contingency_treatment's ACTUAL/incurred deployment tracking. Absent
+#: means genuinely unset -- never defaulted to 0% or 100% (see
+#: qualification_derivation.derive_qualification_register's contingency
+#: branch, which surfaces GREY_AREA_REQUIRES_AUTHORITY when this is None).
+FACT_CONTINGENCY_EXPECTED_UTILIZATION_PCT = "contingency_expected_utilization_pct"
+
 #: Leading account-code token on a budget line description, e.g.
 #: "1400 CAST" -> ("1400", "CAST"). Film budgets are account-coded by
 #: convention; a line without a code cannot participate in
@@ -107,6 +117,12 @@ class ProjectEconomicInputs:
     #: derive_production_requirements() consumes (a distinct, larger,
     #: separately-scoped gap -- see CANONICAL_SERVED_WIRING_REPAIR.md).
     production_requirements_on_file: int = 0
+
+    #: Consolidated Backend Correction, Part 19-20 (CBA-009) — the
+    #: producer's own stated expected contingency-spend utilization
+    #: (0-100, percent), read from the generic ProjectFact model. None
+    #: means genuinely unset, never defaulted.
+    contingency_expected_utilization_pct: float | None = None
 
     @property
     def reconciliation_variance_usd(self) -> float:
@@ -160,6 +176,19 @@ FACT_STATE_UNKNOWN = "UNKNOWN"
 def _fact_presence(rows: list[ProjectFact], key: str) -> str:
     row = next((f for f in rows if f.fact_key == key), None)
     return FACT_STATE_STATED if row is not None and row.value else FACT_STATE_UNKNOWN
+
+
+def _fact_float(rows: list[ProjectFact], key: str) -> float | None:
+    """Consolidated Backend Correction, Part 19-20 — read a scalar numeric
+    ProjectFact. An absent or unparseable value stays None (a genuine
+    missing project fact), never coerced to 0."""
+    row = next((f for f in rows if f.fact_key == key), None)
+    if row is None or row.value in (None, ""):
+        return None
+    try:
+        return float(row.value)
+    except (TypeError, ValueError):
+        return None
 
 
 #: Generic project.format -> the production_type vocabulary the statutory
@@ -285,6 +314,9 @@ async def build_project_economic_inputs(
         production_requirements_on_file=len(requirements_on_file),
         budget_document_id=str(doc.id),
         unparsed_line_descriptions=unparsed,
+        contingency_expected_utilization_pct=_fact_float(
+            fact_rows, FACT_CONTINGENCY_EXPECTED_UTILIZATION_PCT
+        ),
     ))
 
 
@@ -308,6 +340,7 @@ def production_facts_for(
         jurisdiction_code=jurisdiction_code or inputs.jurisdiction_code,
         accounts_outside_jurisdiction=inputs.accounts_outside_jurisdiction,
         offshore_payroll_accounts=inputs.offshore_payroll_accounts,
+        contingency_expected_utilization_pct=inputs.contingency_expected_utilization_pct,
     )
 
 

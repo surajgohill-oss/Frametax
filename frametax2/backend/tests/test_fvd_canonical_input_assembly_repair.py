@@ -254,7 +254,10 @@ async def test_representative_fvd_jurisdiction_traces(db: AsyncSession):
     assert mt["ceiling_requires_confirmation"] is True
 
     mu = seg("MU")
-    assert mu["qpe_usd"] == pytest.approx(1_132_056.00, abs=0.01)
+    # CBA-009 Part 19-20: $1,132,056.00 -> $769,190.00 (FVD's own $362,866.00
+    # contingency reserve, priced against MU's real qualifies=True rule, is
+    # now a disclosed grey area by default, not silently 100%-qualifying).
+    assert mu["qpe_usd"] == pytest.approx(769_190.00, abs=0.01)
     assert mu["doctrine"] == "hybrid_conditional"
 
     au_qld = seg("AU-QLD")
@@ -276,5 +279,7 @@ async def test_little_utopia_regression_unchanged_by_input_assembly_repair(db: A
     result = await evaluate_project(db, LITTLE_UTOPIA_PROJECT_ID)
     assert result["engine_version"] == ENGINE_VERSION
     assert result["base_jurisdiction_code"] == "MU"
-    assert result["top_result"]["true_net_cost_usd"] == 3_057_794.90
+    # CBA-009 Part 19-20: $3,057,794.90 -> $3,148,134.20 (contingency
+    # expected-utilization fact unset -> disclosed grey, not 100%-unconditional).
+    assert result["top_result"]["true_net_cost_usd"] == 3_148_134.20
     assert result["top_result"]["is_baseline"] is True

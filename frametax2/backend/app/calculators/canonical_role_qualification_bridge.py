@@ -53,6 +53,11 @@ from app.data.cultural_point_tables import (
     DISCRETIONARY_OR_DEFINITIONAL_PROGRAMS,
     FACT_SCRIPT,
     FACT_USER,
+    TABLE_AUTHORITY_INCOMPLETE,
+    TABLE_COMPLETE,
+    TABLE_PARTIAL_WITH_KNOWN_HEADROOM,
+    TABLE_PARTIAL_WITH_UNKNOWN_HEADROOM,
+    _script_fact_matches,
 )
 from app.data.cultural_qualification_model import (
     NATIONALITY_REQUIREMENTS,
@@ -61,6 +66,7 @@ from app.data.cultural_qualification_model import (
     get_requirements,
     is_spend_only_program,
 )
+from app.data.program_requirements import get_program_requirements
 from app.models.project_person import ProjectPerson
 from app.models.screenplay import ExtractedScriptElement, ScreenplayDocument
 from app.models.talent import TalentProfile
@@ -222,6 +228,52 @@ async def role_known_codes_from_project(session: AsyncSession, project_id: str) 
     return {role: tuple(sorted(vals)) for role, vals in codes.items()}
 
 
+async def typed_personnel_facts_from_project(session: AsyncSession, project_id: str) -> dict[str, dict[str, tuple[str, ...]]]:
+    """CBA-004 fix (Codex audit 4db2cea, finding 5) — the SEPARATE-typed
+    counterpart to role_known_codes_from_project() above. That function
+    is kept UNCHANGED for the pre-existing 24-slug role-gate registry
+    (cultural_qualification_model.py's NationalityRequirement rows do not
+    themselves distinguish which real programs require strict nationality
+    vs. which accept residency -- re-deriving that per-program distinction
+    across all 24 real regimes is a genuine, disclosed, out-of-scope
+    research task, not attempted here to avoid destabilizing tested,
+    already-correct legacy behavior on unverified assumptions).
+
+    This function is the typed fact source for NEW consumption paths
+    (cultural_point_tables.py's role criteria) that can safely use it:
+    returns, per role, `{"nationality": (...), "residency": (...)}` as
+    two genuinely separate tuples -- never merged into one untyped set."""
+    rows = (await session.execute(
+        select(ProjectPerson.role, TalentProfile.primary_nationality, TalentProfile.known_residencies)
+        .join(TalentProfile, ProjectPerson.talent_id == TalentProfile.id)
+        .where(ProjectPerson.project_id == project_id)
+    )).all()
+
+    _ROLE_ALIASES = {
+        "director": "director", "writer": "writer", "producer": "producer",
+        "lead_cast": "lead_cast", "cast": "supporting_cast",
+        "editor": "editor", "composer": "composer",
+    }
+
+    facts: dict[str, dict[str, set[str]]] = {}
+    for role_text, nationality, known_residencies in rows:
+        role = _ROLE_ALIASES.get((role_text or "").strip().lower())
+        if role is None:
+            continue
+        bucket = facts.setdefault(role, {"nationality": set(), "residency": set()})
+        if nationality:
+            bucket["nationality"].add(nationality.upper())
+        for entry in (known_residencies or []):
+            code = (entry or {}).get("jurisdiction_code") if isinstance(entry, dict) else None
+            if code and (entry.get("confirmed") is not False):
+                bucket["residency"].add(str(code).upper())
+
+    return {
+        role: {kind: tuple(sorted(vals)) for kind, vals in kinds.items()}
+        for role, kinds in facts.items()
+    }
+
+
 #: Maps a cultural-point-table criterion's CATEGORY to the real,
 #: pre-existing ExtractedScriptElement.element_type it corresponds to
 #: (see that model's own docstring: "location", "environment", "climate",
@@ -314,11 +366,32 @@ def evaluate_point_table_qualification(
             else:
                 missing_user.append((c.key, c.max_points, f"{c.description} — no project fact on file for role '{c.role}'"))
         elif c.fact_type == FACT_SCRIPT:
+            # CBA-003 fix (Codex audit 4db2cea, finding 3) — element_type
+            # PRESENCE was previously treated as sufficient to satisfy any
+            # criterion of that type, with no comparison to the criterion's
+            # own jurisdiction. A Tokyo/US-English fact set could falsely
+            # satisfy France-specific criteria for fr_trip purely because
+            # a 'location'/'language' fact existed at all. Fixed: a real
+            # semantic match (_script_fact_matches) against the criterion's
+            # own jurisdiction_code (or the candidate's home_code as the
+            # table's implicit "domestic" jurisdiction) is now required.
             element_types = _SCRIPT_ELEMENT_TYPES_BY_CATEGORY.get(c.category, ())
-            if any(script_facts.get(et) for et in element_types):
+            extracted_values = [v for et in element_types for v in script_facts.get(et, ())]
+            criterion_jurisdiction = c.jurisdiction_code or home_code
+            if not extracted_values:
+                missing_script.append((c.key, c.max_points, f"{c.description} — no Script Analyzer fact extracted"))
+            elif any(_script_fact_matches(v, criterion_jurisdiction, c.expected_values) for v in extracted_values):
                 satisfied.append((c.key, c.max_points))
             else:
-                missing_script.append((c.key, c.max_points, f"{c.description} — no Script Analyzer fact extracted"))
+                # A real fact WAS extracted (e.g. "Tokyo", "English") but
+                # does not name this criterion's own jurisdiction — a
+                # genuine, known NEGATIVE, not a missing fact. Never
+                # silently treated as satisfied, never treated as merely
+                # unknown (that would re-permit the same false positive
+                # this fix closes, one level removed).
+                failed.append((c.key, c.max_points,
+                               f"{c.description} — extracted fact(s) {extracted_values} do not name "
+                               f"{criterion_jurisdiction or 'the required jurisdiction'}"))
         else:
             # FACT_PRODUCTION — a project/production-plan fact (shoot days,
             # post-production location, spend split) this codebase does not
@@ -418,6 +491,35 @@ def evaluate_point_table_qualification(
     )
 
     if confirmed_points >= table.threshold and sub_ok:
+        if table.completeness == TABLE_AUTHORITY_INCOMPLETE:
+            # Part 3 / CBA-003 — quarantine. An aggregate/approximate
+            # table (e.g. Croatia's real 8-item, 3-category-floor test
+            # collapsed into one all-or-nothing 34-point row) can cross
+            # its OWN threshold arithmetically without that being safe
+            # deterministic evidence the real, itemised official test
+            # would also pass — the aggregate cannot verify the real
+            # sub-category floors or role-level allocation. Never emits
+            # QUALIFIES from an authority-incomplete table; the real
+            # official item-level breakdown remains a genuine, disclosed
+            # authority residual.
+            return CanonicalQualificationResult(
+                state=QUAL_AUTHORITY_UNRESOLVED, confidence_state="LOW",
+                qualification_route="cultural_point_table",
+                regime_id=program_slug, jurisdiction_code=jurisdiction_code,
+                current_points=confirmed_points, required_points=table.threshold,
+                authority_basis=table.source_note,
+                missing_facts=(
+                    f"{program_slug}: the aggregate table's own arithmetic would cross the "
+                    f"{table.threshold}-point threshold ({confirmed_points} confirmed), but this table is "
+                    "AUTHORITY_INCOMPLETE (an aggregate/approximate representation, not the real itemised "
+                    "official criteria) — quarantined from deterministic QUALIFIES per CBA-003. Required "
+                    "fact type: the program's own official item-level point breakdown.",
+                ),
+                reasoning_trace=(
+                    f"{program_slug}: AUTHORITY_INCOMPLETE table quarantined from deterministic admission — "
+                    "see missing_facts for the exact residual.",
+                ),
+            )
         return CanonicalQualificationResult(
             state=QUAL_QUALIFIES, confidence_state="HIGH",
             reasoning_trace=(
@@ -542,18 +644,29 @@ def evaluate_role_qualification(
             return evaluate_point_table_qualification(program_slug, jurisdiction_code, role_known_codes, script_facts)
         if program_slug in DISCRETIONARY_OR_DEFINITIONAL_PROGRAMS:
             return evaluate_discretionary_qualification(program_slug, jurisdiction_code)
-        # Codex's GENUINELY_MISSING_RULE_DATA / spend-only classification:
-        # no role/nationality rule data exists for this slug at all in
-        # cultural_qualification_model.py. is_spend_only_program() checks
-        # the explicit, real allowlist -- those are NOT_APPLICABLE (a
-        # genuine "no rule needed" fact); everything else with zero rows
-        # is RULE_DATA_INCOMPLETE (genuinely missing, never silently
-        # treated as passing or as "not required").
-        if is_spend_only_program(program_slug):
+        # CBA-005 fix (Codex audit 4db2cea, finding 5) — NOT_APPLICABLE is
+        # now derived DIRECTLY from program_requirements.py's own
+        # cultural_test_required field (the single authoritative source),
+        # never from a hand-maintained allowlist that can silently drift
+        # out of sync with it. Confirmed defect this closes: 46 of 48
+        # programs with cultural_test_required=False (every one NOT on
+        # the old _SPEND_ONLY_SLUGS 2-entry allowlist) fell through to
+        # RULE_DATA_INCOMPLETE despite their own canonical profile
+        # already, correctly, recording that no cultural test applies.
+        # is_spend_only_program() is kept as a redundant, harmless
+        # secondary check (its 1-entry allowlist, au_location_offset, is
+        # a strict subset of what the profile-driven check below already
+        # covers) rather than deleted, to avoid a behavior change for any
+        # caller that imports it directly.
+        _profile = get_program_requirements(program_slug)
+        if is_spend_only_program(program_slug) or (_profile is not None and _profile.cultural_test_required is False):
             return CanonicalQualificationResult(
                 regime_id=program_slug, jurisdiction_code=jurisdiction_code,
                 state=QUAL_NOT_APPLICABLE, qualification_route="role_nationality_gate",
-                reasoning_trace=("Confirmed spend-only program -- no nationality/role gate applies.",),
+                reasoning_trace=(
+                    "Confirmed no-cultural-test program per program_requirements.py's own "
+                    "cultural_test_required=False -- no nationality/role gate applies.",
+                ),
                 confidence_state="HIGH",
             )
         return CanonicalQualificationResult(

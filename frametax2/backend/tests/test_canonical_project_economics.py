@@ -41,10 +41,38 @@ LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
 
 #: Regression truth from the accepted worldwide acceptance run. Never
 #: recomputed here, never relaxed to make a migration fit.
-ACCEPTED_NPC_USD = 3_057_794.90
-ACCEPTED_INCENTIVE_USD = 1_306_598.10
+#:
+#: Consolidated Backend Correction, Part 19-20 (CBA-009): Codex's audit
+#: confirmed the OLD baseline below silently projected the FULL $301,131.00
+#: contingency reserve as 100%-deployed QPE, unconditionally, contributing
+#: $120,452.40 of the OLD incentive figure. That is the exact defect this
+#: correction closes — see qualification_derivation.derive_qualification_
+#: register's "contingency" branch and its test coverage in
+#: test_contingency_expected_utilization.py.
+#:
+#: Little Utopia has no `contingency_expected_utilization_pct` ProjectFact
+#: on file, so its correct CURRENT baseline is the genuinely-unset case:
+#: the reserve is disclosed as a GREY_AREA_REQUIRES_AUTHORITY opportunity
+#: (full upside still visible, never silently priced in) rather than
+#: counted as qualifying spend. Per the correction task's own instruction
+#: ("LU MAY CHANGE... do not force the old LU number"), the accepted
+#: baseline is updated to the new, honest figure:
+#:   OLD (defective, 100%-unconditional):  incentive $1,306,598.10 / NPC $3,057,794.90
+#:   NEW (unset -> disclosed grey):        incentive $1,216,258.80 / NPC $3,148,134.20
+#:   delta:                                incentive -$90,339.30   / NPC +$90,339.30
+#: `test_hundred_percent_utilization_reproduces_old_baseline_exactly` below
+#: proves the OLD figure is still exactly reachable — by explicit producer
+#: election of 100% expected utilization — confirming this is a default
+#: change, not an arithmetic regression.
+ACCEPTED_NPC_USD = 3_148_134.20
+ACCEPTED_INCENTIVE_USD = 1_216_258.80
 ACCEPTED_GROSS_BUDGET_USD = 4_364_393.00
 ACCEPTED_LEAF_SUM_USD = 4_364_395.00
+
+#: The pre-correction figures, kept only to prove reachability at 100%
+#: expected utilization (see the reconciliation test below).
+_OLD_ACCEPTED_NPC_USD = 3_057_794.90
+_OLD_ACCEPTED_INCENTIVE_USD = 1_306_598.10
 
 
 @pytest.fixture
@@ -132,6 +160,48 @@ async def test_little_utopia_canonical_npc_reproduced_from_generic_inputs(db: As
     assert pricing.is_fully_priced is True
     assert round(pricing.selected_incentive_usd, 2) == ACCEPTED_INCENTIVE_USD
     assert round(pricing.npc_verified_usd, 2) == ACCEPTED_NPC_USD
+
+
+async def test_hundred_percent_utilization_reproduces_old_baseline_exactly(db: AsyncSession):
+    """Consolidated Backend Correction, Part 19-20 reconciliation proof.
+
+    An explicit producer election of 100% expected contingency utilization
+    must reproduce the OLD (pre-correction) accepted figures to the cent —
+    proving the correction only changed the UNSET default's behavior
+    (100%-unconditional -> disclosed grey), not the underlying arithmetic
+    of what 100% utilization itself prices to."""
+    inputs = (await build_project_economic_inputs(db, LITTLE_UTOPIA_PROJECT_ID)).inputs
+
+    spec = StructureSpec(
+        structure_id="ALLOC-BASELINE-MU-100PCT",
+        structure_type="single_country",
+        label="Mauritius single-jurisdiction baseline, 100% expected contingency utilization",
+        primary_jurisdiction=inputs.jurisdiction_code,
+        participants=(inputs.jurisdiction_code,),
+        incentive_programs={inputs.jurisdiction_code: "mu_edb_incentive"},
+    )
+    allocation = derive_account_allocation(
+        lines=inputs.budget_lines,
+        spend_category_by_code=inputs.spend_category_by_code,
+        spec=spec,
+        stated_outside_accounts=inputs.accounts_outside_jurisdiction,
+    )
+    pricing = price_allocated_structure(
+        spec=spec,
+        allocation=allocation,
+        spend_category_by_code=inputs.spend_category_by_code,
+        offshore_payroll_accounts=inputs.offshore_payroll_accounts,
+        gross_budget_usd=inputs.gross_budget_usd,
+        travel_incremental_delta_usd=0.0,
+        fx_delta_usd=None,
+        inkind_replacement_delta_usd=0.0,
+        local_cost_delta_usd=0.0,
+        contingency_expected_utilization_pct=100.0,
+    )
+
+    assert pricing.is_fully_priced is True
+    assert round(pricing.selected_incentive_usd, 2) == _OLD_ACCEPTED_INCENTIVE_USD
+    assert round(pricing.npc_verified_usd, 2) == _OLD_ACCEPTED_NPC_USD
 
 
 async def test_canonical_economics_module_reads_no_project_specific_data(db: AsyncSession):

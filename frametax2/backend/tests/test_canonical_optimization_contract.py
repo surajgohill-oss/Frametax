@@ -89,7 +89,10 @@ class TestInKindNormalization:
         mu = _by_id()[0]["ALLOC-BASELINE-MU"]
         assert mu["gross_budget_usd"] == pytest.approx(4_364_393, abs=5)
         seg = next(s for s in mu["segments"] if s["jurisdiction_code"] == "MU")
-        assert seg["qpe_usd"] == pytest.approx(4_355_327, abs=1)
+        # CBA-009 Part 19-20: $4,355,327 -> $4,054,196 ($301,131.00 lower —
+        # the contingency reserve is now a disclosed grey area by default,
+        # not silently 100%-qualifying).
+        assert seg["qpe_usd"] == pytest.approx(4_054_196, abs=1)
 
     def test_replacement_enters_npc_additively(self):
         gr = _by_id()[0]["ALLOC-RELOC-GR"]

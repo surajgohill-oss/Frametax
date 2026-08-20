@@ -187,6 +187,22 @@ ANSWERABLE_FACTS: dict[str, dict] = {
             "percentage."
         ),
     },
+    "contingency_expected_utilization_pct": {
+        "type": float,
+        "answers_question": "MISSING-CONTINGENCY-UTILIZATION",
+        "description": (
+            "Consolidated Backend Correction, Part 19-20 (CBA-009). What "
+            "percentage (0-100) of the budget's contingency reserve does "
+            "the producer expect to actually deploy into real production "
+            "expenditures? Only relevant for a program whose statutory "
+            "rule confirms the 'contingency' spend category qualifies "
+            "(e.g. Mauritius EDB-2020-QPE-List) — it never changes what "
+            "the law says qualifies, only what fraction of the reserve a "
+            "PROJECTION treats as likely-incurred. Unanswered = disclosed "
+            "as a GREY_AREA_REQUIRES_AUTHORITY opportunity, never silently "
+            "assumed 0% or 100%."
+        ),
+    },
 }
 
 _fact_answers: dict[str, object] = {}
@@ -1457,6 +1473,7 @@ def build_allocated_structures(
                 "note": local_cost.note,
             },
             contingency_allocations=_contingency_allocations,
+            contingency_expected_utilization_pct=_fact_answers.get("contingency_expected_utilization_pct"),
         )
         if pricing.is_fully_priced:
             fx = compute_fx_normalization(
@@ -1492,6 +1509,7 @@ def build_allocated_structures(
                     "note": local_cost.note,
                 },
                 contingency_allocations=_contingency_allocations,
+                contingency_expected_utilization_pct=_fact_answers.get("contingency_expected_utilization_pct"),
             )
         pricings.append(pricing)
 
@@ -1973,6 +1991,10 @@ def _production_facts() -> ProductionFacts:
         post_work_in_jurisdiction=_fact_answers.get("post_work_in_jurisdiction"),
         payroll_routing_localized=_fact_answers.get("payroll_routing_localized"),
         treaty_partner_code=_fact_answers.get("treaty_partner_code"),
+        # Consolidated Backend Correction, Part 19-20 (CBA-009) — same
+        # overlay pattern as every other fact above; genuinely unset
+        # unless the producer has answered it through the facts API.
+        contingency_expected_utilization_pct=_fact_answers.get("contingency_expected_utilization_pct"),
     )
 
 

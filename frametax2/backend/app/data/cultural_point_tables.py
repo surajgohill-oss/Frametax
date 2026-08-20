@@ -26,7 +26,45 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-CULTURAL_POINT_TABLES_VERSION = "1.0.0"
+CULTURAL_POINT_TABLES_VERSION = "1.1.0"
+# 1.1.0 -- Consolidated Backend Correction (CBA-003, Codex audit
+# 4db2cea): adds explicit table-level COMPLETENESS classification (a
+# partially-itemised table's modeled maximum is never confused with the
+# real statutory maximum, and an aggregate/approximate table is now
+# quarantined from deterministic admission rather than silently treated
+# as equivalent to a fully-itemised one) and per-criterion
+# jurisdiction_code + expected_values for SCRIPT_FACT criteria, closing
+# the false-QUALIFIES defect Codex demonstrated (fr_trip returning
+# QUALIFIES from a Tokyo/US/English fact set because any() matched on
+# element_type alone, with no semantic comparison to France at all).
+
+# ── Table-level completeness classification (Part 3 / CBA-003) ─────────
+#: The itemised criteria are a verified, complete representation of the
+#: real official point table (every category and its exact point value
+#: is on file). A partial-modeled maximum can never occur here by
+#: definition -- modeled_max == total_points.
+TABLE_COMPLETE = "COMPLETE"
+#: The itemised criteria are a genuine SUBSET of the real official table
+#: (modeled_max < total_points), but the exact size of the unmodeled
+#: remainder IS known (total_points itself is a confirmed, cited
+#: statutory/regulatory figure) -- safe to credit toward a CEILING
+#: (never toward CONFIRMED points), per the unmodeled_headroom mechanism
+#: already in canonical_role_qualification_bridge.py.
+TABLE_PARTIAL_WITH_KNOWN_HEADROOM = "PARTIAL_WITH_KNOWN_HEADROOM"
+#: Modeled criteria are a subset AND the real statutory maximum itself
+#: is not confirmed (total_points is an estimate, not a cited figure) --
+#: the size of the unmodeled remainder is genuinely unknown, not merely
+#: unitemised.
+TABLE_PARTIAL_WITH_UNKNOWN_HEADROOM = "PARTIAL_WITH_UNKNOWN_HEADROOM"
+#: The table is built from one or more coarse, aggregate, or
+#: approximated criteria (e.g. "the whole 34-point Croatian test" as a
+#: single all-or-nothing row) rather than the real itemised official
+#: categories -- genuinely different from a partial-but-itemised table.
+#: MUST NOT be treated as safe deterministic admission evidence: these
+#: tables can only ever resolve to a non-QUALIFIES state (see the
+#: quarantine logic in evaluate_point_table_qualification) until the
+#: real official item-level breakdown is independently confirmed.
+TABLE_AUTHORITY_INCOMPLETE = "AUTHORITY_INCOMPLETE"
 
 # ── Fact-type vocabulary (Task 4 distinction, reused not reinvented) ────
 FACT_USER = "USER_FACT"           # personnel nationality/residency, ownership/control, production/work location
@@ -67,6 +105,17 @@ class CulturalPointCriterion:
                                # which resolves honestly to a curable/available lever, never fabricated.
     jurisdiction_code: str | None = None  # None = "domestic" (this program's own jurisdiction/EEA per notes)
     description: str = ""
+    #: CBA-003 fix. For FACT_SCRIPT criteria ONLY: the exact, real
+    #: strings a Script Analyzer fact's value must match (case-
+    #: insensitive substring) for THIS specific criterion to be
+    #: satisfied -- e.g. ("france", "french", "fr") for a France
+    #: setting/language criterion. Empty tuple means "not yet given an
+    #: explicit match list" -- see _script_fact_matches() below, which
+    #: falls back to the table's own jurisdiction's real name/language
+    #: when this is empty, rather than ever matching on element_type
+    #: presence alone (the exact defect Codex demonstrated: a Tokyo/US/
+    #: English fact set falsely satisfying France's criteria).
+    expected_values: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -74,6 +123,15 @@ class CulturalPointTable:
     program_slug: str
     total_points: float
     threshold: float
+    #: Part 3 / CBA-003 -- one of TABLE_COMPLETE/TABLE_PARTIAL_WITH_
+    #: KNOWN_HEADROOM/TABLE_PARTIAL_WITH_UNKNOWN_HEADROOM/TABLE_
+    #: AUTHORITY_INCOMPLETE. Never inferred silently from total_points
+    #: vs. modeled criteria sum -- set explicitly per table, because
+    #: "aggregate criteria happen to sum to total_points" (e.g. mt_mfc_
+    #: rebate) is NOT the same real-world state as "genuinely itemised
+    #: and complete" (e.g. no_film_incentive), even though both would
+    #: look identical to a naive modeled_max == total_points check.
+    completeness: str = TABLE_AUTHORITY_INCOMPLETE
     #: Compound minimums beyond the single aggregate threshold (e.g. Czech
     #: Republic's "min 23/46 overall AND min 4 from the Cultural block").
     #: Each entry is (category_label, min_points_from_that_category,
@@ -84,12 +142,63 @@ class CulturalPointTable:
 
 
 def _c(key, category, fact_type, max_points, role=None, jurisdiction_code=None,
-       hardness=CRITERION_POINT_BEARING, description="") -> CulturalPointCriterion:
+       hardness=CRITERION_POINT_BEARING, description="", expected_values=()) -> CulturalPointCriterion:
     return CulturalPointCriterion(
         key=key, category=category, fact_type=fact_type, hardness=hardness,
         max_points=max_points, role=role, jurisdiction_code=jurisdiction_code,
-        description=description,
+        description=description, expected_values=expected_values,
     )
+
+
+#: CBA-003 fix -- real country name(s)/adjective/language(s) for the
+#: jurisdictions this module's tables cover, used ONLY to semantically
+#: match a Script Analyzer fact's free-text VALUE against a criterion
+#: (never to fabricate legal doctrine; this is plain, undisputed
+#: geography/language fact, the same kind of fact an ISO2->name lookup
+#: table would carry). Bounded to the ~15 jurisdictions with real
+#: CULTURAL_POINT_TABLES entries, not a general-purpose world gazetteer.
+JURISDICTION_NAME_AND_LANGUAGE: dict[str, tuple[str, ...]] = {
+    "AT": ("austria", "austrian", "german", "vienna", "salzburg", "graz"),
+    "CZ": ("czech", "czechia", "czech republic", "prague", "brno"),
+    "FR": ("france", "french", "paris", "lyon", "marseille", "nice", "cannes"),
+    "NO": ("norway", "norwegian", "oslo", "bergen", "trondheim"),
+    "MY": ("malaysia", "malaysian", "malay", "kuala lumpur", "penang", "sabah"),
+    "PL": ("poland", "polish", "warsaw", "krakow", "gdansk", "wroclaw"),
+    "PT": ("portugal", "portuguese", "lisbon", "porto", "madeira", "azores"),
+    "GR": ("greece", "greek", "athens", "thessaloniki", "crete", "santorini"),
+    "HR": ("croatia", "croatian", "zagreb", "dubrovnik", "split"),
+    "HU": ("hungary", "hungarian", "budapest"),
+    "IT": ("italy", "italian", "rome", "milan", "venice", "turin", "naples"),
+    "LT": ("lithuania", "lithuanian", "vilnius", "kaunas"),
+    "MT": ("malta", "maltese", "valletta"),
+    "BE": ("belgium", "belgian", "brussels", "flanders", "wallonia", "antwerp"),
+    "FI": ("finland", "finnish", "helsinki"),
+    "LU": ("luxembourg",),
+    "DK": ("denmark", "danish", "copenhagen"),
+}
+
+
+def _script_fact_matches(value: str, jurisdiction_code: str | None, expected_values: tuple[str, ...]) -> bool:
+    """CBA-003 fix -- the SEMANTIC comparison the pre-fix code never
+    performed. A Script Analyzer fact only satisfies a criterion when its
+    free-text value actually names the criterion's own jurisdiction (or
+    one of the criterion's own explicit expected_values) -- element_type
+    presence ALONE is never sufficient. Demonstrated defect this closes:
+    Tokyo/US/English facts could satisfy fr_trip's France-specific
+    criteria purely because a 'location'/'language' fact existed at all,
+    with no comparison to France whatsoever."""
+    v = (value or "").strip().lower()
+    if not v:
+        return False
+    if expected_values:
+        return any(ev.lower() in v for ev in expected_values)
+    if jurisdiction_code:
+        names = JURISDICTION_NAME_AND_LANGUAGE.get(jurisdiction_code.upper(), ())
+        return any(name in v for name in names)
+    # No expected_values AND no jurisdiction_code on the criterion --
+    # genuinely cannot determine a match; fail closed (never silently
+    # satisfied by mere presence).
+    return False
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -105,6 +214,7 @@ def _c(key, category, fact_type, max_points, role=None, jurisdiction_code=None,
 CULTURAL_POINT_TABLES: dict[str, CulturalPointTable] = {
     "at_fisa_plus": CulturalPointTable(
         program_slug="at_fisa_plus", total_points=80, threshold=40,
+        completeness=TABLE_PARTIAL_WITH_KNOWN_HEADROOM,  # 46 official points unitemized (Codex audit 4db2cea)
         criteria=(
             _c("at_content_setting", CATEGORY_STORY_SETTING, FACT_SCRIPT, 4,
                description="Part of scenes set in Austria/EEA/Council of Europe"),
@@ -133,6 +243,7 @@ CULTURAL_POINT_TABLES: dict[str, CulturalPointTable] = {
     ),
     "cz_film_incentive": CulturalPointTable(
         program_slug="cz_film_incentive", total_points=46, threshold=23,
+        completeness=TABLE_PARTIAL_WITH_KNOWN_HEADROOM,  # 10 points unitemized (Codex audit 4db2cea)
         criteria=(
             _c("cz_story_events", CATEGORY_SUBJECT_MATTER, FACT_SCRIPT, 2, description="Story based on European-culture events"),
             _c("cz_story_personality", CATEGORY_SUBJECT_MATTER, FACT_SCRIPT, 2, description="Story based on a European-culture personality"),
@@ -154,6 +265,7 @@ CULTURAL_POINT_TABLES: dict[str, CulturalPointTable] = {
     ),
     "fr_trip": CulturalPointTable(
         program_slug="fr_trip", total_points=38, threshold=18,
+        completeness=TABLE_PARTIAL_WITH_KNOWN_HEADROOM,  # 1 point unitemized (Codex audit 4db2cea)
         criteria=(
             _c("fr_locations", CATEGORY_STORY_SETTING, FACT_SCRIPT, 7, description="Filming geography / locations"),
             _c("fr_characters", CATEGORY_SUBJECT_MATTER, FACT_SCRIPT, 4, description="Character nationalities"),
@@ -179,6 +291,7 @@ CULTURAL_POINT_TABLES: dict[str, CulturalPointTable] = {
     ),
     "no_film_incentive": CulturalPointTable(
         program_slug="no_film_incentive", total_points=51, threshold=20,
+        completeness=TABLE_COMPLETE,  # itemized official table + sub-threshold represented (Codex audit 4db2cea)
         criteria=(
             _c("no_story_events", CATEGORY_SUBJECT_MATTER, FACT_SCRIPT, 2, description="Norwegian/European cultural-historical events"),
             _c("no_character", CATEGORY_SUBJECT_MATTER, FACT_SCRIPT, 2, description="Character from Norwegian/European culture"),
@@ -206,6 +319,7 @@ CULTURAL_POINT_TABLES: dict[str, CulturalPointTable] = {
     ),
     "my_finas_rebate": CulturalPointTable(
         program_slug="my_finas_rebate", total_points=5, threshold=None,
+        completeness=TABLE_COMPLETE,  # complete optional uplift table, not a base pass/fail gate (Codex audit 4db2cea)
         criteria=(
             _c("my_location", CATEGORY_STORY_SETTING, FACT_SCRIPT, 2,
                description="Portrays Malaysia positively / as a destination"),
@@ -219,6 +333,7 @@ CULTURAL_POINT_TABLES: dict[str, CulturalPointTable] = {
     ),
     "pl_pisf_cash_rebate": CulturalPointTable(
         program_slug="pl_pisf_cash_rebate", total_points=48, threshold=25,
+        completeness=TABLE_AUTHORITY_INCOMPLETE,  # 4 12-pt allocations are acknowledged approximations (Codex audit 4db2cea)
         criteria=(
             _c("pl_heritage", CATEGORY_SUBJECT_MATTER, FACT_SCRIPT, 12,
                description="Use of Polish/European cultural heritage in the film"),
@@ -237,6 +352,7 @@ CULTURAL_POINT_TABLES: dict[str, CulturalPointTable] = {
     ),
     "pt_scri_pt_cash_rebate": CulturalPointTable(
         program_slug="pt_scri_pt_cash_rebate", total_points=100, threshold=45,
+        completeness=TABLE_AUTHORITY_INCOMPLETE,  # only 60/40 aggregates represented (Codex audit 4db2cea)
         criteria=(
             _c("pt_cultural_value", CATEGORY_SUBJECT_MATTER, FACT_SCRIPT, 60,
                description="Parte A -- Valor Cultural (identification/nationality of authors, actors, "
@@ -261,6 +377,7 @@ CULTURAL_POINT_TABLES: dict[str, CulturalPointTable] = {
     # category split where none was researched.
     "gr_cash_rebate": CulturalPointTable(
         program_slug="gr_cash_rebate", total_points=50, threshold=20,
+        completeness=TABLE_AUTHORITY_INCOMPLETE,  # one aggregate built from secondary sources, no criteria (Codex audit 4db2cea)
         criteria=(
             _c("gr_aggregate", CATEGORY_OTHER, FACT_USER, 50, role="entity",
                description="Aggregate Greek/European cultural-content and personnel test "
@@ -270,6 +387,7 @@ CULTURAL_POINT_TABLES: dict[str, CulturalPointTable] = {
     ),
     "hr_cash_rebate": CulturalPointTable(
         program_slug="hr_cash_rebate", total_points=34, threshold=12,
+        completeness=TABLE_AUTHORITY_INCOMPLETE,  # category floors/allocations not executable (Codex audit 4db2cea)
         criteria=(
             _c("hr_aggregate", CATEGORY_OTHER, FACT_USER, 34, role="entity",
                description="European cultural content / creative collaboration with Croatian-European "
@@ -280,6 +398,7 @@ CULTURAL_POINT_TABLES: dict[str, CulturalPointTable] = {
     ),
     "hu_hipa_rebate": CulturalPointTable(
         program_slug="hu_hipa_rebate", total_points=None, threshold=16,
+        completeness=TABLE_AUTHORITY_INCOMPLETE,  # unknown statutory maximum, one aggregate (Codex audit 4db2cea)
         criteria=(
             _c("hu_aggregate", CATEGORY_OTHER, FACT_USER, 16, role="entity",
                description="EU-participation scoring (category breakdown not published)"),
@@ -288,6 +407,7 @@ CULTURAL_POINT_TABLES: dict[str, CulturalPointTable] = {
     ),
     "it_tax_credit_foreign": CulturalPointTable(
         program_slug="it_tax_credit_foreign", total_points=None, threshold=50,
+        completeness=TABLE_AUTHORITY_INCOMPLETE,  # unknown statutory maximum, one aggregate (Codex audit 4db2cea)
         criteria=(
             _c("it_aggregate", CATEGORY_OTHER, FACT_USER, 50, role="entity",
                description="Requisiti culturali point threshold (category breakdown not published)"),
@@ -296,6 +416,7 @@ CULTURAL_POINT_TABLES: dict[str, CulturalPointTable] = {
     ),
     "lt_film_centre_cash_rebate": CulturalPointTable(
         program_slug="lt_film_centre_cash_rebate", total_points=8, threshold=2,
+        completeness=TABLE_AUTHORITY_INCOMPLETE,  # 8 criteria collapsed into one all-or-nothing aggregate (Codex audit 4db2cea)
         criteria=(
             _c("lt_aggregate", CATEGORY_OTHER, FACT_USER, 8, role="entity",
                description="8 published criteria, at least 2 must be satisfied (category breakdown "
@@ -305,6 +426,7 @@ CULTURAL_POINT_TABLES: dict[str, CulturalPointTable] = {
     ),
     "mt_mfc_rebate": CulturalPointTable(
         program_slug="mt_mfc_rebate", total_points=40, threshold=40,
+        completeness=TABLE_AUTHORITY_INCOMPLETE,  # general test collapsed into one all-or-nothing aggregate (Codex audit 4db2cea)
         criteria=(
             _c("mt_aggregate", CATEGORY_OTHER, FACT_USER, 40, role="entity",
                description="General Cultural Test (minimum 40 points in aggregate; a separate, fully "

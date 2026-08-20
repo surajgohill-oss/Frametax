@@ -28,6 +28,7 @@ from app.calculators.qualification_model import (
     AccountQualification,
     AuthorityBasis,
     GreyAreaStatus,
+    GreyReason,
     LITTLE_UTOPIA_INKIND_FMV_USD,
     QualificationConfidence,
     QualificationState,
@@ -204,15 +205,20 @@ class TestDeterministicExclusions:
         assert a.state == QualificationState.QUALIFIES
         assert a.authority_basis == AuthorityBasis.EXPLICIT_STATUTE
 
-    def test_contingency_qualifies_with_disclosed_claim_timing_caveat(self, register):
-        """81-00: no clause excludes a contingency reserve either. Included,
-        with a disclosed (non-excluding) claim-timing note: only the
-        drawn-down portion will appear in the auditor's certified
-        incurred-expenditure report at claim time."""
+    def test_contingency_is_disclosed_grey_pending_expected_utilization(self, register):
+        """81-00: no clause excludes a contingency reserve either — the
+        category itself still statute-grounded (EXPLICIT_STATUTE remains
+        the rule's own basis, unchanged). Consolidated Backend Correction,
+        Part 19-20 (CBA-009): the reserve is no longer projected as
+        100%-unconditionally qualifying QPE. With no producer-stated
+        expected-utilization percentage on file, it is disclosed as a
+        GREY_AREA_REQUIRES_AUTHORITY opportunity (full amount visible as
+        upside) rather than silently priced in as QUALIFIES."""
         a = _get(register, "81-00")
-        assert a.state == QualificationState.QUALIFIES
-        assert a.authority_basis == AuthorityBasis.EXPLICIT_STATUTE
-        assert "certified report" in a.reason.lower() or "claim" in a.reason.lower()
+        assert a.state == QualificationState.GREY_AREA_REQUIRES_AUTHORITY
+        assert a.grey_reason == GreyReason.MISSING_PRODUCTION_FACT
+        assert a.amount_usd == pytest.approx(596_597.0, abs=0.01)
+        assert a.incentive_upside_usd == pytest.approx(596_597.0 * 0.40, abs=0.01)
 
     def test_not_applicable_accounts(self, register):
         fc = _get(register, "82-00")
@@ -261,7 +267,7 @@ class TestRegisterReconciliation:
         qualifies = [a for a in register if a.state == QualificationState.QUALIFIES]
         assert all(a.authority_basis == AuthorityBasis.EXPLICIT_STATUTE for a in qualifies)
         qualifies_total = sum(a.amount_usd for a in qualifies)
-        assert qualifies_total == pytest.approx(3_700_954.0, abs=0.01)
+        assert qualifies_total == pytest.approx(3_104_357.0, abs=0.01)
 
         by_state = {}
         for a in register:
@@ -462,4 +468,4 @@ class TestGreyAreaEvidenceGraphMigration:
         build_little_utopia_grey_areas()/build_little_utopia_evidence_graph()
         never mutates the register construction itself."""
         qpe = sum(a.amount_usd for a in register if a.state == QualificationState.QUALIFIES)
-        assert qpe == pytest.approx(3_700_954.0, abs=0.01)
+        assert qpe == pytest.approx(3_104_357.0, abs=0.01)

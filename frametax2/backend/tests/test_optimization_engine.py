@@ -4,6 +4,17 @@ test_optimization_engine.py
 Targeted tests for the CineAtlas risk-adjusted optimization engine
 (optimization_engine.py, structuring_paths.py, and the grey-area/
 reinvestment extensions to qualification_model.py).
+
+Consolidated Backend Correction, Part 19-20 (CBA-009): the sanitized
+fixture's own $596,597.00 Contingency Reserve line (account 81-00,
+tests/fixtures/little_utopia_sanitized.py) is no longer projected as
+100%-unconditionally qualifying QPE. With no
+contingency_expected_utilization_pct fact supplied to this fixture's
+register (build_little_utopia_qualification_register's default facts),
+it is now disclosed as a GREY_AREA_REQUIRES_AUTHORITY opportunity
+instead of QUALIFIES. The Conservative-case QPE baseline used throughout
+this file therefore drops from $3,700,954.00 to $3,104,357.00
+($3,700,954.00 - $596,597.00).
 """
 from __future__ import annotations
 
@@ -68,11 +79,11 @@ def baseline_result(register, paths, grey_areas):
 class TestCanonicalFigures:
     def test_conservative_qpe(self, baseline_result):
         c = baseline_result.cases[RiskCase.CONSERVATIVE]
-        assert c.qpe_usd == pytest.approx(3_700_954.0, abs=1.0)
+        assert c.qpe_usd == pytest.approx(3_104_357.0, abs=1.0)
 
     def test_conservative_incentive(self, baseline_result):
         c = baseline_result.cases[RiskCase.CONSERVATIVE]
-        assert c.incentive_usd == pytest.approx(1_480_381.6, abs=1.0)
+        assert c.incentive_usd == pytest.approx(1_241_742.8, abs=1.0)
 
     def test_optimistic_qpe(self, baseline_result):
         o = baseline_result.cases[RiskCase.OPTIMISTIC]
@@ -115,9 +126,9 @@ class TestBaseCaseGating:
         )
         base = result.cases[RiskCase.BASE]
         cons = result.cases[RiskCase.CONSERVATIVE]
-        assert base.qpe_usd == pytest.approx(3_700_954.0 + 95_000.0, abs=0.01)
+        assert base.qpe_usd == pytest.approx(3_104_357.0 + 95_000.0, abs=0.01)
         # approval alone must NOT promote into Conservative (requires EXECUTED + evidence)
-        assert cons.qpe_usd == pytest.approx(3_700_954.0, abs=0.01)
+        assert cons.qpe_usd == pytest.approx(3_104_357.0, abs=0.01)
 
     def test_executed_with_evidence_promotes_to_conservative(self, register, paths, grey_areas):
         ov = AssumptionOverride(
@@ -130,7 +141,7 @@ class TestBaseCaseGating:
             structuring_paths=paths, grey_areas=grey_areas, overrides=[ov],
         )
         cons = result.cases[RiskCase.CONSERVATIVE]
-        assert cons.qpe_usd == pytest.approx(3_700_954.0 + 95_000.0, abs=0.01)
+        assert cons.qpe_usd == pytest.approx(3_104_357.0 + 95_000.0, abs=0.01)
 
     def test_executed_without_evidence_rejected(self, register, paths, grey_areas):
         ov = AssumptionOverride(
@@ -202,7 +213,7 @@ class TestGreyAreaGating:
             structuring_paths=paths, grey_areas=grey_areas, overrides=[ov],
         )
         cons = result.cases[RiskCase.CONSERVATIVE]
-        assert cons.qpe_usd == pytest.approx(3_700_954.0, abs=0.01)
+        assert cons.qpe_usd == pytest.approx(3_104_357.0, abs=0.01)
 
     def test_resolve_grey_area_function_requires_citation(self, grey_areas):
         atl = next(g for g in grey_areas if g.item_id == "GA-LEGAL-ACCOUNTING-SPLIT")
@@ -312,7 +323,7 @@ class TestReinvestment:
         # reinvestment contributes no dollars to any case — verified indirectly:
         # conservative/base equal the register-only figures with no reinvestment term.
         c = baseline_result.cases[RiskCase.CONSERVATIVE]
-        assert c.qpe_usd == pytest.approx(3_700_954.0, abs=1.0)
+        assert c.qpe_usd == pytest.approx(3_104_357.0, abs=1.0)
 
 
 # ── Reconciliation ────────────────────────────────────────────────────────────
@@ -337,10 +348,13 @@ class TestReconciliation:
         na_total = sum(a.amount_usd for a in register if a.state.value == "not_applicable")
         grey_total = sum(a.amount_usd for a in register if a.state.value == "grey_area_requires_authority")
         structuring_total = sum(a.amount_usd for a in register if a.state.value == "structuring_opportunity")
-        assert qualifies_total == pytest.approx(3_700_954.0, abs=0.01)
+        assert qualifies_total == pytest.approx(3_104_357.0, abs=0.01)
         assert excluded_total == pytest.approx(363_000.0, abs=0.01)
         assert na_total == pytest.approx(92_439.0, abs=0.01)
-        assert grey_total == pytest.approx(0.0, abs=0.01)
+        # CBA-009 Part 19-20: the $596,597.00 Contingency Reserve (81-00) is
+        # now a disclosed grey area (no expected-utilization fact on file)
+        # instead of silently qualifying — see the file-level docstring.
+        assert grey_total == pytest.approx(596_597.0, abs=0.01)
         assert structuring_total == pytest.approx(208_000.0, abs=0.01)
         assert (qualifies_total + excluded_total + na_total + grey_total + structuring_total) \
             == pytest.approx(GROSS_BUDGET_USD, abs=0.01)
