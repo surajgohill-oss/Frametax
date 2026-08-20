@@ -388,3 +388,122 @@ def test_invalid_coproduction_cultural_test_text_stays_unresolved_not_false():
     session = _FakeSession([("coproduction_cultural_test_passed", "unknown")])
     _maj, _min, cultural = asyncio.run(_coproduction_facts(session, "fake-project-id"))
     assert cultural is None
+
+
+# ── Final Consolidated Backend Correction + Global Structuring
+# Intelligence Acceptance, Part 4/CBA-004 — nationality vs residency ─────
+# vs work-location must remain typed, distinct facts. Uses a synthetic,
+# temporarily-registered table (never touching any of the 13 real,
+# researched tables) so the test proves the MECHANISM generically,
+# without fabricating a nationality/residency distinction for any real
+# program's criteria that hasn't actually been re-researched.
+
+def test_residency_cannot_satisfy_a_nationality_only_criterion():
+    from unittest.mock import patch
+
+    from app.calculators.canonical_role_qualification_bridge import evaluate_point_table_qualification
+    from app.data.cultural_point_tables import (
+        CATEGORY_ROLE, FACT_KIND_NATIONALITY, FACT_USER, TABLE_COMPLETE,
+        CulturalPointCriterion, CulturalPointTable,
+    )
+
+    synthetic = CulturalPointTable(
+        program_slug="zz_test_nationality_only", total_points=10.0, threshold=10.0,
+        completeness=TABLE_COMPLETE, source_note="synthetic test fixture",
+        criteria=(
+            CulturalPointCriterion(
+                key="director-nat", category=CATEGORY_ROLE, fact_type=FACT_USER,
+                max_points=10.0, role="director", fact_kind=FACT_KIND_NATIONALITY,
+                description="Director must be a national of ZZ",
+            ),
+        ),
+    )
+    with patch.dict(CULTURAL_POINT_TABLES, {"zz_test_nationality_only": synthetic}):
+        # Director is a RESIDENT of ZZ but a national of elsewhere — a
+        # nationality-only criterion must NOT be satisfied by residency.
+        result = evaluate_point_table_qualification(
+            "zz_test_nationality_only", "ZZ",
+            role_known_codes={"director": ("ZZ",)},  # merged set has ZZ (would falsely satisfy pre-fix)
+            script_facts={},
+            typed_personnel_facts={"director": {"nationality": ("YY",), "residency": ("ZZ",)}},
+        )
+        assert result.state != QUAL_QUALIFIES
+        assert any("director-nat" in f for f in result.failed_requirements)
+
+
+def test_nationality_cannot_satisfy_a_residency_only_criterion():
+    from unittest.mock import patch
+
+    from app.calculators.canonical_role_qualification_bridge import evaluate_point_table_qualification
+    from app.data.cultural_point_tables import (
+        CATEGORY_ROLE, FACT_KIND_RESIDENCY, FACT_USER, TABLE_COMPLETE,
+        CulturalPointCriterion, CulturalPointTable,
+    )
+
+    synthetic = CulturalPointTable(
+        program_slug="zz_test_residency_only", total_points=10.0, threshold=10.0,
+        completeness=TABLE_COMPLETE, source_note="synthetic test fixture",
+        criteria=(
+            CulturalPointCriterion(
+                key="director-res", category=CATEGORY_ROLE, fact_type=FACT_USER,
+                max_points=10.0, role="director", fact_kind=FACT_KIND_RESIDENCY,
+                description="Director must be resident in ZZ",
+            ),
+        ),
+    )
+    with patch.dict(CULTURAL_POINT_TABLES, {"zz_test_residency_only": synthetic}):
+        # Director is a NATIONAL of ZZ but resides elsewhere — a
+        # residency-only criterion must NOT be satisfied by nationality.
+        result = evaluate_point_table_qualification(
+            "zz_test_residency_only", "ZZ",
+            role_known_codes={"director": ("ZZ",)},
+            script_facts={},
+            typed_personnel_facts={"director": {"nationality": ("ZZ",), "residency": ("YY",)}},
+        )
+        assert result.state != QUAL_QUALIFIES
+        assert any("director-res" in f for f in result.failed_requirements)
+
+
+def test_matching_typed_fact_does_satisfy_its_own_kind():
+    from unittest.mock import patch
+
+    from app.calculators.canonical_role_qualification_bridge import evaluate_point_table_qualification
+    from app.data.cultural_point_tables import (
+        CATEGORY_ROLE, FACT_KIND_RESIDENCY, FACT_USER, TABLE_COMPLETE,
+        CulturalPointCriterion, CulturalPointTable,
+    )
+
+    synthetic = CulturalPointTable(
+        program_slug="zz_test_residency_match", total_points=10.0, threshold=10.0,
+        completeness=TABLE_COMPLETE, source_note="synthetic test fixture",
+        criteria=(
+            CulturalPointCriterion(
+                key="director-res", category=CATEGORY_ROLE, fact_type=FACT_USER,
+                max_points=10.0, role="director", fact_kind=FACT_KIND_RESIDENCY,
+                description="Director must be resident in ZZ",
+            ),
+        ),
+    )
+    with patch.dict(CULTURAL_POINT_TABLES, {"zz_test_residency_match": synthetic}):
+        result = evaluate_point_table_qualification(
+            "zz_test_residency_match", "ZZ",
+            role_known_codes={"director": ("ZZ",)},
+            script_facts={},
+            typed_personnel_facts={"director": {"nationality": ("YY",), "residency": ("ZZ",)}},
+        )
+        assert result.state == QUAL_QUALIFIES
+
+
+def test_either_fact_kind_is_unaffected_by_typed_facts_being_absent():
+    """Every one of the 13 real, currently-encoded tables defaults to
+    FACT_KIND_EITHER — omitting typed_personnel_facts entirely (as every
+    pre-existing caller not yet updated does) must reproduce byte-
+    identical behavior to before this fix."""
+    result_without_typed = evaluate_role_qualification(
+        "fr_trip", "FR", role_known_codes={"director": ("FR",)}, script_facts={},
+    )
+    result_with_typed_but_either = evaluate_role_qualification(
+        "fr_trip", "FR", role_known_codes={"director": ("FR",)}, script_facts={},
+        typed_personnel_facts={"director": {"nationality": ("FR",), "residency": ()}},
+    )
+    assert result_without_typed.state == result_with_typed_but_either.state

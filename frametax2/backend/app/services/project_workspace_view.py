@@ -42,6 +42,7 @@ from app.models.jurisdiction import Jurisdiction
 from app.models.production import ProductionStructure, StructureCalculationResult
 from app.models.project import Project
 from app.services import script_parse_status as sps
+from app.services.canonical_evaluation import ENGINE_VERSION
 from app.services.script_analysis_service import resolve_active_screenplay
 
 UI_COMPARABLE = "COMPARABLE"
@@ -69,22 +70,26 @@ async def build_project_workspace_view(session: AsyncSession, project_id) -> dic
     # ── evaluation ────────────────────────────────────────────────────────
     evaluation_status = "NOT_BEGUN"
     candidates: list[dict] = []
-    fingerprint = None
-    engine_version = None
     jurisdiction_code_by_id: dict[str, str] = {}
-    if project.leading_structure_id is not None:
-        leading = await session.get(ProductionStructure, project.leading_structure_id)
-        leading_result = (
-            (await session.execute(
-                select(StructureCalculationResult)
-                .where(StructureCalculationResult.structure_id == leading.id)
-                .order_by(StructureCalculationResult.created_at.desc())
-            )).scalars().first()
-            if leading is not None else None
+    # Final Consolidated Backend Correction + Global Structuring
+    # Intelligence Acceptance, Part 4/CBA-001 (and in the spirit of
+    # Codex's CBA-008) — which rows are "this project's current
+    # evaluation" must never depend on leading_structure_id: that field
+    # is correctly None whenever no candidate currently admits
+    # Recommended (a real, disclosed, priced baseline can still exist
+    # with no recommended winner). Read the current fingerprint directly
+    # off ANY current-engine result row for this project instead — every
+    # row from one evaluation run shares one fingerprint by construction.
+    engine_version = ENGINE_VERSION
+    fingerprint = (await session.execute(
+        select(StructureCalculationResult.input_fingerprint)
+        .join(ProductionStructure, StructureCalculationResult.structure_id == ProductionStructure.id)
+        .where(
+            ProductionStructure.project_id == project.id,
+            StructureCalculationResult.engine_version == engine_version,
         )
-        if leading_result is not None:
-            fingerprint = leading_result.input_fingerprint
-            engine_version = leading_result.engine_version
+        .limit(1)
+    )).scalar_one_or_none()
 
     if fingerprint:
         rows = (await session.execute(
@@ -93,11 +98,6 @@ async def build_project_workspace_view(session: AsyncSession, project_id) -> dic
             .where(
                 ProductionStructure.project_id == project.id,
                 StructureCalculationResult.input_fingerprint == fingerprint,
-                # A fingerprint alone doesn't distinguish engine versions —
-                # an older evaluation's rows can share the same fingerprint
-                # (identical budget/jurisdiction inputs) as a freshly
-                # regenerated set. Only the leading structure's OWN engine
-                # version is "the" current evaluation.
                 StructureCalculationResult.engine_version == engine_version,
             )
         )).all()

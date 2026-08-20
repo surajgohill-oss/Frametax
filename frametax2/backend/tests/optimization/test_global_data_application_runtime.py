@@ -143,7 +143,7 @@ def test_mauritius_calibration_is_byte_identical_after_application():
     baseline = next(
         s for s in served["structures"] if s["structure_id"] == "ALLOC-BASELINE-MU"
     )
-    assert round(baseline["npc_with_adjustments_usd"], 2) == 3148134.20  # CBA-009 Part 19-20: LU NPC updated $3,057,794.90 -> $3,148,134.20 (contingency utilization unset -> disclosed grey, not 100%-unconditional)
+    assert round(baseline["npc_with_adjustments_usd"], 2) == 3057794.90  # CBA-009 Part 19-21: LU's own persisted 100% contingency-utilization project election (migration 0068) reproduces the historical $3,057,794.90 baseline through the generic pipeline
     assert served["ranking"][0]["structure_id"] == "ALLOC-BASELINE-MU"
     assert len(served["structures"]) == 197
 

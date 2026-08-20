@@ -279,7 +279,11 @@ async def test_little_utopia_regression_unchanged_by_input_assembly_repair(db: A
     result = await evaluate_project(db, LITTLE_UTOPIA_PROJECT_ID)
     assert result["engine_version"] == ENGINE_VERSION
     assert result["base_jurisdiction_code"] == "MU"
-    # CBA-009 Part 19-20: $3,057,794.90 -> $3,148,134.20 (contingency
-    # expected-utilization fact unset -> disclosed grey, not 100%-unconditional).
-    assert result["top_result"]["true_net_cost_usd"] == 3_148_134.20
-    assert result["top_result"]["is_baseline"] is True
+    # Final Consolidated Backend Correction + Global Structuring
+    # Intelligence Acceptance, Part 4/CBA-001: Mauritius's own cultural-
+    # test applicability remains genuinely AUTHORITY_UNRESOLVED, so
+    # top_result is correctly None (truthful unresolved status over
+    # false recommendation); the real, priced economics are disclosed
+    # on baseline instead.
+    assert result["baseline"]["true_net_cost_usd"] == 3_057_794.90
+    assert result["top_result"] is None

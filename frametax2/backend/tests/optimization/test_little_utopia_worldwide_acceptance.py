@@ -25,9 +25,10 @@ from app.data.authority_coverage_registry import BLOCKED_SLUGS, blocks_economic_
 from app.data.program_rate_rules import get_rate_rules, resolve_program_rate
 from app.demo.little_utopia_state import build_allocated_structures, get_state
 
-#: CBA-009 Part 19-20: updated $3,057,794.90 -> $3,148,134.20 (contingency
-#: expected-utilization fact unset -> disclosed grey, not 100%-unconditional).
-BASELINE_NPC = 3148134.20
+#: CBA-009 Part 19-21: Little Utopia's own real, persisted 100%
+#: contingency-expected-utilization project election (migration 0068)
+#: reproduces this historical baseline through the generic pipeline.
+BASELINE_NPC = 3057794.90
 
 
 def _served():

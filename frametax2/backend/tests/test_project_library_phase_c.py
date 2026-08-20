@@ -68,7 +68,13 @@ async def test_project_core_fields(project: Project):
     assert project.lifecycle == ProjectLifecycle.EVALUATION.value
     assert float(project.total_budget_usd) == pytest.approx(4364393.00, abs=0.01)
     assert project.target_shoot_year == 2026
-    assert project.leading_structure_id is not None
+    # Final Consolidated Backend Correction + Global Structuring
+    # Intelligence Acceptance, Part 4/CBA-001: leading_structure_id is
+    # correctly None or a real structure id — never asserted either way
+    # here, since it depends on whether Mauritius's own cultural-test
+    # applicability has been resolved by the time this test runs (see
+    # test_production_structure_and_leading_selection for the direct,
+    # authoritative proof of its current correct value).
 
 
 async def test_project_alias(db: AsyncSession, project: Project):
@@ -153,8 +159,12 @@ async def test_project_facts_with_provenance(db: AsyncSession, project: Project)
     # below and test_canonical_project_economics.py) — that phase moved this
     # evidence out of a Little-Utopia-specific module constant and into
     # generic persisted project state, which is what made the canonical
-    # engine drivable from any project's own rows.
-    assert len(facts) == 13
+    # engine drivable from any project's own rows. Plus 1 from migration
+    # 0068 — Little Utopia's own established contingency-expected-
+    # utilization project election (Consolidated Backend Correction, Part
+    # 19-21/CBA-009), persisted the same way rather than left embedded in
+    # code.
+    assert len(facts) == 14
     by_key = {f.fact_key: f for f in facts}
 
     assert by_key["gross_budget_usd"].value == "4364393.0" or float(by_key["gross_budget_usd"].value) == pytest.approx(4364393.0, abs=0.01)
@@ -171,6 +181,12 @@ async def test_project_facts_with_provenance(db: AsyncSession, project: Project)
         "5000", "5100", "5200", "5300", "5400", "5500", "6500"
     ]
     assert json.loads(by_key["budget_offshore_payroll_accounts"].value) == []
+
+    # Migration 0068: Little Utopia's established contingency-expected-
+    # utilization project election (100%), the same "recovered_demo_state"
+    # provenance convention as every other fact 0063 recovered.
+    assert float(by_key["contingency_expected_utilization_pct"].value) == 100.0
+    assert by_key["contingency_expected_utilization_pct"].source_type == "recovered_demo_state"
 
     for fact in facts:
         assert fact.source_type == "recovered_demo_state"
@@ -208,24 +224,31 @@ async def test_production_structure_and_leading_selection(db: AsyncSession, proj
     # tests/test_canonical_evaluation.py) added ~110 more — every candidate
     # discover_executable_jurisdictions finds, each accounted for with an
     # explicit terminal status, never a silent drop (Part N). The migration
-    # row remains (historical provenance, never destroyed), but
-    # leading_structure_id now points at the CANONICAL result, per
-    # test_canonical_evaluation.py's own
-    # test_project_leading_structure_points_at_the_canonical_engine.
+    # row remains (historical provenance, never destroyed).
+    #
+    # Final Consolidated Backend Correction + Global Structuring
+    # Intelligence Acceptance, Part 4/CBA-001: leading_structure_id is
+    # correctly None — Mauritius's own cultural-test applicability is
+    # genuinely AUTHORITY_UNRESOLVED, so the baseline does not admit
+    # Recommended (truthful unresolved status over false recommendation).
+    # The baseline's real, priced economics are proven directly against
+    # the canonical served result instead of via leading_structure_id.
+    from app.services.canonical_evaluation import evaluate_project
+
     structures = (await db.execute(
         select(ProductionStructure).where(ProductionStructure.project_id == project.id)
     )).scalars().all()
     assert len(structures) > 100
 
-    leading = (await db.execute(
-        select(ProductionStructure).where(ProductionStructure.id == project.leading_structure_id)
-    )).scalar_one_or_none()
-    assert leading is not None
-    assert leading.name == "MU — production's current base"
+    served = await evaluate_project(db, str(project.id))
+    assert served["baseline"]["is_baseline"] is True
+    assert served["top_result"] is None
+    await db.refresh(project)
+    assert project.leading_structure_id is None
 
     calc = (await db.execute(
         select(StructureCalculationResult)
-        .where(StructureCalculationResult.structure_id == leading.id)
+        .where(StructureCalculationResult.structure_id == served["baseline"]["structure_id"])
         .order_by(StructureCalculationResult.created_at.desc())
     )).scalars().first()
     assert calc is not None
@@ -233,4 +256,4 @@ async def test_production_structure_and_leading_selection(db: AsyncSession, proj
     assert float(calc.total_budget_usd) == pytest.approx(4364393.00, abs=0.01)
     # The accepted regression truth (see test_canonical_evaluation.py) —
     # never recomputed differently here.
-    assert float(calc.true_net_cost_usd) == pytest.approx(3148134.20, abs=0.01)  # CBA-009 Part 19-20: LU NPC updated $3,057,794.90 -> $3,148,134.20 (contingency utilization unset -> disclosed grey, not 100%-unconditional)
+    assert float(calc.true_net_cost_usd) == pytest.approx(3057794.90, abs=0.01)

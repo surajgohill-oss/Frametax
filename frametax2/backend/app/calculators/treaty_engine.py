@@ -37,6 +37,20 @@ class TreatyData:
     fund_unlocks: list[str]
     confidence_tier: str
     notes: str | None = None
+    #: Final Consolidated Backend Correction + Global Structuring
+    #: Intelligence Acceptance, Part 10/Gemini P0 pattern SP_004 (Non-
+    #: Party Personnel Exception) — the real percentage of budget (or a
+    #: specific key-creative allowance) THIS treaty's own article
+    #: permits for non-party-country cast/crew without losing official
+    #: co-production status, e.g. Canada-UK Treaty Art. 4. None (the
+    #: default for every entry below) means genuinely unresolved — this
+    #: specific treaty's own non-party-personnel clause has not yet been
+    #: individually re-researched. NEVER generalize one treaty's real
+    #: percentage to another; a None here must surface as
+    #: AUTHORITY_UNRESOLVED, never silently as "no exception exists" or
+    #: an invented default percentage.
+    non_party_personnel_exception_pct: float | None = None
+    non_party_personnel_exception_citation: str | None = None
 
 
 @dataclass

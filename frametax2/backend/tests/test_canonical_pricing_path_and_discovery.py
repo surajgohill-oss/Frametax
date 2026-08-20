@@ -40,9 +40,10 @@ from app.services.canonical_evaluation import ENGINE_VERSION, evaluate_project
 
 LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
 FVD_PROJECT_ID = "6c6f1c13-2d49-4bbc-bafb-2a12efa93112"
-#: CBA-009 Part 19-20: updated $3,057,794.90 -> $3,148,134.20 (contingency
-#: expected-utilization fact unset -> disclosed grey, not 100%-unconditional).
-ACCEPTED_LU_NPC_USD = 3_148_134.20
+#: CBA-009 Part 19-21: Little Utopia's own real, persisted 100%
+#: contingency-expected-utilization project election (migration 0068)
+#: reproduces this historical baseline through the generic pipeline.
+ACCEPTED_LU_NPC_USD = 3_057_794.90
 
 #: The three known, independently-cited Ontario programs (Task 6's control
 #: case) — real program_slugs, not aliases.
@@ -97,17 +98,27 @@ def test_get_project_state_calls_the_shared_canonical_view_unconditionally():
 
 async def test_lu_and_fvd_share_the_same_canonical_evaluation_engine(db: AsyncSession):
     """No PROJECT_SPECIFIC_DIVERGENCE in economic calculation/serving
-    (Task 7's required final state) — both projects' current leading
+    (Task 7's required final state) — both projects' own baseline
     structure was produced by the identical evaluate_project() service at
-    the identical engine version."""
+    the identical engine version.
+
+    Final Consolidated Backend Correction + Global Structuring
+    Intelligence Acceptance, Part 4/CBA-001: neither project's baseline
+    currently admits Recommended (both have a genuinely unresolved
+    cultural-test qualification), so `leading_structure_id` is correctly
+    None (never a stale pointer) — the SAME-ENGINE invariant this test
+    exists to prove is checked against `result["baseline"]` instead,
+    which remains real, priced, and disclosed either way."""
     from app.models.production import StructureCalculationResult
 
     for project_id in (LITTLE_UTOPIA_PROJECT_ID, FVD_PROJECT_ID):
         project = await db.get(Project, project_id)
-        assert project.leading_structure_id is not None
+        assert project.leading_structure_id is None
+        served = await evaluate_project(db, project_id)
+        assert served["engine_version"] == ENGINE_VERSION
         result = (await db.execute(
             __import__("sqlalchemy").select(StructureCalculationResult)
-            .where(StructureCalculationResult.structure_id == project.leading_structure_id)
+            .where(StructureCalculationResult.structure_id == served["baseline"]["structure_id"])
             .order_by(StructureCalculationResult.created_at.desc())
         )).scalars().first()
         assert result is not None
@@ -118,11 +129,14 @@ async def test_lu_reevaluates_through_canonical_engine_at_accepted_npc(db: Async
     """Little Utopia, re-run through the SAME service FVD uses (no forced
     historical value, no special-cased inputs), reconciles to the accepted
     Mauritius NPC — proving the canonical persisted inputs are correct, not
-    that the number was hardcoded somewhere."""
+    that the number was hardcoded somewhere. Disclosed on `baseline`;
+    `top_result` is correctly None (Part 4/CBA-001 — Mauritius's own
+    cultural-test applicability remains genuinely unresolved)."""
     result = await evaluate_project(db, LITTLE_UTOPIA_PROJECT_ID)
     assert result["base_jurisdiction_code"] == "MU"
-    assert result["top_result"]["true_net_cost_usd"] == ACCEPTED_LU_NPC_USD
-    assert result["top_result"]["is_baseline"] is True
+    assert result["baseline"]["true_net_cost_usd"] == ACCEPTED_LU_NPC_USD
+    assert result["baseline"]["is_baseline"] is True
+    assert result["top_result"] is None
 
 
 # ── 7. Final NPC reconciles exactly: budget - incentive + adjustments = NPC ─
@@ -133,10 +147,10 @@ async def test_npc_reconciles_exactly_for_lu_and_fvd_baselines(db: AsyncSession)
     from app.models.production import ProductionStructure, StructureCalculationResult
 
     for project_id in (LITTLE_UTOPIA_PROJECT_ID, FVD_PROJECT_ID):
-        project = await db.get(Project, project_id)
+        served = await evaluate_project(db, project_id)
         result = (await db.execute(
             sa_select(StructureCalculationResult)
-            .where(StructureCalculationResult.structure_id == project.leading_structure_id)
+            .where(StructureCalculationResult.structure_id == served["baseline"]["structure_id"])
         )).scalars().first()
         trace = result.calculation_trace_json or {}
         budget = trace["gross_budget_usd"]

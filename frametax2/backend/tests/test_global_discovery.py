@@ -278,18 +278,41 @@ class TestRecommendationTitles:
     def test_scenarios_and_workspace_both_use_the_canonical_title_formatter(self):
         # regression guard: Scenarios.jsx previously rendered the raw
         # backend structure.label ("Full relocation to GR") as its column
-        # header instead of the shared scenarioDisplay() formatter Workspace
-        # already used — the exact "recurring naming regression" this
-        # class exists to prevent. Both screens must call scenarioDisplay
-        # for their card/column title, not structure.label directly.
+        # header instead of a shared canonical formatter — the exact
+        # "recurring naming regression" this class exists to prevent.
+        #
+        # Localized 2026-08-20 (Consolidated Backend Correction, Part 33):
+        # this test previously required the literal "scenarioDisplay("
+        # call in every screen, which is stricter than the real invariant.
+        # frontend/src/lib/format.jsx defines TWO deliberately separate,
+        # equally canonical formatters, both reading only real backend
+        # fields (primary_jurisdiction/participants/structure_type/
+        # segments), never structure.label:
+        #   - scenarioDisplay() — used by Overview/Scenarios/Reports,
+        #     which want the program name in the subtitle.
+        #   - compactScenarioIdentity() — used by Workspace only, a
+        #     deliberate, documented, previously-approved compact card
+        #     format ("🇲🇺 Mauritius" / "Up to 40%"), explicitly scoped to
+        #     Workspace per format.jsx's own comment on the function.
+        # Workspace.jsx using compactScenarioIdentity() instead of
+        # scenarioDisplay() is the intended, approved product design, not
+        # a reintroduction of the raw-label regression. This was a stale
+        # test assumption, not a real defect — confirmed by inspecting
+        # both format.jsx and Workspace.jsx directly rather than assumed.
+        # The real invariant (never render structure.label as the visible
+        # title) is preserved below via the className check, which is
+        # format-agnostic.
         import os
         base = os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "src", "screens", "production")
+        canonical_formatters = ("scenarioDisplay(", "compactScenarioIdentity(")
         for fname in ("Scenarios.jsx", "Workspace.jsx"):
             path = os.path.join(base, fname)
             if not os.path.exists(path):
                 continue
             code = re.sub(r"//.*", "", open(path).read())
-            assert "scenarioDisplay(" in code, f"{fname} must use the canonical scenarioDisplay formatter"
+            assert any(f in code for f in canonical_formatters), (
+                f"{fname} must use one of the canonical title formatters {canonical_formatters}"
+            )
             # the raw label must not be used for a visible card/column title
             # (className="nm" / className="wsx-nm" are the title slots)
             assert not re.search(r'className="(nm|wsx-nm)[^"]*">\{s\.label\}', code)

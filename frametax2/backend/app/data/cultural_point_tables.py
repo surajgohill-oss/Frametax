@@ -26,7 +26,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-CULTURAL_POINT_TABLES_VERSION = "1.1.0"
+CULTURAL_POINT_TABLES_VERSION = "1.2.0"
 # 1.1.0 -- Consolidated Backend Correction (CBA-003, Codex audit
 # 4db2cea): adds explicit table-level COMPLETENESS classification (a
 # partially-itemised table's modeled maximum is never confused with the
@@ -37,6 +37,14 @@ CULTURAL_POINT_TABLES_VERSION = "1.1.0"
 # the false-QUALIFIES defect Codex demonstrated (fr_trip returning
 # QUALIFIES from a Tokyo/US/English fact set because any() matched on
 # element_type alone, with no semantic comparison to France at all).
+# 1.2.0 -- Final Consolidated Backend Correction + Global Structuring
+# Intelligence Acceptance (Part 4/CBA-004): adds fact_kind to
+# CulturalPointCriterion (NATIONALITY/RESIDENCY/EITHER), the typed
+# distinction Codex's audit found missing -- nationality and residency
+# were merged into one set and consumed interchangeably. Every existing
+# criterion defaults to EITHER (byte-identical current behavior); the
+# mechanism itself is now real and available for any criterion whose
+# statutory wording is confirmed to require one specifically.
 
 # ── Table-level completeness classification (Part 3 / CBA-003) ─────────
 #: The itemised criteria are a verified, complete representation of the
@@ -88,6 +96,25 @@ CRITERION_MANDATORY = "MANDATORY"       # must be satisfied or the program hard-
 CRITERION_POINT_BEARING = "POINT_BEARING"  # contributes points toward a threshold, never a standalone gate
 CRITERION_OPTIONAL = "OPTIONAL"
 
+# ── Fact-kind vocabulary (Final Consolidated Backend Correction, Part
+# 4/CBA-004) -- nationality, residency, domicile, and work location are
+# legally distinct facts (a program that names "nationality" is never
+# satisfied by mere residency, and vice versa, unless its own primary
+# authority explicitly says so). A CATEGORY_ROLE criterion's real
+# statutory wording determines which of these it actually requires.
+FACT_KIND_NATIONALITY = "NATIONALITY"
+FACT_KIND_RESIDENCY = "RESIDENCY"
+#: The current default for every existing criterion below -- none of the
+#: 13 encoded tables' role-criterion wording has yet been individually
+#: re-researched to confirm whether each one is nationality-specific or
+#: residency-inclusive (a genuine, disclosed, separate research task; see
+#: evaluate_point_table_qualification's docstring). EITHER preserves
+#: existing behavior byte-for-byte (checks the merged role_known_codes
+#: set, exactly as before this fix) while making the typed distinction a
+#: real, available, generically-correct mechanism for any criterion whose
+#: wording HAS been confirmed one way or the other.
+FACT_KIND_EITHER = "EITHER"
+
 
 @dataclass(frozen=True)
 class CulturalPointCriterion:
@@ -116,6 +143,12 @@ class CulturalPointCriterion:
     #: presence alone (the exact defect Codex demonstrated: a Tokyo/US/
     #: English fact set falsely satisfying France's criteria).
     expected_values: tuple[str, ...] = ()
+    #: Final Consolidated Backend Correction, Part 4/CBA-004 -- for
+    #: CATEGORY_ROLE criteria only: which typed personnel fact this
+    #: criterion's own statutory wording actually requires. Defaults to
+    #: FACT_KIND_EITHER (see that constant's docstring) -- see
+    #: evaluate_point_table_qualification for how this is consumed.
+    fact_kind: str = FACT_KIND_EITHER
 
 
 @dataclass(frozen=True)
@@ -142,11 +175,12 @@ class CulturalPointTable:
 
 
 def _c(key, category, fact_type, max_points, role=None, jurisdiction_code=None,
-       hardness=CRITERION_POINT_BEARING, description="", expected_values=()) -> CulturalPointCriterion:
+       hardness=CRITERION_POINT_BEARING, description="", expected_values=(),
+       fact_kind=FACT_KIND_EITHER) -> CulturalPointCriterion:
     return CulturalPointCriterion(
         key=key, category=category, fact_type=fact_type, hardness=hardness,
         max_points=max_points, role=role, jurisdiction_code=jurisdiction_code,
-        description=description, expected_values=expected_values,
+        description=description, expected_values=expected_values, fact_kind=fact_kind,
     )
 
 

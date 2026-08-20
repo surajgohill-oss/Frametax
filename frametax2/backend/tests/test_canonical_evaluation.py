@@ -29,16 +29,13 @@ from app.services.canonical_evaluation import ENGINE_VERSION, evaluate_project
 LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
 FVD_PROJECT_ID = "6c6f1c13-2d49-4bbc-bafb-2a12efa93112"
 
-#: Consolidated Backend Correction, Part 19-20 (CBA-009) — see the
+#: Consolidated Backend Correction, Part 19-21 (CBA-009) — see the
 #: matching, more fully documented constant in
-#: test_canonical_project_economics.py. Little Utopia has no
-#: contingency_expected_utilization_pct ProjectFact on file, so its
-#: correct served baseline is the honest, disclosed figure (the full
-#: $301,131.00 reserve surfaced as a GREY_AREA_REQUIRES_AUTHORITY
-#: opportunity, not silently counted as 100%-qualifying):
-#:   OLD (defective, 100%-unconditional): $3,057,794.90
-#:   NEW (unset -> disclosed grey):        $3,148,134.20
-ACCEPTED_LU_NPC_USD = 3_148_134.20
+#: test_canonical_project_economics.py. Little Utopia's own real,
+#: persisted 100% contingency-expected-utilization project election
+#: (alembic migration 0068) reproduces the historical accepted figure
+#: through the fully generic pipeline.
+ACCEPTED_LU_NPC_USD = 3_057_794.90
 FVD_GROSS_BUDGET_USD = 4_517_687.00
 
 
@@ -51,61 +48,87 @@ async def db():
 async def test_little_utopia_canonical_service_reproduces_exact_npc_and_winner(db: AsyncSession):
     """THE acceptance test for the served cutover: run through the actual
     served entry point (not the lower-level calculators directly, which
-    test_canonical_project_economics.py already covers), the result must
-    still be Mauritius at exactly the accepted NPC."""
+    test_canonical_project_economics.py already covers), the economics
+    must still be Mauritius at exactly the accepted NPC — disclosed on
+    `baseline`, even though `top_result` is correctly None.
+
+    Final Consolidated Backend Correction + Global Structuring
+    Intelligence Acceptance, Part 4/CBA-001: Mauritius's own cultural-
+    test-applicability research remains genuinely AUTHORITY_UNRESOLVED
+    (a real, prior-session finding — whether the program even has a
+    cultural test at all is unconfirmed by primary authority). Per this
+    task's own explicit instruction ("DO NOT weaken qualification gates
+    merely because LU ... would otherwise have no Recommended scenario.
+    Truthful unresolved status is preferable to false recommendation"),
+    `top_result` is honestly None rather than presenting an unresolved
+    baseline as a recommended winner. The real, priced economics remain
+    fully disclosed on `baseline` and in `ranked`."""
     result = await evaluate_project(db, LITTLE_UTOPIA_PROJECT_ID)
     assert result["status"] in ("EVALUATION_COMPLETE", "EVALUATION_REUSED")
     assert result["engine_version"] == ENGINE_VERSION
     assert result["base_jurisdiction_code"] == "MU"
-    assert result["top_result"]["true_net_cost_usd"] == ACCEPTED_LU_NPC_USD
-    assert result["top_result"]["is_baseline"] is True
-    assert result["baseline"]["structure_id"] == result["top_result"]["structure_id"]
+    assert result["baseline"]["true_net_cost_usd"] == ACCEPTED_LU_NPC_USD
+    assert result["baseline"]["is_baseline"] is True
+    assert result["baseline"]["candidate_status"] == "PRICED"
+    assert result["top_result"] is None
 
 
 async def test_fvd_canonical_service_uses_real_budget_and_greece_baseline(db: AsyncSession):
     """FVD must go through the SAME service, with its own real evidence —
     never the old run_full_analysis figure ($3,627,135.60, commit 87440df)
-    presented as current."""
+    presented as current.
+
+    Greece's own cultural-test point table currently resolves
+    USER_FACT_REQUIRED for this project (0 of 20 points confirmed; a real
+    production-plan fact is genuinely missing) — so, per the same Part
+    4/CBA-001 reasoning as Little Utopia above, `top_result` is honestly
+    None rather than presenting an unresolved baseline as recommended.
+    The real, priced economics remain disclosed on `baseline`."""
     result = await evaluate_project(db, FVD_PROJECT_ID)
     assert result["status"] in ("EVALUATION_COMPLETE", "EVALUATION_REUSED")
     assert result["engine_version"] == ENGINE_VERSION
     assert result["gross_budget_usd"] == FVD_GROSS_BUDGET_USD
     assert result["base_jurisdiction_code"] == "GR"
-    assert result["top_result"]["is_baseline"] is True
+    assert result["baseline"]["is_baseline"] is True
+    assert result["baseline"]["candidate_status"] == "PRICED"
     # Not the stale legacy figure, and not fabricated — whatever the
     # canonical engine honestly produces for Greece's real program.
-    assert result["top_result"]["true_net_cost_usd"] != 3_627_135.60
-    assert result["top_result"]["true_net_cost_usd"] is not None
+    assert result["baseline"]["true_net_cost_usd"] != 3_627_135.60
+    assert result["baseline"]["true_net_cost_usd"] is not None
+    assert result["top_result"] is None
 
 
-async def test_project_leading_structure_points_at_the_canonical_engine(db: AsyncSession):
+async def test_project_leading_structure_is_cleared_pending_qualification_resolution(db: AsyncSession):
     """The stale legacy-engine result (run_full_analysis, commit 87440df)
-    must no longer be what the project's leading structure resolves to."""
+    must never be what the project's leading structure resolves to.
+
+    Neither Little Utopia's nor FVD's own baseline currently admits
+    Recommended (see the two tests above) — so `leading_structure_id` is
+    correctly cleared to None (Part 4/CBA-001: a stale prior leading
+    structure must never keep rendering as though still current and
+    recommended) rather than left pointing at a superseded result."""
     for project_id in (LITTLE_UTOPIA_PROJECT_ID, FVD_PROJECT_ID):
+        await evaluate_project(db, project_id)
         project = await db.get(Project, project_id)
-        assert project.leading_structure_id is not None
-        current_result = (await db.execute(
-            select(StructureCalculationResult)
-            .where(StructureCalculationResult.structure_id == project.leading_structure_id)
-            .order_by(StructureCalculationResult.created_at.desc())
-        )).scalars().first()
-        assert current_result is not None
-        assert current_result.engine_version == ENGINE_VERSION
+        assert project.leading_structure_id is None
 
 
-async def test_relocation_candidates_never_outrank_the_baseline(db: AsyncSession):
+async def test_relocation_candidates_never_become_top_result(db: AsyncSession):
     """Little Utopia has real, honestly-priced relocation candidates with a
     LOWER npc_verified than the baseline (no travel/in-kind cost is modeled
     generically) — they must never be selected as top_result. This is the
     exact "invented savings" trap the RELOCATION_COMPARABILITY_NOTE guards
-    against; this test locks in that the guard actually holds."""
+    against; this test locks in that the guard actually holds even when
+    the baseline itself is qualification-unresolved and top_result is
+    therefore None (Part 4/CBA-001) rather than a relocation candidate
+    silently stepping in to fill the gap."""
     result = await evaluate_project(db, LITTLE_UTOPIA_PROJECT_ID)
     cheaper_alternatives = [
         r for r in result["ranked"]
         if not r["is_baseline"] and r["true_net_cost_usd"] < result["baseline"]["true_net_cost_usd"]
     ]
     assert len(cheaper_alternatives) > 0, "test is meaningless without a real cheaper alternative to guard against"
-    assert result["top_result"]["is_baseline"] is True
+    assert result["top_result"] is None
     assert all(not r["is_baseline"] for r in cheaper_alternatives)
 
 

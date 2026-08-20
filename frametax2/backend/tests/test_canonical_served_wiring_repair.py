@@ -134,22 +134,42 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # test_batch3_programs_price_with_real_numbers_in_fvd for the full
     # explanation). review_required_count shrinks by the same one (ES
     # was never is_directly_comparable for FVD either way).
+    #
+    # Part 3/CBA-006: unpriced grew 10 -> 11 -- FVD's Greece is also a
+    # real European Convention signatory, generating a second, genuine
+    # multilateral treaty_coproduction opportunity alongside Eurimages.
     assert len(priced) == 133
-    assert len(unpriced) == 10
-    assert accounting["comparable_count"] == 1
-    assert accounting["review_required_count"] == 132
-    assert accounting["unpriceable_count"] == 10
+    assert len(unpriced) == 11
+    # Final Consolidated Backend Correction + Global Structuring
+    # Intelligence Acceptance, Part 4/CBA-001: comparable_count is now 0
+    # (was 1) — FVD's own Greece baseline resolves USER_FACT_REQUIRED on
+    # its real cultural-test point table (0/20 confirmed), so it no
+    # longer admits Recommended/comparable ranking (truthful unresolved
+    # status over false recommendation), moving it from comparable into
+    # review_required (still priced, still disclosed, just not ranked).
+    assert accounting["comparable_count"] == 0
+    assert accounting["review_required_count"] == 133
+    assert accounting["unpriceable_count"] == 11
 
     # Cross-screen agreement: the ranking list (what Scenarios/Overview/
-    # World all read via is_directly_comparable) must reproduce the exact
-    # same split, not a second, divergent count.
+    # World all read) must reproduce the exact same split, not a second,
+    # divergent count.
+    #
+    # Final Consolidated Backend Correction + Global Structuring
+    # Intelligence Acceptance, Part 4/CBA-001: `rank` (not
+    # `is_directly_comparable` alone) is now the true signal of "actually
+    # admitted to the comparable pool" — a candidate can be
+    # is_directly_comparable=True (GR's own baseline is) yet excluded from
+    # the numerically-ranked comparable set because its qualification is
+    # genuinely unresolved (see _qualification_admits_recommended). `rank`
+    # is only ever assigned to entries that made it into that pool.
     ranking = view["structures"]["allocated_structures"]["ranking"]
-    comparable_ranked = [r for r in ranking if r["is_directly_comparable"]]
-    review_ranked = [r for r in ranking if r["is_fully_priced"] and not r["is_directly_comparable"]]
+    comparable_ranked = [r for r in ranking if r["rank"] is not None]
+    review_ranked = [r for r in ranking if r["is_fully_priced"] and r["rank"] is None]
     unpriceable_ranked = [r for r in ranking if not r["is_fully_priced"]]
-    assert len(comparable_ranked) == 1
-    assert len(review_ranked) == 132
-    assert len(unpriceable_ranked) == 10
+    assert len(comparable_ranked) == 0
+    assert len(review_ranked) == 133
+    assert len(unpriceable_ranked) == 11
 
     # Feasibility ≠ eligibility (canonical authority substrate + feasibility
     # boundary repair): a landlocked jurisdiction with real marine-mismatch
@@ -309,7 +329,7 @@ async def test_fvd_unpriceable_causes_are_differentiated_not_flattened(db: Async
     ranking = view["structures"]["allocated_structures"]["ranking"]
     unpriceable = [r for r in ranking if not r["is_fully_priced"]]
 
-    assert len(unpriceable) == 10
+    assert len(unpriceable) == 11
     statuses = {r["candidate_status"] for r in unpriceable}
     assert statuses.issuperset({"UNPRICEABLE_AUTHORITY_INSUFFICIENT", "RULE_REJECTED"}), (
         f"expected at least AUTHORITY_INSUFFICIENT and RULE_REJECTED causes, got {statuses}"

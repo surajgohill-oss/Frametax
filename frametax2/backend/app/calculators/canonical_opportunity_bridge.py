@@ -46,6 +46,11 @@ from app.data.national_cultural_status import (
     get_jurisdiction_national_status,
 )
 from app.data.program_requirements import get_program_requirements
+from app.data.structuring_opportunity_patterns import (
+    OPPORTUNITY_TYPE_B_NATIONAL_TREATMENT_STRUCTURE,
+    OPPORTUNITY_TYPE_C_NON_PARTY_PERSONNEL_EXCEPTION,
+    STRUCTURING_OPPORTUNITY_PATTERNS,
+)
 
 OPPORTUNITY_BRIDGE_VERSION = "1.1.0"
 # 1.1.0 — Proactive Opportunity Discovery Reconciliation: adds proactive
@@ -143,6 +148,15 @@ class CanonicalOpportunity:
     #: Task 8 — distinguishes what KIND of fact this opportunity rests on.
     #: Never flattened into a single status field.
     fact_classification: str = "USER_CONFIRMATION_REQUIRED"
+
+    #: Final Consolidated Backend Correction + Global Structuring
+    #: Intelligence Acceptance, Part 5-8 — when this opportunity is backed
+    #: by a durable Gemini structuring_opportunity_patterns.py record,
+    #: its pattern_id (e.g. "SP_002_SERVICE_TO_COPRO_NATIONAL_TREATMENT_
+    #: ARBITRAGE"), for traceability back to that pattern's own primary
+    #: authority/practice/case-study provenance. None for every
+    #: pre-existing opportunity type this task did not touch.
+    pattern_id: str | None = None
 
 
 def _opp_id(kind: str, jurisdiction_code: str, program_slug: str, suffix: str = "") -> str:
@@ -754,6 +768,195 @@ def discover_national_status_opportunity(
     )
 
 
+def discover_service_to_national_treatment_opportunity(
+    jurisdiction_code: str,
+    program_slug: str,
+    home_code: str,
+) -> CanonicalOpportunity | None:
+    """Final Consolidated Backend Correction + Global Structuring
+    Intelligence Acceptance, Part 9 -- Gemini P0 pattern SP_002 (Service
+    to Copro National Treatment Arbitrage). Trigger detection ONLY: this
+    candidate is priced under its own foreign/service pathway
+    (program_slug), and a REAL registered treaty (bilateral, Eurimages,
+    European Convention, or Ibermedia -- registry presence via
+    canonical_treaty_bridge's own find_*_partners helpers, reused
+    unchanged) exists between the production's home jurisdiction and
+    this candidate's own jurisdiction. That treaty's own Article 2
+    national-treatment clause (standard across bilateral audiovisual
+    treaties) means an OFFICIAL co-production structure here -- not the
+    service pathway this candidate is currently priced under -- could
+    unlock domestic/cultural incentives and selective funds a pure
+    service rebate cannot reach.
+
+    Never computes or compares economics (no headline-rate comparison,
+    no NPC estimate for the hypothetical co-production structure) -- the
+    real, separate treaty_coproduction candidate structure
+    (canonical_evaluation.py's own treaty-opportunity loop) is where that
+    resolution actually happens once real facts are supplied. This
+    function only surfaces that the STRUCTURAL LEVER exists and what
+    facts would be needed to pursue it.
+
+    Returns None when no real treaty connects home_code and
+    jurisdiction_code (never a fabricated opportunity), or when this
+    candidate's own jurisdiction_code equals home_code (a production is
+    never "arbitraging" against its own base)."""
+    if jurisdiction_code.upper() == home_code.upper():
+        return None
+
+    from app.calculators.canonical_treaty_bridge import (
+        find_eurimages_partners,
+        find_european_convention_partners,
+        find_ibermedia_partners,
+        find_real_bilateral_partners,
+    )
+
+    treaty_kind = None
+    if jurisdiction_code in find_real_bilateral_partners(home_code, [jurisdiction_code]):
+        treaty_kind = "bilateral"
+    elif jurisdiction_code in find_eurimages_partners(home_code, [jurisdiction_code]):
+        treaty_kind = "eurimages"
+    elif jurisdiction_code in find_european_convention_partners(home_code, [jurisdiction_code]):
+        treaty_kind = "european_convention"
+    elif jurisdiction_code in find_ibermedia_partners(home_code, [jurisdiction_code]):
+        treaty_kind = "ibermedia"
+    if treaty_kind is None:
+        return None
+
+    pattern = STRUCTURING_OPPORTUNITY_PATTERNS["SP_002_SERVICE_TO_COPRO_NATIONAL_TREATMENT_ARBITRAGE"]
+    return CanonicalOpportunity(
+        opportunity_id=_opp_id("SERVICE-TO-COPRO", jurisdiction_code, program_slug),
+        opportunity_type=OPPORTUNITY_TYPE_B_NATIONAL_TREATMENT_STRUCTURE,
+        status=STATUS_REQUIRES_USER_FACT,
+        jurisdiction_code=jurisdiction_code,
+        program_slug=program_slug,
+        title=f"Official co-production structure available via {treaty_kind} treaty with {home_code}",
+        description=(
+            f"This candidate is priced under {program_slug} (foreign/service pathway, no cultural "
+            f"status required). A real, registered {treaty_kind} co-production treaty connects "
+            f"{home_code} and {jurisdiction_code} — its national-treatment clause could unlock "
+            "domestic/cultural incentives and selective funds a pure service rebate cannot reach, "
+            "if the production restructures financing to make the local company an official "
+            "co-producer with real equity/copyright participation."
+        ),
+        authority_basis=pattern.primary_authority,
+        required_facts=pattern.required_project_facts + pattern.required_script_facts,
+        reasoning_trace=(
+            f"Real {treaty_kind} treaty registry entry connects {home_code} and {jurisdiction_code}.",
+            f"Structural lever: {pattern.structural_lever}",
+            f"Program unlocks (if resolved): {', '.join(pattern.program_unlocks) or 'none disclosed'}.",
+            f"Fund unlocks (if resolved): {', '.join(pattern.fund_unlocks) or 'none disclosed'}.",
+            f"Timing: {pattern.timing_constraints}" if pattern.timing_constraints else "Timing: not disclosed.",
+            "Economics are NOT computed here — see this jurisdiction's own real "
+            "treaty_coproduction candidate structure once ownership/cultural-test facts are on file.",
+        ),
+        risk_notes=(pattern.feasibility_constraints,) if pattern.feasibility_constraints else (),
+        trigger=(
+            f"Candidate priced under foreign/service pathway {program_slug}; a real {treaty_kind} "
+            f"treaty connects {home_code} and {jurisdiction_code}."
+        ),
+        fact_classification=FACT_USER_CONFIRMATION_REQUIRED,
+        pattern_id=pattern.pattern_id,
+    )
+
+
+def discover_non_party_personnel_exception_opportunity(
+    jurisdiction_code: str,
+    program_slug: str,
+    home_code: str,
+    role_known_codes: dict[str, tuple[str, ...]] | None,
+) -> CanonicalOpportunity | None:
+    """Final Consolidated Backend Correction + Global Structuring
+    Intelligence Acceptance, Part 11 -- Gemini P0 pattern SP_004
+    (Non-Party Personnel Exception). Trigger detection ONLY, treaty-
+    specific (never generalizes one treaty's real percentage to
+    another): a real bilateral treaty connects home_code and
+    jurisdiction_code, and at least one known ATL/lead role's real
+    nationality is neither party to that treaty.
+
+    treaty_engine.TreatyData.non_party_personnel_exception_pct is None
+    for every currently-registered treaty (not yet individually
+    re-researched per treaty) -- this correctly surfaces as
+    AUTHORITY_UNRESOLVED disclosure (the real, cited percentage is
+    unknown, never assumed 0% or any invented default), per this
+    pattern's own explicit instruction: 'Unknown rule: AUTHORITY_
+    UNRESOLVED'. Once a real treaty's own Article 4 (or equivalent)
+    percentage is individually researched and set on that TreatyData
+    row, this function automatically surfaces the resolved percentage
+    instead -- no code change needed here.
+
+    Returns None when no real bilateral treaty connects the two
+    jurisdictions, or when no known ATL/lead role's nationality is
+    outside both treaty parties (nothing to flag)."""
+    if jurisdiction_code.upper() == home_code.upper() or not role_known_codes:
+        return None
+
+    from app.calculators import treaty_engine as te
+
+    treaty = te.get_bilateral_treaty(home_code, jurisdiction_code)
+    if treaty is None:
+        return None
+
+    parties = {home_code.upper(), jurisdiction_code.upper()}
+    non_party_roles = {
+        role: codes for role, codes in role_known_codes.items()
+        if role in ("lead_cast", "director") and codes and not (set(c.upper() for c in codes) & parties)
+    }
+    if not non_party_roles:
+        return None
+
+    pattern = STRUCTURING_OPPORTUNITY_PATTERNS["SP_004_NON_PARTY_PERSONNEL_EXCEPTION"]
+    pct = treaty.non_party_personnel_exception_pct
+    resolved = pct is not None
+    return CanonicalOpportunity(
+        opportunity_id=_opp_id("NON-PARTY-PERSONNEL", jurisdiction_code, program_slug),
+        opportunity_type=OPPORTUNITY_TYPE_C_NON_PARTY_PERSONNEL_EXCEPTION,
+        status=(STATUS_CONDITIONAL if resolved else STATUS_AUTHORITY_UNRESOLVED),
+        jurisdiction_code=jurisdiction_code,
+        program_slug=program_slug,
+        title=(
+            f"Non-party personnel exception ({pct:.0f}% cap, {treaty.treaty_slug})"
+            if resolved else
+            f"Non-party personnel status unresolved for {treaty.treaty_slug}"
+        ),
+        description=(
+            (
+                f"Known {', '.join(non_party_roles)} nationality is outside the {home_code}/"
+                f"{jurisdiction_code} treaty parties. {treaty.treaty_slug} permits up to {pct:.0f}% "
+                f"of budget (or an equivalent key-creative allowance) from non-party countries "
+                "without losing official co-production status — this could preserve treaty "
+                "eligibility despite the known non-party personnel."
+            ) if resolved else (
+                f"Known {', '.join(non_party_roles)} nationality is outside the {home_code}/"
+                f"{jurisdiction_code} treaty parties. {treaty.treaty_slug} may permit a non-party "
+                "personnel exception (per Gemini pattern SP_004's primary authority for OTHER "
+                "treaties, e.g. Canada-UK/Australia-UK Treaty Article 4), but this SPECIFIC "
+                "treaty's own exception percentage has not yet been individually researched — "
+                "never assumed to be zero or any other treaty's percentage."
+            )
+        ),
+        authority_basis=(
+            treaty.non_party_personnel_exception_citation
+            if resolved and treaty.non_party_personnel_exception_citation
+            else pattern.primary_authority
+        ),
+        required_facts=(
+            () if resolved else
+            (f"{treaty.treaty_slug}'s own non-party-personnel exception percentage/clause "
+             "(primary-source research required — never generalized from another treaty).",)
+        ),
+        reasoning_trace=(
+            f"Non-party role(s) detected: {non_party_roles}.",
+            f"Treaty {treaty.treaty_slug} non_party_personnel_exception_pct = {pct!r}.",
+            f"Structural lever: {pattern.structural_lever}",
+            f"Timing: {pattern.timing_constraints}" if pattern.timing_constraints else "Timing: not disclosed.",
+        ),
+        risk_notes=(pattern.personnel_constraints,) if pattern.personnel_constraints else (),
+        trigger=f"Known non-party-country personnel in {', '.join(non_party_roles)} for a {treaty.treaty_slug} candidate.",
+        fact_classification=FACT_AUTHORITY_FACT if not resolved else FACT_KNOWN_PROJECT_FACT,
+        pattern_id=pattern.pattern_id,
+    )
+
+
 def opportunity_to_dict(opp: CanonicalOpportunity) -> dict:
     return {
         "opportunity_id": opp.opportunity_id,
@@ -781,4 +984,5 @@ def opportunity_to_dict(opp: CanonicalOpportunity) -> dict:
         "risk_notes": list(opp.risk_notes),
         "trigger": opp.trigger,
         "fact_classification": opp.fact_classification,
+        "pattern_id": opp.pattern_id,
     }

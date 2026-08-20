@@ -200,6 +200,136 @@ def evaluate_eurimages_coproduction_opportunity(
     )
 
 
+def evaluate_european_convention_coproduction_opportunity(
+    co_producer_countries: list[str],
+    country_pcts: dict[str, float] | None = None,
+    cultural_test_passed: bool | None = None,
+) -> CoproOpportunity | None:
+    """Final Consolidated Backend Correction + Global Structuring
+    Intelligence Acceptance, Part 3/CBA-006 -- the canonical European
+    Convention on Cinematographic Co-Production adapter, the SAME
+    fail-closed pattern as evaluate_eurimages_coproduction_opportunity()
+    above (no new treaty doctrine -- treaty_engine.evaluate_european_
+    convention_eligibility() and its own real, parsed-tier
+    _MULTILATERAL["european_convention"] thresholds, majority_min_pct=30,
+    minority_min_pct=10.0, min_coproducer_countries=2, are untouched).
+
+    Also the real, primary-source-cited backing for Gemini P0 pattern
+    SP_001 (Bilateral to Multilateral Upgrade, European Convention Art.
+    6): a minority contribution between 10% and 19.9% that cannot clear
+    a typical bilateral treaty's ~20% floor may still clear this
+    multilateral instrument's real 10% floor once a third country is
+    genuinely party to the structure -- see structuring_opportunity_
+    patterns.py for the durable pattern record this function's own
+    resolution feeds into (canonical_evaluation.py's opportunity
+    discovery, never a second eligibility engine)."""
+    signatories = [c for c in co_producer_countries if te.is_european_convention_signatory(c)]
+    if len(signatories) < 2:
+        return None
+
+    if country_pcts is None:
+        return CoproOpportunity(
+            treaty_type="european_convention",
+            treaty_slug="european-convention-coproduction",
+            parties=tuple(c.upper() for c in signatories),
+            resolution_state=RESOLUTION_UNRESOLVED_FACTS,
+            cultural_test_required=True,
+            cultural_test_resolved=False,
+            notes=(
+                f"{signatories} are all European Convention signatories, but no "
+                "project fact states each party's real budget share — "
+                "eligibility cannot be resolved from signatory status alone.",
+            ),
+        )
+
+    result = te.evaluate_european_convention_eligibility(signatories, country_pcts)
+    cultural_resolved = cultural_test_passed is not None
+    cultural_gate_ok = cultural_test_passed is True
+    is_eligible = result.is_eligible and cultural_gate_ok
+
+    reasons = list(result.disqualification_reasons)
+    if cultural_test_passed is not True and result.is_eligible:
+        reasons.append(
+            "The European Convention requires a cultural test (European "
+            "cultural character); "
+            + ("explicitly failed." if cultural_test_passed is False else "never assessed.")
+        )
+
+    return CoproOpportunity(
+        treaty_type="european_convention",
+        treaty_slug="european-convention-coproduction",
+        parties=tuple(c.upper() for c in signatories),
+        resolution_state=(
+            RESOLUTION_ELIGIBLE if is_eligible
+            else (RESOLUTION_INELIGIBLE if cultural_resolved or result.disqualification_reasons
+                  else RESOLUTION_UNRESOLVED_FACTS)
+        ),
+        cultural_test_required=True,
+        cultural_test_resolved=cultural_resolved,
+        unlocked_slugs=tuple(result.unlocked_fund_slugs) if is_eligible else (),
+        disqualification_reasons=tuple(reasons),
+    )
+
+
+def evaluate_ibermedia_coproduction_opportunity(
+    co_producer_countries: list[str],
+    country_pcts: dict[str, float] | None = None,
+    cultural_test_passed: bool | None = None,
+) -> CoproOpportunity | None:
+    """CBA-006 -- the canonical Ibermedia adapter, the SAME fail-closed
+    pattern as the Eurimages/European Convention adapters (no new treaty
+    doctrine -- treaty_engine.evaluate_ibermedia_eligibility() and its
+    own real, parsed-tier _MULTILATERAL["ibermedia"] thresholds,
+    majority_min_pct=20.0, minority_min_pct=10.0, min_coproducer_
+    countries=2, are untouched)."""
+    members = [c for c in co_producer_countries if te.is_ibermedia_member(c)]
+    if len(members) < 2:
+        return None
+
+    if country_pcts is None:
+        return CoproOpportunity(
+            treaty_type="ibermedia",
+            treaty_slug="ibermedia-multilateral",
+            parties=tuple(c.upper() for c in members),
+            resolution_state=RESOLUTION_UNRESOLVED_FACTS,
+            cultural_test_required=True,
+            cultural_test_resolved=False,
+            notes=(
+                f"{members} are all Ibermedia members, but no project fact "
+                "states each party's real budget share — eligibility cannot "
+                "be resolved from membership alone.",
+            ),
+        )
+
+    result = te.evaluate_ibermedia_eligibility(members, country_pcts)
+    cultural_resolved = cultural_test_passed is not None
+    cultural_gate_ok = cultural_test_passed is True
+    is_eligible = result.is_eligible and cultural_gate_ok
+
+    reasons = list(result.disqualification_reasons)
+    if cultural_test_passed is not True and result.is_eligible:
+        reasons.append(
+            "Ibermedia requires a cultural test (Ibero-American cultural "
+            "identity); "
+            + ("explicitly failed." if cultural_test_passed is False else "never assessed.")
+        )
+
+    return CoproOpportunity(
+        treaty_type="ibermedia",
+        treaty_slug="ibermedia-multilateral",
+        parties=tuple(c.upper() for c in members),
+        resolution_state=(
+            RESOLUTION_ELIGIBLE if is_eligible
+            else (RESOLUTION_INELIGIBLE if cultural_resolved or result.disqualification_reasons
+                  else RESOLUTION_UNRESOLVED_FACTS)
+        ),
+        cultural_test_required=True,
+        cultural_test_resolved=cultural_resolved,
+        unlocked_slugs=tuple(result.unlocked_fund_slugs) if is_eligible else (),
+        disqualification_reasons=tuple(reasons),
+    )
+
+
 def find_real_bilateral_partners(home_code: str, candidate_codes: list[str]) -> list[str]:
     """Every candidate code with a REAL registered bilateral treaty
     against home_code — registry presence only, never eligibility."""
@@ -216,3 +346,21 @@ def find_eurimages_partners(home_code: str, candidate_codes: list[str]) -> list[
     if not te.is_eurimages_member(home_code):
         return []
     return [code for code in candidate_codes if te.is_eurimages_member(code)]
+
+
+def find_european_convention_partners(home_code: str, candidate_codes: list[str]) -> list[str]:
+    """CBA-006 -- every candidate code that, together with home_code,
+    would make a real (>=2 signatory) European Convention co-production —
+    signatory status only, never eligibility."""
+    if not te.is_european_convention_signatory(home_code):
+        return []
+    return [code for code in candidate_codes if te.is_european_convention_signatory(code)]
+
+
+def find_ibermedia_partners(home_code: str, candidate_codes: list[str]) -> list[str]:
+    """CBA-006 -- every candidate code that, together with home_code,
+    would make a real (>=2 member) Ibermedia co-production — membership
+    only, never eligibility."""
+    if not te.is_ibermedia_member(home_code):
+        return []
+    return [code for code in candidate_codes if te.is_ibermedia_member(code)]

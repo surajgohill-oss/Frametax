@@ -196,25 +196,48 @@ class TestMauritiusBaselineUnaffectedByMechanismAvailability:
     then only for the deployed dollars (the undeployed remainder keeps
     MU's own verified unconditional-eligibility rule).
 
-    Consolidated Backend Correction, Part 19-20 (CBA-009): this is a
-    DIFFERENT, later correction than Task 91 above — it closes Codex's
-    confirmed defect that the full undeployed reserve was projected as
-    100%-qualifying unconditionally. build_little_utopia_real_register's
-    default `facts=None` now means the PROJECTED expected-utilization
-    fact is genuinely unset, so the $301,131.00 contingency line
-    correctly becomes a disclosed GREY_AREA_REQUIRES_AUTHORITY line
-    (full amount still visible as potential upside) rather than a false
-    QUALIFIES. The Task 91 property this class exists to prove — that
-    the deployment MECHANISM's mere existence doesn't change the
-    baseline — is unaffected and still verified below via explicit
-    facts that pin expected utilization to 100% (the historical,
-    pre-correction assumption), which reproduces the OLD qualifies
-    behavior exactly."""
+    Consolidated Backend Correction, Part 19-21 (CBA-009): a DIFFERENT,
+    later correction than Task 91 above closes Codex's confirmed defect
+    that the full undeployed reserve was projected as 100%-qualifying
+    unconditionally, by adding a real, typed, generic
+    contingency_expected_utilization_pct fact. Little Utopia's own
+    ESTABLISHED PROJECT ELECTION is 100% (see LITTLE_UTOPIA_CONTINGENCY_
+    EXPECTED_UTILIZATION_PCT's docstring) — real, persisted project data,
+    never a Mauritius statutory rule or a hard-coded special case in any
+    calculator — so build_little_utopia_real_register's default `facts=
+    None` correctly reproduces the historical qualifies behavior. The
+    GENERIC mechanism itself (unset -> disclosed grey; a stated
+    percentage scales the qualifying/excluded split) is proven directly
+    against the ladder in test_contingency_expected_utilization.py,
+    using an explicit facts override here to demonstrate it is reachable
+    for this production too, not only as its own default."""
 
-    def test_mu_contingency_is_disclosed_grey_when_utilization_unset(self):
+    def test_mu_contingency_qualifies_by_default_via_lus_real_100pct_election(self):
         from app.calculators.qualification_model import build_little_utopia_real_register
 
         reg = build_little_utopia_real_register(mu_rate=0.40, contingency_allocations={})
+        c = next(a for a in reg if a.account_code == "8300")
+        assert c.state.value == "qualifies"
+        assert c.amount_usd == 301_131.0
+
+    def test_mu_contingency_is_disclosed_grey_when_explicitly_unset(self):
+        """The GENERIC mechanism, reachable for Little Utopia too via an
+        explicit override — proving the default above is a real project
+        election, not a hard-coded assumption baked into the function."""
+        from app.calculators.qualification_derivation import ProductionFacts
+        from app.calculators.qualification_model import build_little_utopia_real_register
+        from app.data.little_utopia_real_budget import (
+            LITTLE_UTOPIA_REAL_ACCOUNTS_OUTSIDE_MU,
+            LITTLE_UTOPIA_REAL_OFFSHORE_PAYROLL,
+        )
+
+        facts = ProductionFacts(
+            jurisdiction_code="MU",
+            accounts_outside_jurisdiction=LITTLE_UTOPIA_REAL_ACCOUNTS_OUTSIDE_MU,
+            offshore_payroll_accounts=LITTLE_UTOPIA_REAL_OFFSHORE_PAYROLL,
+            contingency_expected_utilization_pct=None,
+        )
+        reg = build_little_utopia_real_register(mu_rate=0.40, facts=facts, contingency_allocations={})
         c = next(a for a in reg if a.account_code == "8300")
         assert c.state.value == "grey_area_requires_authority"
         assert c.amount_usd == 301_131.0
@@ -224,8 +247,8 @@ class TestMauritiusBaselineUnaffectedByMechanismAvailability:
     def test_mu_contingency_qualifies_when_utilization_explicitly_100pct(self):
         """The Task 91 property this class exists to prove — the
         deployment-tracking mechanism's mere presence doesn't change the
-        baseline — reproduced under the new correction via an explicit
-        producer election of 100% expected utilization."""
+        baseline — reproduced with an explicit producer election of 100%
+        expected utilization, matching Little Utopia's own real default."""
         from app.calculators.qualification_derivation import ProductionFacts
         from app.calculators.qualification_model import build_little_utopia_real_register
         from app.data.little_utopia_real_budget import (
@@ -259,39 +282,46 @@ class TestLiveStateMutators:
         from app.demo.little_utopia_state import reset_contingency_allocations
         reset_contingency_allocations()
 
-    def test_no_op_by_default_mu_baseline_is_disclosed_grey(self):
-        """Consolidated Backend Correction, Part 19-20 (CBA-009): the live
-        demo state has no `contingency_expected_utilization_pct` fact
-        answer by default, so the $301,131.00 reserve is now correctly a
-        disclosed GREY_AREA_REQUIRES_AUTHORITY line — not a silent
-        100%-unconditional QUALIFIES (the exact defect Codex's audit
-        confirmed). See test_mu_contingency_qualifies_when_utilization_
-        explicitly_100pct above for reachability of the old value."""
+    def test_no_op_by_default_mu_baseline_qualifies_via_real_project_election(self):
+        """Consolidated Backend Correction, Part 19-21 (CBA-009): the live
+        demo state defaults to Little Utopia's own ESTABLISHED PROJECT
+        ELECTION (100% expected contingency utilization —
+        LITTLE_UTOPIA_CONTINGENCY_EXPECTED_UTILIZATION_PCT, real project
+        data, never a Mauritius statutory rule or a hard-coded special
+        case in the generic ladder itself), so the $301,131.00 reserve
+        correctly QUALIFIES with no fact answer needed. See
+        test_fact_answer_can_override_the_project_election below for
+        proof this is a real, overridable default, not a hard-code."""
         from app.demo.little_utopia_state import get_state
 
         state = get_state()
         c = next(a for a in state.register if a.account_code == "8300")
-        assert c.state.value == "grey_area_requires_authority"
+        assert c.state.value == "qualifies"
         assert c.amount_usd == 301_131.0
 
-    def test_fact_answer_sets_utilization_and_restores_qualifies(self):
+    def test_fact_answer_can_override_the_project_election(self):
         """The producer-facing facts API (apply_fact_answers/
         reset_fact_answers) is the EXISTING, generic user-control surface
-        for this new fact — same pattern as every other production fact
-        this module already exposes (post_work_in_jurisdiction,
-        payroll_routing_localized, treaty_partner_code)."""
+        for this fact — same pattern as every other production fact this
+        module already exposes (post_work_in_jurisdiction,
+        payroll_routing_localized, treaty_partner_code). Overriding to 0%
+        proves the 100% default above is a real, overridable project
+        election, not a value hard-coded past the reach of this API."""
         from app.demo.little_utopia_state import (
             apply_fact_answers, get_state, reset_fact_answers,
         )
 
         try:
-            apply_fact_answers({"contingency_expected_utilization_pct": 100.0})
+            apply_fact_answers({"contingency_expected_utilization_pct": 0.0})
             state = get_state()
             c = next(a for a in state.register if a.account_code == "8300")
-            assert c.state.value == "qualifies"
+            assert c.state.value == "excluded"
             assert c.amount_usd == 301_131.0
         finally:
             reset_fact_answers()
+            state = get_state()
+            c = next(a for a in state.register if a.account_code == "8300")
+            assert c.state.value == "qualifies", "clearing the override must restore the real project election"
 
     def test_deploy_then_reset_round_trips_to_original_state(self):
         from app.demo.little_utopia_state import (

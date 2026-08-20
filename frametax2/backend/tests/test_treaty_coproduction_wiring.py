@@ -33,18 +33,25 @@ async def test_fvd_eurimages_opportunity_reaches_co_pro_opportunities_category(d
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
     treaty = [e for e in entries if e["structure_type"] == "treaty_coproduction"]
-    assert len(treaty) == 1
-    e = treaty[0]
-    assert e["treaty_slug"] == "eurimages"
-    assert e["scenario_category"] == "CO_PRO_OPPORTUNITIES"
-    assert e["treaty_resolution_state"] == "UNRESOLVED_FACTS"
-    assert e["treaty_cultural_test_required"] is True
-    assert e["treaty_cultural_test_resolved"] is False
-    assert len(e["coproduction_partners"]) > 0
-    for p in e["coproduction_partners"]:
-        assert p["jurisdiction_display_name"] != p["jurisdiction_code"], (
-            "co-pro partners must expose human-readable names, not raw codes"
-        )
+    # Final Consolidated Backend Correction + Global Structuring
+    # Intelligence Acceptance, Part 3/CBA-006: FVD's Greece is also a
+    # real European Convention on Cinematographic Co-Production
+    # signatory (treaty_engine's own real registry) — a second, genuine
+    # multilateral treaty_coproduction opportunity now generates
+    # alongside Eurimages, the same fail-closed pattern.
+    assert len(treaty) == 2
+    by_slug = {e["treaty_slug"]: e for e in treaty}
+    assert set(by_slug) == {"eurimages", "european-convention-coproduction"}
+    for e in treaty:
+        assert e["scenario_category"] == "CO_PRO_OPPORTUNITIES"
+        assert e["treaty_resolution_state"] == "UNRESOLVED_FACTS"
+        assert e["treaty_cultural_test_required"] is True
+        assert e["treaty_cultural_test_resolved"] is False
+        assert len(e["coproduction_partners"]) > 0
+        for p in e["coproduction_partners"]:
+            assert p["jurisdiction_display_name"] != p["jurisdiction_code"], (
+                "co-pro partners must expose human-readable names, not raw codes"
+            )
 
 
 async def test_unresolved_treaty_opportunity_cannot_rank_as_recommended(db: AsyncSession):
@@ -65,9 +72,11 @@ async def test_unresolved_treaty_opportunity_never_enters_npc(db: AsyncSession):
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
-    treaty = next(e for e in entries if e["structure_type"] == "treaty_coproduction")
-    assert treaty["npc_with_adjustments_usd"] is None
-    assert treaty["selected_incentive_usd"] is None
+    treaty = [e for e in entries if e["structure_type"] == "treaty_coproduction"]
+    assert treaty
+    for t in treaty:
+        assert t["npc_with_adjustments_usd"] is None
+        assert t["selected_incentive_usd"] is None
 
 
 async def test_little_utopia_has_no_treaty_coproduction_opportunity_proven_zero(db: AsyncSession):
@@ -80,4 +89,4 @@ async def test_little_utopia_has_no_treaty_coproduction_opportunity_proven_zero(
     treaty = [e for e in entries if e["structure_type"] == "treaty_coproduction"]
     assert treaty == []
     baseline = next(e for e in entries if e["is_baseline"])
-    assert round(baseline["npc_with_adjustments_usd"], 2) == 3148134.20  # CBA-009 Part 19-20: LU NPC updated $3,057,794.90 -> $3,148,134.20 (contingency utilization unset -> disclosed grey, not 100%-unconditional)
+    assert round(baseline["npc_with_adjustments_usd"], 2) == 3057794.90  # CBA-009 Part 19-21: LU's own persisted 100% contingency-utilization project election (migration 0068) reproduces the historical $3,057,794.90 baseline through the generic pipeline

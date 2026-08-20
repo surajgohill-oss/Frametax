@@ -109,6 +109,6 @@ async def test_little_utopia_baseline_unchanged_by_component_relocation(db: Asyn
     view = await build_production_and_structures(db, LITTLE_UTOPIA_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
     baseline = next(e for e in entries if e["is_baseline"])
-    assert round(baseline["npc_with_adjustments_usd"], 2) == 3148134.20  # CBA-009 Part 19-20: LU NPC updated $3,057,794.90 -> $3,148,134.20 (contingency utilization unset -> disclosed grey, not 100%-unconditional)
+    assert round(baseline["npc_with_adjustments_usd"], 2) == 3057794.90  # CBA-009 Part 19-21: LU's own persisted 100% contingency-utilization project election (migration 0068) reproduces the historical $3,057,794.90 baseline through the generic pipeline
     comp = [e for e in entries if e["structure_type"] == "component_relocation"]
     assert len(comp) > 0

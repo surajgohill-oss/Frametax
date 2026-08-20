@@ -318,6 +318,7 @@ def build_little_utopia_real_register(
         derive_qualification_register,
     )
     from app.data.little_utopia_real_budget import (
+        LITTLE_UTOPIA_CONTINGENCY_EXPECTED_UTILIZATION_PCT,
         LITTLE_UTOPIA_REAL_ACCOUNTS_OUTSIDE_MU,
         LITTLE_UTOPIA_REAL_BUDGET_LINES,
         LITTLE_UTOPIA_REAL_OFFSHORE_PAYROLL,
@@ -325,8 +326,15 @@ def build_little_utopia_real_register(
     )
 
     if facts is None:
+        # Consolidated Backend Correction, Part 19-21 (CBA-009) — this
+        # function's default facts are Little Utopia's own real project
+        # facts (see the accounts_outside/offshore_payroll rows below,
+        # already sourced this way); its established contingency-
+        # expected-utilization election belongs here on the same basis,
+        # never as a Mauritius-specific branch in the generic ladder.
         facts = ProductionFacts(
             jurisdiction_code="MU",
+            contingency_expected_utilization_pct=LITTLE_UTOPIA_CONTINGENCY_EXPECTED_UTILIZATION_PCT,
             accounts_outside_jurisdiction=LITTLE_UTOPIA_REAL_ACCOUNTS_OUTSIDE_MU,
             offshore_payroll_accounts=LITTLE_UTOPIA_REAL_OFFSHORE_PAYROLL,
         )

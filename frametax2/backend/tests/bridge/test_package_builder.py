@@ -40,16 +40,17 @@ class TestPackageContent:
         driving npc_with_adjustments_usd — both now equal here since MU
         (the anchor) has zero relocation/travel/FX deltas.
 
-        Consolidated Backend Correction, Part 19-20 (CBA-009): the
-        $301,131.00 contingency reserve is no longer projected as
-        100%-unconditionally qualifying — with no expected-utilization
-        fact on file, it is disclosed as a grey opportunity instead
-        (selected_incentive_usd=$1,216,258.80, was $1,306,598.10), giving
-        npc = $4,364,393.00 - $1,216,258.80 = $3,148,134.20 (was
-        $3,057,794.90)."""
+        Consolidated Backend Correction, Part 19-21 (CBA-009): the
+        $301,131.00 contingency reserve's qualification now depends on a
+        real, typed, generic contingency-expected-utilization fact rather
+        than being unconditionally 100%-included. Little Utopia's own
+        ESTABLISHED PROJECT ELECTION — a real, persisted ProjectFact
+        (alembic migration 0068), never a Mauritius statutory rule or a
+        hard-coded special case in any calculator — is 100%, so this
+        figure is unchanged, reproduced for the correct reason."""
         pkg = build_package(operation=OperationType.QUALIFICATION_AUDIT, structure_id="ALLOC-BASELINE-MU")
-        assert pkg.economics.npc_usd == 3_148_134.20
-        assert pkg.economics.npc_verified_usd == 3_148_134.20
+        assert pkg.economics.npc_usd == 3_057_794.90
+        assert pkg.economics.npc_verified_usd == 3_057_794.90
 
     def test_repository_commit_is_populated(self):
         pkg = build_package(operation=OperationType.QUALIFICATION_AUDIT)

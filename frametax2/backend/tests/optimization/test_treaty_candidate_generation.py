@@ -88,7 +88,7 @@ def test_little_utopia_mu_auto_enumeration_is_correctly_empty_not_a_regression()
     assert served["coverage"]["reachable_treaty_partners"] == []
 
     baseline = next(s for s in structures if s["structure_id"] == "ALLOC-BASELINE-MU")
-    assert round(baseline["npc_with_adjustments_usd"], 2) == 3148134.20  # CBA-009 Part 19-20: LU NPC updated $3,057,794.90 -> $3,148,134.20 (contingency utilization unset -> disclosed grey, not 100%-unconditional)
+    assert round(baseline["npc_with_adjustments_usd"], 2) == 3057794.90  # CBA-009 Part 19-21: LU's own persisted 100% contingency-utilization project election (migration 0068) reproduces the historical $3,057,794.90 baseline through the generic pipeline
     assert served["ranking"][0]["structure_id"] == "ALLOC-BASELINE-MU"
 
 

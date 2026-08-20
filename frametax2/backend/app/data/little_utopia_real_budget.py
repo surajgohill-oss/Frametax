@@ -227,3 +227,20 @@ LITTLE_UTOPIA_REAL_ACCOUNTS_OUTSIDE_MU: frozenset[str] = frozenset({
 # independently verifiable against this document) — left empty rather
 # than assumed. No account is held in STRUCTURING_OPPORTUNITY as a result.
 LITTLE_UTOPIA_REAL_OFFSHORE_PAYROLL: frozenset[str] = frozenset()
+
+# Consolidated Backend Correction, Part 20-21/CBA-009 — Little Utopia's own
+# ESTABLISHED PROJECT ELECTION: the production expects to deploy its full
+# $301,131.00 contingency reserve (account 8300) into real production
+# expenditures. This is a PROJECT INPUT, exactly like the two territorial
+# fact sets above — never a Mauritius statutory rule (Mauritius's own rule
+# is only that the CONTINGENCY CATEGORY qualifies; what fraction of any
+# given production's own reserve it expects to deploy is that production's
+# own fact, generic to every program/jurisdiction). Represented here as
+# real project data, consumed by app.demo.little_utopia_state._production_
+# facts() as the DEFAULT (still overridable via the existing
+# apply_fact_answers("contingency_expected_utilization_pct", ...) facts
+# API) — never hard-coded into qualification_derivation.py,
+# canonical_evaluation.py, or allocation_pricing.py, all three of which
+# remain fully generic and carry no Mauritius/Little-Utopia-specific
+# branch for this or any other production's contingency election.
+LITTLE_UTOPIA_CONTINGENCY_EXPECTED_UTILIZATION_PCT: float = 100.0

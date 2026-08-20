@@ -432,10 +432,14 @@ async def test_little_utopia_exact_regression_after_authority_substrate_repair(d
     result = await evaluate_project(db, LITTLE_UTOPIA_PROJECT_ID)
     assert result["engine_version"] == ENGINE_VERSION
     assert result["base_jurisdiction_code"] == "MU"
-    # CBA-009 Part 19-20: $3,057,794.90 -> $3,148,134.20 (contingency
-    # expected-utilization fact unset -> disclosed grey, not 100%-unconditional).
-    assert result["top_result"]["true_net_cost_usd"] == 3_148_134.20
-    assert result["top_result"]["is_baseline"] is True
+    # Final Consolidated Backend Correction + Global Structuring
+    # Intelligence Acceptance, Part 4/CBA-001: Mauritius's own cultural-
+    # test applicability remains genuinely AUTHORITY_UNRESOLVED, so
+    # top_result is correctly None (truthful unresolved status over
+    # false recommendation); the real, priced economics are disclosed
+    # on baseline instead.
+    assert result["baseline"]["true_net_cost_usd"] == 3_057_794.90
+    assert result["top_result"] is None
 
 
 # ── Task 10 — FVD runtime candidate-universe regression ─────────────────────
@@ -515,15 +519,21 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     unpriced grows again 9 -> 10, priced shrinks 134 -> 133: ES now
     genuinely RULE_REJECTED (real minimum-QPE threshold unmet once its
     own contingency reserve is no longer counted as 100%-unconditionally
-    qualifying) -- see test_batch3_programs_price_with_real_numbers_in_fvd."""
+    qualifying) -- see test_batch3_programs_price_with_real_numbers_in_fvd.
+    Grew again 143 -> 144 (unpriced 10 -> 11) with Final Consolidated
+    Backend Correction, Part 3/CBA-006: FVD's Greece is also a real
+    European Convention on Cinematographic Co-Production signatory, so a
+    second, genuine multilateral treaty_coproduction opportunity
+    (alongside Eurimages) now generates -- same distinct
+    STATUS_CO_PRO_OPPORTUNITY terminal state, never flattened."""
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
     priced = [e for e in entries if e["is_fully_priced"]]
     unpriced = [e for e in entries if not e["is_fully_priced"]]
-    assert len(entries) == 143
+    assert len(entries) == 144
     assert len(priced) == 133
-    assert len(unpriced) == 10
+    assert len(unpriced) == 11
 
     for code in ("MN", "UZ", "AT"):
         e = next(x for x in entries if x["primary_jurisdiction"] == code)
@@ -818,7 +828,7 @@ async def test_lu_mauritius_control_npc_unchanged(db: AsyncSession):
     entries = view["structures"]["allocated_structures"]["structures"]
     baseline = next(e for e in entries if e["is_baseline"])
     assert baseline["primary_jurisdiction"] == "MU"
-    assert baseline["npc_verified_usd"] == pytest.approx(3148134.20, abs=0.01)  # CBA-009 Part 19-20: LU NPC updated $3,057,794.90 -> $3,148,134.20 (contingency utilization unset -> disclosed grey, not 100%-unconditional)
+    assert baseline["npc_verified_usd"] == pytest.approx(3057794.90, abs=0.01)
 
 
 async def test_georgia_prices_with_real_numbers_in_fvd(db: AsyncSession):

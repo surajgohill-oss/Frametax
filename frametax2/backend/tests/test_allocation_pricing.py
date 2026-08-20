@@ -75,7 +75,14 @@ BASELINE = _spec("P-BASE-MU", "single_country", ("MU",), {"MU": "mu_edb_incentiv
 # ── 1/7/8: baseline partial register matches the served register ────────────
 
 def test_baseline_mu_segment_matches_served_register_qpe():
-    pricing = _price(BASELINE)
+    # Consolidated Backend Correction, Part 19-21 (CBA-009): _price()'s
+    # generic price_allocated_structure() call has no project-specific
+    # default for contingency_expected_utilization_pct (correctly — it
+    # serves any project) — Little Utopia's own real 100% election must
+    # be threaded through explicitly here, same as the served path does,
+    # to match build_little_utopia_real_register()'s own default (which
+    # DOES represent this specific, real project's real facts).
+    pricing = _price(BASELINE, contingency_expected_utilization_pct=100.0)
     assert pricing.is_fully_priced
     mu = next(s for s in pricing.segments if s.jurisdiction_code == "MU")
     served = build_little_utopia_real_register(mu_rate=0.40)

@@ -181,20 +181,21 @@ class TestMauritiusDoctrineAssignment:
 
     def test_real_register_has_no_invalid_greys(self):
         """Every grey in the real Little Utopia register carries a genuine
-        A-F reason; none is an implementation artifact. Only $0 legal-
-        interpretation lines plus ONE real, disclosed, intentional
-        material grey remain: the $301,131.00 contingency reserve
-        (account 8300), grey because Consolidated Backend Correction,
-        Part 19-20 (CBA-009) closed Codex's confirmed defect that the
-        full reserve was projected as 100%-qualifying unconditionally —
-        it is now correctly disclosed as MISSING_PRODUCTION_FACT
-        (the producer's expected-utilization percentage is unset) rather
-        than a false QUALIFIES. See test_contingency_treatment.py and
-        test_contingency_expected_utilization.py for full coverage of
-        this specific, intentional grey."""
+        A-F reason; none is an implementation artifact, and no MATERIAL
+        on-budget grey remains (only $0 legal-interpretation lines).
+
+        Consolidated Backend Correction, Part 19-21 (CBA-009): the
+        $301,131.00 contingency reserve (account 8300) is no longer a
+        material grey here — Little Utopia's own ESTABLISHED PROJECT
+        ELECTION (100% expected contingency utilization, a real,
+        persisted project fact — see LITTLE_UTOPIA_CONTINGENCY_EXPECTED_
+        UTILIZATION_PCT's docstring) resolves it to QUALIFIES by default.
+        The GENERIC mechanism that would surface it as a disclosed grey
+        when this fact is genuinely unset is proven directly in
+        test_contingency_treatment.py and
+        test_contingency_expected_utilization.py."""
         reg = build_little_utopia_real_register()
         greys = [a for a in reg if a.state == QualificationState.GREY_AREA_REQUIRES_AUTHORITY]
         assert all(a.grey_reason is not None for a in greys)
         material_greys = [a for a in greys if a.amount_usd >= 1.0]
-        assert [a.account_code for a in material_greys] == ["8300"]
-        assert material_greys[0].grey_reason == GreyReason.MISSING_PRODUCTION_FACT
+        assert material_greys == []  # 7000/7100/8300 now qualify; only $0 music/marketing remain grey

@@ -38,7 +38,7 @@ from app.models.project import Project
 from app.models.project_fact import ProjectFact
 from app.models.project_person import ProjectPerson
 from app.models.talent import TalentProfile
-from app.services.canonical_evaluation import ENGINE_VERSION
+from app.services.canonical_evaluation import ENGINE_VERSION, _QUALIFICATION_ADMITS_RECOMMENDED
 
 
 def _anchor_and_stacked(trace: dict) -> tuple[str | None, list[str]]:
@@ -271,6 +271,24 @@ SCENARIO_PRICED_LOW_FIT = "PRICED_LOW_FIT"
 SCENARIO_NOT_AVAILABLE = "NOT_AVAILABLE"
 
 
+def _qualification_admits_recommended(entry: dict) -> bool:
+    """Final Consolidated Backend Correction + Global Structuring
+    Intelligence Acceptance, Part 4/CBA-001 — a candidate whose
+    qualification is real but genuinely UNRESOLVED (Curable Gap/User
+    Fact Required/Script Fact Required/Authority Unresolved/Rule Data
+    Incomplete) is priced normally (canonical_evaluation.py admits it to
+    STATUS_PRICED; see _QUALIFICATION_ADMITS_PRICING there) and
+    disclosed with real economics, but must never be presented as the
+    comparable, rankable, RECOMMENDED winner — truthful unresolved
+    status is preferable to false recommendation, even when that leaves
+    a project with no Recommended scenario at all. Absent role_
+    qualification (a program the bridge has genuinely no data for at
+    all) is treated as admitting — there is no unresolved STATE to gate
+    on, as distinct from a real, resolved-to-unresolved state."""
+    state = ((entry.get("role_qualification") or {}).get("state"))
+    return state is None or state in _QUALIFICATION_ADMITS_RECOMMENDED
+
+
 def _scenario_category(entry: dict, rank: int | None) -> str:
     """Deterministic, single-signal-source category. Precedence:
     1. A registered treaty co-production instrument is attached
@@ -286,8 +304,15 @@ def _scenario_category(entry: dict, rank: int | None) -> str:
        exists to preserve).
     2. Not fully priced (capability_only/rule_rejected/authority_
        insufficient, and not a treaty opportunity) -> NOT AVAILABLE.
-    3. rank == 1 -> RECOMMENDED (the served numeric winner).
-    4. Fully priced + directly comparable + not rank 1 -> ALTERNATIVE.
+    3. rank == 1 -> RECOMMENDED (the served numeric winner — only
+       reachable when qualification is resolved; see
+       _qualification_admits_recommended, enforced upstream in the
+       comparable-pool filter so an unresolved candidate can never
+       reach rank 1 in the first place).
+    4. Fully priced + directly comparable + not rank 1 -> ALTERNATIVE
+       (this also covers a directly-comparable candidate whose
+       qualification is unresolved — disclosed with real economics,
+       correctly excluded from Recommended).
     5. Everything else fully priced (not directly comparable, e.g. a
        relocation candidate, a component/split candidate, or a multi-
        program stack whose combined economics are real but not yet
@@ -354,21 +379,28 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
     if project is None:
         return {"status": "PROJECT_NOT_FOUND"}
 
-    fingerprint = None
-    engine_version = None
-    if project.leading_structure_id is not None:
-        leading = await session.get(ProductionStructure, project.leading_structure_id)
-        leading_result = (
-            (await session.execute(
-                select(StructureCalculationResult)
-                .where(StructureCalculationResult.structure_id == leading.id)
-                .order_by(StructureCalculationResult.created_at.desc())
-            )).scalars().first()
-            if leading is not None else None
+    # Final Consolidated Backend Correction + Global Structuring
+    # Intelligence Acceptance, Part 4/CBA-001 (and in the spirit of
+    # Codex's CBA-008): which rows are "this project's current
+    # evaluation" must never depend on leading_structure_id — that field
+    # is correctly None whenever no candidate currently admits
+    # Recommended (a real, disclosed, priced baseline can still exist
+    # with no recommended winner; see canonical_evaluation.py's
+    # _summarize_evaluation). The current fingerprint/engine_version is
+    # instead read directly off ANY current-engine result row for this
+    # project — every row from one evaluation run shares one fingerprint
+    # by construction (_compute_fingerprint is a pure function of the
+    # project's inputs, not of any individual candidate).
+    engine_version = ENGINE_VERSION
+    fingerprint = (await session.execute(
+        select(StructureCalculationResult.input_fingerprint)
+        .join(ProductionStructure, StructureCalculationResult.structure_id == ProductionStructure.id)
+        .where(
+            ProductionStructure.project_id == project.id,
+            StructureCalculationResult.engine_version == engine_version,
         )
-        if leading_result is not None:
-            fingerprint = leading_result.input_fingerprint
-            engine_version = leading_result.engine_version
+        .limit(1)
+    )).scalar_one_or_none()
 
     rows: list[tuple] = []
     if fingerprint:
@@ -419,10 +451,14 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
     # rank vs. what to show as priced-but-review, never overloading
     # is_fully_priced to mean both things.
     comparable = sorted(
-        (e for e in structure_entries if e["is_fully_priced"] and e["is_directly_comparable"]),
+        (e for e in structure_entries
+         if e["is_fully_priced"] and e["is_directly_comparable"] and _qualification_admits_recommended(e)),
         key=lambda e: e["npc_with_adjustments_usd"] if e["npc_with_adjustments_usd"] is not None else float("inf"),
     )
-    review_required = [e for e in structure_entries if e["is_fully_priced"] and not e["is_directly_comparable"]]
+    review_required = [
+        e for e in structure_entries
+        if e["is_fully_priced"] and not (e["is_directly_comparable"] and _qualification_admits_recommended(e))
+    ]
     unpriced = [e for e in structure_entries if not e["is_fully_priced"]]
 
     ranking: list[dict] = []
@@ -564,43 +600,56 @@ async def build_generic_pkg_and_economics(session: AsyncSession, project_id) -> 
     if project is None:
         return {"status": "PROJECT_NOT_FOUND"}
 
-    # ── register + budget totals: the LEADING structure's own already-
-    # persisted segments (Codex Defect 3 restored qualification_trace) ──
+    # ── register + budget totals: the production's own BASELINE
+    # structure's already-persisted segments (Codex Defect 3 restored
+    # qualification_trace). Final Consolidated Backend Correction +
+    # Global Structuring Intelligence Acceptance, Part 4/CBA-001: reads
+    # the baseline directly (is_baseline trace flag, current
+    # ENGINE_VERSION), never leading_structure_id — that field is
+    # correctly None whenever no candidate currently admits Recommended,
+    # but the baseline's own real, priced register must still be
+    # disclosed either way.
     register: list[dict] = []
     line_item_count = 0
     total_budget_usd = None
     currency_code = None
     filename = None
-    if project.leading_structure_id is not None:
-        leading_result = (await session.execute(
-            select(StructureCalculationResult)
-            .where(StructureCalculationResult.structure_id == project.leading_structure_id)
-            .order_by(StructureCalculationResult.created_at.desc())
-        )).scalars().first()
-        if leading_result is not None:
-            trace = leading_result.calculation_trace_json or {}
-            for seg in trace.get("segments") or []:
-                for a in seg.get("qualification_trace") or []:
-                    register.append({
-                        "account_code": a.get("account_code"),
-                        "description": a.get("description"),
-                        "amount_usd": a.get("amount_usd"),
-                        "state": a.get("state"),
-                        # LU's richer register carries confidence/grey_reason/
-                        # structuring_mechanism/incentive_upside — not yet
-                        # computed generically; honest nulls, not invented.
-                        "confidence": "unknown",
-                        "authority_basis": a.get("authority_basis"),
-                        "reason": a.get("reason"),
-                        "grey_reason": None,
-                        "financial_impact_usd": None,
-                        "structuring_mechanism": None,
-                        "resolving_evidence": None,
-                        "incentive_upside_usd": None,
-                    })
-            total_budget_usd = (
-                float(leading_result.total_budget_usd) if leading_result.total_budget_usd is not None else None
-            )
+    baseline_rows = (await session.execute(
+        select(StructureCalculationResult)
+        .join(ProductionStructure, StructureCalculationResult.structure_id == ProductionStructure.id)
+        .where(
+            ProductionStructure.project_id == project.id,
+            StructureCalculationResult.engine_version == ENGINE_VERSION,
+        )
+        .order_by(StructureCalculationResult.created_at.desc())
+    )).scalars().all()
+    leading_result = next(
+        (r for r in baseline_rows if (r.calculation_trace_json or {}).get("is_baseline")), None,
+    )
+    if leading_result is not None:
+        trace = leading_result.calculation_trace_json or {}
+        for seg in trace.get("segments") or []:
+            for a in seg.get("qualification_trace") or []:
+                register.append({
+                    "account_code": a.get("account_code"),
+                    "description": a.get("description"),
+                    "amount_usd": a.get("amount_usd"),
+                    "state": a.get("state"),
+                    # LU's richer register carries confidence/grey_reason/
+                    # structuring_mechanism/incentive_upside — not yet
+                    # computed generically; honest nulls, not invented.
+                    "confidence": "unknown",
+                    "authority_basis": a.get("authority_basis"),
+                    "reason": a.get("reason"),
+                    "grey_reason": None,
+                    "financial_impact_usd": None,
+                    "structuring_mechanism": None,
+                    "resolving_evidence": None,
+                    "incentive_upside_usd": None,
+                })
+        total_budget_usd = (
+            float(leading_result.total_budget_usd) if leading_result.total_budget_usd is not None else None
+        )
 
     budget_doc = (await session.execute(
         select(BudgetDocument).where(BudgetDocument.project_id == project.id)

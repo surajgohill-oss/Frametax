@@ -51,6 +51,8 @@ from app.data.cultural_point_tables import (
     CRITERION_MANDATORY,
     CULTURAL_POINT_TABLES,
     DISCRETIONARY_OR_DEFINITIONAL_PROGRAMS,
+    FACT_KIND_EITHER,
+    FACT_KIND_NATIONALITY,
     FACT_SCRIPT,
     FACT_USER,
     TABLE_AUTHORITY_INCOMPLETE,
@@ -333,13 +335,27 @@ def evaluate_point_table_qualification(
     jurisdiction_code: str | None,
     role_known_codes: dict[str, tuple[str, ...]],
     script_facts: dict[str, tuple[str, ...]],
+    typed_personnel_facts: dict[str, dict[str, tuple[str, ...]]] | None = None,
 ) -> CanonicalQualificationResult:
     """Worldwide Qualification Consumption Closeout, Tasks 2/3/5/6 — the
     ONE consumption path for programs whose real, researched doctrine is
     a cultural POINT TABLE (cultural_point_tables.CULTURAL_POINT_TABLES),
     never forcing that data through the role-gate shape. Reuses the same
     project facts (role_known_codes, script_facts) the role-gate path
-    already reads -- no new fact source, no new economics."""
+    already reads -- no new fact source, no new economics.
+
+    typed_personnel_facts (Final Consolidated Backend Correction, Part
+    4/CBA-004): the SEPARATE nationality-vs-residency breakdown from
+    typed_personnel_facts_from_project(). Consumed ONLY for a criterion
+    whose own fact_kind is NATIONALITY or RESIDENCY specifically (never
+    EITHER, the default for every criterion not yet individually
+    re-researched to confirm which one its real statutory wording
+    requires) -- see the role-criterion branch below. Omitted (None)
+    means every criterion falls back to the merged role_known_codes set,
+    i.e. FACT_KIND_EITHER behavior regardless of any criterion's own
+    declared fact_kind (a caller that hasn't fetched the typed facts
+    cannot honor a distinction it has no data for -- never silently
+    treated as a satisfied or failed nationality/residency check)."""
     table = CULTURAL_POINT_TABLES[program_slug]
     home_code = (jurisdiction_code or "").split("-")[0].upper() or None
 
@@ -352,7 +368,17 @@ def evaluate_point_table_qualification(
 
     for c in table.criteria:
         if c.category == CATEGORY_ROLE and c.fact_type == FACT_USER:
-            known = role_known_codes.get(c.role or "")
+            # Final Consolidated Backend Correction, Part 4/CBA-004 -- a
+            # criterion whose real fact_kind is confirmed NATIONALITY or
+            # RESIDENCY reads the SEPARATE typed set for that kind only;
+            # everything else (the default FACT_KIND_EITHER, or no typed
+            # facts supplied at all) falls back to the merged
+            # role_known_codes set -- byte-identical to prior behavior.
+            if c.fact_kind != FACT_KIND_EITHER and typed_personnel_facts is not None:
+                typed_kind = "nationality" if c.fact_kind == FACT_KIND_NATIONALITY else "residency"
+                known = (typed_personnel_facts.get(c.role or "") or {}).get(typed_kind, ())
+            else:
+                known = role_known_codes.get(c.role or "")
             if known:
                 if home_code and home_code in known:
                     satisfied.append((c.key, c.max_points))
@@ -616,6 +642,7 @@ def evaluate_role_qualification(
     role_known_codes: dict[str, tuple[str, ...]],
     treaty_partner_code: str | None = None,
     script_facts: dict[str, tuple[str, ...]] | None = None,
+    typed_personnel_facts: dict[str, dict[str, tuple[str, ...]]] | None = None,
 ) -> CanonicalQualificationResult:
     """Task 3/4/5 — the repaired seam. Reuses cultural_qualification_
     model.get_requirements()/evaluate_program_eligibility() UNCHANGED;
@@ -641,7 +668,10 @@ def evaluate_role_qualification(
         if program_slug in CONFIRMED_TEST_SCORING_WITHHELD_PROGRAMS:
             return _confirmed_test_scoring_withheld_result(program_slug, jurisdiction_code)
         if program_slug in CULTURAL_POINT_TABLES:
-            return evaluate_point_table_qualification(program_slug, jurisdiction_code, role_known_codes, script_facts)
+            return evaluate_point_table_qualification(
+                program_slug, jurisdiction_code, role_known_codes, script_facts,
+                typed_personnel_facts=typed_personnel_facts,
+            )
         if program_slug in DISCRETIONARY_OR_DEFINITIONAL_PROGRAMS:
             return evaluate_discretionary_qualification(program_slug, jurisdiction_code)
         # CBA-005 fix (Codex audit 4db2cea, finding 5) — NOT_APPLICABLE is

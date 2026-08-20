@@ -90,6 +90,7 @@ from app.data.little_utopia_people import build_little_utopia_people
 from app.data.little_utopia_real_budget import (
     AUTHORITATIVE_GROSS_BUDGET_USD,
     LEAF_ACCOUNT_SUM_USD,
+    LITTLE_UTOPIA_CONTINGENCY_EXPECTED_UTILIZATION_PCT,
     LITTLE_UTOPIA_REAL_ACCOUNTS_OUTSIDE_MU,
     LITTLE_UTOPIA_REAL_OFFSHORE_PAYROLL,
     RECONCILIATION_NOTE,
@@ -1473,7 +1474,7 @@ def build_allocated_structures(
                 "note": local_cost.note,
             },
             contingency_allocations=_contingency_allocations,
-            contingency_expected_utilization_pct=_fact_answers.get("contingency_expected_utilization_pct"),
+            contingency_expected_utilization_pct=_contingency_expected_utilization_pct(),
         )
         if pricing.is_fully_priced:
             fx = compute_fx_normalization(
@@ -1509,7 +1510,7 @@ def build_allocated_structures(
                     "note": local_cost.note,
                 },
                 contingency_allocations=_contingency_allocations,
-                contingency_expected_utilization_pct=_fact_answers.get("contingency_expected_utilization_pct"),
+                contingency_expected_utilization_pct=_contingency_expected_utilization_pct(),
             )
         pricings.append(pricing)
 
@@ -1980,6 +1981,21 @@ def build_allocated_structures(
     }
 
 
+def _contingency_expected_utilization_pct() -> float:
+    """Consolidated Backend Correction, Part 19-21 (CBA-009) — the ONE
+    place this production's contingency-expected-utilization fact is
+    resolved, so every caller (the qualification register AND both
+    price_allocated_structure call sites in build_allocated_structures)
+    reads the identical value. Defaults to Little Utopia's own
+    established project election (see LITTLE_UTOPIA_CONTINGENCY_
+    EXPECTED_UTILIZATION_PCT's docstring), overridable through the
+    existing facts API like every other production fact."""
+    return _fact_answers.get(
+        "contingency_expected_utilization_pct",
+        LITTLE_UTOPIA_CONTINGENCY_EXPECTED_UTILIZATION_PCT,
+    )
+
+
 def _production_facts() -> ProductionFacts:
     """The production's real current facts (from the actual budget's own
     header text — see app.data.little_utopia_real_budget), overlaid with
@@ -1991,10 +2007,16 @@ def _production_facts() -> ProductionFacts:
         post_work_in_jurisdiction=_fact_answers.get("post_work_in_jurisdiction"),
         payroll_routing_localized=_fact_answers.get("payroll_routing_localized"),
         treaty_partner_code=_fact_answers.get("treaty_partner_code"),
-        # Consolidated Backend Correction, Part 19-20 (CBA-009) — same
-        # overlay pattern as every other fact above; genuinely unset
-        # unless the producer has answered it through the facts API.
-        contingency_expected_utilization_pct=_fact_answers.get("contingency_expected_utilization_pct"),
+        # Consolidated Backend Correction, Part 19-21 (CBA-009) — same
+        # overlay pattern as every other fact above. Defaults to Little
+        # Utopia's own established project election (100% — see
+        # LITTLE_UTOPIA_CONTINGENCY_EXPECTED_UTILIZATION_PCT's docstring),
+        # still overridable through the same facts API as every other
+        # production fact here. This is project data, not a Mauritius or
+        # Little-Utopia-specific branch in the generic qualification
+        # ladder itself — qualification_derivation.py never references
+        # this production by name or id.
+        contingency_expected_utilization_pct=_contingency_expected_utilization_pct(),
     )
 
 

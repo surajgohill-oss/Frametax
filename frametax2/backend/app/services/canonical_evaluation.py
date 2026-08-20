@@ -65,9 +65,11 @@ from app.calculators.canonical_opportunity_bridge import (
     discover_cultural_test_gap_opportunity,
     discover_fee_cap_headroom_opportunity,
     discover_national_status_opportunity,
+    discover_non_party_personnel_exception_opportunity,
     discover_potential_reinvestment_candidates,
     discover_qualification_gap_opportunity,
     discover_qualification_lever_opportunities,
+    discover_service_to_national_treatment_opportunity,
     opportunity_to_dict,
 )
 from app.calculators.canonical_qualification_result import (
@@ -85,11 +87,16 @@ from app.calculators.canonical_role_qualification_bridge import (
     evaluate_role_qualification,
     role_known_codes_from_project,
     script_facts_from_project,
+    typed_personnel_facts_from_project,
 )
 from app.calculators.canonical_treaty_bridge import (
     evaluate_bilateral_coproduction_opportunity,
     evaluate_eurimages_coproduction_opportunity,
+    evaluate_european_convention_coproduction_opportunity,
+    evaluate_ibermedia_coproduction_opportunity,
     find_eurimages_partners,
+    find_european_convention_partners,
+    find_ibermedia_partners,
     find_real_bilateral_partners,
 )
 from app.calculators.conditional_programs import conditional_nodes_for, node_to_dict
@@ -371,7 +378,48 @@ from app.services.canonical_project_economics import (
 # is_directly_comparable/is_fully_priced signals only). Bumped so every
 # project regenerates under the corrected gate rather than the brief,
 # over-broad 1.30.0 one.
-ENGINE_VERSION = "canonical-1.30.2"
+# 1.30.3: Little Utopia's own established contingency-expected-
+# utilization project election (100%) is now a real, persisted
+# ProjectFact (alembic migration 0068) rather than an unset default --
+# reproduces the historical accepted LU baseline through the fully
+# generic pipeline. Bumped so LU regenerates under the corrected input.
+# 1.31.0: Final Consolidated Backend Correction + Global Structuring
+# Intelligence Acceptance, Part 4/CBA-001 -- reinstated the RECOMMENDED-
+# ranking qualification gate (both here in _summarize_evaluation's
+# top_result selection and in canonical_production_view.py's comparable
+# pool): a candidate whose qualification is genuinely unresolved can be
+# priced and disclosed but never presented as the recommended winner,
+# even when that means a project has no Recommended scenario at all.
+# Bumped so every project regenerates under the corrected gate.
+# 1.31.1: CBA-008 -- _compute_fingerprint() now also covers personnel
+# (role_known_codes), screenplay (script_facts), co-production facts, and
+# registry/table knowledge versions, not only budget/territorial/
+# contingency inputs. The fingerprint ALGORITHM itself changed (not just
+# a project's own data), so bumped here too -- otherwise old-fingerprint
+# rows from before this change would sit alongside new-fingerprint rows
+# under the SAME engine_version, both matching a same-engine_version-only
+# query and silently double-counting/conflating two different evaluation
+# generations.
+# 1.32.0: Part 4/CBA-004 -- typed_personnel_facts_from_project() (the
+# SEPARATE nationality-vs-residency breakdown) is now genuinely wired
+# through to evaluate_point_table_qualification, which can consult it for
+# any CATEGORY_ROLE criterion whose fact_kind is NATIONALITY or RESIDENCY
+# specifically (default EITHER preserves prior behavior for all 13
+# currently-encoded tables). Bumped so every project regenerates under
+# the corrected, typed-fact-aware qualification path.
+# 1.33.0: Part 3/CBA-006 -- European Convention and Ibermedia multilateral
+# co-production opportunities (canonical_treaty_bridge's two new
+# adapters, reusing treaty_engine.py's own real eligibility functions
+# unchanged) now generate real, disclosed treaty_coproduction candidate
+# structures, the same fail-closed pattern already proven for Eurimages.
+# Also the real backing for Gemini P0 pattern SP_001. Bumped so every
+# project regenerates and picks up the two new opportunity structures.
+# 1.34.0: Gemini P0 patterns SP_002 (service->national-treatment
+# arbitrage) and SP_004 (non-party personnel exception) now surface as
+# real, disclosure-only opportunities on any candidate that trigger-
+# matches a real registered treaty (canonical_opportunity_bridge's two
+# new discover_* functions). Bumped so every project regenerates.
+ENGINE_VERSION = "canonical-1.34.0"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
@@ -422,11 +470,15 @@ STATUS_FEASIBILITY_REVIEW_REQUIRED = "FEASIBILITY_REVIEW_REQUIRED"
 #: itself AUTHORITY_UNRESOLVED — a genuine authority gap about whether a
 #: test exists at all, never a reason to withhold a program's own
 #: statutory spend-based pricing. Corrected 2026-08-20 to the narrower
-#: gate below; ranking itself is untouched by qualification state — it
-#: is governed entirely by the pre-existing is_directly_comparable/
-#: is_fully_priced signals (canonical_production_view.py, Codex Defect 2)
-#: — the real role_qualification gap is still disclosed on every
-#: candidate's trace regardless of whether it wins comparable ranking.
+#: gate below (pricing admission), paired with a SEPARATE, stricter gate
+#: on RECOMMENDED/comparable-ranking admission — see
+#: _QUALIFICATION_ADMITS_RECOMMENDED and canonical_production_view.py's
+#: _qualification_admits_recommended / this module's own
+#: _summarize_evaluation._admits_recommended: a candidate whose
+#: qualification is real but unresolved is priced and disclosed but can
+#: never be presented as the recommended/comparable winner, even when
+#: that leaves a project with no Recommended scenario at all (Part 4:
+#: "truthful unresolved status is preferable to false recommendation").
 STATUS_QUALIFICATION_HARD_FAIL = "QUALIFICATION_HARD_FAIL"
 STATUS_QUALIFICATION_UNRESOLVED = "QUALIFICATION_UNRESOLVED"
 _QUALIFICATION_ADMITS_PRICING = frozenset({
@@ -434,6 +486,22 @@ _QUALIFICATION_ADMITS_PRICING = frozenset({
     QUAL_USER_FACT_REQUIRED, QUAL_SCRIPT_FACT_REQUIRED, QUAL_AUTHORITY_UNRESOLVED,
     QUAL_RULE_DATA_INCOMPLETE,
 })
+
+#: Final Consolidated Backend Correction + Global Structuring Intelligence
+#: Acceptance, Part 4/CBA-001 — the subset of _QUALIFICATION_ADMITS_PRICING
+#: that may enter the COMPARABLE RANKING POOL (eligible for rank #1 /
+#: RECOMMENDED). QUALIFIES and NOT_APPLICABLE are priceable AND
+#: comparable; every other admitted-to-pricing state (CURABLE_GAP,
+#: USER_FACT_REQUIRED, SCRIPT_FACT_REQUIRED, AUTHORITY_UNRESOLVED,
+#: RULE_DATA_INCOMPLETE) is priced and disclosed but explicitly must
+#: NEVER be presented as the comparable, rankable, RECOMMENDED winner —
+#: per this task's own Part 4: "DO NOT weaken qualification gates merely
+#: because LU or FVD would otherwise have no Recommended scenario.
+#: Truthful unresolved status is preferable to false recommendation."
+#: Enforced in canonical_production_view.py's comparable-pool filter,
+#: not by withholding economics (those remain visible under ALTERNATIVE/
+#: PRICED_LOW_FIT/CO_PRO_OPPORTUNITIES as appropriate).
+_QUALIFICATION_ADMITS_RECOMMENDED = frozenset({QUAL_QUALIFIES, QUAL_NOT_APPLICABLE})
 #: Existing Optimizer/Stacker Reconnection, Task B — a real, registry-
 #: backed treaty/co-production pathway exists but cannot (yet) be priced
 #: as qualified economics: either real ownership/cultural-test project
@@ -444,9 +512,19 @@ _QUALIFICATION_ADMITS_PRICING = frozenset({
 STATUS_CO_PRO_OPPORTUNITY = "CO_PRO_OPPORTUNITY"
 
 
-def _compute_fingerprint(inputs: ProjectEconomicInputs) -> str:
+def _compute_fingerprint(
+    inputs: ProjectEconomicInputs,
+    role_known_codes: dict[str, tuple[str, ...]] | None = None,
+    script_facts: dict | None = None,
+    coproduction_facts: tuple | None = None,
+) -> str:
     import hashlib
     import json
+
+    from app.calculators.qualification_model import QUALIFICATION_MODEL_VERSION
+    from app.data.cultural_point_tables import CULTURAL_POINT_TABLES_VERSION
+    from app.data.national_cultural_status import NATIONAL_CULTURAL_STATUS_VERSION
+    from app.data.program_rate_rules import PROGRAM_RATE_RULES_VERSION
 
     payload = {
         "gross_budget_usd": inputs.gross_budget_usd,
@@ -462,6 +540,29 @@ def _compute_fingerprint(inputs: ProjectEconomicInputs) -> str:
         # qualification outcomes (see qualification_derivation's
         # contingency branch) must invalidate any stale cached result.
         "contingency_expected_utilization_pct": inputs.contingency_expected_utilization_pct,
+        # CBA-008 (Codex evidence: "fingerprint excludes personnel,
+        # screenplay, co-production ... versions") — these three facts can
+        # move a candidate between QUALIFIES/CURABLE_GAP/USER_FACT_
+        # REQUIRED/SCRIPT_FACT_REQUIRED, so a change to any of them must
+        # invalidate an existing current-ENGINE_VERSION row rather than
+        # let it keep serving under a now-stale qualification result.
+        "role_known_codes": sorted(
+            (role, sorted(codes)) for role, codes in (role_known_codes or {}).items()
+        ),
+        "script_facts": sorted(
+            (element_type, sorted(values)) for element_type, values in (script_facts or {}).items()
+        ),
+        "coproduction_facts": coproduction_facts,
+        # Registry/table knowledge versions (Codex evidence: "... and
+        # registry/table/treaty versions") — every one of these registries
+        # already bumps ENGINE_VERSION (freshness's OTHER, primary gate)
+        # on any material change by this codebase's own established
+        # convention; included explicitly here too so the fingerprint
+        # alone is also a complete, self-describing input manifest.
+        "qualification_model_version": QUALIFICATION_MODEL_VERSION,
+        "cultural_point_tables_version": CULTURAL_POINT_TABLES_VERSION,
+        "national_cultural_status_version": NATIONAL_CULTURAL_STATUS_VERSION,
+        "program_rate_rules_version": PROGRAM_RATE_RULES_VERSION,
     }
     blob = json.dumps(payload, sort_keys=True, default=str)
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()
@@ -642,6 +743,34 @@ def _opportunities_for_candidate(
     if national_status_opp is not None:
         opportunities.append(opportunity_to_dict(national_status_opp))
 
+    # Final Consolidated Backend Correction + Global Structuring
+    # Intelligence Acceptance, Part 9/CBA-006 — Gemini P0 pattern SP_002
+    # (Service to Copro National Treatment Arbitrage): a real registered
+    # treaty connects this candidate's jurisdiction to the production's
+    # own home jurisdiction, so an official co-production structure here
+    # could unlock national-treatment-gated incentives/funds the current
+    # service pathway cannot reach. Trigger detection + disclosure only
+    # — see canonical_opportunity_bridge.discover_service_to_national_
+    # treatment_opportunity's own docstring.
+    service_copro_opp = discover_service_to_national_treatment_opportunity(
+        code, program_slug, inputs.jurisdiction_code,
+    )
+    if service_copro_opp is not None:
+        opportunities.append(opportunity_to_dict(service_copro_opp))
+
+    # Part 11/CBA-006 — Gemini P0 pattern SP_004 (Non-Party Personnel
+    # Exception): a real bilateral treaty connects this candidate's
+    # jurisdiction to home, and a known ATL/lead role's nationality is
+    # outside both treaty parties. Treaty-specific — never generalizes
+    # one treaty's real percentage to another (see the function's own
+    # docstring on treaty_engine.TreatyData.non_party_personnel_
+    # exception_pct, currently unresolved for every registered treaty).
+    non_party_opp = discover_non_party_personnel_exception_opportunity(
+        code, program_slug, inputs.jurisdiction_code, role_known_codes,
+    )
+    if non_party_opp is not None:
+        opportunities.append(opportunity_to_dict(non_party_opp))
+
     # Task 3 — proactive reinvestment/vendor-participation candidates,
     # triggered purely by real budget-category totals (no known deal
     # terms required, unlike discover_reinvestment_opportunity above).
@@ -727,6 +856,7 @@ async def _coproduction_facts(session: AsyncSession, project_id) -> tuple[float 
 def _role_qualification_for_candidate(
     code: str, program_slug: str, role_known_codes: dict[str, tuple[str, ...]] | None,
     script_facts: dict[str, tuple[str, ...]] | None = None,
+    typed_personnel_facts: dict[str, dict[str, tuple[str, ...]]] | None = None,
 ) -> dict | None:
     """Canonical Co-production Qualification Reconnection, Task 3 — the
     repaired seam. Calls evaluate_role_qualification() (reusing cultural_
@@ -741,10 +871,16 @@ def _role_qualification_for_candidate(
     Consumption Closeout, 2026-08-19: also passes the project's real
     Script Analyzer facts through, so cultural-point-table programs with
     a script-derived criterion can resolve SCRIPT_FACT_REQUIRED correctly
-    rather than being starved of that input."""
+    rather than being starved of that input. Final Consolidated Backend
+    Correction, Part 4/CBA-004: also passes the SEPARATE typed nationality-
+    vs-residency personnel facts through, for any cultural-point-table
+    criterion whose confirmed fact_kind is one specifically."""
     if role_known_codes is None:
         return None
-    result = evaluate_role_qualification(program_slug, code, role_known_codes, script_facts=script_facts)
+    result = evaluate_role_qualification(
+        program_slug, code, role_known_codes, script_facts=script_facts,
+        typed_personnel_facts=typed_personnel_facts,
+    )
     return qualification_result_to_dict(result)
 
 
@@ -932,7 +1068,29 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         )
         return {"status": status, "blockers": econ.blockers}
     inputs = econ.inputs
-    fingerprint = _compute_fingerprint(inputs)
+
+    # CBA-008 — personnel, screenplay, and co-production facts are
+    # material qualification inputs (they can move a candidate between
+    # QUALIFIES/CURABLE_GAP/USER_FACT_REQUIRED/SCRIPT_FACT_REQUIRED) but
+    # were previously fetched only later, per-candidate, and never
+    # reached the fingerprint — an existing current-ENGINE_VERSION row
+    # could keep serving a stale result after only these facts changed.
+    # Fetched once here (same one-query-per-project pattern already
+    # established below) and reused at both use sites — never re-fetched.
+    role_known_codes = await role_known_codes_from_project(session, str(project_id))
+    script_facts = await script_facts_from_project(session, str(project_id))
+    # Part 4/CBA-004 — the SEPARATE typed nationality-vs-residency
+    # breakdown (see evaluate_point_table_qualification's docstring).
+    # Same one-query-per-project pattern; role_known_codes above is kept
+    # unchanged as the legacy merged source for the 24-slug role registry.
+    typed_personnel_facts = await typed_personnel_facts_from_project(session, str(project_id))
+    _copro_majority_pct, _copro_minority_pct, _copro_cultural_test_passed = await _coproduction_facts(
+        session, project.id,
+    )
+    fingerprint = _compute_fingerprint(
+        inputs, role_known_codes=role_known_codes, script_facts=script_facts,
+        coproduction_facts=(_copro_majority_pct, _copro_minority_pct, _copro_cultural_test_passed),
+    )
 
     existing = (await session.execute(
         select(StructureCalculationResult)
@@ -1069,17 +1227,10 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     # See docs/validation/CODEX_EXISTING_OPTIMIZER_LINEAGE_TRACE.md.
     priced_by_code: dict[str, list[StackCandidate]] = {}
 
-    # Canonical Co-production Qualification Reconnection — the first
-    # shared disconnect Codex's audit identified: this project's real,
-    # persisted personnel (ProjectPerson -> TalentProfile) were never
-    # read into the canonical evaluation path at all. One query per
-    # project (role-level facts don't vary per candidate), reused by
-    # every candidate's role-qualification check below.
-    role_known_codes = await role_known_codes_from_project(session, str(project_id))
-    # Worldwide Qualification Consumption Closeout — the SCRIPT_FACT
-    # counterpart to role_known_codes above, same one-query-per-project
-    # pattern, reused by every candidate's cultural-point-table check.
-    script_facts = await script_facts_from_project(session, str(project_id))
+    # role_known_codes/script_facts (Canonical Co-production Qualification
+    # Reconnection / Worldwide Qualification Consumption Closeout) are
+    # fetched once, near the top of this function (see CBA-008 note there
+    # — they're also part of the cache fingerprint now) and reused here.
 
     for code, program_slug, classification in candidates:
         jurisdiction = jurisdiction_by_code.get(code)
@@ -1196,8 +1347,13 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         _conditional_program_dicts, _conditional_compatibility_dict = _conditional_data(
             str(structure.id), code, (program_slug,),
         )
-        _opportunities = _opportunities_for_candidate(inputs, code, program_slug, register, rate_resolution)
-        _role_qualification = _role_qualification_for_candidate(code, program_slug, role_known_codes, script_facts)
+        _opportunities = _opportunities_for_candidate(
+            inputs, code, program_slug, register, rate_resolution, role_known_codes,
+        )
+        _role_qualification = _role_qualification_for_candidate(
+            code, program_slug, role_known_codes, script_facts,
+            typed_personnel_facts=typed_personnel_facts,
+        )
         warnings = [LIMITATION_NOTE] if is_baseline else [LIMITATION_NOTE, RELOCATION_COMPARABILITY_NOTE]
         # FVD canonical input assembly repair, Task 2 — UNKNOWN territorial
         # facts stay visibly provisional rather than being silently absorbed
@@ -1730,9 +1886,9 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     # resolves to UNRESOLVED_FACTS — a genuine, disclosed pathway, never
     # priced or comparable economics.
     candidate_codes = list(priced_by_code.keys())
-    _copro_majority_pct, _copro_minority_pct, _copro_cultural_test_passed = await _coproduction_facts(
-        session, project.id,
-    )
+    # _copro_majority_pct/_copro_minority_pct/_copro_cultural_test_passed
+    # fetched once, near the top of this function (see CBA-008 note there
+    # — also part of the cache fingerprint now) and reused here.
 
     MAX_TREATY_PARTNERS = 5
     for partner_code in find_real_bilateral_partners(home_code, candidate_codes)[:MAX_TREATY_PARTNERS]:
@@ -1885,6 +2041,94 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             input_fingerprint=fingerprint,
         ))
 
+    # Final Consolidated Backend Correction + Global Structuring
+    # Intelligence Acceptance, Part 3/CBA-006 — the same real, fail-closed
+    # multilateral pattern as Eurimages above, for the two other
+    # confirmed represented frameworks (European Convention, Ibermedia).
+    # No new treaty engine — canonical_treaty_bridge's two new adapters
+    # (Part 9/CBA-006) reuse treaty_engine.py's own real, parsed-tier
+    # eligibility functions and thresholds unchanged. European Convention
+    # is also the real, primary-source-cited backing for Gemini P0
+    # pattern SP_001 (Bilateral to Multilateral Upgrade) — see
+    # structuring_opportunity_patterns.py.
+    for _fw_type, _fw_slug, _fw_name, _finder, _evaluator in (
+        ("european_convention", "european-convention-coproduction", "European Convention",
+         find_european_convention_partners, evaluate_european_convention_coproduction_opportunity),
+        ("ibermedia", "ibermedia-multilateral", "Ibermedia",
+         find_ibermedia_partners, evaluate_ibermedia_coproduction_opportunity),
+    ):
+        _fw_partners = _finder(home_code, candidate_codes)
+        if not _fw_partners:
+            continue
+        MAX_FRAMEWORK_DISPLAY = 10
+        _fw_shown = sorted(_fw_partners)[:MAX_FRAMEWORK_DISPLAY]
+        _fw_opp = _evaluator([home_code] + _fw_shown, cultural_test_passed=_copro_cultural_test_passed)
+        _fw_structure = ProductionStructure(
+            id=uuid.uuid4(),
+            project_id=project.id,
+            name=f"{home_code} — {_fw_name} multilateral co-production opportunity",
+            description=(
+                f"{home_code} is a {_fw_name} signatory/member. {len(_fw_partners)} of this "
+                "production's own discovered candidate jurisdictions are ALSO real "
+                f"{_fw_name} parties (via treaty_engine's registry) — a genuine "
+                "multilateral co-production pathway. Real per-country budget-share and "
+                "cultural-test facts are required to resolve eligibility — not yet on "
+                "file for this project."
+            ),
+            jurisdiction_allocations=[],
+            claimed_program_ids=[],
+        )
+        session.add(_fw_structure)
+        await session.flush()
+        _fw_conditional_programs, _fw_conditional_compat = _conditional_data(
+            str(_fw_structure.id), home_code, (),
+        )
+        session.add(StructureCalculationResult(
+            id=uuid.uuid4(), structure_id=_fw_structure.id, engine_version=ENGINE_VERSION,
+            total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
+            true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
+            has_unverified_inputs=True,
+            warnings=[
+                LIMITATION_NOTE,
+                f"{_fw_name} multilateral co-production opportunity — real per-country "
+                "budget-share and cultural-test facts are not yet on file; not priced "
+                "as qualified economics.",
+            ],
+            calculation_trace_json={
+                "candidate_status": STATUS_CO_PRO_OPPORTUNITY,
+                "discovery_classification": "treaty_coproduction",
+                "structure_type": "treaty_coproduction",
+                "primary_jurisdiction": home_code,
+                "is_baseline": False,
+                "relocation_cost_normalized": False,
+                "is_directly_comparable": False,
+                "treaty_slug": _fw_slug,
+                "conditional_programs": _fw_conditional_programs,
+                "conditional_compatibility": _fw_conditional_compat,
+                "coproduction_partners": [
+                    {
+                        "jurisdiction_code": code,
+                        "jurisdiction_display_name": (
+                            jurisdiction_by_code[code].name if code in jurisdiction_by_code else code
+                        ),
+                    }
+                    for code in _fw_shown
+                ],
+                "treaty_resolution_state": _fw_opp.resolution_state if _fw_opp else "UNRESOLVED_FACTS",
+                "treaty_cultural_test_required": _fw_opp.cultural_test_required if _fw_opp else True,
+                "treaty_cultural_test_resolved": _fw_opp.cultural_test_resolved if _fw_opp else False,
+                "treaty_disqualification_reasons": list(_fw_opp.disqualification_reasons) if _fw_opp else [],
+                "reason": (
+                    f"{len(_fw_partners)} real {_fw_name} party candidate(s) discovered; "
+                    "real budget-share and cultural-test facts required to resolve "
+                    "eligibility."
+                ),
+                "feasibility_status": FEASIBILITY_UNKNOWN,
+                "feasibility_reasons": [],
+            },
+            input_fingerprint=fingerprint,
+        ))
+
     await session.commit()
     summary = await _summarize_evaluation(session, project, inputs, fingerprint, reused=False)
     summary["discovery_examined"] = len(discovery.examinations)
@@ -1922,15 +2166,36 @@ async def _summarize_evaluation(
     def _is_baseline(pair) -> bool:
         return bool((pair[1].calculation_trace_json or {}).get("is_baseline"))
 
+    def _admits_recommended(pair) -> bool:
+        # Final Consolidated Backend Correction + Global Structuring
+        # Intelligence Acceptance, Part 4/CBA-001 — consistent with
+        # canonical_production_view.py's own _qualification_admits_
+        # recommended: a real but genuinely UNRESOLVED qualification
+        # state (Curable Gap/User Fact Required/Script Fact Required/
+        # Authority Unresolved/Rule Data Incomplete) is priced and
+        # disclosed (already true — it reached `priced` above) but must
+        # never be the served "winner"/top_result. Truthful unresolved
+        # status is preferable to false recommendation, even when that
+        # means no top_result at all.
+        state = ((pair[1].calculation_trace_json or {}).get("role_qualification") or {}).get("state")
+        return state is None or state in _QUALIFICATION_ADMITS_RECOMMENDED
+
     baseline_pair = next((pair for pair in priced if _is_baseline(pair)), None)
-    # The served "winner"/top_result is the baseline whenever it is priced —
-    # never a relocation candidate, in this phase, regardless of whether one
-    # shows a lower NPC (see RELOCATION_COMPARABILITY_NOTE: that NPC omits
-    # real relocation costs no project has generic data for yet, so it is
-    # never a fair comparison to declare a winner over the baseline). Only
-    # if the baseline itself could not be priced does the top-ranked
-    # (still honestly computed, still disclosed) alternative stand in.
-    top_pair = baseline_pair or (priced[0] if priced else None)
+    # The served "winner"/top_result is the baseline whenever it is priced
+    # AND its own qualification admits Recommended — never a relocation
+    # candidate in this phase regardless of NPC (see RELOCATION_
+    # COMPARABILITY_NOTE). If the baseline IS priced but its qualification
+    # is genuinely unresolved, top_result is None — a relocation candidate
+    # is never directly comparable enough to stand in for an unresolved
+    # baseline either (same reasoning canonical_production_view.py's
+    # comparable pool already applies: only the baseline is ever directly
+    # comparable by construction). Only when the baseline was NEVER priced
+    # at all (e.g. a genuine HARD_FAIL) does the top-ranked other priced
+    # candidate stand in — unrelated to, and unchanged by, this gate.
+    if baseline_pair is not None:
+        top_pair = baseline_pair if _admits_recommended(baseline_pair) else None
+    else:
+        top_pair = priced[0] if priced else None
 
     # Repoint leading_structure_id whenever it's unset OR currently points
     # at a structure NOT produced by this canonical engine (a stale legacy
@@ -1954,6 +2219,17 @@ async def _summarize_evaluation(
         if needs_repoint:
             project.leading_structure_id = top_pair[0].id
             await session.commit()
+    elif project.leading_structure_id is not None:
+        # Final Consolidated Backend Correction + Global Structuring
+        # Intelligence Acceptance, Part 4/CBA-001 — top_pair is None
+        # (no candidate currently admits Recommended, e.g. this
+        # project's baseline qualification is genuinely unresolved
+        # under the CURRENT engine/knowledge version). A stale
+        # leading_structure_id from a prior evaluation must not keep
+        # rendering as though still current and recommended — cleared,
+        # never left pointing at a superseded result.
+        project.leading_structure_id = None
+        await session.commit()
 
     def _entry(structure, result):
         trace = result.calculation_trace_json or {}
