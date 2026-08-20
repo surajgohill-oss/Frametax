@@ -1,6 +1,35 @@
 # Worldwide Qualification, Cultural Status + Official Co-production — Runtime Acceptance
 
-**Generated:** 2026-08-19, updated same-day (continuation from `adc5cba`, itself continued from `763e766`) · project economics engine `canonical-1.29.1`
+**Generated:** 2026-08-19, updated same-day (continuation from `adc5cba` → `e7e9681`, itself continued from `763e766`) · project economics engine `canonical-1.29.2`
+
+## Qualification Consumption Closeout (from `e7e9681`) — additional runtime proofs
+
+- **Canonical consumption: DISCONNECTED 16 → 0.** Every one of the 16 programs Queue B resolved with
+  real cultural-test doctrine but which sat disconnected from the served qualification path
+  (`RULE_DATA_INCOMPLETE` despite real data on file) now reaches a real terminal state via two new,
+  additive registries (`app.data.cultural_point_tables.CULTURAL_POINT_TABLES` /
+  `DISCRETIONARY_OR_DEFINITIONAL_PROGRAMS`) dispatched through `canonical_role_qualification_bridge.
+  evaluate_role_qualification()`.
+- **Two self-caught bugs fixed**: `fr_trip`/`it_tax_credit_foreign` were mischaracterized as
+  spend-only (no cultural test) in `cultural_qualification_model._SPEND_ONLY_SLUGS` from before
+  either program's real cultural test was researched — corrected, both now properly connected via
+  `CULTURAL_POINT_TABLES`. A partial-modeling ceiling bug (Austria's 12 itemised criteria covering
+  only 34 of the real 80 points) was producing a false `HARD_FAIL` — fixed with an explicit
+  `unmodeled_headroom` term.
+- **Cyprus**: applicability confirmed (consumed) via a new `CONFIRMED_TEST_SCORING_WITHHELD_PROGRAMS`
+  dict; the scoring table itself remains a genuine, maximally-researched authority residual
+  (`QUAL_AUTHORITY_UNRESOLVED`, never `RULE_DATA_INCOMPLETE`) — Task 6's `PARTIALLY_CONSUMED_WITH_
+  EXACT_AUTHORITY_RESIDUAL` state.
+- **A new, symmetric fact source**: `script_facts_from_project()` reads the Script Analyzer's own
+  pre-existing `ExtractedScriptElement` model — no new taxonomy, no new economics.
+- **Disclosure-only preserved**: `role_qualification` remains a candidate trace field never consumed
+  by pricing/ranking. LU $3,057,794.90 and FVD $3,072,027.16 re-verified byte-identical after
+  `ENGINE_VERSION` `canonical-1.29.1` → `canonical-1.29.2`.
+- **Two pre-existing tests updated for the new, correct reality** (not weakened — see
+  `FINAL_WORLDWIDE_QUALIFICATION_COPRO_CLOSEOUT.md` for the exact diff reasoning):
+  `test_missing_authority_is_rule_data_incomplete_never_hard_fail`,
+  `test_role_qualification_covers_only_real_registry_slugs`.
+- **Full backend regression**: 4344 passed, 1 pre-existing unrelated frontend failure, 1 skipped.
 
 ## Continuation from `adc5cba` — additional runtime proofs
 

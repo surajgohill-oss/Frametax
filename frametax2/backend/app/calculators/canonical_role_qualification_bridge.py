@@ -16,6 +16,18 @@ carries real role/nationality rule data for exactly 24 program slugs
 served path. Every other regime correctly returns RULE_DATA_INCOMPLETE —
 never fabricated, never generalized from another regime's rules (Task 5's
 explicit prohibition).
+
+Worldwide Qualification Consumption Closeout (2026-08-19): the 16
+programs Queue B resolved with real cultural-test doctrine (point tables
+or a confirmed non-point-table mechanism) but which cultural_
+qualification_model.py's 24-slug role registry does not cover were
+DISCONNECTED from the served qualification path — real, researched
+doctrine sitting in program_requirements.py/cultural_point_tables.py
+that canonical_role_qualification_bridge.py never consulted. This module
+now dispatches through THREE registries (role-gate rows, cultural point
+tables, discretionary/definitional single-criterion programs) into the
+SAME CanonicalQualificationResult contract — one consumption path, three
+accepted doctrine sources, never a second full duplicate of any of them.
 """
 from __future__ import annotations
 
@@ -24,13 +36,23 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.calculators.canonical_qualification_result import (
     QUAL_AUTHORITY_UNRESOLVED,
+    QUAL_CURABLE_GAP,
     QUAL_HARD_FAIL,
     QUAL_NOT_APPLICABLE,
     QUAL_QUALIFIES,
     QUAL_RULE_DATA_INCOMPLETE,
+    QUAL_SCRIPT_FACT_REQUIRED,
     QUAL_USER_FACT_REQUIRED,
     CanonicalQualificationResult,
     RoleGateFinding,
+)
+from app.data.cultural_point_tables import (
+    CATEGORY_ROLE,
+    CRITERION_MANDATORY,
+    CULTURAL_POINT_TABLES,
+    DISCRETIONARY_OR_DEFINITIONAL_PROGRAMS,
+    FACT_SCRIPT,
+    FACT_USER,
 )
 from app.data.cultural_qualification_model import (
     NATIONALITY_REQUIREMENTS,
@@ -40,9 +62,10 @@ from app.data.cultural_qualification_model import (
     is_spend_only_program,
 )
 from app.models.project_person import ProjectPerson
+from app.models.screenplay import ExtractedScriptElement, ScreenplayDocument
 from app.models.talent import TalentProfile
 
-CANONICAL_ROLE_QUALIFICATION_BRIDGE_VERSION = "1.1.0"
+CANONICAL_ROLE_QUALIFICATION_BRIDGE_VERSION = "1.2.0"
 # 1.1.0 — Worldwide Program Qualification + Cultural Test Completion:
 # adds AUTHORITY_UNRESOLVED_PROGRAMS, distinct from the generic
 # RULE_DATA_INCOMPLETE branch. RULE_DATA_INCOMPLETE means "never
@@ -50,6 +73,14 @@ CANONICAL_ROLE_QUALIFICATION_BRIDGE_VERSION = "1.1.0"
 # authority research WAS performed this pass and no confirming (or
 # confirming-absence) source could be located" — a genuinely different,
 # stronger claim, never conflated with simple incompleteness.
+# 1.2.0 — Worldwide Qualification Consumption Closeout: adds the point-
+# table and discretionary/definitional consumption paths (see module
+# docstring). Every program Queue B resolved with real doctrine now
+# reaches a real terminal state (QUALIFIES/HARD_FAIL/CURABLE_GAP/
+# USER_FACT_REQUIRED/SCRIPT_FACT_REQUIRED/NOT_APPLICABLE) instead of
+# RULE_DATA_INCOMPLETE. Disclosure-only, as this entire bridge always
+# has been — no pricing/ranking path consumes these results; qualifying-
+# admission state changes are visible in the served trace only.
 
 #: The exact set of program slugs cultural_qualification_model.py has
 #: real rule data for — computed once from the module's own registry,
@@ -84,18 +115,37 @@ AUTHORITY_UNRESOLVED_PROGRAMS: dict[str, tuple[str, ...]] = {
         "test component.",
     ),
 }
-# NOTE: cy_film_rebate is deliberately NOT in this dict. Its
+# NOTE: cy_film_rebate is deliberately NOT in this dict — its
 # cultural_test_required=True is CONFIRMED (Council of Ministers Decision
-# 83.415/2017, read in full) -- only the exact scoring TABLE is withheld
-# by the primary authority (see its EvidenceRecord in program_
-# requirements.py for the full research trail). AUTHORITY_UNRESOLVED_
-# PROGRAMS here is scoped specifically to cultural_test_required=None
-# (whether a test applies AT ALL is unconfirmed) -- a materially
-# different, narrower claim than "a confirmed test's scoring table is
-# undisclosed". Cyprus correctly falls through to QUAL_RULE_DATA_
-# INCOMPLETE (no NationalityRequirement rows exist for it), which is the
-# accurate state: a real cultural test applies, but no role-level rule
-# data is available to evaluate it against.
+# 83.415/2017, read in full, all 36 pages), a materially different,
+# narrower claim than "whether a test applies at all is unconfirmed". It
+# has its OWN dict below (Worldwide Qualification Consumption Closeout)
+# because leaving it to fall through to QUAL_RULE_DATA_INCOMPLETE would
+# have wrongly re-labelled a maximally-researched, confirmed authority
+# residual as "never researched".
+
+#: Programs where cultural_test_required=True is CONFIRMED but the exact
+#: scoring criteria are a genuine, confirmed authority residual — the
+#: primary authority itself withholds the document (never merely "not
+#: found this pass"). Distinct from AUTHORITY_UNRESOLVED_PROGRAMS above
+#: (which is scoped to applicability itself being unconfirmed) and from
+#: CULTURAL_POINT_TABLES (which requires the actual criteria to be on
+#: file). Worldwide Qualification Consumption Closeout, 2026-08-19 —
+#: Task 6's PARTIALLY_CONSUMED_WITH_EXACT_AUTHORITY_RESIDUAL state: the
+#: program-level doctrine (a test applies) IS consumed; only the
+#: role/point-level detail remains a genuine residual.
+CONFIRMED_TEST_SCORING_WITHHELD_PROGRAMS: dict[str, tuple[str, ...]] = {
+    "cy_film_rebate": (
+        "CULTURAL_TEST_SCORING_TABLE_WITHHELD_BY_PRIMARY_AUTHORITY — cultural_test_required=True is "
+        "confirmed (Council of Ministers Decision 83.415/2017, read in full, all 36 pages including "
+        "every appendix, 2026-08-19), but the exact point table/scoring breakdown by role is not "
+        "published in the primary legal instrument itself or in any secondary source checked "
+        "(irglobal.com, exectus.com.cy, Cyprus Production Service all independently confirm it is "
+        "disclosed only 'upon request' by the Cyprus Film Commission/Invest Cyprus to real applicants). "
+        "Required fact type: authority research only resolvable by the Cyprus Film Commission directly "
+        "disclosing the scoring document, not a project or Script Analyzer fact.",
+    ),
+}
 
 
 def _authority_unresolved_result(program_slug: str, jurisdiction_code: str | None) -> CanonicalQualificationResult:
@@ -109,6 +159,23 @@ def _authority_unresolved_result(program_slug: str, jurisdiction_code: str | Non
             "(Worldwide Program Qualification + Cultural Test Completion, "
             "2026-08-19) and did not resolve cultural-test applicability -- "
             "see program_requirements.py's evidence notes for the full trail.",
+        ),
+        confidence_state="LOW",
+    )
+
+
+def _confirmed_test_scoring_withheld_result(program_slug: str, jurisdiction_code: str | None) -> CanonicalQualificationResult:
+    propositions = CONFIRMED_TEST_SCORING_WITHHELD_PROGRAMS[program_slug]
+    return CanonicalQualificationResult(
+        regime_id=program_slug, jurisdiction_code=jurisdiction_code,
+        state=QUAL_AUTHORITY_UNRESOLVED, qualification_route="cultural_point_table",
+        missing_facts=propositions,
+        authority_basis="Program-level applicability CONFIRMED; role/point-level scoring detail is a "
+                         "genuine, confirmed authority residual (primary authority withholds the document).",
+        reasoning_trace=(
+            f"{program_slug}: PARTIALLY_CONSUMED_WITH_EXACT_AUTHORITY_RESIDUAL — cultural-test "
+            "applicability is real, confirmed doctrine (consumed); the scoring table itself is a "
+            "maximally-researched genuine authority residual, not an unresearched gap.",
         ),
         confidence_state="LOW",
     )
@@ -155,21 +222,326 @@ async def role_known_codes_from_project(session: AsyncSession, project_id: str) 
     return {role: tuple(sorted(vals)) for role, vals in codes.items()}
 
 
+#: Maps a cultural-point-table criterion's CATEGORY to the real,
+#: pre-existing ExtractedScriptElement.element_type it corresponds to
+#: (see that model's own docstring: "location", "environment", "climate",
+#: "character_nationality", "language", "cultural_reference",
+#: "would_not_work_in"). No new taxonomy invented -- reuses exactly what
+#: the Script Analyzer model already defines.
+_SCRIPT_ELEMENT_TYPES_BY_CATEGORY: dict[str, tuple[str, ...]] = {
+    "STORY_SETTING": ("location", "environment"),
+    "LANGUAGE": ("language",),
+    "SUBJECT_MATTER": ("cultural_reference", "character_nationality"),
+}
+
+
+async def script_facts_from_project(session: AsyncSession, project_id: str) -> dict[str, tuple[str, ...]]:
+    """Real, DB-backed script-fact lookup, the SCRIPT_FACT counterpart to
+    role_known_codes_from_project() above. Reads the project's actual
+    persisted ExtractedScriptElement rows (via their owning
+    ScreenplayDocument) and groups them by element_type. Presence of a
+    row is treated as real evidence (consistent with the Script Analyzer
+    SA-1 model's own documented convention: "presence is evidence, scale
+    is not") -- absence is never silently treated as satisfying or
+    failing a criterion, only as SCRIPT_FACT_REQUIRED (Task 4)."""
+    rows = (await session.execute(
+        select(ExtractedScriptElement.element_type, ExtractedScriptElement.normalized_value,
+               ExtractedScriptElement.value)
+        .join(ScreenplayDocument, ExtractedScriptElement.screenplay_id == ScreenplayDocument.id)
+        .where(ScreenplayDocument.project_id == project_id)
+    )).all()
+
+    facts: dict[str, set[str]] = {}
+    for element_type, normalized_value, value in rows:
+        if not element_type:
+            continue
+        bucket = facts.setdefault(element_type, set())
+        v = normalized_value or value
+        if v:
+            bucket.add(str(v))
+    return {k: tuple(sorted(v)) for k, v in facts.items()}
+
+
+#: cultural_qualification_model.role_known_codes_from_project()'s own
+#: alias vocabulary (director/writer/producer/lead_cast/supporting_cast/
+#: editor/composer) -- the exact set of CATEGORY_ROLE criterion `role`
+#: values for which "no key present" reliably means "no person assigned
+#: to this single-slot role yet" (a genuine, actionable CURABLE opening),
+#: as opposed to an aggregate/whole-crew role (e.g. "entity") or a role
+#: this project-personnel model doesn't yet capture at all (e.g.
+#: "dop"/"vfx_supervisor"), where absence is a genuine missing PROJECT
+#: FACT, not a known-open single slot.
+_SINGLE_SLOT_ROLES: frozenset[str] = frozenset({
+    "director", "writer", "producer", "lead_cast", "supporting_cast", "editor", "composer",
+})
+
+
+def evaluate_point_table_qualification(
+    program_slug: str,
+    jurisdiction_code: str | None,
+    role_known_codes: dict[str, tuple[str, ...]],
+    script_facts: dict[str, tuple[str, ...]],
+) -> CanonicalQualificationResult:
+    """Worldwide Qualification Consumption Closeout, Tasks 2/3/5/6 — the
+    ONE consumption path for programs whose real, researched doctrine is
+    a cultural POINT TABLE (cultural_point_tables.CULTURAL_POINT_TABLES),
+    never forcing that data through the role-gate shape. Reuses the same
+    project facts (role_known_codes, script_facts) the role-gate path
+    already reads -- no new fact source, no new economics."""
+    table = CULTURAL_POINT_TABLES[program_slug]
+    home_code = (jurisdiction_code or "").split("-")[0].upper() or None
+
+    satisfied: list[tuple[str, float]] = []
+    failed: list[tuple[str, float, str]] = []
+    curable: list[tuple[str, float, str]] = []
+    missing_user: list[tuple[str, float, str]] = []
+    missing_script: list[tuple[str, float, str]] = []
+    mandatory_failed: list[tuple[str, str]] = []
+
+    for c in table.criteria:
+        if c.category == CATEGORY_ROLE and c.fact_type == FACT_USER:
+            known = role_known_codes.get(c.role or "")
+            if known:
+                if home_code and home_code in known:
+                    satisfied.append((c.key, c.max_points))
+                else:
+                    note = f"{c.description} — known personnel do not match ({known})"
+                    failed.append((c.key, c.max_points, note))
+                    if c.hardness == CRITERION_MANDATORY:
+                        mandatory_failed.append((c.key, note))
+            elif c.role in _SINGLE_SLOT_ROLES:
+                curable.append((c.key, c.max_points, f"{c.description} — role not yet cast/hired"))
+            else:
+                missing_user.append((c.key, c.max_points, f"{c.description} — no project fact on file for role '{c.role}'"))
+        elif c.fact_type == FACT_SCRIPT:
+            element_types = _SCRIPT_ELEMENT_TYPES_BY_CATEGORY.get(c.category, ())
+            if any(script_facts.get(et) for et in element_types):
+                satisfied.append((c.key, c.max_points))
+            else:
+                missing_script.append((c.key, c.max_points, f"{c.description} — no Script Analyzer fact extracted"))
+        else:
+            # FACT_PRODUCTION — a project/production-plan fact (shoot days,
+            # post-production location, spend split) this codebase does not
+            # yet query live; Task 4 groups this with USER/PROJECT facts.
+            missing_user.append((c.key, c.max_points, f"{c.description} — no production-plan fact on file"))
+
+    if mandatory_failed:
+        # Task 3 — a MANDATORY criterion is a hard gate, never merely a
+        # points contribution: a known, confirmed violation HARD_FAILs
+        # immediately regardless of how many points remain reachable
+        # elsewhere in the table (mirrors the pre-existing role-gate
+        # path's own has_failure -> QUAL_HARD_FAIL behavior exactly).
+        return CanonicalQualificationResult(
+            regime_id=program_slug, jurisdiction_code=jurisdiction_code,
+            state=QUAL_HARD_FAIL, qualification_route="cultural_point_table",
+            failed_requirements=tuple(f"{k}: {n}" for k, n in mandatory_failed),
+            authority_basis=table.source_note,
+            confidence_state="HIGH",
+            reasoning_trace=(
+                f"{program_slug}: a MANDATORY criterion is confirmed violated by known project facts — "
+                "this hard-fails regardless of the point total, exactly like a mandatory role-gate "
+                "violation.",
+            ),
+        )
+
+    def _pts(items: list[tuple]) -> float:
+        return sum(x[1] for x in items)
+
+    confirmed_points = _pts(satisfied)
+    # Several tables' structured criteria are a documented SUBSET of the
+    # official point scale (e.g. Austria: 12 itemised criteria covering
+    # 34 of the table's real 80 points -- Part B/C's remaining named
+    # categories were not individually itemised here). Never let that
+    # modeling gap silently produce a false HARD_FAIL: any gap between
+    # the table's own declared total_points and the sum of the itemised
+    # criteria is added to the CEILING only (never to confirmed_points),
+    # disclosed as genuinely unmodeled headroom rather than fabricated
+    # as a specific satisfied/missing criterion.
+    modeled_max = sum(c.max_points for c in table.criteria)
+    unmodeled_headroom = max(0.0, (table.total_points or modeled_max) - modeled_max)
+    ceiling_points = confirmed_points + _pts(curable) + _pts(missing_user) + _pts(missing_script) + unmodeled_headroom
+
+    def _sub_ok(min_required: float, keys: tuple[str, ...], pool: list[tuple[str, float]]) -> bool:
+        return sum(p for k, p in pool if k in keys) >= min_required
+
+    resolved_facts = tuple(f"{k}=satisfied(+{p}pt)" for k, p in satisfied)
+    failed_requirements = tuple(f"{k}: {n}" for k, _, n in failed)
+    curable_requirements = tuple(f"{k}: {n}" for k, _, n in curable)
+    missing_facts = tuple(f"{k}: {n}" for k, _, n in (*missing_user, *missing_script))
+    if unmodeled_headroom > 0:
+        missing_facts = missing_facts + (
+            f"unmodeled_headroom: +{unmodeled_headroom} pt available in official categories not yet "
+            "individually itemised in cultural_point_tables.py — counted toward the ceiling, never toward "
+            "confirmed_points, so this modeling gap can never produce a false QUALIFIES.",
+        )
+    available_levers = tuple(sorted({k for k, _, _ in curable}))
+
+    common = dict(
+        regime_id=program_slug, jurisdiction_code=jurisdiction_code,
+        qualification_route="cultural_point_table",
+        current_points=confirmed_points, required_points=table.threshold,
+        role_findings=tuple(
+            RoleGateFinding(role=c.role or c.key, required_jurisdiction=home_code,
+                             status=(GateStatus.SATISFIED if c.key in {s[0] for s in satisfied}
+                                     else GateStatus.FAILED if c.key in {f[0] for f in failed}
+                                     else GateStatus.INDETERMINATE),
+                             known_codes=role_known_codes.get(c.role or "", ()), notes=c.description)
+            for c in table.criteria if c.category == CATEGORY_ROLE
+        ),
+        resolved_facts=resolved_facts, failed_requirements=failed_requirements,
+        curable_requirements=curable_requirements, missing_facts=missing_facts,
+        available_levers=available_levers,
+        authority_basis=table.source_note,
+    )
+
+    if table.threshold is None:
+        # An OPTIONAL rate-uplift table (e.g. Malaysia's FIMI +5%), not a
+        # base-eligibility gate — the base program never depends on this
+        # score. Real points are still disclosed (current_points/
+        # available_levers) but the gate itself is NOT_APPLICABLE.
+        return CanonicalQualificationResult(
+            state=QUAL_NOT_APPLICABLE,
+            confidence_state="HIGH",
+            reasoning_trace=(
+                f"{program_slug}: cultural point table confirmed ({len(table.criteria)} criteria, "
+                f"{confirmed_points} of {table.total_points} confirmed points) but this table gates an "
+                "OPTIONAL rate uplift, not base-program eligibility — no pass/fail threshold applies to "
+                "the base incentive itself.",
+            ),
+            **common,
+        )
+
+    sub_ok = all(_sub_ok(min_pts, keys, satisfied) for _, min_pts, keys in table.sub_thresholds)
+    sub_ceiling_ok = all(
+        _sub_ok(min_pts, keys, satisfied + [(k, p) for k, p, _ in (*curable, *missing_user, *missing_script)])
+        for _, min_pts, keys in table.sub_thresholds
+    )
+
+    if confirmed_points >= table.threshold and sub_ok:
+        return CanonicalQualificationResult(
+            state=QUAL_QUALIFIES, confidence_state="HIGH",
+            reasoning_trace=(
+                f"{program_slug}: confirmed {confirmed_points} of {table.threshold} required points "
+                f"(table max {table.total_points}) — all sub-thresholds satisfied.",
+            ),
+            **common,
+        )
+    if ceiling_points < table.threshold or not sub_ceiling_ok:
+        return CanonicalQualificationResult(
+            state=QUAL_HARD_FAIL, confidence_state="HIGH",
+            reasoning_trace=(
+                f"{program_slug}: even crediting every curable/unknown criterion, the maximum reachable "
+                f"score is {ceiling_points} against a required {table.threshold} (or a sub-threshold "
+                "cannot mathematically be met) — this production cannot pass this cultural test as "
+                "currently known.",
+            ),
+            **common,
+        )
+    if curable:
+        return CanonicalQualificationResult(
+            state=QUAL_CURABLE_GAP, confidence_state="MEDIUM",
+            reasoning_trace=(
+                f"{program_slug}: {confirmed_points} of {table.threshold} points confirmed; "
+                f"{len(curable)} open role(s) not yet cast could close the gap "
+                f"(+{_pts(curable)} pts available).",
+            ),
+            **common,
+        )
+    if missing_script:
+        return CanonicalQualificationResult(
+            state=QUAL_SCRIPT_FACT_REQUIRED, confidence_state="MEDIUM",
+            reasoning_trace=(
+                f"{program_slug}: {confirmed_points} of {table.threshold} points confirmed; "
+                f"{len(missing_script)} script-derived criterion/criteria not yet extracted by the "
+                "Script Analyzer.",
+            ),
+            **common,
+        )
+    return CanonicalQualificationResult(
+        state=QUAL_USER_FACT_REQUIRED, confidence_state="MEDIUM",
+        reasoning_trace=(
+            f"{program_slug}: {confirmed_points} of {table.threshold} points confirmed; "
+            f"{len(missing_user)} project/production-plan fact(s) still needed.",
+        ),
+        **common,
+    )
+
+
+def evaluate_discretionary_qualification(
+    program_slug: str,
+    jurisdiction_code: str | None,
+) -> CanonicalQualificationResult:
+    """Worldwide Qualification Consumption Closeout, Task 3/5 — the
+    consumption path for programs whose real, confirmed mechanism is NOT
+    a point table at all (cultural_point_tables.
+    DISCRETIONARY_OR_DEFINITIONAL_PROGRAMS): a binary legal-status
+    determination (Belgium), an explicitly non-evaluated definitional
+    gate (Finland), a discretionary committee (Luxembourg), or a
+    competitive ranked-scoring scheme with no fixed threshold (Denmark).
+    Each is genuinely resolved doctrine, not a research residual — never
+    routed to RULE_DATA_INCOMPLETE or AUTHORITY_UNRESOLVED."""
+    entry = DISCRETIONARY_OR_DEFINITIONAL_PROGRAMS[program_slug]
+    if entry["fact_type"] is None:
+        # Finland: the Government Decree explicitly states artistic
+        # content is NOT subject to evaluation — every qualifying-format
+        # production automatically satisfies this dimension by design.
+        return CanonicalQualificationResult(
+            regime_id=program_slug, jurisdiction_code=jurisdiction_code,
+            state=QUAL_QUALIFIES, qualification_route="non_evaluated_definitional_gate",
+            authority_basis=entry["mechanism"],
+            confidence_state="HIGH",
+            reasoning_trace=(entry["description"],),
+        )
+    return CanonicalQualificationResult(
+        regime_id=program_slug, jurisdiction_code=jurisdiction_code,
+        state=QUAL_USER_FACT_REQUIRED, qualification_route="discretionary_or_definitional",
+        missing_facts=(
+            f"{program_slug}: {entry['mechanism']} — {entry['description']}",
+        ),
+        authority_basis=entry["mechanism"],
+        confidence_state="MEDIUM",
+        reasoning_trace=(
+            f"{program_slug}'s cultural-qualification mechanism is confirmed ({entry['mechanism']}), but "
+            "it resolves to a project-level fact (an authority determination on THIS specific project) "
+            "that cannot be computed from personnel/script facts alone.",
+        ),
+    )
+
+
 def evaluate_role_qualification(
     program_slug: str,
     jurisdiction_code: str | None,
     role_known_codes: dict[str, tuple[str, ...]],
     treaty_partner_code: str | None = None,
+    script_facts: dict[str, tuple[str, ...]] | None = None,
 ) -> CanonicalQualificationResult:
     """Task 3/4/5 — the repaired seam. Reuses cultural_qualification_
     model.get_requirements()/evaluate_program_eligibility() UNCHANGED;
     this function only classifies the result into the canonical
     qualification-state vocabulary (Task 4) and preserves per-role
-    findings (Task 5) rather than collapsing to one boolean."""
+    findings (Task 5) rather than collapsing to one boolean.
+
+    Worldwide Qualification Consumption Closeout (2026-08-19): before
+    falling through to RULE_DATA_INCOMPLETE, this now checks TWO more
+    accepted canonical doctrine sources — cultural_point_tables.
+    CULTURAL_POINT_TABLES and .DISCRETIONARY_OR_DEFINITIONAL_PROGRAMS —
+    so real, researched Queue B doctrine that isn't shaped like a
+    NationalityRequirement role gate still reaches a real terminal
+    state. script_facts defaults to {} (never None passed through), so
+    every caller not yet updated to supply it still gets a correct,
+    conservative SCRIPT_FACT_REQUIRED / USER_FACT_REQUIRED result rather
+    than an exception."""
+    script_facts = script_facts or {}
     requirements = get_requirements(program_slug)
     if not requirements:
         if program_slug in AUTHORITY_UNRESOLVED_PROGRAMS:
             return _authority_unresolved_result(program_slug, jurisdiction_code)
+        if program_slug in CONFIRMED_TEST_SCORING_WITHHELD_PROGRAMS:
+            return _confirmed_test_scoring_withheld_result(program_slug, jurisdiction_code)
+        if program_slug in CULTURAL_POINT_TABLES:
+            return evaluate_point_table_qualification(program_slug, jurisdiction_code, role_known_codes, script_facts)
+        if program_slug in DISCRETIONARY_OR_DEFINITIONAL_PROGRAMS:
+            return evaluate_discretionary_qualification(program_slug, jurisdiction_code)
         # Codex's GENUINELY_MISSING_RULE_DATA / spend-only classification:
         # no role/nationality rule data exists for this slug at all in
         # cultural_qualification_model.py. is_spend_only_program() checks

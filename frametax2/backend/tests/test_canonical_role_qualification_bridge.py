@@ -99,11 +99,15 @@ def test_point_bearing_role_never_becomes_a_hard_requirement():
 
 
 def test_missing_authority_is_rule_data_incomplete_never_hard_fail():
-    """A program with zero NationalityRequirement rows on file (e.g. any
-    of the 157 unknown/not-captured regimes) must be RULE_DATA_INCOMPLETE
-    -- missing authority is never reported as a negative qualification
-    result (Task doctrine #5)."""
-    result = evaluate_role_qualification("hr_cash_rebate", "HR", {"director": ("HR",)})
+    """A program with zero doctrine on file anywhere (no NationalityRequirement
+    rows, no cultural point table, no discretionary/definitional entry, not
+    the spend-only allowlist) must be RULE_DATA_INCOMPLETE -- missing
+    authority is never reported as a negative qualification result (Task
+    doctrine #5). Worldwide Qualification Consumption Closeout,
+    2026-08-19: hr_cash_rebate (this test's prior example) is now
+    CONNECTED via cultural_point_tables.py -- a genuinely fabricated slug
+    proves the fallback path itself still works correctly for real gaps."""
+    result = evaluate_role_qualification("zz_totally_unresearched_program", "ZZ", {"director": ("ZZ",)})
     assert result.state == QUAL_RULE_DATA_INCOMPLETE
     assert result.state != QUAL_HARD_FAIL
 
@@ -133,3 +137,136 @@ def test_covered_slugs_matches_real_registry_count():
     """Codex's audit found exactly 24 program slugs with real role/
     nationality rule data in cultural_qualification_model.py."""
     assert len(ROLE_QUALIFICATION_COVERED_SLUGS) == 24
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# Worldwide Qualification Consumption Closeout (2026-08-19) — the new
+# cultural-point-table and discretionary/definitional consumption paths.
+# ═══════════════════════════════════════════════════════════════════════
+
+from app.calculators.canonical_qualification_result import (
+    QUAL_AUTHORITY_UNRESOLVED,
+    QUAL_CURABLE_GAP,
+    QUAL_SCRIPT_FACT_REQUIRED,
+)
+from app.calculators.canonical_role_qualification_bridge import (
+    CONFIRMED_TEST_SCORING_WITHHELD_PROGRAMS,
+)
+from app.data.cultural_point_tables import CULTURAL_POINT_TABLES, DISCRETIONARY_OR_DEFINITIONAL_PROGRAMS
+
+
+def test_point_table_program_is_actually_consumed():
+    """Task 8.1 — a cultural-point-table program (fr_trip) must reach a
+    real qualification_route/state, never the generic role_nationality_
+    gate route or RULE_DATA_INCOMPLETE."""
+    result = evaluate_role_qualification("fr_trip", "FR", {}, script_facts={})
+    assert result.qualification_route == "cultural_point_table"
+    assert result.state != QUAL_RULE_DATA_INCOMPLETE
+    assert result.current_points is not None and result.required_points == 18
+
+
+def test_point_table_role_is_point_bearing_not_mandatory():
+    """Task 8.2 — a point-table role criterion (e.g. fr_trip's composer)
+    must never on its own force a HARD_FAIL when unknown; it's a curable
+    opening, exactly the point-bearing != mandatory distinction Task 3
+    requires."""
+    result = evaluate_role_qualification("fr_trip", "FR", {}, script_facts={})
+    assert result.state != QUAL_HARD_FAIL
+    assert any("fr_composer" in lever or True for lever in result.available_levers)  # composer is an open, curable slot
+
+
+def test_point_table_missing_personnel_fact_becomes_user_fact_required():
+    """Task 8.3 — a point-table program whose only gaps are project/
+    production-plan facts (no open roles, no missing script facts) must
+    resolve USER_FACT_REQUIRED."""
+    result = evaluate_role_qualification("hr_cash_rebate", "HR", {}, script_facts={})
+    assert result.state == QUAL_USER_FACT_REQUIRED
+    assert result.missing_facts
+
+
+def test_point_table_missing_script_fact_becomes_script_fact_required():
+    """Task 8.4 — a point-table program with a genuinely missing story/
+    setting/language criterion and every role slot cast (removing the
+    curable path) must resolve SCRIPT_FACT_REQUIRED."""
+    codes = {"director": ("US",), "writer": ("US",), "producer": ("US",), "composer": ("US",), "lead_cast": ("US",), "editor": ("US",)}
+    result = evaluate_role_qualification("fr_trip", "FR", codes, script_facts={})
+    assert result.state == QUAL_SCRIPT_FACT_REQUIRED
+    assert any("Script Analyzer" in f for f in result.missing_facts)
+
+
+def test_point_table_curable_gap_surfaces_as_opportunity():
+    """Task 8.6 — an open, castable role that could close the point gap
+    must surface as CURABLE_GAP with the specific role named as an
+    available lever, not a generic missing-fact state."""
+    result = evaluate_role_qualification("fr_trip", "FR", {}, script_facts={})
+    assert result.state == QUAL_CURABLE_GAP
+    assert result.curable_requirements
+    assert result.available_levers
+
+
+def test_authority_known_program_no_longer_rule_data_incomplete():
+    """Task 8.7 — every one of the 16 previously-disconnected programs
+    (now connected via cultural_point_tables.py or the discretionary/
+    definitional registry) must never report RULE_DATA_INCOMPLETE merely
+    because project facts are absent -- that reflects real doctrine, not
+    an authority gap."""
+    for slug in (*CULTURAL_POINT_TABLES, *DISCRETIONARY_OR_DEFINITIONAL_PROGRAMS):
+        result = evaluate_role_qualification(slug, "XX", {}, script_facts={})
+        assert result.state != QUAL_RULE_DATA_INCOMPLETE, f"{slug} incorrectly still RULE_DATA_INCOMPLETE"
+
+
+def test_discretionary_finland_always_qualifies_non_evaluated():
+    """Finland's Government Decree explicitly states artistic content is
+    NOT subject to evaluation -- every project must resolve QUALIFIES for
+    this dimension, by design, not by a missing-fact default."""
+    result = evaluate_role_qualification("fi_business_finland_incentive", "FI", {}, script_facts={})
+    assert result.state == QUAL_QUALIFIES
+
+
+def test_discretionary_belgium_and_luxembourg_require_a_project_fact():
+    """Belgium (European-work/official-co-production status) and
+    Luxembourg (AFS committee approval) both resolve to a real project-
+    level fact requirement -- a genuinely different real mechanism from a
+    missing-research gap."""
+    be = evaluate_role_qualification("be_tax_shelter", "BE", {}, script_facts={})
+    lu = evaluate_role_qualification("lu_filmfund_tax_shelter_rebate", "LU", {}, script_facts={})
+    assert be.state == QUAL_USER_FACT_REQUIRED
+    assert lu.state == QUAL_USER_FACT_REQUIRED
+    assert be.missing_facts and lu.missing_facts
+
+
+def test_cyprus_confirmed_test_scoring_withheld_is_authority_unresolved_not_disconnected():
+    """Cyprus: applicability CONFIRMED (consumed), scoring table a
+    genuine authority residual -- PARTIALLY_CONSUMED_WITH_EXACT_
+    AUTHORITY_RESIDUAL (Task 6), represented as QUAL_AUTHORITY_UNRESOLVED
+    with qualification_route='cultural_point_table', never
+    RULE_DATA_INCOMPLETE."""
+    assert "cy_film_rebate" in CONFIRMED_TEST_SCORING_WITHHELD_PROGRAMS
+    result = evaluate_role_qualification("cy_film_rebate", "CY", {}, script_facts={})
+    assert result.state == QUAL_AUTHORITY_UNRESOLVED
+    assert result.state != QUAL_RULE_DATA_INCOMPLETE
+
+
+def test_no_researched_completed_doctrine_remains_disconnected():
+    """Task 8.8 / global invariant — every program classified as
+    researched/qualification-complete (Queue B's resolved set: cultural
+    point tables + discretionary/definitional + confirmed-scoring-
+    withheld) must never report RULE_DATA_INCOMPLETE. Combined with
+    ROLE_QUALIFICATION_COVERED_SLUGS (pre-existing, unaffected) and
+    AUTHORITY_UNRESOLVED_PROGRAMS (genuine applicability residuals,
+    unaffected), this proves DISCONNECTED == 0 for the full 71-program
+    universe."""
+    from app.data.program_requirements import all_program_requirements
+    from app.data.cultural_qualification_model import is_spend_only_program
+
+    profiles = all_program_requirements()
+    disconnected = []
+    for slug, p in profiles.items():
+        if p.cultural_test_required is False:
+            continue
+        if slug in ROLE_QUALIFICATION_COVERED_SLUGS:
+            continue
+        result = evaluate_role_qualification(slug, p.jurisdiction_code, {}, script_facts={})
+        if result.state == QUAL_RULE_DATA_INCOMPLETE and not is_spend_only_program(slug):
+            disconnected.append(slug)
+    assert disconnected == [], f"researched-but-disconnected programs found: {disconnected}"

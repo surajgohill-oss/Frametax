@@ -81,13 +81,47 @@ Every row below has a specific, non-generic proposition and a specific, non-gene
 - **`mu_edb_incentive`** (LU's own home program) — the only specific claim found (a 90%-Mauritius-filming condition) was already investigated and REJECTED by a prior Codex/Gemini cross-verification (National Assembly Hansard, 14 May 2019) as belonging to a different government measure. Two further claims found this pass (dialogue mention, EDB logo credit, video testimonial) are sourced only to non-government production-services sites, disclosed as `UnverifiedRateClaim` entries, never applied as gates.
 - **`fj_film_rebate`** — real statutory basis (Fiji Income Tax (Film-making and Audio-Visual Incentives) Regulations 2016, Regulation 6) exists, but no source checked confirms or denies a cultural/content test component.
 
-## Canonical consumption
+## Canonical consumption (Qualification Consumption Closeout, 2026-08-19)
+
+The served qualification path (`canonical_role_qualification_bridge.evaluate_role_qualification()`)
+now dispatches through FIVE accepted canonical doctrine sources into the SAME
+`CanonicalQualificationResult` contract — never a second duplicate registry, never
+forcing a cultural point table into the role-gate shape:
+
+1. `cultural_qualification_model.py`'s 24-slug `NationalityRequirement` role registry (unchanged).
+2. `cultural_point_tables.CULTURAL_POINT_TABLES` (new, 13 programs) — real, researched cultural-test
+   point tables, each criterion tagged with its category (role/setting/language/subject-matter/
+   production-activity/post-VFX/other) and fact type (USER_FACT/SCRIPT_FACT/PRODUCTION_FACT).
+3. `cultural_point_tables.DISCRETIONARY_OR_DEFINITIONAL_PROGRAMS` (new, 4 programs) — Belgium
+   (European-work/official-co-production status), Finland (explicitly non-evaluated by the
+   Government Decree), Luxembourg (discretionary committee), Denmark (competitive ranked scoring,
+   no fixed threshold).
+4. `AUTHORITY_UNRESOLVED_PROGRAMS` (existing) — applicability itself unconfirmed (Mauritius, Fiji).
+5. `CONFIRMED_TEST_SCORING_WITHHELD_PROGRAMS` (new) — applicability CONFIRMED, scoring table a
+   genuine, maximally-researched authority residual (Cyprus) — Task 6's
+   `PARTIALLY_CONSUMED_WITH_EXACT_AUTHORITY_RESIDUAL` state.
 
 | State | Count |
 |---|---:|
-| NOT_APPLICABLE | 48 |
-| DISCONNECTED | 12 |
-| FULLY_CONSUMED | 3 |
-| PARTIALLY_CONSUMED | 8 |
+| FULLY_CONSUMED (sources 1-3) | 20 |
+| PARTIALLY_CONSUMED_WITH_GENUINE_AUTHORITY_RESIDUAL (sources 4-5) | 3 |
+| NOT_APPLICABLE (confirmed no test, incl. the spend-only allowlist) | 48 |
+| **DISCONNECTED** | **0** |
+
+**Total: 71. Zero disconnected.** A real, self-caught bug fixed as part of this pass:
+`fr_trip` and `it_tax_credit_foreign` had been placed in `cultural_qualification_model.
+_SPEND_ONLY_SLUGS` before either program's real cultural test was researched — Queue B
+since confirmed BOTH have genuine cultural-test point tables (fr_trip: Code du cinéma et
+de l'image animée, 38/18 via Légifrance; it_tax_credit_foreign: a confirmed 50-point
+threshold via DGCA). Both are now correctly connected via `CULTURAL_POINT_TABLES`
+instead of silently reasserting "no cultural test" against this codebase's own confirmed
+contrary finding.
+
+Every program-data resolution flows through the SAME facts the pre-existing role-gate
+path already reads (`role_known_codes_from_project()`, unchanged) plus one new,
+symmetrically-built query (`script_facts_from_project()`, reading the Script Analyzer's
+own pre-existing `ExtractedScriptElement` model — no new taxonomy invented). Disclosure-
+only: `role_qualification` is a candidate trace field, never consumed by pricing/ranking —
+verified by re-running the LU/FVD runtime baselines byte-identical after this change.
 
 STOP.

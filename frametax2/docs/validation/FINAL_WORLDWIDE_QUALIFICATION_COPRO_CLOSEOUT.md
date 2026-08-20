@@ -1,8 +1,54 @@
 # Final Worldwide Qualification + Cultural Status + Official Co-production — Closeout
 
-**Generated:** 2026-08-19, continuation from checkpoint `adc5cba` (itself continued from `763e766`)
+**Generated:** 2026-08-19, continuation from checkpoint `adc5cba` (itself continued from `763e766`), updated same-day with the Qualification Consumption Closeout (from checkpoint `e7e9681`)
 **Branch:** claude/audit-frametax-features-NZcX5
-**Final gate:** `WORLDWIDE_QUALIFICATION_CULTURAL_STATUS_AND_OFFICIAL_COPRO_BACKEND_COMPLETED` — Queue B (program qualification, explicitly the highest-priority gap from `adc5cba`) fully worked, all 21 propositions resolved or genuinely exhausted. Queue D (bilateral route operational terms) fully worked, all 7 routes represented with real terms or explicit fail-closed disclosure, plus one new route discovered. Queue A (national status) and Queue C (co-production coverage) show real further improvement; every remaining item in both carries genuine, specific, non-generic hard-blocker documentation — the required primary-authority research was performed (this pass or the immediately preceding `adc5cba` pass it continues, whose own documentation already met the same hard-blocker standard and is not restated from scratch where nothing new was found despite trying).
+**Final gate:** `WORLDWIDE_QUALIFICATION_CULTURAL_STATUS_AND_OFFICIAL_COPRO_BACKEND_COMPLETED` — Queue B (program qualification, explicitly the highest-priority gap from `adc5cba`) fully worked, all 21 propositions resolved or genuinely exhausted, AND fully CONSUMED by the served qualification engine (`DISCONNECTED = 0`). Queue D (bilateral route operational terms) fully worked, all 7 routes represented with real terms or explicit fail-closed disclosure, plus one new route discovered. Queue A (national status) and Queue C (co-production coverage) show real further improvement; every remaining item in both carries genuine, specific, non-generic hard-blocker documentation.
+
+## Qualification Consumption Closeout (from checkpoint `e7e9681`)
+
+The prior report correctly closed Queue B's RESEARCH gap but left a real CONSUMPTION gap open:
+18 of the 21 resolved propositions had real, exact doctrine sitting in `program_requirements.py`
+that `canonical_role_qualification_bridge.py` never consulted — 16 programs (the 21 minus Cyprus,
+minus the 4 already in the 24-slug role registry) reported `RULE_DATA_INCOMPLETE` despite real
+doctrine being on file. This is now closed:
+
+- **Two new, additive registries** in a new module, `app.data.cultural_point_tables.py`:
+  `CULTURAL_POINT_TABLES` (13 programs — Austria, Czech Republic, France, Norway, Malaysia, Poland,
+  Portugal, plus the prior pass's Greece, Croatia, Hungary, Italy, Lithuania, Malta, each with real,
+  structured, categorized criteria drawn directly from the already-researched evidence notes — no
+  new external research) and `DISCRETIONARY_OR_DEFINITIONAL_PROGRAMS` (4 programs — Belgium,
+  Finland, Luxembourg, Denmark, each a confirmed non-point-table mechanism).
+- **One new consumption dispatch** in `canonical_role_qualification_bridge.evaluate_role_qualification()`:
+  checks the 24-slug role registry (unchanged), then `AUTHORITY_UNRESOLVED_PROGRAMS` (unchanged), then
+  a new `CONFIRMED_TEST_SCORING_WITHHELD_PROGRAMS` dict (Cyprus specifically — applicability
+  confirmed, scoring table a genuine residual, Task 6's `PARTIALLY_CONSUMED_WITH_EXACT_AUTHORITY_
+  RESIDUAL` state), then the two new registries, before falling through to `RULE_DATA_INCOMPLETE`.
+- **A new, symmetric fact source**: `script_facts_from_project()`, reading the Script Analyzer's own
+  pre-existing `ExtractedScriptElement` model (no new taxonomy invented — reuses its documented
+  `element_type` values: location, language, cultural_reference, character_nationality).
+- **Two real bugs self-caught and fixed** during implementation: (1) `fr_trip` and
+  `it_tax_credit_foreign` had been placed in `cultural_qualification_model._SPEND_ONLY_SLUGS`
+  before either program's real cultural test was researched — both now correctly connected;
+  (2) the point-table ceiling calculation initially used only the individually-itemised criteria's
+  point sum, which for partially-itemised tables (e.g. Austria: 12 criteria covering 34 of the
+  real 80 points) produced a false `HARD_FAIL` — fixed with an explicit `unmodeled_headroom`
+  term added to the ceiling only, never to confirmed points, so incomplete modeling can never
+  produce a false negative OR a false positive.
+- **Canonical consumption: 20 FULLY_CONSUMED, 3 PARTIALLY_CONSUMED_WITH_GENUINE_AUTHORITY_RESIDUAL,
+  48 NOT_APPLICABLE, 0 DISCONNECTED** (was 3/2/48/16... — the 2 in `AUTHORITY_UNRESOLVED_PROGRAMS`
+  plus the newly-added Cyprus entry make 3 partial; the 16 disconnected are now split 13 into
+  `CULTURAL_POINT_TABLES`, 4 into `DISCRETIONARY_OR_DEFINITIONAL_PROGRAMS`, with `fr_trip`/
+  `it_tax_credit_foreign` additionally reclassified from the spend-only bug fix).
+- **Disclosure-only, economics unchanged**: `role_qualification` remains a candidate trace field,
+  never consumed by pricing/ranking/NPC — confirmed by re-running the LU/FVD runtime baselines
+  byte-identical.
+- **Two pre-existing regression tests updated for the new, correct reality, not weakened**:
+  `test_missing_authority_is_rule_data_incomplete_never_hard_fail` (previously used `hr_cash_rebate`
+  as its "genuinely missing" example — now genuinely connected, so the test uses a fabricated slug
+  to prove the fallback path itself still works) and `test_role_qualification_covers_only_real_
+  registry_slugs` (previously restricted non-24-slug programs to 3 states; now correctly allows any
+  real state for programs covered by the two new registries, while still forbidding fabrication for
+  genuinely uncovered slugs).
 
 ## What changed since `adc5cba`
 

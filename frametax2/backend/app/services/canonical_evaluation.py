@@ -74,6 +74,7 @@ from app.calculators.canonical_qualification_result import qualification_result_
 from app.calculators.canonical_role_qualification_bridge import (
     evaluate_role_qualification,
     role_known_codes_from_project,
+    script_facts_from_project,
 )
 from app.calculators.canonical_treaty_bridge import (
     evaluate_bilateral_coproduction_opportunity,
@@ -323,7 +324,23 @@ from app.services.canonical_project_economics import (
 # in full, all 36 pages, not merely secondary commentary). Changes served
 # national-status and program-qualification trace text. Bumped so every
 # project regenerates.
-ENGINE_VERSION = "canonical-1.29.1"
+# Worldwide Qualification Consumption Closeout (2026-08-19): the 16
+# programs Queue B resolved with real doctrine but which sat DISCONNECTED
+# from the served role_qualification trace (RULE_DATA_INCOMPLETE despite
+# real point-table/discretionary doctrine on file) are now consumed via
+# two new registries (app.data.cultural_point_tables.CULTURAL_POINT_
+# TABLES / DISCRETIONARY_OR_DEFINITIONAL_PROGRAMS) dispatched through
+# canonical_role_qualification_bridge.evaluate_role_qualification(),
+# reusing the SAME project facts (role_known_codes) plus a new
+# script_facts_from_project() query -- one consumption path, several
+# accepted doctrine sources, zero new economics. Candidates' served
+# role_qualification field now reflects QUALIFIES/HARD_FAIL/CURABLE_GAP/
+# USER_FACT_REQUIRED/SCRIPT_FACT_REQUIRED/AUTHORITY_UNRESOLVED for these
+# 16 (+2 previously-mismarked-spend-only: fr_trip, it_tax_credit_foreign)
+# instead of RULE_DATA_INCOMPLETE. Disclosure-only, as this bridge always
+# has been -- LU/FVD NPC verified byte-identical. Bumped so every project
+# regenerates.
+ENGINE_VERSION = "canonical-1.29.2"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
@@ -622,6 +639,7 @@ async def _coproduction_facts(session: AsyncSession, project_id) -> tuple[float 
 
 def _role_qualification_for_candidate(
     code: str, program_slug: str, role_known_codes: dict[str, tuple[str, ...]] | None,
+    script_facts: dict[str, tuple[str, ...]] | None = None,
 ) -> dict | None:
     """Canonical Co-production Qualification Reconnection, Task 3 — the
     repaired seam. Calls evaluate_role_qualification() (reusing cultural_
@@ -630,11 +648,16 @@ def _role_qualification_for_candidate(
     role_known_codes itself is unavailable (never a fabricated result);
     the bridge function itself always returns a real
     CanonicalQualificationResult (QUALIFIES/HARD_FAIL/USER_FACT_REQUIRED/
-    RULE_DATA_INCOMPLETE/NOT_APPLICABLE) for every program_slug, including
-    the 157 slugs cultural_qualification_model.py has no data for."""
+    SCRIPT_FACT_REQUIRED/CURABLE_GAP/RULE_DATA_INCOMPLETE/NOT_APPLICABLE)
+    for every program_slug, including the ones neither the role registry
+    nor cultural_point_tables.py has data for. Worldwide Qualification
+    Consumption Closeout, 2026-08-19: also passes the project's real
+    Script Analyzer facts through, so cultural-point-table programs with
+    a script-derived criterion can resolve SCRIPT_FACT_REQUIRED correctly
+    rather than being starved of that input."""
     if role_known_codes is None:
         return None
-    result = evaluate_role_qualification(program_slug, code, role_known_codes)
+    result = evaluate_role_qualification(program_slug, code, role_known_codes, script_facts=script_facts)
     return qualification_result_to_dict(result)
 
 
@@ -966,6 +989,10 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     # project (role-level facts don't vary per candidate), reused by
     # every candidate's role-qualification check below.
     role_known_codes = await role_known_codes_from_project(session, str(project_id))
+    # Worldwide Qualification Consumption Closeout — the SCRIPT_FACT
+    # counterpart to role_known_codes above, same one-query-per-project
+    # pattern, reused by every candidate's cultural-point-table check.
+    script_facts = await script_facts_from_project(session, str(project_id))
 
     for code, program_slug, classification in candidates:
         jurisdiction = jurisdiction_by_code.get(code)
@@ -1083,7 +1110,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
             str(structure.id), code, (program_slug,),
         )
         _opportunities = _opportunities_for_candidate(inputs, code, program_slug, register, rate_resolution)
-        _role_qualification = _role_qualification_for_candidate(code, program_slug, role_known_codes)
+        _role_qualification = _role_qualification_for_candidate(code, program_slug, role_known_codes, script_facts)
         warnings = [LIMITATION_NOTE] if is_baseline else [LIMITATION_NOTE, RELOCATION_COMPARABILITY_NOTE]
         # FVD canonical input assembly repair, Task 2 — UNKNOWN territorial
         # facts stay visibly provisional rather than being silently absorbed

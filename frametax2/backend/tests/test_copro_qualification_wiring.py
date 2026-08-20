@@ -75,13 +75,36 @@ async def test_role_qualification_never_contaminates_ranking_or_npc(db: AsyncSes
 
 
 async def test_role_qualification_covers_only_real_registry_slugs(db: AsyncSession):
-    """Every candidate whose program_slug is NOT in cultural_qualification_
-    model.py's real 24-slug registry must resolve RULE_DATA_INCOMPLETE,
-    NOT_APPLICABLE, or (for the small, explicitly-researched set in
-    AUTHORITY_UNRESOLVED_PROGRAMS -- Worldwide Program Qualification +
-    Cultural Test Completion, 2026-08-19) AUTHORITY_UNRESOLVED -- never
-    QUALIFIES/HARD_FAIL fabricated from nothing."""
-    from app.calculators.canonical_role_qualification_bridge import ROLE_QUALIFICATION_COVERED_SLUGS
+    """Every candidate whose program_slug is NOT in ANY accepted canonical
+    doctrine source (the 24-slug role registry, cultural_point_tables.py's
+    two registries, or AUTHORITY_UNRESOLVED_PROGRAMS /
+    CONFIRMED_TEST_SCORING_WITHHELD_PROGRAMS) must resolve RULE_DATA_
+    INCOMPLETE or NOT_APPLICABLE -- never QUALIFIES/HARD_FAIL fabricated
+    from nothing.
+
+    Worldwide Qualification Consumption Closeout (2026-08-19): a slug
+    OUTSIDE the 24-slug role registry may now legitimately resolve to ANY
+    real qualification state (QUALIFIES/HARD_FAIL/CURABLE_GAP/
+    USER_FACT_REQUIRED/SCRIPT_FACT_REQUIRED/AUTHORITY_UNRESOLVED) when it
+    IS covered by one of the two new registries -- that is real,
+    researched doctrine being consumed, not fabrication. The invariant
+    this test protects is narrower and still real: a slug in NONE of the
+    five accepted sources must never report anything but RULE_DATA_
+    INCOMPLETE/NOT_APPLICABLE."""
+    from app.calculators.canonical_role_qualification_bridge import (
+        AUTHORITY_UNRESOLVED_PROGRAMS,
+        CONFIRMED_TEST_SCORING_WITHHELD_PROGRAMS,
+        ROLE_QUALIFICATION_COVERED_SLUGS,
+    )
+    from app.data.cultural_point_tables import CULTURAL_POINT_TABLES, DISCRETIONARY_OR_DEFINITIONAL_PROGRAMS
+
+    accepted_doctrine_slugs = (
+        ROLE_QUALIFICATION_COVERED_SLUGS
+        | CULTURAL_POINT_TABLES.keys()
+        | DISCRETIONARY_OR_DEFINITIONAL_PROGRAMS.keys()
+        | AUTHORITY_UNRESOLVED_PROGRAMS.keys()
+        | CONFIRMED_TEST_SCORING_WITHHELD_PROGRAMS.keys()
+    )
 
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
@@ -89,8 +112,8 @@ async def test_role_qualification_covers_only_real_registry_slugs(db: AsyncSessi
         rq = e.get("role_qualification")
         if not rq:
             continue
-        if rq["regime_id"] not in ROLE_QUALIFICATION_COVERED_SLUGS:
-            assert rq["state"] in ("RULE_DATA_INCOMPLETE", "NOT_APPLICABLE", "AUTHORITY_UNRESOLVED")
+        if rq["regime_id"] not in accepted_doctrine_slugs:
+            assert rq["state"] in ("RULE_DATA_INCOMPLETE", "NOT_APPLICABLE")
 
 
 async def test_role_qualification_survives_persistence_and_api(db: AsyncSession):

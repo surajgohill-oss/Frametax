@@ -312,10 +312,20 @@ def get_required_roles(program_slug: str) -> list[str]:
 
 
 # Programs that have no nationality/cultural requirements (spend-based only)
+#
+# NOTE (Worldwide Qualification Consumption Closeout, 2026-08-19): "fr_trip"
+# and "it_tax_credit_foreign" were REMOVED from this allowlist. Both were
+# placed here before either program's real cultural test had been
+# researched. Queue B (Worldwide Program Qualification Completion) since
+# confirmed BOTH have real, cited, primary-sourced cultural-test point
+# tables (fr_trip: Code du cinema et de l'image animee Art. D331-42 a
+# D331-46, 38 total/18 min via Legifrance; it_tax_credit_foreign: a
+# confirmed 50-point threshold via DGCA) — see
+# app.data.cultural_point_tables.CULTURAL_POINT_TABLES. Leaving them here
+# after that research would have silently reasserted "no cultural test"
+# against this codebase's own confirmed contrary finding.
 _SPEND_ONLY_SLUGS: frozenset[str] = frozenset([
-    "fr_trip",
     "au_location_offset",
-    "it_tax_credit_foreign",
     # Worldwide Qualification/Cultural/Co-production Completion, 2026-08-19.
     # Confirmed via New Zealand Film Commission (nzfilm.co.nz/incentives/
     # rebate-international-nzspr): the International rebate is spend-based
