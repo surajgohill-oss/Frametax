@@ -1,0 +1,240 @@
+{
+  "artifact": "CODEX_FINAL_BACKEND_ACCEPTANCE",
+  "baseline_commit": "8ccf30a2cf9f983473898277c18811a0f27bf693",
+  "audit_date": "2026-08-19",
+  "decision": "ONE_CONSOLIDATED_CORRECTION_PASS_REQUIRED",
+  "external_research_performed": false,
+  "production_code_changed": false,
+  "canonical_data_changed": false,
+  "runtime_controls": {
+    "little_utopia_npc_usd": 3057794.90,
+    "little_utopia_status": "CONTROL_PASS_SUBJECT_TO_CONTINGENCY_CORRECTION",
+    "fvd_npc_usd": 3072027.16,
+    "fvd_status": "CONTROL_PASS",
+    "targeted_tests": "3 passed in 3.64s"
+  },
+  "audit_verdicts": {
+    "served_lineage": "ENGINE_WIRING_DEFECT",
+    "canonical_consumption": "DEFECT",
+    "cultural_table_safety": "DEFECT",
+    "qualification_ontology": "DEFECT",
+    "fact_classification": "DEFECT",
+    "copro_safety": "DEFECT",
+    "multilateral_safety": "DEFECT",
+    "economic_isolation": "PARTIAL_DEFECT",
+    "ranking_admission": "DEFECT",
+    "data_durability": "DATA_DURABILITY_DEFECT",
+    "database_as_runtime_source": "VERIFIED_NO_LIVE_WEB_WITH_REGISTRY_VERSIONING_CAVEAT",
+    "project_specific_contamination": "DEFECT",
+    "contingency": "DEFECT",
+    "lu_fvd_runtime": "CONTROL_PASS",
+    "inspector_ledger": "PRESERVED"
+  },
+  "cultural_table_classification": [
+    {"program_slug": "at_fisa_plus", "classification": "PARTIAL_WITH_KNOWN_HEADROOM", "declared_points": 80, "modeled_points": 34, "threshold": 40},
+    {"program_slug": "cz_film_incentive", "classification": "PARTIAL_WITH_KNOWN_HEADROOM", "declared_points": 46, "modeled_points": 36, "threshold": 23},
+    {"program_slug": "fr_trip", "classification": "PARTIAL_WITH_KNOWN_HEADROOM", "declared_points": 38, "modeled_points": 37, "threshold": 18},
+    {"program_slug": "no_film_incentive", "classification": "COMPLETE", "declared_points": 51, "modeled_points": 51, "threshold": 20},
+    {"program_slug": "my_finas_rebate", "classification": "COMPLETE", "declared_points": 5, "modeled_points": 5, "threshold": null, "note": "optional uplift only"},
+    {"program_slug": "pl_pisf_cash_rebate", "classification": "AUTHORITY_INCOMPLETE", "declared_points": 48, "modeled_points": 48, "threshold": 25},
+    {"program_slug": "pt_scri_pt_cash_rebate", "classification": "AUTHORITY_INCOMPLETE", "declared_points": 100, "modeled_points": 100, "threshold": 45, "note": "aggregate-only plus unselected 20/8 foreign-initiative route"},
+    {"program_slug": "gr_cash_rebate", "classification": "AUTHORITY_INCOMPLETE", "declared_points": 50, "modeled_points": 50, "threshold": 20},
+    {"program_slug": "hr_cash_rebate", "classification": "AUTHORITY_INCOMPLETE", "declared_points": 34, "modeled_points": 34, "threshold": 12},
+    {"program_slug": "hu_hipa_rebate", "classification": "AUTHORITY_INCOMPLETE", "declared_points": null, "modeled_points": 16, "threshold": 16},
+    {"program_slug": "it_tax_credit_foreign", "classification": "AUTHORITY_INCOMPLETE", "declared_points": null, "modeled_points": 50, "threshold": 50},
+    {"program_slug": "lt_film_centre_cash_rebate", "classification": "AUTHORITY_INCOMPLETE", "declared_points": 8, "modeled_points": 8, "threshold": 2},
+    {"program_slug": "mt_mfc_rebate", "classification": "AUTHORITY_INCOMPLETE", "declared_points": 40, "modeled_points": 40, "threshold": 40}
+  ],
+  "correction_items": [
+    {
+      "id": "CBA-001",
+      "severity": "P0",
+      "canonical file/data identity": [
+        "backend/app/services/canonical_evaluation.py::evaluate_project",
+        "backend/app/calculators/canonical_role_qualification_bridge.py",
+        "backend/app/services/canonical_production_view.py::_scenario_category"
+      ],
+      "current behavior": "Candidates are priced and inserted into the stack universe before role/cultural qualification is computed. The qualification result is persisted as disclosure only and is ignored by stack, component, ranking, and scenario-category logic.",
+      "correct behavior": "Qualification must produce a typed admission decision before incentive economics. Only a deterministically qualified program may enter canonical pricing/ranking; unresolved states must remain unpriced opportunities or unavailable, and hard failures must be rejected.",
+      "evidence": [
+        "canonical_evaluation.py:1060 prices; 1112-1113 evaluates qualification; 1143-1150 adds StackCandidate; 1151-1262 persists PRICED",
+        "canonical_evaluation.py:1255-1259 explicitly labels qualification disclosure-only",
+        "canonical_production_view.py:274-306 does not read role_qualification"
+      ],
+      "required fix": "Introduce one canonical admission result consumed by single-program, stack, component, co-production unlock, persistence, ranking, and category paths. Preserve unresolved states as non-numeric opportunity records.",
+      "required runtime proof": "API tests for every terminal qualification state prove HARD_FAIL/USER_FACT_REQUIRED/SCRIPT_FACT_REQUIRED/AUTHORITY_UNRESOLVED/RULE_DATA_INCOMPLETE cannot be PRICED, stacked, ranked, or RECOMMENDED; a fact-complete QUALIFIES control prices once through the canonical calculator."
+    },
+    {
+      "id": "CBA-002",
+      "severity": "P0",
+      "canonical file/data identity": [
+        "backend/app/data/program_rate_rules.py::resolve_program_rate",
+        "backend/app/calculators/allocation_pricing.py::price_segment",
+        "backend/app/data/program_rate_rules_worldwide.py::CA_DOCTRINE",
+        "backend/app/data/program_rate_rules_worldwide.py::CA_CPTC_DOCTRINE"
+      ],
+      "current behavior": "Tier eligibility uses only production_type and min_qpe_usd. Sixty-four conditions across 15 other condition kinds can remain unresolved without blocking a non-band tier. Canadian labour-base programs apply their rates to total QPE; CPTC certification is not an economic admission gate.",
+      "correct behavior": "Every condition kind must have typed semantics: eligibility gate, rate-base transform/cap, uplift-only condition, exclusivity, or disclosure-only risk. Unresolved mandatory eligibility and unavailable statutory bases must block deterministic pricing.",
+      "evidence": [
+        "program_rate_rules.py:1057-1068 selects tiers only by type/QPE",
+        "program_rate_rules.py:1108-1115 serializes every other kind as satisfied=None",
+        "program_rate_rules_worldwide.py:811-823 and 4400-4425 record labour base/certification, but resolver does not execute them",
+        "Direct inventory: 64 conditions in 15 unhandled kinds"
+      ],
+      "required fix": "Replace free-form kind fallthrough with a closed typed condition model and evaluator. Add statutory base calculators/inputs before applying rates. Implement complete PSTC/CPTC certification and Canadian qualified-labour/net-cost controls.",
+      "required runtime proof": "PSTC cultural state is NOT_APPLICABLE and its credit uses qualified Canadian labour only. CPTC cannot price below the complete certification/points requirement and uses 25% of qualified labour subject to the current statutory cap. Each condition kind has pass/fail/unresolved tests."
+    },
+    {
+      "id": "CBA-003",
+      "severity": "P0",
+      "canonical file/data identity": [
+        "backend/app/data/cultural_point_tables.py",
+        "backend/app/calculators/canonical_role_qualification_bridge.py::evaluate_point_table_qualification"
+      ],
+      "current behavior": "Tables have no explicit completeness class. Script criteria are satisfied by the mere presence of any broad element type, irrespective of criterion meaning/jurisdiction. Aggregate and approximated tables are treated as executable point systems.",
+      "correct behavior": "Each table/version must state completeness and known/unknown headroom. Every criterion must use a typed semantic predicate, route/format, alternative-group and subthreshold rules. Authority-incomplete/aggregate approximations cannot produce deterministic QUALIFIES or HARD_FAIL.",
+      "evidence": [
+        "cultural_point_tables.py CulturalPointTable lacks completeness metadata",
+        "canonical_role_qualification_bridge.py:316-321 awards full criterion points from any mapped type",
+        "Tokyo/US/English direct control returns fr_trip QUALIFIES at 18/18",
+        "Poland source_note admits equal-point approximation; Portugal admits aggregate-only and separate 20/8 route; seven tables use single aggregate rows"
+      ],
+      "required fix": "Add completeness/version/provenance/route metadata, semantic predicates, typed territory-group matching, and quarantine rules. Migrate only authority-supported itemized points; represent residuals as unresolved headroom without invented allocation.",
+      "required runtime proof": "All 13 tables pass classification tests; unrelated Tokyo/US/English facts score zero on France-specific criteria; EEA/CoE and route variants work; partial tables cannot false-fail and incomplete tables cannot auto-qualify."
+    },
+    {
+      "id": "CBA-004",
+      "severity": "P0",
+      "canonical file/data identity": [
+        "backend/app/calculators/canonical_role_qualification_bridge.py::role_known_codes_from_project",
+        "backend/app/data/cultural_qualification_model.py::GateCheck",
+        "backend/app/services/canonical_evaluation.py::_coproduction_facts"
+      ],
+      "current behavior": "Nationality and residence codes are merged into one set and consumed interchangeably. Co-production facts are global rather than partner/route bound. Any non-empty boolean text other than true/1/yes becomes false.",
+      "correct behavior": "Nationality, residence, domicile, work location, eligible labour, entity control, contribution, ownership, cultural determination, and authority approval must remain distinct typed facts. Invalid/unknown data remains unresolved.",
+      "evidence": [
+        "canonical_role_qualification_bridge.py:184-222 merges primary_nationality and known_residencies",
+        "cultural_qualification_model.py:393 labels known_codes citizenship/residency",
+        "canonical_evaluation.py:627-631 converts unknown text to False"
+      ],
+      "required fix": "Define typed fact contracts and criterion-specific predicates; bind co-production facts to route and parties; validate booleans and numeric shares without coercing invalid input to a known outcome.",
+      "required runtime proof": "Residency cannot satisfy a citizenship-only rule, work location cannot satisfy residence, route A facts cannot qualify route B, and invalid values yield unresolved states."
+    },
+    {
+      "id": "CBA-005",
+      "severity": "P1",
+      "canonical file/data identity": [
+        "backend/app/data/program_requirements.py",
+        "backend/app/data/cultural_qualification_model.py::_SPEND_ONLY_SLUGS",
+        "backend/app/calculators/canonical_role_qualification_bridge.py::evaluate_role_qualification",
+        "backend/tests/test_canonical_role_qualification_bridge.py::test_no_researched_completed_doctrine_remains_disconnected"
+      ],
+      "current behavior": "Forty-six profiles explicitly marked cultural_test_required=False emit RULE_DATA_INCOMPLETE because only two slugs are in the spend-only allowlist. The global disconnected test skips those 46 profiles.",
+      "correct behavior": "The canonical program requirement record must drive NOT_APPLICABLE for confirmed no-cultural-test programs. Missing authority must remain distinct. The invariant must exercise the actual served state of all 71 profiles without skips that hide a disconnect.",
+      "evidence": [
+        "Empty-fact runtime distribution: RULE_DATA_INCOMPLETE 46, NOT_APPLICABLE 5",
+        "ca_federal_pstc direct control returns RULE_DATA_INCOMPLETE despite cultural_test_required=False",
+        "test_canonical_role_qualification_bridge.py:265 skips all false profiles"
+      ],
+      "required fix": "Consume ProgramRequirementsProfile.cultural_test_required in the canonical qualification router or establish one reconciled classification registry; remove duplicate allowlist drift and strengthen the invariant.",
+      "required runtime proof": "Expected-state manifest covers every one of the 71 slugs; confirmed no-test programs return NOT_APPLICABLE; true missing-authority controls return AUTHORITY_UNRESOLVED/RULE_DATA_INCOMPLETE as appropriate; disconnected count is zero without skips."
+    },
+    {
+      "id": "CBA-006",
+      "severity": "P1",
+      "canonical file/data identity": [
+        "backend/app/calculators/canonical_treaty_bridge.py",
+        "backend/app/calculators/treaty_engine.py",
+        "backend/app/services/canonical_evaluation.py:1575-1739",
+        "backend/app/data/national_cultural_status.py"
+      ],
+      "current behavior": "The bilateral wrapper safely reports missing facts, but canonical generation covers only the old bilateral registry and Eurimages. Additional routes, European Convention, and Ibermedia are not consumed. Generic global shares/cultural facts are reused for all routes, no competent-authority approval is modeled, Eurimages receives no country percentages, and discovery is truncated.",
+      "correct behavior": "All represented official frameworks/routes must remain first-class canonical instruments with route-specific terms, parties, contributions/ownership, cultural rules, competent-authority status, provenance, and explicit unresolved states. Search bounds cannot silently remove material routes.",
+      "evidence": [
+        "canonical_treaty_bridge.py exports bilateral and Eurimages adapters/helpers only",
+        "canonical_evaluation.py generates bilateral and Eurimages only and calls Eurimages without country_pcts",
+        "MAX_TREATY_PARTNERS=5 and MAX_EURIMAGES_DISPLAY=10 truncate the served opportunity set",
+        "Eight additional represented routes are not in treaty_engine._BILATERAL candidate discovery"
+      ],
+      "required fix": "Create canonical adapters for European Convention/Ibermedia and additional confirmed routes; use partner/route-scoped facts and authority approvals; add structured treaty provenance/versioning; separate correctness universe from display pagination.",
+      "required runtime proof": "Controls for each framework prove absent vs exists/terms unknown vs fact-incomplete vs ineligible vs authority-approved eligible; no fabricated bilateral expansion; all represented routes remain discoverable independent of display limits."
+    },
+    {
+      "id": "CBA-007",
+      "severity": "P0",
+      "canonical file/data identity": [
+        "backend/app/main.py",
+        "backend/app/api/v1/structures.py::calculate_structure_impl",
+        "backend/app/api/v1/optimization.py",
+        "backend/app/api/v1/cineglobe.py",
+        "frontend/src/lib/useCineGlobe.js"
+      ],
+      "current behavior": "Mounted production APIs expose the superseded run_full_analysis path, separate optimization engines, and unparameterized Little-Utopia-only state. These routes can calculate/persist or serve state outside the canonical evaluator.",
+      "correct behavior": "Every production-facing calculation/evaluation/optimization/state route must delegate to one canonical project-scoped evaluator and persistence contract. Legacy/demo/admin routes must be removed or hard-isolated so they cannot mutate or masquerade as production state.",
+      "evidence": [
+        "main.py:40-44 mounts structures, optimization, cineglobe, and canonical evaluation routers",
+        "structures.py:97 imports run_full_analysis",
+        "cineglobe.py:56-78 imports little_utopia_state and uses PRODUCTION_NAME",
+        "useCineGlobe.js:35-42 invokes eight legacy calls without projectId"
+      ],
+      "required fix": "Consolidate endpoints or reject legacy calculation calls; separate demo namespace/storage; prevent legacy engine_version rows from entering canonical result tables; make all UI calls project-scoped.",
+      "required runtime proof": "Route inventory proves one production evaluator; every production endpoint returns the same canonical engine version/fingerprint; legacy endpoints cannot write canonical rows; generic new project never reads LU state."
+    },
+    {
+      "id": "CBA-008",
+      "severity": "P0",
+      "canonical file/data identity": [
+        "backend/app/services/canonical_evaluation.py::_compute_fingerprint",
+        "backend/app/services/canonical_evaluation.py::evaluate_project",
+        "backend/app/services/canonical_production_view.py::build_production_and_structures"
+      ],
+      "current behavior": "The fingerprint excludes personnel, screenplay, co-production, contingency, and registry/table/treaty versions. Existing current-engine rows are reused after those inputs change. GET follows the leading result's stored engine version rather than requiring current ENGINE_VERSION.",
+      "correct behavior": "Persistence identity must include every material input and canonical knowledge snapshot. GET must refuse or clearly block stale rows and trigger/require deterministic reevaluation under the current engine/knowledge versions.",
+      "evidence": [
+        "canonical_evaluation.py:378-395 fingerprint payload has budget/home/type/territorial sets only",
+        "canonical_evaluation.py:848-866 reuses matching rows",
+        "canonical_production_view.py:357-381 reads leading_result.engine_version and queries that same version"
+      ],
+      "required fix": "Build a canonical evaluation input manifest containing typed project facts plus all data-schema/registry versions; hash it; enforce current ENGINE_VERSION and manifest at publication; invalidate on relevant writes.",
+      "required runtime proof": "Mutating personnel, script, co-production, contingency, spend/rate/point/treaty versions changes the fingerprint and served result. An old leading row cannot be returned as current after deployment."
+    },
+    {
+      "id": "CBA-009",
+      "severity": "P1",
+      "canonical file/data identity": [
+        "backend/app/data/program_spend_rules.py::MU_EDB_RULES",
+        "backend/app/calculators/qualification_derivation.py::derive_qualification_register",
+        "backend/app/calculators/contingency_treatment.py",
+        "backend/tests/test_contingency_treatment.py"
+      ],
+      "current behavior": "Mauritius marks contingency explicitly qualifying, so the full undeployed reserve bypasses the generic reserve exclusion and expected-use treatment. LU includes $301,131 at 40%, reducing NPC by $120,452.40 relative to a zero-use projection.",
+      "correct behavior": "Projected optimization applies a persisted expected-spend percentage to the reserve, then qualifies the expected deployed destination spend. Actual claim QPE includes only actually deployed/incurred eligible spend. Category eligibility is not evidence of amount realization.",
+      "evidence": [
+        "program_spend_rules.py:599 sets contingency True",
+        "qualification_derivation.py:247-261 qualifies explicit True before lines 288-310 undeployed default",
+        "test_contingency_treatment.py:191-212 asserts full $301,131 inclusion with None/empty deployment"
+      ],
+      "required fix": "Add typed expected utilization, separate projected/actual modes, expand before qualification, include the fact/version in cache identity, and update LU/generic tests.",
+      "required runtime proof": "Generic Mauritius and LU pass 0%, partial, and 100% expected-use tests plus actual-deployed tests; incentive/NPC deltas reconcile exactly and FVD remains unchanged."
+    },
+    {
+      "id": "CBA-010",
+      "severity": "P1",
+      "canonical file/data identity": [
+        "backend/app/data/program_requirements.py::EvidenceRecord",
+        "backend/app/data/cultural_point_tables.py::CulturalPointTable",
+        "backend/app/calculators/treaty_engine.py",
+        "backend/app/data/national_cultural_status.py"
+      ],
+      "current behavior": "Structured knowledge exists, but all 71 program requirement evidence records lack effective_date, 13 lack access_date, 3 lack URL, 7 are secondary; point tables have prose-only source notes; treaty terms/membership lack a complete structured authority/version/effective-date chain. Registry changes rely on manual engine bumps for cache invalidation.",
+      "correct behavior": "Every executable rule/table/route must point to structured primary authority provenance with section/page, effective/version and verification dates, confidence/residual status, and a knowledge snapshot version consumed by evaluation.",
+      "evidence": [
+        "Direct registry inventory at baseline: effective_date missing 71/71, access_date missing 13/71, source_url missing 3/71, secondary 7/71",
+        "CulturalPointTable contains source_note only",
+        "TreatyData lacks sufficient structured source/effective/competent-authority fields"
+      ],
+      "required fix": "Normalize provenance objects across program, point-table, national-status, and treaty data; quarantine non-primary/approximate executable rules; version the canonical snapshot and include it in evaluation identity.",
+      "required runtime proof": "Machine audit walks every executable result to primary authority/version/date or a blocking residual state; no approximate/secondary rule yields deterministic qualification/economics; changing snapshot version invalidates served rows."
+    }
+  ]
+}
