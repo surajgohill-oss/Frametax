@@ -1,0 +1,229 @@
+[
+  {
+    "id": "SP_001_BILATERAL_TO_MULTILATERAL_UPGRADE",
+    "name": "Bilateral to Multilateral Upgrade",
+    "priority": "P0",
+    "description": "When a minority co-producer cannot meet the typical 20% minimum contribution required by a bilateral treaty, adding a third country under a multilateral convention (e.g., European Convention) drops the minimum contribution to 10%.",
+    "jurisdictions": [
+      "GLOBAL",
+      "COUNCIL OF EUROPE"
+    ],
+    "trigger": "Minority contribution between 10% and 19.9%.",
+    "legal_prerequisites": "European Convention on Cinematographic Co-Production (Revised) or similar multilateral instrument.",
+    "required_project_facts": [
+      "Existing two-party structure",
+      "Contribution percentages"
+    ],
+    "required_script_facts": [
+      "None"
+    ],
+    "structural_change": "Introduce a 3rd party co-producer to satisfy multilateral status.",
+    "program_unlocks": [
+      "National incentives in all 3 countries"
+    ],
+    "fund_unlocks": [
+      "Eurimages (requires European multilateral or bilateral)"
+    ],
+    "national_treatment_effect": "Confers national treatment in the third country, unlocking their local funding.",
+    "component_effect": "May require shifting a small BTL component to the 3rd country to hit 10%.",
+    "atl_effect": "Can use 3rd country ATL to satisfy the 10%.",
+    "cashflow_effect": "Additional closing complexity; multiple financing streams.",
+    "timing_constraints": "Must be structured before principal photography.",
+    "feasibility_constraints": "Creative control dilution, trilateral legal fees.",
+    "existing_cineglobe_capability": "REPRESENTATION_GAP",
+    "gap_type": "Optimizer currently only attempts bilateral matching.",
+    "recommended_existing_seam": "Treaty matching engine (needs to iterate combinations > 2).",
+    "primary_authority": "European Convention on Cinematographic Co-Production (Revised) 2017, Art. 6.",
+    "practice_sources": [
+      "Olsberg SPI Coproduction reports",
+      "EAVE structuring guidelines"
+    ],
+    "case_studies": [
+      "Triangle of Sadness (Sweden/Germany/France/UK)"
+    ],
+    "confidence": "HIGH"
+  },
+  {
+    "id": "SP_002_SERVICE_TO_COPRO_NATIONAL_TREATMENT_ARBITRAGE",
+    "name": "Service to Copro National Treatment Arbitrage",
+    "priority": "P0",
+    "description": "Switching from a foreign service production to an official coproduction to unlock National Treatment, which grants access to non-tax-credit selective funds (regional funds, soft money) that exceed the value of the pure service rebate.",
+    "jurisdictions": [
+      "GLOBAL",
+      "EUROPE",
+      "CANADA",
+      "AUSTRALIA"
+    ],
+    "trigger": "Project qualifies for service rebate but has sufficient local elements to potentially pass a cultural test.",
+    "legal_prerequisites": "Bilateral Audiovisual Treaty conferring National Treatment.",
+    "required_project_facts": [
+      "Cultural elements",
+      "Financing gap"
+    ],
+    "required_script_facts": [
+      "Location",
+      "Lead characters' nationality"
+    ],
+    "structural_change": "Restructure financing to make the local service company an official co-producer with equity/copyright.",
+    "program_unlocks": [
+      "Domestic/Cultural tax credits (usually higher % than service)"
+    ],
+    "fund_unlocks": [
+      "Selective national/regional funds (e.g., Medienboard, Telefilm, Screen Australia)"
+    ],
+    "national_treatment_effect": "Transforms foreign capital into eligible 'local' capital for matching purposes.",
+    "component_effect": "May need to lock specific post/VFX components to the jurisdiction to pass the points test.",
+    "atl_effect": "Usually requires local Director or Lead Actor to pass cultural test.",
+    "cashflow_effect": "Selective funds are paid in installments (prep, wrap, delivery), improving cashflow vs tax credits (paid post-delivery).",
+    "timing_constraints": "Must apply for provisional co-pro status at least 30-60 days before shooting.",
+    "feasibility_constraints": "Must share copyright/revenue with the local co-producer.",
+    "existing_cineglobe_capability": "SUPPORTED_BUT_DATA_THIN",
+    "gap_type": "Optimizer calculates both rebates but doesn't auto-suggest the ATL/Copyright changes needed to cross the threshold.",
+    "recommended_existing_seam": "Opportunities/Candidate Generator.",
+    "primary_authority": "Standard Article 2 (National Treatment) in bilateral treaties.",
+    "practice_sources": [
+      "Cannes March\u00e9 du Film finance workshops",
+      "Dentons Film Finance Group"
+    ],
+    "case_studies": [
+      "Room (Canada/Ireland)"
+    ],
+    "confidence": "HIGH"
+  },
+  {
+    "id": "SP_003_PDV_ONLY_TREATY_BYPASS",
+    "name": "PDV-Only Treaty Bypass (Component Relocation)",
+    "priority": "P1",
+    "description": "Executing Principal Photography in one jurisdiction (e.g., Australia) for the Location Offset, and moving all Post/VFX to a second jurisdiction (e.g., NZ, UK, Quebec) strictly for a PDV rebate that requires no official co-production status and no cultural test.",
+    "jurisdictions": [
+      "UK",
+      "AUSTRALIA",
+      "NEW ZEALAND",
+      "CANADA (PROVINCIAL)"
+    ],
+    "trigger": "High VFX/Post budget (>20% of total) in a non-PDV-optimized shooting location.",
+    "legal_prerequisites": "Existence of a standalone PDV incentive with no global cultural test requirement.",
+    "required_project_facts": [
+      "Detailed VFX budget",
+      "Post schedule"
+    ],
+    "required_script_facts": [
+      "VFX shot count/complexity"
+    ],
+    "structural_change": "Contract VFX to a vendor in the target PDV jurisdiction.",
+    "program_unlocks": [
+      "Standalone PDV Rebate (e.g., UK VFX 39%, NZ 20%+5%)"
+    ],
+    "fund_unlocks": [
+      "None"
+    ],
+    "national_treatment_effect": "None (pure service relationship).",
+    "component_effect": "Relocates all post/digital components.",
+    "atl_effect": "None.",
+    "cashflow_effect": "Vendor may cashflow the rebate, reducing producer borrowing.",
+    "timing_constraints": "Vendor contracts must be structured before work begins.",
+    "feasibility_constraints": "Requires robust remote pipeline; limits director's physical presence at VFX house.",
+    "existing_cineglobe_capability": "ALREADY_SUPPORTED_AND_CONNECTED",
+    "gap_type": "Currently supported but optimizer may not aggressively split budgets automatically.",
+    "recommended_existing_seam": "Component allocation engine.",
+    "primary_authority": "UK Finance Act 2024 (VFX uplift); NZ SPRG Guidelines.",
+    "practice_sources": [
+      "EP / Cast & Crew incentive guides",
+      "Sargent-Disc"
+    ],
+    "case_studies": [
+      "Numerous US studio blockbusters (Shoot Aus, VFX NZ/UK)"
+    ],
+    "confidence": "HIGH"
+  },
+  {
+    "id": "SP_004_NON_PARTY_PERSONNEL_EXCEPTION",
+    "name": "Non-Party Personnel Exception in Coproductions",
+    "priority": "P0",
+    "description": "Utilizing specific treaty exceptions that allow 20-30% of the budget or specific key creatives (e.g., US Lead Actor) to be from a non-treaty country without violating the official coproduction status.",
+    "jurisdictions": [
+      "CANADA",
+      "UK",
+      "AUSTRALIA",
+      "FRANCE"
+    ],
+    "trigger": "Official coproduction requires a US/Global star for financing/sales.",
+    "legal_prerequisites": "Treaty clause permitting non-party participation (e.g., Article 4).",
+    "required_project_facts": [
+      "Cast nationalities",
+      "Budget breakdown"
+    ],
+    "required_script_facts": [
+      "Character requirements (if story dictates non-party)"
+    ],
+    "structural_change": "Allocate the non-party exception exclusively to the highest-paid non-party ATL.",
+    "program_unlocks": [
+      "Maintains Official Copro status despite US star."
+    ],
+    "fund_unlocks": [
+      "Maintains selective fund eligibility."
+    ],
+    "national_treatment_effect": "Preserves national treatment.",
+    "component_effect": "Limits non-party BTL crew since the % allowance is consumed by the star.",
+    "atl_effect": "Allows attachment of A-list non-party talent.",
+    "cashflow_effect": "Unlocks presales/equity tied to the star.",
+    "timing_constraints": "Must be approved by Competent Authorities during provisional certification.",
+    "feasibility_constraints": "Strict mathematical cap (often 20% of budget); limits other foreign hires.",
+    "existing_cineglobe_capability": "ENGINE_EXISTS_BUT_DISCONNECTED",
+    "gap_type": "CineGlobe knows nationality but fails to actively calculate the 20% exception threshold.",
+    "recommended_existing_seam": "Cultural qualification / Treaty rules engine.",
+    "primary_authority": "Canada-UK Treaty Article 4; Aus-UK Treaty Article 4.",
+    "practice_sources": [
+      "BFI Co-production guidance",
+      "Telefilm Canada Copro Guidelines"
+    ],
+    "case_studies": [
+      "Brooklyn (Canada/Ireland/UK with US lead)"
+    ],
+    "confidence": "HIGH"
+  },
+  {
+    "id": "SP_005_FINANCE_ONLY_COPRODUCTION",
+    "name": "Financial-Only Coproduction",
+    "priority": "P1",
+    "description": "Structuring a minority coproduction where the minority partner provides purely financial equity (e.g., 10-20%) with no corresponding creative or technical personnel, explicitly allowed by certain treaties.",
+    "jurisdictions": [
+      "EUROPE",
+      "AUSTRALIA",
+      "CANADA"
+    ],
+    "trigger": "Financing gap where creative/technical elements are already locked to the majority country.",
+    "legal_prerequisites": "Treaty explicitly recognizing 'financial co-productions' (e.g., European Convention Art 11).",
+    "required_project_facts": [
+      "Financing structure"
+    ],
+    "required_script_facts": [
+      "None"
+    ],
+    "structural_change": "Introduce a minority co-producer solely for cash equity.",
+    "program_unlocks": [
+      "Minority co-production funds (e.g., Eurimages, NFI Minority Co-pro fund)."
+    ],
+    "fund_unlocks": [
+      "Specific minority selective funds."
+    ],
+    "national_treatment_effect": "Grants national treatment for the minority financier's investment.",
+    "component_effect": "None (no physical production moves).",
+    "atl_effect": "None.",
+    "cashflow_effect": "Closes financing gaps without disrupting physical production.",
+    "timing_constraints": "Must apply before shooting.",
+    "feasibility_constraints": "Minority funds are highly competitive; requires cultural approval in both countries despite no physical spend in minority country.",
+    "existing_cineglobe_capability": "GENUINELY_NEW_OPTIMIZER_CAPABILITY_REQUIRED",
+    "gap_type": "Optimizer currently assumes contribution = spend/personnel, missing purely financial treaties.",
+    "recommended_existing_seam": "Treaty matching engine (needs 'financial-only' flag).",
+    "primary_authority": "European Convention on Cinematographic Co-Production (Revised) 2017, Art. 11.",
+    "practice_sources": [
+      "Council of Europe Explanatory Reports",
+      "Olswang/CMS guides"
+    ],
+    "case_studies": [
+      "Various Eurimages-backed features."
+    ],
+    "confidence": "HIGH"
+  }
+]

@@ -1,0 +1,45 @@
+[
+  {
+    "source": "European Convention on Cinematographic Co-Production (Revised) 2017",
+    "authority_class": "PRIMARY AUTHORITY",
+    "jurisdiction": "COUNCIL OF EUROPE (MULTILATERAL)",
+    "topic": "Multiparty Coproduction & Financial-Only Copro",
+    "date": "2017",
+    "proposition_supported": "Allows 10% minimum contribution for multilateral; allows financial-only copros under specific conditions.",
+    "canonical_finding_ids": [
+      "SP_001_BILATERAL_TO_MULTILATERAL_UPGRADE",
+      "SP_005_FINANCE_ONLY_COPRODUCTION"
+    ]
+  },
+  {
+    "source": "Canada-UK Audiovisual Coproduction Treaty",
+    "authority_class": "PRIMARY AUTHORITY",
+    "jurisdiction": "CANADA / UK",
+    "topic": "Non-party personnel exceptions",
+    "date": "Various (Current)",
+    "proposition_supported": "Allows up to 20% or specific key creatives from non-party states subject to competent authority approval.",
+    "canonical_finding_ids": [
+      "SP_004_NON_PARTY_PERSONNEL_EXCEPTION"
+    ]
+  },
+  {
+    "source": "Olsberg SPI: Impact of Film and Television Incentives",
+    "authority_class": "PROFESSIONAL PRACTICE",
+    "jurisdiction": "GLOBAL",
+    "topic": "Component Relocation & Treaty Arbitrage",
+    "date": "2024/2025",
+    "proposition_supported": "Details how major studios decouple VFX/Post from physical production to maximize blended global rebate yields.",
+    "canonical_finding_ids": [
+      "SP_003_PDV_ONLY_TREATY_BYPASS"
+    ]
+  },
+  {
+    "source": "CRA Income Tax Folio S4-F7-C1 (Canadian Film or Video Production Tax Credit)",
+    "authority_class": "PRIMARY AUTHORITY",
+    "jurisdiction": "CANADA",
+    "topic": "Reinvestment / Deferrals",
+    "date": "Current",
+    "proposition_supported": "Contingent deferrals are not 'incurred' costs for QPE. Must be unconditional liabilities.",
+    "canonical_finding_ids": []
+  }
+]

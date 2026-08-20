@@ -1,0 +1,83 @@
+{
+  "positive_cases": [
+    {
+      "production": "Triangle of Sadness",
+      "countries": [
+        "Sweden",
+        "Germany",
+        "France",
+        "UK"
+      ],
+      "structure": "Multilateral Official Coproduction",
+      "programs_used": [
+        "Swedish Film Institute",
+        "Eurimages",
+        "Medienboard Berlin-Brandenburg",
+        "BFI"
+      ],
+      "why_used": "To aggregate multiple European soft-money funds and access Eurimages, requiring multilateral status as no single minority partner hit 20%.",
+      "legal_mechanism": "European Convention on Cinematographic Co-Production (lowering minimum to 10%).",
+      "economic_rationale": "Maximized non-recoupable soft money; leveraged regional German funds for post-production.",
+      "primary_authority_support": "European Convention Art. 6.",
+      "practice_source": "Eurimages project lists, Screen International case studies.",
+      "generalizable_lesson": "If bilateral 20% minimum is unreachable, adding a 3rd European partner unlocks the 10% multilateral threshold."
+    },
+    {
+      "production": "Room",
+      "countries": [
+        "Canada",
+        "Ireland"
+      ],
+      "structure": "Bilateral Official Coproduction",
+      "programs_used": [
+        "Section 181 (Irish Tax Credit)",
+        "CAVCO (Canada)",
+        "Telefilm",
+        "Screen Ireland"
+      ],
+      "why_used": "To access national treatment in both Canada and Ireland, allowing stacking of federal tax credits with national selective funds.",
+      "legal_mechanism": "Canada-Ireland Audiovisual Coproduction Treaty.",
+      "economic_rationale": "The combined value of Telefilm + Screen Ireland equity + CAVCO + Section 181 far exceeded any pure service rebate.",
+      "primary_authority_support": "Canada-Ireland Treaty.",
+      "practice_source": "Telefilm Canada coproduction success stories.",
+      "generalizable_lesson": "National treatment via official coproduction unlocks selective funds that drastically reduce net production cost compared to service rebates."
+    }
+  ],
+  "negative_cases": [
+    {
+      "production": "Generic Withheld Example A",
+      "countries": [
+        "UK",
+        "Australia"
+      ],
+      "structure": "Attempted Official Coproduction",
+      "programs_used": [
+        "UK Film Tax Relief",
+        "Producer Offset"
+      ],
+      "why_failed": "Failed the proportionality test. The financial contribution did not match the creative/technical contribution (budget was 80% UK, but all ATL was Australian).",
+      "legal_mechanism": "Bilateral Treaty requirement for proportionality.",
+      "economic_rationale": "Lost official status, reverted to Location Offset (lower rate) in Australia.",
+      "primary_authority_support": "UK-Aus Treaty Article on Proportionality.",
+      "practice_source": "Screen Australia Co-pro guidelines warnings.",
+      "generalizable_lesson": "Optimizer MUST validate that financial contribution roughly equals creative/technical points; otherwise, official status is rejected."
+    },
+    {
+      "production": "Generic Withheld Example B",
+      "countries": [
+        "US",
+        "Canada"
+      ],
+      "structure": "Service Production with Deferred Fees",
+      "programs_used": [
+        "PSTC (Canada)"
+      ],
+      "why_failed": "Included $2M of deferred producer fees in the QPE base to increase the rebate.",
+      "legal_mechanism": "CAVCO rules on incurred vs paid costs.",
+      "economic_rationale": "CRA audited and removed the deferred fees because they were contingent on profits and not unconditionally payable, reducing the rebate by $500k.",
+      "primary_authority_support": "CRA Income Tax Folio S4-F7-C1.",
+      "practice_source": "Canadian tax accounting alerts (e.g., MNP, BDO).",
+      "generalizable_lesson": "Deferred consideration cannot be modeled as QPE unless it is an unconditional, non-contingent liability."
+    }
+  ]
+}
