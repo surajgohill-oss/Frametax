@@ -714,6 +714,20 @@ GR_RATE_RULES: tuple[RateRule, ...] = (
         confidence_tier="VERIFIED",
         citation=_GR_CITATION,
         source_ref="JMD-607434-art-6-CODEX-final-resolution",
+        provenance=SourceProvenance(
+            issuing_authority="Hellenic Republic — Joint Ministerial Decision "
+                               "607434 (Government Gazette B' 87/14.01.2026), "
+                               "administered by Enterprise Greece / Greek Film "
+                               "Centre",
+            source_url="https://www.enterprisegreece.gov.gr",
+            citation_detail="JMD 607434, arts. 4-6: minimum eligible Greek "
+                             "spend EUR 200,000 (fiction film/TV film); 40% "
+                             "flat rebate rate.",
+            effective_date="2026-01-14",
+            interpretation_note="80% eligible-spend cap applied separately via "
+                                 "QPE_CAP_RULES['gr_cash_rebate'], same JMD "
+                                 "source.",
+        ),
     ),
 )
 

@@ -801,6 +801,22 @@ CA_DOCTRINE = register(DoctrineRecord(
                                     # CPTC, is the Canadian-content one; not modeled here
     citation=_CA_CITATION,
     source_ref="northbridgeconsultants.com-federal-PSTC",
+    provenance=SourceProvenance(
+        issuing_authority="Canada Revenue Agency, co-administered by the "
+                           "Canadian Audio-Visual Certification Office (CAVCO)",
+        citation_detail="'A refundable corporate income tax credit which is "
+                         "calculated as 16% of the qualified Canadian labour "
+                         "expenditures for an accredited production.' No "
+                         "minimum spend or maximum cap specified.",
+        interpretation_note="canada.ca's own PSTC page returned HTTP 403 and "
+                             "could not be fetched directly by this project — "
+                             "the 16% rate figure itself is corroborated via a "
+                             "production-services consultancy, not independently "
+                             "re-verified against the primary government page. "
+                             "The ISSUING AUTHORITY identity (CRA/CAVCO) is a "
+                             "separately well-established fact, not dependent "
+                             "on that unresolved page fetch.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="ca-federal-pstc-16",
@@ -1293,6 +1309,24 @@ AU_DOCTRINE = register(DoctrineRecord(
                                     # that's the separate Producer Offset
     citation=_AU_CITATION,
     source_ref="screenaustralia.gov.au-location-offset",
+    provenance=SourceProvenance(
+        issuing_authority="Department of Infrastructure, Transport, Regional "
+                           "Development, Communications, Sport and the Arts "
+                           "(Australia), administered via Screen Australia",
+        source_url="https://www.screenaustralia.gov.au",
+        citation_detail="'30% on QAPE' — Location Offset. 'These three "
+                         "offsets [Location, PDV, Producer] are mutually "
+                         "exclusive.'",
+        verified_date="2026-08-17",
+        interpretation_note="Rate increase from a stale 16.5% to the current "
+                             "30% (effective for productions starting principal "
+                             "photography on/after 1 July 2023) confirmed "
+                             "directly from Screen Australia's own official "
+                             "government page, correcting migration 0038's "
+                             "original PARSED figure. AUD $20M minimum spend "
+                             "left unconverted — no sourced AUD/USD FX rate "
+                             "exists in this project's FX table.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="au-location-offset-30",
@@ -2197,6 +2231,19 @@ AE_AD_DOCTRINE = register(DoctrineRecord(
     requires_cultural_test=False,
     citation=_AE_AD_CITATION,
     source_ref="film.gov.ae+mediaoffice.abudhabi",
+    provenance=SourceProvenance(
+        issuing_authority="Abu Dhabi Film Commission, corroborated by the "
+                           "UAE government media office (mediaoffice.abudhabi)",
+        citation_detail="Rebate 'enhancement... from 30% to starting at 35% "
+                         "for all qualified productions... from 1 January "
+                         "2025,' with a points-based Enhanced Rebate up to 50%.",
+        interpretation_note="Direct fetch of film.gov.ae was blocked (HTTP "
+                             "403); content recovered via search-result "
+                             "excerpts of the official page, not a direct "
+                             "page load — disclosed, not treated as a lesser "
+                             "source since the excerpted text is the "
+                             "commission's own official language.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="ae-ad-standard-35",
@@ -3112,6 +3159,14 @@ GE_DOCTRINE = register(DoctrineRecord(
              "incurred in the production of films, television series, "
              "and other audiovisual projects.'",
     source_ref="georgia.org-country-film-incentives",
+    provenance=SourceProvenance(
+        issuing_authority="Government of Georgia (georgia.org official "
+                           "investment/incentive portal)",
+        source_url="https://georgia.org",
+        citation_detail="'A rebate of 20-25% on qualified expenses incurred "
+                         "in the production of films, television series, "
+                         "and other audiovisual projects.'",
+    ),
     tiers=(
         DoctrineRateTier(tier_id="ge-base-20", rate=0.20, is_band_ceiling=False),
         DoctrineRateTier(tier_id="ge-ceiling-25", rate=0.25, is_band_ceiling=True,
@@ -3140,6 +3195,17 @@ TW_DOCTRINE = register(DoctrineRecord(
              "already in the catalog (bamid.gov.tw) but adds a real "
              "competitive-selection fact not previously known.",
     source_ref="productionservicenetwork.com-taiwan+bamid.gov.tw",
+    provenance=SourceProvenance(
+        issuing_authority="Bureau of Audiovisual and Music Industry "
+                           "Development (BAMID), Taiwan — bamid.gov.tw",
+        citation_detail="30% base cash rebate, confirmed in the existing "
+                         "catalog against bamid.gov.tw.",
+        interpretation_note="The competitive/highly-selective-program fact "
+                             "(this is NOT an automatic entitlement) is "
+                             "sourced from a secondary production-services "
+                             "site, productionservicenetwork.com, not the "
+                             "official BAMID page directly.",
+    ),
     tiers=(DoctrineRateTier(tier_id="tw-flat-30", rate=0.30, is_band_ceiling=False,
                              conditions=(RateCondition(
                                  condition_id="tw-competitive-selection",
@@ -5249,6 +5315,18 @@ US_KY_DOCTRINE = register(DoctrineRecord(
               "tax credit, with a $250K (feature) / $20K (doc) minimum "
               "spend and a $75M annual cap.' Confirms catalog's 30% base exactly.",
     source_ref="shamelstudio.com+revenue.ky.gov-kentucky",
+    provenance=SourceProvenance(
+        issuing_authority="Kentucky Department of Revenue (revenue.ky.gov)",
+        citation_detail="'30% base rate, up to 35% with uplifts... $250K "
+                         "(feature) / $20K (doc) minimum spend and a $75M "
+                         "annual cap.'",
+        interpretation_note="Rate figure primary-narrative source is "
+                             "shamelstudio.com (production-services site); "
+                             "revenue.ky.gov (the Department of Revenue's own "
+                             "listing) is cited as corroborating, not the "
+                             "engine's own direct fetch of the department's "
+                             "text.",
+    ),
     tiers=(DoctrineRateTier(tier_id="us-ky-base-30", rate=0.30, is_band_ceiling=False,
                              min_qpe_usd=250_000.0),
            DoctrineRateTier(tier_id="us-ky-ceiling-35", rate=0.35, is_band_ceiling=True,
@@ -5486,6 +5564,20 @@ CZ_DOCTRINE = register(DoctrineRecord(
               "production-incentives page confirms applicants must pass "
               "a cultural test -- corrects this record's prior False.",
     source_ref="rodriqueslaw.com-czech-republic+sfa.gov.cz-official",
+    provenance=SourceProvenance(
+        issuing_authority="State Fund for Cinematography (Státní fond "
+                           "kinematografie / SFA), Czech Republic — sfa.gov.cz",
+        citation_detail="Primary incentive rate 25% (up from a stale 20%); "
+                         "applicants must pass a cultural test.",
+        verified_date="2026-07-26",
+        interpretation_note="The 25% rate correction itself is sourced from "
+                             "rodriqueslaw.com (a law firm); the cultural-test "
+                             "requirement was confirmed via this project's own "
+                             "direct fetch of the official sfa.gov.cz page. The "
+                             "issuing authority (SFA) is not in doubt; the rate "
+                             "figure's own direct primary-page confirmation "
+                             "remains a disclosed gap.",
+    ),
     tiers=(DoctrineRateTier(tier_id="cz-live-action-25", rate=0.25, is_band_ceiling=False),),
 ))
 register_rate_rules(rate_rules_for(CZ_DOCTRINE))
