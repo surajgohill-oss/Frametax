@@ -1747,6 +1747,57 @@ US_NY_DOCTRINE = register(DoctrineRecord(
                 ),
             ),
         ),
+        # CINEGLOBE — FINAL CANONICAL RECOVERY / RECONNECTION CLOSEOUT:
+        # this ceiling ("Production Plus") was already real, existing,
+        # disclosed knowledge in jurisdiction_comparison.py's own NY
+        # profile notes/data_gaps ("'Production Plus' offers a further
+        # +5-10% for companies with multiple NY productions, not modeled
+        # (producer-election fact this engine doesn't have)") — an
+        # EXISTS_BUT_DISCONNECTED finding: known to the comparison-profile
+        # layer, never reconnected into the pricing engine's own served
+        # RateRule/RateCondition path, so it never surfaced as even a
+        # disclosed opportunity on a real priced NY candidate. This tier
+        # reconnects it as a distinct highest ceiling (base 30% + upstate
+        # 10% + scoring 10% + Production Plus up to 10% = 60%), gated by
+        # the SAME existing project_fact_dependent_uplift condition kind
+        # (USER_FACT_REQUIRED) CBA-002 already classifies — never
+        # auto-applied, never assumed, disclosed as a real opportunity
+        # for a multi-NY-production company. NOT a new standalone
+        # program — it is the base us_ny_film_credit's own highest tier,
+        # per this project's own program-vs-enhancement ontology.
+        DoctrineRateTier(
+            tier_id="us-ny-production-plus-ceiling-60",
+            rate=0.60,
+            is_band_ceiling=True,
+            min_qpe_usd=250_000.0,
+            conditions=(
+                RateCondition(
+                    condition_id="us-ny-upstate-and-scoring-uplifts-pp",
+                    description="Same upstate/scoring uplifts as the 50% "
+                                "ceiling tier, carried forward on this "
+                                "higher band.",
+                    quote="An additional 10% credit on qualified labor "
+                          "expenses ... An additional 10% credit for "
+                          "scoring costs (esd.ny.gov)",
+                    kind="discretionary_band",
+                ),
+                RateCondition(
+                    condition_id="us-ny-production-plus-multi-production",
+                    description="'Production Plus' offers a further +5-10% "
+                                "for companies with multiple NY productions "
+                                "— a real, disclosed program enhancement "
+                                "requiring a producer-election project fact "
+                                "(does this production's company have "
+                                "other concurrent NY productions?) this "
+                                "engine does not collect by default.",
+                    quote="'Production Plus' offers a further +5-10% for "
+                          "companies with multiple NY productions "
+                          "(esd.ny.gov, via jurisdiction_comparison.py's "
+                          "existing New York profile)",
+                    kind="project_fact_dependent_uplift",
+                ),
+            ),
+        ),
     ),
 ))
 register_rate_rules(rate_rules_for(US_NY_DOCTRINE))
