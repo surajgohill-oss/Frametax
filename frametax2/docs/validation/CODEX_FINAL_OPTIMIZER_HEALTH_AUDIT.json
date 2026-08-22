@@ -1,0 +1,142 @@
+{
+  "artifact": "CODEX_FINAL_OPTIMIZER_HEALTH_AUDIT",
+  "decision": "ONE_CONSOLIDATED_CORRECTION_PASS_REQUIRED",
+  "audited_head": "6b4497334f3808c746a723a5719d10be5cb182ba",
+  "branch": "claude/audit-frametax-features-NZcX5",
+  "external_research_performed": false,
+  "production_code_changed": false,
+  "canonical_data_changed": false,
+  "runtime": {
+    "little_utopia": {
+      "npc_usd": 3057794.9,
+      "incentive_usd": 1306598.1,
+      "qualification": "AUTHORITY_UNRESOLVED",
+      "recommended_count": 0,
+      "candidate_count": 132,
+      "ranking_count": 132,
+      "engine_version": "canonical-1.34.0",
+      "current_labeled_rows_created_at": "2026-08-20T12:11:59-07:00",
+      "contingency_expected_utilization_pct": 100,
+      "contingency_fact_source": "recovered_demo_state",
+      "contingency_fact_review_status": "approved",
+      "has_ca_bc_dave": false,
+      "has_au_pdv_offset": false
+    },
+    "fvd": {
+      "npc_usd": 3072027.16,
+      "incentive_usd": 1445659.84,
+      "qualification": "USER_FACT_REQUIRED",
+      "recommended_count": 0,
+      "candidate_count": 144,
+      "ranking_count": 144,
+      "engine_version": "canonical-1.34.0",
+      "current_labeled_rows_created_at": "2026-08-20T12:11:31-07:00",
+      "contingency_expected_utilization_pct": null,
+      "has_ca_bc_dave": false,
+      "has_au_pdv_offset": false,
+      "served_new_york_film_credit_ceiling": 0.5,
+      "combined_structure_count": 6,
+      "combined_structures_with_null_qualification": 6
+    }
+  },
+  "authority_state": {
+    "registered": 123,
+    "authority_verified_priceable": 88,
+    "authority_unresolved_non_priceable_label": 35,
+    "economic_state_counts": {
+      "DETERMINISTIC_PRICEABLE": 108,
+      "CONDITIONAL_NONDETERMINISTIC": 12,
+      "MATERIAL_ECONOMIC_RULE_UNRESOLVED": 2,
+      "SUPERSEDED": 1
+    },
+    "policy_separation_correct_at_single_program_boundary": true,
+    "final_served_recalculation_proven": false
+  },
+  "verdicts": {
+    "lineage": "ENGINE_WIRING_DEFECT",
+    "original_58": "POLICY_CORRECT_BUT_FINAL_SERVED_PROOF_STALE",
+    "economic_provenance_separation": "STATE_MODEL_DEFECT",
+    "qualification": "STATE_MODEL_DEFECT_COMBINED_STRUCTURES",
+    "stacking": "STATE_MODEL_DEFECT",
+    "new_york": "CANONICAL_MODEL_HEALTHY_SERVED_RESULT_STALE",
+    "ontario": "DISCOVERY_PRESENT_COMBINED_RUNTIME_DEFECTIVE",
+    "contingency": "HEALTHY_MECHANISM_SERVED_PROOF_STALE",
+    "structuring_intelligence": "ENGINE_WIRING_DEFECT",
+    "ranking_recommended": "UNSAFE_FOR_COMBINED_STRUCTURES",
+    "candidate_universe": "ENGINE_WIRING_DEFECT",
+    "canonical_knowledge_path": "CANONICAL_STORE_PRESENT_MULTIPLE_SERVED_LINEAGES",
+    "cache_stale_results": "ENGINE_WIRING_DEFECT"
+  },
+  "acceptance_matrix": {
+    "result": "NOT_35_OF_35",
+    "source_matrix_present_as_enumerated_artifact": false,
+    "source_evidence": "CAPABILITY_LEDGER retains grouped numeric cross-references and explicitly states the matrix was not individually walked; no standalone enumerated matrix exists in the repository or current task attachments.",
+    "exact_retained_failed_items": [
+      {
+        "items": "1-8 qualification group",
+        "failure": "Combined structures do not preserve a reliable worst member qualification state; actual stacks are null."
+      },
+      {
+        "items": "16",
+        "failure": "Recovered component/PDV programs ca_bc_dave and au_pdv_offset are absent from actual LU/FVD served output."
+      },
+      {
+        "items": "23-24",
+        "failure": "Fingerprint/current-generation GET accepts pre-change rows as current."
+      },
+      {
+        "items": "25-35 durability/genericity group",
+        "failure": "Cannot be accepted item by item: current canonical knowledge does not reliably invalidate persisted project output, and exact original labels are not retained."
+      }
+    ],
+    "verified_count": null,
+    "verified_count_reason": "An exact numerator would invent mappings absent from the retained matrix."
+  },
+  "targeted_tests": {
+    "passed": 145,
+    "failed": 0,
+    "interpretation": "Green but insufficient; important guards are vacuous, metadata-only, or do not exercise served runtime."
+  },
+  "corrections": [
+    {
+      "id": "OH-001",
+      "severity": "P0",
+      "served path": "GET /api/v1/cineglobe/projects/{project_id}/state -> canonical_production_view.build_production_and_structures -> StructureCalculationResult rows filtered by engine_version/fingerprint",
+      "current behavior": "Rows created before canonical-1.34.0 was committed, and before later qualification/knowledge/provenance changes, are served as current because their stored engine_version string is canonical-1.34.0. The fingerprint omits several material canonical dependency versions and GET does not recompute/compare current generation identity.",
+      "correct behavior": "Any material project or canonical-knowledge change invalidates prior results. GET serves only a result whose complete centrally-owned generation identity matches current runtime, otherwise it returns an explicit stale/not-evaluated state.",
+      "evidence": "LU/FVD current-labeled rows were created at 2026-08-20 12:11 local; canonical-1.34.0 commit e67d4ce is 13:11, qualification propagation b245f1b is 15:49, recovered programs commit 9d0266b is 2026-08-21, and final policy commit 6b44973 is 2026-08-22. Served output omits ca_bc_dave, au_pdv_offset and NY Production Plus and retains null stack qualification.",
+      "required fix": "Update backend/app/services/canonical_evaluation.py and backend/app/services/canonical_production_view.py to use a complete canonical generation manifest/fingerprint and reject stale rows. Include all material qualification, authority/economic-state, rate/spend, stacking, treaty, structuring-pattern, executable-registry and consolidation versions. Bump the engine generation and then regenerate project results.",
+      "required runtime proof": "Persist a result, change each material version/input in a controlled test, and prove project GET rejects it. Fresh LU/FVD evaluations must include current recovered candidates, current NY ceiling and current Ontario stacks; no pre-change fingerprint may be returned as current."
+    },
+    {
+      "id": "OH-002",
+      "severity": "P0",
+      "served path": "canonical_evaluation.evaluate_project -> canonical stack results -> combined role_qualification -> canonical_production_view comparable/Recommended gate",
+      "current behavior": "Single qualification is keyed by (single jurisdiction, program slug) but stack lookup uses (stack jurisdiction, program slug), losing federal members in provincial stacks. RULE_DATA_INCOMPLETE is absent from the severity map and can tie with NOT_APPLICABLE. Current persisted LU/FVD stacks all expose null qualification.",
+      "correct behavior": "Every combined structure carries the order-invariant worst qualification state of every member, keyed by canonical program identity, with an explicit total ordering over all states. Missing member-state trace fails Recommended admission closed.",
+      "evidence": "backend/app/services/canonical_evaluation.py stores _qual_state_by_code_program[(code, slug)] and later reads [(stack_result.jurisdiction_code, slug)]. _QUAL_STATE_SEVERITY omits RULE_DATA_INCOMPLETE. A direct diagnostic resolves [NOT_APPLICABLE, RULE_DATA_INCOMPLETE] to NOT_APPLICABLE. Actual FVD has six PRICED stacks and all six have role_qualification null.",
+      "required fix": "Correct the member-state join and total severity map in backend/app/services/canonical_evaluation.py; make backend/app/services/canonical_production_view.py reject combined candidates with an incomplete member qualification trace; preserve per-member trace in persisted output.",
+      "required runtime proof": "Pairwise and N-way order-invariant tests for every qualification state; CPTC USER_FACT_REQUIRED + OPSTC NOT_APPLICABLE must resolve USER_FACT_REQUIRED; OPSTC NOT_APPLICABLE + OFTTC RULE_DATA_INCOMPLETE must resolve RULE_DATA_INCOMPLETE; a comparable home stack with either gap must not be Recommended."
+    },
+    {
+      "id": "OH-003",
+      "severity": "P1",
+      "served path": "Mounted /api/v1/projects/{project_id}/structures/{structure_id}/calculate, /api/v1/optimization/*, and unparameterized /api/v1/cineglobe/* routes",
+      "current behavior": "The structures calculate route calls run_full_analysis 0.1.0 and persists its result in the shared calculation table. Unparameterized CineGlobe routes serve Little-Utopia-only in-memory state under a non-demo prefix and are used by live company screens. Project GET filters legacy rows, but multiple production-capable lineages remain served.",
+      "correct behavior": "Every production calculation endpoint uses the canonical evaluator/generation contract. Demo-only state is explicitly namespaced and cannot be consumed as production truth. Advisory endpoints cannot represent or persist canonical economics.",
+      "evidence": "backend/app/api/v1/structures.py imports run_full_analysis, constructs StructureCalculationResult and commits it. backend/app/api/v1/cineglobe.py imports little_utopia_state.get_state for unparameterized routes. backend/app/main.py mounts all three routers under /api/v1.",
+      "required fix": "Retire or canonicalize calculate_structure_impl; explicitly isolate/migrate the LU-only routes and their live consumers; document and enforce advisory-only optimization endpoints. Relevant files: backend/app/api/v1/structures.py, backend/app/api/v1/cineglobe.py, backend/app/api/v1/optimization.py, backend/app/main.py, and the three current company-screen consumers.",
+      "required runtime proof": "HTTP route inventory plus DB assertions show no endpoint can return or persist 0.1.0 economics; no production/company request receives LU economics without a project identity; demo/legacy calls cannot alter canonical project GET output."
+    },
+    {
+      "id": "OH-004",
+      "severity": "P1",
+      "served path": "Optimizer acceptance/regression suite guarding canonical project GET, cache identity and Recommended admission",
+      "current behavior": "145 targeted tests pass while stale project rows and null stack qualification remain. One role test contains `or True`; the registry-version test asserts only truthy constants/hash; the demo-isolation test checks only source strings; no test covers served worst-state stack propagation or current-generation cache invalidation.",
+      "correct behavior": "Acceptance tests fail on stale served state, missing recovered candidates, incomplete combined qualification trace and multiple production lineages. Collection assertions prove non-zero inspected populations and behavior, not metadata presence.",
+      "evidence": "backend/tests/test_canonical_role_qualification_bridge.py contains `any(... or True ...)`; test_cache_fingerprint_expansion.py::test_registry_versions_are_present_in_the_payload does not mutate/monkeypatch versions; test_legacy_endpoint_isolation.py::test_cineglobe_unparameterized_endpoints_are_explicitly_demo_scoped checks two strings; no combined qualification worst-state test exists.",
+      "required fix": "Replace vacuous/metadata-only guards and add project-GET integration tests spanning canonical registry -> evaluation persistence -> API response. Add negative controls for stale rows and incomplete combined member traces.",
+      "required runtime proof": "Each new regression fails against audited baseline 6b44973 and passes only after OH-001 through OH-003; inspected row/member counts are asserted non-zero."
+    }
+  ]
+}
