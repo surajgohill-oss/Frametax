@@ -75,6 +75,17 @@ BE_DOCTRINE = register(DoctrineRecord(
     requires_cultural_test=True,
     citation=_BE_CITATION,
     source_ref="beci.be+scopeinvest.be-tax-shelter",
+    provenance=SourceProvenance(
+        issuing_authority="FPS Finance (Federal Public Service Finance, Belgium)",
+        source_url="https://finance.belgium.be/en/enterprises/corporation-tax/tax-benefits/tax-shelter-audiovisual-production",
+        citation_detail="Tax Shelter — audiovisual production",
+        verified_date="2026-07-26",
+        interpretation_note="Recovered internally: this program already carried "
+                             "a PRIMARY-tier EvidenceRecord in program_requirements.py "
+                             "(a separate existing canonical provenance store) that had "
+                             "never been cross-referenced into program_rate_rules's own "
+                             "SourceProvenance. No new research performed.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="be-net-42",
@@ -519,6 +530,17 @@ IT_DOCTRINE = register(DoctrineRecord(
     requires_cultural_test=True,
     citation=_IT_CITATION,
     source_ref="mestierecinema.it-italian-tax-credit",
+    provenance=SourceProvenance(
+        issuing_authority="Direzione Generale Cinema e Audiovisivo (DGCA), Ministero della Cultura",
+        source_url="https://cinema.cultura.gov.it/cosa-facciamo/sostegni-economici/linee-di-sostegno/tax-credit/introduzione/",
+        citation_detail="Tax Credit — Introduzione",
+        verified_date="2026-07-26",
+        interpretation_note="Recovered internally: this program already carried "
+                             "a PRIMARY-tier EvidenceRecord in program_requirements.py "
+                             "(a separate existing canonical provenance store) that had "
+                             "never been cross-referenced into program_rate_rules's own "
+                             "SourceProvenance. No new research performed.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="it-flat-40",
@@ -2252,6 +2274,17 @@ US_OR_DOCTRINE = register(DoctrineRecord(
     requires_cultural_test=False,
     citation=_US_OR_CITATION,
     source_ref="3-corroborating-sources-oregon-opif",
+    provenance=SourceProvenance(
+        issuing_authority="Oregon Film & Video Office (Oregon Film)",
+        source_url="https://oregonfilm.org/article/oregon-production-investment-fund-opif/",
+        citation_detail="Oregon Production Investment Fund (OPIF)",
+        verified_date="2026-07-26",
+        interpretation_note="Recovered internally: this program already carried "
+                             "a PRIMARY-tier EvidenceRecord in program_requirements.py "
+                             "(a separate existing canonical provenance store) that had "
+                             "never been cross-referenced into program_rate_rules's own "
+                             "SourceProvenance. No new research performed.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="us-or-combined-262",
@@ -2596,6 +2629,17 @@ MA_DOCTRINE = register(DoctrineRecord(
     requires_cultural_test=False,
     citation=_MA_CITATION,
     source_ref="4-corroborating-sources-morocco-ccm",
+    provenance=SourceProvenance(
+        issuing_authority="Centre Cinematographique Marocain (CCM)",
+        source_url="https://www.ccm.ma/foreign_production/pe/index.html",
+        citation_detail="CCM Foreign Production incentive — official programme page",
+        verified_date="2026-07-26",
+        interpretation_note="Recovered internally: this program already carried "
+                             "a PRIMARY-tier EvidenceRecord in program_requirements.py "
+                             "(a separate existing canonical provenance store) that had "
+                             "never been cross-referenced into program_rate_rules's own "
+                             "SourceProvenance. No new research performed.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="ma-flat-30",
@@ -2651,6 +2695,17 @@ DK_DOCTRINE = register(DoctrineRecord(
     requires_cultural_test=True,
     citation=_DK_CITATION,
     source_ref="3-corroborating-sources-denmark-rebate",
+    provenance=SourceProvenance(
+        issuing_authority="Slots- og Kulturstyrelsen (Danish Agency for Culture and Palaces)",
+        source_url="https://slks.dk/english/work-areas/media/the-danish-production-incentive-scheme",
+        citation_detail="The Danish Production Incentive Scheme",
+        verified_date="2026-07-26",
+        interpretation_note="Recovered internally: this program already carried "
+                             "a PRIMARY-tier EvidenceRecord in program_requirements.py "
+                             "(a separate existing canonical provenance store) that had "
+                             "never been cross-referenced into program_rate_rules's own "
+                             "SourceProvenance. No new research performed.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="dk-flat-25",
@@ -2993,6 +3048,18 @@ TH_DOCTRINE = register(DoctrineRecord(
     incentive_type="cash_rebate", is_refundable=True, is_transferable=False,
     min_spend_usd=1_400_000.0, annual_cap_usd=None, requires_cultural_test=False,
     citation=_TH_CITATION, source_ref="thailand-business-news+overgrownproductions",
+    provenance=SourceProvenance(
+        issuing_authority="Thailand Film Office (TFO), Department of Tourism; "
+                           "Film, Video and Digital Media Committee",
+        citation_detail="Thailand Film Office program guidance (TFO / Department "
+                         "of Tourism).",
+        interpretation_note="Recovered internally: this program already carried "
+                             "a PRIMARY-tier EvidenceRecord in "
+                             "program_requirements.py (a separate existing "
+                             "canonical provenance store) that had never been "
+                             "cross-referenced into program_rate_rules's own "
+                             "SourceProvenance. No new research performed.",
+    ),
     tiers=(
         DoctrineRateTier(tier_id="th-base-15", rate=0.15, is_band_ceiling=False,
                          min_qpe_usd=1_400_000.0),
@@ -3031,6 +3098,13 @@ MY_DOCTRINE = register(DoctrineRecord(
     incentive_type="cash_rebate", is_refundable=True, is_transferable=False,
     min_spend_usd=1_000_000.0, annual_cap_usd=None, requires_cultural_test=False,
     citation=_MY_CITATION, source_ref="productionservicenetwork.com-malaysia",
+    provenance=SourceProvenance(
+        issuing_authority="National Film Development Corporation Malaysia (FINAS)",
+        source_url="https://filminmalaysia.com/app/uploads/2016/12/GUIDELINE-FOREIGN.pdf",
+        citation_detail="Film in Malaysia Incentive (FIMI) Guidelines (Foreign Production), Section 2.2 (Cultural Test) and Appendix C.",
+        verified_date="2026-08-19",
+        interpretation_note="Recovered internally: this program already carried a PRIMARY-tier EvidenceRecord in program_requirements.py (a separate existing canonical provenance store) that had never been cross-referenced into program_rate_rules's own SourceProvenance. No new research performed.",
+    ),
     tiers=(
         DoctrineRateTier(tier_id="my-base-30", rate=0.30, is_band_ceiling=False,
                           min_qpe_usd=1_000_000.0),
@@ -3063,6 +3137,11 @@ PH_DOCTRINE = register(DoctrineRecord(
     incentive_type="cash_rebate", is_refundable=True, is_transferable=False,
     min_spend_usd=None, annual_cap_usd=540_000.0, requires_cultural_test=False,
     citation=_PH_CITATION, source_ref="productionservicenetwork.com-philippines",
+    provenance=SourceProvenance(
+        issuing_authority="Film Development Council of the Philippines (FDCP), through the Film Philippines Office (FPO)",
+        citation_detail="Film Location Incentive Program (FLIP) — official program page.",
+        interpretation_note="Recovered internally: this program already carried a PRIMARY-tier EvidenceRecord in program_requirements.py (a separate existing canonical provenance store) that had never been cross-referenced into program_rate_rules's own SourceProvenance. No new research performed.",
+    ),
     tiers=(
         DoctrineRateTier(tier_id="ph-base-20", rate=0.20, is_band_ceiling=False),
         DoctrineRateTier(tier_id="ph-ceiling-25", rate=0.25, is_band_ceiling=True,
@@ -3218,6 +3297,11 @@ CL_DOCTRINE = register(DoctrineRecord(
     incentive_type="cash_rebate", is_refundable=True, is_transferable=False,
     min_spend_usd=1_000_000.0, annual_cap_usd=None, requires_cultural_test=False,
     citation=_CL_CITATION, source_ref="ep.com-spring-2026-roundup-chile",
+    provenance=SourceProvenance(
+        issuing_authority="Ministerio de las Culturas, las Artes y el Patrimonio (Chile); Corfo (Corporacion de Fomento de la Produccion); Ministerio de Economia, Fomento y Turismo",
+        citation_detail="Ministerios de las Culturas, de Economia y Corfo presentan segunda convocatoria del programa IFI Audiovisual 2025.",
+        interpretation_note="Recovered internally: this program already carried a PRIMARY-tier EvidenceRecord in program_requirements.py (a separate existing canonical provenance store) that had never been cross-referenced into program_rate_rules's own SourceProvenance. No new research performed.",
+    ),
     tiers=(DoctrineRateTier(tier_id="cl-ceiling-40", rate=0.40, is_band_ceiling=True,
                              min_qpe_usd=1_000_000.0,
                              conditions=(RateCondition(
@@ -3256,6 +3340,11 @@ IL_DOCTRINE = register(DoctrineRecord(
     incentive_type="cash_rebate", is_refundable=True, is_transferable=False,
     min_spend_usd=50_000.0, annual_cap_usd=4_800_000.0, requires_cultural_test=False,
     citation=_IL_CITATION, source_ref="hollywoodreporter+timesofisrael-israel",
+    provenance=SourceProvenance(
+        issuing_authority="Israel Ministry of Economy & Industry; NFCT (Israel Film Fund administration)",
+        citation_detail="Information for Foreign Producers — Israel Cash Rebate (NFCT / Ministry of Economy & Industry).",
+        interpretation_note="Recovered internally: this program already carried a PRIMARY-tier EvidenceRecord in program_requirements.py (a separate existing canonical provenance store) that had never been cross-referenced into program_rate_rules's own SourceProvenance. No new research performed.",
+    ),
     tiers=(
         DoctrineRateTier(tier_id="il-base-30", rate=0.30, is_band_ceiling=False,
                           min_qpe_usd=50_000.0),
@@ -3293,6 +3382,12 @@ JP_DOCTRINE = register(DoctrineRecord(
     incentive_type="cash_rebate", is_refundable=True, is_transferable=False,
     min_spend_usd=None, annual_cap_usd=None, requires_cultural_test=False,
     citation=_JP_CITATION, source_ref="variety+deadline+screendaily+vipo.or.jp",
+    provenance=SourceProvenance(
+        issuing_authority="Ministry of Economy, Trade and Industry (METI) with VIPO (Visual Industry Promotion Organization) and the Japan Film Commission",
+        citation_detail="Location Incentive Program for International Large-scale Audiovisual Productions — VIPO / METI.",
+        source_url="https://www.vipo.or.jp",
+        interpretation_note="Recovered internally: this program already carried a PRIMARY-tier EvidenceRecord in program_requirements.py (a separate existing canonical provenance store) that had never been cross-referenced into program_rate_rules's own SourceProvenance. No new research performed.",
+    ),
     tiers=(DoctrineRateTier(tier_id="jp-flat-50", rate=0.50, is_band_ceiling=False),),
 ))
 register_rate_rules(rate_rules_for(JP_DOCTRINE))
@@ -3424,6 +3519,17 @@ FJ_DOCTRINE = register(DoctrineRecord(
              "they work through a locally registered company.' Min "
              "spend ~$110,000. Max rebate cap ~$1,750,000.",
     source_ref="unctad.org-fiji-film-rebate",
+    provenance=SourceProvenance(
+        issuing_authority="Film Fiji (Fijian government film promotion authority)",
+        source_url="https://film-fiji.com/incentives-and-legislation/20-film-tax-rebate/",
+        citation_detail="20% Film Tax Rebate",
+        verified_date="2026-07-26",
+        interpretation_note="Recovered internally: this program already carried "
+                             "a PRIMARY-tier EvidenceRecord in program_requirements.py "
+                             "(a separate existing canonical provenance store) that had "
+                             "never been cross-referenced into program_rate_rules's own "
+                             "SourceProvenance. No new research performed.",
+    ),
     tiers=(DoctrineRateTier(tier_id="fj-flat-20", rate=0.20, is_band_ceiling=False,
                              min_qpe_usd=110_000.0,
                              conditions=(RateCondition(
@@ -4938,6 +5044,17 @@ US_WA_DOCTRINE = register(DoctrineRecord(
               "catalog's stale 15% base figure. Annual fund ~$3.5M, "
               "competitive/oversubscribed (Washington Filmworks).",
     source_ref="greenslate.com-washington",
+    provenance=SourceProvenance(
+        issuing_authority="Washington Filmworks (administrator of the Motion Picture Competitiveness Program); statutory basis Chapter 43.365 RCW",
+        source_url="https://www.washingtonfilmworks.org/wp-content/uploads/2025/06/2025.06.24_WF-Production-Incentive-Program-PIP_GC.pdf",
+        citation_detail="Production Incentive Program (PIP) Guidelines & Criteria and Fact Sheet (rev. 2025-06-24) — Washington Filmworks; Chapter 43.365 RCW",
+        verified_date="2026-07-26",
+        interpretation_note="Recovered internally: this program already carried "
+                             "a PRIMARY-tier EvidenceRecord in program_requirements.py "
+                             "(a separate existing canonical provenance store) that had "
+                             "never been cross-referenced into program_rate_rules's own "
+                             "SourceProvenance. No new research performed.",
+    ),
     tiers=(DoctrineRateTier(tier_id="us-wa-base-30", rate=0.30, is_band_ceiling=False,
                              min_qpe_usd=500_000.0),
            DoctrineRateTier(tier_id="us-wa-ceiling-45", rate=0.45, is_band_ceiling=True,
@@ -5658,6 +5775,17 @@ CA_AB_DOCTRINE = register(DoctrineRecord(
               "ownership.' Confirms catalog's 22% general tier, adds a "
               "real ownership-based 30% ceiling.",
     source_ref="thereactionlab.com-alberta",
+    provenance=SourceProvenance(
+        issuing_authority="Government of Alberta (Jobs, Economy and Trade); Film and Television Tax Credit Act and Film and Television Tax Credit Regulation",
+        source_url="https://www.alberta.ca/film-television-tax-credit",
+        citation_detail="Film and Television Tax Credit (FTTC) — Program Guidelines; Film and Television Tax Credit Act and Regulation (amendments in force 2024-06-07)",
+        verified_date="2026-07-26",
+        interpretation_note="Recovered internally: this program already carried "
+                             "a PRIMARY-tier EvidenceRecord in program_requirements.py "
+                             "(a separate existing canonical provenance store) that had "
+                             "never been cross-referenced into program_rate_rules's own "
+                             "SourceProvenance. No new research performed.",
+    ),
     tiers=(DoctrineRateTier(tier_id="ca-ab-general-22", rate=0.22, is_band_ceiling=False),
            DoctrineRateTier(tier_id="ca-ab-alberta-owned-30", rate=0.30, is_band_ceiling=True,
                              conditions=(RateCondition(
@@ -5781,6 +5909,17 @@ NL_DOCTRINE = register(DoctrineRecord(
               "tax rebate.' Confirms catalog's 30% as the floor, adds a "
               "40% ceiling not previously known.",
     source_ref="rodriqueslaw.com-netherlands",
+    provenance=SourceProvenance(
+        issuing_authority="Netherlands Film Fund (Nederlands Filmfonds)",
+        source_url="https://www.filmfonds.nl/en/funding/fund/netherlands-film-production-incentive",
+        citation_detail="Netherlands Film Production Incentive — Netherlands Film Fund (Filmfonds)",
+        verified_date="2026-07-26",
+        interpretation_note="Recovered internally: this program already carried "
+                             "a PRIMARY-tier EvidenceRecord in program_requirements.py "
+                             "(a separate existing canonical provenance store) that had "
+                             "never been cross-referenced into program_rate_rules's own "
+                             "SourceProvenance. No new research performed.",
+    ),
     tiers=(DoctrineRateTier(tier_id="nl-floor-30", rate=0.30, is_band_ceiling=False),
            DoctrineRateTier(tier_id="nl-ceiling-40", rate=0.40, is_band_ceiling=True,
                              conditions=(RateCondition(
@@ -5829,6 +5968,17 @@ AT_DOCTRINE = register(DoctrineRecord(
               "applications run through the AWS Funding Manager platform "
               "(live since 2023-01-02).",
     source_ref="needafixer.com+progressiveproductions.eu+variety.com-2023+filminaustria.com-official",
+    provenance=SourceProvenance(
+        issuing_authority="Austria Wirtschaftsservice Gesellschaft mbH (aws), under the Federal Ministry of Labor, Economy, Energy and Tourism; FILM in AUSTRIA (Austrian Film Commission) as first point of contact",
+        source_url="https://api.fisaplus.com/fileadmin/user_upload/FISA__SRL_Serviceproduktionen_2025-2027_EN.pdf",
+        citation_detail="FISA+ Funding Guidelines for Service Productions 2025-2027 (official PDF, Annex 3 Cultural Test) plus independently-converging industry summaries for rate/administration facts",
+        verified_date="2026-08-19",
+        interpretation_note="Recovered internally: this program already carried "
+                             "a PRIMARY-tier EvidenceRecord in program_requirements.py "
+                             "(a separate existing canonical provenance store) that had "
+                             "never been cross-referenced into program_rate_rules's own "
+                             "SourceProvenance. No new research performed.",
+    ),
     tiers=(DoctrineRateTier(tier_id="at-base-30", rate=0.30, is_band_ceiling=False),
            DoctrineRateTier(tier_id="at-green-bonus-35", rate=0.35, is_band_ceiling=True,
                              conditions=(RateCondition(
@@ -5935,6 +6085,17 @@ RO_DOCTRINE = register(DoctrineRecord(
               "figure, which matches neither 30% nor 40% -- flagged, not "
               "silently dropped.",
     source_ref="aol.com-romania-conflicts-with-stale-catalog-35pct",
+    provenance=SourceProvenance(
+        issuing_authority="Office for Film and Cultural Investments (OFIC), Government of Romania",
+        source_url="https://app.ofic.ro/",
+        citation_detail="Romanian cash rebate state aid scheme — Office for Film and Cultural Investments (OFIC)",
+        verified_date="2026-07-26",
+        interpretation_note="Recovered internally: this program already carried "
+                             "a PRIMARY-tier EvidenceRecord in program_requirements.py "
+                             "(a separate existing canonical provenance store) that had "
+                             "never been cross-referenced into program_rate_rules's own "
+                             "SourceProvenance. No new research performed.",
+    ),
     tiers=(DoctrineRateTier(tier_id="ro-current-30", rate=0.30, is_band_ceiling=False,
                              conditions=(RateCondition(
                                  condition_id="ro-40pct-expansion-date-unconfirmed",
@@ -5963,6 +6124,17 @@ RS_DOCTRINE = register(DoctrineRecord(
               "pass -- no dedicated fresh Serbia source surfaced in this "
               "search batch; carried forward unchallenged.",
     source_ref="catalog-unchallenged-serbia",
+    provenance=SourceProvenance(
+        issuing_authority="Film Center Serbia (Filmski centar Srbije); Government of the Republic of Serbia",
+        source_url="https://www.fcs.rs/en/industry-guide/film-incentives/",
+        citation_detail="Film Incentives — Film Center Serbia (FCS) / Film in Serbia",
+        verified_date="2026-07-26",
+        interpretation_note="Recovered internally: this program already carried "
+                             "a PRIMARY-tier EvidenceRecord in program_requirements.py "
+                             "(a separate existing canonical provenance store) that had "
+                             "never been cross-referenced into program_rate_rules's own "
+                             "SourceProvenance. No new research performed.",
+    ),
     tiers=(DoctrineRateTier(tier_id="rs-flat-25", rate=0.25, is_band_ceiling=False,
                              conditions=(RateCondition(
                                  condition_id="rs-rate-not-reconfirmed",
@@ -5989,6 +6161,17 @@ IS_GENERAL_DOCTRINE = register(DoctrineRecord(
               "productions that fulfil certain requirements.' Confirms "
               "catalog's 25% base, adds a real 35% ceiling.",
     source_ref="rodriqueslaw.com-iceland",
+    provenance=SourceProvenance(
+        issuing_authority="Film in Iceland (Ministry of Culture and Business Affairs) / Icelandic Film Centre",
+        source_url="https://filminiceland.com/incentives",
+        citation_detail="Iceland Film Incentives / How to Apply — Film in Iceland; Icelandic Film Centre reimbursement scheme",
+        verified_date="2026-07-26",
+        interpretation_note="Recovered internally: this program already carried "
+                             "a PRIMARY-tier EvidenceRecord in program_requirements.py "
+                             "(a separate existing canonical provenance store) that had "
+                             "never been cross-referenced into program_rate_rules's own "
+                             "SourceProvenance. No new research performed.",
+    ),
     tiers=(DoctrineRateTier(tier_id="is-base-25", rate=0.25, is_band_ceiling=False),
            DoctrineRateTier(tier_id="is-ceiling-35", rate=0.35, is_band_ceiling=True,
                              conditions=(RateCondition(
@@ -6361,6 +6544,17 @@ LT_DOCTRINE = register(DoctrineRecord(
               "figure -- fresher/more-specific source used, catalog's "
               "30% flagged not dropped.",
     source_ref="camaleonrental.com-lithuania-conflicts-with-catalog-30pct",
+    provenance=SourceProvenance(
+        issuing_authority="Lietuvos kino centras (Lithuanian Film Centre)",
+        source_url="https://www.lkc.lt/en/tax-incentives/how-it-works",
+        citation_detail="How it works — Lithuanian Film Tax Incentive",
+        verified_date="2026-07-26",
+        interpretation_note="Recovered internally: this program already carried "
+                             "a PRIMARY-tier EvidenceRecord in program_requirements.py "
+                             "(a separate existing canonical provenance store) that had "
+                             "never been cross-referenced into program_rate_rules's own "
+                             "SourceProvenance. No new research performed.",
+    ),
     tiers=(DoctrineRateTier(tier_id="lt-flat-20", rate=0.20, is_band_ceiling=False,
                              conditions=(
                                  RateCondition(
@@ -6395,6 +6589,17 @@ PL_DOCTRINE = register(DoctrineRecord(
               "coverage): 'Poland: 25-30%.' Confirms catalog's 30% as "
               "the ceiling of a real range.",
     source_ref="variety.com-poland",
+    provenance=SourceProvenance(
+        issuing_authority="Polish Film Institute (PISF); Ministry of Culture and National Heritage (statutory/regulatory basis)",
+        source_url="https://eli.sejm.gov.pl/eli/DU/2019/50/ogl",
+        citation_detail="PISF — Information (zachęty); statutory basis: Ustawa z dnia 9 listopada 2018 r. o finansowym wspieraniu produkcji audiowizualnej (Dz.U. 2019 poz. 50), Art. 16(4)/17(3)/21(2)/31(1)(5); test point scale: Rozporządzenie Ministra Kultury i Dziedzictwa Narodowego w sprawie szczegółowego wykazu polskich kosztów kwalifikowalnych..., Załącznik nr 4 (as amended 12 November 2024)",
+        verified_date="2026-08-19",
+        interpretation_note="Recovered internally: this program already carried "
+                             "a PRIMARY-tier EvidenceRecord in program_requirements.py "
+                             "(a separate existing canonical provenance store) that had "
+                             "never been cross-referenced into program_rate_rules's own "
+                             "SourceProvenance. No new research performed.",
+    ),
     tiers=(DoctrineRateTier(tier_id="pl-floor-25", rate=0.25, is_band_ceiling=False),
            DoctrineRateTier(tier_id="pl-ceiling-30", rate=0.30, is_band_ceiling=True,
                              conditions=(RateCondition(
@@ -6436,6 +6641,17 @@ LU_DOCTRINE = register(DoctrineRecord(
               "contradicted this pass -- no dedicated fresh source "
               "surfaced; carried forward unchallenged.",
     source_ref="catalog-unchallenged-luxembourg",
+    provenance=SourceProvenance(
+        issuing_authority="Film Fund Luxembourg (Fonds national de soutien à la production audiovisuelle)",
+        source_url="https://filmfund.lu/en/funding/afs-p/",
+        citation_detail="Selective Financial Assistance (AFS/SFA) for production — Film Fund Luxembourg",
+        verified_date="2026-07-26",
+        interpretation_note="Recovered internally: this program already carried "
+                             "a PRIMARY-tier EvidenceRecord in program_requirements.py "
+                             "(a separate existing canonical provenance store) that had "
+                             "never been cross-referenced into program_rate_rules's own "
+                             "SourceProvenance. No new research performed.",
+    ),
     tiers=(DoctrineRateTier(tier_id="lu-base-30", rate=0.30, is_band_ceiling=False),
            DoctrineRateTier(tier_id="lu-ceiling-40", rate=0.40, is_band_ceiling=True,
                              conditions=(RateCondition(
@@ -6703,6 +6919,17 @@ US_PR_DOCTRINE = register(DoctrineRecord(
               "cap, payroll burden 22-26%.' Corrects catalog's flat 40% "
               "figure to a real base/ceiling structure.",
     source_ref="shamelstudio.com-puerto-rico",
+    provenance=SourceProvenance(
+        issuing_authority="Departamento de Desarrollo Económico y Comercio (DDEC), Puerto Rico; Puerto Rico Film Commission",
+        source_url="https://puertoricofilm.ddec.pr.gov/incentives/",
+        citation_detail="Film industry incentives under the Puerto Rico Incentives Code (Act 60-2019), which subsumed the former Film Industry Economic Incentives Act (Act 27-2011) — Puerto Rico Film Commission / DDEC",
+        verified_date="2026-07-26",
+        interpretation_note="Recovered internally: this program already carried "
+                             "a PRIMARY-tier EvidenceRecord in program_requirements.py "
+                             "(a separate existing canonical provenance store) that had "
+                             "never been cross-referenced into program_rate_rules's own "
+                             "SourceProvenance. No new research performed.",
+    ),
     tiers=(DoctrineRateTier(tier_id="us-pr-base-20", rate=0.20, is_band_ceiling=False,
                              min_qpe_usd=50_000.0),
            DoctrineRateTier(tier_id="us-pr-ceiling-40", rate=0.40, is_band_ceiling=True,

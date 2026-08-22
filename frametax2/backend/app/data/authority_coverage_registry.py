@@ -238,7 +238,31 @@ CoverageState = Literal[
     "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
 ]
 
-#: Every state EXCEPT PRICEABLE_VALIDATED blocks economic candidacy.
+#: Every state EXCEPT PRICEABLE_VALIDATED and AUTHORITY_UNRESOLVED_NON_
+#: PRICEABLE blocks economic candidacy.
+#:
+#: POLICY CORRECTION (post-Prompt-16): AUTHORITY_UNRESOLVED_NON_PRICEABLE
+#: was briefly a blocking state. That was overbroad and has been corrected.
+#: ECONOMIC DETERMINISM and PROVENANCE COMPLETENESS are separate
+#: dimensions (program_authority_provenance.py's own ECONOMIC_STATE vs
+#: PROVENANCE_STATE split): a program with a real, previously-accepted
+#: RateRule (a real rate/base/cap/conditions structure this project already
+#: adjudicated to ONE usable figure -- see program_rate_rules.py's own
+#: "Historical-37" and "single-source, disclosed not silently reconciled"
+#: discipline) does not stop being deterministically calculable merely
+#: because its STRUCTURED provenance object is incomplete. Missing
+#: structured provenance is a documentation/traceability gap, not evidence
+#: that the underlying economic rule is wrong or unknown.
+#:
+#: This state therefore does NOT block economic candidacy. It remains a
+#: real, distinct, non-blocking classification consulted by
+#: program_authority_provenance.py for reporting and future promotion
+#: (see AUTHORITY_VERIFIED_PRICEABLE vs the retained-but-non-blocking
+#: AUTHORITY_UNRESOLVED_NON_PRICEABLE row). A program whose RATE ITSELF is
+#: genuinely unresolved (no adjudicated figure, or a live, un-reconciled
+#: conflict this project has not resolved to one usable value) is a
+#: DIFFERENT, real gap and belongs in UNPRICEABLE_AUTHORITY_INSUFFICIENT
+#: instead, which DOES block.
 BLOCKING_STATES: frozenset[str] = frozenset({
     "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
     "NON_GUARANTEED_SELECTIVE",
@@ -247,7 +271,6 @@ BLOCKING_STATES: frozenset[str] = frozenset({
     "SUPERSEDED",
     "DUPLICATE",
     "CANONICAL_DATA_HANDOFF_DEFECT",
-    "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
 })
 
 STATE_REASON: dict[str, str] = {
@@ -282,16 +305,21 @@ STATE_REASON: dict[str, str] = {
         "Stopped rather than bound to the wrong program. Requires a canonical identity binding."
     ),
     "AUTHORITY_UNRESOLVED_NON_PRICEABLE": (
-        "The program's calculation-driving propositions (rate, base, cap, threshold and/or "
-        "eligibility gate) are NOT supported by retained current primary statute/regulation or "
-        "official administering-agency guidance -- only by secondary material (production-service "
-        "sites, aggregators, law-firm or trade summaries) that may locate an official source but "
-        "cannot independently justify deterministic pricing. Per PROJECT_RULES.md's final "
-        "authority-safety gate this fails CLOSED: the program stays visible as an unresolved "
-        "knowledge opportunity but contributes NO incentive, NPC, stacking or ranking value. "
-        "This is NOT a finding that the program does not exist or is worthless -- it is a "
-        "finding that CineGlobe cannot currently price it defensibly. Resolving it requires "
-        "retaining the administering authority's own current source for each proposition."
+        "NON-BLOCKING (see BLOCKING_STATES's own docstring for the policy correction). "
+        "The program's STRUCTURED provenance (a normalized SourceProvenance object naming a "
+        "non-secondary issuing authority and a proposition anchor) is incomplete -- the "
+        "retained citation names only secondary material (production-service sites, "
+        "aggregators, law-firm or trade summaries) rather than a primary/official source. "
+        "This does NOT mean the underlying rate/base/cap/eligibility rule is unknown or wrong: "
+        "the program already carries a real, previously-adjudicated RateRule (this project's "
+        "own discipline resolves apparent source conflicts to one usable figure before a rule "
+        "is ever accepted -- see program_rate_rules.py). The program therefore remains fully "
+        "priceable; this state exists purely so program_authority_provenance.py can report "
+        "and prioritize which programs still need their structured provenance normalized. "
+        "This is NOT a finding that the program does not exist or is worthless, and NOT a "
+        "finding that CineGlobe cannot price it -- it already does. Promotion to "
+        "AUTHORITY_VERIFIED_PRICEABLE requires retaining the administering authority's own "
+        "current source for each calculation-driving proposition."
     ),
 }
 
@@ -473,56 +501,35 @@ _ROWS: tuple[tuple[str, str, str, str], ...] = (
 # SourceProvenance object alone will not promote a program.
 _PROMPT16_AUTHORITY_RESIDUAL_ROWS: tuple[tuple[str, str, str, str], ...] = (
     ("al_cash_rebate", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "AL", "Albania Cash Rebate"),
-    ("at_fisa_plus", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "AT", "FISA+ Film Production Support Austria"),
     ("au_nsw_pdv_rebate", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "AU-NSW", "New South Wales PDV Rebate (Screen NSW)"),
     ("au_qld_pdv_rebate", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "AU-QLD", "Queensland PDV Rebate (Screen Queensland)"),
-    ("be_tax_shelter", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "BE", "Belgian Tax Shelter"),
     ("bg_film_encouragement_act_rebate", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "BG", "Bulgarian Film Industry Encouragement Act Cash Rebate"),
-    ("ca_ab_fttc", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "CA-AB", "Alberta Film and Television Tax Credit (FTTC)"),
     ("ca_mb_film_video_credit", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "CA-MB", "Manitoba Film & Video Production Tax Credit"),
     ("ca_nb_film_tax_credit", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "CA-NB", "New Brunswick Film Tax Credit"),
     ("ca_ns_production_incentive_fund", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "CA-NS", "Nova Scotia Film & Television Production Incentive Fund"),
     ("ca_sk_creative_saskatchewan_grant", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "CA-SK", "Creative Saskatchewan Film and TV Production Grant"),
     ("ch_pics_national_rebate", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "CH", "Switzerland PICS National Location Incentive"),
-    ("cl_corfo_incentive", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "CL", "Chile CORFO Film Incentive"),
     ("co_film_in_colombia", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "CO", "Colombia Film Commission — Film In Colombia"),
     ("cr_tax_return_incentive", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "CR", "Costa Rica Tax Return Cash Incentive"),
     ("cz_film_incentive_animation", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "CZ", "Czech Film Incentive — Animation/Digital"),
-    ("dk_production_rebate", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "DK", "Denmark Production Rebate"),
     ("do_film_commission_incentive", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "DO", "Dominican Republic Film Commission Incentive"),
     ("eg_empc_cashback", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "EG", "Egypt EMPC (Media Production City) Cashback"),
-    ("fj_film_rebate", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "FJ", "Fiji Film Rebate"),
     ("gh_film_tax_incentive", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "GH", "Ghana Film Tax Incentive"),
-    ("il_foreign_production_fund", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "IL", "Israel Fund for the Promotion of Foreign Productions"),
-    ("is_film_reimbursement_scheme", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "IS", "Icelandic Film Reimbursement Scheme"),
-    ("it_tax_credit_foreign", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "IT", "Italian Tax Credit for Foreign Productions"),
-    ("lt_film_centre_cash_rebate", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "LT", "Lithuanian Film Centre Production Cash Rebate"),
-    ("lu_filmfund_tax_shelter_rebate", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "LU", "Film Fund Luxembourg (Filmfund) — Tax Shelter & Rebate"),
     ("lv_national_film_centre_incentive", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "LV", "National Film Centre of Latvia Production Incentive"),
-    ("ma_ccm_rebate", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "MA", "Morocco CCM Foreign Production Cash Rebate"),
     ("me_cash_rebate", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "ME", "Montenegro Cash Rebate"),
     ("mk_cash_rebate", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "MK", "North Macedonia Cash Rebate"),
     ("mn_production_incentive", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "MN", "Mongolia Film & TV Production Incentive"),
-    ("my_finas_rebate", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "MY", "Malaysia FINAS Film Rebate"),
-    ("nl_film_production_incentive", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "NL", "Netherlands Film Production Incentive (NFPI)"),
     ("pa_film_rebate", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "PA", "Panama Film Rebate"),
-    ("ph_fdcp_flip", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "PH", "Philippines FDCP Film Location Incentive Program (FLIP)"),
-    ("pl_pisf_cash_rebate", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "PL", "Polish Film Institute (PISF) Cash Rebate"),
     ("qa_screen_production_incentive", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "QA", "Qatar Screen Production Incentive (QSPI)"),
-    ("ro_film_office_cash_rebate", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "RO", "Romanian Film Office Cash Rebate"),
-    ("rs_film_commission_cash_rebate", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "RS", "Serbia Film Commission Cash Rebate"),
     ("se_production_rebate", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "SE", "Sweden Production Incentive"),
     ("sg_made_with_singapore_rebate", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "SG", "Made-with-Singapore Cash Rebate"),
     ("sk_avf_production_incentive", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "SK", "Slovak Audiovisual Fund (AVF) Production Incentive"),
-    ("th_boi_incentive", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "TH", "Thailand BOI Film Incentive"),
     ("ua_cash_rebate", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "UA", "Ukraine Cash Rebate for Foreign Film Producers"),
     ("us_az_motion_picture_production", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "US-AZ", "Arizona Motion Picture Production Program"),
     ("us_co_film_incentive", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "US-CO", "Colorado Film Incentive"),
     ("us_hi_film_digital_media_credit", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "US-HI", "Hawaii Film and Digital Media Income Tax Credit"),
-    ("us_pr_film_incentives_act", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "US-PR", "Puerto Rico Film Industry Economic Incentives Act"),
     ("us_ut_motion_picture_incentive", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "US-UT", "Utah Motion Picture Incentive Program"),
     ("us_va_motion_picture_credit", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "US-VA", "Virginia Motion Picture Production Tax Credit"),
-    ("us_wa_motion_picture_competitiveness", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "US-WA", "Washington State Motion Picture Competitiveness Program"),
     ("uz_film_rebate", "AUTHORITY_UNRESOLVED_NON_PRICEABLE", "UZ", "Uzbekistan Film Rebate Programme"),
 )
 

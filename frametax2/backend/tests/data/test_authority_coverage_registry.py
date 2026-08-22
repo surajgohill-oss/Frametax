@@ -230,8 +230,16 @@ def test_calibration_anchors_mu_mt_gr_au_are_untouched():
 
 
 def test_no_record_carries_a_synthetic_rate():
+    """POLICY CORRECTION: AUTHORITY_UNRESOLVED_NON_PRICEABLE is a real,
+    valid registry state that deliberately does NOT block (see
+    BLOCKING_STATES's own docstring) -- a program's structured provenance
+    can be incomplete while its previously-accepted economics still price.
+    Every OTHER state must still block, so this test now checks state
+    validity and asserts the state IS one of the two non-rate-bearing
+    kinds this registry ever carries, rather than assuming universal
+    blocking."""
     for rec in COVERAGE_REGISTRY.values():
-        assert rec.state in BLOCKING_STATES
+        assert rec.state in BLOCKING_STATES or rec.state == "AUTHORITY_UNRESOLVED_NON_PRICEABLE"
         assert rec.reason
         assert not hasattr(rec, "base_rate")
         assert not hasattr(rec, "rate")

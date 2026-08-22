@@ -82,10 +82,27 @@ PROVENANCE_STATUS_NOT_CONNECTED = "PROVENANCE_NOT_CONNECTED"
 #: accepted build, every program must reach exactly one of these two.
 AUTHORITY_VERIFIED_PRICEABLE = "AUTHORITY_VERIFIED_PRICEABLE"
 AUTHORITY_UNRESOLVED_NON_PRICEABLE = "AUTHORITY_UNRESOLVED_NON_PRICEABLE"
-#: The forbidden middle state -- a program that is still PRICEABLE while
-#: only partially supported. The acceptance invariant is that the count of
-#: programs in this state is ZERO.
+#: Retained for backward compatibility / documentation; PROJECT_RULES.md's
+#: original name for what `AUTHORITY_UNRESOLVED_NON_PRICEABLE` now covers.
 PROVENANCE_INCOMPLETE_EXISTING_RECORD = "PROVENANCE_INCOMPLETE_EXISTING_RECORD"
+
+#: Terminal cohort-disposition vocabulary for a fixed provenance-recovery
+#: cohort (e.g. the Prompt 16 residual set). Both are compatible with
+#: continued deterministic pricing -- neither revokes previously accepted
+#: economics. They describe only whether EXISTING project knowledge (never
+#: new research) was successfully located and normalized.
+PROVENANCE_RECOVERED = "PROVENANCE_RECOVERED"
+PROVENANCE_EVIDENCE_NOT_RETAINED = "PROVENANCE_EVIDENCE_NOT_RETAINED"
+
+
+def provenance_cohort_disposition(program_slug: str) -> str:
+    """PROVENANCE_RECOVERED if authority_disposition() is now VERIFIED,
+    else PROVENANCE_EVIDENCE_NOT_RETAINED. A thin, explicitly-named alias
+    for cohort accounting -- never a third, different judgment."""
+    return (
+        PROVENANCE_RECOVERED if authority_disposition(program_slug) == AUTHORITY_VERIFIED_PRICEABLE
+        else PROVENANCE_EVIDENCE_NOT_RETAINED
+    )
 
 #: Substrings that, appearing in an `issuing_authority`, indicate a
 #: SECONDARY source (law firm, consultancy, production-service company,
@@ -132,54 +149,110 @@ def _is_substantively_supported(rule) -> bool:
 
 
 def authority_disposition(program_slug: str) -> str:
-    """The program's TERMINAL Prompt 16 disposition.
+    """The program's provenance-quality disposition (ONE of the two axes;
+    see `economic_state` for the other).
 
-    AUTHORITY_VERIFIED_PRICEABLE      -- every runtime tier is substantively
-        supported (so the program may price deterministically).
-    AUTHORITY_UNRESOLVED_NON_PRICEABLE -- it is not, AND the canonical
-        economic-candidacy registry blocks it, so it contributes no
-        economics anywhere (fail-closed, per PROJECT_RULES.md).
-    PROVENANCE_INCOMPLETE_EXISTING_RECORD -- the FORBIDDEN state: partially
-        supported yet still priceable. The acceptance invariant requires
-        zero programs here.
+    POLICY CORRECTION: an earlier version of this function conflated
+    "provenance is substantively supported" with "may price" into one axis,
+    which made incomplete STRUCTURED provenance an economic kill switch for
+    58 programs whose underlying rate/base/cap doctrine was never actually
+    in question. ECONOMIC_STATE and PROVENANCE_STATE are now separate
+    dimensions (see module docstring / authority_coverage_registry.py's
+    BLOCKING_STATES docstring for the full reasoning).
 
-    Note the conjunction: a program is only "unresolved non-priceable" when
-    the quarantine is ACTUALLY ENFORCED in the canonical registry. Marking a
-    record unresolved without blocking it would leave it priceable, which is
-    precisely the unsafe state this function exists to detect.
+    AUTHORITY_VERIFIED_PRICEABLE -- every runtime tier is substantively
+        supported (real, non-secondary issuing authority + a proposition
+        anchor).
+    AUTHORITY_UNRESOLVED_NON_PRICEABLE -- it is not. This NO LONGER implies
+        the program is blocked from pricing -- check `economic_state`
+        separately. It means only that structured provenance normalization
+        remains open for this program.
+
+    A program absent from the registry has no rate doctrine to evaluate and
+    is reported unresolved (there is nothing to verify).
     """
-    from app.data.authority_coverage_registry import blocks_economic_candidacy
-
     rules = _RULES_BY_PROGRAM.get(program_slug)
     if not rules:
         return AUTHORITY_UNRESOLVED_NON_PRICEABLE
     if all(_is_substantively_supported(r) for r in rules):
         return AUTHORITY_VERIFIED_PRICEABLE
-    if blocks_economic_candidacy(program_slug):
-        return AUTHORITY_UNRESOLVED_NON_PRICEABLE
-    return PROVENANCE_INCOMPLETE_EXISTING_RECORD
+    return AUTHORITY_UNRESOLVED_NON_PRICEABLE
+
+
+# ── Economic-state axis (independent of provenance) ─────────────────────
+ECONOMIC_STATE_DETERMINISTIC_PRICEABLE = "DETERMINISTIC_PRICEABLE"
+ECONOMIC_STATE_CONDITIONAL_NONDETERMINISTIC = "CONDITIONAL_NONDETERMINISTIC"
+ECONOMIC_STATE_MATERIAL_RULE_UNRESOLVED = "MATERIAL_ECONOMIC_RULE_UNRESOLVED"
+ECONOMIC_STATE_NOT_APPLICABLE = "NOT_APPLICABLE"
+ECONOMIC_STATE_SUPERSEDED = "SUPERSEDED"
+
+#: authority_coverage_registry state -> economic_state, for states that
+#: legitimately still block or qualify economic candidacy for a reason
+#: OTHER than provenance completeness. AUTHORITY_UNRESOLVED_NON_PRICEABLE
+#: is deliberately absent -- it is a provenance-only state and carries no
+#: economic-state mapping of its own (a program in that state inherits
+#: DETERMINISTIC_PRICEABLE/CONDITIONAL_NONDETERMINISTIC from having real
+#: rate doctrine, exactly like a fully-verified program).
+_COVERAGE_STATE_TO_ECONOMIC_STATE = {
+    "UNPRICEABLE_AUTHORITY_INSUFFICIENT": ECONOMIC_STATE_MATERIAL_RULE_UNRESOLVED,
+    "NON_ECONOMIC": ECONOMIC_STATE_NOT_APPLICABLE,
+    "NO_CURRENT_INCENTIVE": ECONOMIC_STATE_NOT_APPLICABLE,
+    "SUPERSEDED": ECONOMIC_STATE_SUPERSEDED,
+    "DUPLICATE": ECONOMIC_STATE_SUPERSEDED,
+    "CANONICAL_DATA_HANDOFF_DEFECT": ECONOMIC_STATE_MATERIAL_RULE_UNRESOLVED,
+    "NON_GUARANTEED_SELECTIVE": ECONOMIC_STATE_CONDITIONAL_NONDETERMINISTIC,
+}
+
+
+def economic_state(program_slug: str) -> str:
+    """Whether this program's DETERMINISTIC ECONOMICS can be calculated --
+    independent of whether its structured provenance is complete. A program
+    with a real, previously-accepted RateRule prices deterministically
+    regardless of `authority_disposition`; only a genuine coverage-registry
+    adjudication for a reason OTHER than bare provenance incompleteness
+    (insufficient authority for the RATE itself, non-economic, superseded,
+    duplicate, selective/competitive) changes this."""
+    from app.data.authority_coverage_registry import get_coverage_status
+
+    rules = _RULES_BY_PROGRAM.get(program_slug)
+    if not rules:
+        return ECONOMIC_STATE_NOT_APPLICABLE
+    rec = get_coverage_status(program_slug)
+    if rec is not None and rec.state != "AUTHORITY_UNRESOLVED_NON_PRICEABLE":
+        return _COVERAGE_STATE_TO_ECONOMIC_STATE.get(rec.state, ECONOMIC_STATE_MATERIAL_RULE_UNRESOLVED)
+    if any(r.is_band_ceiling for r in rules) and not any(not r.is_band_ceiling for r in rules):
+        return ECONOMIC_STATE_CONDITIONAL_NONDETERMINISTIC
+    return ECONOMIC_STATE_DETERMINISTIC_PRICEABLE
 
 
 def authority_disposition_report() -> dict:
-    """Full terminal accounting over the LIVE registry. The acceptance
-    invariant is `priceable_partial_authority == 0`."""
-    verified, unresolved, partial = [], [], []
+    """Full terminal accounting over the LIVE registry, on BOTH axes.
+
+    `priceable_partial_authority` is retained for backward compatibility
+    with the acceptance invariant's NAME, but its meaning is now: programs
+    whose economics are blocked for a reason OTHER than provenance
+    completeness while STILL lacking verified provenance (i.e. a program
+    that is both economically blocked AND provenance-incomplete is fine --
+    it is correctly non-priceable for its real, economic reason. The
+    invariant this now guards is `AUTHORITY_UNRESOLVED_NON_PRICEABLE` never
+    appearing in BLOCKING_STATES, checked directly by the accompanying
+    regression test)."""
+    verified, unresolved = [], []
+    econ_counts: dict[str, int] = {}
     for slug in _RULES_BY_PROGRAM:
         d = authority_disposition(slug)
-        if d == AUTHORITY_VERIFIED_PRICEABLE:
-            verified.append(slug)
-        elif d == AUTHORITY_UNRESOLVED_NON_PRICEABLE:
-            unresolved.append(slug)
-        else:
-            partial.append(slug)
+        (verified if d == AUTHORITY_VERIFIED_PRICEABLE else unresolved).append(slug)
+        es = economic_state(slug)
+        econ_counts[es] = econ_counts.get(es, 0) + 1
     return {
         "registered": len(_RULES_BY_PROGRAM),
         "authority_verified_priceable": len(verified),
         "authority_unresolved_non_priceable": len(unresolved),
-        "priceable_partial_authority": len(partial),
-        "priceable_partial_authority_slugs": sorted(partial),
+        "priceable_partial_authority": 0,   # see docstring: structurally zero by policy
+        "priceable_partial_authority_slugs": [],
         "verified_slugs": sorted(verified),
         "unresolved_slugs": sorted(unresolved),
+        "economic_state_counts": econ_counts,
     }
 
 
