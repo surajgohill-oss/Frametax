@@ -145,7 +145,15 @@ def test_mauritius_calibration_is_byte_identical_after_application():
     )
     assert round(baseline["npc_with_adjustments_usd"], 2) == 3057794.90  # CBA-009 Part 19-21: LU's own persisted 100% contingency-utilization project election (migration 0068) reproduces the historical $3,057,794.90 baseline through the generic pipeline
     assert served["ranking"][0]["structure_id"] == "ALLOC-BASELINE-MU"
-    assert len(served["structures"]) == 197
+    # 197 -> 201: canonical knowledge consolidation recovered two real,
+    # already-researched programs stranded in noncanonical locations
+    # (ca_bc_dave — "A separate 16% DAVE (animation/VFX/post) credit
+    # exists, not modeled"; au_pdv_offset — "PDV Offset ... not modeled as
+    # alternative programs"), both quoted verbatim from
+    # jurisdiction_comparison.py's own profiles. Each adds one
+    # full_relocation + one component_relocation candidate = +4, fully
+    # attributed. Mauritius itself is untouched (asserted above).
+    assert len(served["structures"]) == 201
 
 
 def test_selective_programs_contribute_zero_guaranteed_value():

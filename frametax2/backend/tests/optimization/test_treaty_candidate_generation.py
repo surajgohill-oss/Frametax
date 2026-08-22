@@ -73,16 +73,26 @@ def test_little_utopia_mu_auto_enumeration_is_correctly_empty_not_a_regression()
     elsewhere in the ledger) -- the fix must not fabricate one, and the
     served structure count/baseline NPC must be byte-identical.
 
-    Structure count legitimately grew 177 -> 185 -> 197 (CineGlobe canonical
-    pricing path + discovery repair, then the final-19 committee
-    closeout — see the matching note in
-    test_global_data_application_runtime.py::
+    Structure count legitimately grew 177 -> 185 -> 197 -> 201 (CineGlobe
+    canonical pricing path + discovery repair, then the final-19 committee
+    closeout, then the canonical knowledge consolidation — see the matching
+    note in test_global_data_application_runtime.py::
     test_mauritius_calibration_is_byte_identical_after_application).
     Mauritius's own baseline NPC and empty treaty-partner set are
     untouched — asserted below."""
     served = build_allocated_structures(get_state())
     structures = served["structures"]
-    assert len(structures) == 197
+    # 197 -> 201: canonical knowledge consolidation recovered two real,
+    # already-researched programs that had been stranded in noncanonical
+    # locations (ca_bc_dave, au_pdv_offset — each documented verbatim in
+    # jurisdiction_comparison.py yet never given a canonical
+    # representation). Each adds exactly one full_relocation AND one
+    # component_relocation candidate: +4 total, fully attributed. The
+    # component candidates are economically correct — both recoveries are
+    # animation/VFX/post credits, i.e. precisely the programs a production
+    # routes a post/VFX COMPONENT to, a real target the component pathway
+    # previously had no way to reach.
+    assert len(structures) == 201
     treaty_structures = [s for s in structures if s["structure_type"] == "treaty_coproduction"]
     assert treaty_structures == []
     assert served["coverage"]["reachable_treaty_partners"] == []

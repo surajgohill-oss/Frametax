@@ -931,6 +931,107 @@ CA_BC_DOCTRINE = register(DoctrineRecord(
 ))
 register_rate_rules(rate_rules_for(CA_BC_DOCTRINE))
 
+# ── British Columbia: DAVE (Digital Animation, Visual Effects and Post) ────
+#
+# CANONICAL KNOWLEDGE CONSOLIDATION — STRANDED KNOWLEDGE RECOVERED.
+# This program was ALREADY researched and recorded in this project:
+# jurisdiction_comparison.py's CA-BC profile states, from its own direct,
+# verbatim gov.bc.ca confirmation, "A separate 16% DAVE (animation/VFX/
+# post) credit exists, not modeled as part of this program," and its
+# data_gaps entry says it "would need its own program_slug if pursued."
+# That is EXACTLY the New York "Production Plus" failure class: real,
+# already-acquired knowledge stranded in a noncanonical location, never
+# given a canonical representation, therefore invisible to the served
+# optimizer. Recovered here from EXISTING project knowledge only -- no
+# new research was performed, and no figure appears here that was not
+# already recorded in this repository.
+#
+# Ontario's OCASE (18% animation/VFX labour credit, stackable with the
+# province's other credits) is this program's exact structural analog and
+# is already fully served as its own program_slug -- BC's equivalent
+# simply never received the same treatment.
+_CA_BC_DAVE_CITATION = (
+    "gov.bc.ca (Province of British Columbia, official), as already "
+    "recorded verbatim in this project's own CA-BC jurisdiction profile: "
+    "'A separate 16% DAVE (animation/VFX/post) credit exists.' Rate base "
+    "is qualified BC LABOUR expenditure (the same labour-only-base "
+    "structure as the BC PSTC it accompanies), not total QPE."
+)
+CA_BC_DAVE_DOCTRINE = register(DoctrineRecord(
+    jurisdiction_code="CA-BC",
+    program_slug="ca_bc_dave",
+    program_name="British Columbia Digital Animation, Visual Effects and "
+                  "Post-Production (DAVE) Tax Credit",
+    # PARSED, not VERIFIED: the 16% figure is real and was confirmed
+    # directly from gov.bc.ca by the prior pass that recorded the CA-BC
+    # profile, but this canonicalization is a RECOVERY of that recorded
+    # figure, not an independent re-fetch of the government page.
+    confidence_tier="PARSED",
+    incentive_type="tax_credit",
+    is_refundable=True,   # BC's film credits are refundable (same as PSTC)
+    is_transferable=None,
+    min_spend_usd=None,   # none recorded in existing project knowledge
+    annual_cap_usd=None,  # none recorded in existing project knowledge
+    requires_cultural_test=False,   # an animation/VFX labour credit, not a
+                                     # Canadian-content-certified credit
+    citation=_CA_BC_DAVE_CITATION,
+    source_ref="gov.bc.ca-dave-via-canonical-knowledge-consolidation",
+    provenance=SourceProvenance(
+        issuing_authority="Province of British Columbia (gov.bc.ca)",
+        source_url="https://www2.gov.bc.ca",
+        citation_detail="'A separate 16% DAVE (animation/VFX/post) credit "
+                         "exists' -- recorded verbatim in this project's own "
+                         "CA-BC jurisdiction profile from a prior direct "
+                         "gov.bc.ca confirmation.",
+        interpretation_note="Recovered during canonical knowledge "
+                             "consolidation from existing project knowledge; "
+                             "the 16% rate was already recorded, no new "
+                             "research was performed. Minimum spend, cap, and "
+                             "the precise stacking mechanic with BC PSTC are "
+                             "NOT recorded anywhere in existing project "
+                             "knowledge and are deliberately left unset "
+                             "rather than assumed.",
+    ),
+    tiers=(
+        DoctrineRateTier(
+            tier_id="ca-bc-dave-16",
+            rate=0.16,
+            is_band_ceiling=False,
+            conditions=(
+                RateCondition(
+                    condition_id="ca-bc-dave-labour-only-base",
+                    description="The 16% applies to qualified BC LABOUR "
+                                "expenditure, a base narrower than modeled "
+                                "QPE; no cap percentage relating labour to "
+                                "total production cost is recorded in "
+                                "existing project knowledge, so the narrower "
+                                "base cannot be applied -- the modeled "
+                                "credit therefore OVERSTATES nothing only if "
+                                "labour equals QPE, and is disclosed here "
+                                "rather than silently applied.",
+                    quote="16% DAVE (animation/VFX/post) credit ... qualified "
+                          "BC labour expenditure (gov.bc.ca, via this "
+                          "project's own CA-BC profile)",
+                    kind="rate_base_narrower_than_qpe",
+                ),
+                RateCondition(
+                    condition_id="ca-bc-dave-activity-scope",
+                    description="Eligibility is limited to genuine digital "
+                                "animation, visual-effects and post-"
+                                "production activity. Whether a given "
+                                "production performs such activity in BC is "
+                                "a project fact this engine does not collect "
+                                "by default -- never auto-applied.",
+                    quote="DAVE (animation/VFX/post) credit (gov.bc.ca, via "
+                          "this project's own CA-BC profile)",
+                    kind="project_fact_dependent_eligibility",
+                ),
+            ),
+        ),
+    ),
+))
+register_rate_rules(rate_rules_for(CA_BC_DAVE_DOCTRINE))
+
 # ── Canada — Ontario: Production Services Tax Credit (OPSTC) ───────────────
 #
 # NEW jurisdiction. Confirmed directly, verbatim, from ontariocreates.ca
@@ -1398,6 +1499,124 @@ AU_DOCTRINE = register(DoctrineRecord(
     ),
 ))
 register_rate_rules(rate_rules_for(AU_DOCTRINE))
+
+# ── Australia: PDV Offset (Post, Digital and Visual Effects) ───────────────
+#
+# CANONICAL KNOWLEDGE CONSOLIDATION — STRANDED KNOWLEDGE RECOVERED.
+# Second instance of the New York "Production Plus" failure class. Every
+# fact needed for this program was ALREADY in this repository:
+#   - the rate: _AU_CITATION above already states, verbatim from Screen
+#     Australia's own official page (fetched directly by a prior pass),
+#     "Location Offset and PDV Offset both offer '30% on QAPE'";
+#   - the mutual exclusivity: the same citation states "These three
+#     offsets are mutually exclusive";
+#   - the issuing authority: the same citation names the administering
+#     department.
+# jurisdiction_comparison.py's AU profile even recorded the exact gap --
+# "PDV Offset and Producer Offset not modeled as alternative programs
+# (mutually exclusive with Location Offset, would need their own
+# program_slugs)". No new research was performed here; this is purely the
+# canonicalization of knowledge the project already held.
+#
+# Producer Offset is deliberately NOT canonicalized: it requires
+# "significant Australian content" (a real cultural-test-equivalent),
+# making it structurally inapplicable to the foreign/service productions
+# this engine models -- a substantive distinction already recorded in the
+# AU doctrine comment above, not an oversight.
+_AU_PDV_CITATION = (
+    "screenaustralia.gov.au (Screen Australia, official government "
+    "authority, fetched directly by a prior pass and already recorded in "
+    "this module): 'Location Offset and PDV Offset both offer 30% on "
+    "QAPE,' administered by the Department of Infrastructure, Transport, "
+    "Regional Development, Communications, Sport and the Arts. 'These "
+    "three offsets are mutually exclusive.'"
+)
+AU_PDV_DOCTRINE = register(DoctrineRecord(
+    jurisdiction_code="AU",
+    program_slug="au_pdv_offset",
+    program_name="Australia PDV Offset (Post, Digital and Visual Effects)",
+    confidence_tier="PARSED",
+    incentive_type="tax_credit",
+    is_refundable=True,
+    is_transferable=None,
+    # The PDV Offset's own minimum-QAPE threshold is genuinely NOT recorded
+    # anywhere in this project's existing knowledge (only the Location
+    # Offset's AUD $20M is). It is deliberately left unset rather than
+    # copied across from Location Offset (which would be wrong -- PDV's
+    # real threshold is materially lower) or invented. The gap is enforced
+    # as a real eligibility condition below instead, so the program can
+    # never be silently treated as threshold-free.
+    min_spend_usd=None,
+    annual_cap_usd=None,
+    requires_cultural_test=False,   # that's the separate Producer Offset
+    citation=_AU_PDV_CITATION,
+    source_ref="screenaustralia.gov.au-pdv-offset-via-canonical-knowledge-consolidation",
+    provenance=SourceProvenance(
+        issuing_authority="Department of Infrastructure, Transport, Regional "
+                           "Development, Communications, Sport and the Arts "
+                           "(Australia), administered via Screen Australia",
+        source_url="https://www.screenaustralia.gov.au",
+        citation_detail="'Location Offset and PDV Offset both offer 30% on "
+                         "QAPE.' 'These three offsets are mutually "
+                         "exclusive.'",
+        verified_date="2026-08-17",
+        interpretation_note="Recovered during canonical knowledge "
+                             "consolidation from the Location Offset's own "
+                             "already-recorded official citation, which "
+                             "states the PDV rate and the mutual-exclusivity "
+                             "rule directly. No new research performed. PDV's "
+                             "own minimum-QAPE threshold is not recorded in "
+                             "existing project knowledge and is deliberately "
+                             "left unset rather than borrowed from the "
+                             "Location Offset.",
+    ),
+    tiers=(
+        DoctrineRateTier(
+            tier_id="au-pdv-offset-30",
+            rate=0.30,
+            is_band_ceiling=False,
+            conditions=(
+                RateCondition(
+                    condition_id="au-pdv-activity-scope",
+                    description="Eligibility requires genuine post, digital "
+                                "or visual-effects activity performed in "
+                                "Australia. Whether a production does so is "
+                                "a project fact this engine does not collect "
+                                "by default -- never auto-applied.",
+                    quote="PDV Offset ... 30% on QAPE "
+                          "(screenaustralia.gov.au)",
+                    kind="project_fact_dependent_eligibility",
+                ),
+                RateCondition(
+                    condition_id="au-pdv-min-qape-not-recorded",
+                    description="The PDV Offset has its own statutory "
+                                "minimum QAPE threshold, materially lower "
+                                "than the Location Offset's AUD $20M. That "
+                                "figure is NOT recorded anywhere in this "
+                                "project's existing knowledge, so it is "
+                                "neither applied nor assumed absent -- "
+                                "eligibility cannot be confirmed without it.",
+                    quote="(threshold not stated in the Screen Australia "
+                          "text recorded in this project)",
+                    kind="project_fact_dependent_eligibility",
+                ),
+                RateCondition(
+                    condition_id="au-pdv-mutually-exclusive",
+                    description="Location Offset, PDV Offset and Producer "
+                                "Offset are mutually exclusive -- a "
+                                "production may claim only ONE. This "
+                                "program is therefore an ALTERNATIVE to "
+                                "au_location_offset, never an addition to "
+                                "it.",
+                    quote="These three offsets are mutually exclusive "
+                          "(screenaustralia.gov.au)",
+                    kind="mutually_exclusive_alternative_program",
+                ),
+            ),
+        ),
+    ),
+))
+register_rate_rules(rate_rules_for(AU_PDV_DOCTRINE))
 
 # ── New Zealand: Screen Production Rebate (international) ──────────────────
 #
