@@ -739,6 +739,27 @@ GB_IFTC_DOCTRINE = register(DoctrineRecord(
     requires_cultural_test=True,
     citation=_GB_IFTC_CITATION,
     source_ref="HMRC-CREC021110-CREC021120-CODEX-final-resolution",
+    provenance=SourceProvenance(
+        issuing_authority="HM Revenue & Customs (HMRC); Finance (No. 2) Act 2024 "
+                           "s.14; certification by the British Film Institute",
+        source_url="https://www.gov.uk/hmrc-internal-manuals/creative-industries-expenditure-credit",
+        citation_detail="HMRC Creative Industries Expenditure Credit Manual "
+                         "CREC021110 / CREC021120; Finance (No. 2) Act 2024 s.14. "
+                         "Gross credit rate 53%; BFI low-budget certificate; "
+                         "principal photography on/after 1 April 2024; total core "
+                         "expenditure GBP 23,500,000 or less; only the first GBP "
+                         "15,000,000 of relevant global expenditure enters the "
+                         "enhanced-credit calculation.",
+        effective_date="2024-04-01",
+        interpretation_note="Primary authority on both limbs: the statute itself "
+                             "(Finance (No. 2) Act 2024 s.14) for entitlement and "
+                             "HMRC's own published manual for the operative "
+                             "mechanics. The ~39.75% net figure is this engine's "
+                             "own net-of-corporation-tax conversion (53% gross "
+                             "less 25% UK CT), the same convention already applied "
+                             "to standard AVEC's 34% -> 25.5%, not a figure stated "
+                             "in the source.",
+    ),
     tiers=(
         DoctrineRateTier(
             tier_id="gb-iftc-net-3975",
@@ -4840,6 +4861,18 @@ AU_SA_DOCTRINE = register(DoctrineRecord(
     jurisdiction_code="AU-SA",
     program_slug="au_sa_pdv_rebate",
     program_name="South Australia PDV Rebate",
+    provenance=SourceProvenance(
+        issuing_authority="South Australian Film Corporation (safilm.com.au)",
+        source_url="https://www.safilm.com.au",
+        citation_detail="'A 10% rebate on Post Production, Digital and Visual "
+                         "Effects spend, which can be combined with the Federal "
+                         "Government's 30% Post, Digital & Visual Effects (PDV) "
+                         "Offset.'",
+        interpretation_note="Sourced from the administering agency's own official "
+                             "site. The stated combinability with the federal PDV "
+                             "Offset is recorded as the agency states it; this "
+                             "engine does not itself compute that combination.",
+    ),
     confidence_tier="PARSED",
     incentive_type="cash_rebate",
     is_refundable=True,

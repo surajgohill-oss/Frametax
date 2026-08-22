@@ -77,6 +77,111 @@ PROVENANCE_STATUS_PARTIAL_WITH_RESIDUAL = "STRUCTURED_PROVENANCE_PARTIAL_WITH_EX
 #: PROVENANCE_NOT_CONNECTED."
 PROVENANCE_STATUS_NOT_CONNECTED = "PROVENANCE_NOT_CONNECTED"
 
+# ── Prompt 16 terminal authority dispositions ───────────────────────────
+#: PROJECT_RULES.md's final authority-safety gate: before a production-
+#: accepted build, every program must reach exactly one of these two.
+AUTHORITY_VERIFIED_PRICEABLE = "AUTHORITY_VERIFIED_PRICEABLE"
+AUTHORITY_UNRESOLVED_NON_PRICEABLE = "AUTHORITY_UNRESOLVED_NON_PRICEABLE"
+#: The forbidden middle state -- a program that is still PRICEABLE while
+#: only partially supported. The acceptance invariant is that the count of
+#: programs in this state is ZERO.
+PROVENANCE_INCOMPLETE_EXISTING_RECORD = "PROVENANCE_INCOMPLETE_EXISTING_RECORD"
+
+#: Substrings that, appearing in an `issuing_authority`, indicate a
+#: SECONDARY source (law firm, consultancy, production-service company,
+#: aggregator, trade press). PROJECT_RULES.md §4: secondary sources may
+#: locate an official source but may never independently justify continued
+#: deterministic pricing -- so naming one as the issuing authority can
+#: never satisfy the verified disposition.
+_SECONDARY_AUTHORITY_MARKERS = (
+    "law firm", "llp", " llc", "consult", "advisor", "advisory", "fixer",
+    "production service", "productionservice", "aggregator", "blog",
+    "variety", "deadline", "screendaily", "hollywood reporter", "kpmg",
+    "baker mckenzie", "greenberg", "rodriques", "shamelstudio",
+    "thereactionlab", "northbridge", "camaleon", "mbrella", "vitrina",
+    "celluloid", "needafixer", "hellodarwin", "atlasfilm", "innovires",
+)
+
+
+def _is_substantively_supported(rule) -> bool:
+    """Substantive authority test (PROJECT_RULES.md §6: the classifier must
+    inspect substantive fields and source authority, NOT merely test that a
+    SourceProvenance object is non-null).
+
+    A rule is substantively supported only when its provenance:
+      1. exists at all;
+      2. names an `issuing_authority` -- the body that actually administers
+         or enacted the rule;
+      3. that authority is not a secondary source; and
+      4. carries a `citation_detail` -- the specific proposition anchor
+         (quoted rate/threshold/section), not just a bare authority name.
+
+    A bare object, an empty authority, or an authority with no proposition
+    anchor all FAIL -- exactly the "non-null is not proof" defect this
+    replaces.
+    """
+    p = getattr(rule, "provenance", None)
+    if p is None:
+        return False
+    authority = (p.issuing_authority or "").strip()
+    detail = (p.citation_detail or "").strip()
+    if not authority or not detail:
+        return False
+    lowered = authority.lower()
+    return not any(marker in lowered for marker in _SECONDARY_AUTHORITY_MARKERS)
+
+
+def authority_disposition(program_slug: str) -> str:
+    """The program's TERMINAL Prompt 16 disposition.
+
+    AUTHORITY_VERIFIED_PRICEABLE      -- every runtime tier is substantively
+        supported (so the program may price deterministically).
+    AUTHORITY_UNRESOLVED_NON_PRICEABLE -- it is not, AND the canonical
+        economic-candidacy registry blocks it, so it contributes no
+        economics anywhere (fail-closed, per PROJECT_RULES.md).
+    PROVENANCE_INCOMPLETE_EXISTING_RECORD -- the FORBIDDEN state: partially
+        supported yet still priceable. The acceptance invariant requires
+        zero programs here.
+
+    Note the conjunction: a program is only "unresolved non-priceable" when
+    the quarantine is ACTUALLY ENFORCED in the canonical registry. Marking a
+    record unresolved without blocking it would leave it priceable, which is
+    precisely the unsafe state this function exists to detect.
+    """
+    from app.data.authority_coverage_registry import blocks_economic_candidacy
+
+    rules = _RULES_BY_PROGRAM.get(program_slug)
+    if not rules:
+        return AUTHORITY_UNRESOLVED_NON_PRICEABLE
+    if all(_is_substantively_supported(r) for r in rules):
+        return AUTHORITY_VERIFIED_PRICEABLE
+    if blocks_economic_candidacy(program_slug):
+        return AUTHORITY_UNRESOLVED_NON_PRICEABLE
+    return PROVENANCE_INCOMPLETE_EXISTING_RECORD
+
+
+def authority_disposition_report() -> dict:
+    """Full terminal accounting over the LIVE registry. The acceptance
+    invariant is `priceable_partial_authority == 0`."""
+    verified, unresolved, partial = [], [], []
+    for slug in _RULES_BY_PROGRAM:
+        d = authority_disposition(slug)
+        if d == AUTHORITY_VERIFIED_PRICEABLE:
+            verified.append(slug)
+        elif d == AUTHORITY_UNRESOLVED_NON_PRICEABLE:
+            unresolved.append(slug)
+        else:
+            partial.append(slug)
+    return {
+        "registered": len(_RULES_BY_PROGRAM),
+        "authority_verified_priceable": len(verified),
+        "authority_unresolved_non_priceable": len(unresolved),
+        "priceable_partial_authority": len(partial),
+        "priceable_partial_authority_slugs": sorted(partial),
+        "verified_slugs": sorted(verified),
+        "unresolved_slugs": sorted(unresolved),
+    }
+
 
 @dataclass(frozen=True)
 class RuleProvenanceRecord:

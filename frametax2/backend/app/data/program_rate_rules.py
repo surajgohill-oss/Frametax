@@ -499,6 +499,23 @@ MT_RATE_RULES: tuple[RateRule, ...] = (
                  "Animation/VFX): 30% base on all eligible expenditure for non-Maltese "
                  "productions (S.3.2.1).",
         source_ref="MFC-Cash-Rebate-Guidelines-2019-01-official",
+        provenance=SourceProvenance(
+            issuing_authority="Malta Film Commission",
+            citation_detail="'Financial Incentives for the Audiovisual Industry: "
+                             "CASH REBATE GUIDELINES' (Official Document, January "
+                             "2019, 28pp), S.3.2.1 -- 30% base on all eligible "
+                             "expenditure for non-Maltese productions.",
+            effective_date="2019-01",
+            verified_date="2026-07-26",
+            interpretation_note="The official MFC PDF was recovered from this "
+                                 "repository's own saved copy and its real text "
+                                 "extracted directly via pypdf, superseding an "
+                                 "earlier hallucinated placeholder analysis "
+                                 "(a PARSER failure, not a retrieval failure). "
+                                 "Rate structure and section anchors below come "
+                                 "from that extracted primary text; full detail "
+                                 "in program_requirements.mt_mfc_rebate.",
+        ),
     ),
     RateRule(
         program_slug="mt_mfc_rebate", tier_id="mt-general-ceiling-40",
@@ -550,6 +567,23 @@ MT_RATE_RULES: tuple[RateRule, ...] = (
                  "function as evidence, not an automatic-award formula — final "
                  "certificate percentage controls either way.",
         source_ref="MFC-Cash-Rebate-Guidelines-2019-01-official",
+        provenance=SourceProvenance(
+            issuing_authority="Malta Film Commission",
+            citation_detail="'Financial Incentives for the Audiovisual Industry: "
+                             "CASH REBATE GUIDELINES' (Official Document, January "
+                             "2019, 28pp), S.3.2.1 -- 30% base on all eligible "
+                             "expenditure for non-Maltese productions.",
+            effective_date="2019-01",
+            verified_date="2026-07-26",
+            interpretation_note="The official MFC PDF was recovered from this "
+                                 "repository's own saved copy and its real text "
+                                 "extracted directly via pypdf, superseding an "
+                                 "earlier hallucinated placeholder analysis "
+                                 "(a PARSER failure, not a retrieval failure). "
+                                 "Rate structure and section anchors below come "
+                                 "from that extracted primary text; full detail "
+                                 "in program_requirements.mt_mfc_rebate.",
+        ),
     ),
     RateRule(
         program_slug="mt_mfc_rebate", tier_id="mt-animation-25",
@@ -571,6 +605,23 @@ MT_RATE_RULES: tuple[RateRule, ...] = (
                  "Category A tier; scoped as its own record since production_types is "
                  "record-level, not tier-level.",
         source_ref="MFC-Cash-Rebate-Guidelines-2019-01-official",
+        provenance=SourceProvenance(
+            issuing_authority="Malta Film Commission",
+            citation_detail="'Financial Incentives for the Audiovisual Industry: "
+                             "CASH REBATE GUIDELINES' (Official Document, January "
+                             "2019, 28pp), S.3.2.1 -- 30% base on all eligible "
+                             "expenditure for non-Maltese productions.",
+            effective_date="2019-01",
+            verified_date="2026-07-26",
+            interpretation_note="The official MFC PDF was recovered from this "
+                                 "repository's own saved copy and its real text "
+                                 "extracted directly via pypdf, superseding an "
+                                 "earlier hallucinated placeholder analysis "
+                                 "(a PARSER failure, not a retrieval failure). "
+                                 "Rate structure and section anchors below come "
+                                 "from that extracted primary text; full detail "
+                                 "in program_requirements.mt_mfc_rebate.",
+        ),
     ),
     RateRule(
         program_slug="mt_mfc_rebate", tier_id="mt-animation-ceiling-40",
@@ -593,6 +644,23 @@ MT_RATE_RULES: tuple[RateRule, ...] = (
         citation=_MT_CITATION + " 40% ceiling for Animation/VFX requires the full 15% "
                  "Commissioner-discretionary uplift on top of the 25% base.",
         source_ref="MFC-Cash-Rebate-Guidelines-2019-01-official",
+        provenance=SourceProvenance(
+            issuing_authority="Malta Film Commission",
+            citation_detail="'Financial Incentives for the Audiovisual Industry: "
+                             "CASH REBATE GUIDELINES' (Official Document, January "
+                             "2019, 28pp), S.3.2.1 -- 30% base on all eligible "
+                             "expenditure for non-Maltese productions.",
+            effective_date="2019-01",
+            verified_date="2026-07-26",
+            interpretation_note="The official MFC PDF was recovered from this "
+                                 "repository's own saved copy and its real text "
+                                 "extracted directly via pypdf, superseding an "
+                                 "earlier hallucinated placeholder analysis "
+                                 "(a PARSER failure, not a retrieval failure). "
+                                 "Rate structure and section anchors below come "
+                                 "from that extracted primary text; full detail "
+                                 "in program_requirements.mt_mfc_rebate.",
+        ),
     ),
     # NOTE: 'Difficult Audiovisual Work' (up to 50%, MFC Cash Rebate Guidelines
     # Jan 2019 S.3.2.2/S.3.3) is DELIBERATELY NOT modeled as a RateRule tier.

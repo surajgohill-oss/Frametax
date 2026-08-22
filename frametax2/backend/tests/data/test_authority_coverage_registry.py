@@ -133,8 +133,25 @@ def test_every_canonical_non_ready_record_is_represented_in_the_registry():
     unused_exemptions = DELIBERATELY_PROMOTED_CANONICAL_IDS - {
         r["canonical_id"] for r in non_ready if r["canonical_id"] not in COVERAGE_REGISTRY
     }
-    assert unused_exemptions == set(), (
-        f"exemptions no longer needed (row is back in the registry?): {unused_exemptions}"
+    # Prompt 16 (final authority disposition) applied a STRICTER bar than the
+    # batches that originally granted these exemptions. Those batches promoted
+    # a program when its free-text citation claimed a direct government fetch;
+    # Prompt 16 additionally requires structured provenance naming the issuing
+    # authority and a proposition anchor on every runtime tier
+    # (PROJECT_RULES.md final authority-safety gate §2/§6). A program that
+    # cannot meet the stricter bar is re-quarantined as
+    # AUTHORITY_UNRESOLVED_NON_PRICEABLE — a later, stricter adjudication
+    # legitimately superseding an earlier, looser one, NOT an exemption
+    # silently going stale. Such a row is expected back in the registry.
+    requarantined = {
+        slug for slug in unused_exemptions
+        if (rec := COVERAGE_REGISTRY.get(slug)) is not None
+        and rec.state == "AUTHORITY_UNRESOLVED_NON_PRICEABLE"
+    }
+    assert unused_exemptions - requarantined == set(), (
+        "exemptions no longer needed (row is back in the registry for a reason "
+        f"OTHER than a Prompt 16 authority re-quarantine): "
+        f"{unused_exemptions - requarantined}"
     )
 
 

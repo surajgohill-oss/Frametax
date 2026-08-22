@@ -1,0 +1,1697 @@
+{
+  "artifact": "CLAUDE_PROMPT16_AUTHORITY_DISPOSITION",
+  "generated_utc": "2026-08-22T05:39:22.055050+00:00",
+  "external_web_research_performed": false,
+  "frozen_residual_count": 61,
+  "verified_from_residual": 3,
+  "quarantined_from_residual": 58,
+  "registry_totals": {
+    "registered": 123,
+    "authority_verified_priceable": 65,
+    "authority_unresolved_non_priceable": 58,
+    "priceable_partial_authority": 0
+  },
+  "acceptance_invariant_priceable_partial_authority": 0,
+  "records": [
+    {
+      "program_slug": "ae_dxb_dpip",
+      "jurisdiction": "AE-DXB",
+      "program_name": "Dubai Production Incentive Programme (DPIP)",
+      "tier_ids": [
+        "ae-dxb-flat-40"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "SUPERSEDED",
+      "coverage_state": "SUPERSEDED",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "al_cash_rebate",
+      "jurisdiction": "AL",
+      "program_name": "Albania Cash Rebate",
+      "tier_ids": [
+        "al-flat-35"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "at_fisa_plus",
+      "jurisdiction": "AT",
+      "program_name": "FISA+ Film Production Support Austria",
+      "tier_ids": [
+        "at-base-30",
+        "at-green-bonus-35"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "au_nsw_pdv_rebate",
+      "jurisdiction": "AU-NSW",
+      "program_name": "New South Wales PDV Rebate (Screen NSW)",
+      "tier_ids": [
+        "au-nsw-pdv-only-10"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "au_qld_pdv_rebate",
+      "jurisdiction": "AU-QLD",
+      "program_name": "Queensland PDV Rebate (Screen Queensland)",
+      "tier_ids": [
+        "au-qld-pdv-only-15"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "au_sa_pdv_rebate",
+      "jurisdiction": "AU-SA",
+      "program_name": "South Australia PDV Rebate",
+      "tier_ids": [
+        "au-sa-pdv-only-10"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_VERIFIED_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "RECOVERED FROM EXISTING KNOWLEDGE. safilm.com.au is the South Australian Film Corporation's own official site, i.e. the administering agency, and is the source of the 10% PDV rebate figure.",
+      "canonical_files_changed": [
+        "backend/app/data/program_rate_rules_worldwide.py"
+      ],
+      "quarantine_reason": null,
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "economic_impact": "Remains priceable; economics unchanged (provenance-only normalisation).",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "be_tax_shelter",
+      "jurisdiction": "BE",
+      "program_name": "Belgian Tax Shelter",
+      "tier_ids": [
+        "be-net-42",
+        "be-net-44-ceiling"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "bg_film_encouragement_act_rebate",
+      "jurisdiction": "BG",
+      "program_name": "Bulgarian Film Industry Encouragement Act Cash Rebate",
+      "tier_ids": [
+        "bg-flat-25"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "ca_ab_fttc",
+      "jurisdiction": "CA-AB",
+      "program_name": "Alberta Film and Television Tax Credit (FTTC)",
+      "tier_ids": [
+        "ca-ab-general-22",
+        "ca-ab-alberta-owned-30"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "ca_mb_film_video_credit",
+      "jurisdiction": "CA-MB",
+      "program_name": "Manitoba Film & Video Production Tax Credit",
+      "tier_ids": [
+        "ca-mb-base-45",
+        "ca-mb-ceiling-65"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "ca_nb_film_tax_credit",
+      "jurisdiction": "CA-NB",
+      "program_name": "New Brunswick Film Tax Credit",
+      "tier_ids": [
+        "ca-nb-general-25",
+        "ca-nb-feature-miniseries-tv-30"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "ca_ns_production_incentive_fund",
+      "jurisdiction": "CA-NS",
+      "program_name": "Nova Scotia Film & Television Production Incentive Fund",
+      "tier_ids": [
+        "ca-ns-base-25"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "ca_sk_creative_saskatchewan_grant",
+      "jurisdiction": "CA-SK",
+      "program_name": "Creative Saskatchewan Film and TV Production Grant",
+      "tier_ids": [
+        "ca-sk-service-production-25",
+        "ca-sk-saskatchewan-stream-30"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "ch_pics_national_rebate",
+      "jurisdiction": "CH",
+      "program_name": "Switzerland PICS National Location Incentive",
+      "tier_ids": [
+        "ch-floor-20",
+        "ch-ceiling-40"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "cl_corfo_incentive",
+      "jurisdiction": "CL",
+      "program_name": "Chile CORFO Film Incentive",
+      "tier_ids": [
+        "cl-ceiling-40"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "co_film_in_colombia",
+      "jurisdiction": "CO",
+      "program_name": "Colombia Film Commission \u2014 Film In Colombia",
+      "tier_ids": [
+        "co-floor-35",
+        "co-ceiling-40"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "cr_tax_return_incentive",
+      "jurisdiction": "CR",
+      "program_name": "Costa Rica Tax Return Cash Incentive",
+      "tier_ids": [
+        "cr-effective-avg-117"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "cz_film_incentive_animation",
+      "jurisdiction": "CZ",
+      "program_name": "Czech Film Incentive \u2014 Animation/Digital",
+      "tier_ids": [
+        "cz-animation-digital-35"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "dk_production_rebate",
+      "jurisdiction": "DK",
+      "program_name": "Denmark Production Rebate",
+      "tier_ids": [
+        "dk-flat-25"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "do_film_commission_incentive",
+      "jurisdiction": "DO",
+      "program_name": "Dominican Republic Film Commission Incentive",
+      "tier_ids": [
+        "do-flat-25"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "eg_empc_cashback",
+      "jurisdiction": "EG",
+      "program_name": "Egypt EMPC (Media Production City) Cashback",
+      "tier_ids": [
+        "eg-empc-anchor-30"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "fj_film_rebate",
+      "jurisdiction": "FJ",
+      "program_name": "Fiji Film Rebate",
+      "tier_ids": [
+        "fj-flat-20"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "gb_iftc_enhanced_avec",
+      "jurisdiction": "GB",
+      "program_name": "Independent Film Tax Credit (enhanced AVEC for certified low-budget films)",
+      "tier_ids": [
+        "gb-iftc-net-3975"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_VERIFIED_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "RECOVERED FROM EXISTING KNOWLEDGE. Primary authority on both limbs: Finance (No. 2) Act 2024 s.14 (statute) for entitlement and HMRC's own Creative Industries Expenditure Credit Manual CREC021110/CREC021120 for operative mechanics, plus BFI certification. Net ~39.75% is this engine's own net-of-corporation-tax conversion of the 53% gross rate, disclosed as such.",
+      "canonical_files_changed": [
+        "backend/app/data/program_rate_rules_worldwide.py"
+      ],
+      "quarantine_reason": null,
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "economic_impact": "Remains priceable; economics unchanged (provenance-only normalisation).",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "gh_film_tax_incentive",
+      "jurisdiction": "GH",
+      "program_name": "Ghana Film Tax Incentive",
+      "tier_ids": [
+        "gh-flat-20"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "il_foreign_production_fund",
+      "jurisdiction": "IL",
+      "program_name": "Israel Fund for the Promotion of Foreign Productions",
+      "tier_ids": [
+        "il-base-30",
+        "il-post-animation-ceiling-40"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "is_film_reimbursement_scheme",
+      "jurisdiction": "IS",
+      "program_name": "Icelandic Film Reimbursement Scheme",
+      "tier_ids": [
+        "is-base-25",
+        "is-ceiling-35"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "it_tax_credit_foreign",
+      "jurisdiction": "IT",
+      "program_name": "Italian Tax Credit for Foreign Productions",
+      "tier_ids": [
+        "it-flat-40"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "jo_rfc_rebate",
+      "jurisdiction": "JO",
+      "program_name": "Jordan Royal Film Commission Production Rebate",
+      "tier_ids": [
+        "jo-discovery-10",
+        "jo-discovery-ceiling-25"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "NON_GUARANTEED_SELECTIVE",
+      "coverage_state": "NON_GUARANTEED_SELECTIVE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "jp_vipo_location_incentive",
+      "jurisdiction": "JP",
+      "program_name": "Japan VIPO Location Incentive Program",
+      "tier_ids": [
+        "jp-flat-50"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "NON_GUARANTEED_SELECTIVE",
+      "coverage_state": "NON_GUARANTEED_SELECTIVE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "kr_kofic_location_incentive",
+      "jurisdiction": "KR",
+      "program_name": "South Korea KOFIC Location Incentive",
+      "tier_ids": [
+        "kr-tier-20",
+        "kr-tier-ceiling-25"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "NON_GUARANTEED_SELECTIVE",
+      "coverage_state": "NON_GUARANTEED_SELECTIVE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "kz_investment_subsidy",
+      "jurisdiction": "KZ",
+      "program_name": "Kazakhstan Investment Subsidy Program",
+      "tier_ids": [
+        "kz-flat-30"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "lt_film_centre_cash_rebate",
+      "jurisdiction": "LT",
+      "program_name": "Lithuanian Film Centre Production Cash Rebate",
+      "tier_ids": [
+        "lt-flat-20"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "lu_filmfund_tax_shelter_rebate",
+      "jurisdiction": "LU",
+      "program_name": "Film Fund Luxembourg (Filmfund) \u2014 Tax Shelter & Rebate",
+      "tier_ids": [
+        "lu-base-30",
+        "lu-ceiling-40"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "lv_national_film_centre_incentive",
+      "jurisdiction": "LV",
+      "program_name": "National Film Centre of Latvia Production Incentive",
+      "tier_ids": [
+        "lv-floor-20",
+        "lv-ceiling-30"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "ma_ccm_rebate",
+      "jurisdiction": "MA",
+      "program_name": "Morocco CCM Foreign Production Cash Rebate",
+      "tier_ids": [
+        "ma-flat-30"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "me_cash_rebate",
+      "jurisdiction": "ME",
+      "program_name": "Montenegro Cash Rebate",
+      "tier_ids": [
+        "me-flat-25"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "mk_cash_rebate",
+      "jurisdiction": "MK",
+      "program_name": "North Macedonia Cash Rebate",
+      "tier_ids": [
+        "mk-flat-20"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "mn_production_incentive",
+      "jurisdiction": "MN",
+      "program_name": "Mongolia Film & TV Production Incentive",
+      "tier_ids": [
+        "mn-base-location-30",
+        "mn-stacked-ceiling-45"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "mt_mfc_rebate",
+      "jurisdiction": "MT",
+      "program_name": "Malta Film Commission Cash Rebate",
+      "tier_ids": [
+        "mt-general-30",
+        "mt-general-ceiling-40",
+        "mt-animation-25",
+        "mt-animation-ceiling-40"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_VERIFIED_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "RECOVERED FROM EXISTING KNOWLEDGE. The real Malta Film Commission 'Financial Incentives for the Audiovisual Industry: CASH REBATE GUIDELINES' (Official Document, Jan 2019, 28pp) had already been retrieved and its true text extracted directly via pypdf by a prior session, superseding an earlier hallucinated placeholder parse. Rate structure cited to section S.3.2.1. Structured provenance attached to all 4 runtime tiers.",
+      "canonical_files_changed": [
+        "backend/app/data/program_rate_rules.py"
+      ],
+      "quarantine_reason": null,
+      "coverage_state": "PRICEABLE_VALIDATED",
+      "economic_impact": "Remains priceable; economics unchanged (provenance-only normalisation).",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "my_finas_rebate",
+      "jurisdiction": "MY",
+      "program_name": "Malaysia FINAS Film Rebate",
+      "tier_ids": [
+        "my-base-30",
+        "my-cultural-ceiling-35"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "nl_film_production_incentive",
+      "jurisdiction": "NL",
+      "program_name": "Netherlands Film Production Incentive (NFPI)",
+      "tier_ids": [
+        "nl-floor-30",
+        "nl-ceiling-40"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "pa_film_rebate",
+      "jurisdiction": "PA",
+      "program_name": "Panama Film Rebate",
+      "tier_ids": [
+        "pa-flat-25"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "ph_fdcp_flip",
+      "jurisdiction": "PH",
+      "program_name": "Philippines FDCP Film Location Incentive Program (FLIP)",
+      "tier_ids": [
+        "ph-base-20",
+        "ph-ceiling-25"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "pl_pisf_cash_rebate",
+      "jurisdiction": "PL",
+      "program_name": "Polish Film Institute (PISF) Cash Rebate",
+      "tier_ids": [
+        "pl-floor-25",
+        "pl-ceiling-30"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "qa_screen_production_incentive",
+      "jurisdiction": "QA",
+      "program_name": "Qatar Screen Production Incentive (QSPI)",
+      "tier_ids": [
+        "qa-base-40",
+        "qa-uplift-ceiling-50"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "ro_film_office_cash_rebate",
+      "jurisdiction": "RO",
+      "program_name": "Romanian Film Office Cash Rebate",
+      "tier_ids": [
+        "ro-current-30"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "rs_film_commission_cash_rebate",
+      "jurisdiction": "RS",
+      "program_name": "Serbia Film Commission Cash Rebate",
+      "tier_ids": [
+        "rs-flat-25"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "se_production_rebate",
+      "jurisdiction": "SE",
+      "program_name": "Sweden Production Incentive",
+      "tier_ids": [
+        "se-flat-25"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "sg_made_with_singapore_rebate",
+      "jurisdiction": "SG",
+      "program_name": "Made-with-Singapore Cash Rebate",
+      "tier_ids": [
+        "sg-floor-30",
+        "sg-ceiling-40"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "sk_avf_production_incentive",
+      "jurisdiction": "SK",
+      "program_name": "Slovak Audiovisual Fund (AVF) Production Incentive",
+      "tier_ids": [
+        "sk-flat-33"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "th_boi_incentive",
+      "jurisdiction": "TH",
+      "program_name": "Thailand BOI Film Incentive",
+      "tier_ids": [
+        "th-base-15",
+        "th-uplift-ceiling-30"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "ua_cash_rebate",
+      "jurisdiction": "UA",
+      "program_name": "Ukraine Cash Rebate for Foreign Film Producers",
+      "tier_ids": [
+        "ua-floor-4_5",
+        "ua-standard-25",
+        "ua-stacked-ceiling-30"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "us_az_motion_picture_production",
+      "jurisdiction": "US-AZ",
+      "program_name": "Arizona Motion Picture Production Program",
+      "tier_ids": [
+        "us-az-base-15",
+        "us-az-ceiling-20"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "us_co_film_incentive",
+      "jurisdiction": "US-CO",
+      "program_name": "Colorado Film Incentive",
+      "tier_ids": [
+        "us-co-flat-20"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "us_hi_film_digital_media_credit",
+      "jurisdiction": "US-HI",
+      "program_name": "Hawaii Film and Digital Media Income Tax Credit",
+      "tier_ids": [
+        "us-hi-oahu-22",
+        "us-hi-neighbor-islands-27"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "us_or_opif",
+      "jurisdiction": "US-OR",
+      "program_name": "Oregon Production Investment Fund (OPIF)",
+      "tier_ids": [
+        "us-or-combined-262"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "coverage_state": "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "us_pr_film_incentives_act",
+      "jurisdiction": "US-PR",
+      "program_name": "Puerto Rico Film Industry Economic Incentives Act",
+      "tier_ids": [
+        "us-pr-base-20",
+        "us-pr-ceiling-40"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "us_ut_motion_picture_incentive",
+      "jurisdiction": "US-UT",
+      "program_name": "Utah Motion Picture Incentive Program",
+      "tier_ids": [
+        "us-ut-base-20",
+        "us-ut-ceiling-25"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "us_va_motion_picture_credit",
+      "jurisdiction": "US-VA",
+      "program_name": "Virginia Motion Picture Production Tax Credit",
+      "tier_ids": [
+        "us-va-flat-15"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "us_wa_motion_picture_competitiveness",
+      "jurisdiction": "US-WA",
+      "program_name": "Washington State Motion Picture Competitiveness Program",
+      "tier_ids": [
+        "us-wa-base-30",
+        "us-wa-ceiling-45"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    },
+    {
+      "program_slug": "uz_film_rebate",
+      "jurisdiction": "UZ",
+      "program_name": "Uzbekistan Film Rebate Programme",
+      "tier_ids": [
+        "uz-floor-10",
+        "uz-ceiling-25"
+      ],
+      "starting_provenance_status": "PROVENANCE_INCOMPLETE_EXISTING_RECORD",
+      "final_disposition": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "calculation_driving_propositions_checked": [
+        "rate",
+        "rate_base",
+        "cap",
+        "minimum_spend",
+        "eligibility_gate",
+        "production_type_scope",
+        "mutual_exclusivity_where_represented"
+      ],
+      "existing_evidence_recovered": "Full free text of the retained citation, DoctrineRecord, RateRule/RateCondition set, SourceProvenance, program_requirements, program_spend_rules, cultural_point_tables and the coverage registry were all re-read. No current official/administering-authority source for the calculation-driving propositions is retained anywhere in the repository.",
+      "canonical_files_changed": [
+        "backend/app/data/authority_coverage_registry.py"
+      ],
+      "quarantine_reason": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "coverage_state": "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
+      "economic_impact": "Contributes zero incentive, NPC, stacking and ranking value; remains visible as an unresolved knowledge opportunity.",
+      "external_research_performed": false
+    }
+  ]
+}
