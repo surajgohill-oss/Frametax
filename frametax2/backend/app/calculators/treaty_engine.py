@@ -14,6 +14,11 @@ Evaluates:
 """
 from __future__ import annotations
 
+#: OH-001 fix: included in canonical_evaluation._compute_fingerprint()
+#: so a treaty/co-production data change invalidates cached served
+#: evaluations. Bump on any material change.
+TREATY_ENGINE_VERSION = "1.0.0"
+
 from dataclasses import dataclass, field
 
 

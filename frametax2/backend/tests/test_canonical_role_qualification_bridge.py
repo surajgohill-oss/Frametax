@@ -172,7 +172,12 @@ def test_point_table_role_is_point_bearing_not_mandatory():
     requires."""
     result = evaluate_role_qualification("fr_trip", "FR", {}, script_facts={})
     assert result.state != QUAL_HARD_FAIL
-    assert any("fr_composer" in lever or True for lever in result.available_levers)  # composer is an open, curable slot
+    # OH-004 fix (CODEX_FINAL_OPTIMIZER_HEALTH_AUDIT): `"fr_composer" in
+    # lever or True` is always True regardless of `lever`'s actual content
+    # -- the assertion below passed unconditionally, proving nothing about
+    # whether "fr_composer" is genuinely present. Fixed to a real,
+    # falsifiable membership check.
+    assert "fr_composer" in result.available_levers  # composer is an open, curable slot
 
 
 def test_point_table_missing_personnel_fact_becomes_user_fact_required():

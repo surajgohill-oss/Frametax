@@ -525,14 +525,29 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     European Convention on Cinematographic Co-Production signatory, so a
     second, genuine multilateral treaty_coproduction opportunity
     (alongside Eurimages) now generates -- same distinct
-    STATUS_CO_PRO_OPPORTUNITY terminal state, never flattened."""
+    STATUS_CO_PRO_OPPORTUNITY terminal state, never flattened.
+
+    Grew again 144 -> 146 (priced 133 -> 135, unpriced unaffected) with
+    the Canonical Knowledge Consolidation pass: ca_bc_dave and
+    au_pdv_offset (real programs already documented in this project's own
+    jurisdiction_comparison.py but never given a canonical representation
+    until that pass) each add exactly one full_relocation candidate to
+    FVD's own real budget. Unlike Little Utopia's structure list, FVD
+    gains no matching component_relocation candidate for either program
+    -- the component-routing generator only creates one when the
+    production has real spend in a matching component AND the target
+    program covers that activity; FVD's own budget composition simply
+    doesn't route a component to BC or South Australia the way LU's does.
+    This is a real, budget-specific difference, not a bug -- see
+    test_codex_final_optimizer_health_audit.py's own direct proof that
+    both programs reach FVD's fresh served candidate universe."""
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
     priced = [e for e in entries if e["is_fully_priced"]]
     unpriced = [e for e in entries if not e["is_fully_priced"]]
-    assert len(entries) == 144
-    assert len(priced) == 133
+    assert len(entries) == 146
+    assert len(priced) == 135
     assert len(unpriced) == 11
 
     for code in ("MN", "UZ", "AT"):

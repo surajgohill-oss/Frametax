@@ -44,6 +44,13 @@ added from this point forward should use it.
 """
 from __future__ import annotations
 
+#: OH-001 fix: included in canonical_evaluation._compute_fingerprint()
+#: so a change to the doctrine-record registry (a new/changed program,
+#: e.g. ca_bc_dave/au_pdv_offset's addition) invalidates cached served
+#: evaluations rather than being silently omitted from an already-cached
+#: candidate universe. Bump on any material change.
+EXECUTABLE_JURISDICTION_REGISTRY_VERSION = "1.1.0"
+
 from dataclasses import dataclass, field
 
 from app.data.program_rate_rules import (

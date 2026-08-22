@@ -38,6 +38,8 @@ from __future__ import annotations
 import ast
 import inspect
 
+import pytest
+
 
 def test_calculate_structure_impl_never_writes_leading_structure_id():
     from app.api.v1.structures import calculate_structure_impl
@@ -63,6 +65,23 @@ def test_calculate_structure_impl_never_writes_leading_structure_id():
             )
 
 
+def test_calculate_structure_route_is_retired_not_reachable():
+    """OH-003 fix: the POST .../structures/{id}/calculate route (the one
+    genuinely LIVE, mounted path to the legacy run_full_analysis engine --
+    project_evaluation.begin_evaluation, the other caller, was already
+    unreachable from any router) must refuse to execute rather than
+    persist a second, uncanonical engine_version=0.1.0 result lineage."""
+    import asyncio
+
+    from fastapi import HTTPException
+
+    from app.api.v1.structures import calculate_structure
+
+    with pytest.raises(HTTPException) as exc_info:
+        asyncio.run(calculate_structure(project_id="x", structure_id="y", db=None))
+    assert exc_info.value.status_code == 410
+
+
 def test_optimization_router_never_persists_to_the_database():
     """Codex evidence: 'separate optimization engines' as a contamination
     risk. Verified: every endpoint in this module is a stateless
@@ -75,21 +94,63 @@ def test_optimization_router_never_persists_to_the_database():
 
 
 def test_cineglobe_unparameterized_endpoints_are_explicitly_demo_scoped():
-    """Codex evidence: cineglobe.py's unparameterized endpoints
-    (/production, /structures, /package, /economics, /people, /facts,
-    /legal, /recommendations) read app.demo.little_utopia_state directly
-    -- confirmed still true, and confirmed still genuinely used (not dead
-    code) by three real company-level screens (CompanyKnowledge.jsx,
-    Today.jsx, CompanyGlobe.jsx) that are legitimately NOT scoped to any
-    one project. Per CBA-007's "separate demo namespace/storage" option
-    (removal was rejected -- it would break real, live functionality
-    outside this pass's scope), this test locks in that the project-
-    scoped canonical path (get_project_state) remains the one and only
-    entry point for any PROJECT's served economics -- never these."""
+    """OH-004 fix (CODEX_FINAL_OPTIMIZER_HEALTH_AUDIT): the prior version of
+    this test asserted only that two function-NAME STRINGS appear anywhere
+    in the module's source text -- true even if both were dead code inside
+    an unreachable branch, or referenced only in a comment. It proved
+    neither route isolation, nor that the demo routes are namespaced apart
+    from project-scoped ones, nor that they cannot persist a competing
+    canonical snapshot.
+
+    Codex evidence: cineglobe.py's unparameterized endpoints (/production,
+    /structures, /package, /economics, /people, /facts, /legal,
+    /recommendations) read app.demo.little_utopia_state directly -- still
+    true, and still genuinely used (not dead code) by three real
+    company-level screens (CompanyKnowledge.jsx, Today.jsx,
+    CompanyGlobe.jsx) legitimately NOT scoped to any one project. Per
+    CBA-007's "separate demo namespace/storage" option (removal rejected
+    -- would break real, live functionality outside this pass's scope),
+    this now proves the REAL structural guarantees directly:
+
+    1. the module's router mounts under an explicit, distinct prefix
+       (never the project-scoped path);
+    2. the module never imports or references StructureCalculationResult
+       anywhere -- it structurally cannot persist a row that could be
+       read back as a canonical/current project snapshot (the exact
+       contamination Codex's OH-003 warns about), verified by AST walk,
+       not string search;
+    3. `get_project_state`/`build_production_and_structures` are real,
+       CALLED functions reachable from this same module for the
+       genuinely project-scoped routes it also hosts -- not merely
+       present as text."""
+    import ast
+
     import app.api.v1.cineglobe as cineglobe_module
 
-    source = inspect.getsource(cineglobe_module)
-    # The canonical, project-scoped entry point must still exist and be
-    # the one this module defers to for any real project's economics.
-    assert "get_project_state" in source
-    assert "build_production_and_structures" in source
+    router = cineglobe_module.router
+    assert router.prefix == "/cineglobe"
+    assert router.prefix != "/projects"
+
+    tree = ast.parse(inspect.getsource(cineglobe_module))
+    referenced_names = {
+        node.id for node in ast.walk(tree) if isinstance(node, ast.Name)
+    } | {
+        node.attr for node in ast.walk(tree) if isinstance(node, ast.Attribute)
+    }
+    assert "StructureCalculationResult" not in referenced_names, (
+        "cineglobe.py must never reference StructureCalculationResult -- doing so "
+        "would risk persisting/reading a row that could masquerade as a canonical "
+        "project snapshot"
+    )
+
+    call_names = {
+        node.func.id for node in ast.walk(tree)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+    } | {
+        node.func.attr for node in ast.walk(tree)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+    }
+    assert "get_project_state" in call_names or "build_production_and_structures" in call_names, (
+        "the canonical, project-scoped entry point must be actually CALLED "
+        "from this module for its real project-scoped routes, not merely named in text"
+    )

@@ -43,6 +43,11 @@ qualifies semantics (same tri-state as ProgramSpendTreatment.qualifies):
 """
 from __future__ import annotations
 
+#: OH-001 fix: included in canonical_evaluation._compute_fingerprint()
+#: so a QPE-category/territorial-treatment change invalidates cached
+#: served evaluations. Bump on any material change.
+PROGRAM_SPEND_RULES_VERSION = "1.0.0"
+
 import enum
 from dataclasses import dataclass
 

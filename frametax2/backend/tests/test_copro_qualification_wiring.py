@@ -90,7 +90,21 @@ async def test_role_qualification_covers_only_real_registry_slugs(db: AsyncSessi
     researched doctrine being consumed, not fabrication. The invariant
     this test protects is narrower and still real: a slug in NONE of the
     five accepted sources must never report anything but RULE_DATA_
-    INCOMPLETE/NOT_APPLICABLE."""
+    INCOMPLETE/NOT_APPLICABLE.
+
+    CBA-002 continuation (surfaced fresh by the OH-001 stale-cache fix --
+    this exact interaction was masked for one full pass because FVD's
+    cached snapshot predated canonical_evaluation._merge_rate_condition_
+    into_qualification's addition): a THIRD real, non-fabricated source can
+    also produce AUTHORITY_UNRESOLVED for a slug outside all five doctrine
+    registries -- a genuinely cited RateCondition (e.g. ca_on_opstc's own
+    "Ontario labour must be >=25% of QPE claimed", mx_federal_film_
+    incentive_2026's "70% national supply" requirement) that this engine
+    cannot pre-evaluate. This is real, disclosed statutory text, not
+    invention -- see program_rate_rules_worldwide.py's own citations for
+    each. Detected here by the reasoning_trace's own explicit disclosure
+    line rather than trusted blindly, so a genuinely fabricated
+    AUTHORITY_UNRESOLVED elsewhere still fails this test."""
     from app.calculators.canonical_role_qualification_bridge import (
         AUTHORITY_UNRESOLVED_PROGRAMS,
         CONFIRMED_TEST_SCORING_WITHHELD_PROGRAMS,
@@ -112,7 +126,15 @@ async def test_role_qualification_covers_only_real_registry_slugs(db: AsyncSessi
         rq = e.get("role_qualification")
         if not rq:
             continue
+        if "regime_id" not in rq:
+            continue  # combined-structure worst-state trace: {"state": ...} only, no single regime_id
         if rq["regime_id"] not in accepted_doctrine_slugs:
+            rate_condition_disclosed = any(
+                "Rate condition(s)" in line and "resolved to" in line
+                for line in (rq.get("reasoning_trace") or [])
+            )
+            if rate_condition_disclosed:
+                continue
             assert rq["state"] in ("RULE_DATA_INCOMPLETE", "NOT_APPLICABLE")
 
 

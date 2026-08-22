@@ -15,6 +15,12 @@ Rule encoding hierarchy (first match wins):
 """
 from __future__ import annotations
 
+#: OH-001 fix: included in canonical_evaluation._compute_fingerprint()
+#: so a stacking-compatibility/reduction-rule change invalidates cached
+#: served evaluations, including combined-structure results. Bump on any
+#: material change.
+STACKING_RULES_VERSION = "1.0.0"
+
 from app.data.global_inventory import GlobalProgramEntry
 from app.optimization.types import StackingViolation
 

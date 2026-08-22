@@ -64,8 +64,38 @@ async def calculate_structure(
     structure_id: str,
     db: AsyncSession = Depends(get_db),
 ) -> StructureCalculationResult:
-    """Run the full deterministic engine against a production structure."""
-    return await calculate_structure_impl(project_id, structure_id, db)
+    """RETIRED production route (OH-003, CODEX_FINAL_OPTIMIZER_HEALTH_AUDIT).
+
+    This route persisted `engine_version="0.1.0"` `StructureCalculationResult`
+    rows via the legacy `run_full_analysis` engine — a genuinely different,
+    uncanonical calculation lineage from `canonical_evaluation.py`
+    (`ENGINE_VERSION`). It structurally cannot become a project's
+    `leading_structure_id` or satisfy the canonical served query (which
+    requires an exact `engine_version == ENGINE_VERSION` match), and no
+    frontend code calls it — but a second, live, persisting calculation API
+    is exactly the "multiple production-capable engine lineages" defect
+    Codex found, independent of whether it currently has a caller. The one
+    real internal caller (`project_evaluation.begin_evaluation`) was
+    already unreachable from any route (see `api/v1/evaluation.py`'s own
+    docstring); this was the one remaining reachable path to the same
+    uncanonical engine.
+
+    Retired rather than deleted: `calculate_structure_impl` and
+    `run_full_analysis` remain importable for historical/test reference,
+    per this project's own "do not delete historical code merely because
+    it exists" discipline — only the ability to reach and persist through
+    them from a live route is removed. The canonical, single served path
+    for structure/project economics is `POST /api/v1/projects/{project_id}
+    /evaluation/begin` (`canonical_evaluation.evaluate_project`)."""
+    raise HTTPException(
+        status_code=410,
+        detail=(
+            "This endpoint is retired. It used a legacy, uncanonical "
+            "calculation engine (engine_version=0.1.0) that never fed the "
+            "canonical served evaluation. Use "
+            "POST /api/v1/projects/{project_id}/evaluation/begin instead."
+        ),
+    )
 
 
 async def calculate_structure_impl(

@@ -223,6 +223,15 @@ CANONICAL_DATA_HANDOFF_DEFECT
 """
 from __future__ import annotations
 
+#: OH-001 fix (Codex CODEX_FINAL_OPTIMIZER_HEALTH_AUDIT): included in
+#: canonical_evaluation._compute_fingerprint() so an economic-candidacy
+#: policy change (a program blocked/unblocked, a new BLOCKING_STATES
+#: member) invalidates any cached served evaluation, never silently
+#: masquerading a pre-change row as current. Bump whenever COVERAGE_
+#: REGISTRY or BLOCKING_STATES changes in a way that could move a
+#: program's economic candidacy.
+AUTHORITY_COVERAGE_REGISTRY_VERSION = "1.1.0"
+
 from dataclasses import dataclass
 from typing import Literal
 

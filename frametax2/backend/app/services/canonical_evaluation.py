@@ -423,7 +423,22 @@ from app.services.canonical_project_economics import (
 # real, disclosure-only opportunities on any candidate that trigger-
 # matches a real registered treaty (canonical_opportunity_bridge's two
 # new discover_* functions). Bumped so every project regenerates.
-ENGINE_VERSION = "canonical-1.34.0"
+# 1.35.0: OH-001 fix (CODEX_FINAL_OPTIMIZER_HEALTH_AUDIT) -- rows
+# persisted at 1.34.0 (2026-08-20) predate several result-affecting
+# changes that landed WITHOUT a version bump: combined-structure
+# qualification propagation (b245f1b), BC DAVE/AU PDV canonical recovery
+# (9d0266b), NY's 60% Production Plus ceiling tier, and the corrected
+# provenance/economics separation policy (6b44973) -- none of which
+# touched the fingerprint's OLD, incomplete dependency manifest, so those
+# pre-change rows kept matching as "current" indefinitely. Two real
+# fixes land together here: (1) this bump immediately invalidates every
+# row from before this correction, forcing a fresh recompute on next
+# request; (2) _compute_fingerprint() now also covers authority-coverage,
+# provenance, spend-rule, stacking, treaty, structuring-pattern,
+# executable-registry, and role-qualification-bridge versions, so a
+# FUTURE change to any of those needs only its own version bump, not a
+# manual ENGINE_VERSION edit, to correctly invalidate cached rows.
+ENGINE_VERSION = "canonical-1.35.0"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
@@ -525,10 +540,25 @@ def _compute_fingerprint(
     import hashlib
     import json
 
+    from app.calculators.canonical_role_qualification_bridge import (
+        CANONICAL_ROLE_QUALIFICATION_BRIDGE_VERSION,
+    )
     from app.calculators.qualification_model import QUALIFICATION_MODEL_VERSION
+    from app.calculators.treaty_engine import TREATY_ENGINE_VERSION
+    from app.data.authority_coverage_registry import AUTHORITY_COVERAGE_REGISTRY_VERSION
     from app.data.cultural_point_tables import CULTURAL_POINT_TABLES_VERSION
+    from app.data.executable_jurisdiction_registry import (
+        EXECUTABLE_JURISDICTION_REGISTRY_VERSION,
+    )
     from app.data.national_cultural_status import NATIONAL_CULTURAL_STATUS_VERSION
+    from app.data.program_authority_provenance import PROGRAM_AUTHORITY_PROVENANCE_VERSION
     from app.data.program_rate_rules import PROGRAM_RATE_RULES_VERSION
+    from app.data.program_requirements import PROGRAM_REQUIREMENTS_VERSION
+    from app.data.program_spend_rules import PROGRAM_SPEND_RULES_VERSION
+    from app.data.structuring_opportunity_patterns import (
+        STRUCTURING_OPPORTUNITY_PATTERNS_VERSION,
+    )
+    from app.optimization.stacking_rules import STACKING_RULES_VERSION
 
     payload = {
         "gross_budget_usd": inputs.gross_budget_usd,
@@ -557,16 +587,34 @@ def _compute_fingerprint(
             (element_type, sorted(values)) for element_type, values in (script_facts or {}).items()
         ),
         "coproduction_facts": coproduction_facts,
-        # Registry/table knowledge versions (Codex evidence: "... and
-        # registry/table/treaty versions") — every one of these registries
-        # already bumps ENGINE_VERSION (freshness's OTHER, primary gate)
-        # on any material change by this codebase's own established
-        # convention; included explicitly here too so the fingerprint
-        # alone is also a complete, self-describing input manifest.
+        # Registry/table knowledge versions (Codex OH-001: "It omits
+        # material authority/economic-state, stacking, treaty, opportunity-
+        # pattern, spend-rule, executable-registry, and consolidation
+        # versions"). This is the complete canonical dependency manifest:
+        # every registry a served evaluation actually reads from is
+        # represented here by its own version constant. A stale row (a
+        # different value on ANY of these) can never be matched as
+        # reusable — see the query in evaluate_project() immediately
+        # below, which requires an EXACT fingerprint match. Bumping any
+        # one of these constants is therefore sufficient, on its own, to
+        # invalidate every previously-cached row without touching
+        # ENGINE_VERSION — the two mechanisms are complementary, not
+        # redundant (ENGINE_VERSION also covers persisted-SHAPE changes
+        # the fingerprint can't detect, e.g. a new field being added to
+        # calculation_trace_json for unchanged inputs).
         "qualification_model_version": QUALIFICATION_MODEL_VERSION,
         "cultural_point_tables_version": CULTURAL_POINT_TABLES_VERSION,
         "national_cultural_status_version": NATIONAL_CULTURAL_STATUS_VERSION,
         "program_rate_rules_version": PROGRAM_RATE_RULES_VERSION,
+        "authority_coverage_registry_version": AUTHORITY_COVERAGE_REGISTRY_VERSION,
+        "program_authority_provenance_version": PROGRAM_AUTHORITY_PROVENANCE_VERSION,
+        "program_requirements_version": PROGRAM_REQUIREMENTS_VERSION,
+        "program_spend_rules_version": PROGRAM_SPEND_RULES_VERSION,
+        "stacking_rules_version": STACKING_RULES_VERSION,
+        "treaty_engine_version": TREATY_ENGINE_VERSION,
+        "structuring_opportunity_patterns_version": STRUCTURING_OPPORTUNITY_PATTERNS_VERSION,
+        "executable_jurisdiction_registry_version": EXECUTABLE_JURISDICTION_REGISTRY_VERSION,
+        "canonical_role_qualification_bridge_version": CANONICAL_ROLE_QUALIFICATION_BRIDGE_VERSION,
     }
     blob = json.dumps(payload, sort_keys=True, default=str)
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()
@@ -911,12 +959,22 @@ _RATE_CONDITION_ELIGIBILITY_KINDS = frozenset({
 #: with the role/cultural qualification state already computed — the WORSE
 #: (lower number) of the two always wins; a passing rate condition can never
 #: override a real cultural/role-level gap, and vice versa.
+#: OH-002 fix (CODEX_FINAL_OPTIMIZER_HEALTH_AUDIT): QUAL_RULE_DATA_
+#: INCOMPLETE was previously ABSENT from this table. Every merge site below
+#: reads it via `.get(state, 2)`, so a real RULE_DATA_INCOMPLETE state
+#: silently fell back to severity 2 -- the SAME tier as QUALIFIES/
+#: NOT_APPLICABLE, meaning a stack member ordering like [NOT_APPLICABLE,
+#: RULE_DATA_INCOMPLETE] incorrectly resolved to NOT_APPLICABLE (which
+#: DOES admit Recommended) instead of RULE_DATA_INCOMPLETE (which must
+#: NOT — see _QUALIFICATION_ADMITS_RECOMMENDED below, which excludes it).
+#: Explicit entry closes the gap without any `.get(..., default)` reliance.
 _QUAL_STATE_SEVERITY = {
     QUAL_HARD_FAIL: 0,
     QUAL_CURABLE_GAP: 1,
     QUAL_USER_FACT_REQUIRED: 1,
     QUAL_SCRIPT_FACT_REQUIRED: 1,
     QUAL_AUTHORITY_UNRESOLVED: 1,
+    QUAL_RULE_DATA_INCOMPLETE: 1,
     QUAL_NOT_APPLICABLE: 2,
     QUAL_QUALIFIES: 2,
 }
@@ -1350,7 +1408,24 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     # even when one of its members individually carries a real gap. Recorded
     # per (jurisdiction_code, program_slug) as each single-program candidate
     # is resolved below; consulted when each combo's own trace is built.
+    #
+    # OH-002 fix (CODEX_FINAL_OPTIMIZER_HEALTH_AUDIT): a combo's own
+    # jurisdiction_code (e.g. "CA-ON") is NOT necessarily the code each of
+    # its members was individually examined under -- a federal member like
+    # ca_federal_cptc is examined under "CA", not "CA-ON". The combo trace
+    # builder below used to look up (stack_result.jurisdiction_code, slug),
+    # silently missing every federal-under-a-provincial-stack member and
+    # letting its real qualification state (which could be HARD_FAIL,
+    # USER_FACT_REQUIRED, etc.) drop out of the combo's worst-state
+    # computation entirely. Program identity, not jurisdiction_code, is
+    # the correct key for this lookup -- also consistent with this exact
+    # file's own established "program identity, not jurisdiction_code
+    # alone, is the uniqueness key" convention used everywhere else (see
+    # e.g. _price_candidate's structure_id). Indexed by slug alone here;
+    # _qual_state_by_code_program is kept too (nothing else in this file
+    # depends on removing it).
     _qual_state_by_code_program: dict[tuple[str, str], str | None] = {}
+    _qual_state_by_program: dict[str, str | None] = {}
 
     # role_known_codes/script_facts (Canonical Co-production Qualification
     # Reconnection / Worldwide Qualification Consumption Closeout) are
@@ -1488,7 +1563,20 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         _role_qualification = _merge_rate_condition_into_qualification(
             _role_qualification, rate_resolution, program_slug, code,
         )
-        _qual_state_by_code_program[(code, program_slug)] = (_role_qualification or {}).get("state")
+        _this_qual_state = (_role_qualification or {}).get("state")
+        _qual_state_by_code_program[(code, program_slug)] = _this_qual_state
+        # OH-002 fix: also index by program identity ALONE (see the dict's
+        # own declaration comment above for why the combo-trace lookup
+        # cannot rely on jurisdiction_code). If the same program_slug is
+        # ever examined under more than one code, keep the WORSE of the
+        # two states — never silently let a later, better-looking
+        # examination erase an earlier real gap.
+        if program_slug not in _qual_state_by_program:
+            _qual_state_by_program[program_slug] = _this_qual_state
+        else:
+            _prior_state = _qual_state_by_program[program_slug]
+            if _QUAL_STATE_SEVERITY.get(_this_qual_state, 2) < _QUAL_STATE_SEVERITY.get(_prior_state, 2):
+                _qual_state_by_program[program_slug] = _this_qual_state
         warnings = [LIMITATION_NOTE] if is_baseline else [LIMITATION_NOTE, RELOCATION_COMPARABILITY_NOTE]
         # FVD canonical input assembly repair, Task 2 — UNKNOWN territorial
         # facts stay visibly provisional rather than being silently absorbed
@@ -1782,8 +1870,17 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         # CBA-002 continuation, Section 3 — the combo's own qualification
         # state is the WORST (least admitted) of its members', never
         # dropped/defaulted to None just because it's a combined structure.
+        #
+        # OH-002 fix: looked up by PROGRAM IDENTITY alone
+        # (_qual_state_by_program), not by (combo's own jurisdiction_code,
+        # slug) — a federal member (e.g. ca_federal_cptc, examined under
+        # "CA") inside a provincial stack (combo jurisdiction_code
+        # "CA-ON") was previously invisible to this lookup because it was
+        # recorded under a different code than the combo's own, silently
+        # dropping its real qualification state (which could be
+        # HARD_FAIL) out of the worst-state computation entirely.
         _combo_member_states = [
-            _qual_state_by_code_program.get((code, slug)) for slug in stack_result.program_slugs
+            _qual_state_by_program.get(slug) for slug in stack_result.program_slugs
         ]
         _combo_qual_state = min(
             (s for s in _combo_member_states if s is not None),

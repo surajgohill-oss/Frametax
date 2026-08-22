@@ -138,7 +138,17 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # Part 3/CBA-006: unpriced grew 10 -> 11 -- FVD's Greece is also a
     # real European Convention signatory, generating a second, genuine
     # multilateral treaty_coproduction opportunity alongside Eurimages.
-    assert len(priced) == 133
+    #
+    # Canonical Knowledge Consolidation: priced grew again, 133 -> 135.
+    # ca_bc_dave and au_pdv_offset (real programs already documented in
+    # jurisdiction_comparison.py but never canonically represented until
+    # that pass) each add one full_relocation candidate to FVD's real
+    # budget; unpriced/unpriceable are unaffected (both price cleanly).
+    # See test_canonical_authority_substrate.py's test_fvd_runtime_
+    # candidate_universe_restored for the matching full_relocation-only
+    # explanation (FVD's own budget composition doesn't route a component
+    # to either program, unlike Little Utopia's).
+    assert len(priced) == 135
     assert len(unpriced) == 11
     # Final Consolidated Backend Correction + Global Structuring
     # Intelligence Acceptance, Part 4/CBA-001: comparable_count is now 0
@@ -148,7 +158,7 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # status over false recommendation), moving it from comparable into
     # review_required (still priced, still disclosed, just not ranked).
     assert accounting["comparable_count"] == 0
-    assert accounting["review_required_count"] == 133
+    assert accounting["review_required_count"] == 135
     assert accounting["unpriceable_count"] == 11
 
     # Cross-screen agreement: the ranking list (what Scenarios/Overview/
@@ -168,7 +178,7 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     review_ranked = [r for r in ranking if r["is_fully_priced"] and r["rank"] is None]
     unpriceable_ranked = [r for r in ranking if not r["is_fully_priced"]]
     assert len(comparable_ranked) == 0
-    assert len(review_ranked) == 133
+    assert len(review_ranked) == 135
     assert len(unpriceable_ranked) == 11
 
     # Feasibility ≠ eligibility (canonical authority substrate + feasibility
