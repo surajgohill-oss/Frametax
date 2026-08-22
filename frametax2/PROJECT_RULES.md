@@ -15,12 +15,35 @@ This repository has already completed broad worldwide incentive research. Co-pro
    - `PROVENANCE_INCOMPLETE_EXISTING_RECORD`
 3. For co-production/stacking work, solve connection, eligibility, combination, and ranking defects from existing data first. Do not reopen a worldwide jurisdiction audit or use provenance cleanup as a substitute for the requested optimizer exercise.
 4. External research is permitted only when the user explicitly requests it or when one specific, decision-critical proposition is absent from every canonical registry and recoverable repository artifact. Research must be bounded to that proposition; never restart the country/program universe.
-5. `PROVENANCE_INCOMPLETE_EXISTING_RECORD` means the rule already exists and was previously researched but its retained primary-source metadata is incomplete. It is a database-maintenance residual, not an “unresearched jurisdiction,” and does not block co-production/stacking unless the missing proposition is required for the exact decision being made.
+5. `PROVENANCE_INCOMPLETE_EXISTING_RECORD` means the rule already exists and was previously researched but its retained primary-source metadata is incomplete. It does not block development of generic co-production/stacking mechanics, but it **does block final production acceptance for that program while the program remains priceable**. Before final acceptance, every such program must become either `AUTHORITY_VERIFIED_PRICEABLE` or `AUTHORITY_UNRESOLVED_NON_PRICEABLE`.
 6. Validation documents, model reports, comments, and free-text notes are evidence/recovery inputs only. They are never runtime truth. If valid doctrine is found there, migrate it into the appropriate canonical owner and add a recurrence test.
 7. Do not create a parallel registry, optimizer, or calculation path. Extend the existing canonical owner and served bridge.
 8. Do not treat historical population counts such as 71, 84, or 121 as completion truth. Derive counts from the current live canonical registry and explain any movement by program and structure type.
 9. Candidate-count changes must be fully attributed. For a recovered program, identify each added `full_relocation`, `component_relocation`, stack, or co-production candidate and prove why it exists.
-10. Broad research, broad validation, and provenance backfill require a separate explicit task. They are not implicit follow-ons to a bounded co-production/stacking prompt.
+10. Broad research, broad validation, and provenance backfill require a separate explicit task. A task may explicitly commission a fixed residual inventory; when it does, that inventory is frozen at task start and must not expand into another worldwide audit.
+
+### Final authority-safety gate
+
+1. No program with `PROVENANCE_INCOMPLETE_EXISTING_RECORD` may enter deterministic incentive economics, stacking economics, or `RECOMMENDED` in a production-accepted build.
+2. A residual program has only two acceptable terminal dispositions:
+   - `AUTHORITY_VERIFIED_PRICEABLE`: every calculation-driving proposition used at runtime is supported by current primary statute/regulation or official administering-agency guidance and stored as structured provenance.
+   - `AUTHORITY_UNRESOLVED_NON_PRICEABLE`: authoritative support could not be completed; the program remains visible as an unresolved knowledge opportunity but contributes no incentive, NPC, stack, or ranking value.
+3. “Reduce residuals to zero” means zero partially supported programs remain priceable. It does not mean fabricating positive verification for every program.
+4. Secondary sources may locate an official source but may not independently justify continued deterministic pricing.
+5. Missing effective dates, inaccessible official pages, conflicting authority, or incomplete rate/base/cap/eligibility mechanics must be recorded precisely. If the missing fact affects economics or eligibility, quarantine the program rather than assume it.
+6. The provenance classifier and acceptance tests must inspect substantive fields and source authority, not merely test whether a `SourceProvenance` object is non-null.
+7. Overall knowledge-base acceptance is forbidden while the count of priceable partial-provenance programs is greater than zero.
+
+### Persistence and stopping rule for a commissioned closure pass
+
+When a task explicitly commissions a fixed authority-residual closure:
+
+1. Do not stop after inventory, diagnosis, partial batches, access failures, or a report of remaining work.
+2. Process every frozen record to one of the two terminal dispositions above.
+3. If an official source is unavailable after the task's bounded retrieval/escalation sequence, classify the record `AUTHORITY_UNRESOLVED_NON_PRICEABLE`, implement the quarantine, test it, and continue to the next record.
+4. One blocked source never blocks the whole pass and never justifies returning early.
+5. Do not ask the user to decide routine per-record dispositions. Apply the fail-closed rule.
+6. Completion requires runtime enforcement, full inventory accounting, regression tests, the requested commit/push, and remote verification—not merely an MD/JSON report.
 
 ### Canonical data ownership map
 
