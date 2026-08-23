@@ -395,12 +395,21 @@ async def get_project_record(project_id: str, db: AsyncSession = Depends(get_db)
             "genre": project.genre, "format": project.format, "lifecycle": project.lifecycle,
             "total_budget_usd": effective_total_budget_usd, "target_shoot_year": project.target_shoot_year,
             "notes": project.notes,
-            # Whether /api/v1/cineglobe/* (Overview/Workspace/Scenarios —
-            # the actual evaluation engine) currently serves THIS project.
-            # Only one project can be true today (the engine is still
-            # single-production); told to the frontend rather than left
-            # for it to guess by matching titles across two layers.
-            "is_served_production": project.title == PRODUCTION_NAME,
+            # Fresh Project Ingestion Acceptance, Phase 1: whether this
+            # project has a real, priced canonical evaluation to enter —
+            # i.e. whether /projects/{id}/overview (Overview.jsx's
+            # useCineGlobe(projectId) -> GET /cineglobe/projects/{id}/state,
+            # already generic and project-scoped) has something to show.
+            # PREVIOUSLY hardcoded to `project.title == PRODUCTION_NAME`
+            # (Little Utopia only) — a real identity defect: any other
+            # project that successfully evaluated (confirmed via runtime
+            # trace against F#K Valentine's Day, 135 priced/34 unpriceable
+            # candidates) was permanently denied the same clean "Enter
+            # Workspace" state LU gets, stuck showing a redundant "Re-run
+            # Evaluation" + secondary "Enter Workspace" pair instead. Uses
+            # the SAME generic structure_count condition `evaluation_begun`
+            # already computes below — never a title/production match.
+            "is_served_production": structure_count > 0,
         },
         "organization": {"id": str(organization.id), "name": organization.name} if organization else None,
         "aliases": [a.alias for a in aliases],
