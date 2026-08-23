@@ -485,7 +485,23 @@ from app.services.canonical_project_economics import (
 # "stacking_groups" trace field when a same-jurisdiction group was
 # evaluated -- a shape change, bumped per this constant's own established
 # convention.
-ENGINE_VERSION = "canonical-1.38.0"
+# 1.39.0: Co-Pro Conditional Pricing Data Reconnection -- three real
+# wiring/data fixes to the conditional bilateral pricing loop, no new
+# engine: (1) au_producer_offset materialized as an executable RateRule
+# from already-cited canonical knowledge (national_cultural_status.py),
+# priceable ONLY through this conditional path, never ordinary
+# discovery; (2) treaty-unlock slugs are now resolved through the
+# existing canonical-slug alias table before pricing (fixes "nz_spgi" vs
+# the already-canonical "nz_spg_international" -- a real identity
+# mismatch, not a data gap); (3) ca_cmf/fr_tax_credit_cinema/fr_cnc_
+# production confirmed genuinely non-formulaic (competitive, recoupable
+# funds -- see fund_economics_model.py/authority_coverage_registry.py)
+# and deliberately left as disclosed CANONICAL_DATA_GAP/legitimate
+# partials, not "fixed". No new pricing math, no new eligibility
+# doctrine. conditional_scenario's priced_components/canonical_data_gaps
+# values change for affected treaties -- bumped per this constant's own
+# established convention.
+ENGINE_VERSION = "canonical-1.39.0"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
@@ -807,7 +823,17 @@ def _build_conditional_bilateral_scenario(
     # (CANONICAL_DATA_GAP -- e.g. a program only ever represented in
     # legacy/superseded qualification data, never given canonical rate
     # doctrine) is disclosed by name, never priced around or invented.
+    #
+    # Co-Pro Conditional Pricing Data Reconnection: treaty_engine.py's own
+    # unlock-list spelling is not always the same spelling the canonical
+    # rate registry priced the program under (e.g. "nz_spgi" vs the
+    # already-canonicalized "nz_spg_international") -- a real IDENTITY/
+    # ALIAS MISMATCH, not a genuine data absence. Resolved through the
+    # SAME existing, generic canonical-slug table canonical_stack_bridge.py
+    # already consults for stacking-rule lookups -- never a per-slug
+    # special case here.
     from app.data.program_rate_rules import _RULES_BY_PROGRAM
+    from app.data.program_slug_aliases import canonical_slug as _canonical_program_slug
 
     priced_components: list[dict] = []
     data_gaps: list[str] = []
@@ -816,10 +842,11 @@ def _build_conditional_bilateral_scenario(
         code = majority_code if slug in treaty.majority_unlocks else (
             minority_code if slug in treaty.minority_unlocks else majority_code
         )
-        if slug not in _RULES_BY_PROGRAM:
+        priced_slug = _canonical_program_slug(slug)
+        if priced_slug not in _RULES_BY_PROGRAM:
             data_gaps.append(slug)
             continue
-        pricing, register, rr = _price_candidate(inputs, code, slug)
+        pricing, register, rr = _price_candidate(inputs, code, priced_slug)
         if pricing is None or rr is None:
             data_gaps.append(slug)
             continue
@@ -827,9 +854,9 @@ def _build_conditional_bilateral_scenario(
         qualifying_spend = round(sum(
             a.amount_usd for a in register if a.state == QualificationState.QUALIFIES
         ), 2)
-        doctrine_record = _get_doctrine(slug)
+        doctrine_record = _get_doctrine(priced_slug)
         candidates_by_jurisdiction.setdefault(code, []).append(StackCandidate(
-            program_slug=slug,
+            program_slug=priced_slug,
             jurisdiction_code=code,
             selected_incentive_usd=incentive,
             effective_rate=rr.modeled_rate,
@@ -837,7 +864,7 @@ def _build_conditional_bilateral_scenario(
             incentive_type=doctrine_record.incentive_type if doctrine_record else "",
         ))
         priced_components.append({
-            "jurisdiction_code": code, "program_slug": slug,
+            "jurisdiction_code": code, "program_slug": priced_slug,
             "modeled_rate": rr.modeled_rate, "selected_incentive_usd": incentive,
         })
 

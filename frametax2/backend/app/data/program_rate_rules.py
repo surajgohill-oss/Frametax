@@ -36,7 +36,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-PROGRAM_RATE_RULES_VERSION = "1.0.0"
+# 1.1.0 -- Co-Pro Conditional Pricing Data Reconnection: au_producer_offset
+# materialized as an executable RateRule (40% feature / 30% other formats,
+# both real, already-cited canonical knowledge -- see program_rate_rules_
+# worldwide.py's AU Producer Offset entry) for the first time. Priceable
+# ONLY through the conditional official-co-production bridge (deliberately
+# not registered into ordinary jurisdiction discovery). Bumped so every
+# previously-cached served row (which could only ever report this program
+# as CANONICAL_DATA_GAP) is invalidated and recomputed fresh.
+PROGRAM_RATE_RULES_VERSION = "1.2.0"
 
 
 @dataclass(frozen=True)

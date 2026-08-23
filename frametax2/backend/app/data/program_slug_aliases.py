@@ -57,6 +57,16 @@ PROGRAM_SLUG_ALIASES: dict[str, str] = {
     # of Quebec's Production Services Tax Credit.
     "proposed_canada_quebec_refundable_tax_credit_for_film_production_services":
         "ca_qc_pstc",
+    # Co-Pro Conditional Pricing Data Reconnection — "nz_spgi" is
+    # treaty_engine.py's own abbreviation (New Zealand Screen Production
+    # Grant International) for the SAME program already canonicalized
+    # under "nz_spg_international" (program_rate_rules_worldwide.py,
+    # VERIFIED confidence tier, real cited 20%/25% rate; program_name
+    # "New Zealand Screen Production Rebate (International)" — the
+    # official government renaming, with the internal slug kept for
+    # continuity per that entry's own comment). One program, two
+    # spellings, same as every other entry in this table.
+    "nz_spgi": "nz_spg_international",
 }
 
 

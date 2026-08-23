@@ -1661,6 +1661,170 @@ AU_PDV_DOCTRINE = register(DoctrineRecord(
 ))
 register_rate_rules(rate_rules_for(AU_PDV_DOCTRINE))
 
+# ── Australia: Producer Offset (official-co-production-only reconnection) ──
+#
+# Co-Pro Conditional Pricing Data Reconnection: `au_producer_offset` was
+# left deliberately un-canonicalized above ("structurally inapplicable to
+# the foreign/service productions this engine models") because it
+# requires "significant Australian content" (SAC) -- a real cultural-
+# test-equivalent no ordinary service/relocation candidate can satisfy.
+# That reasoning is still correct for ordinary candidate discovery and is
+# NOT reopened here.
+#
+# What changed since that reasoning was written: `canonical_treaty_bridge.
+# solve_bilateral_minimum_contribution` + `canonical_evaluation._build_
+# conditional_bilateral_scenario` (Co-Pro Opportunity Conditional Pricing
+# Bridge) now construct a CONDITIONAL official co-production scenario and
+# re-resolve treaty eligibility BEFORE any pricing is attempted. Real,
+# already-cited, already-canonical knowledge already held elsewhere in
+# this project (app/data/national_cultural_status.py's AU
+# JurisdictionNationalStatus record, added Worldwide Jurisdiction
+# National/Cultural Status pass, sources verified 2026-08-19) states,
+# quoting Screen Australia directly: "Official co-productions
+# automatically satisfy the SAC test." Under that specific, already-
+# qualified condition -- and ONLY that condition -- Producer Offset's own
+# real, cited rate (40% theatrical feature / 30% other formats, QAPE
+# basis, same "mutually exclusive with Location/PDV Offset" rule already
+# recorded for those two programs) is genuine, existing, priceable
+# canonical knowledge that was never materialized as an executable
+# RateRule. This is the SAME "canonicalization of knowledge the project
+# already held, no new research" pattern used immediately above for
+# au_location_offset/au_pdv_offset -- not a new research target, not new
+# economic doctrine.
+#
+# DELIBERATELY NOT `register()`-ed (unlike every other DoctrineRecord in
+# this module): `production_discovery.discover_executable_jurisdictions`
+# reads `all_doctrine_records()` to build ORDINARY (non-conditional)
+# candidate jurisdictions -- registering this record there would make
+# Producer Offset appear as an ordinary AU relocation/service candidate
+# for ANY production, silently bypassing the SAC/official-co-production
+# gate this program actually requires (exactly the "service treatment
+# substituted for domestic/national treatment" error this reconnection
+# must not introduce). `rate_rules_for()` is called directly instead,
+# populating ONLY `program_rate_rules._RULES_BY_PROGRAM` (what `_price_
+# candidate`/`resolve_program_rate` reads) -- the program becomes
+# priceable exclusively through the conditional co-production bridge,
+# which already gates entry on real, re-resolved treaty ELIGIBILITY,
+# never through ordinary discovery. `au_location_offset`/`au_pdv_offset`
+# above are unaffected -- both remain registered, ordinary candidates.
+#
+# No minimum-QAPE threshold for Producer Offset is recorded anywhere in
+# this project's existing knowledge (same disclosed-gap pattern already
+# applied to PDV Offset above) -- left unset rather than borrowed from
+# Location Offset's unrelated AUD $20M service-production threshold or
+# invented.
+_AU_PRODUCER_OFFSET_CITATION = (
+    "screenaustralia.gov.au (Screen Australia, official government "
+    "authority; ausfilm.com.au corroborating) -- already cited in this "
+    "project's national_cultural_status.py AU JurisdictionNationalStatus "
+    "record (Worldwide Jurisdiction National/Cultural Status pass, "
+    "verified 2026-08-19): 'Producer Offset 40% (theatrical feature) / "
+    "30% (other formats) of QAPE, a genuinely SEPARATE program from "
+    "Location Offset (spend-only, no content test).' Requires the "
+    "Significant Australian Content (SAC) test UNLESS the production is "
+    "an official co-production: 'Official co-productions automatically "
+    "satisfy the SAC test.' 'These three offsets [Location, PDV, "
+    "Producer] are mutually exclusive.'"
+)
+_AU_PRODUCER_OFFSET_PROVENANCE = SourceProvenance(
+    issuing_authority="Department of Infrastructure, Transport, Regional "
+                       "Development, Communications, Sport and the Arts "
+                       "(Australia), administered via Screen Australia",
+    source_url="https://www.screenaustralia.gov.au/producer-offset/",
+    citation_detail="'Producer Offset 40% (theatrical feature) / 30% (other "
+                     "formats) of QAPE.' 'Official co-productions "
+                     "automatically satisfy the SAC test.' 'These three "
+                     "offsets are mutually exclusive.'",
+    verified_date="2026-08-19",
+    interpretation_note="Recovered during Co-Pro Conditional Pricing Data "
+                         "Reconnection from national_cultural_status.py's "
+                         "own already-cited AU JurisdictionNationalStatus "
+                         "record -- no new research performed. Materialized "
+                         "as an executable RateRule ONLY for the conditional "
+                         "official-co-production pricing path (deliberately "
+                         "not `register()`-ed into ordinary jurisdiction "
+                         "discovery -- see module comment above). Minimum-"
+                         "QAPE threshold not recorded anywhere in existing "
+                         "project knowledge; left unset rather than borrowed "
+                         "or invented.",
+)
+_AU_PRODUCER_OFFSET_MUTUAL_EXCLUSIVITY_CONDITION = RateCondition(
+    condition_id="au-producer-offset-mutually-exclusive",
+    description="Location Offset, PDV Offset and Producer Offset are "
+                "mutually exclusive -- a production may claim only ONE. "
+                "This program is an ALTERNATIVE to au_location_offset/"
+                "au_pdv_offset, never an addition to either.",
+    quote="These three offsets are mutually exclusive (screenaustralia.gov.au)",
+    kind="mutually_exclusive_alternative_program",
+)
+_AU_PRODUCER_OFFSET_SAC_CONDITION = RateCondition(
+    condition_id="au-producer-offset-sac-via-official-copro",
+    description="Ordinarily requires the Significant Australian Content "
+                "(SAC) test. This engine only ever prices this program "
+                "through the conditional official-co-production bridge, "
+                "which re-resolves real treaty eligibility BEFORE pricing "
+                "is attempted -- the SAC test is satisfied by that "
+                "resolution, per Screen Australia's own stated rule, never "
+                "assumed independently of it.",
+    quote="Official co-productions automatically satisfy the SAC test "
+          "(screenaustralia.gov.au)",
+    kind="project_fact_dependent_eligibility",
+)
+AU_PRODUCER_OFFSET_FEATURE_DOCTRINE = DoctrineRecord(
+    jurisdiction_code="AU",
+    program_slug="au_producer_offset",
+    program_name="Australia Producer Offset (official co-production only)",
+    confidence_tier="PARSED",
+    incentive_type="tax_credit",
+    is_refundable=True,
+    is_transferable=None,
+    min_spend_usd=None,
+    annual_cap_usd=None,
+    requires_cultural_test=True,   # real SAC test -- satisfied via official
+                                    # co-production re-resolution, never
+                                    # assumed for an ordinary candidate
+                                    # (which never reaches this record --
+                                    # see module comment above)
+    citation=_AU_PRODUCER_OFFSET_CITATION,
+    source_ref="screenaustralia.gov.au-producer-offset-via-canonical-knowledge-consolidation",
+    production_types=("feature_film",),
+    provenance=_AU_PRODUCER_OFFSET_PROVENANCE,
+    tiers=(
+        DoctrineRateTier(
+            tier_id="au-producer-offset-40-feature",
+            rate=0.40,
+            is_band_ceiling=False,
+            conditions=(_AU_PRODUCER_OFFSET_SAC_CONDITION, _AU_PRODUCER_OFFSET_MUTUAL_EXCLUSIVITY_CONDITION),
+        ),
+    ),
+)
+AU_PRODUCER_OFFSET_OTHER_FORMAT_DOCTRINE = DoctrineRecord(
+    jurisdiction_code="AU",
+    program_slug="au_producer_offset",
+    program_name="Australia Producer Offset (official co-production only)",
+    confidence_tier="PARSED",
+    incentive_type="tax_credit",
+    is_refundable=True,
+    is_transferable=None,
+    min_spend_usd=None,
+    annual_cap_usd=None,
+    requires_cultural_test=True,
+    citation=_AU_PRODUCER_OFFSET_CITATION,
+    source_ref="screenaustralia.gov.au-producer-offset-via-canonical-knowledge-consolidation",
+    production_types=("tv_series", "documentary", "short_film", "animation"),
+    provenance=_AU_PRODUCER_OFFSET_PROVENANCE,
+    tiers=(
+        DoctrineRateTier(
+            tier_id="au-producer-offset-30-other-format",
+            rate=0.30,
+            is_band_ceiling=False,
+            conditions=(_AU_PRODUCER_OFFSET_SAC_CONDITION, _AU_PRODUCER_OFFSET_MUTUAL_EXCLUSIVITY_CONDITION),
+        ),
+    ),
+)
+register_rate_rules(rate_rules_for(AU_PRODUCER_OFFSET_FEATURE_DOCTRINE))
+register_rate_rules(rate_rules_for(AU_PRODUCER_OFFSET_OTHER_FORMAT_DOCTRINE))
+
 # ── New Zealand: Screen Production Rebate (international) ──────────────────
 #
 # NEW jurisdiction. Checked migration lead first: 0038 promoted

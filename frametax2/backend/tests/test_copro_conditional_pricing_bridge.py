@@ -255,6 +255,36 @@ def test_conditional_scenario_routes_same_jurisdiction_multi_slug_through_stack_
     )
 
 
+def test_conditional_scenario_reconnects_treaty_unlock_slug_through_alias_table(monkeypatch):
+    """Co-Pro Conditional Pricing Data Reconnection, generic proof: a
+    treaty's own unlock-list spelling need not match the canonical rate
+    registry's spelling for the SAME program (the real "nz_spgi" vs
+    "nz_spg_international" case). Proven here with an entirely synthetic
+    alias pair -- program_slug_aliases.PROGRAM_SLUG_ALIASES is the same
+    existing, generic table canonical_stack_bridge.py already consults;
+    this is a program-agnostic reconnection, not a per-slug special case."""
+    from app.data import program_slug_aliases as psa
+
+    treaty = _synthetic_treaty(
+        "zz-yy-bilateral", "ZZ", "YY",
+        maj_unlocks=["zz_treaty_spelling_alias"], min_unlocks=[],
+    )
+    monkeypatch.setitem(te._BILATERAL, frozenset({"ZZ", "YY"}), treaty)
+    monkeypatch.setitem(psa.PROGRAM_SLUG_ALIASES, "zz_treaty_spelling_alias", "uk_avec")
+
+    scenario = ce._build_conditional_bilateral_scenario(
+        _inputs(), "ZZ", "YY", "zz-yy-bilateral", baseline_incentive_usd=None,
+    )
+    assert scenario["canonical_data_gaps"] == []
+    assert scenario["fully_priced"] is True
+    [component] = scenario["priced_components"]
+    assert component["program_slug"] == "uk_avec", (
+        "must report the CANONICAL priced identity, not the treaty's own "
+        "unlock-list spelling, once reconnected through the alias table"
+    )
+    assert scenario["conditional_incentive_usd"] > 0
+
+
 def test_conditional_scenario_returns_none_when_no_treaty_registered():
     scenario = ce._build_conditional_bilateral_scenario(
         _inputs(), "QQ", "WW", "no-such-treaty", baseline_incentive_usd=None,
