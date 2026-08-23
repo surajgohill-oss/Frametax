@@ -1502,6 +1502,22 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         return {"status": status, "blockers": econ.blockers}
     inputs = econ.inputs
 
+    # Fresh Project Source-Document Ingestion: the retroactive counterpart
+    # to material_routing._route_screenplay's commit-time script analysis
+    # -- a project whose screenplay Document/DocumentVersion predates that
+    # commit-time wiring has a real, attached script that was simply never
+    # analyzed. analyze_project_script is the existing SA-1 pipeline,
+    # already idempotent (resolve_active_screenplay bootstraps a
+    # ScreenplayDocument on demand; parse_and_persist only reparses on a
+    # real input-fingerprint change) -- reused unchanged, never a second
+    # script-analysis implementation. Called here, before role_known_
+    # codes/script_facts are read below, so a legacy-imported screenplay's
+    # facts are available on the SAME Evaluate call that first reaches
+    # this point, with no separate manual trigger the product never
+    # exposes.
+    from app.services.script_analysis_service import analyze_project_script
+    await analyze_project_script(session, project_id=project_id)
+
     # CBA-008 — personnel, screenplay, and co-production facts are
     # material qualification inputs (they can move a candidate between
     # QUALIFIES/CURABLE_GAP/USER_FACT_REQUIRED/SCRIPT_FACT_REQUIRED) but

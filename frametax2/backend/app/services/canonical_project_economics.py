@@ -229,6 +229,22 @@ async def build_project_economic_inputs(
         .order_by(BudgetDocument.created_at.desc())
     )).scalars().first()
     if doc is None:
+        # Fresh Project Source-Document Ingestion: before reporting
+        # BUDGET_MISSING, try the SAME budget-routing implementation
+        # material_routing.route_committed_material already runs
+        # automatically for every NEW commit (POST /candidates/{id}/
+        # commit) -- reused unchanged here as the retroactive trigger for
+        # a project whose budget Document/DocumentVersion predates that
+        # commit-time wiring (bulk-seeded/imported before it existed): a
+        # real attached file that was simply never routed, not a missing
+        # asset. Evaluate orchestrates that trigger itself rather than
+        # requiring a separate manual step the product never exposes.
+        # Idempotent (material_routing._route_budget's own existing-row
+        # check) — never fabricates a budget when routing genuinely can't
+        # run (unsupported format, no file cached, nothing extractable).
+        from app.services.material_routing import ensure_current_budget_routed
+        doc = await ensure_current_budget_routed(session, project_id)
+    if doc is None:
         blockers.append(
             "BUDGET_MISSING — no parsed budget document is attached. The "
             "canonical engine prices an actual budget; it does not estimate one."

@@ -2782,3 +2782,62 @@ LU's 24 treaty structures after both fixes: 9 fully priced (was 4), 12 partial (
 **Next exact ingestion step** (not started this pass, explicitly out of scope): (1) a UI action to trigger `/budgets/import` for an already-attached CSV/XLSX document — Werewolf would clear `BUDGET_MISSING` immediately with zero backend changes if this existed; (2) PDF budget extraction — a genuinely new capability (OCR/LLM-based), affecting the other 13 real productions including Lips Like Sugar; (3) base-jurisdiction capture/derivation for a project with no explicit jurisdiction fact on file. None of these are wiring defects — all three are real, disclosed, pre-existing product gaps.
 
 **Deferred, unchanged**: Inspector/sidebar closeout, Script Analyzer/three-level Budget Estimator, and every worldwide program/treaty/co-pro item closed in the prior entry.
+
+---
+
+## Fresh Project Source-Document Ingestion (2026-08-23, continuation from 3b6b4f7)
+
+**Scope note**: Phase 1 correctly classified Lips Like Sugar's `BUDGET_MISSING` as a real, disclosed data gap. This phase corrects that classification: the attached PDF **is** the source data — an existing, generic, already-built ingestion pipeline exists to turn it into a priceable budget; it was simply never triggered for this project. Reconnected, not rebuilt. No new parsing engine, no new eligibility doctrine, no worldwide/research phase reopened.
+
+### Recovery findings (searched before writing any code)
+
+| Capability | Classification | Where |
+|---|---|---|
+| PDF text extraction (pymupdf) | CONNECTED | `app/ingestion/pdf_extractor.py` |
+| Film-budget account-code PDF parser (Movie Magic bare-4-digit + hyphenated conventions, ATL/BTL inference, page provenance) | CONNECTED, real and accurate | `app/ingestion/budget_parser.py::_parse_film_budget` |
+| CSV budget parser | CONNECTED | `app/ingestion/budget_parser.py::parse_budget_csv` |
+| Commit-time auto-routing (budget PDF/CSV → `BudgetDocument`/`BudgetLineItem`; screenplay → SA-1 script analysis) | **CONNECTED for NEW commits**, PRESENT_BUT_DISCONNECTED for pre-existing material | `app/services/material_routing.py::route_committed_material`, wired into `POST /candidates/{id}/commit` |
+| SA-1 script analyzer (scenes/characters/elements/derived facts/production+location requirements) | CONNECTED, real and idempotent | `app/services/script_analysis_service.py::analyze_project_script` |
+| XLSX budget parsing | GENUINELY_MISSING (pre-existing, separate defect: `/budgets/import` accepts the extension but feeds raw XLSX bytes to the CSV text parser — not touched this pass, out of scope) | `app/api/v1/budgets.py` |
+
+**Root cause, precisely**: `material_routing.route_committed_material` already runs automatically on every new commit through the real product flow and correctly parses PDF/CSV budgets and screenplays — this is NOT a gap. The actual defect is retroactive: every real Library production except Little Utopia and F#K Valentine's Day has its budget/screenplay `Document`/`DocumentVersion` rows from BEFORE this commit-time wiring existed (bulk-seeded/imported material). Routing is a commit-time side effect only — nothing ever re-triggers it for material already in the database. `canonical_project_economics.build_project_economic_inputs` (the live "Begin Evaluation" path) and `canonical_evaluation.evaluate_project` had no knowledge of `material_routing.py` at all.
+
+### The fix — one new function, two call sites, zero new parsers
+
+`material_routing.ensure_current_budget_routed(session, project_id)` (new): finds the project's current budget `DocumentVersion`, and if no `BudgetDocument` points at it yet, calls the EXISTING `_route_budget` unchanged. Idempotent (same check `_route_budget` already had); returns `None` — never fabricates — when no budget material exists, the cached file is missing, or the format isn't PDF (CSV/XLSX keep their own dedicated `/budgets/import` flow, untouched).
+
+Wired at two call sites:
+- `canonical_project_economics.build_project_economic_inputs` — calls `ensure_current_budget_routed` before reporting `BUDGET_MISSING`, so Evaluate itself orchestrates ingestion rather than requiring a separate manual step the product never exposed.
+- `canonical_production_state.CanonicalProductionStateBuilder._apply_budget` — its own prior ad-hoc inline PDF-parsing fallback (a near-duplicate of `_route_budget`) was replaced with a call to the same shared function, collapsing two parallel implementations into one.
+
+`canonical_evaluation.evaluate_project` also now calls `analyze_project_script` (the existing, already-idempotent SA-1 pipeline, unchanged) once budget+base-jurisdiction resolve and before `role_known_codes_from_project`/`script_facts_from_project` are read — the same retroactive-trigger pattern, reusing `material_routing._route_screenplay`'s own existing call, not a new implementation.
+
+### Runtime proof — Lips Like Sugar, real browser, real click
+
+BEFORE: `total_budget_usd: null`, no `BudgetDocument`, `people: []`, `facts: []`. Clicked "Begin Evaluation" through the real Company Library UI (search box, no constructed URL). Network trace: `POST /projects/ab10b319-.../evaluation/begin` → response changed from Phase 1's two-blocker `BUDGET_REQUIRED_FOR_CURRENT_EVALUATION` to **`BLOCKED_INCOMPLETE_INPUTS` with exactly one blocker: `BASE_JURISDICTION_UNKNOWN`** — `BUDGET_MISSING` is gone. Confirmed in the database: a real `BudgetDocument` (`v7LLS_RevBudget_T1B_27days_022524.pdf`, **$11,983,654.00** total, `extraction_status: "extracted"`, correctly linked via `document_version_id` to the real Company Library file) with **149 real `BudgetLineItem` rows** (account codes 1100–8xxx, real descriptions, real amounts — e.g. `1100 SCRIPT $314,153`, `1400 CAST $863,388`), and `project.total_budget_usd` populated. Zero console errors. The parser's own computed total independently reconciles against the document's own stated arithmetic (`Net total $10,480,580` + its own stated `Tax Incentive rebate $1,503,074` = `$11,983,654` — an exact match), confirming the extraction is genuinely accurate for this real production, not merely non-crashing.
+
+Script ingestion confirmed separately (direct debug call, per this task's own allowance — Lips Like Sugar's `evaluate_project` call returns before reaching the script-analysis line because `BASE_JURISDICTION_UNKNOWN` still blocks first, so the live endpoint cannot exercise it for this specific project yet): `analyze_project_script` against the real `LIPS OFFICIAL.pdf` succeeds — `SCRIPT_PARSED`, 145 scenes, 37 characters, 1577 elements, 20 derived facts, 197 production requirements, 123 location requirements, zero warnings.
+
+**Base jurisdiction genuinely could not be derived**: no `home_jurisdiction_id`, no `ProjectFact`, no `ProjectPerson` on file for Lips Like Sugar states a production/base jurisdiction. This is a real, correctly-surfaced `USER_CONFIRMATION_REQUIRED` fact, not invented, not defaulted — the honest stop condition this task explicitly permits.
+
+### Second fresh-production genericity control — Bad Hombres
+
+Located through the real Library UI (a different real production, not LU/FVD/Lips Like Sugar). Same real click, same real result: `BUDGET_REQUIRED_FOR_CURRENT_EVALUATION` (before) → `BLOCKED_INCOMPLETE_INPUTS` with only `BASE_JURISDICTION_UNKNOWN` (after). Real `BudgetDocument` created: `BadHombresBudget.v2.pdf`, **$2,482,023.00**. Proves the fix is generic — same code, zero project-specific branching, works for the next production in the Library. (Checked all 12 remaining real PDF-budget productions besides these two: none has a `home_jurisdiction_id` set either — every one of them will reach the identical, honest `BASE_JURISDICTION_UNKNOWN` state once evaluated, which is the correct, consistent outcome, not a defect.)
+
+### Regression (lightweight, not re-audited)
+
+LU: `EVALUATION_REUSED`, baseline NPC **$3,057,794.90** (unchanged). FVD: `EVALUATION_REUSED`, baseline NPC **$3,072,027.16** (unchanged). Both already have their own `BudgetDocument`/`ScreenplayDocument` rows, so the new retroactive triggers are no-ops for them — confirmed by the fresh calls still reusing their existing cached evaluation rather than reprocessing.
+
+### Tests
+
+`tests/test_budget_retroactive_routing.py` (6, new) — simulates the real legacy/bulk-seeded state (a `Document`/`DocumentVersion` created WITHOUT going through `commit_candidate`, so routing never ran) and proves: routing reaches real lines/total; the live `build_project_economic_inputs` path reaches a real `gross_budget_usd`; idempotency (same `DocumentVersion` reused, not reprocessed); no budget material → `None`, never fabricated; missing cached file → `None`, never fabricated. `tests/test_evaluate_triggers_script_ingestion.py` (1, new) — proves `evaluate_project` triggers real script analysis for a legacy-imported screenplay once budget/jurisdiction resolve, using a real MU jurisdiction fixture (never created — asserted already-seeded). 43 focused (including all prior-session budget/identity/routing tests) + 1 final full-suite regression: **4492 passed, 0 failed, 1 skipped**.
+
+### Engine/cache
+
+No `ENGINE_VERSION` bump: this change enables previously-impossible evaluations for projects that had zero prior `StructureCalculationResult` rows (nothing cached to go stale) — it does not alter the served response shape or any already-cached row's correctness. LU/FVD's own real economics are provably unaffected (confirmed above).
+
+**Files changed**: `app/services/material_routing.py` (new `ensure_current_budget_routed`), `app/services/canonical_project_economics.py` (retroactive budget-routing call site), `app/services/canonical_production_state.py` (collapsed its own duplicate inline PDF fallback onto the shared function), `app/services/canonical_evaluation.py` (retroactive script-analysis call site), `tests/test_budget_retroactive_routing.py` (new), `tests/test_evaluate_triggers_script_ingestion.py` (new).
+
+**Final gate**: `FRESH_PROJECT_SOURCE_INGESTION_RUNTIME_VERIFIED_USER_FACT_REQUIRED` — budget ingestion RUNTIME VERIFIED (Lips Like Sugar + Bad Hombres, real browser, real click); script ingestion STATIC/direct-call VERIFIED (blocked from live-endpoint proof for Lips Like Sugar specifically only because a genuine, correctly-surfaced user fact — base jurisdiction — halts the pipeline one step earlier, by design); known-variable questions RUNTIME VERIFIED (the UI banner now shows exactly and only the genuine remaining requirement); evaluation-resume path not exercised this pass (no UI control yet answers `BASE_JURISDICTION_UNKNOWN` — a real, disclosed next step, not a defect); canonical optimizer handoff unchanged, untouched, ready to receive any project once its one remaining genuine fact is supplied.
+
+**Deferred, unchanged**: Inspector/sidebar closeout, Script Analyzer/three-level Budget Estimator (the broader UI feature — its ingestion portion is now connected), XLSX budget parsing (a separate, pre-existing, disclosed defect in `/budgets/import`, not touched), a UI action to answer `BASE_JURISDICTION_UNKNOWN` and resume evaluation, and every worldwide program/treaty/co-pro item closed in prior entries.

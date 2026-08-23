@@ -43,7 +43,7 @@ from app.ingestion.budget_parser import classify_parsed_items, parse_budget_csv,
 from app.ingestion.pdf_extractor import extract_text_from_pdf
 from app.models.budget import BudgetDocument, BudgetLineItem
 from app.models.enums import ATLBTLCategory, CompensationType
-from app.models.library_document import DocumentVersion
+from app.models.library_document import Document, DocumentVersion
 from app.models.project import Project
 from app.services.script_analysis_service import analyze_project_script
 
@@ -155,6 +155,53 @@ async def _route_screenplay(
     current screenplay `DocumentVersion` (reading the file from disk itself)
     when none exists yet — this call is the missing trigger, not new logic."""
     await analyze_project_script(session, project_id=project.id)
+
+
+async def ensure_current_budget_routed(session: AsyncSession, project_id) -> BudgetDocument | None:
+    """Fresh Project Source-Document Ingestion: the retroactive counterpart
+    to `route_committed_material`'s commit-time budget routing.
+
+    `route_committed_material` only ever runs as a side effect of a NEW
+    commit through POST /candidates/{id}/commit — real, generic, and
+    already correct for any project going forward. But a project whose
+    budget Document/DocumentVersion predates that wiring (bulk-seeded or
+    imported before this routing existed) has a real, attached budget
+    file that was simply never routed — not a missing asset, a missing
+    TRIGGER. This function is that trigger, called on demand (from
+    canonical_project_economics.build_project_economic_inputs, the live
+    Evaluate path) rather than only at commit time.
+
+    Reuses `_route_budget` unchanged — never a second parsing/projection
+    implementation. Idempotent per DocumentVersion (`_route_budget`'s own
+    existing-row check), so calling this on every Evaluate is safe and
+    cheap once a project's current version has already been routed."""
+    project = await session.get(Project, project_id)
+    if project is None:
+        return None
+
+    current_dv = (await session.execute(
+        select(DocumentVersion)
+        .join(Document, DocumentVersion.document_id == Document.id)
+        .where(
+            Document.project_id == project_id,
+            Document.category == "budget",
+            DocumentVersion.is_current == True,  # noqa: E712
+        )
+        .order_by(DocumentVersion.created_at.desc())
+    )).scalars().first()
+    if current_dv is None or not current_dv.storage_path:
+        return None
+
+    local_path = Path(settings.LOCAL_STORAGE_PATH) / current_dv.storage_path
+    if not local_path.exists():
+        return None
+
+    await _route_budget(session, project=project, version=current_dv, local_path=local_path)
+    await session.commit()
+
+    return (await session.execute(
+        select(BudgetDocument).where(BudgetDocument.document_version_id == current_dv.id)
+    )).scalars().first()
 
 
 async def route_committed_material(
