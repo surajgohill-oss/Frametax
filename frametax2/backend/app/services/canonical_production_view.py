@@ -188,6 +188,14 @@ def _empty_structure_entry(
         "treaty_cultural_test_required": trace.get("treaty_cultural_test_required"),
         "treaty_cultural_test_resolved": trace.get("treaty_cultural_test_resolved"),
         "treaty_disqualification_reasons": trace.get("treaty_disqualification_reasons") or [],
+        # Co-Pro Conditional Pricing Bridge — populated only for an
+        # UNRESOLVED_FACTS treaty_coproduction structure where a
+        # deterministic minimum-contribution scenario could be
+        # constructed and (where canonical rate data exists) priced. None
+        # for a resolved (ELIGIBLE/INELIGIBLE) opportunity or any other
+        # structure type. See canonical_evaluation._build_conditional_
+        # bilateral_scenario for the full disclosure shape.
+        "conditional_scenario": trace.get("conditional_scenario"),
         "ownership_shares": None,
         # Existing Optimizer/Stacker Reconnection — rich multi-program pass-
         # through. claimed_program_ids is [] for every pre-existing single-

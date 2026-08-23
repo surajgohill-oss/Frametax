@@ -59,9 +59,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.calculators.allocation_pricing import price_allocated_structure, rank_allocated_structures
 from app.calculators.canonical_stack_bridge import (
     StackCandidate,
+    eligible_group_for_combination,
     price_program_group_stack,
 )
 from app.calculators.canonical_opportunity_bridge import (
+    FACT_AUTHORITY_FACT,
+    FACT_PROPOSED_CHANGE,
+    FACT_USER_CONFIRMATION_REQUIRED,
     discover_cultural_test_gap_opportunity,
     discover_fee_cap_headroom_opportunity,
     discover_national_status_opportunity,
@@ -89,7 +93,9 @@ from app.calculators.canonical_role_qualification_bridge import (
     script_facts_from_project,
     typed_personnel_facts_from_project,
 )
+from app.calculators import treaty_engine as te
 from app.calculators.canonical_treaty_bridge import (
+    RESOLUTION_ELIGIBLE,
     evaluate_bilateral_coproduction_opportunity,
     evaluate_eurimages_coproduction_opportunity,
     evaluate_european_convention_coproduction_opportunity,
@@ -99,6 +105,7 @@ from app.calculators.canonical_treaty_bridge import (
     find_european_convention_partners,
     find_ibermedia_partners,
     find_real_bilateral_partners,
+    solve_bilateral_minimum_contribution,
 )
 from app.calculators.conditional_programs import conditional_nodes_for, node_to_dict
 from app.calculators.production_allocation import (
@@ -453,7 +460,32 @@ from app.services.canonical_project_economics import (
 # location_independent_of_service_jurisdiction) mean this is also a SHAPE
 # change, not only a candidate-generation change -- bumped for both
 # reasons, per this constant's own established convention.
-ENGINE_VERSION = "canonical-1.36.0"
+# 1.37.0: Co-Pro Conditional Pricing Bridge -- an UNRESOLVED_FACTS
+# bilateral treaty opportunity now attempts a real conditional scenario:
+# solve_bilateral_minimum_contribution() derives the treaty's own
+# deterministic minimum contribution split, evaluate_bilateral_
+# coproduction_opportunity() re-checks eligibility with that solved
+# split, and every unlocked program slug with real canonical rate data
+# is priced through the SAME _price_candidate() every ordinary candidate
+# uses -- no separate co-pro pricing math. Purely additive
+# ("conditional_scenario" trace field); never changes candidate_status,
+# is_directly_comparable, or ranking eligibility. New calculation_trace_
+# json field on every treaty_coproduction structure -- a shape change,
+# bumped per this constant's own established convention.
+# 1.38.0: Co-Pro Conditional Pricing Bridge, stacking-correctness follow-
+# up -- when a single treaty party's unlocked slugs land in the SAME
+# jurisdiction (e.g. a majority country unlocking two of its own
+# programs), the conditional total is now computed through the EXISTING
+# price_program_group_stack()/eligible_group_for_combination() stacking-
+# compatibility engine instead of a hand-built sum -- same engine every
+# ordinary multi-program candidate group already goes through. Cross-
+# jurisdiction totals (majority vs minority country, the normal bilateral
+# shape) are unaffected -- those remain a direct sum of independent
+# national incentives, not a same-jurisdiction stacking question. New
+# "stacking_groups" trace field when a same-jurisdiction group was
+# evaluated -- a shape change, bumped per this constant's own established
+# convention.
+ENGINE_VERSION = "canonical-1.38.0"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
@@ -695,6 +727,192 @@ def _price_candidate(
         contingency_expected_utilization_pct=inputs.contingency_expected_utilization_pct,
     )
     return pricing, register, rr
+
+
+def _build_conditional_bilateral_scenario(
+    inputs: ProjectEconomicInputs,
+    majority_code: str,
+    minority_code: str,
+    treaty_slug: str,
+    baseline_incentive_usd: float | None,
+) -> dict | None:
+    """Co-Pro Conditional Pricing Bridge — bridges a real, disclosed
+    UNRESOLVED_FACTS treaty opportunity to real conditional economics,
+    reusing every existing canonical mechanism unchanged:
+      - treaty_engine's own real thresholds (solve_bilateral_minimum_
+        contribution -- the deterministic portion, never guessed);
+      - the SAME evaluate_bilateral_coproduction_opportunity adapter the
+        home-anchored/candidate-pair discovery loops already call, now
+        given the solved minimum contribution instead of None;
+      - the SAME _price_candidate() every ordinary single-program
+        candidate is priced through -- no separate co-pro pricing math.
+
+    Generic over ANY bilateral treaty and ANY two candidate jurisdictions
+    -- reads only treaty_slug/majority_code/minority_code/inputs, never a
+    project ID, program name, or country pair by name.
+
+    Returns None only when the treaty registry lookup itself fails (a
+    genuine data-consistency gap, never silently swallowed to the caller
+    as "no opportunity"). Otherwise returns a fully-disclosed dict —
+    every assumed value tagged with a real fact_classification constant,
+    every canonical-data gap named explicitly, never silently priced
+    around."""
+    treaty = te.get_bilateral_treaty(majority_code, minority_code)
+    if treaty is None:
+        return None
+
+    solved = solve_bilateral_minimum_contribution(treaty)
+
+    scenario: dict = {
+        "assumed_majority_contribution_pct": solved.majority_pct,
+        "assumed_minority_contribution_pct": solved.minority_pct,
+        "assumption_fact_classification": FACT_PROPOSED_CHANGE,
+        "assumption_basis": (
+            f"Deterministic minimum contribution split satisfying {treaty_slug}'s "
+            f"own recorded majority_min_pct ({treaty.majority_min_pct}%) and "
+            f"minority_min_pct ({treaty.minority_min_pct}%) thresholds -- the "
+            "lowest lawful split this engine can construct without inventing a "
+            "number the treaty itself does not require."
+        ),
+        "cultural_test_required": solved.cultural_test_required,
+        "deterministically_solvable": solved.deterministically_solvable,
+    }
+    if not solved.deterministically_solvable:
+        scenario["status"] = "USER_DECISION_REQUIRED"
+        scenario["fact_classification"] = FACT_USER_CONFIRMATION_REQUIRED
+        scenario["blocking_reason"] = solved.blocking_reason
+        scenario["conditional_qualification_state"] = "UNRESOLVED_FACTS"
+        return scenario
+
+    result = evaluate_bilateral_coproduction_opportunity(
+        majority_code, minority_code,
+        majority_pct=solved.majority_pct, minority_pct=solved.minority_pct,
+        cultural_test_passed=(True if solved.cultural_test_required else None),
+    )
+    if result is None or result.resolution_state != RESOLUTION_ELIGIBLE:
+        scenario["status"] = "NOT_FEASIBLE"
+        scenario["conditional_qualification_state"] = result.resolution_state if result else "INELIGIBLE"
+        scenario["disqualification_reasons"] = list(result.disqualification_reasons) if result else (
+            "Treaty's own recorded thresholds cannot be satisfied.",
+        )
+        return scenario
+
+    scenario["conditional_qualification_state"] = RESOLUTION_ELIGIBLE
+    scenario["unlocked_slugs"] = list(result.unlocked_slugs)
+
+    # Price every unlocked slug through the SAME canonical kernel every
+    # ordinary candidate uses -- no new economics. majority_unlocks price
+    # against the majority party's own jurisdiction; minority_unlocks
+    # against the minority party's. A slug with no canonical RateRule
+    # (CANONICAL_DATA_GAP -- e.g. a program only ever represented in
+    # legacy/superseded qualification data, never given canonical rate
+    # doctrine) is disclosed by name, never priced around or invented.
+    from app.data.program_rate_rules import _RULES_BY_PROGRAM
+
+    priced_components: list[dict] = []
+    data_gaps: list[str] = []
+    candidates_by_jurisdiction: dict[str, list[StackCandidate]] = {}
+    for slug in result.unlocked_slugs:
+        code = majority_code if slug in treaty.majority_unlocks else (
+            minority_code if slug in treaty.minority_unlocks else majority_code
+        )
+        if slug not in _RULES_BY_PROGRAM:
+            data_gaps.append(slug)
+            continue
+        pricing, register, rr = _price_candidate(inputs, code, slug)
+        if pricing is None or rr is None:
+            data_gaps.append(slug)
+            continue
+        incentive = pricing.selected_incentive_usd or 0.0
+        qualifying_spend = round(sum(
+            a.amount_usd for a in register if a.state == QualificationState.QUALIFIES
+        ), 2)
+        doctrine_record = _get_doctrine(slug)
+        candidates_by_jurisdiction.setdefault(code, []).append(StackCandidate(
+            program_slug=slug,
+            jurisdiction_code=code,
+            selected_incentive_usd=incentive,
+            effective_rate=rr.modeled_rate,
+            qualifying_spend_usd=qualifying_spend,
+            incentive_type=doctrine_record.incentive_type if doctrine_record else "",
+        ))
+        priced_components.append({
+            "jurisdiction_code": code, "program_slug": slug,
+            "modeled_rate": rr.modeled_rate, "selected_incentive_usd": incentive,
+        })
+
+    # Same-jurisdiction multi-slug unlocks (e.g. a majority country whose
+    # treaty entry unlocks more than one of its own programs) must go
+    # through the EXISTING stacking-compatibility engine, never a hand-
+    # built sum -- reuses the identical price_program_group_stack every
+    # ordinary multi-program candidate group already goes through.
+    # Cross-jurisdiction totals (majority vs minority country -- the
+    # normal bilateral case) are independent national incentives, not a
+    # same-jurisdiction stacking question, so they are summed directly.
+    total_conditional_incentive = 0.0
+    stacking_groups: list[dict] = []
+    for code, group in candidates_by_jurisdiction.items():
+        if len(group) < 2 or not eligible_group_for_combination([c.jurisdiction_code for c in group]):
+            total_conditional_incentive += sum(c.selected_incentive_usd for c in group)
+            continue
+        stack_result = price_program_group_stack(group)
+        if stack_result is None:
+            # No named, publishable stacking rule covers this exact group
+            # -- Codex's "visibility alone is not proof of stacking" rule
+            # applies here too: fall back to the raw (unadjusted) sum,
+            # disclosed as unverified rather than silently fabricated.
+            total_conditional_incentive += sum(c.selected_incentive_usd for c in group)
+            stacking_groups.append({
+                "jurisdiction_code": code,
+                "program_slugs": [c.program_slug for c in group],
+                "stacking_verified": False,
+                "note": (
+                    "No named, publishable stacking rule covers this exact "
+                    "program combination -- summed as independent programs, "
+                    "not verified against a stacking-compatibility rule."
+                ),
+            })
+            continue
+        total_conditional_incentive += stack_result.adjusted_incentive_usd
+        stacking_groups.append({
+            "jurisdiction_code": code,
+            "program_slugs": stack_result.program_slugs,
+            "stacking_verified": True,
+            "rule_type": stack_result.rule_type,
+            "raw_incentive_usd": stack_result.raw_incentive_usd,
+            "adjusted_incentive_usd": stack_result.adjusted_incentive_usd,
+            "stacking_reduction_usd": stack_result.stacking_reduction_usd,
+            "legal_review_required": stack_result.legal_review_required,
+            "disclosed_limitations": stack_result.disclosed_limitations,
+        })
+
+    scenario["priced_components"] = priced_components
+    scenario["canonical_data_gaps"] = data_gaps
+    if stacking_groups:
+        scenario["stacking_groups"] = stacking_groups
+    if data_gaps:
+        scenario["canonical_data_gap_note"] = (
+            f"{', '.join(data_gaps)} unlock under this treaty per treaty_engine's "
+            "own registry, but carry no canonical RateRule in the current served "
+            "registry -- a real, disclosed data gap, not priced, not invented, "
+            "not researched this pass."
+        )
+
+    if priced_components:
+        conditional_npc = round(inputs.gross_budget_usd - total_conditional_incentive, 2)
+        scenario["conditional_incentive_usd"] = round(total_conditional_incentive, 2)
+        scenario["conditional_npc_usd"] = conditional_npc
+        scenario["fully_priced"] = not data_gaps
+        if baseline_incentive_usd is not None:
+            baseline_npc = round(inputs.gross_budget_usd - baseline_incentive_usd, 2)
+            scenario["baseline_npc_usd"] = baseline_npc
+            scenario["net_benefit_vs_baseline_usd"] = round(baseline_npc - conditional_npc, 2)
+        scenario["status"] = "CONDITIONAL_PROJECT_FACT_DEPENDENT"
+    else:
+        scenario["status"] = "CANONICAL_DATA_GAP"
+        scenario["fully_priced"] = False
+
+    return scenario
 
 
 def _price_component_relocation_candidate(
@@ -2192,6 +2410,21 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         _conditional_program_dicts, _conditional_compatibility_dict = _conditional_data(
             str(structure.id), home_code, (),
         )
+        # Co-Pro Conditional Pricing Bridge: an UNRESOLVED_FACTS treaty
+        # opportunity gets a real, priced conditional scenario attempted
+        # (never for ELIGIBLE/INELIGIBLE — those already have a real
+        # resolved answer). Purely additive disclosure on the SAME
+        # structure; never changes candidate_status, is_directly_
+        # comparable, or ranking eligibility below.
+        _conditional_scenario = None
+        if opp.resolution_state == "UNRESOLVED_FACTS":
+            _home_candidates = priced_by_code.get(home_code) or []
+            _baseline_incentive = max(
+                (c.selected_incentive_usd for c in _home_candidates), default=None,
+            )
+            _conditional_scenario = _build_conditional_bilateral_scenario(
+                inputs, home_code, partner_code, opp.treaty_slug, _baseline_incentive,
+            )
         session.add(StructureCalculationResult(
             id=uuid.uuid4(), structure_id=structure.id, engine_version=ENGINE_VERSION,
             total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
@@ -2226,6 +2459,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 "reason": "; ".join(opp.notes) or "Real ownership/cultural facts required to resolve eligibility.",
                 "feasibility_status": FEASIBILITY_UNKNOWN,
                 "feasibility_reasons": [],
+                "conditional_scenario": _conditional_scenario,
             },
             input_fingerprint=fingerprint,
         ))
@@ -2283,6 +2517,21 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
         _conditional_program_dicts, _conditional_compatibility_dict = _conditional_data(
             str(structure.id), majority_code, (),
         )
+        # Co-Pro Conditional Pricing Bridge — same rule as the home-anchored
+        # loop above: only for UNRESOLVED_FACTS, purely additive disclosure.
+        # Compared against the production's own current home-jurisdiction
+        # incentive even though neither treaty party IS home_code — the
+        # comparison is "this hypothetical structure vs. what the
+        # production currently gets", not "vs. one of these two countries".
+        _conditional_scenario = None
+        if opp.resolution_state == "UNRESOLVED_FACTS":
+            _home_candidates = priced_by_code.get(home_code) or []
+            _baseline_incentive = max(
+                (c.selected_incentive_usd for c in _home_candidates), default=None,
+            )
+            _conditional_scenario = _build_conditional_bilateral_scenario(
+                inputs, majority_code, minority_code, opp.treaty_slug, _baseline_incentive,
+            )
         session.add(StructureCalculationResult(
             id=uuid.uuid4(), structure_id=structure.id, engine_version=ENGINE_VERSION,
             total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
@@ -2319,6 +2568,7 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 "feasibility_status": FEASIBILITY_UNKNOWN,
                 "feasibility_reasons": [],
                 "location_independent_of_service_jurisdiction": True,
+                "conditional_scenario": _conditional_scenario,
             },
             input_fingerprint=fingerprint,
         ))

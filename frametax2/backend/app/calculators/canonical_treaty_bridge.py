@@ -339,6 +339,62 @@ def find_real_bilateral_partners(home_code: str, candidate_codes: list[str]) -> 
     ]
 
 
+@dataclass(frozen=True)
+class BilateralMinimumContribution:
+    """Co-Pro Conditional Pricing Bridge — the DETERMINISTIC minimum
+    contribution split that would clear a given bilateral treaty's own
+    real, stored thresholds. Never invents a number: every field is read
+    straight off TreatyData's own majority_min_pct/minority_min_pct
+    (minority_max_pct only matters if it is BELOW minority_min_pct, an
+    internally-inconsistent treaty record this function refuses to
+    silently paper over -- see deterministically_solvable).
+
+    A cultural test requirement can never be "solved" numerically (it is
+    a real production/creative fact, not a threshold this engine may
+    assume passed) -- deterministically_solvable is False whenever the
+    treaty requires one, regardless of the percentage thresholds."""
+    majority_pct: float
+    minority_pct: float
+    cultural_test_required: bool
+    deterministically_solvable: bool
+    blocking_reason: str | None = None
+
+
+def solve_bilateral_minimum_contribution(treaty) -> BilateralMinimumContribution:
+    """The minimum lawful majority/minority contribution split that would
+    clear this treaty's own real thresholds -- the DETERMINISTIC portion
+    of Co-Pro Conditional Pricing Bridge's "solve, don't merely ask"
+    requirement. Generic over any TreatyData; never reads a program_slug
+    or jurisdiction_code, so it cannot be production- or treaty-specific
+    by construction."""
+    if treaty.minority_max_pct is not None and treaty.minority_min_pct > treaty.minority_max_pct:
+        return BilateralMinimumContribution(
+            majority_pct=treaty.majority_min_pct,
+            minority_pct=treaty.minority_min_pct,
+            cultural_test_required=treaty.cultural_test_required,
+            deterministically_solvable=False,
+            blocking_reason=(
+                f"Treaty {treaty.treaty_slug}'s own recorded minority_min_pct "
+                f"({treaty.minority_min_pct}) exceeds its minority_max_pct "
+                f"({treaty.minority_max_pct}) -- no contribution split can "
+                "satisfy both; this is a genuine data-consistency gap, not "
+                "solved or guessed around."
+            ),
+        )
+    return BilateralMinimumContribution(
+        majority_pct=treaty.majority_min_pct,
+        minority_pct=treaty.minority_min_pct,
+        cultural_test_required=treaty.cultural_test_required,
+        deterministically_solvable=not treaty.cultural_test_required,
+        blocking_reason=(
+            f"Treaty {treaty.treaty_slug} requires a cultural test to be "
+            "explicitly passed -- this is a real creative/production fact "
+            "this engine cannot assume or solve for numerically."
+            if treaty.cultural_test_required else None
+        ),
+    )
+
+
 def find_bilateral_treaty_pairs_among_candidates(
     candidate_codes: list[str],
 ) -> list[tuple[str, str, str]]:
