@@ -17,7 +17,11 @@ from __future__ import annotations
 #: OH-001 fix: included in canonical_evaluation._compute_fingerprint()
 #: so a treaty/co-production data change invalidates cached served
 #: evaluations. Bump on any material change.
-TREATY_ENGINE_VERSION = "1.0.0"
+# 1.1.0: LU Co-Pro Opportunity Trace fix -- added all_bilateral_treaties(),
+# a new read accessor enabling candidate-pair (not just home-anchored)
+# bilateral discovery. No treaty DATA changed; bumped because a served
+# consumer's candidate SET changes as a direct result.
+TREATY_ENGINE_VERSION = "1.1.0"
 
 from dataclasses import dataclass, field
 
@@ -646,6 +650,17 @@ def get_available_bilateral_treaties(country: str) -> list[TreatyData]:
         td for key, td in _BILATERAL.items()
         if c in key
     ]
+
+
+def all_bilateral_treaties() -> list[TreatyData]:
+    """LU Co-Pro Opportunity Trace fix: every registered bilateral treaty,
+    unfiltered by any one country. Lets a caller discover a real treaty
+    between two CANDIDATE jurisdictions (e.g. two creative-personnel
+    nationalities) without requiring the production's own current/service
+    jurisdiction to be one of the two parties -- see
+    canonical_treaty_bridge.find_bilateral_treaty_pairs_among_candidates,
+    the actual consumer of this accessor."""
+    return list(_BILATERAL.values())
 
 
 def get_unlocked_slugs_for_country(

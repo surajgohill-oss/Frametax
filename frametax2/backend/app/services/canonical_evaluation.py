@@ -94,6 +94,7 @@ from app.calculators.canonical_treaty_bridge import (
     evaluate_eurimages_coproduction_opportunity,
     evaluate_european_convention_coproduction_opportunity,
     evaluate_ibermedia_coproduction_opportunity,
+    find_bilateral_treaty_pairs_among_candidates,
     find_eurimages_partners,
     find_european_convention_partners,
     find_ibermedia_partners,
@@ -438,7 +439,21 @@ from app.services.canonical_project_economics import (
 # executable-registry, and role-qualification-bridge versions, so a
 # FUTURE change to any of those needs only its own version bump, not a
 # manual ENGINE_VERSION edit, to correctly invalidate cached rows.
-ENGINE_VERSION = "canonical-1.35.0"
+# 1.36.0: LU Co-Pro Opportunity Trace fix -- bilateral co-production
+# opportunity discovery previously only considered a treaty where the
+# production's own home/service jurisdiction was one of the two parties
+# (find_real_bilateral_partners(home_code, ...)), wrongly treating the
+# current shoot/service location as a required treaty party. A new,
+# generic loop (find_bilateral_treaty_pairs_among_candidates) now also
+# considers real registered treaties between two OTHER genuine candidate
+# jurisdictions (e.g. matching creative-personnel nationalities), with the
+# SAME fail-closed eligibility adapter -- never a new ontology, never an
+# LU-specific branch. New calculation_trace_json fields
+# (coproduction_partners with two real parties instead of one,
+# location_independent_of_service_jurisdiction) mean this is also a SHAPE
+# change, not only a candidate-generation change -- bumped for both
+# reasons, per this constant's own established convention.
+ENGINE_VERSION = "canonical-1.36.0"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
@@ -2211,6 +2226,99 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
                 "reason": "; ".join(opp.notes) or "Real ownership/cultural facts required to resolve eligibility.",
                 "feasibility_status": FEASIBILITY_UNKNOWN,
                 "feasibility_reasons": [],
+            },
+            input_fingerprint=fingerprint,
+        ))
+
+    # LU Co-Pro Opportunity Trace fix — a real, generic wiring gap: the
+    # loop above only ever considers a bilateral treaty where the
+    # production's own home/service jurisdiction (Mauritius for LU) is
+    # one of the two parties. CineGlobe is production-centric, not
+    # current-jurisdiction-centric — a real registered treaty between two
+    # OTHER genuine candidate jurisdictions (e.g. AU/GB, both already
+    # independently discovered as relocation candidates for LU, and
+    # matching this production's own director/writer nationalities) is a
+    # real structuring opportunity even when the shoot/service location
+    # is a third country, party to neither treaty. Same fail-closed
+    # adapter, same disclosure shape as the home-anchored loop above —
+    # only the PAIR SELECTION is generalized, never the eligibility logic.
+    # Deduplication against the home-anchored loop above is structural,
+    # not a separate tracking set: any pair where home_code IS one of the
+    # two parties is explicitly skipped below (`continue`), and that is
+    # exactly the only case the home-anchored loop could have already
+    # reported — so no treaty_slug can ever be reported by both loops.
+    for majority_code, minority_code, treaty_slug in find_bilateral_treaty_pairs_among_candidates(candidate_codes):
+        if home_code in (majority_code, minority_code):
+            continue  # already covered by the home-anchored loop above
+        opp = evaluate_bilateral_coproduction_opportunity(
+            majority_code, minority_code,
+            majority_pct=_copro_majority_pct, minority_pct=_copro_minority_pct,
+            cultural_test_passed=_copro_cultural_test_passed,
+        )
+        if opp is None:
+            continue
+        majority_jur = jurisdiction_by_code.get(majority_code)
+        minority_jur = jurisdiction_by_code.get(minority_code)
+        structure = ProductionStructure(
+            id=uuid.uuid4(),
+            project_id=project.id,
+            name=f"{majority_code} + {minority_code} — official co-production opportunity ({opp.treaty_slug})",
+            description=(
+                f"A registered bilateral co-production treaty ({opp.treaty_slug}) exists "
+                f"between {majority_code} and {minority_code} — both independently "
+                f"discovered as real candidate jurisdictions for this production, neither "
+                f"of which is the production's current service/location jurisdiction "
+                f"({home_code}). The legal/creative co-production structure and the "
+                f"physical production/service location are separate dimensions: this "
+                f"structure can potentially compose with a {home_code} service/location "
+                "component rather than replacing it. Real ownership/spend-share and "
+                "cultural-test facts are required to resolve eligibility — not yet on "
+                "file for this project."
+            ),
+            jurisdiction_allocations=[],
+            claimed_program_ids=[],
+        )
+        session.add(structure)
+        await session.flush()
+        _conditional_program_dicts, _conditional_compatibility_dict = _conditional_data(
+            str(structure.id), majority_code, (),
+        )
+        session.add(StructureCalculationResult(
+            id=uuid.uuid4(), structure_id=structure.id, engine_version=ENGINE_VERSION,
+            total_budget_usd=inputs.gross_budget_usd, total_incentive_value_usd=None,
+            true_net_cost_usd=None, risk_adjusted_net_cost_usd=None,
+            has_unverified_inputs=True,
+            warnings=[
+                LIMITATION_NOTE,
+                "Official co-production opportunity between two candidate jurisdictions "
+                f"neither of which is {home_code} (this production's current service/"
+                "location jurisdiction) — real ownership/cultural-test facts are not yet "
+                "on file; not priced as qualified economics. Registry presence is real "
+                "and disclosed; it is never reported as resolved eligibility.",
+            ],
+            calculation_trace_json={
+                "candidate_status": STATUS_CO_PRO_OPPORTUNITY,
+                "discovery_classification": "treaty_coproduction",
+                "structure_type": "treaty_coproduction",
+                "primary_jurisdiction": home_code,
+                "is_baseline": False,
+                "relocation_cost_normalized": False,
+                "is_directly_comparable": False,
+                "treaty_slug": opp.treaty_slug,
+                "conditional_programs": _conditional_program_dicts,
+                "conditional_compatibility": _conditional_compatibility_dict,
+                "coproduction_partners": [
+                    {"jurisdiction_code": majority_code, "jurisdiction_display_name": majority_jur.name if majority_jur else majority_code},
+                    {"jurisdiction_code": minority_code, "jurisdiction_display_name": minority_jur.name if minority_jur else minority_code},
+                ],
+                "treaty_resolution_state": opp.resolution_state,
+                "treaty_cultural_test_required": opp.cultural_test_required,
+                "treaty_cultural_test_resolved": opp.cultural_test_resolved,
+                "treaty_disqualification_reasons": list(opp.disqualification_reasons),
+                "reason": "; ".join(opp.notes) or "Real ownership/cultural facts required to resolve eligibility.",
+                "feasibility_status": FEASIBILITY_UNKNOWN,
+                "feasibility_reasons": [],
+                "location_independent_of_service_jurisdiction": True,
             },
             input_fingerprint=fingerprint,
         ))

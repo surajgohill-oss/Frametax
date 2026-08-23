@@ -152,6 +152,16 @@ async def test_relocation_candidates_never_become_top_result(db: AsyncSession):
 UNPRICEABLE_STATUSES = {
     "UNPRICEABLE_AUTHORITY_INSUFFICIENT", "RULE_REJECTED", "FEASIBILITY_REVIEW_REQUIRED",
     "QUALIFICATION_HARD_FAIL", "QUALIFICATION_UNRESOLVED",
+    # LU Co-Pro Opportunity Trace: a real, pre-existing terminal status
+    # (STATUS_CO_PRO_OPPORTUNITY) this set was simply never updated for.
+    # Bilateral co-production opportunities have always used this status
+    # (see the home-anchored loop in canonical_evaluation.py, unchanged);
+    # LU's own home jurisdiction (Mauritius) has no bilateral treaties, so
+    # this status never appeared in LU's own unpriceable set until the
+    # fix that lets bilateral discovery consider treaties between two
+    # OTHER real candidate jurisdictions (e.g. LU's real GB writer +
+    # AU director) rather than requiring Mauritius to be a treaty party.
+    "CO_PRO_OPPORTUNITY",
 }
 
 

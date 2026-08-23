@@ -148,8 +148,19 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # candidate_universe_restored for the matching full_relocation-only
     # explanation (FVD's own budget composition doesn't route a component
     # to either program, unlike Little Utopia's).
+    # LU Co-Pro Opportunity Trace: unpriced grew again, 11 -> 34.
+    # Bilateral co-production discovery previously only considered a
+    # treaty where FVD's own home jurisdiction (Greece) was one of the two
+    # parties -- a real, generic wiring defect (CineGlobe is production-
+    # centric, not current-jurisdiction-centric). 23 real registered
+    # bilateral treaties exist between pairs of FVD's own independently-
+    # discovered candidate jurisdictions that don't involve Greece at all
+    # (e.g. GB+CA, GB+AU, CA+FR...) -- each now surfaces as its own
+    # disclosed, unpriced treaty_coproduction opportunity via
+    # canonical_treaty_bridge.find_bilateral_treaty_pairs_among_candidates.
+    # See test_treaty_coproduction_wiring.py's own dedicated proof.
     assert len(priced) == 135
-    assert len(unpriced) == 11
+    assert len(unpriced) == 34
     # Final Consolidated Backend Correction + Global Structuring
     # Intelligence Acceptance, Part 4/CBA-001: comparable_count is now 0
     # (was 1) — FVD's own Greece baseline resolves USER_FACT_REQUIRED on
@@ -159,7 +170,7 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     # review_required (still priced, still disclosed, just not ranked).
     assert accounting["comparable_count"] == 0
     assert accounting["review_required_count"] == 135
-    assert accounting["unpriceable_count"] == 11
+    assert accounting["unpriceable_count"] == 34
 
     # Cross-screen agreement: the ranking list (what Scenarios/Overview/
     # World all read) must reproduce the exact same split, not a second,
@@ -177,9 +188,12 @@ async def test_fvd_accounting_matches_codex_diagnosis(db: AsyncSession):
     comparable_ranked = [r for r in ranking if r["rank"] is not None]
     review_ranked = [r for r in ranking if r["is_fully_priced"] and r["rank"] is None]
     unpriceable_ranked = [r for r in ranking if not r["is_fully_priced"]]
+    # LU Co-Pro Opportunity Trace: unpriceable_ranked grew 11 -> 34 -- see
+    # the matching, fully-attributed comment above test_fvd_accounting_
+    # matches_codex_diagnosis's own assertion of the same number.
     assert len(comparable_ranked) == 0
     assert len(review_ranked) == 135
-    assert len(unpriceable_ranked) == 11
+    assert len(unpriceable_ranked) == 34
 
     # Feasibility ≠ eligibility (canonical authority substrate + feasibility
     # boundary repair): a landlocked jurisdiction with real marine-mismatch
@@ -339,7 +353,12 @@ async def test_fvd_unpriceable_causes_are_differentiated_not_flattened(db: Async
     ranking = view["structures"]["allocated_structures"]["ranking"]
     unpriceable = [r for r in ranking if not r["is_fully_priced"]]
 
-    assert len(unpriceable) == 11
+    # LU Co-Pro Opportunity Trace: grew again 11 -> 34 (+23) -- 23 real
+    # bilateral candidate-pair treaty opportunities (see
+    # test_fvd_accounting_matches_codex_diagnosis's own matching, fully-
+    # attributed comment). All carry the same distinct
+    # STATUS_CO_PRO_OPPORTUNITY terminal status, never flattened.
+    assert len(unpriceable) == 34
     statuses = {r["candidate_status"] for r in unpriceable}
     assert statuses.issuperset({"UNPRICEABLE_AUTHORITY_INSUFFICIENT", "RULE_REJECTED"}), (
         f"expected at least AUTHORITY_INSUFFICIENT and RULE_REJECTED causes, got {statuses}"

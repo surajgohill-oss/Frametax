@@ -540,15 +540,27 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     doesn't route a component to BC or South Australia the way LU's does.
     This is a real, budget-specific difference, not a bug -- see
     test_codex_final_optimizer_health_audit.py's own direct proof that
-    both programs reach FVD's fresh served candidate universe."""
+    both programs reach FVD's fresh served candidate universe.
+
+    Grew again 146 -> 169 (+23) with the LU Co-Pro Opportunity Trace fix:
+    bilateral treaty discovery previously only considered a treaty where
+    FVD's own home jurisdiction (Greece) was one of the two parties -- a
+    real, generic wiring defect (CineGlobe is production-centric, not
+    current-jurisdiction-centric). 23 real registered bilateral treaties
+    exist between pairs of FVD's own independently-discovered candidate
+    jurisdictions that don't involve Greece (e.g. GB+CA, GB+AU, CA+FR) --
+    each now surfaces as its own disclosed, unpriced treaty_coproduction
+    opportunity. priced is unaffected (all 23 are UNRESOLVED_FACTS, never
+    priced); unpriced absorbs the full growth. See
+    test_treaty_coproduction_wiring.py for the direct proof."""
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
     priced = [e for e in entries if e["is_fully_priced"]]
     unpriced = [e for e in entries if not e["is_fully_priced"]]
-    assert len(entries) == 146
+    assert len(entries) == 169
     assert len(priced) == 135
-    assert len(unpriced) == 11
+    assert len(unpriced) == 34
 
     for code in ("MN", "UZ", "AT"):
         e = next(x for x in entries if x["primary_jurisdiction"] == code)

@@ -339,6 +339,46 @@ def find_real_bilateral_partners(home_code: str, candidate_codes: list[str]) -> 
     ]
 
 
+def find_bilateral_treaty_pairs_among_candidates(
+    candidate_codes: list[str],
+) -> list[tuple[str, str, str]]:
+    """LU Co-Pro Opportunity Trace fix — a real, generic wiring gap:
+    `find_real_bilateral_partners` (above) only ever considers a treaty
+    where the PRODUCTION'S OWN home/service jurisdiction is one of the two
+    parties. CineGlobe's product model is production-centric, not
+    current-jurisdiction-centric: a bilateral co-production treaty between
+    two OTHER real candidate jurisdictions (e.g. two the creative
+    personnel's own nationalities independently made discoverable) is a
+    real structuring opportunity CineGlobe already has the doctrine for,
+    even when the shoot/service location is a third country party to
+    neither treaty.
+
+    Bounded and efficient by construction: iterates the finite, already-
+    registered treaty set (tens of rows, not candidate_codes squared) and
+    keeps only the ones where BOTH parties are already real, independently
+    discovered candidate jurisdictions for this production — never invents
+    a jurisdiction, never requires home_code to be a party.
+
+    Returns (majority_country, minority_country, treaty_slug) triples,
+    majority/minority per the treaty's own stored jurisdiction_a/
+    jurisdiction_b — a fixed, non-arbitrary convention, never guessed per
+    production (no real ownership-share fact is required to know WHICH
+    treaty applies, only to resolve eligibility once applied — see
+    evaluate_bilateral_coproduction_opportunity, unchanged, called with
+    this pairing exactly as it already is for the home-anchored path)."""
+    codes = {c.upper() for c in candidate_codes}
+    pairs: list[tuple[str, str, str]] = []
+    seen_slugs: set[str] = set()
+    for treaty in te.all_bilateral_treaties():
+        if treaty.jurisdiction_a not in codes or treaty.jurisdiction_b not in codes:
+            continue
+        if treaty.treaty_slug in seen_slugs:
+            continue
+        seen_slugs.add(treaty.treaty_slug)
+        pairs.append((treaty.jurisdiction_a, treaty.jurisdiction_b, treaty.treaty_slug))
+    return pairs
+
+
 def find_eurimages_partners(home_code: str, candidate_codes: list[str]) -> list[str]:
     """Every candidate code that, together with home_code, would make a
     real (>=2 member) Eurimages co-production — membership only, never
