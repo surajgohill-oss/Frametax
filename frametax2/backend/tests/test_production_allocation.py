@@ -190,3 +190,81 @@ def test_component_vocabulary_covers_movables():
     assert component_for("music") == "music"
     assert component_for("btl_crew_labor") == "principal_photography"
     assert component_for(None) == "principal_photography"
+
+
+# ── non-unique account codes (Fresh Project Budget Normalization) ───────────
+# Real budgets legitimately reuse an account code across distinct lines
+# (e.g. Lips Like Sugar's real "4900" appearing on both a Production-section
+# fringes line and a Post-Production titles line). account_code is a
+# classification field, never the identity of a line — BudgetLine.line_id is.
+
+def test_two_distinct_spend_lines_sharing_an_account_code_both_survive():
+    lines = [
+        BudgetLine(account_code="4900", description="TOTAL FRINGES",
+                   amount_usd=1_023_115.0, spend_category="btl_crew_labor"),
+        BudgetLine(account_code="4900", description="MAIN AND END TITLES",
+                   amount_usd=10_500.0, spend_category="post_production"),
+    ]
+    assert lines[0].line_id != lines[1].line_id  # distinct identity despite equal code
+
+    result = derive_account_allocation(
+        lines=lines,
+        spend_category_by_code={},
+        spec=_baseline_spec(),
+    )
+
+    # both lines survive — no silent drop, no duplicate-code rejection
+    assert len(result.assignments) == 2
+    assert result.duplicate_account_codes == ()
+    by_desc = {a.description: a for a in result.assignments}
+    assert set(by_desc) == {"TOTAL FRINGES", "MAIN AND END TITLES"}
+
+    # account code preserved as a classification attribute on both
+    assert all(a.account_code == "4900" for a in result.assignments)
+    # each assignment traces back to its own distinct source line
+    assert by_desc["TOTAL FRINGES"].line_id == lines[0].line_id
+    assert by_desc["MAIN AND END TITLES"].line_id == lines[1].line_id
+    assert by_desc["TOTAL FRINGES"].line_id != by_desc["MAIN AND END TITLES"].line_id
+
+    # source amounts preserved exactly
+    assert by_desc["TOTAL FRINGES"].amount_usd == 1_023_115.0
+    assert by_desc["MAIN AND END TITLES"].amount_usd == 10_500.0
+
+    # conservation: total allocated == total budget lines, no code-collision
+    # blocker remains
+    assert result.total_budget_lines_usd == 1_033_615.0
+    assert result.total_allocated_usd == 1_033_615.0
+    assert result.conserves
+    assert result.is_complete
+
+
+def test_subtotal_header_and_real_spend_line_sharing_a_code_are_not_conflated():
+    """A subtotal/header line is excluded upstream (budget_parser's own
+    _GROUP_SUBTOTAL_RE sentinel semantics) before it ever reaches
+    derive_account_allocation as a BudgetLine — so by the time two lines
+    share a code here, both are, by construction, real monetary lines.
+    This test proves the allocator itself never treats a shared code as a
+    signal to collapse/drop one line: total conservation is the only
+    correctness check it performs, and it must hold even when one of the
+    two same-coded lines is a much smaller "administrative" amount that
+    could be mistaken for a subtotal remainder."""
+    lines = [
+        BudgetLine(account_code="8300", description="CONTINGENCY RESERVE",
+                   amount_usd=200_000.0, spend_category="contingency"),
+        BudgetLine(account_code="8300", description="CONTINGENCY — DEPLOYED TO POST",
+                   amount_usd=25_000.0, spend_category="post_production"),
+    ]
+    result = derive_account_allocation(
+        lines=lines,
+        spend_category_by_code={},
+        spec=_baseline_spec(),
+    )
+    assert len(result.assignments) == 2
+    assert result.duplicate_account_codes == ()
+    assert round(result.total_allocated_usd, 2) == 225_000.0
+    assert round(result.total_budget_lines_usd, 2) == 225_000.0
+    assert result.conserves
+    assert result.is_complete
+    # neither line is dropped in favor of the other
+    amounts = sorted(a.amount_usd for a in result.assignments)
+    assert amounts == [25_000.0, 200_000.0]

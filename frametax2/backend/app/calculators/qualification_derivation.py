@@ -64,6 +64,7 @@ No LLM calls. Deterministic and testable.
 """
 from __future__ import annotations
 
+import uuid
 from dataclasses import dataclass, field
 
 from app.calculators.classify_budget_line_items import classify_line_item
@@ -104,12 +105,23 @@ FACT_SPLIT_CATEGORIES = frozenset({"legal_accounting"})
 class BudgetLine:
     """One budget account as the intake provides it. spend_category is
     the chart-of-accounts category when the budget source declares one;
-    None means 'classify from the description'."""
+    None means 'classify from the description'.
+
+    account_code is a CLASSIFICATION field (department/category/reporting
+    code), never a unique identity — real budgets legitimately reuse a
+    code across distinct lines (subtotal/header rows, repeated department
+    codes, contingency deployed to multiple destinations under its own
+    account code). line_id is the actual per-line identity: it defaults
+    to a fresh UUID so every existing caller gets automatic, sufficient
+    uniqueness with zero code changes, but a caller backed by persisted
+    storage (the real budget-ingestion path) should pass the row's own
+    stable primary key instead, for full source traceability."""
     account_code: str
     description: str
     amount_usd: float
     spend_category: str | None = None
     is_memo: bool = False
+    line_id: str = field(default_factory=lambda: uuid.uuid4().hex)
 
 
 @dataclass(frozen=True)

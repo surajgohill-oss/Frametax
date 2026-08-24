@@ -404,7 +404,7 @@ async def build_project_economic_inputs(
             spend_category_by_code[code] = category
         lines.append(BudgetLine(
             account_code=code, description=label, amount_usd=amount,
-            spend_category=category, is_memo=False,
+            spend_category=category, is_memo=False, line_id=str(item.id),
         ))
 
     if not lines:

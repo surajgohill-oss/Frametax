@@ -155,7 +155,13 @@ class StructureSpec:
 @dataclass(frozen=True)
 class AccountAllocation:
     """One account's (or explicit sub-portion's) assignment to exactly
-    one jurisdiction, with full routing provenance."""
+    one jurisdiction, with full routing provenance.
+
+    line_id traces this assignment back to the exact source BudgetLine it
+    was derived from — required because account_code is a classification
+    field, not a unique key (real budgets legitimately reuse a code
+    across distinct lines), so account_code alone cannot disambiguate
+    which source line a given assignment came from."""
     account_code: str
     description: str
     amount_usd: float
@@ -168,6 +174,7 @@ class AccountAllocation:
     authority: str | None = None
     unresolved_requirements: tuple[str, ...] = ()
     split_pct: float | None = None       # set only on explicit split portions
+    line_id: str = ""                    # traces to the source BudgetLine.line_id
 
 
 @dataclass
@@ -249,7 +256,13 @@ def derive_account_allocation(
     assignments: list[AccountAllocation] = []
     unallocated: list[str] = []
     notes: list[str] = []
-    seen_codes: set[str] = set()
+    # Identity for dedup is the LINE, never the account code — a real budget
+    # may legitimately reuse an account code across distinct lines (e.g. a
+    # subtotal/header row, or contingency deployed to multiple destinations
+    # under one code). `duplicates` therefore only ever fires when the same
+    # BudgetLine (same line_id) is passed into `lines` more than once — a
+    # genuine caller bug, not a real-world budget fact.
+    seen_line_ids: set[str] = set()
     duplicates: list[str] = []
 
     # Validate explicit splits up front — a malformed split is a caller
@@ -271,10 +284,10 @@ def derive_account_allocation(
             )
 
     for line in lines:
-        if line.account_code in seen_codes:
+        if line.line_id in seen_line_ids:
             duplicates.append(line.account_code)
             continue
-        seen_codes.add(line.account_code)
+        seen_line_ids.add(line.line_id)
 
         if line.is_memo:
             notes.append(
@@ -292,6 +305,7 @@ def derive_account_allocation(
             for jur, pct in sorted(spec.account_splits[line.account_code].items()):
                 assignments.append(AccountAllocation(
                     account_code=line.account_code,
+                    line_id=line.line_id,
                     description=line.description,
                     amount_usd=round(line.amount_usd * pct, 2),
                     component=component,
@@ -323,6 +337,7 @@ def derive_account_allocation(
                 continue
             assignments.append(AccountAllocation(
                 account_code=line.account_code,
+                line_id=line.line_id,
                 description=line.description,
                 amount_usd=line.amount_usd,
                 component=component,
@@ -366,6 +381,7 @@ def derive_account_allocation(
                     else AssignmentKind.RECOMMENDED)
             assignments.append(AccountAllocation(
                 account_code=line.account_code,
+                line_id=line.line_id,
                 description=line.description,
                 amount_usd=line.amount_usd,
                 component=component,
@@ -387,6 +403,7 @@ def derive_account_allocation(
         if line.account_code in stated_outside_accounts:
             assignments.append(AccountAllocation(
                 account_code=line.account_code,
+                line_id=line.line_id,
                 description=line.description,
                 amount_usd=line.amount_usd,
                 component=component,
@@ -410,6 +427,7 @@ def derive_account_allocation(
         if component in LOCATION_BOUND_COMPONENTS:
             assignments.append(AccountAllocation(
                 account_code=line.account_code,
+                line_id=line.line_id,
                 description=line.description,
                 amount_usd=line.amount_usd,
                 component=component,
@@ -426,6 +444,7 @@ def derive_account_allocation(
         # 6. default -> primary (recommended)
         assignments.append(AccountAllocation(
             account_code=line.account_code,
+            line_id=line.line_id,
             description=line.description,
             amount_usd=line.amount_usd,
             component=component,

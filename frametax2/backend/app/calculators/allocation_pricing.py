@@ -219,6 +219,7 @@ def _segment_lines(
             amount_usd=a.amount_usd,
             spend_category=spend_category_by_code.get(a.account_code),
             is_memo=False,
+            line_id=a.line_id or f"{a.account_code}:{a.jurisdiction_code}",
         )
         for a in sorted(allocations, key=lambda a: a.account_code)
     ]

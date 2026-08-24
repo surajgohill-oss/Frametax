@@ -501,7 +501,25 @@ from app.services.canonical_project_economics import (
 # doctrine. conditional_scenario's priced_components/canonical_data_gaps
 # values change for affected treaties -- bumped per this constant's own
 # established convention.
-ENGINE_VERSION = "canonical-1.39.0"
+# 1.40.0: Fresh Project Budget Normalization -- non-unique account code
+# support. Root cause: derive_account_allocation's own duplicate
+# detection keyed on account_code, a CLASSIFICATION field a real budget
+# may legitimately reuse across distinct lines (e.g. Lips Like Sugar's
+# real "4900" on both a Total Fringes line and a Main and End Titles
+# line) -- the second line sharing a code was silently dropped from
+# assignments entirely, breaking conservation and blocking every
+# candidate from pricing. Fix: BudgetLine gains a genuine per-line
+# identity (line_id, default-generated, real DB primary key threaded
+# through on the live ingestion path) and derive_account_allocation now
+# dedups by line_id, never account_code -- account_code remains pure
+# classification. AccountAllocation also gains line_id for full
+# downstream source traceability. No behavior change for any budget
+# without a repeated code (every existing production's dedup outcome is
+# unchanged); this bump exists only to force a fresh, correctly-
+# conserving allocation/pricing recompute for any project whose budget
+# does carry a repeated code -- bumped per this constant's own
+# established convention.
+ENGINE_VERSION = "canonical-1.40.0"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
