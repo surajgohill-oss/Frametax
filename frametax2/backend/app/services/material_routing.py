@@ -90,6 +90,21 @@ async def _route_budget(
     suffix = local_path.suffix.lower()
     if suffix == ".csv":
         result = parse_budget_csv(local_path.read_bytes(), filename=version.original_filename or local_path.name)
+    elif suffix == ".pdf":
+        # Real per-page boundaries matter here (parse_budget_from_text's
+        # own docstring: without them, a multi-page film budget degrades
+        # to "one giant page" and every detail-page subaccount gets
+        # mis-scanned as a top-sheet row) -- extract with pymupdf's own
+        # page list directly rather than going through _read_source_text,
+        # which only returns a flat, page-boundary-free string.
+        try:
+            extracted = extract_text_from_pdf(local_path, max_pages=300)
+        except Exception:  # noqa: BLE001 — extraction failure must not crash commit
+            return
+        result = parse_budget_from_text(
+            extracted.raw_text, filename=version.original_filename or local_path.name,
+            pages=extracted.pages,
+        )
     else:
         text = _read_source_text(local_path)
         if text is None:

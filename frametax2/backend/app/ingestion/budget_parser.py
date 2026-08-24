@@ -251,7 +251,7 @@ def _parse_film_budget(
     warnings: list[str] = []
 
     top_sheet_pages = [
-        p for p in pages if ("Acct#" in p and "Category Description" in p) or ("Account\n" in p and "Description\n" in p)
+        p for p in pages if ("Acct#" in p and "Category Description" in p) or ("Description\nTotal\n" in p)
     ]
     for top_sheet_page in top_sheet_pages:
         lines = [l.strip() for l in top_sheet_page.splitlines() if l.strip()]

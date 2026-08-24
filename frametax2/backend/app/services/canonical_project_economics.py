@@ -40,6 +40,7 @@ from __future__ import annotations
 
 import json
 import re
+import uuid
 from dataclasses import dataclass, field
 
 from sqlalchemy import select
@@ -48,6 +49,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.calculators.production_requirements import abstract_location
 from app.calculators.qualification_derivation import BudgetLine, ProductionFacts
 from app.models.budget import BudgetDocument, BudgetLineItem
+from app.models.enums import ProjectFactSourceType
 from app.models.jurisdiction import Jurisdiction
 from app.models.project import Project
 from app.models.project_fact import ProjectFact
@@ -200,6 +202,124 @@ _FORMAT_TO_PRODUCTION_TYPE = {
     "animation": "animation",
 }
 
+#: Fresh Project Ingestion, base-jurisdiction derivation: currency evidence
+#: -> canonical jurisdiction code. Only currencies with ONE unambiguous
+#: issuing jurisdiction are mapped -- EUR is deliberately absent (shared by
+#: many Eurozone countries; never guessed). An explicit 3-letter code
+#: (e.g. "CAD" appearing in the document) is unambiguous on its own. A bare
+#: currency SYMBOL is only trusted when it is the ONLY symbol/code present
+#: anywhere in the document -- "$" alone (no other currency marker) is
+#: read as USD, the same default this codebase's own parsers already use
+#: everywhere a currency isn't otherwise stated (see budget_parser.py).
+_CURRENCY_CODE_TO_JURISDICTION_CODE = {"USD": "US", "CAD": "CA", "GBP": "GB", "AUD": "AU"}
+_CURRENCY_SYMBOL_TO_MARKER = {"$": "USD", "£": "GBP", "€": None}  # None = deliberately ambiguous
+_CURRENCY_CODE_RE = re.compile(r"\b(USD|CAD|GBP|AUD|EUR)\b")
+
+
+def _infer_jurisdiction_code_from_currency(raw_text: str) -> str | None:
+    """Deterministic, never-fabricated currency->jurisdiction inference
+    from a budget document's own extracted text. Returns None (never a
+    guess) whenever more than one currency marker is present, or the only
+    marker present (EUR / "€") is shared by multiple real jurisdictions."""
+    if not raw_text:
+        return None
+    codes_found = {m.group(1) for m in _CURRENCY_CODE_RE.finditer(raw_text)}
+    if len(codes_found) == 1:
+        code = next(iter(codes_found))
+        return _CURRENCY_CODE_TO_JURISDICTION_CODE.get(code)  # None for EUR — ambiguous
+    if len(codes_found) > 1:
+        return None  # more than one currency code stated — genuinely ambiguous
+
+    markers_found = {
+        marker for symbol, marker in _CURRENCY_SYMBOL_TO_MARKER.items() if symbol in raw_text
+    }
+    if len(markers_found) == 1:
+        only = next(iter(markers_found))
+        return _CURRENCY_CODE_TO_JURISDICTION_CODE.get(only) if only else None
+    return None  # no marker, or more than one distinct symbol present
+
+
+async def _resolve_home_jurisdiction(
+    session: AsyncSession, project: Project, budget_doc: BudgetDocument,
+) -> Jurisdiction | None:
+    """The ONE canonical base-jurisdiction resolver for the live Evaluate
+    path. Precedence (never fabricated, never overrides an explicit value):
+
+      1. An already-confirmed project.home_jurisdiction_id (explicit
+         project-level fact/override — highest precedence, untouched).
+      2. A real jurisdiction NAME stated in the project's own budget
+         document filename(s) — reuses project_evaluation._derive_home_
+         jurisdiction's existing, already-built, deterministic matcher
+         unchanged (the same generic logic that already resolves F#K
+         Valentine's Day's real "...Greece..." budget filename); never a
+         second, competing name-matching implementation.
+      3. The currency the budget document is itself denominated in —
+         genuinely new (no existing currency-detection capability was
+         found), deliberately minimal, and only ever resolves when
+         unambiguous (see _infer_jurisdiction_code_from_currency).
+
+    Only reached once a BudgetDocument is guaranteed to exist (the caller
+    ingests it first) — a Jurisdiction resolved here is persisted onto
+    project.home_jurisdiction_id plus a ProjectFact (source_type=EXTRACTED,
+    linked to the budget's own DocumentVersion for provenance) so the
+    derivation is never silently re-run or lost, and is clearly
+    distinguishable from a real user-confirmed answer."""
+    if project.home_jurisdiction_id is not None:
+        return await session.get(Jurisdiction, project.home_jurisdiction_id)
+
+    from app.services.project_evaluation import _derive_home_jurisdiction as _match_by_filename
+
+    resolved = await _match_by_filename(session, project)
+    source_label = "budget_filename" if resolved is not None else None
+
+    if resolved is None:
+        from pathlib import Path
+
+        from app.core.config import get_settings
+        from app.ingestion.pdf_extractor import extract_text_from_pdf
+
+        settings = get_settings()
+        local_path = Path(settings.LOCAL_STORAGE_PATH) / (budget_doc.storage_path or "")
+        if budget_doc.file_type == "pdf" and local_path.exists():
+            raw_text = extract_text_from_pdf(local_path).raw_text
+            code = _infer_jurisdiction_code_from_currency(raw_text)
+            if code:
+                resolved = (await session.execute(
+                    select(Jurisdiction).where(Jurisdiction.code == code)
+                )).scalars().first()
+                source_label = "budget_currency" if resolved is not None else None
+
+    if resolved is None:
+        return None
+
+    project.home_jurisdiction_id = resolved.id
+    # ProjectFact holds exactly ONE current row per (project_id, fact_key)
+    # by its own documented design (and a real DB unique constraint) —
+    # update an existing derivation fact in place rather than blindly
+    # inserting a second one (which would violate that constraint if a
+    # prior derivation, or a since-reverted one, already wrote this key).
+    existing_fact = (await session.execute(
+        select(ProjectFact).where(
+            ProjectFact.project_id == project.id, ProjectFact.fact_key == "home_jurisdiction_code",
+        )
+    )).scalars().first()
+    if existing_fact is not None:
+        existing_fact.value = resolved.code
+        existing_fact.source_type = ProjectFactSourceType.EXTRACTED
+        existing_fact.source_document_version_id = budget_doc.document_version_id
+        existing_fact.source_location = f"derived from {source_label}"
+    else:
+        session.add(ProjectFact(
+            id=uuid.uuid4(), project_id=project.id, fact_key="home_jurisdiction_code",
+            value=resolved.code, value_type="string",
+            source_type=ProjectFactSourceType.EXTRACTED,
+            source_document_version_id=budget_doc.document_version_id,
+            source_location=f"derived from {source_label}",
+        ))
+    await session.commit()
+    await session.refresh(project)
+    return resolved
+
 
 async def build_project_economic_inputs(
     session: AsyncSession, project_id
@@ -211,17 +331,6 @@ async def build_project_economic_inputs(
     project = await session.get(Project, project_id)
     if project is None:
         return EconomicInputsResult(None, ["Project not found."])
-
-    jurisdiction = (
-        await session.get(Jurisdiction, project.home_jurisdiction_id)
-        if project.home_jurisdiction_id else None
-    )
-    if jurisdiction is None:
-        blockers.append(
-            "BASE_JURISDICTION_UNKNOWN — the production's base jurisdiction is "
-            "not confirmed on the project. It is not defaulted; supply it "
-            "explicitly or let evaluation derive it from source evidence."
-        )
 
     doc = (await session.execute(
         select(BudgetDocument)
@@ -250,6 +359,21 @@ async def build_project_economic_inputs(
             "canonical engine prices an actual budget; it does not estimate one."
         )
         return EconomicInputsResult(None, blockers)
+
+    # Fresh Project Ingestion, base-jurisdiction derivation: the jurisdiction
+    # in which the production budget is set is the canonical base
+    # jurisdiction unless an explicit project-level fact overrides it. Run
+    # AFTER the budget doc above is guaranteed to exist (ingested if
+    # necessary), so the derivation always has real budget evidence to read
+    # rather than racing ahead of it. Never overrides an already-confirmed
+    # project.home_jurisdiction_id.
+    jurisdiction = await _resolve_home_jurisdiction(session, project, doc)
+    if jurisdiction is None:
+        blockers.append(
+            "BASE_JURISDICTION_UNKNOWN — the production's base jurisdiction is "
+            "not confirmed on the project. It is not defaulted; supply it "
+            "explicitly or let evaluation derive it from source evidence."
+        )
 
     items = (await session.execute(
         select(BudgetLineItem).where(BudgetLineItem.budget_document_id == doc.id)

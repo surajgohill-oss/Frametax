@@ -113,6 +113,67 @@ async def _seed_unrouted_budget_document(
     return version
 
 
+def _write_multipage_film_budget_pdf(path, top_sheet_lines: list[str], detail_page_lines: list[str]) -> None:
+    """A real regression fixture: a top-sheet page PLUS a detail/breakdown
+    page, matching Lips Like Sugar's own real multi-page structure. Proves
+    _route_budget passes real per-page boundaries through to the parser
+    (parse_budget_from_text's own docstring: without them, a multi-page
+    film budget degrades to "one giant page" and every detail-page
+    subaccount gets mis-scanned as an additional top-sheet row)."""
+    doc = fitz.open()
+    doc.new_page().insert_text((50, 50), "\n".join(top_sheet_lines), fontsize=10)
+    doc.new_page().insert_text((50, 50), "\n".join(detail_page_lines), fontsize=10)
+    doc.save(str(path))
+    doc.close()
+
+
+async def test_multipage_pdf_routes_with_real_page_boundaries_not_inflated(db: AsyncSession, project: Project):
+    """Real regression, found via runtime evidence against Lips Like
+    Sugar's actual budget (149 mis-scanned lines instead of 47 real ones):
+    _route_budget must extract PDF text WITH pymupdf's own page list and
+    pass it through to parse_budget_from_text, not the flat, page-
+    boundary-free string _read_source_text returns for other formats."""
+    settings = get_settings()
+    storage_dir = Path(settings.LOCAL_STORAGE_PATH) / f"retro-route-test-{project.id}"
+    storage_dir.mkdir(parents=True, exist_ok=True)
+    pdf_path = storage_dir / "Multipage Budget.pdf"
+    _write_multipage_film_budget_pdf(
+        pdf_path,
+        top_sheet_lines=["TEST PRODUCTION", "Account", "Description", "Total", "1100", "SCRIPT", "$50,000"],
+        detail_page_lines=[
+            "TEST PRODUCTION", "Details", "Account", "Description", "Amt", "Unit", "X", "Rate", "Subtotal",
+            "1100 - SCRIPT", "1109", "WRITER FEE", "1 Allow", "1", "50000", "$50,000", "Subtotal", "$50,000",
+        ],
+    )
+    doc = Document(id=uuid.uuid4(), project_id=project.id, category="budget", title="Multipage Budget")
+    db.add(doc)
+    await db.flush()
+    version = DocumentVersion(
+        id=uuid.uuid4(), document_id=doc.id, original_filename="Multipage Budget.pdf",
+        storage_path=f"retro-route-test-{project.id}/Multipage Budget.pdf", is_current=True,
+    )
+    db.add(version)
+    await db.flush()
+    doc.current_version_id = version.id
+    await db.commit()
+
+    from app.services.material_routing import ensure_current_budget_routed
+    routed = await ensure_current_budget_routed(db, project.id)
+    assert routed is not None
+
+    lines = (await db.execute(
+        select(BudgetLineItem).where(BudgetLineItem.budget_document_id == routed.id)
+    )).scalars().all()
+    # Only the ONE real top-sheet account (1100) should register -- the
+    # detail page's own "1100 - SCRIPT" section header must never be
+    # mis-scanned as a second, spurious top-sheet row.
+    assert len(lines) == 1, (
+        f"expected exactly 1 real line item, got {len(lines)} -- page "
+        "boundaries were lost, causing detail-page rows to be mis-scanned "
+        "as additional top-sheet accounts"
+    )
+
+
 async def test_unrouted_legacy_budget_has_no_budget_document_yet(db: AsyncSession, project: Project):
     await _seed_unrouted_budget_document(db, project, "Legacy Budget.pdf", [("1100", "SCRIPT", 50_000)])
     existing = (await db.execute(
