@@ -173,9 +173,14 @@ _GRAND_TOTAL_RE = re.compile(r"^Grand Total\s*$", re.IGNORECASE)
 
 # Lines that must never contribute to parsed spend totals:
 # rebate/credit/net-total rows are budget assumptions, not gross spend.
+# "tax incentive" is the same self-referential incentive-estimate category
+# as "tax credit"/"incentive rebate" (e.g. a producer's own "Tax Incentive
+# 25%* BTL (No Disc)" netting line ahead of a budget's stated "Net total") —
+# not a real production spend account, so it must never enter QPE/allocation
+# as if it were BTL spend.
 _REBATE_EXCLUSION_RE = re.compile(
-    r"edb\s+rebate|tax\s+credit|net\s+total|rebate\s+at\s+\d|incentive\s+rebate"
-    r"|credit\s+at\s+\d|tax\s+rebate\s+at|film\s+rebate|incentive\s+line"
+    r"edb\s+rebate|tax\s+credit|tax\s+incentive|net\s+total|rebate\s+at\s+\d"
+    r"|incentive\s+rebate|credit\s+at\s+\d|tax\s+rebate\s+at|film\s+rebate|incentive\s+line"
     r"|cash\s+rebate|estimate\s+cash\s+rebate",
     re.IGNORECASE,
 )

@@ -322,6 +322,38 @@ class TestRebateAndGroupSubtotalExclusion:
             assert forbidden not in descriptions
 
 
+class TestTaxIncentiveNettingLineExclusion:
+    """Fresh Project Economic Fidelity: a producer's own projected-
+    incentive netting line (e.g. "9998 - Tax Incentive 25%* BTL (No
+    Disc)" ahead of a stated "Net total") is the same self-referential
+    rebate-assumption category as "EDB Rebate at 35%"/"tax credit" —
+    never real spend, must never enter QPE/allocation as a negative BTL
+    account. Real regression: Lips Like Sugar's actual source budget
+    carries exactly this line, previously mis-parsed as spend and
+    subtracted from every candidate jurisdiction's QPE."""
+
+    def _text_and_pages(self):
+        top_sheet = _TOP_SHEET.replace(
+            "9001\nEDB Rebate at 35%",
+            "9998\nTax Incentive 25%* BTL  (No Disc)",
+        )
+        assert "9998" in top_sheet and "9001" not in top_sheet
+        pages = _pages(top_sheet, _DETAIL_PAGE_1, _DETAIL_PAGE_2, _DETAIL_PAGE_3)
+        return "\n\n".join(pages), pages
+
+    def test_tax_incentive_netting_line_excluded(self):
+        text, pages = self._text_and_pages()
+        result = parse_budget_from_text(text, filename="test.pdf", pages=pages)
+        codes = {li.description.split()[0] for li in result.line_items}
+        assert "9998" not in codes
+
+    def test_tax_incentive_netting_amount_never_summed(self):
+        text, pages = self._text_and_pages()
+        result = parse_budget_from_text(text, filename="test.pdf", pages=pages)
+        total = sum(li.amount_usd for li in result.line_items)
+        assert total == pytest.approx(468_248.0, abs=0.01)
+
+
 class TestExactReconciliation:
     def test_clean_synthetic_budget_reconciles_exactly(self):
         """When the source data has no internal rounding inconsistency,

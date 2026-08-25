@@ -2933,3 +2933,97 @@ Two new focused tests in `tests/test_production_allocation.py`: `test_two_distin
 **Final gate**: `FRESH_PROJECT_BUDGET_NORMALIZATION_AND_PRICING_RUNTIME_VERIFIED` — repeated account codes are now supported generically (no project-specific code anywhere in the fix); unique per-line identity is preserved and source-traceable; subtotal/spend semantics were confirmed correct upstream, not reinvented; conservation holds (no line lost, no line double-counted); Lips Like Sugar's real, already-ingested budget was reprocessed correctly through the unmodified canonical optimizer; `priced_count: 136 > 0`; Bad Hombres and LU/FVD regressions pass; full suite clean; ledger updated.
 
 **Deferred, unchanged**: XLSX budget parsing (bounded, pre-existing, untouched), Inspector/sidebar closeout, and every worldwide program/treaty/co-pro item closed in prior entries. `Fresh Project Ingestion` status is now superseded by this entry's runtime result — the optimizer handoff it described as blocked is, as of this pass, unblocked.
+
+## Fresh Project Economic Fidelity — Budget Detail Conservation + Top-Scenario Attribution (2026-08-24, continuation from 2c54c22)
+
+Reconciled two runtime observations flagged before accepting Fresh Project Ingestion as closed: the 149-vs-47 line-count history, and whether Lips Like Sugar's top-ranked "Full relocation to SA" incentive/NPC figures are genuinely attributable. Neither was assumed a defect; both were proven from the real source PDF and real canonical runtime. One of the two proved to be a real, live defect — found and fixed generically.
+
+### 1. Line-count reconciliation — 149 was already-fixed history, not a live defect
+
+Mechanically reproduced the historical 149 by re-running `parse_budget_from_text` on the real 52-page PDF's flat extracted text **without** its page list (the exact pre-Task-4 defect documented in the prior ledger entry: `material_routing._route_budget` losing pymupdf's real page boundaries) — result: **147 lines**, matching the historically-reported 149 within the small variance expected from other fixes made since (top-sheet-page detector narrowing, the tax-incentive fix below). Re-running the SAME text **with** real page boundaries (the current, always-used live path) — result: **46 lines**. The discrepancy is fully explained: it is the already-closed Task-4 page-boundary bug, confirmed dead in the current live path (`material_routing.py` always calls `extract_text_from_pdf` and passes `.pages` through), not a currently-live defect.
+
+**Mechanical accounting** (current, live parser semantics, real document):
+- SOURCE ROWS EXTRACTED: **8,091** non-blank text lines across 52 pages (171 on the 2 top-sheet pages; 7,920 across 50 detail pages)
+- NORMALIZED RECORDS: **46**
+- MONETARY LEAF LINES: **46**
+- SUBTOTALS (Grand Total + group-subtotal sentinels + rebate/netting exclusions, incl. the fix below): **7**
+- DEPARTMENT_TOTAL / duplicate-rendered / footer lines (top-sheet running aggregates like "TOTAL PRODUCTION $3,174,975", "Budget Dated: 02/25/24" footers, a duplicate-rendered net-total figure — verified individually, none is a missed leaf account): **13**
+- HEADERS/NONMONETARY (10 top-sheet column-header preamble lines + all 7,920 detail-page lines — column headers, department headers, and per-account rate/unit/quantity itemization; confirmed via direct regex check that **zero** detail-page lines match `_ACCT_TOTAL_LINE_RE` for this document, so Pass 2 never overrides a top-sheet amount here — every one of the 46 canonical amounts is sourced from the top sheet alone): **7,930**
+- OTHER: 0 (folded into the categories above)
+- UNCLASSIFIED: **0**
+
+No real monetary leaf line was collapsed into a department total to make conservation work — verified directly: none of the 9 department/section running-total figures equal, individually or by any subset, a number that would need to replace a real leaf line; they are pure redundant aggregates of leaf lines already counted once.
+
+### 2. A real defect found and fixed: a rebate/incentive netting line was being priced as spend
+
+Lips Like Sugar's real budget carries a 47th top-sheet line beyond the 46 real spend accounts: `9998 — Tax Incentive 25%* BTL (No Disc)`, **-$1,503,074.00**, immediately preceding the document's own stated "Net total $10,480,580" (Grand Total $11,983,654 minus this same figure). This is the identical semantic category `_REBATE_EXCLUSION_RE` already excludes for other budgets (`EDB Rebate at 35%`, `tax credit`, `net total`, etc. — a producer's own projected-incentive assumption, never real production spend) but the existing pattern did not match the literal phrase "tax incentive". Confirmed via direct trace: this line was being parsed as a real BudgetLine (`account_code="9998"`, `amount_usd=-1,503,074.0`), classified `QUALIFIES` by the SA program's `OPEN_DEFAULT_INCLUDE` doctrine (no rule names category `miscellaneous`), allocated as spend to whichever jurisdiction a candidate priced, and **subtracted directly from that jurisdiction's QPE** — a real $1,503,074 QPE/incentive/NPC distortion for every full-relocation candidate, not a legitimate data-quality fact.
+
+**Fix**: added `tax\s+incentive` to the existing `_REBATE_EXCLUSION_RE` pattern (`app/ingestion/budget_parser.py`) — same exclusion family, no project-specific string, no new parser. Verified zero collateral effect: Bad Hombres/LU/FVD contain no line with the word "incentive" anywhere. Leaf-line count for Lips Like Sugar changes 47 → 46; leaf-line sum now equals the document's own stated Grand Total **exactly** ($11,983,654.00 — previously the leaf sum was silently $10,480,580.00, a discrepancy this fix removes rather than papering over).
+
+The stale, pre-fix `BudgetDocument`/`BudgetLineItem` rows for Lips Like Sugar's current `DocumentVersion` were invalidated (deleted, cascading to line items) and re-created through the existing, unmodified, per-`DocumentVersion`-idempotent `ensure_current_budget_routed` trigger — the same trigger any new or re-uploaded budget goes through, not a bespoke one-off edit. `canonical_evaluation.ENGINE_VERSION` bumped `canonical-1.40.0` → `canonical-1.41.0` to force a fresh, correctly-conserving `StructureCalculationResult` recompute.
+
+### 3. Source-to-canonical trace (representative departments, real DB rows)
+
+| Dept | Source row | BudgetLineItem.id (line_id) | Amount | In SA allocation |
+|---|---|---|---|---|
+| ATL/personnel | `1400 CAST` | `2568a9ac-…` | $863,388.00 | ✓ jurisdiction=SA |
+| Production | `2000 PRODUCTION STAFF` | `5ba96eff-…` | $608,606.00 | ✓ jurisdiction=SA |
+| Fringes | `4900 Total Fringes` | `22372eca-…` | $1,023,115.00 | ✓ jurisdiction=SA |
+| Titles | `4900 MAIN AND END TITLES` | `7bb23080-…` | $10,500.00 | ✓ jurisdiction=SA |
+| Post | `4500 EDITING` | `75e15d97-…` | $145,410.00 | ✓ jurisdiction=SA |
+| Other | `6300 INSURANCE` | `10611e8d-…` | $106,000.00 | ✓ jurisdiction=SA |
+
+The two `4900`-coded lines (Fringes vs Titles, the Fresh Project Budget Normalization control from the prior entry) trace through to two **distinct** `AccountAllocation.line_id` values, confirming the previous pass's fix remains correctly wired end to end.
+
+### 4. Conservation at every level — real runtime numbers, all four equal
+
+| Level | Total |
+|---|---|
+| Source monetary leaf spend (real PDF, current parser) | $11,983,654.00 |
+| Canonical `BudgetDocument.total_budget_raw` / `leaf_account_sum_usd` | $11,983,654.00 |
+| Allocation input (`sum(BudgetLine.amount_usd)`) | $11,983,654.00 |
+| Allocated segments (`AllocationResult.total_allocated_usd`) | $11,983,654.00 |
+
+**Unexplained delta: $0.00.**
+
+### 5. Top scenario — "Full relocation to SA" — full program-level attribution
+
+Single program, single jurisdiction, single segment (`sa_film_commission_rebate`):
+
+| PROGRAM ID | QUALIFICATION STATE | QPE | RATE | CAP | GROSS INCENTIVE | INTERACTION/REDUCTION | NET INCENTIVE |
+|---|---|---|---|---|---|---|---|
+| `sa_film_commission_rebate` | executable, `open_default_include` | $11,183,654.00 | 0.60 (flat, floor=ceiling) | no cap binds (`qpe_cap_applied_usd: 0.0`) | $6,710,192.40 | none (single program, no stacking) | $6,710,192.40 |
+
+QPE derivation: allocated $11,983,654.00 − excluded $800,000.00 (two real lines: `6800 RESIDUALS RESERVE` $400,000.00 + `7100 Contingency` $400,000.00, both excluded because the SA program has no program-specific contingency/residuals rule — the canonical default, not a new decision) = **$11,183,654.00**. Sum of all 46 `qualification_trace` entries (qualifying + excluded) = $11,983,654.00 — exactly the gross budget, confirming no leaf line was lost or double-counted within the segment.
+
+Reconciliation:
+```
+SUM(net incentives) = $6,710,192.40  ==  reported incentive $6,710,192.40  ✓
+QPE ($11,183,654.00) × rate (0.60) = $6,710,192.40  ✓  (exact, no unexplained residual)
+gross budget ($11,983,654.00) − net incentive ($6,710,192.40) = $5,273,461.60  ==  reported NPC $5,273,461.60  ✓
+```
+**Unexplained residual: $0.00.**
+
+(Prior, pre-fix runtime — for the record, now superseded — reported incentive $5,808,348.00 / NPC $6,175,306.00; the $901,844.40 delta between old and new incentive is exactly QPE delta $1,503,074.00 × rate 0.60, i.e. entirely and only the tax-incentive-netting-line fix above, nothing else moved.)
+
+### 6. False stacking / double-count — mechanical check
+
+Single segment, single program, single jurisdiction for the top candidate — no stacking mechanism is exercised at all. `qpe_cap_applied_usd: 0.0` confirms no cap silently bound. `rate_floor == rate_ceiling == 0.60` confirms a flat statutory rate, not a mis-resolved band. All 46 leaf lines appear exactly once each in the segment's `qualification_trace` (verified by direct sum equaling gross budget). No stale snapshot: this pass's `evaluate_project` call reports `engine_version: canonical-1.41.0`, the version this fix bumped to. Result: **RUNTIME ECONOMIC ATTRIBUTION VERIFIED** — accepted, no doctrine second-guessed.
+
+### 7. Regression (lightweight, per instruction)
+
+Bad Hombres: `priced_count: 130` (unchanged), `gross_budget_usd: $2,482,023.00` (unchanged) — no line containing "incentive", structural no-op confirmed directly. LU: baseline NPC **$3,057,794.90** (unchanged). FVD: baseline NPC **$3,072,027.16** (unchanged).
+
+### 8. Tests
+
+New: `tests/test_movie_magic_budget_parser.py::TestTaxIncentiveNettingLineExclusion` (2 tests — the netting line is excluded from parsed line items; its amount is never summed into the parsed total, on a synthetic fixture derived from the existing rebate-exclusion fixture). New file `tests/test_fresh_project_economic_fidelity.py` (4 tests, real Lips Like Sugar project, non-vacuous): monetary line population > 0 with no stale negative rebate line; source/canonical leaf-sum conservation; allocation conservation for a real single-jurisdiction structure; top-scenario program-count > 0 with program-level incentive sum matching the reported structure incentive and NPC arithmetic reconciling exactly. One updated hardcoded-version assertion in `tests/test_codex_final_optimizer_health_audit.py` (`canonical-1.40.0` → `canonical-1.41.0`). Full suite re-run once (shared parser code changed): **4515 passed, 0 failed, 1 skipped**.
+
+### Engine/cache
+
+`canonical_evaluation.ENGINE_VERSION` bumped `canonical-1.40.0` → `canonical-1.41.0` (documented inline, per established convention). Lips Like Sugar's stale `BudgetDocument`/`BudgetLineItem` rows were invalidated and re-created through the existing, unmodified, per-`DocumentVersion` idempotent `ensure_current_budget_routed` trigger — the same path any new or re-uploaded budget goes through — not a bespoke production-state edit.
+
+**Files changed**: `app/ingestion/budget_parser.py` (`_REBATE_EXCLUSION_RE` broadened), `app/services/canonical_evaluation.py` (`ENGINE_VERSION` bump + inline rationale), `tests/test_movie_magic_budget_parser.py` (+2 tests), `tests/test_fresh_project_economic_fidelity.py` (new, 4 tests), `tests/test_codex_final_optimizer_health_audit.py` (version-string update).
+
+**Final gate**: `FRESH_PROJECT_INGESTION_AND_ECONOMIC_FIDELITY_RUNTIME_VERIFIED` — real PDF budget detail preserved (46 real leaf lines, none collapsed into a department total); the 149-vs-47 discrepancy is fully explained as already-fixed history, not live; total conserved at all four levels with $0.00 unexplained delta; allocation conserved; duplicate account codes remain safe (the two `4900` lines still trace to distinct line_ids); `priced_count: 137 > 0`; top scenario ("Full relocation to SA") fully attributable to the cent with $0.00 residual; no false stacking/double-count (single program, single segment); no research; no closed-phase reopening (ingestion, jurisdiction derivation, script analysis, worldwide/treaty/co-pro all untouched).
+
+**Deferred, unchanged**: XLSX budget parsing, Inspector/sidebar closeout, every worldwide program/treaty/co-pro item closed in prior entries.

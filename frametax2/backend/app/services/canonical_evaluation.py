@@ -519,7 +519,25 @@ from app.services.canonical_project_economics import (
 # conserving allocation/pricing recompute for any project whose budget
 # does carry a repeated code -- bumped per this constant's own
 # established convention.
-ENGINE_VERSION = "canonical-1.40.0"
+# 1.41.0: Fresh Project Economic Fidelity -- a real budget-parser rebate-
+# exclusion gap. _REBATE_EXCLUSION_RE already excluded "tax credit"/
+# "incentive rebate"/"EDB rebate"/"net total" style netting lines (budget
+# assumptions, not real spend) but did not match "tax incentive" (e.g.
+# Lips Like Sugar's own "9998 - Tax Incentive 25%* BTL (No Disc)"
+# ($1,503,074) netting line ahead of its stated "Net total"). That line
+# was being parsed as a real, negative, QUALIFIES-eligible BTL account,
+# allocated as spend to whichever jurisdiction a candidate priced, and
+# subtracted directly from that jurisdiction's QPE -- a real $1,503,074
+# QPE/incentive/NPC distortion, not a data-quality fact. Fixed generically
+# by adding "tax incentive" to the existing exclusion pattern (same
+# semantic family already covered, no project-specific string). Confirmed
+# no other current production (Bad Hombres/LU/FVD) has any line
+# containing "incentive" -- zero collateral effect. Leaf-line count for
+# Lips Like Sugar changes 47 -> 46; leaf-line sum now equals the source
+# document's own stated Grand Total exactly ($11,983,654.00, previously
+# $10,480,580.00 -- a discrepancy this fix removes rather than papering
+# over). Bumped per this constant's own established convention.
+ENGINE_VERSION = "canonical-1.41.0"
 
 LIMITATION_NOTE = (
     "Regional production-cost normalization (MFNI) and generic travel/FX "
