@@ -96,6 +96,17 @@ async def list_projects(
     )).all()
     has_artwork = {pid for (pid,) in artwork_rows}
 
+    # The same canonical served-state signal get_project_record already
+    # computes per-project (structure_count > 0) — bulk-queried here so
+    # the Library grid, not just the Project Record, can route on real
+    # served state rather than the narrower leading_structure_id.
+    structure_rows = (await db.execute(
+        select(ProductionStructure.project_id).where(
+            ProductionStructure.project_id.in_(project_ids)
+        ).distinct()
+    )).all()
+    served_project_ids = {pid for (pid,) in structure_rows}
+
     cards: list[ProjectCard] = []
     for p in projects:
         cats = categories_by_project.get(p.id, set())
@@ -107,6 +118,7 @@ async def list_projects(
                 script="screenplay" in cats, budget="budget" in cats,
                 deck="deck" in cats, schedule="schedule" in cats,
             ),
+            is_served_production=p.id in served_project_ids,
         ))
     return cards
 

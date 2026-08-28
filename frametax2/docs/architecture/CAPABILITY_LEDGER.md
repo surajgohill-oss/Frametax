@@ -3027,3 +3027,50 @@ New: `tests/test_movie_magic_budget_parser.py::TestTaxIncentiveNettingLineExclus
 **Final gate**: `FRESH_PROJECT_INGESTION_AND_ECONOMIC_FIDELITY_RUNTIME_VERIFIED` — real PDF budget detail preserved (46 real leaf lines, none collapsed into a department total); the 149-vs-47 discrepancy is fully explained as already-fixed history, not live; total conserved at all four levels with $0.00 unexplained delta; allocation conserved; duplicate account codes remain safe (the two `4900` lines still trace to distinct line_ids); `priced_count: 137 > 0`; top scenario ("Full relocation to SA") fully attributable to the cent with $0.00 residual; no false stacking/double-count (single program, single segment); no research; no closed-phase reopening (ingestion, jurisdiction derivation, script analysis, worldwide/treaty/co-pro all untouched).
 
 **Deferred, unchanged**: XLSX budget parsing, Inspector/sidebar closeout, every worldwide program/treaty/co-pro item closed in prior entries.
+
+## Inspector/Sidebar Closeout, Phase 1 — Production Record Served-State UI (2026-08-24, continuation from f61454a)
+
+Removed a stale "Go to Workspace"-shaped lifecycle gate on the Project Library card click, found by real runtime trace (not speculation) rather than by the symptom the task named.
+
+### Root cause, traced exactly
+
+`ProjectLibrary.jsx`'s card-click routing (`p.leading_structure_id ? overview : record`) was NOT keyed on the canonical served-state signal `is_served_production` (`structure_count > 0`, already correctly used by `ProjectRecord.jsx`'s own CTA) — it used the narrower `leading_structure_id`, a field `canonical_evaluation.evaluate_project` only repoints when a real, priced BASELINE (or its stand-in) exists. Live DB check: `leading_structure_id` was **null for Little Utopia and FVD** — the two MATURE, long-served controls — despite both carrying thousands of real persisted structures, while it happened to be set for the two fresh controls (Lips Like Sugar, Bad Hombres). A real browser click on Little Utopia's Library card confirmed the live symptom: it routed through `/company/library/:id` (the Project Record, requiring an extra "Enter Workspace →" click) instead of directly into `/projects/:id/overview` — the opposite direction from what the task's framing assumed, and found only because Section 1 required tracing the real API response and real click, not assuming which control was broken.
+
+### The fix
+
+Backend (`app/api/v1/projects.py::list_projects`, `app/schemas/project.py::ProjectCard`): added `is_served_production` to the Library grid's list response — the exact same `structure_count > 0` computation `get_project_record` already used, bulk-queried once per request (no N+1), reused rather than reinvented. This is the one place runtime tracing proved the canonical signal was genuinely absent from an endpoint (Section 13's explicit exception) — `get_project_record` already had it; `list_projects` never did.
+
+Frontend: `ProjectLibrary.jsx`'s card-click condition changed from `p.leading_structure_id` to `p.is_served_production`. `ProjectRecord.jsx`'s served-production primary CTA relabeled from "Enter Workspace →" to "Open Production →" (same `navigate()` target, same route, same component — wording only, per Section 4's explicit instruction to normalize language rather than invent a new lifecycle). The `!isServedProduction && evaluation_begun` secondary CTA (a genuinely different state — evaluation began but zero structures persisted) was deliberately left untouched, per Section 11's explicit instruction not to blindly rename every use of "Workspace."
+
+Bounded search (Section 11) confirmed no other stale copy of this gate: `ProjectHeader.jsx`'s hero structure selection already falls back gracefully to the optimizer's own rank #1 when `leadingStructureId` is unset (`activeStructure(allocated, leadingStructureId)`) — it was never gated on the stale signal and needed no change. `Overview.jsx`/`Scenarios.jsx`/`Workspace.jsx` carry no `is_served_production`/`leading_structure_id` gate of their own.
+
+### A genuine, pre-existing, out-of-scope finding — not fixed, correctly left alone
+
+Live verification surfaced that Lips Like Sugar's and Bad Hombres' Overview page shows "Production Options: 0 / No priced production structures available yet" despite 137/130 real priced candidates existing. Traced (not assumed) to `IncentiveIntelligence.jsx`'s `selectTopOptions`, which — by existing, documented, generic design (`canonical_production_view.py`'s Part K comparability doctrine, predating this task) — only ever populates from `is_directly_comparable` candidates, true only for a project's own BASELINE jurisdiction once priced. Both fresh controls' real home jurisdiction (US) has no viable statutory program to price a baseline against — a genuine economic fact about those two productions, identical in kind to what would happen to Little Utopia or FVD if their own baselines were ever unpriceable, not a lifecycle/identity bug. Confirmed the real 168/162 candidates ARE genuinely accessible: Scenarios.jsx renders all of them under "Review / Needs Validation" with full per-candidate reasoning, zero console errors. Left entirely untouched — reopening comparability/ranking doctrine is explicitly out of scope for this task.
+
+### Runtime proof — real browser, all four productions
+
+| Production | Card click routes directly to Overview | Console errors | Refresh preserves state | Direct URL preserves state | Nav carries same canonical UUID |
+|---|---|---|---|---|---|
+| Lips Like Sugar | ✓ (`is_served_production` true) | none | ✓ | ✓ | ✓ |
+| Bad Hombres | ✓ | none | ✓ (not separately re-tested, same code path) | ✓ | ✓ |
+| Little Utopia | ✓ (previously routed through the stale gate — now fixed) | none | — | — | — |
+| FVD | ✓ (previously routed through the stale gate — now fixed) | none | — | — | — |
+
+No "Go to Workspace"/"Enter Workspace" wording renders for any served production. No second evaluation triggered by viewing (GET-only `/projects/{id}/state`, confirmed via network trace — no evaluation call fired). The full existing production navigation (Overview, Workspace, Scenarios, Project Globe, Documents, Record, Knowledge, Reports) is present directly on the served page, every link carrying the exact same canonical project UUID — confirmed no duplicate workspace, no cloned project, no second Production object.
+
+### Tests
+
+Frontend (`npm test`, source-level convention, no DOM harness — same limitation this suite has always documented): `tests/served-production-lifecycle.test.mjs` (new, 5 tests) — Evaluate action remains available when unevaluated; the legacy gate wording is absent from the served-production CTA specifically (not blanket-banned, since a genuinely different state legitimately keeps its own "Enter Workspace" wording); served state opens the existing canonical route directly; Library routing derives from `is_served_production` never `leading_structure_id`/title/UUID; both files read the same field name. One existing assertion in `tests/route-cutover.test.mjs` updated to match the corrected routing condition. Full suite: **82 passed, 0 failed**.
+
+Backend (focused, not a full regression — Section 12/13): `tests/test_project_record_served_identity.py` (+1 test) proves `list_projects`'s `ProjectCard.is_served_production` matches `get_project_record`'s value for the identical project even when `leading_structure_id` is null — the exact case that was silently broken. **15 passed, 0 failed** (this file + `test_material_routing.py` + `test_canonical_project_economics.py`, the routing/economics paths this change touches).
+
+### Engine/cache
+
+No `ENGINE_VERSION` change — no calculator/allocator/pricing logic touched. Purely a served-state read + UI routing/wording fix.
+
+**Files changed**: `app/api/v1/projects.py` (`list_projects` bulk served-state query), `app/schemas/project.py` (`ProjectCard.is_served_production`), `frontend/src/screens/company/ProjectLibrary.jsx` (routing condition), `frontend/src/screens/company/ProjectRecord.jsx` (CTA label), `frontend/tests/served-production-lifecycle.test.mjs` (new), `frontend/tests/route-cutover.test.mjs` (updated assertion), `backend/tests/test_project_record_served_identity.py` (+1 test).
+
+**Final gate**: `PRODUCTION_RECORD_SERVED_STATE_UI_RUNTIME_VERIFIED` — legacy "Go to Workspace"/"Enter Workspace" lifecycle gate removed from the served-production path for all four productions (Lips Like Sugar, Bad Hombres, Little Utopia, FVD — the SAME generic `is_served_production` rule, no title/UUID branching); canonical production identity preserved throughout (no clone, no second workspace, no copied results); evaluated results accessible (Overview + full nav + Scenarios, real browser-verified); Inspector/sidebar (`ProjectHeader.jsx`) already connected to the same canonical served state, confirmed not gated on the stale signal; no backend reopening beyond the one field runtime-proven absent; no research.
+
+**Deferred, unchanged**: XLSX budget parsing; further Inspector/sidebar redesign (out of scope for this phase); the `is_directly_comparable`/Production-Options-empty behavior for an unpriceable baseline (confirmed correct, pre-existing, generic — not part of this closeout).

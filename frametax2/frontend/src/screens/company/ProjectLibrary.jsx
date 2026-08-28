@@ -151,14 +151,20 @@ export default function ProjectLibrary() {
                 key={p.id}
                 className={`lib-card ${filter === "all" ? "compact" : ""} ${meta.key === "archived" ? "arch" : ""}`}
                 onClick={() => navigate(
-                  // Overview UI contract: a project that already has a
-                  // mature production Overview (leading_structure_id set
-                  // by canonical_evaluation.py once a top structure
-                  // exists -- the same existing signal Sidebar's former
-                  // Productions row used) opens directly into it. Every
+                  // Inspector/Sidebar Closeout Phase 1: routes on the
+                  // canonical served-production signal (is_served_production
+                  // -- the same structure_count > 0 state ProjectRecord's
+                  // CTA already uses), not leading_structure_id. That field
+                  // is narrower -- it can legitimately stay unset for a
+                  // fully served, mature production (e.g. its baseline was
+                  // never repointed as "leading") -- and was silently
+                  // routing already-evaluated productions through the
+                  // legacy Project Record workspace-entry gate instead of
+                  // straight into their canonical Overview. A production
+                  // with real served results opens directly into it; every
                   // other project keeps the existing Project Record /
                   // ingestion flow unchanged.
-                  p.leading_structure_id ? `/projects/${p.id}/overview` : `/company/library/${p.id}`
+                  p.is_served_production ? `/projects/${p.id}/overview` : `/company/library/${p.id}`
                 )}
               >
                 <div className="lib-art">

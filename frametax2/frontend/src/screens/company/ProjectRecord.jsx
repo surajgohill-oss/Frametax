@@ -158,8 +158,12 @@ export default function ProjectRecord() {
         </div>
         <div className="rec-idact">
           {isServedProduction ? (
+            // Inspector/Sidebar Closeout Phase 1: a served production is
+            // already in its working environment -- this opens the
+            // existing canonical Overview, not a separate lifecycle
+            // "workspace entry" the production must be moved into.
             <button className="hero-action primary" onClick={() => navigate(`/projects/${project.id}/overview`)}>
-              Enter Workspace →
+              Open Production →
             </button>
           ) : (
             <button className="hero-action primary" onClick={runEvaluation} disabled={evalRunning}>

@@ -89,9 +89,12 @@ test("ProjectRecord's served-production primary action opens the restored mature
   assert.ok(overviewNavCount >= 1, "must navigate into /projects/{id}/overview at least once");
 });
 
-test("Overview UI contract: Project Library card click routes by the project's own leading_structure_id, never a hard-coded project", () => {
+test("Overview UI contract: Project Library card click routes by the project's own is_served_production, never a hard-coded project", () => {
   const src = stripComments(read("screens/company/ProjectLibrary.jsx"));
-  assert.match(src, /p\.leading_structure_id\s*\?\s*`\/projects\/\$\{p\.id\}\/overview`/, "a project with a mature Overview must be opened directly");
+  // Inspector/Sidebar Closeout Phase 1: leading_structure_id is narrower
+  // than served state (it can legitimately stay unset for a mature,
+  // fully-served production) and must no longer gate this route.
+  assert.match(src, /p\.is_served_production\s*\?\s*`\/projects\/\$\{p\.id\}\/overview`/, "a served production must be opened directly");
   assert.match(src, /`\/company\/library\/\$\{p\.id\}`/, "a not-yet-evaluated project must keep the existing Project Record flow");
   assert.doesNotMatch(src, /fa5cade5-0669-4816-bfe6-72146f8d3bae/, "must not hard-code Little Utopia's project_id");
 });
