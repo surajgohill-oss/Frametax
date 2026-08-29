@@ -60,6 +60,12 @@ export const postEconomicsControls = (controls) =>
 export const getPeople = () => request("/people");
 export const postPeople = (answers) =>
   request("/people", { method: "POST", body: JSON.stringify({ answers }) });
+// Project-scoped counterpart (Production Overview Truthfulness): the
+// legacy /people write above resolves the single in-memory demo engine's
+// project, not whichever project the caller is actually viewing. Every
+// project-scoped Overview screen must save through this one instead.
+export const postProjectPeople = (projectId, answers) =>
+  request(`/projects/${projectId}/people`, { method: "POST", body: JSON.stringify({ answers }) });
 
 // Major-location categories — user-confirmed overrides over the
 // script-derived seeds (canonical Production Record; effective values

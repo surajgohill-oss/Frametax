@@ -71,21 +71,36 @@ export default function ProductionHero({
   const artworkUrl = production?.project_id && !isLittleUtopia
     ? `${API_ORIGIN}/api/v1/projects/${production.project_id}/artwork`
     : null;
-  const heroSrc = artworkUrl && !artworkFailed ? artworkUrl : heroArt;
+  // Production Overview Truthfulness: a project with no artwork of its own
+  // must fall back to a production-NEUTRAL treatment, never another real
+  // production's key art. `heroArt` (little-utopia-hero-clean.png) is
+  // Little Utopia's OWN photograph — correct only for isLittleUtopia
+  // above, never as the generic "nothing else to show" fallback every
+  // other project without artwork was silently inheriting. No neutral
+  // hero image asset exists in this repo and generating one is out of
+  // scope here, so the fallback is the same flat `--surface-2` neutral
+  // surface token the Library grid's own "No artwork yet" card already
+  // uses (screens.css .lib-art) — not a new design, not a new asset.
+  const showNeutralFallback = isLittleUtopia ? false : (!artworkUrl || artworkFailed);
+  const heroSrc = isLittleUtopia ? heroArt : artworkUrl;
 
   return (
     <div className="ph-hero">
       {/* Artwork layer — the complete master image, stretched via
           object-fit:fill to exactly cover the Hero rectangle (see the
           Full-Art Hero Rule in the file header comment above). */}
-      <img
-        key={production?.project_id || "fallback"}
-        className="ph-hero-art"
-        src={heroSrc}
-        alt=""
-        aria-hidden="true"
-        onError={() => setArtworkFailed(true)}
-      />
+      {showNeutralFallback ? (
+        <div className="ph-hero-art ph-hero-art-neutral" aria-hidden="true" />
+      ) : (
+        <img
+          key={production?.project_id || "fallback"}
+          className="ph-hero-art"
+          src={heroSrc}
+          alt=""
+          aria-hidden="true"
+          onError={() => setArtworkFailed(true)}
+        />
+      )}
       {/* Overlay: directional, not uniform — strongest behind the identity
           block (left) and in a shallow band at the bottom (grounding into
           the tabs), much lighter behind the metrics (right) and near-clear
@@ -119,13 +134,22 @@ export default function ProductionHero({
             <span className="ph-hero-metric-value mono">
               {topStructure ? <Money value={topStructure.npc_with_adjustments_usd} /> : "—"}
             </span>
-            <span className="ph-hero-metric-caption">After incentives and rebates</span>
+            {/* Truthful absence, not a blank claiming completeness: no
+                candidate currently admits a directly-comparable/recommended
+                rank (e.g. this production's own base jurisdiction has no
+                priceable program yet) — see Scenarios' Review / Needs
+                Validation group for the real priced candidates that exist. */}
+            <span className="ph-hero-metric-caption">
+              {topStructure ? "After incentives and rebates" : "No directly comparable scenario yet"}
+            </span>
           </div>
           <div className="ph-hero-sep" aria-hidden="true" />
           <div className="ph-hero-metric">
             <span className="ph-hero-metric-label">Recommended Structure</span>
             <span className="ph-hero-metric-value">{recommendedJurisdiction || "—"}</span>
-            {recommendedType && <span className="ph-hero-metric-caption">{recommendedType}</span>}
+            <span className="ph-hero-metric-caption">
+              {recommendedType || (topStructure ? null : "See Scenarios for priced candidates")}
+            </span>
           </div>
           <div className="ph-hero-sep" aria-hidden="true" />
           <div className="ph-hero-metric">

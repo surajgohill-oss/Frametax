@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Pencil } from "lucide-react";
-import { postPeople, postLocations } from "../api";
+import { postPeople, postProjectPeople, postLocations } from "../api";
 import { PERSON_ROLES } from "../lib/personRoles";
 import { flagEmoji } from "../lib/format";
 
@@ -42,7 +42,7 @@ function NationalitySelect({ value, onChange, disabled }) {
   );
 }
 
-export default function ProductionDetails({ people, requirements, refetch }) {
+export default function ProductionDetails({ people, requirements, refetch, projectId }) {
   const overrides = people?.overrides || {};
   const categories = requirements?.location_categories || {};
   const [editing, setEditing] = useState(false);
@@ -109,7 +109,15 @@ export default function ProductionDetails({ people, requirements, refetch }) {
       for (const [slug, cat] of Object.entries(categories)) {
         if (draft.locations[slug] !== cat.effective) locs[slug] = draft.locations[slug];
       }
-      if (Object.keys(answers).length) await postPeople(answers);
+      if (Object.keys(answers).length) {
+        // Production Overview Truthfulness: save through the project-
+        // scoped endpoint whenever this panel is rendered on a real
+        // project (every production route under /projects/:id/) — the legacy /people
+        // write only ever affects the singleton demo engine's own
+        // project, not whichever one is actually being viewed here.
+        if (projectId) await postProjectPeople(projectId, answers);
+        else await postPeople(answers);
+      }
       if (Object.keys(locs).length) await postLocations(locs);
       refetch();
       setEditing(false);

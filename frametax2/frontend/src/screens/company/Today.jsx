@@ -7,7 +7,10 @@ import { useProjectStatus } from "../../lib/useProjectStatus";
 import { buildRecordRows } from "../../lib/recordEvents";
 import { buildHeroStages } from "../../lib/todayCompute";
 import { getTheme, toggleTheme } from "../../lib/theme";
+import { API_ORIGIN } from "../../api";
 import heroArt from "../../assets/production-art/little-utopia-hero-clean.png";
+
+const LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae";
 
 // Today — the company command center. Answers: what's active, what needs
 // attention, what questions are unresolved, and a fast path to ask
@@ -60,6 +63,36 @@ function classifyMomentum({ hasOpenBlocker, hasFreshActivity, hasResolvedItem, i
   if (hasFreshActivity) return MOMENTUM.advanced;
   if (hasResolvedItem) return MOMENTUM.milestone;
   return MOMENTUM.healthy;
+}
+
+// Production Overview Truthfulness: the slate thumbnail previously rendered
+// `heroArt` (Little Utopia's own photograph) unconditionally for every row,
+// regardless of which production it was. Same generic per-project artwork
+// fetch + neutral fallback ProductionHero.jsx uses — never another
+// production's real key art as the generic "nothing to show" default.
+const _UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function SlateArt({ projectId }) {
+  const [failed, setFailed] = useState(false);
+  const isLittleUtopia = projectId === LITTLE_UTOPIA_PROJECT_ID;
+  // The legacy singleton production() row this page still reads for its
+  // one-production fallback can carry a non-UUID placeholder identifier
+  // (e.g. "LITTLE-UTOPIA") rather than a real project id — never attempt
+  // a per-project artwork fetch against that; go straight to neutral.
+  const isRealProjectId = _UUID_RE.test(projectId || "");
+  const src = isLittleUtopia ? heroArt : `${API_ORIGIN}/api/v1/projects/${projectId}/artwork`;
+  if (!isLittleUtopia && (failed || !isRealProjectId)) {
+    return <div className="tdx-art tdx-art-neutral" aria-hidden="true" />;
+  }
+  return (
+    <img
+      className="tdx-art"
+      src={src}
+      alt=""
+      aria-hidden="true"
+      onError={() => setFailed(true)}
+    />
+  );
 }
 
 export default function Today() {
@@ -303,7 +336,7 @@ export default function Today() {
                             same file ProductionHero uses) — object-fit:contain
                             so the complete composition is preserved, never
                             cropped or distorted, at this thumbnail size. */}
-                        <img className="tdx-art" src={heroArt} alt="" aria-hidden="true" />
+                        <SlateArt projectId={p.id} />
                         <div className="row-main">
                           <div className="row-title">
                             <i className="serif">{p.name}</i> <span className="tdy-stage">{p.stageMeta.label}</span>

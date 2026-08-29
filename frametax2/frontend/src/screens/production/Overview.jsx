@@ -95,6 +95,7 @@ export default function Overview() {
             people={people}
             requirements={production.physical_requirements}
             refetch={refetch}
+            projectId={projectId}
           />
         </div>
 

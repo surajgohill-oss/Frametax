@@ -202,6 +202,15 @@
   height: 100%;
   object-fit: fill;
 }
+/* Production-neutral fallback — a project with no artwork of its own and
+   no real key art must never render as another production's photograph.
+   Reuses the SAME neutral surface token the Library grid's own "No
+   artwork yet" card already uses (screens.css .lib-art), not a new
+   design. The existing .ph-hero-scrim gradient still provides full text
+   contrast over a flat fill. */
+.ph-hero-art-neutral {
+  background: var(--surface-2);
+}
 /* Directional overlay — replaces the first pass's near-uniform scrim.
    Strong only behind the identity block (bottom-left, where the live
    serif title sits) and in a shallow band at the very bottom (grounding

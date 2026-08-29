@@ -20,6 +20,7 @@ the engines, before this file ever runs.
 """
 from __future__ import annotations
 
+import uuid
 from dataclasses import asdict
 from typing import Any
 
@@ -690,6 +691,72 @@ async def post_people(body: PeopleAnswers, db: AsyncSession = Depends(get_db)) -
         await db.commit()
 
     return await get_people(db)
+
+
+# ── Project-scoped people write (Production Overview Truthfulness) ──────────
+# The above POST /people is the LEGACY singleton engine's write path
+# (_get_project/_resolve_primary_talent resolve via
+# little_utopia_people.primary_person_name — genuinely Little-Utopia-
+# specific matching, not usable for any other project). Every project-
+# scoped Overview screen (ProductionDetails.jsx via useCineGlobe(projectId))
+# already reads people generically from canonical_production_view.py's
+# real ProjectPerson/TalentProfile rows, but had NO matching generic write
+# endpoint — its Edit control silently called the legacy one, which
+# resolves a different (or no) project entirely for any project besides
+# whichever one the singleton engine happens to be pointed at. This is the
+# project-scoped counterpart: find-or-create a ProjectPerson/TalentProfile
+# row for (project_id, role), never fabricated, never overwriting a
+# multi-person role (producer can carry more than one row — a single
+# name field has no unambiguous single target, so it is left untouched
+# rather than guessed at). An explicit save here is a producer
+# confirmation — outranks any derived/recovered value per canonical fact
+# precedence (is_confirmed=True).
+@router.post("/projects/{project_id}/people")
+async def post_project_people(project_id: str, body: PeopleAnswers, db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
+    project = (await db.execute(select(Project).where(Project.id == project_id))).scalar_one_or_none()
+    if project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    for key, value in body.answers.items():
+        role, _, field_name = key.rpartition("_")
+        if not role or field_name not in ("name", "nationality"):
+            continue
+        rows = (await db.execute(
+            select(ProjectPerson, TalentProfile)
+            .join(TalentProfile, ProjectPerson.talent_id == TalentProfile.id)
+            .where(ProjectPerson.project_id == project.id, ProjectPerson.role == role)
+        )).all()
+        if len(rows) > 1:
+            continue  # multiple people already in this role — no single-field target, never guessed
+
+        if rows:
+            pp, talent = rows[0]
+            if field_name == "name" and not value:
+                # Explicit clear of the only name this role has — the
+                # role returns to genuinely unknown, not a blank string.
+                await db.delete(pp)
+                await db.delete(talent)
+                continue
+        elif value:
+            talent = TalentProfile(id=uuid.uuid4(), name="", role=role)
+            db.add(talent)
+            await db.flush()
+            pp = ProjectPerson(id=uuid.uuid4(), project_id=project.id, talent_id=talent.id, role=role)
+            db.add(pp)
+        else:
+            continue  # clearing a field with no existing row — nothing to do
+
+        if field_name == "name":
+            talent.name = value
+        elif field_name == "nationality":
+            talent.primary_nationality = value
+        pp.is_confirmed = True
+        pp.notes = "Producer-confirmed via Production Facts edit."
+
+    await db.commit()
+    from app.services.canonical_production_view import build_generic_pkg_and_economics
+    sections = await build_generic_pkg_and_economics(db, project_id)
+    return sections["people"]
 
 
 class LocationOverrides(BaseModel):

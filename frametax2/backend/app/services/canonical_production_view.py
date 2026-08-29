@@ -713,7 +713,72 @@ async def build_generic_pkg_and_economics(session: AsyncSession, project_id) -> 
         people[bucket].append({
             "person_id": str(tp.id), "name": tp.name,
             "nationality": tp.primary_nationality,
+            "confirmed": pp.is_confirmed,
         })
+
+    # Production Overview Truthfulness: pkg["missing_inputs"] (what
+    # ProjectHeader.jsx's "Questions Remaining", Workspace.jsx's
+    # QuestionStack, Reports.jsx, and Today.jsx's onboarding all actually
+    # read — never people["missing_inputs"], a same-named but unconsumed
+    # sibling field) was hardcoded to [] for every generic (non-demo)
+    # project, so the metric read 0 even when Production Facts visibly
+    # showed unresolved personnel. Real, generic definition — not the
+    # heavyweight Question Engine in production_package_intelligence.py,
+    # which needs a full PackageIntelligence assembly not yet wired to
+    # per-project data (a separate, larger capability, not invented
+    # here): a PRIMARY role (writer/director/producer/lead_cast — the
+    # roles discovery can realistically fill) with no name at all is a
+    # missing input; any role WITH a name but no resolved nationality is
+    # also a missing input, mirroring exactly the two states
+    # ProductionDetails.jsx's own `pd-missing` styling already flags
+    # visually. The optional recurring slots (lead_cast_2/3, dop, editor,
+    # composer) are open-by-design until a producer fills them and do not
+    # count merely for being empty, but DO count once named without a
+    # resolved nationality. Shaped like production_package_intelligence.
+    # py's own MissingInput (identifier/question/blocking/...) so every
+    # existing consumer (QuestionStack included) renders it correctly
+    # with no special-casing.
+    _PRIMARY_ROLE_BUCKETS = ("writers", "directors", "producers", "cast")
+    _ROLE_LABEL = {
+        "writers": "writer", "directors": "director", "producers": "producer(s)",
+        "cast": "lead cast", "lead_cast_2": "lead cast (2)", "lead_cast_3": "lead cast (3)",
+        "dop": "director of photography", "editor": "editor", "composer": "composer",
+    }
+    pkg_missing_inputs: list[dict] = []
+    for role_bucket, entries in people.items():
+        if role_bucket in ("overrides", "missing_inputs"):
+            continue
+        label = _ROLE_LABEL.get(role_bucket, role_bucket)
+        if not entries:
+            if role_bucket in _PRIMARY_ROLE_BUCKETS:
+                pkg_missing_inputs.append({
+                    "identifier": f"MISSING-{role_bucket.upper()}-NAME",
+                    "question": f"Who is the production's {label}?",
+                    "why_it_matters": (
+                        "Personnel identity is a qualification input for treaty "
+                        "co-production, cultural tests, and national-status tests."
+                    ),
+                    "downstream_engines": [],
+                    "optimizer_value": "unknown",
+                    "blocking": False,
+                    "discovery_hooks": [],
+                })
+            continue
+        for entry in entries:
+            if entry.get("name") and not entry.get("nationality"):
+                pkg_missing_inputs.append({
+                    "identifier": f"MISSING-{role_bucket.upper()}-NATIONALITY",
+                    "question": f"What is {entry['name']}'s ({label}) nationality?",
+                    "why_it_matters": (
+                        "Nationality is a qualification input for treaty co-production, "
+                        "cultural tests, and national-status tests."
+                    ),
+                    "downstream_engines": [],
+                    "optimizer_value": "unknown",
+                    "blocking": False,
+                    "discovery_hooks": [],
+                })
+    pkg["missing_inputs"] = pkg_missing_inputs
 
     # ── facts: real ProjectFact rows, verbatim ──
     fact_rows = (await session.execute(

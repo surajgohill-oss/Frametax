@@ -29,6 +29,8 @@ Invariants enforced here:
 from __future__ import annotations
 
 import hashlib
+import re
+import uuid
 from datetime import datetime, timezone
 
 from sqlalchemy import select
@@ -60,7 +62,9 @@ from app.models.production_requirement import (
 )
 from app.models.project_fact import ProjectFact
 from app.models.project_location_requirement import ProjectLocationRequirement
+from app.models.project_person import ProjectPerson
 from app.models.screenplay import Character, ExtractedScriptElement, Scene, ScreenplayDocument
+from app.models.talent import TalentProfile
 from app.services import script_parse_status as sps
 
 #: Requirement-producing taxonomy keys and their requirement_key.
@@ -424,6 +428,91 @@ async def persist_derived_facts(
     return written
 
 
+# ── Title-page credits (Production Overview Truthfulness) ───────────────────
+# Generic screenplay title-page metadata reader — a small, pure function
+# over already-extracted raw_text (the SAME text SA-1's own parse already
+# persisted; no second PDF/screenplay parser). Standard US spec-script
+# title pages carry "Directed by NAME" / "Written by NAME" (or "Screenplay
+# by NAME") as their own explicit, human-authored credit lines — when
+# present, this is real production evidence, not an inference from the
+# story content. "Story by" is a distinct WGA credit (separate from
+# screenplay authorship) and is deliberately NOT treated as "writer" here,
+# to avoid crediting the wrong person when the two differ. Only the first
+# ~2000 characters (the title-page region) are scanned, so a mid-script
+# line that happens to contain these phrases in dialogue is never matched.
+_TITLE_PAGE_SCAN_CHARS = 2000
+_CREDIT_LINE_RE = re.compile(
+    r"^(directed|written|screenplay)\s+by\s*[:\-]?\s*(.+)$", re.IGNORECASE | re.MULTILINE,
+)
+_NAME_SPLIT_RE = re.compile(r"\s*(?:,|&|\band\b)\s*", re.IGNORECASE)
+_CREDIT_LABEL_TO_ROLE = {"directed": "director", "written": "writer", "screenplay": "writer"}
+
+
+def derive_title_page_credits(raw_text: str | None) -> dict[str, list[str]]:
+    """Returns {"director": [names], "writer": [names]} parsed from a
+    screenplay's own title page, or empty lists when the page states
+    none. Deterministic, format-generic — no project name, no hardcoded
+    person, no external lookup."""
+    credits: dict[str, list[str]] = {"director": [], "writer": []}
+    if not raw_text:
+        return credits
+    region = raw_text[:_TITLE_PAGE_SCAN_CHARS]
+    for m in _CREDIT_LINE_RE.finditer(region):
+        role = _CREDIT_LABEL_TO_ROLE[m.group(1).lower()]
+        names_raw = m.group(2).strip()
+        # A credit line is a short attribution, never a full sentence —
+        # guards against accidentally matching prose that happens to start
+        # with these words (e.g. a scene action line).
+        if len(names_raw) > 80 or names_raw.endswith("."):
+            continue
+        for name in _NAME_SPLIT_RE.split(names_raw):
+            name = name.strip(" ’'\"")
+            if name and name not in credits[role]:
+                credits[role].append(name)
+    return credits
+
+
+async def persist_title_page_credits(
+    session: AsyncSession, *, project_id, screenplay: ScreenplayDocument, credits: dict[str, list[str]],
+) -> int:
+    """Writes discovered title-page credits into the canonical
+    ProjectPerson/TalentProfile model, with source provenance on the
+    TalentProfile row (notes) and via the screenplay's own document
+    version. Never overwrites a role that already has a real person
+    attached (fact precedence — Section 8: existing verified person data
+    outranks a fresh derivation) and never creates a duplicate row for a
+    name already attached to this project in this role. Returns the
+    number of new ProjectPerson rows written."""
+    written = 0
+    for role, names in credits.items():
+        if not names:
+            continue
+        existing_for_role = (await session.execute(
+            select(ProjectPerson).where(ProjectPerson.project_id == project_id, ProjectPerson.role == role)
+        )).scalars().all()
+        if existing_for_role:
+            continue  # a person is already attached to this role — never overwritten by derivation
+        for name in names:
+            talent = TalentProfile(
+                id=uuid.uuid4(), name=name, role=role,
+                notes=(
+                    f"Source: screenplay title page ({screenplay.filename})"
+                    f"{' v' + str(screenplay.document_version_id) if screenplay.document_version_id else ''}."
+                ),
+            )
+            session.add(talent)
+            await session.flush()
+            session.add(ProjectPerson(
+                id=uuid.uuid4(), project_id=project_id, talent_id=talent.id, role=role,
+                is_confirmed=False,
+                notes=f"Recovered from screenplay title page — not yet producer-confirmed.",
+            ))
+            written += 1
+    if written:
+        await session.flush()
+    return written
+
+
 async def build_requirements(
     session: AsyncSession, *, project_id, screenplay: ScreenplayDocument,
     result: StructuralParseResult,
@@ -527,6 +616,20 @@ async def analyze_project_script(
         }
 
     result, did_write = await parse_and_persist(session, screenplay, force=force)
+
+    # Title-page credit recovery runs off screenplay.raw_text directly, not
+    # off a fresh StructuralParseResult — so it must NOT be gated behind
+    # parse_and_persist's own idempotency short-circuit (result is None on
+    # an unchanged re-parse). Without this, a screenplay parsed in a PRIOR
+    # session would never reach credit derivation on any later Evaluate
+    # call, since the parse itself has nothing new to do. Safe to run
+    # every time: persist_title_page_credits is itself idempotent (skips
+    # any role that already has a real person attached).
+    credits = derive_title_page_credits(screenplay.raw_text)
+    credits_written = await persist_title_page_credits(
+        session, project_id=project_id, screenplay=screenplay, credits=credits
+    )
+
     if result is None:
         return {
             "status": screenplay.parse_status,
@@ -534,6 +637,7 @@ async def analyze_project_script(
             "screenplay_id": str(screenplay.id),
             "parse_error": screenplay.parse_error,
             "reparsed": False,
+            "title_page_credits_written": credits_written,
         }
 
     facts = derive_core_facts(result)
@@ -559,5 +663,6 @@ async def analyze_project_script(
         "derived_facts": fact_count,
         "production_requirements": req_count,
         "location_requirements": loc_count,
+        "title_page_credits_written": credits_written,
         "warnings": list(result.warnings),
     }
