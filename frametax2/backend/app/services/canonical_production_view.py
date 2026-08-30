@@ -30,6 +30,7 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.data.executable_jurisdiction_registry import get_doctrine
 from app.models.budget import BudgetDocument, BudgetLineItem
 from app.models.jurisdiction import Jurisdiction
 from app.models.production import ProductionStructure, StructureCalculationResult
@@ -60,6 +61,17 @@ def _anchor_and_stacked(trace: dict) -> tuple[str | None, list[str]]:
     per_program = trace.get("per_program_adjusted_usd") or {}
     ranked = sorted(slugs, key=lambda s: per_program.get(s, 0.0), reverse=True)
     return ranked[0], ranked[1:]
+
+
+def _program_display_name(program_slug: str | None) -> str | None:
+    """The real, human-readable program name from the canonical doctrine
+    registry (executable_jurisdiction_registry.get_doctrine) — never a
+    frontend-hardcoded map, never the raw slug. None for no slug or a
+    slug with no registered doctrine record (never fabricated)."""
+    if not program_slug:
+        return None
+    doctrine = get_doctrine(program_slug)
+    return doctrine.program_name if doctrine else None
 
 
 def _empty_structure_entry(
@@ -153,6 +165,20 @@ def _empty_structure_entry(
         # rows and for pre-1.2.0 rows that predate this enrichment.
         "rejection_reason_class": trace.get("rejection_reason_class"),
         "program_slug": trace.get("program_slug"),
+        # Workspace Top-6/Data Truthfulness: the real, human-readable
+        # program name (e.g. "Australia PDV Offset (Post, Digital and
+        # Visual Effects)" vs "Australia Location Offset") already exists
+        # in the canonical doctrine registry (executable_jurisdiction_
+        # registry.get_doctrine) but was never exposed on a structure —
+        # the UI had only the opaque program_slug and the bare
+        # jurisdiction, so two real, economically distinct programs in
+        # the same country rendered as identical cards. None when no
+        # program_slug is set (e.g. an unpriceable candidate) or the
+        # slug has no registered doctrine record.
+        "program_display_name": _program_display_name(trace.get("program_slug")),
+        "program_display_names": [
+            n for n in (_program_display_name(s) for s in (trace.get("program_slugs") or [])) if n
+        ],
         "blockers": [] if is_priced else [trace.get("reason")] if trace.get("reason") else [],
         "gross_budget_usd": trace.get("gross_budget_usd"),
         "total_incentive_floor_usd": selected_incentive_usd,
@@ -463,10 +489,21 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
          if e["is_fully_priced"] and e["is_directly_comparable"] and _qualification_admits_recommended(e)),
         key=lambda e: e["npc_with_adjustments_usd"] if e["npc_with_adjustments_usd"] is not None else float("inf"),
     )
-    review_required = [
-        e for e in structure_entries
-        if e["is_fully_priced"] and not (e["is_directly_comparable"] and _qualification_admits_recommended(e))
-    ]
+    # Workspace Top-6/Data Truthfulness: review_required carries NO rank
+    # (comparability, not priceability, gates numeric rank — see above),
+    # but its SERVED ORDER was arbitrary (structure_entries' own DB/
+    # trace-generation order), so a UI's "first N" slice was showing
+    # whichever candidates happened to be generated/persisted first, not
+    # the cheapest-modeled ones. Sorting here is presentation order only,
+    # using the same real NPC field comparable's own sort already uses —
+    # it grants no rank, no recommendation, no comparability; a consumer
+    # must still read is_directly_comparable to know these are NOT
+    # canonical-ranked outcomes.
+    review_required = sorted(
+        (e for e in structure_entries
+         if e["is_fully_priced"] and not (e["is_directly_comparable"] and _qualification_admits_recommended(e))),
+        key=lambda e: e["npc_with_adjustments_usd"] if e["npc_with_adjustments_usd"] is not None else float("inf"),
+    )
     unpriced = [e for e in structure_entries if not e["is_fully_priced"]]
 
     ranking: list[dict] = []

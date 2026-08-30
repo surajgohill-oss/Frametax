@@ -4,7 +4,7 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useCineGlobe } from "../lib/useCineGlobe";
 import { useProjectStatus } from "../lib/useProjectStatus";
 import { getTheme, toggleTheme } from "../lib/theme";
-import { activeStructure } from "../lib/globeData";
+import { activeStructure, bestPricedCandidate } from "../lib/globeData";
 import { useAppState } from "../state/AppState";
 import ProductionHero from "../components/ProductionHero";
 
@@ -118,6 +118,30 @@ export default function ProjectHeader() {
   const { leadingStructureId } = useAppState();
   const allocated = data?.structures?.allocated_structures;
   const topStructure = activeStructure(allocated, leadingStructureId);
+  // Workspace/Overview Truthfulness — "Set as leading" is a PRODUCER
+  // SELECTION, never CineGlobe's own ranked recommendation (Section 12).
+  // activeStructure() intentionally prioritizes the manual leadingStructureId
+  // for every OTHER consumer (Globe view, BudgetRail's active structure,
+  // Workspace's anchor lane — all correctly want "whichever structure the
+  // producer is currently focused on"), so that behavior stays unchanged
+  // here too. But the Hero's "Recommended Structure" label specifically
+  // must be reserved for a GENUINE canonical recommendation — the same
+  // rank-#1 pick activeStructure(allocated, null) resolves when no manual
+  // override is in play. If the producer manually leads a structure that
+  // is not that genuine rank-#1 pick, the Hero must say so as a manual
+  // selection, never imply CineGlobe endorsed it.
+  const canonicalTop = activeStructure(allocated, null);
+  const isGenuineRecommendation = !!(
+    topStructure && canonicalTop && topStructure.structure_id === canonicalTop.structure_id
+  );
+  // Workspace/Overview Truthfulness: when doctrine has no rank-eligible
+  // recommendation (topStructure null — a real, possible state, not a
+  // bug; see bestPricedCandidate's own header comment), fall back to the
+  // cheapest real priced candidate so the Hero is never left entirely
+  // blank while real economics exist — passed to ProductionHero as a
+  // DISTINCT, separately-labeled prop, never silently relabeled as the
+  // recommendation itself.
+  const bestPriced = topStructure ? null : bestPricedCandidate(allocated);
 
   // Shared stage control. The menu itself is portaled to document.body
   // (see the effect above) so it always escapes the Hero's overflow clip,
@@ -183,6 +207,8 @@ export default function ProjectHeader() {
       <ProductionHero
         production={production}
         topStructure={topStructure}
+        isGenuineRecommendation={isGenuineRecommendation}
+        bestPricedCandidate={bestPriced}
         stageControl={stageControl}
         openQuestions={openQuestions}
         swing={swing}

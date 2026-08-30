@@ -73,8 +73,13 @@ test("ProductionDetails renders 'Not yet named' for an empty role, never a place
 // E. Hero recommendation/NPC semantics use canonical eligible state.
 test("ProductionHero: NPC/Recommended Structure are gated on topStructure (the same canonical eligible-ranked structure), never candidate #1 merely because candidates exist", () => {
   const src = stripComments(read("components/ProductionHero.jsx"));
-  assert.match(src, /topStructure \? <Money value=\{topStructure\.npc_with_adjustments_usd\} \/> : "—"/, "NPC must come from topStructure or render truthful absence");
+  assert.match(src, /topStructure\s*\?\s*<Money value=\{topStructure\.npc_with_adjustments_usd\} \/>/, "NPC must come from topStructure when a canonical recommendation exists");
   assert.match(src, /No directly comparable scenario yet/, "absence must be captioned truthfully, not left ambiguous");
+  // Workspace/Overview Truthfulness: a genuinely priced-but-not-comparable
+  // best candidate may fill the Hero, but only under an explicitly
+  // DIFFERENT label — never silently presented as "Recommended".
+  assert.match(src, /Top Priced Candidate/);
+  assert.match(src, /Best priced — not CineGlobe's recommendation/);
 });
 test("globeData.activeStructure only returns a structure eligible by rank #1 or the shared leading selection, never an arbitrary candidate", () => {
   const src = stripComments(read("lib/globeData.js"));

@@ -24,7 +24,14 @@ const PROGRAM_NAMES = {
   ie_section_481: "Section 481",
   gr_cash_rebate: "Greece Cash Rebate",
 };
-export function programDisplay(slug) {
+// preferredName: the real canonical program name when the caller has one
+// (structure.program_display_name, sourced from the backend's own
+// executable_jurisdiction_registry doctrine — never a frontend map).
+// Takes priority over the legacy hardcoded PROGRAM_NAMES table, which
+// stays only as a fallback for the four original programs and for any
+// older served row that predates the backend field.
+export function programDisplay(slug, preferredName) {
+  if (preferredName) return preferredName;
   if (!slug) return null;
   return PROGRAM_NAMES[slug] || humanizeToken(slug);
 }

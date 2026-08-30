@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Money } from "../lib/format";
-import { humanizeToken, jurisdictionName } from "../lib/format";
+import { humanizeToken, bestJurisdictionName } from "../lib/format";
 import { API_ORIGIN } from "../api";
 import heroArt from "../assets/production-art/little-utopia-hero-clean.png";
 
@@ -37,6 +37,8 @@ import heroArt from "../assets/production-art/little-utopia-hero-clean.png";
 export default function ProductionHero({
   production,
   topStructure,
+  isGenuineRecommendation,
+  bestPricedCandidate,
   stageControl,
   openQuestions,
   swing,
@@ -44,10 +46,20 @@ export default function ProductionHero({
   headerActions,
 }) {
   const recommendedJurisdiction = topStructure?.primary_jurisdiction
-    ? jurisdictionName(topStructure.primary_jurisdiction)
+    ? bestJurisdictionName(topStructure.primary_jurisdiction, topStructure)
     : null;
   const recommendedType = topStructure?.structure_type
     ? humanizeToken(topStructure.structure_type)
+    : null;
+  // Workspace/Overview Truthfulness: a genuinely different, distinctly
+  // labeled state from "Recommended" — canonical doctrine found no
+  // rank-eligible/directly-comparable structure (topStructure null), but
+  // real priced candidates exist. Never rendered under the "Recommended
+  // Structure" label — a producer must never read this as CineGlobe's
+  // own endorsement.
+  const bestPriced = !topStructure ? bestPricedCandidate : null;
+  const bestPricedJurisdiction = bestPriced?.primary_jurisdiction
+    ? bestJurisdictionName(bestPriced.primary_jurisdiction, bestPriced)
     : null;
 
   // Visible UI defect fix: the Part G change above made this fetch
@@ -130,25 +142,51 @@ export default function ProductionHero({
           </div>
           <div className="ph-hero-sep" aria-hidden="true" />
           <div className="ph-hero-metric">
-            <span className="ph-hero-metric-label">Net Production Cost</span>
+            <span className="ph-hero-metric-label">
+              {topStructure
+                ? (isGenuineRecommendation ? "Net Production Cost" : "Leading Structure Cost")
+                : bestPriced ? "Modeled Net Cost" : "Net Production Cost"}
+            </span>
             <span className="ph-hero-metric-value mono">
-              {topStructure ? <Money value={topStructure.npc_with_adjustments_usd} /> : "—"}
+              {topStructure
+                ? <Money value={topStructure.npc_with_adjustments_usd} />
+                : bestPriced ? <Money value={bestPriced.npc_with_adjustments_usd} /> : "—"}
             </span>
             {/* Truthful absence, not a blank claiming completeness: no
                 candidate currently admits a directly-comparable/recommended
                 rank (e.g. this production's own base jurisdiction has no
-                priceable program yet) — see Scenarios' Review / Needs
-                Validation group for the real priced candidates that exist. */}
+                priceable program yet). When a real priced candidate exists
+                anyway, its NPC is shown under an explicitly DIFFERENT label
+                ("Modeled", never "Net Production Cost" alone) so it is never
+                mistaken for a canonical recommendation — see Scenarios'
+                Review / Needs Validation group for the full priced set. */}
             <span className="ph-hero-metric-caption">
-              {topStructure ? "After incentives and rebates" : "No directly comparable scenario yet"}
+              {topStructure
+                ? (isGenuineRecommendation ? "After incentives and rebates" : "Producer-selected, not CineGlobe's recommendation")
+                : bestPriced ? "Not yet directly comparable — see Scenarios" : "No directly comparable scenario yet"}
             </span>
           </div>
           <div className="ph-hero-sep" aria-hidden="true" />
           <div className="ph-hero-metric">
-            <span className="ph-hero-metric-label">Recommended Structure</span>
-            <span className="ph-hero-metric-value">{recommendedJurisdiction || "—"}</span>
+            {/* Set as leading (Workspace) is a PRODUCER SELECTION, never
+                CineGlobe's own ranked recommendation (Section 12) — this
+                label/caption must never conflate the two. Only the
+                genuine rank-#1/directly-comparable pick earns
+                "Recommended Structure"; a manually-led structure that
+                isn't that pick is labeled "Leading Structure" instead,
+                exactly like the LEADING badge on its own Workspace card. */}
+            <span className="ph-hero-metric-label">
+              {topStructure
+                ? (isGenuineRecommendation ? "Recommended Structure" : "Leading Structure")
+                : "Top Priced Candidate"}
+            </span>
+            <span className="ph-hero-metric-value">
+              {recommendedJurisdiction || bestPricedJurisdiction || "—"}
+            </span>
             <span className="ph-hero-metric-caption">
-              {recommendedType || (topStructure ? null : "See Scenarios for priced candidates")}
+              {topStructure
+                ? (isGenuineRecommendation ? recommendedType : "◈ Producer selection")
+                : (bestPriced ? "Best priced — not CineGlobe's recommendation" : "See Scenarios for priced candidates")}
             </span>
           </div>
           <div className="ph-hero-sep" aria-hidden="true" />

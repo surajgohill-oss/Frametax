@@ -3,6 +3,25 @@ import { humanizeToken, programDisplay } from "./programNames.js";
 
 const jurName = (code) => JURISDICTION_COORDS[code]?.name || code || "—";
 
+// Workspace Top-6/Data Truthfulness: JURISDICTION_COORDS is a GEOGRAPHIC
+// pin/coordinate map for the Globe (its own file header says so — the
+// "commonly-used production hub", e.g. Sydney for AU-NSW), never a
+// producer-facing name registry. It was being reused as one anyway
+// (jurName above), which is exactly wrong for a sub-national code — the
+// real jurisdiction registry name ("Australia — New South Wales") is a
+// city's state, not the city. The backend now serves that real name
+// directly on a structure (jurisdiction_display_name, sourced from the
+// canonical Jurisdiction table, never a frontend map) for its own
+// primary_jurisdiction — prefer it there; fall back to the geo map only
+// for a participant code the structure doesn't carry its own registry
+// name for (a real, disclosed gap, never a fabricated label).
+export function bestJurisdictionName(code, structure) {
+  if (structure && code === structure.primary_jurisdiction && structure.jurisdiction_display_name) {
+    return structure.jurisdiction_display_name;
+  }
+  return jurName(code);
+}
+
 // Pure display formatting only — no business logic, no derived facts.
 
 export function Money({ value, bare = false }) {
@@ -214,11 +233,13 @@ export function scenarioDisplay(structure) {
     // jurisdiction name (prototype lanes name:"Mauritius"/"Malta"/"Ireland").
     // The structure_type is conveyed by the badge + subtitle, never by
     // prepending wording to the title. Reads canonical primary_jurisdiction.
-    title = jurName(primary);
+    title = bestJurisdictionName(primary, structure);
   } else if (structure.structure_type === "component_relocation" && others.length) {
-    title = `${jurName(primary)} + ${others.map(jurName).join(" + ")}`;
+    title = `${bestJurisdictionName(primary, structure)} + ${others.map(jurName).join(" + ")}`;
   } else {
-    title = participants.length ? participants.map(jurName).join(" + ") : jurName(primary);
+    title = participants.length
+      ? participants.map((p) => bestJurisdictionName(p, structure)).join(" + ")
+      : bestJurisdictionName(primary, structure);
   }
 
   const segments = structure.segments || [];
@@ -229,8 +250,12 @@ export function scenarioDisplay(structure) {
   // ranked NPC/incentive on this card is computed from the CEILING (the
   // canonical optimization contract: best-supported modeled, never the
   // floor), so the ceiling must be visible here, not only the floor.
+  // programDisplay prefers the real canonical registry name
+  // (structure.program_display_name, sourced from the backend's own
+  // doctrine registry) over its small legacy hardcoded map — real for
+  // any program the registry knows, never fabricated for one it doesn't.
   const subtitle = structure.is_fully_priced && dominant?.claims_incentive && dominant?.program_slug
-    ? `${programDisplay(dominant.program_slug)} · ${Math.round((dominant.rate_floor || 0) * 100)}%${dominant.is_band_ceiling ? ` (up to ${Math.round((dominant.rate_ceiling || 0) * 100)}%)` : ""}`
+    ? `${programDisplay(dominant.program_slug, structure.program_display_name)} · ${Math.round((dominant.rate_floor || 0) * 100)}%${dominant.is_band_ceiling ? ` (up to ${Math.round((dominant.rate_ceiling || 0) * 100)}%)` : ""}`
     : humanizeToken(structure.structure_type);
 
   return { title, subtitle, dominant };
@@ -249,22 +274,57 @@ export function compactScenarioIdentity(structure) {
   const primary = structure.primary_jurisdiction;
   const codes = participants.length ? participants : (primary ? [primary] : []);
   const flags = codes.map(flagEmoji).filter(Boolean).join(" ");
-  const name = codes.length ? codes.map(jurisdictionName).join(" + ") : (structure.label || "—");
+  // bestJurisdictionName (never the Globe's geo-hub map alone) — see its
+  // own header comment for why: a sub-national code's real registry name
+  // ("Australia — New South Wales") is not its geographic hub city
+  // ("Sydney"). structure.jurisdiction_display_name is the real,
+  // canonical Jurisdiction-table name for structure.primary_jurisdiction.
+  const jurisdictionName_ = codes.length
+    ? codes.map((c) => bestJurisdictionName(c, structure)).join(" + ")
+    : (structure.label || "—");
 
-  // "Up to X%" is the best real modeled rate anywhere in the structure —
-  // the highest rate_ceiling (falling back to rate_floor) across every
-  // incentive-claiming segment, not just the biggest-QPE one. A component
+  // Workspace Top-6/Data Truthfulness: the jurisdiction name alone
+  // collapses genuinely distinct programs in the same country into
+  // identical-looking cards (e.g. Australia's Location Offset and PDV
+  // Offset, or three different states' own PDV rebates). The real
+  // program name already exists in the canonical doctrine registry
+  // (structure.program_display_name) — append it whenever this
+  // structure's own jurisdiction name is not already unique enough to
+  // stand alone, i.e. whenever a real program name exists at all for a
+  // single-program structure (a multi-program stack keeps its plain
+  // jurisdiction title; its programs are enumerated in the card body).
+  const singleProgram = (structure.program_slugs || []).length <= 1;
+  // Falls back through programDisplay's own legacy map/humanization for
+  // a program_slug the backend doctrine registry doesn't (yet) cover —
+  // e.g. the original four "frozen ui-baseline-v1" programs (Little
+  // Utopia/FVD's own) predate that registry. Never blank for a
+  // single-program structure that has ANY program_slug at all.
+  const programName = structure.program_display_name
+    || (structure.program_slug ? programDisplay(structure.program_slug) : null);
+  const name = singleProgram && programName
+    ? `${jurisdictionName_} — ${programName}`
+    : jurisdictionName_;
+
+  // The best real modeled rate anywhere in the structure — the highest
+  // rate_ceiling (falling back to rate_floor) across every incentive-
+  // claiming segment, not just the biggest-QPE one. A component
   // structure's headline is its best-supported ceiling (e.g. Mauritius +
   // Saudi Arabia tops out at Saudi's real 60% modeled rate, not Mauritius's
   // smaller 40%), matching the same ceiling-not-floor convention Inspector
-  // and the optimizer's own ranking already use.
+  // and the optimizer's own ranking already use. When the engine resolved
+  // one EXACT rate (floor == ceiling — the common case for a flat
+  // statutory program, not a band), the label states it plainly rather
+  // than "Up to X%", which implies a range that does not exist here.
   const segments = structure.segments || [];
-  const rates = segments
-    .filter((sg) => sg.claims_incentive)
-    .map((sg) => sg.rate_ceiling ?? sg.rate_floor)
-    .filter((r) => r != null);
-  const rate = rates.length ? Math.max(...rates) : null;
-  const subtitle = rate != null ? `Up to ${Math.round(rate * 100)}%` : humanizeToken(structure.structure_type);
+  const claiming = segments.filter((sg) => sg.claims_incentive);
+  const floors = claiming.map((sg) => sg.rate_floor).filter((r) => r != null);
+  const ceilings = claiming.map((sg) => sg.rate_ceiling ?? sg.rate_floor).filter((r) => r != null);
+  const ceiling = ceilings.length ? Math.max(...ceilings) : null;
+  const floor = floors.length ? Math.min(...floors) : null;
+  const isExactRate = ceiling != null && floor != null && Math.round(floor * 10000) === Math.round(ceiling * 10000);
+  const subtitle = ceiling != null
+    ? (isExactRate ? `${Math.round(ceiling * 100)}%` : `Up to ${Math.round(ceiling * 100)}%`)
+    : humanizeToken(structure.structure_type);
 
   return { flags, name, subtitle };
 }

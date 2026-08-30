@@ -48,6 +48,27 @@ export function activeStructure(allocated, leadingStructureId) {
   return best ? byId.get(best.structure_id) : null;
 }
 
+// Workspace/Overview Truthfulness: distinct from activeStructure/rank #1
+// on purpose — canonical RECOMMENDATION (rank) requires direct
+// comparability (is_directly_comparable, gated on the production's own
+// base jurisdiction being priced — see canonical_production_view.py's
+// Part K doctrine), which can be genuinely absent even when 100+ real
+// priced candidates exist (an unpriceable home baseline). This is never
+// treated as a recommendation substitute — callers must label it
+// distinctly ("Top priced candidate", never "Recommended Structure") —
+// it exists only so a production is never left with a totally blank
+// Hero/Workspace while real priced economics exist below.
+export function bestPricedCandidate(allocated) {
+  if (!allocated) return null;
+  const priced = (allocated.structures || []).filter((s) => s.is_fully_priced);
+  if (!priced.length) return null;
+  return priced.reduce((best, s) => {
+    const bn = best?.npc_with_adjustments_usd ?? Infinity;
+    const sn = s.npc_with_adjustments_usd ?? Infinity;
+    return sn < bn ? s : best;
+  }, null);
+}
+
 // ── The Globe's semantic system (Phase 2 closeout) ──────────────────────
 // EXACTLY FOUR production-decision states. This object is the canonical
 // source: every Globe-adjacent surface (choropleth fill, beacons, hover

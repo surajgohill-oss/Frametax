@@ -1048,7 +1048,9 @@
    when the question stack opens instead of reflowing the rack. */
 .wsx-rack { display: grid; grid-template-columns: repeat(3, minmax(310px, 320px)); justify-content: start; gap: 18px; padding: 20px 10px 20px 18px; }
 
-.wsx-lane { background: var(--surface-1); border: 0.5px solid var(--hairline); border-radius: 5px; overflow: hidden; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; }
+.wsx-lane { background: var(--surface-1); border: 0.5px solid var(--hairline); border-radius: 5px; overflow: hidden; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; cursor: pointer; }
+.wsx-lane:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 2px; }
+.wsx-lane .wsx-foot button, .wsx-lane .wsx-lead-act button { cursor: pointer; }
 .wsx-lane:hover { border-color: var(--hairline-strong); box-shadow: var(--shadow-md); }
 .wsx-lane:hover { transform: translateY(-1px); }
 .wsx-lane.anchor { border-color: var(--text-primary); border-width: 1.5px; border-top-width: 3px; border-top-color: var(--oxblood); background: color-mix(in srgb, var(--surface-1) 96%, var(--text-primary) 4%); }

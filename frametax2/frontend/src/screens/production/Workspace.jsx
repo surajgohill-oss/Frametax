@@ -60,7 +60,19 @@ function visibleStructures(structures, rankById, swapId) {
   const ordered = [...structures].sort((a, b) => {
     const ra = rankById.get(a.structure_id)?.rank ?? Infinity;
     const rb = rankById.get(b.structure_id)?.rank ?? Infinity;
-    return ra - rb;
+    if (ra !== rb) return ra - rb;
+    // Workspace Top-6/Data Truthfulness: among structures with no
+    // canonical rank (comparable_count can be 0 — the production's own
+    // baseline is unpriceable — while real priced candidates still
+    // exist), the served array order is arbitrary generation order, not
+    // economic order. Tie-break by the SAME real NPC field the canonical
+    // comparable ranking already sorts by — grants no rank, no
+    // recommendation; it only makes "which 6 show first" deterministic
+    // and cost-ordered instead of accidental. Priced structures sort
+    // before unpriced ones.
+    const an = a.is_fully_priced ? (a.npc_with_adjustments_usd ?? Infinity) : Infinity;
+    const bn = b.is_fully_priced ? (b.npc_with_adjustments_usd ?? Infinity) : Infinity;
+    return an - bn;
   });
   const base = ordered.slice(0, MAX_VISIBLE);
   const overflow = ordered.slice(MAX_VISIBLE);
@@ -139,7 +151,21 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, onSetLead
   const npc = structure.npc_with_adjustments_usd;
 
   const laneClass = isLeading ? "anchor" : priced ? "" : "draft";
-  const badge = isLeading ? "① LEADING" : priced ? (CIRCLED[(rank?.rank || 1) - 1] || `#${rank?.rank}`) : "DRAFT";
+  // Workspace Top-6/Data Truthfulness: "Set as leading"/LEADING is a
+  // PRODUCER SELECTION, never CineGlobe's own ranked recommendation —
+  // it must never borrow the "①" glyph, which implies canonical rank #1
+  // regardless of the leading structure's real (possibly absent) rank.
+  // A priced structure with no real canonical rank (rank?.rank is only
+  // ever set for a directly-comparable, recommendation-eligible
+  // candidate — see canonical_production_view.py's comparable/
+  // review_required split) must never silently default to "①" either;
+  // "PRICED" states plainly that real economics exist without
+  // asserting an order the doctrine did not establish.
+  const badge = isLeading
+    ? "◈ LEADING"
+    : priced
+      ? (rank?.rank ? (CIRCLED[rank.rank - 1] || `#${rank.rank}`) : "PRICED")
+      : "DRAFT";
 
   // Compact card identity (flag + full jurisdiction name + "Up to X%") —
   // the approved Workspace format. See compactScenarioIdentity in
@@ -154,8 +180,29 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, onSetLead
   // currency-exposed local spend) belongs in the Inspector later, not a
   // prominent card chip.
 
+  // Inspector interaction (Workspace Top-6/Data Truthfulness): the whole
+  // card body is inspectable, not only the small "Inspect" button —
+  // click or Enter/Space anywhere on the card opens the SAME existing
+  // Inspector with this SAME structure. Footer/leading-action buttons
+  // stop propagation so Compare/Set-as-leading don't ALSO fire Inspect.
+  const openInspect = () => onInspect(structure);
+  const handleCardKeyDown = (e) => {
+    if (e.target !== e.currentTarget) return; // let inner buttons handle their own keys
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      openInspect();
+    }
+  };
+
   return (
-    <div className={`wsx-lane ${laneClass}`}>
+    <div
+      className={`wsx-lane ${laneClass}`}
+      role="button"
+      tabIndex={0}
+      aria-label={`Inspect ${name}`}
+      onClick={openInspect}
+      onKeyDown={handleCardKeyDown}
+    >
       <div className="wsx-lh">
         <div className="wsx-lh-id">
           <div className="wsx-nm">{flags ? `${flags} ${name}` : name}</div>
@@ -187,14 +234,14 @@ function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, onSetLead
       )}
 
       <div className="wsx-foot">
-        <button onClick={() => onInspect(structure)}>Inspect</button>
-        <button onClick={() => onCompare(structure)}>Compare</button>
+        <button onClick={(e) => { e.stopPropagation(); openInspect(); }}>Inspect</button>
+        <button onClick={(e) => { e.stopPropagation(); onCompare(structure); }}>Compare</button>
       </div>
       <div className="wsx-lead-act">
         {isLeading ? (
           <button className="wsx-lead is-leading" disabled>● Current leading structure</button>
         ) : (
-          <button className="wsx-lead" onClick={() => onSetLeading(structure.structure_id)}>◈ Set as leading</button>
+          <button className="wsx-lead" onClick={(e) => { e.stopPropagation(); onSetLeading(structure.structure_id); }}>◈ Set as leading</button>
         )}
       </div>
     </div>
@@ -238,6 +285,12 @@ export default function Workspace() {
   // swapped into the last visible lane via "Other Scenarios" — selecting,
   // never creating.
   const [swapId, setSwapId] = useState("");
+  // Compare identity (Workspace Top-6/Data Truthfulness): the canonical
+  // structure_id of whichever card's Compare was last clicked — never a
+  // jurisdiction code, so two same-country/different-program structures
+  // (e.g. Australia Location Offset vs Australia PDV Offset) are never
+  // collapsed into one comparison target.
+  const [compareStructureId, setCompareStructureId] = useState(null);
   const [globeMode, setGlobeMode] = useState("jurisdictions"); // "jurisdictions" | "optimizer"
   const [globeHover, setGlobeHover] = useState(null);
   const {
@@ -494,7 +547,7 @@ export default function Workspace() {
                   isLeading={s.structure_id === leadingId}
                   onSetLeading={handleSetLeading}
                   onInspect={handleSelectStructure}
-                  onCompare={() => { setQOpen(true); setQTab("recommendations"); }}
+                  onCompare={(s) => { setCompareStructureId(s.structure_id); setQOpen(true); setQTab("recommendations"); }}
                   onSelectSegment={handleSelectSegment}
                 />
               ))}
@@ -522,7 +575,7 @@ export default function Workspace() {
                     isLeading={leadingStructure.structure_id === leadingId}
                     onSetLeading={handleSetLeading}
                     onInspect={handleSelectStructure}
-                    onCompare={() => { setQOpen(true); setQTab("recommendations"); }}
+                    onCompare={(s) => { setCompareStructureId(s.structure_id); setQOpen(true); setQTab("recommendations"); }}
                     onSelectSegment={handleSelectSegment}
                   />
                 )}
@@ -576,7 +629,7 @@ export default function Workspace() {
                       isLeading={s.structure_id === leadingId}
                       onSetLeading={handleSetLeading}
                       onInspect={handleSelectStructure}
-                      onCompare={() => { setQOpen(true); setQTab("recommendations"); }}
+                      onCompare={(s) => { setCompareStructureId(s.structure_id); setQOpen(true); setQTab("recommendations"); }}
                       onSelectSegment={handleSelectSegment}
                     />
                   ))}
