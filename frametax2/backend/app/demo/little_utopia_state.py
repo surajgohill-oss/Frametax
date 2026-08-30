@@ -2193,21 +2193,14 @@ SCRIPT_SOURCE_NOTE = (
 # the user may confirm/override each category. Overrides are stored
 # separately (never overwriting the script extraction) and resolved into
 # an EFFECTIVE value exactly like the fact-answer pattern.
-LOCATION_TAXONOMY: dict[str, str] = {
-    "beach_coast": "Beach / Coast",
-    "marine_open_water": "Marine / Open Water",
-    "island_tropical": "Island / Tropical",
-    "jungle_rainforest": "Jungle / Rainforest",
-    "desert_arid": "Desert / Arid",
-    "mountains_alpine": "Mountains / Alpine",
-    "snow_arctic": "Snow / Arctic",
-    "urban_major_city": "Urban / Major City",
-    "small_town_suburban": "Small Town / Suburban",
-    "rural_countryside": "Rural / Countryside",
-    "forest_woodland": "Forest / Woodland",
-    "historic_old_world": "Historic / Old World",
-    "studio_stage": "Studio / Stage",
-}
+#
+# Defined in app.calculators.production_requirements (a shared, non-demo
+# module already home to the abstract_location() ontology this taxonomy
+# is paired with) and re-exported here unchanged so this module's own
+# callers are unaffected — moved to keep canonical_project_economics.py
+# and other project-agnostic services from having to import a per-project
+# demo module for a genuinely generic vocabulary.
+from app.calculators.production_requirements import LOCATION_TAXONOMY  # noqa: F401,E402
 
 # Script-derived seeds: every True value maps to explicit evidence in the
 # read material (SCRIPT_REQUIREMENTS / setting facts above). Categories the

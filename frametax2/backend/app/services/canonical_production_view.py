@@ -538,6 +538,9 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
         else (float(budget_doc.total_budget_raw) if budget_doc and budget_doc.total_budget_raw is not None else None)
     )
 
+    from app.services.canonical_project_economics import build_ui_location_categories
+    ui_location_categories = await build_ui_location_categories(session, project.id)
+
     production = {
         "production_id": str(project.id),
         "production_name": project.title,
@@ -556,7 +559,15 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
             "note": None,
         },
         "production_structure_default": None,
-        "physical_requirements": {},
+        # Script Analyzer Full Production Breakdown: was hardcoded {} for
+        # every generic project, so ProductionDetails.jsx's "Major
+        # Location Requirements" panel always showed "No script analysis
+        # available yet" regardless of real persisted
+        # ProjectLocationRequirement rows. build_ui_location_categories
+        # reads this project's own real SA-1 rows through the existing
+        # abstract_location() ontology, same LOCATION_TAXONOMY/label
+        # contract the demo's own _derive_location_categories() uses.
+        "physical_requirements": {"location_categories": ui_location_categories},
         "territory_physical_match": {},
         "as_of_date": None,
         "computation": {"version": engine_version or ENGINE_VERSION, "computed_at": None},

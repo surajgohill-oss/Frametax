@@ -607,3 +607,104 @@ async def build_physical_requirements(session: AsyncSession, project_id) -> dict
         # evidence is already carried honestly via
         # location_categories["marine_open_water"] above.
     }
+
+
+# ─────────────────────────────────────────────────────────────────────────
+# Script Analyzer Full Production Breakdown — UI-facing location category
+# chips (ProductionDetails.jsx's "Major Location Requirements").
+#
+# canonical_production_view.py's generic (non-demo) `production` dict
+# hardcoded `physical_requirements: {}` for every project — Overview
+# showed "No script analysis available yet" regardless of how many real
+# ProjectLocationRequirement rows a project actually has. The demo-only
+# `little_utopia_state._derive_location_categories()` produces the exact
+# shape ProductionDetails.jsx needs ({slug: {label, script_value,
+# evidence, override, effective, source}}) but reads LU's own hardcoded
+# fixture data. This is the generic, per-project counterpart: same output
+# CONTRACT, same LOCATION_TAXONOMY vocabulary and label text (imported,
+# never redefined — one taxonomy, not a second one), but every value
+# comes from this project's own real, persisted SA-1 rows.
+#
+# abstract_location()'s own raw keyword-ontology output (beach_coast,
+# marine_open_water, island, tropical_environments, forest_environments,
+# desert_environments, mountain_environments, snow_environments,
+# urban_environments, town, village, rural_environments,
+# historic_architecture, ...) uses a DIFFERENT slug vocabulary than the
+# UI's LOCATION_TAXONOMY (13 producer-facing category labels) — the SAME
+# kind of small, explicit translation table
+# _LOCATION_CAPABILITY_TOKEN_TO_CATEGORY_KEY above already uses to bridge
+# abstract_location() into derive_production_requirements()'s own
+# vocabulary. This is that same precedented pattern, not a new ontology:
+# bridging two ALREADY-EXISTING vocabularies, never inventing a category
+# concept that doesn't already exist in one of them.
+_LOCATION_ONTOLOGY_TOKEN_TO_TAXONOMY_SLUG: dict[str, str] = {
+    "beach_coast": "beach_coast",
+    "marine_open_water": "marine_open_water",
+    "island": "island_tropical",
+    "tropical_environments": "island_tropical",
+    "forest_environments": "forest_woodland",
+    "desert_environments": "desert_arid",
+    "mountain_environments": "mountains_alpine",
+    "snow_environments": "snow_arctic",
+    "urban_environments": "urban_major_city",
+    "town": "small_town_suburban",
+    "village": "small_town_suburban",
+    "rural_environments": "rural_countryside",
+    "historic_architecture": "historic_old_world",
+    # harbor_marina, river, lake, mediterranean, coastal_environments,
+    # open_water_filming, tropical (alone), agricultural, industrial,
+    # residential, period_environments: no LOCATION_TAXONOMY slug exists
+    # for these — correctly excluded, never forced into an unrelated
+    # category.
+}
+
+
+async def build_ui_location_categories(session: AsyncSession, project_id) -> dict[str, dict]:
+    """The real, per-project `location_categories` shape
+    ProductionDetails.jsx renders — same contract as the demo's
+    `_derive_location_categories()`, same `LOCATION_TAXONOMY` labels
+    (imported unchanged), built from this project's own persisted SA-1
+    `ProjectLocationRequirement` (scripted locations) rows and any real
+    producer-confirmed category overrides already persisted on the SAME
+    table (`category_key`/`override` rows — Phase C's existing override
+    write path, `POST /locations`). Every taxonomy slug is always
+    present (matching the demo's own always-13-slugs contract) —
+    `effective=False`/`evidence=None` for a category the script genuinely
+    never evidences, never omitted."""
+    # Shared, non-demo home (app.calculators.production_requirements) — never
+    # app.demo.little_utopia_state; this module must stay project-agnostic.
+    from app.calculators.production_requirements import LOCATION_TAXONOMY
+    from app.models.project_location_requirement import ProjectLocationRequirement
+
+    rows = (await session.execute(
+        select(ProjectLocationRequirement).where(ProjectLocationRequirement.project_id == project_id)
+    )).scalars().all()
+    scripted_descriptions = [r.description for r in rows if r.category_key is None and r.description]
+    overrides = {r.category_key: r.override for r in rows if r.category_key is not None}
+
+    evidence_by_slug: dict[str, list[str]] = {}
+    for desc in scripted_descriptions:
+        for token in abstract_location(desc):
+            slug = _LOCATION_ONTOLOGY_TOKEN_TO_TAXONOMY_SLUG.get(token)
+            if slug is None:
+                continue
+            evidence_by_slug.setdefault(slug, []).append(desc)
+
+    out: dict[str, dict] = {}
+    for slug, label in LOCATION_TAXONOMY.items():
+        evidence_list = evidence_by_slug.get(slug)
+        script_value = bool(evidence_list) if evidence_list else None
+        override = overrides.get(slug)
+        effective = override if override is not None else bool(script_value)
+        out[slug] = {
+            "label": label,
+            "script_value": script_value,
+            "evidence": (
+                ", ".join(sorted(set(evidence_list))[:3]) if evidence_list
+                else "Not described in the material read."
+            ),
+            "override": override,
+            "effective": effective,
+            "source": "user_override" if override is not None else "script_analysis",
+        }
+    return out

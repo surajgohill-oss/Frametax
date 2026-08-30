@@ -206,6 +206,32 @@ _LOCATION_ONTOLOGY: dict[str, frozenset[str]] = {
     "luxury": frozenset({"residential"}),
 }
 
+# The concise, producer-facing environment taxonomy used to summarize a
+# production's major location requirements (13 categories). Originally
+# defined only in app.demo.little_utopia_state, but it is genuinely
+# generic — already reused by the real, per-project `/locations` API
+# endpoint (app.api.v1.cineglobe) for any project, not just Little Utopia.
+# Homed here (the module _LOCATION_ONTOLOGY / abstract_location() already
+# live in) so shared, non-demo services (e.g.
+# canonical_project_economics.build_ui_location_categories) can use it
+# without importing a per-project demo module. little_utopia_state.py
+# re-exports this name unchanged so its own callers are unaffected.
+LOCATION_TAXONOMY: dict[str, str] = {
+    "beach_coast": "Beach / Coast",
+    "marine_open_water": "Marine / Open Water",
+    "island_tropical": "Island / Tropical",
+    "jungle_rainforest": "Jungle / Rainforest",
+    "desert_arid": "Desert / Arid",
+    "mountains_alpine": "Mountains / Alpine",
+    "snow_arctic": "Snow / Arctic",
+    "urban_major_city": "Urban / Major City",
+    "small_town_suburban": "Small Town / Suburban",
+    "rural_countryside": "Rural / Countryside",
+    "forest_woodland": "Forest / Woodland",
+    "historic_old_world": "Historic / Old World",
+    "studio_stage": "Studio / Stage",
+}
+
 
 def abstract_location(location: str) -> frozenset[str]:
     """Classify any literal location string into reusable production

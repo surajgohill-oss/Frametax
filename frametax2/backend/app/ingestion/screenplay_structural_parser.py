@@ -34,7 +34,26 @@ import hashlib
 import re
 from dataclasses import dataclass, field
 
-PARSER_VERSION = "sa1-structural-1.0.0"
+PARSER_VERSION = "sa1-structural-1.1.0"
+# 1.1.0 — Script Analyzer Full Production Breakdown: real evidence from
+# Lips Like Sugar's own screenplay (82/145 real scene headings use a
+# literal clock time — "INT. CAMPOS APARTMENT - 2:38 PM" — instead of
+# DAY/NIGHT; 43/145 use "SAME", a standard scene-continuity convention
+# meaning "same time as the previous scene") proved a real location-
+# identity fragmentation defect: neither token was recognized as a
+# time-of-day-like trailing segment, so it was left IN the scripted
+# location text, splitting one real location ("Campos Apartment") into
+# dozens of distinct location_keys ("Campos Apartment 2 38 PM", "Campos
+# Apartment 12 03 PM", ...). Fixed generically (any screenplay using
+# either convention, not just this one): "SAME" now normalizes exactly
+# like CONTINUOUS (both mean "no new time information — carries the
+# prior scene's"), and a literal clock-time token is recognized and
+# stripped from the location text WITHOUT being classified as DAY or
+# NIGHT (time_of_day stays UNKNOWN — inferring day/night from a bare
+# clock time, e.g. whether "2:38" is AM or genuinely daytime, would be
+# exactly the kind of speculative interpretation this parser's own
+# canonical rules forbid; only the location-identity fragmentation is
+# fixed, never a guessed time-of-day fact).
 
 # ── normalized enums (strings, mirrored by the DB columns) ──────────────────
 INT_EXT_INT = "INT"
@@ -111,8 +130,13 @@ _PAREN_ONLY_RE = re.compile(r"^[ \t]*\([^)]*\)[ \t]*$")
 _PAGE_MARKER_RE = re.compile(r"^[ \t]*(?P<n>\d{1,4})[ \t]*\.?[ \t]*$")
 
 # Time-of-day tokens, longest-first so "CONTINUOUS" beats a bare "CONT".
+# "SAME" is a standard scene-continuity convention (same real-world
+# meaning as CONTINUOUS: no new time information, carries the prior
+# scene's) — real evidence: 43/145 of Lips Like Sugar's own real scene
+# headings use it.
 _TOD_TOKENS: tuple[tuple[str, str], ...] = (
     ("CONTINUOUS", TOD_CONTINUOUS),
+    ("SAME", TOD_CONTINUOUS),
     ("MOMENTS LATER", TOD_LATER),
     ("LATER", TOD_LATER),
     ("MAGIC HOUR", TOD_DUSK),
@@ -133,6 +157,15 @@ _TOD_TOKENS: tuple[tuple[str, str], ...] = (
     ("MIDNIGHT", TOD_NIGHT),
     ("NIGHT", TOD_NIGHT),
 )
+
+# A literal clock time ("2:38 PM", "12:03AM") used in place of DAY/NIGHT —
+# real evidence: 82/145 of Lips Like Sugar's own real scene headings use
+# this convention. Recognized ONLY to strip it from the location identity
+# (see _scripted_location) — never mapped to a TOD value here, since
+# inferring DAY/NIGHT from a bare clock time is exactly the speculative
+# interpretation this parser's own canonical rules forbid; time_of_day
+# correctly stays UNKNOWN for these sluglines.
+_CLOCK_TIME_RE = re.compile(r"^\d{1,2}:\d{2}\s*(?:AM|PM)$")
 
 # ── explicit-evidence lexicons ─────────────────────────────────────────────
 # Deliberately narrow and literal. A term is here only when its presence in
@@ -298,7 +331,10 @@ def _scripted_location(rest: str) -> str | None:
     if not cleaned:
         return None
     parts = re.split(r"\s+[-–—]\s+", cleaned)
-    if len(parts) > 1 and _normalize_time_of_day(parts[-1]) != TOD_UNKNOWN:
+    if len(parts) > 1 and (
+        _normalize_time_of_day(parts[-1]) != TOD_UNKNOWN
+        or _CLOCK_TIME_RE.match(parts[-1].strip())
+    ):
         parts = parts[:-1]
     loc = " - ".join(p.strip() for p in parts if p.strip())
     loc = re.sub(r"\s+", " ", loc).strip(" .-–—")
