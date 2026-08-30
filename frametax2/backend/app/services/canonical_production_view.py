@@ -714,6 +714,7 @@ async def build_generic_pkg_and_economics(session: AsyncSession, project_id) -> 
             "person_id": str(tp.id), "name": tp.name,
             "nationality": tp.primary_nationality,
             "confirmed": pp.is_confirmed,
+            "nationality_resolution_status": tp.nationality_resolution_status,
         })
 
     # Production Overview Truthfulness: pkg["missing_inputs"] (what

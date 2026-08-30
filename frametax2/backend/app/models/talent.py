@@ -18,7 +18,30 @@ class TalentProfile(Base):
     # "director" | "writer" | "producer" | "lead_cast" | "cast"
     imdb_id: Mapped[str | None] = mapped_column(String(50), unique=True)
     primary_nationality: Mapped[str | None] = mapped_column(String(100))
-    # ISO 3166-1 alpha-2 country code
+    # ISO 3166-1 alpha-2 country code — the single canonical value
+    # qualification engines read. Never inferred from name/appearance/
+    # residence/birthplace alone; set only from documented citizenship
+    # evidence (producer-entered, or the fields below when externally
+    # resolved).
+
+    # ── Person Nationality Resolution provenance (additive) ────────────
+    nationality_resolution_status: Mapped[str | None] = mapped_column(String(40))
+    # "resolved" | "unresolved_no_match" | "unresolved_ambiguous" |
+    # "lookup_failed" | "not_attempted"
+    nationality_source: Mapped[str | None] = mapped_column(String(40))
+    # e.g. "wikidata"
+    nationality_source_entity_id: Mapped[str | None] = mapped_column(String(100))
+    # e.g. "Q7461586" — the exact resolved entity, for re-verification
+    nationality_evidence: Mapped[list | None] = mapped_column(JSONB)
+    # every documented citizenship (not just primary_nationality) plus
+    # the match evidence used to disambiguate identity — dual/multiple
+    # citizenship is preserved here even though primary_nationality
+    # holds a single value
+    nationality_confidence: Mapped[str | None] = mapped_column(String(20))
+    # ConfidenceTier value — DISCOVERY for an unreviewed external match
+    nationality_resolved_at: Mapped[str | None] = mapped_column(String(40))
+    # ISO timestamp of the resolution attempt (success or failure)
+
     known_residencies: Mapped[list | None] = mapped_column(JSONB)
     # [{"jurisdiction_code": "GB", "confirmed": true}]
     guild_memberships: Mapped[list | None] = mapped_column(JSONB)

@@ -630,6 +630,16 @@ async def analyze_project_script(
         session, project_id=project_id, screenplay=screenplay, credits=credits
     )
 
+    # Person Nationality Resolution: enrich only newly/still-unresolved,
+    # unconfirmed personnel — enrich_project_personnel is itself
+    # idempotent (skips anyone already attempted or producer-confirmed),
+    # so calling it on every analyze_project_script run is safe and cheap
+    # once a project's people are settled. Never breaks this pipeline on
+    # a resolver failure (enrich_talent_nationality/resolve_person_
+    # nationality never raise).
+    from app.services.talent_nationality_resolution import enrich_project_personnel
+    nationality_enrichment = await enrich_project_personnel(session, project_id=project_id)
+
     if result is None:
         return {
             "status": screenplay.parse_status,
@@ -638,6 +648,7 @@ async def analyze_project_script(
             "parse_error": screenplay.parse_error,
             "reparsed": False,
             "title_page_credits_written": credits_written,
+            "nationality_enrichment": nationality_enrichment,
         }
 
     facts = derive_core_facts(result)
@@ -664,5 +675,6 @@ async def analyze_project_script(
         "production_requirements": req_count,
         "location_requirements": loc_count,
         "title_page_credits_written": credits_written,
+        "nationality_enrichment": nationality_enrichment,
         "warnings": list(result.warnings),
     }
