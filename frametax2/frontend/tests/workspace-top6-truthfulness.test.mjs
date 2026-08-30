@@ -33,10 +33,27 @@ const stripComments = (src) =>
 // D. Human-readable structure labels differentiate valid same-country
 // outcomes — never a frontend-hardcoded map when a real registry name
 // exists.
-test("compactScenarioIdentity appends the real backend program_display_name to disambiguate same-jurisdiction structures", () => {
+// Workspace Display Regression closeout: the PRIOR fix (above) correctly
+// established that same-jurisdiction structures must stay distinguishable,
+// but did so by concatenating the FULL legal program_display_name into the
+// primary card TITLE — exactly the verbosity regression the current
+// closeout fixes. program_display_name itself is still read (never
+// discarded from the served data) but the title is jurisdiction-only now;
+// disambiguation moves to a compact, generically-derived secondary label.
+test("compactScenarioIdentity still reads the real backend program_display_name, but never concatenates it into the primary title", () => {
   const src = stripComments(read("lib/format.jsx"));
-  assert.match(src, /structure\.program_display_name/, "must read the real backend-provided program name");
-  assert.match(src, /jurisdictionName_.*—.*programName/, "the jurisdiction name and program name must combine into one distinguishing title");
+  assert.match(src, /structure\.program_display_name/, "must still read the real backend-provided program name — never discarded");
+  assert.doesNotMatch(src, /const name = .*—.*programName/, "the primary title must never concatenate the program name onto the jurisdiction");
+  assert.match(src, /const name = jurisdictionName_;/, "the primary title must be the jurisdiction alone");
+});
+
+test("a compact secondary program label is generically derived, never a per-program hardcoded string", () => {
+  const src = stripComments(read("lib/format.jsx"));
+  assert.match(src, /function compactProgramLabel\(programName, jurisdictionName\)/, "must be a real function, not an inline literal map");
+  // Two purely mechanical transforms only — no jurisdiction/program name
+  // literal appears in the function body itself.
+  assert.match(src, /startsWith\(`\$\{jurisdictionName\.toLowerCase\(\)\} `\)/, "must strip a leading jurisdiction-name prefix generically");
+  assert.match(src, /replace\(\/\\s\*\\\(\[\^\)\]\*\\\)\\s\*\$\/, ""\)/, "must strip a trailing parenthetical clarifier generically");
 });
 
 test("compactScenarioIdentity never uses the Globe's geo-hub coordinate map as the producer-facing jurisdiction name", () => {
@@ -55,14 +72,37 @@ test("an exact resolved rate (floor == ceiling) is labeled plainly, never 'Up to
 });
 
 // C. Exact duplicate canonical structures do not appear twice — proven at
-// the label layer: two structures with the SAME jurisdiction but
-// DIFFERENT program_display_name must produce different titles.
-test("two same-jurisdiction structures with different program_display_name never collide on title", () => {
-  // Reimplements just the title-building logic's decision surface
-  // (jurisdiction + program) as a pure check against the real exported
-  // helper contract, without a JSX/DOM harness.
+// the SECONDARY label layer now (Workspace Display Regression closeout
+// moved disambiguation off the primary title): two structures with the
+// SAME jurisdiction but DIFFERENT program_display_name still produce
+// different secondary labels/subtitles, they simply share a title.
+test("two same-jurisdiction structures with different program_display_name still get distinct secondary labels", () => {
   const src = stripComments(read("lib/format.jsx"));
-  assert.match(src, /const name = singleProgram && programName/);
+  assert.match(src, /const compactLabel = singleProgram \? compactProgramLabel\(programName, jurisdictionName_\) : stackLabel;/);
+  assert.match(src, /return \{ flags, name, subtitle, programLabel: compactLabel \};/, "programLabel must be exposed for callers that need disambiguation without the rate (e.g. a dropdown)");
+});
+
+// A/D. Workspace Display Regression: the card headline is jurisdiction-
+// only; a multi-program stack (no single program name to compact) still
+// gets a real, generically-derived distinguishing label by joining each
+// claimed program's own compact form — never falling back to a bare,
+// indistinguishable jurisdiction name when real program_display_names
+// data exists to disambiguate it.
+test("a multi-program stack derives its secondary label from program_display_names, never a bare indistinguishable jurisdiction name", () => {
+  const src = stripComments(read("lib/format.jsx"));
+  assert.match(src, /structure\.program_display_names/, "must read the real backend-served array of every claimed program's name");
+  assert.match(src, /const stackLabel = !singleProgram && \(structure\.program_display_names \|\| \[\]\)\.length > 1/);
+  assert.match(src, /\.map\(\(n\) => compactProgramLabel\(n, jurisdictionName_\) \|\| n\)/, "each stacked program must go through the SAME compaction rule as the single-program case — no second vocabulary");
+});
+
+// B. Subnational title omits the redundant parent-country prefix — Section
+// 3's rule: a composite registry name ("Australia — New South Wales")
+// must render as its most specific segment alone ("New South Wales"),
+// never the full "Country — Subnational" string as the card headline.
+test("bestJurisdictionName's composite country-subnational form is trimmed to its most specific segment for the card title", () => {
+  const src = stripComments(read("lib/format.jsx"));
+  assert.match(src, /const parts = full\.split\(" — "\);/, "must split the composite registry name on its own real delimiter");
+  assert.match(src, /return parts\[parts\.length - 1\];/, "must keep only the most specific (last) real segment — never a frontend-invented short name");
 });
 
 // B/H. Rank badge truthfulness — never "①" for an unranked structure;
@@ -154,4 +194,70 @@ test("no Lips Like Sugar/project-UUID branching in the repaired Workspace/Hero/f
     assert.doesNotMatch(src, /ab10b319-978e-44d3-9331-af2a5f2cccc2/, `${file} must not hard-code Lips Like Sugar's project id`);
     assert.doesNotMatch(src, /Lips Like Sugar/, `${file} must not name Lips Like Sugar directly`);
   }
+});
+
+// ── Workspace/FX Display Regression closeout ─────────────────────────────
+//
+// The fourth, dynamic FX slot fell back to a bogus, unresolved "—" cell
+// whenever activeStructure(allocated, leadingStructureId) had no manual
+// selection AND no canonical rank-1 (comparable_count: 0 — a real, common
+// Lips Like Sugar state), even though a real Top Priced candidate (and
+// its real, resolvable currency) existed the whole time. See
+// CAPABILITY_LEDGER.md, "Workspace Display Regression Closeout" for the
+// live browser walkthrough.
+
+// E/G. Leading drives the dynamic slot when it resolves to a real
+// structure — the SAME activeStructure() every other Workspace element
+// (anchor lane, "Set as leading" toggle) already reads, never a second
+// "who is leading" computation.
+test("the dynamic FX slot is driven by activeStructure (Leading) when it resolves, labeled LEADING", () => {
+  const src = stripComments(read("screens/production/Workspace.jsx"));
+  assert.match(src, /const dynamicFxStructure = leadingStructure \|\| bestPricedCandidate\(allocated\);/);
+  assert.match(src, /const dynamicFxLabel = leadingStructure \? "LEADING" : \(dynamicFxStructure \? "TOP PRICED" : null\);/);
+});
+
+// H. No Leading exists but a Top Priced candidate does — the SAME real
+// economics ProjectHeader's own Hero already uses for its own "Top Priced
+// Candidate" state (globeData.bestPricedCandidate), never a second,
+// divergent "best" computation invented for the FX rail alone.
+test("bestPricedCandidate (imported from the same globeData module the Hero uses) drives the slot when no Leading exists", () => {
+  const src = stripComments(read("screens/production/Workspace.jsx"));
+  assert.match(src, /import \{ buildGlobeView, structureTier, activeStructure, bestPricedCandidate \} from "\.\.\/\.\.\/lib\/globeData";/);
+});
+
+// I. Neither a Leading selection nor a Top Priced candidate exists — the
+// slot must not render at all, never a fabricated "—"/"USD / —" block.
+test("buildLeaderFxItems returns nothing (no bogus dash block) when no structure is passed at all", () => {
+  const src = stripComments(read("screens/production/Workspace.jsx"));
+  assert.match(src, /function buildLeaderFxItems\(economics, structure, label\) \{\s*\n\s*if \(!structure\) return \[\];/, "must short-circuit to an empty array, never the old { code: \"—\", ... } placeholder");
+  assert.doesNotMatch(src, /code: "—"/, "the fabricated unresolved-dash placeholder must be removed entirely");
+});
+
+// F/Section 9. The currency chain is fully generic: jurisdiction -> ISO2
+// -> economics.jurisdiction_currency (the SAME real canonical map served
+// for the fixed EUR/CAD/GBP trio) -> currency code. A subnational
+// jurisdiction code (e.g. "SA-RUH") is reduced to its ISO2 country prefix
+// before lookup — the same mechanism already resolves Manitoba -> CAD,
+// New South Wales -> AUD, etc. through the one shared jurisdiction_currency
+// map, never a per-subnational duplicate entry.
+test("dynamic FX currency resolution is generic (ISO2 + shared jurisdiction_currency map), never a hardcoded per-country table", () => {
+  const src = stripComments(read("screens/production/Workspace.jsx"));
+  assert.match(src, /const iso2 = jurisdiction\.split\("-"\)\[0\]\.toUpperCase\(\);/);
+  assert.match(src, /const code = jurisdictionCurrency\[iso2\] \|\| iso2;/);
+  assert.match(src, /const jurisdictionCurrency = economics\?\.jurisdiction_currency \|\| \{\};/, "must read the SAME real economics.jurisdiction_currency map the fixed trio uses, not a second one");
+});
+
+// J. Section 10/no hardcoded SAR: a currency the provider genuinely
+// lacks renders its own real code plus a truthful unavailable state —
+// never a fabricated rate, and no jurisdiction/currency is special-cased
+// by name anywhere in this file.
+test("a resolved currency with no snapshot entry renders its own code plus a truthful 'rate unavailable', never a fabricated rate", () => {
+  const src = stripComments(read("screens/production/Workspace.jsx"));
+  assert.match(src, /rate unavailable/);
+  assert.doesNotMatch(src, /SAR|Saudi/, "no jurisdiction/currency may be special-cased by name in this file");
+});
+
+test("the LEADING/TOP PRICED tag is self-contained on the resolved dynamic slot, never a detached label over an unresolved cell", () => {
+  const src = stripComments(read("screens/production/Workspace.jsx"));
+  assert.match(src, /it\.isLeader && it\.leaderLabel && <span className="wsx-fx-tag">\{it\.leaderLabel === "LEADING" \? "Leading" : "Top Priced"\}<\/span>/);
 });

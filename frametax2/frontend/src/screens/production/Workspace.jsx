@@ -7,7 +7,7 @@ import { Loading, ErrorBox } from "../../components/Async";
 import { Money, compactScenarioIdentity, normalizeTrivialVariance, flagEmoji } from "../../lib/format";
 import { useAppState } from "../../state/AppState";
 import Globe3D from "../../components/Globe3D";
-import { buildGlobeView, structureTier, activeStructure } from "../../lib/globeData";
+import { buildGlobeView, structureTier, activeStructure, bestPricedCandidate } from "../../lib/globeData";
 import { buildFxItems } from "../../lib/todayCompute";
 import QuestionStack from "../../components/QuestionStack";
 import RecommendationsList from "../../components/RecommendationsList";
@@ -82,41 +82,72 @@ function visibleStructures(structures, rankById, swapId) {
 }
 const pct = (part, whole) => (whole ? Math.max(0, Math.min(100, (part / whole) * 100)) : 0);
 
+// Workspace Display Regression: "Other Scenarios" is a real HTML <select>
+// — every option needs its own distinct text, unlike a visible card,
+// where the jurisdiction alone is enough because same-jurisdiction
+// scenarios rarely land in the same visible 6 at once. A dropdown
+// routinely DOES hold several same-jurisdiction options (e.g. several
+// distinct Ontario programs) — appends the SAME compact program label
+// compactScenarioIdentity already derives (never a second name/ID
+// scheme) whenever it exists, so the producer can tell them apart
+// without the full legal program name.
+function scenarioOptionLabel(structure) {
+  const { flags, name, programLabel } = compactScenarioIdentity(structure);
+  const label = flags ? `${flags} ${name}` : name;
+  return programLabel ? `${label} — ${programLabel}` : label;
+}
+
 // Project FX strip — Workspace-only, same component family as Today's
 // original FX strip (flag + code, optional 12-month delta chip, both
 // quotation directions USD/{code} and {code}/USD, honest-unavailable
 // fallback) — reused visually and computationally, not redesigned. The
 // fixed EUR/CAD/GBP trio (via the SAME buildFxItems() Today's strip used,
 // unchanged) is always present; after that, one cell per DISTINCT local
-// currency among the current Leading structure's real participants — one
-// cell for a single-jurisdiction leader (MUR), two for a genuine
-// multi-jurisdiction leader (MUR + SAR), deduplicated so two participants
-// sharing a currency (e.g. two Eurozone jurisdictions) never render twice.
-// Never a full local-costing breakdown (that stays ENGINE-PENDING). Every
-// rate is read verbatim from economics.fx_horizons; a participant currency
-// with no snapshot entry renders as an honest "unavailable", never
-// invented — this is metadata/identity only, no frontend FX math.
-function buildLeaderFxItems(economics, leadingStructure) {
+// currency among the dynamic structure's real participants — one cell for
+// a single-jurisdiction structure (SAR), two for a genuine multi-
+// jurisdiction one (MUR + SAR), deduplicated so two participants sharing
+// a currency (e.g. two Eurozone jurisdictions) never render twice. Never
+// a full local-costing breakdown (that stays ENGINE-PENDING). Every rate
+// is read verbatim from economics.fx_horizons (the SAME dataset feeding
+// the fixed EUR/CAD/GBP trio — no second fetch, no frontend FX math); a
+// participant currency with no snapshot entry renders as its own real
+// currency code plus an honest "rate unavailable", never a fabricated
+// number and never the bare "—" placeholder this used to fall back to.
+//
+// Workspace/FX Display Regression: `structure` here is deliberately NOT
+// always the producer's manually-selected Leading Structure — see its
+// caller. When `structure` is null (neither a Leading selection nor a
+// Top Priced candidate exists — e.g. a totally unpriced production),
+// this returns an empty array; Section 7 of the governing directive is
+// explicit that a fake, unresolved "—" block must never render just to
+// fill the fourth slot.
+function buildLeaderFxItems(economics, structure, label) {
+  if (!structure) return [];
   const horizons = economics?.fx_horizons || {};
   const jurisdictionCurrency = economics?.jurisdiction_currency || {};
   // Same participants-or-primary fallback compactScenarioIdentity() uses,
   // so this reads the identical real structure fields, never a second
   // derivation of "which jurisdictions this structure touches."
-  const participants = leadingStructure?.participants?.length
-    ? leadingStructure.participants
-    : (leadingStructure?.primary_jurisdiction ? [leadingStructure.primary_jurisdiction] : []);
+  const participants = structure?.participants?.length
+    ? structure.participants
+    : (structure?.primary_jurisdiction ? [structure.primary_jurisdiction] : []);
 
   const seenCodes = new Set();
   const items = [];
   for (const jurisdiction of participants) {
     const iso2 = jurisdiction.split("-")[0].toUpperCase();
-    const code = jurisdictionCurrency[iso2] || iso2; // no mapping: show the jurisdiction's own code rather than dropping it
+    // Generic chain, no jurisdiction/currency special-cased here:
+    // jurisdiction -> ISO2 -> economics.jurisdiction_currency (the SAME
+    // canonical registry map served for the fixed trio) -> currency code.
+    // No mapping on file: show the jurisdiction's own code rather than
+    // silently dropping the cell.
+    const code = jurisdictionCurrency[iso2] || iso2;
     if (seenCodes.has(code)) continue; // dedupe — never a repeated currency cell
     seenCodes.add(code);
     const flag = flagEmoji(jurisdiction);
     const h = horizons[code];
     if (!h || h.current == null) {
-      items.push({ code, flag, available: false, isLeader: true });
+      items.push({ code, flag, available: false, isLeader: true, leaderLabel: label });
       continue;
     }
     const deltaPct = h["12m"] != null ? ((h["12m"] - h.current) / h.current) * 100 : null;
@@ -125,11 +156,11 @@ function buildLeaderFxItems(economics, leadingStructure) {
     // siblings — reverse is still always 1/current, computed here, never a
     // second stored constant.
     items.push({
-      code, flag, isLeader: true, available: true,
+      code, flag, isLeader: true, leaderLabel: label, available: true,
       current: Number(h.current.toFixed(5)), reverse: Number((1 / h.current).toFixed(5)), deltaPct,
     });
   }
-  return items.length ? items : [{ code: "—", flag: null, available: false, isLeader: true }];
+  return items;
 }
 
 function ScenarioCard({ structure, tier, rank, grossBudget, isLeading, onSetLeading, onInspect, onCompare, onSelectSegment }) {
@@ -361,7 +392,20 @@ export default function Workspace() {
   const leadingStructure = activeStructure(allocated, leadingStructureId);
   const leadingId = leadingStructure?.structure_id ?? null;
   const { overflow, cols } = visibleStructures(allocated.structures, rankById, swapId);
-  const fxItems = [...buildFxItems(economics?.fx_horizons), ...buildLeaderFxItems(economics, leadingStructure)];
+  // Workspace/FX Display Regression: Leading (activeStructure, which
+  // already carries this project's OWN manual-selection-or-canonical-
+  // rank-1 semantics — the same "leading" identity every other Workspace
+  // element, e.g. the anchor lane / "Set as leading" toggle, already
+  // reads) drives the dynamic FX slot whenever it resolves to a real
+  // structure. Only when NEITHER a manual selection nor a canonical
+  // rank-1 exists (Lips Like Sugar's own real state — comparable_count:0
+  // means no candidate is ever directly-comparable) does the slot fall
+  // back to bestPricedCandidate, the SAME real economics the Hero already
+  // uses for its own "Top Priced Candidate" state (ProjectHeader.jsx) —
+  // never a second, divergent "best" computation.
+  const dynamicFxStructure = leadingStructure || bestPricedCandidate(allocated);
+  const dynamicFxLabel = leadingStructure ? "LEADING" : (dynamicFxStructure ? "TOP PRICED" : null);
+  const fxItems = [...buildFxItems(economics?.fx_horizons), ...buildLeaderFxItems(economics, dynamicFxStructure, dynamicFxLabel)];
 
   // Collapsed-rail status dots — hot for any money-bearing / blocking item.
   const dots = [
@@ -404,7 +448,7 @@ export default function Workspace() {
               <div className="wsx-fx-head">
                 <span className="wsx-fx-flag" aria-hidden="true">{it.flag}</span>
                 <span className="wsx-fx-code">{it.code}</span>
-                {it.isLeader && <span className="wsx-fx-tag">Leading</span>}
+                {it.isLeader && it.leaderLabel && <span className="wsx-fx-tag">{it.leaderLabel === "LEADING" ? "Leading" : "Top Priced"}</span>}
                 {it.available && it.deltaPct != null && (
                   <span className={`wsx-fx-delta ${it.deltaPct > 0 ? "up" : "down"}`} title={`12-month move on USD/${it.code}`}>
                     {it.deltaPct > 0 ? "▲" : "▼"} {Math.abs(it.deltaPct).toFixed(1)}%
@@ -415,13 +459,13 @@ export default function Workspace() {
                 <div className="wsx-fx-pair">
                   <span className="l2">USD / {it.code}</span>
                   <span className={`wsx-fx-val mono ${it.available ? "" : "wsx-fx-unavailable"}`}>
-                    {it.available ? it.current : "unavailable"}
+                    {it.available ? it.current : "rate unavailable"}
                   </span>
                 </div>
                 <div className="wsx-fx-pair">
                   <span className="l2">{it.code} / USD</span>
                   <span className={`wsx-fx-val mono ${it.available ? "" : "wsx-fx-unavailable"}`}>
-                    {it.available ? it.reverse : "unavailable"}
+                    {it.available ? it.reverse : "rate unavailable"}
                   </span>
                 </div>
               </div>
@@ -525,11 +569,10 @@ export default function Workspace() {
                   value={swapId}
                   onChange={(e) => setSwapId(e.target.value)}
                 >
-                  <option value="">— {(() => { const last = cols[cols.length - 1]; if (!last) return "—"; const { flags, name } = compactScenarioIdentity(last); return flags ? `${flags} ${name}` : name; })()} —</option>
-                  {overflow.map((s) => {
-                    const { flags, name } = compactScenarioIdentity(s);
-                    return <option key={s.structure_id} value={s.structure_id}>{flags ? `${flags} ${name}` : name}</option>;
-                  })}
+                  <option value="">— {(() => { const last = cols[cols.length - 1]; return last ? scenarioOptionLabel(last) : "—"; })()} —</option>
+                  {overflow.map((s) => (
+                    <option key={s.structure_id} value={s.structure_id}>{scenarioOptionLabel(s)}</option>
+                  ))}
                 </select>
               </div>
             ) : <div aria-hidden="true" />}

@@ -261,14 +261,47 @@ export function scenarioDisplay(structure) {
   return { title, subtitle, dominant };
 }
 
+// Workspace Display Regression closeout: a compact secondary program
+// label, derived generically from the real canonical program name — never
+// a per-program hardcoded string. Two purely mechanical, jurisdiction-
+// agnostic transforms:
+//   1. strip a leading "{jurisdiction name} " prefix, since this
+//      registry's program names are conventionally formatted
+//      "{Jurisdiction} {Program Type}" (e.g. "Australia PDV Offset",
+//      "New South Wales PDV Rebate (Screen NSW)") — the jurisdiction is
+//      already the card's own title, repeating it in the secondary line
+//      is exactly the verbosity this closeout removes.
+//   2. strip a trailing parenthetical clarifier (agency/expansion detail
+//      like "(Screen NSW)" or "(Post, Digital and Visual Effects)") —
+//      useful context, but Inspector/full detail is the right home for
+//      it, not a scan-at-a-glance card.
+// Returns null when the result isn't actually more compact than the
+// source (the prefix didn't match — a program name with no jurisdiction-
+// name prefix pattern, e.g. an agency name like "Saudi Film Commission
+// Production Rebate") — in that case the rate alone is a more useful,
+// honestly-derived secondary line than a still-long program name.
+function compactProgramLabel(programName, jurisdictionName) {
+  if (!programName) return null;
+  let s = programName;
+  if (jurisdictionName && s.toLowerCase().startsWith(`${jurisdictionName.toLowerCase()} `)) {
+    s = s.slice(jurisdictionName.length).trim();
+  }
+  s = s.replace(/\s*\([^)]*\)\s*$/, "").trim();
+  return s && s.length < programName.length ? s : null;
+}
+
 // Workspace-only compact scenario identity — the previously approved
 // compact card format ("🇲🇺 Mauritius" / "Up to 40%"), restored after the
 // verbose "EDB Film Rebate · 30% (up to 40%)" program-mechanics presentation
-// drifted in. Deliberately separate from scenarioDisplay above (still used
-// by Overview/Scenarios/Reports, which DO want the program name) so this
+// drifted in, then briefly regressed again into concatenating the FULL
+// legal program name onto the jurisdiction title (Workspace Display
+// Regression closeout — see compactProgramLabel above for the fix).
+// Deliberately separate from scenarioDisplay above (still used by
+// Overview/Scenarios/Reports, which DO want the program name) so this
 // change is scoped to Workspace only. Reuses the same existing flagEmoji /
-// jurisdictionName helpers — no new country/flag mapping. Detailed program
-// mechanics belong in Inspector, not the primary card identity.
+// jurisdictionName helpers — no new country/flag mapping. The FULL
+// program name (program_display_name) remains available via Inspector —
+// this function only controls the compact card headline/secondary line.
 export function compactScenarioIdentity(structure) {
   const participants = structure.participants || [];
   const primary = structure.primary_jurisdiction;
@@ -279,20 +312,30 @@ export function compactScenarioIdentity(structure) {
   // ("Australia — New South Wales") is not its geographic hub city
   // ("Sydney"). structure.jurisdiction_display_name is the real,
   // canonical Jurisdiction-table name for structure.primary_jurisdiction.
+  //
+  // Workspace Display Regression: jurisdiction_display_name itself can be
+  // a composite "Country — Subnational" string (e.g. "Australia — New
+  // South Wales") — correct for disambiguation, too verbose for a card
+  // headline (Section 3: prefer the subnational name alone as the primary
+  // title). Take only the last " — "-delimited segment, which is always
+  // the most specific real name the registry gave this jurisdiction —
+  // never a second, frontend-invented jurisdiction name.
   const jurisdictionName_ = codes.length
-    ? codes.map((c) => bestJurisdictionName(c, structure)).join(" + ")
+    ? codes.map((c) => {
+        const full = bestJurisdictionName(c, structure);
+        const parts = full.split(" — ");
+        return parts[parts.length - 1];
+      }).join(" + ")
     : (structure.label || "—");
 
-  // Workspace Top-6/Data Truthfulness: the jurisdiction name alone
-  // collapses genuinely distinct programs in the same country into
-  // identical-looking cards (e.g. Australia's Location Offset and PDV
-  // Offset, or three different states' own PDV rebates). The real
-  // program name already exists in the canonical doctrine registry
-  // (structure.program_display_name) — append it whenever this
-  // structure's own jurisdiction name is not already unique enough to
-  // stand alone, i.e. whenever a real program name exists at all for a
-  // single-program structure (a multi-program stack keeps its plain
-  // jurisdiction title; its programs are enumerated in the card body).
+  // The card title is the jurisdiction ALONE (Workspace Display
+  // Regression: the previous fix correctly stopped same-country
+  // structures from looking identical, but overshot by putting the full
+  // legal program name in the headline itself). Program identity is
+  // preserved — just moved to the compact secondary line below, or to
+  // Inspector for its full form — never discarded.
+  const name = jurisdictionName_;
+
   const singleProgram = (structure.program_slugs || []).length <= 1;
   // Falls back through programDisplay's own legacy map/humanization for
   // a program_slug the backend doctrine registry doesn't (yet) cover —
@@ -301,9 +344,20 @@ export function compactScenarioIdentity(structure) {
   // single-program structure that has ANY program_slug at all.
   const programName = structure.program_display_name
     || (structure.program_slug ? programDisplay(structure.program_slug) : null);
-  const name = singleProgram && programName
-    ? `${jurisdictionName_} — ${programName}`
-    : jurisdictionName_;
+  // A genuine multi-program stack (e.g. two Ontario credits claimed
+  // together) has no single program name to compact — but the backend
+  // already serves the real full name of EVERY claimed program
+  // (program_display_names). Join their own compact forms so distinct
+  // stacks (different program combinations) stay distinguishable without
+  // ever falling back to a bare, indistinguishable jurisdiction name —
+  // reuses the exact same per-program stripping rule as the single-
+  // program case, never a second/invented "stack" vocabulary.
+  const stackLabel = !singleProgram && (structure.program_display_names || []).length > 1
+    ? structure.program_display_names
+        .map((n) => compactProgramLabel(n, jurisdictionName_) || n)
+        .join(" + ")
+    : null;
+  const compactLabel = singleProgram ? compactProgramLabel(programName, jurisdictionName_) : stackLabel;
 
   // The best real modeled rate anywhere in the structure — the highest
   // rate_ceiling (falling back to rate_floor) across every incentive-
@@ -322,11 +376,28 @@ export function compactScenarioIdentity(structure) {
   const ceiling = ceilings.length ? Math.max(...ceilings) : null;
   const floor = floors.length ? Math.min(...floors) : null;
   const isExactRate = ceiling != null && floor != null && Math.round(floor * 10000) === Math.round(ceiling * 10000);
-  const subtitle = ceiling != null
+  const rateText = ceiling != null
     ? (isExactRate ? `${Math.round(ceiling * 100)}%` : `Up to ${Math.round(ceiling * 100)}%`)
     : humanizeToken(structure.structure_type);
+  // Program identity moves here (Workspace Display Regression closeout):
+  // the compact secondary line carries the same-jurisdiction distinction
+  // the previous fix correctly established, without the full legal name.
+  // No compact label available (multi-program stack with only one real
+  // program name, or a program name with no jurisdiction-prefix pattern
+  // to strip) — the rate alone is still a real, honest secondary line,
+  // exactly the prior behavior. When ceiling is null, rateText is already
+  // the structure_type fallback ("Multi program" etc.) — appending it
+  // after a real compactLabel would be redundant ("X + Y · Multi
+  // program"), so it's only appended alongside a genuine numeric rate.
+  const subtitle = compactLabel
+    ? (ceiling != null ? `${compactLabel} · ${rateText}` : compactLabel)
+    : rateText;
 
-  return { flags, name, subtitle };
+  // programLabel exposed separately (not just folded into subtitle) so a
+  // caller that needs same-jurisdiction disambiguation without the rate
+  // — e.g. a compact dropdown option — can use it directly, rather than
+  // parsing it back out of the combined subtitle string.
+  return { flags, name, subtitle, programLabel: compactLabel };
 }
 
 // Real AccountQualification.state values -> plain-language label + tier.
