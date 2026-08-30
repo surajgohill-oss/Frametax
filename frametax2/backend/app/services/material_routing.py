@@ -42,9 +42,10 @@ from app.core.config import settings
 from app.ingestion.budget_parser import classify_parsed_items, parse_budget_csv, parse_budget_from_text
 from app.ingestion.pdf_extractor import extract_text_from_pdf
 from app.models.budget import BudgetDocument, BudgetLineItem
-from app.models.enums import ATLBTLCategory, CompensationType
+from app.models.enums import ATLBTLCategory, CompensationType, ProjectAssetKind, ProjectAssetSourceType
 from app.models.library_document import Document, DocumentVersion
 from app.models.project import Project
+from app.models.project_asset import ProjectAsset
 from app.services.script_analysis_service import analyze_project_script
 
 #: Categories this module knows how to route to an existing processor.
@@ -170,6 +171,129 @@ async def _route_screenplay(
     current screenplay `DocumentVersion` (reading the file from disk itself)
     when none exists yet — this call is the missing trigger, not new logic."""
     await analyze_project_script(session, project_id=project.id)
+    # Workspace Data Completeness / Project Key Art: attempt cover-art
+    # extraction from this SAME screenplay file, same commit-time trigger
+    # point as script analysis above. See _extract_screenplay_artwork's own
+    # docstring for the full precedence/provenance/idempotency contract.
+    await _extract_screenplay_artwork(session, project=project, version=version, local_path=local_path)
+
+
+async def _extract_screenplay_artwork(
+    session: AsyncSession, *, project: Project, version: DocumentVersion, local_path: Path,
+) -> str | None:
+    """Reuses app.services.artwork_extraction.extract_pdf_cover() (Phase F —
+    built, never wired to any screenplay trigger before this task) against
+    the project's own real screenplay file. A screenplay whose first page
+    is plain text (no embedded raster image, or only a small logo below
+    MIN_PAGE_COVERAGE) correctly returns None — never rendered as a
+    fallback "page as art" (that tier, render_pdf_page_as_candidate, is
+    explicitly reserved for deck/lookbook categories, never screenplay —
+    see its own docstring). Only a genuine, designed cover/poster page
+    (a real embedded image covering most of the page) is ever persisted.
+
+    Precedence (never violated): an existing master asset (whether user-
+    assigned or already extracted) is never replaced here — this only
+    ever CREATES a new candidate asset and only sets it as master when the
+    project currently has none at all. A human's explicit selection via
+    POST /artwork/{id}/set-master always outranks anything this function
+    does, on every subsequent call.
+
+    Idempotent per DocumentVersion: if a ProjectAsset already traces back
+    to this exact screenplay version (whether a real cover was found and
+    persisted, or this ran before, the same PyMuPDF page-1 scan never
+    reruns twice for a version already checked."""
+    existing = (await session.execute(
+        select(ProjectAsset).where(
+            ProjectAsset.project_id == project.id,
+            ProjectAsset.source_document_version_id == version.id,
+            ProjectAsset.source_type == ProjectAssetSourceType.EXTRACTED_FROM_SCREENPLAY.value,
+        )
+    )).scalars().first()
+    if existing is not None:
+        return "already_extracted"
+
+    if local_path.suffix.lower() != ".pdf" or not local_path.exists():
+        return None
+
+    from app.services.artwork_extraction import extract_pdf_cover
+    image = extract_pdf_cover(local_path)
+    if image is None:
+        return "no_usable_artwork"
+
+    has_master = (await session.execute(
+        select(ProjectAsset).where(ProjectAsset.project_id == project.id, ProjectAsset.is_master.is_(True))
+    )).scalars().first()
+
+    # Same storage convention commit_candidate already uses: write into the
+    # project's own existing storage directory (the screenplay's own
+    # parent dir), never a second directory-naming scheme.
+    project_dir = (Path(settings.LOCAL_STORAGE_PATH) / version.storage_path).parent
+    project_dir.mkdir(parents=True, exist_ok=True)
+    dest_path = project_dir / f"screenplay-cover-{version.id}.{image.ext}"
+    dest_path.write_bytes(image.data)
+    storage_rel_path = str(dest_path.relative_to(settings.LOCAL_STORAGE_PATH))
+
+    import hashlib
+    checksum = hashlib.sha256(image.data).hexdigest()
+
+    asset = ProjectAsset(
+        id=uuid.uuid4(), project_id=project.id, kind=ProjectAssetKind.ARTWORK.value,
+        source_type=ProjectAssetSourceType.EXTRACTED_FROM_SCREENPLAY.value,
+        storage_path=storage_rel_path, checksum_sha256=checksum, file_size=len(image.data),
+        is_master=(has_master is None),
+        source_document_version_id=version.id,
+        notes=(
+            f"Extracted from screenplay page 1 (largest embedded raster image, "
+            f"{image.width}x{image.height} {image.ext}) via extract_pdf_cover()."
+        ),
+    )
+    session.add(asset)
+    await session.flush()
+    return "extracted"
+
+
+async def ensure_screenplay_artwork_extracted(session: AsyncSession, project_id) -> str | None:
+    """Retroactive counterpart to the commit-time call in _route_screenplay,
+    the SAME pattern ensure_current_budget_routed already established for
+    budget: a project whose screenplay DocumentVersion predates this task's
+    wiring was simply never checked for cover art — not a missing asset, a
+    missing TRIGGER. Called on demand from the live Evaluate path so this
+    never requires a manual one-off script. Idempotent — see
+    _extract_screenplay_artwork's own docstring.
+
+    Deliberately does NOT commit (unlike ensure_current_budget_routed,
+    which is called earlier in evaluate_project, before that function's
+    own `project` ORM object is loaded). This function is called AFTER
+    evaluate_project has already loaded and holds a live reference to its
+    own `project` object, which later code keeps reading attributes off
+    of — an internal commit here would expire that object (SQLAlchemy's
+    default expire_on_commit=True) and crash the very next synchronous
+    attribute access with MissingGreenlet. Same flush-only convention
+    analyze_project_script already uses for this exact call site; the
+    caller's own commit (evaluate_project's, at its natural transaction
+    boundary) persists this together with everything else in one unit."""
+    project = await session.get(Project, project_id)
+    if project is None:
+        return None
+
+    current_dv = (await session.execute(
+        select(DocumentVersion)
+        .join(Document, DocumentVersion.document_id == Document.id)
+        .where(
+            Document.project_id == project_id,
+            Document.category == "screenplay",
+            DocumentVersion.is_current == True,  # noqa: E712
+        )
+        .order_by(DocumentVersion.created_at.desc())
+    )).scalars().first()
+    if current_dv is None or not current_dv.storage_path:
+        return None
+
+    local_path = Path(settings.LOCAL_STORAGE_PATH) / current_dv.storage_path
+    if not local_path.exists():
+        return "source_file_missing"
+
+    return await _extract_screenplay_artwork(session, project=project, version=current_dv, local_path=local_path)
 
 
 async def ensure_current_budget_routed(session: AsyncSession, project_id) -> BudgetDocument | None:

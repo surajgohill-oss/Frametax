@@ -857,11 +857,39 @@ async def build_generic_pkg_and_economics(session: AsyncSession, project_id) -> 
         for r in requirement_rows
     ]
 
+    # Workspace Data Completeness: fx_horizons/jurisdiction_currency were
+    # hardcoded to {} here for every generic project (the SAME "served
+    # placeholder never wired to real data" pattern as physical_requirements
+    # before it) even though the real, sourced FX snapshot data
+    # (production_normalization.py's fx_rate_snapshot()/FX_RATE_SNAPSHOTS —
+    # genuinely fetched from ECB via frankfurter.dev and open.er-api.com,
+    # never fabricated) and the real jurisdiction->currency identity map
+    # (_JURISDICTION_CURRENCY) already existed and were already correctly
+    # wired into the legacy cineglobe.py _economics_payload() for the old
+    # Little Utopia-only /production route. Reused verbatim here — same
+    # currency set, same function, same source — so every project (this
+    # generic path now serves Little Utopia too, per get_project_state's
+    # own "no production title may select economic logic" contract) gets
+    # the same real FX data the legacy route already proved correct.
+    from app.calculators.production_normalization import (
+        fx_rate_snapshot, _JURISDICTION_CURRENCY, FX_HORIZON_DATES, FX_RATES_VERSION,
+    )
+    fx_codes = sorted({"MUR", "EUR", "GBP", "CAD"} | set(_JURISDICTION_CURRENCY.values()))
+    fx_horizons = {c: fx_rate_snapshot(c) for c in fx_codes}
+
     economics = {
         "production_structure_default": None, "verified_cash_qpe_usd": None,
         "verified_floor_case": None, "potential_ceiling_case": None, "inkind_post_options": {},
         "financing_source": None, "controls": {}, "normalized_structures": [],
-        "fx_horizons": {}, "jurisdiction_currency": {}, "alternative_jurisdictions": [],
+        "fx_horizons": fx_horizons, "jurisdiction_currency": dict(_JURISDICTION_CURRENCY),
+        # Provenance for the snapshot above (Workspace Data Completeness):
+        # real retrieval dates per horizon, real source, real snapshot
+        # version — never a live per-request fetch, so this identifies
+        # exactly which sourced fetch the served numbers came from.
+        "fx_horizon_dates": dict(FX_HORIZON_DATES),
+        "fx_source": "ECB reference rates (via frankfurter.dev) / open.er-api.com",
+        "fx_snapshot_version": FX_RATES_VERSION,
+        "alternative_jurisdictions": [],
         "available_funds": [], "structuring_advisory": None,
         "production_requirements_disclosed": requirements_disclosed,
     }

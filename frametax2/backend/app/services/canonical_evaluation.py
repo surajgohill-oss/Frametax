@@ -1554,6 +1554,15 @@ async def evaluate_project(session: AsyncSession, project_id) -> dict:
     from app.services.script_analysis_service import analyze_project_script
     await analyze_project_script(session, project_id=project_id)
 
+    # Workspace Data Completeness / Project Key Art: the SAME retroactive-
+    # trigger pattern as analyze_project_script above, for cover-art
+    # extraction from a screenplay Document/DocumentVersion that predates
+    # this task's wiring. Reuses the existing, already-idempotent
+    # material_routing.ensure_screenplay_artwork_extracted — never a
+    # second extraction implementation, never generated/researched art.
+    from app.services.material_routing import ensure_screenplay_artwork_extracted
+    await ensure_screenplay_artwork_extracted(session, project_id)
+
     # CBA-008 — personnel, screenplay, and co-production facts are
     # material qualification inputs (they can move a candidate between
     # QUALIFIES/CURABLE_GAP/USER_FACT_REQUIRED/SCRIPT_FACT_REQUIRED) but
