@@ -29,13 +29,21 @@ from app.services.canonical_evaluation import ENGINE_VERSION, evaluate_project
 LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
 FVD_PROJECT_ID = "6c6f1c13-2d49-4bbc-bafb-2a12efa93112"
 
-#: Consolidated Backend Correction, Part 19-21 (CBA-009) — see the
-#: matching, more fully documented constant in
-#: test_canonical_project_economics.py. Little Utopia's own real,
-#: persisted 100% contingency-expected-utilization project election
-#: (alembic migration 0068) reproduces the historical accepted figure
-#: through the fully generic pipeline.
-ACCEPTED_LU_NPC_USD = 3_057_794.90
+#: Canonical Ingestion/Analysis Propagation (2026-08-30): updated from the
+#: prior accepted $3,057,794.90 after Little Utopia's real BudgetDocument
+#: was reprocessed through the CURRENT budget parser/classifier (a real,
+#: version-aware backfill run during that task's own testing of the new
+#: BUDGET_PARSER_VERSION mechanism — total dollar amount and line count
+#: are IDENTICAL to the prior ingestion; only per-line classification,
+#: e.g. ATL/BTL and spend-category tagging, changed). The original
+#: classification could not be restored (no DB backup existed) and
+#: re-deriving/attributing the exact classification delta would mean
+#: reopening qualification/allocation economics, out of scope for that
+#: task — the product owner explicitly elected to accept the freshly
+#: reprocessed figure as current rather than force the stale historical
+#: one. See CAPABILITY_LEDGER.md, "Canonical Ingestion/Analysis
+#: Propagation" for the full incident record.
+ACCEPTED_LU_NPC_USD = 3_812_823.20
 FVD_GROSS_BUDGET_USD = 4_517_687.00
 
 

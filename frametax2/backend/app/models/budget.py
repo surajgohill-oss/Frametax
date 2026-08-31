@@ -32,6 +32,12 @@ class BudgetDocument(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     extraction_status: Mapped[str] = mapped_column(String(20), default="pending")
     notes: Mapped[str | None] = mapped_column(Text)
+    # Canonical Ingestion/Analysis Propagation: the budget_parser.py /
+    # classify_budget_line_items version this row was parsed under —
+    # nullable so a pre-existing row (parsed before this column existed)
+    # is honestly NULL, never backfilled with a guessed version. Mirrors
+    # screenplay_structural_parser.PARSER_VERSION's own convention.
+    parser_version: Mapped[str | None] = mapped_column(String(40))
 
     # Additive Phase B link into the universal Document/DocumentVersion
     # layer. Nullable — this rich typed table is preserved as-is; a

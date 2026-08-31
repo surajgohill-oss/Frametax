@@ -169,6 +169,17 @@ _LOCATION_ONTOLOGY: dict[str, frozenset[str]] = {
     "waterfront": frozenset({"beach_coast", "coastal_environments"}),
     "sea": frozenset({"marine_open_water", "open_water_filming"}),
     "ocean": frozenset({"marine_open_water", "open_water_filming"}),
+    # Canonical Ingestion/Analysis Propagation: real generic gap, proven
+    # from a real screenplay's own evidence text (a script's marine/open-
+    # water setting description used exactly this vocabulary — "marine",
+    # "open water" — neither of which this ontology recognized, even
+    # though they are the literal words the "marine_open_water" category
+    # name itself uses). Affects any screenplay describing a marine/open-
+    # water setting in this common phrasing, not one production.
+    "marine": frozenset({"marine_open_water", "open_water_filming"}),
+    "open water": frozenset({"marine_open_water", "open_water_filming"}),
+    "open-water": frozenset({"marine_open_water", "open_water_filming"}),
+    "boat": frozenset({"marine_open_water", "open_water_filming"}),
     "harbor": frozenset({"harbor_marina"}),
     "harbour": frozenset({"harbor_marina"}),
     "marina": frozenset({"harbor_marina"}),

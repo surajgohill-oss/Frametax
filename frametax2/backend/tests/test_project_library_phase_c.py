@@ -207,13 +207,22 @@ async def test_project_location_requirements(db: AsyncSession, project: Project)
     # Scoped to category_key IS NULL: the Phase C closeout (0064) added
     # category-override rows to this same table, so an unscoped count no
     # longer means "the migrated script requirements".
+    #
+    # Canonical Ingestion/Analysis Propagation (2026-08-30): 4 -> 8. The
+    # original 4 migration-0063 rows are unchanged; 4 more were added by a
+    # real, one-time data reconnection — _LOCATION_SCRIPT_SEED's own real
+    # screenplay evidence (already served for many sessions via the
+    # LEGACY get_state()/_derive_location_categories() path) was orphaned
+    # when Overview moved to the generic canonical_production_view path
+    # (an earlier task), which only ever read THIS table. See
+    # CAPABILITY_LEDGER.md, "Canonical Ingestion/Analysis Propagation".
     locations = (await db.execute(
         select(ProjectLocationRequirement).where(
             ProjectLocationRequirement.project_id == project.id,
             ProjectLocationRequirement.category_key.is_(None),
         )
     )).scalars().all()
-    assert len(locations) == 4
+    assert len(locations) == 8
     descriptions = {loc.description for loc in locations}
     assert any("Marine" in d or "open-water" in d.lower() for d in descriptions)
 
@@ -256,4 +265,4 @@ async def test_production_structure_and_leading_selection(db: AsyncSession, proj
     assert float(calc.total_budget_usd) == pytest.approx(4364393.00, abs=0.01)
     # The accepted regression truth (see test_canonical_evaluation.py) —
     # never recomputed differently here.
-    assert float(calc.true_net_cost_usd) == pytest.approx(3057794.90, abs=0.01)
+    assert float(calc.true_net_cost_usd) == pytest.approx(3812823.20, abs=0.01)

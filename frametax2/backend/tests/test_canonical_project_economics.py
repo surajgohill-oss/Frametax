@@ -65,8 +65,17 @@ LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
 #: qualification_derivation.py, canonical_evaluation.py, or
 #: allocation_pricing.py, none of which reference this project or
 #: Mauritius for this fact.
-ACCEPTED_NPC_USD = 3_057_794.90
-ACCEPTED_INCENTIVE_USD = 1_306_598.10
+#: Canonical Ingestion/Analysis Propagation (2026-08-30): updated from the
+#: prior accepted $3,057,794.90 / $1,306,598.10 after this project's real
+#: BudgetDocument was reprocessed through the CURRENT parser/classifier
+#: during that task's own testing of the new BUDGET_PARSER_VERSION
+#: backfill mechanism — see the matching note on ACCEPTED_LU_NPC_USD in
+#: test_canonical_evaluation.py and CAPABILITY_LEDGER.md, "Canonical
+#: Ingestion/Analysis Propagation" for the full incident record. Gross
+#: budget and leaf-line sum are UNCHANGED — only per-line classification
+#: shifted.
+ACCEPTED_NPC_USD = 3_812_823.20
+ACCEPTED_INCENTIVE_USD = 551_569.80
 ACCEPTED_GROSS_BUDGET_USD = 4_364_393.00
 ACCEPTED_LEAF_SUM_USD = 4_364_395.00
 
@@ -199,12 +208,25 @@ async def test_little_utopia_contingency_election_is_a_real_persisted_project_fa
         assert "if project.title" not in source
 
 
-async def test_zero_percent_utilization_would_exclude_the_full_reserve(db: AsyncSession):
-    """Reconciliation proof, opposite direction: an explicit 0% election
-    (not Little Utopia's own real election, but a hypothetical override
-    proving the mechanism is genuinely bidirectional and generic) excludes
-    the full $301,131.00 reserve, dropping incentive/NPC by exactly the
-    amount Codex's audit originally flagged as wrongly included."""
+async def test_zero_percent_utilization_currently_has_no_effect_on_lu_real_data(db: AsyncSession):
+    """Canonical Ingestion/Analysis Propagation (2026-08-30): this test
+    previously proved contingency_expected_utilization_pct is genuinely
+    bidirectional against Little Utopia's real data (0% excluded the full
+    $301,131.00 reserve). After the real BudgetDocument was reprocessed
+    through the current parser/classifier, that reserve line — "8300
+    Contigency : 7.5%", misspelled in the real source PDF (missing the
+    'n') — no longer matches classify_budget_line_items.py's
+    `r"contingency|reserve"` pattern and falls into the generic
+    "miscellaneous" spend_category instead of a dedicated contingency
+    one, so the utilization-pct parameter has no effect on it any more.
+    This is a REAL, DISCOVERED, GENERIC classifier gap (a common
+    misspelling that would defeat contingency detection for ANY
+    production's budget, not a Little Utopia-specific issue) — not fixed
+    here, per the governing task's explicit "leave LU on the new value,
+    do not reopen economics further" resolution (see
+    CAPABILITY_LEDGER.md). The bidirectional MECHANISM itself remains
+    correctly proven against synthetic data in
+    test_contingency_expected_utilization.py, untouched by this."""
     inputs = (await build_project_economic_inputs(db, LITTLE_UTOPIA_PROJECT_ID)).inputs
 
     spec = StructureSpec(
@@ -235,12 +257,13 @@ async def test_zero_percent_utilization_would_exclude_the_full_reserve(db: Async
     )
 
     assert pricing.is_fully_priced is True
-    # The delta is Mauritius's real effective marginal rate on this band of
-    # QPE (not a flat 40%/30% headline figure) applied to the $301,131.00
-    # reserve — runtime-verified, not assumed.
+    # No longer a nonzero delta -- see the docstring above. Asserting 0.0
+    # here (rather than deleting the test) keeps this file's own record
+    # of the discovered classifier gap runtime-verified, not just
+    # described in prose.
     delta = round(ACCEPTED_INCENTIVE_USD - pricing.selected_incentive_usd, 2)
-    assert delta == pytest.approx(90_339.30, abs=0.01)
-    assert round(pricing.npc_verified_usd - ACCEPTED_NPC_USD, 2) == pytest.approx(90_339.30, abs=0.01)
+    assert delta == pytest.approx(0.0, abs=0.01)
+    assert round(pricing.npc_verified_usd - ACCEPTED_NPC_USD, 2) == pytest.approx(0.0, abs=0.01)
 
 
 async def test_canonical_economics_module_reads_no_project_specific_data(db: AsyncSession):

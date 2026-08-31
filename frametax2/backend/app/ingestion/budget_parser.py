@@ -18,6 +18,18 @@ from pathlib import Path
 
 from app.calculators.classify_budget_line_items import classify_line_item
 
+# Canonical Ingestion/Analysis Propagation: budget parsing/classification
+# had NO version marker at all before this — unlike screenplay parsing
+# (screenplay_structural_parser.PARSER_VERSION), a genuine parser-logic
+# fix here (e.g. the real _REBATE_EXCLUSION_RE netting-line fix) had no
+# way to mark an already-routed project's BudgetDocument stale, so
+# material_routing._route_budget's "does a BudgetDocument already exist
+# for this DocumentVersion" guard could never detect or backfill it.
+# Bumped whenever a change to this module or classify_budget_line_items
+# changes parsed/classified OUTPUT for existing real budgets — mirrors
+# screenplay_structural_parser.PARSER_VERSION's own convention exactly.
+BUDGET_PARSER_VERSION = "budget-1.0.0"
+
 
 @dataclass
 class ParsedLineItem:

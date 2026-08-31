@@ -35,11 +35,13 @@ from __future__ import annotations
 import uuid
 from pathlib import Path
 
-from sqlalchemy import select
+from sqlalchemy import delete as sa_delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.ingestion.budget_parser import classify_parsed_items, parse_budget_csv, parse_budget_from_text
+from app.ingestion.budget_parser import (
+    BUDGET_PARSER_VERSION, classify_parsed_items, parse_budget_csv, parse_budget_from_text,
+)
 from app.ingestion.pdf_extractor import extract_text_from_pdf
 from app.models.budget import BudgetDocument, BudgetLineItem
 from app.models.enums import ATLBTLCategory, CompensationType, ProjectAssetKind, ProjectAssetSourceType
@@ -81,12 +83,24 @@ async def _route_budget(
     corpus (docs/validation/REAL_PRODUCTION_VALIDATION_CORPUS.md), every
     resolved fixture's declared total independently equals its acceptance
     oracle even where flat leaf-line extraction under-covers, so the
-    declared total — not a leaf-line sum — is the correct figure here."""
+    declared total — not a leaf-line sum — is the correct figure here.
+
+    Canonical Ingestion/Analysis Propagation: version-aware, mirroring
+    screenplay routing's own PARSER_VERSION gate. A BudgetDocument already
+    parsed under the CURRENT BUDGET_PARSER_VERSION is genuinely idempotent
+    and returns immediately. One parsed under an older (or NULL —
+    pre-dates this column) version is stale and gets a real reparse
+    attempt; if that attempt succeeds, the existing row's line items and
+    fields are refreshed IN PLACE (never a duplicate BudgetDocument for
+    the same DocumentVersion). If the reparse yields nothing (a
+    transient extraction failure, an unreadable file), the existing,
+    still-valid parsed data is left completely untouched — a failed
+    reanalysis must never replace good prior output with an empty state."""
     existing = (await session.execute(
         select(BudgetDocument).where(BudgetDocument.document_version_id == version.id)
     )).scalars().first()
-    if existing is not None:
-        return  # already routed for this exact version — idempotent
+    if existing is not None and existing.parser_version == BUDGET_PARSER_VERSION:
+        return  # already routed under the CURRENT parser — genuinely idempotent
 
     suffix = local_path.suffix.lower()
     if suffix == ".csv":
@@ -113,22 +127,44 @@ async def _route_budget(
         result = parse_budget_from_text(text, filename=version.original_filename or local_path.name)
 
     if not result.line_items and result.total_budget_raw is None:
-        return  # nothing the parser could extract — leave unrouted
+        # Nothing the parser could extract this attempt. First-time
+        # routing: leave genuinely unrouted (existing prior behavior).
+        # Stale-reparse attempt: the existing, still-valid BudgetDocument
+        # is left completely untouched — never replaced with emptiness.
+        return
 
     classified = classify_parsed_items(result)
 
-    budget_doc = BudgetDocument(
-        id=uuid.uuid4(),
-        project_id=project.id,
-        filename=version.original_filename or local_path.name,
-        file_type=suffix.lstrip("."),
-        storage_path=version.storage_path,
-        currency_code=classified.currency_code or "USD",
-        total_budget_raw=classified.total_budget_raw,
-        extraction_status="extracted",
-        document_version_id=version.id,
-    )
-    session.add(budget_doc)
+    if existing is not None:
+        # Stale reparse succeeded — refresh the SAME row in place (never
+        # a second BudgetDocument for this DocumentVersion) and replace
+        # its line items atomically, only now that the new parse is
+        # confirmed to have real output.
+        budget_doc = existing
+        budget_doc.filename = version.original_filename or local_path.name
+        budget_doc.file_type = suffix.lstrip(".")
+        budget_doc.storage_path = version.storage_path
+        budget_doc.currency_code = classified.currency_code or "USD"
+        budget_doc.total_budget_raw = classified.total_budget_raw
+        budget_doc.extraction_status = "extracted"
+        budget_doc.parser_version = BUDGET_PARSER_VERSION
+        await session.execute(
+            sa_delete(BudgetLineItem).where(BudgetLineItem.budget_document_id == budget_doc.id)
+        )
+    else:
+        budget_doc = BudgetDocument(
+            id=uuid.uuid4(),
+            project_id=project.id,
+            filename=version.original_filename or local_path.name,
+            file_type=suffix.lstrip("."),
+            storage_path=version.storage_path,
+            currency_code=classified.currency_code or "USD",
+            total_budget_raw=classified.total_budget_raw,
+            extraction_status="extracted",
+            document_version_id=version.id,
+            parser_version=BUDGET_PARSER_VERSION,
+        )
+        session.add(budget_doc)
     await session.flush()
 
     for item in classified.line_items:

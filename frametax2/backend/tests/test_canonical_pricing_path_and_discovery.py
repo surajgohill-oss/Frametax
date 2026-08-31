@@ -40,10 +40,11 @@ from app.services.canonical_evaluation import ENGINE_VERSION, evaluate_project
 
 LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
 FVD_PROJECT_ID = "6c6f1c13-2d49-4bbc-bafb-2a12efa93112"
-#: CBA-009 Part 19-21: Little Utopia's own real, persisted 100%
-#: contingency-expected-utilization project election (migration 0068)
-#: reproduces this historical baseline through the generic pipeline.
-ACCEPTED_LU_NPC_USD = 3_057_794.90
+#: Canonical Ingestion/Analysis Propagation (2026-08-30): updated from
+#: the prior accepted $3,057,794.90 after a real budget reprocess; see
+#: the matching note in test_canonical_evaluation.py and
+#: CAPABILITY_LEDGER.md.
+ACCEPTED_LU_NPC_USD = 3_812_823.20
 
 #: The three known, independently-cited Ontario programs (Task 6's control
 #: case) — real program_slugs, not aliases.

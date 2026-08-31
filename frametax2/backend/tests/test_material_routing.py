@@ -25,12 +25,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import engine
 from app.models.organization import Organization
 from app.models.project import Project
-from app.models.library_document import Document
+from app.models.library_document import Document, DocumentVersion
 from app.models.ingestion_candidate import IngestionCandidate
 from app.models.budget import BudgetDocument, BudgetLineItem
 from app.models.project_fact import ProjectFact
 from app.api.v1.ingestion import discover, commit_candidate, DiscoverRequest
 from app.api.v1.projects import get_project_record
+from app.ingestion.budget_parser import BUDGET_PARSER_VERSION
 
 
 @pytest.fixture
@@ -146,6 +147,142 @@ async def test_budget_commit_is_idempotent_on_recommit(db: AsyncSession, project
         select(BudgetDocument).where(BudgetDocument.document_version_id == document_version_id)
     )).scalars().all()
     assert len(budget_docs) == 1
+
+
+async def test_budget_commit_stamps_the_current_parser_version(db: AsyncSession, project: Project, tmp_path):
+    """A. Canonical Ingestion/Analysis Propagation: a fresh budget commit
+    must be marked with the CURRENT BUDGET_PARSER_VERSION — the version
+    marker screenplay routing already had and budget routing previously
+    lacked entirely."""
+    _write(tmp_path, "Budget.csv", _BUDGET_CSV.encode())
+    await discover(DiscoverRequest(source_type="local", source_pointer=str(tmp_path), project_id=str(project.id)), db)
+    candidate = (await db.execute(
+        select(IngestionCandidate).where(IngestionCandidate.proposed_project_id == project.id)
+    )).scalar_one()
+    result = await commit_candidate(str(candidate.id), db)
+    budget_doc = (await db.execute(
+        select(BudgetDocument).where(BudgetDocument.document_version_id == uuid.UUID(result["document_version_id"]))
+    )).scalar_one()
+    assert budget_doc.parser_version == BUDGET_PARSER_VERSION
+
+
+async def test_stale_budget_parser_version_triggers_reparse_and_backfills_version(
+    db: AsyncSession, project: Project, tmp_path,
+):
+    """A/B. A BudgetDocument parsed under an OLDER (or, as here, NULL —
+    pre-dating the version column) parser version is genuinely stale.
+    ensure_current_budget_routed (the same retroactive-trigger pattern
+    already used for screenplay/artwork) must reparse it and backfill the
+    current version — never leave it stuck forever just because a
+    BudgetDocument row already exists."""
+    from app.services.material_routing import ensure_current_budget_routed
+
+    local_path = _write(tmp_path, "Budget.csv", _BUDGET_CSV.encode())
+    doc = Document(id=uuid.uuid4(), project_id=project.id, category="budget", title="Test Budget")
+    db.add(doc)
+    await db.flush()
+    version = DocumentVersion(
+        id=uuid.uuid4(), document_id=doc.id, original_filename="Budget.csv",
+        storage_path=local_path, is_current=True,
+    )
+    db.add(version)
+    await db.flush()
+    doc.current_version_id = version.id
+    # Simulate a pre-existing, already-routed BudgetDocument with NO
+    # parser_version (the real state of every project's row before this
+    # migration) and stale/incomplete data — one line item, not three.
+    stale_doc = BudgetDocument(
+        id=uuid.uuid4(), project_id=project.id, filename="Budget.csv", file_type="csv",
+        document_version_id=version.id, total_budget_raw=1.0, parser_version=None,
+    )
+    db.add(stale_doc)
+    await db.flush()
+    db.add(BudgetLineItem(id=uuid.uuid4(), budget_document_id=stale_doc.id, description="stale line", amount_usd=1.0))
+    await db.commit()
+
+    result = await ensure_current_budget_routed(db, project.id)
+    assert result is not None
+
+    refreshed = (await db.execute(
+        select(BudgetDocument).where(BudgetDocument.document_version_id == version.id)
+    )).scalars().all()
+    assert len(refreshed) == 1, "must refresh the SAME row, never create a second BudgetDocument for this DocumentVersion"
+    assert refreshed[0].parser_version == BUDGET_PARSER_VERSION
+    assert refreshed[0].total_budget_raw == 150000
+
+    line_items = (await db.execute(
+        select(BudgetLineItem).where(BudgetLineItem.budget_document_id == refreshed[0].id)
+    )).scalars().all()
+    assert len(line_items) == 3, "the stale single line item must be replaced by the real reparsed set, not appended to"
+
+
+async def test_current_parser_version_is_genuinely_idempotent_no_reparse(
+    db: AsyncSession, project: Project, tmp_path,
+):
+    """A BudgetDocument already at the CURRENT parser version must not be
+    reparsed again — the version-aware guard's fast path."""
+    from app.services.material_routing import ensure_current_budget_routed
+
+    local_path = _write(tmp_path, "Budget.csv", _BUDGET_CSV.encode())
+    doc = Document(id=uuid.uuid4(), project_id=project.id, category="budget", title="Test Budget")
+    db.add(doc)
+    await db.flush()
+    version = DocumentVersion(
+        id=uuid.uuid4(), document_id=doc.id, original_filename="Budget.csv",
+        storage_path=local_path, is_current=True,
+    )
+    db.add(version)
+    await db.flush()
+    doc.current_version_id = version.id
+    current_doc = BudgetDocument(
+        id=uuid.uuid4(), project_id=project.id, filename="Budget.csv", file_type="csv",
+        document_version_id=version.id, total_budget_raw=999.0, parser_version=BUDGET_PARSER_VERSION,
+    )
+    db.add(current_doc)
+    await db.commit()
+
+    await ensure_current_budget_routed(db, project.id)
+
+    refreshed = (await db.execute(
+        select(BudgetDocument).where(BudgetDocument.document_version_id == version.id)
+    )).scalars().first()
+    # total_budget_raw is untouched (999.0, not the real CSV's 150000) —
+    # proves the reparse never ran at all, not merely that it produced the
+    # same number.
+    assert refreshed.total_budget_raw == 999.0
+
+
+async def test_failed_reparse_preserves_last_valid_budget_data(db: AsyncSession, project: Project, tmp_path):
+    """E. A reparse attempt against a missing/unreadable source file must
+    never wipe out the existing, still-valid parsed data — a failed
+    reanalysis leaves the last-known-good state completely untouched."""
+    from app.services.material_routing import ensure_current_budget_routed
+
+    doc = Document(id=uuid.uuid4(), project_id=project.id, category="budget", title="Test Budget")
+    db.add(doc)
+    await db.flush()
+    version = DocumentVersion(
+        id=uuid.uuid4(), document_id=doc.id, original_filename="Budget.csv",
+        storage_path=str(tmp_path / "does-not-exist.csv"), is_current=True,
+    )
+    db.add(version)
+    await db.flush()
+    doc.current_version_id = version.id
+    stale_doc = BudgetDocument(
+        id=uuid.uuid4(), project_id=project.id, filename="Budget.csv", file_type="csv",
+        document_version_id=version.id, total_budget_raw=42.0, parser_version=None,
+    )
+    db.add(stale_doc)
+    await db.commit()
+
+    result = await ensure_current_budget_routed(db, project.id)
+    assert result is None  # missing-source early exit — same as the pre-existing behavior
+
+    still_there = (await db.execute(
+        select(BudgetDocument).where(BudgetDocument.document_version_id == version.id)
+    )).scalars().first()
+    assert still_there is not None
+    assert still_there.total_budget_raw == 42.0, "the last-valid parsed data must survive a failed reparse attempt"
 
 
 async def test_screenplay_commit_triggers_sa1_pipeline_and_persists_facts(
