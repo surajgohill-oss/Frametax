@@ -68,3 +68,28 @@ def test_writer_fee_is_atl():
     r = classify_line_item("Writer fee", "ATL")
     assert r.atl_btl == ATLBTLCategory.ATL
     assert r.spend_category == SpendCategory.ATL_WRITER
+
+
+def test_contingency_correctly_spelled_is_classified():
+    r = classify_line_item("Contingency reserve")
+    assert r.spend_category == SpendCategory.CONTINGENCY
+
+
+def test_contingency_real_misspelling_is_still_classified():
+    """Little Utopia Economic Reconciliation: the real source budget PDF
+    spells this line "Contigency" (missing the 'n', account 8300,
+    $301,131.00) — a real, generic misspelling that silently defeated
+    contingency detection for ANY production with this typo, not a
+    Little Utopia-specific issue. Independently confirmed against this
+    exact account's own hand-verified classification in
+    app/data/little_utopia_real_budget.py (`"8300": "contingency"`)."""
+    r = classify_line_item("8300 Contigency : 7.5%")
+    assert r.spend_category == SpendCategory.CONTINGENCY
+
+
+def test_contingency_misspelling_fix_does_not_over_match():
+    """The fix (contin?gency) makes only the ONE real 'n' before 'g'
+    optional — it must not turn into a loose wildcard that matches
+    unrelated words."""
+    r = classify_line_item("Continuity supervisor")
+    assert r.spend_category != SpendCategory.CONTINGENCY

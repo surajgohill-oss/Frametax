@@ -4,7 +4,7 @@ import { useCineGlobe } from "../../lib/useCineGlobe";
 import { useAppState } from "../../state/AppState";
 import { Loading, ErrorBox } from "../../components/Async";
 import Globe3D from "../../components/Globe3D";
-import { buildGlobeView, activeStructure } from "../../lib/globeData";
+import { buildGlobeView, activeStructure, bestPricedCandidate } from "../../lib/globeData";
 import ProductionDetails from "../../components/ProductionDetails";
 import BudgetRail from "../../components/BudgetRail";
 import IncentiveIntelligence from "../../components/IncentiveIntelligence";
@@ -58,7 +58,21 @@ export default function Overview() {
     () => buildGlobeView(allocated, rankById, { mode: globeMode, leadingStructureId, selectedJurisdiction }),
     [allocated, rankById, globeMode, leadingStructureId, selectedJurisdiction],
   );
-  const structure = allocated ? activeStructure(allocated, leadingStructureId) : null;
+  // Bad Hombres Overview Truthfulness / generic ingestion propagation:
+  // this is the SAME real defect the Workspace dynamic FX slot had (see
+  // CAPABILITY_LEDGER.md, "Workspace Display Regression Closeout") —
+  // activeStructure() correctly returns null whenever there is neither a
+  // producer-selected Leading structure nor a canonical rank-1 (a real,
+  // common state: comparable_count:0 when a production's own base
+  // jurisdiction is unpriceable), but the Budget card then had no
+  // fallback and silently showed Credit/NPC as "—" even while a real Top
+  // Priced candidate (and the Hero's own real Modeled Net Cost) already
+  // existed. Falls back to the SAME bestPricedCandidate(allocated) the
+  // Hero already uses for its own "Top Priced Candidate" state — never a
+  // second "best" computation — so the Budget card and Hero can never
+  // silently disagree about which structure they describe.
+  const structure = allocated ? (activeStructure(allocated, leadingStructureId) || bestPricedCandidate(allocated)) : null;
+  const structureIsLeading = allocated ? !!activeStructure(allocated, leadingStructureId) : false;
 
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
@@ -154,6 +168,7 @@ export default function Overview() {
             production={production}
             register={pkg.register}
             structure={structure}
+            structureIsLeading={structureIsLeading}
             economics={economics}
             onSelectAccount={(line, alloc) => openInspector("account", {
               ...line,

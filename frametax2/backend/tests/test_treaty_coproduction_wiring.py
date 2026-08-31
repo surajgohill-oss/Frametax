@@ -130,7 +130,7 @@ async def test_little_utopia_home_anchored_treaty_opportunity_is_still_honestly_
     ]
     assert home_anchored == []
     baseline = next(e for e in entries if e["is_baseline"])
-    assert round(baseline["npc_with_adjustments_usd"], 2) == 3812823.20  # CBA-009 Part 19-21: LU's own persisted 100% contingency-utilization project election (migration 0068) reproduces the historical $3,812,823.20 baseline through the generic pipeline
+    assert round(baseline["npc_with_adjustments_usd"], 2) == 3722483.90  # CBA-009 Part 19-21: LU's own persisted 100% contingency-utilization project election (migration 0068) reproduces the historical $3,722,483.90 baseline through the generic pipeline
 
 
 async def test_lu_australia_uk_bilateral_opportunity_surfaces_independent_of_mauritius(db: AsyncSession):

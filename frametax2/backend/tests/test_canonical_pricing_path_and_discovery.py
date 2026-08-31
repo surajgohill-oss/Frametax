@@ -44,7 +44,7 @@ FVD_PROJECT_ID = "6c6f1c13-2d49-4bbc-bafb-2a12efa93112"
 #: the prior accepted $3,057,794.90 after a real budget reprocess; see
 #: the matching note in test_canonical_evaluation.py and
 #: CAPABILITY_LEDGER.md.
-ACCEPTED_LU_NPC_USD = 3_812_823.20
+ACCEPTED_LU_NPC_USD = 3_722_483.90
 
 #: The three known, independently-cited Ontario programs (Task 6's control
 #: case) — real program_slugs, not aliases.

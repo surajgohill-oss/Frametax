@@ -103,3 +103,27 @@ test("api.js exposes a project-scoped people write, distinct from the legacy sin
   const src = stripComments(read("api.js"));
   assert.match(src, /export const postProjectPeople = \(projectId, answers\) =>\s*\n\s*request\(`\/projects\/\$\{projectId\}\/people`/);
 });
+
+// ── Bad Hombres Overview Truthfulness / Generic Ingestion Propagation ──────
+//
+// The Production Budget card (BudgetRail) fell back to a bare "—" for
+// Credit/NPC whenever activeStructure() found neither a producer-selected
+// Leading structure nor a canonical rank-1 (a real, common state:
+// comparable_count:0 when a production's own base jurisdiction is
+// unpriceable) — even while the Hero, right above it, already showed a
+// real Modeled Net Cost for a real Top Priced candidate. Two surfaces on
+// the SAME page silently describing different economic bases. See
+// CAPABILITY_LEDGER.md, "Bad Hombres Overview Truthfulness" for the live
+// browser walkthrough.
+
+test("Overview's Budget card falls back to bestPricedCandidate (the SAME function the Hero uses) when no active structure exists", () => {
+  const src = stripComments(read("screens/production/Overview.jsx"));
+  assert.match(src, /import \{ buildGlobeView, activeStructure, bestPricedCandidate \} from "\.\.\/\.\.\/lib\/globeData";/);
+  assert.match(src, /const structure = allocated \? \(activeStructure\(allocated, leadingStructureId\) \|\| bestPricedCandidate\(allocated\)\) : null;/);
+});
+
+test("BudgetRail is self-labeled (Leading/Top Priced) so it can never be read as silently contradicting the Hero", () => {
+  const src = stripComments(read("components/BudgetRail.jsx"));
+  assert.match(src, /const stateLabel = !structure \? null : \(structureIsLeading \? "Leading" : "Top Priced"\);/);
+  assert.doesNotMatch(src, /Bad Hombres|4355ae88|ab10b319|Lips Like Sugar/i, "the fix must be generic, never a per-project branch");
+});

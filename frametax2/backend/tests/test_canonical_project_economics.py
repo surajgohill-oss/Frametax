@@ -39,43 +39,41 @@ from app.services.canonical_project_economics import (
 #: The real, already-accepted Little Utopia project row.
 LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
 
-#: Regression truth from the accepted worldwide acceptance run. Never
-#: recomputed here, never relaxed to make a migration fit.
+#: Little Utopia Economic Reconciliation (2026-08-30): the CURRENT,
+#: genuinely-derived canonical figures — computed from the real chain
+#: (source budget -> normalized lines -> qualification register ->
+#: allocation -> pricing) at Little Utopia's own CURRENTLY-PERSISTED real
+#: election (contingency_expected_utilization_pct=100, ProjectFact,
+#: migration 0068) — never picked to match either historical figure.
 #:
-#: Consolidated Backend Correction, Part 19-21 (CBA-009): Codex's audit
-#: confirmed a defect where every program whose contingency CATEGORY
-#: statutorily qualifies (Mauritius's own real EDB-2020-QPE-List finding)
-#: had its ENTIRE reserve projected as 100%-deployed QPE unconditionally,
-#: with no way for a producer to state a different real expectation — a
-#: genuine, generic defect, fixed by a new, real, typed
-#: ProductionFacts.contingency_expected_utilization_pct fact (see
-#: qualification_derivation.derive_qualification_register's "contingency"
-#: branch and test_contingency_expected_utilization.py).
+#: Two prior historical NPCs exist and neither is treated as
+#: automatically correct: $3,057,794.90 (an earlier ingestion whose exact
+#: per-line classification could not be reproduced/restored) and
+#: $3,812,823.20 (a transient state during this task's own predecessor,
+#: caused by a real, now-fixed classifier gap — see below). See
+#: CAPABILITY_LEDGER.md, "Little Utopia Economic Reconciliation" for the
+#: full derivation and the 0/25/50/75/100% sensitivity proof.
 #:
-#: Little Utopia's own ESTABLISHED PROJECT ELECTION — not a Mauritius
-#: statutory rule, not a hard-coded special case in any calculator — is
-#: that it expects to deploy its full $301,131.00 contingency reserve.
-#: This is now a real, persisted ProjectFact (alembic migration 0068,
-#: "recovered_demo_state" provenance, same convention 0063 established for
-#: every other Little Utopia fact recovered from its own real source
-#: material). Reading that real 100% election through the fully generic
-#: correction above reproduces the historical accepted baseline exactly —
-#: for the correct reason (a real project fact flowing through a real,
-#: generic rule), not because either number is hard-coded anywhere in
-#: qualification_derivation.py, canonical_evaluation.py, or
-#: allocation_pricing.py, none of which reference this project or
-#: Mauritius for this fact.
-#: Canonical Ingestion/Analysis Propagation (2026-08-30): updated from the
-#: prior accepted $3,057,794.90 / $1,306,598.10 after this project's real
-#: BudgetDocument was reprocessed through the CURRENT parser/classifier
-#: during that task's own testing of the new BUDGET_PARSER_VERSION
-#: backfill mechanism — see the matching note on ACCEPTED_LU_NPC_USD in
-#: test_canonical_evaluation.py and CAPABILITY_LEDGER.md, "Canonical
-#: Ingestion/Analysis Propagation" for the full incident record. Gross
-#: budget and leaf-line sum are UNCHANGED — only per-line classification
-#: shifted.
-ACCEPTED_NPC_USD = 3_812_823.20
-ACCEPTED_INCENTIVE_USD = 551_569.80
+#: Root cause of the difference, confirmed and fixed (not reverse-
+#: engineered): the real source budget PDF spells the contingency reserve
+#: line "Contigency" (missing the 'n', account 8300, $301,131.00).
+#: classify_budget_line_items.py's contingency-detection regex didn't
+#: tolerate this real misspelling, so the reserve fell into generic
+#: "miscellaneous" BTL spend instead of the dedicated contingency
+#: category the contingency_expected_utilization_pct mechanism targets —
+#: a genuine, GENERIC gap (any production's budget could have this same
+#: typo), independently confirmed against app/data/little_utopia_real_
+#: budget.py's own hand-verified, account-code-keyed classification
+#: (`"8300": "contingency"`), which always correctly classified this
+#: exact account regardless of the description text. Fixed centrally
+#: (contin?gency), never a Little-Utopia-specific branch. With the fix,
+#: the mechanism is genuinely bidirectional again against LU's real data
+#: — the 100%-vs-0%-utilization swing reproduces the SAME $90,339.30
+#: marginal incentive delta the mechanism has always modeled (Mauritius's
+#: real EDB program qualifies 100% of deployed contingency spend, per its
+#: existing, unchanged qualification doctrine — not a new assumption).
+ACCEPTED_NPC_USD = 3_722_483.90
+ACCEPTED_INCENTIVE_USD = 641_909.10
 ACCEPTED_GROSS_BUDGET_USD = 4_364_393.00
 ACCEPTED_LEAF_SUM_USD = 4_364_395.00
 
@@ -208,25 +206,17 @@ async def test_little_utopia_contingency_election_is_a_real_persisted_project_fa
         assert "if project.title" not in source
 
 
-async def test_zero_percent_utilization_currently_has_no_effect_on_lu_real_data(db: AsyncSession):
-    """Canonical Ingestion/Analysis Propagation (2026-08-30): this test
-    previously proved contingency_expected_utilization_pct is genuinely
-    bidirectional against Little Utopia's real data (0% excluded the full
-    $301,131.00 reserve). After the real BudgetDocument was reprocessed
-    through the current parser/classifier, that reserve line — "8300
-    Contigency : 7.5%", misspelled in the real source PDF (missing the
-    'n') — no longer matches classify_budget_line_items.py's
-    `r"contingency|reserve"` pattern and falls into the generic
-    "miscellaneous" spend_category instead of a dedicated contingency
-    one, so the utilization-pct parameter has no effect on it any more.
-    This is a REAL, DISCOVERED, GENERIC classifier gap (a common
-    misspelling that would defeat contingency detection for ANY
-    production's budget, not a Little Utopia-specific issue) — not fixed
-    here, per the governing task's explicit "leave LU on the new value,
-    do not reopen economics further" resolution (see
-    CAPABILITY_LEDGER.md). The bidirectional MECHANISM itself remains
-    correctly proven against synthetic data in
-    test_contingency_expected_utilization.py, untouched by this."""
+async def test_zero_percent_utilization_would_exclude_the_full_reserve(db: AsyncSession):
+    """Little Utopia Economic Reconciliation (2026-08-30): restored to its
+    original intent after the real classifier gap (see ACCEPTED_NPC_USD's
+    own docstring above — "Contigency", missing the 'n', defeated
+    contingency detection) was fixed centrally. Reconciliation proof,
+    opposite direction from the 100%-utilization figures above: an
+    explicit 0% election (not Little Utopia's own real 100% election, a
+    hypothetical override proving the mechanism is genuinely bidirectional
+    and generic) excludes the full $301,131.00 reserve, dropping
+    incentive/NPC by exactly the real marginal amount Mauritius's own EDB
+    program's existing, unchanged doctrine yields for that swing."""
     inputs = (await build_project_economic_inputs(db, LITTLE_UTOPIA_PROJECT_ID)).inputs
 
     spec = StructureSpec(
@@ -257,13 +247,14 @@ async def test_zero_percent_utilization_currently_has_no_effect_on_lu_real_data(
     )
 
     assert pricing.is_fully_priced is True
-    # No longer a nonzero delta -- see the docstring above. Asserting 0.0
-    # here (rather than deleting the test) keeps this file's own record
-    # of the discovered classifier gap runtime-verified, not just
-    # described in prose.
+    # The delta is Mauritius's real effective marginal rate on this band of
+    # QPE (not a flat 40%/30% headline figure) applied to the $301,131.00
+    # reserve — runtime-verified, not assumed. Reproduces the SAME real
+    # $90,339.30 the mechanism always modeled, before the classifier gap
+    # existed.
     delta = round(ACCEPTED_INCENTIVE_USD - pricing.selected_incentive_usd, 2)
-    assert delta == pytest.approx(0.0, abs=0.01)
-    assert round(pricing.npc_verified_usd - ACCEPTED_NPC_USD, 2) == pytest.approx(0.0, abs=0.01)
+    assert delta == pytest.approx(90_339.30, abs=0.01)
+    assert round(pricing.npc_verified_usd - ACCEPTED_NPC_USD, 2) == pytest.approx(90_339.30, abs=0.01)
 
 
 async def test_canonical_economics_module_reads_no_project_specific_data(db: AsyncSession):

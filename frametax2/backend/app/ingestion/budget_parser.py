@@ -28,7 +28,7 @@ from app.calculators.classify_budget_line_items import classify_line_item
 # Bumped whenever a change to this module or classify_budget_line_items
 # changes parsed/classified OUTPUT for existing real budgets — mirrors
 # screenplay_structural_parser.PARSER_VERSION's own convention exactly.
-BUDGET_PARSER_VERSION = "budget-1.0.0"
+BUDGET_PARSER_VERSION = "budget-1.1.0"
 
 
 @dataclass

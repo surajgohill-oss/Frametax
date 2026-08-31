@@ -265,4 +265,4 @@ async def test_production_structure_and_leading_selection(db: AsyncSession, proj
     assert float(calc.total_budget_usd) == pytest.approx(4364393.00, abs=0.01)
     # The accepted regression truth (see test_canonical_evaluation.py) —
     # never recomputed differently here.
-    assert float(calc.true_net_cost_usd) == pytest.approx(3812823.20, abs=0.01)
+    assert float(calc.true_net_cost_usd) == pytest.approx(3722483.90, abs=0.01)

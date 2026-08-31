@@ -159,15 +159,26 @@ function AdjustmentsPreview({ economics }) {
   );
 }
 
-export default function BudgetRail({ production, register, structure, economics, onSelectAccount }) {
+export default function BudgetRail({ production, register, structure, structureIsLeading, economics, onSelectAccount }) {
   const blocks = useMemo(() => buildAccountBlocks(register || []), [register]);
   const hasFinance = blocks.some((b) => /finance/i.test(b.label));
   const [openLineKey, setOpenLineKey] = useState(null);
   const onToggleLine = (key) => setOpenLineKey((cur) => (cur === key ? null : key));
 
+  // Bad Hombres Overview Truthfulness: Credit/NPC describe WHICHEVER
+  // structure the caller passed as `structure` — a producer-selected
+  // Leading structure when one exists, otherwise the Hero's own real Top
+  // Priced candidate (never a silent, unlabeled "—" while the Hero shows
+  // a real number for a different structure). Self-contained label so
+  // this card can never be read as contradicting the Hero.
+  const stateLabel = !structure ? null : (structureIsLeading ? "Leading" : "Top Priced");
+
   return (
     <section className="brail-panel">
-      <div className="pd-section-label">Production budget</div>
+      <div className="pd-section-label">
+        Production budget
+        {stateLabel && <span className="text-tertiary" style={{ textTransform: "none", fontWeight: 400 }}> · {stateLabel}</span>}
+      </div>
 
       {/* Collapsed presentation: Total Budget, Credit, NPC — the three
           headline figures, all read verbatim from the active structure

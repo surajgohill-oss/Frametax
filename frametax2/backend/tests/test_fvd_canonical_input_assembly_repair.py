@@ -285,5 +285,5 @@ async def test_little_utopia_regression_unchanged_by_input_assembly_repair(db: A
     # top_result is correctly None (truthful unresolved status over
     # false recommendation); the real, priced economics are disclosed
     # on baseline instead.
-    assert result["baseline"]["true_net_cost_usd"] == 3_812_823.20
+    assert result["baseline"]["true_net_cost_usd"] == 3_722_483.90
     assert result["top_result"] is None

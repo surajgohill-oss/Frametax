@@ -438,7 +438,7 @@ async def test_little_utopia_exact_regression_after_authority_substrate_repair(d
     # top_result is correctly None (truthful unresolved status over
     # false recommendation); the real, priced economics are disclosed
     # on baseline instead.
-    assert result["baseline"]["true_net_cost_usd"] == 3_812_823.20
+    assert result["baseline"]["true_net_cost_usd"] == 3_722_483.90
     assert result["top_result"] is None
 
 
@@ -847,7 +847,7 @@ def test_formulaic_terminal_accounting_sums_exactly():
 async def test_lu_mauritius_control_npc_unchanged(db: AsyncSession):
     """The single most load-bearing control value in this entire lineage:
     Little Utopia's baseline (Mauritius) true_net_cost_usd must remain
-    EXACTLY $3,812,823.20 after every fix in this task. If this regresses,
+    EXACTLY $3,722,483.90 after every fix in this task. If this regresses,
     something touched served pricing logic, not just data/publication
     correctness."""
     await evaluate_project(db, LITTLE_UTOPIA_PROJECT_ID)
@@ -855,7 +855,7 @@ async def test_lu_mauritius_control_npc_unchanged(db: AsyncSession):
     entries = view["structures"]["allocated_structures"]["structures"]
     baseline = next(e for e in entries if e["is_baseline"])
     assert baseline["primary_jurisdiction"] == "MU"
-    assert baseline["npc_verified_usd"] == pytest.approx(3812823.20, abs=0.01)
+    assert baseline["npc_verified_usd"] == pytest.approx(3722483.90, abs=0.01)
 
 
 async def test_georgia_prices_with_real_numbers_in_fvd(db: AsyncSession):

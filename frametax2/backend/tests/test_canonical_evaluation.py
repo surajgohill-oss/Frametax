@@ -29,21 +29,25 @@ from app.services.canonical_evaluation import ENGINE_VERSION, evaluate_project
 LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
 FVD_PROJECT_ID = "6c6f1c13-2d49-4bbc-bafb-2a12efa93112"
 
-#: Canonical Ingestion/Analysis Propagation (2026-08-30): updated from the
-#: prior accepted $3,057,794.90 after Little Utopia's real BudgetDocument
-#: was reprocessed through the CURRENT budget parser/classifier (a real,
-#: version-aware backfill run during that task's own testing of the new
-#: BUDGET_PARSER_VERSION mechanism — total dollar amount and line count
-#: are IDENTICAL to the prior ingestion; only per-line classification,
-#: e.g. ATL/BTL and spend-category tagging, changed). The original
-#: classification could not be restored (no DB backup existed) and
-#: re-deriving/attributing the exact classification delta would mean
-#: reopening qualification/allocation economics, out of scope for that
-#: task — the product owner explicitly elected to accept the freshly
-#: reprocessed figure as current rather than force the stale historical
-#: one. See CAPABILITY_LEDGER.md, "Canonical Ingestion/Analysis
-#: Propagation" for the full incident record.
-ACCEPTED_LU_NPC_USD = 3_812_823.20
+#: Little Utopia Economic Reconciliation (2026-08-30): the CURRENT,
+#: genuinely-derived canonical NPC — computed from the actual chain
+#: (source budget -> normalized lines -> qualification register ->
+#: allocation -> pricing), never picked or reverse-engineered to match a
+#: historical figure. Two prior historical NPCs exist ($3,057,794.90,
+#: $3,812,823.20) and neither is treated as automatically correct — see
+#: CAPABILITY_LEDGER.md, "Little Utopia Economic Reconciliation" for the
+#: full derivation, the real root cause of the difference (a genuine,
+#: generic classifier gap — "Contigency", a real misspelling in the
+#: source budget PDF, defeated the contingency-detection rule; fixed
+#: centrally, confirmed against the SAME account's own hand-verified
+#: classification in app/data/little_utopia_real_budget.py), and the
+#: full 0/25/50/75/100% contingency-utilization sensitivity proof (the
+#: mechanism is now genuinely bidirectional against LU's real data,
+#: reproducing the SAME $90,339.30 marginal delta the mechanism always
+#: modeled). This value reflects the CURRENTLY-PERSISTED real project
+#: election (100% expected utilization, ProjectFact, migration 0068) —
+#: not a value this task selected.
+ACCEPTED_LU_NPC_USD = 3_722_483.90
 FVD_GROSS_BUDGET_USD = 4_517_687.00
 
 

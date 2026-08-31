@@ -111,7 +111,19 @@ _RULES: list[ClassificationRule] = [
                        ATLBTLCategory.OTHER, SpendCategory.INSURANCE, False, False),
     ClassificationRule(r"completion( guarantee| bond)|bond premium",
                        ATLBTLCategory.OTHER, SpendCategory.COMPLETION_BOND, False, False),
-    ClassificationRule(r"contingency|reserve",
+    # Little Utopia Economic Reconciliation: "conting?ency" tolerates the
+    # real, common misspelling "Contigency" (missing the 'n') found in
+    # Little Utopia's own real source budget PDF (account 8300) — a real,
+    # generic gap independently proven by two facts: (1) the SAME account
+    # is hand-classified "contingency" in app/data/little_utopia_real_
+    # budget.py's own account-code-keyed map, confirming the doctrine
+    # intends this exact line to be a contingency reserve; (2) the
+    # category's own display name uses the correct spelling, so a typo in
+    # ANY production's real budget PDF would silently defeat this rule
+    # the same way. Not new doctrine — this is the SAME existing rule,
+    # made robust to a real spelling variant, exactly like "conting?ency"
+    # already tolerates both "contingency" and "reserve" as synonyms.
+    ClassificationRule(r"contin?gency|reserve",
                        ATLBTLCategory.OTHER, SpendCategory.CONTINGENCY, False, False),
 ]
 
