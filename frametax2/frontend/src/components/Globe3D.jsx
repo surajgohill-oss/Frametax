@@ -8,7 +8,7 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { STATUS_HEX, GRAPHITE_HEX, PULSE_TIERS } from "../lib/globeData";
-import { CAMERA_FOV_DEG, fitCameraDistance, resolveRestingFlight } from "../lib/globeFit";
+import { CAMERA_FOV_DEG, fitCameraDistance } from "../lib/globeFit";
 import { subscribeTheme } from "../lib/theme";
 
 // ── Studio environment (image-based lighting) ───────────────────────────
@@ -2414,43 +2414,22 @@ export default function Globe3D({
     }
     const camera = cameraRef.current;
     const controls = controlsRef.current;
-    if (!camera || !controls) return;
-    const restingFit = stateRef.current.fitDistance ?? DEFAULT_CAMERA_DISTANCE;
     const targetLat = focusLat ?? selectedLat;
     const targetLng = focusLng ?? selectedLng;
+    if (targetLat == null || targetLng == null || !camera || !controls) return;
 
-    let dir, distance;
-    if (targetLat == null || targetLng == null) {
-      // No selection and no mode-specific focus target — e.g. Jurisdictions
-      // mode with nothing selected, arrived at from Optimizer Overlay (which
-      // always supplies its own pathway focusDistance) or from a cleared
-      // selection. This used to `return` here, silently leaving the camera
-      // at whatever distance the PREVIOUS flight (a selected jurisdiction,
-      // or Optimizer's own pathway framing — which can be farther than this
-      // mode's resting fit for a widely-spread structure) left it at. That
-      // is the verified root cause of "the Globe shrinks/sticks when
-      // switching modes" — see resolveRestingFlight's own docstring
-      // (lib/globeFit.js) for the full trace. Fly back to restingFit along
-      // the camera's CURRENT direction — corrects the distance without
-      // touching whatever orientation the producer (or autorotation) had
-      // settled on.
-      const resting = resolveRestingFlight(camera.position, restingFit);
-      if (!resting) return; // already resting — nothing to correct
-      dir = new THREE.Vector3(resting.direction.x, resting.direction.y, resting.direction.z);
-      distance = resting.distance;
-    } else {
-      // The globe is about to move under a stationary cursor, so the hovered
-      // hit-target will slide away without ever firing mouseleave.
-      if (onPointHover) onPointHover(null);
+    // The globe is about to move under a stationary cursor, so the hovered
+    // hit-target will slide away without ever firing mouseleave.
+    if (onPointHover) onPointHover(null);
 
-      const dest = globe.getCoords(targetLat, targetLng, 0);
-      dir = new THREE.Vector3(dest.x, dest.y, dest.z).normalize();
-      // Floor the flight distance at the computed fit, so selecting a
-      // jurisdiction can never leave the sphere clipped. This replaces a
-      // hardcoded `DEFAULT_CAMERA_DISTANCE - 30` floor which, at the old
-      // distance, was itself inside the clipping range.
-      distance = focusDistance ?? Math.max(camera.position.length(), restingFit);
-    }
+    const dest = globe.getCoords(targetLat, targetLng, 0);
+    const dir = new THREE.Vector3(dest.x, dest.y, dest.z).normalize();
+    // Floor the flight distance at the computed fit, so selecting a
+    // jurisdiction can never leave the sphere clipped. This replaces a
+    // hardcoded `DEFAULT_CAMERA_DISTANCE - 30` floor which, at the old
+    // distance, was itself inside the clipping range.
+    const restingFit = stateRef.current.fitDistance ?? DEFAULT_CAMERA_DISTANCE;
+    const distance = focusDistance ?? Math.max(camera.position.length(), restingFit);
     const endPos = dir.multiplyScalar(distance);
     const startPos = camera.position.clone();
     const duration = 700;

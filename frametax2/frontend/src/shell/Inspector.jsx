@@ -1,6 +1,6 @@
 import { X } from "lucide-react";
 import { useAppState } from "../state/AppState";
-import { Money, Pct, YesNo, TimingFactValue, tierBadgeClass, recommendationHeadline, questionStatusLabel, humanizeToken, structureLabel, accountStateLabel } from "../lib/format";
+import { Money, Pct, YesNo, TimingFactValue, tierBadgeClass, recommendationHeadline, questionStatusLabel, humanizeToken, structureLabel, accountStateLabel, jurisdictionName, programDisplay } from "../lib/format";
 
 // Final Global Discovery phase: the "Requirements & Timing" section of a
 // jurisdiction segment — extends the existing AllocationSegmentInspector
@@ -285,7 +285,18 @@ function AllocationSegmentInspector({ data }) {
   return (
     <>
       <p className="inspector-eyebrow">Jurisdiction segment{data.structureLabel ? ` · ${data.structureLabel}` : ""}</p>
-      <h3>{data.jurisdiction_code}{data.program_slug ? ` — ${data.program_slug}` : ""}</h3>
+      {/* Restore Frozen Project Globe: raw backend identifiers (jurisdiction_code
+          concatenated with the literal program_slug, e.g. "DE — de_dfff") were
+          rendered verbatim here — the same real, existing display-name helpers
+          globeData.js's own hover data already uses (jurisdictionName /
+          programDisplay, both re-exported from lib/format) were never applied
+          on this click-through path. Never touches the backend id itself. */}
+      <h3>{jurisdictionName(data.jurisdiction_code)}</h3>
+      {data.program_slug && (
+        <p className="text-secondary small" style={{ margin: "2px 0 8px" }}>
+          {programDisplay(data.program_slug)}
+        </p>
+      )}
       <dl className="kv-list">
         <div><dt>Allocated spend</dt><dd className="mono"><Money value={data.allocated_usd} /></dd></div>
         {data.claims_incentive ? (
