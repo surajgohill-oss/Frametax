@@ -264,7 +264,14 @@ const GLOBE_THEME = {
     // paired with the clearcoatRoughnessMap above so the extra reflectivity
     // has genuine per-pixel variation to break up rather than printing a
     // single brighter blob.
-    envIntensity: 0.44,
+    // PHASE 3B CLOSEOUT: 0.44 -> 0.50 — the ocean read as flat/near-black in
+    // runtime review; a stronger reflected response, paired with the crisper
+    // clearcoatRoughness below, is what makes the surface read as dimensional
+    // rather than a flat tint. Base colour/hue untouched (still dark navy).
+    // PHASE 3B FINAL VISUAL DELTA: 0.50 -> 0.58 — still read as too close to
+    // flat at NORMAL zoom (not a crop) on the next runtime pass. Base colour/
+    // hue still untouched.
+    envIntensity: 0.58,
     // Multiplier on the polygon cap/side materials' own envMapIntensity.
     // Day is the identity by definition — the day render is the frozen,
     // verified baseline and this consolidation must not alter a pixel of it.
@@ -307,7 +314,9 @@ const GLOBE_THEME = {
     // same proportion as day (1.04 -> 1.12).
     exposure: 1.12,
     // Raised in step with day (0.46 -> 0.50), same reasoning.
-    envIntensity: 0.50,
+    // PHASE 3B CLOSEOUT: raised in step with day (0.50 -> 0.56).
+    // PHASE 3B FINAL VISUAL DELTA: raised in step with day (0.56 -> 0.64).
+    envIntensity: 0.64,
     // Night lifts the LAND/status caps' environment response alongside the
     // ocean's. Previously only the globe body's envMapIntensity was
     // theme-driven, so at night the ocean gained reflectivity while every
@@ -363,8 +372,18 @@ const HOVER_STROKE = "#dfe4ec";
 // ATMOSPHERE_ALTITUDE above — the rim now carries more of the "curvature
 // reinforcement" job (item 4) so the atmosphere can be narrower without the
 // limb going bare.
-const BASE_RIM_INTENSITY = 0.24;
-const SELECTED_RIM_INTENSITY = 0.32;
+// PHASE 3B CLOSEOUT: 0.24 -> 0.29, in step with the ATMOSPHERE_ALTITUDE raise
+// above — the crisp curvature edge needed to lift alongside the softer outer
+// taper, or the atmosphere raise alone would have widened a still-faint glow
+// rather than making the limb genuinely legible.
+// PHASE 3B FINAL VISUAL DELTA: 0.29 -> 0.34, paired with another
+// ATMOSPHERE_ALTITUDE raise below — still not perceptible at NORMAL zoom
+// (not a crop) on the next runtime pass. SELECTED_RIM_INTENSITY raised in
+// the same proportion (was left at 0.32 in the prior pass, which shrank the
+// "substantial lift on selection" gap from ~33% relative to ~10% — an
+// unintended regression, corrected here).
+const BASE_RIM_INTENSITY = 0.34;
+const SELECTED_RIM_INTENSITY = 0.44;
 // Selection is a substantial physical lift, not a hint — it must become the
 // focal point of the scene the moment it is chosen. Raised again ~25% in the
 // 2026-07-28 closeout pass (0.15 -> 0.19), on top of the earlier ~2.5x raise
@@ -433,7 +452,17 @@ const ORBIT_MAX_DISTANCE = 460;
 // pass is what turns two shells into two visibly DIFFERENT jobs — a crisp
 // curvature edge (rim) and a much narrower soft taper beyond it (atmosphere)
 // — instead of one wide glow doing both.
-const ATMOSPHERE_ALTITUDE = 0.095;
+// PHASE 3B CLOSEOUT: 0.095 -> 0.125. Runtime review found the shell had been
+// tightened past legibility — at 0.095 the atmosphere was difficult to
+// perceive at all, not merely restrained. Nudged partway back toward (not to)
+// the library default 0.15, paired with the BASE_RIM_INTENSITY raise below,
+// so the limb reads as "the planet has atmosphere" without returning to the
+// "one wide uniform wash" failure the two comments above document.
+// PHASE 3B FINAL VISUAL DELTA: 0.125 -> 0.16 — still imperceptible at NORMAL
+// zoom (not a crop) on the next runtime pass. Now slightly past the library
+// default (0.15) rather than under it, paired with the BASE_RIM_INTENSITY
+// raise above so the crisp edge and the soft taper lift together.
+const ATMOSPHERE_ALTITUDE = 0.16;
 
 function easeOutQuart(t) {
   return 1 - Math.pow(1 - t, 4);
@@ -495,9 +524,10 @@ function brightenHex(hex, amount = 0.24) {
 //    scalar per frame — no geometry, no extra draw call.
 const ENV_DRIFT_RAD_PER_SEC = 0.0125; // ~8.4 min per revolution
 // 2. Limb breathing: the fresnel rim shell's intensity oscillates a few
-//    percent, reading as atmosphere rather than as a hard glass edge.
-//    three-globe's own atmosphere layer stays off (it z-fights the sphere —
-//    see showAtmosphere below), so this shell is the only limb we have.
+//    percent, reading as atmosphere rather than as a hard glass edge. This
+//    shell works ALONGSIDE three-globe's own atmosphere layer (re-enabled
+//    Phase 3A — see showAtmosphere below), not instead of it: the rim is the
+//    crisp curvature edge, the atmosphere is the soft glow beyond it.
 const RIM_BREATH_PERIOD_SEC = 11.0;
 const RIM_BREATH_AMOUNT = 0.12; // ±12% of the current base intensity
 // 3. Recommendation breath: the gold beacon's glow shell swells slightly on
@@ -505,6 +535,18 @@ const RIM_BREATH_AMOUNT = 0.12; // ±12% of the current base intensity
 //    makes the recommendation the thing the eye returns to.
 const GOLD_BREATH_PERIOD_SEC = 4.4;
 const GOLD_BREATH_AMOUNT = 0.16;
+// 3b. Ocean drift. PHASE 3B CLOSEOUT: sped up from a ~40-minute full cycle
+//    (1/2400) to a ~2.5-minute one — the prior rate was too slow to perceive
+//    within a normal runtime observation window, which the brief calls out
+//    explicitly ("motion must be visually verified, not merely present in
+//    source"). Still slow and restrained by any normal-speed standard (a full
+//    cycle takes longer than a minute hand's half-revolution); not a "rolling
+//    wave," just a slow specular/bump drift across the existing texture.
+//    PHASE 3B FINAL VISUAL DELTA: 1/150 (~2.5min cycle) -> 1/45 (~45s cycle)
+//    — the 2.5-minute rate proved via pixel-diff but was still too slow for
+//    a human glancing at the NORMAL viewport to register as "moving" within
+//    a few seconds of looking. 45s is still a slow drift, not a wave.
+const OCEAN_DRIFT_PER_SEC = 1 / 45;
 // 4. Slow autorotation, and ONLY while the producer is neither inspecting
 //    nor driving the camera: any selection or any pointer interaction stops
 //    it immediately (see the controls block). A globe that keeps turning
@@ -590,6 +632,38 @@ function isoOfFeature(feat) {
   const raw = feat?.properties?.ISO_A2;
   if (raw && raw !== "-99") return raw;
   return ISO_A2_FIX_BY_ADM0_A3[feat?.properties?.ADM0_A3] || raw;
+}
+
+// ── PHASE 3B BATCH 2: border quality — deterministic altitude tie-break ──
+// ROOT CAUSE (confirmed directly in the installed three-globe 2.45.2
+// source, `node_modules/three-globe/dist/three-globe.mjs`'s polygon layer):
+// every country/state polygon renders its OWN complete boundary stroke as
+// an independent `LineSegments` + `LineBasicMaterial` (depthTest enabled,
+// three-globe's default). A border shared with a neighbour is therefore
+// drawn TWICE — once by each country's own feature — and three-globe scales
+// each stroke to `1 + altitude + 1e-4` (see its polygon layer's
+// `applyUpdate`), i.e. a FIXED relative offset above that feature's OWN
+// cap. Two adjacent countries at the SAME semantic tier share the exact
+// same `altitude` input, so their strokes land at the identical final
+// radius — a textbook coincident-depth GPU z-fight, undefined per-pixel/
+// per-frame winner, which is exactly what reads as "dashed / broken /
+// noisy" borders (confirmed visually: internal borders between two
+// untouched-land neighbours, the majority case, were the most affected).
+//
+// FIX: nudge every polygon's altitude by a tiny, DETERMINISTIC (hashed from
+// the feature's own ISO code — never random, never per-frame, so the same
+// pair of neighbours resolves the same way on every render) amount. Chosen
+// far smaller than the smallest real semantic altitude step
+// (INACTIVE_POLYGON_ALTITUDE = 0.002; this jitter tops out at 2e-5, two
+// orders of magnitude below) so the CAP/fill is visually unaffected, but
+// the same order of magnitude as three-globe's own proven stroke-offset
+// constant (1e-4) — large enough to reliably separate two coincident lines
+// in the depth buffer. No architecture change, no dataset change, no new
+// dependency — a one-line addition to the existing altitude accessor.
+function altitudeJitter(iso) {
+  let h = 0;
+  for (let i = 0; i < (iso || "").length; i++) h = (h * 31 + iso.charCodeAt(i)) | 0;
+  return (((h >>> 0) % 1000) / 1000) * 4e-5 - 2e-5; // deterministic, in [-2e-5, +2e-5)
 }
 
 // Canvas backdrop. Deliberately a shade lighter than the globe body so the
@@ -682,8 +756,14 @@ function makeOceanSurfaceTexture() {
   // breakup" grain the approved render shows in its specular region) was
   // still one size larger than it needed to be. Same deterministic PRNG,
   // same toroidal wrap; only a third scale added, not a new technique.
+  // PHASE 3B FINAL VISIBILITY PASS: octave 1's deltaMax raised (14 -> 20) —
+  // this is the BROAD, low-frequency swell that gives the ocean visible
+  // depth in a STILL frame (the other two octaves are fine grain, mostly
+  // felt through specular breakup, not through flat-lit tonal variation).
+  // Radius stays large (60-140px on a 1024px-wide texture) so the increase
+  // reads as soft depth, not as visible repeating blobs.
   const OCTAVES = [
-    { count: 90, rMin: 60, rMax: 140, deltaMax: 14 },
+    { count: 90, rMin: 60, rMax: 140, deltaMax: 20 },
     { count: 260, rMin: 8, rMax: 24, deltaMax: 22 },
     { count: 420, rMin: 3, rMax: 9, deltaMax: 26 },
   ];
@@ -782,6 +862,22 @@ export default function Globe3D({
   // CARD is the caller's, but the Globe owns the surface reaction, because
   // only the Globe knows which polygon/material a jurisdiction resolved to.
   hoveredIso = null,
+  // PHASE 3B BATCH 2 (objective 5): additional jurisdictions to illuminate
+  // alongside `hoveredIso` — used when hovering a Co-Production Opportunity
+  // to light up its real related jurisdictions (structure.participants,
+  // resolved to globe keys by the caller). `primaryIlluminatedIso`, if one
+  // of these, reads slightly stronger — real data (structure.primary_
+  // jurisdiction), never an invented preference. Both no-ops when absent,
+  // so every non-amber hover is completely unaffected by this prop existing.
+  illuminatedIsos = null,
+  primaryIlluminatedIso = null,
+  // PHASE 3B BATCH 2 (objective 6): jurisdictions currently in their one-
+  // time "unlock pulse" window (caller owns the timing — see ProjectGlobe.jsx
+  // categoryByIso diff effect). A brief, non-looping brighten distinct from
+  // hover/illumination; the caller is responsible for clearing it (setting
+  // this back to null) after its own timeout, this component never loops
+  // or re-triggers it on its own.
+  pulsingIsos = null,
   selectedLat = null,
   selectedLng = null,
   // Where the camera should settle. Defaults to the selected jurisdiction;
@@ -806,7 +902,7 @@ export default function Globe3D({
   // Mutable snapshot the polygon/point accessors read from — the accessors
   // are handed to three-globe once (stable identities), and re-assigning
   // them is how a selection/status change repaints without a remount.
-  const liveRef = useRef({ polygonColors: null, selectedIso: null, hoveredIso: null, pointRadius: null, geoIsoSet: null, strokeColor: null, landColor: null });
+  const liveRef = useRef({ polygonColors: null, selectedIso: null, hoveredIso: null, illuminatedIsos: null, primaryIlluminatedIso: null, pulsingIsos: null, pointRadius: null, geoIsoSet: null, strokeColor: null, landColor: null });
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -1040,7 +1136,31 @@ export default function Globe3D({
       // common case) and only started working after the producer had already
       // clicked something. Caught in runtime verification, not by the build.
       const base = sel ? dimHex(hex, 0.66, resolvedNeutralFill()) : hex;
-      return hovered ? brightenHex(base, 0.30) : base;
+      if (hovered) return brightenHex(base, 0.30);
+      // PHASE 3B BATCH 2 (objective 5): Co-Production Opportunity hover
+      // illuminates its real related jurisdictions too — the SAME hue
+      // brighten technique as ordinary hover, at two restrained, distinct
+      // strengths so the category colour is always preserved (never a
+      // generic white/washed highlight) and the illuminated set never reads
+      // as identical to a direct hover. The primary jurisdiction (real
+      // `structure.primary_jurisdiction`, never invented) reads slightly
+      // stronger than the rest of the related set.
+      const illuminated = !!iso && liveRef.current.illuminatedIsos?.has(iso);
+      if (illuminated) {
+        const isPrimary = iso === liveRef.current.primaryIlluminatedIso;
+        return brightenHex(base, isPrimary ? 0.22 : 0.14);
+      }
+      // PHASE 3B BATCH 2 (objective 6): category-transition unlock pulse —
+      // deliberately the STRONGEST of the three brighten tiers (hover 0.30,
+      // illumination 0.14-0.22, pulse 0.45) so a genuine "this just became
+      // available" moment reads as more emphatic than a passive hover, while
+      // still preserving the jurisdiction's own hue (same brightenHex
+      // mechanism, no new colour). One-shot: the caller (ProjectGlobe.jsx)
+      // owns the timer and clears `pulsingIsos` itself; this accessor has no
+      // concept of "playing" or "looping", it only reads whatever is
+      // currently in liveRef at paint time.
+      if (iso && liveRef.current.pulsingIsos?.has(iso)) return brightenHex(base, 0.45);
+      return base;
     };
     const strokeColorFn = (feat) => {
       const iso = isoOfFeature(feat);
@@ -1053,6 +1173,15 @@ export default function Globe3D({
       // landmass. Ranked BELOW selection (which owns SELECTED_STROKE) and
       // above every resting border.
       if (iso && iso === liveRef.current.hoveredIso) return HOVER_STROKE;
+      // PHASE 3B BATCH 2 (objective 5): illuminated related jurisdictions
+      // get the same border emphasis as a direct hover — a brightened fill
+      // with no border change reads as a colour glitch, not a highlighted
+      // country.
+      if (iso && liveRef.current.illuminatedIsos?.has(iso)) return HOVER_STROKE;
+      // PHASE 3B BATCH 2 (objective 6): pulsing jurisdictions get the gold
+      // stroke — the Globe's existing "look here" border, reused rather than
+      // inventing a new accent colour for a one-shot event.
+      if (iso && liveRef.current.pulsingIsos?.has(iso)) return GOLD_STROKE;
       if (hex === TIER_HEX.gold) return GOLD_STROKE;
       // Theme-driven: night mode softens borders markedly (see GLOBE_THEME).
       return liveRef.current.strokeColor || NEUTRAL_STROKE;
@@ -1085,12 +1214,13 @@ export default function Globe3D({
     };
     const altitudeFn = (feat) => {
       const iso = isoOfFeature(feat);
-      if (liveRef.current.selectedIso && iso === liveRef.current.selectedIso) return SELECTED_POLYGON_ALTITUDE;
+      const jitter = altitudeJitter(iso);
+      if (liveRef.current.selectedIso && iso === liveRef.current.selectedIso) return SELECTED_POLYGON_ALTITUDE + jitter;
       const colors = liveRef.current.polygonColors;
       const hex = colors?.get ? colors.get(iso) : colors?.[iso];
-      if (!hex) return INACTIVE_POLYGON_ALTITUDE;
-      if (hex === TIER_HEX.gold) return GOLD_BASELINE_POLYGON_ALTITUDE;
-      return PARTICIPATING_POLYGON_ALTITUDE;
+      if (!hex) return INACTIVE_POLYGON_ALTITUDE + jitter;
+      if (hex === TIER_HEX.gold) return GOLD_BASELINE_POLYGON_ALTITUDE + jitter;
+      return PARTICIPATING_POLYGON_ALTITUDE + jitter;
     };
 
     // ── Isolated material-correction pass (2026-07-28) ────────────────────
@@ -1169,11 +1299,25 @@ export default function Globe3D({
       // same curvature lever (lower roughness lets the environment gradient
       // vary more by each polygon's surface normal), not a new mechanism.
       land: { roughness: 0.47, clearcoat: 0.12, clearcoatRoughness: 0.65, emissiveIntensity: 0.19, envBase: 0.42 },
-      // Additional: roughness/clearcoat sit roughly a third of the way from
-      // land toward enamel — enough that hovering/selecting it still reads
-      // as "a real thing," not so much that it competes with Optimized or
-      // Unlockable for attention.
-      quiet: { roughness: 0.43, clearcoat: 0.30, clearcoatRoughness: 0.45, emissiveIntensity: 0.16, envBase: 0.48 },
+      // Excluded (STATUS_HEX.silver — see MATERIAL_TIER_BY_HEX below).
+      // PHASE 3B FINAL CATEGORY VALIDATION: this recipe used to be tuned
+      // under the OLD "Additional" semantics ("sits much closer to untouched
+      // land than to the enamel tier... a real thing, not so much that it
+      // competes for attention") — appropriate when this was the most
+      // numerous, least-important residual bucket. Under the CURRENT
+      // semantics this slot is "Excluded": a jurisdiction the discovery
+      // engine actively examined and rejected, a materially different fact
+      // from "never examined" (plain untouched land). Runtime review found
+      // the two had converged close enough to be visually indistinguishable
+      // from the legend's distinct silver swatch. Widened the gap from land
+      // (roughness 0.43->0.38, clearcoat 0.30->0.42, clearcoatRoughness
+      // 0.45->0.38, envBase 0.48->0.52) while keeping it well short of the
+      // enamel tier (roughness 0.30, clearcoat 1.0) — still subdued, still
+      // never competing with Alternatives/Co-Production for attention, just
+      // no longer close enough to land to read as "no data." emissiveIntensity
+      // held at land's own value (0.19) so the shadow-side floor doesn't
+      // make Excluded brighter than untouched land in the unlit hemisphere.
+      quiet: { roughness: 0.38, clearcoat: 0.42, clearcoatRoughness: 0.38, emissiveIntensity: 0.19, envBase: 0.52 },
       // Optimized alternative + Unlockable opportunity, unchanged from the
       // pre-3A "active status" recipe — proven, already reads as premium
       // satin/enamel, and step 1's runtime check confirmed it still holds
@@ -1325,6 +1469,21 @@ export default function Globe3D({
       const hex = d.color || TIER_HEX[d.tier] || TIER_HEX.charcoal;
       if (isSmallJurisdiction(d) && liveRef.current.selectedIso && d.iso !== liveRef.current.selectedIso) {
         return dimHex(hex, 0.66, resolvedNeutralFill());
+      }
+      // PHASE 3B BATCH 2 (objective 5/6): beacon-rendered jurisdictions
+      // (islands/city-states too small for the polygon layer — Mauritius,
+      // Malta, Singapore) never went through capColorFn's illumination/pulse
+      // branches at all, since they render via this entirely separate point
+      // path. Mauritius specifically is the anchor participant of nearly
+      // every Co-Production Opportunity in this production, so without this
+      // the single most common "related jurisdiction" would silently never
+      // illuminate. Same brightenHex tiers as the polygon path, same source
+      // of truth (liveRef.current.illuminatedIsos/pulsingIsos) — not a
+      // second colour system.
+      if (d.iso && liveRef.current.pulsingIsos?.has(d.iso)) return brightenHex(hex, 0.45);
+      if (d.iso && liveRef.current.illuminatedIsos?.has(d.iso)) {
+        const isPrimary = d.iso === liveRef.current.primaryIlluminatedIso;
+        return brightenHex(hex, isPrimary ? 0.22 : 0.14);
       }
       return hex;
     };
@@ -1597,7 +1756,21 @@ export default function Globe3D({
       // panel shape, was what kept the reflection reading as a sharp isolated
       // spot regardless of how long/thin the source was made.
       clearcoatRoughnessMap: oceanSurfaceTexture,
-      clearcoatRoughness: 0.68,
+      // PHASE 3B CLOSEOUT: 0.68 -> 0.58 (effective sphere-average clearcoat
+      // roughness ~0.34 -> ~0.29) — a crisper specular streak, paired with
+      // the raised envIntensity above, for visible surface dimensionality.
+      // Still well short of the ~0.16 "two white orbs" failure this file
+      // documents as the hard ceiling on the other end.
+      // PHASE 3B FINAL VISUAL DELTA: 0.58 -> 0.50 (effective ~0.29 -> ~0.25)
+      // — still one more step short of the 0.16 failure line, for a
+      // noticeably crisper specular streak at normal zoom.
+      // PHASE 3B FINAL VISIBILITY PASS: 0.50 -> 0.56 (effective ~0.25 ->
+      // ~0.28) — pulled back slightly. The category-matrix pass explicitly
+      // warned against "isolated white blobs dominating the surface"; a
+      // BROADER, softer highlight (the actual ask this round) needs a touch
+      // more clearcoat roughness, not less. Reflection STRENGTH stays put
+      // (envMapIntensity unchanged) — only its concentration is softened.
+      clearcoatRoughness: 0.56,
       envMapIntensity: GLOBE_THEME.day.envIntensity,
       ior: 1.52, // ~optical crown glass
       // Emissive is additive and lighting-independent, so it is the sphere's
@@ -1776,6 +1949,19 @@ export default function Globe3D({
             mesh.scale.setScalar(s);
           }
         }
+        // 4. Ocean drift (Phase 3B Batch 2) — scrolls the SAME procedural
+        //    bump/roughness/clearcoat-roughness texture's UV offset, rather
+        //    than animating geometry or adding a shader. A single scalar
+        //    write, shared by all three material channels because they all
+        //    reference the one `oceanSurfaceTexture` object. Deliberately
+        //    slow and horizontal-only (longitude direction, matching the
+        //    texture's own toroidal wrap — see makeOceanSurfaceTexture) so
+        //    it reads as "the water has depth" on close, deliberate
+        //    observation without ever looking like a current or wave
+        //    travelling in a visible direction. Never touches land: the
+        //    land grain shader is a separate, static, object-space effect
+        //    (applyLandGrainShader) with no texture and nothing to offset.
+        oceanSurfaceTexture.offset.x = (elapsed * OCEAN_DRIFT_PER_SEC) % 1;
       }
       controls.update();
       composer.render();
@@ -2076,9 +2262,22 @@ export default function Globe3D({
   // source), so the brighten lands on the same frame — the snap hover needs —
   // while altitude, which nothing here touches, keeps its 500ms selection
   // easing.
+  // PHASE 3B BATCH 2: also reacts to `illuminatedIsos`/`primaryIlluminatedIso`
+  // (objective 5, Co-Production Opportunity hover illumination) — same
+  // repaint mechanism, no new effect needed. The caller (ProjectGlobe.jsx)
+  // memoizes the array so this only actually re-fires on a real hover
+  // change, not on every render.
+  const illuminatedKey = illuminatedIsos && illuminatedIsos.length ? illuminatedIsos.join(",") : "";
   useEffect(() => {
-    if (liveRef.current.hoveredIso === hoveredIso) return;
+    const illuminatedSet = illuminatedIsos && illuminatedIsos.length ? new Set(illuminatedIsos) : null;
+    if (
+      liveRef.current.hoveredIso === hoveredIso
+      && liveRef.current.primaryIlluminatedIso === primaryIlluminatedIso
+      && illuminatedKey === (liveRef.current.illuminatedIsos ? [...liveRef.current.illuminatedIsos].join(",") : "")
+    ) return;
     liveRef.current.hoveredIso = hoveredIso;
+    liveRef.current.illuminatedIsos = illuminatedSet;
+    liveRef.current.primaryIlluminatedIso = primaryIlluminatedIso;
     const globe = globeRef.current;
     if (!globe) return;
     globe
@@ -2086,8 +2285,37 @@ export default function Globe3D({
       .polygonSideColor(globe.polygonSideColor())
       .polygonCapMaterial(globe.polygonCapMaterial())
       .polygonSideMaterial(globe.polygonSideMaterial())
-      .polygonStrokeColor(globe.polygonStrokeColor());
-  }, [hoveredIso]);
+      .polygonStrokeColor(globe.polygonStrokeColor())
+      // PHASE 3B BATCH 2: also re-invoke pointColor — illumination must reach
+      // beacon-rendered jurisdictions (Mauritius, Malta, Singapore), which
+      // render via the point layer, not the polygon layer, and were
+      // otherwise silently skipped by this repaint (caught in runtime
+      // verification: Mauritius, the most common related jurisdiction in
+      // this production's data, never lit up until this was added).
+      .pointColor(globe.pointColor());
+  }, [hoveredIso, illuminatedKey, primaryIlluminatedIso]);
+
+  // PHASE 3B BATCH 2 (objective 6): category-transition unlock pulse repaint
+  // — a separate effect from hover on purpose, same reasoning as hover being
+  // separate from selection: pulse timing is owned entirely by the caller
+  // (ProjectGlobe.jsx's own timeout), so this must not get tangled with
+  // pointer-driven hover repaints or re-run anything beyond the same four
+  // accessors hover already re-invokes.
+  const pulsingKey = pulsingIsos && pulsingIsos.length ? pulsingIsos.join(",") : "";
+  useEffect(() => {
+    const pulsingSet = pulsingIsos && pulsingIsos.length ? new Set(pulsingIsos) : null;
+    liveRef.current.pulsingIsos = pulsingSet;
+    const globe = globeRef.current;
+    if (!globe) return;
+    globe
+      .polygonCapColor(globe.polygonCapColor())
+      .polygonSideColor(globe.polygonSideColor())
+      .polygonCapMaterial(globe.polygonCapMaterial())
+      .polygonSideMaterial(globe.polygonSideMaterial())
+      .polygonStrokeColor(globe.polygonStrokeColor())
+      .pointColor(globe.pointColor());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pulsingKey]);
 
   useEffect(() => {
     stateRef.current.obscuredRightPx = obscuredRightPx;

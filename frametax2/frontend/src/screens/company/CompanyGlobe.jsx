@@ -8,13 +8,12 @@ import { STATUS_HEX } from "../../lib/globeData";
 import { Money } from "../../lib/format";
 
 export default function CompanyGlobe() {
-  // Hard Restore Frozen Project Globe: current-data compatibility adapter.
+  // Restore Final Phase 3B Globe: current-data compatibility adapter.
   // useCineGlobe() itself is unchanged (Company-level, not project-scoped —
-  // matches the frozen call exactly). The 3 navigate() targets below were
-  // adapted from the frozen commit's pre-multi-project literal
-  // "/production/overview" to the current project-scoped route, since that
-  // legacy route no longer exists. Nothing about the Globe rendering below
-  // was touched.
+  // matches the frozen call exactly). The 3 navigate() targets were
+  // adapted from the pre-multi-project literal "/production/overview" to
+  // the current project-scoped route, since that legacy route no longer
+  // exists. Nothing about the Globe rendering below was touched.
   const { data, error, loading } = useCineGlobe();
   const navigate = useNavigate();
   const [preview, setPreview] = useState(null);
