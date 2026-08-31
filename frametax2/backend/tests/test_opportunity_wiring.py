@@ -92,7 +92,7 @@ async def test_baselines_unchanged_after_opportunity_reconnection(db: AsyncSessi
     await evaluate_project(db, LITTLE_UTOPIA_PROJECT_ID)
     lu_view = await build_production_and_structures(db, LITTLE_UTOPIA_PROJECT_ID)
     lu_baseline = next(e for e in lu_view["structures"]["allocated_structures"]["structures"] if e["is_baseline"])
-    assert round(lu_baseline["npc_with_adjustments_usd"], 2) == 3722483.90  # CBA-009 Part 19-21: LU's own persisted 100% contingency-utilization project election (migration 0068) reproduces the historical $3,057,794.90 baseline through the generic pipeline
+    assert round(lu_baseline["npc_with_adjustments_usd"], 2) == 3812823.20  # Production Page Integrity Closeout (migration 0071): migration 0068's beta 100% contingency-utilization election was removed as a stale, project-name-branched default. With no election on file, derive_qualification_register's own existing GREY_AREA_REQUIRES_AUTHORITY doctrine applies (never silently 0% or 100%) — the reserve is excluded from qualifying QPE until a producer sets contingency_expected_utilization_pct via POST /projects/{id}/assumptions. Reconciled: budget ($4,364,393) + LA item (account 5000 EDITORIAL, $9,068, already excluded from MU QPE via the existing accounts_outside_jurisdiction fact) + contingency (unset) + QPE ($1,838,566) + incentive ($551,569.80) + NPC ($3,812,823.20), reproduced via a real evaluate_project() call.
 
     await evaluate_project(db, FVD_PROJECT_ID)
     fvd_view = await build_production_and_structures(db, FVD_PROJECT_ID)

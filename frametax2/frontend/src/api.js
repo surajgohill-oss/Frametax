@@ -67,6 +67,14 @@ export const postPeople = (answers) =>
 export const postProjectPeople = (projectId, answers) =>
   request(`/projects/${projectId}/people`, { method: "POST", body: JSON.stringify({ answers }) });
 
+// Production Page Integrity: generic producer-controlled project
+// assumptions (currently: contingency_expected_utilization_pct) — the
+// SAME real ProjectFact write path as postProjectPeople above, just a
+// different whitelisted key set. See app/api/v1/cineglobe.py
+// post_project_assumptions. A value of null deletes that fact's row.
+export const postProjectAssumptions = (projectId, answers) =>
+  request(`/projects/${projectId}/assumptions`, { method: "POST", body: JSON.stringify({ answers }) });
+
 // Major-location categories — user-confirmed overrides over the
 // script-derived seeds (canonical Production Record; effective values
 // feed territory matching / recommendations, which recompute on write).

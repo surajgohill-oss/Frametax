@@ -7,6 +7,8 @@ import Globe3D from "../../components/Globe3D";
 import { buildGlobeView, activeStructure, bestPricedCandidate } from "../../lib/globeData";
 import ProductionDetails from "../../components/ProductionDetails";
 import BudgetRail from "../../components/BudgetRail";
+import BudgetComposition from "../../components/BudgetComposition";
+import ContingencyControl from "../../components/ContingencyControl";
 import IncentiveIntelligence from "../../components/IncentiveIntelligence";
 // FXStrip: REMOVED from this Overview position this batch (see Batch 2 —
 // the full-width strip demoted the Globe and broke the approved
@@ -77,7 +79,9 @@ export default function Overview() {
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
 
-  const { production, pkg, people, economics } = data;
+  const { production, pkg, people, economics, facts } = data;
+  const contingencyPctRaw = facts?.answers?.contingency_expected_utilization_pct;
+  const contingencyPct = contingencyPctRaw == null ? null : Number(contingencyPctRaw);
 
   // Production Options card click — same inspect pattern Scenarios.jsx
   // already uses (open the structure's first segment, or its
@@ -162,8 +166,21 @@ export default function Overview() {
           />
         </div>
 
-        {/* ── RIGHT — Budget Rail (traceability over the canonical register) ── */}
+        {/* ── RIGHT — Budget composition (imported, generic) + Contingency
+             control (producer assumption) + Budget Rail (Modeled Economics,
+             traceability over the canonical register) ── */}
         <div className="ovxg-col">
+          <BudgetComposition
+            production={production}
+            budget={pkg.budget}
+            onSelectLine={(line) => openInspector("budget-line", line)}
+          />
+          <ContingencyControl
+            projectId={projectId}
+            budget={pkg.budget}
+            currentPct={contingencyPct}
+            onSaved={refetch}
+          />
           <BudgetRail
             production={production}
             register={pkg.register}

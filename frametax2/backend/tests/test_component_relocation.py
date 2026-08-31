@@ -109,6 +109,6 @@ async def test_little_utopia_baseline_unchanged_by_component_relocation(db: Asyn
     view = await build_production_and_structures(db, LITTLE_UTOPIA_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
     baseline = next(e for e in entries if e["is_baseline"])
-    assert round(baseline["npc_with_adjustments_usd"], 2) == 3722483.90  # CBA-009 Part 19-21: LU's own persisted 100% contingency-utilization project election (migration 0068) reproduces the historical $3,722,483.90 baseline through the generic pipeline
+    assert round(baseline["npc_with_adjustments_usd"], 2) == 3812823.20  # Production Page Integrity Closeout (migration 0071): migration 0068's beta 100% contingency-utilization election was removed as stale. No election on file -> GREY_AREA_REQUIRES_AUTHORITY (never silently 0%/100%), reserve excluded from qualifying QPE until a producer sets it. Current canonical NPC reproduced via a real evaluate_project() call.
     comp = [e for e in entries if e["structure_type"] == "component_relocation"]
     assert len(comp) > 0

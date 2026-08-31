@@ -438,7 +438,11 @@ async def test_little_utopia_exact_regression_after_authority_substrate_repair(d
     # top_result is correctly None (truthful unresolved status over
     # false recommendation); the real, priced economics are disclosed
     # on baseline instead.
-    assert result["baseline"]["true_net_cost_usd"] == 3_722_483.90
+    # Production Page Integrity Closeout (migration 0071): LU's stale beta
+    # 100% contingency-utilization election (migration 0068) was removed
+    # as a project-name-branched default. Absent an election the reserve
+    # is GREY_AREA_REQUIRES_AUTHORITY, never silently 0%/100%.
+    assert result["baseline"]["true_net_cost_usd"] == 3_812_823.20
     assert result["top_result"] is None
 
 
@@ -855,7 +859,11 @@ async def test_lu_mauritius_control_npc_unchanged(db: AsyncSession):
     entries = view["structures"]["allocated_structures"]["structures"]
     baseline = next(e for e in entries if e["is_baseline"])
     assert baseline["primary_jurisdiction"] == "MU"
-    assert baseline["npc_verified_usd"] == pytest.approx(3722483.90, abs=0.01)
+    # Production Page Integrity Closeout (migration 0071): LU's stale beta
+    # 100% contingency-utilization election (migration 0068) was removed.
+    # Absent an election the reserve is GREY_AREA_REQUIRES_AUTHORITY, never
+    # silently defaulted to 0% or 100%.
+    assert baseline["npc_verified_usd"] == pytest.approx(3812823.20, abs=0.01)
 
 
 async def test_georgia_prices_with_real_numbers_in_fvd(db: AsyncSession):

@@ -159,12 +159,14 @@ async def test_project_facts_with_provenance(db: AsyncSession, project: Project)
     # below and test_canonical_project_economics.py) — that phase moved this
     # evidence out of a Little-Utopia-specific module constant and into
     # generic persisted project state, which is what made the canonical
-    # engine drivable from any project's own rows. Plus 1 from migration
-    # 0068 — Little Utopia's own established contingency-expected-
-    # utilization project election (Consolidated Backend Correction, Part
-    # 19-21/CBA-009), persisted the same way rather than left embedded in
-    # code.
-    assert len(facts) == 14
+    # engine drivable from any project's own rows. Migration 0068 had added
+    # a 14th — Little Utopia's beta-era 100% contingency-expected-
+    # utilization election — but Production Page Integrity Closeout
+    # (migration 0071) removed that row as a stale, project-name-branched
+    # default: the product now exposes a real, generic producer control
+    # (POST /projects/{id}/assumptions) for this fact, and no project
+    # carries a silent default. Back to 13.
+    assert len(facts) == 13
     by_key = {f.fact_key: f for f in facts}
 
     assert by_key["gross_budget_usd"].value == "4364393.0" or float(by_key["gross_budget_usd"].value) == pytest.approx(4364393.0, abs=0.01)
@@ -182,11 +184,16 @@ async def test_project_facts_with_provenance(db: AsyncSession, project: Project)
     ]
     assert json.loads(by_key["budget_offshore_payroll_accounts"].value) == []
 
-    # Migration 0068: Little Utopia's established contingency-expected-
-    # utilization project election (100%), the same "recovered_demo_state"
-    # provenance convention as every other fact 0063 recovered.
-    assert float(by_key["contingency_expected_utilization_pct"].value) == 100.0
-    assert by_key["contingency_expected_utilization_pct"].source_type == "recovered_demo_state"
+    # Migration 0068 had persisted a contingency_expected_utilization_pct=100
+    # fact here (a beta-era, "recovered_demo_state"-provenance election).
+    # Production Page Integrity Closeout (migration 0071) removed that row:
+    # it was a stale default, not a legitimate producer election, and the
+    # product now exposes a real, generic control for this fact (POST
+    # /projects/{id}/assumptions) rather than a silent per-project default.
+    # No row at all is the correct, honest state until a producer elects
+    # one — derive_qualification_register's own GREY_AREA_REQUIRES_AUTHORITY
+    # doctrine applies, never a silent 0% or 100%.
+    assert "contingency_expected_utilization_pct" not in by_key
 
     for fact in facts:
         assert fact.source_type == "recovered_demo_state"
@@ -264,5 +271,8 @@ async def test_production_structure_and_leading_selection(db: AsyncSession, proj
     assert calc.engine_version == ENGINE_VERSION
     assert float(calc.total_budget_usd) == pytest.approx(4364393.00, abs=0.01)
     # The accepted regression truth (see test_canonical_evaluation.py) —
-    # never recomputed differently here.
-    assert float(calc.true_net_cost_usd) == pytest.approx(3722483.90, abs=0.01)
+    # never recomputed differently here. Production Page Integrity Closeout
+    # (migration 0071): LU's stale beta 100% contingency-utilization
+    # election (migration 0068) was removed; absent an election the
+    # reserve is GREY_AREA_REQUIRES_AUTHORITY, not silently 0%/100%.
+    assert float(calc.true_net_cost_usd) == pytest.approx(3812823.20, abs=0.01)

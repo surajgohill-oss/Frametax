@@ -35,7 +35,7 @@ from app.models.project_person import ProjectPerson
 from app.models.project_location_requirement import ProjectLocationRequirement
 from app.models.project_fact import ProjectFact
 from app.models.talent import TalentProfile
-from app.models.enums import ProjectFactSourceType
+from app.models.enums import ProjectFactSourceType, ReviewStatus
 from app.data.little_utopia_people import PersonOverride, primary_person_name
 
 from app.calculators.optimization_engine import RiskCase
@@ -757,6 +757,66 @@ async def post_project_people(project_id: str, body: PeopleAnswers, db: AsyncSes
     from app.services.canonical_production_view import build_generic_pkg_and_economics
     sections = await build_generic_pkg_and_economics(db, project_id)
     return sections["people"]
+
+
+# Production Page Integrity: the generic producer-controlled project
+# assumptions any project may set, each read generically by
+# canonical_project_economics.build_project_economic_inputs (never a
+# per-project branch in that reader). Whitelisted (never an arbitrary
+# fact_key write) so this endpoint can't be used to smuggle a value into
+# an extraction/system-owned fact key (writer_name, gross_budget_usd,
+# etc.) that must retain its own real provenance/source_document_version.
+_PROJECT_ASSUMPTION_FACT_KEYS = {"contingency_expected_utilization_pct"}
+
+
+class ProjectAssumptions(BaseModel):
+    answers: dict[str, Any]
+
+
+@router.post("/projects/{project_id}/assumptions")
+async def post_project_assumptions(
+    project_id: str, body: ProjectAssumptions, db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Generic write path for a producer-controlled project assumption
+    (e.g. contingency_expected_utilization_pct) — the SAME real
+    ProjectFact table/precedence every other fact already uses, never a
+    second persistence mechanism. Works identically for any project;
+    no project id/title is ever read or branched on here. A later
+    Evaluate picks up the change through the existing fingerprint (the
+    fact is already part of build_project_economic_inputs's real input
+    set — this endpoint only writes it, the existing evaluation pipeline
+    already reads it)."""
+    project = (await db.execute(select(Project).where(Project.id == project_id))).scalar_one_or_none()
+    if project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    for fact_key, value in body.answers.items():
+        if fact_key not in _PROJECT_ASSUMPTION_FACT_KEYS:
+            raise HTTPException(status_code=400, detail=f"'{fact_key}' is not a producer-settable project assumption.")
+        existing = (await db.execute(
+            select(ProjectFact).where(ProjectFact.project_id == project.id, ProjectFact.fact_key == fact_key)
+        )).scalar_one_or_none()
+        if value is None:
+            if existing is not None:
+                await db.delete(existing)
+            continue
+        if existing is not None:
+            existing.value = str(value)
+            existing.source_type = ProjectFactSourceType.USER_OVERRIDE.value
+            existing.review_status = ReviewStatus.APPROVED.value
+        else:
+            db.add(ProjectFact(
+                id=uuid.uuid4(), project_id=project.id, fact_key=fact_key,
+                value=str(value), value_type="number",
+                source_type=ProjectFactSourceType.USER_OVERRIDE.value,
+                review_status=ReviewStatus.APPROVED.value,
+            ))
+
+    await db.commit()
+    fact_rows = (await db.execute(
+        select(ProjectFact).where(ProjectFact.project_id == project.id, ProjectFact.fact_key.in_(_PROJECT_ASSUMPTION_FACT_KEYS))
+    )).scalars().all()
+    return {"answers": {f.fact_key: f.value for f in fact_rows}}
 
 
 class LocationOverrides(BaseModel):

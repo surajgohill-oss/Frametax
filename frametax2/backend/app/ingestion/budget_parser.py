@@ -28,7 +28,7 @@ from app.calculators.classify_budget_line_items import classify_line_item
 # Bumped whenever a change to this module or classify_budget_line_items
 # changes parsed/classified OUTPUT for existing real budgets — mirrors
 # screenplay_structural_parser.PARSER_VERSION's own convention exactly.
-BUDGET_PARSER_VERSION = "budget-1.1.0"
+BUDGET_PARSER_VERSION = "budget-1.2.0"
 
 
 @dataclass
@@ -182,6 +182,20 @@ _BTL_SECTION_RE = re.compile(
     r"Total Production|Total Post Production|Total Other", re.IGNORECASE
 )
 _GRAND_TOTAL_RE = re.compile(r"^Grand Total\s*$", re.IGNORECASE)
+
+# Production Page Integrity: a real, generic Movie Magic top-sheet
+# convention — a loaded-cost line applied AFTER the "Total Above and
+# Below-The-Line" subtotal (contingency reserve, production fee,
+# completion bond percentage) has no leading numeric account code of its
+# own, only a "LABEL : X.X%" line followed by its dollar amount. Previously
+# fell through to the bare `else: i += 1` branch and was silently
+# dropped — a real leaf-line extraction gap (confirmed against Bad
+# Hombres' own real budget: "CONTINGENCY : 5.0%" / "$94,382", the exact
+# real difference between its declared grand total and its own extracted
+# leaf-line sum). Never a synthetic/invented account code — the label
+# text itself (already real, already in the source document) is the
+# line's own description and identity, same as any other extracted line.
+_LOADED_COST_PCT_RE = re.compile(r"^([A-Za-z][A-Za-z /&]*?)\s*:\s*\d+(?:\.\d+)?%\s*$")
 
 # Lines that must never contribute to parsed spend totals:
 # rebate/credit/net-total rows are budget assumptions, not gross spend.
@@ -340,6 +354,17 @@ def _parse_film_budget(
                 # LINE - PRODUCTION") — aggregates accounts already counted
                 # individually; never registered as its own leaf account.
                 i += 1
+            elif (m_loaded := _LOADED_COST_PCT_RE.match(line)) and i + 1 < len(lines):
+                # "CONTINGENCY : 5.0%" / "Production Fee : 0.0%" — a real,
+                # unnumbered top-sheet loaded-cost line (see
+                # _LOADED_COST_PCT_RE's own docstring). Registered under
+                # its own real label text, never a numeric code the
+                # document itself doesn't state.
+                label = m_loaded.group(1).strip()
+                amt = _parse_amount(lines[i + 1])
+                if amt is not None and amt != 0:
+                    _register(label, label, amt, None)
+                i += 2
             else:
                 i += 1
 
@@ -403,16 +428,21 @@ def _parse_film_budget(
             return "Other"
         return "Below The Line"
 
-    def _base_acct(key: str) -> str:
+    def _base_acct(key: str) -> str | None:
         # key may have a dedup suffix like "85-00_2" or "8300_2" — strip it.
-        return re.match(rf"({_ACCT_CODE_HYPHEN_RE}|{_ACCT_CODE_BARE_RE})", key).group(1)
+        # A real, unnumbered top-sheet loaded-cost line (_LOADED_COST_PCT_RE
+        # — "CONTINGENCY : 5.0%") is registered under its own label text,
+        # never a numeric code the source document doesn't state — no
+        # match is the honest, expected outcome for that case, not an error.
+        m = re.match(rf"({_ACCT_CODE_HYPHEN_RE}|{_ACCT_CODE_BARE_RE})", key)
+        return m.group(1) if m else None
 
     items: list[ParsedLineItem] = []
     for row_num, (key, (desc, amt, page_ref)) in enumerate(sorted(acct_totals.items())):
         base_acct = _base_acct(key)
         items.append(ParsedLineItem(
-            description=f"{base_acct} {desc}",
-            department=_dept_for_acct(base_acct),
+            description=f"{base_acct} {desc}" if base_acct else desc,
+            department=_dept_for_acct(base_acct) if base_acct else "Other",
             amount_raw=str(amt),
             amount_usd=amt,
             currency_code=currency_code,

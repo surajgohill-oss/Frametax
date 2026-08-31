@@ -48,7 +48,7 @@ test("Today.jsx: the Production Slate thumbnail is per-project, never Little Uto
 // B. Served production facts render from canonical project/person facts.
 test("Overview.jsx reads people from the canonical per-project state, not a hardcoded/company-level source", () => {
   const src = stripComments(read("screens/production/Overview.jsx"));
-  assert.match(src, /const \{ production, pkg, people, economics \} = data/, "Overview must destructure people from the canonical per-project payload");
+  assert.match(src, /const \{ production, pkg, people, economics, facts \} = data/, "Overview must destructure people from the canonical per-project payload");
   assert.match(src, /<ProductionDetails[\s\S]{0,150}people=\{people\}/, "ProductionDetails must be rendered with the real canonical people object");
 });
 

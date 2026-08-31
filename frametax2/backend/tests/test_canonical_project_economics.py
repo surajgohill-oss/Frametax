@@ -39,23 +39,18 @@ from app.services.canonical_project_economics import (
 #: The real, already-accepted Little Utopia project row.
 LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
 
-#: Little Utopia Economic Reconciliation (2026-08-30): the CURRENT,
-#: genuinely-derived canonical figures — computed from the real chain
-#: (source budget -> normalized lines -> qualification register ->
-#: allocation -> pricing) at Little Utopia's own CURRENTLY-PERSISTED real
-#: election (contingency_expected_utilization_pct=100, ProjectFact,
-#: migration 0068) — never picked to match either historical figure.
+#: Little Utopia Economic Reconciliation (2026-08-30): the 100%-EXPECTED-
+#: UTILIZATION SCENARIO figures — computed from the real chain (source
+#: budget -> normalized lines -> qualification register -> allocation ->
+#: pricing) with contingency_expected_utilization_pct EXPLICITLY set to
+#: 100. These are no longer Little Utopia's currently-persisted default
+#: (see CURRENT_NPC_USD/CURRENT_INCENTIVE_USD below) — kept here as a
+#: fixed, real reference point for the 0%-vs-100% sensitivity proof
+#: (test_zero_percent_utilization_would_exclude_the_full_reserve), which
+#: passes an explicit override and never reads the persisted fact.
 #:
-#: Two prior historical NPCs exist and neither is treated as
-#: automatically correct: $3,057,794.90 (an earlier ingestion whose exact
-#: per-line classification could not be reproduced/restored) and
-#: $3,812,823.20 (a transient state during this task's own predecessor,
-#: caused by a real, now-fixed classifier gap — see below). See
-#: CAPABILITY_LEDGER.md, "Little Utopia Economic Reconciliation" for the
-#: full derivation and the 0/25/50/75/100% sensitivity proof.
-#:
-#: Root cause of the difference, confirmed and fixed (not reverse-
-#: engineered): the real source budget PDF spells the contingency reserve
+#: Root cause of the $3,722,483.90 vs $3,812,823.20 difference, confirmed
+#: and fixed: the real source budget PDF spells the contingency reserve
 #: line "Contigency" (missing the 'n', account 8300, $301,131.00).
 #: classify_budget_line_items.py's contingency-detection regex didn't
 #: tolerate this real misspelling, so the reserve fell into generic
@@ -67,15 +62,29 @@ LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
 #: (`"8300": "contingency"`), which always correctly classified this
 #: exact account regardless of the description text. Fixed centrally
 #: (contin?gency), never a Little-Utopia-specific branch. With the fix,
-#: the mechanism is genuinely bidirectional again against LU's real data
-#: — the 100%-vs-0%-utilization swing reproduces the SAME $90,339.30
-#: marginal incentive delta the mechanism has always modeled (Mauritius's
-#: real EDB program qualifies 100% of deployed contingency spend, per its
+#: the mechanism is genuinely bidirectional against LU's real data — the
+#: 100%-vs-0%-utilization swing reproduces the SAME $90,339.30 marginal
+#: incentive delta the mechanism has always modeled (Mauritius's real EDB
+#: program qualifies 100% of deployed contingency spend, per its
 #: existing, unchanged qualification doctrine — not a new assumption).
 ACCEPTED_NPC_USD = 3_722_483.90
 ACCEPTED_INCENTIVE_USD = 641_909.10
 ACCEPTED_GROSS_BUDGET_USD = 4_364_393.00
 ACCEPTED_LEAF_SUM_USD = 4_364_395.00
+
+#: Production Page Integrity Closeout (migration 0071): the CURRENT
+#: canonical figures — Little Utopia's stale beta 100% contingency-
+#: utilization election (migration 0068, "recovered_demo_state"
+#: provenance) was removed as a project-name-branched default that never
+#: reflected a real producer decision. With no election on file,
+#: derive_qualification_register's own existing, unchanged
+#: GREY_AREA_REQUIRES_AUTHORITY doctrine applies to the reserve — never
+#: silently assumed 0% or 100%. Reproduces the SAME figures as an
+#: explicit 0% election (the reserve is excluded from qualifying QPE
+#: either way); the distinction from a genuine 0% election is that this
+#: state carries no election at all, not a resolved one.
+CURRENT_NPC_USD = 3_812_823.20
+CURRENT_INCENTIVE_USD = 551_569.80
 
 
 @pytest.fixture
@@ -118,10 +127,14 @@ async def test_little_utopia_canonical_npc_reproduced_from_generic_inputs(db: As
 
     Canonical calculators (derive_qualification_register ->
     derive_account_allocation -> price_allocated_structure), driven purely
-    from generic persisted project evidence, must reproduce the accepted
-    Little Utopia baseline economics to the cent.
+    from generic persisted project evidence, must reproduce the CURRENT
+    Little Utopia baseline economics to the cent — as of Production Page
+    Integrity Closeout (migration 0071), that means no persisted
+    contingency election at all (inputs.contingency_expected_utilization_pct
+    is None), not the retired 100% beta default.
     """
     inputs = (await build_project_economic_inputs(db, LITTLE_UTOPIA_PROJECT_ID)).inputs
+    assert inputs.contingency_expected_utilization_pct is None
 
     register = derive_qualification_register(
         inputs.budget_lines,
@@ -158,30 +171,31 @@ async def test_little_utopia_canonical_npc_reproduced_from_generic_inputs(db: As
         fx_delta_usd=None,
         inkind_replacement_delta_usd=0.0,
         local_cost_delta_usd=0.0,
-        # Consolidated Backend Correction, Part 19-21 (CBA-009) — the
-        # production's own real, persisted election, same as the served
-        # path (canonical_evaluation._price_candidate) threads through.
+        # Whatever is actually persisted (None, post migration 0071) —
+        # same as the served path (canonical_evaluation._price_candidate)
+        # threads through. Never hardcoded to a scenario value here.
         contingency_expected_utilization_pct=inputs.contingency_expected_utilization_pct,
     )
 
     assert pricing.is_fully_priced is True
-    assert round(pricing.selected_incentive_usd, 2) == ACCEPTED_INCENTIVE_USD
-    assert round(pricing.npc_verified_usd, 2) == ACCEPTED_NPC_USD
+    assert round(pricing.selected_incentive_usd, 2) == CURRENT_INCENTIVE_USD
+    assert round(pricing.npc_verified_usd, 2) == CURRENT_NPC_USD
 
 
-async def test_little_utopia_contingency_election_is_a_real_persisted_project_fact(db: AsyncSession):
-    """Consolidated Backend Correction, Part 19-21/CBA-009 acceptance proof.
+async def test_little_utopia_contingency_election_has_no_stale_default(db: AsyncSession):
+    """Production Page Integrity Closeout (migration 0071) acceptance proof.
 
-    Little Utopia's 100% expected-contingency-utilization election must
-    come from a real, persisted ProjectFact row (alembic migration 0068)
-    read through the fully generic
-    canonical_project_economics.build_project_economic_inputs seam —
-    never a Mauritius or Little-Utopia-specific branch anywhere in the
-    calculators themselves. Confirms the historical baseline is
-    reproduced FOR THE CORRECT REASON, not merely that the number
-    matches."""
+    Little Utopia's migration-0068 beta 100% expected-contingency-
+    utilization election (a stale "recovered_demo_state" default, never a
+    real producer decision) is gone. The generic
+    canonical_project_economics.build_project_economic_inputs seam reads
+    whatever is actually persisted — nothing here, currently — and never
+    substitutes a Mauritius or Little-Utopia-specific default anywhere in
+    the calculators themselves. Confirms the current, honest state is
+    reproduced FOR THE CORRECT REASON (no fact on file), not merely that
+    a number matches."""
     inputs = (await build_project_economic_inputs(db, LITTLE_UTOPIA_PROJECT_ID)).inputs
-    assert inputs.contingency_expected_utilization_pct == pytest.approx(100.0)
+    assert inputs.contingency_expected_utilization_pct is None
 
     import inspect
 

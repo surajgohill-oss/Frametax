@@ -75,10 +75,11 @@ async def test_little_utopia_workspace_view_uses_the_same_adapter(db: AsyncSessi
     evaluation = result["evaluation"]
     assert evaluation["status"] == "EVALUATION_COMPLETE"
     assert evaluation["top_result"]["jurisdiction_code"] == "MU"
-    # CBA-009 Part 19-21: Little Utopia's own real, persisted 100%
-    # contingency-expected-utilization project election (migration 0068)
-    # reproduces this historical baseline through the generic pipeline.
-    assert evaluation["top_result"]["true_net_cost_usd"] == pytest.approx(3_722_483.90, abs=1.0)
+    # Production Page Integrity Closeout (migration 0071): LU's stale
+    # beta 100% contingency-utilization election (migration 0068) was
+    # removed. Absent an election the reserve is GREY_AREA_REQUIRES_
+    # AUTHORITY, never silently 0%/100%.
+    assert evaluation["top_result"]["true_net_cost_usd"] == pytest.approx(3_812_823.20, abs=1.0)
 
     # LU's screenplay has not been SA-1 parsed — the adapter must report
     # that honestly (0 scenes) rather than fabricate structure (Part D).

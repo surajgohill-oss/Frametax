@@ -27,6 +27,8 @@ details generically than Little Utopia's own richer, unchanged
 """
 from __future__ import annotations
 
+import re
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -40,6 +42,13 @@ from app.models.project_fact import ProjectFact
 from app.models.project_person import ProjectPerson
 from app.models.talent import TalentProfile
 from app.services.canonical_evaluation import ENGINE_VERSION, _QUALIFICATION_ADMITS_RECOMMENDED
+
+# Production Page Integrity: the SAME leading-account-code convention
+# canonical_project_economics.py's own _ACCOUNT_CODE_RE already uses to
+# derive the priced register's line identity — reused here unchanged so
+# the budget-composition drill-down's account codes are never a second,
+# differently-parsed identity for the same real line.
+_ACCOUNT_CODE_RE = re.compile(r"^\s*(\d{3,6})\s+(.*)$")
 
 
 def _anchor_and_stacked(trace: dict) -> tuple[str | None, list[str]]:
@@ -538,6 +547,36 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
         else (float(budget_doc.total_budget_raw) if budget_doc and budget_doc.total_budget_raw is not None else None)
     )
 
+    # Production Page Integrity: leaf_account_sum_usd/variance_usd/note
+    # were hardcoded None for every generic project — the SAME "designed
+    # field, never wired" pattern this session keeps finding. Populated
+    # from the real, persisted BudgetLineItem rows (never a second budget
+    # model). A genuine, MATERIAL gap (as opposed to the ~$2 immaterial
+    # rounding LU's own real document carries) is disclosed here, never
+    # silently balanced away and never force-redistributed into the
+    # displayed category breakdown — the declared document total remains
+    # the authoritative gross_budget_usd either way (existing, unchanged
+    # doctrine: "the document's own declared total governs").
+    leaf_account_sum_usd = None
+    variance_usd = None
+    reconciliation_note = None
+    if budget_doc is not None:
+        leaf_sum_row = (await session.execute(
+            select(BudgetLineItem.amount_usd).where(BudgetLineItem.budget_document_id == budget_doc.id)
+        )).scalars().all()
+        leaf_account_sum_usd = round(sum(float(a) for a in leaf_sum_row if a is not None), 2)
+        if gross_budget_usd is not None:
+            variance_usd = round(gross_budget_usd - leaf_account_sum_usd, 2)
+            if abs(variance_usd) > 5:
+                reconciliation_note = (
+                    f"The document's own declared grand total (${gross_budget_usd:,.2f}) differs from "
+                    f"the sum of its own extracted leaf account lines (${leaf_account_sum_usd:,.2f}) by "
+                    f"${variance_usd:,.2f} — a real gap in the source document itself (e.g. a category "
+                    "reported only as part of the stated total, not broken into its own leaf line), not "
+                    "a parsing loss. The declared total remains authoritative; never redistributed into "
+                    "the displayed category breakdown to force a match."
+                )
+
     from app.services.canonical_project_economics import build_ui_location_categories
     ui_location_categories = await build_ui_location_categories(session, project.id)
 
@@ -554,9 +593,9 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
         "rate_warnings": [],
         "budget_reconciliation": {
             "authoritative_gross_usd": gross_budget_usd,
-            "leaf_account_sum_usd": None,
-            "variance_usd": None,
-            "note": None,
+            "leaf_account_sum_usd": leaf_account_sum_usd,
+            "variance_usd": variance_usd,
+            "note": reconciliation_note,
         },
         "production_structure_default": None,
         # Script Analyzer Full Production Breakdown: was hardcoded {} for
@@ -707,6 +746,21 @@ async def build_generic_pkg_and_economics(session: AsyncSession, project_id) -> 
             float(leading_result.total_budget_usd) if leading_result.total_budget_usd is not None else None
         )
 
+    # Production Page Integrity: the compact producer-facing budget
+    # COMPOSITION breakdown (Section 5/6's "what the production costs")
+    # is intentionally sourced from the raw, real, persisted
+    # BudgetLineItem rows — never from `register` above, which requires
+    # a fully-priced, is_baseline StructureCalculationResult (a
+    # jurisdiction-pricing outcome) and is legitimately empty for a
+    # project whose own home jurisdiction isn't priced (Lips Like
+    # Sugar's/Bad Hombres' own real state). The real budget composition
+    # exists and is knowable regardless of whether ANY jurisdiction
+    # pricing succeeded — the two were previously conflated by having
+    # the ONLY breakdown source be pricing-dependent. Grouped by the
+    # SAME generic classify_budget_line_items.py spend_category/
+    # atl_btl taxonomy every project's real ingestion already assigns
+    # per line — never a second/invented category vocabulary.
+    line_items_for_breakdown: list[BudgetLineItem] = []
     budget_doc = (await session.execute(
         select(BudgetDocument).where(BudgetDocument.project_id == project.id)
         .order_by(BudgetDocument.created_at.desc())
@@ -716,10 +770,30 @@ async def build_generic_pkg_and_economics(session: AsyncSession, project_id) -> 
         currency_code = budget_doc.currency_code
         if total_budget_usd is None and budget_doc.total_budget_raw is not None:
             total_budget_usd = float(budget_doc.total_budget_raw)
-        line_item_count = (await session.execute(
-            select(BudgetLineItem.id).where(BudgetLineItem.budget_document_id == budget_doc.id)
+        line_items_for_breakdown = (await session.execute(
+            select(BudgetLineItem).where(BudgetLineItem.budget_document_id == budget_doc.id)
         )).scalars().all()
-        line_item_count = len(line_item_count)
+        line_item_count = len(line_items_for_breakdown)
+
+    atl_total = btl_total = post_total = other_total = labor_total = non_labor_total = 0.0
+    totals_by_spend_category: dict[str, float] = {}
+    for item in line_items_for_breakdown:
+        amt = float(item.amount_usd) if item.amount_usd is not None else 0.0
+        bucket = getattr(item.atl_btl, "value", item.atl_btl)
+        if bucket == "atl":
+            atl_total += amt
+        elif bucket == "btl":
+            btl_total += amt
+        elif bucket == "post":
+            post_total += amt
+        else:
+            other_total += amt
+        if item.is_labor:
+            labor_total += amt
+        else:
+            non_labor_total += amt
+        category = getattr(item.spend_category, "value", item.spend_category) or "miscellaneous"
+        totals_by_spend_category[category] = round(totals_by_spend_category.get(category, 0.0) + amt, 2)
 
     pkg = {
         "production_id": str(project.id),
@@ -730,9 +804,30 @@ async def build_generic_pkg_and_economics(session: AsyncSession, project_id) -> 
             "known": budget_doc is not None, "filename": filename, "currency_code": currency_code,
             "total_budget_usd": total_budget_usd,
             "line_item_count": line_item_count,
-            "atl_total_usd": None, "btl_total_usd": None, "post_total_usd": None,
-            "other_total_usd": None, "labor_usd": None, "non_labor_usd": None,
-            "totals_by_spend_category_usd": {}, "opportunity_hints": [],
+            "atl_total_usd": round(atl_total, 2) if line_items_for_breakdown else None,
+            "btl_total_usd": round(btl_total, 2) if line_items_for_breakdown else None,
+            "post_total_usd": round(post_total, 2) if line_items_for_breakdown else None,
+            "other_total_usd": round(other_total, 2) if line_items_for_breakdown else None,
+            "labor_usd": round(labor_total, 2) if line_items_for_breakdown else None,
+            "non_labor_usd": round(non_labor_total, 2) if line_items_for_breakdown else None,
+            "totals_by_spend_category_usd": totals_by_spend_category,
+            "opportunity_hints": [],
+            # Drill-down (Section 7): real line identity, never dropped —
+            # account code parsed from the SAME leading-code convention
+            # canonical_project_economics.py's own _ACCOUNT_CODE_RE
+            # already uses to build the priced register, so a producer
+            # sees the identical code either way.
+            "line_items": [
+                {
+                    "line_id": str(item.id),
+                    "account_code": (m.group(1) if (m := _ACCOUNT_CODE_RE.match(item.description or "")) else None),
+                    "description": item.description,
+                    "amount_usd": float(item.amount_usd) if item.amount_usd is not None else None,
+                    "spend_category": getattr(item.spend_category, "value", item.spend_category),
+                    "atl_btl": getattr(item.atl_btl, "value", item.atl_btl),
+                }
+                for item in line_items_for_breakdown
+            ],
         },
         "script": {
             "known": False, "filename": None, "page_count": None, "word_count": None,

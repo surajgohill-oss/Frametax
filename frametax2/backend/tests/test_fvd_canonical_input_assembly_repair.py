@@ -285,5 +285,9 @@ async def test_little_utopia_regression_unchanged_by_input_assembly_repair(db: A
     # top_result is correctly None (truthful unresolved status over
     # false recommendation); the real, priced economics are disclosed
     # on baseline instead.
-    assert result["baseline"]["true_net_cost_usd"] == 3_722_483.90
+    # Production Page Integrity Closeout (migration 0071): LU's stale
+    # beta 100% contingency-utilization election was removed. Absent an
+    # election the reserve is GREY_AREA_REQUIRES_AUTHORITY, never
+    # silently 0%/100%.
+    assert result["baseline"]["true_net_cost_usd"] == 3_812_823.20
     assert result["top_result"] is None

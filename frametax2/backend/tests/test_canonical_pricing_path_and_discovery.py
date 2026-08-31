@@ -40,11 +40,13 @@ from app.services.canonical_evaluation import ENGINE_VERSION, evaluate_project
 
 LITTLE_UTOPIA_PROJECT_ID = "fa5cade5-0669-4816-bfe6-72146f8d3bae"
 FVD_PROJECT_ID = "6c6f1c13-2d49-4bbc-bafb-2a12efa93112"
-#: Canonical Ingestion/Analysis Propagation (2026-08-30): updated from
-#: the prior accepted $3,057,794.90 after a real budget reprocess; see
-#: the matching note in test_canonical_evaluation.py and
-#: CAPABILITY_LEDGER.md.
-ACCEPTED_LU_NPC_USD = 3_722_483.90
+#: Production Page Integrity Closeout (migration 0071): Little Utopia's
+#: beta 100% contingency-utilization election was removed as a stale
+#: default; with no election on file the reserve is genuinely
+#: GREY_AREA_REQUIRES_AUTHORITY, reproducing the same figures as an
+#: explicit 0% election. See the matching note in
+#: test_canonical_evaluation.py and CAPABILITY_LEDGER.md.
+ACCEPTED_LU_NPC_USD = 3_812_823.20
 
 #: The three known, independently-cited Ontario programs (Task 6's control
 #: case) — real program_slugs, not aliases.
