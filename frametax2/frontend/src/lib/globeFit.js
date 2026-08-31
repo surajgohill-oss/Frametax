@@ -69,3 +69,33 @@ export function silhouetteRadiusPx(width, height, distance, radius = GLOBE_GEOME
   const frac = Math.tan(Math.asin(radius / distance)) / halfV;
   return frac * (height / 2);
 }
+
+// Production Overview + Project Globe UI regression repair: the camera-flight
+// decision for the "no selection, no mode-specific focus target" case (e.g.
+// Jurisdictions mode with nothing selected). Extracted as a pure function so
+// the fix is regression-tested without a WebGL context or a browser — the
+// same reasoning `fitCameraDistance`/`silhouetteRadiusPx` above were already
+// extracted for.
+//
+// VERIFIED root cause (traced in Globe3D.jsx, present unchanged since the
+// Globe's earliest commit): the selection/focus-flight effect used to
+// `return` immediately whenever there was no explicit target, which silently
+// left the camera at whatever distance the PREVIOUS flight (a selected
+// jurisdiction, or Optimizer Overlay's own pathway framing — which can be
+// farther OR nearer than this mode's resting fit) had reached. Toggling into
+// Jurisdictions mode with nothing selected never had a case that returned
+// the camera to ITS OWN whole-globe resting fit — this is what read as "the
+// Globe shrinks/sticks when switching modes".
+//
+// Takes and returns plain {x,y,z} objects (never a THREE.Vector3) so this
+// stays importable from a Node test with no `three` dependency, matching the
+// rest of this module.
+export function resolveRestingFlight(cameraPosition, restingFit) {
+  const len = Math.hypot(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+  if (Math.abs(len - restingFit) < 1.5) return null; // already resting — no-op, not a fresh flight
+  if (len === 0) return null; // degenerate — no direction to preserve
+  return {
+    direction: { x: cameraPosition.x / len, y: cameraPosition.y / len, z: cameraPosition.z / len },
+    distance: restingFit,
+  };
+}

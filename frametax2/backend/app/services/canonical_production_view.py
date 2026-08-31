@@ -777,6 +777,19 @@ async def build_generic_pkg_and_economics(session: AsyncSession, project_id) -> 
 
     atl_total = btl_total = post_total = other_total = labor_total = non_labor_total = 0.0
     totals_by_spend_category: dict[str, float] = {}
+    # Production Overview + Project Globe UI regression repair, Section 4:
+    # `department` is a SECOND real, already-imported field on every
+    # BudgetLineItem (parsed by budget_parser.py's own _dept_for_acct — the
+    # source document's own top-sheet section headers, e.g. "Above The
+    # Line" / "Production" / "Post Production" / "Other" — never invented
+    # here). Exposed alongside spend_category rather than replacing it:
+    # spend_category is the finer, canonical taxonomy but a project whose
+    # real budget skews heavily into categories the classifier maps to
+    # "miscellaneous" reads as an unhelpful single bucket at that
+    # granularity; department is the coarser grouping the source document
+    # itself already uses, and every bucket it produces is a real section
+    # name, never a generic catch-all.
+    totals_by_department: dict[str, float] = {}
     for item in line_items_for_breakdown:
         amt = float(item.amount_usd) if item.amount_usd is not None else 0.0
         bucket = getattr(item.atl_btl, "value", item.atl_btl)
@@ -794,6 +807,8 @@ async def build_generic_pkg_and_economics(session: AsyncSession, project_id) -> 
             non_labor_total += amt
         category = getattr(item.spend_category, "value", item.spend_category) or "miscellaneous"
         totals_by_spend_category[category] = round(totals_by_spend_category.get(category, 0.0) + amt, 2)
+        department = item.department or "Other"
+        totals_by_department[department] = round(totals_by_department.get(department, 0.0) + amt, 2)
 
     pkg = {
         "production_id": str(project.id),
@@ -811,6 +826,7 @@ async def build_generic_pkg_and_economics(session: AsyncSession, project_id) -> 
             "labor_usd": round(labor_total, 2) if line_items_for_breakdown else None,
             "non_labor_usd": round(non_labor_total, 2) if line_items_for_breakdown else None,
             "totals_by_spend_category_usd": totals_by_spend_category,
+            "totals_by_department_usd": totals_by_department,
             "opportunity_hints": [],
             # Drill-down (Section 7): real line identity, never dropped —
             # account code parsed from the SAME leading-code convention
@@ -824,6 +840,7 @@ async def build_generic_pkg_and_economics(session: AsyncSession, project_id) -> 
                     "description": item.description,
                     "amount_usd": float(item.amount_usd) if item.amount_usd is not None else None,
                     "spend_category": getattr(item.spend_category, "value", item.spend_category),
+                    "department": item.department,
                     "atl_btl": getattr(item.atl_btl, "value", item.atl_btl),
                 }
                 for item in line_items_for_breakdown

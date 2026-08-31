@@ -7,8 +7,6 @@ import Globe3D from "../../components/Globe3D";
 import { buildGlobeView, activeStructure, bestPricedCandidate } from "../../lib/globeData";
 import ProductionDetails from "../../components/ProductionDetails";
 import BudgetRail from "../../components/BudgetRail";
-import BudgetComposition from "../../components/BudgetComposition";
-import ContingencyControl from "../../components/ContingencyControl";
 import IncentiveIntelligence from "../../components/IncentiveIntelligence";
 // FXStrip: REMOVED from this Overview position this batch (see Batch 2 —
 // the full-width strip demoted the Globe and broke the approved
@@ -166,27 +164,22 @@ export default function Overview() {
           />
         </div>
 
-        {/* ── RIGHT — Budget composition (imported, generic) + Contingency
-             control (producer assumption) + Budget Rail (Modeled Economics,
-             traceability over the canonical register) ── */}
+        {/* ── RIGHT — Budget Rail (the ONE canonical budget surface: real
+             imported department/account breakdown, drill-down, and the
+             compact contingency control — traceability over the canonical
+             register when a structure has priced, department-grouped
+             pkg.budget line items otherwise) ── */}
         <div className="ovxg-col">
-          <BudgetComposition
-            production={production}
-            budget={pkg.budget}
-            onSelectLine={(line) => openInspector("budget-line", line)}
-          />
-          <ContingencyControl
-            projectId={projectId}
-            budget={pkg.budget}
-            currentPct={contingencyPct}
-            onSaved={refetch}
-          />
           <BudgetRail
             production={production}
             register={pkg.register}
+            budget={pkg.budget}
             structure={structure}
             structureIsLeading={structureIsLeading}
             economics={economics}
+            projectId={projectId}
+            contingencyPct={contingencyPct}
+            onContingencySaved={refetch}
             onSelectAccount={(line, alloc) => openInspector("account", {
               ...line,
               crossRef: alloc ? [{

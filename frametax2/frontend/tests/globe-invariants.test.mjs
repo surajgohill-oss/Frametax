@@ -30,6 +30,7 @@ import {
   GLOBE_CONTENT_RADIUS,
   GLOBE_GEOMETRY_RADIUS,
   fitCameraDistance,
+  resolveRestingFlight,
   silhouetteRadiusPx,
 } from "../src/lib/globeFit.js";
 
@@ -774,4 +775,74 @@ test("fixture relationships can never leak into the real-data path", () => {
     "relatedCodes must fall back to the structure's real participants when no fixture relationship exists");
   assert.match(src, /entry\.fixtureRelated\?\.primary\s*\?\?\s*structure\?\.primary_jurisdiction/,
     "primaryJurisdictionCode must fall back to the structure's real primary_jurisdiction");
+});
+
+// ── Production Overview + Project Globe UI regression repair ───────────────
+//
+// resolveRestingFlight is the extracted decision logic for the camera-flight
+// effect's "no selection, no mode-specific focus target" case. VERIFIED root
+// cause (traced directly in Globe3D.jsx, unchanged since the Globe's earliest
+// commit — 2b961ce): the effect used to `return` immediately whenever there
+// was no explicit target, silently leaving the camera at whatever distance a
+// PREVIOUS flight (a selected jurisdiction, or Optimizer Overlay's own
+// pathway framing) had reached — Jurisdictions mode with nothing selected
+// never had a case that returned the camera to its OWN whole-globe resting
+// fit. That is what read as "the Globe shrinks/sticks when switching modes".
+//
+// SCOPE, honestly stated (see file header): this proves the DECISION is
+// correct — given a camera away from resting, it computes a flight back to
+// resting along the camera's current direction; given a camera already at
+// resting, it correctly does nothing. It cannot prove the tween actually
+// paints on screen (that needs a real, focused/visible browser tab — the
+// project has no browser-test dependency, same limitation the header above
+// already states for the rest of this file).
+
+test("resolveRestingFlight flies back to the resting fit when the camera is away from it", () => {
+  // Camera sitting on the +Z axis at distance 250 (e.g. Optimizer Overlay's
+  // own tighter pathway framing), resting fit is 302 (a typical whole-globe
+  // fit at a landscape panel) — this is the exact real-world case that used
+  // to leave the Globe "shrunk" after returning to Jurisdictions mode.
+  const result = resolveRestingFlight({ x: 0, y: 0, z: 250 }, 302);
+  assert.ok(result, "must return a flight when the camera is away from resting");
+  assert.equal(result.distance, 302);
+  // Direction preserved (still pointing along +Z) — only the distance is
+  // corrected, never the orientation the producer (or autorotation) had
+  // settled on.
+  assert.deepEqual(result.direction, { x: 0, y: 0, z: 1 });
+});
+
+test("resolveRestingFlight is a genuine no-op once the camera is already resting", () => {
+  assert.equal(resolveRestingFlight({ x: 0, y: 0, z: 302 }, 302), null);
+  // Within the same 1.5-unit epsilon applySize's own atRestingFraming check
+  // uses — never re-triggers a flight for float noise around the same spot.
+  assert.equal(resolveRestingFlight({ x: 0, y: 0, z: 301 }, 302), null);
+});
+
+test("resolveRestingFlight preserves the camera's actual 3D direction, not just a Z-axis case", () => {
+  // A camera at an arbitrary orbited position (e.g. after manual drag or
+  // autorotation) away from resting — the returned direction must be the
+  // SAME unit vector, only the magnitude (distance) corrected.
+  const pos = { x: 100, y: 50, z: 200 };
+  const len = Math.hypot(pos.x, pos.y, pos.z);
+  const result = resolveRestingFlight(pos, 302);
+  assert.ok(result);
+  assert.equal(result.distance, 302);
+  assert.ok(Math.abs(result.direction.x - pos.x / len) < 1e-9);
+  assert.ok(Math.abs(result.direction.y - pos.y / len) < 1e-9);
+  assert.ok(Math.abs(result.direction.z - pos.z / len) < 1e-9);
+  // The direction must itself be a unit vector.
+  const dirLen = Math.hypot(result.direction.x, result.direction.y, result.direction.z);
+  assert.ok(Math.abs(dirLen - 1) < 1e-9);
+});
+
+test("resolveRestingFlight never divides by zero at the degenerate origin", () => {
+  assert.equal(resolveRestingFlight({ x: 0, y: 0, z: 0 }, 302), null);
+});
+
+test("Globe3D's selection-flight effect calls resolveRestingFlight for the no-target case, never a bare return", () => {
+  const src = stripComments(read("components/Globe3D.jsx"));
+  assert.match(src, /import\s*\{[^}]*resolveRestingFlight[^}]*\}\s*from\s*"\.\.\/lib\/globeFit"/,
+    "Globe3D must import resolveRestingFlight from lib/globeFit — the shared, tested decision, never a re-implemented inline copy");
+  assert.match(src, /resolveRestingFlight\(camera\.position,\s*restingFit\)/,
+    "the no-target branch must call resolveRestingFlight rather than silently returning");
 });

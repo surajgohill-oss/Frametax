@@ -103,16 +103,27 @@ function ContingencySection({ accountCodes = [], contingencyByAccount = {} }) {
 }
 
 function AccountInspector({ data }) {
-  const state = accountStateLabel(data.state);
+  // Production Overview + Project Globe UI regression repair: this same
+  // Inspector now also renders a department-grouped fallback line (a
+  // project whose own base jurisdiction never priced — pkg.register is
+  // empty, so the line carries no qualification state/confidence at all).
+  // Never fabricate a state for that jurisdiction-agnostic case — omit the
+  // row rather than showing an empty badge.
+  const hasQualificationState = data.state != null;
+  const state = hasQualificationState ? accountStateLabel(data.state) : null;
   return (
     <>
       <p className="inspector-eyebrow">Budget account {data.code}</p>
       <h3>{data.label}</h3>
       <dl className="kv-list">
         <div><dt>Amount</dt><dd className="mono"><Money value={data.amount} /></dd></div>
-        <div><dt>Qualification state</dt><dd><span className={`badge ${state.tier}`}>{state.label}</span></dd></div>
-        <div><dt>Confidence</dt><dd style={{ textTransform: "capitalize" }}>{data.confidence}</dd></div>
-        {data.movement !== "unclassified" && (
+        {state && (
+          <div><dt>Qualification state</dt><dd><span className={`badge ${state.tier}`}>{state.label}</span></dd></div>
+        )}
+        {data.confidence && (
+          <div><dt>Confidence</dt><dd style={{ textTransform: "capitalize" }}>{data.confidence}</dd></div>
+        )}
+        {data.movement != null && data.movement !== "unclassified" && (
           <div><dt>Movement</dt><dd style={{ textTransform: "capitalize" }}>{data.movement}</dd></div>
         )}
         {data.incentiveUpsideUsd != null && (
@@ -149,38 +160,6 @@ function AccountInspector({ data }) {
           </div>
         </div>
       )}
-    </>
-  );
-}
-
-// Production Page Integrity: drill-down for a Budget Composition line
-// (BudgetComposition.jsx / canonical_production_view.build_generic_pkg_and_economics
-// pkg.budget.line_items) — deliberately a DIFFERENT, simpler renderer than
-// AccountInspector above. AccountInspector describes a register line's
-// jurisdiction-QPE qualification state under the active structure;
-// this one describes the line exactly as the imported document itself
-// states it (account code, description, amount, canonical spend category),
-// with no structure/jurisdiction dependency — never fabricates a
-// qualification state this jurisdiction-agnostic view has no basis for.
-function BudgetLineInspector({ data }) {
-  return (
-    <>
-      <p className="inspector-eyebrow">Budget line{data.account_code ? ` ${data.account_code}` : ""}</p>
-      <h3>{data.description}</h3>
-      <dl className="kv-list">
-        <div><dt>Amount</dt><dd className="mono"><Money value={data.amount_usd} /></dd></div>
-        {data.spend_category && (
-          <div><dt>Canonical category</dt><dd style={{ textTransform: "capitalize" }}>{data.spend_category.replace(/_/g, " ")}</dd></div>
-        )}
-        {data.atl_btl && (
-          <div><dt>ATL / BTL</dt><dd style={{ textTransform: "uppercase" }}>{data.atl_btl}</dd></div>
-        )}
-      </dl>
-      <p className="text-tertiary small" style={{ marginTop: 8 }}>
-        Read verbatim from the imported budget document's own leaf account line — no jurisdiction, structure, or
-        incentive-program treatment applied. See the Production Budget rail for this line's qualification state
-        under the active structure, if one is priced.
-      </p>
     </>
   );
 }
@@ -432,7 +411,6 @@ const RENDERERS = {
   question: QuestionInspector,
   jurisdiction: JurisdictionInspector,
   account: AccountInspector,
-  "budget-line": BudgetLineInspector,
   "allocation-segment": AllocationSegmentInspector,
   "allocation-assignment": AllocationAssignmentInspector,
   "structure-recommendation": StructureRecommendationInspector,

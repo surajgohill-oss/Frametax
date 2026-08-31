@@ -83,3 +83,48 @@ export function buildAccountBlocks(register) {
   }
   return blocks;
 }
+
+// Production Overview + Project Globe UI regression repair, Section 3/4: the
+// ONE canonical budget surface (BudgetRail) needs a real breakdown even for
+// a project whose own base jurisdiction never priced — pkg.register above is
+// jurisdiction-pricing-derived and genuinely empty in that case (Lips Like
+// Sugar, Bad Hombres), even though the project's real imported budget lines
+// exist. This builds the SAME {key, label, lines, amount} block shape
+// buildAccountBlocks produces above, so RailBlock renders either source
+// identically, but from pkg.budget.line_items (jurisdiction-agnostic, always
+// populated once a budget is imported) grouped by `department` — the
+// source document's own real top-sheet section headers (Above The Line /
+// Production / Post Production / Other), parsed and stored on every
+// BudgetLineItem already. Deliberately NOT spend_category: that finer,
+// canonical taxonomy is what collapses a real budget's ATL/crew/art spend
+// into a single "Miscellaneous" bucket whenever the classifier can't place a
+// line more specifically — department is the coarser grouping the document
+// itself already uses, so every bucket it produces is a real section name,
+// never a generic catch-all. No new taxonomy invented; both fields already
+// exist on the same imported row.
+export function buildDepartmentBlocks(lineItems) {
+  const byDept = new Map();
+  for (const item of lineItems || []) {
+    const dept = item.department || "Other";
+    if (!byDept.has(dept)) byDept.set(dept, []);
+    byDept.get(dept).push(item);
+  }
+  return Array.from(byDept.entries())
+    .map(([dept, items]) => {
+      const lines = items
+        .map((item) => ({
+          key: item.line_id,
+          code: item.account_code,
+          label: item.description,
+          amount: item.amount_usd || 0,
+        }))
+        .sort((a, b) => b.amount - a.amount);
+      return {
+        key: dept.toLowerCase().replace(/\s+/g, "-"),
+        label: dept,
+        lines,
+        amount: lines.reduce((sum, l) => sum + l.amount, 0),
+      };
+    })
+    .sort((a, b) => b.amount - a.amount);
+}

@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Money } from "../lib/format";
-import { buildAccountBlocks } from "../lib/budgetBlocks";
+import { buildAccountBlocks, buildDepartmentBlocks } from "../lib/budgetBlocks";
+import { postProjectAssumptions } from "../api";
 
 // Production Budget rail — approved Overview right column. Categories and
 // line items come verbatim from the real parsed budget register
@@ -159,11 +160,85 @@ function AdjustmentsPreview({ economics }) {
   );
 }
 
-export default function BudgetRail({ production, register, structure, structureIsLeading, economics, onSelectAccount }) {
-  const blocks = useMemo(() => buildAccountBlocks(register || []), [register]);
+// Compact Contingency Expected-Utilization control — Production Overview +
+// Project Globe UI regression repair, Section 5: lives INSIDE the Budget
+// Rail (never a standalone module) as a single line — reserve amount, then a
+// short dropdown, matching the rest of this rail's density. Same real,
+// already-implemented persistence/API this control has used since it was
+// first built (POST /projects/{id}/assumptions) — this batch only moves
+// where it renders, never what it does or how it's stored.
+const CONTINGENCY_OPTIONS = [0, 25, 50, 75, 100];
+
+function ContingencyLine({ projectId, reserveUsd, currentPct, onSaved }) {
+  const [saving, setSaving] = useState(false);
+  if (!reserveUsd) return null;
+
+  async function choose(e) {
+    const pct = e.target.value === "" ? null : Number(e.target.value);
+    if (saving) return;
+    setSaving(true);
+    try {
+      await postProjectAssumptions(projectId, { contingency_expected_utilization_pct: pct });
+      onSaved?.();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="brail-block">
+      <div className="brail-header brail-static brail-contingency-row" title="Expected use of contingency.">
+        <span style={{ width: 13 }} />
+        <span className="brail-name">Contingency</span>
+        <span className="mono brail-amount">
+          <Money value={reserveUsd} bare />
+        </span>
+        <span className="brail-contingency-use">
+          <span className="text-tertiary">Use</span>
+          <select
+            className="brail-contingency-select"
+            value={currentPct ?? ""}
+            disabled={saving}
+            onChange={choose}
+          >
+            <option value="">—</option>
+            {CONTINGENCY_OPTIONS.map((pct) => (
+              <option key={pct} value={pct}>{pct}%</option>
+            ))}
+          </select>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+export default function BudgetRail({
+  production, register, budget, structure, structureIsLeading, economics, onSelectAccount,
+  projectId, contingencyPct, onContingencySaved,
+}) {
+  // Production Overview + Project Globe UI regression repair, Section 3/4:
+  // ONE canonical budget surface. pkg.register (jurisdiction-pricing-
+  // derived) is used when it's populated; a project whose own base
+  // jurisdiction never priced (register genuinely empty — Lips Like Sugar,
+  // Bad Hombres) falls back to the SAME generic, jurisdiction-agnostic
+  // pkg.budget.line_items every project already has, grouped by the
+  // document's own real department sections. Never a second, competing
+  // budget presentation — the same RailBlock renders either source.
+  const blocks = useMemo(() => {
+    const accountBlocks = buildAccountBlocks(register || []);
+    if (accountBlocks.length > 0) {
+      // The dedicated "Contingency" account block (BLOCK_DEFS) and the
+      // compact ContingencyLine row below both show the SAME reserve total
+      // — never both. The compact row is the canonical presentation now
+      // (Section 5); drop the block rather than showing the figure twice.
+      return accountBlocks.filter((b) => b.key !== "contingency");
+    }
+    return buildDepartmentBlocks(budget?.line_items || []);
+  }, [register, budget]);
   const hasFinance = blocks.some((b) => /finance/i.test(b.label));
   const [openLineKey, setOpenLineKey] = useState(null);
   const onToggleLine = (key) => setOpenLineKey((cur) => (cur === key ? null : key));
+  const contingencyReserveUsd = budget?.totals_by_spend_category_usd?.contingency ?? 0;
 
   // Bad Hombres Overview Truthfulness: Credit/NPC describe WHICHEVER
   // structure the caller passed as `structure` — a producer-selected
@@ -212,6 +287,13 @@ export default function BudgetRail({ production, register, structure, structureI
           onToggleLine={onToggleLine}
         />
       ))}
+      <ContingencyLine
+        projectId={projectId}
+        reserveUsd={contingencyReserveUsd}
+        currentPct={contingencyPct}
+        onSaved={onContingencySaved}
+      />
+
       {!hasFinance && (
         <div className="brail-block">
           <div className="brail-header brail-static">

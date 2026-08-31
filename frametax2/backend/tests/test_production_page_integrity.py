@@ -96,6 +96,39 @@ async def test_budget_composition_populated_without_a_priced_register(db: AsyncS
     assert len(result["pkg"]["budget"]["line_items"]) == 34
 
 
+# ── A2. Production Overview + Project Globe UI regression repair: department
+#        grouping (the source document's own real top-sheet sections) is a
+#        second, additive real field alongside spend_category — never a
+#        replacement, and it must conserve to gross exactly like the other
+#        aggregate. This is what BudgetRail.jsx groups by so a producer never
+#        sees an undifferentiated "Miscellaneous" bucket for a real budget
+#        the classifier maps mostly into that one spend_category. ────────────
+
+@pytest.mark.parametrize(
+    "project_id,expected_gross,tolerance",
+    [
+        (LLS_PROJECT_ID, 11_983_654.0, 0.01),
+        (BAD_HOMBRES_PROJECT_ID, 2_482_023.0, 0.01),
+        (LITTLE_UTOPIA_PROJECT_ID, 4_364_393.0, 2.01),
+        (FVD_PROJECT_ID, 4_517_687.0, 0.01),
+    ],
+)
+async def test_department_breakdown_conserves_to_gross(db: AsyncSession, project_id, expected_gross, tolerance):
+    result = await build_generic_pkg_and_economics(db, project_id)
+    by_department = result["pkg"]["budget"]["totals_by_department_usd"]
+    assert by_department, "totals_by_department_usd must be populated once a budget is imported"
+    # Every bucket must be a real section name from the source document —
+    # never a generic catch-all like "Miscellaneous" (that's exactly the
+    # spend_category limitation this second field exists to route around).
+    assert "Miscellaneous" not in by_department
+    dept_sum = round(sum(by_department.values()), 2)
+    assert dept_sum == pytest.approx(expected_gross, abs=tolerance)
+    # Every line item must carry its own department, for BudgetRail's
+    # department-grouped fallback rendering to work at all.
+    for line in result["pkg"]["budget"]["line_items"]:
+        assert line["department"]
+
+
 # ── B. Bad Hombres' real unnumbered loaded-cost CONTINGENCY line ───────────
 
 async def test_bad_hombres_contingency_line_extracted(db: AsyncSession):
