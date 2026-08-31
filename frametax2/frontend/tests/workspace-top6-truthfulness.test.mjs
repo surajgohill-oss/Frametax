@@ -146,7 +146,12 @@ test("ProjectHeader computes isGenuineRecommendation by comparing the active str
 // distinctly-labeled fallback the Hero only reaches when topStructure
 // (activeStructure's own recommendation-or-leading pick) is absent.
 test("bestPricedCandidate is a distinct fallback, never substituted silently for the canonical recommendation", () => {
-  const src = stripComments(read("lib/globeData.js"));
+  // Hard Restore Frozen Project Globe: bestPricedCandidate was extracted
+  // out of lib/globeData.js (now restored byte-exact to the July 30 freeze,
+  // which predates this function) into its own small module — a current-
+  // data compatibility adapter, not a behavior change. Same function, same
+  // callers, different file.
+  const src = stripComments(read("lib/bestPricedCandidate.js"));
   assert.match(src, /export function bestPricedCandidate\(allocated\)/);
   const heroSrc = stripComments(read("components/ProductionHero.jsx"));
   assert.match(heroSrc, /bestPriced = !topStructure \? bestPricedCandidate : null/, "bestPriced must only apply when there is genuinely no active structure at all");
@@ -220,9 +225,14 @@ test("the dynamic FX slot is driven by activeStructure (Leading) when it resolve
 // economics ProjectHeader's own Hero already uses for its own "Top Priced
 // Candidate" state (globeData.bestPricedCandidate), never a second,
 // divergent "best" computation invented for the FX rail alone.
-test("bestPricedCandidate (imported from the same globeData module the Hero uses) drives the slot when no Leading exists", () => {
+test("bestPricedCandidate (imported from the same module the Hero uses) drives the slot when no Leading exists", () => {
+  // Hard Restore Frozen Project Globe: bestPricedCandidate now lives in its
+  // own module (lib/bestPricedCandidate.js), not lib/globeData.js (restored
+  // byte-exact to the July 30 freeze) — same function, same single source
+  // every caller shares, different file.
   const src = stripComments(read("screens/production/Workspace.jsx"));
-  assert.match(src, /import \{ buildGlobeView, structureTier, activeStructure, bestPricedCandidate \} from "\.\.\/\.\.\/lib\/globeData";/);
+  assert.match(src, /import \{ buildGlobeView, structureTier, activeStructure \} from "\.\.\/\.\.\/lib\/globeData";/);
+  assert.match(src, /import \{ bestPricedCandidate \} from "\.\.\/\.\.\/lib\/bestPricedCandidate";/);
 });
 
 // I. Neither a Leading selection nor a Top Priced candidate exists — the

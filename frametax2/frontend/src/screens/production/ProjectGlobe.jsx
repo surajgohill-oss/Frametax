@@ -1,15 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useCineGlobe } from "../../lib/useCineGlobe";
 import { Loading, ErrorBox } from "../../components/Async";
 import Globe3D from "../../components/Globe3D";
 import GlobeLegend from "../../components/GlobeLegend";
-import { buildGlobeView, structureTier, STATUS_HEX, STATUS_RANK, globeKey } from "../../lib/globeData";
+import { buildGlobeView, structureTier, STATUS_HEX } from "../../lib/globeData";
 import { isFixtureActive } from "../../lib/globeVisualFixture";
 import { useAppState } from "../../state/AppState";
-import { Money, humanizeToken, jurisdictionName } from "../../lib/format";
-import { formatFullUsd, incentivePctOfGross, presentExclusionReason, relatedJurisdictions } from "../../lib/globeHoverFormat";
-import { loadCategorySnapshot, saveCategorySnapshot, diffCategories } from "../../lib/globeCategoryDiff";
+import { Money, CompactMoney, humanizeToken } from "../../lib/format";
 
 // Project Globe — this production's structures and their routing on the
 // canonical globe. Same live model as the Workspace Map mode, given its own
@@ -24,6 +22,16 @@ import { loadCategorySnapshot, saveCategorySnapshot, diffCategories } from "../.
 // estimated NPC) — see buildHoverLines() below and globeData's
 // buildCountryHoverData, which is the sole source for every figure here.
 export default function ProjectGlobe() {
+  // Hard Restore Frozen Project Globe: current-data compatibility adapter,
+  // not a frozen-behavior change. At the July 30 freeze this route was not
+  // yet project-scoped (useCineGlobe() with no args, the single in-memory
+  // demo project). The app is now genuinely multi-project
+  // (/projects/:projectId/globe) — useCineGlobe already supports a
+  // projectId argument for exactly this (see its own docstring), so this
+  // is the caller-side data-fetching boundary Section 6 asks for: read the
+  // route's real projectId and pass it through unchanged. Nothing below
+  // this line (camera, polygons, borders, elevation, hover, tooltip,
+  // interaction state) is touched.
   const { projectId } = useParams();
   const { data, error, loading } = useCineGlobe(projectId);
   const { inspector, openInspector, leadingStructureId, selectedJurisdiction, setSelectedJurisdiction } = useAppState();
@@ -33,12 +41,6 @@ export default function ProjectGlobe() {
   // converted to a position relative to canvasRef below at render time.
   const [hoverRect, setHoverRect] = useState(null);
   const canvasRef = useRef(null);
-  // PHASE 3B BATCH 2 (objective 6) — one-time "unlock pulse" isos, cleared
-  // by its own timeout. A plain ref (not state) tracks the pending timeout
-  // so a second genuine transition inside the pulse window replaces rather
-  // than stacks it.
-  const [pulsingIsos, setPulsingIsos] = useState(null);
-  const pulseTimeoutRef = useRef(null);
   // Read once per render: the fixture gate is durable state now, not a URL read.
   const fixtureActive = isFixtureActive();
 
@@ -47,100 +49,14 @@ export default function ProjectGlobe() {
     if (!allocated) return new Map();
     return new Map(allocated.ranking.map((r) => [r.structure_id, r]));
   }, [allocated]);
-  const { points, arcs, polygonColors, selectedIso, selectedLat, selectedLng, focusLat, focusLng, focusDistance, structuresByCode, categoryByIso } = useMemo(
-    () => buildGlobeView(allocated, rankById, {
-      mode: globeMode, leadingStructureId, selectedJurisdiction,
-      grossBudgetUsd: data?.production?.gross_budget_usd ?? null,
-    }),
-    [allocated, rankById, globeMode, leadingStructureId, selectedJurisdiction, data?.production?.gross_budget_usd],
+  const { points, arcs, polygonColors, selectedIso, selectedLat, selectedLng, focusLat, focusLng, focusDistance, structuresByCode } = useMemo(
+    () => buildGlobeView(allocated, rankById, { mode: globeMode, leadingStructureId, selectedJurisdiction }),
+    [allocated, rankById, globeMode, leadingStructureId, selectedJurisdiction],
   );
-
-  // PHASE 3B BATCH 2 (objective 9): opening the Inspector clears hover
-  // (and, transitively, any Co-Production illumination) rather than leaving
-  // it stale underneath — the cursor can stay parked on the same marker
-  // after a click without the Globe still showing a hover response for a
-  // country whose full detail is now in the Inspector.
-  useEffect(() => {
-    if (inspector) { setHover(null); setHoverRect(null); }
-  }, [inspector]);
-
-  // Phase 3B Batch 1 — category-state diff engine. Produces transition
-  // information ONLY (console-logged for dev verification, same disclosure
-  // pattern as the visual fixture); no animation, no visible UI change.
-  // Later Phase 3B batches consume `diffCategories`'s output to drive
-  // one-time signals. Runs whenever the engine's own output changes, and
-  // persists the new snapshot so a page refresh doesn't read every
-  // jurisdiction as "newly changed".
-  useEffect(() => {
-    if (!categoryByIso || categoryByIso.size === 0) return;
-    const productionId = data?.production?.production_id;
-    const prevSnapshot = loadCategorySnapshot(productionId);
-    const changes = diffCategories(prevSnapshot, categoryByIso);
-    if (changes.length > 0 && import.meta.env.DEV) {
-      // eslint-disable-next-line no-console
-      console.info("[CineGlobe] Globe category changes since last snapshot:", changes);
-    }
-    // PHASE 3B BATCH 2 (objective 6) — one-time unlock pulse for a genuine
-    // IMPROVING transition only (silver -> amber, amber -> jade, etc. — the
-    // same STATUS_RANK the status upsert itself resolves by, never a second
-    // ordering). Never fires on first observation (diffCategories already
-    // excludes that) or on a downgrade. Respects prefers-reduced-motion by
-    // not scheduling any timer at all — the fill still updates to the new
-    // category colour on the very same repaint, just without the pulse.
-    const improved = changes
-      .filter((c) => STATUS_RANK[c.currCategory] > STATUS_RANK[c.prevCategory])
-      .map((c) => c.iso);
-    const reducedMotion = typeof window !== "undefined"
-      && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    if (improved.length > 0 && !reducedMotion) {
-      if (pulseTimeoutRef.current) clearTimeout(pulseTimeoutRef.current);
-      setPulsingIsos(improved);
-      pulseTimeoutRef.current = setTimeout(() => {
-        setPulsingIsos(null);
-        pulseTimeoutRef.current = null;
-      }, 2400);
-    }
-    saveCategorySnapshot(productionId, categoryByIso);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryByIso, data?.production?.production_id]);
-
-  // Pulse timeout must not outlive the component (route navigation away
-  // from Project Globe mid-pulse).
-  useEffect(() => () => { if (pulseTimeoutRef.current) clearTimeout(pulseTimeoutRef.current); }, []);
-
-  // PHASE 3B BATCH 2 (objective 5) — Co-Production Opportunity hover
-  // illumination. Only computed (non-null) while hovering an amber
-  // jurisdiction with real related codes; every other hover — Recommended,
-  // Alternative, Excluded — passes null through and Globe3D's illumination
-  // path is a complete no-op for them (see capColorFn/strokeColorFn there).
-  // Memoized on the hovered jurisdiction's own code, not on the `hover`
-  // object identity, so Globe3D's illumination effect doesn't re-fire on
-  // every hover-position update within the same country.
-  const { illuminatedIsos, primaryIlluminatedIso } = useMemo(() => {
-    if (!hover || hover.status !== "amber" || !hover.relatedCodes?.length) {
-      return { illuminatedIsos: null, primaryIlluminatedIso: null };
-    }
-    return {
-      illuminatedIsos: hover.relatedCodes.map(globeKey),
-      primaryIlluminatedIso: hover.primaryJurisdictionCode ? globeKey(hover.primaryJurisdictionCode) : null,
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hover?.isoA2, hover?.status]);
 
   if (loading) return <div className="screen"><Loading /></div>;
   if (error) return <div className="screen"><ErrorBox message={error} /></div>;
 
-  // PHASE 3B BATCH 1 — CLICK CONTRACT (establish, do not redesign):
-  // Globe click -> open Inspector -> select jurisdiction -> the same
-  // shared AppState (`selectedJurisdiction`/`leadingStructureId`) Workspace
-  // already reads (Workspace.jsx: `activeStructure(allocated,
-  // leadingStructureId)`, `selectedJurisdiction` in its own buildGlobeView
-  // call) — so a Globe click already "activates the corresponding Workspace
-  // scenario family" via existing shared state, no new wiring needed. This
-  // function SHALL NOT call any backend endpoint, rerun optimization, or
-  // create/modify a scenario — it only sets client-side selection state and
-  // opens the (already-computed, already-served) Inspector view for it. See
-  // the regression test guarding this exact contract.
   function selectJurisdiction(code) {
     setSelectedJurisdiction(code);
     const s = (structuresByCode.get(code) || [])[0];
@@ -255,9 +171,6 @@ export default function ProjectGlobe() {
           polygonColors={polygonColors}
           selectedIso={selectedIso}
           hoveredIso={hover?.iso ?? null}
-          illuminatedIsos={illuminatedIsos}
-          primaryIlluminatedIso={primaryIlluminatedIso}
-          pulsingIsos={pulsingIsos}
           selectedLat={selectedLat}
           selectedLng={selectedLng}
           focusLat={focusLat}
@@ -298,13 +211,51 @@ export default function ProjectGlobe() {
   );
 }
 
+// The base-incentive line: read verbatim from buildCountryHoverData's
+// `baseIncentive` (program + rate, the same fields Inspector.jsx's
+// AllocationSegmentInspector renders) or `excludedReason` (the backend's own
+// real discovery-examination sentence). Never a fabricated percentage or
+// reason — an honest fallback string when the engine hasn't supplied one.
+function baseIncentiveLine(hover) {
+  // `hover.status` is the colour-slot key ("gold"/"jade"/"amber"/"silver"),
+  // NOT `semanticState` ("recommended"/"alternative"/"unlockable"/
+  // "additional") — an earlier draft of this function checked the wrong
+  // field (`=== "additional"`), which silently never matched, so Excluded
+  // jurisdictions with an actual (if unpriceable) structure attached fell
+  // through to the generic "Base incentive · Not available" branch instead
+  // of surfacing their real exclusion reason. Caught in runtime
+  // verification (Hungary), not by a test — see the test added below.
+  if (hover.status === "silver") {
+    return hover.excludedReason || "Current production constraints";
+  }
+  if (hover.baseIncentive) {
+    const { programLabel, ratePct, rateCeilingPct } = hover.baseIncentive;
+    if (ratePct == null) return programLabel;
+    const ceiling = rateCeilingPct != null ? ` (up to ${rateCeilingPct}%)` : "";
+    return `${programLabel} · ${ratePct}%${ceiling}`;
+  }
+  return "Base incentive · Not available";
+}
+
+// The NPC line's fallback text depends on WHY there's no number — an
+// honest distinction, not one generic dash: Co-Production Opportunities are
+// blocked-but-priceable ("not currently priced"), Excluded jurisdictions
+// have no structure to price at all ("not viable"). Never a client-computed
+// NPC — `hover.npcUsd` is the same `structure.npc_with_adjustments_usd` the
+// Inspector and every structure card already read.
+function npcFallback(hover) {
+  if (hover.status === "amber") return "Not currently priced";
+  if (hover.status === "silver") return "Not viable";
+  return "Not priced";
+}
+
 // Anchors the hover card near the hovered marker's own on-screen box
 // (Globe3D passes it through unmodified from the CSS2D hit-target's
 // getBoundingClientRect()) rather than a fixed panel corner. Clamped to stay
 // inside the canvas panel on every edge — no floating-ui/popper dependency;
 // a fixed approximate card width is enough for a compact, single-purpose
 // card that never wraps to more than a few short lines.
-const HOVER_CARD_W = 260;
+const HOVER_CARD_W = 220;
 const HOVER_CARD_MARGIN = 10;
 function hoverCardStyle(hoverRect, canvasEl) {
   if (!hoverRect || !canvasEl) return { display: "none" };
@@ -312,128 +263,19 @@ function hoverCardStyle(hoverRect, canvasEl) {
   let left = hoverRect.left - box.left + hoverRect.width / 2 + HOVER_CARD_MARGIN;
   let top = hoverRect.top - box.top - 8;
   left = Math.max(HOVER_CARD_MARGIN, Math.min(left, box.width - HOVER_CARD_W - HOVER_CARD_MARGIN));
-  top = Math.max(HOVER_CARD_MARGIN, Math.min(top, box.height - 168));
+  top = Math.max(HOVER_CARD_MARGIN, Math.min(top, box.height - 96));
   return { left, top, width: HOVER_CARD_W };
-}
-
-// PHASE 3B BATCH 1 — canonical hover template, three variants by category.
-// Every figure is read straight off `hover` (built in globeData.js's
-// buildCountryHoverData from real structure/segment/discovery fields — see
-// that function's own comments for exactly which backend field each one
-// is). Full, non-abbreviated currency throughout (formatFullUsd) per this
-// batch's explicit "no MM/K abbreviations" instruction — the previously
-// used compact-currency formatter must not appear anywhere in this file.
-
-// Recommended / Alternatives: program, modeled rate, this jurisdiction's own
-// segment incentive (at the modeled rate) + its share of gross budget, and
-// the structure's NPC.
-// PHASE 3B GLOBE CLOSEOUT: field-by-field template per the standing hover
-// contract — "Program Name / Maximum Incentive / Modeled Incentive / NPC /
-// Incentive / Gross Budget", each its own line, full dollar amounts, no
-// abbreviation. The previous draft folded the rate onto the Program line
-// AND repeated it on a second "Modeled Rate" line with a "(guaranteed floor
-// Y%)" annotation — read as exactly the "misleading 30-40% range" framing
-// the contract explicitly rules out. "Maximum Incentive" is a single number
-// (rate_ceiling — see globeData.js's buildCountryHoverData / globeHoverFormat.js's
-// modeledRateInfo for why that field, not rate_floor, is the one that
-// actually funds the dollar figures below it), stated once, as "Up to X%".
-function RecommendedOrAlternativeBody({ hover }) {
-  const b = hover.baseIncentive;
-  const pctOfGross = incentivePctOfGross(hover.segmentIncentiveUsd, hover.grossBudgetUsd);
-  return (
-    <>
-      <div className="hover-field">
-        <div className="text-tertiary small">Program</div>
-        <div className="small">{b ? b.programLabel : "Not available"}</div>
-      </div>
-      <div className="hover-field">
-        <div className="text-tertiary small">Maximum Incentive</div>
-        <div className="small">{b?.ratePct != null ? `Up to ${b.ratePct}%` : "Not available"}</div>
-      </div>
-      <div className="hover-field">
-        <div className="text-tertiary small">Modeled Incentive</div>
-        <div className="small">{hover.segmentIncentiveUsd != null ? formatFullUsd(hover.segmentIncentiveUsd) : "Not available"}</div>
-      </div>
-      <div className="hover-field">
-        <div className="text-tertiary small">NPC</div>
-        <div className="small">{hover.npcUsd != null ? formatFullUsd(hover.npcUsd) : "Not priced"}</div>
-      </div>
-      <div className="hover-field">
-        <div className="text-tertiary small">Incentive / Gross Budget</div>
-        <div className="small">{pctOfGross || "Not available"}</div>
-      </div>
-    </>
-  );
-}
-
-// Co-Production Opportunity: program (if one resolved despite the block),
-// the structure's own real related jurisdictions, and an explicit,
-// undisguised "not available" for the two figures this data model does not
-// yet support (see the Batch 1 report's missing-contract note) — never a
-// fabricated uplift or NPC.
-function CoProductionBody({ hover }) {
-  const b = hover.baseIncentive;
-  const related = relatedJurisdictions({ participants: [hover.jurisdictionCode, ...hover.relatedCodes] }, hover.jurisdictionCode, jurisdictionName);
-  return (
-    <>
-      <div className="hover-field">
-        <div className="text-tertiary small">Program</div>
-        <div className="small">
-          {b ? `${b.programLabel}${b.ratePct != null ? (b.isBandCeiling ? ` · Up to ${b.ratePct}%` : ` · ${b.ratePct}%`) : ""}` : "Not available"}
-        </div>
-      </div>
-      {related.length > 0 && (
-        <div className="hover-field">
-          <div className="text-tertiary small">Co-Production With</div>
-          <div className="small">{related.map((r) => r.name).join(", ")}</div>
-        </div>
-      )}
-      {/* MISSING BACKEND CONTRACT (see Batch 1 report): no field anywhere
-          expresses a forward-looking co-production uplift or "best modeled
-          NPC" for a BLOCKED structure — blocked structures are, by
-          definition, not fully priced, so there is no real number to show.
-          Stated honestly rather than fabricated; label matches the
-          standing contract's eventual "Co-Production Potential" field name
-          so no rewrite is needed once the optimizer actually produces one. */}
-      <div className="hover-field">
-        <div className="text-tertiary small">Co-Production Potential</div>
-        <div className="small">Not modeled yet</div>
-      </div>
-      <div className="hover-field">
-        <div className="text-tertiary small">Best Modeled NPC</div>
-        <div className="small">Not priced — structure is blocked</div>
-      </div>
-    </>
-  );
-}
-
-// Excluded: one line answering "why isn't this an option" — the backend's
-// own real discovery-examination reason, truncated to its first sentence
-// and stripped of raw snake_case tokens (see globeHoverFormat.js's
-// presentExclusionReason for exactly what transform is applied and why it
-// is NOT a fabricated category enum).
-function ExcludedBody({ hover }) {
-  const reason = presentExclusionReason(hover.excludedReason) || "Current production constraints";
-  return (
-    <div className="hover-field">
-      <div className="text-tertiary small">Reason</div>
-      <div className="small">{reason}</div>
-    </div>
-  );
 }
 
 function GlobeHoverCard({ hover, hoverRect, canvasRef }) {
   return (
     <div className="globe-tooltip" style={hoverCardStyle(hoverRect, canvasRef.current)}>
       <strong>{hover.jurisdictionName}</strong>
-      <div className="text-tertiary small" style={{ marginBottom: 6 }}>{hover.fullStatusLabel}</div>
-      {hover.status === "silver" ? (
-        <ExcludedBody hover={hover} />
-      ) : hover.status === "amber" ? (
-        <CoProductionBody hover={hover} />
-      ) : (
-        <RecommendedOrAlternativeBody hover={hover} />
-      )}
+      <div className="text-tertiary small">{hover.fullStatusLabel}</div>
+      <div className="text-secondary small" style={{ marginTop: 4 }}>{baseIncentiveLine(hover)}</div>
+      <div className="text-secondary small">
+        Estimated NPC · {hover.npcUsd != null ? <CompactMoney value={hover.npcUsd} /> : npcFallback(hover)}
+      </div>
     </div>
   );
 }

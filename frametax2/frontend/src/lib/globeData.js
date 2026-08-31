@@ -1,5 +1,5 @@
 import { JURISDICTION_COORDS } from "./jurisdictions.js";
-import { fixtureSlotFor, fixtureRelatedFor, isFixtureActive, noteFixtureCounts } from "./globeVisualFixture.js";
+import { fixtureSlotFor, isFixtureActive, noteFixtureCounts } from "./globeVisualFixture.js";
 // Reused, not re-derived: the SAME program-name + rate presentation
 // scenarioDisplay() already uses for structure cards across Overview,
 // Workspace and Scenarios (see format.jsx) — so a hovered jurisdiction's
@@ -46,27 +46,6 @@ export function activeStructure(allocated, leadingStructureId) {
   if (leadingStructureId && byId.has(leadingStructureId)) return byId.get(leadingStructureId);
   const best = allocated.ranking.find((r) => r.rank === 1);
   return best ? byId.get(best.structure_id) : null;
-}
-
-// Workspace/Overview Truthfulness: distinct from activeStructure/rank #1
-// on purpose — canonical RECOMMENDATION (rank) requires direct
-// comparability (is_directly_comparable, gated on the production's own
-// base jurisdiction being priced — see canonical_production_view.py's
-// Part K doctrine), which can be genuinely absent even when 100+ real
-// priced candidates exist (an unpriceable home baseline). This is never
-// treated as a recommendation substitute — callers must label it
-// distinctly ("Top priced candidate", never "Recommended Structure") —
-// it exists only so a production is never left with a totally blank
-// Hero/Workspace while real priced economics exist below.
-export function bestPricedCandidate(allocated) {
-  if (!allocated) return null;
-  const priced = (allocated.structures || []).filter((s) => s.is_fully_priced);
-  if (!priced.length) return null;
-  return priced.reduce((best, s) => {
-    const bn = best?.npc_with_adjustments_usd ?? Infinity;
-    const sn = s.npc_with_adjustments_usd ?? Infinity;
-    return sn < bn ? s : best;
-  }, null);
 }
 
 // ── The Globe's semantic system (Phase 2 closeout) ──────────────────────
@@ -219,15 +198,6 @@ function applyFixtureStates(statuses) {
     entry.status = semantic;
     entry.hex = GLOBE_SEMANTIC[semantic].hex;
     counts[semantic] += 1;
-    // Hypothetical Co-Production relationship, dev-only. Attached to the
-    // entry rather than passed separately so it travels the SAME path the
-    // real `structure.participants` relationship does, and so it can only
-    // ever exist on a map that applyFixtureStates has already rewritten —
-    // i.e. it is structurally impossible for it to reach production
-    // rendering. See fixtureRelatedFor's own comment for why the real data
-    // cannot exercise this state at all.
-    const rel = fixtureRelatedFor(iso);
-    if (rel) entry.fixtureRelated = rel;
   }
   noteFixtureCounts(counts);
   return statuses;
@@ -263,11 +233,7 @@ export function globeKey(jurisdictionCode) {
   return parent;
 }
 
-// Exported (Phase 3B Batch 2) so the category-diff engine's consumer can
-// tell an IMPROVING transition (silver -> amber, amber -> jade, etc., the
-// "unlock pulse" case) from a downgrade, using the SAME rank the status
-// upsert itself already resolves by — never a second, parallel ordering.
-export const STATUS_RANK = { gold: 4, jade: 3, amber: 2, silver: 1 };
+const STATUS_RANK = { gold: 4, jade: 3, amber: 2, silver: 1 };
 
 function roleFor(structure, code) {
   if (!structure) return null;
@@ -383,25 +349,7 @@ export function buildCountryStatuses(allocated, rankById) {
 // remains off-limits is long source notes, the qualification trace,
 // account-level detail and any other Inspector-only content — those still
 // require opening the Inspector.
-//
-// PHASE 3B BATCH 1: `baseIncentive` now carries the MODELED rate
-// (`rate_ceiling`, confirmed from allocation_pricing.py source to be the
-// field literally populated from `rr.modeled_rate` — the rate that actually
-// funds `incentive_ceiling_usd`/`selected_incentive_usd`/
-// `npc_with_adjustments_usd`), not the guaranteed floor — see
-// globeHoverFormat.js's `modeledRateInfo` for the full reasoning. Also adds
-// the per-jurisdiction segment incentive (`segmentIncentiveUsd`, at the
-// modeled rate, for "% of gross budget"), the structure's own gross budget,
-// and — for Co-Production Opportunities — the structure's real participant
-// list as `relatedCodes` (raw codes; the caller resolves display names, kept
-// out of this pure-data module).
-//
-// `grossBudgetUsd` param: the PRODUCTION's own gross budget, used only as
-// the fallback when a structure has none of its own — same
-// `structure.gross_budget_usd ?? productionGross` chain Workspace.jsx's
-// ScenarioCard already uses (see format.jsx-era comment there); never a
-// second, independently-derived figure.
-export function buildCountryHoverData(statuses, grossBudgetUsd = null) {
+export function buildCountryHoverData(statuses) {
   const byIso = new Map();
   for (const [iso, entry] of statuses) {
     const { structure, code } = entry.best;
@@ -415,9 +363,8 @@ export function buildCountryHoverData(statuses, grossBudgetUsd = null) {
     const baseIncentive = seg?.claims_incentive && seg.program_slug
       ? {
           programLabel: programDisplay(seg.program_slug),
-          ratePct: seg.rate_ceiling != null ? Math.round(seg.rate_ceiling * 100) : null,
-          floorPct: seg.rate_floor != null ? Math.round(seg.rate_floor * 100) : null,
-          isBandCeiling: !!seg.is_band_ceiling,
+          ratePct: seg.rate_floor != null ? Math.round(seg.rate_floor * 100) : null,
+          rateCeilingPct: seg.is_band_ceiling && seg.rate_ceiling != null ? Math.round(seg.rate_ceiling * 100) : null,
         }
       : null;
     byIso.set(iso, {
@@ -433,44 +380,12 @@ export function buildCountryHoverData(statuses, grossBudgetUsd = null) {
       hex: entry.hex,
       incentiveUsd: structure?.is_fully_priced ? structure.selected_incentive_usd : null,
       npcUsd: structure?.is_fully_priced ? structure.npc_with_adjustments_usd : null,
-      // This jurisdiction's OWN segment incentive (at the modeled rate) —
-      // distinct from `incentiveUsd` above, which is the whole structure's
-      // total across every segment. Real for any segment with a resolved
-      // rate, independent of `is_fully_priced` (a segment can resolve a rate
-      // while a DIFFERENT segment in the same structure blocks the whole
-      // structure from being fully priced).
-      segmentIncentiveUsd: seg?.claims_incentive ? seg.incentive_ceiling_usd ?? null : null,
-      grossBudgetUsd: structure?.gross_budget_usd ?? grossBudgetUsd ?? null,
       baseIncentive,
       // Real backend text (production_discovery.py's own reason string) —
       // only ever set for Excluded jurisdictions sourced from a discovery
       // examination (see buildCountryStatuses branch 2). Never fabricated;
       // absent when the engine hasn't actually classified a reason.
       excludedReason: entry.meta?.reason ?? null,
-      // Co-Production Opportunities only: the structure's own real
-      // participants (this hover's code excluded) — see globeHoverFormat.js
-      // for why this is the one real "related jurisdiction" relationship
-      // this data model has, and the report for what's still missing.
-      // `entry.fixtureRelated` is set ONLY by applyFixtureStates (dev-only,
-      // see globeVisualFixture.js) and is absent on every real-data path, so
-      // the `??` below resolves to the real participants in production. It
-      // exists because the real relationship is unreachable for this
-      // production — measured, not assumed: the winning structure for every
-      // jurisdiction is the single-participant ALLOC-RELOC-* one, so this
-      // array is empty for all 86, and the illumination it drives has never
-      // fired at runtime.
-      relatedCodes:
-        entry.fixtureRelated?.related ??
-        structure?.participants?.filter((c) => c !== code) ??
-        [],
-      // PHASE 3B BATCH 2: the structure's own real `primary_jurisdiction` —
-      // used ONLY to let hover illumination make the primary related
-      // jurisdiction read slightly stronger than the rest, per the batch's
-      // explicit "only when such ranking is supported by real data, never
-      // invent a preferred partner" instruction. Real field, not a computed
-      // preference.
-      primaryJurisdictionCode:
-        entry.fixtureRelated?.primary ?? structure?.primary_jurisdiction ?? null,
       role: roleFor(structure, code),
       structureId: structure?.structure_id ?? null,
       structureLabel: structure?.label ?? null,
@@ -576,13 +491,13 @@ export function buildOptimizerPathway(allocated, leadingStructureId) {
 // contract — click routing into the Inspector).
 export function buildGlobeView(
   allocated, rankById,
-  { mode = "jurisdictions", leadingStructureId = null, selectedJurisdiction = null, grossBudgetUsd = null } = {},
+  { mode = "jurisdictions", leadingStructureId = null, selectedJurisdiction = null } = {},
 ) {
   const empty = {
     points: [], arcs: [], polygonColors: new Map(), selectedIso: null,
     selectedLat: null, selectedLng: null, focusLat: null, focusLng: null, focusDistance: null,
     hoverByIso: new Map(), structuresByCode: new Map(),
-    stateCounts: { gold: 0, jade: 0, amber: 0, silver: 0 }, categoryByIso: new Map(),
+    stateCounts: { gold: 0, jade: 0, amber: 0, silver: 0 },
   };
   if (!allocated) return empty;
 
@@ -595,13 +510,7 @@ export function buildGlobeView(
   // Presentation only: nothing here touches the backend response, the
   // optimizer, or any persisted record.
   if (isFixtureActive()) applyFixtureStates(statuses);
-  const hoverByIso = buildCountryHoverData(statuses, grossBudgetUsd);
-  // Phase 3B Batch 1: the category-diff engine's input — plain iso->status
-  // ("gold"/"jade"/"amber"/"silver") map, cheap to derive here since
-  // `statuses` already carries it. No animation, no rendering — see
-  // lib/globeCategoryDiff.js for what consumes this.
-  const categoryByIso = new Map();
-  for (const [iso, entry] of statuses) categoryByIso.set(iso, entry.status);
+  const hoverByIso = buildCountryHoverData(statuses);
   const polygonColors = new Map();
   for (const [iso, entry] of statuses) polygonColors.set(iso, entry.hex);
 
@@ -639,7 +548,7 @@ export function buildGlobeView(
       focusLat: selectedCoord?.lat ?? pathway.focusLat,
       focusLng: selectedCoord?.lng ?? pathway.focusLng,
       focusDistance: pathway.focusDistance,
-      hoverByIso, structuresByCode, stateCounts, categoryByIso,
+      hoverByIso, structuresByCode, stateCounts,
     };
   }
 
@@ -691,7 +600,7 @@ export function buildGlobeView(
     points, arcs: structureArcs, polygonColors, selectedIso,
     selectedLat: selectedCoord?.lat ?? null, selectedLng: selectedCoord?.lng ?? null,
     focusLat: selectedCoord?.lat ?? null, focusLng: selectedCoord?.lng ?? null, focusDistance: null,
-    hoverByIso, structuresByCode, stateCounts, categoryByIso,
+    hoverByIso, structuresByCode, stateCounts,
   };
 }
 

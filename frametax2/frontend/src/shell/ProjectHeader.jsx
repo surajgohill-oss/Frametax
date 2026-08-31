@@ -4,7 +4,8 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useCineGlobe } from "../lib/useCineGlobe";
 import { useProjectStatus } from "../lib/useProjectStatus";
 import { getTheme, toggleTheme } from "../lib/theme";
-import { activeStructure, bestPricedCandidate } from "../lib/globeData";
+import { activeStructure } from "../lib/globeData";
+import { bestPricedCandidate } from "../lib/bestPricedCandidate";
 import { useAppState } from "../state/AppState";
 import ProductionHero from "../components/ProductionHero";
 

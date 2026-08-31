@@ -36,7 +36,6 @@ import {
 import {
   FIXTURE_DISCLOSURE,
   FIXTURE_EXPECTED_COUNTS,
-  fixtureRelatedFor,
   fixtureSlotFor,
   isFixtureActive,
 } from "../src/lib/globeVisualFixture.js";
@@ -222,47 +221,45 @@ test("the restored Globe legend carries exactly the four current states, no lega
   }
 });
 
-test("the legend is scoped to Project Globe only, is vertical, and never intercepts a click", () => {
+test("the legend is scoped to Project Globe only, and stays visually secondary", () => {
   // "Only the Project Globe rendering" — not Overview, not Workspace. Import
   // check is a reasonable proxy: only ProjectGlobe.jsx may mount it.
   const mounters = ["screens/production/Overview.jsx", "screens/production/Workspace.jsx"]
     .filter((f) => stripComments(read(f)).includes("GlobeLegend"));
   assert.deepEqual(mounters, [], `GlobeLegend must not be mounted outside Project Globe: ${mounters.join(", ")}`);
   assert.match(read("screens/production/ProjectGlobe.jsx"), /<GlobeLegend\s*\/>/);
-  // PHASE 3B GLOBE CLOSEOUT: the old "stay tiny, single row" rule is
-  // explicitly reversed — the legend was found too small to read and is
-  // rebuilt as a larger vertical stack. What must still hold: readable but
-  // not modal-sized, and it must never swallow a click meant for the globe
-  // underneath/beside it (pointer-events: none).
+  // Visually secondary: small type, not full-width, not styled as a modal —
+  // asserted structurally rather than by exact pixel values, which belong to
+  // design review, not a regression test.
   const css = read("styles/screens.css");
-  const block = /\.globe-legend-vertical\s*\{[^}]*\}/.exec(css);
-  assert.ok(block, ".globe-legend-vertical rule not found");
-  assert.match(block[0], /font:\s*1[0-4]px/, "legend type must be larger than the old 10px, but still a caption size, not a heading");
-  assert.match(block[0], /pointer-events:\s*none/, "legend must never intercept a click meant for the globe");
-  assert.match(block[0], /flex-direction:\s*column/, "legend must be vertical, per the closeout instruction");
+  const block = /\.globe-legend-compact\s*\{[^}]*\}/.exec(css);
+  assert.ok(block, ".globe-legend-compact rule not found");
+  assert.match(block[0], /font:\s*10px/, "legend type must stay small");
 });
 
 // PHASE 3A FINAL CLOSEOUT: this test previously banned ANY money figure from
-// the Globe hover card. That rule is explicitly, deliberately reversed —
-// hover shows "a lightweight economic summary" including estimated NPC and
-// incentive. PHASE 3B BATCH 1: money must be FULL precision (formatFullUsd /
-// Money), never CompactMoney's "$2.6M" abbreviation — an explicit
-// requirement this batch. The boundary that survives is narrower, not gone:
-// hover must never pull in Inspector-only content (the qualification trace,
-// account/source citations, requirements, blockers) — that's still what
-// opening the Inspector is for.
-test("Globe hover card shows full-precision money and stays clear of Inspector-only content", () => {
+// the Globe hover card. That rule is explicitly, deliberately reversed this
+// batch — hover is now required to show "a lightweight economic summary"
+// (estimated NPC). The boundary that survives is narrower, not gone: hover
+// may show npcUsd via CompactMoney, but must never pull in Inspector-only
+// content (the qualification trace, account/source citations, requirements,
+// blockers) — that's still what opening the Inspector is for.
+//
+// The PREVIOUS version of this test used a regex anchored on the literal
+// string `<div className="globe-tooltip">` with nothing between the class
+// name and the closing `>`. Adding the `style={...}` attribute this batch
+// (to anchor the card near the hovered marker) made that regex match ZERO
+// occurrences — the test kept reporting green while asserting nothing at
+// all. Anchoring on the component/function instead of a brittle exact-tag
+// string is what this rewrite fixes.
+test("Globe hover card shows NPC but stays clear of Inspector-only content", () => {
   const src = read("screens/production/ProjectGlobe.jsx");
   const fn = /function GlobeHoverCard[\s\S]*?\n}/.exec(src);
   assert.ok(fn, "GlobeHoverCard component not found");
-  assert.ok(!/CompactMoney/.test(src), "Phase 3B Batch 1 requires full-precision money — CompactMoney must not appear anywhere in this file");
-  assert.ok(/formatFullUsd/.test(src), "hover card must render money via formatFullUsd (no MM/K abbreviation)");
-  for (const bodyFnName of ["RecommendedOrAlternativeBody", "CoProductionBody", "ExcludedBody"]) {
-    const bodyFn = new RegExp(`function ${bodyFnName}[\\s\\S]*?\\n}`).exec(src);
-    assert.ok(bodyFn, `${bodyFnName} not found`);
-    for (const forbidden of ["qualification_trace", "account_codes", "requirements", "blockers", "statutory_basis"]) {
-      assert.ok(!bodyFn[0].includes(forbidden), `${bodyFnName} must not pull in Inspector-only field "${forbidden}"`);
-    }
+  const body = fn[0];
+  assert.ok(/CompactMoney/.test(body), "hover card must render estimated NPC via CompactMoney");
+  for (const forbidden of ["qualification_trace", "account_codes", "requirements", "blockers", "statutory_basis"]) {
+    assert.ok(!body.includes(forbidden), `hover card must not pull in Inspector-only field "${forbidden}"`);
   }
 });
 
@@ -270,35 +267,22 @@ test("Globe hover card shows full-precision money and stays clear of Inspector-o
 // verification): buildCountryHoverData's `status` field is the COLOUR-slot
 // key ("gold"/"jade"/"amber"/"silver"), never the `semanticState` key
 // ("recommended"/"alternative"/"unlockable"/"additional"). An earlier draft
-// checked `hover.status === "additional"` / `"unlockable"` — those strings
-// never appear in `status`, so the checks silently never matched. PHASE 3B
-// BATCH 1 restructured the hover card into three category-specific body
-// components dispatched directly in GlobeHoverCard's own render — this test
-// now asserts THAT dispatch uses the colour-slot keys, so the exact same
-// regression can't reappear silently in the new shape.
-test("hover card dispatch keys off the colour-slot status, not semanticState", () => {
+// of ProjectGlobe.jsx's fallback helpers checked `hover.status === "additional"`
+// / `"unlockable"` — those strings never appear in `status`, so the checks
+// silently never matched, and an Excluded jurisdiction with an actual (if
+// unpriceable) structure attached showed the generic "Base incentive · Not
+// available" / "Not priced" text instead of its real exclusion reason and
+// "Not viable". This test asserts the source checks the colour-slot keys
+// directly, so this exact regression can't reappear silently.
+test("hover fallback text keys off the colour-slot status, not semanticState", () => {
   const src = read("screens/production/ProjectGlobe.jsx");
-  const cardFn = /function GlobeHoverCard[\s\S]*?\n}/.exec(src)[0];
-  assert.ok(cardFn.includes('hover.status === "silver"'), 'GlobeHoverCard must dispatch Excluded on status === "silver"');
-  assert.ok(cardFn.includes('hover.status === "amber"'), 'GlobeHoverCard must dispatch Co-Production on status === "amber"');
-  assert.ok(!/hover\.status === "additional"/.test(cardFn), 'must not check the semanticState string "additional"');
-  assert.ok(!/hover\.status === "unlockable"/.test(cardFn), 'must not check the semanticState string "unlockable"');
-});
-
-// PHASE 3B BATCH 1 — click contract: a Globe click must never call the
-// backend, rerun optimization, or create/modify a scenario. `selectJurisdiction`
-// and `selectStructure` are pure client-state operations (setSelectedJurisdiction
-// + openInspector) over data already served; this guards against either
-// function growing a fetch/POST call in a future edit.
-test("Globe click contract never calls the backend", () => {
-  const src = read("screens/production/ProjectGlobe.jsx");
-  for (const fnName of ["selectJurisdiction", "selectStructure"]) {
-    const fn = new RegExp(`function ${fnName}\\([\\s\\S]*?\\n  }`).exec(src);
-    assert.ok(fn, `${fnName} not found`);
-    for (const forbidden of ["fetch(", "axios", "POST", ".post(", "await api"]) {
-      assert.ok(!fn[0].includes(forbidden), `${fnName} must not call the backend (found "${forbidden}")`);
-    }
-  }
+  const baseFn = /function baseIncentiveLine[\s\S]*?\n}/.exec(src)[0];
+  const npcFn = /function npcFallback[\s\S]*?\n}/.exec(src)[0];
+  assert.ok(baseFn.includes('hover.status === "silver"'), 'baseIncentiveLine must check status === "silver"');
+  assert.ok(!/hover\.status === "additional"/.test(baseFn), 'baseIncentiveLine must not check the semanticState string "additional"');
+  assert.ok(npcFn.includes('hover.status === "amber"'), 'npcFallback must check status === "amber"');
+  assert.ok(npcFn.includes('hover.status === "silver"'), 'npcFallback must check status === "silver"');
+  assert.ok(!/hover\.status === "unlockable"/.test(npcFn), 'npcFallback must not check the semanticState string "unlockable"');
 });
 
 // ── Visual fixture ──────────────────────────────────────────────────────
@@ -353,16 +337,8 @@ test("fixture carries its disclosure and cannot reach the backend", () => {
   // (see below) — the original blanket ban was the wrong expression of the rule
   // and would have blocked the fix for the fixture silently switching itself
   // off. What must stay absent is anything that leaves the browser.
-  //
-  // Checked against CODE, not comments — the file-level convention documented
-  // at the top of this suite. The Phase 3B reconciliation added a comment
-  // naming the real backend structure ids (ALLOC-COMPONENT-POST-<X>), whose
-  // text contains "POST"; failing the guard on a comment that merely EXPLAINS
-  // the data model is exactly the false positive stripComments exists for. The
-  // invariant itself is unchanged and still absolute for executable code.
-  const code = stripComments(src);
   for (const forbidden of ["fetch(", "XMLHttpRequest", "POST", "PUT", "PATCH"]) {
-    assert.ok(!code.includes(forbidden), `fixture must not use ${forbidden}`);
+    assert.ok(!src.includes(forbidden), `fixture must not use ${forbidden}`);
   }
 });
 
@@ -550,238 +526,3 @@ test("no two jurisdictions share a display name", async () => {
   }
   assert.deepEqual(dupes, [], `ambiguous jurisdiction labels: ${dupes.join(" | ")}`);
 });
-
-// ── Phase 3B Batch 1: shared hover-presentation helpers ─────────────────
-
-test("formatFullUsd never abbreviates", async () => {
-  const { formatFullUsd } = await import("../src/lib/globeHoverFormat.js");
-  assert.equal(formatFullUsd(742131), "$742,131");
-  assert.equal(formatFullUsd(3622262), "$3,622,262");
-  assert.equal(formatFullUsd(null), null);
-});
-
-test("incentivePctOfGross divides incentive by GROSS BUDGET, not qualified spend", async () => {
-  const { incentivePctOfGross } = await import("../src/lib/globeHoverFormat.js");
-  // 742,131 / 4,364,393 = 17.0% — the worked example from the Phase 3B spec.
-  assert.equal(incentivePctOfGross(742131, 4364393), "17.0%");
-  assert.equal(incentivePctOfGross(null, 4364393), null);
-  assert.equal(incentivePctOfGross(742131, 0), null);
-  assert.equal(incentivePctOfGross(742131, null), null);
-});
-
-test("modeledRateInfo reads rate_ceiling (the engine's real modeled_rate), not rate_floor", async () => {
-  const { modeledRateInfo } = await import("../src/lib/globeHoverFormat.js");
-  // Confirmed from allocation_pricing.py: rate_ceiling is populated from
-  // rr.modeled_rate, the ONLY rate that feeds incentive_ceiling_usd /
-  // selected_incentive_usd / npc_with_adjustments_usd.
-  const seg = { claims_incentive: true, rate_floor: 0.30, rate_ceiling: 0.40, is_band_ceiling: true };
-  const info = modeledRateInfo(seg);
-  assert.equal(info.modeledPct, 40, "modeled rate must be the ceiling (40), matching what funds the incentive");
-  assert.equal(info.floorPct, 30);
-  assert.equal(info.isBandCeiling, true);
-  assert.equal(modeledRateInfo({ claims_incentive: false }), null);
-  assert.equal(modeledRateInfo(null), null);
-});
-
-test("presentExclusionReason truncates to the first real sentence and humanizes snake_case tokens, never a fabricated category", async () => {
-  const { presentExclusionReason } = await import("../src/lib/globeHoverFormat.js");
-  const raw = "Not production-capable: the production requires marine_filming, open_water_filming, which this jurisdiction cannot provide. Rejected on capability, independent of any incentive.";
-  const out = presentExclusionReason(raw);
-  assert.ok(!out.includes("_"), "must not leak raw snake_case engine tokens");
-  assert.ok(out.includes("marine filming"), "must humanize, not delete, the real requirement token");
-  assert.ok(!out.includes("Rejected on capability"), "must be truncated to the first sentence only");
-  assert.equal(presentExclusionReason(null), null);
-});
-
-test("relatedJurisdictions returns the structure's own real participants, excluding the hovered code", async () => {
-  const { relatedJurisdictions } = await import("../src/lib/globeHoverFormat.js");
-  const structure = { participants: ["MU", "BE", "FR"] };
-  const names = { MU: "Mauritius", BE: "Belgium", FR: "France" };
-  const out = relatedJurisdictions(structure, "MU", (c) => names[c]);
-  assert.deepEqual(out, [{ code: "BE", name: "Belgium" }, { code: "FR", name: "France" }]);
-  assert.deepEqual(relatedJurisdictions(null, "MU", (c) => names[c]), []);
-});
-
-// ── Phase 3B Batch 1: category-state diff engine ────────────────────────
-
-test("diffCategories reports only real changes, never a false positive on first observation", async () => {
-  const { diffCategories } = await import("../src/lib/globeCategoryDiff.js");
-  const prev = new Map([["MU", "gold"], ["BE", "jade"], ["FR", "amber"]]);
-  const curr = new Map([["MU", "gold"], ["BE", "amber"], ["FR", "amber"], ["DE", "silver"]]);
-  const changes = diffCategories(prev, curr);
-  // BE changed jade -> amber: reported. FR unchanged: not reported. DE has
-  // no prior entry (first observation): not reported, not a false positive.
-  // MU unchanged: not reported.
-  assert.deepEqual(changes, [{ iso: "BE", prevCategory: "jade", currCategory: "amber" }]);
-});
-
-test("diffCategories against an identical snapshot reports zero changes", async () => {
-  const { diffCategories } = await import("../src/lib/globeCategoryDiff.js");
-  const snapshot = new Map([["MU", "gold"], ["BE", "jade"]]);
-  assert.deepEqual(diffCategories(snapshot, new Map(snapshot)), []);
-});
-
-test("category snapshot persistence round-trips through localStorage and is keyed per production", async () => {
-  const { loadCategorySnapshot, saveCategorySnapshot } = await import("../src/lib/globeCategoryDiff.js");
-  // node --test has no localStorage by default; skip gracefully rather than
-  // fail the whole suite if the environment doesn't provide one (the real
-  // browser runtime always does).
-  if (typeof localStorage === "undefined") return;
-  const snap = new Map([["MU", "gold"], ["BE", "jade"]]);
-  saveCategorySnapshot("TEST-PROD-A", snap);
-  saveCategorySnapshot("TEST-PROD-B", new Map([["MU", "silver"]]));
-  const loadedA = loadCategorySnapshot("TEST-PROD-A");
-  const loadedB = loadCategorySnapshot("TEST-PROD-B");
-  assert.equal(loadedA.get("MU"), "gold");
-  assert.equal(loadedA.get("BE"), "jade");
-  assert.equal(loadedB.get("MU"), "silver", "productions must not share a snapshot key");
-});
-
-// ── Phase 3B Batch 2: border quality, hover illumination, category pulse ──
-
-test("altitudeJitter is deterministic and stays far below the smallest real altitude step", async () => {
-  const src = read("components/Globe3D.jsx");
-  const fn = /function altitudeJitter[\s\S]*?\n}/.exec(src);
-  assert.ok(fn, "altitudeJitter not found");
-  // eslint-disable-next-line no-eval
-  const altitudeJitter = new Function(`${fn[0]}; return altitudeJitter;`)();
-  const a = altitudeJitter("US-GA");
-  const b = altitudeJitter("US-GA");
-  const c = altitudeJitter("CA-BC");
-  assert.equal(a, b, "same ISO must jitter identically every call — never random per frame");
-  assert.ok(Math.abs(a) < 2e-5 + 1e-12, `jitter ${a} exceeds its own documented +/-2e-5 bound`);
-  // INACTIVE_POLYGON_ALTITUDE = 0.002 is the smallest real semantic step —
-  // jitter must be at least an order of magnitude below it or it would
-  // visibly perturb the cap/fill, not just tie-break the stroke.
-  assert.ok(Math.abs(a) < 0.002 / 10, "jitter must stay far below the smallest real altitude step");
-  assert.notEqual(a, c, "different ISOs should (almost always) get different jitter");
-});
-
-test("altitudeFn applies the jitter to every branch, so no branch reintroduces exact stroke coincidence", async () => {
-  const src = read("components/Globe3D.jsx");
-  const fn = /const altitudeFn = \(feat\) => \{[\s\S]*?\n    \};/.exec(src);
-  assert.ok(fn, "altitudeFn not found");
-  const body = fn[0];
-  // Every return in this function must include the jitter term.
-  const returns = body.match(/return [^;]+;/g) || [];
-  assert.ok(returns.length >= 4, `expected at least 4 return branches, found ${returns.length}`);
-  for (const r of returns) {
-    assert.ok(r.includes("jitter"), `altitudeFn branch does not apply the jitter: ${r}`);
-  }
-});
-
-test("ocean drift animates the SAME texture's UV offset only — no geometry, no land motion, gated on ambientMotion", async () => {
-  const src = read("components/Globe3D.jsx");
-  assert.match(src, /oceanSurfaceTexture\.offset\.x\s*=/, "ocean drift must animate the texture offset");
-  assert.ok(!/land.*\.offset\.[xy]\s*=/i.test(src), "land must never be animated by the ocean drift");
-  // The drift line must appear strictly between the ambientMotion gate and
-  // the frame's requestAnimationFrame call (i.e. inside that gated block,
-  // not a separately-scheduled or always-on animation).
-  const gateIdx = src.indexOf("if (stateRef.current.ambientMotion)");
-  const driftIdx = src.indexOf("oceanSurfaceTexture.offset.x =");
-  const rafIdx = src.indexOf("frameId = requestAnimationFrame(animate)");
-  assert.ok(gateIdx > -1 && driftIdx > gateIdx && driftIdx < rafIdx, "ocean drift must be inside the ambientMotion-gated animate loop");
-});
-
-test("Co-Production Opportunity hover illumination is a no-op for every other category", async () => {
-  const src = read("screens/production/ProjectGlobe.jsx");
-  const block = /const \{ illuminatedIsos, primaryIlluminatedIso \} = useMemo\(\(\) => \{[\s\S]*?\n  \}, \[/.exec(src);
-  assert.ok(block, "illumination useMemo not found");
-  assert.match(block[0], /hover\.status !== "amber"/, 'illumination must gate on status === "amber" only');
-  assert.match(block[0], /relatedCodes/, "illumination must be built from the real relatedCodes, not invented");
-});
-
-test("category pulse only fires on a real rank IMPROVEMENT, using the shared STATUS_RANK", async () => {
-  const src = read("screens/production/ProjectGlobe.jsx");
-  assert.match(src, /STATUS_RANK\[c\.currCategory\] > STATUS_RANK\[c\.prevCategory\]/, "pulse must gate on an improving STATUS_RANK comparison");
-  assert.match(src, /prefers-reduced-motion/, "pulse must check prefers-reduced-motion before scheduling");
-  assert.match(src, /clearTimeout\(pulseTimeoutRef\.current\)/, "a new pulse must clear any pending previous pulse timeout, never stack");
-});
-
-test("pulse brighten is the strongest of the three tiers, and never invents a new colour", async () => {
-  const src = read("components/Globe3D.jsx");
-  const capFn = /const capColorFn = \(feat\) => \{[\s\S]*?\n    \};/.exec(src)[0];
-  assert.match(capFn, /brightenHex\(base, 0\.45\)/, "pulse must use the documented 0.45 tier");
-  assert.match(capFn, /liveRef\.current\.pulsingIsos\?\.has\(iso\)/, "pulse must read from liveRef.current.pulsingIsos");
-  // All three tiers (hover/illumination/pulse) must route through the same
-  // brightenHex helper — never a second, hardcoded colour system.
-  const brightenCalls = (capFn.match(/brightenHex\(/g) || []).length;
-  assert.ok(brightenCalls >= 3, "hover, illumination and pulse should all route through brightenHex");
-});
-
-test("beacon-rendered jurisdictions (Mauritius/Malta/Singapore) also receive illumination/pulse, not just polygons", async () => {
-  const src = read("components/Globe3D.jsx");
-  const pointFn = /const pointColorFn = \(d\) => \{[\s\S]*?\n    \};/.exec(src);
-  assert.ok(pointFn, "pointColorFn not found");
-  assert.match(pointFn[0], /liveRef\.current\.illuminatedIsos\?\.has\(d\.iso\)/, "pointColorFn must check illuminatedIsos");
-  assert.match(pointFn[0], /liveRef\.current\.pulsingIsos\?\.has\(d\.iso\)/, "pointColorFn must check pulsingIsos");
-  // The repaint-trigger effects must re-invoke pointColor, or a beacon
-  // country's illumination would never repaint on hover start/end.
-  assert.match(src, /\.polygonStrokeColor\(globe\.polygonStrokeColor\(\)\)\s*\n\s*\.pointColor\(globe\.pointColor\(\)\)/, "illumination repaint effect must re-invoke pointColor too");
-});
-
-// ── Phase 3B ledger reconciliation: Co-Production relationship fixture ────
-//
-// THE DEFECT THESE GUARD. The Phase 3B reconciliation measured live output and
-// found `relatedCodes` EMPTY for all 86 jurisdictions, so the Co-Production
-// illumination had never fired at runtime despite being implemented and
-// unit-tested. Cause: two structures exist per partner — ALLOC-RELOC-<X>
-// (participants [X], fully priced -> jade) and ALLOC-COMPONENT-POST-<X>
-// (participants [MU, X], blocked -> amber) — and buildCountryStatuses keeps the
-// HIGHER STATUS_RANK, so the single-participant one always wins. Live counts
-// confirm the same thing: 1 gold / 84 jade / 0 amber / 21 silver, i.e. this
-// production has no Co-Production Opportunities at all.
-
-test("the fixture Co-Production relationship is dev-only data and never a colour or a status", () => {
-  const rel = fixtureRelatedFor("EG");
-  assert.ok(rel, "the fixture must define at least one Co-Production relationship to validate against");
-  assert.ok(Array.isArray(rel.related) && rel.related.length >= 2 && rel.related.length <= 4,
-    "the relationship must name 2-4 related jurisdictions, per the acceptance fixture contract");
-  assert.ok(rel.related.includes(rel.primary), "the primary must be one of the related jurisdictions");
-  // Raw globe keys only — never a hex, never a semantic slot name.
-  for (const code of rel.related) {
-    assert.match(code, /^[A-Z]{2}(-[A-Z0-9]+)?$/, `${code} must be a plain globe key`);
-  }
-  const src = read("lib/globeVisualFixture.js");
-  assert.ok(!/#[0-9a-fA-F]{3,6}/.test(src), "the fixture must never declare a colour of its own");
-  assert.equal(fixtureRelatedFor("ZZ-NOT-A-PLACE"), null, "unlisted keys must return null, not a default relationship");
-});
-
-test("the fixture relationship anchor is an amber jurisdiction, or illumination could never fire", () => {
-  const rel = fixtureRelatedFor("EG");
-  assert.equal(fixtureSlotFor("EG"), "amber",
-    "illumination is gated on hover.status === 'amber' (ProjectGlobe.jsx), so the anchor must be amber");
-  // At least one related jurisdiction must be beacon-rendered, so the
-  // pointColorFn path is exercised and not just the polygon path.
-  assert.ok(rel.related.includes("MT"),
-    "the relationship must include a beacon-rendered jurisdiction (Malta) to exercise pointColorFn");
-});
-
-test("fixture relationships can never leak into the real-data path", () => {
-  const src = stripComments(read("lib/globeData.js"));
-  // The fixture relationship is attached to the entry ONLY inside
-  // applyFixtureStates, which is itself only called under isFixtureActive().
-  const applyFn = /function applyFixtureStates\(statuses\)[\s\S]*?\n\}/.exec(src);
-  assert.ok(applyFn, "applyFixtureStates not found");
-  assert.match(applyFn[0], /fixtureRelatedFor\(/, "the relationship must be attached inside applyFixtureStates");
-  assert.match(src, /if \(isFixtureActive\(\)\) applyFixtureStates\(statuses\)/,
-    "applyFixtureStates must stay gated on isFixtureActive()");
-  const others = src.split(/function applyFixtureStates\(statuses\)[\s\S]*?\n\}/).join("");
-  assert.ok(!/fixtureRelatedFor\(/.test(others),
-    "fixtureRelatedFor must be called from exactly one place — applyFixtureStates");
-  // And the hover payload must FALL BACK to the real participants.
-  assert.match(src, /entry\.fixtureRelated\?\.related\s*\?\?[\s\S]{0,120}participants/,
-    "relatedCodes must fall back to the structure's real participants when no fixture relationship exists");
-  assert.match(src, /entry\.fixtureRelated\?\.primary\s*\?\?\s*structure\?\.primary_jurisdiction/,
-    "primaryJurisdictionCode must fall back to the structure's real primary_jurisdiction");
-});
-
-// resolveRestingFlight (and the Globe3D "fly back to resting fit on no
-// target" branch it backed) was REMOVED — Restore Frozen Project Globe
-// (2026-08-31). It was introduced on the theory that a missing reset case
-// was the root cause of "the Globe shrinks/sticks when switching modes",
-// but that guard (`if (targetLat == null || ...) return;`) is byte-for-byte
-// unchanged from the Globe's approved July 30 implementation (1f98404) —
-// restoring old behavior meant REMOVING this addition, not keeping it. Kept
-// as a live "do not reintroduce without a runtime-verified reproduction"
-// marker rather than a silent, undocumented deletion.

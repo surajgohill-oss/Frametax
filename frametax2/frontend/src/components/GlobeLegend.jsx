@@ -1,41 +1,33 @@
 import { GLOBE_SEMANTIC } from "../lib/globeData";
 
-// ── Four-state Globe legend — top-left, chrome-free (Phase 3B closeout) ──
+// ── Four-state Globe legend (restored, explicit reversal of Phase 2) ────
 //
-// PHASE 3B GLOBE CLOSEOUT: three treatments tried, in order — a 10px
-// horizontal chip (too small), a vertical panel with a near-opaque plate
-// (read as a UI card), a vertical panel with a quiet translucent plate
-// (still read as a container competing with the globe). FINAL: no
-// container at all — just dot + label, anchored to the Globe viewport's
-// true top-left corner, legible over any background via a text-shadow
-// halo (see screens.css) rather than a plate behind it. The four-state
-// contract from every prior pass is UNCHANGED and still structurally
-// enforced:
+// Phase 2's closeout deleted the persistent legend outright — the model at
+// the time was six legacy database-state categories, and "learn the four
+// states by hovering" was a reasonable bar for that smaller, corrected set.
+// This authorization explicitly reinstates a legend, scoped tightly to
+// prevent it becoming the old six-category panel again:
 //
-//   - EXACTLY the four current states (Recommended / Alternatives /
-//     Co-Production Opportunities / Excluded), read live from GLOBE_SEMANTIC
-//     — never a hand-written duplicate, so it cannot silently drift from the
+//   - EXACTLY the four current states (Recommended / Optimized alternative /
+//     Unlockable opportunity / Additional), read live from GLOBE_SEMANTIC —
+//     never a hand-written duplicate, so it cannot silently drift from the
 //     Globe's own choropleth or the fixture badge's counts;
 //   - no legacy wording anywhere (no "Qualified/viable", "Conditional", "No
 //     known incentive", "Not evaluated", "Candidate jurisdictions" — this
 //     component doesn't even have a code path that could reintroduce them,
 //     since it only ever iterates GLOBE_SEMANTIC's four keys);
+//   - visually secondary: small type, low-contrast chrome, positioned to sit
+//     with the Globe rather than compete with it;
 //   - production-visible (unlike the dev-only fixture badge) — this is
-//     product chrome, not a debug aid;
-//   - `pointer-events: none` (see CSS) so it never intercepts a click meant
-//     for the globe underneath or beside it.
-//
-// Uses `fullLabel` (the same long form hover already uses — "Co-Production
-// Opportunities", not the compact chip's old "Co-Pro Opportunities") since a
-// vertical stack has the width to spell it out.
+//     product chrome, not a debug aid.
 export default function GlobeLegend({ className = "" }) {
   const order = ["gold", "jade", "amber", "silver"];
   return (
-    <div className={`globe-legend-vertical ${className}`.trim()} role="note" aria-label="Globe status key">
+    <div className={`globe-legend-compact ${className}`.trim()} role="note" aria-label="Globe status key">
       {order.map((slot) => (
-        <span key={slot} className="glv-item">
-          <span className="glv-dot" style={{ background: GLOBE_SEMANTIC[slot].hex }} aria-hidden="true" />
-          {GLOBE_SEMANTIC[slot].fullLabel}
+        <span key={slot} className="glc-item">
+          <span className="glc-dot" style={{ background: GLOBE_SEMANTIC[slot].hex }} aria-hidden="true" />
+          {GLOBE_SEMANTIC[slot].label}
         </span>
       ))}
     </div>

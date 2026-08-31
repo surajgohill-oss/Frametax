@@ -117,8 +117,13 @@ test("api.js exposes a project-scoped people write, distinct from the legacy sin
 // browser walkthrough.
 
 test("Overview's Budget card falls back to bestPricedCandidate (the SAME function the Hero uses) when no active structure exists", () => {
+  // Hard Restore Frozen Project Globe: bestPricedCandidate now lives in its
+  // own module (lib/bestPricedCandidate.js), not lib/globeData.js (restored
+  // byte-exact to the July 30 freeze) — same function, same single source
+  // every caller shares, different file.
   const src = stripComments(read("screens/production/Overview.jsx"));
-  assert.match(src, /import \{ buildGlobeView, activeStructure, bestPricedCandidate \} from "\.\.\/\.\.\/lib\/globeData";/);
+  assert.match(src, /import \{ buildGlobeView, activeStructure \} from "\.\.\/\.\.\/lib\/globeData";/);
+  assert.match(src, /import \{ bestPricedCandidate \} from "\.\.\/\.\.\/lib\/bestPricedCandidate";/);
   assert.match(src, /const structure = allocated \? \(activeStructure\(allocated, leadingStructureId\) \|\| bestPricedCandidate\(allocated\)\) : null;/);
 });
 

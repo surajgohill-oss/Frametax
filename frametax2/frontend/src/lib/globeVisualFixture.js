@@ -200,55 +200,6 @@ export const FIXTURE_EXPECTED_COUNTS = {
   // than a fixed number that would break whenever the dataset changes size.
 };
 
-// ── Co-Production relationship (development only) ───────────────────────
-//
-// WHY THIS EXISTS — a defect found during the Phase 3B ledger reconciliation,
-// not a convenience. The Globe's Co-Production hover illumination reads
-// `relatedCodes`, which globeData.js derives from the winning structure's
-// real `participants` array. Measured against live output for this
-// production: `relatedCodes` is EMPTY for all 86 jurisdictions, so the
-// illumination has never actually fired at runtime.
-//
-// The cause is structural, not a bug: two structures exist per partner
-// jurisdiction — `ALLOC-RELOC-<X>` (full relocation, participants `[X]`,
-// fully priced -> jade) and `ALLOC-COMPONENT-POST-<X>` (component
-// relocation, participants `[MU, X]`, carries blockers -> amber).
-// `buildCountryStatuses`'s `upsert` keeps whichever has the HIGHER
-// STATUS_RANK, and jade (3) outranks amber (2) — so the single-participant
-// structure always wins and the two-participant one is never the `best`.
-// Live category counts confirm the same thing from the other direction:
-// 1 gold / 84 jade / 0 amber / 21 silver — this production has ZERO
-// Co-Production Opportunities, so the state cannot be exercised at all.
-//
-// Whether the ranking should prefer the multi-participant structure is an
-// OPTIMIZER/semantics question, explicitly out of scope for the Globe phase
-// (see CAPABILITY_LEDGER). This fixture therefore supplies a HYPOTHETICAL
-// relationship purely so the RENDERER can be visually validated, on exactly
-// the same terms as the slot assignments above: deterministic, dev-only,
-// non-persisting, disclosed on screen, and never presented as optimizer
-// output.
-//
-// Anchor chosen for visual demonstrability from the default camera (Europe /
-// Africa / Mediterranean, all visible without rotating), and deliberately
-// mixed in render path so BOTH illumination code paths are exercised in one
-// screenshot: IT/MA/GR are polygon-rendered, MT (Malta) is beacon-rendered
-// via the separate pointColorFn path that a previous batch found was missing
-// illumination entirely.
-const FIXTURE_RELATIONSHIPS = new Map([
-  ["EG", { primary: "IT", related: ["IT", "MA", "GR", "MT"] }],
-]);
-
-/**
- * Hypothetical related jurisdictions for a GLOBE KEY, or null.
- *
- * Returns raw globe keys only — never a colour, never a status. The caller
- * (globeData.js) remains the sole owner of what illumination looks like, the
- * same boundary the slot assignments above respect.
- */
-export function fixtureRelatedFor(globeKeyValue) {
-  return FIXTURE_RELATIONSHIPS.get(globeKeyValue) ?? null;
-}
-
 /**
  * The semantic slot this fixture assigns to a GLOBE KEY (see globeKey()).
  * Returns one of the four canonical slot names only — never a colour, never a
