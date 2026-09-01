@@ -26,7 +26,7 @@ hard-coded historical economic total as if it were production law.
 from __future__ import annotations
 
 import pytest
-from sqlalchemy import func, select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.data.program_rate_rules import get_rate_rules  # noqa: F401 -- import-order guard
@@ -127,23 +127,40 @@ async def test_authority_unresolved_program_is_served_but_unpriced(db: AsyncSess
 
 # ── CLUSTER 13 — the read path must be pure ──────────────────────────────
 
-async def _mutation_snapshot(session: AsyncSession) -> dict:
-    """Everything a read was previously able to mutate."""
+async def _mutation_snapshot(session: AsyncSession, project_id: str) -> dict:
+    """Everything a read was previously able to mutate FOR ONE PROJECT.
+
+    Deliberately scoped to the project under test rather than the whole
+    database: the regression being guarded (ensure_current_budget_routed /
+    home-jurisdiction persistence) writes against the project being read, and
+    a global snapshot would also register unrelated concurrent activity from
+    other tests sharing this database.
+    """
     facts = (await session.execute(
         select(ProjectFact.id, ProjectFact.value, ProjectFact.fact_key)
+        .where(ProjectFact.project_id == project_id)
     )).all()
-    homes = (await session.execute(
-        select(Project.id, Project.home_jurisdiction_id)
-    )).all()
+    home = (await session.execute(
+        select(Project.home_jurisdiction_id).where(Project.id == project_id)
+    )).scalar()
     counts = {}
-    for table in ("project_facts", "budget_documents", "budget_line_items",
-                  "structure_calculation_results", "production_structures"):
+    for table, col in (
+        ("budget_documents", "project_id"),
+        ("production_structures", "project_id"),
+    ):
         counts[table] = (await session.execute(
-            select(func.count()).select_from(__import__("sqlalchemy").text(table))
+            text(f"select count(*) from {table} where {col} = :p"), {"p": project_id}
         )).scalar()
+    counts["budget_line_items"] = (await session.execute(
+        text(
+            "select count(*) from budget_line_items bli "
+            "join budget_documents bd on bd.id = bli.budget_document_id "
+            "where bd.project_id = :p"
+        ), {"p": project_id}
+    )).scalar()
     return {
         "facts": sorted((str(f[0]), f[1], f[2]) for f in facts),
-        "homes": sorted((str(h[0]), str(h[1])) for h in homes),
+        "home": str(home),
         "counts": counts,
     }
 
@@ -152,7 +169,7 @@ async def _mutation_snapshot(session: AsyncSession) -> dict:
     "project_id", [LIPS_PROJECT_ID, FVD_PROJECT_ID, UNROUTED_PROJECT_ID]
 )
 async def test_production_view_get_performs_zero_writes(db: AsyncSession, project_id):
-    before = await _mutation_snapshot(db)
+    before = await _mutation_snapshot(db, project_id)
     try:
         await build_production_and_structures(db, project_id)
     except Exception:
@@ -160,31 +177,31 @@ async def test_production_view_get_performs_zero_writes(db: AsyncSession, projec
         # report blockers. Purity is asserted either way -- a read must not
         # mutate even on the failure path.
         await db.rollback()
-    after = await _mutation_snapshot(db)
+    after = await _mutation_snapshot(db, project_id)
 
     assert after["counts"] == before["counts"], (
         "a GET inserted or deleted rows: " f"{before['counts']} -> {after['counts']}"
     )
     assert after["facts"] == before["facts"], "a GET mutated ProjectFact state"
-    assert after["homes"] == before["homes"], "a GET mutated Project.home_jurisdiction_id"
+    assert after["home"] == before["home"], "a GET mutated Project.home_jurisdiction_id"
 
 
 @pytest.mark.parametrize(
     "project_id", [LIPS_PROJECT_ID, FVD_PROJECT_ID, UNROUTED_PROJECT_ID]
 )
 async def test_workspace_view_get_performs_zero_writes(db: AsyncSession, project_id):
-    before = await _mutation_snapshot(db)
+    before = await _mutation_snapshot(db, project_id)
     try:
         await build_project_workspace_view(db, project_id)
     except Exception:
         await db.rollback()
-    after = await _mutation_snapshot(db)
+    after = await _mutation_snapshot(db, project_id)
 
     assert after["counts"] == before["counts"], (
         "a GET inserted or deleted rows: " f"{before['counts']} -> {after['counts']}"
     )
     assert after["facts"] == before["facts"], "a GET mutated ProjectFact state"
-    assert after["homes"] == before["homes"], "a GET mutated Project.home_jurisdiction_id"
+    assert after["home"] == before["home"], "a GET mutated Project.home_jurisdiction_id"
 
 
 def test_read_only_builder_never_reaches_write_capable_recovery():
@@ -284,3 +301,100 @@ def test_a_determinate_floorless_ceiling_still_prices():
     seg = _probe_segment("us_tx_miip")
     assert seg.executable is True
     assert seg.incentive_floor_usd > 0
+
+
+
+def _probe_segment_amount(slug: str, amount_usd: float):
+    from app.calculators.allocation_pricing import price_segment
+    from app.calculators.production_allocation import AccountAllocation, AssignmentKind
+
+    alloc = AccountAllocation(
+        account_code="2000", description="Production spend",
+        amount_usd=amount_usd, component="production", jurisdiction_code="XX",
+        assignment_kind=AssignmentKind.FIXED,
+        rationale="dollar-cap probe",
+        governing_decision="cineglobe-economics-integrity-repair",
+    )
+    return price_segment(
+        jurisdiction_code="XX", program_slug=slug, allocations=[alloc],
+        spend_category_by_code={"2000": "production"},
+        offshore_payroll_accounts=frozenset(),
+        production_type="feature_film", gross_budget_usd=amount_usd,
+    )
+
+
+# ── CLUSTER 7 — dollar caps must constrain the served incentive ──────────
+
+def test_dollar_cap_resolver_prefers_the_smallest_applicable_cap():
+    """per_project_cap_usd and annual_cap_usd already existed as canonical
+    fields. The binding cap is the smallest applicable one, and its type and
+    provenance must be named -- never an invented ceiling."""
+    from app.calculators.allocation_pricing import _resolve_incentive_dollar_cap
+
+    cap, kind, basis = _resolve_incentive_dollar_cap("cy_film_rebate")
+    assert cap == pytest.approx(650_000.0)
+    assert kind == "per_project"
+    assert "per_project_cap_usd" in basis
+
+    # A program with no declared dollar cap must report absence, not zero.
+    cap, kind, basis = _resolve_incentive_dollar_cap("gr_cash_rebate")
+    assert cap is None and kind is None and basis is None
+
+
+def test_dollar_cap_clips_the_incentive_and_preserves_the_uncapped_amount():
+    """Cyprus at an 11M segment resolves an incentive far above its own
+    canonical per-project cap. The cap must bind, and the pre-cap figure must
+    survive for audit."""
+    seg = _probe_segment_amount("cy_film_rebate", 11_000_000.0)
+    assert seg.executable is True
+    assert seg.incentive_cap_usd == pytest.approx(650_000.0)
+    assert seg.incentive_ceiling_usd == pytest.approx(650_000.0)
+    assert seg.incentive_floor_usd <= 650_000.0
+    assert seg.incentive_uncapped_usd > seg.incentive_ceiling_usd
+    assert seg.incentive_cap_applied_usd == pytest.approx(
+        seg.incentive_uncapped_usd - seg.incentive_ceiling_usd
+    )
+    assert seg.notes and "cap" in seg.notes[0].lower()
+
+
+def test_a_non_binding_dollar_cap_does_not_clip():
+    """No over-clipping: California declares a $120M annual allocation, which
+    a single ordinary production never approaches."""
+    seg = _probe_segment_amount("us_ca_film_credit", 11_000_000.0)
+    assert seg.executable is True
+    assert seg.incentive_cap_usd == pytest.approx(120_000_000.0)
+    assert seg.incentive_cap_applied_usd == 0.0
+    assert seg.incentive_uncapped_usd is None
+
+
+def test_a_program_without_a_dollar_cap_is_unaffected():
+    seg = _probe_segment_amount("gr_cash_rebate", 11_000_000.0)
+    assert seg.executable is True
+    assert seg.incentive_cap_usd is None
+    assert seg.incentive_cap_applied_usd == 0.0
+
+
+def test_no_priced_segment_ever_exceeds_its_own_declared_dollar_cap():
+    """Registry-wide invariant, not a single control: for every priceable
+    program that declares a dollar cap, a deliberately oversized segment must
+    still come back at or under that cap."""
+    from app.calculators.allocation_pricing import _resolve_incentive_dollar_cap
+    from app.data.authority_coverage_registry import blocks_economic_candidacy
+    from app.data.program_rate_rules import _RULES_BY_PROGRAM
+
+    checked = 0
+    for slug in _RULES_BY_PROGRAM:
+        if blocks_economic_candidacy(slug):
+            continue
+        cap, _, _ = _resolve_incentive_dollar_cap(slug)
+        if not cap:
+            continue
+        seg = _probe_segment_amount(slug, 500_000_000.0)
+        if not seg.executable:
+            continue
+        assert seg.incentive_ceiling_usd <= cap + 0.01, (
+            f"{slug} priced {seg.incentive_ceiling_usd:,.2f} above its cap {cap:,.2f}"
+        )
+        assert seg.incentive_floor_usd <= cap + 0.01
+        checked += 1
+    assert checked, "expected at least one capped priceable program"

@@ -125,6 +125,22 @@ class SegmentEconomics:
     # this stays False.
     ceiling_requires_confirmation: bool = False
     qpe_cap_applied_usd: float = 0.0   # amount excluded by a program-level QPE cap (e.g. GB/GR 80%)
+    # Cluster 7 (dollar caps). A percentage QPE cap (above) limits the BASE;
+    # these limit the INCENTIVE itself, applied after base x rate. Both are
+    # canonical fields that already existed but never constrained served
+    # pricing: ProgramRequirementsProfile.per_project_cap_usd is a hard
+    # per-production ceiling, and DoctrineRecord.annual_cap_usd /
+    # ProgramRequirementsProfile.annual_program_cap_usd is the program's whole
+    # annual allocation -- one production can never receive more than the
+    # entire year's fund, so it is a true (if usually non-binding) upper
+    # bound. incentive_cap_usd is the binding cap actually applied;
+    # incentive_cap_type names which kind bound; incentive_uncapped_usd
+    # preserves the pre-cap figure so the reduction is auditable.
+    incentive_cap_usd: float | None = None
+    incentive_cap_type: str | None = None
+    incentive_cap_basis: str | None = None
+    incentive_uncapped_usd: float | None = None
+    incentive_cap_applied_usd: float = 0.0
 
 
 @dataclass
@@ -223,6 +239,61 @@ def _segment_lines(
         )
         for a in sorted(allocations, key=lambda a: a.account_code)
     ]
+
+
+
+def _resolve_incentive_dollar_cap(slug: str) -> tuple[float | None, str | None, str | None]:
+    """The binding DOLLAR cap on one production's incentive for `slug`.
+
+    Two canonical fields already exist and mean different things:
+
+      * ProgramRequirementsProfile.per_project_cap_usd -- a hard statutory
+        ceiling on what ONE production may receive. Directly binding.
+      * DoctrineRecord.annual_cap_usd / ProgramRequirementsProfile.
+        annual_program_cap_usd -- the program's ENTIRE annual allocation
+        across all productions. Not a per-project entitlement, but still a
+        true upper bound: a single production cannot receive more than the
+        whole year's fund.
+
+    The binding cap is the smallest applicable one. Returns
+    (cap_usd, cap_type, basis) or (None, None, None) when the program
+    declares no dollar cap -- absence, never an invented ceiling.
+    """
+    from app.data.executable_jurisdiction_registry import get_doctrine
+    from app.data.program_requirements import get_program_requirements
+
+    candidates: list[tuple[float, str, str]] = []
+
+    profile = get_program_requirements(slug)
+    if profile is not None:
+        per_project = getattr(profile, "per_project_cap_usd", None)
+        if per_project:
+            candidates.append((
+                float(per_project), "per_project",
+                "ProgramRequirementsProfile.per_project_cap_usd",
+            ))
+        annual_profile = getattr(profile, "annual_program_cap_usd", None)
+        if annual_profile:
+            candidates.append((
+                float(annual_profile), "annual_program",
+                "ProgramRequirementsProfile.annual_program_cap_usd",
+            ))
+
+    try:
+        doctrine_record = get_doctrine(slug)
+    except Exception:
+        doctrine_record = None
+    annual_doctrine = getattr(doctrine_record, "annual_cap_usd", None) if doctrine_record else None
+    if annual_doctrine:
+        candidates.append((
+            float(annual_doctrine), "annual_program",
+            "DoctrineRecord.annual_cap_usd",
+        ))
+
+    if not candidates:
+        return None, None, None
+    cap_usd, cap_type, basis = min(candidates, key=lambda c: c[0])
+    return cap_usd, cap_type, basis
 
 
 def price_segment(
@@ -493,6 +564,32 @@ def price_segment(
         and not (confirmed_ceiling_programs and slug in confirmed_ceiling_programs)
     )
 
+    # ── Cluster 7: dollar caps constrain the INCENTIVE ───────────────────
+    # Canonical sequence: qualifying base x rate (+ uplift) = gross
+    # incentive, THEN the applicable dollar cap clips it. Applied after the
+    # rate so the cap can never be mistaken for a base or a rate, and to
+    # BOTH the floor and ceiling figures so a capped program cannot present
+    # an uncapped upside. The pre-cap amount is preserved for audit.
+    cap_usd, cap_type, cap_basis = _resolve_incentive_dollar_cap(slug)
+    incentive_uncapped_usd = None
+    incentive_cap_applied = 0.0
+    cap_notes: tuple[str, ...] = ()
+    if cap_usd is not None and ceiling_incentive_usd > cap_usd:
+        incentive_uncapped_usd = ceiling_incentive_usd
+        incentive_cap_applied = round(ceiling_incentive_usd - cap_usd, 2)
+        cap_notes = (
+            f"{jurisdiction_code}/{slug}: incentive clipped by the program's "
+            f"{cap_type.replace('_', ' ')} cap of ${cap_usd:,.2f} "
+            f"({cap_basis}). Uncapped ${ceiling_incentive_usd:,.2f} -> "
+            f"capped ${min(ceiling_incentive_usd, cap_usd):,.2f}.",
+        )
+        ceiling_incentive_usd = round(min(ceiling_incentive_usd, cap_usd), 2)
+        floor_incentive_usd = round(min(floor_incentive_usd, cap_usd), 2)
+    elif cap_usd is not None and floor_incentive_usd > cap_usd:
+        incentive_uncapped_usd = floor_incentive_usd
+        incentive_cap_applied = round(floor_incentive_usd - cap_usd, 2)
+        floor_incentive_usd = round(min(floor_incentive_usd, cap_usd), 2)
+
     return SegmentEconomics(
         jurisdiction_code=jurisdiction_code, program_slug=slug,
         claims_incentive=True, allocated_usd=allocated,
@@ -504,8 +601,14 @@ def price_segment(
         incentive_ceiling_usd=ceiling_incentive_usd,
         doctrine=doctrine.value,
         register_trace=trace,
+        notes=cap_notes,
         ceiling_requires_confirmation=ceiling_requires_confirmation,
         qpe_cap_applied_usd=qpe_cap_applied,
+        incentive_cap_usd=cap_usd,
+        incentive_cap_type=cap_type,
+        incentive_cap_basis=cap_basis,
+        incentive_uncapped_usd=incentive_uncapped_usd,
+        incentive_cap_applied_usd=incentive_cap_applied,
     )
 
 
