@@ -260,6 +260,7 @@ def _infer_jurisdiction_code_from_currency(raw_text: str) -> str | None:
 
 async def _resolve_home_jurisdiction(
     session: AsyncSession, project: Project, budget_doc: BudgetDocument,
+    *, persist: bool = True,
 ) -> Jurisdiction | None:
     """The ONE canonical base-jurisdiction resolver for the live Evaluate
     path. Precedence (never fabricated, never overrides an explicit value):
@@ -311,6 +312,14 @@ async def _resolve_home_jurisdiction(
     if resolved is None:
         return None
 
+    # READ PURITY: a GET/read may reconstruct the derivation in memory to
+    # rebuild an input fingerprint, but must never persist it. Assigning
+    # project.home_jurisdiction_id would mark the ORM object dirty and let
+    # an unrelated later commit flush it, so the assignment itself is
+    # skipped -- not merely the commit.
+    if not persist:
+        return resolved
+
     project.home_jurisdiction_id = resolved.id
     # ProjectFact holds exactly ONE current row per (project_id, fact_key)
     # by its own documented design (and a real DB unique constraint) —
@@ -341,10 +350,26 @@ async def _resolve_home_jurisdiction(
 
 
 async def build_project_economic_inputs(
-    session: AsyncSession, project_id
+    session: AsyncSession, project_id, *, read_only: bool = False,
 ) -> EconomicInputsResult:
     """Assemble canonical economic inputs for any project from persisted
-    evidence. Returns blockers rather than a degraded input set."""
+    evidence. Returns blockers rather than a degraded input set.
+
+    read_only=True makes this builder SIDE-EFFECT FREE, for callers that
+    serve a GET/read (canonical_production_view, project_workspace_view).
+    Those views reconstruct the current input fingerprint on read; before
+    this flag existed they reached the same write-capable recovery this
+    function performs for the evaluation path, so a page load could route a
+    budget, set project.home_jurisdiction_id, insert/update a ProjectFact
+    and commit. A read must never mutate project state.
+
+    Under read_only the two recovery steps are skipped rather than
+    silently substituted: an unrouted budget yields the honest
+    BUDGET_MISSING blocker instead of being routed and persisted, and home
+    jurisdiction is resolved in memory only. Write-time normalization
+    still happens exactly where it belongs -- the explicit
+    evaluate/write workflow, which calls this with the default
+    read_only=False."""
     blockers: list[str] = []
 
     project = await session.get(Project, project_id)
@@ -370,8 +395,9 @@ async def build_project_economic_inputs(
         # Idempotent (material_routing._route_budget's own existing-row
         # check) — never fabricates a budget when routing genuinely can't
         # run (unsupported format, no file cached, nothing extractable).
-        from app.services.material_routing import ensure_current_budget_routed
-        doc = await ensure_current_budget_routed(session, project_id)
+        if not read_only:
+            from app.services.material_routing import ensure_current_budget_routed
+            doc = await ensure_current_budget_routed(session, project_id)
     if doc is None:
         blockers.append(
             "BUDGET_MISSING — no parsed budget document is attached. The "
@@ -386,7 +412,9 @@ async def build_project_economic_inputs(
     # necessary), so the derivation always has real budget evidence to read
     # rather than racing ahead of it. Never overrides an already-confirmed
     # project.home_jurisdiction_id.
-    jurisdiction = await _resolve_home_jurisdiction(session, project, doc)
+    jurisdiction = await _resolve_home_jurisdiction(
+        session, project, doc, persist=not read_only,
+    )
     if jurisdiction is None:
         blockers.append(
             "BASE_JURISDICTION_UNKNOWN — the production's base jurisdiction is "

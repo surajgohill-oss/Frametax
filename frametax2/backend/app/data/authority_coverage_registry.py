@@ -230,7 +230,7 @@ from __future__ import annotations
 #: masquerading a pre-change row as current. Bump whenever COVERAGE_
 #: REGISTRY or BLOCKING_STATES changes in a way that could move a
 #: program's economic candidacy.
-AUTHORITY_COVERAGE_REGISTRY_VERSION = "1.1.0"
+AUTHORITY_COVERAGE_REGISTRY_VERSION = "1.2.0"
 
 from dataclasses import dataclass
 from typing import Literal
@@ -247,31 +247,39 @@ CoverageState = Literal[
     "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
 ]
 
-#: Every state EXCEPT PRICEABLE_VALIDATED and AUTHORITY_UNRESOLVED_NON_
-#: PRICEABLE blocks economic candidacy.
+#: Every state EXCEPT PRICEABLE_VALIDATED blocks economic candidacy.
 #:
-#: POLICY CORRECTION (post-Prompt-16): AUTHORITY_UNRESOLVED_NON_PRICEABLE
-#: was briefly a blocking state. That was overbroad and has been corrected.
-#: ECONOMIC DETERMINISM and PROVENANCE COMPLETENESS are separate
-#: dimensions (program_authority_provenance.py's own ECONOMIC_STATE vs
-#: PROVENANCE_STATE split): a program with a real, previously-accepted
-#: RateRule (a real rate/base/cap/conditions structure this project already
-#: adjudicated to ONE usable figure -- see program_rate_rules.py's own
-#: "Historical-37" and "single-source, disclosed not silently reconciled"
-#: discipline) does not stop being deterministically calculable merely
-#: because its STRUCTURED provenance object is incomplete. Missing
-#: structured provenance is a documentation/traceability gap, not evidence
-#: that the underlying economic rule is wrong or unknown.
+#: FAIL-CLOSED AUTHORITY GATE. An earlier "policy correction" removed
+#: AUTHORITY_UNRESOLVED_NON_PRICEABLE from this set on the theory that
+#: ECONOMIC DETERMINISM and PROVENANCE COMPLETENESS are separable: that a
+#: program holding a previously-adjudicated RateRule stays deterministically
+#: calculable even when its structured provenance is incomplete.
 #:
-#: This state therefore does NOT block economic candidacy. It remains a
-#: real, distinct, non-blocking classification consulted by
-#: program_authority_provenance.py for reporting and future promotion
-#: (see AUTHORITY_VERIFIED_PRICEABLE vs the retained-but-non-blocking
-#: AUTHORITY_UNRESOLVED_NON_PRICEABLE row). A program whose RATE ITSELF is
-#: genuinely unresolved (no adjudicated figure, or a live, un-reconciled
-#: conflict this project has not resolved to one usable value) is a
-#: DIFFERENT, real gap and belongs in UNPRICEABLE_AUTHORITY_INSUFFICIENT
-#: instead, which DOES block.
+#: That reasoning is rejected. It contradicts the final authority-safety gate
+#: in PROJECT_RULES.md, which admits exactly two terminal dispositions for a
+#: residual program:
+#:
+#:   AUTHORITY_VERIFIED_PRICEABLE       -- every calculation-driving
+#:       proposition is supported by current primary authority, so the
+#:       program may price deterministically; or
+#:   AUTHORITY_UNRESOLVED_NON_PRICEABLE -- authoritative support could NOT be
+#:       completed, so the program "remains visible as an unresolved
+#:       knowledge opportunity but contributes no incentive, NPC, stack, or
+#:       ranking value."
+#:
+#: The name of the state is itself the disposition: NON_PRICEABLE. A retained
+#: rate figure whose administering-authority support was never completed is
+#: precisely the case the gate exists to quarantine — the rule may be right,
+#: but the project has not established that it is, and a producer financing a
+#: real film must not receive a deterministic number backed only by secondary
+#: material. Fail closed rather than assume.
+#:
+#: Blocking here does NOT erase the program. Both consumption sites preserve
+#: it as visible-but-unpriced: production_discovery classifies it
+#: `capability_only` with the coverage state as the stated reason, and
+#: allocation_pricing._price_segment returns an allocated, disclosed segment
+#: with executable=False and an explicit blocker. Conditional/unresolved
+#: disclosure is retained; only deterministic economics are withheld.
 BLOCKING_STATES: frozenset[str] = frozenset({
     "UNPRICEABLE_AUTHORITY_INSUFFICIENT",
     "NON_GUARANTEED_SELECTIVE",
@@ -280,6 +288,7 @@ BLOCKING_STATES: frozenset[str] = frozenset({
     "SUPERSEDED",
     "DUPLICATE",
     "CANONICAL_DATA_HANDOFF_DEFECT",
+    "AUTHORITY_UNRESOLVED_NON_PRICEABLE",
 })
 
 STATE_REASON: dict[str, str] = {
@@ -314,20 +323,19 @@ STATE_REASON: dict[str, str] = {
         "Stopped rather than bound to the wrong program. Requires a canonical identity binding."
     ),
     "AUTHORITY_UNRESOLVED_NON_PRICEABLE": (
-        "NON-BLOCKING (see BLOCKING_STATES's own docstring for the policy correction). "
-        "The program's STRUCTURED provenance (a normalized SourceProvenance object naming a "
-        "non-secondary issuing authority and a proposition anchor) is incomplete -- the "
-        "retained citation names only secondary material (production-service sites, "
+        "Authoritative support could not be completed, so the program contributes no "
+        "incentive, NPC, stack or ranking value (PROJECT_RULES.md final authority-safety "
+        "gate). The program's STRUCTURED provenance (a normalized SourceProvenance object "
+        "naming a non-secondary issuing authority and a proposition anchor) is incomplete -- "
+        "the retained citation names only secondary material (production-service sites, "
         "aggregators, law-firm or trade summaries) rather than a primary/official source. "
-        "This does NOT mean the underlying rate/base/cap/eligibility rule is unknown or wrong: "
-        "the program already carries a real, previously-adjudicated RateRule (this project's "
-        "own discipline resolves apparent source conflicts to one usable figure before a rule "
-        "is ever accepted -- see program_rate_rules.py). The program therefore remains fully "
-        "priceable; this state exists purely so program_authority_provenance.py can report "
-        "and prioritize which programs still need their structured provenance normalized. "
-        "This is NOT a finding that the program does not exist or is worthless, and NOT a "
-        "finding that CineGlobe cannot price it -- it already does. Promotion to "
-        "AUTHORITY_VERIFIED_PRICEABLE requires retaining the administering authority's own "
+        "A retained rate figure whose administering-authority support was never completed is "
+        "exactly what this state quarantines: the rule may well be correct, but the project "
+        "has not established that it is, and deterministic producer economics must not rest "
+        "on secondary material. This is NOT a finding that the program does not exist or is "
+        "worthless -- it remains visible as an unresolved knowledge opportunity and may be "
+        "disclosed conditionally; it is only barred from deterministic economics. Promotion "
+        "to AUTHORITY_VERIFIED_PRICEABLE requires retaining the administering authority's own "
         "current source for each calculation-driving proposition."
     ),
 }

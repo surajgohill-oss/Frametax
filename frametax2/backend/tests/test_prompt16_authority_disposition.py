@@ -1,17 +1,25 @@
 """
 test_prompt16_authority_disposition.py
 
-Prompt 16 (Final Authority Disposition) + its POLICY CORRECTION (Final
-Canonical Backend Closeout): economics and provenance are separate
-dimensions.
+Prompt 16 (Final Authority Disposition), restored to the FAIL-CLOSED gate.
+
+An intermediate "policy correction" treated economics and provenance as
+separable and removed `AUTHORITY_UNRESOLVED_NON_PRICEABLE` from
+`BLOCKING_STATES`. That is rejected: it contradicted the final
+authority-safety gate in PROJECT_RULES.md, under which an
+authority-unresolved program "contributes no incentive, NPC, stack, or
+ranking value."
 
   * the provenance classifier verifies SUBSTANTIVELY -- a non-null
     SourceProvenance object alone can never mark a program verified
     (PROJECT_RULES.md §6);
-  * `AUTHORITY_UNRESOLVED_NON_PRICEABLE` is a REPORTING-ONLY provenance
-    state -- it must never appear in `BLOCKING_STATES`, so incomplete
-    structured provenance can never by itself suppress a previously
-    accepted program's deterministic economics;
+  * `AUTHORITY_UNRESOLVED_NON_PRICEABLE` is a TERMINAL NON-PRICEABLE
+    disposition -- it MUST appear in `BLOCKING_STATES`, so a rate whose
+    administering-authority support was never completed can never drive
+    deterministic producer economics;
+  * blocking withholds economics WITHOUT erasing the program: it stays
+    visible as an unresolved opportunity and may be disclosed
+    conditionally;
   * a program that IS genuinely economically blocked (material rule
     unresolved, superseded, non-economic, selective) still fails closed by
     ANY route -- discovery, direct `price_segment`, stacking, ranking --
@@ -29,7 +37,6 @@ from app.data.authority_coverage_registry import BLOCKING_STATES, blocks_economi
 from app.data.program_authority_provenance import (
     AUTHORITY_UNRESOLVED_NON_PRICEABLE,
     AUTHORITY_VERIFIED_PRICEABLE,
-    ECONOMIC_STATE_DETERMINISTIC_PRICEABLE,
     ECONOMIC_STATE_MATERIAL_RULE_UNRESOLVED,
     PROVENANCE_EVIDENCE_NOT_RETAINED,
     PROVENANCE_RECOVERED,
@@ -42,25 +49,28 @@ from app.data.program_authority_provenance import (
 from app.data.program_rate_rules import _RULES_BY_PROGRAM
 
 
-# ── THE policy correction, proven structurally ───────────────────────────
+# ── THE fail-closed authority gate, proven structurally ──────────────────
 
-def test_provenance_incompleteness_never_blocks_economic_candidacy():
-    """THE gate. Incomplete structured provenance alone must never suppress
-    a previously accepted program's deterministic economics."""
-    assert "AUTHORITY_UNRESOLVED_NON_PRICEABLE" not in BLOCKING_STATES
+def test_unresolved_authority_blocks_economic_candidacy():
+    """THE gate. An authority-unresolved program is NON_PRICEABLE by name and
+    by PROJECT_RULES.md: it must block deterministic economics."""
+    assert "AUTHORITY_UNRESOLVED_NON_PRICEABLE" in BLOCKING_STATES
 
 
-def test_a_program_can_be_provenance_unresolved_yet_economically_priceable():
-    """The exact state Prompt 16 wrongly forbade. Proven against the real
-    registry, not a synthetic example."""
+def test_no_program_is_provenance_unresolved_yet_deterministically_priced():
+    """Fail closed. Every provenance-unresolved program in the real registry
+    must be barred from deterministic economics -- a retained rate figure
+    whose authority was never completed is exactly what the gate quarantines.
+    Proven against the live registry, not a synthetic example."""
     candidates = [
         s for s in _RULES_BY_PROGRAM
         if authority_disposition(s) == AUTHORITY_UNRESOLVED_NON_PRICEABLE
-        and economic_state(s) == ECONOMIC_STATE_DETERMINISTIC_PRICEABLE
     ]
-    assert candidates, "expected real programs that are provenance-unresolved but priceable"
+    assert candidates, "expected real provenance-unresolved programs in the registry"
     for slug in candidates:
-        assert not blocks_economic_candidacy(slug)
+        assert blocks_economic_candidacy(slug), (
+            f"{slug} is authority-unresolved but still economically priceable"
+        )
 
 
 # ── Terminal accounting on BOTH axes ──────────────────────────────────────
@@ -135,16 +145,17 @@ def _economically_blocked_slugs():
     return [s for s in _RULES_BY_PROGRAM if blocks_economic_candidacy(s)]
 
 
-def test_economically_blocked_programs_all_have_a_real_non_provenance_reason():
-    """Every program still blocked must be blocked for a genuine economic
-    reason, never for AUTHORITY_UNRESOLVED_NON_PRICEABLE (which cannot
-    block, per the first test above)."""
+def test_economically_blocked_programs_all_carry_a_declared_blocking_state():
+    """Every blocked program must be blocked by a DECLARED registry state and
+    carry a stated reason -- never blocked incidentally or silently.
+    Unresolved authority is itself a genuine, declared economic reason to
+    fail closed, so it is a legitimate member of this set."""
     from app.data.authority_coverage_registry import COVERAGE_REGISTRY
 
     for slug in _economically_blocked_slugs():
         rec = COVERAGE_REGISTRY[slug]
-        assert rec.state != "AUTHORITY_UNRESOLVED_NON_PRICEABLE"
         assert rec.state in BLOCKING_STATES
+        assert rec.reason
 
 
 def test_economically_blocked_program_cannot_price_via_direct_price_segment():

@@ -65,7 +65,17 @@ async def test_fvd_eurimages_opportunity_reaches_co_pro_opportunities_category(d
             )
 
     bilateral_among_candidates = [e for e in treaty if e["treaty_slug"] not in by_slug]
-    assert len(bilateral_among_candidates) == 23
+    # 23 -> 22 with the fail-closed authority gate (CineGlobe economics +
+    # wiring integrity repair, Cluster 1). Bilateral opportunities are
+    # generated between pairs of FVD's own DISCOVERED candidate
+    # jurisdictions. ch_pics_national_rebate is
+    # AUTHORITY_UNRESOLVED_NON_PRICEABLE, so Switzerland no longer
+    # contributes an economic leg and the single ca-ch-bilateral pair drops
+    # out. Every other bilateral pair is unaffected.
+    assert len(bilateral_among_candidates) == 22
+    assert all(
+        "ca-ch-bilateral" != e["treaty_slug"] for e in bilateral_among_candidates
+    ), "CH is authority-unresolved; its bilateral pair must not be offered"
     assert all(not e["is_directly_comparable"] for e in bilateral_among_candidates)
     assert all(e.get("npc_with_adjustments_usd") is None for e in bilateral_among_candidates)
     assert all("GR" not in [p["jurisdiction_code"] for p in e["coproduction_partners"]] for e in bilateral_among_candidates), (

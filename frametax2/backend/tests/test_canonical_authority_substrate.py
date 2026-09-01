@@ -73,13 +73,32 @@ async def db():
 # ── Test 1/2 (from the task's numbered list) — feasibility vs eligibility ──
 
 async def test_soft_feasibility_mismatch_does_not_reject_economic_candidate(db: AsyncSession):
-    """A landlocked jurisdiction with a real marine mismatch must remain a
-    priced economic candidate — feasibility never suppresses discovery."""
+    """A landlocked jurisdiction with a real marine mismatch must still be
+    DISCOVERED — feasibility never suppresses discovery.
+
+    MN and UZ are both landlocked with a soft marine mismatch. They are no
+    longer *priced*, but for a reason that has nothing to do with
+    feasibility: both are AUTHORITY_UNRESOLVED_NON_PRICEABLE and the
+    fail-closed authority gate withholds deterministic economics from them
+    (PROJECT_RULES.md final authority-safety gate). This test therefore
+    asserts the thing it always meant to assert — the soft feasibility gate
+    is not what removes them — and proves the two gates stay independent.
+    """
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = {e["primary_jurisdiction"]: e for e in view["structures"]["allocated_structures"]["structures"]}
-    assert "MN" in entries and entries["MN"]["is_fully_priced"] is True
-    assert "UZ" in entries and entries["UZ"]["is_fully_priced"] is True
+
+    for code in ("MN", "UZ"):
+        assert code in entries, f"{code} was suppressed from discovery entirely"
+        entry = entries[code]
+        # Discovery kept it and disclosed the real, non-feasibility reason.
+        blocking_text = " ".join([entry.get("reason") or "", *(entry.get("blockers") or [])]).lower()
+        assert "authority unresolved non priceable" in blocking_text, (
+            f"{code} must be withheld for the authority reason, not a feasibility one: {blocking_text[:200]}"
+        )
+        # Fail-closed authority gate: no deterministic economics.
+        assert entry["is_fully_priced"] is False
+        assert not entry.get("selected_incentive_usd")
 
 
 async def test_statutory_eligibility_failure_still_rejects_correctly(db: AsyncSession):
@@ -556,15 +575,42 @@ async def test_fvd_runtime_candidate_universe_restored(db: AsyncSession):
     each now surfaces as its own disclosed, unpriced treaty_coproduction
     opportunity. priced is unaffected (all 23 are UNRESOLVED_FACTS, never
     priced); unpriced absorbs the full growth. See
-    test_treaty_coproduction_wiring.py for the direct proof."""
+    test_treaty_coproduction_wiring.py for the direct proof.
+
+    Fail-closed authority gate (CineGlobe economics + wiring integrity
+    repair, Cluster 1): entries 169 -> 168, priced 135 -> 105, unpriced
+    34 -> 63. AUTHORITY_UNRESOLVED_NON_PRICEABLE is now a BLOCKING state,
+    restoring PROJECT_RULES.md's final authority-safety gate (such a
+    program "contributes no incentive, NPC, stack, or ranking value").
+    Full attribution of the movement, per PROJECT_RULES.md rule 9:
+
+      * -30 priced: exactly one full_relocation candidate per
+        authority-unresolved program is withheld from deterministic
+        economics (al, au_nsw, au_qld, bg, ca_mb, ca_nb, ca_ns, ca_sk,
+        ch_pics, co, cr, do, eg, gh, lv, me, mk, mn, pa, qa, se, sg, sk,
+        ua, us_az, us_co, us_hi, us_ut, us_va, uz). Each remains a
+        DISCOVERED, disclosed entry carrying the authority reason -- it is
+        withheld, never erased -- so these move to unpriced, +30.
+      * -4 entries: the 3 CA-MB component/split candidates (post/vfx/music)
+        can no longer price on Manitoba and are therefore never persisted
+        (the pre-existing documented behavior for a component candidate
+        that fails to price), plus the CA + CH bilateral co-production
+        opportunity, which loses its Swiss economic leg. One of those 4 was
+        already unpriced, so unpriced nets +29 rather than +30.
+      * +3 entries: with Manitoba out of the top-6 alternative
+        jurisdictions by single-program incentive value, IT takes the
+        vacated slot and the same 3 components route there instead.
+
+      169 - 4 + 3 = 168 entries; 135 - 30 = 105 priced; 34 + 30 - 1 = 63.
+    """
     await evaluate_project(db, FVD_PROJECT_ID)
     view = await build_production_and_structures(db, FVD_PROJECT_ID)
     entries = view["structures"]["allocated_structures"]["structures"]
     priced = [e for e in entries if e["is_fully_priced"]]
     unpriced = [e for e in entries if not e["is_fully_priced"]]
-    assert len(entries) == 169
-    assert len(priced) == 135
-    assert len(unpriced) == 34
+    assert len(entries) == 168
+    assert len(priced) == 105
+    assert len(unpriced) == 63
 
     for code in ("MN", "UZ", "AT"):
         e = next(x for x in entries if x["primary_jurisdiction"] == code)

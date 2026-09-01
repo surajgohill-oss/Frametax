@@ -466,7 +466,10 @@ async def build_production_and_structures(session: AsyncSession, project_id) -> 
         role_known_codes_from_project, script_facts_from_project,
     )
     fingerprint = None
-    econ = await build_project_economic_inputs(session, project.id)
+    # READ PURITY: this is a GET/read builder. read_only=True keeps
+    # fingerprint reconstruction side-effect free (no budget routing, no
+    # home-jurisdiction persistence, no ProjectFact write, no commit).
+    econ = await build_project_economic_inputs(session, project.id, read_only=True)
     if econ.ok:
         role_known_codes = await role_known_codes_from_project(session, str(project.id))
         script_facts = await script_facts_from_project(session, str(project.id))
