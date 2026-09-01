@@ -513,3 +513,40 @@ def test_each_subnational_participant_gets_its_own_node_generically():
         assert all(n.jurisdiction_code.upper() == code for n in attached), (
             f"{code} attached another jurisdiction's subnational node"
         )
+
+
+# ── REGISTRY-WIDE CANONICAL -> EXECUTABLE CONFORMANCE ────────────────────
+
+def test_every_registered_program_is_priceable_or_fails_closed_with_a_reason():
+    """The invariant the whole repair rests on, asserted mechanically across
+    the LIVE registry (no research, no invented rules): every program with
+    registered rate rules must either expose a coherent executable pricing
+    contract, or fail closed with an exact stated reason. A program that
+    prices with an incoherent contract, or fails without a reason, is exactly
+    the defect class this guards."""
+    import sys
+    from pathlib import Path
+
+    scripts_dir = Path(__file__).resolve().parents[1] / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    from canonical_executable_conformance import classify, incoherences
+
+    from app.data.program_rate_rules import _RULES_BY_PROGRAM
+
+    records = [classify(slug) for slug in sorted(_RULES_BY_PROGRAM)]
+    assert records, "expected registered programs"
+
+    problems = [(r["slug"], p) for r in records for p in incoherences(r)]
+    assert problems == [], f"structural incoherences: {problems}"
+
+    for record in records:
+        if record["disposition"] == "FAILS_CLOSED":
+            assert record["reasons"], f"{record['slug']} failed closed with no reason"
+            assert ":" in record["reasons"][0], (
+                f"{record['slug']} reason is not a typed kind:detail pair"
+            )
+
+    priceable = [r for r in records if r["disposition"] == "PRICEABLE"]
+    failed = [r for r in records if r["disposition"] == "FAILS_CLOSED"]
+    assert priceable and failed, "expected both dispositions to be represented"
